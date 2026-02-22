@@ -9,6 +9,12 @@ export class MainController {
             mobileSearchToggleBtn: document.getElementById('mobile-search-toggle')
         };
         
+        // Configuraciones de comportamiento de los módulos
+        this.config = {
+            closeOnEsc: true,           // Cambiar a false si NO quieres que se cierren con la tecla ESC
+            allowMultipleModules: false // Cambiar a true si quieres permitir más de un módulo abierto a la vez
+        };
+
         this.state = {
             isMobileSearchActive: false,
             currentDevice: '' // Guarda el dispositivo actual para evitar logs repetitivos
@@ -39,6 +45,65 @@ export class MainController {
         // Evento global de redimensionamiento de ventana (resize)
         window.addEventListener('resize', () => {
             this.handleResize();
+        });
+
+        // Evento global para clics (Maneja los botones de acción y los clics fuera de los módulos)
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-action]');
+            
+            // 1. Si el clic se hizo en un botón de acción
+            if (btn) {
+                const action = btn.getAttribute('data-action');
+                if (action === 'toggleModuleSurface') {
+                    this.toggleModule('moduleSurface');
+                } else if (action === 'toggleModuleMainOptions') {
+                    this.toggleModule('moduleMainOptions');
+                }
+                return; // Detenemos la ejecución aquí para no cerrar los módulos
+            }
+
+            // 2. Si el clic NO fue en un botón, comprobamos si fue FUERA de un módulo activo
+            const isClickInsideModule = e.target.closest('[data-module]');
+            if (!isClickInsideModule) {
+                this.closeAllModules();
+            }
+        });
+
+        // Evento global de teclado para detectar la tecla "Escape"
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.config.closeOnEsc) {
+                this.closeAllModules();
+            }
+        });
+    }
+
+    /**
+     * Alterna la visibilidad (clases disabled y active) de un módulo en específico
+     */
+    toggleModule(moduleName) {
+        const moduleEl = document.querySelector(`[data-module="${moduleName}"]`);
+        if (!moduleEl) return;
+
+        const isCurrentlyActive = moduleEl.classList.contains('active');
+
+        // Si NO se permite más de un módulo activo y estamos a punto de ABRIR uno nuevo, cerramos el resto
+        if (!this.config.allowMultipleModules && !isCurrentlyActive) {
+            this.closeAllModules();
+        }
+
+        // Alternamos el estado del módulo solicitado
+        moduleEl.classList.toggle('disabled');
+        moduleEl.classList.toggle('active');
+    }
+
+    /**
+     * Cierra todos los módulos que estén activos en pantalla
+     */
+    closeAllModules() {
+        const activeModules = document.querySelectorAll('[data-module].active');
+        activeModules.forEach(moduleEl => {
+            moduleEl.classList.remove('active');
+            moduleEl.classList.add('disabled');
         });
     }
 

@@ -78,7 +78,7 @@
                 <div class="general-content-bottom">
                     
                     <div class="component-module component-module--sidebar disabled" data-module="moduleSurface">
-                        <div class="component-menu component-menu--w325 component-menu--h-full">
+                        <div class="component-menu component-menu--w265 component-menu--h-full">
                             
                             <div class="component-menu-top">
                                 <div class="component-menu-list">

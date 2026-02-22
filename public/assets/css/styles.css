@@ -223,7 +223,11 @@ body,html {
 .component-module--sidebar {
     padding: 12px;
     height: 100%;
-    flex: 0 0 auto;
+    /* Modificado: Ahora es absolute siempre */
+    position: absolute; 
+    top: 0;
+    left: 0;
+    z-index: 50; /* Lo pone por encima de general-content-scrolleable */
 }
 
 /* 2. Menú Base */
@@ -244,20 +248,20 @@ body,html {
 
 /* 2.1 Zonas del Menú (Top y Bottom) */
 .component-menu-top {
-    flex: 1 1 auto; /* Toma el espacio disponible y empuja el bottom */
+    flex: 1 1 auto; 
     display: flex;
     flex-direction: column;
-    overflow-y: auto; /* Por si el contenido crece mucho */
+    overflow-y: auto; 
     scrollbar-width: thin;
 }
 
 .component-menu-bottom {
-    flex: 0 0 auto; /* Se queda estático abajo */
+    flex: 0 0 auto; 
     display: flex;
     flex-direction: column;
     margin-top: 8px;
     padding-top: 8px;
-    border-top: 1px solid #00000020; /* Borde sutil para separar la zona baja */
+    border-top: 1px solid #00000020; 
 }
 
 
@@ -342,8 +346,23 @@ body,html {
         display: flex; 
     }
 
+    /* Módulo Surface en móvil */
     .component-module--sidebar {
         display: none; 
+        padding: 0; /* Quitamos el padding al contenedor */
+        width: 100%; /* Aseguramos que el sidebar ocupe todo */
+        /* position: absolute; y z-index: 50; ya se heredan del general */
+        background: #fff;
+    }
+
+    /* Ajustes específicos para el component-menu dentro de sidebar en móvil */
+    .component-module--sidebar .component-menu {
+        width: 100% !important; /* Forzamos el 100% por sobre el modificador w265 */
+        border-top-left-radius: 0; /* Quitamos el radio superior izquierdo */
+        border-top-right-radius: 0; /* Quitamos el radio superior derecho */
+        border-left: none; /* Quitamos bordes si no son necesarios */
+        border-right: none;
+        border-top: none;
     }
 }
 
