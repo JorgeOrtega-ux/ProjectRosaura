@@ -2,23 +2,18 @@
 // api/services/auth-services.php
 
 require_once __DIR__ . '/../../includes/core/Utils.php';
+require_once __DIR__ . '/../../includes/config/database.php';
+
 use App\Core\Utils;
+use App\Config\Database;
 
 class AuthServices {
     private $pdo;
 
     public function __construct() {
-        $host = 'localhost';
-        $dbname = 'projectrosaura';
-        $user = 'root';
-        $pass = '';
-
-        try {
-            $this->pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $user, $pass);
-            $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        } catch (PDOException $e) {
-            die(json_encode(['success' => false, 'message' => 'Error de conexión a la base de datos.']));
-        }
+        // Instanciamos la clase Database centralizada
+        $db = new Database();
+        $this->pdo = $db->getConnection();
     }
 
     public function registerStep1($data) {

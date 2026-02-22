@@ -1,0 +1,25 @@
+# Archivos de entorno con credenciales sensibles
+.env
+.env.*
+!.env.example
+
+# Archivos del sistema operativo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Directorios de dependencias (por si decides usar Composer o Node en el futuro)
+vendor/
+node_modules/
+
+# Archivos de logs
+*.log
+error_log
+
+# Ignorar archivos generados por editores / IDEs
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln

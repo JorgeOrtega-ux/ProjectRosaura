@@ -1,0 +1,66 @@
+<?php
+// includes/config/database.php
+
+namespace App\Config;
+
+use PDO;
+use PDOException;
+
+class Database {
+    private $pdo;
+
+    public function __construct() {
+        // Cargar variables de entorno desde el archivo .env en la raíz
+        $this->loadEnv(__DIR__ . '/../../.env');
+
+        // Leer credenciales del entorno o usar valores por defecto
+        $host = $_ENV['DB_HOST'] ?? 'localhost';
+        $dbname = $_ENV['DB_NAME'] ?? 'projectrosaura';
+        $user = $_ENV['DB_USER'] ?? 'root';
+        $pass = $_ENV['DB_PASS'] ?? '';
+
+        try {
+            $this->pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $user, $pass);
+            $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        } catch (PDOException $e) {
+            die(json_encode(['success' => false, 'message' => 'Error de conexión a la base de datos.']));
+        }
+    }
+
+    /**
+     * Retorna la instancia de conexión PDO
+     * @return PDO
+     */
+    public function getConnection() {
+        return $this->pdo;
+    }
+
+    /**
+     * Función interna y ligera para parsear el archivo .env
+     */
+    private function loadEnv($path) {
+        if (!file_exists($path)) {
+            return; // Si no existe, dependemos del entorno del servidor o los valores por defecto
+        }
+
+        $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        foreach ($lines as $line) {
+            // Ignorar los comentarios
+            if (strpos(trim($line), '#') === 0) {
+                continue;
+            }
+
+            // Separar llave y valor
+            list($name, $value) = explode('=', $line, 2);
+            $name = trim($name);
+            $value = trim($value);
+
+            if (!array_key_exists($name, $_SERVER) && !array_key_exists($name, $_ENV)) {
+                putenv(sprintf('%s=%s', $name, $value));
+                $_ENV[$name] = $value;
+                $_SERVER[$name] = $value;
+            }
+        }
+    }
+}
+?>
