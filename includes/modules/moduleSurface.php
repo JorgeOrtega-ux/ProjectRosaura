@@ -21,31 +21,5 @@
                 </a>
             </div>
         </div>
-
-        <div class="component-menu-bottom">
-            <div class="component-menu-list">
-                
-                <?php /* if(isset($_SESSION['es_admin']) && $_SESSION['es_admin'] === true): */ ?>
-                <a href="#" class="component-menu-link">
-                    <div class="component-menu-link-icon">
-                        <span class="material-symbols-rounded">admin_panel_settings</span>
-                    </div>
-                    <div class="component-menu-link-text">
-                        <span>Panel de Control</span>
-                    </div>
-                </a>
-                <?php /* endif; */ ?>
-
-                <a href="#" class="component-menu-link">
-                    <div class="component-menu-link-icon">
-                        <span class="material-symbols-rounded">settings</span>
-                    </div>
-                    <div class="component-menu-link-text">
-                        <span>Configuración</span>
-                    </div>
-                </a>
-            </div>
-        </div>
-
     </div>
 </div>
