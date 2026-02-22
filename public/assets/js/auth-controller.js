@@ -67,7 +67,7 @@ export class AuthController {
             password: passwordInput.value
         };
 
-        const result = await this.api.post(ApiRoutes.AUTH.LOGIN, data);
+        const result = await this.api.post(ApiRoutes.Auth.Login, data);
 
         if (result.success) {
             window.location.href = '/ProjectRosaura/';
@@ -89,7 +89,7 @@ export class AuthController {
             password: passwordInput.value
         };
 
-        const result = await this.api.post(ApiRoutes.AUTH.REGISTER, data);
+        const result = await this.api.post(ApiRoutes.Auth.Register, data);
 
         if (result.success) {
             window.location.href = '/ProjectRosaura/';
@@ -99,7 +99,7 @@ export class AuthController {
     }
 
     async handleLogout() {
-        const result = await this.api.post(ApiRoutes.AUTH.LOGOUT);
+        const result = await this.api.post(ApiRoutes.Auth.Logout);
 
         if (result.success) {
             window.location.href = '/ProjectRosaura/';

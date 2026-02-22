@@ -1,5 +1,5 @@
 <?php
-// api/auth-services.php
+// api/services/auth-services.php
 
 class AuthServices {
     private $pdo;
@@ -106,7 +106,15 @@ class AuthServices {
 
     private function generateProfilePicture($username, $uuid) {
         $initial = mb_substr($username, 0, 1, "UTF-8");
-        $url = "https://ui-avatars.com/api/?name=" . urlencode($initial) . "&background=random&color=fff&size=512&font-size=0.5";
+        
+        // Colores permitidos
+        $allowedColors = ['2563eb', '16a34a', '7c3aed', 'dc2626', 'ea580c', '374151'];
+        
+        // Seleccionar un color aleatorio del arreglo
+        $randomColor = $allowedColors[array_rand($allowedColors)];
+        
+        // Construir la URL con el color de fondo elegido y texto blanco (color=fff)
+        $url = "https://ui-avatars.com/api/?name=" . urlencode($initial) . "&background=" . $randomColor . "&color=fff&size=512&font-size=0.5";
         
         $imageContent = @file_get_contents($url);
         
@@ -114,8 +122,8 @@ class AuthServices {
             return false;
         }
 
-        // Definir la ruta física en el servidor
-        $storageDir = __DIR__ . '/../public/storage/profilePictures/default/';
+        // IMPORTANTE: Subimos dos niveles (api/services -> api -> raíz -> public)
+        $storageDir = __DIR__ . '/../../public/storage/profilePictures/default/';
         
         if (!is_dir($storageDir)) {
             mkdir($storageDir, 0777, true);

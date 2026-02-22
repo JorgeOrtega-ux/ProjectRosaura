@@ -2,8 +2,8 @@
 // api/handler/auth-handler.php
 
 // Requerimos los servicios. 
-// Subimos un nivel de directorio porque estamos dentro de api/handler/
-require_once __DIR__ . '/../auth-services.php';
+// Subimos un nivel de directorio y entramos a la nueva carpeta 'services'
+require_once __DIR__ . '/../services/auth-services.php';
 
 $authServices = new AuthServices();
 

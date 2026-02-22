@@ -2,8 +2,8 @@
 
 export class ApiService {
     constructor() {
-        // Apuntamos al nuevo receptor central del backend
-        this.baseUrl = '/ProjectRosaura/api/endpoint.php';
+        // Apuntamos al nuevo receptor central del backend (index.php)
+        this.baseUrl = '/ProjectRosaura/api/index.php'; 
     }
 
     /**
@@ -11,7 +11,7 @@ export class ApiService {
      * @param {object} data - Los parámetros
      */
     async post(route, data = {}) {
-        // Formamos el JSON exactamente como lo espera endpoint.php
+        // Formamos el JSON exactamente como lo espera index.php
         const payload = {
             route: route,
             ...data
