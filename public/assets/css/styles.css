@@ -2,10 +2,11 @@
     padding: 0;
     margin: 0;
     box-sizing: border-box;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 }
 
 body,html {
-     width: 100%;
+    width: 100%;
     height: 100%;
 }
 
@@ -30,10 +31,6 @@ body,html {
     border-radius: 12px;
 }
 
-
-
-
-
 .general-content-top {
     width: 100%;
     height: auto;
@@ -43,11 +40,17 @@ body,html {
 
 .general-content-bottom {
     flex: 1 1 auto;
+    position: relative;
+    overflow: hidden; /* Evita que el scroll rompa bordes */
 }
 
 .general-content-scrolleable {
-    flex: 1 1 auto;
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    scrollbar-width: thin;
 }
+
 /* --- HEADER LAYOUT --- */
 .header {
     width: 100%;
@@ -81,13 +84,6 @@ body,html {
     justify-content: flex-end;
     align-items: center;
 }
-.overflow-y {
-    scrollbar-width: thin;
-}
-
-
-
-
 
 /* --- COMPONENT: SEARCH --- */
 .component-search {
@@ -105,6 +101,7 @@ body,html {
     display: flex;
     justify-content: center;
     align-items: center;
+    color: #666;
 }
 
 .component-search-input {
@@ -122,4 +119,108 @@ body,html {
     background-color: transparent;
     padding-right: 12px;
     font-size: 14px;
+}
+
+/* ========================================= */
+/* --- COMPONENT: BUTTON SYSTEM ---          */
+/* ========================================= */
+
+/* 1. Base Button */
+.component-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px; /* Espacio entre icono y texto si hubiera */
+    border: 1px solid #00000020;
+    border-radius: 8px;
+    background-color: #ffffff;
+    color: #111111;
+    outline: none;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.15s ease-in-out;
+    padding: 0 8px; /* Padding por defecto */
+    text-decoration: none;
+    user-select: none;
+    white-space: nowrap;
+}
+
+.component-button:hover {
+    background-color: #f3f3f3;
+}
+
+.component-button:active {
+    transform: scale(0.96); /* Efecto profesional al hacer clic */
+}
+
+/* 2. Modificadores de Tamaño (Alturas) */
+.component-button--h40 { height: 40px; }
+.component-button--h38 { height: 38px; }
+.component-button--h36 { height: 36px; }
+.component-button--h34 { height: 34px; font-size: 13px; }
+.component-button--h32 { height: 32px; font-size: 13px; }
+.component-button--h30 { height: 30px; font-size: 12px; padding: 0 6px;}
+
+/* 3. Modificador Icono Cuadrado (Mismo ancho que alto) */
+.component-button--icon {
+    padding: 0;
+    justify-content: center;
+}
+.component-button--icon.component-button--h40 { width: 40px; }
+.component-button--icon.component-button--h38 { width: 38px; }
+.component-button--icon.component-button--h36 { width: 36px; }
+.component-button--icon.component-button--h34 { width: 34px; }
+.component-button--icon.component-button--h32 { width: 32px; }
+.component-button--icon.component-button--h30 { width: 30px; }
+
+/* 4. Modificadores de Forma */
+.component-button--pill {
+    border-radius: 9999px; /* Píldora perfecta siempre */
+    padding: 0 16px; /* Un poco más de padding lateral se ve mejor en píldoras */
+}
+
+.component-button--circle {
+    border-radius: 50%; /* Útil para botones de icono redondos */
+}
+
+/* 5. Modificadores de Tema / Color */
+.component-button--dark {
+    background-color: #000000;
+    color: #ffffff;
+    border-color: #000000;
+}
+
+.component-button--dark:hover {
+    background-color: #333333;
+    border-color: #333333;
+}
+
+.component-button--dark .material-symbols-rounded {
+    color: #ffffff; /* Asegura que el icono sea blanco en botón oscuro */
+}
+
+/* --- CLASES DE PRUEBA (SOLO PARA DEMOSTRACIÓN EN EL CONTENEDOR) --- */
+.buttons-demo-container {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+}
+
+.buttons-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+}
+
+.buttons-row-title {
+    width: 100%;
+    font-size: 14px;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+    font-weight: 600;
 }
