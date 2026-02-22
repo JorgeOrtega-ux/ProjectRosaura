@@ -18,7 +18,7 @@
                     <div class="header" id="main-header">
                         <div class="header-left">
                             <div class="component-actions">
-                                <button class="component-button component-button--icon component-button--h40">
+                                <button class="component-button component-button--icon component-button--h40" data-action="toggleModuleSurface">
                                     <span class="material-symbols-rounded">menu</span>
                                 </button>
                             </div>
@@ -43,13 +43,13 @@
                                     <span class="material-symbols-rounded">search</span>
                                 </button>
 
-                                <button class="component-button component-button--icon component-button--h40">
+                                <button class="component-button component-button--icon component-button--h40" data-action="toggleModuleMainOptions">
                                     <span class="material-symbols-rounded">more_vert</span>
                                 </button>
                             </div>
                         </div>
 
-                        <div class="component-module component-module--dropdown">
+                        <div class="component-module component-module--dropdown disabled" data-module="moduleMainOptions">
                             <div class="component-menu component-menu--w265 component-menu--h-auto">
                                 <div class="component-menu-list">
                                     <a href="#" class="component-menu-link">
@@ -77,7 +77,7 @@
 
                 <div class="general-content-bottom">
                     
-                    <div class="component-module component-module--sidebar">
+                    <div class="component-module component-module--sidebar disabled" data-module="moduleSurface">
                         <div class="component-menu component-menu--w325 component-menu--h-full">
                             
                             <div class="component-menu-top">
