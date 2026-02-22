@@ -67,6 +67,15 @@ export class SpaRouter {
                 this.render(html);
                 this.highlightCurrentRoute();
                 this.updateDocumentTitle(url);
+                
+                // LÓGICA SPA PURA: Evaluamos si la ruta es de Auth y actualizamos el layout visual
+                const isAuthRoute = url.includes('/login') || url.includes('/register');
+                if (isAuthRoute) {
+                    document.body.classList.add('layout-auth');
+                } else {
+                    document.body.classList.remove('layout-auth');
+                }
+
                 window.dispatchEvent(new CustomEvent('viewLoaded', { detail: { url } }));
             } else {
                 this.render('<div class="view-content" style="padding: 24px; text-align: center;"><h1 style="color: #d32f2f;">Error HTTP</h1><p>No se pudo cargar la vista solicitada.</p></div>');
@@ -115,7 +124,6 @@ export class SpaRouter {
         const spinner = document.createElement('div');
         spinner.style.cssText = 'width: 44px; height: 44px; border: 4px solid #00000015; border-top-color: #111; border-radius: 50%; animation: spin 0.8s linear infinite;';
         
-        // Inyectar el Keyframe si no existe globalmente
         if (!document.getElementById('spa-spinner-keyframe')) {
             const style = document.createElement('style');
             style.id = 'spa-spinner-keyframe';

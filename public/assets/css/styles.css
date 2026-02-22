@@ -42,6 +42,31 @@ body,html {
     height: auto;
     padding: 8px;
     border-bottom: 1px solid #00000020;
+    position: relative;
+    z-index: 10;
+    transition: border-bottom-color 0.3s ease;
+}
+
+/* --- Estado Active (Shadow del Header al hacer scroll) --- */
+.general-content-top::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    height: 16px;
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.06), transparent);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+.general-content-top.shadow {
+    border-bottom-color: transparent;
+}
+
+.general-content-top.shadow::after {
+    opacity: 1;
 }
 
 .general-content-bottom {
@@ -97,7 +122,6 @@ body,html {
     align-items: center;
 }
 
-/* Protegemos el botón móvil aumentando su especificidad */
 .header .mobile-search-btn {
     display: none; 
 }
@@ -140,4 +164,16 @@ body,html {
     .header.header--search-active .header-center {
         display: flex; 
     }
+}/* ========================================= */
+/* --- AUTHENTICATION LAYOUT MODIFIER ---    */
+/* ========================================= */
+
+/* Oculta el top bar (Header) cuando estamos en modo Auth */
+body.layout-auth .general-content-top {
+    display: none;
+}
+
+/* Oculta el sidebar lateral cuando estamos en modo Auth */
+body.layout-auth .component-module--sidebar {
+    display: none;
 }

@@ -5,7 +5,9 @@
 export class MainController {
     constructor() {
         this.dom = {
-            header: document.querySelector('.header')
+            header: document.querySelector('.header'),
+            topBar: document.querySelector('.general-content-top'),
+            scrolleableArea: document.querySelector('.general-content-scrolleable')
         };
         
         this.config = {
@@ -43,6 +45,17 @@ export class MainController {
         window.addEventListener('resize', () => {
             this.handleResize();
         });
+
+        // Lógica para detectar el scroll y agregar/quitar la clase .shadow
+        if (this.dom.scrolleableArea && this.dom.topBar) {
+            this.dom.scrolleableArea.addEventListener('scroll', () => {
+                if (this.dom.scrolleableArea.scrollTop > 0) {
+                    this.dom.topBar.classList.add('shadow');
+                } else {
+                    this.dom.topBar.classList.remove('shadow');
+                }
+            });
+        }
 
         // Manejador centralizado de clics
         document.addEventListener('click', (e) => {
@@ -208,7 +221,6 @@ export class MainController {
     handleResize() {
         if (window.innerWidth > 768 && this.state.isMobileSearchActive) {
             this.state.isMobileSearchActive = false;
-            // Se verifica que this.dom.header exista antes de quitarle la clase
             if (this.dom.header) {
                 this.dom.header.classList.remove('header--search-active');
             }

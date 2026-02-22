@@ -1,7 +1,7 @@
 <?php
 // public/index.php
 
-// Requerir manualmente clases core (ya que Rosaura no tiene autoloader configurado aún)
+// Requerir manualmente clases core
 require_once __DIR__ . '/../includes/core/loader.php';
 require_once __DIR__ . '/../includes/core/router.php';
 
@@ -15,6 +15,9 @@ $router = new Router($routes);
 
 $routeData = $router->resolve();
 $currentView = $routeData['view'];
+
+// Detectar si la vista inicial es de autenticación para el renderizado del lado del servidor
+$isAuthRoute = (strpos($currentView, 'auth/') === 0);
 
 // Interceptar petición SPA
 $isSpaRequest = !empty($_SERVER['HTTP_X_SPA_REQUEST']);
@@ -36,7 +39,7 @@ if ($isSpaRequest) {
     <title>Project Rosaura</title>
 </head>
 
-<body>
+<body class="<?php echo $isAuthRoute ? 'layout-auth' : ''; ?>">
     <div class="page-wrapper">
         <div class="main-content">
             <div class="general-content">
