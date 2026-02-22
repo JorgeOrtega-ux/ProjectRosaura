@@ -1,4 +1,4 @@
-<div class="header" id="main-header">
+<div class="header">
     <div class="header-left">
         <div class="component-actions">
             <button class="component-button component-button--icon component-button--h40" data-action="toggleModuleSurface">
@@ -22,7 +22,7 @@
                 Acceder
             </button>
 
-            <button id="mobile-search-toggle" class="component-button component-button--icon component-button--h40 mobile-search-btn">
+            <button class="component-button component-button--icon component-button--h40 mobile-search-btn" data-action="toggleMobileSearch">
                 <span class="material-symbols-rounded">search</span>
             </button>
 

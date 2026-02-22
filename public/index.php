@@ -16,12 +16,12 @@
             <div class="general-content">
                 
                 <div class="general-content-top">
-                    <?php include 'includes/layouts/header.php'; ?>
+                    <?php include __DIR__ . '/../includes/layouts/header.php'; ?>
                 </div>
 
                 <div class="general-content-bottom">
                     
-                    <?php include 'includes/modules/moduleSurface.php'; ?>
+                    <?php include __DIR__ . '/../includes/modules/moduleSurface.php'; ?>
 
                     <div class="general-content-scrolleable">
                     </div>

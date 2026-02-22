@@ -5,8 +5,7 @@
 export class MainController {
     constructor() {
         this.dom = {
-            header: document.getElementById('main-header'),
-            mobileSearchToggleBtn: document.getElementById('mobile-search-toggle')
+            header: document.querySelector('.header')
         };
         
         this.config = {
@@ -41,13 +40,6 @@ export class MainController {
     }
 
     bindEvents() {
-        if (this.dom.mobileSearchToggleBtn) {
-            this.dom.mobileSearchToggleBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                this.toggleMobileSearch();
-            });
-        }
-
         window.addEventListener('resize', () => {
             this.handleResize();
         });
@@ -56,13 +48,15 @@ export class MainController {
         document.addEventListener('click', (e) => {
             const btn = e.target.closest('[data-action]');
             
-            // 1. Clic en botón de acción (abrir menús)
+            // 1. Clic en botón de acción (abrir menús u otras acciones)
             if (btn) {
                 const action = btn.getAttribute('data-action');
                 if (action === 'toggleModuleSurface') {
                     this.toggleModule('moduleSurface');
                 } else if (action === 'toggleModuleMainOptions') {
                     this.toggleModule('moduleMainOptions');
+                } else if (action === 'toggleMobileSearch') {
+                    this.toggleMobileSearch();
                 }
                 return;
             }
@@ -214,7 +208,10 @@ export class MainController {
     handleResize() {
         if (window.innerWidth > 768 && this.state.isMobileSearchActive) {
             this.state.isMobileSearchActive = false;
-            this.dom.header.classList.remove('header--search-active');
+            // Se verifica que this.dom.header exista antes de quitarle la clase
+            if (this.dom.header) {
+                this.dom.header.classList.remove('header--search-active');
+            }
         }
 
         // Si regresamos a PC y algo se quedó en medio del drag, lo reseteamos
