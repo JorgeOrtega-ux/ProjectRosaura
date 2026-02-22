@@ -1,0 +1,12 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Le decimos a Apache que la base de nuestro proyecto es esta subcarpeta
+    RewriteBase /ProjectRosaura/
+
+    # Si la petición no contiene ya la carpeta public...
+    RewriteCond %{REQUEST_URI} !public/
+
+    # Redirige todo el tráfico internamente a la carpeta public
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>

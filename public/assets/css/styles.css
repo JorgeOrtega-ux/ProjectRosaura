@@ -97,7 +97,8 @@ body,html {
     align-items: center;
 }
 
-.mobile-search-btn {
+/* Protegemos el botón móvil aumentando su especificidad */
+.header .mobile-search-btn {
     display: none; 
 }
 
@@ -106,7 +107,6 @@ body,html {
 /* ========================================= */
 
 @media (max-width: 768px) {
-    /* Ajustes solicitados para la estructura base en móvil */
     .main-content {
         padding: 0;
     }
@@ -115,7 +115,6 @@ body,html {
         border-radius: 0;
     }
 
-    /* Ajustes del Header */
     .header {
         flex-wrap: wrap;
     }
@@ -134,22 +133,11 @@ body,html {
         order: 2;
     }
 
-    .mobile-search-btn {
+    .header .mobile-search-btn {
         display: inline-flex;
     }
 
     .header.header--search-active .header-center {
         display: flex; 
     }
-}
-
-/* ========================================= */
-/* --- UTILITIES ---                         */
-/* ========================================= */
-.disabled {
-    display: none;
-}
-
-.active {
-    display: flex;
 }

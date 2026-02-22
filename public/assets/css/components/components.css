@@ -127,6 +127,15 @@
     display: block;
 }
 
+/* Estados nativos amarrados al componente */
+.component-module.disabled {
+    display: none;
+}
+
+.component-module.active {
+    display: flex;
+}
+
 .component-module--dropdown {
     position: absolute;
     top: calc(100% + 5px);
@@ -234,12 +243,10 @@
 /* --- RESPONSIVE MOBILE COMPONENT LOGIC --- */
 /* ========================================= */
 @media (max-width: 768px) {
-    /* Barra de Búsqueda */
     .component-search {
         width: 100%; 
     }
 
-    /* --- SIDEBAR MENU EN MÓVIL --- */
     .component-module--sidebar {
         display: none; 
         padding: 0; 
@@ -247,8 +254,9 @@
         background: #fff;
     }
 
+    /* Tiene especificidad de 2 clases, le gana a la clase única .component-menu--w265 */
     .component-module--sidebar .component-menu {
-        width: 100% !important; 
+        width: 100%; 
         border-top-left-radius: 0; 
         border-top-right-radius: 0; 
         border-left: none; 
@@ -256,7 +264,6 @@
         border-top: none;
     }
 
-    /* --- BOTTOM SHEET (DRAG & DROP) PARA DROPDOWNS EN MÓVIL --- */
     .component-module--dropdown {
         position: fixed;
         top: 0; left: 0; right: 0; bottom: 0;
@@ -269,13 +276,15 @@
         transition: display 0.3s allow-discrete, background-color 0.3s ease;
     }
 
+    /* Estado amarrado al dropdown. Su especificidad es alta y respeta la cascada. */
     .component-module--dropdown.disabled {
         display: none;
         background-color: rgba(0, 0, 0, 0);
     }
 
+    /* Tiene especificidad de 2 clases, le gana a la clase única .component-menu--w265 */
     .component-module--dropdown .component-menu {
-        width: 100% !important;
+        width: 100%;
         border-bottom-left-radius: 0;
         border-bottom-right-radius: 0;
         transform: translateY(0);
@@ -287,7 +296,6 @@
         transform: translateY(100%);
     }
 
-    /* INICIO DE LA ANIMACIÓN PARA QUE NO SALTE DE GOLPE */
     @starting-style {
         .component-module--dropdown {
             background-color: rgba(0, 0, 0, 0);
@@ -297,11 +305,11 @@
         }
     }
 
-    .component-module.is-dragging .component-menu {
-        transition: none !important; /* Desactiva transición al seguir el dedo */
+    /* Especificidad de 3 clases, anula la transición natural de 2 clases sin usar !important */
+    .component-module--dropdown.is-dragging .component-menu {
+        transition: none; 
     }
 
-    /* Muestra la barra de arrastre solo en móvil */
     .pill-container {
         display: flex;
         justify-content: center;
@@ -310,17 +318,6 @@
         flex-shrink: 0;
         padding-bottom: 12px;
         cursor: grab;
-        touch-action: none; /* Crucial para evitar scroll nativo de iOS/Android */
+        touch-action: none; 
     }
-}
-
-/* ========================================= */
-/* --- UTILITIES ---                         */
-/* ========================================= */
-.disabled {
-    display: none;
-}
-
-.active {
-    display: flex;
 }
