@@ -105,7 +105,6 @@ class AuthServices {
     }
 
     private function generateProfilePicture($username, $uuid) {
-        // Usar la primera letra del nombre
         $initial = mb_substr($username, 0, 1, "UTF-8");
         $url = "https://ui-avatars.com/api/?name=" . urlencode($initial) . "&background=random&color=fff&size=512&font-size=0.5";
         
@@ -118,7 +117,6 @@ class AuthServices {
         // Definir la ruta física en el servidor
         $storageDir = __DIR__ . '/../public/storage/profilePictures/default/';
         
-        // Crear las carpetas si no existen
         if (!is_dir($storageDir)) {
             mkdir($storageDir, 0777, true);
         }
@@ -128,7 +126,6 @@ class AuthServices {
 
         file_put_contents($filePath, $imageContent);
 
-        // Retornar la ruta relativa para usarla en el HTML (src)
         return 'public/storage/profilePictures/default/' . $fileName;
     }
 }

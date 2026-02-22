@@ -1,10 +1,10 @@
-/**
- * AuthController
- * Controlador para gestionar la lógica de las vistas de autenticación.
- */
+// public/assets/js/auth-controller.js
+import { ApiService } from './core/api-services.js';
+import { ApiRoutes } from './core/api-routes.js';
+
 export class AuthController {
     constructor() {
-        this.apiUrl = '/ProjectRosaura/api/auth-handler.php';
+        this.api = new ApiService();
     }
 
     init() {
@@ -13,7 +13,6 @@ export class AuthController {
     }
 
     bindEvents() {
-        // Delegación de eventos para escuchar clics en toda la aplicación (útil para la SPA)
         document.addEventListener('click', (e) => {
             const toggleBtn = e.target.closest('[data-action="togglePassword"]');
             const loginBtn = e.target.closest('[data-action="submitLogin"]');
@@ -64,28 +63,16 @@ export class AuthController {
         if (!emailInput || !passwordInput) return;
 
         const data = {
-            action: 'login',
             email: emailInput.value,
             password: passwordInput.value
         };
 
-        try {
-            const response = await fetch(this.apiUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
-            const result = await response.json();
+        const result = await this.api.post(ApiRoutes.AUTH.LOGIN, data);
 
-            if (result.success) {
-                // Forzamos la recarga real de la página para que PHP reconstruya el header con la sesión activa
-                window.location.href = '/ProjectRosaura/';
-            } else {
-                alert(result.message); // En el futuro puedes cambiar esto por un toast o modal nativo
-            }
-        } catch (error) {
-            console.error("Error en login:", error);
-            alert("Ocurrió un error al iniciar sesión.");
+        if (result.success) {
+            window.location.href = '/ProjectRosaura/';
+        } else {
+            alert(result.message);
         }
     }
 
@@ -97,47 +84,25 @@ export class AuthController {
         if (!emailInput || !usernameInput || !passwordInput) return;
 
         const data = {
-            action: 'register',
-            email: emailInput.value,
             username: usernameInput.value,
+            email: emailInput.value,
             password: passwordInput.value
         };
 
-        try {
-            const response = await fetch(this.apiUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
-            const result = await response.json();
+        const result = await this.api.post(ApiRoutes.AUTH.REGISTER, data);
 
-            if (result.success) {
-                // Al registrar, la sesión se inicia en backend, por lo que recargamos
-                window.location.href = '/ProjectRosaura/';
-            } else {
-                alert(result.message);
-            }
-        } catch (error) {
-            console.error("Error en registro:", error);
-            alert("Ocurrió un error al registrar la cuenta.");
+        if (result.success) {
+            window.location.href = '/ProjectRosaura/';
+        } else {
+            alert(result.message);
         }
     }
 
     async handleLogout() {
-        try {
-            const response = await fetch(this.apiUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'logout' })
-            });
-            const result = await response.json();
+        const result = await this.api.post(ApiRoutes.AUTH.LOGOUT);
 
-            if (result.success) {
-                // Al cerrar sesión, recargamos la página base
-                window.location.href = '/ProjectRosaura/';
-            }
-        } catch (error) {
-            console.error("Error al cerrar sesión:", error);
+        if (result.success) {
+            window.location.href = '/ProjectRosaura/';
         }
     }
 }
