@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded" />
+    <link rel="stylesheet" type="text/css" href="assets/css/styles.css">
+    <title>Document</title>
+</head>
+
+<body>
+    <div class="page-wrapper">
+        <div class="main-content">
+            <div class="general-content">
+                <div class="general-content-top">
+                    <div class="header">
+                        <div class="header-left"></div>
+                        <div class="header-center">
+                            <div class="component-search">
+                                <div class="component-search-icon">
+                                    <span class="material-symbols-rounded">search</span>
+                                </div>
+                                <div class="component-search-input">
+                                    <input type="text">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="header-right"></div>
+                    </div>
+                </div>
+                <div class="general-content-bottom">
+                    <div class="general-content-scrolleable overflow-y"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
