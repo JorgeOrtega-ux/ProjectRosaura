@@ -1,12 +1,23 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
     
-    # Le decimos a Apache que la base de nuestro proyecto es esta subcarpeta
+    # IMPORTANTE: +FollowSymLinks es obligatorio en servidores Windows para mod_rewrite
+    Options +FollowSymLinks -Indexes -MultiViews
+
+    # Base de tu proyecto
     RewriteBase /ProjectRosaura/
 
-    # Si la petición no contiene ya la carpeta public...
-    RewriteCond %{REQUEST_URI} !public/
+    # 1. Enrutar archivos estáticos (JS, CSS) directamente hacia la carpeta public
+    RewriteRule ^assets/(.*)$ public/assets/$1 [L]
 
-    # Redirige todo el tráfico internamente a la carpeta public
-    RewriteRule ^(.*)$ public/$1 [L]
+    # 2. Si la petición ya está apuntando a public/ internamente, la dejamos pasar
+    RewriteRule ^public/ - [L]
+
+    # 3. Si piden un archivo físico que SÍ existe (ej. un .png subido fuera de assets), dejarlo pasar
+    # Omitimos la validación de directorios (-d) para que la raíz "/" no provoque un 403
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteRule ^ - [L]
+
+    # 4. Cualquier otra petición (incluyendo la raíz y las rutas SPA como /explore) va al index.php
+    RewriteRule ^(.*)$ public/index.php [QSA,L]
 </IfModule>

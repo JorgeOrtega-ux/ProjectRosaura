@@ -1,3 +1,12 @@
+<script>
+    // Diccionario de títulos para la SPA
+    window.AppRouteTitles = {
+        '/': "Inicio",
+        '/explore': "Explorar colecciones"
+    };
+    window.AppName = "ProjectRosaura";
+</script>
+
 <div class="header">
     <div class="header-left">
         <div class="component-actions">

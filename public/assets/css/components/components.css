@@ -203,7 +203,9 @@
     transition: background-color 0.15s ease;
 }
 
-.component-menu-link:hover {
+/* Busca esto en components.css (aprox línea 161) y reemplazalo por: */
+.component-menu-link:hover,
+.component-menu-link.active {
     background-color: #f5f5fa;
 }
 

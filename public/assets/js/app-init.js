@@ -1,10 +1,14 @@
+// public/assets/js/app-init.js
 import { MainController } from './main-controller.js';
+import { SpaRouter } from './core/spa-router.js'; // Nueva importación
 
-// Esperamos a que el HTML esté completamente cargado y parseado
 document.addEventListener('DOMContentLoaded', () => {
-    // Instanciamos el controlador
+    // 1. Instanciamos lógica UI base (eventos, menús emergentes, etc)
     const app = new MainController();
-    
-    // Arrancamos la aplicación
     app.init();
+    
+    // 2. Instanciamos el Router SPA
+    const router = new SpaRouter({
+        outlet: '#app-router-outlet'
+    });
 });

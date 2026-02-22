@@ -1,13 +1,39 @@
+<?php
+// public/index.php
+
+// Requerir manualmente clases core (ya que Rosaura no tiene autoloader configurado aún)
+require_once __DIR__ . '/../includes/core/loader.php';
+require_once __DIR__ . '/../includes/core/router.php';
+
+use App\Core\Loader;
+use App\Core\Router;
+
+$routes = require __DIR__ . '/../includes/config/routes.php';
+
+$loader = new Loader();
+$router = new Router($routes);
+
+$routeData = $router->resolve();
+$currentView = $routeData['view'];
+
+// Interceptar petición SPA
+$isSpaRequest = !empty($_SERVER['HTTP_X_SPA_REQUEST']);
+if ($isSpaRequest) {
+    $loader->load($currentView);
+    exit; 
+}
+?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <base href="/ProjectRosaura/">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded" />
     <link rel="stylesheet" type="text/css" href="assets/css/styles.css">
     <link rel="stylesheet" type="text/css" href="assets/css/components/components.css">
-    <title>Estructura Base</title>
+    <title>Project Rosaura</title>
 </head>
 
 <body>
@@ -23,7 +49,8 @@
                     
                     <?php include __DIR__ . '/../includes/modules/moduleSurface.php'; ?>
 
-                    <div class="general-content-scrolleable">
+                    <div class="general-content-scrolleable" id="app-router-outlet">
+                        <?php $loader->load($currentView); ?>
                     </div>
 
                 </div>
