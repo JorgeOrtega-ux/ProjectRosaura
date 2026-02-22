@@ -26,6 +26,8 @@
             <button class="component-button component-button--dark component-button--h45 component-button--full" data-action="submitLogin">
                 Continuar
             </button>
+            
+            <div class="component-alert-error" id="auth-error-message"></div>
 
             <div class="component-link-container component-link-container--center">
                 <span class="component-link-text">¿No tienes una cuenta?</span>

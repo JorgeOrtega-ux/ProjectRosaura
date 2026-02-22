@@ -29,27 +29,27 @@ export class AuthController {
 
             if (loginBtn) {
                 e.preventDefault();
-                this.handleLogin();
+                this.handleLogin(loginBtn);
             }
 
             if (registerStep1Btn) {
                 e.preventDefault();
-                this.handleRegisterStep1();
+                this.handleRegisterStep1(registerStep1Btn);
             }
 
             if (registerStep2Btn) {
                 e.preventDefault();
-                this.handleRegisterStep2();
+                this.handleRegisterStep2(registerStep2Btn);
             }
 
             if (registerVerifyBtn) {
                 e.preventDefault();
-                this.handleRegisterVerify();
+                this.handleRegisterVerify(registerVerifyBtn);
             }
 
             if (logoutBtn) {
                 e.preventDefault();
-                this.handleLogout();
+                this.handleLogout(logoutBtn);
             }
         });
     }
@@ -70,11 +70,46 @@ export class AuthController {
         }
     }
 
-    async handleLogin() {
+    showError(msg) {
+        const errorBox = document.getElementById('auth-error-message');
+        if (errorBox) {
+            errorBox.textContent = msg;
+            errorBox.classList.add('active');
+        } else {
+            alert(msg);
+        }
+    }
+
+    clearError() {
+        const errorBox = document.getElementById('auth-error-message');
+        if (errorBox) {
+            errorBox.textContent = '';
+            errorBox.classList.remove('active');
+        }
+    }
+
+    setButtonLoading(btn) {
+        if (btn.disabled) return;
+        btn.dataset.originalText = btn.innerHTML;
+        btn.innerHTML = '<div class="component-spinner"></div>';
+        btn.disabled = true;
+    }
+
+    restoreButton(btn) {
+        if (btn.dataset.originalText) {
+            btn.innerHTML = btn.dataset.originalText;
+        }
+        btn.disabled = false;
+    }
+
+    async handleLogin(btn) {
+        this.clearError();
         const emailInput = document.getElementById('email');
         const passwordInput = document.getElementById('password');
 
         if (!emailInput || !passwordInput) return;
+
+        this.setButtonLoading(btn);
 
         const data = {
             email: emailInput.value,
@@ -86,15 +121,19 @@ export class AuthController {
         if (result.success) {
             window.location.href = '/ProjectRosaura/';
         } else {
-            alert(result.message);
+            this.restoreButton(btn);
+            this.showError(result.message);
         }
     }
 
-    async handleRegisterStep1() {
+    async handleRegisterStep1(btn) {
+        this.clearError();
         const emailInput = document.getElementById('email');
         const passwordInput = document.getElementById('password');
 
         if (!emailInput || !passwordInput) return;
+
+        this.setButtonLoading(btn);
 
         const data = {
             email: emailInput.value,
@@ -110,14 +149,18 @@ export class AuthController {
                 window.location.href = '/ProjectRosaura/register/aditional-data';
             }
         } else {
-            alert(result.message);
+            this.restoreButton(btn);
+            this.showError(result.message);
         }
     }
 
-    async handleRegisterStep2() {
+    async handleRegisterStep2(btn) {
+        this.clearError();
         const usernameInput = document.getElementById('username');
 
         if (!usernameInput) return;
+        
+        this.setButtonLoading(btn);
 
         const data = {
             username: usernameInput.value
@@ -132,14 +175,18 @@ export class AuthController {
                 window.location.href = '/ProjectRosaura/register/verification-account';
             }
         } else {
-            alert(result.message);
+            this.restoreButton(btn);
+            this.showError(result.message);
         }
     }
 
-    async handleRegisterVerify() {
+    async handleRegisterVerify(btn) {
+        this.clearError();
         const codeInput = document.getElementById('verification_code');
 
         if (!codeInput) return;
+
+        this.setButtonLoading(btn);
 
         const data = {
             code: codeInput.value
@@ -150,15 +197,29 @@ export class AuthController {
         if (result.success) {
             window.location.href = '/ProjectRosaura/';
         } else {
-            alert(result.message);
+            this.restoreButton(btn);
+            this.showError(result.message);
         }
     }
 
-    async handleLogout() {
+    async handleLogout(logoutBtn) {
+        if (logoutBtn.dataset.loading === 'true') return; // Bloquear clics múltiples
+        logoutBtn.dataset.loading = 'true';
+
+        // Generar el spinner dinámicamente a la derecha del texto
+        const spinnerDiv = document.createElement('div');
+        spinnerDiv.className = 'component-menu-link-icon';
+        spinnerDiv.innerHTML = '<div class="component-spinner"></div>';
+        logoutBtn.appendChild(spinnerDiv);
+
         const result = await this.api.post(ApiRoutes.Auth.Logout);
 
         if (result.success) {
             window.location.href = '/ProjectRosaura/';
+        } else {
+            // Si falla se remueve el nodo inyectado
+            spinnerDiv.remove();
+            logoutBtn.dataset.loading = 'false';
         }
     }
 }

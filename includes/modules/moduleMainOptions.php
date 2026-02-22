@@ -28,10 +28,10 @@ $isLoggedIn = isset($_SESSION['user_id']);
             <?php if ($isLoggedIn): ?>
             <div class="component-menu-link" data-action="submitLogout">
                 <div class="component-menu-link-icon">
-                    <span class="material-symbols-rounded" style="color: #d32f2f;">logout</span>
+                    <span class="material-symbols-rounded">logout</span>
                 </div>
                 <div class="component-menu-link-text">
-                    <span style="color: #d32f2f;">Cerrar sesión</span>
+                    <span>Cerrar sesión</span>
                 </div>
             </div>
             <?php endif; ?>

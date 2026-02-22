@@ -60,6 +60,8 @@ if ($relativePath === '/register/aditional-data') {
                     <button class="component-button component-button--dark component-button--h45 component-button--full" data-action="submitRegisterStep1">
                         Continuar
                     </button>
+                    
+                    <div class="component-alert-error" id="auth-error-message"></div>
 
                     <div class="component-link-container component-link-container--center">
                         <span class="component-link-text">¿Ya tienes una cuenta?</span>
@@ -82,6 +84,8 @@ if ($relativePath === '/register/aditional-data') {
                     <button class="component-button component-button--dark component-button--h45 component-button--full" data-action="submitRegisterStep2">
                         Continuar
                     </button>
+                    
+                    <div class="component-alert-error" id="auth-error-message"></div>
 
                     <div class="component-link-container component-link-container--center">
                         <span class="component-link" data-nav="/ProjectRosaura/register">Volver atrás</span>
@@ -103,6 +107,8 @@ if ($relativePath === '/register/aditional-data') {
                     <button class="component-button component-button--dark component-button--h45 component-button--full" data-action="submitRegisterVerify">
                         Crear cuenta
                     </button>
+                    
+                    <div class="component-alert-error" id="auth-error-message"></div>
                     
                     <div class="component-link-container component-link-container--center">
                         <span class="component-link" data-nav="/ProjectRosaura/register/aditional-data">Volver atrás</span>
