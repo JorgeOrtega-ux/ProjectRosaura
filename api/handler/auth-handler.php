@@ -1,16 +1,21 @@
 <?php
 // api/handler/auth-handler.php
 
-// Requerimos los servicios. 
-// Subimos un nivel de directorio y entramos a la nueva carpeta 'services'
 require_once __DIR__ . '/../services/auth-services.php';
 
 $authServices = new AuthServices();
 
-// Ejecutamos el método correspondiente según la 'action' dictada por el route-map.php
 switch ($action) {
-    case 'register':
-        echo json_encode($authServices->register($input));
+    case 'register_step1':
+        echo json_encode($authServices->registerStep1($input));
+        break;
+
+    case 'register_step2':
+        echo json_encode($authServices->registerStep2($input));
+        break;
+
+    case 'register_verify':
+        echo json_encode($authServices->registerVerify($input));
         break;
         
     case 'login':

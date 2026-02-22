@@ -16,7 +16,11 @@ export class AuthController {
         document.addEventListener('click', (e) => {
             const toggleBtn = e.target.closest('[data-action="togglePassword"]');
             const loginBtn = e.target.closest('[data-action="submitLogin"]');
-            const registerBtn = e.target.closest('[data-action="submitRegister"]');
+            
+            const registerStep1Btn = e.target.closest('[data-action="submitRegisterStep1"]');
+            const registerStep2Btn = e.target.closest('[data-action="submitRegisterStep2"]');
+            const registerVerifyBtn = e.target.closest('[data-action="submitRegisterVerify"]');
+            
             const logoutBtn = e.target.closest('[data-action="submitLogout"]');
             
             if (toggleBtn) {
@@ -28,9 +32,19 @@ export class AuthController {
                 this.handleLogin();
             }
 
-            if (registerBtn) {
+            if (registerStep1Btn) {
                 e.preventDefault();
-                this.handleRegister();
+                this.handleRegisterStep1();
+            }
+
+            if (registerStep2Btn) {
+                e.preventDefault();
+                this.handleRegisterStep2();
+            }
+
+            if (registerVerifyBtn) {
+                e.preventDefault();
+                this.handleRegisterVerify();
             }
 
             if (logoutBtn) {
@@ -76,20 +90,62 @@ export class AuthController {
         }
     }
 
-    async handleRegister() {
+    async handleRegisterStep1() {
         const emailInput = document.getElementById('email');
-        const usernameInput = document.getElementById('username');
         const passwordInput = document.getElementById('password');
 
-        if (!emailInput || !usernameInput || !passwordInput) return;
+        if (!emailInput || !passwordInput) return;
 
         const data = {
-            username: usernameInput.value,
             email: emailInput.value,
             password: passwordInput.value
         };
 
-        const result = await this.api.post(ApiRoutes.Auth.Register, data);
+        const result = await this.api.post(ApiRoutes.Auth.RegisterStep1, data);
+
+        if (result.success) {
+            if (window.spaRouter) {
+                window.spaRouter.navigate('/ProjectRosaura/register/aditional-data');
+            } else {
+                window.location.href = '/ProjectRosaura/register/aditional-data';
+            }
+        } else {
+            alert(result.message);
+        }
+    }
+
+    async handleRegisterStep2() {
+        const usernameInput = document.getElementById('username');
+
+        if (!usernameInput) return;
+
+        const data = {
+            username: usernameInput.value
+        };
+
+        const result = await this.api.post(ApiRoutes.Auth.RegisterStep2, data);
+
+        if (result.success) {
+            if (window.spaRouter) {
+                window.spaRouter.navigate('/ProjectRosaura/register/verification-account');
+            } else {
+                window.location.href = '/ProjectRosaura/register/verification-account';
+            }
+        } else {
+            alert(result.message);
+        }
+    }
+
+    async handleRegisterVerify() {
+        const codeInput = document.getElementById('verification_code');
+
+        if (!codeInput) return;
+
+        const data = {
+            code: codeInput.value
+        };
+
+        const result = await this.api.post(ApiRoutes.Auth.RegisterVerify, data);
 
         if (result.success) {
             window.location.href = '/ProjectRosaura/';

@@ -4,7 +4,7 @@ import { SpaRouter } from './core/spa-router.js';
 import { AuthController } from './auth-controller.js';
 
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Instanciamos lógica UI base (eventos, menús emergentes, etc)
+    // 1. Instanciamos lógica UI base
     const app = new MainController();
     app.init();
 
@@ -12,8 +12,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const auth = new AuthController();
     auth.init();
     
-    // 3. Instanciamos el Router SPA
-    const router = new SpaRouter({
+    // 3. Instanciamos el Router SPA y lo guardamos en window para uso global
+    window.spaRouter = new SpaRouter({
         outlet: '#app-router-outlet'
     });
 });
