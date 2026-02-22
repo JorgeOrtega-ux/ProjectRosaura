@@ -33,23 +33,33 @@ if (empty($route)) {
     exit;
 }
 
-// Cargar el mapa de rutas (Este require se queda porque carga un arreglo, no una clase)
+// Cargar el mapa de rutas (Este require se queda porque carga un arreglo de configuración)
 $routes = require __DIR__ . '/route-map.php';
 
 // Validar si la ruta existe en el diccionario
 if (array_key_exists($route, $routes)) {
     $routeConfig = $routes[$route];
     
-    // Extraer qué archivo y qué acción requiere esta ruta
-    $handlerFile = __DIR__ . '/' . $routeConfig['file'];
+    // Extraer qué controlador y qué método (acción) requiere esta ruta
+    $controllerName = $routeConfig['controller'];
     $action = $routeConfig['action'];
 
-    if (file_exists($handlerFile)) {
-        // Al hacer require, el archivo handler podrá leer las variables $action y $input
-        require_once $handlerFile;
+    // Validar que la clase del Controlador exista (el Autoloader la buscará automáticamente)
+    if (class_exists($controllerName)) {
+        // Instanciar el controlador dinámicamente
+        $controller = new $controllerName();
+        
+        // Validar que el método exista dentro del controlador
+        if (method_exists($controller, $action)) {
+            // Ejecutar el método y pasarle el input, retornando la respuesta en JSON
+            echo json_encode($controller->$action($input));
+        } else {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Método de acción no encontrado en el controlador.']);
+        }
     } else {
         http_response_code(500);
-        echo json_encode(['success' => false, 'message' => 'Archivo handler no encontrado.']);
+        echo json_encode(['success' => false, 'message' => 'Clase de controlador no encontrada.']);
     }
 } else {
     http_response_code(404);
