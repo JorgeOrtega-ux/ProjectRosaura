@@ -70,10 +70,23 @@ export class SpaRouter {
                 
                 // LÓGICA SPA PURA: Evaluamos si la ruta es de Auth y actualizamos el layout visual
                 const isAuthRoute = url.includes('/login') || url.includes('/register');
+                const topBar = document.querySelector('.general-content-top');
+
+                if (topBar) {
+                    if (isAuthRoute) {
+                        topBar.classList.add('disabled');
+                    } else {
+                        topBar.classList.remove('disabled');
+                    }
+                }
+
+                // Forzar el cierre del sidebar al entrar a una vista Auth
                 if (isAuthRoute) {
-                    document.body.classList.add('layout-auth');
-                } else {
-                    document.body.classList.remove('layout-auth');
+                    const sidebar = document.querySelector('.component-module--sidebar');
+                    if (sidebar && sidebar.classList.contains('active')) {
+                        sidebar.classList.remove('active');
+                        sidebar.classList.add('disabled');
+                    }
                 }
 
                 window.dispatchEvent(new CustomEvent('viewLoaded', { detail: { url } }));

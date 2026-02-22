@@ -39,12 +39,12 @@ if ($isSpaRequest) {
     <title>Project Rosaura</title>
 </head>
 
-<body class="<?php echo $isAuthRoute ? 'layout-auth' : ''; ?>">
+<body>
     <div class="page-wrapper">
         <div class="main-content">
             <div class="general-content">
                 
-                <div class="general-content-top">
+                <div class="general-content-top <?php echo $isAuthRoute ? 'disabled' : ''; ?>">
                     <?php include __DIR__ . '/../includes/layouts/header.php'; ?>
                 </div>
 
