@@ -3,7 +3,9 @@
 session_start();
 header('Content-Type: application/json');
 
-require_once __DIR__ . '/../includes/core/Utils.php';
+// Cargar autoloader de Composer
+require_once __DIR__ . '/../vendor/autoload.php';
+
 use App\Core\Utils;
 
 // 1. OBTENER Y VALIDAR EL TOKEN CSRF DESDE LOS HEADERS DE LA PETICIÓN
@@ -31,7 +33,7 @@ if (empty($route)) {
     exit;
 }
 
-// Cargar el mapa de rutas
+// Cargar el mapa de rutas (Este require se queda porque carga un arreglo, no una clase)
 $routes = require __DIR__ . '/route-map.php';
 
 // Validar si la ruta existe en el diccionario

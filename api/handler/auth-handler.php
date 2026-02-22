@@ -1,7 +1,7 @@
 <?php
 // api/handler/auth-handler.php
 
-require_once __DIR__ . '/../services/auth-services.php';
+use App\Api\Services\AuthServices;
 
 $authServices = new AuthServices();
 

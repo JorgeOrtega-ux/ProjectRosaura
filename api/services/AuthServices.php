@@ -1,11 +1,11 @@
 <?php
-// api/services/auth-services.php
+// api/services/AuthServices.php
 
-require_once __DIR__ . '/../../includes/core/Utils.php';
-require_once __DIR__ . '/../../includes/config/database.php';
+namespace App\Api\Services;
 
 use App\Core\Utils;
 use App\Config\Database;
+use PDO;
 
 class AuthServices {
     private $pdo;

@@ -2,18 +2,17 @@
 // public/index.php
 session_start(); // AGREGADO PARA EL MANEJO DE SESIONES
 
-// Requerir manualmente clases core
-require_once __DIR__ . '/../includes/core/loader.php';
-require_once __DIR__ . '/../includes/core/router.php';
-require_once __DIR__ . '/../includes/core/Utils.php'; // Agregamos Utils
+// Cargar autoloader de Composer
+require_once __DIR__ . '/../vendor/autoload.php';
 
 use App\Core\Loader;
 use App\Core\Router;
-use App\Core\Utils; // Usamos Utils
+use App\Core\Utils; 
 
 // Generar o recuperar el token CSRF para esta sesión
 $csrfToken = Utils::generateCSRFToken();
 
+// Conservamos este require ya que devuelve un arreglo
 $routes = require __DIR__ . '/../includes/config/routes.php';
 
 $loader = new Loader();
