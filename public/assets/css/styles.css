@@ -17,6 +17,10 @@ body,html {
     height: 100%;
 }
 
+/* ========================================= */
+/* --- MAIN LAYOUT STRUCTURE ---             */
+/* ========================================= */
+
 .main-content {
     width: 100%;
     height: 100%;
@@ -56,7 +60,10 @@ body,html {
     scrollbar-width: thin;
 }
 
-/* --- HEADER LAYOUT --- */
+/* ========================================= */
+/* --- HEADER LAYOUT ---                     */
+/* ========================================= */
+
 .header {
     width: 100%;
     height: auto; 
@@ -90,232 +97,25 @@ body,html {
     align-items: center;
 }
 
-/* --- COMPONENT: ACTIONS --- */
-.component-actions {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 8px;
-}
-
-/* --- COMPONENT: SEARCH --- */
-.component-search {
-    width: 425px;
-    height: 40px;
-    display: flex;
-    border: 1px solid #00000020;
-    border-radius: 8px;
-    background-color: #ffffff;
-}
-
-.component-search-icon {
-    width: 45px;
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    color: #666;
-}
-
-.component-search-input {
-    flex: 1 1 auto;
-    display: flex;
-    justify-content: flex-start;
-    align-items: center;
-}
-
-.component-search-input > input {
-    width: 100%;
-    height: 100%;
-    border: none;
-    outline: none;
-    background-color: transparent;
-    padding-right: 12px;
-    font-size: 14px;
-    font-family: inherit; 
-}
-
-/* ========================================= */
-/* --- COMPONENT: BUTTON SYSTEM ---          */
-/* ========================================= */
-
-.component-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px; 
-    border: 1px solid #00000020;
-    border-radius: 8px;
-    background-color: #ffffff;
-    color: #111111;
-    outline: none;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
-    transition: all 0.15s ease-in-out;
-    padding: 0 12px; 
-    text-decoration: none;
-    user-select: none;
-    white-space: nowrap;
-    font-family: inherit; 
-}
-
-.component-button:hover {
-    background-color: #f5f5fa; 
-}
-
-.component-button:active {
-    transform: scale(0.96); 
-}
-
-.component-button--h40 { height: 40px; }
-.component-button--h38 { height: 38px; }
-.component-button--h36 { height: 36px; }
-.component-button--h34 { height: 34px; font-size: 13px; }
-.component-button--h32 { height: 32px; font-size: 13px; }
-.component-button--h30 { height: 30px; font-size: 12px; padding: 0 6px;}
-
-.component-button--icon {
-    padding: 0;
-    justify-content: center;
-}
-.component-button--icon.component-button--h40 { width: 40px; }
-.component-button--icon.component-button--h38 { width: 38px; }
-.component-button--icon.component-button--h36 { width: 36px; }
-.component-button--icon.component-button--h34 { width: 34px; }
-.component-button--icon.component-button--h32 { width: 32px; }
-.component-button--icon.component-button--h30 { width: 30px; }
-
-.component-button--pill { border-radius: 9999px; padding: 0 16px; }
-.component-button--circle { border-radius: 50%; }
-
-.component-button--dark {
-    background-color: #000000;
-    color: #ffffff;
-    border-color: #000000;
-}
-
-.component-button--dark:hover {
-    background-color: #333333;
-    border-color: #333333;
-}
-
-.component-button--dark .material-symbols-rounded {
-    color: #ffffff; 
-}
-
-/* ========================================= */
-/* --- COMPONENT: MENU SYSTEM ---            */
-/* ========================================= */
-
-/* 1. Módulos Base */
-.component-module {
-    display: block;
-}
-
-.component-module--dropdown {
-    position: absolute;
-    top: calc(100% + 5px);
-    right: 0;
-    z-index: 100;
-}
-
-.component-module--sidebar {
-    padding: 12px;
-    height: 100%;
-    /* Modificado: Ahora es absolute siempre */
-    position: absolute; 
-    top: 0;
-    left: 0;
-    z-index: 50; /* Lo pone por encima de general-content-scrolleable */
-}
-
-/* 2. Menú Base */
-.component-menu {
-    background-color: #ffffff;
-    border: 1px solid #00000020;
-    border-radius: 12px;
-    padding: 8px;
-    display: flex;
-    flex-direction: column;
-}
-
-/* Modificadores de Ancho / Alto */
-.component-menu--w265 { width: 265px; }
-.component-menu--w325 { width: 325px; }
-.component-menu--h-auto { height: auto; }
-.component-menu--h-full { height: 100%; }
-
-/* 2.1 Zonas del Menú (Top y Bottom) */
-.component-menu-top {
-    flex: 1 1 auto; 
-    display: flex;
-    flex-direction: column;
-    overflow-y: auto; 
-    scrollbar-width: thin;
-}
-
-.component-menu-bottom {
-    flex: 0 0 auto; 
-    display: flex;
-    flex-direction: column;
-    margin-top: 8px;
-    padding-top: 8px;
-    border-top: 1px solid #00000020; 
-}
-
-
-/* 3. Lista y Enlaces del Menú */
-.component-menu-list {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-}
-
-.component-menu-link {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    width: 100%;
-    height: 40px;
-    text-decoration: none;
-    color: #111111;
-    border-radius: 8px;
-    transition: background-color 0.15s ease;
-}
-
-.component-menu-link:hover {
-    background-color: #f5f5fa;
-}
-
-.component-menu-link-icon {
-    width: 45px;
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    color: #666;
-}
-
-.component-menu-link-text {
-    flex: 1 1 auto;
-    display: flex;
-    justify-content: flex-start;
-    align-items: center;
-    font-size: 14px;
-    font-weight: 500;
-}
-
-
-/* ========================================= */
-/* --- RESPONSIVE MOBILE LOGIC ---           */
-/* ========================================= */
-
 .mobile-search-btn {
     display: none; 
 }
 
+/* ========================================= */
+/* --- RESPONSIVE LAYOUT LOGIC ---           */
+/* ========================================= */
+
 @media (max-width: 768px) {
+    /* Ajustes solicitados para la estructura base en móvil */
+    .main-content {
+        padding: 0;
+    }
+
+    .general-content {
+        border-radius: 0;
+    }
+
+    /* Ajustes del Header */
     .header {
         flex-wrap: wrap;
     }
@@ -324,10 +124,6 @@ body,html {
         display: none; 
         flex: 0 0 100%; 
         order: 3; 
-    }
-
-    .component-search {
-        width: 100%; 
     }
 
     .header-left {
@@ -345,27 +141,11 @@ body,html {
     .header.header--search-active .header-center {
         display: flex; 
     }
-
-    /* Módulo Surface en móvil */
-    .component-module--sidebar {
-        display: none; 
-        padding: 0; /* Quitamos el padding al contenedor */
-        width: 100%; /* Aseguramos que el sidebar ocupe todo */
-        /* position: absolute; y z-index: 50; ya se heredan del general */
-        background: #fff;
-    }
-
-    /* Ajustes específicos para el component-menu dentro de sidebar en móvil */
-    .component-module--sidebar .component-menu {
-        width: 100% !important; /* Forzamos el 100% por sobre el modificador w265 */
-        border-top-left-radius: 0; /* Quitamos el radio superior izquierdo */
-        border-top-right-radius: 0; /* Quitamos el radio superior derecho */
-        border-left: none; /* Quitamos bordes si no son necesarios */
-        border-right: none;
-        border-top: none;
-    }
 }
 
+/* ========================================= */
+/* --- UTILITIES ---                         */
+/* ========================================= */
 .disabled {
     display: none;
 }

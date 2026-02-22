@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded" />
     <link rel="stylesheet" type="text/css" href="assets/css/styles.css">
+    <link rel="stylesheet" type="text/css" href="assets/css/components/components.css">
     <title>Estructura Base</title>
 </head>
 
@@ -51,6 +52,9 @@
 
                         <div class="component-module component-module--dropdown disabled" data-module="moduleMainOptions">
                             <div class="component-menu component-menu--w265 component-menu--h-auto">
+                                
+                                <div class="pill-container"><div class="drag-handle"></div></div>
+                                
                                 <div class="component-menu-list">
                                     <a href="#" class="component-menu-link">
                                         <div class="component-menu-link-icon">
