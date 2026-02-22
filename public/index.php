@@ -5,9 +5,14 @@ session_start(); // AGREGADO PARA EL MANEJO DE SESIONES
 // Requerir manualmente clases core
 require_once __DIR__ . '/../includes/core/loader.php';
 require_once __DIR__ . '/../includes/core/router.php';
+require_once __DIR__ . '/../includes/core/Utils.php'; // Agregamos Utils
 
 use App\Core\Loader;
 use App\Core\Router;
+use App\Core\Utils; // Usamos Utils
+
+// Generar o recuperar el token CSRF para esta sesión
+$csrfToken = Utils::generateCSRFToken();
 
 $routes = require __DIR__ . '/../includes/config/routes.php';
 
@@ -34,6 +39,8 @@ if ($isSpaRequest) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <base href="/ProjectRosaura/">
+    <meta name="csrf-token" content="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
+    
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded" />
     <link rel="stylesheet" type="text/css" href="assets/css/styles.css">
     <link rel="stylesheet" type="text/css" href="assets/css/components/components.css">

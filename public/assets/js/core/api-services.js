@@ -17,16 +17,26 @@ export class ApiService {
             ...data
         };
 
+        // Obtenemos el token CSRF inyectado en el HTML
+        const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+        const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+
         try {
             const response = await fetch(this.baseUrl, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': csrfToken // Enviamos el token en las cabeceras
                 },
                 body: JSON.stringify(payload)
             });
 
             if (!response.ok) {
+                // Si el servidor responde 403 (Token inválido), podemos capturarlo aquí
+                if (response.status === 403) {
+                    const errorData = await response.json();
+                    return errorData; 
+                }
                 throw new Error(`Error HTTP: ${response.status}`);
             }
 
