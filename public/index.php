@@ -15,11 +15,13 @@
             <div class="general-content">
                 
                 <div class="general-content-top">
-                    <div class="header">
+                    <div class="header" id="main-header">
                         <div class="header-left">
-                            <button class="component-button component-button--icon component-button--h40">
-                                <span class="material-symbols-rounded">menu</span>
-                            </button>
+                            <div class="component-actions">
+                                <button class="component-button component-button--icon component-button--h40">
+                                    <span class="material-symbols-rounded">menu</span>
+                                </button>
+                            </div>
                         </div>
                         <div class="header-center">
                             <div class="component-search">
@@ -32,21 +34,111 @@
                             </div>
                         </div>
                         <div class="header-right">
-                            <button class="component-button component-button--icon component-button--h40">
-                                <span class="material-symbols-rounded">more_vert</span>
-                            </button>
+                            <div class="component-actions">
+                                <button class="component-button component-button--dark component-button--h40">
+                                    Acceder
+                                </button>
+
+                                <button id="mobile-search-toggle" class="component-button component-button--icon component-button--h40 mobile-search-btn">
+                                    <span class="material-symbols-rounded">search</span>
+                                </button>
+
+                                <button class="component-button component-button--icon component-button--h40">
+                                    <span class="material-symbols-rounded">more_vert</span>
+                                </button>
+                            </div>
                         </div>
+
+                        <div class="component-module component-module--dropdown">
+                            <div class="component-menu component-menu--w265 component-menu--h-auto">
+                                <div class="component-menu-list">
+                                    <a href="#" class="component-menu-link">
+                                        <div class="component-menu-link-icon">
+                                            <span class="material-symbols-rounded">settings</span>
+                                        </div>
+                                        <div class="component-menu-link-text">
+                                            <span>Configuración</span>
+                                        </div>
+                                    </a>
+                                    <a href="#" class="component-menu-link">
+                                        <div class="component-menu-link-icon">
+                                            <span class="material-symbols-rounded">help</span>
+                                        </div>
+                                        <div class="component-menu-link-text">
+                                            <span>Ayuda y comentarios</span>
+                                        </div>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 
                 <div class="general-content-bottom">
-                    <div class="general-content-scrolleable">
+                    
+                    <div class="component-module component-module--sidebar">
+                        <div class="component-menu component-menu--w325 component-menu--h-full">
+                            
+                            <div class="component-menu-top">
+                                <div class="component-menu-list">
+                                    <a href="#" class="component-menu-link">
+                                        <div class="component-menu-link-icon">
+                                            <span class="material-symbols-rounded">home</span>
+                                        </div>
+                                        <div class="component-menu-link-text">
+                                            <span>Página principal</span>
+                                        </div>
+                                    </a>
+                                    <a href="#" class="component-menu-link">
+                                        <div class="component-menu-link-icon">
+                                            <span class="material-symbols-rounded">explore</span>
+                                        </div>
+                                        <div class="component-menu-link-text">
+                                            <span>Explorar tendencias</span>
+                                        </div>
+                                    </a>
+                                </div>
+                            </div>
+
+                            <div class="component-menu-bottom">
+                                <div class="component-menu-list">
+                                    
+                                    <?php /* if(isset($_SESSION['es_admin']) && $_SESSION['es_admin'] === true): */ ?>
+                                    <a href="#" class="component-menu-link">
+                                        <div class="component-menu-link-icon">
+                                            <span class="material-symbols-rounded">admin_panel_settings</span>
+                                        </div>
+                                        <div class="component-menu-link-text">
+                                            <span>Panel de Control</span>
+                                        </div>
+                                    </a>
+                                    <?php /* endif; */ ?>
+
+                                    <a href="#" class="component-menu-link">
+                                        <div class="component-menu-link-icon">
+                                            <span class="material-symbols-rounded">settings</span>
+                                        </div>
+                                        <div class="component-menu-link-text">
+                                            <span>Configuración</span>
+                                        </div>
+                                    </a>
+                                </div>
+                            </div>
+
                         </div>
+                    </div>
+
+                    <div class="general-content-scrolleable">
+                    </div>
+
                 </div>
 
             </div>
         </div>
     </div>
+
+    <script type="module" src="assets/js/app-init.js"></script>
 </body>
 
 </html>
