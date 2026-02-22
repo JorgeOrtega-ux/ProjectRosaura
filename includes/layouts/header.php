@@ -2,7 +2,9 @@
     // Diccionario de títulos para la SPA
     window.AppRouteTitles = {
         '/': "Inicio",
-        '/explore': "Explorar colecciones"
+        '/explore': "Explorar colecciones",
+        '/login': "Iniciar sesión",
+        '/register': "Crear cuenta"
     };
     window.AppName = "ProjectRosaura";
 </script>
@@ -27,7 +29,7 @@
     </div>
     <div class="header-right">
         <div class="component-actions">
-            <button class="component-button component-button--dark component-button--h40">
+            <button class="component-button component-button--dark component-button--h40" data-nav="/ProjectRosaura/login">
                 Acceder
             </button>
 

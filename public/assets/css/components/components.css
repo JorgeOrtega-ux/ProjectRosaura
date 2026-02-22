@@ -202,6 +202,7 @@
     color: #111111;
     border-radius: 8px;
     transition: background-color 0.15s ease;
+    cursor: pointer;
 }
 
 /* Busca esto en components.css (aprox línea 161) y reemplazalo por: */
@@ -308,7 +309,7 @@
         }
     }
 
-    /* Especificidad de 3 clases, anula la transición natural de 2 clases sin usar !important */
+    /* Especificidad de 3 clases, anula la transición natural de 2 clases sin usar la bandera prioritaria */
     .component-module--dropdown.is-dragging .component-menu {
         transition: none; 
     }
