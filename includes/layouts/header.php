@@ -1,3 +1,9 @@
+<?php 
+// includes/layouts/header.php
+$isLoggedIn = isset($_SESSION['user_id']);
+$userRole = $_SESSION['user_role'] ?? 'user';
+$userPic = $_SESSION['user_pic'] ?? '';
+?>
 <script>
     // Diccionario de títulos para la SPA
     window.AppRouteTitles = {
@@ -29,17 +35,24 @@
     </div>
     <div class="header-right">
         <div class="component-actions">
-            <button class="component-button component-button--dark component-button--h40" data-nav="/ProjectRosaura/login">
-                Acceder
-            </button>
-
+            
             <button class="component-button component-button--icon component-button--h40 mobile-search-btn" data-action="toggleMobileSearch">
                 <span class="material-symbols-rounded">search</span>
             </button>
 
-            <button class="component-button component-button--icon component-button--h40" data-action="toggleModuleMainOptions">
-                <span class="material-symbols-rounded">more_vert</span>
-            </button>
+            <?php if (!$isLoggedIn): ?>
+                <button class="component-button component-button--dark component-button--h40" data-nav="/ProjectRosaura/login">
+                    Acceder
+                </button>
+                <button class="component-button component-button--icon component-button--h40" data-action="toggleModuleMainOptions">
+                    <span class="material-symbols-rounded">more_vert</span>
+                </button>
+            <?php else: ?>
+                <button class="component-button component-button--profile role-<?php echo htmlspecialchars($userRole); ?>" data-action="toggleModuleMainOptions">
+                    <img src="/ProjectRosaura/<?php echo htmlspecialchars($userPic); ?>" alt="Perfil">
+                </button>
+            <?php endif; ?>
+
         </div>
     </div>
 

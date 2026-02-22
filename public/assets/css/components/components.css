@@ -122,6 +122,56 @@
     color: #ffffff; 
 }
 
+/* ====== COMPONENTE PROFILE BUTTON (AGREGADO) ====== */
+.component-button--profile {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    padding: 0;
+    border: none;
+    background-color: transparent;
+    position: relative;
+    cursor: pointer;
+    margin: 4px; /* Espacio para el borde separado */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.component-button--profile img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    position: relative;
+    z-index: 2;
+}
+
+.component-button--profile::before {
+    content: '';
+    position: absolute;
+    top: -4px;
+    left: -4px;
+    right: -4px;
+    bottom: -4px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    z-index: 1;
+    pointer-events: none;
+    transition: border-color 0.2s ease;
+}
+
+/* Colores de roles */
+.component-button--profile.role-user::before { border-color: #b0b0b0; } /* Gris */
+.component-button--profile.role-moderator::before { border-color: #1a73e8; } /* Azul */
+.component-button--profile.role-administrator::before { border-color: #d32f2f; } /* Rojo */
+.component-button--profile.role-founder::before { border-color: #9c27b0; } /* Morado */
+
+.component-button--profile:active {
+    transform: scale(0.92);
+}
+
 /* ========================================= */
 /* --- COMPONENT: MENU SYSTEM ---            */
 /* ========================================= */

@@ -1,5 +1,6 @@
 <?php
 // public/index.php
+session_start(); // AGREGADO PARA EL MANEJO DE SESIONES
 
 // Requerir manualmente clases core
 require_once __DIR__ . '/../includes/core/loader.php';
