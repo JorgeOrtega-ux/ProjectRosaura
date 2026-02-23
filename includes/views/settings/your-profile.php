@@ -8,6 +8,25 @@ $userEmail = $_SESSION['user_email'] ?? 'usuario@ejemplo.com';
 $userRole = $_SESSION['user_role'] ?? 'user';
 $userPic = $_SESSION['user_pic'] ?? 'public/storage/profilePictures/default/default.png';
 $formattedAvatar = '/ProjectRosaura/' . ltrim($userPic, '/');
+
+// Preferencias
+$userPrefs = $_SESSION['user_prefs'] ?? [];
+$prefLang = $userPrefs['language'] ?? ($_COOKIE['pr_language'] ?? 'es-419');
+$prefOpenLinks = isset($userPrefs['open_links_new_tab']) ? (int)$userPrefs['open_links_new_tab'] : 1;
+
+$languages = [
+    'en-US' => 'English (United States)',
+    'en-GB' => 'English (United Kingdom)',
+    'fr-FR' => 'Français (France)',
+    'de-DE' => 'Deutsch (Deutschland)',
+    'it-IT' => 'Italiano (Italia)',
+    'es-419' => 'Español (Latinoamérica)',
+    'es-MX' => 'Español (México)',
+    'es-ES' => 'Español (España)',
+    'pt-BR' => 'Português (Brasil)',
+    'pt-PT' => 'Português (Portugal)'
+];
+$currentLangText = $languages[$prefLang] ?? 'Español (Latinoamérica)';
 ?>
 
 <div class="view-content">
@@ -128,7 +147,7 @@ $formattedAvatar = '/ProjectRosaura/' . ltrim($userPic, '/');
                     <div class="component-dropdown-wrapper">
                         <div class="component-dropdown-trigger" data-action="toggleModuleLanguage">
                             <span class="material-symbols-rounded">language</span>
-                            <span class="component-dropdown-text">Español (Latinoamérica)</span>
+                            <span class="component-dropdown-text"><?php echo htmlspecialchars($currentLangText); ?></span>
                             <span class="material-symbols-rounded">expand_more</span>
                         </div>
                         <?php include __DIR__ . '/../../modules/moduleLanguage.php'; ?>
@@ -148,7 +167,7 @@ $formattedAvatar = '/ProjectRosaura/' . ltrim($userPic, '/');
                 </div>
                 <div class="component-card__actions component-card__actions--end">
                     <label class="component-toggle-switch">
-                        <input type="checkbox" data-action="togglePreference" data-key="open_links_new_tab" checked>
+                        <input type="checkbox" data-action="togglePreference" data-key="open_links_new_tab" <?php echo $prefOpenLinks === 1 ? 'checked' : ''; ?>>
                         <span class="component-toggle-slider"></span>
                     </label>
                 </div>

@@ -1,3 +1,20 @@
+<?php
+// includes/views/settings/guest.php
+$prefLang = $_COOKIE['pr_language'] ?? 'es-419';
+$languages = [
+    'en-US' => 'English (United States)',
+    'en-GB' => 'English (United Kingdom)',
+    'fr-FR' => 'Français (France)',
+    'de-DE' => 'Deutsch (Deutschland)',
+    'it-IT' => 'Italiano (Italia)',
+    'es-419' => 'Español (Latinoamérica)',
+    'es-MX' => 'Español (México)',
+    'es-ES' => 'Español (España)',
+    'pt-BR' => 'Português (Brasil)',
+    'pt-PT' => 'Português (Portugal)'
+];
+$currentLangText = $languages[$prefLang] ?? 'Español (Latinoamérica)';
+?>
 <div class="view-content">
     <div class="component-wrapper">
         
@@ -19,7 +36,7 @@
                     <div class="component-dropdown-wrapper">
                         <div class="component-dropdown-trigger" data-action="toggleModuleLanguage">
                             <span class="material-symbols-rounded">language</span>
-                            <span class="component-dropdown-text">Español (Latinoamérica)</span>
+                            <span class="component-dropdown-text"><?php echo htmlspecialchars($currentLangText); ?></span>
                             <span class="material-symbols-rounded">expand_more</span>
                         </div>
                         <?php include __DIR__ . '/../../modules/moduleLanguage.php'; ?>

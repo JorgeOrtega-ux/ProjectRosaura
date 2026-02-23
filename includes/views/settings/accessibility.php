@@ -1,3 +1,16 @@
+<?php
+// includes/views/settings/accessibility.php
+$userPrefs = $_SESSION['user_prefs'] ?? [];
+$prefTheme = $userPrefs['theme'] ?? 'system';
+$prefExtendedAlerts = isset($userPrefs['extended_alerts']) ? (int)$userPrefs['extended_alerts'] : 0;
+
+$themeTexts = [
+    'system' => 'Sincronizar con el sistema',
+    'light'  => 'Tema claro',
+    'dark'   => 'Tema oscuro'
+];
+$currentThemeText = $themeTexts[$prefTheme] ?? 'Sincronizar con el sistema';
+?>
 <div class="view-content">
     <div class="component-wrapper">
         
@@ -19,7 +32,7 @@
                     <div class="component-dropdown-wrapper">
                         <div class="component-dropdown-trigger" data-action="toggleModuleTheme">
                             <span class="material-symbols-rounded">brightness_auto</span>
-                            <span class="component-dropdown-text">Sincronizar con el sistema</span>
+                            <span class="component-dropdown-text"><?php echo htmlspecialchars($currentThemeText); ?></span>
                             <span class="material-symbols-rounded">expand_more</span>
                         </div>
                         <?php include __DIR__ . '/../../modules/moduleTheme.php'; ?>
@@ -39,7 +52,7 @@
                 </div>
                 <div class="component-card__actions component-card__actions--end">
                     <label class="component-toggle-switch">
-                        <input type="checkbox" data-action="togglePreference" data-key="extended_alerts">
+                        <input type="checkbox" data-action="togglePreference" data-key="extended_alerts" <?php echo $prefExtendedAlerts === 1 ? 'checked' : ''; ?>>
                         <span class="component-toggle-slider"></span>
                     </label>
                 </div>

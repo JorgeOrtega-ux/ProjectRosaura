@@ -1,5 +1,20 @@
 <?php 
 // includes/modules/moduleLanguage.php
+$userPrefs = $_SESSION['user_prefs'] ?? [];
+$currentLang = $userPrefs['language'] ?? ($_COOKIE['pr_language'] ?? 'es-419');
+
+$languages = [
+    'en-US' => 'English (United States)',
+    'en-GB' => 'English (United Kingdom)',
+    'fr-FR' => 'Français (France)',
+    'de-DE' => 'Deutsch (Deutschland)',
+    'it-IT' => 'Italiano (Italia)',
+    'es-419' => 'Español (Latinoamérica)',
+    'es-MX' => 'Español (México)',
+    'es-ES' => 'Español (España)',
+    'pt-BR' => 'Português (Brasil)',
+    'pt-PT' => 'Português (Portugal)'
+];
 ?>
 <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="moduleLanguage">
     
@@ -19,97 +34,16 @@
         </div>
 
         <div class="component-menu-list component-menu-list--scrollable">
-            
-            <div class="component-menu-link" data-action="setPref" data-key="language" data-value="en-US">
+            <?php foreach ($languages as $code => $name): ?>
+            <div class="component-menu-link <?php echo ($currentLang === $code) ? 'active' : ''; ?>" data-action="setPref" data-key="language" data-value="<?php echo htmlspecialchars($code); ?>">
                 <div class="component-menu-link-icon">
                     <span class="material-symbols-rounded">language</span>
                 </div>
                 <div class="component-menu-link-text">
-                    <span>English (United States)</span>
+                    <span><?php echo htmlspecialchars($name); ?></span>
                 </div>
             </div>
-
-            <div class="component-menu-link" data-action="setPref" data-key="language" data-value="en-GB">
-                <div class="component-menu-link-icon">
-                    <span class="material-symbols-rounded">language</span>
-                </div>
-                <div class="component-menu-link-text">
-                    <span>English (United Kingdom)</span>
-                </div>
-            </div>
-
-            <div class="component-menu-link" data-action="setPref" data-key="language" data-value="fr-FR">
-                <div class="component-menu-link-icon">
-                    <span class="material-symbols-rounded">language</span>
-                </div>
-                <div class="component-menu-link-text">
-                    <span>Français (France)</span>
-                </div>
-            </div>
-
-            <div class="component-menu-link" data-action="setPref" data-key="language" data-value="de-DE">
-                <div class="component-menu-link-icon">
-                    <span class="material-symbols-rounded">language</span>
-                </div>
-                <div class="component-menu-link-text">
-                    <span>Deutsch (Deutschland)</span>
-                </div>
-            </div>
-
-            <div class="component-menu-link" data-action="setPref" data-key="language" data-value="it-IT">
-                <div class="component-menu-link-icon">
-                    <span class="material-symbols-rounded">language</span>
-                </div>
-                <div class="component-menu-link-text">
-                    <span>Italiano (Italia)</span>
-                </div>
-            </div>
-
-            <div class="component-menu-link active" data-action="setPref" data-key="language" data-value="es-419">
-                <div class="component-menu-link-icon">
-                    <span class="material-symbols-rounded">language</span>
-                </div>
-                <div class="component-menu-link-text">
-                    <span>Español (Latinoamérica)</span>
-                </div>
-            </div>
-
-            <div class="component-menu-link" data-action="setPref" data-key="language" data-value="es-MX">
-                <div class="component-menu-link-icon">
-                    <span class="material-symbols-rounded">language</span>
-                </div>
-                <div class="component-menu-link-text">
-                    <span>Español (México)</span>
-                </div>
-            </div>
-
-            <div class="component-menu-link" data-action="setPref" data-key="language" data-value="es-ES">
-                <div class="component-menu-link-icon">
-                    <span class="material-symbols-rounded">language</span>
-                </div>
-                <div class="component-menu-link-text">
-                    <span>Español (España)</span>
-                </div>
-            </div>
-
-            <div class="component-menu-link" data-action="setPref" data-key="language" data-value="pt-BR">
-                <div class="component-menu-link-icon">
-                    <span class="material-symbols-rounded">language</span>
-                </div>
-                <div class="component-menu-link-text">
-                    <span>Português (Brasil)</span>
-                </div>
-            </div>
-
-            <div class="component-menu-link" data-action="setPref" data-key="language" data-value="pt-PT">
-                <div class="component-menu-link-icon">
-                    <span class="material-symbols-rounded">language</span>
-                </div>
-                <div class="component-menu-link-text">
-                    <span>Português (Portugal)</span>
-                </div>
-            </div>
-
+            <?php endforeach; ?>
         </div>
     </div>
 </div>
