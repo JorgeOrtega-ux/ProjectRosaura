@@ -790,6 +790,13 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
     }
 
     /* Evitar doble espaciado cuando hay un header u otro elemento que ya tenga padding justo debajo de la píldora */
+    .pill-container + .component-menu-header,
+    .pill-container + .component-menu-list,
+    .pill-container + .component-menu-list--scrollable {
+        padding-top: 0;
+    }
+
+    /* Evitar doble espaciado cuando hay un header u otro elemento que ya tenga padding justo debajo de la píldora */
     .pill-container + .component-menu-header {
         padding-top: 0;
     }
