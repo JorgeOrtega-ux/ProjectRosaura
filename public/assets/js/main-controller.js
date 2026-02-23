@@ -1,3 +1,5 @@
+// public/assets/js/main-controller.js
+
 /**
  * MainController
  * Clase principal para la gestión de la interfaz y la lógica de la aplicación.
@@ -124,7 +126,15 @@ export class MainController {
             // Retardo para enfocar el input una vez que sea visible
             setTimeout(() => {
                 const input = document.getElementById('input-' + field);
-                if (input) input.focus();
+                if (input) {
+                    input.focus();
+                    
+                    // Truco cross-browser para mover el cursor al final del texto.
+                    // Funciona perfectamente en inputs tipo text, email, number, etc.
+                    const val = input.value;
+                    input.value = '';
+                    input.value = val;
+                }
             }, 50);
         } else {
             // Se oculta la edición, se muestra la vista
