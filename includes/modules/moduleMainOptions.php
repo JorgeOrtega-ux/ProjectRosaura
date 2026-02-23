@@ -1,6 +1,8 @@
 <?php 
 // includes/modules/moduleMainOptions.php
 $isLoggedIn = isset($_SESSION['user_id']);
+// 1. Asignamos la ruta final directamente para que coincida con el backend
+$settingsLink = $isLoggedIn ? '/ProjectRosaura/settings/your-profile' : '/ProjectRosaura/settings/guest';
 ?>
 <div class="component-module component-module--dropdown disabled" data-module="moduleMainOptions">
     <div class="component-menu component-menu--w265 component-menu--h-auto">
@@ -8,7 +10,7 @@ $isLoggedIn = isset($_SESSION['user_id']);
         <div class="pill-container"><div class="drag-handle"></div></div>
         
         <div class="component-menu-list">
-            <div class="component-menu-link nav-item" data-nav="/ProjectRosaura/settings">
+            <div class="component-menu-link nav-item" data-nav="<?php echo $settingsLink; ?>">
                 <div class="component-menu-link-icon">
                     <span class="material-symbols-rounded">settings</span>
                 </div>

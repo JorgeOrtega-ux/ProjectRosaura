@@ -37,7 +37,15 @@ export class SpaRouter {
     }
 
     navigate(url) {
-        if (window.location.pathname === url) return;
+        let currentPath = window.location.pathname;
+        
+        // 1. Normalizamos los slashes al final para comparaciones exactas sin falsos positivos
+        let normalizedCurrent = currentPath.endsWith('/') && currentPath.length > 1 ? currentPath.slice(0, -1) : currentPath;
+        let normalizedUrl = url.endsWith('/') && url.length > 1 ? url.slice(0, -1) : url;
+
+        // Si la ruta limpiada es exactamente la misma, abortamos tempranamente (Evita el re-fetch infinito)
+        if (normalizedCurrent === normalizedUrl) return;
+
         window.history.pushState(null, '', url);
         this.loadRoute(url);
     }
@@ -108,19 +116,31 @@ export class SpaRouter {
 
     highlightCurrentRoute() {
         const path = window.location.pathname;
+        let normalizedPath = path.endsWith('/') && path.length > 1 ? path.slice(0, -1) : path;
+
         document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
 
-        const targets = document.querySelectorAll(`[data-nav="${path}"], [data-nav="${path}/"]`);
+        // 2. Aplicamos clase 'active' a la ruta exacta normalizada
+        const targets = document.querySelectorAll(`[data-nav="${normalizedPath}"], [data-nav="${normalizedPath}/"]`);
         targets.forEach(target => {
             target.classList.add('active');
         });
+
+        // 3. Regla especial para mantener el botón de Configuración activo en el Dropdown
+        // incluso si estás en otra subpestaña (ej: /settings/security)
+        if (normalizedPath.includes('/settings')) {
+            const dropdownSettingsItem = document.querySelector('.component-module--dropdown [data-nav^="/ProjectRosaura/settings"]');
+            if (dropdownSettingsItem) {
+                dropdownSettingsItem.classList.add('active');
+            }
+        }
 
         // Lógica para alternar los menús principales vs configuración en la UI de Surface
         const mainMenu = document.getElementById('sidebar-menu-main');
         const settingsMenu = document.getElementById('sidebar-menu-settings');
         
         if (mainMenu && settingsMenu) {
-            if (path.includes('/settings')) {
+            if (normalizedPath.includes('/settings')) {
                 mainMenu.style.display = 'none';
                 settingsMenu.style.display = 'flex';
             } else {
