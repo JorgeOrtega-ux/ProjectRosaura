@@ -39,6 +39,7 @@
     justify-content: center;
     align-items: center;
     color: #666;
+    flex-shrink: 0; /* Agregado para evitar que el ícono se encoja */
 }
 
 .component-search-input {
@@ -343,6 +344,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    flex-shrink: 0; /* Agregado para evitar que el ícono se encoja */
 }
 
 .component-menu-link-text {
@@ -352,6 +354,15 @@
     align-items: center;
     font-size: 14px;
     font-weight: 500;
+    min-width: 0; /* Necesario para que el text-overflow funcione dentro de un contenedor flex */
+}
+
+.component-menu-link-text span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    display: block;
 }
 
 /* ========================================= */

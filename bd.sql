@@ -38,3 +38,18 @@ CREATE TABLE IF NOT EXISTS rate_limits (
     blocked_until DATETIME DEFAULT NULL,
     UNIQUE KEY ip_action (ip_address, action)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- NUEVA TABLA: Registro de historial de cambios de perfil
+CREATE TABLE IF NOT EXISTS profile_changes_log (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT(11) NOT NULL,
+    change_type ENUM('avatar', 'username', 'email') NOT NULL,
+    old_value VARCHAR(255) DEFAULT NULL,
+    new_value VARCHAR(255) DEFAULT NULL,
+    ip_address VARCHAR(45) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX (user_id),
+    INDEX (change_type),
+    INDEX (created_at),
+    CONSTRAINT fk_user_profile_log FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

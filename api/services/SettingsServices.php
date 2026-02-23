@@ -21,6 +21,11 @@ class SettingsServices {
             return ['success' => false, 'message' => 'Sesión no válida o expirada.'];
         }
 
+        // LÍMITE: 3 cambios de foto de perfil en 1 día
+        if (!$this->canChangeProfileData($_SESSION['user_id'], 'avatar', 3, 1)) {
+            return ['success' => false, 'message' => 'Has alcanzado el límite de 3 cambios de foto de perfil por día.'];
+        }
+
         $files = $data['_files'] ?? [];
         
         if (!isset($files['avatar']) || $files['avatar']['error'] !== UPLOAD_ERR_OK) {
@@ -66,6 +71,10 @@ class SettingsServices {
 
             $stmt = $this->pdo->prepare("UPDATE users SET profile_picture = ? WHERE id = ?");
             if ($stmt->execute([$newRelPath, $_SESSION['user_id']])) {
+                
+                // GUARDAR EN EL HISTORIAL (LOG)
+                $this->logProfileChange($_SESSION['user_id'], 'avatar', $oldPic, $newRelPath);
+
                 $_SESSION['user_pic'] = $newRelPath;
                 return [
                     'success' => true, 
@@ -81,6 +90,11 @@ class SettingsServices {
     public function deleteAvatar() {
         if (!isset($_SESSION['user_id'])) {
             return ['success' => false, 'message' => 'Sesión no válida.'];
+        }
+
+        // LÍMITE: Al eliminar la foto, se cuenta como un cambio. (Límite 3 al día)
+        if (!$this->canChangeProfileData($_SESSION['user_id'], 'avatar', 3, 1)) {
+            return ['success' => false, 'message' => 'Has alcanzado el límite de 3 cambios de foto de perfil por día.'];
         }
 
         $oldPic = $_SESSION['user_pic'] ?? '';
@@ -99,6 +113,10 @@ class SettingsServices {
 
         $stmt = $this->pdo->prepare("UPDATE users SET profile_picture = ? WHERE id = ?");
         if ($stmt->execute([$newRelPath, $_SESSION['user_id']])) {
+            
+            // GUARDAR EN EL HISTORIAL (LOG)
+            $this->logProfileChange($_SESSION['user_id'], 'avatar', $oldPic, $newRelPath);
+
             $_SESSION['user_pic'] = $newRelPath;
             return [
                 'success' => true, 
@@ -115,6 +133,11 @@ class SettingsServices {
             return ['success' => false, 'message' => 'Sesión no válida.'];
         }
 
+        // LÍMITE: 1 cambio de nombre de usuario cada 7 días
+        if (!$this->canChangeProfileData($_SESSION['user_id'], 'username', 1, 7)) {
+            return ['success' => false, 'message' => 'Solo puedes cambiar tu nombre de usuario 1 vez cada 7 días.'];
+        }
+
         $username = trim($data['username'] ?? '');
 
         if (strlen($username) < 3 || strlen($username) > 32) {
@@ -127,8 +150,14 @@ class SettingsServices {
             return ['success' => false, 'message' => 'Este nombre de usuario ya está en uso.'];
         }
 
+        $oldUsername = $_SESSION['user_name'] ?? '';
+
         $stmtUpd = $this->pdo->prepare("UPDATE users SET username = ? WHERE id = ?");
         if ($stmtUpd->execute([$username, $_SESSION['user_id']])) {
+            
+            // GUARDAR EN EL HISTORIAL (LOG)
+            $this->logProfileChange($_SESSION['user_id'], 'username', $oldUsername, $username);
+
             $_SESSION['user_name'] = $username;
             return [
                 'success' => true, 
@@ -241,6 +270,11 @@ class SettingsServices {
             return ['success' => false, 'message' => 'Por seguridad, debes verificar tu identidad con el código enviado a tu correo primero o la sesión ha expirado.'];
         }
 
+        // LÍMITE: 1 cambio de correo cada 7 días
+        if (!$this->canChangeProfileData($_SESSION['user_id'], 'email', 1, 7)) {
+            return ['success' => false, 'message' => 'Solo puedes cambiar tu correo electrónico 1 vez cada 7 días.'];
+        }
+
         $email = trim($data['email'] ?? '');
 
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -254,8 +288,14 @@ class SettingsServices {
             return ['success' => false, 'message' => 'Este correo electrónico ya está registrado en otra cuenta.'];
         }
 
+        $oldEmail = $_SESSION['user_email'] ?? '';
+
         $stmtUpd = $this->pdo->prepare("UPDATE users SET email = ? WHERE id = ?");
         if ($stmtUpd->execute([$email, $_SESSION['user_id']])) {
+            
+            // GUARDAR EN EL HISTORIAL (LOG)
+            $this->logProfileChange($_SESSION['user_id'], 'email', $oldEmail, $email);
+
             $_SESSION['user_email'] = $email;
             
             // Destruir bandera de actualización por seguridad tras concretar
@@ -271,8 +311,36 @@ class SettingsServices {
         return ['success' => false, 'message' => 'Error al actualizar el correo en base de datos.'];
     }
 
+
     /* ========================================================================= */
-    /* MÉTODOS PRIVADOS PARA LIMITACIÓN DE TASA (RATE LIMITING)                  */
+    /* MÉTODOS PRIVADOS PARA LIMITACIÓN Y REGISTRO DE CAMBIOS DE PERFIL (LOG)    */
+    /* ========================================================================= */
+
+    /**
+     * Revisa si el usuario tiene permitido hacer un cambio en base a un límite de tiempo.
+     */
+    private function canChangeProfileData($userId, $changeType, $maxAttempts, $days) {
+        $days = (int)$days; // Seguridad para parsear explícitamente a número
+        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM profile_changes_log WHERE user_id = ? AND change_type = ? AND created_at >= DATE_SUB(NOW(), INTERVAL $days DAY)");
+        $stmt->execute([$userId, $changeType]);
+        
+        $count = (int) $stmt->fetchColumn();
+        
+        return $count < $maxAttempts;
+    }
+
+    /**
+     * Guarda el cambio en el historial de la base de datos de manera silenciosa.
+     */
+    private function logProfileChange($userId, $changeType, $oldValue, $newValue) {
+        $ip = $this->getIpAddress();
+        $stmt = $this->pdo->prepare("INSERT INTO profile_changes_log (user_id, change_type, old_value, new_value, ip_address) VALUES (?, ?, ?, ?, ?)");
+        $stmt->execute([$userId, $changeType, $oldValue, $newValue, $ip]);
+    }
+
+
+    /* ========================================================================= */
+    /* MÉTODOS PRIVADOS PARA LIMITACIÓN DE TASA (RATE LIMITING DE ERRORES/LOGIN) */
     /* ========================================================================= */
 
     private function getIpAddress() {
