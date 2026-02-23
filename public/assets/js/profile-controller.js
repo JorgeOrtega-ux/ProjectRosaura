@@ -184,7 +184,11 @@ export class ProfileController {
     }
 
     async deleteAvatar(btn) {
-        if (!confirm('¿Estás seguro de eliminar tu foto de perfil?')) return;
+        // Lanzamos la promesa y ESPERAMOS LA RESPUESTA de la UI sin bloquear el hilo de Javascript
+        const isConfirmed = await window.dialogSystem.show('confirmDeleteAvatar');
+        
+        // Si el usuario cancela, no hacemos nada más
+        if (!isConfirmed) return;
 
         this.setButtonLoading(btn);
 

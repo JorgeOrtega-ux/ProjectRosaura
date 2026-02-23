@@ -3,6 +3,7 @@ import { MainController } from './main-controller.js';
 import { SpaRouter } from './core/spa-router.js';
 import { AuthController } from './auth-controller.js';
 import { ProfileController } from './profile-controller.js';
+import { DialogSystem } from './core/dialog-system.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Instanciamos lógica UI base
@@ -18,7 +19,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const profile = new ProfileController();
     profile.init();
 
-    // 4. Instanciamos el Router SPA y lo guardamos en window para uso global
+    // 4. Instanciamos el Sistema de Diálogos y lo guardamos global
+    window.dialogSystem = new DialogSystem();
+
+    // 5. Instanciamos el Router SPA y lo guardamos en window para uso global
     window.spaRouter = new SpaRouter({
         outlet: '#app-router-outlet'
     });

@@ -936,3 +936,102 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
         transform: translateY(120%);
     }
 }
+
+/* ========================================= */
+/* --- COMPONENT: DIALOGS / OVERLAYS ---     */
+/* ========================================= */
+.component-dialog-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: rgba(0, 0, 0, 0.4); /* Negro semitrasparente */
+    z-index: 2000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.component-dialog-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.component-dialog-box {
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 24px;
+    width: 100%;
+    max-width: 400px; /* Tamaño máximo para escritorio */
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    transform: scale(0.95);
+    transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+
+.component-dialog-overlay.active .component-dialog-box {
+    transform: scale(1);
+}
+
+.component-dialog-header {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.component-dialog-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #111111;
+    margin: 0;
+}
+
+.component-dialog-desc {
+    font-size: 15px;
+    color: #666666;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.component-dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+/* Mobile Dialog (Bottom Sheet con Drag) */
+@media (max-width: 768px) {
+    .component-dialog-overlay {
+        align-items: flex-end;
+    }
+
+    .component-dialog-box {
+        max-width: 100%;
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+        transform: translateY(100%);
+        padding-top: 0; /* Espacio reservado para el .pill-container */
+        padding-bottom: 24px;
+        margin: 0;
+    }
+
+    .component-dialog-overlay.active .component-dialog-box {
+        transform: translateY(0);
+    }
+
+    .component-dialog-overlay.is-dragging .component-dialog-box {
+        transition: none; /* Desactiva transiciones durante el drag para fluidez */
+    }
+    
+    .component-dialog-actions {
+        flex-direction: column-reverse; /* En móvil, cancelar va abajo y confirmar arriba */
+    }
+    
+    .component-dialog-actions .component-button {
+        width: 100%; /* Botones de bloque completo */
+    }
+}
