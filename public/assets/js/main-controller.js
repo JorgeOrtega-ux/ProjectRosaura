@@ -14,7 +14,7 @@ export class MainController {
         this.state = { isMobileSearchActive: false, currentDevice: '' };
         this.dragState = { startY: 0, currentY: 0, currentDiff: 0, isDragging: false, panel: null, module: null };
         
-        this.api = new ApiService(); // Inicializamos API aquí para uso global
+        this.api = new ApiService();
     }
 
     get isMobile() { return window.innerWidth <= 768; }
@@ -24,9 +24,8 @@ export class MainController {
         this.initPreferences();
         this.bindEvents();
         this.initBottomSheets(); 
-        this.syncUIPreferences(); // Sincroniza switches al cargar
+        this.syncUIPreferences(); 
         
-        // Cuando el Router cambie de vista, volver a sincronizar UI
         window.addEventListener('viewLoaded', () => this.syncUIPreferences());
     }
 
@@ -64,19 +63,33 @@ export class MainController {
     }
 
     async savePreference(key, value) {
-        // 1. Aplicación inmediata en Frontend
+        // 1. Aplicación inmediata visual
         if (key === 'theme') this.applyTheme(value);
 
-        // 2. Guardar en estado local
+        // 2. Comprobar entorno (Base de datos o LocalStorage)
         if (window.AppUserPrefs) {
             window.AppUserPrefs[key] = value;
-            // 3. Si tiene sesión, enviar a la Base de Datos
-            await this.api.post(ApiRoutes.Settings.UpdatePreferences, { key: key, value: value });
+            
+            try {
+                // Enviar a la Base de Datos
+                const response = await this.api.post(ApiRoutes.Settings.UpdatePreferences, { key: key, value: value });
+                
+                if (response && response.success) {
+                    this.showToast('Preferencia guardada en tu cuenta', 'success');
+                } else {
+                    this.showToast('Error de red al guardar preferencia', 'error');
+                }
+            } catch (err) {
+                console.error("Error API:", err);
+                this.showToast('Error de red al guardar', 'error');
+            }
         } else {
+            // Usuario invitado
             localStorage.setItem('pr_' + key, value);
+            this.showToast('Configuración local guardada', 'success');
         }
 
-        this.syncUIPreferences(); // Refrescar textos e iconos de dropdowns
+        this.syncUIPreferences(); // Refrescar textos e iconos
     }
 
     applyTheme(theme) {
@@ -99,14 +112,12 @@ export class MainController {
         const openLinks = this.getPref('open_links_new_tab');
         const alerts = this.getPref('extended_alerts');
 
-        // Switches
         const toggleLinks = document.querySelector('[data-key="open_links_new_tab"]');
         if (toggleLinks) toggleLinks.checked = (openLinks == 1 || openLinks == '1');
 
         const toggleAlerts = document.querySelector('[data-key="extended_alerts"]');
         if (toggleAlerts) toggleAlerts.checked = (alerts == 1 || alerts == '1');
 
-        // Menús Activos
         document.querySelectorAll('[data-action="setPref"]').forEach(item => {
             if (item.getAttribute('data-key') === 'theme') {
                 item.classList.toggle('active', item.getAttribute('data-value') === theme);
@@ -116,7 +127,6 @@ export class MainController {
             }
         });
 
-        // Actualizar textos de los triggers de los dropdowns (si existen en la vista actual)
         const themeTriggerTxt = document.querySelector('[data-action="toggleModuleTheme"] .component-dropdown-text');
         if (themeTriggerTxt) {
             const activeItem = document.querySelector('[data-key="theme"].active .component-menu-link-text span');
@@ -139,7 +149,6 @@ export class MainController {
             });
         }
 
-        // --- INTERCEPTOR DE CLICS ---
         document.addEventListener('click', (e) => {
             const btn = e.target.closest('[data-action]');
             
@@ -151,7 +160,6 @@ export class MainController {
                 else if (action === 'toggleModuleTheme') this.toggleModule('moduleTheme');
                 else if (action === 'toggleMobileSearch') this.toggleMobileSearch();
                 else if (action === 'toggleEditState') this.toggleEditState(btn.getAttribute('data-target'));
-                // NUEVO: Capturar clic en elemento de menú de preferencias
                 else if (action === 'setPref') {
                     const key = btn.getAttribute('data-key');
                     const value = btn.getAttribute('data-value');
@@ -172,7 +180,6 @@ export class MainController {
             });
         });
 
-        // --- INTERCEPTOR DE SWITCHES ---
         document.addEventListener('change', (e) => {
             if (e.target.matches('[data-action="togglePreference"]')) {
                 const key = e.target.getAttribute('data-key');

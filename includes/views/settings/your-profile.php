@@ -91,7 +91,7 @@ $formattedAvatar = '/ProjectRosaura/' . ltrim($userPic, '/');
                         </div>
                     </div>
                     <div class="component-card__actions component-card__actions--stretch">
-                        <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="email">Editar</button>
+                        <button type="button" class="component-button component-button--h34" data-action="requestEmailUpdate">Editar</button>
                     </div>
                 </div>
 
@@ -148,7 +148,7 @@ $formattedAvatar = '/ProjectRosaura/' . ltrim($userPic, '/');
                 </div>
                 <div class="component-card__actions component-card__actions--end">
                     <label class="component-toggle-switch">
-                        <input type="checkbox" checked>
+                        <input type="checkbox" data-action="togglePreference" data-key="open_links_new_tab" checked>
                         <span class="component-toggle-slider"></span>
                     </label>
                 </div>

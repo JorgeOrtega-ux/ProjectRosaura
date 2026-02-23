@@ -9,7 +9,7 @@
 
         <div class="component-menu-list component-menu-list--scrollable">
             
-            <div class="component-menu-link active">
+            <div class="component-menu-link active" data-action="setPref" data-key="theme" data-value="system">
                 <div class="component-menu-link-icon">
                     <span class="material-symbols-rounded">brightness_auto</span>
                 </div>
@@ -18,7 +18,7 @@
                 </div>
             </div>
 
-            <div class="component-menu-link">
+            <div class="component-menu-link" data-action="setPref" data-key="theme" data-value="light">
                 <div class="component-menu-link-icon">
                     <span class="material-symbols-rounded">light_mode</span>
                 </div>
@@ -27,7 +27,7 @@
                 </div>
             </div>
 
-            <div class="component-menu-link">
+            <div class="component-menu-link" data-action="setPref" data-key="theme" data-value="dark">
                 <div class="component-menu-link-icon">
                     <span class="material-symbols-rounded">dark_mode</span>
                 </div>

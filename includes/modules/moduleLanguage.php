@@ -20,7 +20,7 @@
 
         <div class="component-menu-list component-menu-list--scrollable">
             
-            <div class="component-menu-link">
+            <div class="component-menu-link" data-action="setPref" data-key="language" data-value="en-US">
                 <div class="component-menu-link-icon">
                     <span class="material-symbols-rounded">language</span>
                 </div>
@@ -29,7 +29,7 @@
                 </div>
             </div>
 
-            <div class="component-menu-link">
+            <div class="component-menu-link" data-action="setPref" data-key="language" data-value="en-GB">
                 <div class="component-menu-link-icon">
                     <span class="material-symbols-rounded">language</span>
                 </div>
@@ -38,7 +38,7 @@
                 </div>
             </div>
 
-            <div class="component-menu-link">
+            <div class="component-menu-link" data-action="setPref" data-key="language" data-value="fr-FR">
                 <div class="component-menu-link-icon">
                     <span class="material-symbols-rounded">language</span>
                 </div>
@@ -47,7 +47,7 @@
                 </div>
             </div>
 
-            <div class="component-menu-link">
+            <div class="component-menu-link" data-action="setPref" data-key="language" data-value="de-DE">
                 <div class="component-menu-link-icon">
                     <span class="material-symbols-rounded">language</span>
                 </div>
@@ -56,7 +56,7 @@
                 </div>
             </div>
 
-            <div class="component-menu-link">
+            <div class="component-menu-link" data-action="setPref" data-key="language" data-value="it-IT">
                 <div class="component-menu-link-icon">
                     <span class="material-symbols-rounded">language</span>
                 </div>
@@ -65,7 +65,7 @@
                 </div>
             </div>
 
-            <div class="component-menu-link active">
+            <div class="component-menu-link active" data-action="setPref" data-key="language" data-value="es-419">
                 <div class="component-menu-link-icon">
                     <span class="material-symbols-rounded">language</span>
                 </div>
@@ -74,7 +74,7 @@
                 </div>
             </div>
 
-            <div class="component-menu-link">
+            <div class="component-menu-link" data-action="setPref" data-key="language" data-value="es-MX">
                 <div class="component-menu-link-icon">
                     <span class="material-symbols-rounded">language</span>
                 </div>
@@ -83,7 +83,7 @@
                 </div>
             </div>
 
-            <div class="component-menu-link">
+            <div class="component-menu-link" data-action="setPref" data-key="language" data-value="es-ES">
                 <div class="component-menu-link-icon">
                     <span class="material-symbols-rounded">language</span>
                 </div>
@@ -92,7 +92,7 @@
                 </div>
             </div>
 
-            <div class="component-menu-link">
+            <div class="component-menu-link" data-action="setPref" data-key="language" data-value="pt-BR">
                 <div class="component-menu-link-icon">
                     <span class="material-symbols-rounded">language</span>
                 </div>
@@ -101,7 +101,7 @@
                 </div>
             </div>
 
-            <div class="component-menu-link">
+            <div class="component-menu-link" data-action="setPref" data-key="language" data-value="pt-PT">
                 <div class="component-menu-link-icon">
                     <span class="material-symbols-rounded">language</span>
                 </div>

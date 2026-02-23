@@ -14,6 +14,7 @@ require_once __DIR__ . '/../vendor/autoload.php';
 use App\Core\Loader;
 use App\Core\Router;
 use App\Core\Utils; 
+use App\Config\Database; // IMPORTANTE: Se importó la conexión a BD
 
 $csrfToken = Utils::generateCSRFToken();
 $routes = require __DIR__ . '/../includes/config/routes.php';
@@ -26,11 +27,36 @@ $currentView = $routeData['view'];
 
 // Detectar variables de estado clave
 $isLoggedIn = isset($_SESSION['user_id']);
+
+// ========================================================================================
+// --- FIX: AUTOSANAR SESIONES ANTIGUAS SIN PREFERENCIAS ---
+// ========================================================================================
+// Si tienes sesión activa, pero no tienes preferencias cargadas (sesión antigua):
+if ($isLoggedIn && !isset($_SESSION['user_prefs'])) {
+    $db = new Database();
+    $pdo = $db->getConnection();
+    
+    $stmt = $pdo->prepare("SELECT * FROM user_preferences WHERE user_id = ?");
+    $stmt->execute([$_SESSION['user_id']]);
+    $prefs = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if ($prefs) {
+        $_SESSION['user_prefs'] = $prefs;
+    } else {
+        // Si el usuario es tan viejo que ni siquiera tiene fila en la tabla
+        $insPref = $pdo->prepare("INSERT INTO user_preferences (user_id, language, open_links_new_tab, theme, extended_alerts) VALUES (?, 'es-419', 1, 'system', 0)");
+        if ($insPref->execute([$_SESSION['user_id']])) {
+            $stmt->execute([$_SESSION['user_id']]);
+            $_SESSION['user_prefs'] = $stmt->fetch(PDO::FETCH_ASSOC);
+        }
+    }
+}
+
 $isSpaRequest = !empty($_SERVER['HTTP_X_SPA_REQUEST']);
 $isAuthRoute = (strpos($currentView, 'auth/') === 0);
 
 // ========================================================================================
-// --- PROTECCIÓN DE RUTAS Y REDIRECCIONES (ANTES DE ENVIAR CUALQUIER OUTPUT HTML) ---
+// --- PROTECCIÓN DE RUTAS Y REDIRECCIONES ---
 // ========================================================================================
 $protectedSettings = [
     'settings/your-profile.php',
@@ -81,6 +107,7 @@ if ($isSpaRequest) {
     <title>Project Rosaura</title>
     
     <script>
+        // Si la sesión está sanada, esto ya no devolverá 'null'
         window.AppUserPrefs = <?php echo ($isLoggedIn && isset($_SESSION['user_prefs'])) ? json_encode($_SESSION['user_prefs']) : 'null'; ?>;
         
         (function() {

@@ -62,7 +62,7 @@
                 </div>
                 <div class="component-card__actions component-card__actions--end">
                     <label class="component-toggle-switch">
-                        <input type="checkbox" checked>
+                        <input type="checkbox" data-action="togglePreference" data-key="open_links_new_tab" checked>
                         <span class="component-toggle-slider"></span>
                     </label>
                 </div>
@@ -79,7 +79,7 @@
                 </div>
                 <div class="component-card__actions component-card__actions--end">
                     <label class="component-toggle-switch">
-                        <input type="checkbox">
+                        <input type="checkbox" data-action="togglePreference" data-key="extended_alerts">
                         <span class="component-toggle-slider"></span>
                     </label>
                 </div>

@@ -39,7 +39,7 @@
                 </div>
                 <div class="component-card__actions component-card__actions--end">
                     <label class="component-toggle-switch">
-                        <input type="checkbox">
+                        <input type="checkbox" data-action="togglePreference" data-key="extended_alerts">
                         <span class="component-toggle-slider"></span>
                     </label>
                 </div>
