@@ -39,10 +39,20 @@ class SettingsController
     {
         return $this->settingsServices->updateEmail($input);
     }
-
-    // --- NUEVO: Controlador para preferencias ---
     public function update_preferences($input)
     {
         return $this->settingsServices->updatePreferences($input);
     }
+    
+    // --- NUEVO: Controladores de Seguridad ---
+    public function verify_current_password($input)
+    {
+        return $this->settingsServices->verifyCurrentPassword($input);
+    }
+    
+    public function update_password($input)
+    {
+        return $this->settingsServices->updatePassword($input);
+    }
 }
+?>

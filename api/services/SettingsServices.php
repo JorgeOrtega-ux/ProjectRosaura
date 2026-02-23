@@ -21,7 +21,6 @@ class SettingsServices {
             return ['success' => false, 'message' => 'Sesión no válida o expirada.'];
         }
 
-        // LÍMITE: 3 cambios de foto de perfil en 1 día
         if (!$this->canChangeProfileData($_SESSION['user_id'], 'avatar', 3, 1)) {
             return ['success' => false, 'message' => 'Has alcanzado el límite de 3 cambios de foto de perfil por día.'];
         }
@@ -34,12 +33,10 @@ class SettingsServices {
 
         $file = $files['avatar'];
         
-        // Validar tamaño (Máximo 2MB)
         if ($file['size'] > 2 * 1024 * 1024) {
             return ['success' => false, 'message' => 'La imagen supera el límite de 2MB.'];
         }
 
-        // Validar tipo MIME real
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
         $mime = finfo_file($finfo, $file['tmp_name']);
         finfo_close($finfo);
@@ -72,7 +69,6 @@ class SettingsServices {
             $stmt = $this->pdo->prepare("UPDATE users SET profile_picture = ? WHERE id = ?");
             if ($stmt->execute([$newRelPath, $_SESSION['user_id']])) {
                 
-                // GUARDAR EN EL HISTORIAL (LOG)
                 $this->logProfileChange($_SESSION['user_id'], 'avatar', $oldPic, $newRelPath);
 
                 $_SESSION['user_pic'] = $newRelPath;
@@ -92,9 +88,6 @@ class SettingsServices {
             return ['success' => false, 'message' => 'Sesión no válida.'];
         }
 
-        // Se eliminó la validación de límite de tasa aquí. 
-        // El usuario siempre tiene permitido eliminar y restaurar su foto por defecto sin bloqueo.
-
         $oldPic = $_SESSION['user_pic'] ?? '';
         if (!empty($oldPic) && strpos($oldPic, 'uploaded/') !== false) {
             $oldPath = __DIR__ . '/../../' . ltrim($oldPic, '/ProjectRosaura/');
@@ -112,7 +105,6 @@ class SettingsServices {
         $stmt = $this->pdo->prepare("UPDATE users SET profile_picture = ? WHERE id = ?");
         if ($stmt->execute([$newRelPath, $_SESSION['user_id']])) {
             
-            // GUARDAR EN EL HISTORIAL (LOG)
             $this->logProfileChange($_SESSION['user_id'], 'avatar', $oldPic, $newRelPath);
 
             $_SESSION['user_pic'] = $newRelPath;
@@ -131,7 +123,6 @@ class SettingsServices {
             return ['success' => false, 'message' => 'Sesión no válida.'];
         }
 
-        // LÍMITE: 1 cambio de nombre de usuario cada 7 días
         if (!$this->canChangeProfileData($_SESSION['user_id'], 'username', 1, 7)) {
             return ['success' => false, 'message' => 'Solo puedes cambiar tu nombre de usuario 1 vez cada 7 días.'];
         }
@@ -153,7 +144,6 @@ class SettingsServices {
         $stmtUpd = $this->pdo->prepare("UPDATE users SET username = ? WHERE id = ?");
         if ($stmtUpd->execute([$username, $_SESSION['user_id']])) {
             
-            // GUARDAR EN EL HISTORIAL (LOG)
             $this->logProfileChange($_SESSION['user_id'], 'username', $oldUsername, $username);
 
             $_SESSION['user_name'] = $username;
@@ -172,25 +162,21 @@ class SettingsServices {
             return ['success' => false, 'message' => 'Sesión no válida.'];
         }
 
-        // 1. SOLUCIÓN AL BUCLE (SEGURIDAD POR TIEMPO): 
-        // Si el usuario ya verificó su identidad y aún está dentro de los 15 minutos de gracia
         if (!empty($_SESSION['can_update_email_expires']) && $_SESSION['can_update_email_expires'] > time()) {
             return [
                 'success' => true, 
                 'message' => 'Identidad ya verificada.', 
-                'skip_verification' => true // Bandera especial para el frontend
+                'skip_verification' => true 
             ];
         }
 
         $email = $_SESSION['user_email'];
 
-        // 2. RATE LIMITING: Bloqueo tras 3 envíos de código consecutivos por 30 minutos
         $rateCheck = $this->checkRateLimit('request_email_code', 3, 30);
         if (!$rateCheck['allowed']) {
             return ['success' => false, 'message' => $rateCheck['message']];
         }
 
-        // 3. PREVENCIÓN DE SPAM LIGERO: Evitar enviar si ya hay uno activo para modificar el correo.
         $stmt = $this->pdo->prepare("SELECT id FROM verification_codes WHERE identifier = ? AND code_type = 'email_update' AND expires_at > NOW()");
         $stmt->execute([$email]);
         if ($stmt->rowCount() > 0) {
@@ -212,7 +198,6 @@ class SettingsServices {
             $emailSent = $mailer->sendEmailUpdateCode($email, $_SESSION['user_name'], $code);
 
             if ($emailSent) {
-                // Registramos la acción porque ha generado un nuevo envío de correo
                 $this->recordAttempt('request_email_code', 3, 30);
                 return ['success' => true, 'message' => 'Se ha enviado un código a tu correo actual.'];
             } else {
@@ -242,14 +227,11 @@ class SettingsServices {
         if ($stmt->rowCount() > 0) {
             $verification = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            // Eliminar token usado
             $delStmt = $this->pdo->prepare("DELETE FROM verification_codes WHERE id = ?");
             $delStmt->execute([$verification['id']]);
 
-            // Crear bandera en sesión con TIEMPO DE EXPIRACIÓN de 15 minutos
             $_SESSION['can_update_email_expires'] = time() + (15 * 60);
 
-            // Como se verificó la identidad con éxito, limpiamos los intentos del rate limit
             $this->clearRateLimit('request_email_code');
 
             return ['success' => true, 'message' => 'Identidad verificada. Tienes 15 minutos para editar tu correo.'];
@@ -263,12 +245,10 @@ class SettingsServices {
             return ['success' => false, 'message' => 'Sesión no válida.'];
         }
 
-        // SEGURIDAD POR TIEMPO: Verificar que tiene la autorización y que NO han pasado los 15 minutos
         if (empty($_SESSION['can_update_email_expires']) || $_SESSION['can_update_email_expires'] < time()) {
             return ['success' => false, 'message' => 'Por seguridad, debes verificar tu identidad con el código enviado a tu correo primero o la sesión ha expirado.'];
         }
 
-        // LÍMITE: 1 cambio de correo cada 7 días
         if (!$this->canChangeProfileData($_SESSION['user_id'], 'email', 1, 7)) {
             return ['success' => false, 'message' => 'Solo puedes cambiar tu correo electrónico 1 vez cada 7 días.'];
         }
@@ -279,7 +259,6 @@ class SettingsServices {
             return ['success' => false, 'message' => 'El formato del correo electrónico no es válido.'];
         }
 
-        // Verificar si existe otro usuario con ese email
         $stmt = $this->pdo->prepare("SELECT id FROM users WHERE email = ? AND id != ?");
         $stmt->execute([$email, $_SESSION['user_id']]);
         if ($stmt->rowCount() > 0) {
@@ -291,12 +270,10 @@ class SettingsServices {
         $stmtUpd = $this->pdo->prepare("UPDATE users SET email = ? WHERE id = ?");
         if ($stmtUpd->execute([$email, $_SESSION['user_id']])) {
             
-            // GUARDAR EN EL HISTORIAL (LOG)
             $this->logProfileChange($_SESSION['user_id'], 'email', $oldEmail, $email);
 
             $_SESSION['user_email'] = $email;
             
-            // Destruir bandera de actualización por seguridad tras concretar
             unset($_SESSION['can_update_email_expires']);
 
             return [
@@ -314,7 +291,6 @@ class SettingsServices {
             return ['success' => false, 'message' => 'Sesión no válida.'];
         }
 
-        // --- RATE LIMITING: Máximo 20 cambios de preferencia cada 5 minutos ---
         $rateCheck = $this->checkRateLimit('update_preferences', 20, 5, "Has cambiado tus preferencias demasiadas veces. Por favor espera {minutes} minutos.");
         if (!$rateCheck['allowed']) {
             return ['success' => false, 'message' => $rateCheck['message']];
@@ -329,7 +305,6 @@ class SettingsServices {
             return ['success' => false, 'message' => 'Preferencia no válida.'];
         }
 
-        // Sanitización dependiendo del tipo de preferencia
         if ($key === 'open_links_new_tab' || $key === 'extended_alerts') {
             $value = ($value === '1' || $value === true || $value === 1) ? 1 : 0;
         }
@@ -337,16 +312,96 @@ class SettingsServices {
         $stmt = $this->pdo->prepare("UPDATE user_preferences SET {$key} = ? WHERE user_id = ?");
         
         if ($stmt->execute([$value, $_SESSION['user_id']])) {
-            // Actualizar la sesión en tiempo real
             $_SESSION['user_prefs'][$key] = $value;
-            
-            // --- REGISTRAR EL INTENTO ---
             $this->recordAttempt('update_preferences', 20, 5);
-            
             return ['success' => true, 'message' => 'Preferencia guardada.'];
         }
 
         return ['success' => false, 'message' => 'Error al guardar la preferencia.'];
+    }
+    
+    // =========================================================================
+    // --- NUEVO: SISTEMA DE SEGURIDAD (CAMBIO DE CONTRASEÑA) ---
+    // =========================================================================
+
+    public function verifyCurrentPassword($data) {
+        if (!isset($_SESSION['user_id'])) {
+            return ['success' => false, 'message' => 'Sesión no válida.'];
+        }
+
+        $rateCheck = $this->checkRateLimit('verify_current_password', 5, 15);
+        if (!$rateCheck['allowed']) {
+            return ['success' => false, 'message' => $rateCheck['message']];
+        }
+
+        $currentPassword = trim($data['current_password'] ?? '');
+
+        if (empty($currentPassword)) {
+            return ['success' => false, 'message' => 'La contraseña es obligatoria.'];
+        }
+
+        $stmt = $this->pdo->prepare("SELECT password FROM users WHERE id = ?");
+        $stmt->execute([$_SESSION['user_id']]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($user && password_verify($currentPassword, $user['password'])) {
+            $this->clearRateLimit('verify_current_password');
+            
+            // Asignamos bandera temporal válida por 15 minutos en sesión
+            $_SESSION['can_change_password_expires'] = time() + (15 * 60);
+
+            return ['success' => true, 'message' => 'Identidad verificada.'];
+        }
+
+        $this->recordAttempt('verify_current_password', 5, 15);
+        return ['success' => false, 'message' => 'La contraseña actual es incorrecta.'];
+    }
+
+    public function updatePassword($data) {
+        if (!isset($_SESSION['user_id'])) {
+            return ['success' => false, 'message' => 'Sesión no válida.'];
+        }
+
+        // Bloqueo estricto: Si la sesión expiró o se saltaron el paso 1
+        if (empty($_SESSION['can_change_password_expires']) || $_SESSION['can_change_password_expires'] < time()) {
+            return ['success' => false, 'message' => 'Por seguridad, debes verificar tu contraseña actual primero o la sesión ha expirado.'];
+        }
+
+        $rateCheck = $this->checkRateLimit('update_password', 5, 15);
+        if (!$rateCheck['allowed']) {
+            return ['success' => false, 'message' => $rateCheck['message']];
+        }
+
+        $newPassword = trim($data['new_password'] ?? '');
+        $confirmPassword = trim($data['confirm_password'] ?? '');
+
+        if (empty($newPassword) || empty($confirmPassword)) {
+            return ['success' => false, 'message' => 'Todos los campos son obligatorios.'];
+        }
+
+        if ($newPassword !== $confirmPassword) {
+            return ['success' => false, 'message' => 'Las contraseñas no coinciden.'];
+        }
+
+        $passLen = strlen($newPassword);
+        if ($passLen < 8 || $passLen > 64) {
+            return ['success' => false, 'message' => 'La contraseña debe tener entre 8 y 64 caracteres.'];
+        }
+
+        $hashedPassword = password_hash($newPassword, PASSWORD_BCRYPT);
+
+        $stmt = $this->pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
+        if ($stmt->execute([$hashedPassword, $_SESSION['user_id']])) {
+            
+            // Retiramos los permisos
+            unset($_SESSION['can_change_password_expires']);
+            $this->clearRateLimit('update_password');
+
+            return ['success' => true, 'message' => 'Contraseña actualizada correctamente.'];
+        }
+
+        $this->recordAttempt('update_password', 5, 15);
+        return ['success' => false, 'message' => 'Hubo un error al actualizar tu contraseña.'];
     }
     
 
@@ -354,11 +409,8 @@ class SettingsServices {
     /* MÉTODOS PRIVADOS PARA LIMITACIÓN Y REGISTRO DE CAMBIOS DE PERFIL (LOG)    */
     /* ========================================================================= */
 
-    /**
-     * Revisa si el usuario tiene permitido hacer un cambio en base a un límite de tiempo.
-     */
     private function canChangeProfileData($userId, $changeType, $maxAttempts, $days) {
-        $days = (int)$days; // Seguridad para parsear explícitamente a número
+        $days = (int)$days; 
         $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM profile_changes_log WHERE user_id = ? AND change_type = ? AND created_at >= DATE_SUB(NOW(), INTERVAL $days DAY)");
         $stmt->execute([$userId, $changeType]);
         
@@ -367,19 +419,11 @@ class SettingsServices {
         return $count < $maxAttempts;
     }
 
-    /**
-     * Guarda el cambio en el historial de la base de datos de manera silenciosa.
-     */
     private function logProfileChange($userId, $changeType, $oldValue, $newValue) {
         $ip = $this->getIpAddress();
         $stmt = $this->pdo->prepare("INSERT INTO profile_changes_log (user_id, change_type, old_value, new_value, ip_address) VALUES (?, ?, ?, ?, ?)");
         $stmt->execute([$userId, $changeType, $oldValue, $newValue, $ip]);
     }
-
-
-    /* ========================================================================= */
-    /* MÉTODOS PRIVADOS PARA LIMITACIÓN DE TASA (RATE LIMITING DE ERRORES/LOGIN) */
-    /* ========================================================================= */
 
     private function getIpAddress() {
         if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
@@ -402,7 +446,6 @@ class SettingsServices {
             if ($limit['blocked_until'] && strtotime($limit['blocked_until']) > time()) {
                 $remainingMinutes = ceil((strtotime($limit['blocked_until']) - time()) / 60);
                 
-                // Si existe un mensaje personalizado, reemplazamos el comodín {minutes}, de lo contrario damos el por defecto.
                 $msg = $customMsg 
                     ? str_replace('{minutes}', $remainingMinutes, $customMsg)
                     : "Has enviado demasiados códigos. Por seguridad, por favor espera {$remainingMinutes} minutos.";

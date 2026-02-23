@@ -81,7 +81,8 @@ $isAuthRoute = (strpos($currentView, 'auth/') === 0);
 $protectedSettings = [
     'settings/your-profile.php',
     'settings/security.php',
-    'settings/accessibility.php'
+    'settings/accessibility.php',
+    'settings/change-password.php' // <-- NUEVO: RUTA PROTEGIDA
 ];
 
 $redirectUrl = null;

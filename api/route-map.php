@@ -19,7 +19,11 @@ return [
     'settings.verify_email_code'  => ['controller' => 'App\Api\Controllers\SettingsController', 'action' => 'verify_email_code'],
     'settings.update_email'       => ['controller' => 'App\Api\Controllers\SettingsController', 'action' => 'update_email'],
     
-    // --- NUEVO: RUTA PARA PREFERENCIAS ---
-    'settings.update_preferences' => ['controller' => 'App\Api\Controllers\SettingsController', 'action' => 'update_preferences']
+    // --- RUTAS PREFERENCIAS ---
+    'settings.update_preferences' => ['controller' => 'App\Api\Controllers\SettingsController', 'action' => 'update_preferences'],
+    
+    // --- NUEVAS RUTAS SEGURIDAD ---
+    'settings.verify_current_password' => ['controller' => 'App\Api\Controllers\SettingsController', 'action' => 'verify_current_password'],
+    'settings.update_password'         => ['controller' => 'App\Api\Controllers\SettingsController', 'action' => 'update_password']
 ];
 ?>

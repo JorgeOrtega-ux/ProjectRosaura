@@ -39,7 +39,6 @@ export class ProfileController {
                 this.saveUsername(btnSaveUsername);
             }
 
-            // Nueva acción interceptada desde HTML para pedir código del email en lugar de abrir la vista de una
             const btnRequestEmail = e.target.closest('[data-action="requestEmailUpdate"]');
             if (btnRequestEmail) {
                 this.handleEmailUpdateRequest();
@@ -49,6 +48,17 @@ export class ProfileController {
             if (btnSaveEmail) {
                 this.saveEmail(btnSaveEmail);
             }
+
+            // --- NUEVOS: EVENTOS DE SEGURIDAD (CONTRASEÑA) ---
+            const btnVerifyPass = e.target.closest('[data-action="submitVerifyCurrentPassword"]');
+            if (btnVerifyPass) {
+                this.verifyCurrentPassword(btnVerifyPass);
+            }
+
+            const btnUpdatePass = e.target.closest('[data-action="submitUpdatePassword"]');
+            if (btnUpdatePass) {
+                this.updatePassword(btnUpdatePass);
+            }
         });
 
         document.addEventListener('change', (e) => {
@@ -57,7 +67,6 @@ export class ProfileController {
             }
         });
 
-        // Formato para el diálogo de verificación de correo
         document.addEventListener('input', (e) => {
             if (e.target && e.target.id === 'dialog_email_code') {
                 let val = e.target.value.replace(/\D/g, ''); 
@@ -190,7 +199,6 @@ export class ProfileController {
     async deleteAvatar(btn) {
         const isConfirmed = await window.dialogSystem.show('confirmDeleteAvatar');
         
-        // Ahora requires.confirmed porque devuelve un objeto
         if (!isConfirmed.confirmed) return;
 
         this.setButtonLoading(btn);
@@ -242,19 +250,14 @@ export class ProfileController {
     }
 
     async handleEmailUpdateRequest() {
-        // 1. Mostrar diálogo de carga
         window.dialogSystem.show('loadingEmailCode');
 
-        // 2. Pedir enviar código
         const res = await this.api.post(ApiRoutes.Settings.RequestEmailCode);
         
-        // 3. Ocultar el diálogo de carga forzosamente y esperar a que las animaciones terminen
         window.dialogSystem.closeCurrent(false);
         await new Promise(resolve => setTimeout(resolve, 350));
 
         if (res.success) {
-            
-            // LÓGICA ANTI-BUCLES: Si el backend informa que ya estaba autorizado, abrimos la vista y detenemos el modal
             if (res.skip_verification) {
                 window.appInstance.toggleEditState('email');
                 return;
@@ -262,7 +265,6 @@ export class ProfileController {
 
             this.showMessage(res.message, 'success');
 
-            // 4. Mostrar input para capturar el código enviado
             const verifyDialog = await window.dialogSystem.show('verifyEmailCode');
             
             if (verifyDialog.confirmed) {
@@ -272,13 +274,10 @@ export class ProfileController {
                     return;
                 }
 
-                // 5. Validar en API
                 const verifyRes = await this.api.post(ApiRoutes.Settings.VerifyEmailCode, { code });
                 
                 if (verifyRes.success) {
                     this.showMessage(verifyRes.message, 'success');
-                    
-                    // 6. Finalmente, desatar la vista de Edición del HTML
                     window.appInstance.toggleEditState('email');
                 } else {
                     this.showMessage(verifyRes.message, 'error');
@@ -311,6 +310,83 @@ export class ProfileController {
             document.getElementById('display-email').textContent = result.new_email;
             input.setAttribute('data-original-value', result.new_email);
             window.appInstance.toggleEditState('email');
+        } else {
+            this.showMessage(result.message, 'error');
+        }
+    }
+
+    // ==========================================
+    // --- LÓGICA DE ACTUALIZAR CONTRASEÑA ---
+    // ==========================================
+    async verifyCurrentPassword(btn) {
+        const input = document.getElementById('cp_current_password');
+        if (!input) return;
+
+        const val = input.value.trim();
+        if (val === '') {
+            this.showMessage('Ingresa tu contraseña actual.', 'error');
+            return;
+        }
+
+        this.setButtonLoading(btn);
+        
+        const result = await this.api.post(ApiRoutes.Settings.VerifyCurrentPassword, { current_password: val });
+        this.restoreButton(btn);
+
+        if (result.success) {
+            // Ocultamos PASO 1 y mostramos PASO 2 de manera segura
+            document.getElementById('step-1-current-password').classList.replace('active', 'disabled');
+            document.getElementById('step-2-new-password').classList.replace('disabled', 'active');
+            
+            // Focuseamos para mejorar usabilidad
+            setTimeout(() => {
+                const nextInput = document.getElementById('cp_new_password');
+                if (nextInput) nextInput.focus();
+            }, 50);
+
+        } else {
+            this.showMessage(result.message, 'error');
+        }
+    }
+
+    async updatePassword(btn) {
+        const newPass = document.getElementById('cp_new_password');
+        const confirmPass = document.getElementById('cp_confirm_password');
+        if (!newPass || !confirmPass) return;
+
+        const valNew = newPass.value;
+        const valConfirm = confirmPass.value;
+
+        if (valNew !== valConfirm) {
+            this.showMessage('Las contraseñas no coinciden.', 'error');
+            return;
+        }
+
+        if (valNew.length < 8 || valNew.length > 64) {
+            this.showMessage('La contraseña debe tener entre 8 y 64 caracteres.', 'error');
+            return;
+        }
+
+        this.setButtonLoading(btn);
+        
+        const data = {
+            new_password: valNew,
+            confirm_password: valConfirm
+        };
+
+        const result = await this.api.post(ApiRoutes.Settings.UpdatePassword, data);
+        this.restoreButton(btn);
+
+        if (result.success) {
+            this.showMessage(result.message, 'success');
+            // Redirigir hacia la pantalla base de seguridad tras cambiar la contra
+            setTimeout(() => {
+                if (window.spaRouter) {
+                    window.spaRouter.navigate('/ProjectRosaura/settings/security');
+                } else {
+                    window.location.href = '/ProjectRosaura/settings/security';
+                }
+            }, 1000);
         } else {
             this.showMessage(result.message, 'error');
         }

@@ -16,6 +16,9 @@ return [
     '/settings/your-profile' => ['view' => 'settings/your-profile.php'],
     '/settings/security' => ['view' => 'settings/security.php'],
     '/settings/accessibility' => ['view' => 'settings/accessibility.php'],
-    '/settings/guest' => ['view' => 'settings/guest.php']
+    '/settings/guest' => ['view' => 'settings/guest.php'],
+    
+    // --- NUEVA RUTA: CAMBIAR CONTRASEÑA ---
+    '/settings/change-password' => ['view' => 'settings/change-password.php']
 ];
 ?>

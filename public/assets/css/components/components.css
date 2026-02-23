@@ -1126,3 +1126,7 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
         width: 100%; 
     }
 }
+
+.component-card--grouped.disabled {
+    display: none;
+}

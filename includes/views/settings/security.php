@@ -2,8 +2,8 @@
     <div class="component-wrapper">
         
         <div class="component-header-card">
-            <h1 class="component-page-title">Inicio de sesión y seguridad</h1>
-            <p class="component-page-description">Gestiona tus contraseñas, métodos de acceso y la seguridad integral de tu cuenta.</p>
+            <h1 class="component-page-title"><?php echo __('sec_title'); ?></h1>
+            <p class="component-page-description"><?php echo __('sec_desc'); ?></p>
         </div>
 
         <div class="component-card--grouped">
@@ -19,7 +19,7 @@
                     </div>
                 </div>
                 <div class="component-card__actions component-card__actions--end">
-                    <button type="button" class="component-button component-button--h36">Cambiar contraseña</button>
+                    <button type="button" class="component-button component-button--h36" data-nav="/ProjectRosaura/settings/change-password">Cambiar contraseña</button>
                 </div>
             </div>
             
