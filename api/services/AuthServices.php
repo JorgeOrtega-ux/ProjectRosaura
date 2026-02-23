@@ -207,11 +207,20 @@ class AuthServices {
             return ['success' => false, 'message' => 'Todos los campos son obligatorios.'];
         }
 
+        // 1. Verificación de Límite de Tasa (5 intentos, bloqueo de 15 minutos)
+        $rateCheck = $this->checkRateLimit('login', 5, 15);
+        if (!$rateCheck['allowed']) {
+            return ['success' => false, 'message' => $rateCheck['message']];
+        }
+
         $stmt = $this->pdo->prepare("SELECT * FROM users WHERE email = ?");
         $stmt->execute([$email]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($user && password_verify($password, $user['password'])) {
+            // Login exitoso, limpiamos los intentos fallidos
+            $this->clearRateLimit('login');
+
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['user_uuid'] = $user['uuid'];
             $_SESSION['user_name'] = $user['username'];
@@ -221,6 +230,9 @@ class AuthServices {
 
             return ['success' => true, 'message' => 'Inicio de sesión exitoso.'];
         }
+
+        // Login fallido, registramos el intento
+        $this->recordAttempt('login', 5, 15);
 
         return ['success' => false, 'message' => 'Credenciales incorrectas.'];
     }
@@ -238,12 +250,21 @@ class AuthServices {
             return ['success' => false, 'message' => 'El correo es obligatorio.'];
         }
 
+        // 1. Verificación de Límite de Tasa (3 intentos, bloqueo de 30 minutos)
+        // Esto ayuda a prevenir la enumeración de correos y envío de spam
+        $rateCheck = $this->checkRateLimit('forgot_password', 3, 30);
+        if (!$rateCheck['allowed']) {
+            return ['success' => false, 'message' => $rateCheck['message']];
+        }
+
         // Checar si el usuario existe
         $stmt = $this->pdo->prepare("SELECT username FROM users WHERE email = ?");
         $stmt->execute([$email]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$user) {
+            // Aunque falle, registramos el intento para evitar enumeración rápida
+            $this->recordAttempt('forgot_password', 3, 30);
             return ['success' => false, 'message' => 'El correo ingresado no existe.'];
         }
 
@@ -270,6 +291,8 @@ class AuthServices {
             $emailSent = $mailer->sendPasswordResetLink($email, $user['username'], $resetLink);
 
             if ($emailSent) {
+                // Registramos la acción exitosa como un intento para prevenir saturación del SMTP
+                $this->recordAttempt('forgot_password', 3, 30);
                 return ['success' => true, 'message' => 'Se ha enviado un correo con las instrucciones.'];
             } else {
                 return ['success' => false, 'message' => 'Error al enviar el correo electrónico. Inténtalo más tarde.'];
@@ -316,6 +339,75 @@ class AuthServices {
         }
 
         return ['success' => false, 'message' => 'Hubo un error al actualizar la contraseña.'];
+    }
+
+    /* ========================================================================= */
+    /* MÉTODOS PRIVADOS PARA LIMITACIÓN DE TASA (RATE LIMITING)                  */
+    /* ========================================================================= */
+
+    private function getIpAddress() {
+        if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
+            $ip = $_SERVER['HTTP_CLIENT_IP'];
+        } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+            $ip = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0];
+        } else {
+            $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+        }
+        return trim($ip);
+    }
+
+    private function checkRateLimit($action, $maxAttempts, $lockoutMinutes) {
+        $ip = $this->getIpAddress();
+        $stmt = $this->pdo->prepare("SELECT attempts, blocked_until FROM rate_limits WHERE ip_address = ? AND action = ?");
+        $stmt->execute([$ip, $action]);
+        $limit = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($limit) {
+            // Si hay un bloqueo activo y la fecha de expiración aún no llega
+            if ($limit['blocked_until'] && strtotime($limit['blocked_until']) > time()) {
+                $remainingMinutes = ceil((strtotime($limit['blocked_until']) - time()) / 60);
+                return [
+                    'allowed' => false, 
+                    'message' => "Demasiados intentos. Por seguridad, por favor espera {$remainingMinutes} minutos e inténtalo de nuevo."
+                ];
+            }
+        }
+        
+        return ['allowed' => true];
+    }
+
+    private function recordAttempt($action, $maxAttempts, $lockoutMinutes) {
+        $ip = $this->getIpAddress();
+        $stmt = $this->pdo->prepare("SELECT attempts, blocked_until FROM rate_limits WHERE ip_address = ? AND action = ?");
+        $stmt->execute([$ip, $action]);
+        $limit = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($limit) {
+            // Si ya pasó el tiempo de bloqueo, reiniciamos el contador a 1
+            if ($limit['blocked_until'] && strtotime($limit['blocked_until']) <= time()) {
+                $attempts = 1;
+                $blockedUntil = ($attempts >= $maxAttempts) ? date('Y-m-d H:i:s', strtotime("+{$lockoutMinutes} minutes")) : null;
+            } else {
+                $attempts = $limit['attempts'] + 1;
+                $blockedUntil = ($attempts >= $maxAttempts) ? date('Y-m-d H:i:s', strtotime("+{$lockoutMinutes} minutes")) : null;
+            }
+
+            $updateStmt = $this->pdo->prepare("UPDATE rate_limits SET attempts = ?, blocked_until = ? WHERE ip_address = ? AND action = ?");
+            $updateStmt->execute([$attempts, $blockedUntil, $ip, $action]);
+        } else {
+            // Primer intento
+            $attempts = 1;
+            $blockedUntil = ($attempts >= $maxAttempts) ? date('Y-m-d H:i:s', strtotime("+{$lockoutMinutes} minutes")) : null;
+            
+            $insertStmt = $this->pdo->prepare("INSERT INTO rate_limits (ip_address, action, attempts, blocked_until) VALUES (?, ?, ?, ?)");
+            $insertStmt->execute([$ip, $action, $attempts, $blockedUntil]);
+        }
+    }
+
+    private function clearRateLimit($action) {
+        $ip = $this->getIpAddress();
+        $stmt = $this->pdo->prepare("DELETE FROM rate_limits WHERE ip_address = ? AND action = ?");
+        $stmt->execute([$ip, $action]);
     }
 }
 ?>

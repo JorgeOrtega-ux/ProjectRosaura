@@ -28,3 +28,13 @@ CREATE TABLE IF NOT EXISTS verification_codes (
     INDEX (identifier),
     INDEX (code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS rate_limits (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    ip_address VARCHAR(45) NOT NULL,
+    action VARCHAR(50) NOT NULL COMMENT 'e.g., login, forgot_password',
+    attempts INT DEFAULT 1,
+    last_attempt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    blocked_until DATETIME DEFAULT NULL,
+    UNIQUE KEY ip_action (ip_address, action)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
