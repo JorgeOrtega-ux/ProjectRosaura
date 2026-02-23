@@ -1,6 +1,9 @@
 <?php 
 // includes/modules/moduleMainOptions.php
 $isLoggedIn = isset($_SESSION['user_id']);
+$userRole = $_SESSION['user_role'] ?? 'user';
+$isAdmin = ($userRole === 'founder' || $userRole === 'administrator');
+
 // 1. Asignamos la ruta final directamente para que coincida con el backend
 $settingsLink = $isLoggedIn ? '/ProjectRosaura/settings/your-profile' : '/ProjectRosaura/settings/guest';
 ?>
@@ -10,6 +13,19 @@ $settingsLink = $isLoggedIn ? '/ProjectRosaura/settings/your-profile' : '/Projec
         <div class="pill-container"><div class="drag-handle"></div></div>
         
         <div class="component-menu-list">
+            
+            <?php if ($isLoggedIn && $isAdmin): ?>
+            <div class="component-menu-link component-menu-link--bordered nav-item" data-nav="/ProjectRosaura/admin">
+                <div class="component-menu-link-icon">
+                    <span class="material-symbols-rounded">admin_panel_settings</span>
+                </div>
+                <div class="component-menu-link-text">
+                    <span>Panel de administración</span>
+                </div>
+            </div>
+            <div class="component-menu-divider"></div>
+            <?php endif; ?>
+
             <div class="component-menu-link nav-item" data-nav="<?php echo $settingsLink; ?>">
                 <div class="component-menu-link-icon">
                     <span class="material-symbols-rounded">settings</span>

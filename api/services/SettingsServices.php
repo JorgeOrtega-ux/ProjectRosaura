@@ -92,10 +92,8 @@ class SettingsServices {
             return ['success' => false, 'message' => 'Sesión no válida.'];
         }
 
-        // LÍMITE: Al eliminar la foto, se cuenta como un cambio. (Límite 3 al día)
-        if (!$this->canChangeProfileData($_SESSION['user_id'], 'avatar', 3, 1)) {
-            return ['success' => false, 'message' => 'Has alcanzado el límite de 3 cambios de foto de perfil por día.'];
-        }
+        // Se eliminó la validación de límite de tasa aquí. 
+        // El usuario siempre tiene permitido eliminar y restaurar su foto por defecto sin bloqueo.
 
         $oldPic = $_SESSION['user_pic'] ?? '';
         if (!empty($oldPic) && strpos($oldPic, 'uploaded/') !== false) {
@@ -311,7 +309,6 @@ class SettingsServices {
         return ['success' => false, 'message' => 'Error al actualizar el correo en base de datos.'];
     }
 
-    // --- NUEVO: Servicio para actualizar preferencias ---
     public function updatePreferences($data) {
         if (!isset($_SESSION['user_id'])) {
             return ['success' => false, 'message' => 'Sesión no válida.'];
