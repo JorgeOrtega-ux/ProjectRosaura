@@ -24,8 +24,11 @@ export class SpaRouter {
                 if (module && module.classList.contains('active')) {
                     module.classList.remove('active');
                     module.classList.add('disabled');
-                    const panel = module.querySelector('.component-menu');
-                    if (panel) panel.removeAttribute('style');
+                    
+                    // FIX: Solo resetear el transform, no eliminar todo el atributo style
+                    module.querySelectorAll('.component-menu').forEach(panel => {
+                        panel.style.transform = '';
+                    });
                 }
 
                 const url = navTarget.dataset.nav;

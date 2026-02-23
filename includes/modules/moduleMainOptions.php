@@ -8,11 +8,11 @@ $isAdmin = ($userRole === 'founder' || $userRole === 'administrator');
 $settingsLink = $isLoggedIn ? '/ProjectRosaura/settings/your-profile' : '/ProjectRosaura/settings/guest';
 ?>
 <div class="component-module component-module--dropdown disabled" data-module="moduleMainOptions">
-    <div class="component-menu component-menu--w265 component-menu--h-auto">
+    <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding">
         
         <div class="pill-container"><div class="drag-handle"></div></div>
         
-        <div class="component-menu-list">
+        <div class="component-menu-list component-menu-list--scrollable">
             
             <?php if ($isLoggedIn && $isAdmin): ?>
             <div class="component-menu-link component-menu-link--bordered nav-item" data-nav="/ProjectRosaura/admin">

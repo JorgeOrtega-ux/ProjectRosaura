@@ -274,6 +274,7 @@
     flex-direction: column;
     overflow-y: auto; 
     scrollbar-width: thin;
+    padding: 8px;
 }
 
 .component-menu-bottom {
@@ -334,6 +335,7 @@
 .component-menu-divider {
     width: 100%;
     height: 1px;
+    flex-shrink: 0;
     background-color: #00000020;
     border-radius: 1px;
 }
@@ -726,11 +728,8 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
 
     .component-module--sidebar .component-menu {
         width: 100%; 
-        border-top-left-radius: 0; 
-        border-top-right-radius: 0; 
-        border-left: none; 
-        border-right: none;
-        border-top: none;
+        border-radius: 0; 
+        border: none;
     }
 
     .component-module--dropdown {
@@ -758,6 +757,7 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
         transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
         will-change: transform;
         padding-top: 0; /* Eliminamos el padding top superior en móvil (sin !important) */
+        max-height: 90vh;
     }
 
     .component-module--dropdown.disabled .component-menu {
