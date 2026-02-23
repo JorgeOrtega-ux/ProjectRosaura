@@ -48,16 +48,21 @@ export class DialogSystem {
             overlay.appendChild(box);
             this.container.appendChild(overlay);
 
-            // Trigger para la animación CSS
+            // Trigger para la animación CSS inicial (Entrada)
             requestAnimationFrame(() => overlay.classList.add('active'));
 
-            // Funcionalidad de cierre
+            // Funcionalidad de cierre centralizada
             const closeDialog = (result) => {
+                // CORRECCIÓN: Limpiamos el estilo inline para devolverle el control al CSS 
+                // y permitir que la animación de salida se ejecute fluidamente.
+                box.style.transform = ''; 
+                
                 overlay.classList.remove('active');
+                
                 setTimeout(() => {
                     overlay.remove();
                     resolve(result); // Se resuelve la promesa con true/false
-                }, 300); // Mismo tiempo que la transición CSS
+                }, 300); // Mismo tiempo que la transición CSS (0.3s)
             };
 
             // Bind Botones
@@ -67,7 +72,7 @@ export class DialogSystem {
             if(btnConfirm) btnConfirm.addEventListener('click', () => closeDialog(true));
             if(btnCancel) btnCancel.addEventListener('click', () => closeDialog(false));
             
-            // Cerrar al dar click fuera (en el área oscura)
+            // Cerrar al dar click fuera (en el área oscura semitransparente)
             overlay.addEventListener('click', (e) => {
                 if (e.target === overlay) closeDialog(false);
             });
@@ -93,6 +98,8 @@ export class DialogSystem {
 
             isDragging = true;
             startY = e.clientY;
+            
+            // is-dragging quita el transition temporalmente para que siga el dedo instantáneamente
             overlay.classList.add('is-dragging');
             box.setPointerCapture(e.pointerId);
         });
@@ -110,6 +117,8 @@ export class DialogSystem {
         const endDrag = (e) => {
             if (!isDragging) return;
             isDragging = false;
+            
+            // Devolvemos las transiciones CSS al contenedor
             overlay.classList.remove('is-dragging');
             
             if (box.hasPointerCapture(e.pointerId)) {
@@ -120,9 +129,10 @@ export class DialogSystem {
             if (currentDiff > box.offsetHeight * 0.35) {
                 closeCallback();
             } else {
-                // Rebotar al lugar original
+                // Rebotar al lugar original si no superó el límite
                 box.style.transform = '';
             }
+            
             currentDiff = 0;
         };
 
