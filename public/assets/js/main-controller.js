@@ -143,6 +143,46 @@ export class MainController {
         }
     }
 
+    // ==========================================
+    // MÉTODO GLOBAL DE TOAST NOTIFICATIONS
+    // ==========================================
+    showToast(message, type = 'success') {
+        const container = document.getElementById('toast-container');
+        if (!container) return;
+
+        // Crear elemento DOM para el toast
+        const toast = document.createElement('div');
+        toast.className = `component-toast component-toast--${type}`;
+
+        // Determinar icono material symbols según el tipo
+        let iconName = type === 'success' ? 'check_circle' : 'error';
+
+        toast.innerHTML = `
+            <div class="component-toast-icon">
+                <span class="material-symbols-rounded">${iconName}</span>
+            </div>
+            <div class="component-toast-text">${message}</div>
+        `;
+
+        container.appendChild(toast);
+
+        // Disparar reflow para habilitar la animación CSS
+        requestAnimationFrame(() => {
+            toast.classList.add('show');
+        });
+
+        // Eliminar el toast automáticamente después de 4 segundos
+        setTimeout(() => {
+            toast.classList.remove('show');
+            toast.classList.add('hide');
+            
+            // Esperar a que la transición termine (0.3s) antes de quitar el elemento del DOM
+            setTimeout(() => {
+                toast.remove();
+            }, 300);
+        }, 4000);
+    }
+
     initBottomSheets() {
         const modules = document.querySelectorAll('.component-module--dropdown');
 

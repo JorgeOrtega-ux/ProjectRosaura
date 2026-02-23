@@ -59,26 +59,14 @@ export class ProfileController {
     }
 
     showMessage(msg, type = 'error') {
-        const errBox = document.getElementById('profile-error-message');
-        const sucBox = document.getElementById('profile-success-message');
-        if (!errBox || !sucBox) return;
-
-        errBox.classList.remove('active');
-        sucBox.classList.remove('active');
-
-        if (type === 'error') {
-            errBox.textContent = msg;
-            errBox.classList.add('active');
+        // En lugar de renderizar en divs estáticos de la vista de perfil,
+        // ahora disparamos el Toast Global
+        if (window.appInstance && typeof window.appInstance.showToast === 'function') {
+            window.appInstance.showToast(msg, type);
         } else {
-            sucBox.textContent = msg;
-            sucBox.classList.add('active');
+            // Un respaldo en caso de que appInstance no haya cargado por alguna razón
+            alert(msg);
         }
-        
-        // Quitar mensaje a los 5 segundos
-        setTimeout(() => {
-            errBox.classList.remove('active');
-            sucBox.classList.remove('active');
-        }, 5000);
     }
 
     setButtonLoading(btn) {

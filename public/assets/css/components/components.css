@@ -843,3 +843,96 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
 .component-alert-success.active {
     display: block;
 }
+
+/* ========================================= */
+/* --- COMPONENT: TOAST NOTIFICATIONS ---    */
+/* ========================================= */
+.toast-container {
+    position: fixed;
+    bottom: 24px;
+    left: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    z-index: 9999;
+    pointer-events: none; /* Permite clickear detrás si está vacío */
+}
+
+.component-toast {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 280px;
+    max-width: 350px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    background-color: #ffffff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    pointer-events: auto; /* Restaura los eventos de puntero sobre el toast */
+    
+    /* Estado inicial invisible (fuera de pantalla izquierda) */
+    transform: translateX(-120%);
+    opacity: 0;
+    transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.3s ease;
+}
+
+/* Clases dinámicas añadidas vía JavaScript */
+.component-toast.show {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.component-toast.hide {
+    transform: translateX(-120%);
+    opacity: 0;
+}
+
+.component-toast-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.component-toast-text {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 500;
+    color: #111111;
+}
+
+/* Variantes de Toast (Éxito y Error) */
+.component-toast--success {
+    border-left: 4px solid #16a34a;
+}
+.component-toast--success .component-toast-icon {
+    color: #16a34a;
+}
+
+.component-toast--error {
+    border-left: 4px solid #d32f2f;
+}
+.component-toast--error .component-toast-icon {
+    color: #d32f2f;
+}
+
+/* Responsividad en Móviles (El Toast sale desde abajo) */
+@media (max-width: 600px) {
+    .toast-container {
+        left: 16px;
+        right: 16px;
+        bottom: 16px;
+        align-items: center;
+    }
+    .component-toast {
+        width: 100%;
+        max-width: 100%;
+        transform: translateY(120%);
+    }
+    .component-toast.show {
+        transform: translateY(0);
+    }
+    .component-toast.hide {
+        transform: translateY(120%);
+    }
+}

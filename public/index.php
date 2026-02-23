@@ -116,6 +116,8 @@ if ($isSpaRequest) {
         </div>
     </div>
 
+    <div id="toast-container" class="toast-container"></div>
+
     <script type="module" src="assets/js/app-init.js"></script>
 </body>
 
