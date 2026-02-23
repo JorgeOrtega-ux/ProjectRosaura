@@ -50,7 +50,7 @@ $formattedAvatar = '/ProjectRosaura/' . ltrim($userPic, '/');
                         </div>
                     </div>
                     <div class="component-card__actions component-card__actions--stretch">
-                        <button type="button" class="component-button component-button--h34" onclick="toggleEdit('username')">Editar</button>
+                        <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="username">Editar</button>
                     </div>
                 </div>
 
@@ -63,7 +63,7 @@ $formattedAvatar = '/ProjectRosaura/' . ltrim($userPic, '/');
                                     <input type="text" id="input-username" class="component-input-field component-input-field--simple" value="<?php echo htmlspecialchars($userName); ?>" placeholder="Ingresa tu usuario">
                                 </div>
                                 <div class="component-card__actions component-card__actions--stretch">
-                                    <button type="button" class="component-button component-button--h34" onclick="toggleEdit('username')">Cancelar</button>
+                                    <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="username">Cancelar</button>
                                     <button type="button" class="component-button component-button--h34 component-button--dark">Guardar</button>
                                 </div>
                             </div>
@@ -85,7 +85,7 @@ $formattedAvatar = '/ProjectRosaura/' . ltrim($userPic, '/');
                         </div>
                     </div>
                     <div class="component-card__actions component-card__actions--stretch">
-                        <button type="button" class="component-button component-button--h34" onclick="toggleEdit('email')">Editar</button>
+                        <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="email">Editar</button>
                     </div>
                 </div>
 
@@ -98,7 +98,7 @@ $formattedAvatar = '/ProjectRosaura/' . ltrim($userPic, '/');
                                     <input type="email" id="input-email" class="component-input-field component-input-field--simple" value="<?php echo htmlspecialchars($userEmail); ?>" placeholder="Ingresa tu correo">
                                 </div>
                                 <div class="component-card__actions component-card__actions--stretch">
-                                    <button type="button" class="component-button component-button--h34" onclick="toggleEdit('email')">Cancelar</button>
+                                    <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="email">Cancelar</button>
                                     <button type="button" class="component-button component-button--h34 component-button--dark">Guardar</button>
                                 </div>
                             </div>
@@ -154,22 +154,3 @@ $formattedAvatar = '/ProjectRosaura/' . ltrim($userPic, '/');
 
     </div>
 </div>
-
-<script>
-    function toggleEdit(field) {
-        const viewBox = document.querySelector(`[data-state="${field}-view"]`);
-        const editBox = document.querySelector(`[data-state="${field}-edit"]`);
-        
-        if (viewBox.classList.contains('active')) {
-            // Se oculta la vista, se muestra la edición
-            viewBox.classList.replace('active', 'disabled');
-            editBox.classList.replace('disabled', 'active');
-            // Retardo para enfocar el input una vez que sea visible
-            setTimeout(() => document.getElementById('input-' + field).focus(), 50);
-        } else {
-            // Se oculta la edición, se muestra la vista
-            editBox.classList.replace('active', 'disabled');
-            viewBox.classList.replace('disabled', 'active');
-        }
-    }
-</script>

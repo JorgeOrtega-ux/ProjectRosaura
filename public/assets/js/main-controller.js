@@ -69,9 +69,13 @@ export class MainController {
                 } else if (action === 'toggleModuleMainOptions') {
                     this.toggleModule('moduleMainOptions');
                 } else if (action === 'toggleModuleLanguage') {
-                    this.toggleModule('moduleLanguage'); // Acción del nuevo dropdown
+                    this.toggleModule('moduleLanguage');
                 } else if (action === 'toggleMobileSearch') {
                     this.toggleMobileSearch();
+                } else if (action === 'toggleEditState') {
+                    // Acción global para alternar entre ver/editar en cualquier parte de la web
+                    const target = btn.getAttribute('data-target');
+                    if (target) this.toggleEditState(target);
                 }
                 return;
             }
@@ -103,6 +107,30 @@ export class MainController {
                 this.closeAllModules();
             }
         });
+    }
+
+    // Nuevo método global para los estados Ver/Editar
+    toggleEditState(field) {
+        const viewBox = document.querySelector(`[data-state="${field}-view"]`);
+        const editBox = document.querySelector(`[data-state="${field}-edit"]`);
+        
+        if (!viewBox || !editBox) return;
+
+        if (viewBox.classList.contains('active')) {
+            // Se oculta la vista, se muestra la edición
+            viewBox.classList.replace('active', 'disabled');
+            editBox.classList.replace('disabled', 'active');
+            
+            // Retardo para enfocar el input una vez que sea visible
+            setTimeout(() => {
+                const input = document.getElementById('input-' + field);
+                if (input) input.focus();
+            }, 50);
+        } else {
+            // Se oculta la edición, se muestra la vista
+            editBox.classList.replace('active', 'disabled');
+            viewBox.classList.replace('disabled', 'active');
+        }
     }
 
     initBottomSheets() {
