@@ -5,6 +5,7 @@ namespace App\Api\Services;
 
 use App\Config\Database;
 use App\Core\Utils;
+use App\Core\Mailer;
 use PDO;
 
 class SettingsServices {
@@ -53,7 +54,6 @@ class SettingsServices {
         $destPath = $uploadDir . $fileName;
 
         if (move_uploaded_file($file['tmp_name'], $destPath)) {
-            // Eliminar imagen anterior SI pertenece a la carpeta uploaded
             $oldPic = $_SESSION['user_pic'] ?? '';
             if (!empty($oldPic) && strpos($oldPic, 'uploaded/') !== false) {
                 $oldPath = __DIR__ . '/../../' . ltrim($oldPic, '/ProjectRosaura/');
@@ -83,7 +83,6 @@ class SettingsServices {
             return ['success' => false, 'message' => 'Sesión no válida.'];
         }
 
-        // Eliminar imagen actual SI pertenece a uploaded
         $oldPic = $_SESSION['user_pic'] ?? '';
         if (!empty($oldPic) && strpos($oldPic, 'uploaded/') !== false) {
             $oldPath = __DIR__ . '/../../' . ltrim($oldPic, '/ProjectRosaura/');
@@ -92,7 +91,6 @@ class SettingsServices {
             }
         }
 
-        // Generar nuevo avatar por defecto
         $newRelPath = Utils::generateProfilePicture($_SESSION['user_name'], $_SESSION['user_uuid']);
 
         if (!$newRelPath) {
@@ -123,7 +121,6 @@ class SettingsServices {
             return ['success' => false, 'message' => 'El nombre de usuario debe tener entre 3 y 32 caracteres.'];
         }
 
-        // Verificar si existe otro usuario con ese nombre
         $stmt = $this->pdo->prepare("SELECT id FROM users WHERE username = ? AND id != ?");
         $stmt->execute([$username, $_SESSION['user_id']]);
         if ($stmt->rowCount() > 0) {
@@ -143,9 +140,84 @@ class SettingsServices {
         return ['success' => false, 'message' => 'Error al actualizar el nombre.'];
     }
 
+    public function requestEmailCode() {
+        if (!isset($_SESSION['user_id'])) {
+            return ['success' => false, 'message' => 'Sesión no válida.'];
+        }
+
+        $email = $_SESSION['user_email'];
+
+        // PREVENCIÓN DE SPAM: Evitar enviar si ya hay uno activo para modificar el correo.
+        $stmt = $this->pdo->prepare("SELECT id FROM verification_codes WHERE identifier = ? AND code_type = 'email_update' AND expires_at > NOW()");
+        $stmt->execute([$email]);
+        if ($stmt->rowCount() > 0) {
+            return ['success' => true, 'message' => 'El código ya fue enviado a tu correo previamente.'];
+        }
+
+        $code = '';
+        for ($i = 0; $i < 12; $i++) {
+            $code .= mt_rand(0, 9);
+        }
+
+        $expiresAt = date('Y-m-d H:i:s', strtotime('+15 minutes'));
+        $payload = json_encode(['action' => 'email_update']);
+
+        $insertStmt = $this->pdo->prepare("INSERT INTO verification_codes (identifier, code_type, code, payload, expires_at) VALUES (?, 'email_update', ?, ?, ?)");
+        
+        if ($insertStmt->execute([$email, $code, $payload, $expiresAt])) {
+            $mailer = new Mailer();
+            $emailSent = $mailer->sendEmailUpdateCode($email, $_SESSION['user_name'], $code);
+
+            if ($emailSent) {
+                return ['success' => true, 'message' => 'Se ha enviado un código a tu correo actual.'];
+            } else {
+                return ['success' => false, 'message' => 'Error al enviar el correo electrónico. Inténtalo más tarde.'];
+            }
+        }
+
+        return ['success' => false, 'message' => 'Error interno al procesar la solicitud.'];
+    }
+
+    public function verifyEmailCode($data) {
+        if (!isset($_SESSION['user_id'])) {
+            return ['success' => false, 'message' => 'Sesión no válida.'];
+        }
+
+        $code = trim($data['code'] ?? '');
+        $code = str_replace('-', '', $code);
+        $email = $_SESSION['user_email'];
+
+        if (empty($code)) {
+            return ['success' => false, 'message' => 'El código es obligatorio.'];
+        }
+
+        $stmt = $this->pdo->prepare("SELECT id FROM verification_codes WHERE identifier = ? AND code_type = 'email_update' AND code = ? AND expires_at > NOW()");
+        $stmt->execute([$email, $code]);
+
+        if ($stmt->rowCount() > 0) {
+            $verification = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            // Eliminar token usado
+            $delStmt = $this->pdo->prepare("DELETE FROM verification_codes WHERE id = ?");
+            $delStmt->execute([$verification['id']]);
+
+            // Crear bandera en sesión que autorice cambiar el correo
+            $_SESSION['can_update_email'] = true;
+
+            return ['success' => true, 'message' => 'Identidad verificada. Ya puedes editar tu correo.'];
+        }
+
+        return ['success' => false, 'message' => 'El código ingresado es incorrecto o ha expirado.'];
+    }
+
     public function updateEmail($data) {
         if (!isset($_SESSION['user_id'])) {
             return ['success' => false, 'message' => 'Sesión no válida.'];
+        }
+
+        // SEGURIDAD: Verificar que el usuario pasó por el código de validación
+        if (empty($_SESSION['can_update_email']) || $_SESSION['can_update_email'] !== true) {
+            return ['success' => false, 'message' => 'Por seguridad, debes verificar tu identidad con el código enviado a tu correo primero.'];
         }
 
         $email = trim($data['email'] ?? '');
@@ -158,20 +230,24 @@ class SettingsServices {
         $stmt = $this->pdo->prepare("SELECT id FROM users WHERE email = ? AND id != ?");
         $stmt->execute([$email, $_SESSION['user_id']]);
         if ($stmt->rowCount() > 0) {
-            return ['success' => false, 'message' => 'Este correo electrónico ya está registrado.'];
+            return ['success' => false, 'message' => 'Este correo electrónico ya está registrado en otra cuenta.'];
         }
 
         $stmtUpd = $this->pdo->prepare("UPDATE users SET email = ? WHERE id = ?");
         if ($stmtUpd->execute([$email, $_SESSION['user_id']])) {
             $_SESSION['user_email'] = $email;
+            
+            // Destruir bandera de actualización por seguridad tras concretar
+            unset($_SESSION['can_update_email']);
+
             return [
                 'success' => true, 
-                'message' => 'Correo electrónico actualizado.',
+                'message' => 'Correo electrónico actualizado con éxito.',
                 'new_email' => $email
             ];
         }
 
-        return ['success' => false, 'message' => 'Error al actualizar el correo.'];
+        return ['success' => false, 'message' => 'Error al actualizar el correo en base de datos.'];
     }
 }
 ?>

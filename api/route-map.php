@@ -12,9 +12,11 @@ return [
     'auth.reset_password'  => ['controller' => 'App\Api\Controllers\AuthController', 'action' => 'reset_password'],
 
     // --- RUTAS DE CONFIGURACIÓN / PERFIL ---
-    'settings.update_avatar'   => ['controller' => 'App\Api\Controllers\SettingsController', 'action' => 'update_avatar'],
-    'settings.delete_avatar'   => ['controller' => 'App\Api\Controllers\SettingsController', 'action' => 'delete_avatar'],
-    'settings.update_username' => ['controller' => 'App\Api\Controllers\SettingsController', 'action' => 'update_username'],
-    'settings.update_email'    => ['controller' => 'App\Api\Controllers\SettingsController', 'action' => 'update_email']
+    'settings.update_avatar'      => ['controller' => 'App\Api\Controllers\SettingsController', 'action' => 'update_avatar'],
+    'settings.delete_avatar'      => ['controller' => 'App\Api\Controllers\SettingsController', 'action' => 'delete_avatar'],
+    'settings.update_username'    => ['controller' => 'App\Api\Controllers\SettingsController', 'action' => 'update_username'],
+    'settings.request_email_code' => ['controller' => 'App\Api\Controllers\SettingsController', 'action' => 'request_email_code'],
+    'settings.verify_email_code'  => ['controller' => 'App\Api\Controllers\SettingsController', 'action' => 'verify_email_code'],
+    'settings.update_email'       => ['controller' => 'App\Api\Controllers\SettingsController', 'action' => 'update_email']
 ];
 ?>

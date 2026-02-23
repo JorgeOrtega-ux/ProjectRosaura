@@ -5,8 +5,6 @@ namespace App\Core;
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
-// Al estar en el mismo namespace (App\Core) no es estrictamente necesario el "use App\Core\EmailTemplates;", 
-// pero la clase EmailTemplates ya está disponible gracias al Autoloader.
 
 class Mailer {
     private $mail;
@@ -36,7 +34,6 @@ class Mailer {
             $this->mail->isHTML(true);
             $this->mail->Subject = 'Código de Verificación - Project Rosaura';
             
-            // Usamos nuestra nueva clase centralizada para obtener el HTML
             $this->mail->Body = EmailTemplates::get('verification_code', [
                 'username' => $username,
                 'code' => $code
@@ -59,13 +56,34 @@ class Mailer {
             $this->mail->isHTML(true);
             $this->mail->Subject = 'Restablecer contraseña - Project Rosaura';
             
-            // Usamos nuestra nueva clase centralizada para obtener el HTML
             $this->mail->Body = EmailTemplates::get('password_reset', [
                 'username' => $username,
                 'resetLink' => $resetLink
             ]);
             
             $this->mail->AltBody = "Hola {$username},\n\nHaz recibido una solicitud para restablecer tu contraseña. Visita el siguiente enlace para crear una nueva: \n\n{$resetLink}\n\nEste enlace expira en 15 minutos.\n\nAtentamente,\nEl equipo de Project Rosaura";
+
+            return $this->mail->send();
+        } catch (Exception $e) {
+            error_log("Fallo al enviar correo a {$toEmail}: {$this->mail->ErrorInfo}");
+            return false;
+        }
+    }
+
+    public function sendEmailUpdateCode($toEmail, $username, $code) {
+        try {
+            $this->mail->clearAddresses();
+            $this->mail->addAddress($toEmail, $username);
+
+            $this->mail->isHTML(true);
+            $this->mail->Subject = 'Actualización de correo - Project Rosaura';
+            
+            $this->mail->Body = EmailTemplates::get('email_update_code', [
+                'username' => $username,
+                'code' => $code
+            ]);
+            
+            $this->mail->AltBody = "Hola {$username},\n\nTu código de verificación para autorizar el cambio de correo es: {$code}\n\nEste código expira en 15 minutos.\n\nAtentamente,\nEl equipo de Project Rosaura";
 
             return $this->mail->send();
         } catch (Exception $e) {

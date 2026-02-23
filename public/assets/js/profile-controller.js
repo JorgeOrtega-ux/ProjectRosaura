@@ -15,36 +15,36 @@ export class ProfileController {
 
     bindEvents() {
         document.addEventListener('click', (e) => {
-            // Abrir explorador de archivos
             if (e.target.closest('#btn-change-avatar') || e.target.closest('#profile-avatar-overlay')) {
                 const input = document.getElementById('input-avatar-file');
                 if (input) input.click();
             }
 
-            // Cancelar previsualización
             if (e.target.closest('#btn-cancel-avatar')) {
                 this.cancelAvatarPreview();
             }
 
-            // Guardar foto
             const btnSaveAvatar = e.target.closest('#btn-save-avatar');
             if (btnSaveAvatar) {
                 this.saveAvatar(btnSaveAvatar);
             }
 
-            // Eliminar foto
             const btnDelAvatar = e.target.closest('#btn-delete-avatar');
             if (btnDelAvatar) {
                 this.deleteAvatar(btnDelAvatar);
             }
 
-            // Guardar Username
             const btnSaveUsername = e.target.closest('[data-action="saveUsername"]');
             if (btnSaveUsername) {
                 this.saveUsername(btnSaveUsername);
             }
 
-            // Guardar Email
+            // Nueva acción interceptada desde HTML para pedir código del email en lugar de abrir la vista de una
+            const btnRequestEmail = e.target.closest('[data-action="requestEmailUpdate"]');
+            if (btnRequestEmail) {
+                this.handleEmailUpdateRequest();
+            }
+
             const btnSaveEmail = e.target.closest('[data-action="saveEmail"]');
             if (btnSaveEmail) {
                 this.saveEmail(btnSaveEmail);
@@ -56,15 +56,27 @@ export class ProfileController {
                 this.handleFileSelection(e);
             }
         });
+
+        // Formato para el diálogo de verificación de correo
+        document.addEventListener('input', (e) => {
+            if (e.target && e.target.id === 'dialog_email_code') {
+                let val = e.target.value.replace(/\D/g, ''); 
+                let formatted = '';
+                for (let i = 0; i < val.length; i++) {
+                    if (i > 0 && i % 4 === 0) {
+                        formatted += '-';
+                    }
+                    formatted += val[i];
+                }
+                e.target.value = formatted;
+            }
+        });
     }
 
     showMessage(msg, type = 'error') {
-        // En lugar de renderizar en divs estáticos de la vista de perfil,
-        // ahora disparamos el Toast Global
         if (window.appInstance && typeof window.appInstance.showToast === 'function') {
             window.appInstance.showToast(msg, type);
         } else {
-            // Un respaldo en caso de que appInstance no haya cargado por alguna razón
             alert(msg);
         }
     }
@@ -83,20 +95,16 @@ export class ProfileController {
         btn.disabled = false;
     }
 
-    // --- MÉTODOS DE FOTO DE PERFIL ---
-
     handleFileSelection(e) {
         const file = e.target.files[0];
         if (!file) return;
 
-        // Validar tamaño 2MB
         if (file.size > 2 * 1024 * 1024) {
             this.showMessage('La imagen no debe superar los 2MB.', 'error');
             e.target.value = ''; 
             return;
         }
 
-        // Validar MIME types
         const validTypes = ['image/png', 'image/jpeg', 'image/jpg'];
         if (!validTypes.includes(file.type)) {
             this.showMessage('Solo se permiten imágenes en formato PNG o JPG.', 'error');
@@ -106,7 +114,6 @@ export class ProfileController {
 
         this.selectedFile = file;
 
-        // FileReader para previsualizar
         const reader = new FileReader();
         reader.onload = (ev) => {
             const imgEl = document.getElementById('profile-avatar-img');
@@ -162,18 +169,15 @@ export class ProfileController {
         if (result.success) {
             this.showMessage(result.message, 'success');
             
-            // Actualizamos atributos DOM para que Cancelar sepa a dónde volver
             const imgEl = document.getElementById('profile-avatar-img');
             if (imgEl) {
                 imgEl.src = result.new_avatar;
                 imgEl.setAttribute('data-original-src', result.new_avatar);
             }
 
-            // Actualizamos la foto en el Header SPA si existe
             const headerAvatar = document.querySelector('.header .component-button--profile img');
             if (headerAvatar) headerAvatar.src = result.new_avatar;
 
-            // Reset UI states
             const fileInput = document.getElementById('input-avatar-file');
             if (fileInput) fileInput.value = '';
             this.selectedFile = null;
@@ -184,11 +188,10 @@ export class ProfileController {
     }
 
     async deleteAvatar(btn) {
-        // Lanzamos la promesa y ESPERAMOS LA RESPUESTA de la UI sin bloquear el hilo de Javascript
         const isConfirmed = await window.dialogSystem.show('confirmDeleteAvatar');
         
-        // Si el usuario cancela, no hacemos nada más
-        if (!isConfirmed) return;
+        // Ahora requires.confirmed porque devuelve un objeto
+        if (!isConfirmed.confirmed) return;
 
         this.setButtonLoading(btn);
 
@@ -204,15 +207,12 @@ export class ProfileController {
                 imgEl.setAttribute('data-original-src', result.new_avatar);
             }
 
-            // Actualizamos el Header global
             const headerAvatar = document.querySelector('.header .component-button--profile img');
             if (headerAvatar) headerAvatar.src = result.new_avatar;
         } else {
             this.showMessage(result.message, 'error');
         }
     }
-
-    // --- MÉTODOS DE TEXTOS ---
 
     async saveUsername(btn) {
         const input = document.getElementById('input-username');
@@ -221,7 +221,6 @@ export class ProfileController {
         const val = input.value.trim();
         const originalVal = input.getAttribute('data-original-value');
 
-        // REGLA: Si no hay cambio, cerrar sin request.
         if (val === originalVal) {
             window.appInstance.toggleEditState('username');
             return;
@@ -234,14 +233,54 @@ export class ProfileController {
 
         if (result.success) {
             this.showMessage(result.message, 'success');
-            // Actualizar datos de display
             document.getElementById('display-username').textContent = result.new_username;
             input.setAttribute('data-original-value', result.new_username);
-            
-            // Cerrar modo edición
             window.appInstance.toggleEditState('username');
         } else {
             this.showMessage(result.message, 'error');
+        }
+    }
+
+    // --- SECUENCIA DE EDITAR CORREO CON VERIFICACIÓN ---
+
+    async handleEmailUpdateRequest() {
+        // 1. Mostrar diálogo de carga
+        window.dialogSystem.show('loadingEmailCode');
+
+        // 2. Pedir enviar código (El backend ignorará si ya existe uno activo, para evitar spam)
+        const res = await this.api.post(ApiRoutes.Settings.RequestEmailCode);
+        
+        // 3. Ocultar el diálogo de carga forzosamente y esperar a que las animaciones terminen
+        window.dialogSystem.closeCurrent(false);
+        await new Promise(resolve => setTimeout(resolve, 350));
+
+        if (res.success) {
+            this.showMessage(res.message, 'success'); // Muestra que se envió / ya estaba enviado
+
+            // 4. Mostrar input para capturar el código enviado
+            const verifyDialog = await window.dialogSystem.show('verifyEmailCode');
+            
+            if (verifyDialog.confirmed) {
+                const code = verifyDialog.data['dialog_email_code'];
+                if (!code) {
+                    this.showMessage('El código de verificación es obligatorio.', 'error');
+                    return;
+                }
+
+                // 5. Validar en API
+                const verifyRes = await this.api.post(ApiRoutes.Settings.VerifyEmailCode, { code });
+                
+                if (verifyRes.success) {
+                    this.showMessage(verifyRes.message, 'success');
+                    
+                    // 6. Finalmente, desatar la vista de Edición del HTML
+                    window.appInstance.toggleEditState('email');
+                } else {
+                    this.showMessage(verifyRes.message, 'error');
+                }
+            }
+        } else {
+            this.showMessage(res.message, 'error');
         }
     }
 
@@ -252,7 +291,6 @@ export class ProfileController {
         const val = input.value.trim();
         const originalVal = input.getAttribute('data-original-value');
 
-        // REGLA: Si no hay cambio, cerrar sin request.
         if (val === originalVal) {
             window.appInstance.toggleEditState('email');
             return;
@@ -265,11 +303,8 @@ export class ProfileController {
 
         if (result.success) {
             this.showMessage(result.message, 'success');
-            // Actualizar datos de display
             document.getElementById('display-email').textContent = result.new_email;
             input.setAttribute('data-original-value', result.new_email);
-            
-            // Cerrar modo edición
             window.appInstance.toggleEditState('email');
         } else {
             this.showMessage(result.message, 'error');

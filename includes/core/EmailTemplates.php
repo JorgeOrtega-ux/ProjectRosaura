@@ -5,19 +5,11 @@ namespace App\Core;
 
 class EmailTemplates {
     
-    /**
-     * Genera el HTML completo para un correo combinando la plantilla específica con el layout maestro.
-     * * @param string $templateName Nombre de la plantilla (ej. 'verification_code')
-     * @param array $data Arreglo asociativo con las variables necesarias para la plantilla
-     * @return string Código HTML final
-     */
     public static function get($templateName, $data = []) {
-        // Extraemos las variables del array para usarlas directamente (ej. $data['username'] -> $username)
         extract($data);
         
         $content = '';
 
-        // 1. Seleccionamos el contenido específico según el tipo de correo
         switch ($templateName) {
             case 'verification_code':
                 $content = "
@@ -49,12 +41,26 @@ class EmailTemplates {
                 ";
                 break;
 
+            case 'email_update_code':
+                $content = "
+                    <h2 style='color: #111111; margin-top: 0;'>Hola, {$username}</h2>
+                    <p style='color: #666666; font-size: 15px; line-height: 1.5;'>Has solicitado actualizar el correo electrónico de tu cuenta. Para continuar y verificar tu identidad, por favor ingresa el siguiente código de confirmación:</p>
+                    
+                    <div style='text-align: center; margin: 35px 0;'>
+                        <span style='font-size: 26px; font-weight: bold; background-color: #f5f5fa; color: #111111; padding: 15px 25px; border-radius: 8px; letter-spacing: 4px; border: 1px solid #00000020; display: inline-block;'>{$code}</span>
+                    </div>
+                    
+                    <p style='color: #666666; font-size: 14px;'>Este código expirará en 15 minutos.</p>
+                    <hr style='border: none; border-top: 1px solid #00000020; margin: 25px 0;'>
+                    <p style='font-size: 12px; color: #999999;'>Si no realizaste esta solicitud, puedes ignorar este correo de forma segura y tu cuenta se mantendrá protegida.</p>
+                ";
+                break;
+
             default:
                 $content = "<p style='color: #111;'>Contenido del correo no especificado o plantilla no encontrada.</p>";
                 break;
         }
 
-        // 2. Retornamos el Layout Maestro inyectando el $content en el centro
         return "
         <!DOCTYPE html>
         <html lang='es'>

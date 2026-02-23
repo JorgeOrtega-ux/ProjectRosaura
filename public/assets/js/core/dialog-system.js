@@ -1,38 +1,24 @@
 // public/assets/js/core/dialog-system.js
+import { DialogTemplates } from './dialog-templates.js';
 
 export class DialogSystem {
     constructor() {
         this.container = document.getElementById('dialog-container');
-        
-        // Aquí podrás guardar infinitas plantillas en el futuro
-        this.templates = {
-            confirmDeleteAvatar: {
-                build: () => `
-                    <div class="pill-container"><div class="drag-handle"></div></div>
-                    <div class="component-dialog-header">
-                        <h2 class="component-dialog-title">Eliminar foto de perfil</h2>
-                        <p class="component-dialog-desc">¿Estás seguro de que deseas eliminar tu foto de perfil? Esta acción restaurará el avatar por defecto y no se puede deshacer.</p>
-                    </div>
-                    <div class="component-dialog-actions">
-                        <button class="component-button component-button--h45" data-dialog-action="cancel">Cancelar</button>
-                        <button class="component-button component-button--h45 component-button--dark" data-dialog-action="confirm">Eliminar</button>
-                    </div>
-                `
-            }
-        };
+        this.templates = DialogTemplates;
+        this.activeCloseFn = null;
     }
 
     /**
-     * Muestra un diálogo y devuelve una promesa.
+     * Muestra un diálogo y devuelve una promesa con estado y datos extraídos.
      * @param {string} templateName El nombre de la plantilla a renderizar.
      * @param {object} data Datos opcionales si la plantilla lo requiere en el futuro.
-     * @returns {Promise<boolean>} Resolves a true si se confirma, false si se cancela o cierra.
+     * @returns {Promise<{confirmed: boolean, data: object}>}
      */
     show(templateName, data = {}) {
         return new Promise((resolve) => {
             if (!this.templates[templateName]) {
                 console.error(`La plantilla de diálogo '${templateName}' no existe.`);
-                resolve(false);
+                resolve({ confirmed: false, data: {} });
                 return;
             }
 
@@ -53,17 +39,28 @@ export class DialogSystem {
 
             // Funcionalidad de cierre centralizada
             const closeDialog = (result) => {
-                // CORRECCIÓN: Limpiamos el estilo inline para devolverle el control al CSS 
-                // y permitir que la animación de salida se ejecute fluidamente.
-                box.style.transform = ''; 
+                let formData = {};
                 
+                // Si el usuario confirmó, extraemos los valores de los inputs con IDs que haya en el diálogo
+                if (result === true) {
+                    const inputs = box.querySelectorAll('input');
+                    inputs.forEach(inp => {
+                        if (inp.id) formData[inp.id] = inp.value;
+                    });
+                }
+
+                // Devolver el control a CSS
+                box.style.transform = ''; 
                 overlay.classList.remove('active');
                 
                 setTimeout(() => {
                     overlay.remove();
-                    resolve(result); // Se resuelve la promesa con true/false
+                    this.activeCloseFn = null;
+                    resolve({ confirmed: result === true, data: formData });
                 }, 300); // Mismo tiempo que la transición CSS (0.3s)
             };
+
+            this.activeCloseFn = closeDialog;
 
             // Bind Botones
             const btnConfirm = box.querySelector('[data-dialog-action="confirm"]');
@@ -85,21 +82,27 @@ export class DialogSystem {
         });
     }
 
+    /**
+     * Cierra forzosamente el diálogo actual abierto sin interacción del usuario
+     */
+    closeCurrent(result = false) {
+        if (this.activeCloseFn) {
+            this.activeCloseFn(result);
+        }
+    }
+
     bindDragEvents(pill, box, overlay, closeCallback) {
         let startY = 0;
         let currentDiff = 0;
         let isDragging = false;
 
         pill.addEventListener('pointerdown', (e) => {
-            // Solo activar en móviles (< 768px)
             if (window.innerWidth > 768) return;
-            // Prevenir clic derecho de ratón
             if (e.pointerType === 'mouse' && e.button !== 0) return; 
 
             isDragging = true;
             startY = e.clientY;
             
-            // is-dragging quita el transition temporalmente para que siga el dedo instantáneamente
             overlay.classList.add('is-dragging');
             box.setPointerCapture(e.pointerId);
         });
@@ -108,7 +111,6 @@ export class DialogSystem {
             if (!isDragging) return;
             currentDiff = e.clientY - startY;
             
-            // Solo arrastrar hacia abajo
             if (currentDiff > 0) {
                 box.style.transform = `translateY(${currentDiff}px)`;
             }
@@ -118,18 +120,15 @@ export class DialogSystem {
             if (!isDragging) return;
             isDragging = false;
             
-            // Devolvemos las transiciones CSS al contenedor
             overlay.classList.remove('is-dragging');
             
             if (box.hasPointerCapture(e.pointerId)) {
                 box.releasePointerCapture(e.pointerId);
             }
 
-            // Si se arrastró más del 35% de la altura, cerrar
             if (currentDiff > box.offsetHeight * 0.35) {
                 closeCallback();
             } else {
-                // Rebotar al lugar original si no superó el límite
                 box.style.transform = '';
             }
             
