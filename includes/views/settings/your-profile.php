@@ -18,9 +18,6 @@ $formattedAvatar = '/ProjectRosaura/' . ltrim($userPic, '/');
             <p class="component-page-description">Administra tu foto de perfil, información personal y preferencias de cuenta.</p>
         </div>
 
-        <div class="component-alert-error" id="profile-error-message" style="margin-bottom: -8px;"></div>
-        <div class="component-alert-success" id="profile-success-message" style="margin-bottom: -8px;"></div>
-
         <div class="component-card--grouped">
             <div class="component-group-item">
                  <div class="component-card__content">
