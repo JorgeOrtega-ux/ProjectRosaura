@@ -314,6 +314,12 @@ class SettingsServices {
             return ['success' => false, 'message' => 'Sesión no válida.'];
         }
 
+        // --- RATE LIMITING: Máximo 20 cambios de preferencia cada 5 minutos ---
+        $rateCheck = $this->checkRateLimit('update_preferences', 20, 5, "Has cambiado tus preferencias demasiadas veces. Por favor espera {minutes} minutos.");
+        if (!$rateCheck['allowed']) {
+            return ['success' => false, 'message' => $rateCheck['message']];
+        }
+
         $key = $data['key'] ?? '';
         $value = $data['value'] ?? '';
 
@@ -333,6 +339,10 @@ class SettingsServices {
         if ($stmt->execute([$value, $_SESSION['user_id']])) {
             // Actualizar la sesión en tiempo real
             $_SESSION['user_prefs'][$key] = $value;
+            
+            // --- REGISTRAR EL INTENTO ---
+            $this->recordAttempt('update_preferences', 20, 5);
+            
             return ['success' => true, 'message' => 'Preferencia guardada.'];
         }
 
@@ -382,7 +392,7 @@ class SettingsServices {
         return trim($ip);
     }
 
-    private function checkRateLimit($action, $maxAttempts, $lockoutMinutes) {
+    private function checkRateLimit($action, $maxAttempts, $lockoutMinutes, $customMsg = null) {
         $ip = $this->getIpAddress();
         $stmt = $this->pdo->prepare("SELECT attempts, blocked_until FROM rate_limits WHERE ip_address = ? AND action = ?");
         $stmt->execute([$ip, $action]);
@@ -391,9 +401,15 @@ class SettingsServices {
         if ($limit) {
             if ($limit['blocked_until'] && strtotime($limit['blocked_until']) > time()) {
                 $remainingMinutes = ceil((strtotime($limit['blocked_until']) - time()) / 60);
+                
+                // Si existe un mensaje personalizado, reemplazamos el comodín {minutes}, de lo contrario damos el por defecto.
+                $msg = $customMsg 
+                    ? str_replace('{minutes}', $remainingMinutes, $customMsg)
+                    : "Has enviado demasiados códigos. Por seguridad, por favor espera {$remainingMinutes} minutos.";
+
                 return [
                     'allowed' => false, 
-                    'message' => "Has enviado demasiados códigos. Por seguridad, por favor espera {$remainingMinutes} minutos."
+                    'message' => $msg
                 ];
             }
         }
