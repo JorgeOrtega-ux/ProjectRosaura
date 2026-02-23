@@ -95,7 +95,7 @@ export class MainController {
             if (key !== 'language') this.showToast('Configuración local guardada', 'success');
         }
 
-        // 3. RECÁRGA DE PÁGINA SI ES IDIOMA (como pediste)
+        // 3. RECÁRGA DE PÁGINA SI ES IDIOMA
         if (key === 'language') {
             window.location.reload();
             return;
@@ -295,7 +295,8 @@ export class MainController {
         if (this.dragState.currentDiff > this.dragState.panel.offsetHeight * 0.40) {
             this.closeModule(this.dragState.module); 
         } else {
-            this.dragState.panel.removeAttribute('style');
+            // FIX: Limpiamos sólo el transform para no borrar las reglas de display del SPA Router
+            this.dragState.panel.style.transform = '';
         }
         this.dragState.currentDiff = 0;
         this.dragState.module = null;
@@ -311,10 +312,13 @@ export class MainController {
     }
 
     openModule(module) { module.classList.replace('disabled', 'active'); }
+    
     closeModule(module) { 
         module.classList.replace('active', 'disabled'); 
-        module.querySelectorAll('.component-menu').forEach(p => p.removeAttribute('style'));
+        // FIX: Limpiamos sólo el transform para no borrar las reglas de display del SPA Router
+        module.querySelectorAll('.component-menu').forEach(p => p.style.transform = '');
     }
+    
     closeAllModules() { document.querySelectorAll('.component-module:not(.disabled)').forEach(m => this.closeModule(m)); }
 
     handleResize() {
@@ -326,7 +330,8 @@ export class MainController {
             document.querySelectorAll('.is-dragging').forEach(m => {
                 m.classList.remove('is-dragging');
                 const p = m.querySelector('.component-menu');
-                if (p) p.removeAttribute('style');
+                // FIX: Limpiamos sólo el transform para no borrar las reglas de display del SPA Router
+                if (p) p.style.transform = '';
             });
             this.dragState.isDragging = false;
         }

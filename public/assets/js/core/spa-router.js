@@ -25,7 +25,7 @@ export class SpaRouter {
                     module.classList.remove('active');
                     module.classList.add('disabled');
                     
-                    // FIX: Solo resetear el transform, no eliminar todo el atributo style
+                    // Limpiamos la transformación del Drag
                     module.querySelectorAll('.component-menu').forEach(panel => {
                         panel.style.transform = '';
                     });
@@ -150,12 +150,19 @@ export class SpaRouter {
         const settingsMenu = document.getElementById('sidebar-menu-settings');
         
         if (mainMenu && settingsMenu) {
+            // AQUI USAMOS CLASES EN LUGAR DE ESTILOS INLINE
             if (normalizedPath.includes('/settings')) {
-                mainMenu.style.display = 'none';
-                settingsMenu.style.display = 'flex';
+                mainMenu.classList.remove('active');
+                mainMenu.classList.add('disabled');
+                
+                settingsMenu.classList.remove('disabled');
+                settingsMenu.classList.add('active');
             } else {
-                mainMenu.style.display = 'flex';
-                settingsMenu.style.display = 'none';
+                mainMenu.classList.remove('disabled');
+                mainMenu.classList.add('active');
+                
+                settingsMenu.classList.remove('active');
+                settingsMenu.classList.add('disabled');
             }
         }
     }

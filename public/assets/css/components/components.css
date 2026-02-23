@@ -256,6 +256,16 @@
     flex-direction: column;
 }
 
+/* === NUEVO: SOPORTE DE ESTADOS PARA .component-menu === */
+.component-menu.disabled {
+    display: none !important;
+}
+
+.component-menu.active {
+    display: flex;
+}
+/* ====================================================== */
+
 .component-menu--no-padding {
     padding: 0;
     overflow: hidden; 

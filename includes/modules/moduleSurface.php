@@ -4,7 +4,7 @@ $isLoggedIn = isset($_SESSION['user_id']);
 ?>
 <div class="component-module component-module--sidebar disabled" data-module="moduleSurface">
     
-    <div class="component-menu component-menu--w265 component-menu--h-full component-menu--no-padding" id="sidebar-menu-main">
+    <div class="component-menu component-menu--w265 component-menu--h-full component-menu--no-padding active" id="sidebar-menu-main">
         <div class="component-menu-top">
             <div class="component-menu-list">
                 <div class="component-menu-link nav-item" data-nav="/ProjectRosaura/">
@@ -27,7 +27,7 @@ $isLoggedIn = isset($_SESSION['user_id']);
         </div>
     </div>
 
-    <div class="component-menu component-menu--w265 component-menu--h-full component-menu--no-padding" id="sidebar-menu-settings" style="display: none;">
+    <div class="component-menu component-menu--w265 component-menu--h-full component-menu--no-padding disabled" id="sidebar-menu-settings">
         <div class="component-menu-top">
             <div class="component-menu-list">
                 <div class="component-menu-link component-menu-link--bordered nav-item" data-nav="/ProjectRosaura/">
