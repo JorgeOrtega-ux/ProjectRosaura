@@ -39,7 +39,7 @@
     justify-content: center;
     align-items: center;
     color: #666;
-    flex-shrink: 0; /* Agregado para evitar que el ícono se encoja */
+    flex-shrink: 0; 
 }
 
 .component-search-input {
@@ -76,7 +76,6 @@
     cursor: pointer;
     font-size: 14px;
     font-weight: 500;
-    /* Evita animaciones de layout (width/height) al redimensionar la ventana */
     transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
     padding: 0 12px; 
     text-decoration: none;
@@ -137,6 +136,17 @@
 
 .component-button--dark .material-symbols-rounded {
     color: #ffffff; 
+}
+
+.component-button--danger {
+    color: #d32f2f;
+    border-color: #d32f2f30;
+    background-color: #fffaf9;
+}
+
+.component-button--danger:hover {
+    background-color: #ffebee;
+    border-color: #d32f2f50;
 }
 
 /* ====== COMPONENTE PROFILE BUTTON ====== */
@@ -222,7 +232,6 @@
     z-index: 100;
 }
 
-/* Variante de dropdown que se alinea a la izquierda y toma el 100% del contenedor relativo */
 .component-module--dropdown-left {
     right: auto;
     left: 0;
@@ -247,10 +256,9 @@
     flex-direction: column;
 }
 
-/* Modificador para quitar padding y delegar los espacios a los hijos (útil para bordes completos) */
 .component-menu--no-padding {
     padding: 0;
-    overflow: hidden; /* Mantiene los bordes redondeados limpios */
+    overflow: hidden; 
 }
 
 .component-menu--w265 { width: 265px; }
@@ -259,13 +267,12 @@
 .component-menu--h-auto { height: auto; }
 .component-menu--h-full { height: 100%; }
 
-/* Contenedor estático para la parte superior de un menú (ej. Buscador) */
 .component-menu-header {
     flex: 0 0 auto; 
     display: flex;
     flex-direction: column;
-    padding: 8px; /* Padding reducido a 8px */
-    border-bottom: 1px solid #00000020; /* Ahora toca los extremos */
+    padding: 8px; 
+    border-bottom: 1px solid #00000020; 
 }
 
 .component-menu-top {
@@ -293,18 +300,16 @@
     gap: 8px;
 }
 
-/* Modificador para listas con scroll interno */
 .component-menu-list--scrollable {
-    max-height: 250px; /* Define el alto fijo máximo */
+    max-height: 250px; 
     overflow-y: auto;
     scrollbar-width: thin;
-    padding: 8px; /* Padding a 8px por todos los lados */
+    padding: 8px; 
 }
 
-/* Ajuste específico para que los enlaces se adapten 100% dentro del padding */
 .component-menu-list--scrollable .component-menu-link {
-    width: 100%; /* Ajuste a 100% */
-    margin: 0;   /* Sin margen */
+    width: 100%; 
+    margin: 0;   
 }
 
 .component-menu-link {
@@ -318,7 +323,7 @@
     border-radius: 8px;
     transition: background-color 0.15s ease, border-color 0.15s ease;
     cursor: pointer;
-    flex-shrink: 0; /* Asegura que el botón no se aplaste cuando hay scroll */
+    flex-shrink: 0; 
 }
 
 .component-menu-link:hover,
@@ -326,12 +331,10 @@
     background-color: #f5f5fa;
 }
 
-/* Clase modificadora para borde */
 .component-menu-link--bordered {
     border: 1px solid #00000020;
 }
 
-/* Línea divisora para los menús */
 .component-menu-divider {
     width: 100%;
     height: 1px;
@@ -346,7 +349,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    flex-shrink: 0; /* Agregado para evitar que el ícono se encoja */
+    flex-shrink: 0; 
 }
 
 .component-menu-link-text {
@@ -356,7 +359,7 @@
     align-items: center;
     font-size: 14px;
     font-weight: 500;
-    min-width: 0; /* Necesario para que el text-overflow funcione dentro de un contenedor flex */
+    min-width: 0; 
 }
 
 .component-menu-link-text span {
@@ -427,6 +430,41 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+}
+
+/* ========================================= */
+/* --- COMPONENT: STAGE FORM (STATES) ---    */
+/* ========================================= */
+.component-stage-form {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 12px;
+}
+
+.component-stage-form.active {
+    display: flex;
+}
+
+.component-stage-form.disabled {
+    display: none;
+}
+
+.component-stage-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+    margin-bottom: 4px;
+}
+
+.component-stage-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    width: 100%;
+    margin-top: 4px;
 }
 
 /* ========================================= */
@@ -572,6 +610,12 @@
 
 .component-card__actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 
+/* Nuevo: Asegura que al hacer wrap se empuje al fondo (derecha) */
+.component-card__actions--end {
+    flex-grow: 1;
+    justify-content: flex-end;
+}
+
 /* View & Edit State Logic */
 .component-state-box {
     width: 100%;
@@ -581,6 +625,27 @@
 }
 .component-state-box.disabled { display: none !important; }
 .component-state-box.active { display: flex; }
+
+/* Card Icons */
+.component-card__icon-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+
+.component-card__icon-container--bordered {
+    border: 1px solid #00000020;
+    background-color: transparent;
+}
+
+.component-card__icon-container span.material-symbols-rounded {
+    color: #666666;
+    font-size: 22px;
+}
 
 /* Contenedor que amarra firmemente el input con sus botones en PC */
 .component-edit-row {
@@ -657,6 +722,14 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
         width: 100%;
     }
 
+    .component-stage-actions {
+        flex-direction: column-reverse; 
+        gap: 8px;
+    }
+    .component-stage-actions .component-button {
+        width: 100%;
+    }
+
     /* --- MODIFICADORES DE ACCIONES PARA MÓVIL --- */
     
     /* Margen superior general cuando los elementos pasan abajo */
@@ -666,7 +739,7 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
     
     .component-group-item--stacked .component-card__actions,
     .component-edit-row .component-card__actions {
-        margin-top: 0; /* Evitar doble margen porque ya tienen gap del padre */
+        margin-top: 0; 
     }
     
     /* 1. Botones (100% de ancho, se reparten 50/50 si son 2) */
@@ -689,12 +762,16 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
         justify-content: flex-start;
     }
 
-    /* 3. Alineación a la derecha (Checkbox) */
+    /* 3. Alineación a la derecha (Ahora con botones al 100%) */
     .component-card__actions--end {
         width: 100%;
         display: flex;
-        flex-direction: row;
+        flex-direction: column; /* Apila por si hay varios botones al 100% */
         justify-content: flex-end;
+    }
+    
+    .component-card__actions--end .component-button {
+        width: 100%;
     }
 }
 
@@ -756,7 +833,7 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
         transform: translateY(0);
         transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
         will-change: transform;
-        padding-top: 0; /* Eliminamos el padding top superior en móvil (sin !important) */
+        padding-top: 0; 
         max-height: 90vh;
     }
 
@@ -783,20 +860,18 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
         align-items: center;
         width: 100%;
         flex-shrink: 0;
-        padding-top: 8px; /* 8px en top */
-        padding-bottom: 8px; /* 8px en bottom */
+        padding-top: 8px; 
+        padding-bottom: 8px; 
         cursor: grab;
         touch-action: none; 
     }
 
-    /* Evitar doble espaciado cuando hay un header u otro elemento que ya tenga padding justo debajo de la píldora */
     .pill-container + .component-menu-header,
     .pill-container + .component-menu-list,
     .pill-container + .component-menu-list--scrollable {
         padding-top: 0;
     }
 
-    /* Evitar doble espaciado cuando hay un header u otro elemento que ya tenga padding justo debajo de la píldora */
     .pill-container + .component-menu-header {
         padding-top: 0;
     }
@@ -873,7 +948,7 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
     flex-direction: column;
     gap: 12px;
     z-index: 9999;
-    pointer-events: none; /* Permite clickear detrás si está vacío */
+    pointer-events: none; 
 }
 
 .component-toast {
@@ -886,15 +961,13 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
     border-radius: 8px;
     background-color: #ffffff;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    pointer-events: auto; /* Restaura los eventos de puntero sobre el toast */
+    pointer-events: auto; 
     
-    /* Estado inicial invisible (fuera de pantalla izquierda) */
     transform: translateX(-120%);
     opacity: 0;
     transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.3s ease;
 }
 
-/* Clases dinámicas añadidas vía JavaScript */
 .component-toast.show {
     transform: translateX(0);
     opacity: 1;
@@ -934,7 +1007,7 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
     color: #d32f2f;
 }
 
-/* Responsividad en Móviles (El Toast sale desde abajo) */
+/* Responsividad en Móviles */
 @media (max-width: 600px) {
     .toast-container {
         left: 16px;
@@ -961,7 +1034,7 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
 .component-dialog-overlay {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
-    background-color: rgba(0, 0, 0, 0.4); /* Negro semitrasparente */
+    background-color: rgba(0, 0, 0, 0.4); 
     z-index: 2000;
     display: flex;
     justify-content: center;
@@ -981,7 +1054,7 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
     border-radius: 12px;
     padding: 24px;
     width: 100%;
-    max-width: 400px; /* Tamaño máximo para escritorio */
+    max-width: 400px; 
     display: flex;
     flex-direction: column;
     gap: 16px;
@@ -1021,7 +1094,7 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
     margin-top: 8px;
 }
 
-/* Mobile Dialog (Bottom Sheet con Drag) */
+/* Mobile Dialog */
 @media (max-width: 768px) {
     .component-dialog-overlay {
         align-items: flex-end;
@@ -1032,7 +1105,7 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
         border-bottom-left-radius: 0;
         border-bottom-right-radius: 0;
         transform: translateY(100%);
-        padding-top: 0; /* Espacio reservado para el .pill-container */
+        padding-top: 0; 
         padding-bottom: 24px;
         margin: 0;
     }
@@ -1042,14 +1115,14 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
     }
 
     .component-dialog-overlay.is-dragging .component-dialog-box {
-        transition: none; /* Desactiva transiciones durante el drag para fluidez */
+        transition: none; 
     }
     
     .component-dialog-actions {
-        flex-direction: column-reverse; /* En móvil, cancelar va abajo y confirmar arriba */
+        flex-direction: column-reverse; 
     }
     
     .component-dialog-actions .component-button {
-        width: 100%; /* Botones de bloque completo */
+        width: 100%; 
     }
 }
