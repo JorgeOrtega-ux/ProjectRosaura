@@ -22,6 +22,16 @@
     background-color: #ffffff;
 }
 
+/* Modificador para que el buscador tome el 100% de su contenedor */
+.component-search--full {
+    width: 100%;
+}
+
+/* Modificador de altura */
+.component-search--h36 {
+    height: 36px;
+}
+
 .component-search-icon {
     width: 45px;
     height: 100%;
@@ -211,6 +221,13 @@
     z-index: 100;
 }
 
+/* Variante de dropdown que se alinea a la izquierda y toma el 100% del contenedor relativo */
+.component-module--dropdown-left {
+    right: auto;
+    left: 0;
+    width: 100%;
+}
+
 .component-module--sidebar {
     padding: 12px;
     height: 100%;
@@ -229,10 +246,26 @@
     flex-direction: column;
 }
 
+/* Modificador para quitar padding y delegar los espacios a los hijos (útil para bordes completos) */
+.component-menu--no-padding {
+    padding: 0;
+    overflow: hidden; /* Mantiene los bordes redondeados limpios */
+}
+
 .component-menu--w265 { width: 265px; }
 .component-menu--w325 { width: 325px; }
+.component-menu--w-full { width: 100%; }
 .component-menu--h-auto { height: auto; }
 .component-menu--h-full { height: 100%; }
+
+/* Contenedor estático para la parte superior de un menú (ej. Buscador) */
+.component-menu-header {
+    flex: 0 0 auto; 
+    display: flex;
+    flex-direction: column;
+    padding: 8px; /* Padding reducido a 8px */
+    border-bottom: 1px solid #00000020; /* Ahora toca los extremos */
+}
 
 .component-menu-top {
     flex: 1 1 auto; 
@@ -258,6 +291,20 @@
     gap: 8px;
 }
 
+/* Modificador para listas con scroll interno */
+.component-menu-list--scrollable {
+    max-height: 250px; /* Define el alto fijo máximo */
+    overflow-y: auto;
+    scrollbar-width: thin;
+    padding: 8px; /* Padding a 8px por todos los lados */
+}
+
+/* Ajuste específico para que los enlaces se adapten 100% dentro del padding */
+.component-menu-list--scrollable .component-menu-link {
+    width: 100%; /* Ajuste a 100% */
+    margin: 0;   /* Sin margen */
+}
+
 .component-menu-link {
     display: flex;
     flex-direction: row;
@@ -269,6 +316,7 @@
     border-radius: 8px;
     transition: background-color 0.15s ease, border-color 0.15s ease;
     cursor: pointer;
+    flex-shrink: 0; /* Asegura que el botón no se aplaste cuando hay scroll */
 }
 
 .component-menu-link:hover,
@@ -489,7 +537,7 @@
 .component-page-title { font-size: 24px; font-weight: 700; margin: 0 0 8px 0; color: #111111; }
 .component-page-description { font-size: 15px; color: #666666; margin: 0; }
 
-.component-card--grouped { display: flex; flex-direction: column; border: 1px solid #00000020; border-radius: 12px; background-color: #ffffff; overflow: hidden; }
+.component-card--grouped { display: flex; flex-direction: column; border: 1px solid #00000020; border-radius: 12px; background-color: #ffffff; }
 
 /* Estructuras base para las filas */
 .component-group-item { display: flex; flex-direction: row; align-items: center; justify-content: space-between; padding: 24px; gap: 16px; }
@@ -563,7 +611,9 @@
 input:checked + .component-toggle-slider { background-color: #111111; border-color: #111111; }
 input:checked + .component-toggle-slider:before { transform: translateX(20px); }
 
-/* Dropdown Trigger Component */
+/* Dropdown Wrapper & Trigger Component */
+.component-dropdown-wrapper { position: relative; width: 100%; max-width: 265px; }
+.component-dropdown-wrapper .component-dropdown-trigger { max-width: 100%; }
 .component-dropdown-trigger { display: flex; align-items: center; gap: 8px; width: 100%; max-width: 265px; height: 40px; padding: 0 12px; border: 1px solid #00000020; border-radius: 8px; background-color: #ffffff; cursor: pointer; color: #111111; transition: border-color 0.2s ease, background-color 0.2s ease; }
 .component-dropdown-trigger:hover { border-color: #111111; background-color: #f5f5fa; }
 .component-dropdown-text { flex: 1; font-weight: 500; font-size: 14px; }
@@ -642,6 +692,9 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
     .component-dropdown-trigger {
         max-width: 100%;
     }
+    .component-dropdown-wrapper {
+        max-width: 100%;
+    }
 }
 
 
@@ -718,6 +771,7 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
         align-items: center;
         width: 100%;
         flex-shrink: 0;
+        padding-top: 12px; /* Añadimos padding superior aquí ya que eliminamos el del contenedor */
         padding-bottom: 12px;
         cursor: grab;
         touch-action: none; 

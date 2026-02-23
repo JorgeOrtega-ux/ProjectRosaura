@@ -118,11 +118,19 @@ $formattedAvatar = '/ProjectRosaura/' . ltrim($userPic, '/');
                     </div>
                 </div>
                 <div class="component-card__actions component-card__actions--start">
-                    <div class="component-dropdown-trigger">
-                        <span class="material-symbols-rounded">language</span>
-                        <span class="component-dropdown-text">Español (Latinoamérica)</span>
-                        <span class="material-symbols-rounded">expand_more</span>
+                    
+                    <div class="component-dropdown-wrapper">
+                        
+                        <div class="component-dropdown-trigger" data-action="toggleModuleLanguage">
+                            <span class="material-symbols-rounded">language</span>
+                            <span class="component-dropdown-text">Español (Latinoamérica)</span>
+                            <span class="material-symbols-rounded">expand_more</span>
+                        </div>
+                        
+                        <?php include __DIR__ . '/../../modules/moduleLanguage.php'; ?>
+
                     </div>
+
                 </div>
             </div>
         </div>

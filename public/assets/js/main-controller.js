@@ -68,6 +68,8 @@ export class MainController {
                     this.toggleModule('moduleSurface');
                 } else if (action === 'toggleModuleMainOptions') {
                     this.toggleModule('moduleMainOptions');
+                } else if (action === 'toggleModuleLanguage') {
+                    this.toggleModule('moduleLanguage'); // Acción del nuevo dropdown
                 } else if (action === 'toggleMobileSearch') {
                     this.toggleMobileSearch();
                 }
