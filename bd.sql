@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS rate_limits (
 CREATE TABLE IF NOT EXISTS profile_changes_log (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT(11) NOT NULL,
-    change_type ENUM('avatar', 'username', 'email') NOT NULL,
+    change_type ENUM('avatar', 'username', 'email', 'password') NOT NULL,
     old_value VARCHAR(255) DEFAULT NULL,
     new_value VARCHAR(255) DEFAULT NULL,
     ip_address VARCHAR(45) NOT NULL,
@@ -64,4 +64,15 @@ CREATE TABLE IF NOT EXISTS user_preferences (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY (user_id),
     CONSTRAINT fk_user_preferences FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Ejecuta esto en tu base de datos actual:
+CREATE TABLE IF NOT EXISTS auth_tokens (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT(11) NOT NULL,
+    selector VARCHAR(255) NOT NULL,
+    hashed_validator VARCHAR(255) NOT NULL,
+    expires_at DATETIME NOT NULL,
+    CONSTRAINT fk_user_tokens FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX (selector)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

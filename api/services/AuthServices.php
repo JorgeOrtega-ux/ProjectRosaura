@@ -16,6 +16,129 @@ class AuthServices {
         $this->pdo = $db->getConnection();
     }
 
+    // =================================================================================
+    // --- LÓGICA DE SESIÓN PERSISTENTE (TOKENS ROTATIVOS) ---
+    // =================================================================================
+
+    public function createRememberToken($userId) {
+        $selector = bin2hex(random_bytes(16));
+        $validator = bin2hex(random_bytes(32));
+        $hashedValidator = hash('sha256', $validator);
+        $expiresAt = date('Y-m-d H:i:s', time() + (86400 * 30)); // 30 días de duración
+
+        $stmt = $this->pdo->prepare("INSERT INTO auth_tokens (user_id, selector, hashed_validator, expires_at) VALUES (?, ?, ?, ?)");
+        $stmt->execute([$userId, $selector, $hashedValidator, $expiresAt]);
+
+        $cookieValue = $selector . ':' . $validator;
+        
+        // La cookie es segura, no accesible por JavaScript (HttpOnly) y mitiga CSRF (Strict)
+        setcookie('remember_token', $cookieValue, [
+            'expires' => time() + (86400 * 30),
+            'path' => '/ProjectRosaura/',
+            'secure' => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on',
+            'httponly' => true,
+            'samesite' => 'Strict'
+        ]);
+    }
+
+    public function clearRememberToken() {
+        if (isset($_COOKIE['remember_token'])) {
+            $parts = explode(':', $_COOKIE['remember_token']);
+            if (count($parts) === 2) {
+                $selector = $parts[0];
+                $stmt = $this->pdo->prepare("DELETE FROM auth_tokens WHERE selector = ?");
+                $stmt->execute([$selector]);
+            }
+            
+            setcookie('remember_token', '', [
+                'expires' => time() - 3600,
+                'path' => '/ProjectRosaura/',
+                'secure' => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on',
+                'httponly' => true,
+                'samesite' => 'Strict'
+            ]);
+            unset($_COOKIE['remember_token']);
+        }
+    }
+
+    public function autoLogin() {
+        if (isset($_SESSION['user_id']) || empty($_COOKIE['remember_token'])) {
+            return false;
+        }
+
+        $parts = explode(':', $_COOKIE['remember_token']);
+        if (count($parts) !== 2) {
+            $this->clearRememberToken();
+            return false;
+        }
+
+        list($selector, $validator) = $parts;
+
+        $stmt = $this->pdo->prepare("SELECT * FROM auth_tokens WHERE selector = ? AND expires_at > NOW()");
+        $stmt->execute([$selector]);
+        $token = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($token) {
+            $calcHash = hash('sha256', $validator);
+            
+            // Verificamos el hash con mitigación de ataques de tiempo
+            if (hash_equals($token['hashed_validator'], $calcHash)) {
+                $userId = $token['user_id'];
+                
+                $stmtUser = $this->pdo->prepare("SELECT * FROM users WHERE id = ?");
+                $stmtUser->execute([$userId]);
+                $user = $stmtUser->fetch(PDO::FETCH_ASSOC);
+
+                if ($user) {
+                    session_regenerate_id(true);
+                    
+                    $stmtPref = $this->pdo->prepare("SELECT * FROM user_preferences WHERE user_id = ?");
+                    $stmtPref->execute([$userId]);
+                    $userPrefs = $stmtPref->fetch(PDO::FETCH_ASSOC);
+
+                    if (!$userPrefs) {
+                        $acceptLang = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '';
+                        $assignedLang = Utils::getClosestLanguage($acceptLang);
+                        
+                        $insPref = $this->pdo->prepare("INSERT INTO user_preferences (user_id, language, open_links_new_tab, theme, extended_alerts) VALUES (?, ?, 1, 'system', 0)");
+                        $insPref->execute([$userId, $assignedLang]);
+                        
+                        $stmtPref->execute([$userId]);
+                        $userPrefs = $stmtPref->fetch(PDO::FETCH_ASSOC);
+                    }
+                    
+                    $_SESSION['user_id'] = $user['id'];
+                    $_SESSION['user_uuid'] = $user['uuid'];
+                    $_SESSION['user_name'] = $user['username'];
+                    $_SESSION['user_email'] = $user['email'];
+                    $_SESSION['user_role'] = $user['role'];
+                    $_SESSION['user_pic'] = $user['profile_picture'];
+                    $_SESSION['user_prefs'] = $userPrefs;
+
+                    // IMPORTANTE: Rotación del token. Borramos el usado y creamos uno nuevo
+                    $stmtDel = $this->pdo->prepare("DELETE FROM auth_tokens WHERE id = ?");
+                    $stmtDel->execute([$token['id']]);
+                    $this->createRememberToken($userId);
+
+                    return true;
+                }
+            } else {
+                // ROBO DETECTADO: El selector existe pero el validador es viejo/incorrecto.
+                // Eliminamos todos los tokens de este usuario para proteger la cuenta en todos sus dispositivos.
+                $stmtDelAll = $this->pdo->prepare("DELETE FROM auth_tokens WHERE user_id = ?");
+                $stmtDelAll->execute([$token['user_id']]);
+            }
+        }
+        
+        // Si llegamos aquí, el token era inválido, expiró o hubo robo. Limpiamos la cookie.
+        $this->clearRememberToken();
+        return false;
+    }
+
+    // =================================================================================
+    // --- MÉTODOS TRADICIONALES MODIFICADOS ---
+    // =================================================================================
+
     public function registerStep1($data) {
         $email = trim($data['email'] ?? '');
         $password = trim($data['password'] ?? '');
@@ -179,19 +302,16 @@ class AuthServices {
         if ($stmtUser->execute([$uuid, $username, $email, $hashedPassword, $profilePicturePath])) {
             $userId = $this->pdo->lastInsertId();
             
-            // --- CREACIÓN AUTOMÁTICA DE PREFERENCIAS ---
             $acceptLang = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '';
             $assignedLang = Utils::getClosestLanguage($acceptLang);
             
             $stmtPref = $this->pdo->prepare("INSERT INTO user_preferences (user_id, language, open_links_new_tab, theme, extended_alerts) VALUES (?, ?, 1, 'system', 0)");
             $stmtPref->execute([$userId, $assignedLang]);
 
-            // Recuperamos las preferencias recién creadas
             $stmtGetPref = $this->pdo->prepare("SELECT * FROM user_preferences WHERE user_id = ?");
             $stmtGetPref->execute([$userId]);
             $userPrefs = $stmtGetPref->fetch(PDO::FETCH_ASSOC);
 
-            // --- SEGURIDAD: PREVENCIÓN DE SESSION FIXATION ---
             session_regenerate_id(true);
             
             $_SESSION['user_id'] = $userId;
@@ -201,6 +321,9 @@ class AuthServices {
             $_SESSION['user_role'] = 'user';
             $_SESSION['user_pic'] = $profilePicturePath;
             $_SESSION['user_prefs'] = $userPrefs;
+
+            // --- ESTABLECER SESIÓN PERSISTENTE AL REGISTRARSE ---
+            $this->createRememberToken($userId);
 
             unset($_SESSION['reg_email']);
             unset($_SESSION['reg_password']);
@@ -236,8 +359,6 @@ class AuthServices {
             $this->clearRateLimit('login');
             session_regenerate_id(true);
 
-            // --- RECUPERACIÓN AUTOMÁTICA DE PREFERENCIAS ---
-            // Si por algún motivo la fila de preferencias fue borrada, la recreamos para evitar crasheos.
             $stmtPref = $this->pdo->prepare("SELECT * FROM user_preferences WHERE user_id = ?");
             $stmtPref->execute([$user['id']]);
             $userPrefs = $stmtPref->fetch(PDO::FETCH_ASSOC);
@@ -261,6 +382,9 @@ class AuthServices {
             $_SESSION['user_pic'] = $user['profile_picture'];
             $_SESSION['user_prefs'] = $userPrefs;
 
+            // --- ESTABLECER SESIÓN PERSISTENTE AL INICIAR SESIÓN ---
+            $this->createRememberToken($user['id']);
+
             return ['success' => true, 'message' => 'Inicio de sesión exitoso.'];
         }
 
@@ -270,6 +394,9 @@ class AuthServices {
     }
 
     public function logout() {
+        // --- DESTRUIR SESIÓN PERSISTENTE EN CERRAR SESIÓN ---
+        $this->clearRememberToken();
+        
         session_unset();
         session_destroy();
         return ['success' => true, 'message' => 'Sesión cerrada.'];
@@ -352,6 +479,10 @@ class AuthServices {
         $updateStmt = $this->pdo->prepare("UPDATE users SET password = ? WHERE email = ?");
         if ($updateStmt->execute([$hashedPassword, $email])) {
             
+            // --- PROTECCIÓN: CIERRA SESIÓN EN TODOS LOS DISPOSITIVOS AL RESETEAR PASS ---
+            $stmtDelAll = $this->pdo->prepare("DELETE FROM auth_tokens WHERE user_id = (SELECT id FROM users WHERE email = ?)");
+            $stmtDelAll->execute([$email]);
+
             $delStmt = $this->pdo->prepare("DELETE FROM verification_codes WHERE identifier = ? AND code_type = 'password_reset'");
             $delStmt->execute([$email]);
 

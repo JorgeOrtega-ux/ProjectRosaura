@@ -15,7 +15,16 @@ use App\Core\Loader;
 use App\Core\Router;
 use App\Core\Utils; 
 use App\Config\Database;
-use App\Core\Translator; // Importamos el traductor
+use App\Core\Translator; 
+use App\Api\Services\AuthServices; // <-- IMPORTACIÓN NECESARIA
+
+// ========================================================================================
+// --- AUTO-LOGIN SILENCIOSO (SESIÓN PERSISTENTE) ---
+// ========================================================================================
+if (!isset($_SESSION['user_id']) && isset($_COOKIE['remember_token'])) {
+    $authService = new AuthServices();
+    $authService->autoLogin(); // Restaurará la sesión y rotará el token invisiblemente
+}
 
 $csrfToken = Utils::generateCSRFToken();
 $routes = require __DIR__ . '/../includes/config/routes.php';
@@ -29,7 +38,7 @@ $currentView = $routeData['view'];
 $isLoggedIn = isset($_SESSION['user_id']);
 
 // ========================================================================================
-// --- FIX: AUTOSANAR SESIONES ANTIGUAS SIN PREFERENCIAS ---
+// --- AUTOSANAR SESIONES ANTIGUAS SIN PREFERENCIAS ---
 // ========================================================================================
 if ($isLoggedIn && !isset($_SESSION['user_prefs'])) {
     $db = new Database();
@@ -62,10 +71,8 @@ if ($isLoggedIn && !empty($_SESSION['user_prefs']['language'])) {
     $lang = Utils::getClosestLanguage($_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '');
 }
 
-// Inicializamos el traductor
 Translator::init($lang);
 
-// Helper global para PHP
 if (!function_exists('__')) {
     function __($key) {
         return Translator::get($key);
@@ -82,7 +89,7 @@ $protectedSettings = [
     'settings/your-profile.php',
     'settings/security.php',
     'settings/accessibility.php',
-    'settings/change-password.php' // <-- NUEVO: RUTA PROTEGIDA
+    'settings/change-password.php'
 ];
 
 $redirectUrl = null;
@@ -129,7 +136,6 @@ if ($isSpaRequest) {
     <script>
         window.AppUserPrefs = <?php echo ($isLoggedIn && isset($_SESSION['user_prefs'])) ? json_encode($_SESSION['user_prefs']) : 'null'; ?>;
         
-        // --- MOTOR DE TRADUCCIÓN PARA JAVASCRIPT ---
         window.AppTranslations = <?php echo json_encode(Translator::getAll()); ?>;
         function __(key) {
             return (window.AppTranslations && window.AppTranslations[key] !== undefined) ? window.AppTranslations[key] : key;

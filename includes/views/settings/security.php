@@ -1,3 +1,25 @@
+<?php
+// includes/views/settings/security.php
+if (session_status() === PHP_SESSION_NONE) session_start();
+use App\Config\Database;
+
+$lastUpdateText = "Nunca se ha actualizado";
+
+if (isset($_SESSION['user_id'])) {
+    $db = new Database();
+    $pdo = $db->getConnection();
+    
+    // Consultamos el registro más reciente en log de tipo 'password'
+    $stmt = $pdo->prepare("SELECT created_at FROM profile_changes_log WHERE user_id = ? AND change_type = 'password' ORDER BY created_at DESC LIMIT 1");
+    $stmt->execute([$_SESSION['user_id']]);
+    $log = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if ($log && !empty($log['created_at'])) {
+        $date = new DateTime($log['created_at']);
+        $lastUpdateText = $date->format('d/m/Y H:i'); // Formato de fecha deseado
+    }
+}
+?>
 <div class="view-content">
     <div class="component-wrapper">
         
@@ -15,7 +37,7 @@
                     </div>
                     <div class="component-card__text">
                         <h2 class="component-card__title">Contraseña</h2>
-                        <p class="component-card__description">Última actualización: Nunca</p>
+                        <p class="component-card__description">Última actualización: <?php echo htmlspecialchars($lastUpdateText); ?></p>
                     </div>
                 </div>
                 <div class="component-card__actions component-card__actions--end">

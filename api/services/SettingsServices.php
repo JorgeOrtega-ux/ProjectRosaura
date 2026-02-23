@@ -393,6 +393,10 @@ class SettingsServices {
         $stmt = $this->pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
         if ($stmt->execute([$hashedPassword, $_SESSION['user_id']])) {
             
+            // --- NUEVO: REGISTRAR EL CAMBIO DE CONTRASEÑA EN EL LOG ---
+            $this->logProfileChange($_SESSION['user_id'], 'password', '***', '***');
+            // ----------------------------------------------------------
+
             // Retiramos los permisos
             unset($_SESSION['can_change_password_expires']);
             $this->clearRateLimit('update_password');
