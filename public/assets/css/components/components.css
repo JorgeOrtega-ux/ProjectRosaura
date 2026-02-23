@@ -602,7 +602,18 @@
 .component-divider { border: 0; border-top: 1px solid #00000020; width: 100%; margin: 0; }
 
 .component-card__content { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 18px; }
+.component-card__content--full { width: 100%; }
+.component-card__content--start { align-items: flex-start; }
+
 .component-card__text { display: flex; flex-direction: column; gap: 4px; width: 100%; }
+
+.component-card__form-area {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    margin-top: 12px;
+}
 
 .component-card__title { font-size: 15px; font-weight: 600; margin: 0; color: #111111; }
 .component-card__description { font-size: 14px; color: #666666; margin: 0; line-height: 1.4; }
@@ -786,7 +797,6 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
         max-width: 100%;
     }
 }
-
 
 /* ========================================= */
 /* --- RESPONSIVE MOBILE COMPONENT LOGIC --- */
