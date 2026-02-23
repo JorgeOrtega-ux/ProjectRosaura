@@ -145,9 +145,25 @@ class SettingsServices {
             return ['success' => false, 'message' => 'Sesión no válida.'];
         }
 
+        // 1. SOLUCIÓN AL BUCLE (SEGURIDAD POR TIEMPO): 
+        // Si el usuario ya verificó su identidad y aún está dentro de los 15 minutos de gracia
+        if (!empty($_SESSION['can_update_email_expires']) && $_SESSION['can_update_email_expires'] > time()) {
+            return [
+                'success' => true, 
+                'message' => 'Identidad ya verificada.', 
+                'skip_verification' => true // Bandera especial para el frontend
+            ];
+        }
+
         $email = $_SESSION['user_email'];
 
-        // PREVENCIÓN DE SPAM: Evitar enviar si ya hay uno activo para modificar el correo.
+        // 2. RATE LIMITING: Bloqueo tras 3 envíos de código consecutivos por 30 minutos
+        $rateCheck = $this->checkRateLimit('request_email_code', 3, 30);
+        if (!$rateCheck['allowed']) {
+            return ['success' => false, 'message' => $rateCheck['message']];
+        }
+
+        // 3. PREVENCIÓN DE SPAM LIGERO: Evitar enviar si ya hay uno activo para modificar el correo.
         $stmt = $this->pdo->prepare("SELECT id FROM verification_codes WHERE identifier = ? AND code_type = 'email_update' AND expires_at > NOW()");
         $stmt->execute([$email]);
         if ($stmt->rowCount() > 0) {
@@ -169,6 +185,8 @@ class SettingsServices {
             $emailSent = $mailer->sendEmailUpdateCode($email, $_SESSION['user_name'], $code);
 
             if ($emailSent) {
+                // Registramos la acción porque ha generado un nuevo envío de correo
+                $this->recordAttempt('request_email_code', 3, 30);
                 return ['success' => true, 'message' => 'Se ha enviado un código a tu correo actual.'];
             } else {
                 return ['success' => false, 'message' => 'Error al enviar el correo electrónico. Inténtalo más tarde.'];
@@ -201,10 +219,13 @@ class SettingsServices {
             $delStmt = $this->pdo->prepare("DELETE FROM verification_codes WHERE id = ?");
             $delStmt->execute([$verification['id']]);
 
-            // Crear bandera en sesión que autorice cambiar el correo
-            $_SESSION['can_update_email'] = true;
+            // Crear bandera en sesión con TIEMPO DE EXPIRACIÓN de 15 minutos
+            $_SESSION['can_update_email_expires'] = time() + (15 * 60);
 
-            return ['success' => true, 'message' => 'Identidad verificada. Ya puedes editar tu correo.'];
+            // Como se verificó la identidad con éxito, limpiamos los intentos del rate limit
+            $this->clearRateLimit('request_email_code');
+
+            return ['success' => true, 'message' => 'Identidad verificada. Tienes 15 minutos para editar tu correo.'];
         }
 
         return ['success' => false, 'message' => 'El código ingresado es incorrecto o ha expirado.'];
@@ -215,9 +236,9 @@ class SettingsServices {
             return ['success' => false, 'message' => 'Sesión no válida.'];
         }
 
-        // SEGURIDAD: Verificar que el usuario pasó por el código de validación
-        if (empty($_SESSION['can_update_email']) || $_SESSION['can_update_email'] !== true) {
-            return ['success' => false, 'message' => 'Por seguridad, debes verificar tu identidad con el código enviado a tu correo primero.'];
+        // SEGURIDAD POR TIEMPO: Verificar que tiene la autorización y que NO han pasado los 15 minutos
+        if (empty($_SESSION['can_update_email_expires']) || $_SESSION['can_update_email_expires'] < time()) {
+            return ['success' => false, 'message' => 'Por seguridad, debes verificar tu identidad con el código enviado a tu correo primero o la sesión ha expirado.'];
         }
 
         $email = trim($data['email'] ?? '');
@@ -238,7 +259,7 @@ class SettingsServices {
             $_SESSION['user_email'] = $email;
             
             // Destruir bandera de actualización por seguridad tras concretar
-            unset($_SESSION['can_update_email']);
+            unset($_SESSION['can_update_email_expires']);
 
             return [
                 'success' => true, 
@@ -248,6 +269,72 @@ class SettingsServices {
         }
 
         return ['success' => false, 'message' => 'Error al actualizar el correo en base de datos.'];
+    }
+
+    /* ========================================================================= */
+    /* MÉTODOS PRIVADOS PARA LIMITACIÓN DE TASA (RATE LIMITING)                  */
+    /* ========================================================================= */
+
+    private function getIpAddress() {
+        if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
+            $ip = $_SERVER['HTTP_CLIENT_IP'];
+        } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+            $ip = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0];
+        } else {
+            $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+        }
+        return trim($ip);
+    }
+
+    private function checkRateLimit($action, $maxAttempts, $lockoutMinutes) {
+        $ip = $this->getIpAddress();
+        $stmt = $this->pdo->prepare("SELECT attempts, blocked_until FROM rate_limits WHERE ip_address = ? AND action = ?");
+        $stmt->execute([$ip, $action]);
+        $limit = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($limit) {
+            if ($limit['blocked_until'] && strtotime($limit['blocked_until']) > time()) {
+                $remainingMinutes = ceil((strtotime($limit['blocked_until']) - time()) / 60);
+                return [
+                    'allowed' => false, 
+                    'message' => "Has enviado demasiados códigos. Por seguridad, por favor espera {$remainingMinutes} minutos."
+                ];
+            }
+        }
+        
+        return ['allowed' => true];
+    }
+
+    private function recordAttempt($action, $maxAttempts, $lockoutMinutes) {
+        $ip = $this->getIpAddress();
+        $stmt = $this->pdo->prepare("SELECT attempts, blocked_until FROM rate_limits WHERE ip_address = ? AND action = ?");
+        $stmt->execute([$ip, $action]);
+        $limit = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($limit) {
+            if ($limit['blocked_until'] && strtotime($limit['blocked_until']) <= time()) {
+                $attempts = 1;
+                $blockedUntil = ($attempts >= $maxAttempts) ? date('Y-m-d H:i:s', strtotime("+{$lockoutMinutes} minutes")) : null;
+            } else {
+                $attempts = $limit['attempts'] + 1;
+                $blockedUntil = ($attempts >= $maxAttempts) ? date('Y-m-d H:i:s', strtotime("+{$lockoutMinutes} minutes")) : null;
+            }
+
+            $updateStmt = $this->pdo->prepare("UPDATE rate_limits SET attempts = ?, blocked_until = ? WHERE ip_address = ? AND action = ?");
+            $updateStmt->execute([$attempts, $blockedUntil, $ip, $action]);
+        } else {
+            $attempts = 1;
+            $blockedUntil = ($attempts >= $maxAttempts) ? date('Y-m-d H:i:s', strtotime("+{$lockoutMinutes} minutes")) : null;
+            
+            $insertStmt = $this->pdo->prepare("INSERT INTO rate_limits (ip_address, action, attempts, blocked_until) VALUES (?, ?, ?, ?)");
+            $insertStmt->execute([$ip, $action, $attempts, $blockedUntil]);
+        }
+    }
+
+    private function clearRateLimit($action) {
+        $ip = $this->getIpAddress();
+        $stmt = $this->pdo->prepare("DELETE FROM rate_limits WHERE ip_address = ? AND action = ?");
+        $stmt->execute([$ip, $action]);
     }
 }
 ?>

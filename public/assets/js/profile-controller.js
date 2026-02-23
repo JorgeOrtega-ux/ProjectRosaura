@@ -241,13 +241,11 @@ export class ProfileController {
         }
     }
 
-    // --- SECUENCIA DE EDITAR CORREO CON VERIFICACIÓN ---
-
     async handleEmailUpdateRequest() {
         // 1. Mostrar diálogo de carga
         window.dialogSystem.show('loadingEmailCode');
 
-        // 2. Pedir enviar código (El backend ignorará si ya existe uno activo, para evitar spam)
+        // 2. Pedir enviar código
         const res = await this.api.post(ApiRoutes.Settings.RequestEmailCode);
         
         // 3. Ocultar el diálogo de carga forzosamente y esperar a que las animaciones terminen
@@ -255,7 +253,14 @@ export class ProfileController {
         await new Promise(resolve => setTimeout(resolve, 350));
 
         if (res.success) {
-            this.showMessage(res.message, 'success'); // Muestra que se envió / ya estaba enviado
+            
+            // LÓGICA ANTI-BUCLES: Si el backend informa que ya estaba autorizado, abrimos la vista y detenemos el modal
+            if (res.skip_verification) {
+                window.appInstance.toggleEditState('email');
+                return;
+            }
+
+            this.showMessage(res.message, 'success');
 
             // 4. Mostrar input para capturar el código enviado
             const verifyDialog = await window.dialogSystem.show('verifyEmailCode');
