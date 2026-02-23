@@ -72,6 +72,8 @@ export class MainController {
                     this.toggleModule('moduleMainOptions');
                 } else if (action === 'toggleModuleLanguage') {
                     this.toggleModule('moduleLanguage');
+                } else if (action === 'toggleModuleTheme') {
+                    this.toggleModule('moduleTheme');
                 } else if (action === 'toggleMobileSearch') {
                     this.toggleMobileSearch();
                 } else if (action === 'toggleEditState') {
