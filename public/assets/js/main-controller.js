@@ -46,6 +46,7 @@ export class MainController {
             else if (base === 'it') finalLang = 'it-IT';
             
             localStorage.setItem('pr_language', finalLang);
+            document.cookie = "pr_language=" + finalLang + "; path=/; max-age=31536000"; // Sincroniza con PHP para invitados
             localStorage.setItem('pr_open_links_new_tab', '1');
             localStorage.setItem('pr_theme', 'system');
             localStorage.setItem('pr_extended_alerts', '0');
@@ -66,6 +67,11 @@ export class MainController {
         // 1. Aplicación inmediata visual
         if (key === 'theme') this.applyTheme(value);
 
+        // Actualizamos Cookie para que PHP sepa el idioma incluso si es invitado
+        if (key === 'language') {
+            document.cookie = "pr_language=" + value + "; path=/; max-age=31536000";
+        }
+
         // 2. Comprobar entorno (Base de datos o LocalStorage)
         if (window.AppUserPrefs) {
             window.AppUserPrefs[key] = value;
@@ -75,18 +81,24 @@ export class MainController {
                 const response = await this.api.post(ApiRoutes.Settings.UpdatePreferences, { key: key, value: value });
                 
                 if (response && response.success) {
-                    this.showToast('Preferencia guardada en tu cuenta', 'success');
+                    if (key !== 'language') this.showToast('Preferencia guardada en tu cuenta', 'success');
                 } else {
-                    this.showToast('Error de red al guardar preferencia', 'error');
+                    if (key !== 'language') this.showToast('Error de red al guardar preferencia', 'error');
                 }
             } catch (err) {
                 console.error("Error API:", err);
-                this.showToast('Error de red al guardar', 'error');
+                if (key !== 'language') this.showToast('Error de red al guardar', 'error');
             }
         } else {
             // Usuario invitado
             localStorage.setItem('pr_' + key, value);
-            this.showToast('Configuración local guardada', 'success');
+            if (key !== 'language') this.showToast('Configuración local guardada', 'success');
+        }
+
+        // 3. RECÁRGA DE PÁGINA SI ES IDIOMA (como pediste)
+        if (key === 'language') {
+            window.location.reload();
+            return;
         }
 
         this.syncUIPreferences(); // Refrescar textos e iconos

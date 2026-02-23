@@ -5,17 +5,17 @@ $userRole = $_SESSION['user_role'] ?? 'user';
 $userPic = $_SESSION['user_pic'] ?? '';
 ?>
 <script>
-    // Diccionario de títulos para la SPA
+    // Diccionario de títulos para la SPA. Usamos PHP para inyectar las traducciones.
     window.AppRouteTitles = {
-        '/': "Inicio",
-        '/explore': "Explorar colecciones",
-        '/login': "Iniciar sesión",
-        '/register': "Crear cuenta",
-        '/settings': "Configuración",
-        '/settings/your-profile': "Tu perfil",
-        '/settings/security': "Inicio de sesión y seguridad",
-        '/settings/accessibility': "Accesibilidad",
-        '/settings/guest': "Configuración de invitado"
+        '/': "<?php echo __('route_home'); ?>",
+        '/explore': "<?php echo __('route_explore'); ?>",
+        '/login': "<?php echo __('route_login'); ?>",
+        '/register': "<?php echo __('route_register'); ?>",
+        '/settings': "<?php echo __('route_settings'); ?>",
+        '/settings/your-profile': "<?php echo __('route_profile'); ?>",
+        '/settings/security': "<?php echo __('route_security'); ?>",
+        '/settings/accessibility': "<?php echo __('route_accessibility'); ?>",
+        '/settings/guest': "<?php echo __('route_guest'); ?>"
     };
     window.AppName = "ProjectRosaura";
 </script>
@@ -34,7 +34,7 @@ $userPic = $_SESSION['user_pic'] ?? '';
                 <span class="material-symbols-rounded">search</span>
             </div>
             <div class="component-search-input">
-                <input type="text" placeholder="Buscar...">
+                <input type="text" placeholder="<?php echo __('search_placeholder'); ?>">
             </div>
         </div>
     </div>
@@ -47,7 +47,7 @@ $userPic = $_SESSION['user_pic'] ?? '';
 
             <?php if (!$isLoggedIn): ?>
                 <button class="component-button component-button--dark component-button--h40" data-nav="/ProjectRosaura/login">
-                    Acceder
+                    <?php echo __('btn_login'); ?>
                 </button>
                 <button class="component-button component-button--icon component-button--h40" data-action="toggleModuleMainOptions">
                     <span class="material-symbols-rounded">more_vert</span>

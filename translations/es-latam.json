@@ -1,0 +1,15 @@
+{
+    "route_home": "Inicio",
+    "route_explore": "Explorar colecciones",
+    "route_login": "Iniciar sesión",
+    "route_register": "Crear cuenta",
+    "route_settings": "Configuración",
+    "route_profile": "Tu perfil",
+    "route_security": "Inicio de sesión y seguridad",
+    "route_accessibility": "Accesibilidad",
+    "route_guest": "Configuración de invitado",
+    "search_placeholder": "Buscar...",
+    "btn_login": "Acceder",
+    "home_title": "Página Principal",
+    "home_desc": "Bienvenido al inicio de Project Rosaura. Esta vista ha sido cargada mediante el sistema SPA sin recargar la página."
+}

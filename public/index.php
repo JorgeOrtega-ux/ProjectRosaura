@@ -14,7 +14,8 @@ require_once __DIR__ . '/../vendor/autoload.php';
 use App\Core\Loader;
 use App\Core\Router;
 use App\Core\Utils; 
-use App\Config\Database; // IMPORTANTE: Se importó la conexión a BD
+use App\Config\Database;
+use App\Core\Translator; // Importamos el traductor
 
 $csrfToken = Utils::generateCSRFToken();
 $routes = require __DIR__ . '/../includes/config/routes.php';
@@ -25,13 +26,11 @@ $router = new Router($routes);
 $routeData = $router->resolve();
 $currentView = $routeData['view'];
 
-// Detectar variables de estado clave
 $isLoggedIn = isset($_SESSION['user_id']);
 
 // ========================================================================================
 // --- FIX: AUTOSANAR SESIONES ANTIGUAS SIN PREFERENCIAS ---
 // ========================================================================================
-// Si tienes sesión activa, pero no tienes preferencias cargadas (sesión antigua):
 if ($isLoggedIn && !isset($_SESSION['user_prefs'])) {
     $db = new Database();
     $pdo = $db->getConnection();
@@ -43,12 +42,33 @@ if ($isLoggedIn && !isset($_SESSION['user_prefs'])) {
     if ($prefs) {
         $_SESSION['user_prefs'] = $prefs;
     } else {
-        // Si el usuario es tan viejo que ni siquiera tiene fila en la tabla
         $insPref = $pdo->prepare("INSERT INTO user_preferences (user_id, language, open_links_new_tab, theme, extended_alerts) VALUES (?, 'es-419', 1, 'system', 0)");
         if ($insPref->execute([$_SESSION['user_id']])) {
             $stmt->execute([$_SESSION['user_id']]);
             $_SESSION['user_prefs'] = $stmt->fetch(PDO::FETCH_ASSOC);
         }
+    }
+}
+
+// ========================================================================================
+// --- SISTEMA DE TRADUCCIONES ---
+// ========================================================================================
+$lang = 'es-419'; // Idioma por defecto
+if ($isLoggedIn && !empty($_SESSION['user_prefs']['language'])) {
+    $lang = $_SESSION['user_prefs']['language'];
+} elseif (isset($_COOKIE['pr_language'])) {
+    $lang = $_COOKIE['pr_language']; // Leemos la cookie si es invitado
+} else {
+    $lang = Utils::getClosestLanguage($_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '');
+}
+
+// Inicializamos el traductor
+Translator::init($lang);
+
+// Helper global para PHP
+if (!function_exists('__')) {
+    function __($key) {
+        return Translator::get($key);
     }
 }
 
@@ -86,7 +106,6 @@ if ($redirectUrl) {
     }
 }
 
-// Interceptar petición SPA (Renderiza solo la vista)
 if ($isSpaRequest) {
     $loader->load($currentView);
     exit; 
@@ -107,8 +126,13 @@ if ($isSpaRequest) {
     <title>Project Rosaura</title>
     
     <script>
-        // Si la sesión está sanada, esto ya no devolverá 'null'
         window.AppUserPrefs = <?php echo ($isLoggedIn && isset($_SESSION['user_prefs'])) ? json_encode($_SESSION['user_prefs']) : 'null'; ?>;
+        
+        // --- MOTOR DE TRADUCCIÓN PARA JAVASCRIPT ---
+        window.AppTranslations = <?php echo json_encode(Translator::getAll()); ?>;
+        function __(key) {
+            return (window.AppTranslations && window.AppTranslations[key] !== undefined) ? window.AppTranslations[key] : key;
+        }
         
         (function() {
             var theme = 'system';
@@ -159,10 +183,8 @@ if ($isSpaRequest) {
     </div>
 
     <div id="toast-container" class="toast-container"></div>
-    
     <div id="dialog-container"></div>
 
     <script type="module" src="assets/js/app-init.js"></script>
 </body>
-
 </html>
