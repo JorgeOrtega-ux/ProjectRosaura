@@ -10,7 +10,12 @@ $userPic = $_SESSION['user_pic'] ?? '';
         '/': "Inicio",
         '/explore': "Explorar colecciones",
         '/login': "Iniciar sesión",
-        '/register': "Crear cuenta"
+        '/register': "Crear cuenta",
+        '/settings': "Configuración",
+        '/settings/your-profile': "Tu perfil",
+        '/settings/security': "Inicio de sesión y seguridad",
+        '/settings/accessibility': "Accesibilidad",
+        '/settings/guest': "Configuración de invitado"
     };
     window.AppName = "ProjectRosaura";
 </script>

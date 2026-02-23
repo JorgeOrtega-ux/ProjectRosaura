@@ -169,4 +169,23 @@ body,html {
     .header.header--search-active .header-center {
         display: flex; 
     }
+}/* ========================================= */
+/* --- SETTINGS VIEWS ---                    */
+/* ========================================= */
+
+.settings-container {
+    padding: 24px;
+    width: 100%;
+}
+
+.settings-title {
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #111111;
+}
+
+.settings-desc {
+    color: #666666;
+    font-size: 15px;
 }

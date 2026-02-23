@@ -8,7 +8,7 @@ $isLoggedIn = isset($_SESSION['user_id']);
         <div class="pill-container"><div class="drag-handle"></div></div>
         
         <div class="component-menu-list">
-            <div class="component-menu-link">
+            <div class="component-menu-link nav-item" data-nav="/ProjectRosaura/settings">
                 <div class="component-menu-link-icon">
                     <span class="material-symbols-rounded">settings</span>
                 </div>

@@ -58,7 +58,8 @@ export class SpaRouter {
 
             const redirectUrl = response.headers.get('X-SPA-Redirect');
             if (redirectUrl) {
-                window.location.href = redirectUrl;
+                window.history.replaceState(null, '', redirectUrl);
+                this.loadRoute(redirectUrl);
                 return;
             }
 
@@ -113,6 +114,20 @@ export class SpaRouter {
         targets.forEach(target => {
             target.classList.add('active');
         });
+
+        // Lógica para alternar los menús principales vs configuración en la UI de Surface
+        const mainMenu = document.getElementById('sidebar-menu-main');
+        const settingsMenu = document.getElementById('sidebar-menu-settings');
+        
+        if (mainMenu && settingsMenu) {
+            if (path.includes('/settings')) {
+                mainMenu.style.display = 'none';
+                settingsMenu.style.display = 'flex';
+            } else {
+                mainMenu.style.display = 'flex';
+                settingsMenu.style.display = 'none';
+            }
+        }
     }
 
     updateDocumentTitle(url) {
