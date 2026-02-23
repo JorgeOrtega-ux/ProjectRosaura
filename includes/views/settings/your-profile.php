@@ -18,23 +18,32 @@ $formattedAvatar = '/ProjectRosaura/' . ltrim($userPic, '/');
             <p class="component-page-description">Administra tu foto de perfil, información personal y preferencias de cuenta.</p>
         </div>
 
+        <div class="component-alert-error" id="profile-error-message" style="margin-bottom: -8px;"></div>
+        <div class="component-alert-success" id="profile-success-message" style="margin-bottom: -8px;"></div>
+
         <div class="component-card--grouped">
             <div class="component-group-item">
                  <div class="component-card__content">
-                    <div class="component-avatar role-<?php echo htmlspecialchars($userRole); ?>">
-                        <img src="<?php echo htmlspecialchars($formattedAvatar); ?>" alt="Avatar">
-                        <div class="component-avatar__overlay">
+                    <div class="component-avatar role-<?php echo htmlspecialchars($userRole); ?>" id="profile-avatar-container">
+                        <img src="<?php echo htmlspecialchars($formattedAvatar); ?>" alt="Avatar" id="profile-avatar-img" data-original-src="<?php echo htmlspecialchars($formattedAvatar); ?>">
+                        <div class="component-avatar__overlay" id="profile-avatar-overlay">
                             <span class="material-symbols-rounded">photo_camera</span>
                         </div>
                     </div>
                     <div class="component-card__text">
                         <h2 class="component-card__title">Foto de perfil</h2>
                         <p class="component-card__description">Se recomienda una imagen cuadrada de máximo 2MB (PNG o JPG).</p>
+                        
+                        <input type="file" id="input-avatar-file" accept="image/png, image/jpeg, image/jpg" style="display: none;">
                     </div>
                 </div>
-                <div class="component-card__actions component-card__actions--stretch">
-                    <button type="button" class="component-button component-button--h34 component-button--dark">Cambiar foto</button>
-                    <button type="button" class="component-button component-button--h34">Eliminar</button>
+                
+                <div class="component-card__actions component-card__actions--stretch" id="profile-avatar-actions">
+                    <button type="button" class="component-button component-button--h34 component-button--dark" id="btn-change-avatar">Cambiar foto</button>
+                    <button type="button" class="component-button component-button--h34" id="btn-delete-avatar">Eliminar</button>
+                    
+                    <button type="button" class="component-button component-button--h34" id="btn-cancel-avatar" style="display: none;">Cancelar</button>
+                    <button type="button" class="component-button component-button--h34 component-button--dark" id="btn-save-avatar" style="display: none;">Guardar</button>
                 </div>
             </div>
 
@@ -46,7 +55,7 @@ $formattedAvatar = '/ProjectRosaura/' . ltrim($userPic, '/');
                     <div class="component-card__content">
                         <div class="component-card__text">
                             <h2 class="component-card__title">Nombre de usuario</h2>
-                            <span class="component-display-value"><?php echo htmlspecialchars($userName); ?></span>
+                            <span class="component-display-value" id="display-username"><?php echo htmlspecialchars($userName); ?></span>
                         </div>
                     </div>
                     <div class="component-card__actions component-card__actions--stretch">
@@ -60,11 +69,11 @@ $formattedAvatar = '/ProjectRosaura/' . ltrim($userPic, '/');
                             <h2 class="component-card__title">Nombre de usuario</h2>
                             <div class="component-edit-row">
                                 <div class="component-input-group component-input-group--h34">
-                                    <input type="text" id="input-username" class="component-input-field component-input-field--simple" value="<?php echo htmlspecialchars($userName); ?>" placeholder="Ingresa tu usuario">
+                                    <input type="text" id="input-username" class="component-input-field component-input-field--simple" value="<?php echo htmlspecialchars($userName); ?>" data-original-value="<?php echo htmlspecialchars($userName); ?>" placeholder="Ingresa tu usuario">
                                 </div>
                                 <div class="component-card__actions component-card__actions--stretch">
                                     <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="username">Cancelar</button>
-                                    <button type="button" class="component-button component-button--h34 component-button--dark">Guardar</button>
+                                    <button type="button" class="component-button component-button--h34 component-button--dark" data-action="saveUsername">Guardar</button>
                                 </div>
                             </div>
                         </div>
@@ -81,7 +90,7 @@ $formattedAvatar = '/ProjectRosaura/' . ltrim($userPic, '/');
                     <div class="component-card__content">
                         <div class="component-card__text">
                             <h2 class="component-card__title">Correo electrónico</h2>
-                            <span class="component-display-value"><?php echo htmlspecialchars($userEmail); ?></span>
+                            <span class="component-display-value" id="display-email"><?php echo htmlspecialchars($userEmail); ?></span>
                         </div>
                     </div>
                     <div class="component-card__actions component-card__actions--stretch">
@@ -95,11 +104,11 @@ $formattedAvatar = '/ProjectRosaura/' . ltrim($userPic, '/');
                             <h2 class="component-card__title">Correo electrónico</h2>
                             <div class="component-edit-row">
                                 <div class="component-input-group component-input-group--h34">
-                                    <input type="email" id="input-email" class="component-input-field component-input-field--simple" value="<?php echo htmlspecialchars($userEmail); ?>" placeholder="Ingresa tu correo">
+                                    <input type="email" id="input-email" class="component-input-field component-input-field--simple" value="<?php echo htmlspecialchars($userEmail); ?>" data-original-value="<?php echo htmlspecialchars($userEmail); ?>" placeholder="Ingresa tu correo">
                                 </div>
                                 <div class="component-card__actions component-card__actions--stretch">
                                     <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="email">Cancelar</button>
-                                    <button type="button" class="component-button component-button--h34 component-button--dark">Guardar</button>
+                                    <button type="button" class="component-button component-button--h34 component-button--dark" data-action="saveEmail">Guardar</button>
                                 </div>
                             </div>
                         </div>
@@ -120,15 +129,12 @@ $formattedAvatar = '/ProjectRosaura/' . ltrim($userPic, '/');
                 <div class="component-card__actions component-card__actions--start">
                     
                     <div class="component-dropdown-wrapper">
-                        
                         <div class="component-dropdown-trigger" data-action="toggleModuleLanguage">
                             <span class="material-symbols-rounded">language</span>
                             <span class="component-dropdown-text">Español (Latinoamérica)</span>
                             <span class="material-symbols-rounded">expand_more</span>
                         </div>
-                        
                         <?php include __DIR__ . '/../../modules/moduleLanguage.php'; ?>
-
                     </div>
 
                 </div>

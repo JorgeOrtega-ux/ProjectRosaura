@@ -18,14 +18,12 @@ header("Content-Security-Policy: default-src 'none'; frame-ancestors 'none';");
 
 // ========================================================================================
 
-
 // Cargar autoloader de Composer
 require_once __DIR__ . '/../vendor/autoload.php';
 
 use App\Core\Utils;
 
 // 1. OBTENER Y VALIDAR EL TOKEN CSRF DESDE LOS HEADERS DE LA PETICIÓN
-// PHP convierte las cabeceras personalizadas a mayúsculas y les agrega HTTP_
 $requestToken = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
 
 if (!Utils::validateCSRFToken($requestToken)) {
@@ -37,11 +35,21 @@ if (!Utils::validateCSRFToken($requestToken)) {
     exit;
 }
 
-// 2. Recibir los datos crudos del fetch
-$inputJSON = file_get_contents('php://input');
-$input = json_decode($inputJSON, true) ?? [];
+// 2. Recibir los datos de la petición (Soporte para JSON y FormData)
+$contentType = $_SERVER["CONTENT_TYPE"] ?? '';
+$input = [];
 
-// Extraer la ruta (ej. 'auth.login')
+if (strpos($contentType, 'multipart/form-data') !== false) {
+    // Si es FormData (ej. subida de archivos), PHP pobla $_POST y $_FILES automáticamente
+    $input = $_POST;
+    $input['_files'] = $_FILES; // Anexamos los archivos para mandarlos al controlador
+} else {
+    // Si es JSON normal
+    $inputJSON = file_get_contents('php://input');
+    $input = json_decode($inputJSON, true) ?? [];
+}
+
+// Extraer la ruta (ej. 'auth.login' o 'settings.update_avatar')
 $route = $input['route'] ?? '';
 
 if (empty($route)) {
@@ -49,25 +57,22 @@ if (empty($route)) {
     exit;
 }
 
-// Cargar el mapa de rutas (Este require se queda porque carga un arreglo de configuración)
+// Cargar el mapa de rutas
 $routes = require __DIR__ . '/route-map.php';
 
 // Validar si la ruta existe en el diccionario
 if (array_key_exists($route, $routes)) {
     $routeConfig = $routes[$route];
     
-    // Extraer qué controlador y qué método (acción) requiere esta ruta
+    // Extraer qué controlador y qué método requiere esta ruta
     $controllerName = $routeConfig['controller'];
     $action = $routeConfig['action'];
 
-    // Validar que la clase del Controlador exista (el Autoloader la buscará automáticamente)
     if (class_exists($controllerName)) {
-        // Instanciar el controlador dinámicamente
         $controller = new $controllerName();
         
-        // Validar que el método exista dentro del controlador
         if (method_exists($controller, $action)) {
-            // Ejecutar el método y pasarle el input, retornando la respuesta en JSON
+            // Ejecutar el método
             echo json_encode($controller->$action($input));
         } else {
             http_response_code(500);

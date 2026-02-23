@@ -9,5 +9,11 @@ export const ApiRoutes = {
         Logout: 'auth.logout',
         ForgotPassword: 'auth.forgot_password',
         ResetPassword: 'auth.reset_password'
+    },
+    Settings: {
+        UpdateAvatar: 'settings.update_avatar',
+        DeleteAvatar: 'settings.delete_avatar',
+        UpdateUsername: 'settings.update_username',
+        UpdateEmail: 'settings.update_email'
     }
 };
