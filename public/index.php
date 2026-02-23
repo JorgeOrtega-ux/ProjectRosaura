@@ -2,6 +2,28 @@
 // public/index.php
 session_start(); // AGREGADO PARA EL MANEJO DE SESIONES
 
+// ========================================================================================
+// --- CABECERAS DE SEGURIDAD HTTP ---
+// ========================================================================================
+
+// 1. Prevenir Clickjacking bloqueando iframes externos o limitándolos al mismo origen
+header("X-Frame-Options: SAMEORIGIN");
+
+// 2. Prevenir MIME-Sniffing obligando al navegador a respetar el Content-Type declarado
+header("X-Content-Type-Options: nosniff");
+
+// 3. Content Security Policy (CSP) contra XSS:
+// - default-src 'self': Permite contenido del mismo dominio.
+// - script-src: 'self' y 'unsafe-inline' (para los inlines de config en header.php).
+// - style-src: 'self', 'unsafe-inline' y fuentes de Google.
+// - font-src: 'self' y las fuentes renderizadas de Google.
+// - img-src: 'self' y base64 (data:)
+// - connect-src: 'self' (Esencial para las peticiones fetch de la SPA hacia la API local).
+// - frame-ancestors 'none': Directiva moderna para Clickjacking.
+header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none';");
+
+// ========================================================================================
+
 // Cargar autoloader de Composer
 require_once __DIR__ . '/../vendor/autoload.php';
 

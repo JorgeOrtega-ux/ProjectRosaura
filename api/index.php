@@ -3,6 +3,22 @@
 session_start();
 header('Content-Type: application/json');
 
+// ========================================================================================
+// --- CABECERAS DE SEGURIDAD PARA LA API ---
+// ========================================================================================
+
+// 1. Impedir completamente que la API sea enmarcada (Clickjacking)
+header("X-Frame-Options: DENY");
+
+// 2. Obligar estrictamente a que se interprete como application/json (MIME-Sniffing)
+header("X-Content-Type-Options: nosniff");
+
+// 3. CSP para APIs: Bloquea todos los recursos, no se ejecuta HTML ni scripts en una API JSON
+header("Content-Security-Policy: default-src 'none'; frame-ancestors 'none';");
+
+// ========================================================================================
+
+
 // Cargar autoloader de Composer
 require_once __DIR__ . '/../vendor/autoload.php';
 

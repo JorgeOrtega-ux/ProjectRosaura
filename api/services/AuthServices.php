@@ -179,6 +179,9 @@ class AuthServices {
         if ($stmtUser->execute([$uuid, $username, $email, $hashedPassword, $profilePicturePath])) {
             $userId = $this->pdo->lastInsertId();
             
+            // --- SEGURIDAD: PREVENCIÓN DE SESSION FIXATION ---
+            session_regenerate_id(true);
+            
             $_SESSION['user_id'] = $userId;
             $_SESSION['user_uuid'] = $uuid;
             $_SESSION['user_name'] = $username;
@@ -220,6 +223,10 @@ class AuthServices {
         if ($user && password_verify($password, $user['password'])) {
             // Login exitoso, limpiamos los intentos fallidos
             $this->clearRateLimit('login');
+
+            // --- SEGURIDAD: PREVENCIÓN DE SESSION FIXATION ---
+            // Borramos el id de sesión viejo y creamos uno nuevo asociado al usuario autenticado.
+            session_regenerate_id(true);
 
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['user_uuid'] = $user['uuid'];
