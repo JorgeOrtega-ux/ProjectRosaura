@@ -615,7 +615,7 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
 .component-dropdown-wrapper { position: relative; width: 100%; max-width: 265px; }
 .component-dropdown-wrapper .component-dropdown-trigger { max-width: 100%; }
 .component-dropdown-trigger { display: flex; align-items: center; gap: 8px; width: 100%; max-width: 265px; height: 40px; padding: 0 12px; border: 1px solid #00000020; border-radius: 8px; background-color: #ffffff; cursor: pointer; color: #111111; transition: border-color 0.2s ease, background-color 0.2s ease; }
-.component-dropdown-trigger:hover { border-color: #111111; background-color: #f5f5fa; }
+.component-dropdown-trigger:hover { border-color: #111111; }
 .component-dropdown-text { flex: 1; font-weight: 500; font-size: 14px; }
 
 /* ========================================= */
@@ -746,6 +746,7 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
         transform: translateY(0);
         transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
         will-change: transform;
+        padding-top: 0; /* Eliminamos el padding top superior en móvil (sin !important) */
     }
 
     .component-module--dropdown.disabled .component-menu {
@@ -771,10 +772,15 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
         align-items: center;
         width: 100%;
         flex-shrink: 0;
-        padding-top: 12px; /* Añadimos padding superior aquí ya que eliminamos el del contenedor */
-        padding-bottom: 12px;
+        padding-top: 8px; /* 8px en top */
+        padding-bottom: 8px; /* 8px en bottom */
         cursor: grab;
         touch-action: none; 
+    }
+
+    /* Evitar doble espaciado cuando hay un header u otro elemento que ya tenga padding justo debajo de la píldora */
+    .pill-container + .component-menu-header {
+        padding-top: 0;
     }
 }
 
