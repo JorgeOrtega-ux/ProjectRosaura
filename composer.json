@@ -1,6 +1,9 @@
 {
     "name": "projectrosaura/app",
     "description": "Project Rosaura con Autoload PSR-4",
+    "require": {
+        "phpmailer/phpmailer": "^6.9"
+    },
     "autoload": {
         "psr-4": {
             "App\\Core\\": "includes/core/",

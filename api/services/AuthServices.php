@@ -5,13 +5,14 @@ namespace App\Api\Services;
 
 use App\Core\Utils;
 use App\Config\Database;
+use App\Core\Mailer; // Importamos la nueva clase
 use PDO;
 
 class AuthServices {
     private $pdo;
 
     public function __construct() {
-        // Instanciamos la clase Database centralizada
+        // Instanciamos la clase Database centralizada (esto también carga el .env)
         $db = new Database();
         $this->pdo = $db->getConnection();
     }
@@ -69,8 +70,16 @@ class AuthServices {
         
         if ($stmt->execute([$identifier, $code, $payload, $expiresAt])) {
             $_SESSION['reg_username'] = $username;
-            // NOTA: El envío por correo u otro medio queda pendiente.
-            return ['success' => true, 'message' => 'Paso 2 completado.'];
+            
+            // Instanciamos el servicio de correo y lo enviamos
+            $mailer = new Mailer();
+            $emailSent = $mailer->sendVerificationCode($identifier, $username, $code);
+
+            if ($emailSent) {
+                return ['success' => true, 'message' => 'Paso 2 completado. Código enviado al correo.'];
+            } else {
+                return ['success' => false, 'message' => 'El registro avanzó, pero hubo un error de red al enviar el correo. Por favor intenta registrarte de nuevo.'];
+            }
         }
 
         return ['success' => false, 'message' => 'Error al guardar el código de verificación.'];
