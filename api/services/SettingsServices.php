@@ -311,6 +311,37 @@ class SettingsServices {
         return ['success' => false, 'message' => 'Error al actualizar el correo en base de datos.'];
     }
 
+    // --- NUEVO: Servicio para actualizar preferencias ---
+    public function updatePreferences($data) {
+        if (!isset($_SESSION['user_id'])) {
+            return ['success' => false, 'message' => 'Sesión no válida.'];
+        }
+
+        $key = $data['key'] ?? '';
+        $value = $data['value'] ?? '';
+
+        $allowedKeys = ['language', 'open_links_new_tab', 'theme', 'extended_alerts'];
+        
+        if (!in_array($key, $allowedKeys)) {
+            return ['success' => false, 'message' => 'Preferencia no válida.'];
+        }
+
+        // Sanitización dependiendo del tipo de preferencia
+        if ($key === 'open_links_new_tab' || $key === 'extended_alerts') {
+            $value = ($value === '1' || $value === true || $value === 1) ? 1 : 0;
+        }
+
+        $stmt = $this->pdo->prepare("UPDATE user_preferences SET {$key} = ? WHERE user_id = ?");
+        
+        if ($stmt->execute([$value, $_SESSION['user_id']])) {
+            // Actualizar la sesión en tiempo real
+            $_SESSION['user_prefs'][$key] = $value;
+            return ['success' => true, 'message' => 'Preferencia guardada.'];
+        }
+
+        return ['success' => false, 'message' => 'Error al guardar la preferencia.'];
+    }
+    
 
     /* ========================================================================= */
     /* MÉTODOS PRIVADOS PARA LIMITACIÓN Y REGISTRO DE CAMBIOS DE PERFIL (LOG)    */

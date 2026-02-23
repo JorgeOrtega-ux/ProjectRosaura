@@ -15,11 +15,11 @@ export class SpaRouter {
         });
 
         document.body.addEventListener('click', (e) => {
+            // Lógica para interceptar la navegación interna de la SPA
             const navTarget = e.target.closest('[data-nav]');
             if (navTarget) {
                 e.preventDefault();
 
-                // Cerrar cualquier sidebar/dropdown en móviles al hacer clic en un link
                 const module = navTarget.closest('.component-module');
                 if (module && module.classList.contains('active')) {
                     module.classList.remove('active');
@@ -30,6 +30,23 @@ export class SpaRouter {
 
                 const url = navTarget.dataset.nav;
                 this.navigate(url);
+                return;
+            }
+
+            // Lógica para la Preferencia de Usuario de "Abrir enlaces externos en nueva pestaña"
+            const anchor = e.target.closest('a');
+            if (anchor && anchor.href && !anchor.href.startsWith(window.location.origin) && !anchor.href.startsWith('javascript:')) {
+                let openNewTab = true;
+                if (window.AppUserPrefs) {
+                    openNewTab = parseInt(window.AppUserPrefs.open_links_new_tab) === 1;
+                } else {
+                    openNewTab = localStorage.getItem('pr_open_links_new_tab') !== '0'; // Por defecto es '1' (true)
+                }
+
+                if (openNewTab) {
+                    anchor.target = '_blank';
+                    anchor.rel = 'noopener noreferrer';
+                }
             }
         });
 
@@ -38,12 +55,9 @@ export class SpaRouter {
 
     navigate(url) {
         let currentPath = window.location.pathname;
-        
-        // 1. Normalizamos los slashes al final para comparaciones exactas sin falsos positivos
         let normalizedCurrent = currentPath.endsWith('/') && currentPath.length > 1 ? currentPath.slice(0, -1) : currentPath;
         let normalizedUrl = url.endsWith('/') && url.length > 1 ? url.slice(0, -1) : url;
 
-        // Si la ruta limpiada es exactamente la misma, abortamos tempranamente (Evita el re-fetch infinito)
         if (normalizedCurrent === normalizedUrl) return;
 
         window.history.pushState(null, '', url);
@@ -65,11 +79,10 @@ export class SpaRouter {
             const [response] = await Promise.all([fetchPromise, delayPromise]);
 
             if (response.ok) {
-                // Si el servidor resolvió la ruta internamente, actualizamos la barra de direcciones
                 const updateUrl = response.headers.get('X-SPA-Update-URL');
                 if (updateUrl) {
                     window.history.replaceState(null, '', updateUrl);
-                    url = updateUrl; // Actualizamos la URL local para el menú y título
+                    url = updateUrl; 
                 }
 
                 const html = await response.text();
@@ -77,7 +90,6 @@ export class SpaRouter {
                 this.highlightCurrentRoute();
                 this.updateDocumentTitle(url);
 
-                // LÓGICA SPA PURA: Evaluamos si la ruta es de Auth y actualizamos el layout visual
                 const isAuthRoute = url.includes('/login') || url.includes('/register') || url.includes('/forgot-password') || url.includes('/reset-password');
                 const topBar = document.querySelector('.general-content-top');
 
@@ -89,7 +101,6 @@ export class SpaRouter {
                     }
                 }
 
-                // Forzar el cierre del sidebar al entrar a una vista Auth
                 if (isAuthRoute) {
                     const sidebar = document.querySelector('.component-module--sidebar');
                     if (sidebar && sidebar.classList.contains('active')) {
@@ -120,14 +131,11 @@ export class SpaRouter {
 
         document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
 
-        // 2. Aplicamos clase 'active' a la ruta exacta normalizada
         const targets = document.querySelectorAll(`[data-nav="${normalizedPath}"], [data-nav="${normalizedPath}/"]`);
         targets.forEach(target => {
             target.classList.add('active');
         });
 
-        // 3. Regla especial para mantener el botón de Configuración activo en el Dropdown
-        // incluso si estás en otra subpestaña (ej: /settings/security)
         if (normalizedPath.includes('/settings')) {
             const dropdownSettingsItem = document.querySelector('.component-module--dropdown [data-nav^="/ProjectRosaura/settings"]');
             if (dropdownSettingsItem) {
@@ -135,7 +143,6 @@ export class SpaRouter {
             }
         }
 
-        // Lógica para alternar los menús principales vs configuración en la UI de Surface
         const mainMenu = document.getElementById('sidebar-menu-main');
         const settingsMenu = document.getElementById('sidebar-menu-settings');
         

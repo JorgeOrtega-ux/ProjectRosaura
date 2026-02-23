@@ -29,7 +29,6 @@ $isLoggedIn = isset($_SESSION['user_id']);
 $isSpaRequest = !empty($_SERVER['HTTP_X_SPA_REQUEST']);
 $isAuthRoute = (strpos($currentView, 'auth/') === 0);
 
-
 // ========================================================================================
 // --- PROTECCIÓN DE RUTAS Y REDIRECCIONES (ANTES DE ENVIAR CUALQUIER OUTPUT HTML) ---
 // ========================================================================================
@@ -41,36 +40,25 @@ $protectedSettings = [
 
 $redirectUrl = null;
 
-// 1. Entrada a /settings base
 if ($currentView === 'settings/index.php') {
     $currentView = $isLoggedIn ? 'settings/your-profile.php' : 'settings/guest.php';
     $redirectUrl = $isLoggedIn ? '/ProjectRosaura/settings/your-profile' : '/ProjectRosaura/settings/guest';
-}
-// 2. Proteger secciones si NO está logueado
-elseif (in_array($currentView, $protectedSettings) && !$isLoggedIn) {
+} elseif (in_array($currentView, $protectedSettings) && !$isLoggedIn) {
     $currentView = 'settings/guest.php';
     $redirectUrl = '/ProjectRosaura/settings/guest';
-}
-// 3. Proteger la vista de invitado si SÍ está logueado
-elseif ($currentView === 'settings/guest.php' && $isLoggedIn) {
+} elseif ($currentView === 'settings/guest.php' && $isLoggedIn) {
     $currentView = 'settings/your-profile.php';
     $redirectUrl = '/ProjectRosaura/settings/your-profile';
 }
 
-// Si la validación determinó que debemos cambiar de ruta...
 if ($redirectUrl) {
     if ($isSpaRequest) {
-        // Redirección interna: Le decimos al JS que actualice la URL en el navegador,
-        // pero NO detenemos la ejecución. El loader seguirá fluyendo hacia abajo.
         header("X-SPA-Update-URL: " . $redirectUrl);
     } else {
-        // Redirección dura si el usuario recargó la página con F5
         header("Location: " . $redirectUrl);
         exit;
     }
 }
-// ========================================================================================
-
 
 // Interceptar petición SPA (Renderiza solo la vista)
 if ($isSpaRequest) {
@@ -91,6 +79,33 @@ if ($isSpaRequest) {
     <link rel="stylesheet" type="text/css" href="assets/css/styles.css">
     <link rel="stylesheet" type="text/css" href="assets/css/components/components.css">
     <title>Project Rosaura</title>
+    
+    <script>
+        window.AppUserPrefs = <?php echo ($isLoggedIn && isset($_SESSION['user_prefs'])) ? json_encode($_SESSION['user_prefs']) : 'null'; ?>;
+        
+        (function() {
+            var theme = 'system';
+            if (window.AppUserPrefs && window.AppUserPrefs.theme) {
+                theme = window.AppUserPrefs.theme;
+            } else {
+                var guestTheme = localStorage.getItem('pr_theme');
+                if (guestTheme) theme = guestTheme;
+            }
+            
+            var isDark = false;
+            if (theme === 'system') {
+                isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            } else if (theme === 'dark') {
+                isDark = true;
+            }
+            
+            if (isDark) {
+                document.documentElement.classList.add('dark-theme');
+            } else {
+                document.documentElement.classList.add('light-theme');
+            }
+        })();
+    </script>
 </head>
 
 <body>

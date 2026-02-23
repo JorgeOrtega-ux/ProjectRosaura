@@ -91,7 +91,7 @@ $formattedAvatar = '/ProjectRosaura/' . ltrim($userPic, '/');
                         </div>
                     </div>
                     <div class="component-card__actions component-card__actions--stretch">
-                        <button type="button" class="component-button component-button--h34" data-action="requestEmailUpdate">Editar</button>
+                        <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="email">Editar</button>
                     </div>
                 </div>
 

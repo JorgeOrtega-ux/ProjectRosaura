@@ -16,6 +16,8 @@ export const ApiRoutes = {
         UpdateUsername: 'settings.update_username',
         RequestEmailCode: 'settings.request_email_code',
         VerifyEmailCode: 'settings.verify_email_code',
-        UpdateEmail: 'settings.update_email'
+        UpdateEmail: 'settings.update_email',
+        // NUEVO:
+        UpdatePreferences: 'settings.update_preferences'
     }
 };

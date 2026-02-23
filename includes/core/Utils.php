@@ -75,5 +75,53 @@ class Utils {
         // hash_equals previene ataques de sincronización (timing attacks)
         return hash_equals($_SESSION['csrf_token'], $token);
     }
+
+    /**
+     * Analiza el header de idioma HTTP_ACCEPT_LANGUAGE y devuelve el idioma más cercano disponible.
+     * @param string $acceptLanguage
+     * @return string
+     */
+    public static function getClosestLanguage($acceptLanguage) {
+        $available = [
+            'en-US', 'en-GB', 'fr-FR', 'de-DE', 'it-IT', 
+            'es-419', 'es-MX', 'es-ES', 'pt-BR', 'pt-PT'
+        ];
+        
+        if (empty($acceptLanguage)) return 'en-US';
+
+        // Extrae todos los idiomas solicitados y los ordena por su prioridad "q"
+        preg_match_all('/([a-z]{1,8}(-[a-z]{1,8})?)\s*(;\s*q\s*=\s*(1|0\.[0-9]+))?/i', $acceptLanguage, $lang_parse);
+        $langs = [];
+        if (count($lang_parse[1])) {
+            $langs = array_combine($lang_parse[1], $lang_parse[4]);
+            foreach ($langs as $lang => $val) {
+                if ($val === '') $langs[$lang] = 1;
+            }
+            arsort($langs, SORT_NUMERIC);
+        }
+
+        foreach ($langs as $lang => $q) {
+            $lang = str_replace('_', '-', $lang);
+            
+            // 1. Coincidencia exacta (ej. es-MX)
+            foreach ($available as $avail) {
+                if (strcasecmp($lang, $avail) === 0) {
+                    return $avail;
+                }
+            }
+            
+            // 2. Coincidencia base/fallback (ej. es-AR -> detecta 'es' y asigna 'es-419')
+            $base = strtolower(explode('-', $lang)[0]);
+            if ($base === 'es') return 'es-419';
+            if ($base === 'en') return 'en-US';
+            if ($base === 'pt') return 'pt-BR';
+            if ($base === 'fr') return 'fr-FR';
+            if ($base === 'de') return 'de-DE';
+            if ($base === 'it') return 'it-IT';
+        }
+
+        // Si nada coincide, inglés por defecto.
+        return 'en-US'; 
+    }
 }
 ?>

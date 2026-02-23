@@ -17,6 +17,9 @@ return [
     'settings.update_username'    => ['controller' => 'App\Api\Controllers\SettingsController', 'action' => 'update_username'],
     'settings.request_email_code' => ['controller' => 'App\Api\Controllers\SettingsController', 'action' => 'request_email_code'],
     'settings.verify_email_code'  => ['controller' => 'App\Api\Controllers\SettingsController', 'action' => 'verify_email_code'],
-    'settings.update_email'       => ['controller' => 'App\Api\Controllers\SettingsController', 'action' => 'update_email']
+    'settings.update_email'       => ['controller' => 'App\Api\Controllers\SettingsController', 'action' => 'update_email'],
+    
+    // --- NUEVO: RUTA PARA PREFERENCIAS ---
+    'settings.update_preferences' => ['controller' => 'App\Api\Controllers\SettingsController', 'action' => 'update_preferences']
 ];
 ?>

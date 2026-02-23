@@ -179,6 +179,18 @@ class AuthServices {
         if ($stmtUser->execute([$uuid, $username, $email, $hashedPassword, $profilePicturePath])) {
             $userId = $this->pdo->lastInsertId();
             
+            // --- CREACIÓN AUTOMÁTICA DE PREFERENCIAS ---
+            $acceptLang = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '';
+            $assignedLang = Utils::getClosestLanguage($acceptLang);
+            
+            $stmtPref = $this->pdo->prepare("INSERT INTO user_preferences (user_id, language, open_links_new_tab, theme, extended_alerts) VALUES (?, ?, 1, 'system', 0)");
+            $stmtPref->execute([$userId, $assignedLang]);
+
+            // Recuperamos las preferencias recién creadas
+            $stmtGetPref = $this->pdo->prepare("SELECT * FROM user_preferences WHERE user_id = ?");
+            $stmtGetPref->execute([$userId]);
+            $userPrefs = $stmtGetPref->fetch(PDO::FETCH_ASSOC);
+
             // --- SEGURIDAD: PREVENCIÓN DE SESSION FIXATION ---
             session_regenerate_id(true);
             
@@ -188,6 +200,7 @@ class AuthServices {
             $_SESSION['user_email'] = $email;
             $_SESSION['user_role'] = 'user';
             $_SESSION['user_pic'] = $profilePicturePath;
+            $_SESSION['user_prefs'] = $userPrefs;
 
             unset($_SESSION['reg_email']);
             unset($_SESSION['reg_password']);
@@ -210,7 +223,6 @@ class AuthServices {
             return ['success' => false, 'message' => 'Todos los campos son obligatorios.'];
         }
 
-        // 1. Verificación de Límite de Tasa (5 intentos, bloqueo de 15 minutos)
         $rateCheck = $this->checkRateLimit('login', 5, 15);
         if (!$rateCheck['allowed']) {
             return ['success' => false, 'message' => $rateCheck['message']];
@@ -221,12 +233,25 @@ class AuthServices {
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($user && password_verify($password, $user['password'])) {
-            // Login exitoso, limpiamos los intentos fallidos
             $this->clearRateLimit('login');
-
-            // --- SEGURIDAD: PREVENCIÓN DE SESSION FIXATION ---
-            // Borramos el id de sesión viejo y creamos uno nuevo asociado al usuario autenticado.
             session_regenerate_id(true);
+
+            // --- RECUPERACIÓN AUTOMÁTICA DE PREFERENCIAS ---
+            // Si por algún motivo la fila de preferencias fue borrada, la recreamos para evitar crasheos.
+            $stmtPref = $this->pdo->prepare("SELECT * FROM user_preferences WHERE user_id = ?");
+            $stmtPref->execute([$user['id']]);
+            $userPrefs = $stmtPref->fetch(PDO::FETCH_ASSOC);
+
+            if (!$userPrefs) {
+                $acceptLang = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '';
+                $assignedLang = Utils::getClosestLanguage($acceptLang);
+                
+                $insPref = $this->pdo->prepare("INSERT INTO user_preferences (user_id, language, open_links_new_tab, theme, extended_alerts) VALUES (?, ?, 1, 'system', 0)");
+                $insPref->execute([$user['id'], $assignedLang]);
+                
+                $stmtPref->execute([$user['id']]);
+                $userPrefs = $stmtPref->fetch(PDO::FETCH_ASSOC);
+            }
 
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['user_uuid'] = $user['uuid'];
@@ -234,11 +259,11 @@ class AuthServices {
             $_SESSION['user_email'] = $user['email'];
             $_SESSION['user_role'] = $user['role'];
             $_SESSION['user_pic'] = $user['profile_picture'];
+            $_SESSION['user_prefs'] = $userPrefs;
 
             return ['success' => true, 'message' => 'Inicio de sesión exitoso.'];
         }
 
-        // Login fallido, registramos el intento
         $this->recordAttempt('login', 5, 15);
 
         return ['success' => false, 'message' => 'Credenciales incorrectas.'];
@@ -257,30 +282,24 @@ class AuthServices {
             return ['success' => false, 'message' => 'El correo es obligatorio.'];
         }
 
-        // 1. Verificación de Límite de Tasa (3 intentos, bloqueo de 30 minutos)
-        // Esto ayuda a prevenir la enumeración de correos y envío de spam
         $rateCheck = $this->checkRateLimit('forgot_password', 3, 30);
         if (!$rateCheck['allowed']) {
             return ['success' => false, 'message' => $rateCheck['message']];
         }
 
-        // Checar si el usuario existe
         $stmt = $this->pdo->prepare("SELECT username FROM users WHERE email = ?");
         $stmt->execute([$email]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$user) {
-            // Aunque falle, registramos el intento para evitar enumeración rápida
             $this->recordAttempt('forgot_password', 3, 30);
             return ['success' => false, 'message' => 'El correo ingresado no existe.'];
         }
 
-        // Generar un token criptográficamente seguro de 64 caracteres
         $token = bin2hex(random_bytes(32)); 
         $expiresAt = date('Y-m-d H:i:s', strtotime('+15 minutes'));
         $payload = json_encode(['email' => $email]);
 
-        // Evitar acumulación de tokens por spam borrando los anteriores para esta cuenta
         $delStmt = $this->pdo->prepare("DELETE FROM verification_codes WHERE identifier = ? AND code_type = 'password_reset'");
         $delStmt->execute([$email]);
 
@@ -288,17 +307,14 @@ class AuthServices {
         
         if ($insertStmt->execute([$email, $token, $payload, $expiresAt])) {
             
-            // Construir el enlace en base al host dinámicamente
             $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
             $host = $_SERVER['HTTP_HOST'];
             $resetLink = $protocol . $host . "/ProjectRosaura/reset-password?token=" . $token;
 
-            // Enviar correo
             $mailer = new Mailer();
             $emailSent = $mailer->sendPasswordResetLink($email, $user['username'], $resetLink);
 
             if ($emailSent) {
-                // Registramos la acción exitosa como un intento para prevenir saturación del SMTP
                 $this->recordAttempt('forgot_password', 3, 30);
                 return ['success' => true, 'message' => 'Se ha enviado un correo con las instrucciones.'];
             } else {
@@ -322,7 +338,6 @@ class AuthServices {
             return ['success' => false, 'message' => 'La contraseña debe tener entre 8 y 64 caracteres.'];
         }
 
-        // Buscar el token
         $stmt = $this->pdo->prepare("SELECT * FROM verification_codes WHERE code = ? AND code_type = 'password_reset' AND expires_at > NOW()");
         $stmt->execute([$token]);
         $verification = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -334,11 +349,9 @@ class AuthServices {
         $email = $verification['identifier'];
         $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
 
-        // Actualizar contraseña
         $updateStmt = $this->pdo->prepare("UPDATE users SET password = ? WHERE email = ?");
         if ($updateStmt->execute([$hashedPassword, $email])) {
             
-            // Eliminar token usado
             $delStmt = $this->pdo->prepare("DELETE FROM verification_codes WHERE identifier = ? AND code_type = 'password_reset'");
             $delStmt->execute([$email]);
 
@@ -347,10 +360,6 @@ class AuthServices {
 
         return ['success' => false, 'message' => 'Hubo un error al actualizar la contraseña.'];
     }
-
-    /* ========================================================================= */
-    /* MÉTODOS PRIVADOS PARA LIMITACIÓN DE TASA (RATE LIMITING)                  */
-    /* ========================================================================= */
 
     private function getIpAddress() {
         if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
@@ -370,7 +379,6 @@ class AuthServices {
         $limit = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($limit) {
-            // Si hay un bloqueo activo y la fecha de expiración aún no llega
             if ($limit['blocked_until'] && strtotime($limit['blocked_until']) > time()) {
                 $remainingMinutes = ceil((strtotime($limit['blocked_until']) - time()) / 60);
                 return [
@@ -390,7 +398,6 @@ class AuthServices {
         $limit = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($limit) {
-            // Si ya pasó el tiempo de bloqueo, reiniciamos el contador a 1
             if ($limit['blocked_until'] && strtotime($limit['blocked_until']) <= time()) {
                 $attempts = 1;
                 $blockedUntil = ($attempts >= $maxAttempts) ? date('Y-m-d H:i:s', strtotime("+{$lockoutMinutes} minutes")) : null;
@@ -402,7 +409,6 @@ class AuthServices {
             $updateStmt = $this->pdo->prepare("UPDATE rate_limits SET attempts = ?, blocked_until = ? WHERE ip_address = ? AND action = ?");
             $updateStmt->execute([$attempts, $blockedUntil, $ip, $action]);
         } else {
-            // Primer intento
             $attempts = 1;
             $blockedUntil = ($attempts >= $maxAttempts) ? date('Y-m-d H:i:s', strtotime("+{$lockoutMinutes} minutes")) : null;
             
