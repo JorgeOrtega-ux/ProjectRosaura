@@ -4,9 +4,9 @@ $userPrefs = $_SESSION['user_prefs'] ?? [];
 $currentTheme = $userPrefs['theme'] ?? 'system';
 
 $themes = [
-    'system' => ['icon' => 'brightness_auto', 'text' => 'Sincronizar con el sistema'],
-    'light'  => ['icon' => 'light_mode', 'text' => 'Tema claro'],
-    'dark'   => ['icon' => 'dark_mode', 'text' => 'Tema oscuro']
+    'system' => ['icon' => 'brightness_auto', 'text' => __('theme_system')],
+    'light'  => ['icon' => 'light_mode', 'text' => __('theme_light')],
+    'dark'   => ['icon' => 'dark_mode', 'text' => __('theme_dark')]
 ];
 ?>
 <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="moduleTheme">

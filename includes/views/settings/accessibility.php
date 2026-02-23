@@ -5,26 +5,26 @@ $prefTheme = $userPrefs['theme'] ?? 'system';
 $prefExtendedAlerts = isset($userPrefs['extended_alerts']) ? (int)$userPrefs['extended_alerts'] : 0;
 
 $themeTexts = [
-    'system' => 'Sincronizar con el sistema',
-    'light'  => 'Tema claro',
-    'dark'   => 'Tema oscuro'
+    'system' => __('theme_system'),
+    'light'  => __('theme_light'),
+    'dark'   => __('theme_dark')
 ];
-$currentThemeText = $themeTexts[$prefTheme] ?? 'Sincronizar con el sistema';
+$currentThemeText = $themeTexts[$prefTheme] ?? __('theme_system');
 ?>
 <div class="view-content">
     <div class="component-wrapper">
         
         <div class="component-header-card">
-            <h1 class="component-page-title">Accesibilidad</h1>
-            <p class="component-page-description">Ajusta la interfaz según tus preferencias para una mejor experiencia.</p>
+            <h1 class="component-page-title"><?php echo __('acc_title'); ?></h1>
+            <p class="component-page-description"><?php echo __('acc_desc'); ?></p>
         </div>
 
         <div class="component-card--grouped">
             <div class="component-group-item component-group-item--stacked">
                 <div class="component-card__content">
                     <div class="component-card__text">
-                        <h2 class="component-card__title">Tema de la interfaz</h2>
-                        <p class="component-card__description">Elige el tema de colores para la plataforma.</p>
+                        <h2 class="component-card__title"><?php echo __('pref_theme_title'); ?></h2>
+                        <p class="component-card__description"><?php echo __('pref_theme_desc'); ?></p>
                     </div>
                 </div>
                 <div class="component-card__actions component-card__actions--start">
@@ -46,8 +46,8 @@ $currentThemeText = $themeTexts[$prefTheme] ?? 'Sincronizar con el sistema';
             <div class="component-group-item component-group-item--wrap">
                 <div class="component-card__content">
                     <div class="component-card__text">
-                        <h2 class="component-card__title">Aumentar el tiempo de las alertas</h2>
-                        <p class="component-card__description">Las notificaciones y mensajes durarán más tiempo en la pantalla antes de desaparecer.</p>
+                        <h2 class="component-card__title"><?php echo __('pref_alerts_title'); ?></h2>
+                        <p class="component-card__description"><?php echo __('pref_alerts_desc'); ?></p>
                     </div>
                 </div>
                 <div class="component-card__actions component-card__actions--end">

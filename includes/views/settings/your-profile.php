@@ -33,8 +33,8 @@ $currentLangText = $languages[$prefLang] ?? 'Español (Latinoamérica)';
     <div class="component-wrapper">
         
         <div class="component-header-card">
-            <h1 class="component-page-title">Tu Perfil</h1>
-            <p class="component-page-description">Administra tu foto de perfil, información personal y preferencias de cuenta.</p>
+            <h1 class="component-page-title"><?php echo __('prof_title'); ?></h1>
+            <p class="component-page-description"><?php echo __('prof_desc'); ?></p>
         </div>
 
         <div class="component-card--grouped">
@@ -47,19 +47,19 @@ $currentLangText = $languages[$prefLang] ?? 'Español (Latinoamérica)';
                         </div>
                     </div>
                     <div class="component-card__text">
-                        <h2 class="component-card__title">Foto de perfil</h2>
-                        <p class="component-card__description">Se recomienda una imagen cuadrada de máximo 2MB (PNG o JPG).</p>
+                        <h2 class="component-card__title"><?php echo __('prof_avatar_title'); ?></h2>
+                        <p class="component-card__description"><?php echo __('prof_avatar_desc'); ?></p>
                         
                         <input type="file" id="input-avatar-file" accept="image/png, image/jpeg, image/jpg" style="display: none;">
                     </div>
                 </div>
                 
                 <div class="component-card__actions component-card__actions--stretch" id="profile-avatar-actions">
-                    <button type="button" class="component-button component-button--h34 component-button--dark" id="btn-change-avatar">Cambiar foto</button>
-                    <button type="button" class="component-button component-button--h34" id="btn-delete-avatar">Eliminar</button>
+                    <button type="button" class="component-button component-button--h34 component-button--dark" id="btn-change-avatar"><?php echo __('btn_change_avatar'); ?></button>
+                    <button type="button" class="component-button component-button--h34" id="btn-delete-avatar"><?php echo __('btn_delete'); ?></button>
                     
-                    <button type="button" class="component-button component-button--h34" id="btn-cancel-avatar" style="display: none;">Cancelar</button>
-                    <button type="button" class="component-button component-button--h34 component-button--dark" id="btn-save-avatar" style="display: none;">Guardar</button>
+                    <button type="button" class="component-button component-button--h34" id="btn-cancel-avatar" style="display: none;"><?php echo __('btn_cancel'); ?></button>
+                    <button type="button" class="component-button component-button--h34 component-button--dark" id="btn-save-avatar" style="display: none;"><?php echo __('btn_save'); ?></button>
                 </div>
             </div>
 
@@ -70,26 +70,26 @@ $currentLangText = $languages[$prefLang] ?? 'Español (Latinoamérica)';
                 <div class="active component-state-box" data-state="username-view">
                     <div class="component-card__content">
                         <div class="component-card__text">
-                            <h2 class="component-card__title">Nombre de usuario</h2>
+                            <h2 class="component-card__title"><?php echo __('lbl_username'); ?></h2>
                             <span class="component-display-value" id="display-username"><?php echo htmlspecialchars($userName); ?></span>
                         </div>
                     </div>
                     <div class="component-card__actions component-card__actions--stretch">
-                        <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="username">Editar</button>
+                        <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="username"><?php echo __('btn_edit'); ?></button>
                     </div>
                 </div>
 
                 <div class="disabled component-state-box" data-state="username-edit">
                     <div class="component-card__content" style="width: 100%;">
                         <div class="component-card__text" style="width: 100%;">
-                            <h2 class="component-card__title">Nombre de usuario</h2>
+                            <h2 class="component-card__title"><?php echo __('lbl_username'); ?></h2>
                             <div class="component-edit-row">
                                 <div class="component-input-group component-input-group--h34">
-                                    <input type="text" id="input-username" class="component-input-field component-input-field--simple" value="<?php echo htmlspecialchars($userName); ?>" data-original-value="<?php echo htmlspecialchars($userName); ?>" placeholder="Ingresa tu usuario">
+                                    <input type="text" id="input-username" class="component-input-field component-input-field--simple" value="<?php echo htmlspecialchars($userName); ?>" data-original-value="<?php echo htmlspecialchars($userName); ?>" placeholder="<?php echo __('ph_username'); ?>">
                                 </div>
                                 <div class="component-card__actions component-card__actions--stretch">
-                                    <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="username">Cancelar</button>
-                                    <button type="button" class="component-button component-button--h34 component-button--dark" data-action="saveUsername">Guardar</button>
+                                    <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="username"><?php echo __('btn_cancel'); ?></button>
+                                    <button type="button" class="component-button component-button--h34 component-button--dark" data-action="saveUsername"><?php echo __('btn_save'); ?></button>
                                 </div>
                             </div>
                         </div>
@@ -105,26 +105,26 @@ $currentLangText = $languages[$prefLang] ?? 'Español (Latinoamérica)';
                 <div class="active component-state-box" data-state="email-view">
                     <div class="component-card__content">
                         <div class="component-card__text">
-                            <h2 class="component-card__title">Correo electrónico</h2>
+                            <h2 class="component-card__title"><?php echo __('lbl_email'); ?></h2>
                             <span class="component-display-value" id="display-email"><?php echo htmlspecialchars($userEmail); ?></span>
                         </div>
                     </div>
                     <div class="component-card__actions component-card__actions--stretch">
-                        <button type="button" class="component-button component-button--h34" data-action="requestEmailUpdate">Editar</button>
+                        <button type="button" class="component-button component-button--h34" data-action="requestEmailUpdate"><?php echo __('btn_edit'); ?></button>
                     </div>
                 </div>
 
                 <div class="disabled component-state-box" data-state="email-edit">
                     <div class="component-card__content" style="width: 100%;">
                         <div class="component-card__text" style="width: 100%;">
-                            <h2 class="component-card__title">Correo electrónico</h2>
+                            <h2 class="component-card__title"><?php echo __('lbl_email'); ?></h2>
                             <div class="component-edit-row">
                                 <div class="component-input-group component-input-group--h34">
-                                    <input type="email" id="input-email" class="component-input-field component-input-field--simple" value="<?php echo htmlspecialchars($userEmail); ?>" data-original-value="<?php echo htmlspecialchars($userEmail); ?>" placeholder="Ingresa tu correo">
+                                    <input type="email" id="input-email" class="component-input-field component-input-field--simple" value="<?php echo htmlspecialchars($userEmail); ?>" data-original-value="<?php echo htmlspecialchars($userEmail); ?>" placeholder="<?php echo __('ph_email'); ?>">
                                 </div>
                                 <div class="component-card__actions component-card__actions--stretch">
-                                    <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="email">Cancelar</button>
-                                    <button type="button" class="component-button component-button--h34 component-button--dark" data-action="saveEmail">Guardar</button>
+                                    <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="email"><?php echo __('btn_cancel'); ?></button>
+                                    <button type="button" class="component-button component-button--h34 component-button--dark" data-action="saveEmail"><?php echo __('btn_save'); ?></button>
                                 </div>
                             </div>
                         </div>
@@ -138,8 +138,8 @@ $currentLangText = $languages[$prefLang] ?? 'Español (Latinoamérica)';
             <div class="component-group-item component-group-item--stacked">
                 <div class="component-card__content">
                     <div class="component-card__text">
-                        <h2 class="component-card__title">Idioma de la interfaz</h2>
-                        <p class="component-card__description">Selecciona tu idioma preferido para la plataforma.</p>
+                        <h2 class="component-card__title"><?php echo __('pref_lang_title'); ?></h2>
+                        <p class="component-card__description"><?php echo __('pref_lang_desc'); ?></p>
                     </div>
                 </div>
                 <div class="component-card__actions component-card__actions--start">
@@ -161,8 +161,8 @@ $currentLangText = $languages[$prefLang] ?? 'Español (Latinoamérica)';
             <div class="component-group-item component-group-item--wrap">
                 <div class="component-card__content">
                     <div class="component-card__text">
-                        <h2 class="component-card__title">Abrir enlaces en una pestaña nueva</h2>
-                        <p class="component-card__description">Los enlaces externos se abrirán en una nueva pestaña del navegador.</p>
+                        <h2 class="component-card__title"><?php echo __('pref_links_title'); ?></h2>
+                        <p class="component-card__description"><?php echo __('pref_links_desc'); ?></p>
                     </div>
                 </div>
                 <div class="component-card__actions component-card__actions--end">

@@ -12,7 +12,7 @@ $isLoggedIn = isset($_SESSION['user_id']);
                         <span class="material-symbols-rounded">home</span>
                     </div>
                     <div class="component-menu-link-text">
-                        <span>Página principal</span>
+                        <span><?php echo __('menu_home'); ?></span>
                     </div>
                 </div>
                 <div class="component-menu-link nav-item" data-nav="/ProjectRosaura/explore">
@@ -20,7 +20,7 @@ $isLoggedIn = isset($_SESSION['user_id']);
                         <span class="material-symbols-rounded">explore</span>
                     </div>
                     <div class="component-menu-link-text">
-                        <span>Explorar colecciones</span>
+                        <span><?php echo __('menu_explore'); ?></span>
                     </div>
                 </div>
             </div>
@@ -33,7 +33,7 @@ $isLoggedIn = isset($_SESSION['user_id']);
                         <span class="material-symbols-rounded">arrow_back</span>
                     </div>
                     <div class="component-menu-link-text">
-                        <span>Volver a inicio</span>
+                        <span><?php echo __('menu_back_home'); ?></span>
                     </div>
                 </div>
 
@@ -45,7 +45,7 @@ $isLoggedIn = isset($_SESSION['user_id']);
                         <span class="material-symbols-rounded">person</span>
                     </div>
                     <div class="component-menu-link-text">
-                        <span>Tu perfil</span>
+                        <span><?php echo __('menu_profile'); ?></span>
                     </div>
                 </div>
                 <div class="component-menu-link nav-item" data-nav="/ProjectRosaura/settings/security">
@@ -53,7 +53,7 @@ $isLoggedIn = isset($_SESSION['user_id']);
                         <span class="material-symbols-rounded">security</span>
                     </div>
                     <div class="component-menu-link-text">
-                        <span>Inicio de sesión y seguridad</span>
+                        <span><?php echo __('menu_security'); ?></span>
                     </div>
                 </div>
                 <div class="component-menu-link nav-item" data-nav="/ProjectRosaura/settings/accessibility">
@@ -61,7 +61,7 @@ $isLoggedIn = isset($_SESSION['user_id']);
                         <span class="material-symbols-rounded">accessibility_new</span>
                     </div>
                     <div class="component-menu-link-text">
-                        <span>Accesibilidad</span>
+                        <span><?php echo __('menu_accessibility'); ?></span>
                     </div>
                 </div>
                 <?php else: ?>
@@ -70,7 +70,7 @@ $isLoggedIn = isset($_SESSION['user_id']);
                         <span class="material-symbols-rounded">person_off</span>
                     </div>
                     <div class="component-menu-link-text">
-                        <span>Configuración de invitado</span>
+                        <span><?php echo __('menu_guest_settings'); ?></span>
                     </div>
                 </div>
                 <?php endif; ?>

@@ -54,7 +54,7 @@ $userPic = $_SESSION['user_pic'] ?? '';
                 </button>
             <?php else: ?>
                 <button class="component-button component-button--profile role-<?php echo htmlspecialchars($userRole); ?>" data-action="toggleModuleMainOptions">
-                    <img src="/ProjectRosaura/<?php echo htmlspecialchars($userPic); ?>" alt="Perfil">
+                    <img src="/ProjectRosaura/<?php echo htmlspecialchars($userPic); ?>" alt="<?php echo __('alt_profile'); ?>">
                 </button>
             <?php endif; ?>
 

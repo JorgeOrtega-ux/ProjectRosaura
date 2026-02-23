@@ -15,11 +15,11 @@ $errorMsg = null;
 // Validación de protección de acceso directo
 if ($relativePath === '/register/aditional-data') {
     if (empty($_SESSION['reg_email']) || empty($_SESSION['reg_password'])) {
-        $errorMsg = "No hay datos previos. Por favor inicia el registro desde el principio.";
+        $errorMsg = __('reg_no_data');
     }
 } elseif ($relativePath === '/register/verification-account') {
     if (empty($_SESSION['reg_email']) || empty($_SESSION['reg_username'])) {
-        $errorMsg = "No hay datos previos. Por favor inicia el registro desde el principio.";
+        $errorMsg = __('reg_no_data');
     }
 }
 ?>
@@ -29,89 +29,89 @@ if ($relativePath === '/register/aditional-data') {
         
         <?php if ($errorMsg): ?>
             <div class="component-form-header">
-                <h1 class="component-form-title" style="color: #d32f2f;">Acceso Denegado</h1>
+                <h1 class="component-form-title" style="color: #d32f2f;"><?php echo __('reg_access_denied'); ?></h1>
                 <p class="component-form-desc"><?php echo htmlspecialchars($errorMsg); ?></p>
             </div>
             <div class="component-form-body">
                 <button class="component-button component-button--dark component-button--h45 component-button--full" data-nav="/ProjectRosaura/register">
-                    Volver al inicio
+                    <?php echo __('btn_back_home'); ?>
                 </button>
             </div>
         <?php else: ?>
 
             <?php if ($relativePath === '/register'): ?>
                 <div class="component-form-header">
-                    <h1 class="component-form-title">Crear cuenta</h1>
-                    <p class="component-form-desc">Paso 1: Ingresa tu correo y contraseña.</p>
+                    <h1 class="component-form-title"><?php echo __('reg_step1_title'); ?></h1>
+                    <p class="component-form-desc"><?php echo __('reg_step1_desc'); ?></p>
                 </div>
 
                 <div class="component-form-body">
                     <div class="component-input-group">
                         <input type="email" id="email" name="email" class="component-input-field" placeholder=" ">
-                        <label for="email" class="component-input-label">Correo electrónico</label>
+                        <label for="email" class="component-input-label"><?php echo __('lbl_email'); ?></label>
                     </div>
 
                     <div class="component-input-group">
                         <input type="password" id="password" name="password" class="component-input-field component-input-field--with-icon" placeholder=" ">
-                        <label for="password" class="component-input-label">Contraseña</label>
+                        <label for="password" class="component-input-label"><?php echo __('lbl_password'); ?></label>
                         <span class="material-symbols-rounded component-input-toggle" data-action="togglePassword">visibility_off</span>
                     </div>
 
                     <button class="component-button component-button--dark component-button--h45 component-button--full" data-action="submitRegisterStep1">
-                        Continuar
+                        <?php echo __('btn_continue'); ?>
                     </button>
                     
                     <div class="component-alert-error" id="auth-error-message"></div>
 
                     <div class="component-link-container component-link-container--center">
-                        <span class="component-link-text">¿Ya tienes una cuenta?</span>
-                        <span class="component-link" data-nav="/ProjectRosaura/login">Iniciar sesión</span>
+                        <span class="component-link-text"><?php echo __('txt_has_account'); ?></span>
+                        <span class="component-link" data-nav="/ProjectRosaura/login"><?php echo __('link_login'); ?></span>
                     </div>
                 </div>
 
             <?php elseif ($relativePath === '/register/aditional-data'): ?>
                 <div class="component-form-header">
-                    <h1 class="component-form-title">Datos adicionales</h1>
-                    <p class="component-form-desc">Paso 2: Elige cómo te llamarán los demás.</p>
+                    <h1 class="component-form-title"><?php echo __('reg_step2_title'); ?></h1>
+                    <p class="component-form-desc"><?php echo __('reg_step2_desc'); ?></p>
                 </div>
 
                 <div class="component-form-body">
                     <div class="component-input-group">
                         <input type="text" id="username" name="username" class="component-input-field" placeholder=" ">
-                        <label for="username" class="component-input-label">Nombre de usuario</label>
+                        <label for="username" class="component-input-label"><?php echo __('lbl_username'); ?></label>
                     </div>
 
                     <button class="component-button component-button--dark component-button--h45 component-button--full" data-action="submitRegisterStep2">
-                        Continuar
+                        <?php echo __('btn_continue'); ?>
                     </button>
                     
                     <div class="component-alert-error" id="auth-error-message"></div>
 
                     <div class="component-link-container component-link-container--center">
-                        <span class="component-link" data-nav="/ProjectRosaura/register">Volver atrás</span>
+                        <span class="component-link" data-nav="/ProjectRosaura/register"><?php echo __('link_go_back'); ?></span>
                     </div>
                 </div>
 
             <?php elseif ($relativePath === '/register/verification-account'): ?>
                 <div class="component-form-header">
-                    <h1 class="component-form-title">Verificar cuenta</h1>
-                    <p class="component-form-desc">Paso 3: Ingresa el código de 12 dígitos que te enviamos.</p>
+                    <h1 class="component-form-title"><?php echo __('reg_step3_title'); ?></h1>
+                    <p class="component-form-desc"><?php echo __('reg_step3_desc'); ?></p>
                 </div>
 
                 <div class="component-form-body">
                     <div class="component-input-group">
                         <input type="text" id="verification_code" name="verification_code" class="component-input-field" placeholder=" " maxlength="14">
-                        <label for="verification_code" class="component-input-label">Código de verificación</label>
+                        <label for="verification_code" class="component-input-label"><?php echo __('lbl_verify_code'); ?></label>
                     </div>
 
                     <button class="component-button component-button--dark component-button--h45 component-button--full" data-action="submitRegisterVerify">
-                        Crear cuenta
+                        <?php echo __('btn_create_account'); ?>
                     </button>
                     
                     <div class="component-alert-error" id="auth-error-message"></div>
                     
                     <div class="component-link-container component-link-container--center">
-                        <span class="component-link" data-nav="/ProjectRosaura/register/aditional-data">Volver atrás</span>
+                        <span class="component-link" data-nav="/ProjectRosaura/register/aditional-data"><?php echo __('link_go_back'); ?></span>
                     </div>
                 </div>
             <?php endif; ?>

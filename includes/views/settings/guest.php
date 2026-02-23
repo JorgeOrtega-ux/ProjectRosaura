@@ -19,16 +19,16 @@ $currentLangText = $languages[$prefLang] ?? 'Español (Latinoamérica)';
     <div class="component-wrapper">
         
         <div class="component-header-card">
-            <h1 class="component-page-title">Configuración de invitado</h1>
-            <p class="component-page-description">No tienes una sesión activa. Inicia sesión para guardar permanentemente tus preferencias. Mientras tanto, puedes ajustar estas opciones locales.</p>
+            <h1 class="component-page-title"><?php echo __('guest_title'); ?></h1>
+            <p class="component-page-description"><?php echo __('guest_desc'); ?></p>
         </div>
 
         <div class="component-card--grouped">
             <div class="component-group-item component-group-item--stacked">
                 <div class="component-card__content">
                     <div class="component-card__text">
-                        <h2 class="component-card__title">Idioma de la interfaz</h2>
-                        <p class="component-card__description">Selecciona tu idioma preferido para la plataforma.</p>
+                        <h2 class="component-card__title"><?php echo __('pref_lang_title'); ?></h2>
+                        <p class="component-card__description"><?php echo __('pref_lang_desc'); ?></p>
                     </div>
                 </div>
                 <div class="component-card__actions component-card__actions--start">
@@ -50,8 +50,8 @@ $currentLangText = $languages[$prefLang] ?? 'Español (Latinoamérica)';
             <div class="component-group-item component-group-item--stacked">
                 <div class="component-card__content">
                     <div class="component-card__text">
-                        <h2 class="component-card__title">Tema de la interfaz</h2>
-                        <p class="component-card__description">Elige el tema de colores para la plataforma.</p>
+                        <h2 class="component-card__title"><?php echo __('pref_theme_title'); ?></h2>
+                        <p class="component-card__description"><?php echo __('pref_theme_desc'); ?></p>
                     </div>
                 </div>
                 <div class="component-card__actions component-card__actions--start">
@@ -59,7 +59,7 @@ $currentLangText = $languages[$prefLang] ?? 'Español (Latinoamérica)';
                     <div class="component-dropdown-wrapper">
                         <div class="component-dropdown-trigger" data-action="toggleModuleTheme">
                             <span class="material-symbols-rounded">brightness_auto</span>
-                            <span class="component-dropdown-text">Sincronizar con el sistema</span>
+                            <span class="component-dropdown-text"><?php echo __('theme_system'); ?></span>
                             <span class="material-symbols-rounded">expand_more</span>
                         </div>
                         <?php include __DIR__ . '/../../modules/moduleTheme.php'; ?>
@@ -73,8 +73,8 @@ $currentLangText = $languages[$prefLang] ?? 'Español (Latinoamérica)';
             <div class="component-group-item component-group-item--wrap">
                 <div class="component-card__content">
                     <div class="component-card__text">
-                        <h2 class="component-card__title">Abrir enlaces en una pestaña nueva</h2>
-                        <p class="component-card__description">Los enlaces externos se abrirán en una nueva pestaña del navegador.</p>
+                        <h2 class="component-card__title"><?php echo __('pref_links_title'); ?></h2>
+                        <p class="component-card__description"><?php echo __('pref_links_desc'); ?></p>
                     </div>
                 </div>
                 <div class="component-card__actions component-card__actions--end">
@@ -90,8 +90,8 @@ $currentLangText = $languages[$prefLang] ?? 'Español (Latinoamérica)';
             <div class="component-group-item component-group-item--wrap">
                 <div class="component-card__content">
                     <div class="component-card__text">
-                        <h2 class="component-card__title">Aumentar el tiempo de las alertas</h2>
-                        <p class="component-card__description">Las notificaciones y mensajes durarán más tiempo en la pantalla antes de desaparecer.</p>
+                        <h2 class="component-card__title"><?php echo __('pref_alerts_title'); ?></h2>
+                        <p class="component-card__description"><?php echo __('pref_alerts_desc'); ?></p>
                     </div>
                 </div>
                 <div class="component-card__actions component-card__actions--end">

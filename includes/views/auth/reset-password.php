@@ -22,22 +22,22 @@ if (!empty($token)) {
         
         <?php if (!$isValid): ?>
             <div class="component-form-header">
-                <h1 class="component-form-title">Enlace no válido</h1>
-                <p class="component-form-desc">El enlace para restablecer la contraseña no existe, ya fue usado o ha expirado.</p>
+                <h1 class="component-form-title"><?php echo __('reset_invalid_title'); ?></h1>
+                <p class="component-form-desc"><?php echo __('reset_invalid_desc'); ?></p>
             </div>
             
             <div class="component-form-body">
                 <button class="component-button component-button--dark component-button--h45 component-button--full" data-nav="/ProjectRosaura/forgot-password">
-                    Volver a intentar
+                    <?php echo __('btn_try_again'); ?>
                 </button>
                 <div class="component-link-container component-link-container--center">
-                    <span class="component-link" data-nav="/ProjectRosaura/login">Ir al inicio de sesión</span>
+                    <span class="component-link" data-nav="/ProjectRosaura/login"><?php echo __('link_go_login'); ?></span>
                 </div>
             </div>
         <?php else: ?>
             <div class="component-form-header">
-                <h1 class="component-form-title">Nueva contraseña</h1>
-                <p class="component-form-desc">Ingresa tu nueva contraseña para la cuenta.</p>
+                <h1 class="component-form-title"><?php echo __('reset_title'); ?></h1>
+                <p class="component-form-desc"><?php echo __('reset_desc'); ?></p>
             </div>
 
             <div class="component-form-body">
@@ -46,18 +46,18 @@ if (!empty($token)) {
 
                 <div class="component-input-group">
                     <input type="password" id="new_password" name="password" class="component-input-field component-input-field--with-icon" placeholder=" ">
-                    <label for="new_password" class="component-input-label">Nueva contraseña</label>
+                    <label for="new_password" class="component-input-label"><?php echo __('lbl_new_password'); ?></label>
                     <span class="material-symbols-rounded component-input-toggle" data-action="togglePassword">visibility_off</span>
                 </div>
 
                 <div class="component-input-group">
                     <input type="password" id="confirm_password" name="confirm_password" class="component-input-field component-input-field--with-icon" placeholder=" ">
-                    <label for="confirm_password" class="component-input-label">Confirmar contraseña</label>
+                    <label for="confirm_password" class="component-input-label"><?php echo __('lbl_confirm_password'); ?></label>
                     <span class="material-symbols-rounded component-input-toggle" data-action="togglePassword">visibility_off</span>
                 </div>
 
                 <button class="component-button component-button--dark component-button--h45 component-button--full" data-action="submitResetPassword">
-                    Guardar contraseña
+                    <?php echo __('btn_save_password'); ?>
                 </button>
                 
                 <div class="component-alert-error" id="auth-error-message"></div>

@@ -15,7 +15,7 @@ $settingsLink = $isLoggedIn ? '/ProjectRosaura/settings/your-profile' : '/Projec
                     <span class="material-symbols-rounded">settings</span>
                 </div>
                 <div class="component-menu-link-text">
-                    <span>Configuración</span>
+                    <span><?php echo __('menu_settings'); ?></span>
                 </div>
             </div>
             <div class="component-menu-link">
@@ -23,7 +23,7 @@ $settingsLink = $isLoggedIn ? '/ProjectRosaura/settings/your-profile' : '/Projec
                     <span class="material-symbols-rounded">help</span>
                 </div>
                 <div class="component-menu-link-text">
-                    <span>Ayuda y comentarios</span>
+                    <span><?php echo __('menu_help'); ?></span>
                 </div>
             </div>
             
@@ -33,7 +33,7 @@ $settingsLink = $isLoggedIn ? '/ProjectRosaura/settings/your-profile' : '/Projec
                     <span class="material-symbols-rounded">logout</span>
                 </div>
                 <div class="component-menu-link-text">
-                    <span>Cerrar sesión</span>
+                    <span><?php echo __('menu_logout'); ?></span>
                 </div>
             </div>
             <?php endif; ?>

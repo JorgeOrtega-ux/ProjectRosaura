@@ -28,7 +28,7 @@ $languages = [
                     <span class="material-symbols-rounded">search</span>
                 </div>
                 <div class="component-search-input">
-                    <input type="text" placeholder="Buscar idioma...">
+                    <input type="text" placeholder="<?php echo __('search_language'); ?>">
                 </div>
             </div>
         </div>
