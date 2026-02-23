@@ -100,7 +100,7 @@ if ($relativePath === '/register/aditional-data') {
 
                 <div class="component-form-body">
                     <div class="component-input-group">
-                        <input type="text" id="verification_code" name="verification_code" class="component-input-field" placeholder=" " maxlength="12">
+                        <input type="text" id="verification_code" name="verification_code" class="component-input-field" placeholder=" " maxlength="14">
                         <label for="verification_code" class="component-input-label">Código de verificación</label>
                     </div>
 

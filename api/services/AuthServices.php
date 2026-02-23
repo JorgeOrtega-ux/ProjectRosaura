@@ -5,14 +5,13 @@ namespace App\Api\Services;
 
 use App\Core\Utils;
 use App\Config\Database;
-use App\Core\Mailer; // Importamos la nueva clase
+use App\Core\Mailer; 
 use PDO;
 
 class AuthServices {
     private $pdo;
 
     public function __construct() {
-        // Instanciamos la clase Database centralizada (esto también carga el .env)
         $db = new Database();
         $this->pdo = $db->getConnection();
     }
@@ -23,6 +22,49 @@ class AuthServices {
 
         if (empty($email) || empty($password)) {
             return ['success' => false, 'message' => 'El correo y la contraseña son obligatorios.'];
+        }
+
+        // --- VALIDACIONES DE CONTRASEÑA ---
+        $passLen = strlen($password);
+        if ($passLen < 8 || $passLen > 64) {
+            return ['success' => false, 'message' => 'La contraseña debe tener entre 8 y 64 caracteres.'];
+        }
+
+        // --- VALIDACIONES DE CORREO ELECTRÓNICO ---
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return ['success' => false, 'message' => 'El formato del correo electrónico no es válido.'];
+        }
+
+        $emailLen = strlen($email);
+        if ($emailLen < 6 || $emailLen > 254) {
+            return ['success' => false, 'message' => 'El correo debe tener en total entre 6 y 254 caracteres.'];
+        }
+
+        $parts = explode('@', $email);
+        if (count($parts) !== 2) {
+            return ['success' => false, 'message' => 'El formato del correo electrónico es incorrecto.'];
+        }
+
+        $localPart = $parts[0];
+        $domainPart = $parts[1];
+
+        if (strlen($localPart) < 2 || strlen($localPart) > 64) {
+            return ['success' => false, 'message' => 'La parte local del correo (antes de la @) debe tener entre 2 y 64 caracteres.'];
+        }
+
+        if (strlen($domainPart) < 3 || strlen($domainPart) > 255) {
+            return ['success' => false, 'message' => 'El dominio del correo (después de la @) debe tener entre 3 y 255 caracteres.'];
+        }
+
+        $subdomains = explode('.', $domainPart);
+        if (count($subdomains) < 2) {
+            return ['success' => false, 'message' => 'El dominio del correo electrónico debe incluir una extensión válida.'];
+        }
+
+        foreach ($subdomains as $sub) {
+            if (strlen($sub) < 2 || strlen($sub) > 63) {
+                return ['success' => false, 'message' => 'Cada parte del dominio separada por un punto debe tener entre 2 y 63 caracteres.'];
+            }
         }
 
         // Verificar si el correo ya existe
@@ -44,6 +86,19 @@ class AuthServices {
 
         if (empty($username)) {
             return ['success' => false, 'message' => 'El nombre de usuario es obligatorio.'];
+        }
+
+        // --- VALIDACIONES DE NOMBRE DE USUARIO ---
+        $userLen = strlen($username);
+        if ($userLen < 3 || $userLen > 32) {
+            return ['success' => false, 'message' => 'El nombre de usuario debe tener entre 3 y 32 caracteres.'];
+        }
+
+        // Verificar si el username ya existe en la base de datos
+        $stmtUser = $this->pdo->prepare("SELECT id FROM users WHERE username = ?");
+        $stmtUser->execute([$username]);
+        if ($stmtUser->rowCount() > 0) {
+            return ['success' => false, 'message' => 'Este nombre de usuario ya está en uso. Por favor, elige otro.'];
         }
 
         if (empty($_SESSION['reg_email']) || empty($_SESSION['reg_password'])) {
@@ -87,6 +142,9 @@ class AuthServices {
 
     public function registerVerify($data) {
         $code = trim($data['code'] ?? '');
+        
+        // Retirar los guiones agregados por el frontend para compararlo con el código numérico real
+        $code = str_replace('-', '', $code);
 
         if (empty($code)) {
             return ['success' => false, 'message' => 'El código de verificación es obligatorio.'];
