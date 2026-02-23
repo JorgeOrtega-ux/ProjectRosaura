@@ -1,3 +1,4 @@
+-- bd.sql
 CREATE DATABASE IF NOT EXISTS projectrosaura;
 USE projectrosaura;
 
@@ -20,7 +21,7 @@ CREATE TABLE IF NOT EXISTS verification_codes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     identifier VARCHAR(100) NOT NULL,
     code_type VARCHAR(50) NOT NULL DEFAULT 'account_activation',
-    code CHAR(12) NOT NULL,
+    code VARCHAR(128) NOT NULL,
     payload JSON NOT NULL,
     expires_at DATETIME NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

@@ -20,7 +20,7 @@
             </div>
 
             <div class="component-link-container component-link-container--right">
-                <span class="component-link">¿Olvidaste la contraseña?</span>
+                <span class="component-link" data-nav="/ProjectRosaura/forgot-password">¿Olvidaste la contraseña?</span>
             </div>
 
             <button class="component-button component-button--dark component-button--h45 component-button--full" data-action="submitLogin">

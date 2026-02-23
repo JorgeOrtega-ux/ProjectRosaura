@@ -10,7 +10,6 @@ class AuthController {
     private $authServices;
 
     public function __construct() {
-        // Instanciamos el servicio una sola vez al construir el controlador
         $this->authServices = new AuthServices();
     }
 
@@ -31,8 +30,15 @@ class AuthController {
     }
 
     public function logout() {
-        // En el caso de logout, no se requiere enviar $input, pero el index lo pasa igual por defecto
         return $this->authServices->logout();
+    }
+
+    public function forgot_password($input) {
+        return $this->authServices->forgotPassword($input);
+    }
+
+    public function reset_password($input) {
+        return $this->authServices->resetPassword($input);
     }
 }
 ?>

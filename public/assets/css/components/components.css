@@ -127,7 +127,7 @@
     color: #ffffff; 
 }
 
-/* ====== COMPONENTE PROFILE BUTTON (AGREGADO) ====== */
+/* ====== COMPONENTE PROFILE BUTTON ====== */
 .component-button--profile {
     width: 34px;
     height: 34px;
@@ -137,7 +137,7 @@
     background-color: transparent;
     position: relative;
     cursor: pointer;
-    margin: 4px; /* Espacio para el borde separado */
+    margin: 4px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -168,11 +168,9 @@
 }
 
 /* Colores de roles */
-.component-button--profile.role-user::before { border-color: #b0b0b0; } /* Gris */
-.component-button--profile.role-moderator::before { border-color: #1a73e8; } /* Azul */
-.component-button--profile.role-administrator::before { border-color: #d32f2f; } /* Rojo */
-
-/* === NUEVO BORDE MULTICOLOR PARA FOUNDER === */
+.component-button--profile.role-user::before { border-color: #b0b0b0; }
+.component-button--profile.role-moderator::before { border-color: #1a73e8; }
+.component-button--profile.role-administrator::before { border-color: #d32f2f; }
 .component-button--profile.role-founder::before { 
     border: none;
     background-image: conic-gradient(
@@ -547,7 +545,6 @@
     }
 }
 
-/* Anular el fondo de autocompletado nativo de los navegadores */
 .component-input-field:-webkit-autofill,
 .component-input-field:-webkit-autofill:hover, 
 .component-input-field:-webkit-autofill:focus, 
@@ -590,5 +587,20 @@
 }
 
 .component-alert-error.active {
+    display: block;
+}
+
+.component-alert-success {
+    background-color: #f0fdf4;
+    border: 1px solid #16a34a;
+    color: #16a34a;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    text-align: center;
+    display: none;
+}
+
+.component-alert-success.active {
     display: block;
 }

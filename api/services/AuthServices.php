@@ -24,13 +24,11 @@ class AuthServices {
             return ['success' => false, 'message' => 'El correo y la contraseña son obligatorios.'];
         }
 
-        // --- VALIDACIONES DE CONTRASEÑA ---
         $passLen = strlen($password);
         if ($passLen < 8 || $passLen > 64) {
             return ['success' => false, 'message' => 'La contraseña debe tener entre 8 y 64 caracteres.'];
         }
 
-        // --- VALIDACIONES DE CORREO ELECTRÓNICO ---
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             return ['success' => false, 'message' => 'El formato del correo electrónico no es válido.'];
         }
@@ -67,14 +65,12 @@ class AuthServices {
             }
         }
 
-        // Verificar si el correo ya existe
         $stmt = $this->pdo->prepare("SELECT id FROM users WHERE email = ?");
         $stmt->execute([$email]);
         if ($stmt->rowCount() > 0) {
             return ['success' => false, 'message' => 'El correo electrónico ya está registrado.'];
         }
 
-        // Guardamos temporalmente en sesión
         $_SESSION['reg_email'] = $email;
         $_SESSION['reg_password'] = $password;
 
@@ -88,13 +84,11 @@ class AuthServices {
             return ['success' => false, 'message' => 'El nombre de usuario es obligatorio.'];
         }
 
-        // --- VALIDACIONES DE NOMBRE DE USUARIO ---
         $userLen = strlen($username);
         if ($userLen < 3 || $userLen > 32) {
             return ['success' => false, 'message' => 'El nombre de usuario debe tener entre 3 y 32 caracteres.'];
         }
 
-        // Verificar si el username ya existe en la base de datos
         $stmtUser = $this->pdo->prepare("SELECT id FROM users WHERE username = ?");
         $stmtUser->execute([$username]);
         if ($stmtUser->rowCount() > 0) {
@@ -105,13 +99,11 @@ class AuthServices {
             return ['success' => false, 'message' => 'Faltan datos de la etapa 1. Por favor vuelve atrás.'];
         }
 
-        // Generar un código numérico aleatorio de 12 dígitos
         $code = '';
         for ($i = 0; $i < 12; $i++) {
             $code .= mt_rand(0, 9);
         }
 
-        // Preparar el payload con todos los datos
         $payload = json_encode([
             'email' => $_SESSION['reg_email'],
             'password' => $_SESSION['reg_password'],
@@ -119,14 +111,13 @@ class AuthServices {
         ]);
 
         $identifier = $_SESSION['reg_email'];
-        $expiresAt = date('Y-m-d H:i:s', strtotime('+15 minutes')); // Expira en 15 mins
+        $expiresAt = date('Y-m-d H:i:s', strtotime('+15 minutes')); 
 
         $stmt = $this->pdo->prepare("INSERT INTO verification_codes (identifier, code_type, code, payload, expires_at) VALUES (?, 'account_activation', ?, ?, ?)");
         
         if ($stmt->execute([$identifier, $code, $payload, $expiresAt])) {
             $_SESSION['reg_username'] = $username;
             
-            // Instanciamos el servicio de correo y lo enviamos
             $mailer = new Mailer();
             $emailSent = $mailer->sendVerificationCode($identifier, $username, $code);
 
@@ -142,8 +133,6 @@ class AuthServices {
 
     public function registerVerify($data) {
         $code = trim($data['code'] ?? '');
-        
-        // Retirar los guiones agregados por el frontend para compararlo con el código numérico real
         $code = str_replace('-', '', $code);
 
         if (empty($code)) {
@@ -156,7 +145,6 @@ class AuthServices {
 
         $identifier = $_SESSION['reg_email'];
 
-        // Buscar el código en la BD
         $stmt = $this->pdo->prepare("SELECT * FROM verification_codes WHERE identifier = ? AND code_type = 'account_activation' ORDER BY created_at DESC LIMIT 1");
         $stmt->execute([$identifier]);
         $verification = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -173,7 +161,6 @@ class AuthServices {
             return ['success' => false, 'message' => 'El código de verificación ha expirado.'];
         }
 
-        // Si es válido, procedemos a crear la cuenta
         $payload = json_decode($verification['payload'], true);
         $username = $payload['username'];
         $email = $payload['email'];
@@ -192,7 +179,6 @@ class AuthServices {
         if ($stmtUser->execute([$uuid, $username, $email, $hashedPassword, $profilePicturePath])) {
             $userId = $this->pdo->lastInsertId();
             
-            // Iniciar sesión automáticamente
             $_SESSION['user_id'] = $userId;
             $_SESSION['user_uuid'] = $uuid;
             $_SESSION['user_name'] = $username;
@@ -200,12 +186,10 @@ class AuthServices {
             $_SESSION['user_role'] = 'user';
             $_SESSION['user_pic'] = $profilePicturePath;
 
-            // Limpiar variables de registro de la sesión
             unset($_SESSION['reg_email']);
             unset($_SESSION['reg_password']);
             unset($_SESSION['reg_username']);
 
-            // Borrar el código de verificación para que no se use de nuevo
             $delStmt = $this->pdo->prepare("DELETE FROM verification_codes WHERE id = ?");
             $delStmt->execute([$verification['id']]);
 
@@ -245,6 +229,93 @@ class AuthServices {
         session_unset();
         session_destroy();
         return ['success' => true, 'message' => 'Sesión cerrada.'];
+    }
+
+    public function forgotPassword($data) {
+        $email = trim($data['email'] ?? '');
+
+        if (empty($email)) {
+            return ['success' => false, 'message' => 'El correo es obligatorio.'];
+        }
+
+        // Checar si el usuario existe
+        $stmt = $this->pdo->prepare("SELECT username FROM users WHERE email = ?");
+        $stmt->execute([$email]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$user) {
+            return ['success' => false, 'message' => 'El correo ingresado no existe.'];
+        }
+
+        // Generar un token criptográficamente seguro de 64 caracteres
+        $token = bin2hex(random_bytes(32)); 
+        $expiresAt = date('Y-m-d H:i:s', strtotime('+15 minutes'));
+        $payload = json_encode(['email' => $email]);
+
+        // Evitar acumulación de tokens por spam borrando los anteriores para esta cuenta
+        $delStmt = $this->pdo->prepare("DELETE FROM verification_codes WHERE identifier = ? AND code_type = 'password_reset'");
+        $delStmt->execute([$email]);
+
+        $insertStmt = $this->pdo->prepare("INSERT INTO verification_codes (identifier, code_type, code, payload, expires_at) VALUES (?, 'password_reset', ?, ?, ?)");
+        
+        if ($insertStmt->execute([$email, $token, $payload, $expiresAt])) {
+            
+            // Construir el enlace en base al host dinámicamente
+            $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
+            $host = $_SERVER['HTTP_HOST'];
+            $resetLink = $protocol . $host . "/ProjectRosaura/reset-password?token=" . $token;
+
+            // Enviar correo
+            $mailer = new Mailer();
+            $emailSent = $mailer->sendPasswordResetLink($email, $user['username'], $resetLink);
+
+            if ($emailSent) {
+                return ['success' => true, 'message' => 'Se ha enviado un correo con las instrucciones.'];
+            } else {
+                return ['success' => false, 'message' => 'Error al enviar el correo electrónico. Inténtalo más tarde.'];
+            }
+        }
+
+        return ['success' => false, 'message' => 'Error interno al procesar la solicitud.'];
+    }
+
+    public function resetPassword($data) {
+        $token = trim($data['token'] ?? '');
+        $password = trim($data['password'] ?? '');
+
+        if (empty($token) || empty($password)) {
+            return ['success' => false, 'message' => 'Todos los campos son obligatorios.'];
+        }
+
+        $passLen = strlen($password);
+        if ($passLen < 8 || $passLen > 64) {
+            return ['success' => false, 'message' => 'La contraseña debe tener entre 8 y 64 caracteres.'];
+        }
+
+        // Buscar el token
+        $stmt = $this->pdo->prepare("SELECT * FROM verification_codes WHERE code = ? AND code_type = 'password_reset' AND expires_at > NOW()");
+        $stmt->execute([$token]);
+        $verification = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$verification) {
+            return ['success' => false, 'message' => 'El token es inválido o ha expirado.'];
+        }
+
+        $email = $verification['identifier'];
+        $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
+
+        // Actualizar contraseña
+        $updateStmt = $this->pdo->prepare("UPDATE users SET password = ? WHERE email = ?");
+        if ($updateStmt->execute([$hashedPassword, $email])) {
+            
+            // Eliminar token usado
+            $delStmt = $this->pdo->prepare("DELETE FROM verification_codes WHERE identifier = ? AND code_type = 'password_reset'");
+            $delStmt->execute([$email]);
+
+            return ['success' => true, 'message' => 'Tu contraseña ha sido actualizada exitosamente.'];
+        }
+
+        return ['success' => false, 'message' => 'Hubo un error al actualizar la contraseña.'];
     }
 }
 ?>

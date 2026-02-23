@@ -21,6 +21,9 @@ export class AuthController {
             const registerStep2Btn = e.target.closest('[data-action="submitRegisterStep2"]');
             const registerVerifyBtn = e.target.closest('[data-action="submitRegisterVerify"]');
             
+            const forgotPasswordBtn = e.target.closest('[data-action="submitForgotPassword"]');
+            const resetPasswordBtn = e.target.closest('[data-action="submitResetPassword"]');
+            
             const logoutBtn = e.target.closest('[data-action="submitLogout"]');
             
             if (toggleBtn) {
@@ -47,16 +50,25 @@ export class AuthController {
                 this.handleRegisterVerify(registerVerifyBtn);
             }
 
+            if (forgotPasswordBtn) {
+                e.preventDefault();
+                this.handleForgotPassword(forgotPasswordBtn);
+            }
+
+            if (resetPasswordBtn) {
+                e.preventDefault();
+                this.handleResetPassword(resetPasswordBtn);
+            }
+
             if (logoutBtn) {
                 e.preventDefault();
                 this.handleLogout(logoutBtn);
             }
         });
 
-        // Formatear el input de código de verificación a XXXX-XXXX-XXXX
         document.addEventListener('input', (e) => {
             if (e.target && e.target.id === 'verification_code') {
-                let val = e.target.value.replace(/\D/g, ''); // Remover todo excepto números
+                let val = e.target.value.replace(/\D/g, ''); 
                 let formatted = '';
                 for (let i = 0; i < val.length; i++) {
                     if (i > 0 && i % 4 === 0) {
@@ -86,6 +98,7 @@ export class AuthController {
     }
 
     showError(msg) {
+        this.clearMessages();
         const errorBox = document.getElementById('auth-error-message');
         if (errorBox) {
             errorBox.textContent = msg;
@@ -95,11 +108,28 @@ export class AuthController {
         }
     }
 
-    clearError() {
+    showSuccess(msg) {
+        this.clearMessages();
+        const successBox = document.getElementById('auth-success-message');
+        if (successBox) {
+            successBox.textContent = msg;
+            successBox.classList.add('active');
+        } else {
+            alert(msg);
+        }
+    }
+
+    clearMessages() {
         const errorBox = document.getElementById('auth-error-message');
         if (errorBox) {
             errorBox.textContent = '';
             errorBox.classList.remove('active');
+        }
+        
+        const successBox = document.getElementById('auth-success-message');
+        if (successBox) {
+            successBox.textContent = '';
+            successBox.classList.remove('active');
         }
     }
 
@@ -118,7 +148,7 @@ export class AuthController {
     }
 
     async handleLogin(btn) {
-        this.clearError();
+        this.clearMessages();
         const emailInput = document.getElementById('email');
         const passwordInput = document.getElementById('password');
 
@@ -142,7 +172,7 @@ export class AuthController {
     }
 
     async handleRegisterStep1(btn) {
-        this.clearError();
+        this.clearMessages();
         const emailInput = document.getElementById('email');
         const passwordInput = document.getElementById('password');
 
@@ -151,7 +181,6 @@ export class AuthController {
         const email = emailInput.value.trim();
         const password = passwordInput.value;
 
-        // Validaciones JS frontend para no saturar al servidor
         if (password.length < 8 || password.length > 64) {
             this.showError('La contraseña debe tener entre 8 y 64 caracteres.');
             return;
@@ -216,7 +245,7 @@ export class AuthController {
     }
 
     async handleRegisterStep2(btn) {
-        this.clearError();
+        this.clearMessages();
         const usernameInput = document.getElementById('username');
 
         if (!usernameInput) return;
@@ -249,7 +278,7 @@ export class AuthController {
     }
 
     async handleRegisterVerify(btn) {
-        this.clearError();
+        this.clearMessages();
         const codeInput = document.getElementById('verification_code');
 
         if (!codeInput) return;
@@ -264,6 +293,76 @@ export class AuthController {
 
         if (result.success) {
             window.location.href = '/ProjectRosaura/';
+        } else {
+            this.restoreButton(btn);
+            this.showError(result.message);
+        }
+    }
+
+    async handleForgotPassword(btn) {
+        this.clearMessages();
+        const emailInput = document.getElementById('forgot_email');
+        if (!emailInput) return;
+
+        const email = emailInput.value.trim();
+        if (!email) {
+            this.showError('Por favor ingresa tu correo.');
+            return;
+        }
+
+        this.setButtonLoading(btn);
+
+        const data = { email: email };
+        const result = await this.api.post(ApiRoutes.Auth.ForgotPassword, data);
+
+        this.restoreButton(btn);
+
+        if (result.success) {
+            this.showSuccess(result.message);
+        } else {
+            this.showError(result.message);
+        }
+    }
+
+    async handleResetPassword(btn) {
+        this.clearMessages();
+        const tokenInput = document.getElementById('reset_token');
+        const passInput = document.getElementById('new_password');
+        const confirmInput = document.getElementById('confirm_password');
+
+        if (!tokenInput || !passInput || !confirmInput) return;
+
+        const password = passInput.value;
+        const confirmPassword = confirmInput.value;
+
+        if (password !== confirmPassword) {
+            this.showError('Las contraseñas no coinciden.');
+            return;
+        }
+
+        if (password.length < 8 || password.length > 64) {
+            this.showError('La contraseña debe tener entre 8 y 64 caracteres.');
+            return;
+        }
+
+        this.setButtonLoading(btn);
+
+        const data = {
+            token: tokenInput.value,
+            password: password
+        };
+
+        const result = await this.api.post(ApiRoutes.Auth.ResetPassword, data);
+
+        if (result.success) {
+            this.showSuccess(result.message);
+            setTimeout(() => {
+                if (window.spaRouter) {
+                    window.spaRouter.navigate('/ProjectRosaura/login');
+                } else {
+                    window.location.href = '/ProjectRosaura/login';
+                }
+            }, 2000);
         } else {
             this.restoreButton(btn);
             this.showError(result.message);
