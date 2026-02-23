@@ -56,14 +56,14 @@ export class SpaRouter {
             const delayPromise = new Promise(resolve => setTimeout(resolve, 200));
             const [response] = await Promise.all([fetchPromise, delayPromise]);
 
-            const redirectUrl = response.headers.get('X-SPA-Redirect');
-            if (redirectUrl) {
-                window.history.replaceState(null, '', redirectUrl);
-                this.loadRoute(redirectUrl);
-                return;
-            }
-
             if (response.ok) {
+                // Si el servidor resolvió la ruta internamente, actualizamos la barra de direcciones
+                const updateUrl = response.headers.get('X-SPA-Update-URL');
+                if (updateUrl) {
+                    window.history.replaceState(null, '', updateUrl);
+                    url = updateUrl; // Actualizamos la URL local para el menú y título
+                }
+
                 const html = await response.text();
                 this.render(html);
                 this.highlightCurrentRoute();

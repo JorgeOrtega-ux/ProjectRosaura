@@ -39,35 +39,35 @@ $protectedSettings = [
     'settings/accessibility.php'
 ];
 
+$redirectUrl = null;
+
 // 1. Entrada a /settings base
 if ($currentView === 'settings/index.php') {
-    $target = $isLoggedIn ? '/ProjectRosaura/settings/your-profile' : '/ProjectRosaura/settings/guest';
-    if ($isSpaRequest) {
-        header("X-SPA-Redirect: " . $target);
-    } else {
-        header("Location: " . $target);
-    }
-    exit;
+    $currentView = $isLoggedIn ? 'settings/your-profile.php' : 'settings/guest.php';
+    $redirectUrl = $isLoggedIn ? '/ProjectRosaura/settings/your-profile' : '/ProjectRosaura/settings/guest';
 }
-
 // 2. Proteger secciones si NO está logueado
-if (in_array($currentView, $protectedSettings) && !$isLoggedIn) {
-    if ($isSpaRequest) {
-        header("X-SPA-Redirect: /ProjectRosaura/settings/guest");
-    } else {
-        header("Location: /ProjectRosaura/settings/guest");
-    }
-    exit;
+elseif (in_array($currentView, $protectedSettings) && !$isLoggedIn) {
+    $currentView = 'settings/guest.php';
+    $redirectUrl = '/ProjectRosaura/settings/guest';
+}
+// 3. Proteger la vista de invitado si SÍ está logueado
+elseif ($currentView === 'settings/guest.php' && $isLoggedIn) {
+    $currentView = 'settings/your-profile.php';
+    $redirectUrl = '/ProjectRosaura/settings/your-profile';
 }
 
-// 3. Proteger la vista de invitado si SÍ está logueado
-if ($currentView === 'settings/guest.php' && $isLoggedIn) {
+// Si la validación determinó que debemos cambiar de ruta...
+if ($redirectUrl) {
     if ($isSpaRequest) {
-        header("X-SPA-Redirect: /ProjectRosaura/settings/your-profile");
+        // Redirección interna: Le decimos al JS que actualice la URL en el navegador,
+        // pero NO detenemos la ejecución. El loader seguirá fluyendo hacia abajo.
+        header("X-SPA-Update-URL: " . $redirectUrl);
     } else {
-        header("Location: /ProjectRosaura/settings/your-profile");
+        // Redirección dura si el usuario recargó la página con F5
+        header("Location: " . $redirectUrl);
+        exit;
     }
-    exit;
 }
 // ========================================================================================
 
