@@ -6,11 +6,18 @@ export class ProfileController {
     constructor() {
         this.api = new ApiService();
         this.selectedFile = null;
+        this.isDefaultAvatar = false;
     }
 
     init() {
         this.bindEvents();
         console.log("ProfileController inicializado.");
+
+        // Detectar si la imagen cargada inicialmente es la predeterminada
+        const imgEl = document.getElementById('profile-avatar-img');
+        if (imgEl && imgEl.src.includes('/default/')) {
+            this.isDefaultAvatar = true;
+        }
 
         if (document.getElementById('2fa-setup-container')) {
             this.init2FAView();
@@ -168,12 +175,17 @@ export class ProfileController {
         const btnCancel = document.getElementById('btn-cancel-avatar');
         const btnSave = document.getElementById('btn-save-avatar');
         if (!btnChange || !btnDelete || !btnCancel || !btnSave) return;
+        
         if (isPreview) {
-            btnChange.style.display = 'none'; btnDelete.style.display = 'none';
-            btnCancel.style.display = 'inline-flex'; btnSave.style.display = 'inline-flex';
+            btnChange.style.display = 'none'; 
+            btnDelete.style.display = 'none';
+            btnCancel.style.display = 'inline-flex'; 
+            btnSave.style.display = 'inline-flex';
         } else {
-            btnChange.style.display = 'inline-flex'; btnDelete.style.display = 'inline-flex';
-            btnCancel.style.display = 'none'; btnSave.style.display = 'none';
+            btnChange.style.display = 'inline-flex'; 
+            btnDelete.style.display = this.isDefaultAvatar ? 'none' : 'inline-flex';
+            btnCancel.style.display = 'none'; 
+            btnSave.style.display = 'none';
         }
     }
 
@@ -192,7 +204,9 @@ export class ProfileController {
             if (headerAvatar) headerAvatar.src = result.new_avatar;
             const fileInput = document.getElementById('input-avatar-file');
             if (fileInput) fileInput.value = '';
+            
             this.selectedFile = null;
+            this.isDefaultAvatar = false; // Se guardó una imagen personalizada
             this.toggleAvatarButtons(false);
         } else this.showMessage(result.message, 'error');
     }
@@ -209,6 +223,9 @@ export class ProfileController {
             if (imgEl) { imgEl.src = result.new_avatar; imgEl.setAttribute('data-original-src', result.new_avatar); }
             const headerAvatar = document.querySelector('.header .component-button--profile img');
             if (headerAvatar) headerAvatar.src = result.new_avatar;
+            
+            this.isDefaultAvatar = true; // Se eliminó y volvió a la predeterminada
+            this.toggleAvatarButtons(false);
         } else this.showMessage(result.message, 'error');
     }
 

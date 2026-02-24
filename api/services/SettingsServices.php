@@ -56,6 +56,13 @@ class SettingsServices {
     public function deleteAvatar() {
         if (!isset($_SESSION['user_id'])) return ['success' => false, 'message' => 'Sesión no válida.'];
         $oldPic = $_SESSION['user_pic'] ?? '';
+        
+        // --- PROTECCIÓN ---
+        // Evita proceder si la foto de perfil ya es la predeterminada del sistema.
+        if (strpos($oldPic, '/default/') !== false) {
+            return ['success' => false, 'message' => 'Ya tienes una foto de perfil por defecto.'];
+        }
+
         if (!empty($oldPic) && strpos($oldPic, 'uploaded/') !== false) {
             $oldPath = __DIR__ . '/../../' . ltrim($oldPic, '/ProjectRosaura/');
             if (file_exists($oldPath)) unlink($oldPath);

@@ -9,6 +9,9 @@ $userRole = $_SESSION['user_role'] ?? 'user';
 $userPic = $_SESSION['user_pic'] ?? 'public/storage/profilePictures/default/default.png';
 $formattedAvatar = '/ProjectRosaura/' . ltrim($userPic, '/');
 
+// Verificamos si la imagen actual pertenece al directorio default
+$isDefaultAvatar = strpos($userPic, '/default/') !== false;
+
 // Preferencias
 $userPrefs = $_SESSION['user_prefs'] ?? [];
 $prefLang = $userPrefs['language'] ?? ($_COOKIE['pr_language'] ?? 'es-419');
@@ -56,7 +59,7 @@ $currentLangText = $languages[$prefLang] ?? 'Español (Latinoamérica)';
                 
                 <div class="component-card__actions component-card__actions--stretch" id="profile-avatar-actions">
                     <button type="button" class="component-button component-button--h34 component-button--dark" id="btn-change-avatar"><?php echo __('btn_change_avatar'); ?></button>
-                    <button type="button" class="component-button component-button--h34" id="btn-delete-avatar"><?php echo __('btn_delete'); ?></button>
+                    <button type="button" class="component-button component-button--h34" id="btn-delete-avatar" style="<?php echo $isDefaultAvatar ? 'display: none;' : ''; ?>"><?php echo __('btn_delete'); ?></button>
                     
                     <button type="button" class="component-button component-button--h34" id="btn-cancel-avatar" style="display: none;"><?php echo __('btn_cancel'); ?></button>
                     <button type="button" class="component-button component-button--h34 component-button--dark" id="btn-save-avatar" style="display: none;"><?php echo __('btn_save'); ?></button>

@@ -217,7 +217,9 @@ export class MainController {
                 const input = document.getElementById('input-' + field);
                 if (input) {
                     input.focus();
-                    input.value = input.value;
+                    // --- MODIFICACIÓN: POSICIONAR EL CURSOR AL FINAL DE FORMA SEGURA ---
+                    const valLength = input.value.length;
+                    input.setSelectionRange(valLength, valLength);
                 }
             }, 50);
         } else {
