@@ -13,15 +13,18 @@ use App\Core\Router;
 use App\Core\Utils; 
 use App\Core\Translator; 
 use App\Core\Container;
+use App\Api\Services\AuthServices;
+use App\Core\Interfaces\UserPrefsManagerInterface;
 
 // 1. Instanciar el Contenedor
 $container = new Container();
 
-// 2. Obtener servicios del contenedor
-$authService = $container->getAuthServices();
-$prefsManager = $container->getUserPrefsManager();
+// 2. Obtener servicios del contenedor usando la nueva sintaxis PSR-11
+$authService = $container->get(AuthServices::class);
+$prefsManager = $container->get(UserPrefsManagerInterface::class);
 
 // Manejo de Seguridad de Dispositivos y AutoLogin
+// Ahora verificamos mediante el SessionManager que AuthServices utiliza internamente
 if (isset($_SESSION['user_id'])) {
     if (!$authService->isCurrentDeviceValid()) {
         $authService->logout();

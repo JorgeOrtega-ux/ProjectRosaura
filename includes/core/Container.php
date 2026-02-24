@@ -3,83 +3,90 @@
 
 namespace App\Core;
 
+use Psr\Container\ContainerInterface;
+use Exception;
+use ReflectionClass;
+use PDO;
 use App\Config\Database;
 use App\Core\RateLimiter;
+use App\Core\Interfaces\RateLimiterInterface;
 use App\Core\UserPrefsManager;
-use App\Api\Services\AuthServices;
-use App\Api\Services\SettingsServices;
-use App\Api\Controllers\AuthController;
-use App\Api\Controllers\SettingsController;
+use App\Core\Interfaces\UserPrefsManagerInterface;
+use App\Core\SessionManager;
+use App\Core\Interfaces\SessionManagerInterface;
+use App\Core\Repositories\UserRepository;
+use App\Core\Interfaces\UserRepositoryInterface;
 
-class Container {
-    private $pdo;
-    private $rateLimiter;
-    private $userPrefsManager;
+class Container implements ContainerInterface {
+    private $instances = [];
+    private $bindings = [];
 
-    // Singleton de PDO: Garantiza 1 sola conexión física por request
-    public function getPDO() {
-        if ($this->pdo === null) {
-            $db = new Database();
-            $this->pdo = $db->getConnection();
-        }
-        return $this->pdo;
+    public function __construct() {
+        // 1. Registrar Singletons base
+        $db = new Database();
+        $this->instances[PDO::class] = $db->getConnection();
+        
+        // 2. Registrar Bindings (Interfaces conectadas a Implementaciones)
+        $this->bindings[RateLimiterInterface::class] = RateLimiter::class;
+        $this->bindings[UserPrefsManagerInterface::class] = UserPrefsManager::class;
+        $this->bindings[SessionManagerInterface::class] = SessionManager::class;
+        $this->bindings[UserRepositoryInterface::class] = UserRepository::class;
     }
 
-    // Singleton de RateLimiter (inyectando PDO)
-    public function getRateLimiter() {
-        if ($this->rateLimiter === null) {
-            $this->rateLimiter = new RateLimiter($this->getPDO());
-        }
-        return $this->rateLimiter;
-    }
-
-    // Singleton de UserPrefsManager (inyectando PDO)
-    public function getUserPrefsManager() {
-        if ($this->userPrefsManager === null) {
-            $this->userPrefsManager = new UserPrefsManager($this->getPDO());
-        }
-        return $this->userPrefsManager;
-    }
-
-    // Fábrica de AuthServices
-    public function getAuthServices() {
-        return new AuthServices(
-            $this->getPDO(),
-            $this->getRateLimiter(),
-            $this->getUserPrefsManager()
-        );
-    }
-
-    // Fábrica de SettingsServices
-    public function getSettingsServices() {
-        return new SettingsServices(
-            $this->getPDO(),
-            $this->getRateLimiter()
-        );
-    }
-
-    // Fábrica de AuthController (inyectando su servicio ya ensamblado)
-    public function getAuthController() {
-        return new AuthController($this->getAuthServices());
-    }
-
-    // Fábrica de SettingsController (inyectando su servicio ya ensamblado)
-    public function getSettingsController() {
-        return new SettingsController($this->getSettingsServices());
-    }
-
-    /**
-     * Resuelve y devuelve la instancia del Controlador solicitado dinámicamente.
-     */
-    public function get($className) {
-        if ($className === 'App\Api\Controllers\AuthController') {
-            return $this->getAuthController();
-        }
-        if ($className === 'App\Api\Controllers\SettingsController') {
-            return $this->getSettingsController();
+    public function get(string $id) {
+        // Si ya está instanciado, devolver el singleton
+        if (isset($this->instances[$id])) {
+            return $this->instances[$id];
         }
 
-        throw new \Exception("Clase no registrada en el contenedor de dependencias: " . $className);
+        // Si es una interfaz, buscar qué clase concreta la implementa
+        $concrete = $this->bindings[$id] ?? $id;
+        
+        // Resolver instanciación dinámica
+        $resolved = $this->resolve($concrete);
+        
+        // Guardar para futuros llamados (Singleton por petición)
+        $this->instances[$id] = $resolved;
+        if ($concrete !== $id) {
+            $this->instances[$concrete] = $resolved;
+        }
+
+        return $resolved;
+    }
+
+    public function has(string $id): bool {
+        return isset($this->instances[$id]) || isset($this->bindings[$id]) || class_exists($id);
+    }
+
+    private function resolve($className) {
+        try {
+            $reflection = new ReflectionClass($className);
+        } catch (\ReflectionException $e) {
+            throw new Exception("Error en contenedor: No se pudo reflejar {$className}");
+        }
+
+        if (!$reflection->isInstantiable()) {
+            throw new Exception("La clase {$className} no es instanciable (interfaz sin binding).");
+        }
+
+        $constructor = $reflection->getConstructor();
+
+        // Si no tiene constructor, instanciar directamente
+        if (is_null($constructor)) {
+            return new $className;
+        }
+
+        $parameters = $constructor->getParameters();
+        $dependencies = array_map(function($param) use ($className) {
+            $type = $param->getType();
+            if (!$type || $type->isBuiltin()) {
+                throw new Exception("Fallo en {$className}: No se puede inyectar el parámetro \${$param->getName()}");
+            }
+            // Llamada recursiva para resolver la dependencia
+            return $this->get($type->getName());
+        }, $parameters);
+
+        return $reflection->newInstanceArgs($dependencies);
     }
 }
 ?>

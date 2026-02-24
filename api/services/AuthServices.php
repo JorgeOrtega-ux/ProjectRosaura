@@ -6,30 +6,52 @@ namespace App\Api\Services;
 use App\Core\Utils;
 use App\Core\Mailer; 
 use App\Core\GoogleAuthenticator;
+use App\Core\Logger;
 use App\Core\Interfaces\RateLimiterInterface;
 use App\Core\Interfaces\UserPrefsManagerInterface;
-use App\Core\Logger;
+use App\Core\Interfaces\UserRepositoryInterface;
+use App\Core\Interfaces\SessionManagerInterface;
 use PDO;
 
 class AuthServices {
-    private $pdo;
+    private $pdo; // Mantenido temporalmente para auth_tokens y verification_codes
     private $rateLimiter;
     private $prefsManager;
+    private $userRepository;
+    private $sessionManager;
 
-    // Recibimos las herramientas vía Constructor usando Interfaces
-    public function __construct(PDO $pdo, RateLimiterInterface $rateLimiter, UserPrefsManagerInterface $prefsManager) {
+    // 1. Inyección de Dependencias Actualizada con Interfaces Clean Architecture
+    public function __construct(
+        PDO $pdo, 
+        RateLimiterInterface $rateLimiter, 
+        UserPrefsManagerInterface $prefsManager,
+        UserRepositoryInterface $userRepository,
+        SessionManagerInterface $sessionManager
+    ) {
         $this->pdo = $pdo;
         $this->rateLimiter = $rateLimiter;
         $this->prefsManager = $prefsManager;
+        $this->userRepository = $userRepository;
+        $this->sessionManager = $sessionManager;
     }
 
     public function isCurrentDeviceValid() {
-        if (!isset($_SESSION['user_id']) || !isset($_COOKIE['remember_token'])) return false;
+        // 2. Uso del SessionManager en lugar de $_SESSION
+        if (!$this->sessionManager->has('user_id') || !isset($_COOKIE['remember_token'])) return false;
+        
         $parts = explode(':', $_COOKIE['remember_token']);
         if (count($parts) !== 2) return false;
+        
         $selector = $parts[0];
-        $stmt = $this->pdo->prepare("SELECT t.id FROM auth_tokens t JOIN users u ON t.user_id = u.id WHERE t.selector = ? AND t.user_id = ? AND t.expires_at > NOW() AND u.user_status = 'active'");
-        $stmt->execute([$selector, $_SESSION['user_id']]);
+        
+        // Esta consulta debería ir a un futuro TokenRepository
+        $stmt = $this->pdo->prepare("
+            SELECT t.id 
+            FROM auth_tokens t 
+            JOIN users u ON t.user_id = u.id 
+            WHERE t.selector = ? AND t.user_id = ? AND t.expires_at > NOW() AND u.user_status = 'active'
+        ");
+        $stmt->execute([$selector, $this->sessionManager->get('user_id')]);
         return $stmt->rowCount() > 0;
     }
 
@@ -40,8 +62,10 @@ class AuthServices {
         $expiresAt = date('Y-m-d H:i:s', time() + (86400 * 30));
         $userAgent = substr($_SERVER['HTTP_USER_AGENT'] ?? 'Desconocido', 0, 255);
         $ipAddress = substr(Utils::getIpAddress(), 0, 45);
+        
         $stmt = $this->pdo->prepare("INSERT INTO auth_tokens (user_id, selector, hashed_validator, expires_at, user_agent, ip_address) VALUES (?, ?, ?, ?, ?, ?)");
         $stmt->execute([$userId, $selector, $hashedValidator, $expiresAt, $userAgent, $ipAddress]);
+        
         $cookieValue = $selector . ':' . $validator;
         setcookie('remember_token', $cookieValue, [
             'expires' => time() + (86400 * 30),
@@ -65,9 +89,11 @@ class AuthServices {
     }
 
     public function autoLogin() {
-        if (isset($_SESSION['user_id']) || empty($_COOKIE['remember_token'])) return false;
+        if ($this->sessionManager->has('user_id') || empty($_COOKIE['remember_token'])) return false;
+        
         $parts = explode(':', $_COOKIE['remember_token']);
         if (count($parts) !== 2) { $this->clearRememberToken(); return false; }
+        
         list($selector, $validator) = $parts;
         $stmt = $this->pdo->prepare("SELECT * FROM auth_tokens WHERE selector = ? AND expires_at > NOW()");
         $stmt->execute([$selector]);
@@ -75,41 +101,41 @@ class AuthServices {
 
         if ($token) {
             if (hash_equals($token['hashed_validator'], hash('sha256', $validator))) {
-                $stmtUser = $this->pdo->prepare("SELECT * FROM users WHERE id = ?");
-                $stmtUser->execute([$token['user_id']]);
-                $user = $stmtUser->fetch(PDO::FETCH_ASSOC);
+                
+                // 3. Uso del Patrón Repositorio
+                $user = $this->userRepository->findById($token['user_id']);
 
                 if ($user) {
                     if ($user['user_status'] !== 'active') {
-                        Logger::security("Intento de autologin en cuenta inactiva (Estado: {$user['user_status']})", Logger::LEVEL_WARNING, ['user_id' => $user['id'], 'ip' => Utils::getIpAddress()]);
+                        Logger::security("Intento de autologin en cuenta inactiva (Estado: {$user['user_status']})", 'warning', ['user_id' => $user['id'], 'ip' => Utils::getIpAddress()]);
                         $stmtDelAll = $this->pdo->prepare("DELETE FROM auth_tokens WHERE user_id = ?");
                         $stmtDelAll->execute([$user['id']]);
                         $this->clearRememberToken();
                         return false;
                     }
-                    session_regenerate_id(true);
                     
-                    // USO DEL PREF MANAGER
+                    $this->sessionManager->regenerate(true);
                     $userPrefs = $this->prefsManager->ensureDefaultPreferences($user['id']);
                     
-                    $_SESSION['user_id'] = $user['id'];
-                    $_SESSION['user_uuid'] = $user['uuid'];
-                    $_SESSION['user_name'] = $user['username'];
-                    $_SESSION['user_email'] = $user['email'];
-                    $_SESSION['user_role'] = $user['role'];
-                    $_SESSION['user_pic'] = $user['profile_picture'];
-                    $_SESSION['user_prefs'] = $userPrefs;
-                    $_SESSION['user_2fa'] = $user['two_factor_enabled'] ?? 0;
+                    // 4. Asignación de sesión a través del SessionManager
+                    $this->sessionManager->set('user_id', $user['id']);
+                    $this->sessionManager->set('user_uuid', $user['uuid']);
+                    $this->sessionManager->set('user_name', $user['username']);
+                    $this->sessionManager->set('user_email', $user['email']);
+                    $this->sessionManager->set('user_role', $user['role']);
+                    $this->sessionManager->set('user_pic', $user['profile_picture']);
+                    $this->sessionManager->set('user_prefs', $userPrefs);
+                    $this->sessionManager->set('user_2fa', $user['two_factor_enabled'] ?? 0);
 
                     $stmtDel = $this->pdo->prepare("DELETE FROM auth_tokens WHERE id = ?");
                     $stmtDel->execute([$token['id']]);
                     $this->createRememberToken($user['id']);
                     
-                    Logger::security("Autologin exitoso", Logger::LEVEL_INFO, ['user_id' => $user['id'], 'ip' => Utils::getIpAddress()]);
+                    Logger::security("Autologin exitoso", 'info', ['user_id' => $user['id'], 'ip' => Utils::getIpAddress()]);
                     return true;
                 }
             } else {
-                Logger::security("Manipulación de cookie de autologin detectada (Validador incorrecto)", Logger::LEVEL_WARNING, ['user_id' => $token['user_id'], 'ip' => Utils::getIpAddress()]);
+                Logger::security("Manipulación de cookie de autologin detectada", 'warning', ['user_id' => $token['user_id'], 'ip' => Utils::getIpAddress()]);
                 $stmtDelAll = $this->pdo->prepare("DELETE FROM auth_tokens WHERE user_id = ?");
                 $stmtDelAll->execute([$token['user_id']]);
             }
@@ -123,12 +149,15 @@ class AuthServices {
         if (empty($email) || empty($password)) return ['success' => false, 'message' => 'El correo y la contraseña son obligatorios.'];
         $eVal = Utils::validateEmailFormat($email); if (!$eVal['valid']) return ['success' => false, 'message' => $eVal['message']];
         $pVal = Utils::validatePasswordFormat($password); if (!$pVal['valid']) return ['success' => false, 'message' => $pVal['message']];
-        $stmt = $this->pdo->prepare("SELECT id FROM users WHERE email = ?"); $stmt->execute([$email]);
-        if ($stmt->rowCount() > 0) {
-            Logger::security("Intento de registro con correo ya existente: {$email}", Logger::LEVEL_INFO, ['ip' => Utils::getIpAddress()]);
+        
+        // Uso del Repositorio
+        if ($this->userRepository->findByEmail($email)) {
+            Logger::security("Intento de registro con correo ya existente: {$email}", 'info', ['ip' => Utils::getIpAddress()]);
             return ['success' => false, 'message' => 'El correo electrónico ya está registrado.'];
         }
-        $_SESSION['reg_email'] = $email; $_SESSION['reg_password'] = $password;
+        
+        $this->sessionManager->set('reg_email', $email); 
+        $this->sessionManager->set('reg_password', $password);
         return ['success' => true, 'message' => 'Paso 1 completado.'];
     }
 
@@ -136,25 +165,35 @@ class AuthServices {
         $username = trim($data['username'] ?? '');
         if (empty($username)) return ['success' => false, 'message' => 'El nombre de usuario es obligatorio.'];
         if (strlen($username) < 3 || strlen($username) > 32) return ['success' => false, 'message' => 'El nombre de usuario debe tener entre 3 y 32 caracteres.'];
-        $stmtUser = $this->pdo->prepare("SELECT id FROM users WHERE username = ?"); $stmtUser->execute([$username]);
-        if ($stmtUser->rowCount() > 0) return ['success' => false, 'message' => 'Este nombre de usuario ya está en uso.'];
-        if (empty($_SESSION['reg_email']) || empty($_SESSION['reg_password'])) return ['success' => false, 'message' => 'Faltan datos. Por favor vuelve atrás.'];
+        
+        // Uso del Repositorio
+        if ($this->userRepository->findByUsername($username)) {
+            return ['success' => false, 'message' => 'Este nombre de usuario ya está en uso.'];
+        }
+
+        if (!$this->sessionManager->has('reg_email') || !$this->sessionManager->has('reg_password')) {
+            return ['success' => false, 'message' => 'Faltan datos. Por favor vuelve atrás.'];
+        }
 
         $code = Utils::generateNumericCode(12);
-        $payload = json_encode(['email' => $_SESSION['reg_email'], 'password' => $_SESSION['reg_password'], 'username' => $username]);
-        $identifier = $_SESSION['reg_email'];
+        $payload = json_encode([
+            'email' => $this->sessionManager->get('reg_email'), 
+            'password' => $this->sessionManager->get('reg_password'), 
+            'username' => $username
+        ]);
+        $identifier = $this->sessionManager->get('reg_email');
         $expiresAt = date('Y-m-d H:i:s', strtotime('+15 minutes')); 
 
         $stmt = $this->pdo->prepare("INSERT INTO verification_codes (identifier, code_type, code, payload, expires_at) VALUES (?, 'account_activation', ?, ?, ?)");
         if ($stmt->execute([$identifier, $code, $payload, $expiresAt])) {
-            $_SESSION['reg_username'] = $username;
+            $this->sessionManager->set('reg_username', $username);
+            
             $mailer = new Mailer();
             if ($mailer->sendVerificationCode($identifier, $username, $code)) {
-                Logger::security("Código de verificación de registro enviado a: {$identifier}", Logger::LEVEL_INFO, ['ip' => Utils::getIpAddress()]);
+                Logger::security("Código de verificación de registro enviado a: {$identifier}", 'info', ['ip' => Utils::getIpAddress()]);
                 return ['success' => true, 'message' => 'Paso 2 completado. Código enviado.'];
-            }
-            else {
-                Logger::security("Fallo interno al enviar correo de verificación a: {$identifier}", Logger::LEVEL_ERROR, ['ip' => Utils::getIpAddress()]);
+            } else {
+                Logger::security("Fallo interno al enviar correo a: {$identifier}", 'error', ['ip' => Utils::getIpAddress()]);
                 return ['success' => false, 'message' => 'Error de red al enviar el correo. Intenta de nuevo.'];
             }
         }
@@ -164,8 +203,11 @@ class AuthServices {
     public function registerVerify($data) {
         $code = str_replace('-', '', trim($data['code'] ?? ''));
         if (empty($code)) return ['success' => false, 'message' => 'El código es obligatorio.'];
-        if (empty($_SESSION['reg_email'])) return ['success' => false, 'message' => 'Sesión expirada. Inicia nuevamente.'];
-        $identifier = $_SESSION['reg_email'];
+        
+        if (!$this->sessionManager->has('reg_email')) {
+            return ['success' => false, 'message' => 'Sesión expirada. Inicia nuevamente.'];
+        }
+        $identifier = $this->sessionManager->get('reg_email');
 
         $stmt = $this->pdo->prepare("SELECT * FROM verification_codes WHERE identifier = ? AND code_type = 'account_activation' ORDER BY created_at DESC LIMIT 1");
         $stmt->execute([$identifier]);
@@ -173,7 +215,7 @@ class AuthServices {
 
         if (!$verification) return ['success' => false, 'message' => 'No se encontró un código.'];
         if ($verification['code'] !== $code) {
-            Logger::security("Código de verificación incorrecto ingresado para: {$identifier}", Logger::LEVEL_WARNING, ['ip' => Utils::getIpAddress()]);
+            Logger::security("Código incorrecto ingresado para: {$identifier}", 'warning', ['ip' => Utils::getIpAddress()]);
             return ['success' => false, 'message' => 'El código es incorrecto.'];
         }
         if (strtotime($verification['expires_at']) < time()) return ['success' => false, 'message' => 'El código ha expirado.'];
@@ -183,31 +225,41 @@ class AuthServices {
         $profilePic = Utils::generateProfilePicture($payload['username'], $uuid);
         if (!$profilePic) return ['success' => false, 'message' => 'Error al generar la foto de perfil.'];
 
-        $stmtUser = $this->pdo->prepare("INSERT INTO users (uuid, username, email, password, role, user_status, profile_picture) VALUES (?, ?, ?, ?, 'user', 'active', ?)");
-        if ($stmtUser->execute([$uuid, $payload['username'], $payload['email'], password_hash($payload['password'], PASSWORD_BCRYPT), $profilePic])) {
-            $userId = $this->pdo->lastInsertId();
+        // Uso del Repositorio para crear
+        $newUserId = $this->userRepository->createUser([
+            'uuid' => $uuid,
+            'username' => $payload['username'],
+            'email' => $payload['email'],
+            'password' => password_hash($payload['password'], PASSWORD_BCRYPT),
+            'profile_picture' => $profilePic
+        ]);
+
+        if ($newUserId > 0) {
+            $userPrefs = $this->prefsManager->ensureDefaultPreferences($newUserId);
+
+            $this->sessionManager->regenerate(true);
+            $this->sessionManager->set('user_id', $newUserId);
+            $this->sessionManager->set('user_uuid', $uuid);
+            $this->sessionManager->set('user_name', $payload['username']);
+            $this->sessionManager->set('user_email', $payload['email']);
+            $this->sessionManager->set('user_role', 'user');
+            $this->sessionManager->set('user_pic', $profilePic);
+            $this->sessionManager->set('user_prefs', $userPrefs);
+            $this->sessionManager->set('user_2fa', 0);
+
+            $this->createRememberToken($newUserId);
             
-            // USO DEL PREF MANAGER
-            $userPrefs = $this->prefsManager->ensureDefaultPreferences($userId);
+            $this->sessionManager->remove('reg_email');
+            $this->sessionManager->remove('reg_password');
+            $this->sessionManager->remove('reg_username');
+            
+            $delStmt = $this->pdo->prepare("DELETE FROM verification_codes WHERE id = ?"); 
+            $delStmt->execute([$verification['id']]);
 
-            session_regenerate_id(true);
-            $_SESSION['user_id'] = $userId;
-            $_SESSION['user_uuid'] = $uuid;
-            $_SESSION['user_name'] = $payload['username'];
-            $_SESSION['user_email'] = $payload['email'];
-            $_SESSION['user_role'] = 'user';
-            $_SESSION['user_pic'] = $profilePic;
-            $_SESSION['user_prefs'] = $userPrefs;
-            $_SESSION['user_2fa'] = 0;
-
-            $this->createRememberToken($userId);
-            unset($_SESSION['reg_email'], $_SESSION['reg_password'], $_SESSION['reg_username']);
-            $delStmt = $this->pdo->prepare("DELETE FROM verification_codes WHERE id = ?"); $delStmt->execute([$verification['id']]);
-
-            Logger::security("Nueva cuenta registrada exitosamente", Logger::LEVEL_INFO, ['user_id' => $userId, 'email' => $payload['email'], 'ip' => Utils::getIpAddress()]);
+            Logger::security("Nueva cuenta registrada", 'info', ['user_id' => $newUserId, 'email' => $payload['email'], 'ip' => Utils::getIpAddress()]);
             return ['success' => true, 'message' => 'Cuenta creada con éxito.'];
         }
-        Logger::security("Fallo en base de datos al intentar registrar usuario: {$payload['email']}", Logger::LEVEL_ERROR, ['ip' => Utils::getIpAddress()]);
+        Logger::security("Fallo en base de datos al registrar: {$payload['email']}", 'error', ['ip' => Utils::getIpAddress()]);
         return ['success' => false, 'message' => 'Error al crear la cuenta.'];
     }
 
@@ -215,72 +267,67 @@ class AuthServices {
         $email = trim($data['email'] ?? ''); $password = trim($data['password'] ?? '');
         if (empty($email) || empty($password)) return ['success' => false, 'message' => 'Todos los campos son obligatorios.'];
 
-        // USO DEL RATE LIMITER INYECTADO
         $rateCheck = $this->rateLimiter->check('login', 5, 15);
         if (!$rateCheck['allowed']) {
-            Logger::security("Límite de tasa excedido en login para: {$email}", Logger::LEVEL_WARNING, ['ip' => Utils::getIpAddress()]);
+            Logger::security("Límite de tasa excedido en login para: {$email}", 'warning', ['ip' => Utils::getIpAddress()]);
             return ['success' => false, 'message' => $rateCheck['message']];
         }
 
-        $stmt = $this->pdo->prepare("SELECT * FROM users WHERE email = ?"); $stmt->execute([$email]);
-        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        // Uso del Repositorio
+        $user = $this->userRepository->findByEmail($email);
 
         if ($user && password_verify($password, $user['password'])) {
             $this->rateLimiter->clear('login');
-            if ($user['user_status'] === 'deleted') {
-                Logger::security("Intento de login en cuenta eliminada", Logger::LEVEL_WARNING, ['user_id' => $user['id'], 'ip' => Utils::getIpAddress()]);
-                return ['success' => false, 'message' => 'Cuenta eliminada.'];
-            }
-            if ($user['user_status'] === 'suspended') {
-                Logger::security("Intento de login en cuenta suspendida", Logger::LEVEL_WARNING, ['user_id' => $user['id'], 'ip' => Utils::getIpAddress()]);
-                return ['success' => false, 'message' => 'Cuenta suspendida.'];
-            }
+            
+            if ($user['user_status'] === 'deleted') return ['success' => false, 'message' => 'Cuenta eliminada.'];
+            if ($user['user_status'] === 'suspended') return ['success' => false, 'message' => 'Cuenta suspendida.'];
+            
             if (!empty($user['two_factor_enabled'])) {
-                $_SESSION['pending_2fa_user_id'] = $user['id'];
-                Logger::security("Login requiere 2FA", Logger::LEVEL_INFO, ['user_id' => $user['id'], 'ip' => Utils::getIpAddress()]);
+                $this->sessionManager->set('pending_2fa_user_id', $user['id']);
+                Logger::security("Login requiere 2FA", 'info', ['user_id' => $user['id'], 'ip' => Utils::getIpAddress()]);
                 return ['success' => true, 'requires_2fa' => true, 'message' => 'Se requiere código 2FA.'];
             }
 
-            session_regenerate_id(true);
+            $this->sessionManager->regenerate(true);
             $userPrefs = $this->prefsManager->ensureDefaultPreferences($user['id']);
 
-            $_SESSION['user_id'] = $user['id'];
-            $_SESSION['user_uuid'] = $user['uuid'];
-            $_SESSION['user_name'] = $user['username'];
-            $_SESSION['user_email'] = $user['email'];
-            $_SESSION['user_role'] = $user['role'];
-            $_SESSION['user_pic'] = $user['profile_picture'];
-            $_SESSION['user_prefs'] = $userPrefs;
-            $_SESSION['user_2fa'] = $user['two_factor_enabled'] ?? 0;
+            $this->sessionManager->set('user_id', $user['id']);
+            $this->sessionManager->set('user_uuid', $user['uuid']);
+            $this->sessionManager->set('user_name', $user['username']);
+            $this->sessionManager->set('user_email', $user['email']);
+            $this->sessionManager->set('user_role', $user['role']);
+            $this->sessionManager->set('user_pic', $user['profile_picture']);
+            $this->sessionManager->set('user_prefs', $userPrefs);
+            $this->sessionManager->set('user_2fa', $user['two_factor_enabled'] ?? 0);
 
             $this->createRememberToken($user['id']);
-            Logger::security("Inicio de sesión exitoso", Logger::LEVEL_INFO, ['user_id' => $user['id'], 'ip' => Utils::getIpAddress()]);
+            Logger::security("Inicio de sesión exitoso", 'info', ['user_id' => $user['id'], 'ip' => Utils::getIpAddress()]);
             return ['success' => true, 'requires_2fa' => false, 'message' => 'Inicio de sesión exitoso.'];
         }
+        
         $this->rateLimiter->record('login', 5, 15);
-        Logger::security("Credenciales incorrectas en login para: {$email}", Logger::LEVEL_WARNING, ['ip' => Utils::getIpAddress()]);
+        Logger::security("Credenciales incorrectas en login para: {$email}", 'warning', ['ip' => Utils::getIpAddress()]);
         return ['success' => false, 'message' => 'Credenciales incorrectas.'];
     }
 
     public function loginVerify2FA($data) {
         $code = trim($data['code'] ?? '');
         if (empty($code)) return ['success' => false, 'message' => 'El código es obligatorio.'];
-        if (empty($_SESSION['pending_2fa_user_id'])) return ['success' => false, 'message' => 'Sesión expirada.'];
+        if (!$this->sessionManager->has('pending_2fa_user_id')) return ['success' => false, 'message' => 'Sesión expirada.'];
 
-        $userId = $_SESSION['pending_2fa_user_id'];
+        $userId = $this->sessionManager->get('pending_2fa_user_id');
         $rateCheck = $this->rateLimiter->check('login_2fa', 5, 15);
+        
         if (!$rateCheck['allowed']) {
-            Logger::security("Límite de tasa excedido en 2FA", Logger::LEVEL_WARNING, ['user_id' => $userId, 'ip' => Utils::getIpAddress()]);
+            Logger::security("Límite de tasa excedido en 2FA", 'warning', ['user_id' => $userId, 'ip' => Utils::getIpAddress()]);
             return ['success' => false, 'message' => $rateCheck['message']];
         }
 
-        $stmt = $this->pdo->prepare("SELECT * FROM users WHERE id = ? AND user_status = 'active'");
-        $stmt->execute([$userId]);
-        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        // Uso del Repositorio
+        $user = $this->userRepository->findById($userId);
 
-        if (!$user || empty($user['two_factor_enabled'])) {
+        if (!$user || empty($user['two_factor_enabled']) || $user['user_status'] !== 'active') {
             $this->rateLimiter->record('login_2fa', 5, 15);
-            Logger::security("Fallo de validación de estado de usuario durante 2FA", Logger::LEVEL_WARNING, ['user_id' => $userId, 'ip' => Utils::getIpAddress()]);
             return ['success' => false, 'message' => 'Error de validación.'];
         }
 
@@ -290,10 +337,11 @@ class AuthServices {
             $index = array_search($code, $codes);
             if ($index !== false) {
                 unset($codes[$index]);
+                // Idealmente el repositorio también manejaría este Update
                 $stmtUpdate = $this->pdo->prepare("UPDATE users SET two_factor_recovery_codes = ? WHERE id = ?");
                 $stmtUpdate->execute([json_encode(array_values($codes)), $userId]);
                 $isValid = true;
-                Logger::security("Login exitoso usando código de recuperación 2FA", Logger::LEVEL_INFO, ['user_id' => $userId, 'ip' => Utils::getIpAddress()]);
+                Logger::security("Login exitoso usando código recuperación 2FA", 'info', ['user_id' => $userId]);
             }
         } else {
             $ga = new GoogleAuthenticator();
@@ -302,55 +350,52 @@ class AuthServices {
 
         if ($isValid) {
             $this->rateLimiter->clear('login_2fa');
-            session_regenerate_id(true);
+            $this->sessionManager->regenerate(true);
 
-            $_SESSION['user_id'] = $user['id'];
-            $_SESSION['user_uuid'] = $user['uuid'];
-            $_SESSION['user_name'] = $user['username'];
-            $_SESSION['user_email'] = $user['email'];
-            $_SESSION['user_role'] = $user['role'];
-            $_SESSION['user_pic'] = $user['profile_picture'];
-            $_SESSION['user_prefs'] = $this->prefsManager->ensureDefaultPreferences($user['id']);
-            $_SESSION['user_2fa'] = 1;
+            $this->sessionManager->set('user_id', $user['id']);
+            $this->sessionManager->set('user_uuid', $user['uuid']);
+            $this->sessionManager->set('user_name', $user['username']);
+            $this->sessionManager->set('user_email', $user['email']);
+            $this->sessionManager->set('user_role', $user['role']);
+            $this->sessionManager->set('user_pic', $user['profile_picture']);
+            $this->sessionManager->set('user_prefs', $this->prefsManager->ensureDefaultPreferences($user['id']));
+            $this->sessionManager->set('user_2fa', 1);
 
-            unset($_SESSION['pending_2fa_user_id']);
+            $this->sessionManager->remove('pending_2fa_user_id');
             $this->createRememberToken($user['id']);
             
-            if (strlen($code) !== 8) {
-                Logger::security("Inicio de sesión 2FA exitoso", Logger::LEVEL_INFO, ['user_id' => $userId, 'ip' => Utils::getIpAddress()]);
-            }
             return ['success' => true, 'message' => 'Inicio de sesión exitoso.'];
         }
 
         $this->rateLimiter->record('login_2fa', 5, 15);
-        Logger::security("Código 2FA incorrecto", Logger::LEVEL_WARNING, ['user_id' => $userId, 'ip' => Utils::getIpAddress()]);
+        Logger::security("Código 2FA incorrecto", 'warning', ['user_id' => $userId, 'ip' => Utils::getIpAddress()]);
         return ['success' => false, 'message' => 'El código es incorrecto.'];
     }
 
     public function logout() {
-        if (isset($_SESSION['user_id'])) {
-            Logger::security("Cierre de sesión manual", Logger::LEVEL_INFO, ['user_id' => $_SESSION['user_id'], 'ip' => Utils::getIpAddress()]);
+        if ($this->sessionManager->has('user_id')) {
+            Logger::security("Cierre de sesión manual", 'info', ['user_id' => $this->sessionManager->get('user_id'), 'ip' => Utils::getIpAddress()]);
         }
         $this->clearRememberToken();
-        session_unset(); session_destroy();
+        $this->sessionManager->destroy();
         return ['success' => true, 'message' => 'Sesión cerrada.'];
     }
 
     public function forgotPassword($data) {
         $email = trim($data['email'] ?? '');
         if (empty($email)) return ['success' => false, 'message' => 'El correo es obligatorio.'];
+        
         $rateCheck = $this->rateLimiter->check('forgot_password', 3, 30);
         if (!$rateCheck['allowed']) {
-            Logger::security("Límite de tasa excedido en recuperación de contraseña para: {$email}", Logger::LEVEL_WARNING, ['ip' => Utils::getIpAddress()]);
+            Logger::security("Límite de tasa excedido en recuperación", 'warning', ['ip' => Utils::getIpAddress()]);
             return ['success' => false, 'message' => $rateCheck['message']];
         }
 
-        $stmt = $this->pdo->prepare("SELECT id, username, user_status FROM users WHERE email = ?"); $stmt->execute([$email]);
-        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        // Uso del Repositorio
+        $user = $this->userRepository->findByEmail($email);
 
         if (!$user || $user['user_status'] !== 'active') {
             $this->rateLimiter->record('forgot_password', 3, 30);
-            Logger::security("Intento de recuperación de contraseña para cuenta inexistente o inactiva: {$email}", Logger::LEVEL_INFO, ['ip' => Utils::getIpAddress()]);
             return ['success' => false, 'message' => 'Cuenta no existe o está inactiva.'];
         }
 
@@ -367,17 +412,17 @@ class AuthServices {
             $mailer = new Mailer();
             if ($mailer->sendPasswordResetLink($email, $user['username'], $resetLink)) {
                 $this->rateLimiter->record('forgot_password', 3, 30);
-                Logger::security("Enlace de recuperación de contraseña enviado exitosamente", Logger::LEVEL_INFO, ['user_id' => $user['id'], 'ip' => Utils::getIpAddress()]);
+                Logger::security("Enlace de recuperación enviado exitosamente", 'info', ['user_id' => $user['id'], 'ip' => Utils::getIpAddress()]);
                 return ['success' => true, 'message' => 'Se ha enviado un correo con las instrucciones.'];
             }
         }
-        Logger::security("Fallo interno al crear/enviar enlace de recuperación para: {$email}", Logger::LEVEL_ERROR, ['ip' => Utils::getIpAddress()]);
         return ['success' => false, 'message' => 'Error interno al procesar la solicitud.'];
     }
 
     public function resetPassword($data) {
         $token = trim($data['token'] ?? ''); $password = trim($data['password'] ?? '');
         if (empty($token) || empty($password)) return ['success' => false, 'message' => 'Campos obligatorios.'];
+        
         $passValidation = Utils::validatePasswordFormat($password);
         if (!$passValidation['valid']) return ['success' => false, 'message' => $passValidation['message']];
 
@@ -386,19 +431,20 @@ class AuthServices {
         $verification = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$verification) {
-            Logger::security("Intento de uso de token de recuperación inválido o expirado", Logger::LEVEL_WARNING, ['ip' => Utils::getIpAddress()]);
+            Logger::security("Intento de uso de token expirado", 'warning', ['ip' => Utils::getIpAddress()]);
             return ['success' => false, 'message' => 'El token es inválido o expiró.'];
         }
 
         $email = $verification['identifier'];
+        
+        // Idealmente en el UserRepository habría un método para updatePassword
         $updateStmt = $this->pdo->prepare("UPDATE users SET password = ? WHERE email = ?");
         if ($updateStmt->execute([password_hash($password, PASSWORD_BCRYPT), $email])) {
             $this->pdo->prepare("DELETE FROM auth_tokens WHERE user_id = (SELECT id FROM users WHERE email = ?)")->execute([$email]);
             $this->pdo->prepare("DELETE FROM verification_codes WHERE identifier = ? AND code_type = 'password_reset'")->execute([$email]);
-            Logger::security("Contraseña restablecida correctamente mediante token", Logger::LEVEL_INFO, ['email' => $email, 'ip' => Utils::getIpAddress()]);
+            Logger::security("Contraseña restablecida", 'info', ['email' => $email, 'ip' => Utils::getIpAddress()]);
             return ['success' => true, 'message' => 'Contraseña actualizada.'];
         }
-        Logger::security("Fallo en base de datos al restablecer contraseña para: {$email}", Logger::LEVEL_ERROR, ['ip' => Utils::getIpAddress()]);
         return ['success' => false, 'message' => 'Error al actualizar.'];
     }
 }

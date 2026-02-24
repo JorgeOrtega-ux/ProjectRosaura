@@ -3,58 +3,44 @@
 
 namespace App\Core;
 
-class Logger {
-    const LEVEL_INFO = 'INFO';
-    const LEVEL_WARNING = 'WARNING';
-    const LEVEL_ERROR = 'ERROR';
+use Psr\Log\LoggerInterface;
 
-    /**
-     * Registra logs relacionados con la base de datos.
-     */
-    public static function database($message, $level = self::LEVEL_ERROR, $context = []) {
-        self::write('database', $level, $message, $context);
+class Logger implements LoggerInterface {
+    
+    // Mantenemos estos estáticos por compatibilidad con tu código actual
+    // mientras terminas la migración completa
+    public static function database($message, $level = 'error', $context = []) {
+        (new self())->log($level, $message, $context, 'database');
+    }
+    public static function security($message, $level = 'warning', $context = []) {
+        (new self())->log($level, $message, $context, 'security');
     }
 
-    /**
-     * Registra logs relacionados con seguridad, autenticación, CSRF, correos, etc.
-     */
-    public static function security($message, $level = self::LEVEL_ERROR, $context = []) {
-        self::write('security', $level, $message, $context);
-    }
+    // --- MÉTODOS ESTANDARIZADOS DE PSR-3 ---
+    public function emergency($message, array $context = []): void { $this->log('emergency', $message, $context); }
+    public function alert($message, array $context = []): void { $this->log('alert', $message, $context); }
+    public function critical($message, array $context = []): void { $this->log('critical', $message, $context); }
+    public function error($message, array $context = []): void { $this->log('error', $message, $context); }
+    public function warning($message, array $context = []): void { $this->log('warning', $message, $context); }
+    public function notice($message, array $context = []): void { $this->log('notice', $message, $context); }
+    public function info($message, array $context = []): void { $this->log('info', $message, $context); }
+    public function debug($message, array $context = []): void { $this->log('debug', $message, $context); }
 
-    /**
-     * Registra logs generales de la aplicación (reservado para el futuro).
-     */
-    public static function app($message, $level = self::LEVEL_ERROR, $context = []) {
-        self::write('app', $level, $message, $context);
-    }
-
-    /**
-     * Motor interno para escribir el archivo log.
-     */
-    private static function write($category, $level, $message, $context = []) {
+    public function log($level, $message, array $context = [], string $category = 'app'): void {
         $date = date('Y-m-d');
         $time = date('H:i:s');
         
-        // La ruta apunta a la carpeta raíz /logs/categoria
         $logDir = __DIR__ . '/../../logs/' . $category;
 
-        // Crear la estructura de directorios si no existe
         if (!is_dir($logDir)) {
             mkdir($logDir, 0777, true);
-            // Proteger el directorio contra acceso web directo si el servidor no está bien configurado
             file_put_contents($logDir . '/.htaccess', "Deny from all");
         }
 
         $logFile = $logDir . '/' . $date . '.log';
-
-        // Formatear el contexto extra como JSON si existe
         $contextStr = !empty($context) ? ' | Contexto: ' . json_encode($context, JSON_UNESCAPED_UNICODE) : '';
-        
-        // Formato: [14:30:00] [ERROR] Hubo una falla | Contexto: {"ip":"127...
-        $formattedMessage = "[{$time}] [{$level}] {$message}{$contextStr}" . PHP_EOL;
+        $formattedMessage = "[{$time}] [" . strtoupper($level) . "] {$message}{$contextStr}" . PHP_EOL;
 
-        // Escribir en el archivo
         file_put_contents($logFile, $formattedMessage, FILE_APPEND);
     }
 }
