@@ -35,8 +35,8 @@ class AuthServices {
 
         $selector = $parts[0];
         
-        // Verificamos si este dispositivo exacto sigue en la base de datos
-        $stmt = $this->pdo->prepare("SELECT id FROM auth_tokens WHERE selector = ? AND user_id = ? AND expires_at > NOW()");
+        // Verificamos si este dispositivo exacto sigue en la base de datos Y si el usuario sigue "activo"
+        $stmt = $this->pdo->prepare("SELECT t.id FROM auth_tokens t JOIN users u ON t.user_id = u.id WHERE t.selector = ? AND t.user_id = ? AND t.expires_at > NOW() AND u.user_status = 'active'");
         $stmt->execute([$selector, $_SESSION['user_id']]);
 
         return $stmt->rowCount() > 0;
@@ -114,6 +114,14 @@ class AuthServices {
                 $user = $stmtUser->fetch(PDO::FETCH_ASSOC);
 
                 if ($user) {
+                    // Validar estado del usuario en el auto-login
+                    if ($user['user_status'] !== 'active') {
+                        $stmtDelAll = $this->pdo->prepare("DELETE FROM auth_tokens WHERE user_id = ?");
+                        $stmtDelAll->execute([$userId]);
+                        $this->clearRememberToken();
+                        return false;
+                    }
+
                     session_regenerate_id(true);
                     
                     $stmtPref = $this->pdo->prepare("SELECT * FROM user_preferences WHERE user_id = ?");
@@ -314,7 +322,7 @@ class AuthServices {
             return ['success' => false, 'message' => 'Error al generar la foto de perfil.'];
         }
 
-        $stmtUser = $this->pdo->prepare("INSERT INTO users (uuid, username, email, password, role, profile_picture) VALUES (?, ?, ?, ?, 'user', ?)");
+        $stmtUser = $this->pdo->prepare("INSERT INTO users (uuid, username, email, password, role, user_status, profile_picture) VALUES (?, ?, ?, ?, 'user', 'active', ?)");
         
         if ($stmtUser->execute([$uuid, $username, $email, $hashedPassword, $profilePicturePath])) {
             $userId = $this->pdo->lastInsertId();
@@ -375,6 +383,14 @@ class AuthServices {
         if ($user && password_verify($password, $user['password'])) {
             $this->clearRateLimit('login');
             
+            // Validamos que la cuenta no esté suspendida o eliminada
+            if ($user['user_status'] === 'deleted') {
+                return ['success' => false, 'message' => 'Esta cuenta ha sido eliminada.'];
+            }
+            if ($user['user_status'] === 'suspended') {
+                return ['success' => false, 'message' => 'Esta cuenta ha sido suspendida por un administrador.'];
+            }
+
             if (!empty($user['two_factor_enabled'])) {
                 $_SESSION['pending_2fa_user_id'] = $user['id'];
                 return ['success' => true, 'requires_2fa' => true, 'message' => 'Se requiere código de verificación de dos factores.'];
@@ -434,13 +450,13 @@ class AuthServices {
             return ['success' => false, 'message' => $rateCheck['message']];
         }
 
-        $stmt = $this->pdo->prepare("SELECT * FROM users WHERE id = ?");
+        $stmt = $this->pdo->prepare("SELECT * FROM users WHERE id = ? AND user_status = 'active'");
         $stmt->execute([$userId]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$user || empty($user['two_factor_enabled'])) {
             $this->recordAttempt('login_2fa', 5, 15);
-            return ['success' => false, 'message' => 'Error de validación del usuario.'];
+            return ['success' => false, 'message' => 'Error de validación del usuario o cuenta no disponible.'];
         }
 
         $isValid = false;
@@ -518,13 +534,18 @@ class AuthServices {
             return ['success' => false, 'message' => $rateCheck['message']];
         }
 
-        $stmt = $this->pdo->prepare("SELECT username FROM users WHERE email = ?");
+        $stmt = $this->pdo->prepare("SELECT username, user_status FROM users WHERE email = ?");
         $stmt->execute([$email]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$user) {
             $this->recordAttempt('forgot_password', 3, 30);
             return ['success' => false, 'message' => 'El correo ingresado no existe.'];
+        }
+
+        if ($user['user_status'] !== 'active') {
+            $this->recordAttempt('forgot_password', 3, 30);
+            return ['success' => false, 'message' => 'Esta cuenta está suspendida o ha sido eliminada permanentemente.'];
         }
 
         $token = bin2hex(random_bytes(32)); 

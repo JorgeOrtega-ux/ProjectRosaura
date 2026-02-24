@@ -10,6 +10,8 @@
     "route_guest": "Configuración de invitado",
     "route_change_password": "Cambiar contraseña",
     "route_2fa": "Autenticación de Dos Factores",
+    "route_devices": "Tus dispositivos",
+    "route_delete_account": "Eliminar cuenta",
     "search_placeholder": "Buscar...",
     "btn_login": "Acceder",
     "home_title": "Página Principal",
@@ -108,7 +110,11 @@
     "lbl_2fa_code": "Código de seguridad",
     "btn_verify_login": "Verificar y acceder",
     "link_back_to_login": "Volver a iniciar sesión",
-    "route_devices": "Tus dispositivos",
     "devices_title": "Dispositivos conectados",
-    "devices_desc": "Administra las sesiones activas en tu cuenta. Cierra la sesión en aquellos dispositivos que ya no utilices."
+    "devices_desc": "Administra las sesiones activas en tu cuenta. Cierra la sesión en aquellos dispositivos que ya no utilices.",
+    "del_acc_title": "Eliminar cuenta",
+    "del_acc_desc": "Por favor, lee cuidadosamente lo siguiente antes de proceder.",
+    "del_acc_warning": "Al eliminar tu cuenta, perderás acceso a todos los servicios, y tu perfil dejará de ser visible. Esta acción es permanente e irrecuperable.",
+    "lbl_confirm_delete": "Entiendo las consecuencias y deseo eliminar mi cuenta.",
+    "btn_delete_account_final": "Eliminar permanentemente"
 }

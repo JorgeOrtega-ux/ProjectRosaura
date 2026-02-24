@@ -17,7 +17,8 @@ $userPic = $_SESSION['user_pic'] ?? '';
         '/settings/guest': "<?php echo __('route_guest'); ?>",
         '/settings/change-password': "<?php echo __('route_change_password'); ?>",
         '/settings/2fa': "<?php echo __('route_2fa'); ?>",
-        '/settings/devices': "<?php echo __('route_devices'); ?>"
+        '/settings/devices': "<?php echo __('route_devices'); ?>",
+        '/settings/delete-account': "<?php echo __('route_delete_account'); ?>"
     };
     window.AppName = "ProjectRosaura";
 </script>

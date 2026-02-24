@@ -26,6 +26,7 @@ return [
     // --- RUTAS SEGURIDAD ---
     'settings.verify_current_password' => ['controller' => 'App\Api\Controllers\SettingsController', 'action' => 'verify_current_password'],
     'settings.update_password'         => ['controller' => 'App\Api\Controllers\SettingsController', 'action' => 'update_password'],
+    'settings.delete_account'          => ['controller' => 'App\Api\Controllers\SettingsController', 'action' => 'delete_account'],
     
     // --- NUEVAS RUTAS 2FA ---
     'settings.2fa_generate' => ['controller' => 'App\Api\Controllers\SettingsController', 'action' => 'generate_2fa'],
@@ -37,7 +38,5 @@ return [
     'settings.get_devices'       => ['controller' => 'App\Api\Controllers\SettingsController', 'action' => 'get_devices'],
     'settings.revoke_device'     => ['controller' => 'App\Api\Controllers\SettingsController', 'action' => 'revoke_device'],
     'settings.revoke_all_devices'=> ['controller' => 'App\Api\Controllers\SettingsController', 'action' => 'revoke_all_devices']
-
-    
 ];
 ?>

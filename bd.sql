@@ -12,6 +12,7 @@ CREATE TABLE `users` (
   `two_factor_enabled` tinyint(1) DEFAULT 0,
   `two_factor_recovery_codes` text DEFAULT NULL,
   `role` enum('user','moderator','administrator','founder') DEFAULT 'user',
+  `user_status` enum('active','suspended','deleted') DEFAULT 'active',
   `profile_picture` varchar(255) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
@@ -45,7 +46,7 @@ CREATE TABLE IF NOT EXISTS rate_limits (
 CREATE TABLE IF NOT EXISTS profile_changes_log (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT(11) NOT NULL,
-    change_type ENUM('avatar', 'username', 'email', 'password', '2fa') NOT NULL,
+    change_type ENUM('avatar', 'username', 'email', 'password', '2fa', 'account_status') NOT NULL,
     old_value VARCHAR(255) DEFAULT NULL,
     new_value VARCHAR(255) DEFAULT NULL,
     ip_address VARCHAR(45) NOT NULL,
@@ -79,7 +80,6 @@ CREATE TABLE IF NOT EXISTS auth_tokens (
     INDEX (selector)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- SI TU TABLA YA EXISTE EJECUTA ESTO EN TU GESTOR SQL:
--- ALTER TABLE users ADD COLUMN two_factor_secret VARCHAR(64) DEFAULT NULL AFTER password;
--- ALTER TABLE users ADD COLUMN two_factor_enabled TINYINT(1) DEFAULT 0 AFTER two_factor_secret;
--- ALTER TABLE users ADD COLUMN two_factor_recovery_codes TEXT DEFAULT NULL AFTER two_factor_enabled;
+-- SI TUS TABLAS YA EXISTEN, EJECUTA ESTO EN TU GESTOR SQL:
+-- ALTER TABLE users ADD COLUMN user_status ENUM('active', 'suspended', 'deleted') DEFAULT 'active' AFTER role;
+-- ALTER TABLE profile_changes_log MODIFY COLUMN change_type ENUM('avatar', 'username', 'email', 'password', '2fa', 'account_status') NOT NULL;

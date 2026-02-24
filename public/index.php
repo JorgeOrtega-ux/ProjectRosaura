@@ -24,7 +24,7 @@ use App\Api\Services\AuthServices;
 $authService = new AuthServices();
 
 if (isset($_SESSION['user_id'])) {
-    // Si tiene sesión, validamos que su dispositivo no haya sido revocado
+    // Si tiene sesión, validamos que su dispositivo no haya sido revocado y la cuenta siga ACTIVA
     if (!$authService->isCurrentDeviceValid()) {
         $authService->logout(); // Destruye la sesión de PHP y limpia cookies
         header("Location: /ProjectRosaura/login");
@@ -99,7 +99,9 @@ $protectedSettings = [
     'settings/security.php',
     'settings/accessibility.php',
     'settings/change-password.php',
-    'settings/2fa.php'
+    'settings/2fa.php',
+    'settings/devices.php',
+    'settings/delete-account.php'
 ];
 
 $redirectUrl = null;

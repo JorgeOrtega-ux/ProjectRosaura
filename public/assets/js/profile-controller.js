@@ -12,12 +12,10 @@ export class ProfileController {
         this.bindEvents();
         console.log("ProfileController inicializado.");
 
-        // NUEVO: Si recargas la página directamente en la vista 2FA, forzamos la carga.
         if (document.getElementById('2fa-setup-container')) {
             this.init2FAView();
         }
 
-        // NUEVO: Arranque para cargas directas de dispositivos
         if (document.getElementById('devices-container')) {
             this.initDevicesView();
         }
@@ -81,10 +79,22 @@ export class ProfileController {
 
             const btnRevoke = e.target.closest('[data-action="revokeDevice"]');
             if (btnRevoke) this.revokeDevice(btnRevoke);
+            
+            // --- EVENTOS ELIMINAR CUENTA ---
+            const btnDeleteAccount = e.target.closest('[data-action="submitDeleteAccount"]');
+            if (btnDeleteAccount) this.deleteAccount(btnDeleteAccount);
         });
 
         document.addEventListener('change', (e) => {
             if (e.target && e.target.id === 'input-avatar-file') this.handleFileSelection(e);
+            
+            // --- MOSTRAR CAMPO DE CONTRASEÑA EN ELIMINAR CUENTA ---
+            if (e.target && e.target.id === 'chk_confirm_delete') {
+                const passArea = document.getElementById('delete_password_area');
+                if (passArea) {
+                    passArea.style.display = e.target.checked ? 'block' : 'none';
+                }
+            }
         });
 
         document.addEventListener('input', (e) => {
@@ -538,6 +548,30 @@ export class ProfileController {
             this.showMessage(res.message, 'success');
             this.initDevicesView(); 
         } else {
+            this.showMessage(res.message, 'error');
+        }
+    }
+
+    // ==========================================
+    // --- LÓGICA DE ELIMINAR CUENTA ---
+    // ==========================================
+    async deleteAccount(btn) {
+        const input = document.getElementById('delete_account_password');
+        if (!input) return;
+        const pass = input.value;
+        if (!pass) {
+            this.showMessage('Debes ingresar tu contraseña para confirmar.', 'error');
+            return;
+        }
+
+        this.setButtonLoading(btn);
+        const res = await this.api.post(ApiRoutes.Settings.DeleteAccount, { password: pass });
+        
+        if (res.success) {
+            // Ya que el backend destruyó las sesiones, mandamos a la pantalla de inicio directamente
+            window.location.href = '/ProjectRosaura/';
+        } else {
+            this.restoreButton(btn);
             this.showMessage(res.message, 'error');
         }
     }

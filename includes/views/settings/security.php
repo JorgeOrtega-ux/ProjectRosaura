@@ -74,8 +74,7 @@ if (isset($_SESSION['user_id'])) {
                     </div>
                 </div>
                 <div class="component-card__actions component-card__actions--end">
-                    
-                <button type="button" class="component-button component-button--h36" data-nav="/ProjectRosaura/settings/devices">Gestionar dispositivos</button>
+                    <button type="button" class="component-button component-button--h36" data-nav="/ProjectRosaura/settings/devices">Gestionar dispositivos</button>
                 </div>
             </div>
         </div>
@@ -89,7 +88,7 @@ if (isset($_SESSION['user_id'])) {
                     </div>
                 </div>
                 <div class="component-card__actions component-card__actions--end">
-                    <button type="button" class="component-button component-button--h36 component-button--danger">Eliminar cuenta</button>
+                    <button type="button" class="component-button component-button--h36 component-button--danger" data-nav="/ProjectRosaura/settings/delete-account">Eliminar cuenta</button>
                 </div>
             </div>
         </div>

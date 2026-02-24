@@ -51,8 +51,12 @@ class SettingsController
     {
         return $this->settingsServices->updatePassword($input);
     }
+    public function delete_account($input)
+    {
+        return $this->settingsServices->deleteAccount($input);
+    }
 
-    // --- NUEVOS: Controladores 2FA ---
+    // --- Controladores 2FA ---
     public function generate_2fa()
     {
         return $this->settingsServices->generate2faSetup();
@@ -69,7 +73,8 @@ class SettingsController
     {
         return $this->settingsServices->regenerateRecoveryCodes($input);
     }
-    // --- NUEVOS: Controladores Dispositivos ---
+    
+    // --- Controladores Dispositivos ---
     public function get_devices()
     {
         return $this->settingsServices->getDevices();
@@ -83,3 +88,4 @@ class SettingsController
         return $this->settingsServices->revokeAllDevices();
     }
 }
+?>

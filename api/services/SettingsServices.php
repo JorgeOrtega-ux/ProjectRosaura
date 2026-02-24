@@ -273,6 +273,51 @@ class SettingsServices {
     }
 
     // ==========================================
+    // --- LÓGICA DE ELIMINAR CUENTA ---
+    // ==========================================
+    public function deleteAccount($data) {
+        if (!isset($_SESSION['user_id'])) return ['success' => false, 'message' => 'Sesión no válida.'];
+
+        $password = trim($data['password'] ?? '');
+        if (empty($password)) return ['success' => false, 'message' => 'La contraseña es obligatoria para confirmar la eliminación.'];
+
+        $stmt = $this->pdo->prepare("SELECT password FROM users WHERE id = ?");
+        $stmt->execute([$_SESSION['user_id']]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($user && password_verify($password, $user['password'])) {
+            // Pasamos el estado a deleted en lugar de eliminar el registro
+            $upd = $this->pdo->prepare("UPDATE users SET user_status = 'deleted' WHERE id = ?");
+            if ($upd->execute([$_SESSION['user_id']])) {
+                
+                $this->logProfileChange($_SESSION['user_id'], 'account_status', 'active', 'deleted');
+                
+                // Forzamos cierre de sesión en TODOS los dispositivos
+                $delTokens = $this->pdo->prepare("DELETE FROM auth_tokens WHERE user_id = ?");
+                $delTokens->execute([$_SESSION['user_id']]);
+                
+                // Limpiamos la sesión y la cookie actual
+                if (isset($_COOKIE['remember_token'])) {
+                    setcookie('remember_token', '', [
+                        'expires' => time() - 3600,
+                        'path' => '/ProjectRosaura/',
+                        'secure' => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on',
+                        'httponly' => true,
+                        'samesite' => 'Strict'
+                    ]);
+                }
+                session_unset();
+                session_destroy();
+                
+                return ['success' => true, 'message' => 'Tu cuenta ha sido eliminada permanentemente.'];
+            }
+            return ['success' => false, 'message' => 'Error al actualizar la base de datos.'];
+        }
+        
+        return ['success' => false, 'message' => 'La contraseña ingresada es incorrecta.'];
+    }
+
+    // ==========================================
     // --- LÓGICA DE 2FA ---
     // ==========================================
     public function generate2faSetup() {
@@ -352,7 +397,8 @@ class SettingsServices {
         
         return ['success' => false, 'message' => 'Contraseña incorrecta.'];
     }
-// ==========================================
+
+    // ==========================================
     // --- LÓGICA DE GESTIÓN DE DISPOSITIVOS ---
     // ==========================================
     public function getDevices() {
@@ -410,6 +456,7 @@ class SettingsServices {
         }
         return ['success' => false, 'message' => 'Error al cerrar las sesiones de los dispositivos.'];
     }
+
     public function regenerateRecoveryCodes($data) {
         if (!isset($_SESSION['user_id'])) return ['success' => false, 'message' => 'Sesión no válida.'];
         if (empty($_SESSION['user_2fa'])) return ['success' => false, 'message' => 'El 2FA no está activado.'];

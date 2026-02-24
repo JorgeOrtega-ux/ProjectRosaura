@@ -19,9 +19,10 @@ return [
     '/settings/accessibility' => ['view' => 'settings/accessibility.php'],
     '/settings/guest' => ['view' => 'settings/guest.php'],
     
-    // --- NUEVAS RUTAS SEGURIDAD Y 2FA ---
+    // --- NUEVAS RUTAS SEGURIDAD, 2FA Y DISPOSITIVOS ---
     '/settings/change-password' => ['view' => 'settings/change-password.php'],
     '/settings/2fa' => ['view' => 'settings/2fa.php'],
-    '/settings/devices' => ['view' => 'settings/devices.php'] // <-- AÑADIR ESTO
+    '/settings/devices' => ['view' => 'settings/devices.php'],
+    '/settings/delete-account' => ['view' => 'settings/delete-account.php']
 ];
 ?>
