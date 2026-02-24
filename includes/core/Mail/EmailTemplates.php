@@ -1,7 +1,7 @@
 <?php
-// includes/core/EmailTemplates.php
+// includes/core/Mail/EmailTemplates.php
 
-namespace App\Core;
+namespace App\Core\Mail;
 
 class EmailTemplates {
     

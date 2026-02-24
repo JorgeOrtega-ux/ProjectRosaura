@@ -1,7 +1,7 @@
 <?php
-// includes/core/Utils.php
+// includes/core/Helpers/Utils.php
 
-namespace App\Core;
+namespace App\Core\Helpers;
 
 class Utils {
     
@@ -21,7 +21,8 @@ class Utils {
         $imageContent = @file_get_contents($url);
         if ($imageContent === false) return false;
 
-        $storageDir = __DIR__ . '/../../public/storage/profilePictures/default/';
+        // SE AGREGÓ UN ../ EXTRA A LA RUTA
+        $storageDir = __DIR__ . '/../../../public/storage/profilePictures/default/';
         if (!is_dir($storageDir)) mkdir($storageDir, 0777, true);
         $fileName = $uuid . '.png';
         $filePath = $storageDir . $fileName;

@@ -10,9 +10,9 @@ header("Content-Security-Policy: default-src 'none'; frame-ancestors 'none';");
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
-use App\Core\Utils;
+use App\Core\Helpers\Utils;
 use App\Core\Container;
-use App\Core\Logger;
+use App\Core\System\Logger;
 use App\Api\Services\AuthServices;
 
 // 1. Instanciar el Contenedor de Dependencias

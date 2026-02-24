@@ -3,16 +3,16 @@
 
 namespace App\Api\Services;
 
-use App\Core\Utils;
-use App\Core\Mailer;
-use App\Core\GoogleAuthenticator;
+use App\Core\Helpers\Utils;
+use App\Core\Mail\Mailer;
+use App\Core\Security\GoogleAuthenticator;
+use App\Core\System\Logger;
 use App\Core\Interfaces\RateLimiterInterface;
 use App\Core\Interfaces\SessionManagerInterface;
 use App\Core\Interfaces\UserRepositoryInterface;
 use App\Core\Interfaces\TokenRepositoryInterface;
 use App\Core\Interfaces\VerificationCodeRepositoryInterface;
 use App\Core\Interfaces\ProfileLogRepositoryInterface;
-use App\Core\Logger;
 
 class SettingsServices {
     private $rateLimiter;

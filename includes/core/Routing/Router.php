@@ -1,6 +1,7 @@
 <?php
-// includes/core/router.php
-namespace App\Core;
+// includes/core/Routing/Router.php
+
+namespace App\Core\Routing;
 
 class Router {
     private $routes;

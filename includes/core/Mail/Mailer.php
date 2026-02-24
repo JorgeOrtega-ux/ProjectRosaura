@@ -1,11 +1,11 @@
 <?php
-// includes/core/Mailer.php
+// includes/core/Mail/Mailer.php
 
-namespace App\Core;
+namespace App\Core\Mail;
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
-use App\Core\Logger;
+use App\Core\System\Logger;
 
 class Mailer {
     private $mail;
@@ -44,7 +44,7 @@ class Mailer {
 
             return $this->mail->send();
         } catch (Exception $e) {
-            Logger::security("Fallo al enviar correo de verificación a {$toEmail}: {$this->mail->ErrorInfo}", Logger::LEVEL_ERROR);
+            Logger::security("Fallo al enviar correo de verificación a {$toEmail}: {$this->mail->ErrorInfo}", 'error');
             return false;
         }
     }
@@ -66,7 +66,7 @@ class Mailer {
 
             return $this->mail->send();
         } catch (Exception $e) {
-            Logger::security("Fallo al enviar correo de restablecimiento a {$toEmail}: {$this->mail->ErrorInfo}", Logger::LEVEL_ERROR);
+            Logger::security("Fallo al enviar correo de restablecimiento a {$toEmail}: {$this->mail->ErrorInfo}", 'error');
             return false;
         }
     }
@@ -88,7 +88,7 @@ class Mailer {
 
             return $this->mail->send();
         } catch (Exception $e) {
-            Logger::security("Fallo al enviar correo de cambio de email a {$toEmail}: {$this->mail->ErrorInfo}", Logger::LEVEL_ERROR);
+            Logger::security("Fallo al enviar correo de cambio de email a {$toEmail}: {$this->mail->ErrorInfo}", 'error');
             return false;
         }
     }

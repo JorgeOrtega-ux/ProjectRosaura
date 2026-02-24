@@ -1,9 +1,10 @@
 <?php
-// includes/core/UserPrefsManager.php
+// includes/core/System/UserPrefsManager.php
 
-namespace App\Core;
+namespace App\Core\System;
 
 use App\Core\Interfaces\UserPrefsManagerInterface;
+use App\Core\Helpers\Utils;
 use PDO;
 
 class UserPrefsManager implements UserPrefsManagerInterface {

@@ -1,7 +1,7 @@
 <?php
-// includes/core/SessionManager.php
+// includes/core/System/SessionManager.php
 
-namespace App\Core;
+namespace App\Core\System;
 
 use App\Core\Interfaces\SessionManagerInterface;
 

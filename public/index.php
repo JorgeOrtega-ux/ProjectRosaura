@@ -8,10 +8,10 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-i
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
-use App\Core\Loader;
-use App\Core\Router;
-use App\Core\Utils; 
-use App\Core\Translator; 
+use App\Core\Routing\Loader;
+use App\Core\Routing\Router;
+use App\Core\Helpers\Utils; 
+use App\Core\System\Translator; 
 use App\Core\Container;
 use App\Api\Services\AuthServices;
 use App\Core\Interfaces\UserPrefsManagerInterface;

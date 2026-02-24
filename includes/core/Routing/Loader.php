@@ -1,13 +1,14 @@
 <?php
-// includes/core/loader.php
-namespace App\Core;
+// includes/core/Routing/Loader.php
+
+namespace App\Core\Routing;
 
 class Loader {
     private $viewsPath;
 
     public function __construct() {
-        // Define la ruta base donde están las vistas
-        $this->viewsPath = __DIR__ . '/../views/';
+        // SE AGREGÓ UN ../ EXTRA A LA RUTA
+        $this->viewsPath = __DIR__ . '/../../../includes/views/';
     }
 
     public function load($viewName) {

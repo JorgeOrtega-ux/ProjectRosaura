@@ -1,14 +1,14 @@
 <?php
-// includes/core/Translator.php
+// includes/core/System/Translator.php
 
-namespace App\Core;
+namespace App\Core\System;
 
 class Translator {
     private static $translations = null;
 
     public static function init($lang) {
-        // Buscamos el archivo JSON correspondiente al código de idioma (ej. es-419.json)
-        $file = __DIR__ . '/../../translations/' . $lang . '.json';
+        // SE AGREGÓ UN ../ EXTRA A LA RUTA
+        $file = __DIR__ . '/../../../translations/' . $lang . '.json';
         
         if (file_exists($file)) {
             $json = file_get_contents($file);

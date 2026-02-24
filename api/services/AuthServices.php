@@ -3,10 +3,10 @@
 
 namespace App\Api\Services;
 
-use App\Core\Utils;
-use App\Core\Mailer; 
-use App\Core\GoogleAuthenticator;
-use App\Core\Logger;
+use App\Core\Helpers\Utils;
+use App\Core\Mail\Mailer; 
+use App\Core\Security\GoogleAuthenticator;
+use App\Core\System\Logger;
 use App\Core\Interfaces\RateLimiterInterface;
 use App\Core\Interfaces\UserPrefsManagerInterface;
 use App\Core\Interfaces\UserRepositoryInterface;

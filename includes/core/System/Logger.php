@@ -1,7 +1,7 @@
 <?php
-// includes/core/Logger.php
+// includes/core/System/Logger.php
 
-namespace App\Core;
+namespace App\Core\System;
 
 use Psr\Log\LoggerInterface;
 
@@ -30,7 +30,8 @@ class Logger implements LoggerInterface {
         $date = date('Y-m-d');
         $time = date('H:i:s');
         
-        $logDir = __DIR__ . '/../../logs/' . $category;
+        // SE AGREGÓ UN ../ EXTRA A LA RUTA
+        $logDir = __DIR__ . '/../../../logs/' . $category;
 
         if (!is_dir($logDir)) {
             mkdir($logDir, 0777, true);

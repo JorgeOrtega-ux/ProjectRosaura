@@ -1,7 +1,7 @@
 <?php
-// includes/core/GoogleAuthenticator.php
+// includes/core/Security/GoogleAuthenticator.php
 
-namespace App\Core;
+namespace App\Core\Security;
 
 class GoogleAuthenticator {
     private $codeLength = 6;

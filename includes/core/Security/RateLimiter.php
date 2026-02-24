@@ -1,9 +1,10 @@
 <?php
-// includes/core/RateLimiter.php
+// includes/core/Security/RateLimiter.php
 
-namespace App\Core;
+namespace App\Core\Security;
 
 use App\Core\Interfaces\RateLimiterInterface;
+use App\Core\Helpers\Utils;
 use PDO;
 
 class RateLimiter implements RateLimiterInterface {
