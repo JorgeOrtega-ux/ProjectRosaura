@@ -3,29 +3,31 @@
 session_start();
 header('Content-Type: application/json');
 
-// ========================================================================================
-// --- CABECERAS DE SEGURIDAD PARA LA API ---
-// ========================================================================================
 header("X-Frame-Options: DENY");
 header("X-Content-Type-Options: nosniff");
 header("Content-Security-Policy: default-src 'none'; frame-ancestors 'none';");
 
-// Cargar autoloader de Composer
 require_once __DIR__ . '/../vendor/autoload.php';
 
 use App\Core\Utils;
+use App\Config\Database;
+use App\Core\RateLimiter;
+use App\Core\UserPrefsManager;
 use App\Api\Services\AuthServices;
 
-// ========================================================================================
-// --- VALIDACIÓN DE SESIÓN Y AUTO-LOGIN PARA LA API ---
-// ========================================================================================
-$authService = new AuthServices();
+// Instanciar dependencias compartidas
+$db = new Database();
+$pdo = $db->getConnection();
+$rateLimiter = new RateLimiter($pdo);
+$prefsManager = new UserPrefsManager($pdo);
+
+// Inyección al AuthServices global para validar sesiones
+$authService = new AuthServices($pdo, $rateLimiter, $prefsManager);
 
 if (isset($_SESSION['user_id'])) {
-    // Validar que el dispositivo actual siga activo
     if (!$authService->isCurrentDeviceValid()) {
         $authService->logout();
-        http_response_code(401); // 401: Unauthorized
+        http_response_code(401);
         echo json_encode(['success' => false, 'message' => 'Sesión revocada.']);
         exit;
     }
@@ -33,19 +35,13 @@ if (isset($_SESSION['user_id'])) {
     $authService->autoLogin(); 
 }
 
-// 1. OBTENER Y VALIDAR EL TOKEN CSRF DESDE LOS HEADERS DE LA PETICIÓN
 $requestToken = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
-
 if (!Utils::validateCSRFToken($requestToken)) {
     http_response_code(403);
-    echo json_encode([
-        'success' => false, 
-        'message' => 'Solicitud rechazada. Token de seguridad CSRF inválido o ausente.'
-    ]);
+    echo json_encode(['success' => false, 'message' => 'Token de seguridad inválido.']);
     exit;
 }
 
-// 2. Recibir los datos de la petición (Soporte para JSON y FormData)
 $contentType = $_SERVER["CONTENT_TYPE"] ?? '';
 $input = [];
 
@@ -58,7 +54,6 @@ if (strpos($contentType, 'multipart/form-data') !== false) {
 }
 
 $route = $input['route'] ?? '';
-
 if (empty($route)) {
     echo json_encode(['success' => false, 'message' => 'Ruta no especificada.']);
     exit;
@@ -73,20 +68,21 @@ if (array_key_exists($route, $routes)) {
     $action = $routeConfig['action'];
 
     if (class_exists($controllerName)) {
+        // Al instanciar el controlador, el controlador mismo arma sus propios servicios
         $controller = new $controllerName();
         
         if (method_exists($controller, $action)) {
             echo json_encode($controller->$action($input));
         } else {
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Método de acción no encontrado en el controlador.']);
+            echo json_encode(['success' => false, 'message' => 'Acción no encontrada.']);
         }
     } else {
         http_response_code(500);
-        echo json_encode(['success' => false, 'message' => 'Clase de controlador no encontrada.']);
+        echo json_encode(['success' => false, 'message' => 'Controlador no encontrado.']);
     }
 } else {
     http_response_code(404);
-    echo json_encode(['success' => false, 'message' => 'La ruta solicitada no existe.']);
+    echo json_encode(['success' => false, 'message' => 'Ruta no existe.']);
 }
 ?>

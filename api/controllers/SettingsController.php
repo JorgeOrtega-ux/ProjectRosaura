@@ -4,88 +4,40 @@
 namespace App\Api\Controllers;
 
 use App\Api\Services\SettingsServices;
+use App\Config\Database;
+use App\Core\RateLimiter;
 
-class SettingsController
-{
+class SettingsController {
+    
     private $settingsServices;
 
-    public function __construct()
-    {
-        $this->settingsServices = new SettingsServices();
+    public function __construct() {
+        $db = new Database();
+        $pdo = $db->getConnection();
+        $rateLimiter = new RateLimiter($pdo);
+        
+        // Inyección de Dependencias
+        $this->settingsServices = new SettingsServices($pdo, $rateLimiter);
     }
 
-    public function update_avatar($input)
-    {
-        return $this->settingsServices->updateAvatar($input);
-    }
-    public function delete_avatar()
-    {
-        return $this->settingsServices->deleteAvatar();
-    }
-    public function update_username($input)
-    {
-        return $this->settingsServices->updateUsername($input);
-    }
-    public function request_email_code()
-    {
-        return $this->settingsServices->requestEmailCode();
-    }
-    public function verify_email_code($input)
-    {
-        return $this->settingsServices->verifyEmailCode($input);
-    }
-    public function update_email($input)
-    {
-        return $this->settingsServices->updateEmail($input);
-    }
-    public function update_preferences($input)
-    {
-        return $this->settingsServices->updatePreferences($input);
-    }
+    public function update_avatar($input) { return $this->settingsServices->updateAvatar($input); }
+    public function delete_avatar() { return $this->settingsServices->deleteAvatar(); }
+    public function update_username($input) { return $this->settingsServices->updateUsername($input); }
+    public function request_email_code() { return $this->settingsServices->requestEmailCode(); }
+    public function verify_email_code($input) { return $this->settingsServices->verifyEmailCode($input); }
+    public function update_email($input) { return $this->settingsServices->updateEmail($input); }
+    public function update_preferences($input) { return $this->settingsServices->updatePreferences($input); }
+    public function verify_current_password($input) { return $this->settingsServices->verifyCurrentPassword($input); }
+    public function update_password($input) { return $this->settingsServices->updatePassword($input); }
+    public function delete_account($input) { return $this->settingsServices->deleteAccount($input); }
 
-    public function verify_current_password($input)
-    {
-        return $this->settingsServices->verifyCurrentPassword($input);
-    }
-    public function update_password($input)
-    {
-        return $this->settingsServices->updatePassword($input);
-    }
-    public function delete_account($input)
-    {
-        return $this->settingsServices->deleteAccount($input);
-    }
-
-    // --- Controladores 2FA ---
-    public function generate_2fa()
-    {
-        return $this->settingsServices->generate2faSetup();
-    }
-    public function enable_2fa($input)
-    {
-        return $this->settingsServices->enable2fa($input);
-    }
-    public function disable_2fa($input)
-    {
-        return $this->settingsServices->disable2fa($input);
-    }
-    public function regenerate_recovery_codes($input)
-    {
-        return $this->settingsServices->regenerateRecoveryCodes($input);
-    }
+    public function generate_2fa() { return $this->settingsServices->generate2faSetup(); }
+    public function enable_2fa($input) { return $this->settingsServices->enable2fa($input); }
+    public function disable_2fa($input) { return $this->settingsServices->disable2fa($input); }
+    public function regenerate_recovery_codes($input) { return $this->settingsServices->regenerateRecoveryCodes($input); }
     
-    // --- Controladores Dispositivos ---
-    public function get_devices()
-    {
-        return $this->settingsServices->getDevices();
-    }
-    public function revoke_device($input)
-    {
-        return $this->settingsServices->revokeDevice($input);
-    }
-    public function revoke_all_devices()
-    {
-        return $this->settingsServices->revokeAllDevices();
-    }
+    public function get_devices() { return $this->settingsServices->getDevices(); }
+    public function revoke_device($input) { return $this->settingsServices->revokeDevice($input); }
+    public function revoke_all_devices() { return $this->settingsServices->revokeAllDevices(); }
 }
 ?>
