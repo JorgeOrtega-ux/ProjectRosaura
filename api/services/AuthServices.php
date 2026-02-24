@@ -6,7 +6,7 @@ namespace App\Api\Services;
 use App\Core\Utils;
 use App\Config\Database;
 use App\Core\Mailer; 
-use App\Core\GoogleAuthenticator; // IMPORTACIÓN NECESARIA
+use App\Core\GoogleAuthenticator;
 use PDO;
 
 class AuthServices {
@@ -17,7 +17,32 @@ class AuthServices {
         $this->pdo = $db->getConnection();
     }
 
- public function createRememberToken($userId) {
+    public function isCurrentDeviceValid() {
+        // Si no hay sesión, no hay nada que validar aquí
+        if (!isset($_SESSION['user_id'])) {
+            return false;
+        }
+
+        // Si la cookie del token no existe, la sesión es inválida
+        if (!isset($_COOKIE['remember_token'])) {
+            return false;
+        }
+
+        $parts = explode(':', $_COOKIE['remember_token']);
+        if (count($parts) !== 2) {
+            return false;
+        }
+
+        $selector = $parts[0];
+        
+        // Verificamos si este dispositivo exacto sigue en la base de datos
+        $stmt = $this->pdo->prepare("SELECT id FROM auth_tokens WHERE selector = ? AND user_id = ? AND expires_at > NOW()");
+        $stmt->execute([$selector, $_SESSION['user_id']]);
+
+        return $stmt->rowCount() > 0;
+    }
+
+    public function createRememberToken($userId) {
         $selector = bin2hex(random_bytes(16));
         $validator = bin2hex(random_bytes(32));
         $hashedValidator = hash('sha256', $validator);
@@ -350,13 +375,11 @@ class AuthServices {
         if ($user && password_verify($password, $user['password'])) {
             $this->clearRateLimit('login');
             
-            // VERIFICACIÓN DE 2FA:
             if (!empty($user['two_factor_enabled'])) {
                 $_SESSION['pending_2fa_user_id'] = $user['id'];
                 return ['success' => true, 'requires_2fa' => true, 'message' => 'Se requiere código de verificación de dos factores.'];
             }
 
-            // SI NO TIENE 2FA, PROCEDE NORMAL
             session_regenerate_id(true);
 
             $stmtPref = $this->pdo->prepare("SELECT * FROM user_preferences WHERE user_id = ?");
@@ -422,7 +445,6 @@ class AuthServices {
 
         $isValid = false;
         
-        // Comprobar si es código de app o código de recuperación (los de rec. tienen 8 caracteres)
         if (strlen($code) === 8) {
             $codes = json_decode($user['two_factor_recovery_codes'], true) ?: [];
             $index = array_search($code, $codes);

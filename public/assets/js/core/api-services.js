@@ -25,6 +25,12 @@ export class ApiService {
             });
 
             if (!response.ok) {
+                // Interceptar explícitamente el 401 (Sesión Revocada)
+                if (response.status === 401) {
+                    window.location.href = '/ProjectRosaura/login';
+                    return { success: false, message: 'Sesión revocada.' };
+                }
+
                 if (response.status === 403) return await response.json(); 
                 throw new Error(`Error HTTP: ${response.status}`);
             }
@@ -36,7 +42,7 @@ export class ApiService {
         }
     }
 
-    // NUEVO MÉTODO PARA ENVIAR FORMDATA (Archivos)
+    // MÉTODO PARA ENVIAR FORMDATA (Archivos)
     async postForm(route, formData) {
         // Añadimos la ruta al FormData
         formData.append('route', route);
@@ -55,6 +61,12 @@ export class ApiService {
             });
 
             if (!response.ok) {
+                // Interceptar explícitamente el 401 (Sesión Revocada)
+                if (response.status === 401) {
+                    window.location.href = '/ProjectRosaura/login';
+                    return { success: false, message: 'Sesión revocada.' };
+                }
+
                 if (response.status === 403) return await response.json(); 
                 throw new Error(`Error HTTP: ${response.status}`);
             }

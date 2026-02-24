@@ -14,13 +14,22 @@ header("Content-Security-Policy: default-src 'none'; frame-ancestors 'none';");
 require_once __DIR__ . '/../vendor/autoload.php';
 
 use App\Core\Utils;
-use App\Api\Services\AuthServices; // <-- IMPORTACIÓN NECESARIA
+use App\Api\Services\AuthServices;
 
 // ========================================================================================
-// --- AUTO-LOGIN SILENCIOSO (SESIÓN PERSISTENTE) ---
+// --- VALIDACIÓN DE SESIÓN Y AUTO-LOGIN PARA LA API ---
 // ========================================================================================
-if (!isset($_SESSION['user_id']) && isset($_COOKIE['remember_token'])) {
-    $authService = new AuthServices();
+$authService = new AuthServices();
+
+if (isset($_SESSION['user_id'])) {
+    // Validar que el dispositivo actual siga activo
+    if (!$authService->isCurrentDeviceValid()) {
+        $authService->logout();
+        http_response_code(401); // 401: Unauthorized
+        echo json_encode(['success' => false, 'message' => 'Sesión revocada.']);
+        exit;
+    }
+} elseif (isset($_COOKIE['remember_token'])) {
     $authService->autoLogin(); 
 }
 

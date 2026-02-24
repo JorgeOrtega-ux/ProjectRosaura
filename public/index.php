@@ -7,7 +7,6 @@ session_start();
 // ========================================================================================
 header("X-Frame-Options: SAMEORIGIN");
 header("X-Content-Type-Options: nosniff");
-// SE MODIFICÓ img-src PARA PERMITIR https://api.qrserver.com
 header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://api.qrserver.com; connect-src 'self'; frame-ancestors 'none';");
 
 require_once __DIR__ . '/../vendor/autoload.php';
@@ -20,11 +19,20 @@ use App\Core\Translator;
 use App\Api\Services\AuthServices;
 
 // ========================================================================================
-// --- AUTO-LOGIN SILENCIOSO (SESIÓN PERSISTENTE) ---
+// --- VALIDACIÓN DE SESIÓN Y AUTO-LOGIN ---
 // ========================================================================================
-if (!isset($_SESSION['user_id']) && isset($_COOKIE['remember_token'])) {
-    $authService = new AuthServices();
-    $authService->autoLogin(); // Restaurará la sesión y rotará el token invisiblemente
+$authService = new AuthServices();
+
+if (isset($_SESSION['user_id'])) {
+    // Si tiene sesión, validamos que su dispositivo no haya sido revocado
+    if (!$authService->isCurrentDeviceValid()) {
+        $authService->logout(); // Destruye la sesión de PHP y limpia cookies
+        header("Location: /ProjectRosaura/login");
+        exit;
+    }
+} elseif (isset($_COOKIE['remember_token'])) {
+    // Auto-Login si no hay sesión activa pero sí hay token guardado
+    $authService->autoLogin(); 
 }
 
 $csrfToken = Utils::generateCSRFToken();
