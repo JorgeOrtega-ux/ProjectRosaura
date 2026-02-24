@@ -290,8 +290,6 @@ class SettingsServices {
             $upd = $this->pdo->prepare("UPDATE users SET user_status = 'deleted' WHERE id = ?");
             if ($upd->execute([$_SESSION['user_id']])) {
                 
-                $this->logProfileChange($_SESSION['user_id'], 'account_status', 'active', 'deleted');
-                
                 // Forzamos cierre de sesión en TODOS los dispositivos
                 $delTokens = $this->pdo->prepare("DELETE FROM auth_tokens WHERE user_id = ?");
                 $delTokens->execute([$_SESSION['user_id']]);

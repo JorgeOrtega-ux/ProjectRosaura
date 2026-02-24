@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS rate_limits (
 CREATE TABLE IF NOT EXISTS profile_changes_log (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT(11) NOT NULL,
-    change_type ENUM('avatar', 'username', 'email', 'password', '2fa', 'account_status') NOT NULL,
+    change_type ENUM('avatar', 'username', 'email', 'password', '2fa') NOT NULL,
     old_value VARCHAR(255) DEFAULT NULL,
     new_value VARCHAR(255) DEFAULT NULL,
     ip_address VARCHAR(45) NOT NULL,
@@ -82,4 +82,4 @@ CREATE TABLE IF NOT EXISTS auth_tokens (
 
 -- SI TUS TABLAS YA EXISTEN, EJECUTA ESTO EN TU GESTOR SQL:
 -- ALTER TABLE users ADD COLUMN user_status ENUM('active', 'suspended', 'deleted') DEFAULT 'active' AFTER role;
--- ALTER TABLE profile_changes_log MODIFY COLUMN change_type ENUM('avatar', 'username', 'email', 'password', '2fa', 'account_status') NOT NULL;
+-- ALTER TABLE profile_changes_log MODIFY COLUMN change_type ENUM('avatar', 'username', 'email', 'password', '2fa') NOT NULL;
