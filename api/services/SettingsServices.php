@@ -14,7 +14,8 @@ use App\Core\Interfaces\TokenRepositoryInterface;
 use App\Core\Interfaces\VerificationCodeRepositoryInterface;
 use App\Core\Interfaces\ProfileLogRepositoryInterface;
 
-class SettingsServices {
+class SettingsServices
+{
     private $rateLimiter;
     private $sessionManager;
     private $userRepository;
@@ -38,9 +39,10 @@ class SettingsServices {
         $this->profileLogRepository = $profileLogRepository;
     }
 
-    public function updateAvatar($data) {
+    public function updateAvatar($data)
+    {
         if (!$this->sessionManager->has('user_id')) return ['success' => false, 'message' => 'Sesión no válida o expirada.'];
-        
+
         $userId = $this->sessionManager->get('user_id');
         if (!$this->canChangeProfileData($userId, 'avatar', 3, 1)) return ['success' => false, 'message' => 'Has alcanzado el límite de 3 cambios de foto por día.'];
 
@@ -49,7 +51,9 @@ class SettingsServices {
         $file = $files['avatar'];
         if ($file['size'] > 2 * 1024 * 1024) return ['success' => false, 'message' => 'La imagen supera el límite de 2MB.'];
 
-        $finfo = finfo_open(FILEINFO_MIME_TYPE); $mime = finfo_file($finfo, $file['tmp_name']); finfo_close($finfo);
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mime = finfo_file($finfo, $file['tmp_name']);
+        finfo_close($finfo);
         if ($mime !== 'image/png' && $mime !== 'image/jpeg') return ['success' => false, 'message' => 'Solo se permiten formatos PNG y JPG.'];
 
         $fileName = Utils::generateUUID() . (($mime === 'image/png') ? '.png' : '.jpg');
@@ -64,7 +68,7 @@ class SettingsServices {
                 if (file_exists($oldPath)) unlink($oldPath);
             }
             $newRelPath = 'public/storage/profilePictures/uploaded/' . $fileName;
-            
+
             if ($this->userRepository->updateAvatar($userId, $newRelPath)) {
                 $this->logProfileChange($userId, 'avatar', $oldPic, $newRelPath);
                 $this->sessionManager->set('user_pic', $newRelPath);
@@ -75,12 +79,13 @@ class SettingsServices {
         return ['success' => false, 'message' => 'Error en el servidor.'];
     }
 
-    public function deleteAvatar() {
+    public function deleteAvatar()
+    {
         if (!$this->sessionManager->has('user_id')) return ['success' => false, 'message' => 'Sesión no válida.'];
-        
+
         $userId = $this->sessionManager->get('user_id');
         $oldPic = $this->sessionManager->get('user_pic', '');
-        
+
         if (strpos($oldPic, '/default/') !== false) {
             return ['success' => false, 'message' => 'Ya tienes una foto de perfil por defecto.'];
         }
@@ -89,7 +94,7 @@ class SettingsServices {
             $oldPath = __DIR__ . '/../../' . ltrim($oldPic, '/ProjectRosaura/');
             if (file_exists($oldPath)) unlink($oldPath);
         }
-        
+
         $newRelPath = Utils::generateProfilePicture($this->sessionManager->get('user_name'), $this->sessionManager->get('user_uuid'));
         if ($this->userRepository->updateAvatar($userId, $newRelPath)) {
             $this->logProfileChange($userId, 'avatar', $oldPic, $newRelPath);
@@ -100,20 +105,21 @@ class SettingsServices {
         return ['success' => false, 'message' => 'Error en la base de datos.'];
     }
 
-    public function updateUsername($data) {
+    public function updateUsername($data)
+    {
         if (!$this->sessionManager->has('user_id')) return ['success' => false, 'message' => 'Sesión no válida.'];
-        
+
         $userId = $this->sessionManager->get('user_id');
         if (!$this->canChangeProfileData($userId, 'username', 1, 7)) return ['success' => false, 'message' => 'Solo puedes cambiar tu nombre 1 vez cada 7 días.'];
-        
+
         $username = trim($data['username'] ?? '');
         if (strlen($username) < 3 || strlen($username) > 32) return ['success' => false, 'message' => 'Inválido.'];
-        
+
         $existingUser = $this->userRepository->findByUsername($username);
         if ($existingUser && $existingUser['id'] != $userId) {
             return ['success' => false, 'message' => 'Este nombre de usuario ya está en uso.'];
         }
-        
+
         $oldUsername = $this->sessionManager->get('user_name', '');
         if ($this->userRepository->updateUsername($userId, $username)) {
             $this->logProfileChange($userId, 'username', $oldUsername, $username);
@@ -124,14 +130,15 @@ class SettingsServices {
         return ['success' => false, 'message' => 'Error al actualizar.'];
     }
 
-    public function requestEmailCode() {
+    public function requestEmailCode()
+    {
         if (!$this->sessionManager->has('user_id')) return ['success' => false, 'message' => 'Sesión no válida.'];
-        
+
         $userId = $this->sessionManager->get('user_id');
         if ($this->sessionManager->has('can_update_email_expires') && $this->sessionManager->get('can_update_email_expires') > time()) {
             return ['success' => true, 'message' => 'Identidad ya verificada.', 'skip_verification' => true];
         }
-        
+
         $email = $this->sessionManager->get('user_email');
         $rateCheck = $this->rateLimiter->check('request_email_code', 3, 30);
         if (!$rateCheck['allowed']) {
@@ -158,9 +165,10 @@ class SettingsServices {
         return ['success' => false, 'message' => 'Error interno.'];
     }
 
-    public function verifyEmailCode($data) {
+    public function verifyEmailCode($data)
+    {
         if (!$this->sessionManager->has('user_id')) return ['success' => false, 'message' => 'Sesión no válida.'];
-        
+
         $userId = $this->sessionManager->get('user_id');
         $code = str_replace('-', '', trim($data['code'] ?? ''));
         if (empty($code)) return ['success' => false, 'message' => 'El código es obligatorio.'];
@@ -178,9 +186,10 @@ class SettingsServices {
         return ['success' => false, 'message' => 'El código es incorrecto o ha expirado.'];
     }
 
-    public function updateEmail($data) {
+    public function updateEmail($data)
+    {
         if (!$this->sessionManager->has('user_id')) return ['success' => false, 'message' => 'Sesión no válida.'];
-        
+
         $userId = $this->sessionManager->get('user_id');
         if (!$this->sessionManager->has('can_update_email_expires') || $this->sessionManager->get('can_update_email_expires') < time()) {
             Logger::security("Intento de cambio de email sin identidad verificada", 'warning', ['user_id' => $userId, 'ip' => Utils::getIpAddress()]);
@@ -208,14 +217,16 @@ class SettingsServices {
         return ['success' => false, 'message' => 'Error al actualizar.'];
     }
 
-    public function updatePreferences($data) {
+    public function updatePreferences($data)
+    {
         if (!$this->sessionManager->has('user_id')) return ['success' => false, 'message' => 'Sesión no válida.'];
-        
+
         $userId = $this->sessionManager->get('user_id');
         $rateCheck = $this->rateLimiter->check('update_preferences', 20, 5, "Has cambiado tus preferencias demasiadas veces. Por favor espera {minutes} minutos.");
         if (!$rateCheck['allowed']) return ['success' => false, 'message' => $rateCheck['message']];
 
-        $key = $data['key'] ?? ''; $value = $data['value'] ?? '';
+        $key = $data['key'] ?? '';
+        $value = $data['value'] ?? '';
         if (!in_array($key, ['language', 'open_links_new_tab', 'theme', 'extended_alerts'])) return ['success' => false, 'message' => 'Preferencia no válida.'];
         if ($key === 'open_links_new_tab' || $key === 'extended_alerts') $value = ($value == 1) ? 1 : 0;
 
@@ -223,16 +234,17 @@ class SettingsServices {
             $userPrefs = $this->sessionManager->get('user_prefs', []);
             $userPrefs[$key] = $value;
             $this->sessionManager->set('user_prefs', $userPrefs);
-            
+
             $this->rateLimiter->record('update_preferences', 20, 5);
             return ['success' => true, 'message' => 'Preferencia guardada.'];
         }
         return ['success' => false, 'message' => 'Error.'];
     }
 
-    public function verifyCurrentPassword($data) {
+    public function verifyCurrentPassword($data)
+    {
         if (!$this->sessionManager->has('user_id')) return ['success' => false, 'message' => 'Sesión no válida.'];
-        
+
         $userId = $this->sessionManager->get('user_id');
         $rateCheck = $this->rateLimiter->check('verify_current_password', 5, 15);
         if (!$rateCheck['allowed']) {
@@ -248,21 +260,22 @@ class SettingsServices {
             Logger::security("Contraseña actual verificada exitosamente", 'info', ['user_id' => $userId]);
             return ['success' => true, 'message' => 'Identidad verificada.'];
         }
-        
+
         $this->rateLimiter->record('verify_current_password', 5, 15);
         Logger::security("Verificación de contraseña actual fallida", 'warning', ['user_id' => $userId, 'ip' => Utils::getIpAddress()]);
         return ['success' => false, 'message' => 'La contraseña es incorrecta.'];
     }
 
-    public function updatePassword($data) {
+    public function updatePassword($data)
+    {
         if (!$this->sessionManager->has('user_id')) return ['success' => false, 'message' => 'Sesión no válida.'];
-        
+
         $userId = $this->sessionManager->get('user_id');
         if (!$this->sessionManager->has('can_change_password_expires') || $this->sessionManager->get('can_change_password_expires') < time()) {
             Logger::security("Intento de actualización de contraseña sin verificación previa", 'warning', ['user_id' => $userId, 'ip' => Utils::getIpAddress()]);
             return ['success' => false, 'message' => 'Verifica tu contraseña primero.'];
         }
-        
+
         $rateCheck = $this->rateLimiter->check('update_password', 5, 15);
         if (!$rateCheck['allowed']) return ['success' => false, 'message' => $rateCheck['message']];
 
@@ -282,11 +295,12 @@ class SettingsServices {
         return ['success' => false, 'message' => 'Hubo un error.'];
     }
 
-    public function deleteAccount($data) {
+    public function deleteAccount($data)
+    {
         if (!$this->sessionManager->has('user_id')) return ['success' => false, 'message' => 'Sesión no válida.'];
-        
+
         $userId = $this->sessionManager->get('user_id');
-        
+
         $user = $this->userRepository->findById($userId);
 
         if ($user && password_verify(trim($data['password'] ?? ''), $user['password'])) {
@@ -294,7 +308,7 @@ class SettingsServices {
                 $this->tokenRepository->deleteAllByUserId($userId);
                 if (isset($_COOKIE['remember_token'])) setcookie('remember_token', '', ['expires' => time() - 3600, 'path' => '/ProjectRosaura/']);
                 Logger::security("Cuenta de usuario marcada como eliminada", 'warning', ['user_id' => $userId, 'ip' => Utils::getIpAddress()]);
-                
+
                 $this->sessionManager->destroy();
                 return ['success' => true, 'message' => 'Tu cuenta ha sido eliminada.'];
             }
@@ -303,7 +317,8 @@ class SettingsServices {
         return ['success' => false, 'message' => 'Contraseña incorrecta.'];
     }
 
-    public function generate2faSetup() {
+    public function generate2faSetup()
+    {
         if (!$this->sessionManager->has('user_id')) return ['success' => false, 'message' => 'Sesión no válida.'];
         if ($this->sessionManager->has('user_2fa') && $this->sessionManager->get('user_2fa') != 0) {
             return ['success' => false, 'message' => 'El 2FA ya está activado.'];
@@ -312,76 +327,101 @@ class SettingsServices {
         $userId = $this->sessionManager->get('user_id');
         $ga = new GoogleAuthenticator();
         $secret = $ga->createSecret();
-        
+
         $this->sessionManager->set('2fa_setup_secret', $secret);
         Logger::security("Solicitud de generación de credenciales 2FA iniciada", 'info', ['user_id' => $userId]);
-        
+
         return [
-            'success' => true, 
-            'secret' => $secret, 
+            'success' => true,
+            'secret' => $secret,
             'qr_url' => $ga->getQRCodeUrl('ProjectRosaura', $this->sessionManager->get('user_email'), $secret)
         ];
     }
 
-    public function enable2fa($data) {
+    public function enable2fa($data)
+    {
         if (!$this->sessionManager->has('user_id')) return ['success' => false, 'message' => 'Sesión no válida.'];
-        
+
         $userId = $this->sessionManager->get('user_id');
-        $code = trim($data['code'] ?? ''); 
+
+        // Aplicar Rate Limit: Máximo 5 intentos cada 15 minutos
+        $rateCheck = $this->rateLimiter->check('enable_2fa', 5, 15);
+        if (!$rateCheck['allowed']) {
+            Logger::security("Límite de tasa excedido al intentar activar 2FA", 'warning', ['user_id' => $userId, 'ip' => Utils::getIpAddress()]);
+            return ['success' => false, 'message' => $rateCheck['message']];
+        }
+
+        $code = trim($data['code'] ?? '');
         $secret = $this->sessionManager->get('2fa_setup_secret', '');
-        
+
         if (empty($secret) || empty($code)) return ['success' => false, 'message' => 'Faltan datos.'];
 
         $ga = new GoogleAuthenticator();
         if ($ga->verifyCode($secret, $code, 2)) {
             $codes = Utils::generateRecoveryCodes(10, 8);
             if ($this->userRepository->update2FA($userId, $secret, 1, json_encode($codes))) {
-                $this->sessionManager->set('user_2fa', 1); 
+                $this->sessionManager->set('user_2fa', 1);
                 $this->sessionManager->remove('2fa_setup_secret');
+                $this->rateLimiter->clear('enable_2fa'); // Limpiar intentos al tener éxito
                 $this->logProfileChange($userId, '2fa', 'disabled', 'enabled');
                 Logger::security("Autenticación de Dos Factores (2FA) habilitada", 'info', ['user_id' => $userId, 'ip' => Utils::getIpAddress()]);
                 return ['success' => true, 'message' => 'Activado con éxito.', 'recovery_codes' => $codes];
             }
         }
+
+        $this->rateLimiter->record('enable_2fa', 5, 15); // Registrar fallo
         Logger::security("Fallo al intentar habilitar 2FA (Código incorrecto)", 'warning', ['user_id' => $userId, 'ip' => Utils::getIpAddress()]);
         return ['success' => false, 'message' => 'Código incorrecto.'];
     }
 
-    public function disable2fa($data) {
+    public function disable2fa($data)
+    {
         if (!$this->sessionManager->has('user_id')) return ['success' => false, 'message' => 'Sesión no válida.'];
-        
+
         $userId = $this->sessionManager->get('user_id');
+
+        // Aplicar Rate Limit para proteger la contraseña
+        $rateCheck = $this->rateLimiter->check('disable_2fa', 5, 15);
+        if (!$rateCheck['allowed']) {
+            return ['success' => false, 'message' => $rateCheck['message']];
+        }
+
         $user = $this->userRepository->findById($userId);
 
         if ($user && password_verify(trim($data['password'] ?? ''), $user['password'])) {
             if ($this->userRepository->update2FA($userId, null, 0, null)) {
                 $this->sessionManager->set('user_2fa', 0);
+                $this->rateLimiter->clear('disable_2fa');
                 $this->logProfileChange($userId, '2fa', 'enabled', 'disabled');
                 Logger::security("Autenticación de Dos Factores (2FA) deshabilitada", 'warning', ['user_id' => $userId, 'ip' => Utils::getIpAddress()]);
                 return ['success' => true, 'message' => 'Desactivado.'];
             }
         }
+
+        $this->rateLimiter->record('disable_2fa', 5, 15);
         Logger::security("Intento fallido de deshabilitar 2FA (Contraseña incorrecta)", 'warning', ['user_id' => $userId, 'ip' => Utils::getIpAddress()]);
         return ['success' => false, 'message' => 'Contraseña incorrecta.'];
     }
 
-    public function getDevices() {
+    public function getDevices()
+    {
         if (!$this->sessionManager->has('user_id')) return ['success' => false, 'message' => 'Sesión no válida.'];
-        
+
         $userId = $this->sessionManager->get('user_id');
         $currentSelector = isset($_COOKIE['remember_token']) ? explode(':', $_COOKIE['remember_token'])[0] : '';
-        
+
         $devices = $this->tokenRepository->getActiveDevicesByUserId($userId);
-        foreach ($devices as &$device) { 
-            $device['is_current'] = ($device['selector'] === $currentSelector); 
-            unset($device['selector']); 
+        foreach ($devices as &$device) {
+            $device['is_current'] = ($device['selector'] === $currentSelector);
+            unset($device['selector']);
         }
         return ['success' => true, 'devices' => $devices];
     }
 
-    public function revokeDevice($data) {
+    public function revokeDevice($data)
+    {
         if (!$this->sessionManager->has('user_id')) return ['success' => false, 'message' => 'Sesión no válida.'];
-        
+
         $userId = $this->sessionManager->get('user_id');
         if ($this->tokenRepository->revokeDevice((int)($data['device_id'] ?? 0), $userId)) {
             Logger::security("Sesión de dispositivo revocada manualmente", 'info', ['user_id' => $userId, 'device_id' => $data['device_id']]);
@@ -390,12 +430,13 @@ class SettingsServices {
         return ['success' => false, 'message' => 'Error.'];
     }
 
-    public function revokeAllDevices() {
+    public function revokeAllDevices()
+    {
         if (!$this->sessionManager->has('user_id')) return ['success' => false, 'message' => 'Sesión no válida.'];
-        
+
         $userId = $this->sessionManager->get('user_id');
         $currentSelector = isset($_COOKIE['remember_token']) ? explode(':', $_COOKIE['remember_token'])[0] : '';
-        
+
         if ($this->tokenRepository->revokeOtherDevices($userId, $currentSelector)) {
             Logger::security("Todas las demás sesiones de dispositivos fueron revocadas", 'info', ['user_id' => $userId, 'ip' => Utils::getIpAddress()]);
             return ['success' => true, 'message' => 'Todas cerradas.'];
@@ -403,12 +444,13 @@ class SettingsServices {
         return ['success' => false, 'message' => 'Error.'];
     }
 
-    public function regenerateRecoveryCodes($data) {
+    public function regenerateRecoveryCodes($data)
+    {
         if (!$this->sessionManager->has('user_id')) return ['success' => false, 'message' => 'Sesión no válida.'];
-        
+
         $userId = $this->sessionManager->get('user_id');
         $user = $this->userRepository->findById($userId);
-        
+
         if ($user) {
             if (password_verify(trim($data['password'] ?? ''), $user['password'])) {
                 $codes = Utils::generateRecoveryCodes(10, 8);
@@ -422,14 +464,15 @@ class SettingsServices {
         return ['success' => false, 'message' => 'Contraseña incorrecta.'];
     }
 
-    private function canChangeProfileData($userId, $changeType, $maxAttempts, $days) {
+    private function canChangeProfileData($userId, $changeType, $maxAttempts, $days)
+    {
         $count = $this->profileLogRepository->countRecentChanges($userId, $changeType, (int)$days);
         return $count < $maxAttempts;
     }
 
-    private function logProfileChange($userId, $changeType, $oldValue, $newValue) {
+    private function logProfileChange($userId, $changeType, $oldValue, $newValue)
+    {
         $ip = Utils::getIpAddress();
         $this->profileLogRepository->logChange($userId, $changeType, $oldValue, $newValue, $ip);
     }
 }
-?>
