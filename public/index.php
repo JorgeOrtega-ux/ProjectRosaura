@@ -7,7 +7,8 @@ session_start();
 // ========================================================================================
 header("X-Frame-Options: SAMEORIGIN");
 header("X-Content-Type-Options: nosniff");
-header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none';");
+// SE MODIFICÓ img-src PARA PERMITIR https://api.qrserver.com
+header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://api.qrserver.com; connect-src 'self'; frame-ancestors 'none';");
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
@@ -16,7 +17,7 @@ use App\Core\Router;
 use App\Core\Utils; 
 use App\Config\Database;
 use App\Core\Translator; 
-use App\Api\Services\AuthServices; // <-- IMPORTACIÓN NECESARIA
+use App\Api\Services\AuthServices;
 
 // ========================================================================================
 // --- AUTO-LOGIN SILENCIOSO (SESIÓN PERSISTENTE) ---
@@ -89,7 +90,8 @@ $protectedSettings = [
     'settings/your-profile.php',
     'settings/security.php',
     'settings/accessibility.php',
-    'settings/change-password.php'
+    'settings/change-password.php',
+    'settings/2fa.php'
 ];
 
 $redirectUrl = null;

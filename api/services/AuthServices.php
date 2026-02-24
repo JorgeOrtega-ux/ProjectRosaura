@@ -16,22 +16,17 @@ class AuthServices {
         $this->pdo = $db->getConnection();
     }
 
-    // =================================================================================
-    // --- LÓGICA DE SESIÓN PERSISTENTE (TOKENS ROTATIVOS) ---
-    // =================================================================================
-
     public function createRememberToken($userId) {
         $selector = bin2hex(random_bytes(16));
         $validator = bin2hex(random_bytes(32));
         $hashedValidator = hash('sha256', $validator);
-        $expiresAt = date('Y-m-d H:i:s', time() + (86400 * 30)); // 30 días de duración
+        $expiresAt = date('Y-m-d H:i:s', time() + (86400 * 30));
 
         $stmt = $this->pdo->prepare("INSERT INTO auth_tokens (user_id, selector, hashed_validator, expires_at) VALUES (?, ?, ?, ?)");
         $stmt->execute([$userId, $selector, $hashedValidator, $expiresAt]);
 
         $cookieValue = $selector . ':' . $validator;
         
-        // La cookie es segura, no accesible por JavaScript (HttpOnly) y mitiga CSRF (Strict)
         setcookie('remember_token', $cookieValue, [
             'expires' => time() + (86400 * 30),
             'path' => '/ProjectRosaura/',
@@ -81,7 +76,6 @@ class AuthServices {
         if ($token) {
             $calcHash = hash('sha256', $validator);
             
-            // Verificamos el hash con mitigación de ataques de tiempo
             if (hash_equals($token['hashed_validator'], $calcHash)) {
                 $userId = $token['user_id'];
                 
@@ -114,8 +108,8 @@ class AuthServices {
                     $_SESSION['user_role'] = $user['role'];
                     $_SESSION['user_pic'] = $user['profile_picture'];
                     $_SESSION['user_prefs'] = $userPrefs;
+                    $_SESSION['user_2fa'] = $user['two_factor_enabled'] ?? 0;
 
-                    // IMPORTANTE: Rotación del token. Borramos el usado y creamos uno nuevo
                     $stmtDel = $this->pdo->prepare("DELETE FROM auth_tokens WHERE id = ?");
                     $stmtDel->execute([$token['id']]);
                     $this->createRememberToken($userId);
@@ -123,21 +117,14 @@ class AuthServices {
                     return true;
                 }
             } else {
-                // ROBO DETECTADO: El selector existe pero el validador es viejo/incorrecto.
-                // Eliminamos todos los tokens de este usuario para proteger la cuenta en todos sus dispositivos.
                 $stmtDelAll = $this->pdo->prepare("DELETE FROM auth_tokens WHERE user_id = ?");
                 $stmtDelAll->execute([$token['user_id']]);
             }
         }
         
-        // Si llegamos aquí, el token era inválido, expiró o hubo robo. Limpiamos la cookie.
         $this->clearRememberToken();
         return false;
     }
-
-    // =================================================================================
-    // --- MÉTODOS TRADICIONALES MODIFICADOS ---
-    // =================================================================================
 
     public function registerStep1($data) {
         $email = trim($data['email'] ?? '');
@@ -321,8 +308,8 @@ class AuthServices {
             $_SESSION['user_role'] = 'user';
             $_SESSION['user_pic'] = $profilePicturePath;
             $_SESSION['user_prefs'] = $userPrefs;
+            $_SESSION['user_2fa'] = 0;
 
-            // --- ESTABLECER SESIÓN PERSISTENTE AL REGISTRARSE ---
             $this->createRememberToken($userId);
 
             unset($_SESSION['reg_email']);
@@ -381,8 +368,8 @@ class AuthServices {
             $_SESSION['user_role'] = $user['role'];
             $_SESSION['user_pic'] = $user['profile_picture'];
             $_SESSION['user_prefs'] = $userPrefs;
+            $_SESSION['user_2fa'] = $user['two_factor_enabled'] ?? 0;
 
-            // --- ESTABLECER SESIÓN PERSISTENTE AL INICIAR SESIÓN ---
             $this->createRememberToken($user['id']);
 
             return ['success' => true, 'message' => 'Inicio de sesión exitoso.'];
@@ -394,9 +381,7 @@ class AuthServices {
     }
 
     public function logout() {
-        // --- DESTRUIR SESIÓN PERSISTENTE EN CERRAR SESIÓN ---
         $this->clearRememberToken();
-        
         session_unset();
         session_destroy();
         return ['success' => true, 'message' => 'Sesión cerrada.'];
@@ -479,7 +464,6 @@ class AuthServices {
         $updateStmt = $this->pdo->prepare("UPDATE users SET password = ? WHERE email = ?");
         if ($updateStmt->execute([$hashedPassword, $email])) {
             
-            // --- PROTECCIÓN: CIERRA SESIÓN EN TODOS LOS DISPOSITIVOS AL RESETEAR PASS ---
             $stmtDelAll = $this->pdo->prepare("DELETE FROM auth_tokens WHERE user_id = (SELECT id FROM users WHERE email = ?)");
             $stmtDelAll->execute([$email]);
 
@@ -518,7 +502,6 @@ class AuthServices {
                 ];
             }
         }
-        
         return ['allowed' => true];
     }
 

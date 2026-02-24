@@ -18,7 +18,8 @@ return [
     '/settings/accessibility' => ['view' => 'settings/accessibility.php'],
     '/settings/guest' => ['view' => 'settings/guest.php'],
     
-    // --- NUEVA RUTA: CAMBIAR CONTRASEÑA ---
-    '/settings/change-password' => ['view' => 'settings/change-password.php']
+    // --- NUEVAS RUTAS SEGURIDAD Y 2FA ---
+    '/settings/change-password' => ['view' => 'settings/change-password.php'],
+    '/settings/2fa' => ['view' => 'settings/2fa.php']
 ];
 ?>

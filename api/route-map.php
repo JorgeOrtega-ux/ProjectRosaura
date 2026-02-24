@@ -22,8 +22,13 @@ return [
     // --- RUTAS PREFERENCIAS ---
     'settings.update_preferences' => ['controller' => 'App\Api\Controllers\SettingsController', 'action' => 'update_preferences'],
     
-    // --- NUEVAS RUTAS SEGURIDAD ---
+    // --- RUTAS SEGURIDAD ---
     'settings.verify_current_password' => ['controller' => 'App\Api\Controllers\SettingsController', 'action' => 'verify_current_password'],
-    'settings.update_password'         => ['controller' => 'App\Api\Controllers\SettingsController', 'action' => 'update_password']
+    'settings.update_password'         => ['controller' => 'App\Api\Controllers\SettingsController', 'action' => 'update_password'],
+    
+    // --- NUEVAS RUTAS 2FA ---
+    'settings.2fa_generate' => ['controller' => 'App\Api\Controllers\SettingsController', 'action' => 'generate_2fa'],
+    'settings.2fa_enable'   => ['controller' => 'App\Api\Controllers\SettingsController', 'action' => 'enable_2fa'],
+    'settings.2fa_disable'  => ['controller' => 'App\Api\Controllers\SettingsController', 'action' => 'disable_2fa']
 ];
 ?>

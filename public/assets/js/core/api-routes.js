@@ -18,8 +18,11 @@ export const ApiRoutes = {
         VerifyEmailCode: 'settings.verify_email_code',
         UpdateEmail: 'settings.update_email',
         UpdatePreferences: 'settings.update_preferences',
-        // NUEVAS DE SEGURIDAD
         VerifyCurrentPassword: 'settings.verify_current_password',
-        UpdatePassword: 'settings.update_password'
+        UpdatePassword: 'settings.update_password',
+        // NUEVAS 2FA
+        Generate2FA: 'settings.2fa_generate',
+        Enable2FA: 'settings.2fa_enable',
+        Disable2FA: 'settings.2fa_disable'
     }
 };

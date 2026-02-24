@@ -9,6 +9,7 @@
     "route_accessibility": "Accesibilidad",
     "route_guest": "Configuración de invitado",
     "route_change_password": "Cambiar contraseña",
+    "route_2fa": "Autenticación de Dos Factores",
     "search_placeholder": "Buscar...",
     "btn_login": "Acceder",
     "home_title": "Página Principal",
@@ -99,5 +100,7 @@
     "ph_email": "Ingresa tu correo",
     "404_title": "Oops! 404",
     "404_desc": "La página que estás intentando buscar no existe en este proyecto.",
-    "btn_back_home": "Volver al inicio"
+    "btn_back_home": "Volver al inicio",
+    "2fa_title": "Autenticación de dos factores",
+    "2fa_desc": "Agrega una capa adicional de seguridad utilizando una aplicación de autenticación móvil."
 }

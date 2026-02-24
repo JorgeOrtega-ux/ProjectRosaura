@@ -5,7 +5,6 @@ $userRole = $_SESSION['user_role'] ?? 'user';
 $userPic = $_SESSION['user_pic'] ?? '';
 ?>
 <script>
-    // Diccionario de títulos para la SPA. Usamos PHP para inyectar las traducciones.
     window.AppRouteTitles = {
         '/': "<?php echo __('route_home'); ?>",
         '/explore': "<?php echo __('route_explore'); ?>",
@@ -16,7 +15,8 @@ $userPic = $_SESSION['user_pic'] ?? '';
         '/settings/security': "<?php echo __('route_security'); ?>",
         '/settings/accessibility': "<?php echo __('route_accessibility'); ?>",
         '/settings/guest': "<?php echo __('route_guest'); ?>",
-        '/settings/change-password': "<?php echo __('route_change_password'); ?>"
+        '/settings/change-password': "<?php echo __('route_change_password'); ?>",
+        '/settings/2fa': "<?php echo __('route_2fa'); ?>"
     };
     window.AppName = "ProjectRosaura";
 </script>
