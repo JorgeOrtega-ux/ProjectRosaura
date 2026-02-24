@@ -11,48 +11,43 @@ use App\Core\Interfaces\RateLimiterInterface;
 use App\Core\Interfaces\UserPrefsManagerInterface;
 use App\Core\Interfaces\UserRepositoryInterface;
 use App\Core\Interfaces\SessionManagerInterface;
-use PDO;
+use App\Core\Interfaces\TokenRepositoryInterface;
+use App\Core\Interfaces\VerificationCodeRepositoryInterface;
 
 class AuthServices {
-    private $pdo; // Mantenido temporalmente para auth_tokens y verification_codes
     private $rateLimiter;
     private $prefsManager;
     private $userRepository;
     private $sessionManager;
+    private $tokenRepository;
+    private $verificationCodeRepository;
 
-    // 1. Inyección de Dependencias Actualizada con Interfaces Clean Architecture
+    // 100% CLEAN ARCHITECTURE: Ninguna dependencia de base de datos relacional
     public function __construct(
-        PDO $pdo, 
         RateLimiterInterface $rateLimiter, 
         UserPrefsManagerInterface $prefsManager,
         UserRepositoryInterface $userRepository,
-        SessionManagerInterface $sessionManager
+        SessionManagerInterface $sessionManager,
+        TokenRepositoryInterface $tokenRepository,
+        VerificationCodeRepositoryInterface $verificationCodeRepository
     ) {
-        $this->pdo = $pdo;
         $this->rateLimiter = $rateLimiter;
         $this->prefsManager = $prefsManager;
         $this->userRepository = $userRepository;
         $this->sessionManager = $sessionManager;
+        $this->tokenRepository = $tokenRepository;
+        $this->verificationCodeRepository = $verificationCodeRepository;
     }
 
     public function isCurrentDeviceValid() {
-        // 2. Uso del SessionManager en lugar de $_SESSION
         if (!$this->sessionManager->has('user_id') || !isset($_COOKIE['remember_token'])) return false;
         
         $parts = explode(':', $_COOKIE['remember_token']);
         if (count($parts) !== 2) return false;
         
         $selector = $parts[0];
-        
-        // Esta consulta debería ir a un futuro TokenRepository
-        $stmt = $this->pdo->prepare("
-            SELECT t.id 
-            FROM auth_tokens t 
-            JOIN users u ON t.user_id = u.id 
-            WHERE t.selector = ? AND t.user_id = ? AND t.expires_at > NOW() AND u.user_status = 'active'
-        ");
-        $stmt->execute([$selector, $this->sessionManager->get('user_id')]);
-        return $stmt->rowCount() > 0;
+        $token = $this->tokenRepository->findValidTokenBySelectorAndUserId($selector, $this->sessionManager->get('user_id'));
+        return $token !== null;
     }
 
     public function createRememberToken($userId) {
@@ -63,8 +58,7 @@ class AuthServices {
         $userAgent = substr($_SERVER['HTTP_USER_AGENT'] ?? 'Desconocido', 0, 255);
         $ipAddress = substr(Utils::getIpAddress(), 0, 45);
         
-        $stmt = $this->pdo->prepare("INSERT INTO auth_tokens (user_id, selector, hashed_validator, expires_at, user_agent, ip_address) VALUES (?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$userId, $selector, $hashedValidator, $expiresAt, $userAgent, $ipAddress]);
+        $this->tokenRepository->createToken($userId, $selector, $hashedValidator, $expiresAt, $userAgent, $ipAddress);
         
         $cookieValue = $selector . ':' . $validator;
         setcookie('remember_token', $cookieValue, [
@@ -80,8 +74,7 @@ class AuthServices {
         if (isset($_COOKIE['remember_token'])) {
             $parts = explode(':', $_COOKIE['remember_token']);
             if (count($parts) === 2) {
-                $stmt = $this->pdo->prepare("DELETE FROM auth_tokens WHERE selector = ?");
-                $stmt->execute([$parts[0]]);
+                $this->tokenRepository->deleteBySelector($parts[0]);
             }
             setcookie('remember_token', '', ['expires' => time() - 3600, 'path' => '/ProjectRosaura/', 'secure' => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on', 'httponly' => true, 'samesite' => 'Strict']);
             unset($_COOKIE['remember_token']);
@@ -95,21 +88,17 @@ class AuthServices {
         if (count($parts) !== 2) { $this->clearRememberToken(); return false; }
         
         list($selector, $validator) = $parts;
-        $stmt = $this->pdo->prepare("SELECT * FROM auth_tokens WHERE selector = ? AND expires_at > NOW()");
-        $stmt->execute([$selector]);
-        $token = $stmt->fetch(PDO::FETCH_ASSOC);
+        $token = $this->tokenRepository->findValidTokenBySelector($selector);
 
         if ($token) {
             if (hash_equals($token['hashed_validator'], hash('sha256', $validator))) {
                 
-                // 3. Uso del Patrón Repositorio
                 $user = $this->userRepository->findById($token['user_id']);
 
                 if ($user) {
                     if ($user['user_status'] !== 'active') {
                         Logger::security("Intento de autologin en cuenta inactiva (Estado: {$user['user_status']})", 'warning', ['user_id' => $user['id'], 'ip' => Utils::getIpAddress()]);
-                        $stmtDelAll = $this->pdo->prepare("DELETE FROM auth_tokens WHERE user_id = ?");
-                        $stmtDelAll->execute([$user['id']]);
+                        $this->tokenRepository->deleteAllByUserId($user['id']);
                         $this->clearRememberToken();
                         return false;
                     }
@@ -117,7 +106,6 @@ class AuthServices {
                     $this->sessionManager->regenerate(true);
                     $userPrefs = $this->prefsManager->ensureDefaultPreferences($user['id']);
                     
-                    // 4. Asignación de sesión a través del SessionManager
                     $this->sessionManager->set('user_id', $user['id']);
                     $this->sessionManager->set('user_uuid', $user['uuid']);
                     $this->sessionManager->set('user_name', $user['username']);
@@ -127,8 +115,7 @@ class AuthServices {
                     $this->sessionManager->set('user_prefs', $userPrefs);
                     $this->sessionManager->set('user_2fa', $user['two_factor_enabled'] ?? 0);
 
-                    $stmtDel = $this->pdo->prepare("DELETE FROM auth_tokens WHERE id = ?");
-                    $stmtDel->execute([$token['id']]);
+                    $this->tokenRepository->deleteById($token['id']);
                     $this->createRememberToken($user['id']);
                     
                     Logger::security("Autologin exitoso", 'info', ['user_id' => $user['id'], 'ip' => Utils::getIpAddress()]);
@@ -136,8 +123,7 @@ class AuthServices {
                 }
             } else {
                 Logger::security("Manipulación de cookie de autologin detectada", 'warning', ['user_id' => $token['user_id'], 'ip' => Utils::getIpAddress()]);
-                $stmtDelAll = $this->pdo->prepare("DELETE FROM auth_tokens WHERE user_id = ?");
-                $stmtDelAll->execute([$token['user_id']]);
+                $this->tokenRepository->deleteAllByUserId($token['user_id']);
             }
         }
         $this->clearRememberToken();
@@ -150,7 +136,6 @@ class AuthServices {
         $eVal = Utils::validateEmailFormat($email); if (!$eVal['valid']) return ['success' => false, 'message' => $eVal['message']];
         $pVal = Utils::validatePasswordFormat($password); if (!$pVal['valid']) return ['success' => false, 'message' => $pVal['message']];
         
-        // Uso del Repositorio
         if ($this->userRepository->findByEmail($email)) {
             Logger::security("Intento de registro con correo ya existente: {$email}", 'info', ['ip' => Utils::getIpAddress()]);
             return ['success' => false, 'message' => 'El correo electrónico ya está registrado.'];
@@ -166,7 +151,6 @@ class AuthServices {
         if (empty($username)) return ['success' => false, 'message' => 'El nombre de usuario es obligatorio.'];
         if (strlen($username) < 3 || strlen($username) > 32) return ['success' => false, 'message' => 'El nombre de usuario debe tener entre 3 y 32 caracteres.'];
         
-        // Uso del Repositorio
         if ($this->userRepository->findByUsername($username)) {
             return ['success' => false, 'message' => 'Este nombre de usuario ya está en uso.'];
         }
@@ -184,8 +168,7 @@ class AuthServices {
         $identifier = $this->sessionManager->get('reg_email');
         $expiresAt = date('Y-m-d H:i:s', strtotime('+15 minutes')); 
 
-        $stmt = $this->pdo->prepare("INSERT INTO verification_codes (identifier, code_type, code, payload, expires_at) VALUES (?, 'account_activation', ?, ?, ?)");
-        if ($stmt->execute([$identifier, $code, $payload, $expiresAt])) {
+        if ($this->verificationCodeRepository->createCode($identifier, 'account_activation', $code, $payload, $expiresAt)) {
             $this->sessionManager->set('reg_username', $username);
             
             $mailer = new Mailer();
@@ -209,23 +192,19 @@ class AuthServices {
         }
         $identifier = $this->sessionManager->get('reg_email');
 
-        $stmt = $this->pdo->prepare("SELECT * FROM verification_codes WHERE identifier = ? AND code_type = 'account_activation' ORDER BY created_at DESC LIMIT 1");
-        $stmt->execute([$identifier]);
-        $verification = $stmt->fetch(PDO::FETCH_ASSOC);
+        $verification = $this->verificationCodeRepository->findLatestValidByIdentifierAndType($identifier, 'account_activation');
 
-        if (!$verification) return ['success' => false, 'message' => 'No se encontró un código.'];
+        if (!$verification) return ['success' => false, 'message' => 'No se encontró un código o ha expirado.'];
         if ($verification['code'] !== $code) {
             Logger::security("Código incorrecto ingresado para: {$identifier}", 'warning', ['ip' => Utils::getIpAddress()]);
             return ['success' => false, 'message' => 'El código es incorrecto.'];
         }
-        if (strtotime($verification['expires_at']) < time()) return ['success' => false, 'message' => 'El código ha expirado.'];
 
         $payload = json_decode($verification['payload'], true);
         $uuid = Utils::generateUUID();
         $profilePic = Utils::generateProfilePicture($payload['username'], $uuid);
         if (!$profilePic) return ['success' => false, 'message' => 'Error al generar la foto de perfil.'];
 
-        // Uso del Repositorio para crear
         $newUserId = $this->userRepository->createUser([
             'uuid' => $uuid,
             'username' => $payload['username'],
@@ -253,8 +232,7 @@ class AuthServices {
             $this->sessionManager->remove('reg_password');
             $this->sessionManager->remove('reg_username');
             
-            $delStmt = $this->pdo->prepare("DELETE FROM verification_codes WHERE id = ?"); 
-            $delStmt->execute([$verification['id']]);
+            $this->verificationCodeRepository->deleteById($verification['id']);
 
             Logger::security("Nueva cuenta registrada", 'info', ['user_id' => $newUserId, 'email' => $payload['email'], 'ip' => Utils::getIpAddress()]);
             return ['success' => true, 'message' => 'Cuenta creada con éxito.'];
@@ -273,7 +251,6 @@ class AuthServices {
             return ['success' => false, 'message' => $rateCheck['message']];
         }
 
-        // Uso del Repositorio
         $user = $this->userRepository->findByEmail($email);
 
         if ($user && password_verify($password, $user['password'])) {
@@ -323,7 +300,6 @@ class AuthServices {
             return ['success' => false, 'message' => $rateCheck['message']];
         }
 
-        // Uso del Repositorio
         $user = $this->userRepository->findById($userId);
 
         if (!$user || empty($user['two_factor_enabled']) || $user['user_status'] !== 'active') {
@@ -337,9 +313,7 @@ class AuthServices {
             $index = array_search($code, $codes);
             if ($index !== false) {
                 unset($codes[$index]);
-                // Idealmente el repositorio también manejaría este Update
-                $stmtUpdate = $this->pdo->prepare("UPDATE users SET two_factor_recovery_codes = ? WHERE id = ?");
-                $stmtUpdate->execute([json_encode(array_values($codes)), $userId]);
+                $this->userRepository->updateRecoveryCodes($userId, json_encode(array_values($codes)));
                 $isValid = true;
                 Logger::security("Login exitoso usando código recuperación 2FA", 'info', ['user_id' => $userId]);
             }
@@ -391,7 +365,6 @@ class AuthServices {
             return ['success' => false, 'message' => $rateCheck['message']];
         }
 
-        // Uso del Repositorio
         $user = $this->userRepository->findByEmail($email);
 
         if (!$user || $user['user_status'] !== 'active') {
@@ -403,10 +376,9 @@ class AuthServices {
         $expiresAt = date('Y-m-d H:i:s', strtotime('+15 minutes'));
         $payload = json_encode(['email' => $email]);
 
-        $this->pdo->prepare("DELETE FROM verification_codes WHERE identifier = ? AND code_type = 'password_reset'")->execute([$email]);
-        $insertStmt = $this->pdo->prepare("INSERT INTO verification_codes (identifier, code_type, code, payload, expires_at) VALUES (?, 'password_reset', ?, ?, ?)");
+        $this->verificationCodeRepository->deleteByIdentifierAndType($email, 'password_reset');
         
-        if ($insertStmt->execute([$email, $token, $payload, $expiresAt])) {
+        if ($this->verificationCodeRepository->createCode($email, 'password_reset', $token, $payload, $expiresAt)) {
             $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
             $resetLink = $protocol . $_SERVER['HTTP_HOST'] . "/ProjectRosaura/reset-password?token=" . $token;
             $mailer = new Mailer();
@@ -426,9 +398,7 @@ class AuthServices {
         $passValidation = Utils::validatePasswordFormat($password);
         if (!$passValidation['valid']) return ['success' => false, 'message' => $passValidation['message']];
 
-        $stmt = $this->pdo->prepare("SELECT * FROM verification_codes WHERE code = ? AND code_type = 'password_reset' AND expires_at > NOW()");
-        $stmt->execute([$token]);
-        $verification = $stmt->fetch(PDO::FETCH_ASSOC);
+        $verification = $this->verificationCodeRepository->findValidByCodeAndType($token, 'password_reset');
 
         if (!$verification) {
             Logger::security("Intento de uso de token expirado", 'warning', ['ip' => Utils::getIpAddress()]);
@@ -436,12 +406,11 @@ class AuthServices {
         }
 
         $email = $verification['identifier'];
+        $user = $this->userRepository->findByEmail($email);
         
-        // Idealmente en el UserRepository habría un método para updatePassword
-        $updateStmt = $this->pdo->prepare("UPDATE users SET password = ? WHERE email = ?");
-        if ($updateStmt->execute([password_hash($password, PASSWORD_BCRYPT), $email])) {
-            $this->pdo->prepare("DELETE FROM auth_tokens WHERE user_id = (SELECT id FROM users WHERE email = ?)")->execute([$email]);
-            $this->pdo->prepare("DELETE FROM verification_codes WHERE identifier = ? AND code_type = 'password_reset'")->execute([$email]);
+        if ($user && $this->userRepository->updatePassword($user['id'], password_hash($password, PASSWORD_BCRYPT))) {
+            $this->tokenRepository->deleteAllByUserId($user['id']);
+            $this->verificationCodeRepository->deleteByIdentifierAndType($email, 'password_reset');
             Logger::security("Contraseña restablecida", 'info', ['email' => $email, 'ip' => Utils::getIpAddress()]);
             return ['success' => true, 'message' => 'Contraseña actualizada.'];
         }

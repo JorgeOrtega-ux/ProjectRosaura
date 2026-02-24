@@ -6,6 +6,7 @@ namespace App\Core;
 use Psr\Container\ContainerInterface;
 use Exception;
 use ReflectionClass;
+use ReflectionNamedType;
 use PDO;
 use App\Config\Database;
 use App\Core\RateLimiter;
@@ -16,10 +17,17 @@ use App\Core\SessionManager;
 use App\Core\Interfaces\SessionManagerInterface;
 use App\Core\Repositories\UserRepository;
 use App\Core\Interfaces\UserRepositoryInterface;
+use App\Core\Repositories\TokenRepository;
+use App\Core\Interfaces\TokenRepositoryInterface;
+use App\Core\Repositories\VerificationCodeRepository;
+use App\Core\Interfaces\VerificationCodeRepositoryInterface;
+use App\Core\Repositories\ProfileLogRepository;
+use App\Core\Interfaces\ProfileLogRepositoryInterface;
 
 class Container implements ContainerInterface {
     private $instances = [];
     private $bindings = [];
+    private $resolving = []; // Tracking para prevenir dependencias circulares
 
     public function __construct() {
         // 1. Registrar Singletons base
@@ -31,21 +39,29 @@ class Container implements ContainerInterface {
         $this->bindings[UserPrefsManagerInterface::class] = UserPrefsManager::class;
         $this->bindings[SessionManagerInterface::class] = SessionManager::class;
         $this->bindings[UserRepositoryInterface::class] = UserRepository::class;
+        
+        // 3. Nuevos Repositorios Clean Architecture
+        $this->bindings[TokenRepositoryInterface::class] = TokenRepository::class;
+        $this->bindings[VerificationCodeRepositoryInterface::class] = VerificationCodeRepository::class;
+        $this->bindings[ProfileLogRepositoryInterface::class] = ProfileLogRepository::class;
     }
 
     public function get(string $id) {
-        // Si ya está instanciado, devolver el singleton
         if (isset($this->instances[$id])) {
             return $this->instances[$id];
         }
 
-        // Si es una interfaz, buscar qué clase concreta la implementa
         $concrete = $this->bindings[$id] ?? $id;
         
-        // Resolver instanciación dinámica
+        // Prevención de stack overflow por dependencia circular
+        if (isset($this->resolving[$concrete])) {
+            throw new Exception("Dependencia circular detectada al intentar resolver: {$concrete}");
+        }
+
+        $this->resolving[$concrete] = true;
         $resolved = $this->resolve($concrete);
+        unset($this->resolving[$concrete]);
         
-        // Guardar para futuros llamados (Singleton por petición)
         $this->instances[$id] = $resolved;
         if ($concrete !== $id) {
             $this->instances[$concrete] = $resolved;
@@ -66,12 +82,11 @@ class Container implements ContainerInterface {
         }
 
         if (!$reflection->isInstantiable()) {
-            throw new Exception("La clase {$className} no es instanciable (interfaz sin binding).");
+            throw new Exception("La clase {$className} no es instanciable (interfaz sin binding o clase abstracta).");
         }
 
         $constructor = $reflection->getConstructor();
 
-        // Si no tiene constructor, instanciar directamente
         if (is_null($constructor)) {
             return new $className;
         }
@@ -79,10 +94,19 @@ class Container implements ContainerInterface {
         $parameters = $constructor->getParameters();
         $dependencies = array_map(function($param) use ($className) {
             $type = $param->getType();
-            if (!$type || $type->isBuiltin()) {
-                throw new Exception("Fallo en {$className}: No se puede inyectar el parámetro \${$param->getName()}");
+            
+            if (!$type) {
+                throw new Exception("Fallo en {$className}: El parámetro \${$param->getName()} no tiene tipo definido.");
             }
-            // Llamada recursiva para resolver la dependencia
+            
+            // Protección contra tipos primitivos e inyecciones inválidas
+            if ($type instanceof ReflectionNamedType && $type->isBuiltin()) {
+                if ($param->isDefaultValueAvailable()) {
+                    return $param->getDefaultValue();
+                }
+                throw new Exception("Fallo en {$className}: No se puede auto-inyectar el parámetro primitivo \${$param->getName()} sin un valor por defecto.");
+            }
+            
             return $this->get($type->getName());
         }, $parameters);
 

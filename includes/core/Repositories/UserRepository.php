@@ -50,5 +50,45 @@ class UserRepository implements UserRepositoryInterface {
         $stmt = $this->pdo->prepare("UPDATE users SET user_status = ? WHERE id = ?");
         return $stmt->execute([$status, $id]);
     }
+
+    // --- NUEVOS MÉTODOS DE MUTACIÓN ---
+
+    public function updateAvatar(int $id, string $path): bool {
+        $stmt = $this->pdo->prepare("UPDATE users SET profile_picture = ? WHERE id = ?");
+        return $stmt->execute([$path, $id]);
+    }
+
+    public function updateUsername(int $id, string $username): bool {
+        $stmt = $this->pdo->prepare("UPDATE users SET username = ? WHERE id = ?");
+        return $stmt->execute([$username, $id]);
+    }
+
+    public function updateEmail(int $id, string $email): bool {
+        $stmt = $this->pdo->prepare("UPDATE users SET email = ? WHERE id = ?");
+        return $stmt->execute([$email, $id]);
+    }
+
+    public function updatePassword(int $id, string $hashedPassword): bool {
+        $stmt = $this->pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
+        return $stmt->execute([$hashedPassword, $id]);
+    }
+
+    public function update2FA(int $id, ?string $secret, int $enabled, ?string $recoveryCodes): bool {
+        $stmt = $this->pdo->prepare("UPDATE users SET two_factor_secret = ?, two_factor_enabled = ?, two_factor_recovery_codes = ? WHERE id = ?");
+        return $stmt->execute([$secret, $enabled, $recoveryCodes, $id]);
+    }
+
+    public function updateRecoveryCodes(int $id, string $recoveryCodes): bool {
+        $stmt = $this->pdo->prepare("UPDATE users SET two_factor_recovery_codes = ? WHERE id = ?");
+        return $stmt->execute([$recoveryCodes, $id]);
+    }
+
+    public function updatePreference(int $userId, string $key, $value): bool {
+        $allowedKeys = ['language', 'open_links_new_tab', 'theme', 'extended_alerts'];
+        if (!in_array($key, $allowedKeys)) return false;
+
+        $stmt = $this->pdo->prepare("UPDATE user_preferences SET {$key} = ? WHERE user_id = ?");
+        return $stmt->execute([$value, $userId]);
+    }
 }
 ?>

@@ -9,5 +9,14 @@ interface UserRepositoryInterface {
     public function findByUsername(string $username): ?array;
     public function createUser(array $data): int;
     public function updateStatus(int $id, string $status): bool;
+    
+    // Nuevas firmas para operaciones que mutan el perfil del usuario
+    public function updateAvatar(int $id, string $path): bool;
+    public function updateUsername(int $id, string $username): bool;
+    public function updateEmail(int $id, string $email): bool;
+    public function updatePassword(int $id, string $hashedPassword): bool;
+    public function update2FA(int $id, ?string $secret, int $enabled, ?string $recoveryCodes): bool;
+    public function updateRecoveryCodes(int $id, string $recoveryCodes): bool;
+    public function updatePreference(int $userId, string $key, $value): bool;
 }
 ?>

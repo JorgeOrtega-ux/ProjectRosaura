@@ -9,26 +9,33 @@ use App\Core\GoogleAuthenticator;
 use App\Core\Interfaces\RateLimiterInterface;
 use App\Core\Interfaces\SessionManagerInterface;
 use App\Core\Interfaces\UserRepositoryInterface;
+use App\Core\Interfaces\TokenRepositoryInterface;
+use App\Core\Interfaces\VerificationCodeRepositoryInterface;
+use App\Core\Interfaces\ProfileLogRepositoryInterface;
 use App\Core\Logger;
-use PDO;
 
 class SettingsServices {
-    private $pdo; // Mantenido para profile_changes_log, verification_codes, auth_tokens y user_preferences
     private $rateLimiter;
     private $sessionManager;
     private $userRepository;
+    private $tokenRepository;
+    private $verificationCodeRepository;
+    private $profileLogRepository;
 
-    // 1. Inyección de Dependencias Actualizada con Interfaces Clean Architecture
     public function __construct(
-        PDO $pdo, 
         RateLimiterInterface $rateLimiter,
         SessionManagerInterface $sessionManager,
-        UserRepositoryInterface $userRepository
+        UserRepositoryInterface $userRepository,
+        TokenRepositoryInterface $tokenRepository,
+        VerificationCodeRepositoryInterface $verificationCodeRepository,
+        ProfileLogRepositoryInterface $profileLogRepository
     ) {
-        $this->pdo = $pdo;
         $this->rateLimiter = $rateLimiter;
         $this->sessionManager = $sessionManager;
         $this->userRepository = $userRepository;
+        $this->tokenRepository = $tokenRepository;
+        $this->verificationCodeRepository = $verificationCodeRepository;
+        $this->profileLogRepository = $profileLogRepository;
     }
 
     public function updateAvatar($data) {
@@ -58,9 +65,7 @@ class SettingsServices {
             }
             $newRelPath = 'public/storage/profilePictures/uploaded/' . $fileName;
             
-            // Idealmente esto iría en un UserRepository->updateAvatar()
-            $stmt = $this->pdo->prepare("UPDATE users SET profile_picture = ? WHERE id = ?");
-            if ($stmt->execute([$newRelPath, $userId])) {
+            if ($this->userRepository->updateAvatar($userId, $newRelPath)) {
                 $this->logProfileChange($userId, 'avatar', $oldPic, $newRelPath);
                 $this->sessionManager->set('user_pic', $newRelPath);
                 Logger::security("Avatar de usuario actualizado", 'info', ['user_id' => $userId]);
@@ -76,7 +81,6 @@ class SettingsServices {
         $userId = $this->sessionManager->get('user_id');
         $oldPic = $this->sessionManager->get('user_pic', '');
         
-        // --- PROTECCIÓN ---
         if (strpos($oldPic, '/default/') !== false) {
             return ['success' => false, 'message' => 'Ya tienes una foto de perfil por defecto.'];
         }
@@ -87,8 +91,7 @@ class SettingsServices {
         }
         
         $newRelPath = Utils::generateProfilePicture($this->sessionManager->get('user_name'), $this->sessionManager->get('user_uuid'));
-        $stmt = $this->pdo->prepare("UPDATE users SET profile_picture = ? WHERE id = ?");
-        if ($stmt->execute([$newRelPath, $userId])) {
+        if ($this->userRepository->updateAvatar($userId, $newRelPath)) {
             $this->logProfileChange($userId, 'avatar', $oldPic, $newRelPath);
             $this->sessionManager->set('user_pic', $newRelPath);
             Logger::security("Avatar de usuario eliminado", 'info', ['user_id' => $userId]);
@@ -106,15 +109,13 @@ class SettingsServices {
         $username = trim($data['username'] ?? '');
         if (strlen($username) < 3 || strlen($username) > 32) return ['success' => false, 'message' => 'Inválido.'];
         
-        // 2. Uso del UserRepository
         $existingUser = $this->userRepository->findByUsername($username);
         if ($existingUser && $existingUser['id'] != $userId) {
             return ['success' => false, 'message' => 'Este nombre de usuario ya está en uso.'];
         }
         
         $oldUsername = $this->sessionManager->get('user_name', '');
-        $stmtUpd = $this->pdo->prepare("UPDATE users SET username = ? WHERE id = ?");
-        if ($stmtUpd->execute([$username, $userId])) {
+        if ($this->userRepository->updateUsername($userId, $username)) {
             $this->logProfileChange($userId, 'username', $oldUsername, $username);
             $this->sessionManager->set('user_name', $username);
             Logger::security("Nombre de usuario actualizado: {$oldUsername} -> {$username}", 'info', ['user_id' => $userId]);
@@ -138,16 +139,15 @@ class SettingsServices {
             return ['success' => false, 'message' => $rateCheck['message']];
         }
 
-        $stmt = $this->pdo->prepare("SELECT id FROM verification_codes WHERE identifier = ? AND code_type = 'email_update' AND expires_at > NOW()");
-        $stmt->execute([$email]);
-        if ($stmt->rowCount() > 0) return ['success' => true, 'message' => 'Código ya enviado.'];
+        if ($this->verificationCodeRepository->hasActiveCode($email, 'email_update')) {
+            return ['success' => true, 'message' => 'Código ya enviado.'];
+        }
 
         $code = Utils::generateNumericCode(12);
         $expiresAt = date('Y-m-d H:i:s', strtotime('+15 minutes'));
         $payload = json_encode(['action' => 'email_update']);
 
-        $insertStmt = $this->pdo->prepare("INSERT INTO verification_codes (identifier, code_type, code, payload, expires_at) VALUES (?, 'email_update', ?, ?, ?)");
-        if ($insertStmt->execute([$email, $code, $payload, $expiresAt])) {
+        if ($this->verificationCodeRepository->createCode($email, 'email_update', $code, $payload, $expiresAt)) {
             $mailer = new Mailer();
             if ($mailer->sendEmailUpdateCode($email, $this->sessionManager->get('user_name'), $code)) {
                 $this->rateLimiter->record('request_email_code', 3, 30);
@@ -165,11 +165,10 @@ class SettingsServices {
         $code = str_replace('-', '', trim($data['code'] ?? ''));
         if (empty($code)) return ['success' => false, 'message' => 'El código es obligatorio.'];
 
-        $stmt = $this->pdo->prepare("SELECT id FROM verification_codes WHERE identifier = ? AND code_type = 'email_update' AND code = ? AND expires_at > NOW()");
-        $stmt->execute([$this->sessionManager->get('user_email'), $code]);
+        $verification = $this->verificationCodeRepository->findValidByCodeAndType($code, 'email_update');
 
-        if ($stmt->rowCount() > 0) {
-            $this->pdo->prepare("DELETE FROM verification_codes WHERE id = ?")->execute([$stmt->fetch(PDO::FETCH_ASSOC)['id']]);
+        if ($verification && $verification['identifier'] === $this->sessionManager->get('user_email')) {
+            $this->verificationCodeRepository->deleteById($verification['id']);
             $this->sessionManager->set('can_update_email_expires', time() + (15 * 60));
             $this->rateLimiter->clear('request_email_code');
             Logger::security("Identidad verificada exitosamente para cambio de email", 'info', ['user_id' => $userId]);
@@ -193,15 +192,13 @@ class SettingsServices {
         $emailValidation = Utils::validateEmailFormat($email);
         if (!$emailValidation['valid']) return ['success' => false, 'message' => $emailValidation['message']];
 
-        // 3. Uso del UserRepository
         $existingUser = $this->userRepository->findByEmail($email);
         if ($existingUser && $existingUser['id'] != $userId) {
             return ['success' => false, 'message' => 'Correo registrado en otra cuenta.'];
         }
 
         $oldEmail = $this->sessionManager->get('user_email', '');
-        $stmtUpd = $this->pdo->prepare("UPDATE users SET email = ? WHERE id = ?");
-        if ($stmtUpd->execute([$email, $userId])) {
+        if ($this->userRepository->updateEmail($userId, $email)) {
             $this->logProfileChange($userId, 'email', $oldEmail, $email);
             $this->sessionManager->set('user_email', $email);
             $this->sessionManager->remove('can_update_email_expires');
@@ -222,8 +219,7 @@ class SettingsServices {
         if (!in_array($key, ['language', 'open_links_new_tab', 'theme', 'extended_alerts'])) return ['success' => false, 'message' => 'Preferencia no válida.'];
         if ($key === 'open_links_new_tab' || $key === 'extended_alerts') $value = ($value == 1) ? 1 : 0;
 
-        $stmt = $this->pdo->prepare("UPDATE user_preferences SET {$key} = ? WHERE user_id = ?");
-        if ($stmt->execute([$value, $userId])) {
+        if ($this->userRepository->updatePreference($userId, $key, $value)) {
             $userPrefs = $this->sessionManager->get('user_prefs', []);
             $userPrefs[$key] = $value;
             $this->sessionManager->set('user_prefs', $userPrefs);
@@ -244,7 +240,6 @@ class SettingsServices {
             return ['success' => false, 'message' => $rateCheck['message']];
         }
 
-        // 4. Uso del UserRepository
         $user = $this->userRepository->findById($userId);
 
         if ($user && password_verify(trim($data['current_password'] ?? ''), $user['password'])) {
@@ -276,8 +271,7 @@ class SettingsServices {
         $pVal = Utils::validatePasswordFormat($newPassword);
         if (!$pVal['valid']) return ['success' => false, 'message' => $pVal['message']];
 
-        $stmt = $this->pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
-        if ($stmt->execute([password_hash($newPassword, PASSWORD_BCRYPT), $userId])) {
+        if ($this->userRepository->updatePassword($userId, password_hash($newPassword, PASSWORD_BCRYPT))) {
             $this->logProfileChange($userId, 'password', '***', '***');
             $this->sessionManager->remove('can_change_password_expires');
             $this->rateLimiter->clear('update_password');
@@ -293,12 +287,11 @@ class SettingsServices {
         
         $userId = $this->sessionManager->get('user_id');
         
-        // 5. Uso del UserRepository
         $user = $this->userRepository->findById($userId);
 
         if ($user && password_verify(trim($data['password'] ?? ''), $user['password'])) {
             if ($this->userRepository->updateStatus($userId, 'deleted')) {
-                $this->pdo->prepare("DELETE FROM auth_tokens WHERE user_id = ?")->execute([$userId]);
+                $this->tokenRepository->deleteAllByUserId($userId);
                 if (isset($_COOKIE['remember_token'])) setcookie('remember_token', '', ['expires' => time() - 3600, 'path' => '/ProjectRosaura/']);
                 Logger::security("Cuenta de usuario marcada como eliminada", 'warning', ['user_id' => $userId, 'ip' => Utils::getIpAddress()]);
                 
@@ -342,8 +335,7 @@ class SettingsServices {
         $ga = new GoogleAuthenticator();
         if ($ga->verifyCode($secret, $code, 2)) {
             $codes = Utils::generateRecoveryCodes(10, 8);
-            $stmt = $this->pdo->prepare("UPDATE users SET two_factor_secret = ?, two_factor_enabled = 1, two_factor_recovery_codes = ? WHERE id = ?");
-            if ($stmt->execute([$secret, json_encode($codes), $userId])) {
+            if ($this->userRepository->update2FA($userId, $secret, 1, json_encode($codes))) {
                 $this->sessionManager->set('user_2fa', 1); 
                 $this->sessionManager->remove('2fa_setup_secret');
                 $this->logProfileChange($userId, '2fa', 'disabled', 'enabled');
@@ -362,11 +354,12 @@ class SettingsServices {
         $user = $this->userRepository->findById($userId);
 
         if ($user && password_verify(trim($data['password'] ?? ''), $user['password'])) {
-            $this->pdo->prepare("UPDATE users SET two_factor_secret = NULL, two_factor_enabled = 0, two_factor_recovery_codes = NULL WHERE id = ?")->execute([$userId]);
-            $this->sessionManager->set('user_2fa', 0);
-            $this->logProfileChange($userId, '2fa', 'enabled', 'disabled');
-            Logger::security("Autenticación de Dos Factores (2FA) deshabilitada", 'warning', ['user_id' => $userId, 'ip' => Utils::getIpAddress()]);
-            return ['success' => true, 'message' => 'Desactivado.'];
+            if ($this->userRepository->update2FA($userId, null, 0, null)) {
+                $this->sessionManager->set('user_2fa', 0);
+                $this->logProfileChange($userId, '2fa', 'enabled', 'disabled');
+                Logger::security("Autenticación de Dos Factores (2FA) deshabilitada", 'warning', ['user_id' => $userId, 'ip' => Utils::getIpAddress()]);
+                return ['success' => true, 'message' => 'Desactivado.'];
+            }
         }
         Logger::security("Intento fallido de deshabilitar 2FA (Contraseña incorrecta)", 'warning', ['user_id' => $userId, 'ip' => Utils::getIpAddress()]);
         return ['success' => false, 'message' => 'Contraseña incorrecta.'];
@@ -377,10 +370,12 @@ class SettingsServices {
         
         $userId = $this->sessionManager->get('user_id');
         $currentSelector = isset($_COOKIE['remember_token']) ? explode(':', $_COOKIE['remember_token'])[0] : '';
-        $stmt = $this->pdo->prepare("SELECT id, user_agent, ip_address, expires_at, selector FROM auth_tokens WHERE user_id = ? ORDER BY expires_at DESC");
-        $stmt->execute([$userId]);
-        $devices = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        foreach ($devices as &$device) { $device['is_current'] = ($device['selector'] === $currentSelector); unset($device['selector']); }
+        
+        $devices = $this->tokenRepository->getActiveDevicesByUserId($userId);
+        foreach ($devices as &$device) { 
+            $device['is_current'] = ($device['selector'] === $currentSelector); 
+            unset($device['selector']); 
+        }
         return ['success' => true, 'devices' => $devices];
     }
 
@@ -388,8 +383,7 @@ class SettingsServices {
         if (!$this->sessionManager->has('user_id')) return ['success' => false, 'message' => 'Sesión no válida.'];
         
         $userId = $this->sessionManager->get('user_id');
-        $stmt = $this->pdo->prepare("DELETE FROM auth_tokens WHERE id = ? AND user_id = ?");
-        if ($stmt->execute([$data['device_id'] ?? null, $userId])) {
+        if ($this->tokenRepository->revokeDevice((int)($data['device_id'] ?? 0), $userId)) {
             Logger::security("Sesión de dispositivo revocada manualmente", 'info', ['user_id' => $userId, 'device_id' => $data['device_id']]);
             return ['success' => true, 'message' => 'Sesión cerrada.'];
         }
@@ -401,7 +395,8 @@ class SettingsServices {
         
         $userId = $this->sessionManager->get('user_id');
         $currentSelector = isset($_COOKIE['remember_token']) ? explode(':', $_COOKIE['remember_token'])[0] : '';
-        if ($this->pdo->prepare("DELETE FROM auth_tokens WHERE user_id = ? AND selector != ?")->execute([$userId, $currentSelector])) {
+        
+        if ($this->tokenRepository->revokeOtherDevices($userId, $currentSelector)) {
             Logger::security("Todas las demás sesiones de dispositivos fueron revocadas", 'info', ['user_id' => $userId, 'ip' => Utils::getIpAddress()]);
             return ['success' => true, 'message' => 'Todas cerradas.'];
         }
@@ -417,7 +412,7 @@ class SettingsServices {
         if ($user) {
             if (password_verify(trim($data['password'] ?? ''), $user['password'])) {
                 $codes = Utils::generateRecoveryCodes(10, 8);
-                if ($this->pdo->prepare("UPDATE users SET two_factor_recovery_codes = ? WHERE id = ?")->execute([json_encode($codes), $userId])) {
+                if ($this->userRepository->updateRecoveryCodes($userId, json_encode($codes))) {
                     Logger::security("Códigos de recuperación de 2FA regenerados", 'info', ['user_id' => $userId, 'ip' => Utils::getIpAddress()]);
                     return ['success' => true, 'message' => 'Códigos generados.', 'recovery_codes' => $codes];
                 }
@@ -428,14 +423,13 @@ class SettingsServices {
     }
 
     private function canChangeProfileData($userId, $changeType, $maxAttempts, $days) {
-        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM profile_changes_log WHERE user_id = ? AND change_type = ? AND created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)");
-        $stmt->execute([$userId, $changeType, (int)$days]);
-        return (int) $stmt->fetchColumn() < $maxAttempts;
+        $count = $this->profileLogRepository->countRecentChanges($userId, $changeType, (int)$days);
+        return $count < $maxAttempts;
     }
 
     private function logProfileChange($userId, $changeType, $oldValue, $newValue) {
         $ip = Utils::getIpAddress();
-        $this->pdo->prepare("INSERT INTO profile_changes_log (user_id, change_type, old_value, new_value, ip_address) VALUES (?, ?, ?, ?, ?)")->execute([$userId, $changeType, $oldValue, $newValue, $ip]);
+        $this->profileLogRepository->logChange($userId, $changeType, $oldValue, $newValue, $ip);
     }
 }
 ?>
