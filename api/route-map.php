@@ -7,6 +7,7 @@ return [
     'auth.register.step2'  => ['controller' => 'App\Api\Controllers\AuthController', 'action' => 'register_step2'],
     'auth.register.verify' => ['controller' => 'App\Api\Controllers\AuthController', 'action' => 'register_verify'],
     'auth.login'           => ['controller' => 'App\Api\Controllers\AuthController', 'action' => 'login'],
+    'auth.login.verify_2fa'=> ['controller' => 'App\Api\Controllers\AuthController', 'action' => 'login_verify_2fa'],
     'auth.logout'          => ['controller' => 'App\Api\Controllers\AuthController', 'action' => 'logout'],
     'auth.forgot_password' => ['controller' => 'App\Api\Controllers\AuthController', 'action' => 'forgot_password'],
     'auth.reset_password'  => ['controller' => 'App\Api\Controllers\AuthController', 'action' => 'reset_password'],

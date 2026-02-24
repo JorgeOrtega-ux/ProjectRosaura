@@ -6,6 +6,7 @@ namespace App\Api\Services;
 use App\Core\Utils;
 use App\Config\Database;
 use App\Core\Mailer; 
+use App\Core\GoogleAuthenticator; // IMPORTACIÓN NECESARIA
 use PDO;
 
 class AuthServices {
@@ -344,6 +345,14 @@ class AuthServices {
 
         if ($user && password_verify($password, $user['password'])) {
             $this->clearRateLimit('login');
+            
+            // VERIFICACIÓN DE 2FA:
+            if (!empty($user['two_factor_enabled'])) {
+                $_SESSION['pending_2fa_user_id'] = $user['id'];
+                return ['success' => true, 'requires_2fa' => true, 'message' => 'Se requiere código de verificación de dos factores.'];
+            }
+
+            // SI NO TIENE 2FA, PROCEDE NORMAL
             session_regenerate_id(true);
 
             $stmtPref = $this->pdo->prepare("SELECT * FROM user_preferences WHERE user_id = ?");
@@ -372,12 +381,96 @@ class AuthServices {
 
             $this->createRememberToken($user['id']);
 
-            return ['success' => true, 'message' => 'Inicio de sesión exitoso.'];
+            return ['success' => true, 'requires_2fa' => false, 'message' => 'Inicio de sesión exitoso.'];
         }
 
         $this->recordAttempt('login', 5, 15);
 
         return ['success' => false, 'message' => 'Credenciales incorrectas.'];
+    }
+
+    public function loginVerify2FA($data) {
+        $code = trim($data['code'] ?? '');
+        
+        if (empty($code)) {
+            return ['success' => false, 'message' => 'El código de seguridad es obligatorio.'];
+        }
+
+        if (empty($_SESSION['pending_2fa_user_id'])) {
+            return ['success' => false, 'message' => 'Sesión expirada o inválida. Por favor inicia sesión nuevamente.'];
+        }
+
+        $userId = $_SESSION['pending_2fa_user_id'];
+
+        $rateCheck = $this->checkRateLimit('login_2fa', 5, 15);
+        if (!$rateCheck['allowed']) {
+            return ['success' => false, 'message' => $rateCheck['message']];
+        }
+
+        $stmt = $this->pdo->prepare("SELECT * FROM users WHERE id = ?");
+        $stmt->execute([$userId]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$user || empty($user['two_factor_enabled'])) {
+            $this->recordAttempt('login_2fa', 5, 15);
+            return ['success' => false, 'message' => 'Error de validación del usuario.'];
+        }
+
+        $isValid = false;
+        
+        // Comprobar si es código de app o código de recuperación (los de rec. tienen 8 caracteres)
+        if (strlen($code) === 8) {
+            $codes = json_decode($user['two_factor_recovery_codes'], true) ?: [];
+            $index = array_search($code, $codes);
+            if ($index !== false) {
+                unset($codes[$index]);
+                $codesJson = json_encode(array_values($codes));
+                $stmtUpdate = $this->pdo->prepare("UPDATE users SET two_factor_recovery_codes = ? WHERE id = ?");
+                $stmtUpdate->execute([$codesJson, $userId]);
+                $isValid = true;
+            }
+        } else {
+            $ga = new GoogleAuthenticator();
+            $isValid = $ga->verifyCode($user['two_factor_secret'], $code, 2);
+        }
+
+        if ($isValid) {
+            $this->clearRateLimit('login_2fa');
+            session_regenerate_id(true);
+
+            $stmtPref = $this->pdo->prepare("SELECT * FROM user_preferences WHERE user_id = ?");
+            $stmtPref->execute([$user['id']]);
+            $userPrefs = $stmtPref->fetch(PDO::FETCH_ASSOC);
+
+            if (!$userPrefs) {
+                $acceptLang = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '';
+                $assignedLang = Utils::getClosestLanguage($acceptLang);
+                
+                $insPref = $this->pdo->prepare("INSERT INTO user_preferences (user_id, language, open_links_new_tab, theme, extended_alerts) VALUES (?, ?, 1, 'system', 0)");
+                $insPref->execute([$user['id'], $assignedLang]);
+                
+                $stmtPref->execute([$user['id']]);
+                $userPrefs = $stmtPref->fetch(PDO::FETCH_ASSOC);
+            }
+
+            $_SESSION['user_id'] = $user['id'];
+            $_SESSION['user_uuid'] = $user['uuid'];
+            $_SESSION['user_name'] = $user['username'];
+            $_SESSION['user_email'] = $user['email'];
+            $_SESSION['user_role'] = $user['role'];
+            $_SESSION['user_pic'] = $user['profile_picture'];
+            $_SESSION['user_prefs'] = $userPrefs;
+            $_SESSION['user_2fa'] = 1;
+
+            unset($_SESSION['pending_2fa_user_id']);
+
+            $this->createRememberToken($user['id']);
+
+            return ['success' => true, 'message' => 'Inicio de sesión exitoso.'];
+        }
+
+        $this->recordAttempt('login_2fa', 5, 15);
+        return ['success' => false, 'message' => 'El código ingresado es incorrecto.'];
     }
 
     public function logout() {

@@ -29,6 +29,10 @@ class AuthController {
         return $this->authServices->login($input);
     }
 
+    public function login_verify_2fa($input) {
+        return $this->authServices->loginVerify2FA($input);
+    }
+
     public function logout() {
         return $this->authServices->logout();
     }

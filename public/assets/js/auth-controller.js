@@ -15,7 +15,9 @@ export class AuthController {
     bindEvents() {
         document.addEventListener('click', (e) => {
             const toggleBtn = e.target.closest('[data-action="togglePassword"]');
+            
             const loginBtn = e.target.closest('[data-action="submitLogin"]');
+            const login2FABtn = e.target.closest('[data-action="submitLogin2FA"]'); // NUEVO
             
             const registerStep1Btn = e.target.closest('[data-action="submitRegisterStep1"]');
             const registerStep2Btn = e.target.closest('[data-action="submitRegisterStep2"]');
@@ -33,6 +35,11 @@ export class AuthController {
             if (loginBtn) {
                 e.preventDefault();
                 this.handleLogin(loginBtn);
+            }
+
+            if (login2FABtn) {
+                e.preventDefault();
+                this.handleLogin2FA(login2FABtn);
             }
 
             if (registerStep1Btn) {
@@ -162,6 +169,45 @@ export class AuthController {
         };
 
         const result = await this.api.post(ApiRoutes.Auth.Login, data);
+
+        if (result.success) {
+            if (result.requires_2fa) {
+                // Redirigir a la vista para ingresar el código 2FA
+                if (window.spaRouter) {
+                    window.spaRouter.navigate('/ProjectRosaura/login/two-factor');
+                } else {
+                    window.location.href = '/ProjectRosaura/login/two-factor';
+                }
+            } else {
+                // Inició sesión normalmente
+                window.location.href = '/ProjectRosaura/';
+            }
+        } else {
+            this.restoreButton(btn);
+            this.showError(result.message);
+        }
+    }
+
+    async handleLogin2FA(btn) {
+        this.clearMessages();
+        const codeInput = document.getElementById('2fa_code');
+
+        if (!codeInput) return;
+
+        const code = codeInput.value.trim();
+
+        if (!code) {
+            this.showError('El código es obligatorio.');
+            return;
+        }
+
+        this.setButtonLoading(btn);
+
+        const data = {
+            code: code
+        };
+
+        const result = await this.api.post(ApiRoutes.Auth.LoginVerify2FA, data);
 
         if (result.success) {
             window.location.href = '/ProjectRosaura/';

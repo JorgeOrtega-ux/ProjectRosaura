@@ -102,5 +102,10 @@
     "404_desc": "La página que estás intentando buscar no existe en este proyecto.",
     "btn_back_home": "Volver al inicio",
     "2fa_title": "Autenticación de dos factores",
-    "2fa_desc": "Agrega una capa adicional de seguridad utilizando una aplicación de autenticación móvil."
+    "2fa_desc": "Agrega una capa adicional de seguridad utilizando una aplicación de autenticación móvil.",
+    "login_2fa_title": "Verificación de seguridad",
+    "login_2fa_desc": "Ingresa el código de 6 dígitos de tu aplicación de autenticación o un código de recuperación.",
+    "lbl_2fa_code": "Código de seguridad",
+    "btn_verify_login": "Verificar y acceder",
+    "link_back_to_login": "Volver a iniciar sesión"
 }
