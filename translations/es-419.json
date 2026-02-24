@@ -107,5 +107,8 @@
     "login_2fa_desc": "Ingresa el código de 6 dígitos de tu aplicación de autenticación o un código de recuperación.",
     "lbl_2fa_code": "Código de seguridad",
     "btn_verify_login": "Verificar y acceder",
-    "link_back_to_login": "Volver a iniciar sesión"
+    "link_back_to_login": "Volver a iniciar sesión",
+    "route_devices": "Tus dispositivos",
+    "devices_title": "Dispositivos conectados",
+    "devices_desc": "Administra las sesiones activas en tu cuenta. Cierra la sesión en aquellos dispositivos que ya no utilices."
 }

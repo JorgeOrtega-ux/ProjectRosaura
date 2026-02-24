@@ -69,4 +69,17 @@ class SettingsController
     {
         return $this->settingsServices->regenerateRecoveryCodes($input);
     }
+    // --- NUEVOS: Controladores Dispositivos ---
+    public function get_devices()
+    {
+        return $this->settingsServices->getDevices();
+    }
+    public function revoke_device($input)
+    {
+        return $this->settingsServices->revokeDevice($input);
+    }
+    public function revoke_all_devices()
+    {
+        return $this->settingsServices->revokeAllDevices();
+    }
 }

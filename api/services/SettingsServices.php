@@ -352,7 +352,64 @@ class SettingsServices {
         
         return ['success' => false, 'message' => 'Contraseña incorrecta.'];
     }
+// ==========================================
+    // --- LÓGICA DE GESTIÓN DE DISPOSITIVOS ---
+    // ==========================================
+    public function getDevices() {
+        if (!isset($_SESSION['user_id'])) return ['success' => false, 'message' => 'Sesión no válida.'];
 
+        $currentSelector = '';
+        if (isset($_COOKIE['remember_token'])) {
+            $parts = explode(':', $_COOKIE['remember_token']);
+            if (count($parts) === 2) {
+                $currentSelector = $parts[0];
+            }
+        }
+
+        $stmt = $this->pdo->prepare("SELECT id, user_agent, ip_address, expires_at, selector FROM auth_tokens WHERE user_id = ? ORDER BY expires_at DESC");
+        $stmt->execute([$_SESSION['user_id']]);
+        $devices = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Identificamos cuál es la sesión actual en la que está el usuario
+        foreach ($devices as &$device) {
+            $device['is_current'] = ($device['selector'] === $currentSelector);
+            unset($device['selector']); // Por seguridad no devolvemos el selector
+        }
+
+        return ['success' => true, 'devices' => $devices];
+    }
+
+    public function revokeDevice($data) {
+        if (!isset($_SESSION['user_id'])) return ['success' => false, 'message' => 'Sesión no válida.'];
+        
+        $deviceId = $data['device_id'] ?? null;
+        if (!$deviceId) return ['success' => false, 'message' => 'ID de dispositivo inválido.'];
+
+        $stmt = $this->pdo->prepare("DELETE FROM auth_tokens WHERE id = ? AND user_id = ?");
+        if ($stmt->execute([$deviceId, $_SESSION['user_id']])) {
+            return ['success' => true, 'message' => 'La sesión en ese dispositivo ha sido cerrada.'];
+        }
+        return ['success' => false, 'message' => 'Hubo un error al cerrar la sesión.'];
+    }
+
+    public function revokeAllDevices() {
+        if (!isset($_SESSION['user_id'])) return ['success' => false, 'message' => 'Sesión no válida.'];
+
+        $currentSelector = '';
+        if (isset($_COOKIE['remember_token'])) {
+            $parts = explode(':', $_COOKIE['remember_token']);
+            if (count($parts) === 2) {
+                $currentSelector = $parts[0];
+            }
+        }
+
+        // Borra todos EXCEPTO la sesión actual
+        $stmt = $this->pdo->prepare("DELETE FROM auth_tokens WHERE user_id = ? AND selector != ?");
+        if ($stmt->execute([$_SESSION['user_id'], $currentSelector])) {
+            return ['success' => true, 'message' => 'Todas las demás sesiones han sido cerradas.'];
+        }
+        return ['success' => false, 'message' => 'Error al cerrar las sesiones de los dispositivos.'];
+    }
     public function regenerateRecoveryCodes($data) {
         if (!isset($_SESSION['user_id'])) return ['success' => false, 'message' => 'Sesión no válida.'];
         if (empty($_SESSION['user_2fa'])) return ['success' => false, 'message' => 'El 2FA no está activado.'];

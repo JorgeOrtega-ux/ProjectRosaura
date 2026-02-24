@@ -21,6 +21,7 @@ return [
     
     // --- NUEVAS RUTAS SEGURIDAD Y 2FA ---
     '/settings/change-password' => ['view' => 'settings/change-password.php'],
-    '/settings/2fa' => ['view' => 'settings/2fa.php']
+    '/settings/2fa' => ['view' => 'settings/2fa.php'],
+    '/settings/devices' => ['view' => 'settings/devices.php'] // <-- AÑADIR ESTO
 ];
 ?>

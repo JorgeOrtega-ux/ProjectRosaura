@@ -31,6 +31,13 @@ return [
     'settings.2fa_generate' => ['controller' => 'App\Api\Controllers\SettingsController', 'action' => 'generate_2fa'],
     'settings.2fa_enable'   => ['controller' => 'App\Api\Controllers\SettingsController', 'action' => 'enable_2fa'],
     'settings.2fa_disable'  => ['controller' => 'App\Api\Controllers\SettingsController', 'action' => 'disable_2fa'],
-    'settings.2fa_regenerate_recovery' => ['controller' => 'App\Api\Controllers\SettingsController', 'action' => 'regenerate_recovery_codes']
+    'settings.2fa_regenerate_recovery' => ['controller' => 'App\Api\Controllers\SettingsController', 'action' => 'regenerate_recovery_codes'],
+
+    // --- RUTAS DISPOSITIVOS ---
+    'settings.get_devices'       => ['controller' => 'App\Api\Controllers\SettingsController', 'action' => 'get_devices'],
+    'settings.revoke_device'     => ['controller' => 'App\Api\Controllers\SettingsController', 'action' => 'revoke_device'],
+    'settings.revoke_all_devices'=> ['controller' => 'App\Api\Controllers\SettingsController', 'action' => 'revoke_all_devices']
+
+    
 ];
 ?>

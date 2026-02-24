@@ -17,14 +17,18 @@ class AuthServices {
         $this->pdo = $db->getConnection();
     }
 
-    public function createRememberToken($userId) {
+ public function createRememberToken($userId) {
         $selector = bin2hex(random_bytes(16));
         $validator = bin2hex(random_bytes(32));
         $hashedValidator = hash('sha256', $validator);
         $expiresAt = date('Y-m-d H:i:s', time() + (86400 * 30));
 
-        $stmt = $this->pdo->prepare("INSERT INTO auth_tokens (user_id, selector, hashed_validator, expires_at) VALUES (?, ?, ?, ?)");
-        $stmt->execute([$userId, $selector, $hashedValidator, $expiresAt]);
+        // Obtenemos info del dispositivo
+        $userAgent = substr($_SERVER['HTTP_USER_AGENT'] ?? 'Desconocido', 0, 255);
+        $ipAddress = substr($this->getIpAddress(), 0, 45);
+
+        $stmt = $this->pdo->prepare("INSERT INTO auth_tokens (user_id, selector, hashed_validator, expires_at, user_agent, ip_address) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$userId, $selector, $hashedValidator, $expiresAt, $userAgent, $ipAddress]);
 
         $cookieValue = $selector . ':' . $validator;
         

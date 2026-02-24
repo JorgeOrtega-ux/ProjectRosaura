@@ -24,7 +24,11 @@ export const ApiRoutes = {
         // NUEVAS 2FA
         Generate2FA: 'settings.2fa_generate',
         Enable2FA: 'settings.2fa_enable',
-        Disable2FA: 'settings.2fa_disable',
-        RegenerateRecoveryCodes: 'settings.2fa_regenerate_recovery'
+       Disable2FA: 'settings.2fa_disable',
+        RegenerateRecoveryCodes: 'settings.2fa_regenerate_recovery',
+        // NUEVAS DISPOSITIVOS
+        GetDevices: 'settings.get_devices',
+        RevokeDevice: 'settings.revoke_device',
+        RevokeAllDevices: 'settings.revoke_all_devices'
     }
 };

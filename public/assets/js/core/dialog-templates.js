@@ -42,5 +42,18 @@ export const DialogTemplates = {
                 <button class="component-button component-button--h45 component-button--dark" data-dialog-action="confirm">Verificar</button>
             </div>
         `
+    },
+    confirmRevokeAllDevices: {
+        build: () => `
+            <div class="pill-container"><div class="drag-handle"></div></div>
+            <div class="component-dialog-header">
+                <h2 class="component-dialog-title">Cerrar todas las sesiones</h2>
+                <p class="component-dialog-desc">¿Estás seguro de que deseas cerrar sesión en todos los demás dispositivos? Tendrás que volver a iniciar sesión en ellos.</p>
+            </div>
+            <div class="component-dialog-actions">
+                <button class="component-button component-button--h45" data-dialog-action="cancel">Cancelar</button>
+                <button class="component-button component-button--h45 component-button--danger" data-dialog-action="confirm">Cerrar todas</button>
+            </div>
+        `
     }
 };

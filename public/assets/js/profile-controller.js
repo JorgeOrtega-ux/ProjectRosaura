@@ -8,13 +8,18 @@ export class ProfileController {
         this.selectedFile = null;
     }
 
- init() {
+    init() {
         this.bindEvents();
         console.log("ProfileController inicializado.");
 
         // NUEVO: Si recargas la página directamente en la vista 2FA, forzamos la carga.
         if (document.getElementById('2fa-setup-container')) {
             this.init2FAView();
+        }
+
+        // NUEVO: Arranque para cargas directas de dispositivos
+        if (document.getElementById('devices-container')) {
+            this.initDevicesView();
         }
     }
 
@@ -69,6 +74,13 @@ export class ProfileController {
                 if (window.spaRouter) window.spaRouter.navigate('/ProjectRosaura/settings/security');
                 else window.location.href = '/ProjectRosaura/settings/security';
             }
+
+            // --- EVENTOS DISPOSITIVOS ---
+            const btnRevokeAll = e.target.closest('[data-action="revokeAllDevices"]');
+            if (btnRevokeAll) this.revokeAllDevices(btnRevokeAll);
+
+            const btnRevoke = e.target.closest('[data-action="revokeDevice"]');
+            if (btnRevoke) this.revokeDevice(btnRevoke);
         });
 
         document.addEventListener('change', (e) => {
@@ -91,6 +103,9 @@ export class ProfileController {
             if (e.detail.url.includes('/settings/2fa')) {
                 this.init2FAView();
             }
+            if (e.detail.url.includes('/settings/devices')) {
+                this.initDevicesView();
+            }
         });
     }
 
@@ -112,7 +127,7 @@ export class ProfileController {
         btn.disabled = false;
     }
 
-    handleFileSelection(e) { /* Lógica existente */
+    handleFileSelection(e) {
         const file = e.target.files[0];
         if (!file) return;
         if (file.size > 2 * 1024 * 1024) { this.showMessage('La imagen no debe superar los 2MB.', 'error'); e.target.value = ''; return; }
@@ -414,5 +429,116 @@ export class ProfileController {
             btn.textContent = 'Copiado!';
             setTimeout(() => btn.textContent = originalText, 2000);
         });
+    }
+
+    // ==========================================
+    // --- LÓGICA DE DISPOSITIVOS ---
+    // ==========================================
+    async initDevicesView() {
+        const listContainer = document.getElementById('devices-list');
+        if (!listContainer) return;
+
+        listContainer.innerHTML = '<div class="component-spinner" style="margin: 0 auto;"></div>';
+
+        const res = await this.api.post(ApiRoutes.Settings.GetDevices);
+        if (res.success) {
+            this.renderDevices(res.devices);
+        } else {
+            listContainer.innerHTML = `<p style="color: #d32f2f;">${res.message}</p>`;
+        }
+    }
+
+    renderDevices(devices) {
+        const listContainer = document.getElementById('devices-list');
+        if (!listContainer) return;
+        listContainer.innerHTML = '';
+
+        if (devices.length === 0) {
+            listContainer.innerHTML = '<p class="component-card__description">No hay dispositivos activos.</p>';
+            return;
+        }
+
+        devices.forEach(device => {
+            const parsedUA = this.parseUserAgent(device.user_agent);
+            
+            const div = document.createElement('div');
+            div.style.cssText = 'display: flex; align-items: center; justify-content: space-between; padding: 12px; border: 1px solid #00000020; border-radius: 8px; flex-wrap: wrap; gap: 12px;';
+            
+            const btnHtml = !device.is_current ? `
+                <button class="component-button component-button--icon component-button--h36 component-button--danger" data-action="revokeDevice" data-id="${device.id}" title="Cerrar sesión">
+                    <span class="material-symbols-rounded">close</span>
+                </button>
+            ` : '';
+
+            const statusText = device.is_current ? 
+                '<p style="font-size: 13px; color: #16a34a; font-weight: 500; margin: 4px 0 0 0;">Este dispositivo (Actual)</p>' : 
+                '<p style="font-size: 13px; color: #666; margin: 4px 0 0 0;">Activo</p>';
+
+            div.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="component-card__icon-container component-card__icon-container--bordered">
+                        <span class="material-symbols-rounded">${parsedUA.icon}</span>
+                    </div>
+                    <div>
+                        <h3 style="font-size: 15px; font-weight: 600; margin: 0; color: #111;">${parsedUA.os} - ${parsedUA.browser}</h3>
+                        <p style="font-size: 13px; color: #666; margin: 4px 0 0 0;">IP: ${device.ip_address || 'Desconocida'}</p>
+                        ${statusText}
+                    </div>
+                </div>
+                <div>${btnHtml}</div>
+            `;
+            listContainer.appendChild(div);
+        });
+    }
+
+    parseUserAgent(ua) {
+        let browser = "Navegador Desconocido";
+        let os = "OS Desconocido";
+        let icon = "devices";
+
+        if (!ua) return { browser, os, icon };
+
+        if (ua.includes("Firefox")) browser = "Firefox";
+        else if (ua.includes("Edg")) browser = "Edge";
+        else if (ua.includes("Chrome")) browser = "Chrome";
+        else if (ua.includes("Safari") && !ua.includes("Chrome")) browser = "Safari";
+
+        if (ua.includes("Win")) { os = "Windows"; icon = "computer"; }
+        else if (ua.includes("Mac")) { os = "MacOS"; icon = "computer"; }
+        else if (ua.includes("Linux")) { os = "Linux"; icon = "computer"; }
+        else if (ua.includes("Android")) { os = "Android"; icon = "smartphone"; }
+        else if (ua.includes("iPhone") || ua.includes("iPad")) { os = "iOS"; icon = "smartphone"; }
+
+        return { browser, os, icon };
+    }
+
+    async revokeDevice(btn) {
+        const id = btn.getAttribute('data-id');
+        this.setButtonLoading(btn);
+        const res = await this.api.post(ApiRoutes.Settings.RevokeDevice, { device_id: id });
+        this.restoreButton(btn);
+
+        if (res.success) {
+            this.showMessage(res.message, 'success');
+            this.initDevicesView(); 
+        } else {
+            this.showMessage(res.message, 'error');
+        }
+    }
+
+    async revokeAllDevices(btn) {
+        const isConfirmed = await window.dialogSystem.show('confirmRevokeAllDevices');
+        if (!isConfirmed.confirmed) return;
+
+        this.setButtonLoading(btn);
+        const res = await this.api.post(ApiRoutes.Settings.RevokeAllDevices);
+        this.restoreButton(btn);
+
+        if (res.success) {
+            this.showMessage(res.message, 'success');
+            this.initDevicesView(); 
+        } else {
+            this.showMessage(res.message, 'error');
+        }
     }
 }

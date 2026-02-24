@@ -74,7 +74,8 @@ if (isset($_SESSION['user_id'])) {
                     </div>
                 </div>
                 <div class="component-card__actions component-card__actions--end">
-                    <button type="button" class="component-button component-button--h36">Gestionar dispositivos</button>
+                    
+                <button type="button" class="component-button component-button--h36" data-nav="/ProjectRosaura/settings/devices">Gestionar dispositivos</button>
                 </div>
             </div>
         </div>
