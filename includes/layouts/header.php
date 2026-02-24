@@ -18,7 +18,12 @@ $userPic = $_SESSION['user_pic'] ?? '';
         '/settings/change-password': "<?php echo __('route_change_password'); ?>",
         '/settings/2fa': "<?php echo __('route_2fa'); ?>",
         '/settings/devices': "<?php echo __('route_devices'); ?>",
-        '/settings/delete-account': "<?php echo __('route_delete_account'); ?>"
+        '/settings/delete-account': "<?php echo __('route_delete_account'); ?>",
+        '/admin': "<?php echo __('route_admin_dashboard'); ?>",
+        '/admin/dashboard': "<?php echo __('route_admin_dashboard'); ?>",
+        '/admin/manage-users': "<?php echo __('route_admin_users'); ?>",
+        '/admin/backups': "<?php echo __('route_admin_backups'); ?>",
+        '/admin/server-config': "<?php echo __('route_admin_server'); ?>"
     };
     window.AppName = "ProjectRosaura";
 </script>

@@ -139,30 +139,56 @@ export class SpaRouter {
             target.classList.add('active');
         });
 
+        // Alternar el menú lateral en función de la ruta
+        const mainMenu = document.getElementById('sidebar-menu-main');
+        const settingsMenu = document.getElementById('sidebar-menu-settings');
+        const adminMenu = document.getElementById('sidebar-menu-admin');
+        
+        if (mainMenu && settingsMenu) {
+            if (normalizedPath.includes('/admin') && adminMenu) {
+                mainMenu.classList.remove('active');
+                mainMenu.classList.add('disabled');
+                
+                settingsMenu.classList.remove('active');
+                settingsMenu.classList.add('disabled');
+                
+                adminMenu.classList.remove('disabled');
+                adminMenu.classList.add('active');
+            } else if (normalizedPath.includes('/settings')) {
+                mainMenu.classList.remove('active');
+                mainMenu.classList.add('disabled');
+                
+                if (adminMenu) {
+                    adminMenu.classList.remove('active');
+                    adminMenu.classList.add('disabled');
+                }
+                
+                settingsMenu.classList.remove('disabled');
+                settingsMenu.classList.add('active');
+            } else {
+                settingsMenu.classList.remove('active');
+                settingsMenu.classList.add('disabled');
+                
+                if (adminMenu) {
+                    adminMenu.classList.remove('active');
+                    adminMenu.classList.add('disabled');
+                }
+                
+                mainMenu.classList.remove('disabled');
+                mainMenu.classList.add('active');
+            }
+        }
+
+        // Dropdowns especiales: Mantiene iluminado el link del menú desplegable
         if (normalizedPath.includes('/settings')) {
             const dropdownSettingsItem = document.querySelector('.component-module--dropdown [data-nav^="/ProjectRosaura/settings"]');
             if (dropdownSettingsItem) {
                 dropdownSettingsItem.classList.add('active');
             }
-        }
-
-        const mainMenu = document.getElementById('sidebar-menu-main');
-        const settingsMenu = document.getElementById('sidebar-menu-settings');
-        
-        if (mainMenu && settingsMenu) {
-            // AQUI USAMOS CLASES EN LUGAR DE ESTILOS INLINE
-            if (normalizedPath.includes('/settings')) {
-                mainMenu.classList.remove('active');
-                mainMenu.classList.add('disabled');
-                
-                settingsMenu.classList.remove('disabled');
-                settingsMenu.classList.add('active');
-            } else {
-                mainMenu.classList.remove('disabled');
-                mainMenu.classList.add('active');
-                
-                settingsMenu.classList.remove('active');
-                settingsMenu.classList.add('disabled');
+        } else if (normalizedPath.includes('/admin')) {
+            const dropdownAdminItem = document.querySelector('.component-module--dropdown [data-nav^="/ProjectRosaura/admin"]');
+            if (dropdownAdminItem) {
+                dropdownAdminItem.classList.add('active');
             }
         }
     }

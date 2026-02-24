@@ -15,7 +15,7 @@ $settingsLink = $isLoggedIn ? '/ProjectRosaura/settings/your-profile' : '/Projec
         <div class="component-menu-list component-menu-list--scrollable">
             
             <?php if ($isLoggedIn && $isAdmin): ?>
-            <div class="component-menu-link component-menu-link--bordered nav-item" data-nav="/ProjectRosaura/admin">
+            <div class="component-menu-link component-menu-link--bordered nav-item" data-nav="/ProjectRosaura/admin/dashboard">
                 <div class="component-menu-link-icon">
                     <span class="material-symbols-rounded">admin_panel_settings</span>
                 </div>

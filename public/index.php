@@ -24,7 +24,6 @@ $authService = $container->get(AuthServices::class);
 $prefsManager = $container->get(UserPrefsManagerInterface::class);
 
 // Manejo de Seguridad de Dispositivos y AutoLogin
-// Ahora verificamos mediante el SessionManager que AuthServices utiliza internamente
 if (isset($_SESSION['user_id'])) {
     if (!$authService->isCurrentDeviceValid()) {
         $authService->logout();
@@ -47,6 +46,14 @@ $routeData = $router->resolve();
 $currentView = $routeData['view'];
 
 $isLoggedIn = isset($_SESSION['user_id']);
+$userRole = $_SESSION['user_role'] ?? 'user';
+
+// --- VALIDACIÓN DE ACCESO AL PANEL DE ADMINISTRACIÓN ---
+if (strpos($currentView, 'admin/') === 0) {
+    if (!$isLoggedIn || ($userRole !== 'founder' && $userRole !== 'administrator')) {
+        $currentView = 'system/404.php';
+    }
+}
 
 // Sincronizar preferencias si faltan en la sesión
 if ($isLoggedIn && !isset($_SESSION['user_prefs'])) {
@@ -78,7 +85,13 @@ $protectedSettings = [
 ];
 
 $redirectUrl = null;
-if ($currentView === 'settings/index.php') {
+$requestUriPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+
+// CORRECCIÓN: Si entra a /admin limpio, pero tiene acceso, lo redirigimos a /admin/dashboard
+if ($currentView !== 'system/404.php' && ($requestUriPath === '/ProjectRosaura/admin' || $requestUriPath === '/ProjectRosaura/admin/')) {
+    $currentView = 'admin/dashboard.php';
+    $redirectUrl = '/ProjectRosaura/admin/dashboard';
+} elseif ($currentView === 'settings/index.php') {
     $currentView = $isLoggedIn ? 'settings/your-profile.php' : 'settings/guest.php';
     $redirectUrl = $isLoggedIn ? '/ProjectRosaura/settings/your-profile' : '/ProjectRosaura/settings/guest';
 } elseif (in_array($currentView, $protectedSettings) && !$isLoggedIn) {
