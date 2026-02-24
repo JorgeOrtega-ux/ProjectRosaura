@@ -57,6 +57,12 @@ export class ProfileController {
 
             const btnCopyRecovery = e.target.closest('[data-action="copyRecoveryCodes"]');
             if (btnCopyRecovery) this.copyRecoveryCodes(btnCopyRecovery);
+            
+            const btnRegenerate2FA = e.target.closest('[data-action="submitRegenerateRecoveryCodes"]');
+            if (btnRegenerate2FA) this.regenerateRecoveryCodes(btnRegenerate2FA);
+
+            const btnCopyNewRecovery = e.target.closest('[data-action="copyNewRecoveryCodes"]');
+            if (btnCopyNewRecovery) this.copyNewRecoveryCodes(btnCopyNewRecovery);
 
             const btnFinish2FA = e.target.closest('[data-action="finish2FA"]');
             if (btnFinish2FA) {
@@ -356,6 +362,54 @@ export class ProfileController {
     copyRecoveryCodes(btn) {
         if (!this.currentRecoveryCodes) return;
         navigator.clipboard.writeText(this.currentRecoveryCodes).then(() => {
+            const originalText = btn.textContent;
+            btn.textContent = 'Copiado!';
+            setTimeout(() => btn.textContent = originalText, 2000);
+        });
+    }
+
+    async regenerateRecoveryCodes(btn) {
+        const input = document.getElementById('2fa_regenerate_password');
+        if (!input) return;
+        const pass = input.value;
+        if (!pass) {
+            this.showMessage('Debes ingresar tu contraseña.', 'error');
+            return;
+        }
+
+        this.setButtonLoading(btn);
+        const result = await this.api.post(ApiRoutes.Settings.RegenerateRecoveryCodes, { password: pass });
+        this.restoreButton(btn);
+
+        if (result.success) {
+            this.showMessage(result.message, 'success');
+            
+            const wrapper = document.getElementById('2fa-new-recovery-codes-wrapper');
+            wrapper.style.display = 'block';
+            
+            const codeList = document.getElementById('2fa-new-recovery-codes-list');
+            codeList.innerHTML = '';
+            result.recovery_codes.forEach(c => {
+                const span = document.createElement('span');
+                span.style.padding = '8px 12px';
+                span.style.background = '#f5f5fa';
+                span.style.borderRadius = '4px';
+                span.style.fontFamily = 'monospace';
+                span.style.letterSpacing = '1px';
+                span.textContent = c;
+                codeList.appendChild(span);
+            });
+            
+            this.newRecoveryCodes = result.recovery_codes.join('\n');
+            input.value = ''; // limpiar la contraseña después de generar
+        } else {
+            this.showMessage(result.message, 'error');
+        }
+    }
+
+    copyNewRecoveryCodes(btn) {
+        if (!this.newRecoveryCodes) return;
+        navigator.clipboard.writeText(this.newRecoveryCodes).then(() => {
             const originalText = btn.textContent;
             btn.textContent = 'Copiado!';
             setTimeout(() => btn.textContent = originalText, 2000);

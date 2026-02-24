@@ -65,4 +65,8 @@ class SettingsController
     {
         return $this->settingsServices->disable2fa($input);
     }
+    public function regenerate_recovery_codes($input)
+    {
+        return $this->settingsServices->regenerateRecoveryCodes($input);
+    }
 }

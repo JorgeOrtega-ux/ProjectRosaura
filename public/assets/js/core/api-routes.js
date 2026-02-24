@@ -24,6 +24,7 @@ export const ApiRoutes = {
         // NUEVAS 2FA
         Generate2FA: 'settings.2fa_generate',
         Enable2FA: 'settings.2fa_enable',
-        Disable2FA: 'settings.2fa_disable'
+        Disable2FA: 'settings.2fa_disable',
+        RegenerateRecoveryCodes: 'settings.2fa_regenerate_recovery'
     }
 };

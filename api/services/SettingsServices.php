@@ -353,6 +353,39 @@ class SettingsServices {
         return ['success' => false, 'message' => 'Contraseña incorrecta.'];
     }
 
+    public function regenerateRecoveryCodes($data) {
+        if (!isset($_SESSION['user_id'])) return ['success' => false, 'message' => 'Sesión no válida.'];
+        if (empty($_SESSION['user_2fa'])) return ['success' => false, 'message' => 'El 2FA no está activado.'];
+
+        $password = trim($data['password'] ?? '');
+        if (empty($password)) return ['success' => false, 'message' => 'Se requiere la contraseña actual para confirmar.'];
+
+        $stmt = $this->pdo->prepare("SELECT password FROM users WHERE id = ?");
+        $stmt->execute([$_SESSION['user_id']]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($user && password_verify($password, $user['password'])) {
+            $codes = [];
+            for ($i = 0; $i < 10; $i++) {
+                $codes[] = substr(bin2hex(random_bytes(4)), 0, 8);
+            }
+            $codesJson = json_encode($codes);
+
+            $update = $this->pdo->prepare("UPDATE users SET two_factor_recovery_codes = ? WHERE id = ?");
+            if ($update->execute([$codesJson, $_SESSION['user_id']])) {
+                $this->logProfileChange($_SESSION['user_id'], '2fa', 'recovery_regenerated', 'recovery_regenerated');
+                return [
+                    'success' => true, 
+                    'message' => 'Nuevos códigos de recuperación generados con éxito.',
+                    'recovery_codes' => $codes
+                ];
+            }
+            return ['success' => false, 'message' => 'Error al actualizar base de datos.'];
+        }
+        
+        return ['success' => false, 'message' => 'Contraseña incorrecta.'];
+    }
+
     private function canChangeProfileData($userId, $changeType, $maxAttempts, $days) {
         $days = (int)$days; 
         $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM profile_changes_log WHERE user_id = ? AND change_type = ? AND created_at >= DATE_SUB(NOW(), INTERVAL $days DAY)");

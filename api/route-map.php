@@ -30,6 +30,7 @@ return [
     // --- NUEVAS RUTAS 2FA ---
     'settings.2fa_generate' => ['controller' => 'App\Api\Controllers\SettingsController', 'action' => 'generate_2fa'],
     'settings.2fa_enable'   => ['controller' => 'App\Api\Controllers\SettingsController', 'action' => 'enable_2fa'],
-    'settings.2fa_disable'  => ['controller' => 'App\Api\Controllers\SettingsController', 'action' => 'disable_2fa']
+    'settings.2fa_disable'  => ['controller' => 'App\Api\Controllers\SettingsController', 'action' => 'disable_2fa'],
+    'settings.2fa_regenerate_recovery' => ['controller' => 'App\Api\Controllers\SettingsController', 'action' => 'regenerate_recovery_codes']
 ];
 ?>
