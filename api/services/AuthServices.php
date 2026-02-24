@@ -8,6 +8,7 @@ use App\Core\Mailer;
 use App\Core\GoogleAuthenticator;
 use App\Core\Interfaces\RateLimiterInterface;
 use App\Core\Interfaces\UserPrefsManagerInterface;
+use App\Core\Logger;
 use PDO;
 
 class AuthServices {
@@ -80,6 +81,7 @@ class AuthServices {
 
                 if ($user) {
                     if ($user['user_status'] !== 'active') {
+                        Logger::security("Intento de autologin en cuenta inactiva (Estado: {$user['user_status']})", Logger::LEVEL_WARNING, ['user_id' => $user['id'], 'ip' => Utils::getIpAddress()]);
                         $stmtDelAll = $this->pdo->prepare("DELETE FROM auth_tokens WHERE user_id = ?");
                         $stmtDelAll->execute([$user['id']]);
                         $this->clearRememberToken();
@@ -102,9 +104,12 @@ class AuthServices {
                     $stmtDel = $this->pdo->prepare("DELETE FROM auth_tokens WHERE id = ?");
                     $stmtDel->execute([$token['id']]);
                     $this->createRememberToken($user['id']);
+                    
+                    Logger::security("Autologin exitoso", Logger::LEVEL_INFO, ['user_id' => $user['id'], 'ip' => Utils::getIpAddress()]);
                     return true;
                 }
             } else {
+                Logger::security("Manipulación de cookie de autologin detectada (Validador incorrecto)", Logger::LEVEL_WARNING, ['user_id' => $token['user_id'], 'ip' => Utils::getIpAddress()]);
                 $stmtDelAll = $this->pdo->prepare("DELETE FROM auth_tokens WHERE user_id = ?");
                 $stmtDelAll->execute([$token['user_id']]);
             }
@@ -119,7 +124,10 @@ class AuthServices {
         $eVal = Utils::validateEmailFormat($email); if (!$eVal['valid']) return ['success' => false, 'message' => $eVal['message']];
         $pVal = Utils::validatePasswordFormat($password); if (!$pVal['valid']) return ['success' => false, 'message' => $pVal['message']];
         $stmt = $this->pdo->prepare("SELECT id FROM users WHERE email = ?"); $stmt->execute([$email]);
-        if ($stmt->rowCount() > 0) return ['success' => false, 'message' => 'El correo electrónico ya está registrado.'];
+        if ($stmt->rowCount() > 0) {
+            Logger::security("Intento de registro con correo ya existente: {$email}", Logger::LEVEL_INFO, ['ip' => Utils::getIpAddress()]);
+            return ['success' => false, 'message' => 'El correo electrónico ya está registrado.'];
+        }
         $_SESSION['reg_email'] = $email; $_SESSION['reg_password'] = $password;
         return ['success' => true, 'message' => 'Paso 1 completado.'];
     }
@@ -141,8 +149,14 @@ class AuthServices {
         if ($stmt->execute([$identifier, $code, $payload, $expiresAt])) {
             $_SESSION['reg_username'] = $username;
             $mailer = new Mailer();
-            if ($mailer->sendVerificationCode($identifier, $username, $code)) return ['success' => true, 'message' => 'Paso 2 completado. Código enviado.'];
-            else return ['success' => false, 'message' => 'Error de red al enviar el correo. Intenta de nuevo.'];
+            if ($mailer->sendVerificationCode($identifier, $username, $code)) {
+                Logger::security("Código de verificación de registro enviado a: {$identifier}", Logger::LEVEL_INFO, ['ip' => Utils::getIpAddress()]);
+                return ['success' => true, 'message' => 'Paso 2 completado. Código enviado.'];
+            }
+            else {
+                Logger::security("Fallo interno al enviar correo de verificación a: {$identifier}", Logger::LEVEL_ERROR, ['ip' => Utils::getIpAddress()]);
+                return ['success' => false, 'message' => 'Error de red al enviar el correo. Intenta de nuevo.'];
+            }
         }
         return ['success' => false, 'message' => 'Error al guardar el código.'];
     }
@@ -158,7 +172,10 @@ class AuthServices {
         $verification = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$verification) return ['success' => false, 'message' => 'No se encontró un código.'];
-        if ($verification['code'] !== $code) return ['success' => false, 'message' => 'El código es incorrecto.'];
+        if ($verification['code'] !== $code) {
+            Logger::security("Código de verificación incorrecto ingresado para: {$identifier}", Logger::LEVEL_WARNING, ['ip' => Utils::getIpAddress()]);
+            return ['success' => false, 'message' => 'El código es incorrecto.'];
+        }
         if (strtotime($verification['expires_at']) < time()) return ['success' => false, 'message' => 'El código ha expirado.'];
 
         $payload = json_decode($verification['payload'], true);
@@ -187,8 +204,10 @@ class AuthServices {
             unset($_SESSION['reg_email'], $_SESSION['reg_password'], $_SESSION['reg_username']);
             $delStmt = $this->pdo->prepare("DELETE FROM verification_codes WHERE id = ?"); $delStmt->execute([$verification['id']]);
 
+            Logger::security("Nueva cuenta registrada exitosamente", Logger::LEVEL_INFO, ['user_id' => $userId, 'email' => $payload['email'], 'ip' => Utils::getIpAddress()]);
             return ['success' => true, 'message' => 'Cuenta creada con éxito.'];
         }
+        Logger::security("Fallo en base de datos al intentar registrar usuario: {$payload['email']}", Logger::LEVEL_ERROR, ['ip' => Utils::getIpAddress()]);
         return ['success' => false, 'message' => 'Error al crear la cuenta.'];
     }
 
@@ -198,17 +217,27 @@ class AuthServices {
 
         // USO DEL RATE LIMITER INYECTADO
         $rateCheck = $this->rateLimiter->check('login', 5, 15);
-        if (!$rateCheck['allowed']) return ['success' => false, 'message' => $rateCheck['message']];
+        if (!$rateCheck['allowed']) {
+            Logger::security("Límite de tasa excedido en login para: {$email}", Logger::LEVEL_WARNING, ['ip' => Utils::getIpAddress()]);
+            return ['success' => false, 'message' => $rateCheck['message']];
+        }
 
         $stmt = $this->pdo->prepare("SELECT * FROM users WHERE email = ?"); $stmt->execute([$email]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($user && password_verify($password, $user['password'])) {
             $this->rateLimiter->clear('login');
-            if ($user['user_status'] === 'deleted') return ['success' => false, 'message' => 'Cuenta eliminada.'];
-            if ($user['user_status'] === 'suspended') return ['success' => false, 'message' => 'Cuenta suspendida.'];
+            if ($user['user_status'] === 'deleted') {
+                Logger::security("Intento de login en cuenta eliminada", Logger::LEVEL_WARNING, ['user_id' => $user['id'], 'ip' => Utils::getIpAddress()]);
+                return ['success' => false, 'message' => 'Cuenta eliminada.'];
+            }
+            if ($user['user_status'] === 'suspended') {
+                Logger::security("Intento de login en cuenta suspendida", Logger::LEVEL_WARNING, ['user_id' => $user['id'], 'ip' => Utils::getIpAddress()]);
+                return ['success' => false, 'message' => 'Cuenta suspendida.'];
+            }
             if (!empty($user['two_factor_enabled'])) {
                 $_SESSION['pending_2fa_user_id'] = $user['id'];
+                Logger::security("Login requiere 2FA", Logger::LEVEL_INFO, ['user_id' => $user['id'], 'ip' => Utils::getIpAddress()]);
                 return ['success' => true, 'requires_2fa' => true, 'message' => 'Se requiere código 2FA.'];
             }
 
@@ -225,9 +254,11 @@ class AuthServices {
             $_SESSION['user_2fa'] = $user['two_factor_enabled'] ?? 0;
 
             $this->createRememberToken($user['id']);
+            Logger::security("Inicio de sesión exitoso", Logger::LEVEL_INFO, ['user_id' => $user['id'], 'ip' => Utils::getIpAddress()]);
             return ['success' => true, 'requires_2fa' => false, 'message' => 'Inicio de sesión exitoso.'];
         }
         $this->rateLimiter->record('login', 5, 15);
+        Logger::security("Credenciales incorrectas en login para: {$email}", Logger::LEVEL_WARNING, ['ip' => Utils::getIpAddress()]);
         return ['success' => false, 'message' => 'Credenciales incorrectas.'];
     }
 
@@ -238,7 +269,10 @@ class AuthServices {
 
         $userId = $_SESSION['pending_2fa_user_id'];
         $rateCheck = $this->rateLimiter->check('login_2fa', 5, 15);
-        if (!$rateCheck['allowed']) return ['success' => false, 'message' => $rateCheck['message']];
+        if (!$rateCheck['allowed']) {
+            Logger::security("Límite de tasa excedido en 2FA", Logger::LEVEL_WARNING, ['user_id' => $userId, 'ip' => Utils::getIpAddress()]);
+            return ['success' => false, 'message' => $rateCheck['message']];
+        }
 
         $stmt = $this->pdo->prepare("SELECT * FROM users WHERE id = ? AND user_status = 'active'");
         $stmt->execute([$userId]);
@@ -246,6 +280,7 @@ class AuthServices {
 
         if (!$user || empty($user['two_factor_enabled'])) {
             $this->rateLimiter->record('login_2fa', 5, 15);
+            Logger::security("Fallo de validación de estado de usuario durante 2FA", Logger::LEVEL_WARNING, ['user_id' => $userId, 'ip' => Utils::getIpAddress()]);
             return ['success' => false, 'message' => 'Error de validación.'];
         }
 
@@ -258,6 +293,7 @@ class AuthServices {
                 $stmtUpdate = $this->pdo->prepare("UPDATE users SET two_factor_recovery_codes = ? WHERE id = ?");
                 $stmtUpdate->execute([json_encode(array_values($codes)), $userId]);
                 $isValid = true;
+                Logger::security("Login exitoso usando código de recuperación 2FA", Logger::LEVEL_INFO, ['user_id' => $userId, 'ip' => Utils::getIpAddress()]);
             }
         } else {
             $ga = new GoogleAuthenticator();
@@ -279,14 +315,22 @@ class AuthServices {
 
             unset($_SESSION['pending_2fa_user_id']);
             $this->createRememberToken($user['id']);
+            
+            if (strlen($code) !== 8) {
+                Logger::security("Inicio de sesión 2FA exitoso", Logger::LEVEL_INFO, ['user_id' => $userId, 'ip' => Utils::getIpAddress()]);
+            }
             return ['success' => true, 'message' => 'Inicio de sesión exitoso.'];
         }
 
         $this->rateLimiter->record('login_2fa', 5, 15);
+        Logger::security("Código 2FA incorrecto", Logger::LEVEL_WARNING, ['user_id' => $userId, 'ip' => Utils::getIpAddress()]);
         return ['success' => false, 'message' => 'El código es incorrecto.'];
     }
 
     public function logout() {
+        if (isset($_SESSION['user_id'])) {
+            Logger::security("Cierre de sesión manual", Logger::LEVEL_INFO, ['user_id' => $_SESSION['user_id'], 'ip' => Utils::getIpAddress()]);
+        }
         $this->clearRememberToken();
         session_unset(); session_destroy();
         return ['success' => true, 'message' => 'Sesión cerrada.'];
@@ -296,13 +340,17 @@ class AuthServices {
         $email = trim($data['email'] ?? '');
         if (empty($email)) return ['success' => false, 'message' => 'El correo es obligatorio.'];
         $rateCheck = $this->rateLimiter->check('forgot_password', 3, 30);
-        if (!$rateCheck['allowed']) return ['success' => false, 'message' => $rateCheck['message']];
+        if (!$rateCheck['allowed']) {
+            Logger::security("Límite de tasa excedido en recuperación de contraseña para: {$email}", Logger::LEVEL_WARNING, ['ip' => Utils::getIpAddress()]);
+            return ['success' => false, 'message' => $rateCheck['message']];
+        }
 
-        $stmt = $this->pdo->prepare("SELECT username, user_status FROM users WHERE email = ?"); $stmt->execute([$email]);
+        $stmt = $this->pdo->prepare("SELECT id, username, user_status FROM users WHERE email = ?"); $stmt->execute([$email]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$user || $user['user_status'] !== 'active') {
             $this->rateLimiter->record('forgot_password', 3, 30);
+            Logger::security("Intento de recuperación de contraseña para cuenta inexistente o inactiva: {$email}", Logger::LEVEL_INFO, ['ip' => Utils::getIpAddress()]);
             return ['success' => false, 'message' => 'Cuenta no existe o está inactiva.'];
         }
 
@@ -319,9 +367,11 @@ class AuthServices {
             $mailer = new Mailer();
             if ($mailer->sendPasswordResetLink($email, $user['username'], $resetLink)) {
                 $this->rateLimiter->record('forgot_password', 3, 30);
+                Logger::security("Enlace de recuperación de contraseña enviado exitosamente", Logger::LEVEL_INFO, ['user_id' => $user['id'], 'ip' => Utils::getIpAddress()]);
                 return ['success' => true, 'message' => 'Se ha enviado un correo con las instrucciones.'];
             }
         }
+        Logger::security("Fallo interno al crear/enviar enlace de recuperación para: {$email}", Logger::LEVEL_ERROR, ['ip' => Utils::getIpAddress()]);
         return ['success' => false, 'message' => 'Error interno al procesar la solicitud.'];
     }
 
@@ -335,15 +385,20 @@ class AuthServices {
         $stmt->execute([$token]);
         $verification = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if (!$verification) return ['success' => false, 'message' => 'El token es inválido o expiró.'];
+        if (!$verification) {
+            Logger::security("Intento de uso de token de recuperación inválido o expirado", Logger::LEVEL_WARNING, ['ip' => Utils::getIpAddress()]);
+            return ['success' => false, 'message' => 'El token es inválido o expiró.'];
+        }
 
         $email = $verification['identifier'];
         $updateStmt = $this->pdo->prepare("UPDATE users SET password = ? WHERE email = ?");
         if ($updateStmt->execute([password_hash($password, PASSWORD_BCRYPT), $email])) {
             $this->pdo->prepare("DELETE FROM auth_tokens WHERE user_id = (SELECT id FROM users WHERE email = ?)")->execute([$email]);
             $this->pdo->prepare("DELETE FROM verification_codes WHERE identifier = ? AND code_type = 'password_reset'")->execute([$email]);
+            Logger::security("Contraseña restablecida correctamente mediante token", Logger::LEVEL_INFO, ['email' => $email, 'ip' => Utils::getIpAddress()]);
             return ['success' => true, 'message' => 'Contraseña actualizada.'];
         }
+        Logger::security("Fallo en base de datos al restablecer contraseña para: {$email}", Logger::LEVEL_ERROR, ['ip' => Utils::getIpAddress()]);
         return ['success' => false, 'message' => 'Error al actualizar.'];
     }
 }

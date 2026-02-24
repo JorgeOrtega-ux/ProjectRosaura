@@ -5,6 +5,7 @@ namespace App\Config;
 
 use PDO;
 use PDOException;
+use App\Core\Logger;
 
 class Database {
     private $pdo;
@@ -23,7 +24,9 @@ class Database {
             $this->pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $user, $pass);
             $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         } catch (PDOException $e) {
-            die(json_encode(['success' => false, 'message' => 'Error de conexión a la base de datos.']));
+            // El error real se queda en el servidor, no en la respuesta HTTP
+            Logger::database("Error de conexión a la base de datos: " . $e->getMessage(), Logger::LEVEL_ERROR);
+            die(json_encode(['success' => false, 'message' => 'Ocurrió un error interno en el servidor.']));
         }
     }
 

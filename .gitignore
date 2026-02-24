@@ -12,9 +12,13 @@ desktop.ini
 vendor/
 node_modules/
 
-# Archivos de logs
+# Archivos de logs generales
 *.log
 error_log
+
+# === IGNORAR LA CARPETA DEL NUEVO SISTEMA DE LOGS ===
+logs/
+!logs/.gitkeep
 
 # Ignorar archivos generados por editores / IDEs
 .idea/
