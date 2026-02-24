@@ -3,9 +3,10 @@
 
 namespace App\Core;
 
+use App\Core\Interfaces\UserPrefsManagerInterface;
 use PDO;
 
-class UserPrefsManager {
+class UserPrefsManager implements UserPrefsManagerInterface {
     private $pdo;
 
     public function __construct(PDO $pdo) {

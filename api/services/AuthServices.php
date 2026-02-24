@@ -6,8 +6,8 @@ namespace App\Api\Services;
 use App\Core\Utils;
 use App\Core\Mailer; 
 use App\Core\GoogleAuthenticator;
-use App\Core\RateLimiter;
-use App\Core\UserPrefsManager;
+use App\Core\Interfaces\RateLimiterInterface;
+use App\Core\Interfaces\UserPrefsManagerInterface;
 use PDO;
 
 class AuthServices {
@@ -15,8 +15,8 @@ class AuthServices {
     private $rateLimiter;
     private $prefsManager;
 
-    // Recibimos las herramientas vía Constructor
-    public function __construct(PDO $pdo, RateLimiter $rateLimiter, UserPrefsManager $prefsManager) {
+    // Recibimos las herramientas vía Constructor usando Interfaces
+    public function __construct(PDO $pdo, RateLimiterInterface $rateLimiter, UserPrefsManagerInterface $prefsManager) {
         $this->pdo = $pdo;
         $this->rateLimiter = $rateLimiter;
         $this->prefsManager = $prefsManager;

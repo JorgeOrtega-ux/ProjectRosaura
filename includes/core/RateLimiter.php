@@ -3,9 +3,10 @@
 
 namespace App\Core;
 
+use App\Core\Interfaces\RateLimiterInterface;
 use PDO;
 
-class RateLimiter {
+class RateLimiter implements RateLimiterInterface {
     private $pdo;
 
     public function __construct(PDO $pdo) {

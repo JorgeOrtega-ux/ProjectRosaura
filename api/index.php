@@ -14,8 +14,9 @@ use App\Config\Database;
 use App\Core\RateLimiter;
 use App\Core\UserPrefsManager;
 use App\Api\Services\AuthServices;
+use App\Api\Services\SettingsServices;
 
-// Instanciar dependencias compartidas
+// Instanciar dependencias compartidas (ÚNICA CONEXIÓN A BD POR REQUEST)
 $db = new Database();
 $pdo = $db->getConnection();
 $rateLimiter = new RateLimiter($pdo);
@@ -68,8 +69,16 @@ if (array_key_exists($route, $routes)) {
     $action = $routeConfig['action'];
 
     if (class_exists($controllerName)) {
-        // Al instanciar el controlador, el controlador mismo arma sus propios servicios
-        $controller = new $controllerName();
+        // COMPOSITION ROOT: Ensamblaje e Inyección de Dependencias
+        if ($controllerName === 'App\Api\Controllers\AuthController') {
+            $controller = new $controllerName($authService);
+        } elseif ($controllerName === 'App\Api\Controllers\SettingsController') {
+            $settingsService = new SettingsServices($pdo, $rateLimiter);
+            $controller = new $controllerName($settingsService);
+        } else {
+            // Fallback por si hay Controladores sin inyección requerida
+            $controller = new $controllerName();
+        }
         
         if (method_exists($controller, $action)) {
             echo json_encode($controller->$action($input));

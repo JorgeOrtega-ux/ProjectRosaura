@@ -4,22 +4,14 @@
 namespace App\Api\Controllers;
 
 use App\Api\Services\AuthServices;
-use App\Config\Database;
-use App\Core\RateLimiter;
-use App\Core\UserPrefsManager;
 
 class AuthController {
     
     private $authServices;
 
-    public function __construct() {
-        $db = new Database();
-        $pdo = $db->getConnection();
-        $rateLimiter = new RateLimiter($pdo);
-        $prefsManager = new UserPrefsManager($pdo);
-        
-        // Inyección de Dependencias
-        $this->authServices = new AuthServices($pdo, $rateLimiter, $prefsManager);
+    // Inyección de Dependencias Limpia (SOLID)
+    public function __construct(AuthServices $authServices) {
+        $this->authServices = $authServices;
     }
 
     public function register_step1($input) { return $this->authServices->registerStep1($input); }

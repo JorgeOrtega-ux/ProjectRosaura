@@ -4,20 +4,14 @@
 namespace App\Api\Controllers;
 
 use App\Api\Services\SettingsServices;
-use App\Config\Database;
-use App\Core\RateLimiter;
 
 class SettingsController {
     
     private $settingsServices;
 
-    public function __construct() {
-        $db = new Database();
-        $pdo = $db->getConnection();
-        $rateLimiter = new RateLimiter($pdo);
-        
-        // Inyección de Dependencias
-        $this->settingsServices = new SettingsServices($pdo, $rateLimiter);
+    // Inyección de Dependencias Limpia (SOLID)
+    public function __construct(SettingsServices $settingsServices) {
+        $this->settingsServices = $settingsServices;
     }
 
     public function update_avatar($input) { return $this->settingsServices->updateAvatar($input); }

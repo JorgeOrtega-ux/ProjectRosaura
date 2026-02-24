@@ -6,15 +6,15 @@ namespace App\Api\Services;
 use App\Core\Utils;
 use App\Core\Mailer;
 use App\Core\GoogleAuthenticator;
-use App\Core\RateLimiter;
+use App\Core\Interfaces\RateLimiterInterface;
 use PDO;
 
 class SettingsServices {
     private $pdo;
     private $rateLimiter;
 
-    // Recibimos herramientas vía Constructor
-    public function __construct(PDO $pdo, RateLimiter $rateLimiter) {
+    // Recibimos herramientas vía Constructor usando Interfaces
+    public function __construct(PDO $pdo, RateLimiterInterface $rateLimiter) {
         $this->pdo = $pdo;
         $this->rateLimiter = $rateLimiter;
     }
