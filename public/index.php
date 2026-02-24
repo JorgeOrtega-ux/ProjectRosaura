@@ -4,7 +4,7 @@ session_start();
 
 header("X-Frame-Options: SAMEORIGIN");
 header("X-Content-Type-Options: nosniff");
-header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://api.qrserver.com; connect-src 'self'; frame-ancestors 'none';");
+header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://api.qrserver.com; connect-src 'self'; frame-ancestors 'none';");
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
@@ -159,6 +159,8 @@ if ($isSpaRequest) {
     </div>
     <div id="toast-container" class="toast-container"></div>
     <div id="dialog-container"></div>
+    
+    <script src="https://unpkg.com/@popperjs/core@2"></script>
     <script type="module" src="assets/js/app-init.js"></script>
 </body>
 </html>

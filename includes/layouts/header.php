@@ -31,7 +31,7 @@ $userPic = $_SESSION['user_pic'] ?? '';
 <div class="header">
     <div class="header-left">
         <div class="component-actions">
-            <button class="component-button component-button--icon component-button--h40" data-action="toggleModuleSurface">
+            <button class="component-button component-button--icon component-button--h40" data-action="toggleModuleSurface" data-tooltip="Menú principal" data-position="bottom">
                 <span class="material-symbols-rounded">menu</span>
             </button>
         </div>
@@ -49,7 +49,7 @@ $userPic = $_SESSION['user_pic'] ?? '';
     <div class="header-right">
         <div class="component-actions">
             
-            <button class="component-button component-button--icon component-button--h40 mobile-search-btn" data-action="toggleMobileSearch">
+            <button class="component-button component-button--icon component-button--h40 mobile-search-btn" data-action="toggleMobileSearch" data-tooltip="Buscar" data-position="bottom">
                 <span class="material-symbols-rounded">search</span>
             </button>
 
@@ -57,11 +57,11 @@ $userPic = $_SESSION['user_pic'] ?? '';
                 <button class="component-button component-button--dark component-button--h40" data-nav="/ProjectRosaura/login">
                     <?php echo __('btn_login'); ?>
                 </button>
-                <button class="component-button component-button--icon component-button--h40" data-action="toggleModuleMainOptions">
+                <button class="component-button component-button--icon component-button--h40" data-action="toggleModuleMainOptions" data-tooltip="Opciones" data-position="bottom">
                     <span class="material-symbols-rounded">more_vert</span>
                 </button>
             <?php else: ?>
-                <button class="component-button component-button--profile role-<?php echo htmlspecialchars($userRole); ?>" data-action="toggleModuleMainOptions">
+                <button class="component-button component-button--profile role-<?php echo htmlspecialchars($userRole); ?>" data-action="toggleModuleMainOptions" data-tooltip="Tu cuenta" data-position="bottom">
                     <img src="/ProjectRosaura/<?php echo htmlspecialchars($userPic); ?>" alt="<?php echo __('alt_profile'); ?>">
                 </button>
             <?php endif; ?>

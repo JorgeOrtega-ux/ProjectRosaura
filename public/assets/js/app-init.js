@@ -4,6 +4,7 @@ import { SpaRouter } from './core/spa-router.js';
 import { AuthController } from './auth-controller.js';
 import { ProfileController } from './profile-controller.js';
 import { DialogSystem } from './core/dialog-system.js';
+import { TooltipSystem } from './core/tooltip-system.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Instanciamos lógica UI base
@@ -25,5 +26,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // 5. Instanciamos el Router SPA y lo guardamos en window para uso global
     window.spaRouter = new SpaRouter({
         outlet: '#app-router-outlet'
+    });
+
+    // 6. Instanciamos e inicializamos el Sistema de Tooltips
+    window.tooltipSystem = new TooltipSystem();
+    window.tooltipSystem.init();
+
+    // Re-inicializamos los tooltips por si el router SPA trae nuevas vistas
+    window.addEventListener('viewLoaded', () => {
+        window.tooltipSystem.init();
     });
 });

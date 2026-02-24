@@ -1151,3 +1151,71 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
 .component-card--grouped.disabled {
     display: none;
 }
+
+/* ========================================= */
+/* --- TOOLTIPS (Con soporte Popper.js)  --- */
+/* ========================================= */
+[data-tooltip] {
+    cursor: pointer;
+}
+
+/* El cuerpo del Tooltip */
+.aurora-tooltip {
+    z-index: 9999;
+    background-color: #111111; 
+    color: #ffffff; 
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: inherit;
+    border-radius: 6px;
+    white-space: nowrap;
+    pointer-events: none;
+    
+    /* Animaciones suaves compatibles con Popper.js */
+    opacity: 0;
+    visibility: hidden;
+    transform: scale(0.96); /* Un poco de escala en vez de translate para no sobreescribir Popper */
+    transition: opacity 0.2s ease, visibility 0.2s, transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Flecha nativa mediante Popper */
+.aurora-tooltip-arrow,
+.aurora-tooltip-arrow::before {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: inherit;
+}
+
+.aurora-tooltip-arrow {
+    visibility: hidden;
+}
+
+.aurora-tooltip-arrow::before {
+    visibility: visible;
+    content: '';
+    transform: rotate(45deg);
+}
+
+/* Direcciones automáticas mediante atributos dinámicos de Popper.js */
+.aurora-tooltip[data-popper-placement^='top'] > .aurora-tooltip-arrow {
+    bottom: -4px;
+}
+.aurora-tooltip[data-popper-placement^='bottom'] > .aurora-tooltip-arrow {
+    top: -4px;
+}
+.aurora-tooltip[data-popper-placement^='left'] > .aurora-tooltip-arrow {
+    right: -4px;
+}
+.aurora-tooltip[data-popper-placement^='right'] > .aurora-tooltip-arrow {
+    left: -4px;
+}
+
+/* ESTADO ACTIVO del Tooltip (Controlado por JavaScript) */
+.aurora-tooltip.show {
+    opacity: 1;
+    visibility: visible;
+    transform: scale(1);
+}
