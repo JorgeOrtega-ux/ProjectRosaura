@@ -11,19 +11,17 @@ require_once __DIR__ . '/../vendor/autoload.php';
 use App\Core\Loader;
 use App\Core\Router;
 use App\Core\Utils; 
-use App\Config\Database;
 use App\Core\Translator; 
-use App\Core\RateLimiter;
-use App\Core\UserPrefsManager;
-use App\Api\Services\AuthServices;
+use App\Core\Container;
 
-// Inyección de Dependencias
-$db = new Database();
-$pdo = $db->getConnection();
-$rateLimiter = new RateLimiter($pdo);
-$prefsManager = new UserPrefsManager($pdo);
-$authService = new AuthServices($pdo, $rateLimiter, $prefsManager);
+// 1. Instanciar el Contenedor
+$container = new Container();
 
+// 2. Obtener servicios del contenedor
+$authService = $container->getAuthServices();
+$prefsManager = $container->getUserPrefsManager();
+
+// Manejo de Seguridad de Dispositivos y AutoLogin
 if (isset($_SESSION['user_id'])) {
     if (!$authService->isCurrentDeviceValid()) {
         $authService->logout();
@@ -34,9 +32,11 @@ if (isset($_SESSION['user_id'])) {
     $authService->autoLogin(); 
 }
 
+// Generar Token CSRF para la sesión
 $csrfToken = Utils::generateCSRFToken();
-$routes = require __DIR__ . '/../includes/config/routes.php';
 
+// Configuración de Rutas y Navegación
+$routes = require __DIR__ . '/../includes/config/routes.php';
 $loader = new Loader();
 $router = new Router($routes);
 
@@ -45,11 +45,12 @@ $currentView = $routeData['view'];
 
 $isLoggedIn = isset($_SESSION['user_id']);
 
-// Autosaneamiento usando la herramienta inyectada
+// Sincronizar preferencias si faltan en la sesión
 if ($isLoggedIn && !isset($_SESSION['user_prefs'])) {
     $_SESSION['user_prefs'] = $prefsManager->ensureDefaultPreferences($_SESSION['user_id']);
 }
 
+// Inicialización de Idioma
 $lang = 'es-419';
 if ($isLoggedIn && !empty($_SESSION['user_prefs']['language'])) {
     $lang = $_SESSION['user_prefs']['language'];
@@ -60,8 +61,11 @@ if ($isLoggedIn && !empty($_SESSION['user_prefs']['language'])) {
 }
 
 Translator::init($lang);
-if (!function_exists('__')) { function __($key) { return Translator::get($key); } }
+if (!function_exists('__')) { 
+    function __($key) { return Translator::get($key); } 
+}
 
+// Lógica de Redirección SPA / Guest
 $isSpaRequest = !empty($_SERVER['HTTP_X_SPA_REQUEST']);
 $isAuthRoute = (strpos($currentView, 'auth/') === 0);
 
@@ -87,7 +91,10 @@ if ($redirectUrl) {
     else { header("Location: " . $redirectUrl); exit; }
 }
 
-if ($isSpaRequest) { $loader->load($currentView); exit; }
+if ($isSpaRequest) { 
+    $loader->load($currentView); 
+    exit; 
+}
 ?>
 <!DOCTYPE html>
 <html lang="es">

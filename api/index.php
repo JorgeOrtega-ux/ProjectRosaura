@@ -3,6 +3,7 @@
 session_start();
 header('Content-Type: application/json');
 
+// Cabeceras de seguridad
 header("X-Frame-Options: DENY");
 header("X-Content-Type-Options: nosniff");
 header("Content-Security-Policy: default-src 'none'; frame-ancestors 'none';");
@@ -10,21 +11,15 @@ header("Content-Security-Policy: default-src 'none'; frame-ancestors 'none';");
 require_once __DIR__ . '/../vendor/autoload.php';
 
 use App\Core\Utils;
-use App\Config\Database;
-use App\Core\RateLimiter;
-use App\Core\UserPrefsManager;
-use App\Api\Services\AuthServices;
-use App\Api\Services\SettingsServices;
+use App\Core\Container;
 
-// Instanciar dependencias compartidas (ÚNICA CONEXIÓN A BD POR REQUEST)
-$db = new Database();
-$pdo = $db->getConnection();
-$rateLimiter = new RateLimiter($pdo);
-$prefsManager = new UserPrefsManager($pdo);
+// 1. Instanciar el Contenedor de Dependencias
+$container = new Container();
 
-// Inyección al AuthServices global para validar sesiones
-$authService = new AuthServices($pdo, $rateLimiter, $prefsManager);
+// 2. Obtener servicios necesarios del contenedor
+$authService = $container->getAuthServices();
 
+// Manejo de Sesión y AutoLogin
 if (isset($_SESSION['user_id'])) {
     if (!$authService->isCurrentDeviceValid()) {
         $authService->logout();
@@ -36,6 +31,7 @@ if (isset($_SESSION['user_id'])) {
     $authService->autoLogin(); 
 }
 
+// Validación de Token CSRF
 $requestToken = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
 if (!Utils::validateCSRFToken($requestToken)) {
     http_response_code(403);
@@ -43,6 +39,7 @@ if (!Utils::validateCSRFToken($requestToken)) {
     exit;
 }
 
+// Procesamiento de Input
 $contentType = $_SERVER["CONTENT_TYPE"] ?? '';
 $input = [];
 
@@ -60,6 +57,7 @@ if (empty($route)) {
     exit;
 }
 
+// Cargar el mapa de rutas
 $routes = require __DIR__ . '/route-map.php';
 
 if (array_key_exists($route, $routes)) {
@@ -68,27 +66,20 @@ if (array_key_exists($route, $routes)) {
     $controllerName = $routeConfig['controller'];
     $action = $routeConfig['action'];
 
-    if (class_exists($controllerName)) {
-        // COMPOSITION ROOT: Ensamblaje e Inyección de Dependencias
-        if ($controllerName === 'App\Api\Controllers\AuthController') {
-            $controller = new $controllerName($authService);
-        } elseif ($controllerName === 'App\Api\Controllers\SettingsController') {
-            $settingsService = new SettingsServices($pdo, $rateLimiter);
-            $controller = new $controllerName($settingsService);
-        } else {
-            // Fallback por si hay Controladores sin inyección requerida
-            $controller = new $controllerName();
-        }
+    try {
+        // 3. RESOLUCIÓN VÍA CONTENEDOR (Composition Root real)
+        // El contenedor ya sabe cómo instanciar AuthController y SettingsController con sus servicios
+        $controller = $container->get($controllerName);
         
         if (method_exists($controller, $action)) {
             echo json_encode($controller->$action($input));
         } else {
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Acción no encontrada.']);
+            echo json_encode(['success' => false, 'message' => 'Acción no encontrada en el controlador.']);
         }
-    } else {
+    } catch (\Exception $e) {
         http_response_code(500);
-        echo json_encode(['success' => false, 'message' => 'Controlador no encontrado.']);
+        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
     }
 } else {
     http_response_code(404);
