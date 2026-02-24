@@ -18,24 +18,14 @@ class AuthServices {
     }
 
     public function isCurrentDeviceValid() {
-        // Si no hay sesión, no hay nada que validar aquí
-        if (!isset($_SESSION['user_id'])) {
-            return false;
-        }
-
-        // Si la cookie del token no existe, la sesión es inválida
-        if (!isset($_COOKIE['remember_token'])) {
-            return false;
-        }
+        if (!isset($_SESSION['user_id'])) return false;
+        if (!isset($_COOKIE['remember_token'])) return false;
 
         $parts = explode(':', $_COOKIE['remember_token']);
-        if (count($parts) !== 2) {
-            return false;
-        }
+        if (count($parts) !== 2) return false;
 
         $selector = $parts[0];
         
-        // Verificamos si este dispositivo exacto sigue en la base de datos Y si el usuario sigue "activo"
         $stmt = $this->pdo->prepare("SELECT t.id FROM auth_tokens t JOIN users u ON t.user_id = u.id WHERE t.selector = ? AND t.user_id = ? AND t.expires_at > NOW() AND u.user_status = 'active'");
         $stmt->execute([$selector, $_SESSION['user_id']]);
 
@@ -48,9 +38,8 @@ class AuthServices {
         $hashedValidator = hash('sha256', $validator);
         $expiresAt = date('Y-m-d H:i:s', time() + (86400 * 30));
 
-        // Obtenemos info del dispositivo
         $userAgent = substr($_SERVER['HTTP_USER_AGENT'] ?? 'Desconocido', 0, 255);
-        $ipAddress = substr($this->getIpAddress(), 0, 45);
+        $ipAddress = substr(Utils::getIpAddress(), 0, 45);
 
         $stmt = $this->pdo->prepare("INSERT INTO auth_tokens (user_id, selector, hashed_validator, expires_at, user_agent, ip_address) VALUES (?, ?, ?, ?, ?, ?)");
         $stmt->execute([$userId, $selector, $hashedValidator, $expiresAt, $userAgent, $ipAddress]);
@@ -87,9 +76,7 @@ class AuthServices {
     }
 
     public function autoLogin() {
-        if (isset($_SESSION['user_id']) || empty($_COOKIE['remember_token'])) {
-            return false;
-        }
+        if (isset($_SESSION['user_id']) || empty($_COOKIE['remember_token'])) return false;
 
         $parts = explode(':', $_COOKIE['remember_token']);
         if (count($parts) !== 2) {
@@ -114,7 +101,6 @@ class AuthServices {
                 $user = $stmtUser->fetch(PDO::FETCH_ASSOC);
 
                 if ($user) {
-                    // Validar estado del usuario en el auto-login
                     if ($user['user_status'] !== 'active') {
                         $stmtDelAll = $this->pdo->prepare("DELETE FROM auth_tokens WHERE user_id = ?");
                         $stmtDelAll->execute([$userId]);
@@ -124,20 +110,7 @@ class AuthServices {
 
                     session_regenerate_id(true);
                     
-                    $stmtPref = $this->pdo->prepare("SELECT * FROM user_preferences WHERE user_id = ?");
-                    $stmtPref->execute([$userId]);
-                    $userPrefs = $stmtPref->fetch(PDO::FETCH_ASSOC);
-
-                    if (!$userPrefs) {
-                        $acceptLang = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '';
-                        $assignedLang = Utils::getClosestLanguage($acceptLang);
-                        
-                        $insPref = $this->pdo->prepare("INSERT INTO user_preferences (user_id, language, open_links_new_tab, theme, extended_alerts) VALUES (?, ?, 1, 'system', 0)");
-                        $insPref->execute([$userId, $assignedLang]);
-                        
-                        $stmtPref->execute([$userId]);
-                        $userPrefs = $stmtPref->fetch(PDO::FETCH_ASSOC);
-                    }
+                    $userPrefs = Utils::ensureDefaultPreferences($this->pdo, $userId);
                     
                     $_SESSION['user_id'] = $user['id'];
                     $_SESSION['user_uuid'] = $user['uuid'];
@@ -172,46 +145,11 @@ class AuthServices {
             return ['success' => false, 'message' => 'El correo y la contraseña son obligatorios.'];
         }
 
-        $passLen = strlen($password);
-        if ($passLen < 8 || $passLen > 64) {
-            return ['success' => false, 'message' => 'La contraseña debe tener entre 8 y 64 caracteres.'];
-        }
+        $emailValidation = Utils::validateEmailFormat($email);
+        if (!$emailValidation['valid']) return ['success' => false, 'message' => $emailValidation['message']];
 
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            return ['success' => false, 'message' => 'El formato del correo electrónico no es válido.'];
-        }
-
-        $emailLen = strlen($email);
-        if ($emailLen < 6 || $emailLen > 254) {
-            return ['success' => false, 'message' => 'El correo debe tener en total entre 6 y 254 caracteres.'];
-        }
-
-        $parts = explode('@', $email);
-        if (count($parts) !== 2) {
-            return ['success' => false, 'message' => 'El formato del correo electrónico es incorrecto.'];
-        }
-
-        $localPart = $parts[0];
-        $domainPart = $parts[1];
-
-        if (strlen($localPart) < 2 || strlen($localPart) > 64) {
-            return ['success' => false, 'message' => 'La parte local del correo (antes de la @) debe tener entre 2 y 64 caracteres.'];
-        }
-
-        if (strlen($domainPart) < 3 || strlen($domainPart) > 255) {
-            return ['success' => false, 'message' => 'El dominio del correo (después de la @) debe tener entre 3 y 255 caracteres.'];
-        }
-
-        $subdomains = explode('.', $domainPart);
-        if (count($subdomains) < 2) {
-            return ['success' => false, 'message' => 'El dominio del correo electrónico debe incluir una extensión válida.'];
-        }
-
-        foreach ($subdomains as $sub) {
-            if (strlen($sub) < 2 || strlen($sub) > 63) {
-                return ['success' => false, 'message' => 'Cada parte del dominio separada por un punto debe tener entre 2 y 63 caracteres.'];
-            }
-        }
+        $passValidation = Utils::validatePasswordFormat($password);
+        if (!$passValidation['valid']) return ['success' => false, 'message' => $passValidation['message']];
 
         $stmt = $this->pdo->prepare("SELECT id FROM users WHERE email = ?");
         $stmt->execute([$email]);
@@ -247,10 +185,7 @@ class AuthServices {
             return ['success' => false, 'message' => 'Faltan datos de la etapa 1. Por favor vuelve atrás.'];
         }
 
-        $code = '';
-        for ($i = 0; $i < 12; $i++) {
-            $code .= mt_rand(0, 9);
-        }
+        $code = Utils::generateNumericCode(12);
 
         $payload = json_encode([
             'email' => $_SESSION['reg_email'],
@@ -283,13 +218,8 @@ class AuthServices {
         $code = trim($data['code'] ?? '');
         $code = str_replace('-', '', $code);
 
-        if (empty($code)) {
-            return ['success' => false, 'message' => 'El código de verificación es obligatorio.'];
-        }
-
-        if (empty($_SESSION['reg_email'])) {
-            return ['success' => false, 'message' => 'Sesión expirada o datos incompletos. Por favor inicia nuevamente.'];
-        }
+        if (empty($code)) return ['success' => false, 'message' => 'El código de verificación es obligatorio.'];
+        if (empty($_SESSION['reg_email'])) return ['success' => false, 'message' => 'Sesión expirada o datos incompletos. Por favor inicia nuevamente.'];
 
         $identifier = $_SESSION['reg_email'];
 
@@ -297,17 +227,9 @@ class AuthServices {
         $stmt->execute([$identifier]);
         $verification = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if (!$verification) {
-            return ['success' => false, 'message' => 'No se encontró un código para esta solicitud.'];
-        }
-
-        if ($verification['code'] !== $code) {
-            return ['success' => false, 'message' => 'El código ingresado es incorrecto.'];
-        }
-
-        if (strtotime($verification['expires_at']) < time()) {
-            return ['success' => false, 'message' => 'El código de verificación ha expirado.'];
-        }
+        if (!$verification) return ['success' => false, 'message' => 'No se encontró un código para esta solicitud.'];
+        if ($verification['code'] !== $code) return ['success' => false, 'message' => 'El código ingresado es incorrecto.'];
+        if (strtotime($verification['expires_at']) < time()) return ['success' => false, 'message' => 'El código de verificación ha expirado.'];
 
         $payload = json_decode($verification['payload'], true);
         $username = $payload['username'];
@@ -318,24 +240,13 @@ class AuthServices {
         $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
         $profilePicturePath = Utils::generateProfilePicture($username, $uuid);
 
-        if (!$profilePicturePath) {
-            return ['success' => false, 'message' => 'Error al generar la foto de perfil.'];
-        }
+        if (!$profilePicturePath) return ['success' => false, 'message' => 'Error al generar la foto de perfil.'];
 
         $stmtUser = $this->pdo->prepare("INSERT INTO users (uuid, username, email, password, role, user_status, profile_picture) VALUES (?, ?, ?, ?, 'user', 'active', ?)");
         
         if ($stmtUser->execute([$uuid, $username, $email, $hashedPassword, $profilePicturePath])) {
             $userId = $this->pdo->lastInsertId();
-            
-            $acceptLang = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '';
-            $assignedLang = Utils::getClosestLanguage($acceptLang);
-            
-            $stmtPref = $this->pdo->prepare("INSERT INTO user_preferences (user_id, language, open_links_new_tab, theme, extended_alerts) VALUES (?, ?, 1, 'system', 0)");
-            $stmtPref->execute([$userId, $assignedLang]);
-
-            $stmtGetPref = $this->pdo->prepare("SELECT * FROM user_preferences WHERE user_id = ?");
-            $stmtGetPref->execute([$userId]);
-            $userPrefs = $stmtGetPref->fetch(PDO::FETCH_ASSOC);
+            $userPrefs = Utils::ensureDefaultPreferences($this->pdo, $userId);
 
             session_regenerate_id(true);
             
@@ -350,9 +261,7 @@ class AuthServices {
 
             $this->createRememberToken($userId);
 
-            unset($_SESSION['reg_email']);
-            unset($_SESSION['reg_password']);
-            unset($_SESSION['reg_username']);
+            unset($_SESSION['reg_email'], $_SESSION['reg_password'], $_SESSION['reg_username']);
 
             $delStmt = $this->pdo->prepare("DELETE FROM verification_codes WHERE id = ?");
             $delStmt->execute([$verification['id']]);
@@ -367,29 +276,20 @@ class AuthServices {
         $email = trim($data['email'] ?? '');
         $password = trim($data['password'] ?? '');
 
-        if (empty($email) || empty($password)) {
-            return ['success' => false, 'message' => 'Todos los campos son obligatorios.'];
-        }
+        if (empty($email) || empty($password)) return ['success' => false, 'message' => 'Todos los campos son obligatorios.'];
 
-        $rateCheck = $this->checkRateLimit('login', 5, 15);
-        if (!$rateCheck['allowed']) {
-            return ['success' => false, 'message' => $rateCheck['message']];
-        }
+        $rateCheck = Utils::checkRateLimit($this->pdo, 'login', 5, 15);
+        if (!$rateCheck['allowed']) return ['success' => false, 'message' => $rateCheck['message']];
 
         $stmt = $this->pdo->prepare("SELECT * FROM users WHERE email = ?");
         $stmt->execute([$email]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($user && password_verify($password, $user['password'])) {
-            $this->clearRateLimit('login');
+            Utils::clearRateLimit($this->pdo, 'login');
             
-            // Validamos que la cuenta no esté suspendida o eliminada
-            if ($user['user_status'] === 'deleted') {
-                return ['success' => false, 'message' => 'Esta cuenta ha sido eliminada.'];
-            }
-            if ($user['user_status'] === 'suspended') {
-                return ['success' => false, 'message' => 'Esta cuenta ha sido suspendida por un administrador.'];
-            }
+            if ($user['user_status'] === 'deleted') return ['success' => false, 'message' => 'Esta cuenta ha sido eliminada.'];
+            if ($user['user_status'] === 'suspended') return ['success' => false, 'message' => 'Esta cuenta ha sido suspendida por un administrador.'];
 
             if (!empty($user['two_factor_enabled'])) {
                 $_SESSION['pending_2fa_user_id'] = $user['id'];
@@ -397,21 +297,7 @@ class AuthServices {
             }
 
             session_regenerate_id(true);
-
-            $stmtPref = $this->pdo->prepare("SELECT * FROM user_preferences WHERE user_id = ?");
-            $stmtPref->execute([$user['id']]);
-            $userPrefs = $stmtPref->fetch(PDO::FETCH_ASSOC);
-
-            if (!$userPrefs) {
-                $acceptLang = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '';
-                $assignedLang = Utils::getClosestLanguage($acceptLang);
-                
-                $insPref = $this->pdo->prepare("INSERT INTO user_preferences (user_id, language, open_links_new_tab, theme, extended_alerts) VALUES (?, ?, 1, 'system', 0)");
-                $insPref->execute([$user['id'], $assignedLang]);
-                
-                $stmtPref->execute([$user['id']]);
-                $userPrefs = $stmtPref->fetch(PDO::FETCH_ASSOC);
-            }
+            $userPrefs = Utils::ensureDefaultPreferences($this->pdo, $user['id']);
 
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['user_uuid'] = $user['uuid'];
@@ -427,35 +313,27 @@ class AuthServices {
             return ['success' => true, 'requires_2fa' => false, 'message' => 'Inicio de sesión exitoso.'];
         }
 
-        $this->recordAttempt('login', 5, 15);
-
+        Utils::recordAttempt($this->pdo, 'login', 5, 15);
         return ['success' => false, 'message' => 'Credenciales incorrectas.'];
     }
 
     public function loginVerify2FA($data) {
         $code = trim($data['code'] ?? '');
         
-        if (empty($code)) {
-            return ['success' => false, 'message' => 'El código de seguridad es obligatorio.'];
-        }
-
-        if (empty($_SESSION['pending_2fa_user_id'])) {
-            return ['success' => false, 'message' => 'Sesión expirada o inválida. Por favor inicia sesión nuevamente.'];
-        }
+        if (empty($code)) return ['success' => false, 'message' => 'El código de seguridad es obligatorio.'];
+        if (empty($_SESSION['pending_2fa_user_id'])) return ['success' => false, 'message' => 'Sesión expirada o inválida. Por favor inicia sesión nuevamente.'];
 
         $userId = $_SESSION['pending_2fa_user_id'];
 
-        $rateCheck = $this->checkRateLimit('login_2fa', 5, 15);
-        if (!$rateCheck['allowed']) {
-            return ['success' => false, 'message' => $rateCheck['message']];
-        }
+        $rateCheck = Utils::checkRateLimit($this->pdo, 'login_2fa', 5, 15);
+        if (!$rateCheck['allowed']) return ['success' => false, 'message' => $rateCheck['message']];
 
         $stmt = $this->pdo->prepare("SELECT * FROM users WHERE id = ? AND user_status = 'active'");
         $stmt->execute([$userId]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$user || empty($user['two_factor_enabled'])) {
-            $this->recordAttempt('login_2fa', 5, 15);
+            Utils::recordAttempt($this->pdo, 'login_2fa', 5, 15);
             return ['success' => false, 'message' => 'Error de validación del usuario o cuenta no disponible.'];
         }
 
@@ -477,23 +355,10 @@ class AuthServices {
         }
 
         if ($isValid) {
-            $this->clearRateLimit('login_2fa');
+            Utils::clearRateLimit($this->pdo, 'login_2fa');
             session_regenerate_id(true);
 
-            $stmtPref = $this->pdo->prepare("SELECT * FROM user_preferences WHERE user_id = ?");
-            $stmtPref->execute([$user['id']]);
-            $userPrefs = $stmtPref->fetch(PDO::FETCH_ASSOC);
-
-            if (!$userPrefs) {
-                $acceptLang = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '';
-                $assignedLang = Utils::getClosestLanguage($acceptLang);
-                
-                $insPref = $this->pdo->prepare("INSERT INTO user_preferences (user_id, language, open_links_new_tab, theme, extended_alerts) VALUES (?, ?, 1, 'system', 0)");
-                $insPref->execute([$user['id'], $assignedLang]);
-                
-                $stmtPref->execute([$user['id']]);
-                $userPrefs = $stmtPref->fetch(PDO::FETCH_ASSOC);
-            }
+            $userPrefs = Utils::ensureDefaultPreferences($this->pdo, $user['id']);
 
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['user_uuid'] = $user['uuid'];
@@ -505,13 +370,12 @@ class AuthServices {
             $_SESSION['user_2fa'] = 1;
 
             unset($_SESSION['pending_2fa_user_id']);
-
             $this->createRememberToken($user['id']);
 
             return ['success' => true, 'message' => 'Inicio de sesión exitoso.'];
         }
 
-        $this->recordAttempt('login_2fa', 5, 15);
+        Utils::recordAttempt($this->pdo, 'login_2fa', 5, 15);
         return ['success' => false, 'message' => 'El código ingresado es incorrecto.'];
     }
 
@@ -525,26 +389,22 @@ class AuthServices {
     public function forgotPassword($data) {
         $email = trim($data['email'] ?? '');
 
-        if (empty($email)) {
-            return ['success' => false, 'message' => 'El correo es obligatorio.'];
-        }
+        if (empty($email)) return ['success' => false, 'message' => 'El correo es obligatorio.'];
 
-        $rateCheck = $this->checkRateLimit('forgot_password', 3, 30);
-        if (!$rateCheck['allowed']) {
-            return ['success' => false, 'message' => $rateCheck['message']];
-        }
+        $rateCheck = Utils::checkRateLimit($this->pdo, 'forgot_password', 3, 30);
+        if (!$rateCheck['allowed']) return ['success' => false, 'message' => $rateCheck['message']];
 
         $stmt = $this->pdo->prepare("SELECT username, user_status FROM users WHERE email = ?");
         $stmt->execute([$email]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$user) {
-            $this->recordAttempt('forgot_password', 3, 30);
+            Utils::recordAttempt($this->pdo, 'forgot_password', 3, 30);
             return ['success' => false, 'message' => 'El correo ingresado no existe.'];
         }
 
         if ($user['user_status'] !== 'active') {
-            $this->recordAttempt('forgot_password', 3, 30);
+            Utils::recordAttempt($this->pdo, 'forgot_password', 3, 30);
             return ['success' => false, 'message' => 'Esta cuenta está suspendida o ha sido eliminada permanentemente.'];
         }
 
@@ -558,7 +418,6 @@ class AuthServices {
         $insertStmt = $this->pdo->prepare("INSERT INTO verification_codes (identifier, code_type, code, payload, expires_at) VALUES (?, 'password_reset', ?, ?, ?)");
         
         if ($insertStmt->execute([$email, $token, $payload, $expiresAt])) {
-            
             $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
             $host = $_SERVER['HTTP_HOST'];
             $resetLink = $protocol . $host . "/ProjectRosaura/reset-password?token=" . $token;
@@ -567,7 +426,7 @@ class AuthServices {
             $emailSent = $mailer->sendPasswordResetLink($email, $user['username'], $resetLink);
 
             if ($emailSent) {
-                $this->recordAttempt('forgot_password', 3, 30);
+                Utils::recordAttempt($this->pdo, 'forgot_password', 3, 30);
                 return ['success' => true, 'message' => 'Se ha enviado un correo con las instrucciones.'];
             } else {
                 return ['success' => false, 'message' => 'Error al enviar el correo electrónico. Inténtalo más tarde.'];
@@ -581,29 +440,22 @@ class AuthServices {
         $token = trim($data['token'] ?? '');
         $password = trim($data['password'] ?? '');
 
-        if (empty($token) || empty($password)) {
-            return ['success' => false, 'message' => 'Todos los campos son obligatorios.'];
-        }
+        if (empty($token) || empty($password)) return ['success' => false, 'message' => 'Todos los campos son obligatorios.'];
 
-        $passLen = strlen($password);
-        if ($passLen < 8 || $passLen > 64) {
-            return ['success' => false, 'message' => 'La contraseña debe tener entre 8 y 64 caracteres.'];
-        }
+        $passValidation = Utils::validatePasswordFormat($password);
+        if (!$passValidation['valid']) return ['success' => false, 'message' => $passValidation['message']];
 
         $stmt = $this->pdo->prepare("SELECT * FROM verification_codes WHERE code = ? AND code_type = 'password_reset' AND expires_at > NOW()");
         $stmt->execute([$token]);
         $verification = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if (!$verification) {
-            return ['success' => false, 'message' => 'El token es inválido o ha expirado.'];
-        }
+        if (!$verification) return ['success' => false, 'message' => 'El token es inválido o ha expirado.'];
 
         $email = $verification['identifier'];
         $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
 
         $updateStmt = $this->pdo->prepare("UPDATE users SET password = ? WHERE email = ?");
         if ($updateStmt->execute([$hashedPassword, $email])) {
-            
             $stmtDelAll = $this->pdo->prepare("DELETE FROM auth_tokens WHERE user_id = (SELECT id FROM users WHERE email = ?)");
             $stmtDelAll->execute([$email]);
 
@@ -614,67 +466,6 @@ class AuthServices {
         }
 
         return ['success' => false, 'message' => 'Hubo un error al actualizar la contraseña.'];
-    }
-
-    private function getIpAddress() {
-        if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
-            $ip = $_SERVER['HTTP_CLIENT_IP'];
-        } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-            $ip = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0];
-        } else {
-            $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
-        }
-        return trim($ip);
-    }
-
-    private function checkRateLimit($action, $maxAttempts, $lockoutMinutes) {
-        $ip = $this->getIpAddress();
-        $stmt = $this->pdo->prepare("SELECT attempts, blocked_until FROM rate_limits WHERE ip_address = ? AND action = ?");
-        $stmt->execute([$ip, $action]);
-        $limit = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if ($limit) {
-            if ($limit['blocked_until'] && strtotime($limit['blocked_until']) > time()) {
-                $remainingMinutes = ceil((strtotime($limit['blocked_until']) - time()) / 60);
-                return [
-                    'allowed' => false, 
-                    'message' => "Demasiados intentos. Por seguridad, por favor espera {$remainingMinutes} minutos e inténtalo de nuevo."
-                ];
-            }
-        }
-        return ['allowed' => true];
-    }
-
-    private function recordAttempt($action, $maxAttempts, $lockoutMinutes) {
-        $ip = $this->getIpAddress();
-        $stmt = $this->pdo->prepare("SELECT attempts, blocked_until FROM rate_limits WHERE ip_address = ? AND action = ?");
-        $stmt->execute([$ip, $action]);
-        $limit = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if ($limit) {
-            if ($limit['blocked_until'] && strtotime($limit['blocked_until']) <= time()) {
-                $attempts = 1;
-                $blockedUntil = ($attempts >= $maxAttempts) ? date('Y-m-d H:i:s', strtotime("+{$lockoutMinutes} minutes")) : null;
-            } else {
-                $attempts = $limit['attempts'] + 1;
-                $blockedUntil = ($attempts >= $maxAttempts) ? date('Y-m-d H:i:s', strtotime("+{$lockoutMinutes} minutes")) : null;
-            }
-
-            $updateStmt = $this->pdo->prepare("UPDATE rate_limits SET attempts = ?, blocked_until = ? WHERE ip_address = ? AND action = ?");
-            $updateStmt->execute([$attempts, $blockedUntil, $ip, $action]);
-        } else {
-            $attempts = 1;
-            $blockedUntil = ($attempts >= $maxAttempts) ? date('Y-m-d H:i:s', strtotime("+{$lockoutMinutes} minutes")) : null;
-            
-            $insertStmt = $this->pdo->prepare("INSERT INTO rate_limits (ip_address, action, attempts, blocked_until) VALUES (?, ?, ?, ?)");
-            $insertStmt->execute([$ip, $action, $attempts, $blockedUntil]);
-        }
-    }
-
-    private function clearRateLimit($action) {
-        $ip = $this->getIpAddress();
-        $stmt = $this->pdo->prepare("DELETE FROM rate_limits WHERE ip_address = ? AND action = ?");
-        $stmt->execute([$ip, $action]);
     }
 }
 ?>

@@ -3,8 +3,8 @@
 
 namespace App\Api\Services;
 
-use App\Config\Database;
 use App\Core\Utils;
+use App\Config\Database;
 use App\Core\Mailer;
 use App\Core\GoogleAuthenticator;
 use PDO;
@@ -111,15 +111,14 @@ class SettingsServices {
 
         $email = $_SESSION['user_email'];
 
-        $rateCheck = $this->checkRateLimit('request_email_code', 3, 30);
+        $rateCheck = Utils::checkRateLimit($this->pdo, 'request_email_code', 3, 30);
         if (!$rateCheck['allowed']) return ['success' => false, 'message' => $rateCheck['message']];
 
         $stmt = $this->pdo->prepare("SELECT id FROM verification_codes WHERE identifier = ? AND code_type = 'email_update' AND expires_at > NOW()");
         $stmt->execute([$email]);
         if ($stmt->rowCount() > 0) return ['success' => true, 'message' => 'El código ya fue enviado a tu correo previamente.'];
 
-        $code = '';
-        for ($i = 0; $i < 12; $i++) $code .= mt_rand(0, 9);
+        $code = Utils::generateNumericCode(12);
 
         $expiresAt = date('Y-m-d H:i:s', strtotime('+15 minutes'));
         $payload = json_encode(['action' => 'email_update']);
@@ -131,7 +130,7 @@ class SettingsServices {
             $emailSent = $mailer->sendEmailUpdateCode($email, $_SESSION['user_name'], $code);
 
             if ($emailSent) {
-                $this->recordAttempt('request_email_code', 3, 30);
+                Utils::recordAttempt($this->pdo, 'request_email_code', 3, 30);
                 return ['success' => true, 'message' => 'Se ha enviado un código a tu correo actual.'];
             } else {
                 return ['success' => false, 'message' => 'Error al enviar el correo electrónico. Inténtalo más tarde.'];
@@ -158,7 +157,7 @@ class SettingsServices {
             $delStmt->execute([$verification['id']]);
 
             $_SESSION['can_update_email_expires'] = time() + (15 * 60);
-            $this->clearRateLimit('request_email_code');
+            Utils::clearRateLimit($this->pdo, 'request_email_code');
 
             return ['success' => true, 'message' => 'Identidad verificada. Tienes 15 minutos para editar tu correo.'];
         }
@@ -173,7 +172,9 @@ class SettingsServices {
         if (!$this->canChangeProfileData($_SESSION['user_id'], 'email', 1, 7)) return ['success' => false, 'message' => 'Solo puedes cambiar tu correo 1 vez cada 7 días.'];
 
         $email = trim($data['email'] ?? '');
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) return ['success' => false, 'message' => 'El formato del correo electrónico no es válido.'];
+        
+        $emailValidation = Utils::validateEmailFormat($email);
+        if (!$emailValidation['valid']) return ['success' => false, 'message' => $emailValidation['message']];
 
         $stmt = $this->pdo->prepare("SELECT id FROM users WHERE email = ? AND id != ?");
         $stmt->execute([$email, $_SESSION['user_id']]);
@@ -195,7 +196,7 @@ class SettingsServices {
     public function updatePreferences($data) {
         if (!isset($_SESSION['user_id'])) return ['success' => false, 'message' => 'Sesión no válida.'];
 
-        $rateCheck = $this->checkRateLimit('update_preferences', 20, 5, "Has cambiado tus preferencias demasiadas veces. Por favor espera {minutes} minutos.");
+        $rateCheck = Utils::checkRateLimit($this->pdo, 'update_preferences', 20, 5, "Has cambiado tus preferencias demasiadas veces. Por favor espera {minutes} minutos.");
         if (!$rateCheck['allowed']) return ['success' => false, 'message' => $rateCheck['message']];
 
         $key = $data['key'] ?? '';
@@ -211,7 +212,7 @@ class SettingsServices {
         $stmt = $this->pdo->prepare("UPDATE user_preferences SET {$key} = ? WHERE user_id = ?");
         if ($stmt->execute([$value, $_SESSION['user_id']])) {
             $_SESSION['user_prefs'][$key] = $value;
-            $this->recordAttempt('update_preferences', 20, 5);
+            Utils::recordAttempt($this->pdo, 'update_preferences', 20, 5);
             return ['success' => true, 'message' => 'Preferencia guardada.'];
         }
         return ['success' => false, 'message' => 'Error al guardar la preferencia.'];
@@ -220,7 +221,7 @@ class SettingsServices {
     public function verifyCurrentPassword($data) {
         if (!isset($_SESSION['user_id'])) return ['success' => false, 'message' => 'Sesión no válida.'];
 
-        $rateCheck = $this->checkRateLimit('verify_current_password', 5, 15);
+        $rateCheck = Utils::checkRateLimit($this->pdo, 'verify_current_password', 5, 15);
         if (!$rateCheck['allowed']) return ['success' => false, 'message' => $rateCheck['message']];
 
         $currentPassword = trim($data['current_password'] ?? '');
@@ -231,12 +232,12 @@ class SettingsServices {
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($user && password_verify($currentPassword, $user['password'])) {
-            $this->clearRateLimit('verify_current_password');
+            Utils::clearRateLimit($this->pdo, 'verify_current_password');
             $_SESSION['can_change_password_expires'] = time() + (15 * 60);
             return ['success' => true, 'message' => 'Identidad verificada.'];
         }
 
-        $this->recordAttempt('verify_current_password', 5, 15);
+        Utils::recordAttempt($this->pdo, 'verify_current_password', 5, 15);
         return ['success' => false, 'message' => 'La contraseña actual es incorrecta.'];
     }
 
@@ -246,7 +247,7 @@ class SettingsServices {
             return ['success' => false, 'message' => 'Por seguridad, debes verificar tu contraseña actual primero.'];
         }
 
-        $rateCheck = $this->checkRateLimit('update_password', 5, 15);
+        $rateCheck = Utils::checkRateLimit($this->pdo, 'update_password', 5, 15);
         if (!$rateCheck['allowed']) return ['success' => false, 'message' => $rateCheck['message']];
 
         $newPassword = trim($data['new_password'] ?? '');
@@ -255,8 +256,8 @@ class SettingsServices {
         if (empty($newPassword) || empty($confirmPassword)) return ['success' => false, 'message' => 'Todos los campos son obligatorios.'];
         if ($newPassword !== $confirmPassword) return ['success' => false, 'message' => 'Las contraseñas no coinciden.'];
 
-        $passLen = strlen($newPassword);
-        if ($passLen < 8 || $passLen > 64) return ['success' => false, 'message' => 'La contraseña debe tener entre 8 y 64 caracteres.'];
+        $passValidation = Utils::validatePasswordFormat($newPassword);
+        if (!$passValidation['valid']) return ['success' => false, 'message' => $passValidation['message']];
 
         $hashedPassword = password_hash($newPassword, PASSWORD_BCRYPT);
 
@@ -264,17 +265,14 @@ class SettingsServices {
         if ($stmt->execute([$hashedPassword, $_SESSION['user_id']])) {
             $this->logProfileChange($_SESSION['user_id'], 'password', '***', '***');
             unset($_SESSION['can_change_password_expires']);
-            $this->clearRateLimit('update_password');
+            Utils::clearRateLimit($this->pdo, 'update_password');
             return ['success' => true, 'message' => 'Contraseña actualizada correctamente.'];
         }
 
-        $this->recordAttempt('update_password', 5, 15);
+        Utils::recordAttempt($this->pdo, 'update_password', 5, 15);
         return ['success' => false, 'message' => 'Hubo un error al actualizar tu contraseña.'];
     }
 
-    // ==========================================
-    // --- LÓGICA DE ELIMINAR CUENTA ---
-    // ==========================================
     public function deleteAccount($data) {
         if (!isset($_SESSION['user_id'])) return ['success' => false, 'message' => 'Sesión no válida.'];
 
@@ -286,15 +284,11 @@ class SettingsServices {
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($user && password_verify($password, $user['password'])) {
-            // Pasamos el estado a deleted en lugar de eliminar el registro
             $upd = $this->pdo->prepare("UPDATE users SET user_status = 'deleted' WHERE id = ?");
             if ($upd->execute([$_SESSION['user_id']])) {
-                
-                // Forzamos cierre de sesión en TODOS los dispositivos
                 $delTokens = $this->pdo->prepare("DELETE FROM auth_tokens WHERE user_id = ?");
                 $delTokens->execute([$_SESSION['user_id']]);
                 
-                // Limpiamos la sesión y la cookie actual
                 if (isset($_COOKIE['remember_token'])) {
                     setcookie('remember_token', '', [
                         'expires' => time() - 3600,
@@ -347,10 +341,7 @@ class SettingsServices {
 
         $ga = new GoogleAuthenticator();
         if ($ga->verifyCode($secret, $code, 2)) {
-            $codes = [];
-            for ($i = 0; $i < 10; $i++) {
-                $codes[] = substr(bin2hex(random_bytes(4)), 0, 8);
-            }
+            $codes = Utils::generateRecoveryCodes(10, 8);
             $codesJson = json_encode($codes);
 
             $stmt = $this->pdo->prepare("UPDATE users SET two_factor_secret = ?, two_factor_enabled = 1, two_factor_recovery_codes = ? WHERE id = ?");
@@ -414,10 +405,9 @@ class SettingsServices {
         $stmt->execute([$_SESSION['user_id']]);
         $devices = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        // Identificamos cuál es la sesión actual en la que está el usuario
         foreach ($devices as &$device) {
             $device['is_current'] = ($device['selector'] === $currentSelector);
-            unset($device['selector']); // Por seguridad no devolvemos el selector
+            unset($device['selector']);
         }
 
         return ['success' => true, 'devices' => $devices];
@@ -447,7 +437,6 @@ class SettingsServices {
             }
         }
 
-        // Borra todos EXCEPTO la sesión actual
         $stmt = $this->pdo->prepare("DELETE FROM auth_tokens WHERE user_id = ? AND selector != ?");
         if ($stmt->execute([$_SESSION['user_id'], $currentSelector])) {
             return ['success' => true, 'message' => 'Todas las demás sesiones han sido cerradas.'];
@@ -467,10 +456,7 @@ class SettingsServices {
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($user && password_verify($password, $user['password'])) {
-            $codes = [];
-            for ($i = 0; $i < 10; $i++) {
-                $codes[] = substr(bin2hex(random_bytes(4)), 0, 8);
-            }
+            $codes = Utils::generateRecoveryCodes(10, 8);
             $codesJson = json_encode($codes);
 
             $update = $this->pdo->prepare("UPDATE users SET two_factor_recovery_codes = ? WHERE id = ?");
@@ -496,53 +482,9 @@ class SettingsServices {
     }
 
     private function logProfileChange($userId, $changeType, $oldValue, $newValue) {
-        $ip = $this->getIpAddress();
+        $ip = Utils::getIpAddress();
         $stmt = $this->pdo->prepare("INSERT INTO profile_changes_log (user_id, change_type, old_value, new_value, ip_address) VALUES (?, ?, ?, ?, ?)");
         $stmt->execute([$userId, $changeType, $oldValue, $newValue, $ip]);
-    }
-
-    private function getIpAddress() {
-        if (!empty($_SERVER['HTTP_CLIENT_IP'])) return $_SERVER['HTTP_CLIENT_IP'];
-        if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) return explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0];
-        return trim($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0');
-    }
-
-    private function checkRateLimit($action, $maxAttempts, $lockoutMinutes, $customMsg = null) {
-        $ip = $this->getIpAddress();
-        $stmt = $this->pdo->prepare("SELECT attempts, blocked_until FROM rate_limits WHERE ip_address = ? AND action = ?");
-        $stmt->execute([$ip, $action]);
-        $limit = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if ($limit && $limit['blocked_until'] && strtotime($limit['blocked_until']) > time()) {
-            $remainingMinutes = ceil((strtotime($limit['blocked_until']) - time()) / 60);
-            $msg = $customMsg ? str_replace('{minutes}', $remainingMinutes, $customMsg) : "Por seguridad, espera {$remainingMinutes} minutos.";
-            return ['allowed' => false, 'message' => $msg];
-        }
-        return ['allowed' => true];
-    }
-
-    private function recordAttempt($action, $maxAttempts, $lockoutMinutes) {
-        $ip = $this->getIpAddress();
-        $stmt = $this->pdo->prepare("SELECT attempts, blocked_until FROM rate_limits WHERE ip_address = ? AND action = ?");
-        $stmt->execute([$ip, $action]);
-        $limit = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if ($limit) {
-            $attempts = ($limit['blocked_until'] && strtotime($limit['blocked_until']) <= time()) ? 1 : $limit['attempts'] + 1;
-            $blockedUntil = ($attempts >= $maxAttempts) ? date('Y-m-d H:i:s', strtotime("+{$lockoutMinutes} minutes")) : null;
-            $updateStmt = $this->pdo->prepare("UPDATE rate_limits SET attempts = ?, blocked_until = ? WHERE ip_address = ? AND action = ?");
-            $updateStmt->execute([$attempts, $blockedUntil, $ip, $action]);
-        } else {
-            $blockedUntil = (1 >= $maxAttempts) ? date('Y-m-d H:i:s', strtotime("+{$lockoutMinutes} minutes")) : null;
-            $insertStmt = $this->pdo->prepare("INSERT INTO rate_limits (ip_address, action, attempts, blocked_until) VALUES (?, ?, ?, ?)");
-            $insertStmt->execute([$ip, $action, 1, $blockedUntil]);
-        }
-    }
-
-    private function clearRateLimit($action) {
-        $ip = $this->getIpAddress();
-        $stmt = $this->pdo->prepare("DELETE FROM rate_limits WHERE ip_address = ? AND action = ?");
-        $stmt->execute([$ip, $action]);
     }
 }
 ?>
