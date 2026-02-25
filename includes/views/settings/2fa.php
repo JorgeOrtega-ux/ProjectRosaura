@@ -33,33 +33,24 @@ $is2FAActive = !empty($_SESSION['user_2fa']);
                     <div class="component-accordion-body">
                         <div class="component-accordion-content">
                             
-                            <div class="component-split-layout">
-                                <div class="component-split-layout__left">
-                                    <h3 class="component-card__title" style="margin-bottom: 16px;">Instrucciones</h3>
-                                    <div class="component-step-container">
-                                        <div class="component-step-item">
-                                            <div class="component-step-circle">1</div>
-                                            <p class="component-step-text">Descarga y abre una aplicación de autenticación como Google Authenticator o Authy.</p>
-                                        </div>
-                                        <div class="component-step-item">
-                                            <div class="component-step-circle">2</div>
-                                            <p class="component-step-text">Escanea el código QR que se muestra a la derecha usando la cámara de tu dispositivo.</p>
-                                        </div>
-                                        <div class="component-step-item">
-                                            <div class="component-step-circle">3</div>
-                                            <p class="component-step-text">Si no puedes escanear el código, introduce la clave manual mostrada debajo del QR.</p>
-                                        </div>
-                                    </div>
+                            <div class="component-2fa-setup">
+                                <div class="component-2fa-qr-col">
+                                    <img id="2fa-qr-img" src="" alt="Código QR">
                                 </div>
-
-                                <div class="component-split-layout__right">
-                                    <div class="component-qr-box">
-                                        <img id="2fa-qr-img" src="" alt="Código QR">
-                                    </div>
-                                    <div class="component-secret-box">
-                                        <p class="component-secret-label">Clave manual:</p>
-                                        <div id="2fa-secret-text" class="component-secret-code">CARGANDO...</div>
-                                    </div>
+                                
+                                <div class="component-2fa-secret-col">
+                                    <h3>¿No puedes escanear?</h3>
+                                    <p>Ingresa esta clave en tu aplicación:</p>
+                                    <div id="2fa-secret-text" class="component-2fa-secret-box">CARGANDO...</div>
+                                </div>
+                                
+                                <div class="component-2fa-instructions-col">
+                                    <h3>Pasos a seguir:</h3>
+                                    <ol>
+                                        <li>Descarga <b>Google Authenticator</b> o <b>Authy</b>.</li>
+                                        <li>Escanea el código QR a la izquierda o usa la clave.</li>
+                                        <li>Ingresa el código en el paso 2 de abajo.</li>
+                                    </ol>
                                 </div>
                             </div>
 

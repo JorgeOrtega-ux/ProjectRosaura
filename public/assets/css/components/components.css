@@ -256,7 +256,6 @@
     flex-direction: column;
 }
 
-/* === NUEVO: SOPORTE DE ESTADOS PARA .component-menu === */
 .component-menu.disabled {
     display: none !important;
 }
@@ -264,7 +263,6 @@
 .component-menu.active {
     display: flex;
 }
-/* ====================================================== */
 
 .component-menu--no-padding {
     padding: 0;
@@ -600,13 +598,11 @@
 
 .component-card--grouped { display: flex; flex-direction: column; border: 1px solid #00000020; border-radius: 12px; background-color: #ffffff; }
 
-/* Estructuras base para las filas */
 .component-group-item { display: flex; flex-direction: row; align-items: center; justify-content: space-between; padding: 24px; gap: 16px; }
 .component-group-item--wrap { flex-wrap: wrap; }
 .component-group-item--stacked { flex-direction: column; align-items: flex-start; gap: 12px; }
 .component-group-item--stacked .component-card__actions { width: 100%; }
 
-/* Variación para filas que tienen estados (Ver/Editar) */
 .component-group-item--stateful { display: block; width: 100%; padding: 24px; }
 
 .component-divider { border: 0; border-top: 1px solid #00000020; width: 100%; margin: 0; }
@@ -631,13 +627,11 @@
 
 .component-card__actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 
-/* Nuevo: Asegura que al hacer wrap se empuje al fondo (derecha) */
 .component-card__actions--end {
     flex-grow: 1;
     justify-content: flex-end;
 }
 
-/* View & Edit State Logic */
 .component-state-box {
     width: 100%;
     justify-content: space-between;
@@ -647,7 +641,6 @@
 .component-state-box.disabled { display: none !important; }
 .component-state-box.active { display: flex; }
 
-/* Card Icons */
 .component-card__icon-container {
     display: flex;
     align-items: center;
@@ -668,7 +661,6 @@
     font-size: 22px;
 }
 
-/* Contenedor que amarra firmemente el input con sus botones en PC */
 .component-edit-row {
     display: flex;
     width: 100%;
@@ -680,7 +672,6 @@
     flex: 1; 
 }
 
-/* Input Overrides */
 .component-input-group--h34 { height: 34px !important; }
 .component-input-field--simple { padding: 0 12px !important; }
 
@@ -721,7 +712,6 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
 /* --- RESPONSIVE PROFILE / SETTINGS (600px) */
 /* ========================================= */
 @media (max-width: 600px) {
-    /* Filas genéricas pasan a columnas */
     .component-group-item {
         flex-direction: column;
         align-items: stretch;
@@ -751,9 +741,6 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
         width: 100%;
     }
 
-    /* --- MODIFICADORES DE ACCIONES PARA MÓVIL --- */
-    
-    /* Margen superior general cuando los elementos pasan abajo */
     .component-card__actions {
         margin-top: 8px;
     }
@@ -763,7 +750,6 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
         margin-top: 0; 
     }
     
-    /* 1. Botones (100% de ancho, se reparten 50/50 si son 2) */
     .component-card__actions--stretch {
         width: 100%;
         display: flex;
@@ -775,7 +761,6 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
         width: auto;
     }
 
-    /* 2. Alineación a la izquierda (Dropdown) */
     .component-card__actions--start {
         width: 100%;
         display: flex;
@@ -783,11 +768,10 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
         justify-content: flex-start;
     }
 
-    /* 3. Alineación a la derecha (Ahora con botones al 100%) */
     .component-card__actions--end {
         width: 100%;
         display: flex;
-        flex-direction: column; /* Apila por si hay varios botones al 100% */
+        flex-direction: column; 
         justify-content: center;
         align-items: flex-end;
     }
@@ -797,9 +781,6 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
     }
 }
 
-/* ========================================= */
-/* --- EXPANSIÓN A 465PX (MÓVILES CHICOS) -- */
-/* ========================================= */
 @media (max-width: 465px) {
     .component-dropdown-trigger {
         max-width: 100%;
@@ -1188,21 +1169,93 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
 }
 
 /* ========================================= */
-/* --- COMPONENT: STEPS & SPLIT LAYOUT ---   */
+/* --- COMPONENT: 2FA SETUP MINIMALIST ---   */
 /* ========================================= */
-.component-step-container { display: flex; flex-direction: column; gap: 12px; }
-.component-step-item { display: flex; gap: 12px; align-items: flex-start; }
-.component-step-circle { width: 24px; height: 24px; border-radius: 50%; background-color: #111111; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
-.component-step-text { font-size: 14px; color: #666666; margin: 0; line-height: 1.4; padding-top: 2px; }
 
-.component-split-layout { display: flex; gap: 16px; flex-wrap: wrap; }
-.component-split-layout__left { flex: 1; min-width: 250px; border: 1px solid #00000020; border-radius: 8px; padding: 16px; background-color: #ffffff; }
-.component-split-layout__right { display: flex; flex-direction: column; gap: 16px; width: 240px; flex-shrink: 0; margin: 0 auto; }
-.component-qr-box { border: 1px solid #00000020; border-radius: 8px; padding: 16px; display: flex; justify-content: center; align-items: center; background-color: #ffffff; }
-.component-qr-box img { width: 100%; max-width: 200px; height: auto; display: block; }
-.component-secret-box { border: 1px solid #00000020; border-radius: 8px; padding: 12px; background-color: #f5f5fa; text-align: center; }
-.component-secret-label { font-size: 12px; color: #666666; margin: 0 0 4px 0; }
-.component-secret-code { font-family: monospace; letter-spacing: 1px; font-size: 15px; color: #111111; word-break: break-all; font-weight: 700; }
+.component-2fa-setup {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    align-items: stretch;
+}
+
+.component-2fa-qr-col {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #ffffff;
+    border: 1px solid #00000020;
+    border-radius: 8px;
+    padding: 12px;
+}
+
+.component-2fa-qr-col img {
+    width: 130px;
+    height: 130px;
+    display: block;
+}
+
+.component-2fa-secret-col {
+    flex: 1;
+    min-width: 200px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background: #ffffff;
+    border: 1px solid #00000020;
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.component-2fa-secret-col h3, 
+.component-2fa-instructions-col h3 {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0 0 12px 0;
+    color: #111111;
+}
+
+.component-2fa-secret-col p {
+    font-size: 13px;
+    color: #666666;
+    margin: 0 0 8px 0;
+}
+
+.component-2fa-secret-box {
+    background: #f5f5fa;
+    border: 1px solid #00000015;
+    padding: 12px;
+    border-radius: 6px;
+    font-family: monospace;
+    font-weight: bold;
+    text-align: center;
+    letter-spacing: 1px;
+    color: #111111;
+    word-break: break-all;
+}
+
+.component-2fa-instructions-col {
+    flex: 2;
+    min-width: 250px;
+    background: #ffffff;
+    border: 1px solid #00000020;
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.component-2fa-instructions-col ol {
+    margin: 0;
+    padding-left: 20px;
+    color: #666666;
+    font-size: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
 
 /* ========================================= */
 /* --- TOOLTIPS (Con soporte Popper.js)  --- */
@@ -1211,7 +1264,6 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
     cursor: pointer;
 }
 
-/* El cuerpo del Tooltip */
 .aurora-tooltip {
     z-index: 9999;
     background-color: #111111; 
@@ -1224,15 +1276,13 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
     white-space: nowrap;
     pointer-events: none;
     
-    /* Animaciones suaves compatibles con Popper.js */
     opacity: 0;
     visibility: hidden;
-    transform: scale(0.96); /* Un poco de escala en vez de translate para no sobreescribir Popper */
+    transform: scale(0.96);
     transition: opacity 0.2s ease, visibility 0.2s, transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-/* Flecha nativa mediante Popper */
 .aurora-tooltip-arrow,
 .aurora-tooltip-arrow::before {
     position: absolute;
@@ -1251,7 +1301,6 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
     transform: rotate(45deg);
 }
 
-/* Direcciones automáticas mediante atributos dinámicos de Popper.js */
 .aurora-tooltip[data-popper-placement^='top'] > .aurora-tooltip-arrow {
     bottom: -4px;
 }
@@ -1265,7 +1314,6 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
     left: -4px;
 }
 
-/* ESTADO ACTIVO del Tooltip (Controlado por JavaScript) */
 .aurora-tooltip.show {
     opacity: 1;
     visibility: visible;
