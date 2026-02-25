@@ -10,6 +10,90 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-i
 
 require_once __DIR__ . '/../../vendor/autoload.php';
 
+// =========================================================================
+// --- 1. MANEJO GLOBAL DE ERRORES Y EXCEPCIONES (Ocultar PHP) ---
+// =========================================================================
+
+// Desactivar la muestra de errores crudos de PHP en el navegador
+ini_set('display_errors', 0);
+error_reporting(E_ALL);
+
+// Función para mostrar la vista genérica de error con tu diseño modular
+// Función para mostrar la vista genérica de error simulando la interfaz de la web
+function render_fatal_error_view() {
+    http_response_code(500);
+    
+    // Si la petición es de la API o del SPA Router, devolver JSON para no romper el JS
+    if (isset($_SERVER['HTTP_X_SPA_REQUEST']) || (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false)) {
+        echo json_encode(['success' => false, 'message' => 'Ocurrió un error interno en el servidor.']);
+        exit;
+    }
+
+    // Renderizar un "cascarón" que imita tu layout (app.php) para que parezca que la web sí cargó
+    echo '<!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Error 500 - Project Rosaura</title>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded" />
+        <link rel="stylesheet" type="text/css" href="/ProjectRosaura/public/assets/css/styles.css">
+        <link rel="stylesheet" type="text/css" href="/ProjectRosaura/public/assets/css/components/components.css">
+    </head>
+    <body>
+        <div class="page-wrapper">
+            <div class="main-content">
+                <div class="general-content">
+                    
+                    <div class="general-content-top">
+                        <div class="header" style="height: 48px; padding: 0 12px; display: flex; align-items: center; border-bottom: 1px solid #00000020;">
+                            <span style="font-size: 18px; font-weight: bold; color: #111;">Project Rosaura</span>
+                        </div>
+                    </div>
+
+                    <div class="general-content-bottom" style="background-color: #fcfcfc;">
+                        <div class="component-module component-module--sidebar" style="width: 265px; border-right: 1px solid #00000020; display: none;"></div>
+
+                        <div class="general-content-scrolleable" style="display: flex; justify-content: center; align-items: center; padding: 24px; width: 100%;">
+                            
+                            <div class="view-content" style="padding: 40px 24px; text-align: center; max-width: 500px; background: #fff; border-radius: 12px; border: 1px solid #00000020; box-shadow: 0 10px 25px rgba(0,0,0,0.05);">
+                                <div class="component-card__icon-container component-card__icon-container--bordered" style="width: 64px; height: 64px; margin: 0 auto 16px auto;">
+                                    <span class="material-symbols-rounded" style="font-size: 32px; color: #d32f2f;">gpp_bad</span>
+                                </div>
+                                <h1 style="font-size: 24px; font-weight: 700; color: #111111; margin-bottom: 8px;">Error Interno del Servidor</h1>
+                                <p style="color: #666; font-size: 15px; margin-bottom: 24px; line-height: 1.5;">Lo sentimos, no pudimos cargar esta sección. Ha ocurrido un problema técnico en el servidor y nuestro equipo ha sido notificado.</p>
+                                <a href="/ProjectRosaura/" class="component-button component-button--dark component-button--h45" style="text-decoration: none;">Volver a recargar</a>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </body>
+    </html>';
+    exit;
+}
+
+// Capturar cualquier Excepción no atrapada (como la inyección de dependencias)
+set_exception_handler(function (\Throwable $e) {
+    \App\Core\System\Logger::security("Fatal Exception: " . $e->getMessage() . " en " . $e->getFile() . " línea " . $e->getLine(), 'critical');
+    render_fatal_error_view();
+});
+
+// Capturar Errores Fatales nativos de PHP (Sintaxis, Memoria, etc)
+register_shutdown_function(function () {
+    $error = error_get_last();
+    // Identificar si el error es uno que detiene la ejecución del script
+    if ($error !== null && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
+        \App\Core\System\Logger::security("Fatal Error: " . $error['message'] . " en " . $error['file'] . " línea " . $error['line'], 'critical');
+        render_fatal_error_view();
+    }
+});
+
+// =========================================================================
+
 use App\Core\Helpers\Utils; 
 use App\Core\System\Translator; 
 use App\Core\Container;
