@@ -4,30 +4,34 @@
 return [
     '/' => ['view' => 'app/home.php'],
     '/explore' => ['view' => 'app/explore.php'],
-    '/login' => ['view' => 'auth/login.php'],
-    '/login/two-factor' => ['view' => 'auth/login.php'],
-    '/register' => ['view' => 'auth/register.php'],
-    '/register/aditional-data' => ['view' => 'auth/register.php'],
-    '/register/verification-account' => ['view' => 'auth/register.php'],
-    '/forgot-password' => ['view' => 'auth/forgot-password.php'],
-    '/reset-password' => ['view' => 'auth/reset-password.php'],
+    
+    // --- RUTAS DE AUTENTICACIÓN (Solo invitados) ---
+    '/login' => ['view' => 'auth/login.php', 'guest_only' => true],
+    '/login/two-factor' => ['view' => 'auth/login.php', 'guest_only' => true],
+    '/register' => ['view' => 'auth/register.php', 'guest_only' => true],
+    '/register/aditional-data' => ['view' => 'auth/register.php', 'guest_only' => true],
+    '/register/verification-account' => ['view' => 'auth/register.php', 'guest_only' => true],
+    '/forgot-password' => ['view' => 'auth/forgot-password.php', 'guest_only' => true],
+    '/reset-password' => ['view' => 'auth/reset-password.php', 'guest_only' => true],
     
     // --- RUTAS DE CONFIGURACIÓN ---
     '/settings' => ['view' => 'settings/index.php'],
-    '/settings/your-profile' => ['view' => 'settings/your-profile.php'],
-    '/settings/security' => ['view' => 'settings/security.php'],
-    '/settings/accessibility' => ['view' => 'settings/accessibility.php'],
-    '/settings/guest' => ['view' => 'settings/guest.php'],
-    '/settings/change-password' => ['view' => 'settings/change-password.php'],
-    '/settings/2fa' => ['view' => 'settings/2fa.php'],
-    '/settings/devices' => ['view' => 'settings/devices.php'],
-    '/settings/delete-account' => ['view' => 'settings/delete-account.php'],
+    '/settings/guest' => ['view' => 'settings/guest.php', 'guest_only' => true],
 
-    // --- RUTAS DE ADMINISTRADOR ---
-    '/admin' => ['view' => 'admin/dashboard.php'],
-    '/admin/dashboard' => ['view' => 'admin/dashboard.php'],
-    '/admin/manage-users' => ['view' => 'admin/manage-users.php'],
-    '/admin/backups' => ['view' => 'admin/backups.php'],
-    '/admin/server-config' => ['view' => 'admin/server-config.php']
+    // --- RUTAS PROTEGIDAS (Requieren autenticación) ---
+    '/settings/your-profile' => ['view' => 'settings/your-profile.php', 'auth' => true],
+    '/settings/security' => ['view' => 'settings/security.php', 'auth' => true],
+    '/settings/accessibility' => ['view' => 'settings/accessibility.php', 'auth' => true],
+    '/settings/change-password' => ['view' => 'settings/change-password.php', 'auth' => true],
+    '/settings/2fa' => ['view' => 'settings/2fa.php', 'auth' => true],
+    '/settings/devices' => ['view' => 'settings/devices.php', 'auth' => true],
+    '/settings/delete-account' => ['view' => 'settings/delete-account.php', 'auth' => true],
+
+    // --- RUTAS DE ADMINISTRADOR (Requieren autenticación + Roles específicos) ---
+    '/admin' => ['view' => 'admin/dashboard.php', 'auth' => true, 'roles' => ['founder', 'administrator']],
+    '/admin/dashboard' => ['view' => 'admin/dashboard.php', 'auth' => true, 'roles' => ['founder', 'administrator']],
+    '/admin/manage-users' => ['view' => 'admin/manage-users.php', 'auth' => true, 'roles' => ['founder', 'administrator']],
+    '/admin/backups' => ['view' => 'admin/backups.php', 'auth' => true, 'roles' => ['founder', 'administrator']],
+    '/admin/server-config' => ['view' => 'admin/server-config.php', 'auth' => true, 'roles' => ['founder', 'administrator']]
 ];
 ?>

@@ -47,13 +47,51 @@ $currentView = $routeData['view'];
 
 $isLoggedIn = isset($_SESSION['user_id']);
 $userRole = $_SESSION['user_role'] ?? 'user';
+$redirectUrl = null;
+$requestUriPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
-// --- VALIDACIÓN DE ACCESO AL PANEL DE ADMINISTRACIÓN ---
-if (strpos($currentView, 'admin/') === 0) {
-    if (!$isLoggedIn || ($userRole !== 'founder' && $userRole !== 'administrator')) {
-        $currentView = 'system/404.php';
+
+// --- NUEVO SISTEMA DE VALIDACIÓN DE RUTAS DINÁMICO ---
+
+// 1. Validar rutas de "Solo Invitados" (guest_only)
+if (!empty($routeData['guest_only']) && $isLoggedIn) {
+    if ($currentView === 'settings/guest.php') {
+        $currentView = 'settings/your-profile.php';
+        $redirectUrl = '/ProjectRosaura/settings/your-profile';
+    } else {
+        // Intenta ir a login/register estando logueado -> va al home
+        $redirectUrl = '/ProjectRosaura/';
     }
 }
+
+// 2. Validar rutas protegidas (auth)
+if (!empty($routeData['auth']) && !$isLoggedIn) {
+    if (strpos($currentView, 'admin/') === 0) {
+        $currentView = 'system/404.php'; // Fingimos que no existe por seguridad
+    } else {
+        $currentView = 'settings/guest.php';
+        $redirectUrl = '/ProjectRosaura/settings/guest';
+    }
+}
+
+// 3. Validar rutas por roles permitidos (roles)
+if (!empty($routeData['roles']) && $isLoggedIn) {
+    if (!in_array($userRole, $routeData['roles'])) {
+        $currentView = 'system/404.php'; // Denegado, fingimos que no existe
+    }
+}
+
+// 4. Alias y Redirecciones internas (Ej. limpieza de /admin y /settings)
+if ($currentView !== 'system/404.php' && !$redirectUrl) {
+    if ($requestUriPath === '/ProjectRosaura/admin' || $requestUriPath === '/ProjectRosaura/admin/') {
+        $currentView = 'admin/dashboard.php';
+        $redirectUrl = '/ProjectRosaura/admin/dashboard';
+    } elseif ($currentView === 'settings/index.php') {
+        $currentView = $isLoggedIn ? 'settings/your-profile.php' : 'settings/guest.php';
+        $redirectUrl = $isLoggedIn ? '/ProjectRosaura/settings/your-profile' : '/ProjectRosaura/settings/guest';
+    }
+}
+
 
 // Sincronizar preferencias si faltan en la sesión
 if ($isLoggedIn && !isset($_SESSION['user_prefs'])) {
@@ -75,32 +113,9 @@ if (!function_exists('__')) {
     function __($key) { return Translator::get($key); } 
 }
 
-// Lógica de Redirección SPA / Guest
+// Lógica de Redirección SPA
 $isSpaRequest = !empty($_SERVER['HTTP_X_SPA_REQUEST']);
 $isAuthRoute = (strpos($currentView, 'auth/') === 0);
-
-$protectedSettings = [
-    'settings/your-profile.php', 'settings/security.php', 'settings/accessibility.php',
-    'settings/change-password.php', 'settings/2fa.php', 'settings/devices.php', 'settings/delete-account.php'
-];
-
-$redirectUrl = null;
-$requestUriPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-
-// CORRECCIÓN: Si entra a /admin limpio, pero tiene acceso, lo redirigimos a /admin/dashboard
-if ($currentView !== 'system/404.php' && ($requestUriPath === '/ProjectRosaura/admin' || $requestUriPath === '/ProjectRosaura/admin/')) {
-    $currentView = 'admin/dashboard.php';
-    $redirectUrl = '/ProjectRosaura/admin/dashboard';
-} elseif ($currentView === 'settings/index.php') {
-    $currentView = $isLoggedIn ? 'settings/your-profile.php' : 'settings/guest.php';
-    $redirectUrl = $isLoggedIn ? '/ProjectRosaura/settings/your-profile' : '/ProjectRosaura/settings/guest';
-} elseif (in_array($currentView, $protectedSettings) && !$isLoggedIn) {
-    $currentView = 'settings/guest.php';
-    $redirectUrl = '/ProjectRosaura/settings/guest';
-} elseif ($currentView === 'settings/guest.php' && $isLoggedIn) {
-    $currentView = 'settings/your-profile.php';
-    $redirectUrl = '/ProjectRosaura/settings/your-profile';
-}
 
 if ($redirectUrl) {
     if ($isSpaRequest) header("X-SPA-Update-URL: " . $redirectUrl);
