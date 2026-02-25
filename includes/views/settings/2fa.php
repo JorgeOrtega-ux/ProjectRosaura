@@ -12,38 +12,92 @@ $is2FAActive = !empty($_SESSION['user_2fa']);
         </div>
 
         <?php if (!$is2FAActive): ?>
-            <div class="component-card--grouped active" id="2fa-setup-container">
-                <div class="component-group-item component-group-item--stacked">
-                    <div class="component-card__content component-card__content--full component-card__content--start">
-                        <div class="component-card__text">
-                            <h2 class="component-card__title">1. Escanea el código QR</h2>
-                            <p class="component-card__description">Abre tu aplicación de autenticación (como Google Authenticator o Authy) y escanea el siguiente código.</p>
+            
+            <div id="2fa-setup-container" class="component-setup-container active">
+                
+                <div class="component-card--grouped component-accordion active">
+                    <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
+                        <div class="component-card__content">
+                            <div class="component-card__icon-container component-card__icon-container--bordered">
+                                <span class="material-symbols-rounded">qr_code_scanner</span>
+                            </div>
+                            <div class="component-card__text">
+                                <h2 class="component-card__title">1. Configura tu aplicación</h2>
+                                <p class="component-card__description">Vincula tu cuenta con tu aplicación de autenticación preferida.</p>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--end">
+                            <span class="material-symbols-rounded component-accordion-icon">expand_more</span>
+                        </div>
+                    </div>
+                    <div class="component-accordion-body">
+                        <div class="component-accordion-content">
                             
-                            <div style="margin: 16px 0; text-align: center; width: 100%;">
-                                <img id="2fa-qr-img" src="" alt="Código QR" style="width: 200px; height: 200px; border: 1px solid #00000020; border-radius: 8px; padding: 8px; background: #fff;">
+                            <div class="component-split-layout">
+                                <div class="component-split-layout__left">
+                                    <h3 class="component-card__title" style="margin-bottom: 16px;">Instrucciones</h3>
+                                    <div class="component-step-container">
+                                        <div class="component-step-item">
+                                            <div class="component-step-circle">1</div>
+                                            <p class="component-step-text">Descarga y abre una aplicación de autenticación como Google Authenticator o Authy.</p>
+                                        </div>
+                                        <div class="component-step-item">
+                                            <div class="component-step-circle">2</div>
+                                            <p class="component-step-text">Escanea el código QR que se muestra a la derecha usando la cámara de tu dispositivo.</p>
+                                        </div>
+                                        <div class="component-step-item">
+                                            <div class="component-step-circle">3</div>
+                                            <p class="component-step-text">Si no puedes escanear el código, introduce la clave manual mostrada debajo del QR.</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="component-split-layout__right">
+                                    <div class="component-qr-box">
+                                        <img id="2fa-qr-img" src="" alt="Código QR">
+                                    </div>
+                                    <div class="component-secret-box">
+                                        <p class="component-secret-label">Clave manual:</p>
+                                        <div id="2fa-secret-text" class="component-secret-code">CARGANDO...</div>
+                                    </div>
+                                </div>
                             </div>
 
-                            <h2 class="component-card__title">2. Ingresa la clave manualmente</h2>
-                            <p class="component-card__description">Si no puedes escanear el código, ingresa esta clave en tu app:</p>
-                            <div style="background: #f5f5fa; padding: 12px; border-radius: 8px; font-family: monospace; letter-spacing: 2px; text-align: center; font-size: 16px; margin: 12px 0;">
-                                <strong id="2fa-secret-text">CARGANDO...</strong>
-                            </div>
+                        </div>
+                    </div>
+                </div>
 
-                            <h2 class="component-card__title">3. Verifica el código</h2>
-                            <p class="component-card__description">Ingresa el código de 6 dígitos generado por tu aplicación.</p>
+                <div class="component-card--grouped component-accordion">
+                    <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
+                        <div class="component-card__content">
+                            <div class="component-card__icon-container component-card__icon-container--bordered">
+                                <span class="material-symbols-rounded">verified_user</span>
+                            </div>
+                            <div class="component-card__text">
+                                <h2 class="component-card__title">2. Verifica el código</h2>
+                                <p class="component-card__description">Ingresa el código de 6 dígitos generado por tu aplicación.</p>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--end">
+                            <span class="material-symbols-rounded component-accordion-icon">expand_more</span>
+                        </div>
+                    </div>
+                    <div class="component-accordion-body">
+                        <div class="component-accordion-content">
                             <div class="component-card__form-area">
                                 <div class="component-input-group">
                                     <input type="text" id="2fa_app_code" class="component-input-field" placeholder=" " maxlength="6">
                                     <label for="2fa_app_code" class="component-input-label">Código de la aplicación</label>
                                 </div>
                             </div>
+                            <div class="component-card__actions component-card__actions--end" style="width: 100%; justify-content: flex-end; display: flex; gap: 8px; margin-top: 16px;">
+                                <button class="component-button component-button--h36" data-nav="/ProjectRosaura/settings/security"><?php echo __('btn_cancel'); ?></button>
+                                <button class="component-button component-button--h36 component-button--dark" data-action="submitActivate2FA">Activar</button>
+                            </div>
                         </div>
                     </div>
-                    <div class="component-card__actions component-card__actions--end" style="width: 100%; justify-content: flex-end; display: flex; gap: 8px; margin-top: 16px;">
-                        <button class="component-button component-button--h36" data-nav="/ProjectRosaura/settings/security"><?php echo __('btn_cancel'); ?></button>
-                        <button class="component-button component-button--h36 component-button--dark" data-action="submitActivate2FA">Activar</button>
-                    </div>
                 </div>
+                
             </div>
 
             <div class="component-card--grouped disabled" id="2fa-recovery-container">

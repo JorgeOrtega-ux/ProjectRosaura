@@ -171,6 +171,10 @@ export class MainController {
                 else if (action === 'toggleModuleLanguage') this.toggleModule('moduleLanguage');
                 else if (action === 'toggleModuleTheme') this.toggleModule('moduleTheme');
                 else if (action === 'toggleMobileSearch') this.toggleMobileSearch();
+                else if (action === 'toggleAccordion') {
+                    const accordion = btn.closest('.component-accordion');
+                    if (accordion) accordion.classList.toggle('active');
+                }
                 else if (action === 'toggleEditState') this.toggleEditState(btn.getAttribute('data-target'));
                 else if (action === 'setPref') {
                     const key = btn.getAttribute('data-key');
