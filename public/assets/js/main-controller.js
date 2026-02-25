@@ -46,7 +46,7 @@ export class MainController {
             else if (base === 'it') finalLang = 'it-IT';
             
             localStorage.setItem('pr_language', finalLang);
-            document.cookie = "pr_language=" + finalLang + "; path=/; max-age=31536000"; // Sincroniza con PHP para invitados
+            document.cookie = "pr_language=" + finalLang + "; path=/; max-age=31536000"; 
             localStorage.setItem('pr_open_links_new_tab', '1');
             localStorage.setItem('pr_theme', 'system');
             localStorage.setItem('pr_extended_alerts', '0');
@@ -64,20 +64,16 @@ export class MainController {
     }
 
     async savePreference(key, value) {
-        // 1. Aplicación inmediata visual
         if (key === 'theme') this.applyTheme(value);
 
-        // Actualizamos Cookie para que PHP sepa el idioma incluso si es invitado
         if (key === 'language') {
             document.cookie = "pr_language=" + value + "; path=/; max-age=31536000";
         }
 
-        // 2. Comprobar entorno (Base de datos o LocalStorage)
         if (window.AppUserPrefs) {
             window.AppUserPrefs[key] = value;
             
             try {
-                // Enviar a la Base de Datos
                 const response = await this.api.post(ApiRoutes.Settings.UpdatePreferences, { key: key, value: value });
                 
                 if (response && response.success) {
@@ -90,18 +86,16 @@ export class MainController {
                 if (key !== 'language') this.showToast('Error de red al guardar', 'error');
             }
         } else {
-            // Usuario invitado
             localStorage.setItem('pr_' + key, value);
             if (key !== 'language') this.showToast('Configuración local guardada', 'success');
         }
 
-        // 3. RECÁRGA DE PÁGINA SI ES IDIOMA
         if (key === 'language') {
             window.location.reload();
             return;
         }
 
-        this.syncUIPreferences(); // Refrescar textos e iconos
+        this.syncUIPreferences(); 
     }
 
     applyTheme(theme) {
@@ -221,7 +215,6 @@ export class MainController {
                 const input = document.getElementById('input-' + field);
                 if (input) {
                     input.focus();
-                    // --- MODIFICACIÓN: POSICIONAR EL CURSOR AL FINAL DE FORMA SEGURA ---
                     const valLength = input.value.length;
                     input.setSelectionRange(valLength, valLength);
                 }
@@ -233,8 +226,13 @@ export class MainController {
     }
 
     showToast(message, type = 'success') {
-        const container = document.getElementById('toast-container');
-        if (!container) return;
+        let container = document.getElementById('toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'toast-container';
+            container.className = 'toast-container';
+            document.body.appendChild(container);
+        }
 
         const toast = document.createElement('div');
         toast.className = `component-toast component-toast--${type}`;
@@ -250,7 +248,12 @@ export class MainController {
         setTimeout(() => {
             toast.classList.remove('show');
             toast.classList.add('hide');
-            setTimeout(() => toast.remove(), 300);
+            setTimeout(() => {
+                toast.remove();
+                if (container.childNodes.length === 0 && container.parentNode) {
+                    container.remove();
+                }
+            }, 300);
         }, duration);
     }
 
@@ -301,8 +304,8 @@ export class MainController {
         if (this.dragState.currentDiff > this.dragState.panel.offsetHeight * 0.40) {
             this.closeModule(this.dragState.module); 
         } else {
-            // FIX: Limpiamos sólo el transform para no borrar las reglas de display del SPA Router
-            this.dragState.panel.style.transform = '';
+            // Eliminamos el atributo style por completo
+            this.dragState.panel.removeAttribute('style');
         }
         this.dragState.currentDiff = 0;
         this.dragState.module = null;
@@ -321,8 +324,8 @@ export class MainController {
     
     closeModule(module) { 
         module.classList.replace('active', 'disabled'); 
-        // FIX: Limpiamos sólo el transform para no borrar las reglas de display del SPA Router
-        module.querySelectorAll('.component-menu').forEach(p => p.style.transform = '');
+        // Eliminamos el atributo style por completo
+        module.querySelectorAll('.component-menu').forEach(p => p.removeAttribute('style'));
     }
     
     closeAllModules() { document.querySelectorAll('.component-module:not(.disabled)').forEach(m => this.closeModule(m)); }
@@ -336,8 +339,8 @@ export class MainController {
             document.querySelectorAll('.is-dragging').forEach(m => {
                 m.classList.remove('is-dragging');
                 const p = m.querySelector('.component-menu');
-                // FIX: Limpiamos sólo el transform para no borrar las reglas de display del SPA Router
-                if (p) p.style.transform = '';
+                // Eliminamos el atributo style por completo
+                if (p) p.removeAttribute('style');
             });
             this.dragState.isDragging = false;
         }

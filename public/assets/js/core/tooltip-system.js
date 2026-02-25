@@ -2,98 +2,120 @@
 
 export class TooltipSystem {
     constructor() {
-        this.tooltips = new Map();
+        this.activeTooltip = null;
+        this.activePopper = null;
+        this.activeTarget = null;
+        this.initialized = false;
     }
 
     init() {
-        this.destroyAll(); // Limpiar instancias previas si recarga por SPA
-        const elements = document.querySelectorAll('[data-tooltip]');
-        elements.forEach(el => this.createTooltip(el));
+        if (this.initialized) return;
+        this.initialized = true;
+
+        document.addEventListener('mouseover', (e) => this.handleShow(e));
+        document.addEventListener('focusin', (e) => this.handleShow(e));
+        document.addEventListener('mouseout', (e) => this.handleHide(e));
+        document.addEventListener('focusout', (e) => this.handleHide(e));
+        
+        document.addEventListener('click', (e) => {
+            if (this.activeTarget && this.activeTarget.contains(e.target)) {
+                this.destroyCurrent();
+            }
+        });
     }
 
-    createTooltip(element) {
-        const text = element.getAttribute('data-tooltip');
+    handleShow(e) {
+        const target = e.target.closest('[data-tooltip]');
+        if (!target) return;
+        
+        if (this.activeTarget === target) return;
+
+        if (this.activeTarget) this.destroyCurrent();
+
+        this.activeTarget = target;
+        const text = target.getAttribute('data-tooltip');
         if (!text) return;
 
-        // Crear contenedor del Tooltip
-        const tooltip = document.createElement('div');
-        tooltip.className = 'aurora-tooltip';
+        this.activeTooltip = document.createElement('div');
+        this.activeTooltip.className = 'aurora-tooltip';
         
-        // Contenedor interno para el texto
+        // Desactivamos la transición temporalmente para evitar el "viaje" desde 0,0
+        this.activeTooltip.style.transition = 'none';
+        
         const innerText = document.createElement('span');
         innerText.textContent = text;
-        tooltip.appendChild(innerText);
+        this.activeTooltip.appendChild(innerText);
         
-        // Crear flecha para Popper.js
         const arrow = document.createElement('div');
         arrow.className = 'aurora-tooltip-arrow';
         arrow.setAttribute('data-popper-arrow', '');
-        tooltip.appendChild(arrow);
+        this.activeTooltip.appendChild(arrow);
 
-        // Se anexa al body para evitar problemas de overflow
-        document.body.appendChild(tooltip);
+        document.body.appendChild(this.activeTooltip);
 
-        // Si no hay atributo data-position, será 'auto' por defecto.
-        const preferredPosition = element.getAttribute('data-position') || 'auto';
+        const preferredPosition = target.getAttribute('data-position') || 'auto';
 
-        // Instanciar Popper con soporte inteligente de espacios
-        const popperInstance = Popper.createPopper(element, tooltip, {
+        this.activePopper = Popper.createPopper(target, this.activeTooltip, {
             placement: preferredPosition,
             modifiers: [
-                {
-                    name: 'offset',
-                    options: {
-                        offset: [0, 8],
-                    },
-                },
-                {
-                    // Voltea el tooltip automáticamente si no cabe en su posición original
-                    name: 'flip',
-                    enabled: true,
-                    options: {
-                        fallbackPlacements: ['bottom', 'top', 'left', 'right'],
-                    },
-                },
-                {
-                    // Previene que se salga de los bordes de la pantalla
-                    name: 'preventOverflow',
-                    enabled: true,
-                    options: {
-                        boundary: 'viewport',
-                    },
-                }
+                { name: 'offset', options: { offset: [0, 8] } },
+                { name: 'flip', enabled: true, options: { fallbackPlacements: ['bottom', 'top', 'left', 'right'] } },
+                { name: 'preventOverflow', enabled: true, options: { boundary: 'viewport' } }
             ],
         });
 
-        const show = () => {
-            tooltip.classList.add('show');
-            popperInstance.update(); // Obliga a Popper a recalcular el espacio justo antes de mostrarse
-        };
-
-        const hide = () => {
-            tooltip.classList.remove('show');
-        };
-
-        // Eventos
-        element.addEventListener('mouseenter', show);
-        element.addEventListener('focus', show);
-        element.addEventListener('mouseleave', hide);
-        element.addEventListener('blur', hide);
-
-        this.tooltips.set(element, { tooltip, popperInstance, show, hide });
+        this.activePopper.update().then(() => {
+            requestAnimationFrame(() => {
+                if (this.activeTooltip) {
+                    // Limpiamos la propiedad de forma nativa sin dejar rastros vacíos
+                    this.activeTooltip.style.removeProperty('transition'); 
+                    
+                    requestAnimationFrame(() => {
+                        if (this.activeTooltip) {
+                            this.activeTooltip.classList.add('show');
+                        }
+                    });
+                }
+            });
+        });
     }
 
-    destroyAll() {
-        this.tooltips.forEach((data, element) => {
-            element.removeEventListener('mouseenter', data.show);
-            element.removeEventListener('focus', data.show);
-            element.removeEventListener('mouseleave', data.hide);
-            element.removeEventListener('blur', data.hide);
-            data.popperInstance.destroy();
-            if (data.tooltip && data.tooltip.parentNode) {
-                data.tooltip.parentNode.removeChild(data.tooltip);
-            }
-        });
-        this.tooltips.clear();
+    handleHide(e) {
+        if (!this.activeTarget) return;
+
+        const target = e.target.closest('[data-tooltip]');
+        if (!target && e.type !== 'focusout') return; 
+
+        if (e.type === 'mouseout' && e.relatedTarget && this.activeTarget.contains(e.relatedTarget)) {
+            return;
+        }
+
+        this.destroyCurrent();
+    }
+
+    destroyCurrent() {
+        if (this.activeTooltip) {
+            // Guardamos referencias locales para no perderlas en el setTimeout
+            const tooltipToRemove = this.activeTooltip;
+            const popperToRemove = this.activePopper;
+
+            // Iniciamos la animación de salida
+            tooltipToRemove.classList.remove('show');
+            
+            // ¡CLAVE!: Destruimos Popper y el DOM SOLO CUANDO termine la animación.
+            // Si lo destruimos antes, pierde su "position: absolute" y genera Overflow
+            setTimeout(() => {
+                if (popperToRemove) {
+                    popperToRemove.destroy();
+                }
+                if (tooltipToRemove.parentNode) {
+                    tooltipToRemove.parentNode.removeChild(tooltipToRemove);
+                }
+            }, 200); 
+        }
+
+        this.activeTooltip = null;
+        this.activePopper = null;
+        this.activeTarget = null;
     }
 }

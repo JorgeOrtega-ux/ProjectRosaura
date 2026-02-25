@@ -63,8 +63,6 @@ global $serverConfig; // Rescatamos la config generada en bootstrap.php
             </div>
         </div>
     </div>
-    <div id="toast-container" class="toast-container"></div>
-    <div id="dialog-container"></div>
     
     <script src="https://unpkg.com/@popperjs/core@2"></script>
     <script type="module" src="assets/js/app-init.js"></script>

@@ -3,17 +3,20 @@ import { DialogTemplates } from './dialog-templates.js';
 
 export class DialogSystem {
     constructor() {
-        this.container = document.getElementById('dialog-container');
         this.templates = DialogTemplates;
         this.activeCloseFn = null;
     }
 
-    /**
-     * Muestra un diálogo y devuelve una promesa con estado y datos extraídos.
-     * @param {string} templateName El nombre de la plantilla a renderizar.
-     * @param {object} data Datos opcionales si la plantilla lo requiere en el futuro.
-     * @returns {Promise<{confirmed: boolean, data: object}>}
-     */
+    _getContainer() {
+        let container = document.getElementById('dialog-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'dialog-container';
+            document.body.appendChild(container);
+        }
+        return container;
+    }
+
     show(templateName, data = {}) {
         return new Promise((resolve) => {
             if (!this.templates[templateName]) {
@@ -22,26 +25,23 @@ export class DialogSystem {
                 return;
             }
 
-            // Crear Overlay
+            const container = this._getContainer();
+
             const overlay = document.createElement('div');
             overlay.className = 'component-dialog-overlay';
             
-            // Crear Caja Blanca
             const box = document.createElement('div');
             box.className = 'component-dialog-box';
             box.innerHTML = this.templates[templateName].build(data);
             
             overlay.appendChild(box);
-            this.container.appendChild(overlay);
+            container.appendChild(overlay);
 
-            // Trigger para la animación CSS inicial (Entrada)
             requestAnimationFrame(() => overlay.classList.add('active'));
 
-            // Funcionalidad de cierre centralizada
             const closeDialog = (result) => {
                 let formData = {};
                 
-                // Si el usuario confirmó, extraemos los valores de los inputs con IDs que haya en el diálogo
                 if (result === true) {
                     const inputs = box.querySelectorAll('input');
                     inputs.forEach(inp => {
@@ -49,32 +49,34 @@ export class DialogSystem {
                     });
                 }
 
-                // Devolver el control a CSS
-                box.style.transform = ''; 
+                // Eliminamos completamente el atributo style del DOM
+                box.removeAttribute('style'); 
                 overlay.classList.remove('active');
                 
                 setTimeout(() => {
                     overlay.remove();
                     this.activeCloseFn = null;
+                    
+                    if (container.childNodes.length === 0 && container.parentNode) {
+                        container.remove();
+                    }
+                    
                     resolve({ confirmed: result === true, data: formData });
-                }, 300); // Mismo tiempo que la transición CSS (0.3s)
+                }, 300); 
             };
 
             this.activeCloseFn = closeDialog;
 
-            // Bind Botones
             const btnConfirm = box.querySelector('[data-dialog-action="confirm"]');
             const btnCancel = box.querySelector('[data-dialog-action="cancel"]');
             
             if(btnConfirm) btnConfirm.addEventListener('click', () => closeDialog(true));
             if(btnCancel) btnCancel.addEventListener('click', () => closeDialog(false));
             
-            // Cerrar al dar click fuera (en el área oscura semitransparente)
             overlay.addEventListener('click', (e) => {
                 if (e.target === overlay) closeDialog(false);
             });
 
-            // Bind Drag & Drop para móviles
             const pill = box.querySelector('.pill-container');
             if (pill) {
                 this.bindDragEvents(pill, box, overlay, () => closeDialog(false));
@@ -82,9 +84,6 @@ export class DialogSystem {
         });
     }
 
-    /**
-     * Cierra forzosamente el diálogo actual abierto sin interacción del usuario
-     */
     closeCurrent(result = false) {
         if (this.activeCloseFn) {
             this.activeCloseFn(result);
@@ -129,7 +128,7 @@ export class DialogSystem {
             if (currentDiff > box.offsetHeight * 0.35) {
                 closeCallback();
             } else {
-                box.style.transform = '';
+                box.removeAttribute('style'); // Remover style
             }
             
             currentDiff = 0;

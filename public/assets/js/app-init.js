@@ -28,12 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
         outlet: '#app-router-outlet'
     });
 
-    // 6. Instanciamos e inicializamos el Sistema de Tooltips
+    // 6. Instanciamos e inicializamos el Sistema de Tooltips (Usa delegación de eventos)
     window.tooltipSystem = new TooltipSystem();
     window.tooltipSystem.init();
-
-    // Re-inicializamos los tooltips por si el router SPA trae nuevas vistas
-    window.addEventListener('viewLoaded', () => {
-        window.tooltipSystem.init();
-    });
 });
