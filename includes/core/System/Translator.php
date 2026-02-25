@@ -18,12 +18,20 @@ class Translator {
         }
     }
 
-    public static function get($key) {
+    // AHORA ACEPTA PARÁMETROS PARA REEMPLAZO DINÁMICO
+    public static function get($key, $params = []) {
+        $text = $key; // Fallback inicial a la clave misma
+        
         if (self::$translations !== null && array_key_exists($key, self::$translations)) {
-            return self::$translations[$key];
+            $text = self::$translations[$key];
         }
-        // Si no existe la traducción o el archivo, devuelve la clave misma (Fallback)
-        return $key; 
+        
+        // Reemplazar las variables dinámicas en el texto {variable}
+        foreach ($params as $paramKey => $paramValue) {
+            $text = str_replace('{' . $paramKey . '}', $paramValue, $text);
+        }
+
+        return $text; 
     }
 
     public static function getAll() {

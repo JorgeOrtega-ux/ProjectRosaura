@@ -13,6 +13,7 @@ use App\Core\Interfaces\UserRepositoryInterface;
 use App\Core\Interfaces\TokenRepositoryInterface;
 use App\Core\Interfaces\VerificationCodeRepositoryInterface;
 use App\Core\Interfaces\ProfileLogRepositoryInterface;
+use App\Core\Interfaces\ServerConfigRepositoryInterface; // NUEVO
 
 class SettingsServices
 {
@@ -22,6 +23,7 @@ class SettingsServices
     private $tokenRepository;
     private $verificationCodeRepository;
     private $profileLogRepository;
+    private $config; // NUEVO: Para guardar la configuración del servidor
 
     public function __construct(
         RateLimiterInterface $rateLimiter,
@@ -29,7 +31,8 @@ class SettingsServices
         UserRepositoryInterface $userRepository,
         TokenRepositoryInterface $tokenRepository,
         VerificationCodeRepositoryInterface $verificationCodeRepository,
-        ProfileLogRepositoryInterface $profileLogRepository
+        ProfileLogRepositoryInterface $profileLogRepository,
+        ServerConfigRepositoryInterface $configRepository // NUEVO: Inyección
     ) {
         $this->rateLimiter = $rateLimiter;
         $this->sessionManager = $sessionManager;
@@ -37,6 +40,7 @@ class SettingsServices
         $this->tokenRepository = $tokenRepository;
         $this->verificationCodeRepository = $verificationCodeRepository;
         $this->profileLogRepository = $profileLogRepository;
+        $this->config = $configRepository->getConfig(); // Cargamos configuración global
     }
 
     public function updateAvatar($data)
@@ -44,12 +48,23 @@ class SettingsServices
         if (!$this->sessionManager->has('user_id')) return ['success' => false, 'message' => 'Sesión no válida o expirada.'];
 
         $userId = $this->sessionManager->get('user_id');
-        if (!$this->canChangeProfileData($userId, 'avatar', 3, 1)) return ['success' => false, 'message' => 'Has alcanzado el límite de 3 cambios de foto por día.'];
+        
+        // Cooldown Dinámico
+        $maxAttempts = $this->config['avatar_change_max_attempts'];
+        $cooldownDays = $this->config['avatar_change_cooldown_days'];
+        if (!$this->canChangeProfileData($userId, 'avatar', $maxAttempts, $cooldownDays)) {
+            return ['success' => false, 'message' => "Has alcanzado el límite de {$maxAttempts} cambios de foto en {$cooldownDays} días."];
+        }
 
         $files = $data['_files'] ?? [];
         if (!isset($files['avatar']) || $files['avatar']['error'] !== UPLOAD_ERR_OK) return ['success' => false, 'message' => 'Hubo un error al subir el archivo.'];
         $file = $files['avatar'];
-        if ($file['size'] > 2 * 1024 * 1024) return ['success' => false, 'message' => 'La imagen supera el límite de 2MB.'];
+        
+        // Límite de Tamaño Dinámico
+        $maxSizeMb = $this->config['max_avatar_size_mb'];
+        if ($file['size'] > $maxSizeMb * 1024 * 1024) {
+            return ['success' => false, 'message' => "La imagen supera el límite de {$maxSizeMb}MB."];
+        }
 
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
         $mime = finfo_file($finfo, $file['tmp_name']);
@@ -110,10 +125,22 @@ class SettingsServices
         if (!$this->sessionManager->has('user_id')) return ['success' => false, 'message' => 'Sesión no válida.'];
 
         $userId = $this->sessionManager->get('user_id');
-        if (!$this->canChangeProfileData($userId, 'username', 1, 7)) return ['success' => false, 'message' => 'Solo puedes cambiar tu nombre 1 vez cada 7 días.'];
+        
+        // Cooldown Dinámico
+        $maxAttempts = $this->config['username_change_max_attempts'];
+        $cooldownDays = $this->config['username_change_cooldown_days'];
+        if (!$this->canChangeProfileData($userId, 'username', $maxAttempts, $cooldownDays)) {
+            return ['success' => false, 'message' => "Solo puedes cambiar tu nombre {$maxAttempts} vez cada {$cooldownDays} días."];
+        }
 
         $username = trim($data['username'] ?? '');
-        if (strlen($username) < 3 || strlen($username) > 32) return ['success' => false, 'message' => 'Inválido.'];
+        $minLen = $this->config['min_username_length'];
+        $maxLen = $this->config['max_username_length'];
+        
+        // Longitud Dinámica
+        if (strlen($username) < $minLen || strlen($username) > $maxLen) {
+            return ['success' => false, 'message' => "El nombre de usuario debe tener entre {$minLen} y {$maxLen} caracteres."];
+        }
 
         $existingUser = $this->userRepository->findByUsername($username);
         if ($existingUser && $existingUser['id'] != $userId) {
@@ -140,7 +167,12 @@ class SettingsServices
         }
 
         $email = $this->sessionManager->get('user_email');
-        $rateCheck = $this->rateLimiter->check('request_email_code', 3, 30);
+        
+        // Rate Limits Dinámicos (Asumimos unos por defecto de seguridad si no están expuestos explícitamente)
+        $attempts = $this->config['email_code_request_attempts'] ?? 3;
+        $minutes = $this->config['email_code_request_minutes'] ?? 30;
+        $rateCheck = $this->rateLimiter->check('request_email_code', $attempts, $minutes);
+        
         if (!$rateCheck['allowed']) {
             Logger::security("Límite de tasa excedido en solicitud de código de cambio de email", 'warning', ['user_id' => $userId, 'ip' => Utils::getIpAddress()]);
             return ['success' => false, 'message' => $rateCheck['message']];
@@ -151,13 +183,14 @@ class SettingsServices
         }
 
         $code = Utils::generateNumericCode(12);
-        $expiresAt = date('Y-m-d H:i:s', strtotime('+15 minutes'));
+        $codeMinutes = $this->config['verification_code_minutes'] ?? 15;
+        $expiresAt = date('Y-m-d H:i:s', strtotime("+{$codeMinutes} minutes"));
         $payload = json_encode(['action' => 'email_update']);
 
         if ($this->verificationCodeRepository->createCode($email, 'email_update', $code, $payload, $expiresAt)) {
             $mailer = new Mailer();
             if ($mailer->sendEmailUpdateCode($email, $this->sessionManager->get('user_name'), $code)) {
-                $this->rateLimiter->record('request_email_code', 3, 30);
+                $this->rateLimiter->record('request_email_code', $attempts, $minutes);
                 Logger::security("Código para actualización de email enviado", 'info', ['user_id' => $userId]);
                 return ['success' => true, 'message' => 'Código enviado.'];
             }
@@ -177,10 +210,11 @@ class SettingsServices
 
         if ($verification && $verification['identifier'] === $this->sessionManager->get('user_email')) {
             $this->verificationCodeRepository->deleteById($verification['id']);
-            $this->sessionManager->set('can_update_email_expires', time() + (15 * 60));
+            $codeMinutes = $this->config['verification_code_minutes'] ?? 15;
+            $this->sessionManager->set('can_update_email_expires', time() + ($codeMinutes * 60));
             $this->rateLimiter->clear('request_email_code');
             Logger::security("Identidad verificada exitosamente para cambio de email", 'info', ['user_id' => $userId]);
-            return ['success' => true, 'message' => 'Identidad verificada. Tienes 15 minutos.'];
+            return ['success' => true, 'message' => "Identidad verificada. Tienes {$codeMinutes} minutos."];
         }
         Logger::security("Código de verificación incorrecto en cambio de email", 'warning', ['user_id' => $userId, 'ip' => Utils::getIpAddress()]);
         return ['success' => false, 'message' => 'El código es incorrecto o ha expirado.'];
@@ -195,7 +229,13 @@ class SettingsServices
             Logger::security("Intento de cambio de email sin identidad verificada", 'warning', ['user_id' => $userId, 'ip' => Utils::getIpAddress()]);
             return ['success' => false, 'message' => 'Verifica tu identidad primero.'];
         }
-        if (!$this->canChangeProfileData($userId, 'email', 1, 7)) return ['success' => false, 'message' => 'Solo puedes cambiar tu correo 1 vez cada 7 días.'];
+        
+        // Cooldown Dinámico
+        $maxAttempts = $this->config['email_change_max_attempts'];
+        $cooldownDays = $this->config['email_change_cooldown_days'];
+        if (!$this->canChangeProfileData($userId, 'email', $maxAttempts, $cooldownDays)) {
+            return ['success' => false, 'message' => "Solo puedes cambiar tu correo {$maxAttempts} vez cada {$cooldownDays} días."];
+        }
 
         $email = trim($data['email'] ?? '');
         $emailValidation = Utils::validateEmailFormat($email);
@@ -222,7 +262,11 @@ class SettingsServices
         if (!$this->sessionManager->has('user_id')) return ['success' => false, 'message' => 'Sesión no válida.'];
 
         $userId = $this->sessionManager->get('user_id');
-        $rateCheck = $this->rateLimiter->check('update_preferences', 20, 5, "Has cambiado tus preferencias demasiadas veces. Por favor espera {minutes} minutos.");
+        
+        // Rate Limits Dinámicos
+        $attempts = $this->config['prefs_update_rate_limit_attempts'] ?? 20;
+        $minutes = $this->config['prefs_update_rate_limit_minutes'] ?? 5;
+        $rateCheck = $this->rateLimiter->check('update_preferences', $attempts, $minutes, "Has cambiado tus preferencias demasiadas veces. Por favor espera {minutes} minutos.");
         if (!$rateCheck['allowed']) return ['success' => false, 'message' => $rateCheck['message']];
 
         $key = $data['key'] ?? '';
@@ -235,7 +279,7 @@ class SettingsServices
             $userPrefs[$key] = $value;
             $this->sessionManager->set('user_prefs', $userPrefs);
 
-            $this->rateLimiter->record('update_preferences', 20, 5);
+            $this->rateLimiter->record('update_preferences', $attempts, $minutes);
             return ['success' => true, 'message' => 'Preferencia guardada.'];
         }
         return ['success' => false, 'message' => 'Error.'];
@@ -246,7 +290,12 @@ class SettingsServices
         if (!$this->sessionManager->has('user_id')) return ['success' => false, 'message' => 'Sesión no válida.'];
 
         $userId = $this->sessionManager->get('user_id');
-        $rateCheck = $this->rateLimiter->check('verify_current_password', 5, 15);
+        
+        // Rate Limits Dinámicos
+        $attempts = $this->config['security_verify_attempts'] ?? 5;
+        $minutes = $this->config['security_verify_minutes'] ?? 15;
+        $rateCheck = $this->rateLimiter->check('verify_current_password', $attempts, $minutes);
+        
         if (!$rateCheck['allowed']) {
             Logger::security("Límite de tasa excedido en verificación de contraseña actual", 'warning', ['user_id' => $userId, 'ip' => Utils::getIpAddress()]);
             return ['success' => false, 'message' => $rateCheck['message']];
@@ -256,12 +305,13 @@ class SettingsServices
 
         if ($user && password_verify(trim($data['current_password'] ?? ''), $user['password'])) {
             $this->rateLimiter->clear('verify_current_password');
-            $this->sessionManager->set('can_change_password_expires', time() + (15 * 60));
+            $codeMinutes = $this->config['verification_code_minutes'] ?? 15;
+            $this->sessionManager->set('can_change_password_expires', time() + ($codeMinutes * 60));
             Logger::security("Contraseña actual verificada exitosamente", 'info', ['user_id' => $userId]);
             return ['success' => true, 'message' => 'Identidad verificada.'];
         }
 
-        $this->rateLimiter->record('verify_current_password', 5, 15);
+        $this->rateLimiter->record('verify_current_password', $attempts, $minutes);
         Logger::security("Verificación de contraseña actual fallida", 'warning', ['user_id' => $userId, 'ip' => Utils::getIpAddress()]);
         return ['success' => false, 'message' => 'La contraseña es incorrecta.'];
     }
@@ -276,12 +326,18 @@ class SettingsServices
             return ['success' => false, 'message' => 'Verifica tu contraseña primero.'];
         }
 
-        $rateCheck = $this->rateLimiter->check('update_password', 5, 15);
+        // Rate Limits Dinámicos
+        $attempts = $this->config['password_update_rate_limit_attempts'] ?? 5;
+        $minutes = $this->config['password_update_rate_limit_minutes'] ?? 15;
+        $rateCheck = $this->rateLimiter->check('update_password', $attempts, $minutes);
+        
         if (!$rateCheck['allowed']) return ['success' => false, 'message' => $rateCheck['message']];
 
         $newPassword = trim($data['new_password'] ?? '');
         if ($newPassword !== trim($data['confirm_password'] ?? '')) return ['success' => false, 'message' => 'Las contraseñas no coinciden.'];
-        $pVal = Utils::validatePasswordFormat($newPassword);
+        
+        // Validación Dinámica
+        $pVal = Utils::validatePasswordFormat($newPassword, $this->config['min_password_length'], $this->config['max_password_length']);
         if (!$pVal['valid']) return ['success' => false, 'message' => $pVal['message']];
 
         if ($this->userRepository->updatePassword($userId, password_hash($newPassword, PASSWORD_BCRYPT))) {
@@ -291,7 +347,7 @@ class SettingsServices
             Logger::security("Contraseña de cuenta actualizada manualmente", 'info', ['user_id' => $userId, 'ip' => Utils::getIpAddress()]);
             return ['success' => true, 'message' => 'Contraseña actualizada.'];
         }
-        $this->rateLimiter->record('update_password', 5, 15);
+        $this->rateLimiter->record('update_password', $attempts, $minutes);
         return ['success' => false, 'message' => 'Hubo un error.'];
     }
 
@@ -344,8 +400,11 @@ class SettingsServices
 
         $userId = $this->sessionManager->get('user_id');
 
-        // Aplicar Rate Limit: Máximo 5 intentos cada 15 minutos
-        $rateCheck = $this->rateLimiter->check('enable_2fa', 5, 15);
+        // Rate Limits Dinámicos
+        $attempts = $this->config['security_verify_attempts'] ?? 5;
+        $minutes = $this->config['security_verify_minutes'] ?? 15;
+        $rateCheck = $this->rateLimiter->check('enable_2fa', $attempts, $minutes);
+        
         if (!$rateCheck['allowed']) {
             Logger::security("Límite de tasa excedido al intentar activar 2FA", 'warning', ['user_id' => $userId, 'ip' => Utils::getIpAddress()]);
             return ['success' => false, 'message' => $rateCheck['message']];
@@ -369,7 +428,7 @@ class SettingsServices
             }
         }
 
-        $this->rateLimiter->record('enable_2fa', 5, 15); // Registrar fallo
+        $this->rateLimiter->record('enable_2fa', $attempts, $minutes); // Registrar fallo
         Logger::security("Fallo al intentar habilitar 2FA (Código incorrecto)", 'warning', ['user_id' => $userId, 'ip' => Utils::getIpAddress()]);
         return ['success' => false, 'message' => 'Código incorrecto.'];
     }
@@ -380,8 +439,11 @@ class SettingsServices
 
         $userId = $this->sessionManager->get('user_id');
 
-        // Aplicar Rate Limit para proteger la contraseña
-        $rateCheck = $this->rateLimiter->check('disable_2fa', 5, 15);
+        // Rate Limits Dinámicos
+        $attempts = $this->config['security_verify_attempts'] ?? 5;
+        $minutes = $this->config['security_verify_minutes'] ?? 15;
+        $rateCheck = $this->rateLimiter->check('disable_2fa', $attempts, $minutes);
+        
         if (!$rateCheck['allowed']) {
             return ['success' => false, 'message' => $rateCheck['message']];
         }
@@ -398,7 +460,7 @@ class SettingsServices
             }
         }
 
-        $this->rateLimiter->record('disable_2fa', 5, 15);
+        $this->rateLimiter->record('disable_2fa', $attempts, $minutes);
         Logger::security("Intento fallido de deshabilitar 2FA (Contraseña incorrecta)", 'warning', ['user_id' => $userId, 'ip' => Utils::getIpAddress()]);
         return ['success' => false, 'message' => 'Contraseña incorrecta.'];
     }
@@ -476,3 +538,4 @@ class SettingsServices
         $this->profileLogRepository->logChange($userId, $changeType, $oldValue, $newValue, $ip);
     }
 }
+?>

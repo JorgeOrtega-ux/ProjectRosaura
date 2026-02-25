@@ -8,6 +8,9 @@ class EmailTemplates {
     public static function get($templateName, $data = []) {
         extract($data);
         
+        // Variable dinámica para el tiempo de expiración (Fallback a 15 min)
+        $expiresIn = $data['expiresIn'] ?? 15;
+        
         $content = '';
 
         switch ($templateName) {
@@ -20,7 +23,7 @@ class EmailTemplates {
                         <span style='font-size: 26px; font-weight: bold; background-color: #f5f5fa; color: #111111; padding: 15px 25px; border-radius: 8px; letter-spacing: 4px; border: 1px solid #00000020; display: inline-block;'>{$code}</span>
                     </div>
                     
-                    <p style='color: #666666; font-size: 14px;'>Este código expirará en 15 minutos.</p>
+                    <p style='color: #666666; font-size: 14px;'>Este código expirará en {$expiresIn} minutos.</p>
                     <hr style='border: none; border-top: 1px solid #00000020; margin: 25px 0;'>
                     <p style='font-size: 12px; color: #999999;'>Si no solicitaste este registro, puedes ignorar este correo de forma segura.</p>
                 ";
@@ -35,7 +38,7 @@ class EmailTemplates {
                         <a href='{$resetLink}' style='background-color: #111111; color: #ffffff; padding: 14px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;'>Restablecer contraseña</a>
                     </div>
                     
-                    <p style='color: #666666; font-size: 14px;'>Este enlace expirará en 15 minutos.</p>
+                    <p style='color: #666666; font-size: 14px;'>Este enlace expirará en {$expiresIn} minutos.</p>
                     <hr style='border: none; border-top: 1px solid #00000020; margin: 25px 0;'>
                     <p style='font-size: 12px; color: #999999;'>Si no realizaste esta solicitud, ignora este correo. Tu cuenta sigue segura.</p>
                 ";
@@ -50,7 +53,7 @@ class EmailTemplates {
                         <span style='font-size: 26px; font-weight: bold; background-color: #f5f5fa; color: #111111; padding: 15px 25px; border-radius: 8px; letter-spacing: 4px; border: 1px solid #00000020; display: inline-block;'>{$code}</span>
                     </div>
                     
-                    <p style='color: #666666; font-size: 14px;'>Este código expirará en 15 minutos.</p>
+                    <p style='color: #666666; font-size: 14px;'>Este código expirará en {$expiresIn} minutos.</p>
                     <hr style='border: none; border-top: 1px solid #00000020; margin: 25px 0;'>
                     <p style='font-size: 12px; color: #999999;'>Si no realizaste esta solicitud, puedes ignorar este correo de forma segura y tu cuenta se mantendrá protegida.</p>
                 ";

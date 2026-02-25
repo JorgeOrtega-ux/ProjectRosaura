@@ -80,6 +80,31 @@ CREATE TABLE IF NOT EXISTS auth_tokens (
     INDEX (selector)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- NUEVA TABLA: Configuración Dinámica del Servidor
+CREATE TABLE IF NOT EXISTS server_config (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    min_password_length INT NOT NULL DEFAULT 8,
+    max_password_length INT NOT NULL DEFAULT 64,
+    min_username_length INT NOT NULL DEFAULT 3,
+    max_username_length INT NOT NULL DEFAULT 32,
+    max_avatar_size_mb INT NOT NULL DEFAULT 2,
+    username_change_cooldown_days INT NOT NULL DEFAULT 7,
+    username_change_max_attempts INT NOT NULL DEFAULT 1,
+    email_change_cooldown_days INT NOT NULL DEFAULT 7,
+    email_change_max_attempts INT NOT NULL DEFAULT 1,
+    avatar_change_cooldown_days INT NOT NULL DEFAULT 1,
+    avatar_change_max_attempts INT NOT NULL DEFAULT 3,
+    login_rate_limit_attempts INT NOT NULL DEFAULT 5,
+    login_rate_limit_minutes INT NOT NULL DEFAULT 15,
+    forgot_password_rate_limit_attempts INT NOT NULL DEFAULT 3,
+    forgot_password_rate_limit_minutes INT NOT NULL DEFAULT 30,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Insertar configuración inicial por defecto (Solo si la tabla está vacía)
+INSERT INTO server_config (id) 
+SELECT 1 WHERE NOT EXISTS (SELECT * FROM server_config);
+
 -- SI TUS TABLAS YA EXISTEN, EJECUTA ESTO EN TU GESTOR SQL:
 -- ALTER TABLE users ADD COLUMN user_status ENUM('active', 'suspended', 'deleted') DEFAULT 'active' AFTER role;
 -- ALTER TABLE profile_changes_log MODIFY COLUMN change_type ENUM('avatar', 'username', 'email', 'password', '2fa') NOT NULL;

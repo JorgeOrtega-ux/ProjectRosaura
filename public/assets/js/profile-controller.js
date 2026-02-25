@@ -7,6 +7,8 @@ export class ProfileController {
         this.api = new ApiService();
         this.selectedFile = null;
         this.isDefaultAvatar = false;
+        // Cargar configuración global dinámica expuesta por PHP
+        this.config = window.AppServerConfig || {};
     }
 
     init() {
@@ -147,9 +149,22 @@ export class ProfileController {
     handleFileSelection(e) {
         const file = e.target.files[0];
         if (!file) return;
-        if (file.size > 2 * 1024 * 1024) { this.showMessage('La imagen no debe superar los 2MB.', 'error'); e.target.value = ''; return; }
+        
+        // Validación Dinámica de tamaño de archivo
+        const maxSizeMb = this.config.max_avatar_size_mb || 2;
+        if (file.size > maxSizeMb * 1024 * 1024) { 
+            this.showMessage(`La imagen no debe superar los ${maxSizeMb}MB.`, 'error'); 
+            e.target.value = ''; 
+            return; 
+        }
+
         const validTypes = ['image/png', 'image/jpeg', 'image/jpg'];
-        if (!validTypes.includes(file.type)) { this.showMessage('Solo se permiten imágenes en formato PNG o JPG.', 'error'); e.target.value = ''; return; }
+        if (!validTypes.includes(file.type)) { 
+            this.showMessage('Solo se permiten imágenes en formato PNG o JPG.', 'error'); 
+            e.target.value = ''; 
+            return; 
+        }
+
         this.selectedFile = file;
         const reader = new FileReader();
         reader.onload = (ev) => {
@@ -206,7 +221,7 @@ export class ProfileController {
             if (fileInput) fileInput.value = '';
             
             this.selectedFile = null;
-            this.isDefaultAvatar = false; // Se guardó una imagen personalizada
+            this.isDefaultAvatar = false; 
             this.toggleAvatarButtons(false);
         } else this.showMessage(result.message, 'error');
     }
@@ -224,7 +239,7 @@ export class ProfileController {
             const headerAvatar = document.querySelector('.header .component-button--profile img');
             if (headerAvatar) headerAvatar.src = result.new_avatar;
             
-            this.isDefaultAvatar = true; // Se eliminó y volvió a la predeterminada
+            this.isDefaultAvatar = true; 
             this.toggleAvatarButtons(false);
         } else this.showMessage(result.message, 'error');
     }
@@ -301,9 +316,24 @@ export class ProfileController {
         const newPass = document.getElementById('cp_new_password');
         const confirmPass = document.getElementById('cp_confirm_password');
         if (!newPass || !confirmPass) return;
-        const valNew = newPass.value; const valConfirm = confirmPass.value;
-        if (valNew !== valConfirm) { this.showMessage('Las contraseñas no coinciden.', 'error'); return; }
-        if (valNew.length < 8 || valNew.length > 64) { this.showMessage('La contraseña debe tener entre 8 y 64 caracteres.', 'error'); return; }
+        
+        const valNew = newPass.value; 
+        const valConfirm = confirmPass.value;
+        
+        if (valNew !== valConfirm) { 
+            this.showMessage('Las contraseñas no coinciden.', 'error'); 
+            return; 
+        }
+
+        // Validación Dinámica de Contraseña
+        const minPass = this.config.min_password_length || 8;
+        const maxPass = this.config.max_password_length || 64;
+
+        if (valNew.length < minPass || valNew.length > maxPass) { 
+            this.showMessage(`La contraseña debe tener entre ${minPass} y ${maxPass} caracteres.`, 'error'); 
+            return; 
+        }
+
         this.setButtonLoading(btn);
         const result = await this.api.post(ApiRoutes.Settings.UpdatePassword, { new_password: valNew, confirm_password: valConfirm });
         this.restoreButton(btn);
@@ -316,9 +346,6 @@ export class ProfileController {
         } else this.showMessage(result.message, 'error');
     }
 
-    // ==========================================
-    // --- LÓGICA DE 2FA ---
-    // ==========================================
     async init2FAView() {
         const setupContainer = document.getElementById('2fa-setup-container');
         if (setupContainer && setupContainer.classList.contains('active')) {
@@ -348,14 +375,10 @@ export class ProfileController {
         if (result.success) {
             this.showMessage(result.message, 'success');
             
-            // Ocultar Setup
             document.getElementById('2fa-setup-container').classList.replace('active', 'disabled');
-            
-            // Mostrar Códigos de Recuperación
             const recoveryContainer = document.getElementById('2fa-recovery-container');
             recoveryContainer.classList.replace('disabled', 'active');
             
-            // Llenar códigos
             const codeList = document.getElementById('2fa-recovery-codes-list');
             codeList.innerHTML = '';
             result.recovery_codes.forEach(c => {
@@ -369,7 +392,6 @@ export class ProfileController {
                 codeList.appendChild(span);
             });
             
-            // Guardar para poder copiar
             this.currentRecoveryCodes = result.recovery_codes.join('\n');
             
         } else {
@@ -443,7 +465,7 @@ export class ProfileController {
             });
             
             this.newRecoveryCodes = result.recovery_codes.join('\n');
-            input.value = ''; // limpiar la contraseña después de generar
+            input.value = ''; 
         } else {
             this.showMessage(result.message, 'error');
         }
@@ -458,9 +480,6 @@ export class ProfileController {
         });
     }
 
-    // ==========================================
-    // --- LÓGICA DE DISPOSITIVOS ---
-    // ==========================================
     async initDevicesView() {
         const listContainer = document.getElementById('devices-list');
         if (!listContainer) return;
@@ -569,9 +588,6 @@ export class ProfileController {
         }
     }
 
-    // ==========================================
-    // --- LÓGICA DE ELIMINAR CUENTA ---
-    // ==========================================
     async deleteAccount(btn) {
         const input = document.getElementById('delete_account_password');
         if (!input) return;
@@ -585,7 +601,6 @@ export class ProfileController {
         const res = await this.api.post(ApiRoutes.Settings.DeleteAccount, { password: pass });
         
         if (res.success) {
-            // Ya que el backend destruyó las sesiones, mandamos a la pantalla de inicio directamente
             window.location.href = '/ProjectRosaura/';
         } else {
             this.restoreButton(btn);

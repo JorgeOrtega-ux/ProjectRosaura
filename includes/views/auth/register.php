@@ -12,6 +12,11 @@ if (strlen($relativePath) > 1 && substr($relativePath, -1) === '/') {
 
 $errorMsg = null;
 
+// Extraemos configuración global para imprimir atributos HTML de forma dinámica
+global $serverConfig;
+$maxUsernameLen = $serverConfig['max_username_length'] ?? 32;
+$maxPasswordLen = $serverConfig['max_password_length'] ?? 64;
+
 // Validación de protección de acceso directo
 if ($relativePath === '/register/aditional-data') {
     if (empty($_SESSION['reg_email']) || empty($_SESSION['reg_password'])) {
@@ -47,12 +52,12 @@ if ($relativePath === '/register/aditional-data') {
 
                 <div class="component-form-body">
                     <div class="component-input-group">
-                        <input type="email" id="email" name="email" class="component-input-field" placeholder=" ">
+                        <input type="email" id="email" name="email" class="component-input-field" placeholder=" " maxlength="254">
                         <label for="email" class="component-input-label"><?php echo __('lbl_email'); ?></label>
                     </div>
 
                     <div class="component-input-group">
-                        <input type="password" id="password" name="password" class="component-input-field component-input-field--with-icon" placeholder=" ">
+                        <input type="password" id="password" name="password" class="component-input-field component-input-field--with-icon" placeholder=" " maxlength="<?php echo htmlspecialchars($maxPasswordLen); ?>">
                         <label for="password" class="component-input-label"><?php echo __('lbl_password'); ?></label>
                         <span class="material-symbols-rounded component-input-toggle" data-action="togglePassword">visibility_off</span>
                     </div>
@@ -77,7 +82,7 @@ if ($relativePath === '/register/aditional-data') {
 
                 <div class="component-form-body">
                     <div class="component-input-group">
-                        <input type="text" id="username" name="username" class="component-input-field" placeholder=" ">
+                        <input type="text" id="username" name="username" class="component-input-field" placeholder=" " maxlength="<?php echo htmlspecialchars($maxUsernameLen); ?>">
                         <label for="username" class="component-input-label"><?php echo __('lbl_username'); ?></label>
                     </div>
 

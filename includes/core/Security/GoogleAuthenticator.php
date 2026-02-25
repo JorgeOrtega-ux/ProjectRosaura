@@ -16,8 +16,8 @@ class GoogleAuthenticator {
     }
 
     public function getQRCodeUrl($name, $email, $secret) {
-        $urlEncoded = urlencode("otpauth://totp/" . urlencode($name) . ":" . urlencode($email) . "?secret=" . $secret . "&issuer=" . urlencode($name));
-        return "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=" . $urlEncoded;
+        // Retornamos directamente la URI en lugar de la imagen externa
+        return "otpauth://totp/" . rawurlencode($name) . ":" . rawurlencode($email) . "?secret=" . $secret . "&issuer=" . rawurlencode($name);
     }
 
     public function verifyCode($secret, $code, $discrepancy = 1, $currentTimeSlice = null) {

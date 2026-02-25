@@ -1,5 +1,6 @@
 <?php
 // includes/layouts/app.php
+global $serverConfig; // Rescatamos la config generada en bootstrap.php
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -15,9 +16,25 @@
     <title>Project Rosaura</title>
     
     <script>
+        // Inyectar Preferencias de Usuario
         window.AppUserPrefs = <?php echo ($isLoggedIn && isset($_SESSION['user_prefs'])) ? json_encode($_SESSION['user_prefs']) : 'null'; ?>;
+        
+        // Inyectar Configuración Global del Servidor para validaciones en JS
+        window.AppServerConfig = <?php echo isset($serverConfig) ? json_encode($serverConfig) : '{}'; ?>;
+        
+        // Inyectar Traducciones
         window.AppTranslations = <?php echo json_encode(\App\Core\System\Translator::getAll()); ?>;
-        function __(key) { return (window.AppTranslations && window.AppTranslations[key] !== undefined) ? window.AppTranslations[key] : key; }
+        
+        // Motor de traducción en JS (Si los params existen, los reemplaza)
+        function __(key, params = {}) { 
+            let text = (window.AppTranslations && window.AppTranslations[key] !== undefined) ? window.AppTranslations[key] : key; 
+            for (const [pKey, pValue] of Object.entries(params)) {
+                text = text.replace(new RegExp(`{${pKey}}`, 'g'), pValue);
+            }
+            return text;
+        }
+
+        // Script de inicialización de Tema para evitar flash blanco (FOUC)
         (function() {
             var theme = 'system';
             if (window.AppUserPrefs && window.AppUserPrefs.theme) theme = window.AppUserPrefs.theme;

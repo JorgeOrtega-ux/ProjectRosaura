@@ -95,28 +95,32 @@ class Utils {
         return $codes;
     }
 
-    public static function validateEmailFormat($email) {
+    // AHORA ACEPTA PARÁMETROS DINÁMICOS
+    public static function validateEmailFormat($email, $minTotal = 6, $maxTotal = 254, $minLocal = 2, $maxLocal = 64, $minDomain = 3, $maxDomain = 255) {
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) return ['valid' => false, 'message' => 'El formato del correo electrónico no es válido.'];
         $emailLen = strlen($email);
-        if ($emailLen < 6 || $emailLen > 254) return ['valid' => false, 'message' => 'El correo debe tener en total entre 6 y 254 caracteres.'];
+        
+        if ($emailLen < $minTotal || $emailLen > $maxTotal) return ['valid' => false, 'message' => "El correo debe tener en total entre {$minTotal} y {$maxTotal} caracteres."];
         $parts = explode('@', $email);
         if (count($parts) !== 2) return ['valid' => false, 'message' => 'El formato del correo electrónico es incorrecto.'];
 
         $localPart = $parts[0]; $domainPart = $parts[1];
-        if (strlen($localPart) < 2 || strlen($localPart) > 64) return ['valid' => false, 'message' => 'La parte local del correo debe tener entre 2 y 64 caracteres.'];
-        if (strlen($domainPart) < 3 || strlen($domainPart) > 255) return ['valid' => false, 'message' => 'El dominio del correo debe tener entre 3 y 255 caracteres.'];
+        if (strlen($localPart) < $minLocal || strlen($localPart) > $maxLocal) return ['valid' => false, 'message' => "La parte local del correo debe tener entre {$minLocal} y {$maxLocal} caracteres."];
+        if (strlen($domainPart) < $minDomain || strlen($domainPart) > $maxDomain) return ['valid' => false, 'message' => "El dominio del correo debe tener entre {$minDomain} y {$maxDomain} caracteres."];
 
         $subdomains = explode('.', $domainPart);
         if (count($subdomains) < 2) return ['valid' => false, 'message' => 'El dominio del correo electrónico debe incluir una extensión válida.'];
         foreach ($subdomains as $sub) {
+            // El RFC de DNS (1035) limita cada etiqueta de subdominio a 63 caracteres. 
             if (strlen($sub) < 2 || strlen($sub) > 63) return ['valid' => false, 'message' => 'Cada parte del dominio separada por un punto debe tener entre 2 y 63 caracteres.'];
         }
         return ['valid' => true];
     }
 
-    public static function validatePasswordFormat($password) {
+    // AHORA ACEPTA PARÁMETROS DINÁMICOS
+    public static function validatePasswordFormat($password, $minLen = 8, $maxLen = 64) {
         $passLen = strlen($password);
-        if ($passLen < 8 || $passLen > 64) return ['valid' => false, 'message' => 'La contraseña debe tener entre 8 y 64 caracteres.'];
+        if ($passLen < $minLen || $passLen > $maxLen) return ['valid' => false, 'message' => "La contraseña debe tener entre {$minLen} y {$maxLen} caracteres."];
         return ['valid' => true];
     }
 }

@@ -23,6 +23,8 @@ use App\Core\Repositories\VerificationCodeRepository;
 use App\Core\Interfaces\VerificationCodeRepositoryInterface;
 use App\Core\Repositories\ProfileLogRepository;
 use App\Core\Interfaces\ProfileLogRepositoryInterface;
+use App\Core\Repositories\ServerConfigRepository;
+use App\Core\Interfaces\ServerConfigRepositoryInterface;
 
 class Container implements ContainerInterface {
     private $instances = [];
@@ -44,6 +46,9 @@ class Container implements ContainerInterface {
         $this->bindings[TokenRepositoryInterface::class] = TokenRepository::class;
         $this->bindings[VerificationCodeRepositoryInterface::class] = VerificationCodeRepository::class;
         $this->bindings[ProfileLogRepositoryInterface::class] = ProfileLogRepository::class;
+        
+        // Binding del nuevo repositorio de configuración
+        $this->bindings[ServerConfigRepositoryInterface::class] = ServerConfigRepository::class;
     }
 
     public function get(string $id) {

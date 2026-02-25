@@ -15,11 +15,16 @@ use App\Core\System\Translator;
 use App\Core\Container;
 use App\Api\Services\AuthServices;
 use App\Core\Interfaces\UserPrefsManagerInterface;
+use App\Core\Interfaces\ServerConfigRepositoryInterface;
 
 // 1. Instanciar el Contenedor
 $container = new Container();
 
-// 2. Obtener servicios
+// 2. Cargar Configuración del Servidor y exponerla globalmente
+$configRepo = $container->get(ServerConfigRepositoryInterface::class);
+$serverConfig = $configRepo->getConfig();
+
+// 3. Obtener servicios
 $authService = $container->get(AuthServices::class);
 $prefsManager = $container->get(UserPrefsManagerInterface::class);
 
@@ -57,7 +62,9 @@ if ($isLoggedIn && !empty($_SESSION['user_prefs']['language'])) {
 }
 
 Translator::init($lang);
+
+// Actualizado para permitir parámetros en las traducciones (__('clave', ['var' => 'valor']))
 if (!function_exists('__')) { 
-    function __($key) { return Translator::get($key); } 
+    function __($key, $params = []) { return Translator::get($key, $params); } 
 }
 ?>

@@ -5,6 +5,8 @@ import { ApiRoutes } from './core/api-routes.js';
 export class AuthController {
     constructor() {
         this.api = new ApiService();
+        // Cargar configuración global dinámica expuesta por PHP
+        this.config = window.AppServerConfig || {};
     }
 
     init() {
@@ -17,7 +19,7 @@ export class AuthController {
             const toggleBtn = e.target.closest('[data-action="togglePassword"]');
             
             const loginBtn = e.target.closest('[data-action="submitLogin"]');
-            const login2FABtn = e.target.closest('[data-action="submitLogin2FA"]'); // NUEVO
+            const login2FABtn = e.target.closest('[data-action="submitLogin2FA"]');
             
             const registerStep1Btn = e.target.closest('[data-action="submitRegisterStep1"]');
             const registerStep2Btn = e.target.closest('[data-action="submitRegisterStep2"]');
@@ -172,14 +174,12 @@ export class AuthController {
 
         if (result.success) {
             if (result.requires_2fa) {
-                // Redirigir a la vista para ingresar el código 2FA
                 if (window.spaRouter) {
                     window.spaRouter.navigate('/ProjectRosaura/login/two-factor');
                 } else {
                     window.location.href = '/ProjectRosaura/login/two-factor';
                 }
             } else {
-                // Inició sesión normalmente
                 window.location.href = '/ProjectRosaura/';
             }
         } else {
@@ -203,9 +203,7 @@ export class AuthController {
 
         this.setButtonLoading(btn);
 
-        const data = {
-            code: code
-        };
+        const data = { code: code };
 
         const result = await this.api.post(ApiRoutes.Auth.LoginVerify2FA, data);
 
@@ -227,8 +225,12 @@ export class AuthController {
         const email = emailInput.value.trim();
         const password = passwordInput.value;
 
-        if (password.length < 8 || password.length > 64) {
-            this.showError('La contraseña debe tener entre 8 y 64 caracteres.');
+        // Variables dinámicas
+        const minPass = this.config.min_password_length || 8;
+        const maxPass = this.config.max_password_length || 64;
+
+        if (password.length < minPass || password.length > maxPass) {
+            this.showError(`La contraseña debe tener entre ${minPass} y ${maxPass} caracteres.`);
             return;
         }
 
@@ -298,16 +300,18 @@ export class AuthController {
         
         const username = usernameInput.value.trim();
 
-        if (username.length < 3 || username.length > 32) {
-            this.showError('El nombre de usuario debe tener entre 3 y 32 caracteres.');
+        // Variables dinámicas
+        const minUser = this.config.min_username_length || 3;
+        const maxUser = this.config.max_username_length || 32;
+
+        if (username.length < minUser || username.length > maxUser) {
+            this.showError(`El nombre de usuario debe tener entre ${minUser} y ${maxUser} caracteres.`);
             return;
         }
 
         this.setButtonLoading(btn);
 
-        const data = {
-            username: username
-        };
+        const data = { username: username };
 
         const result = await this.api.post(ApiRoutes.Auth.RegisterStep2, data);
 
@@ -331,9 +335,7 @@ export class AuthController {
 
         this.setButtonLoading(btn);
 
-        const data = {
-            code: codeInput.value
-        };
+        const data = { code: codeInput.value };
 
         const result = await this.api.post(ApiRoutes.Auth.RegisterVerify, data);
 
@@ -386,8 +388,12 @@ export class AuthController {
             return;
         }
 
-        if (password.length < 8 || password.length > 64) {
-            this.showError('La contraseña debe tener entre 8 y 64 caracteres.');
+        // Variables dinámicas
+        const minPass = this.config.min_password_length || 8;
+        const maxPass = this.config.max_password_length || 64;
+
+        if (password.length < minPass || password.length > maxPass) {
+            this.showError(`La contraseña debe tener entre ${minPass} y ${maxPass} caracteres.`);
             return;
         }
 

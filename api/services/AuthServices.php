@@ -13,6 +13,7 @@ use App\Core\Interfaces\UserRepositoryInterface;
 use App\Core\Interfaces\SessionManagerInterface;
 use App\Core\Interfaces\TokenRepositoryInterface;
 use App\Core\Interfaces\VerificationCodeRepositoryInterface;
+use App\Core\Interfaces\ServerConfigRepositoryInterface; // NUEVO
 
 class AuthServices {
     private $rateLimiter;
@@ -21,6 +22,7 @@ class AuthServices {
     private $sessionManager;
     private $tokenRepository;
     private $verificationCodeRepository;
+    private $config; // NUEVO: Para guardar la configuración del servidor
 
     // 100% CLEAN ARCHITECTURE: Ninguna dependencia de base de datos relacional
     public function __construct(
@@ -29,7 +31,8 @@ class AuthServices {
         UserRepositoryInterface $userRepository,
         SessionManagerInterface $sessionManager,
         TokenRepositoryInterface $tokenRepository,
-        VerificationCodeRepositoryInterface $verificationCodeRepository
+        VerificationCodeRepositoryInterface $verificationCodeRepository,
+        ServerConfigRepositoryInterface $configRepository // NUEVO: Inyección de la config
     ) {
         $this->rateLimiter = $rateLimiter;
         $this->prefsManager = $prefsManager;
@@ -37,6 +40,7 @@ class AuthServices {
         $this->sessionManager = $sessionManager;
         $this->tokenRepository = $tokenRepository;
         $this->verificationCodeRepository = $verificationCodeRepository;
+        $this->config = $configRepository->getConfig(); // Cargamos configuración global
     }
 
     public function isCurrentDeviceValid() {
@@ -54,7 +58,11 @@ class AuthServices {
         $selector = bin2hex(random_bytes(16));
         $validator = bin2hex(random_bytes(32));
         $hashedValidator = hash('sha256', $validator);
-        $expiresAt = date('Y-m-d H:i:s', time() + (86400 * 30));
+        
+        // Tiempo dinámico para Remember Me
+        $days = $this->config['remember_me_days'] ?? 30;
+        $expiresAt = date('Y-m-d H:i:s', time() + (86400 * $days));
+        
         $userAgent = substr($_SERVER['HTTP_USER_AGENT'] ?? 'Desconocido', 0, 255);
         $ipAddress = substr(Utils::getIpAddress(), 0, 45);
         
@@ -62,7 +70,7 @@ class AuthServices {
         
         $cookieValue = $selector . ':' . $validator;
         setcookie('remember_token', $cookieValue, [
-            'expires' => time() + (86400 * 30),
+            'expires' => time() + (86400 * $days),
             'path' => '/ProjectRosaura/',
             'secure' => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on',
             'httponly' => true,
@@ -133,8 +141,13 @@ class AuthServices {
     public function registerStep1($data) {
         $email = trim($data['email'] ?? ''); $password = trim($data['password'] ?? '');
         if (empty($email) || empty($password)) return ['success' => false, 'message' => 'El correo y la contraseña son obligatorios.'];
-        $eVal = Utils::validateEmailFormat($email); if (!$eVal['valid']) return ['success' => false, 'message' => $eVal['message']];
-        $pVal = Utils::validatePasswordFormat($password); if (!$pVal['valid']) return ['success' => false, 'message' => $pVal['message']];
+        
+        $eVal = Utils::validateEmailFormat($email); 
+        if (!$eVal['valid']) return ['success' => false, 'message' => $eVal['message']];
+        
+        // Validación dinámica de contraseña
+        $pVal = Utils::validatePasswordFormat($password, $this->config['min_password_length'], $this->config['max_password_length']); 
+        if (!$pVal['valid']) return ['success' => false, 'message' => $pVal['message']];
         
         if ($this->userRepository->findByEmail($email)) {
             Logger::security("Intento de registro con correo ya existente: {$email}", 'info', ['ip' => Utils::getIpAddress()]);
@@ -149,7 +162,13 @@ class AuthServices {
     public function registerStep2($data) {
         $username = trim($data['username'] ?? '');
         if (empty($username)) return ['success' => false, 'message' => 'El nombre de usuario es obligatorio.'];
-        if (strlen($username) < 3 || strlen($username) > 32) return ['success' => false, 'message' => 'El nombre de usuario debe tener entre 3 y 32 caracteres.'];
+        
+        // Validación dinámica de nombre de usuario
+        $minUser = $this->config['min_username_length'];
+        $maxUser = $this->config['max_username_length'];
+        if (strlen($username) < $minUser || strlen($username) > $maxUser) {
+            return ['success' => false, 'message' => "El nombre de usuario debe tener entre {$minUser} y {$maxUser} caracteres."];
+        }
         
         if ($this->userRepository->findByUsername($username)) {
             return ['success' => false, 'message' => 'Este nombre de usuario ya está en uso.'];
@@ -166,7 +185,10 @@ class AuthServices {
             'username' => $username
         ]);
         $identifier = $this->sessionManager->get('reg_email');
-        $expiresAt = date('Y-m-d H:i:s', strtotime('+15 minutes')); 
+        
+        // Expiración dinámica para el código de registro
+        $codeMinutes = $this->config['verification_code_minutes'] ?? 15;
+        $expiresAt = date('Y-m-d H:i:s', strtotime("+{$codeMinutes} minutes")); 
 
         if ($this->verificationCodeRepository->createCode($identifier, 'account_activation', $code, $payload, $expiresAt)) {
             $this->sessionManager->set('reg_username', $username);
@@ -245,7 +267,11 @@ class AuthServices {
         $email = trim($data['email'] ?? ''); $password = trim($data['password'] ?? '');
         if (empty($email) || empty($password)) return ['success' => false, 'message' => 'Todos los campos son obligatorios.'];
 
-        $rateCheck = $this->rateLimiter->check('login', 5, 15);
+        // Rate limit dinámico para el Login
+        $attempts = $this->config['login_rate_limit_attempts'];
+        $minutes = $this->config['login_rate_limit_minutes'];
+        $rateCheck = $this->rateLimiter->check('login', $attempts, $minutes);
+        
         if (!$rateCheck['allowed']) {
             Logger::security("Límite de tasa excedido en login para: {$email}", 'warning', ['ip' => Utils::getIpAddress()]);
             return ['success' => false, 'message' => $rateCheck['message']];
@@ -282,7 +308,7 @@ class AuthServices {
             return ['success' => true, 'requires_2fa' => false, 'message' => 'Inicio de sesión exitoso.'];
         }
         
-        $this->rateLimiter->record('login', 5, 15);
+        $this->rateLimiter->record('login', $attempts, $minutes);
         Logger::security("Credenciales incorrectas en login para: {$email}", 'warning', ['ip' => Utils::getIpAddress()]);
         return ['success' => false, 'message' => 'Credenciales incorrectas.'];
     }
@@ -293,7 +319,11 @@ class AuthServices {
         if (!$this->sessionManager->has('pending_2fa_user_id')) return ['success' => false, 'message' => 'Sesión expirada.'];
 
         $userId = $this->sessionManager->get('pending_2fa_user_id');
-        $rateCheck = $this->rateLimiter->check('login_2fa', 5, 15);
+        
+        // Rate limit dinámico para el 2FA (reutilizando parámetros del login)
+        $attempts = $this->config['login_rate_limit_attempts'];
+        $minutes = $this->config['login_rate_limit_minutes'];
+        $rateCheck = $this->rateLimiter->check('login_2fa', $attempts, $minutes);
         
         if (!$rateCheck['allowed']) {
             Logger::security("Límite de tasa excedido en 2FA", 'warning', ['user_id' => $userId, 'ip' => Utils::getIpAddress()]);
@@ -303,7 +333,7 @@ class AuthServices {
         $user = $this->userRepository->findById($userId);
 
         if (!$user || empty($user['two_factor_enabled']) || $user['user_status'] !== 'active') {
-            $this->rateLimiter->record('login_2fa', 5, 15);
+            $this->rateLimiter->record('login_2fa', $attempts, $minutes);
             return ['success' => false, 'message' => 'Error de validación.'];
         }
 
@@ -341,7 +371,7 @@ class AuthServices {
             return ['success' => true, 'message' => 'Inicio de sesión exitoso.'];
         }
 
-        $this->rateLimiter->record('login_2fa', 5, 15);
+        $this->rateLimiter->record('login_2fa', $attempts, $minutes);
         Logger::security("Código 2FA incorrecto", 'warning', ['user_id' => $userId, 'ip' => Utils::getIpAddress()]);
         return ['success' => false, 'message' => 'El código es incorrecto.'];
     }
@@ -359,7 +389,11 @@ class AuthServices {
         $email = trim($data['email'] ?? '');
         if (empty($email)) return ['success' => false, 'message' => 'El correo es obligatorio.'];
         
-        $rateCheck = $this->rateLimiter->check('forgot_password', 3, 30);
+        // Rate limit dinámico para Recuperación de Contraseña
+        $attempts = $this->config['forgot_password_rate_limit_attempts'];
+        $minutes = $this->config['forgot_password_rate_limit_minutes'];
+        $rateCheck = $this->rateLimiter->check('forgot_password', $attempts, $minutes);
+        
         if (!$rateCheck['allowed']) {
             Logger::security("Límite de tasa excedido en recuperación", 'warning', ['ip' => Utils::getIpAddress()]);
             return ['success' => false, 'message' => $rateCheck['message']];
@@ -368,12 +402,16 @@ class AuthServices {
         $user = $this->userRepository->findByEmail($email);
 
         if (!$user || $user['user_status'] !== 'active') {
-            $this->rateLimiter->record('forgot_password', 3, 30);
+            $this->rateLimiter->record('forgot_password', $attempts, $minutes);
             return ['success' => false, 'message' => 'Cuenta no existe o está inactiva.'];
         }
 
         $token = bin2hex(random_bytes(32)); 
-        $expiresAt = date('Y-m-d H:i:s', strtotime('+15 minutes'));
+        
+        // Expiración dinámica para el enlace
+        $codeMinutes = $this->config['verification_code_minutes'] ?? 15;
+        $expiresAt = date('Y-m-d H:i:s', strtotime("+{$codeMinutes} minutes"));
+        
         $payload = json_encode(['email' => $email]);
 
         $this->verificationCodeRepository->deleteByIdentifierAndType($email, 'password_reset');
@@ -383,7 +421,7 @@ class AuthServices {
             $resetLink = $protocol . $_SERVER['HTTP_HOST'] . "/ProjectRosaura/reset-password?token=" . $token;
             $mailer = new Mailer();
             if ($mailer->sendPasswordResetLink($email, $user['username'], $resetLink)) {
-                $this->rateLimiter->record('forgot_password', 3, 30);
+                $this->rateLimiter->record('forgot_password', $attempts, $minutes);
                 Logger::security("Enlace de recuperación enviado exitosamente", 'info', ['user_id' => $user['id'], 'ip' => Utils::getIpAddress()]);
                 return ['success' => true, 'message' => 'Se ha enviado un correo con las instrucciones.'];
             }
@@ -395,7 +433,8 @@ class AuthServices {
         $token = trim($data['token'] ?? ''); $password = trim($data['password'] ?? '');
         if (empty($token) || empty($password)) return ['success' => false, 'message' => 'Campos obligatorios.'];
         
-        $passValidation = Utils::validatePasswordFormat($password);
+        // Validación dinámica de formato de contraseña
+        $passValidation = Utils::validatePasswordFormat($password, $this->config['min_password_length'], $this->config['max_password_length']);
         if (!$passValidation['valid']) return ['success' => false, 'message' => $passValidation['message']];
 
         $verification = $this->verificationCodeRepository->findValidByCodeAndType($token, 'password_reset');

@@ -35,7 +35,9 @@ $is2FAActive = !empty($_SESSION['user_2fa']);
                             
                             <div class="component-2fa-setup">
                                 <div class="component-2fa-qr-col">
-                                    <img id="2fa-qr-img" src="" alt="Código QR">
+                                    <div id="2fa-qr-container" style="width: 150px; height: 150px; display: flex; align-items: center; justify-content: center;">
+                                        <div class="component-spinner"></div>
+                                    </div>
                                 </div>
                                 
                                 <div class="component-2fa-secret-col">
