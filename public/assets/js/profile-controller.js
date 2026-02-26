@@ -7,7 +7,6 @@ export class ProfileController {
         this.api = new ApiService();
         this.selectedFile = null;
         this.isDefaultAvatar = false;
-        // Cargar configuración global dinámica expuesta por PHP
         this.config = window.AppServerConfig || {};
     }
 
@@ -15,7 +14,6 @@ export class ProfileController {
         this.bindEvents();
         console.log("ProfileController inicializado.");
 
-        // Detectar si la imagen cargada inicialmente es la predeterminada
         const imgEl = document.getElementById('profile-avatar-img');
         if (imgEl && imgEl.src.includes('/default/')) {
             this.isDefaultAvatar = true;
@@ -82,6 +80,23 @@ export class ProfileController {
                 else window.location.href = '/ProjectRosaura/settings/security';
             }
 
+            // --- RESET PARA "CANCELAR" o "TERMINAR" EN EL FORMULARIO DE REGENERAR ---
+            const btnToggleRegen = e.target.closest('[data-action="toggleEditState"][data-target="regenerate"]');
+            if (btnToggleRegen) {
+                const wrapper = document.getElementById('2fa-new-recovery-codes-wrapper');
+                const row = document.getElementById('2fa-regenerate-form-row');
+                const input = document.getElementById('2fa_regenerate_password');
+                if (wrapper) wrapper.style.display = 'none';
+                if (row) row.style.display = 'flex';
+                if (input) input.value = '';
+            }
+
+            const btnToggleDeactivate = e.target.closest('[data-action="toggleEditState"][data-target="deactivate"]');
+            if (btnToggleDeactivate) {
+                const input = document.getElementById('2fa_disable_password');
+                if (input) input.value = '';
+            }
+
             // --- EVENTOS DISPOSITIVOS ---
             const btnRevokeAll = e.target.closest('[data-action="revokeAllDevices"]');
             if (btnRevokeAll) this.revokeAllDevices(btnRevokeAll);
@@ -97,7 +112,6 @@ export class ProfileController {
         document.addEventListener('change', (e) => {
             if (e.target && e.target.id === 'input-avatar-file') this.handleFileSelection(e);
             
-            // --- MOSTRAR CAMPO DE CONTRASEÑA EN ELIMINAR CUENTA ---
             if (e.target && e.target.id === 'chk_confirm_delete') {
                 const passArea = document.getElementById('delete_password_area');
                 if (passArea) {
@@ -150,7 +164,6 @@ export class ProfileController {
         const file = e.target.files[0];
         if (!file) return;
         
-        // Validación Dinámica de tamaño de archivo
         const maxSizeMb = this.config.max_avatar_size_mb || 2;
         if (file.size > maxSizeMb * 1024 * 1024) { 
             this.showMessage(`La imagen no debe superar los ${maxSizeMb}MB.`, 'error'); 
@@ -325,7 +338,6 @@ export class ProfileController {
             return; 
         }
 
-        // Validación Dinámica de Contraseña
         const minPass = this.config.min_password_length || 8;
         const maxPass = this.config.max_password_length || 64;
 
@@ -354,7 +366,6 @@ export class ProfileController {
                 const qrContainer = document.getElementById('2fa-qr-container');
                 if (qrContainer) {
                     try {
-                        // Cargar la librería moderna de QR dinámicamente si no existe aún
                         if (!window.QRCodeStyling) {
                             await new Promise((resolve, reject) => {
                                 const script = document.createElement('script');
@@ -365,12 +376,7 @@ export class ProfileController {
                             });
                         }
 
-                        // Limpiar el loader/spinner del contenedor
                         qrContainer.innerHTML = '';
-
-                        // Inicializar el QR moderno (Puntos y esquinas redondeadas)
-                        // CORRECCIÓN APLICADA: Tamaño reducido a 150 para que el SVG no se desborde, 
-                        // manteniendo type="svg" para que sea 100% nítido
                         const qrCode = new window.QRCodeStyling({
                             width: 150, 
                             height: 150, 
@@ -394,10 +400,8 @@ export class ProfileController {
                             }
                         });
 
-                        // Insertarlo en el contenedor
                         qrCode.append(qrContainer);
 
-                        // Ajustar para que el SVG ocupe el contenedor correctamente
                         const qrElement = qrContainer.querySelector('canvas, svg');
                         if (qrElement) {
                             qrElement.style.width = '100%';
@@ -444,14 +448,13 @@ export class ProfileController {
             const codeList = document.getElementById('2fa-recovery-codes-list');
             codeList.innerHTML = '';
             result.recovery_codes.forEach(c => {
-                const span = document.createElement('span');
-                span.style.padding = '8px 12px';
-                span.style.background = '#f5f5fa';
-                span.style.borderRadius = '4px';
-                span.style.fontFamily = 'monospace';
-                span.style.letterSpacing = '1px';
-                span.textContent = c;
-                codeList.appendChild(span);
+                const div = document.createElement('div');
+                div.className = 'component-recovery-code';
+                div.innerHTML = `
+                    <span class="material-symbols-rounded component-recovery-code-icon">key</span>
+                    <span class="component-recovery-code-text">${c}</span>
+                `;
+                codeList.appendChild(div);
             });
             
             this.currentRecoveryCodes = result.recovery_codes.join('\n');
@@ -511,19 +514,21 @@ export class ProfileController {
             this.showMessage(result.message, 'success');
             
             const wrapper = document.getElementById('2fa-new-recovery-codes-wrapper');
+            const row = document.getElementById('2fa-regenerate-form-row');
+            
             wrapper.style.display = 'block';
+            if (row) row.style.display = 'none'; // Ocultamos el campo de contraseña
             
             const codeList = document.getElementById('2fa-new-recovery-codes-list');
             codeList.innerHTML = '';
             result.recovery_codes.forEach(c => {
-                const span = document.createElement('span');
-                span.style.padding = '8px 12px';
-                span.style.background = '#f5f5fa';
-                span.style.borderRadius = '4px';
-                span.style.fontFamily = 'monospace';
-                span.style.letterSpacing = '1px';
-                span.textContent = c;
-                codeList.appendChild(span);
+                const div = document.createElement('div');
+                div.className = 'component-recovery-code';
+                div.innerHTML = `
+                    <span class="material-symbols-rounded component-recovery-code-icon">key</span>
+                    <span class="component-recovery-code-text">${c}</span>
+                `;
+                codeList.appendChild(div);
             });
             
             this.newRecoveryCodes = result.recovery_codes.join('\n');

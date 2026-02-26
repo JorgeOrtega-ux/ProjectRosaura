@@ -1258,6 +1258,32 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
 }
 
 /* ========================================= */
+/* --- COMPONENT: RECOVERY CODE ITEM ---     */
+/* ========================================= */
+.component-recovery-code {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    border: 1px solid #00000020;
+    border-radius: 8px;
+    background-color: #ffffff;
+}
+
+.component-recovery-code-icon {
+    font-size: 18px !important;
+    color: #666666;
+}
+
+.component-recovery-code-text {
+    font-family: monospace;
+    font-size: 14px;
+    letter-spacing: 1.5px;
+    color: #111111;
+    font-weight: 700;
+}
+
+/* ========================================= */
 /* --- TOOLTIPS (Con soporte Popper.js)  --- */
 /* ========================================= */
 [data-tooltip] {
