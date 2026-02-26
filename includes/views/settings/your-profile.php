@@ -58,7 +58,7 @@ $currentLangText = $languages[$prefLang] ?? 'Español (Latinoamérica)';
                 </div>
                 
                 <div class="component-card__actions component-card__actions--stretch" id="profile-avatar-actions">
-                    <button type="button" class="component-button component-button--h34 component-button--dark" id="btn-change-avatar"><?php echo __('btn_change_avatar'); ?></button>
+                    <button type="button" class="component-button component-button--h34 component-button--dark" id="btn-change-avatar"><?php echo $isDefaultAvatar ? __('btn_upload_avatar') : __('btn_change_avatar'); ?></button>
                     <button type="button" class="component-button component-button--h34 <?php echo $isDefaultAvatar ? 'disabled' : ''; ?>" id="btn-delete-avatar"><?php echo __('btn_delete'); ?></button>
                     
                     <button type="button" class="component-button component-button--h34 disabled" id="btn-cancel-avatar"><?php echo __('btn_cancel'); ?></button>

@@ -42,8 +42,16 @@ if (!empty($routeData['roles']) && $isLoggedIn) {
     }
 }
 
-// 4. Alias y Redirecciones internas
-if ($currentView !== 'system/404.php' && !$redirectUrl) {
+// 4. Validar rutas que requieren 2FA (requires_2fa)
+if (!empty($routeData['requires_2fa']) && $isLoggedIn && $currentView !== 'system/404.php') {
+    if (empty($_SESSION['user_2fa'])) {
+        $currentView = 'system/require-2fa.php'; 
+        // No aplicamos $redirectUrl para que el usuario se mantenga en la URL actual (ej: /admin) pero viendo el bloqueo
+    }
+}
+
+// 5. Alias y Redirecciones internas
+if ($currentView !== 'system/404.php' && $currentView !== 'system/require-2fa.php' && !$redirectUrl) {
     if ($requestUriPath === '/ProjectRosaura/admin' || $requestUriPath === '/ProjectRosaura/admin/') {
         $currentView = 'admin/dashboard.php';
         $redirectUrl = '/ProjectRosaura/admin/dashboard';

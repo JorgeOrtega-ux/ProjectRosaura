@@ -232,6 +232,12 @@ export class ProfileController {
             this.selectedFile = null;
             this.isDefaultAvatar = false; 
             this.toggleAvatarButtons(false);
+            
+            // Actualizar texto del botón primario a "Cambiar foto" tras subir con éxito
+            const btnChange = document.getElementById('btn-change-avatar');
+            if (btnChange && typeof window.__ === 'function') {
+                btnChange.textContent = __('btn_change_avatar');
+            }
         } else this.showMessage(result.message, 'error');
     }
 
@@ -250,6 +256,12 @@ export class ProfileController {
             
             this.isDefaultAvatar = true; 
             this.toggleAvatarButtons(false);
+            
+            // Actualizar texto del botón primario a "Subir foto" tras eliminar con éxito
+            const btnChange = document.getElementById('btn-change-avatar');
+            if (btnChange && typeof window.__ === 'function') {
+                btnChange.textContent = __('btn_upload_avatar');
+            }
         } else this.showMessage(result.message, 'error');
     }
 

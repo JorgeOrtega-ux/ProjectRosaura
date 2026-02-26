@@ -103,6 +103,7 @@
     "prof_desc": "Administra tu foto de perfil, información personal y preferencias de cuenta.",
     "prof_avatar_title": "Foto de perfil",
     "prof_avatar_desc": "Se recomienda una imagen cuadrada de máximo {max_mb}MB (PNG o JPG).",
+    "btn_upload_avatar": "Subir foto",
     "btn_change_avatar": "Cambiar foto",
     "btn_delete": "Eliminar",
     "btn_cancel": "Cancelar",

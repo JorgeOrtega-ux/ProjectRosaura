@@ -81,7 +81,8 @@ export class SpaRouter {
             const delayPromise = new Promise(resolve => setTimeout(resolve, 200));
             const [response] = await Promise.all([fetchPromise, delayPromise]);
 
-            if (response.ok) {
+            // SE AGREGÓ: Permitir explícitamente códigos 404 (Vista no encontrada) y 403 (Forbidden / Bloqueos 2FA)
+            if (response.ok || response.status === 404 || response.status === 403) {
                 const updateUrl = response.headers.get('X-SPA-Update-URL');
                 if (updateUrl) {
                     window.history.replaceState(null, '', updateUrl);
@@ -114,7 +115,7 @@ export class SpaRouter {
 
                 window.dispatchEvent(new CustomEvent('viewLoaded', { detail: { url } }));
             } else {
-                this.render('<div class="view-content" style="padding: 24px; text-align: center;"><h1 style="color: #d32f2f;">Error HTTP</h1><p>No se pudo cargar la vista solicitada.</p></div>');
+                this.render('<div class="view-content" style="padding: 24px; text-align: center;"><h1 style="color: #d32f2f;">Error HTTP</h1><p>No se pudo cargar la vista solicitada. Código: ' + response.status + '</p></div>');
             }
         } catch (error) {
             this.render('<div class="view-content" style="padding: 24px; text-align: center;"><h1 style="color: #d32f2f;">Error de Red</h1><p>Revise su conexión a internet.</p></div>');
