@@ -37,7 +37,7 @@
     "menu_admin_dashboard": "Dashboard",
     "menu_admin_users": "Gestionar usuarios",
     "menu_admin_backups": "Copias de seguridad",
-    "menu_admin_server": "Servidor",
+    "menu_admin_server": "Configuración del servidor",
     "theme_system": "Sincronizar con el sistema",
     "theme_light": "Tema claro",
     "theme_dark": "Tema oscuro",

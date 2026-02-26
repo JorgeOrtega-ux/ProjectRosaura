@@ -28,6 +28,9 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 
             <div class="component-group-item component-group-item--wrap">
                 <div class="component-card__content">
+                    <div class="component-card__icon-container component-card__icon-container--bordered">
+                        <span class="material-symbols-rounded">fact_check</span>
+                    </div>
                     <div class="component-card__text">
                         <h2 class="component-card__title">Confirmar riesgos</h2>
                         <p class="component-card__description">Entiendo los riesgos y deseo desactivar el 2FA de mi cuenta.</p>
@@ -45,6 +48,9 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                 <hr class="component-divider">
                 <div class="component-group-item component-group-item--stacked">
                     <div class="component-card__content component-card__content--full component-card__content--start">
+                        <div class="component-card__icon-container component-card__icon-container--bordered">
+                            <span class="material-symbols-rounded">lock</span>
+                        </div>
                         <div class="component-card__text">
                             <h2 class="component-card__title">Verificar identidad</h2>
                             <p class="component-card__description">Para finalizar, ingresa tu contraseña actual:</p>
