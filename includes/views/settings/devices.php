@@ -17,14 +17,14 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                         <h2 class="component-card__title">Sesiones Activas</h2>
                         <p class="component-card__description">A continuación, se muestran los dispositivos y navegadores donde has iniciado sesión. Si no reconoces alguno, ciérralo inmediatamente.</p>
                         
-                        <div style="margin-top: 16px; margin-bottom: 24px;">
+                        <div>
                             <button class="component-button component-button--danger component-button--h36" data-action="revokeAllDevices">
                                 <span class="material-symbols-rounded">logout</span> Cerrar todas las demás sesiones
                             </button>
                         </div>
 
-                        <div id="devices-list" style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
-                            <div class="component-spinner" style="margin: 0 auto;"></div>
+                        <div id="devices-list">
+                            <div class="component-spinner"></div>
                         </div>
                     </div>
                 </div>

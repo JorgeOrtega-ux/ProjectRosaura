@@ -15,10 +15,10 @@ if (session_status() === PHP_SESSION_NONE) session_start();
             <div class="component-group-item component-group-item--stacked">
                 <div class="component-card__content component-card__content--full component-card__content--start">
                     <div class="component-card__icon-container component-card__icon-container--bordered">
-                        <span class="material-symbols-rounded" style="color: #d32f2f;">warning</span>
+                        <span class="material-symbols-rounded">warning</span>
                     </div>
                     <div class="component-card__text">
-                        <h2 class="component-card__title" style="color: #d32f2f;">Desactivar 2FA</h2>
+                        <h2 class="component-card__title">Desactivar 2FA</h2>
                         <p class="component-card__description">Al desactivar esta función, tu cuenta solo estará protegida por tu contraseña. Si alguien la descubre, podrá acceder sin restricciones.</p>
                     </div>
                 </div>
@@ -29,7 +29,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
             <div class="component-group-item component-group-item--wrap">
                 <div class="component-card__content">
                     <div class="component-card__text">
-                        <h2 class="component-card__title" style="color: #d32f2f;">Confirmar riesgos</h2>
+                        <h2 class="component-card__title">Confirmar riesgos</h2>
                         <p class="component-card__description">Entiendo los riesgos y deseo desactivar el 2FA de mi cuenta.</p>
                     </div>
                 </div>
@@ -41,13 +41,13 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                 </div>
             </div>
 
-            <div id="deactivate_2fa_password_area" style="display: none;">
+            <div id="deactivate_2fa_password_area" class="disabled">
                 <hr class="component-divider">
                 <div class="component-group-item component-group-item--stacked">
                     <div class="component-card__content component-card__content--full component-card__content--start">
                         <div class="component-card__text">
                             <h2 class="component-card__title">Verificar identidad</h2>
-                            <p class="component-card__description" style="margin-bottom: 12px;">Para finalizar, ingresa tu contraseña actual:</p>
+                            <p class="component-card__description">Para finalizar, ingresa tu contraseña actual:</p>
                             
                             <div class="component-card__form-area">
                                 <div class="component-input-group">

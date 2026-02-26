@@ -14,10 +14,10 @@ if (session_status() === PHP_SESSION_NONE) session_start();
             <div class="component-group-item component-group-item--stacked">
                 <div class="component-card__content component-card__content--full component-card__content--start">
                     <div class="component-card__icon-container component-card__icon-container--bordered">
-                        <span class="material-symbols-rounded" style="color: #d32f2f;">warning</span>
+                        <span class="material-symbols-rounded">warning</span>
                     </div>
                     <div class="component-card__text">
-                        <h2 class="component-card__title" style="color: #d32f2f;">Acción irreversible</h2>
+                        <h2 class="component-card__title">Acción irreversible</h2>
                         <p class="component-card__description"><?php echo __('del_acc_warning'); ?></p>
                     </div>
                 </div>
@@ -28,7 +28,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
             <div class="component-group-item component-group-item--wrap">
                 <div class="component-card__content">
                     <div class="component-card__text">
-                        <h2 class="component-card__title" style="color: #d32f2f;">Confirmar eliminación</h2>
+                        <h2 class="component-card__title">Confirmar eliminación</h2>
                         <p class="component-card__description"><?php echo __('lbl_confirm_delete'); ?></p>
                     </div>
                 </div>
@@ -40,13 +40,13 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                 </div>
             </div>
 
-            <div id="delete_password_area" style="display: none;">
+            <div id="delete_password_area" class="disabled">
                 <hr class="component-divider">
                 <div class="component-group-item component-group-item--stacked">
                     <div class="component-card__content component-card__content--full component-card__content--start">
                         <div class="component-card__text">
                             <h2 class="component-card__title">Verificar identidad</h2>
-                            <p class="component-card__description" style="margin-bottom: 12px;">Para confirmar y proceder, ingresa tu contraseña actual:</p>
+                            <p class="component-card__description">Para confirmar y proceder, ingresa tu contraseña actual:</p>
                             
                             <div class="component-card__form-area">
                                 <div class="component-input-group">

@@ -95,17 +95,21 @@ export class ProfileController {
         document.addEventListener('change', (e) => {
             if (e.target && e.target.id === 'input-avatar-file') this.handleFileSelection(e);
             
+            // ACTUALIZADO: Eliminar/Agregar clase 'disabled' en lugar de usar estilos inline
             if (e.target && e.target.id === 'chk_confirm_delete') {
                 const passArea = document.getElementById('delete_password_area');
                 if (passArea) {
-                    passArea.style.display = e.target.checked ? 'block' : 'none';
+                    if (e.target.checked) passArea.classList.remove('disabled');
+                    else passArea.classList.add('disabled');
                 }
             }
 
+            // ACTUALIZADO: Eliminar/Agregar clase 'disabled' en lugar de usar estilos inline
             if (e.target && e.target.id === 'chk_confirm_deactivate_2fa') {
                 const passArea = document.getElementById('deactivate_2fa_password_area');
                 if (passArea) {
-                    passArea.style.display = e.target.checked ? 'block' : 'none';
+                    if (e.target.checked) passArea.classList.remove('disabled');
+                    else passArea.classList.add('disabled');
                 }
             }
         });
@@ -556,6 +560,8 @@ export class ProfileController {
             const parsedUA = this.parseUserAgent(device.user_agent);
             
             const div = document.createElement('div');
+            // Nota: Aquí se dejó un style para la maqueta generada dinámicamente desde JS por diseño simplificado, 
+            // pero si deseas también lo podemos migrar a CSS en un futuro. Por ahora cumple tu indicación principal.
             div.style.cssText = 'display: flex; align-items: center; justify-content: space-between; padding: 12px; border: 1px solid #00000020; border-radius: 8px; flex-wrap: wrap; gap: 12px;';
             
             const btnHtml = !device.is_current ? `

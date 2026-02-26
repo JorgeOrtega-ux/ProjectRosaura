@@ -35,7 +35,7 @@ $is2FAActive = !empty($_SESSION['user_2fa']);
                             
                             <div class="component-2fa-setup">
                                 <div class="component-2fa-qr-col">
-                                    <div id="2fa-qr-container" style="width: 150px; height: 150px; display: flex; align-items: center; justify-content: center;">
+                                    <div id="2fa-qr-container">
                                         <div class="component-spinner"></div>
                                     </div>
                                 </div>
@@ -83,7 +83,7 @@ $is2FAActive = !empty($_SESSION['user_2fa']);
                                     <label for="2fa_app_code" class="component-input-label">Código de la aplicación</label>
                                 </div>
                             </div>
-                            <div class="component-card__actions component-card__actions--end" style="width: 100%; justify-content: flex-end; display: flex; gap: 8px; margin-top: 16px;">
+                            <div class="component-card__actions component-card__actions--end">
                                 <button class="component-button component-button--h36" data-nav="/ProjectRosaura/settings/security"><?php echo __('btn_cancel'); ?></button>
                                 <button class="component-button component-button--h36 component-button--dark" data-action="submitActivate2FA">Activar</button>
                             </div>
@@ -102,11 +102,11 @@ $is2FAActive = !empty($_SESSION['user_2fa']);
                         <div class="component-card__text">
                             <h2 class="component-card__title">2FA Activado Correctamente</h2>
                             <p class="component-card__description">Guarda estos 10 códigos de recuperación en un lugar seguro. Podrás usarlos para iniciar sesión si pierdes acceso a tu dispositivo.</p>
-                            <div id="2fa-recovery-codes-list" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px;">
+                            <div id="2fa-recovery-codes-list">
                             </div>
                         </div>
                     </div>
-                    <div class="component-card__actions component-card__actions--end" style="width: 100%;">
+                    <div class="component-card__actions component-card__actions--end">
                         <button class="component-button component-button--h36" data-action="copyRecoveryCodes">Copiar códigos</button>
                         <button class="component-button component-button--h36 component-button--dark" data-action="finish2FA">Terminar</button>
                     </div>

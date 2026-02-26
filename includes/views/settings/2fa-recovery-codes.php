@@ -49,11 +49,11 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                         <h2 class="component-card__title">Nuevos códigos generados</h2>
                         <p class="component-card__description">Guarda estos 10 códigos de recuperación en un lugar seguro. Podrás usarlos para iniciar sesión si pierdes acceso a tu dispositivo.</p>
                         
-                        <div id="2fa-new-recovery-codes-list" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px;">
+                        <div id="2fa-new-recovery-codes-list">
                             </div>
                     </div>
                 </div>
-                <div class="component-card__actions component-card__actions--end" style="width: 100%;">
+                <div class="component-card__actions component-card__actions--end">
                     <button class="component-button component-button--h36" data-action="copyNewRecoveryCodes">Copiar códigos</button>
                     <button class="component-button component-button--h36 component-button--dark" data-nav="/ProjectRosaura/settings/2fa">Terminar</button>
                 </div>

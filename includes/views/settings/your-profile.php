@@ -53,16 +53,16 @@ $currentLangText = $languages[$prefLang] ?? 'Español (Latinoamérica)';
                         <h2 class="component-card__title"><?php echo __('prof_avatar_title'); ?></h2>
                         <p class="component-card__description"><?php echo __('prof_avatar_desc'); ?></p>
                         
-                        <input type="file" id="input-avatar-file" accept="image/png, image/jpeg, image/jpg" style="display: none;">
+                        <input type="file" id="input-avatar-file" accept="image/png, image/jpeg, image/jpg">
                     </div>
                 </div>
                 
                 <div class="component-card__actions component-card__actions--stretch" id="profile-avatar-actions">
                     <button type="button" class="component-button component-button--h34 component-button--dark" id="btn-change-avatar"><?php echo __('btn_change_avatar'); ?></button>
-                    <button type="button" class="component-button component-button--h34" id="btn-delete-avatar" style="<?php echo $isDefaultAvatar ? 'display: none;' : ''; ?>"><?php echo __('btn_delete'); ?></button>
+                    <button type="button" class="component-button component-button--h34" id="btn-delete-avatar"><?php echo __('btn_delete'); ?></button>
                     
-                    <button type="button" class="component-button component-button--h34" id="btn-cancel-avatar" style="display: none;"><?php echo __('btn_cancel'); ?></button>
-                    <button type="button" class="component-button component-button--h34 component-button--dark" id="btn-save-avatar" style="display: none;"><?php echo __('btn_save'); ?></button>
+                    <button type="button" class="component-button component-button--h34" id="btn-cancel-avatar"><?php echo __('btn_cancel'); ?></button>
+                    <button type="button" class="component-button component-button--h34 component-button--dark" id="btn-save-avatar"><?php echo __('btn_save'); ?></button>
                 </div>
             </div>
 
@@ -83,8 +83,8 @@ $currentLangText = $languages[$prefLang] ?? 'Español (Latinoamérica)';
                 </div>
 
                 <div class="disabled component-state-box" data-state="username-edit">
-                    <div class="component-card__content" style="width: 100%;">
-                        <div class="component-card__text" style="width: 100%;">
+                    <div class="component-card__content">
+                        <div class="component-card__text">
                             <h2 class="component-card__title"><?php echo __('lbl_username'); ?></h2>
                             <div class="component-edit-row">
                                 <div class="component-input-group component-input-group--h34">
@@ -118,8 +118,8 @@ $currentLangText = $languages[$prefLang] ?? 'Español (Latinoamérica)';
                 </div>
 
                 <div class="disabled component-state-box" data-state="email-edit">
-                    <div class="component-card__content" style="width: 100%;">
-                        <div class="component-card__text" style="width: 100%;">
+                    <div class="component-card__content">
+                        <div class="component-card__text">
                             <h2 class="component-card__title"><?php echo __('lbl_email'); ?></h2>
                             <div class="component-edit-row">
                                 <div class="component-input-group component-input-group--h34">
