@@ -351,8 +351,70 @@ export class ProfileController {
         if (setupContainer && setupContainer.classList.contains('active')) {
             const res = await this.api.post(ApiRoutes.Settings.Generate2FA);
             if (res.success) {
-                document.getElementById('2fa-qr-img').src = res.qr_url;
-                document.getElementById('2fa-secret-text').textContent = res.secret;
+                const qrContainer = document.getElementById('2fa-qr-container');
+                if (qrContainer) {
+                    try {
+                        // Cargar la librería moderna de QR dinámicamente si no existe aún
+                        if (!window.QRCodeStyling) {
+                            await new Promise((resolve, reject) => {
+                                const script = document.createElement('script');
+                                script.src = 'https://unpkg.com/qr-code-styling@1.5.0/lib/qr-code-styling.js';
+                                script.onload = resolve;
+                                script.onerror = reject;
+                                document.head.appendChild(script);
+                            });
+                        }
+
+                        // Limpiar el loader/spinner del contenedor
+                        qrContainer.innerHTML = '';
+
+                        // Inicializar el QR moderno (Puntos y esquinas redondeadas)
+                        // CORRECCIÓN APLICADA: Tamaño reducido a 150 para que el SVG no se desborde, 
+                        // manteniendo type="svg" para que sea 100% nítido
+                        const qrCode = new window.QRCodeStyling({
+                            width: 150, 
+                            height: 150, 
+                            type: "svg", 
+                            data: res.qr_url,
+                            margin: 0,
+                            dotsOptions: {
+                                color: "#111111",
+                                type: "rounded"
+                            },
+                            backgroundOptions: {
+                                color: "#ffffff",
+                            },
+                            cornersSquareOptions: {
+                                type: "extra-rounded",
+                                color: "#111111"
+                            },
+                            cornersDotOptions: {
+                                type: "dot",
+                                color: "#111111"
+                            }
+                        });
+
+                        // Insertarlo en el contenedor
+                        qrCode.append(qrContainer);
+
+                        // Ajustar para que el SVG ocupe el contenedor correctamente
+                        const qrElement = qrContainer.querySelector('canvas, svg');
+                        if (qrElement) {
+                            qrElement.style.width = '100%';
+                            qrElement.style.height = '100%';
+                            qrElement.style.display = 'block';
+                        }
+
+                    } catch (error) {
+                        console.error("No se pudo cargar qr-code-styling, utilizando fallback.", error);
+                        qrContainer.innerHTML = `<p style="font-size: 12px; color: #d32f2f; text-align: center;">Error renderizando QR. Usa la clave secreta abajo.</p>`;
+                    }
+                }
+                
+                const secretText = document.getElementById('2fa-secret-text');
+                if (secretText) {
+                    secretText.textContent = res.secret;
+                }
             } else {
                 this.showMessage(res.message, 'error');
             }
