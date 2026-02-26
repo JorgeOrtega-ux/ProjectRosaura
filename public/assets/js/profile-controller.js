@@ -95,7 +95,6 @@ export class ProfileController {
         document.addEventListener('change', (e) => {
             if (e.target && e.target.id === 'input-avatar-file') this.handleFileSelection(e);
             
-            // ACTUALIZADO: Eliminar/Agregar clase 'disabled' en lugar de usar estilos inline
             if (e.target && e.target.id === 'chk_confirm_delete') {
                 const passArea = document.getElementById('delete_password_area');
                 if (passArea) {
@@ -104,7 +103,6 @@ export class ProfileController {
                 }
             }
 
-            // ACTUALIZADO: Eliminar/Agregar clase 'disabled' en lugar de usar estilos inline
             if (e.target && e.target.id === 'chk_confirm_deactivate_2fa') {
                 const passArea = document.getElementById('deactivate_2fa_password_area');
                 if (passArea) {
@@ -199,15 +197,19 @@ export class ProfileController {
         if (!btnChange || !btnDelete || !btnCancel || !btnSave) return;
         
         if (isPreview) {
-            btnChange.style.display = 'none'; 
-            btnDelete.style.display = 'none';
-            btnCancel.style.display = 'inline-flex'; 
-            btnSave.style.display = 'inline-flex';
+            btnChange.classList.add('disabled');
+            btnDelete.classList.add('disabled');
+            btnCancel.classList.remove('disabled');
+            btnSave.classList.remove('disabled');
         } else {
-            btnChange.style.display = 'inline-flex'; 
-            btnDelete.style.display = this.isDefaultAvatar ? 'none' : 'inline-flex';
-            btnCancel.style.display = 'none'; 
-            btnSave.style.display = 'none';
+            btnChange.classList.remove('disabled');
+            if (this.isDefaultAvatar) {
+                btnDelete.classList.add('disabled');
+            } else {
+                btnDelete.classList.remove('disabled');
+            }
+            btnCancel.classList.add('disabled');
+            btnSave.classList.add('disabled');
         }
     }
 

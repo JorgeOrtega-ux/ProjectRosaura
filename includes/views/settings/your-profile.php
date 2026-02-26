@@ -53,16 +53,16 @@ $currentLangText = $languages[$prefLang] ?? 'Español (Latinoamérica)';
                         <h2 class="component-card__title"><?php echo __('prof_avatar_title'); ?></h2>
                         <p class="component-card__description"><?php echo __('prof_avatar_desc'); ?></p>
                         
-                        <input type="file" id="input-avatar-file" accept="image/png, image/jpeg, image/jpg">
+                        <input type="file" id="input-avatar-file" accept="image/png, image/jpeg, image/jpg" class="disabled">
                     </div>
                 </div>
                 
                 <div class="component-card__actions component-card__actions--stretch" id="profile-avatar-actions">
                     <button type="button" class="component-button component-button--h34 component-button--dark" id="btn-change-avatar"><?php echo __('btn_change_avatar'); ?></button>
-                    <button type="button" class="component-button component-button--h34" id="btn-delete-avatar"><?php echo __('btn_delete'); ?></button>
+                    <button type="button" class="component-button component-button--h34 <?php echo $isDefaultAvatar ? 'disabled' : ''; ?>" id="btn-delete-avatar"><?php echo __('btn_delete'); ?></button>
                     
-                    <button type="button" class="component-button component-button--h34" id="btn-cancel-avatar"><?php echo __('btn_cancel'); ?></button>
-                    <button type="button" class="component-button component-button--h34 component-button--dark" id="btn-save-avatar"><?php echo __('btn_save'); ?></button>
+                    <button type="button" class="component-button component-button--h34 disabled" id="btn-cancel-avatar"><?php echo __('btn_cancel'); ?></button>
+                    <button type="button" class="component-button component-button--h34 component-button--dark disabled" id="btn-save-avatar"><?php echo __('btn_save'); ?></button>
                 </div>
             </div>
 

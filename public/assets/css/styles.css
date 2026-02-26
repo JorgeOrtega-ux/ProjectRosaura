@@ -1,3 +1,4 @@
+/* public/assets/css/styles.css */
 @import url('https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,100..900;1,100..900&display=swap');
 
 * {
@@ -169,7 +170,9 @@ body,html {
     .header.header--search-active .header-center {
         display: flex; 
     }
-}/* ========================================= */
+}
+
+/* ========================================= */
 /* --- SETTINGS VIEWS ---                    */
 /* ========================================= */
 
@@ -190,6 +193,7 @@ body,html {
     font-size: 15px;
 }
 
+/* Aseguramos que los elementos .disabled verdaderamente se oculten, inclusive si un componente (ej. button) fuerza su display inline/flex */
 .disabled {
-    display: none;
+    display: none !important;
 }
