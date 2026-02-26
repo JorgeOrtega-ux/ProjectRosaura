@@ -1,14 +1,15 @@
 <?php
-// includes/views/settings/delete-account.php
+// includes/views/settings/2fa-deactivate.php
 if (session_status() === PHP_SESSION_NONE) session_start();
 ?>
 <div class="view-content">
     <div class="component-wrapper">
-        <div class="component-header-card">
-            <h1 class="component-page-title"><?php echo __('del_acc_title'); ?></h1>
-            <p class="component-page-description"><?php echo __('del_acc_desc'); ?></p>
-        </div>
         
+        <div class="component-header-card">
+            <h1 class="component-page-title"><?php echo __('2fa_deactivate_title'); ?></h1>
+            <p class="component-page-description"><?php echo __('2fa_deactivate_desc'); ?></p>
+        </div>
+
         <div class="component-card--grouped">
             
             <div class="component-group-item component-group-item--stacked">
@@ -17,8 +18,8 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                         <span class="material-symbols-rounded" style="color: #d32f2f;">warning</span>
                     </div>
                     <div class="component-card__text">
-                        <h2 class="component-card__title" style="color: #d32f2f;">Acción irreversible</h2>
-                        <p class="component-card__description"><?php echo __('del_acc_warning'); ?></p>
+                        <h2 class="component-card__title" style="color: #d32f2f;">Desactivar 2FA</h2>
+                        <p class="component-card__description">Al desactivar esta función, tu cuenta solo estará protegida por tu contraseña. Si alguien la descubre, podrá acceder sin restricciones.</p>
                     </div>
                 </div>
             </div>
@@ -28,42 +29,43 @@ if (session_status() === PHP_SESSION_NONE) session_start();
             <div class="component-group-item component-group-item--wrap">
                 <div class="component-card__content">
                     <div class="component-card__text">
-                        <h2 class="component-card__title" style="color: #d32f2f;">Confirmar eliminación</h2>
-                        <p class="component-card__description"><?php echo __('lbl_confirm_delete'); ?></p>
+                        <h2 class="component-card__title" style="color: #d32f2f;">Confirmar riesgos</h2>
+                        <p class="component-card__description">Entiendo los riesgos y deseo desactivar el 2FA de mi cuenta.</p>
                     </div>
                 </div>
                 <div class="component-card__actions component-card__actions--end">
                     <label class="component-toggle-switch">
-                        <input type="checkbox" id="chk_confirm_delete">
+                        <input type="checkbox" id="chk_confirm_deactivate_2fa">
                         <span class="component-toggle-slider"></span>
                     </label>
                 </div>
             </div>
 
-            <div id="delete_password_area" style="display: none;">
+            <div id="deactivate_2fa_password_area" style="display: none;">
                 <hr class="component-divider">
                 <div class="component-group-item component-group-item--stacked">
                     <div class="component-card__content component-card__content--full component-card__content--start">
                         <div class="component-card__text">
                             <h2 class="component-card__title">Verificar identidad</h2>
-                            <p class="component-card__description" style="margin-bottom: 12px;">Para confirmar y proceder, ingresa tu contraseña actual:</p>
+                            <p class="component-card__description" style="margin-bottom: 12px;">Para finalizar, ingresa tu contraseña actual:</p>
                             
                             <div class="component-card__form-area">
                                 <div class="component-input-group">
-                                    <input type="password" id="delete_account_password" class="component-input-field component-input-field--with-icon" placeholder=" ">
-                                    <label for="delete_account_password" class="component-input-label"><?php echo __('lbl_password'); ?></label>
+                                    <input type="password" id="2fa_disable_password" class="component-input-field component-input-field--with-icon" placeholder=" ">
+                                    <label for="2fa_disable_password" class="component-input-label">Contraseña actual</label>
                                     <span class="material-symbols-rounded component-input-toggle" data-action="togglePassword">visibility_off</span>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="component-card__actions component-card__actions--end">
-                        <button class="component-button component-button--h36" data-nav="/ProjectRosaura/settings/security">Cancelar</button>
-                        <button class="component-button component-button--h36 component-button--danger" data-action="submitDeleteAccount"><?php echo __('btn_delete_account_final'); ?></button>
+                        <button class="component-button component-button--h36" data-nav="/ProjectRosaura/settings/2fa">Cancelar</button>
+                        <button class="component-button component-button--h36 component-button--danger" data-action="submitDeactivate2FA">Desactivar permanentemente</button>
                     </div>
                 </div>
             </div>
 
         </div>
+
     </div>
 </div>

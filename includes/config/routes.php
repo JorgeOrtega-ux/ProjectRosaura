@@ -24,6 +24,11 @@ return [
     '/settings/accessibility' => ['view' => 'settings/accessibility.php', 'auth' => true],
     '/settings/change-password' => ['view' => 'settings/change-password.php', 'auth' => true],
     '/settings/2fa' => ['view' => 'settings/2fa.php', 'auth' => true],
+    
+    // NUEVAS RUTAS
+    '/settings/2fa/recovery-codes' => ['view' => 'settings/2fa-recovery-codes.php', 'auth' => true],
+    '/settings/2fa/deactivate' => ['view' => 'settings/2fa-deactivate.php', 'auth' => true],
+
     '/settings/devices' => ['view' => 'settings/devices.php', 'auth' => true],
     '/settings/delete-account' => ['view' => 'settings/delete-account.php', 'auth' => true],
 

@@ -115,104 +115,37 @@ $is2FAActive = !empty($_SESSION['user_2fa']);
 
         <?php else: ?>
 
-            <div class="component-card--grouped" style="margin-bottom: 16px;">
-                <div class="component-group-item component-group-item--stateful">
-                    
-                    <div class="active component-state-box" data-state="regenerate-view">
-                        <div class="component-card__content">
-                            <div class="component-card__icon-container component-card__icon-container--bordered">
-                                <span class="material-symbols-rounded">key</span>
-                            </div>
-                            <div class="component-card__text">
-                                <h2 class="component-card__title">Códigos de recuperación</h2>
-                                <p class="component-card__description">Genera 10 nuevos códigos de recuperación. Los códigos anteriores dejarán de funcionar.</p>
-                            </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--end">
-                            <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="regenerate">Generar códigos</button>
-                        </div>
-                    </div>
-
-                    <div class="disabled component-state-box" data-state="regenerate-edit">
-                        <div class="component-card__content" style="width: 100%;">
-                            <div class="component-card__text" style="width: 100%;">
-                                <h2 class="component-card__title">Generar nuevos códigos</h2>
-                                <p class="component-card__description">Ingresa tu contraseña actual para confirmar la operación.</p>
-                                
-                                <div class="component-edit-row" id="2fa-regenerate-form-row">
-                                    <div class="component-input-group component-input-group--h34">
-                                        <input type="password" id="2fa_regenerate_password" class="component-input-field component-input-field--simple" style="padding-right: 40px !important;" placeholder="Contraseña actual">
-                                        <span class="material-symbols-rounded component-input-toggle" data-action="togglePassword">visibility_off</span>
-                                    </div>
-                                    <div class="component-card__actions component-card__actions--stretch">
-                                        <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="regenerate">Cancelar</button>
-                                        <button type="button" class="component-button component-button--h34 component-button--dark" data-action="submitRegenerateRecoveryCodes">Confirmar</button>
-                                    </div>
-                                </div>
-
-                                <div id="2fa-new-recovery-codes-wrapper" style="display: none; margin-top: 16px; border-top: 1px solid #00000020; padding-top: 16px;">
-                                    <div class="component-card__content component-card__content--start">
-                                        <div class="component-card__icon-container component-card__icon-container--bordered">
-                                            <span class="material-symbols-rounded">shield</span>
-                                        </div>
-                                        <div class="component-card__text">
-                                            <h2 class="component-card__title">Nuevos códigos generados</h2>
-                                            <p class="component-card__description">Guarda estos 10 códigos de recuperación en un lugar seguro. Podrás usarlos para iniciar sesión si pierdes acceso a tu dispositivo.</p>
-                                        </div>
-                                    </div>
-                                    <div id="2fa-new-recovery-codes-list" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px;">
-                                    </div>
-                                    <div class="component-card__actions component-card__actions--end" style="width: 100%; margin-top: 16px;">
-                                        <button class="component-button component-button--h36" data-action="copyNewRecoveryCodes">Copiar códigos</button>
-                                        <button class="component-button component-button--h36 component-button--dark" data-action="toggleEditState" data-target="regenerate">Terminar</button>
-                                    </div>
-                                </div>
-
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-
             <div class="component-card--grouped">
-                <div class="component-group-item component-group-item--stateful">
-                    
-                    <div class="active component-state-box" data-state="deactivate-view">
-                        <div class="component-card__content">
-                            <div class="component-card__icon-container component-card__icon-container--bordered">
-                                <span class="material-symbols-rounded">verified_user</span>
-                            </div>
-                            <div class="component-card__text">
-                                <h2 class="component-card__title">Desactivar 2FA</h2>
-                                <p class="component-card__description">Al desactivar esta función, tu cuenta será menos segura.</p>
-                            </div>
+                <div class="component-group-item component-group-item--wrap">
+                    <div class="component-card__content">
+                        <div class="component-card__icon-container component-card__icon-container--bordered">
+                            <span class="material-symbols-rounded">key</span>
                         </div>
-                        <div class="component-card__actions component-card__actions--end">
-                            <button type="button" class="component-button component-button--h34 component-button--danger" data-action="toggleEditState" data-target="deactivate">Desactivar</button>
+                        <div class="component-card__text">
+                            <h2 class="component-card__title">Códigos de recuperación</h2>
+                            <p class="component-card__description">Genera 10 nuevos códigos de recuperación. Los códigos anteriores dejarán de funcionar.</p>
                         </div>
                     </div>
+                    <div class="component-card__actions component-card__actions--end">
+                        <button type="button" class="component-button component-button--h36" data-nav="/ProjectRosaura/settings/2fa/recovery-codes">Generar códigos</button>
+                    </div>
+                </div>
+                
+                <hr class="component-divider">
 
-                    <div class="disabled component-state-box" data-state="deactivate-edit">
-                        <div class="component-card__content" style="width: 100%;">
-                            <div class="component-card__text" style="width: 100%;">
-                                <h2 class="component-card__title">Desactivar autenticación de dos factores</h2>
-                                <p class="component-card__description">Ingresa tu contraseña actual para confirmar la desactivación.</p>
-                                
-                                <div class="component-edit-row">
-                                    <div class="component-input-group component-input-group--h34">
-                                        <input type="password" id="2fa_disable_password" class="component-input-field component-input-field--simple" style="padding-right: 40px !important;" placeholder="Contraseña actual">
-                                        <span class="material-symbols-rounded component-input-toggle" data-action="togglePassword">visibility_off</span>
-                                    </div>
-                                    <div class="component-card__actions component-card__actions--stretch">
-                                        <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="deactivate">Cancelar</button>
-                                        <button type="button" class="component-button component-button--h34 component-button--danger" data-action="submitDeactivate2FA">Confirmar</button>
-                                    </div>
-                                </div>
-                            </div>
+                <div class="component-group-item component-group-item--wrap">
+                    <div class="component-card__content">
+                        <div class="component-card__icon-container component-card__icon-container--bordered">
+                            <span class="material-symbols-rounded">verified_user</span>
+                        </div>
+                        <div class="component-card__text">
+                            <h2 class="component-card__title">Desactivar 2FA</h2>
+                            <p class="component-card__description">Al desactivar esta función, tu cuenta será menos segura.</p>
                         </div>
                     </div>
-
+                    <div class="component-card__actions component-card__actions--end">
+                        <button type="button" class="component-button component-button--h36 component-button--danger" data-nav="/ProjectRosaura/settings/2fa/deactivate">Desactivar</button>
+                    </div>
                 </div>
             </div>
 

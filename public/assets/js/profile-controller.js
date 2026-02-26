@@ -80,23 +80,6 @@ export class ProfileController {
                 else window.location.href = '/ProjectRosaura/settings/security';
             }
 
-            // --- RESET PARA "CANCELAR" o "TERMINAR" EN EL FORMULARIO DE REGENERAR ---
-            const btnToggleRegen = e.target.closest('[data-action="toggleEditState"][data-target="regenerate"]');
-            if (btnToggleRegen) {
-                const wrapper = document.getElementById('2fa-new-recovery-codes-wrapper');
-                const row = document.getElementById('2fa-regenerate-form-row');
-                const input = document.getElementById('2fa_regenerate_password');
-                if (wrapper) wrapper.style.display = 'none';
-                if (row) row.style.display = 'flex';
-                if (input) input.value = '';
-            }
-
-            const btnToggleDeactivate = e.target.closest('[data-action="toggleEditState"][data-target="deactivate"]');
-            if (btnToggleDeactivate) {
-                const input = document.getElementById('2fa_disable_password');
-                if (input) input.value = '';
-            }
-
             // --- EVENTOS DISPOSITIVOS ---
             const btnRevokeAll = e.target.closest('[data-action="revokeAllDevices"]');
             if (btnRevokeAll) this.revokeAllDevices(btnRevokeAll);
@@ -118,6 +101,13 @@ export class ProfileController {
                     passArea.style.display = e.target.checked ? 'block' : 'none';
                 }
             }
+
+            if (e.target && e.target.id === 'chk_confirm_deactivate_2fa') {
+                const passArea = document.getElementById('deactivate_2fa_password_area');
+                if (passArea) {
+                    passArea.style.display = e.target.checked ? 'block' : 'none';
+                }
+            }
         });
 
         document.addEventListener('input', (e) => {
@@ -133,7 +123,7 @@ export class ProfileController {
         });
 
         window.addEventListener('viewLoaded', (e) => {
-            if (e.detail.url.includes('/settings/2fa')) {
+            if (e.detail.url.includes('/settings/2fa') && !e.detail.url.includes('recovery') && !e.detail.url.includes('deactivate')) {
                 this.init2FAView();
             }
             if (e.detail.url.includes('/settings/devices')) {
@@ -383,21 +373,10 @@ export class ProfileController {
                             type: "svg", 
                             data: res.qr_url,
                             margin: 0,
-                            dotsOptions: {
-                                color: "#111111",
-                                type: "rounded"
-                            },
-                            backgroundOptions: {
-                                color: "#ffffff",
-                            },
-                            cornersSquareOptions: {
-                                type: "extra-rounded",
-                                color: "#111111"
-                            },
-                            cornersDotOptions: {
-                                type: "dot",
-                                color: "#111111"
-                            }
+                            dotsOptions: { color: "#111111", type: "rounded" },
+                            backgroundOptions: { color: "#ffffff" },
+                            cornersSquareOptions: { type: "extra-rounded", color: "#111111" },
+                            cornersDotOptions: { type: "dot", color: "#111111" }
                         });
 
                         qrCode.append(qrContainer);
@@ -480,8 +459,8 @@ export class ProfileController {
         if (result.success) {
             this.showMessage(result.message, 'success');
             setTimeout(() => {
-                if (window.spaRouter) window.spaRouter.navigate('/ProjectRosaura/settings/security');
-                else window.location.href = '/ProjectRosaura/settings/security';
+                if (window.spaRouter) window.spaRouter.navigate('/ProjectRosaura/settings/2fa');
+                else window.location.href = '/ProjectRosaura/settings/2fa';
             }, 1000);
         } else {
             this.showMessage(result.message, 'error');
@@ -513,23 +492,25 @@ export class ProfileController {
         if (result.success) {
             this.showMessage(result.message, 'success');
             
+            const step1 = document.getElementById('step-1-generate-codes');
             const wrapper = document.getElementById('2fa-new-recovery-codes-wrapper');
-            const row = document.getElementById('2fa-regenerate-form-row');
             
-            wrapper.style.display = 'block';
-            if (row) row.style.display = 'none'; // Ocultamos el campo de contraseña
+            if (step1) step1.classList.replace('active', 'disabled');
+            if (wrapper) wrapper.classList.replace('disabled', 'active');
             
             const codeList = document.getElementById('2fa-new-recovery-codes-list');
-            codeList.innerHTML = '';
-            result.recovery_codes.forEach(c => {
-                const div = document.createElement('div');
-                div.className = 'component-recovery-code';
-                div.innerHTML = `
-                    <span class="material-symbols-rounded component-recovery-code-icon">key</span>
-                    <span class="component-recovery-code-text">${c}</span>
-                `;
-                codeList.appendChild(div);
-            });
+            if (codeList) {
+                codeList.innerHTML = '';
+                result.recovery_codes.forEach(c => {
+                    const div = document.createElement('div');
+                    div.className = 'component-recovery-code';
+                    div.innerHTML = `
+                        <span class="material-symbols-rounded component-recovery-code-icon">key</span>
+                        <span class="component-recovery-code-text">${c}</span>
+                    `;
+                    codeList.appendChild(div);
+                });
+            }
             
             this.newRecoveryCodes = result.recovery_codes.join('\n');
             input.value = ''; 
