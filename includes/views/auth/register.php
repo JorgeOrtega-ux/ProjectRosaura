@@ -114,9 +114,10 @@ if ($relativePath === '/register/aditional-data') {
                     </button>
                     
                     <div class="component-alert-error" id="auth-error-message"></div>
+                    <div class="component-alert-success" id="auth-success-message"></div>
                     
                     <div class="component-link-container component-link-container--center">
-                        <span class="component-link" data-nav="/ProjectRosaura/register/aditional-data"><?php echo __('link_go_back'); ?></span>
+                        <span class="component-link" id="btn-resend-register-code" data-action="resendRegisterCode" style="pointer-events: none; color: #999999;"><?php echo __('btn_resend_code'); ?></span>
                     </div>
                 </div>
             <?php endif; ?>

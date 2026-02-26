@@ -17,6 +17,7 @@ class AuthController {
     public function register_step1($input) { return $this->authServices->registerStep1($input); }
     public function register_step2($input) { return $this->authServices->registerStep2($input); }
     public function register_verify($input) { return $this->authServices->registerVerify($input); }
+    public function register_resend_code() { return $this->authServices->registerResendCode(); }
     public function login($input) { return $this->authServices->login($input); }
     public function login_verify_2fa($input) { return $this->authServices->loginVerify2FA($input); }
     public function logout() { return $this->authServices->logout(); }

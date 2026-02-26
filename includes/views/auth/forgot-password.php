@@ -13,7 +13,7 @@
                 <label for="forgot_email" class="component-input-label"><?php echo __('lbl_email'); ?></label>
             </div>
 
-            <button class="component-button component-button--dark component-button--h45 component-button--full" data-action="submitForgotPassword">
+            <button class="component-button component-button--dark component-button--h45 component-button--full" id="btn-forgot-password" data-action="submitForgotPassword">
                 <?php echo __('btn_continue'); ?>
             </button>
             

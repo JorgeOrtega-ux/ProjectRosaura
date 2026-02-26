@@ -5,16 +5,30 @@ import { ApiRoutes } from './core/api-routes.js';
 export class AuthController {
     constructor() {
         this.api = new ApiService();
-        // Cargar configuración global dinámica expuesta por PHP
         this.config = window.AppServerConfig || {};
+        this.resendInterval = null; // Almacena el interval globalmente para limpiarlo al navegar
     }
 
     init() {
         this.bindEvents();
         console.log("AuthController inicializado.");
+        
+        // Verifica en carga de ventana si está en la etapa 3 para iniciar timer automáticamente
+        if (window.location.pathname.includes('/register/verification-account')) {
+            const resendBtn = document.getElementById('btn-resend-register-code');
+            if (resendBtn) this.startResendTimer(resendBtn, __('btn_resend_code'), 60, true);
+        }
     }
 
     bindEvents() {
+        // Escuchar transiciones SPA
+        window.addEventListener('viewLoaded', (e) => {
+            if (e.detail.url.includes('/register/verification-account')) {
+                const resendBtn = document.getElementById('btn-resend-register-code');
+                if (resendBtn) this.startResendTimer(resendBtn, __('btn_resend_code'), 60, true);
+            }
+        });
+
         document.addEventListener('click', (e) => {
             const toggleBtn = e.target.closest('[data-action="togglePassword"]');
             
@@ -24,6 +38,7 @@ export class AuthController {
             const registerStep1Btn = e.target.closest('[data-action="submitRegisterStep1"]');
             const registerStep2Btn = e.target.closest('[data-action="submitRegisterStep2"]');
             const registerVerifyBtn = e.target.closest('[data-action="submitRegisterVerify"]');
+            const resendRegisterCodeBtn = e.target.closest('[data-action="resendRegisterCode"]');
             
             const forgotPasswordBtn = e.target.closest('[data-action="submitForgotPassword"]');
             const resetPasswordBtn = e.target.closest('[data-action="submitResetPassword"]');
@@ -59,6 +74,11 @@ export class AuthController {
                 this.handleRegisterVerify(registerVerifyBtn);
             }
 
+            if (resendRegisterCodeBtn) {
+                e.preventDefault();
+                this.handleResendRegisterCode(resendRegisterCodeBtn);
+            }
+
             if (forgotPasswordBtn) {
                 e.preventDefault();
                 this.handleForgotPassword(forgotPasswordBtn);
@@ -88,6 +108,37 @@ export class AuthController {
                 e.target.value = formatted;
             }
         });
+    }
+
+    startResendTimer(element, defaultText, seconds = 60, isLink = false) {
+        if (this.resendInterval) clearInterval(this.resendInterval);
+        let timeLeft = seconds;
+        
+        if (isLink) {
+            element.style.pointerEvents = 'none';
+            element.style.color = '#999999';
+        } else {
+            element.disabled = true;
+        }
+        
+        element.textContent = `${defaultText} (${timeLeft})`;
+
+        this.resendInterval = setInterval(() => {
+            timeLeft--;
+            if (timeLeft <= 0) {
+                clearInterval(this.resendInterval);
+                if (isLink) {
+                    element.style.pointerEvents = 'auto';
+                    element.style.color = ''; 
+                } else {
+                    element.disabled = false;
+                    element.dataset.originalText = defaultText; 
+                }
+                element.textContent = defaultText;
+            } else {
+                element.textContent = `${defaultText} (${timeLeft})`;
+            }
+        }, 1000);
     }
 
     togglePasswordVisibility(toggleBtn) {
@@ -225,7 +276,6 @@ export class AuthController {
         const email = emailInput.value.trim();
         const password = passwordInput.value;
 
-        // Variables dinámicas
         const minPass = this.config.min_password_length || 8;
         const maxPass = this.config.max_password_length || 64;
 
@@ -300,7 +350,6 @@ export class AuthController {
         
         const username = usernameInput.value.trim();
 
-        // Variables dinámicas
         const minUser = this.config.min_username_length || 3;
         const maxUser = this.config.max_username_length || 32;
 
@@ -347,6 +396,28 @@ export class AuthController {
         }
     }
 
+    async handleResendRegisterCode(btn) {
+        this.clearMessages();
+        
+        if(btn.style.pointerEvents === 'none') return;
+        
+        btn.style.pointerEvents = 'none';
+        btn.style.color = '#999999';
+        btn.textContent = 'Enviando...';
+
+        const result = await this.api.post(ApiRoutes.Auth.RegisterResendCode);
+
+        if (result.success) {
+            this.showSuccess(result.message);
+            this.startResendTimer(btn, __('btn_resend_code'), 60, true);
+        } else {
+            this.showError(result.message);
+            btn.style.pointerEvents = 'auto';
+            btn.style.color = '';
+            btn.textContent = __('btn_resend_code');
+        }
+    }
+
     async handleForgotPassword(btn) {
         this.clearMessages();
         const emailInput = document.getElementById('forgot_email');
@@ -363,11 +434,11 @@ export class AuthController {
         const data = { email: email };
         const result = await this.api.post(ApiRoutes.Auth.ForgotPassword, data);
 
-        this.restoreButton(btn);
-
         if (result.success) {
             this.showSuccess(result.message);
+            this.startResendTimer(btn, __('btn_resend_email'), 60, false);
         } else {
+            this.restoreButton(btn);
             this.showError(result.message);
         }
     }
@@ -388,7 +459,6 @@ export class AuthController {
             return;
         }
 
-        // Variables dinámicas
         const minPass = this.config.min_password_length || 8;
         const maxPass = this.config.max_password_length || 64;
 

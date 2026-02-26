@@ -66,6 +66,8 @@
     "reg_step3_desc": "Paso 3: Ingresa el código de 12 dígitos que te enviamos.",
     "lbl_verify_code": "Código de verificación",
     "btn_create_account": "Crear cuenta",
+    "btn_resend_code": "Reenviar código de verificación",
+    "btn_resend_email": "Reenviar correo de verificación",
     "reset_invalid_title": "Enlace no válido",
     "reset_invalid_desc": "El enlace para restablecer la contraseña no existe, ya fue usado o ha expirado.",
     "btn_try_again": "Volver a intentar",

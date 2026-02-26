@@ -13,7 +13,7 @@ use App\Core\Interfaces\UserRepositoryInterface;
 use App\Core\Interfaces\SessionManagerInterface;
 use App\Core\Interfaces\TokenRepositoryInterface;
 use App\Core\Interfaces\VerificationCodeRepositoryInterface;
-use App\Core\Interfaces\ServerConfigRepositoryInterface; // NUEVO
+use App\Core\Interfaces\ServerConfigRepositoryInterface; 
 
 class AuthServices {
     private $rateLimiter;
@@ -22,7 +22,7 @@ class AuthServices {
     private $sessionManager;
     private $tokenRepository;
     private $verificationCodeRepository;
-    private $config; // NUEVO: Para guardar la configuración del servidor
+    private $config; 
 
     // 100% CLEAN ARCHITECTURE: Ninguna dependencia de base de datos relacional
     public function __construct(
@@ -32,7 +32,7 @@ class AuthServices {
         SessionManagerInterface $sessionManager,
         TokenRepositoryInterface $tokenRepository,
         VerificationCodeRepositoryInterface $verificationCodeRepository,
-        ServerConfigRepositoryInterface $configRepository // NUEVO: Inyección de la config
+        ServerConfigRepositoryInterface $configRepository
     ) {
         $this->rateLimiter = $rateLimiter;
         $this->prefsManager = $prefsManager;
@@ -40,7 +40,7 @@ class AuthServices {
         $this->sessionManager = $sessionManager;
         $this->tokenRepository = $tokenRepository;
         $this->verificationCodeRepository = $verificationCodeRepository;
-        $this->config = $configRepository->getConfig(); // Cargamos configuración global
+        $this->config = $configRepository->getConfig(); 
     }
 
     public function isCurrentDeviceValid() {
@@ -59,7 +59,6 @@ class AuthServices {
         $validator = bin2hex(random_bytes(32));
         $hashedValidator = hash('sha256', $validator);
         
-        // Tiempo dinámico para Remember Me
         $days = $this->config['remember_me_days'] ?? 30;
         $expiresAt = date('Y-m-d H:i:s', time() + (86400 * $days));
         
@@ -145,7 +144,6 @@ class AuthServices {
         $eVal = Utils::validateEmailFormat($email); 
         if (!$eVal['valid']) return ['success' => false, 'message' => $eVal['message']];
         
-        // Validación dinámica de contraseña
         $pVal = Utils::validatePasswordFormat($password, $this->config['min_password_length'], $this->config['max_password_length']); 
         if (!$pVal['valid']) return ['success' => false, 'message' => $pVal['message']];
         
@@ -163,7 +161,6 @@ class AuthServices {
         $username = trim($data['username'] ?? '');
         if (empty($username)) return ['success' => false, 'message' => 'El nombre de usuario es obligatorio.'];
         
-        // Validación dinámica de nombre de usuario
         $minUser = $this->config['min_username_length'];
         $maxUser = $this->config['max_username_length'];
         if (strlen($username) < $minUser || strlen($username) > $maxUser) {
@@ -186,7 +183,6 @@ class AuthServices {
         ]);
         $identifier = $this->sessionManager->get('reg_email');
         
-        // Expiración dinámica para el código de registro
         $codeMinutes = $this->config['verification_code_minutes'] ?? 15;
         $expiresAt = date('Y-m-d H:i:s', strtotime("+{$codeMinutes} minutes")); 
 
@@ -203,6 +199,48 @@ class AuthServices {
             }
         }
         return ['success' => false, 'message' => 'Error al guardar el código.'];
+    }
+
+    // --- NUEVO MÉTODO PARA REENVIAR CÓDIGO CON COOLDOWN DE 60s ---
+    public function registerResendCode() {
+        if (!$this->sessionManager->has('reg_email') || !$this->sessionManager->has('reg_username')) {
+            return ['success' => false, 'message' => 'Faltan datos de sesión.'];
+        }
+        
+        $email = $this->sessionManager->get('reg_email');
+        $username = $this->sessionManager->get('reg_username');
+        $password = $this->sessionManager->get('reg_password');
+
+        // Protección de 60 segundos basada en base de datos
+        $lastCode = $this->verificationCodeRepository->findLatestValidByIdentifierAndType($email, 'account_activation');
+        if ($lastCode && (time() - strtotime($lastCode['created_at'])) < 60) {
+            $timeLeft = 60 - (time() - strtotime($lastCode['created_at']));
+            return ['success' => false, 'message' => "Por favor, espera {$timeLeft} segundos antes de solicitar otro código."];
+        }
+
+        $code = Utils::generateNumericCode(12);
+        $payload = json_encode([
+            'email' => $email, 
+            'password' => $password, 
+            'username' => $username
+        ]);
+        
+        $codeMinutes = $this->config['verification_code_minutes'] ?? 15;
+        $expiresAt = date('Y-m-d H:i:s', strtotime("+{$codeMinutes} minutes")); 
+
+        $this->verificationCodeRepository->deleteByIdentifierAndType($email, 'account_activation');
+
+        if ($this->verificationCodeRepository->createCode($email, 'account_activation', $code, $payload, $expiresAt)) {
+            $mailer = new Mailer();
+            if ($mailer->sendVerificationCode($email, $username, $code)) {
+                Logger::security("Código de verificación de registro reenviado a: {$email}", 'info', ['ip' => Utils::getIpAddress()]);
+                return ['success' => true, 'message' => 'Código reenviado correctamente.'];
+            } else {
+                Logger::security("Fallo interno al reenviar correo a: {$email}", 'error', ['ip' => Utils::getIpAddress()]);
+                return ['success' => false, 'message' => 'Error de red al reenviar el correo. Intenta de nuevo.'];
+            }
+        }
+        return ['success' => false, 'message' => 'Error al procesar la solicitud.'];
     }
 
     public function registerVerify($data) {
@@ -267,7 +305,6 @@ class AuthServices {
         $email = trim($data['email'] ?? ''); $password = trim($data['password'] ?? '');
         if (empty($email) || empty($password)) return ['success' => false, 'message' => 'Todos los campos son obligatorios.'];
 
-        // Rate limit dinámico para el Login
         $attempts = $this->config['login_rate_limit_attempts'];
         $minutes = $this->config['login_rate_limit_minutes'];
         $rateCheck = $this->rateLimiter->check('login', $attempts, $minutes);
@@ -320,7 +357,6 @@ class AuthServices {
 
         $userId = $this->sessionManager->get('pending_2fa_user_id');
         
-        // Rate limit dinámico para el 2FA (reutilizando parámetros del login)
         $attempts = $this->config['login_rate_limit_attempts'];
         $minutes = $this->config['login_rate_limit_minutes'];
         $rateCheck = $this->rateLimiter->check('login_2fa', $attempts, $minutes);
@@ -389,7 +425,6 @@ class AuthServices {
         $email = trim($data['email'] ?? '');
         if (empty($email)) return ['success' => false, 'message' => 'El correo es obligatorio.'];
         
-        // Rate limit dinámico para Recuperación de Contraseña
         $attempts = $this->config['forgot_password_rate_limit_attempts'];
         $minutes = $this->config['forgot_password_rate_limit_minutes'];
         $rateCheck = $this->rateLimiter->check('forgot_password', $attempts, $minutes);
@@ -406,9 +441,16 @@ class AuthServices {
             return ['success' => false, 'message' => 'Cuenta no existe o está inactiva.'];
         }
 
+        // --- PROTECCIÓN COOLDOWN 60 SEGUNDOS AL REENVIAR ---
+        $lastCode = $this->verificationCodeRepository->findLatestValidByIdentifierAndType($email, 'password_reset');
+        if ($lastCode && (time() - strtotime($lastCode['created_at'])) < 60) {
+            $timeLeft = 60 - (time() - strtotime($lastCode['created_at']));
+            $this->rateLimiter->record('forgot_password', $attempts, $minutes);
+            return ['success' => false, 'message' => "Por favor, espera {$timeLeft} segundos antes de solicitar otro correo."];
+        }
+
         $token = bin2hex(random_bytes(32)); 
         
-        // Expiración dinámica para el enlace
         $codeMinutes = $this->config['verification_code_minutes'] ?? 15;
         $expiresAt = date('Y-m-d H:i:s', strtotime("+{$codeMinutes} minutes"));
         
@@ -433,7 +475,6 @@ class AuthServices {
         $token = trim($data['token'] ?? ''); $password = trim($data['password'] ?? '');
         if (empty($token) || empty($password)) return ['success' => false, 'message' => 'Campos obligatorios.'];
         
-        // Validación dinámica de formato de contraseña
         $passValidation = Utils::validatePasswordFormat($password, $this->config['min_password_length'], $this->config['max_password_length']);
         if (!$passValidation['valid']) return ['success' => false, 'message' => $passValidation['message']];
 

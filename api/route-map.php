@@ -6,6 +6,7 @@ return [
     'auth.register.step1'  => ['controller' => 'App\Api\Controllers\AuthController', 'action' => 'register_step1'],
     'auth.register.step2'  => ['controller' => 'App\Api\Controllers\AuthController', 'action' => 'register_step2'],
     'auth.register.verify' => ['controller' => 'App\Api\Controllers\AuthController', 'action' => 'register_verify'],
+    'auth.register.resend_code' => ['controller' => 'App\Api\Controllers\AuthController', 'action' => 'register_resend_code'],
     'auth.login'           => ['controller' => 'App\Api\Controllers\AuthController', 'action' => 'login'],
     'auth.login.verify_2fa'=> ['controller' => 'App\Api\Controllers\AuthController', 'action' => 'login_verify_2fa'],
     'auth.logout'          => ['controller' => 'App\Api\Controllers\AuthController', 'action' => 'logout'],
