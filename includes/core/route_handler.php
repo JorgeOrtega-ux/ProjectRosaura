@@ -15,6 +15,10 @@ $currentView = $routeData['view'];
 $redirectUrl = null;
 $requestUriPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
+// Variable global para que la vista genérica de mensajes sepa qué renderizar
+global $systemMessageType;
+$systemMessageType = null;
+
 // 1. Validar rutas de "Solo Invitados" (guest_only)
 if (!empty($routeData['guest_only']) && $isLoggedIn) {
     if ($currentView === 'settings/guest.php') {
@@ -28,7 +32,8 @@ if (!empty($routeData['guest_only']) && $isLoggedIn) {
 // 2. Validar rutas protegidas (auth)
 if (!empty($routeData['auth']) && !$isLoggedIn) {
     if (strpos($currentView, 'admin/') === 0) {
-        $currentView = 'system/404.php'; 
+        $currentView = 'system/message.php';
+        $systemMessageType = '404';
     } else {
         $currentView = 'settings/guest.php';
         $redirectUrl = '/ProjectRosaura/settings/guest';
@@ -38,20 +43,28 @@ if (!empty($routeData['auth']) && !$isLoggedIn) {
 // 3. Validar rutas por roles permitidos (roles)
 if (!empty($routeData['roles']) && $isLoggedIn) {
     if (!in_array($userRole, $routeData['roles'])) {
-        $currentView = 'system/404.php'; 
+        $currentView = 'system/message.php';
+        $systemMessageType = '404';
     }
 }
 
 // 4. Validar rutas que requieren 2FA (requires_2fa)
-if (!empty($routeData['requires_2fa']) && $isLoggedIn && $currentView !== 'system/404.php') {
+if (!empty($routeData['requires_2fa']) && $isLoggedIn && $currentView !== 'system/message.php') {
     if (empty($_SESSION['user_2fa'])) {
-        $currentView = 'system/require-2fa.php'; 
+        $currentView = 'system/message.php';
+        $systemMessageType = 'require_2fa';
         // No aplicamos $redirectUrl para que el usuario se mantenga en la URL actual (ej: /admin) pero viendo el bloqueo
     }
 }
 
+// Interceptar el 404 del Router nativo
+if ($currentView === 'system/404.php') {
+    $currentView = 'system/message.php';
+    $systemMessageType = '404';
+}
+
 // 5. Alias y Redirecciones internas
-if ($currentView !== 'system/404.php' && $currentView !== 'system/require-2fa.php' && !$redirectUrl) {
+if ($currentView !== 'system/message.php' && !$redirectUrl) {
     if ($requestUriPath === '/ProjectRosaura/admin' || $requestUriPath === '/ProjectRosaura/admin/') {
         $currentView = 'admin/dashboard.php';
         $redirectUrl = '/ProjectRosaura/admin/dashboard';

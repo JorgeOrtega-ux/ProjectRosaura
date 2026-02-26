@@ -26,7 +26,7 @@ switch ($type) {
     default:
         http_response_code(404);
         $config = [
-            'icon' => 'warning',
+            'icon' => 'gpp_bad', // Puedes usar un ícono estándar para 404
             'color' => '#d32f2f',
             'title' => __('404_title'),
             'desc' => __('404_desc'),
