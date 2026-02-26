@@ -201,7 +201,6 @@ class AuthServices {
         return ['success' => false, 'message' => 'Error al guardar el código.'];
     }
 
-    // --- NUEVO MÉTODO PARA REENVIAR CÓDIGO CON COOLDOWN DE 60s ---
     public function registerResendCode() {
         if (!$this->sessionManager->has('reg_email') || !$this->sessionManager->has('reg_username')) {
             return ['success' => false, 'message' => 'Faltan datos de sesión.'];
@@ -211,7 +210,6 @@ class AuthServices {
         $username = $this->sessionManager->get('reg_username');
         $password = $this->sessionManager->get('reg_password');
 
-        // Protección de 60 segundos basada en base de datos sin errores de timezone
         $lastCode = $this->verificationCodeRepository->findLatestValidByIdentifierAndType($email, 'account_activation');
         if ($lastCode && isset($lastCode['seconds_elapsed']) && $lastCode['seconds_elapsed'] < 60) {
             $timeLeft = 60 - (int)$lastCode['seconds_elapsed'];
@@ -319,8 +317,9 @@ class AuthServices {
         if ($user && password_verify($password, $user['password'])) {
             $this->rateLimiter->clear('login');
             
-            if ($user['user_status'] === 'deleted') return ['success' => false, 'message' => 'Cuenta eliminada.'];
-            if ($user['user_status'] === 'suspended') return ['success' => false, 'message' => 'Cuenta suspendida.'];
+            // SE AÑADIÓ LA CLAVE STATUS PARA QUE EL FRONTEND NAVEGUE A MESSAGE.PHP
+            if ($user['user_status'] === 'deleted') return ['success' => false, 'status' => 'deleted', 'message' => 'Cuenta eliminada.'];
+            if ($user['user_status'] === 'suspended') return ['success' => false, 'status' => 'suspended', 'message' => 'Cuenta suspendida.'];
             
             if (!empty($user['two_factor_enabled'])) {
                 $this->sessionManager->set('pending_2fa_user_id', $user['id']);
@@ -441,7 +440,6 @@ class AuthServices {
             return ['success' => false, 'message' => 'Cuenta no existe o está inactiva.'];
         }
 
-        // --- PROTECCIÓN COOLDOWN 60 SEGUNDOS AL REENVIAR ---
         $lastCode = $this->verificationCodeRepository->findLatestValidByIdentifierAndType($email, 'password_reset');
         if ($lastCode && isset($lastCode['seconds_elapsed']) && $lastCode['seconds_elapsed'] < 60) {
             $timeLeft = 60 - (int)$lastCode['seconds_elapsed'];

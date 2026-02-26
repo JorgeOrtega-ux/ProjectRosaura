@@ -14,6 +14,10 @@ return [
     '/forgot-password' => ['view' => 'auth/forgot-password.php', 'guest_only' => true],
     '/reset-password' => ['view' => 'auth/reset-password.php', 'guest_only' => true],
     
+    // --- RUTAS DE SISTEMA PÚBLICAS (Manejo de estados) ---
+    '/account-suspended' => ['view' => 'system/message.php'],
+    '/account-deleted' => ['view' => 'system/message.php'],
+    
     // --- RUTAS DE CONFIGURACIÓN ---
     '/settings' => ['view' => 'settings/index.php'],
     '/settings/guest' => ['view' => 'settings/guest.php', 'guest_only' => true],

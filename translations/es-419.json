@@ -12,6 +12,8 @@
     "route_2fa": "Autenticación de Dos Factores",
     "route_devices": "Tus dispositivos",
     "route_delete_account": "Eliminar cuenta",
+    "route_suspended": "Cuenta suspendida",
+    "route_deleted": "Cuenta eliminada",
     "route_admin_dashboard": "Panel de control",
     "route_admin_users": "Gestionar usuarios",
     "route_admin_backups": "Copias de seguridad",
@@ -135,5 +137,10 @@
     "admin_backups_title": "Copias de seguridad",
     "admin_backups_desc": "Administración de respaldos de la base de datos y archivos críticos.",
     "admin_server_title": "Configuración del servidor",
-    "admin_server_desc": "Ajustes del entorno de ejecución, visor de logs y rendimiento."
+    "admin_server_desc": "Ajustes del entorno de ejecución, visor de logs y rendimiento.",
+    "suspended_title": "Cuenta Suspendida",
+    "suspended_desc": "Tu cuenta ha sido suspendida temporal o permanentemente por violar nuestros términos de servicio. Si crees que esto es un error, por favor contacta a soporte.",
+    "deleted_title": "Cuenta Eliminada",
+    "deleted_desc": "Esta cuenta ha sido eliminada y ya no se encuentra disponible. Todos los datos asociados han sido borrados de forma irreversible.",
+    "btn_back_login": "Volver a Iniciar sesión"
 }

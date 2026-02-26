@@ -19,6 +19,13 @@ $requestUriPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 global $systemMessageType;
 $systemMessageType = null;
 
+// Validar y configurar las vistas de mensajes especiales del sistema
+if ($requestUriPath === '/ProjectRosaura/account-suspended' || $requestUriPath === '/ProjectRosaura/account-suspended/') {
+    $systemMessageType = 'suspended';
+} elseif ($requestUriPath === '/ProjectRosaura/account-deleted' || $requestUriPath === '/ProjectRosaura/account-deleted/') {
+    $systemMessageType = 'deleted';
+}
+
 // 1. Validar rutas de "Solo Invitados" (guest_only)
 if (!empty($routeData['guest_only']) && $isLoggedIn) {
     if ($currentView === 'settings/guest.php') {
@@ -53,7 +60,6 @@ if (!empty($routeData['requires_2fa']) && $isLoggedIn && $currentView !== 'syste
     if (empty($_SESSION['user_2fa'])) {
         $currentView = 'system/message.php';
         $systemMessageType = 'require_2fa';
-        // No aplicamos $redirectUrl para que el usuario se mantenga en la URL actual (ej: /admin) pero viendo el bloqueo
     }
 }
 
@@ -76,7 +82,7 @@ if ($currentView !== 'system/message.php' && !$redirectUrl) {
 
 // Lógica de Redirección SPA
 $isSpaRequest = !empty($_SERVER['HTTP_X_SPA_REQUEST']);
-$isAuthRoute = (strpos($currentView, 'auth/') === 0);
+$isAuthRoute = (strpos($currentView, 'auth/') === 0) || in_array($requestUriPath, ['/ProjectRosaura/account-suspended', '/ProjectRosaura/account-suspended/', '/ProjectRosaura/account-deleted', '/ProjectRosaura/account-deleted/']);
 
 if ($redirectUrl) {
     if ($isSpaRequest) header("X-SPA-Update-URL: " . $redirectUrl);

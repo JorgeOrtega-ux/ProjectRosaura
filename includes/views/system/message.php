@@ -22,11 +22,37 @@ switch ($type) {
         ];
         break;
 
+    case 'suspended':
+        http_response_code(403);
+        $config = [
+            'icon' => 'block',
+            'color' => '#d32f2f',
+            'title' => __('suspended_title'),
+            'desc' => __('suspended_desc'),
+            'buttons' => [
+                ['url' => '/ProjectRosaura/login', 'text' => __('btn_back_login'), 'class' => 'component-button--dark']
+            ]
+        ];
+        break;
+
+    case 'deleted':
+        http_response_code(403);
+        $config = [
+            'icon' => 'person_off',
+            'color' => '#d32f2f',
+            'title' => __('deleted_title'),
+            'desc' => __('deleted_desc'),
+            'buttons' => [
+                ['url' => '/ProjectRosaura/login', 'text' => __('btn_back_login'), 'class' => 'component-button--dark']
+            ]
+        ];
+        break;
+
     case '404':
     default:
         http_response_code(404);
         $config = [
-            'icon' => 'gpp_bad', // Puedes usar un ícono estándar para 404
+            'icon' => 'gpp_bad', 
             'color' => '#d32f2f',
             'title' => __('404_title'),
             'desc' => __('404_desc'),

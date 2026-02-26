@@ -6,14 +6,13 @@ export class AuthController {
     constructor() {
         this.api = new ApiService();
         this.config = window.AppServerConfig || {};
-        this.resendInterval = null; // Almacena el interval globalmente para limpiarlo al navegar
+        this.resendInterval = null; 
     }
 
     init() {
         this.bindEvents();
         console.log("AuthController inicializado.");
         
-        // Verifica en carga de ventana si está en la etapa 3 para iniciar timer automáticamente
         if (window.location.pathname.includes('/register/verification-account')) {
             const resendBtn = document.getElementById('btn-resend-register-code');
             if (resendBtn) this.startResendTimer(resendBtn, __('btn_resend_code'), 60, true);
@@ -21,7 +20,6 @@ export class AuthController {
     }
 
     bindEvents() {
-        // Escuchar transiciones SPA
         window.addEventListener('viewLoaded', (e) => {
             if (e.detail.url.includes('/register/verification-account')) {
                 const resendBtn = document.getElementById('btn-resend-register-code');
@@ -31,68 +29,26 @@ export class AuthController {
 
         document.addEventListener('click', (e) => {
             const toggleBtn = e.target.closest('[data-action="togglePassword"]');
-            
             const loginBtn = e.target.closest('[data-action="submitLogin"]');
             const login2FABtn = e.target.closest('[data-action="submitLogin2FA"]');
-            
             const registerStep1Btn = e.target.closest('[data-action="submitRegisterStep1"]');
             const registerStep2Btn = e.target.closest('[data-action="submitRegisterStep2"]');
             const registerVerifyBtn = e.target.closest('[data-action="submitRegisterVerify"]');
             const resendRegisterCodeBtn = e.target.closest('[data-action="resendRegisterCode"]');
-            
             const forgotPasswordBtn = e.target.closest('[data-action="submitForgotPassword"]');
             const resetPasswordBtn = e.target.closest('[data-action="submitResetPassword"]');
-            
             const logoutBtn = e.target.closest('[data-action="submitLogout"]');
             
-            if (toggleBtn) {
-                this.togglePasswordVisibility(toggleBtn);
-            }
-
-            if (loginBtn) {
-                e.preventDefault();
-                this.handleLogin(loginBtn);
-            }
-
-            if (login2FABtn) {
-                e.preventDefault();
-                this.handleLogin2FA(login2FABtn);
-            }
-
-            if (registerStep1Btn) {
-                e.preventDefault();
-                this.handleRegisterStep1(registerStep1Btn);
-            }
-
-            if (registerStep2Btn) {
-                e.preventDefault();
-                this.handleRegisterStep2(registerStep2Btn);
-            }
-
-            if (registerVerifyBtn) {
-                e.preventDefault();
-                this.handleRegisterVerify(registerVerifyBtn);
-            }
-
-            if (resendRegisterCodeBtn) {
-                e.preventDefault();
-                this.handleResendRegisterCode(resendRegisterCodeBtn);
-            }
-
-            if (forgotPasswordBtn) {
-                e.preventDefault();
-                this.handleForgotPassword(forgotPasswordBtn);
-            }
-
-            if (resetPasswordBtn) {
-                e.preventDefault();
-                this.handleResetPassword(resetPasswordBtn);
-            }
-
-            if (logoutBtn) {
-                e.preventDefault();
-                this.handleLogout(logoutBtn);
-            }
+            if (toggleBtn) this.togglePasswordVisibility(toggleBtn);
+            if (loginBtn) { e.preventDefault(); this.handleLogin(loginBtn); }
+            if (login2FABtn) { e.preventDefault(); this.handleLogin2FA(login2FABtn); }
+            if (registerStep1Btn) { e.preventDefault(); this.handleRegisterStep1(registerStep1Btn); }
+            if (registerStep2Btn) { e.preventDefault(); this.handleRegisterStep2(registerStep2Btn); }
+            if (registerVerifyBtn) { e.preventDefault(); this.handleRegisterVerify(registerVerifyBtn); }
+            if (resendRegisterCodeBtn) { e.preventDefault(); this.handleResendRegisterCode(resendRegisterCodeBtn); }
+            if (forgotPasswordBtn) { e.preventDefault(); this.handleForgotPassword(forgotPasswordBtn); }
+            if (resetPasswordBtn) { e.preventDefault(); this.handleResetPassword(resetPasswordBtn); }
+            if (logoutBtn) { e.preventDefault(); this.handleLogout(logoutBtn); }
         });
 
         document.addEventListener('input', (e) => {
@@ -100,9 +56,7 @@ export class AuthController {
                 let val = e.target.value.replace(/\D/g, ''); 
                 let formatted = '';
                 for (let i = 0; i < val.length; i++) {
-                    if (i > 0 && i % 4 === 0) {
-                        formatted += '-';
-                    }
+                    if (i > 0 && i % 4 === 0) formatted += '-';
                     formatted += val[i];
                 }
                 e.target.value = formatted;
@@ -225,17 +179,24 @@ export class AuthController {
 
         if (result.success) {
             if (result.requires_2fa) {
-                if (window.spaRouter) {
-                    window.spaRouter.navigate('/ProjectRosaura/login/two-factor');
-                } else {
-                    window.location.href = '/ProjectRosaura/login/two-factor';
-                }
+                if (window.spaRouter) window.spaRouter.navigate('/ProjectRosaura/login/two-factor');
+                else window.location.href = '/ProjectRosaura/login/two-factor';
             } else {
                 window.location.href = '/ProjectRosaura/';
             }
         } else {
             this.restoreButton(btn);
-            this.showError(result.message);
+            
+            // REDIRECCIONES PARA CUENTAS INACTIVAS
+            if (result.status === 'suspended') {
+                if (window.spaRouter) window.spaRouter.navigate('/ProjectRosaura/account-suspended');
+                else window.location.href = '/ProjectRosaura/account-suspended';
+            } else if (result.status === 'deleted') {
+                if (window.spaRouter) window.spaRouter.navigate('/ProjectRosaura/account-deleted');
+                else window.location.href = '/ProjectRosaura/account-deleted';
+            } else {
+                this.showError(result.message);
+            }
         }
     }
 
@@ -331,11 +292,8 @@ export class AuthController {
         const result = await this.api.post(ApiRoutes.Auth.RegisterStep1, data);
 
         if (result.success) {
-            if (window.spaRouter) {
-                window.spaRouter.navigate('/ProjectRosaura/register/aditional-data');
-            } else {
-                window.location.href = '/ProjectRosaura/register/aditional-data';
-            }
+            if (window.spaRouter) window.spaRouter.navigate('/ProjectRosaura/register/aditional-data');
+            else window.location.href = '/ProjectRosaura/register/aditional-data';
         } else {
             this.restoreButton(btn);
             this.showError(result.message);
@@ -365,11 +323,8 @@ export class AuthController {
         const result = await this.api.post(ApiRoutes.Auth.RegisterStep2, data);
 
         if (result.success) {
-            if (window.spaRouter) {
-                window.spaRouter.navigate('/ProjectRosaura/register/verification-account');
-            } else {
-                window.location.href = '/ProjectRosaura/register/verification-account';
-            }
+            if (window.spaRouter) window.spaRouter.navigate('/ProjectRosaura/register/verification-account');
+            else window.location.href = '/ProjectRosaura/register/verification-account';
         } else {
             this.restoreButton(btn);
             this.showError(result.message);
@@ -398,7 +353,6 @@ export class AuthController {
 
     async handleResendRegisterCode(btn) {
         this.clearMessages();
-        
         if(btn.style.pointerEvents === 'none') return;
         
         btn.style.pointerEvents = 'none';
@@ -412,7 +366,6 @@ export class AuthController {
             this.startResendTimer(btn, __('btn_resend_code'), 60, true);
         } else {
             this.showError(result.message);
-            
             if (result.cooldown) {
                 this.startResendTimer(btn, __('btn_resend_code'), result.cooldown, true);
             } else {
@@ -445,7 +398,6 @@ export class AuthController {
         } else {
             this.restoreButton(btn);
             this.showError(result.message);
-            
             if (result.cooldown) {
                 this.startResendTimer(btn, __('btn_resend_email'), result.cooldown, false);
             }
@@ -478,21 +430,15 @@ export class AuthController {
 
         this.setButtonLoading(btn);
 
-        const data = {
-            token: tokenInput.value,
-            password: password
-        };
+        const data = { token: tokenInput.value, password: password };
 
         const result = await this.api.post(ApiRoutes.Auth.ResetPassword, data);
 
         if (result.success) {
             this.showSuccess(result.message);
             setTimeout(() => {
-                if (window.spaRouter) {
-                    window.spaRouter.navigate('/ProjectRosaura/login');
-                } else {
-                    window.location.href = '/ProjectRosaura/login';
-                }
+                if (window.spaRouter) window.spaRouter.navigate('/ProjectRosaura/login');
+                else window.location.href = '/ProjectRosaura/login';
             }, 2000);
         } else {
             this.restoreButton(btn);

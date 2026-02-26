@@ -15,7 +15,6 @@ export class SpaRouter {
         });
 
         document.body.addEventListener('click', (e) => {
-            // Lógica para interceptar la navegación interna de la SPA
             const navTarget = e.target.closest('[data-nav]');
             if (navTarget) {
                 e.preventDefault();
@@ -25,7 +24,6 @@ export class SpaRouter {
                     module.classList.remove('active');
                     module.classList.add('disabled');
                     
-                    // Limpiamos la transformación del Drag
                     module.querySelectorAll('.component-menu').forEach(panel => {
                         panel.style.transform = '';
                     });
@@ -36,14 +34,13 @@ export class SpaRouter {
                 return;
             }
 
-            // Lógica para la Preferencia de Usuario de "Abrir enlaces externos en nueva pestaña"
             const anchor = e.target.closest('a');
             if (anchor && anchor.href && !anchor.href.startsWith(window.location.origin) && !anchor.href.startsWith('javascript:')) {
                 let openNewTab = true;
                 if (window.AppUserPrefs) {
                     openNewTab = parseInt(window.AppUserPrefs.open_links_new_tab) === 1;
                 } else {
-                    openNewTab = localStorage.getItem('pr_open_links_new_tab') !== '0'; // Por defecto es '1' (true)
+                    openNewTab = localStorage.getItem('pr_open_links_new_tab') !== '0';
                 }
 
                 if (openNewTab) {
@@ -81,7 +78,6 @@ export class SpaRouter {
             const delayPromise = new Promise(resolve => setTimeout(resolve, 200));
             const [response] = await Promise.all([fetchPromise, delayPromise]);
 
-            // SE AGREGÓ: Permitir explícitamente códigos 404 (Vista no encontrada) y 403 (Forbidden / Bloqueos 2FA)
             if (response.ok || response.status === 404 || response.status === 403) {
                 const updateUrl = response.headers.get('X-SPA-Update-URL');
                 if (updateUrl) {
@@ -94,7 +90,8 @@ export class SpaRouter {
                 this.highlightCurrentRoute();
                 this.updateDocumentTitle(url);
 
-                const isAuthRoute = url.includes('/login') || url.includes('/register') || url.includes('/forgot-password') || url.includes('/reset-password');
+                // ACTUALIZACIÓN DE RUTAS DE "PANTALLA COMPLETA / SIN HEADER"
+                const isAuthRoute = url.includes('/login') || url.includes('/register') || url.includes('/forgot-password') || url.includes('/reset-password') || url.includes('/account-suspended') || url.includes('/account-deleted');
                 const topBar = document.querySelector('.general-content-top');
 
                 if (topBar) {
@@ -140,7 +137,6 @@ export class SpaRouter {
             target.classList.add('active');
         });
 
-        // Alternar el menú lateral en función de la ruta
         const mainMenu = document.getElementById('sidebar-menu-main');
         const settingsMenu = document.getElementById('sidebar-menu-settings');
         const adminMenu = document.getElementById('sidebar-menu-admin');
@@ -180,7 +176,6 @@ export class SpaRouter {
             }
         }
 
-        // Dropdowns especiales: Mantiene iluminado el link del menú desplegable
         if (normalizedPath.includes('/settings')) {
             const dropdownSettingsItem = document.querySelector('.component-module--dropdown [data-nav^="/ProjectRosaura/settings"]');
             if (dropdownSettingsItem) {

@@ -19,6 +19,8 @@ $userPic = $_SESSION['user_pic'] ?? '';
         '/settings/2fa': "<?php echo __('route_2fa'); ?>",
         '/settings/devices': "<?php echo __('route_devices'); ?>",
         '/settings/delete-account': "<?php echo __('route_delete_account'); ?>",
+        '/account-suspended': "<?php echo __('route_suspended'); ?>",
+        '/account-deleted': "<?php echo __('route_deleted'); ?>",
         '/admin': "<?php echo __('route_admin_dashboard'); ?>",
         '/admin/dashboard': "<?php echo __('route_admin_dashboard'); ?>",
         '/admin/manage-users': "<?php echo __('route_admin_users'); ?>",
