@@ -296,8 +296,7 @@
     flex: 0 0 auto; 
     display: flex;
     flex-direction: column;
-    margin-top: 8px;
-    padding-top: 8px;
+    padding: 8px;
     border-top: 1px solid #00000020; 
 }
 
@@ -1344,4 +1343,56 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
     opacity: 1;
     visibility: visible;
     transform: scale(1);
+}
+
+/* ========================================= */
+/* --- COMPONENT: SYSTEM MESSAGE ---         */
+/* ========================================= */
+.component-message-layout {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    min-height: calc(100vh - 120px);
+    padding: 24px;
+}
+
+.component-message-box {
+    width: 500px;
+    height: 350px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    background-color: transparent;
+    border: none;
+}
+
+.component-message-icon-wrapper {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.component-message-icon {
+    font-size: 48px;
+    color: #d32f2f;
+}
+
+.component-message-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #d32f2f;
+    margin-bottom: 12px;
+}
+
+.component-message-desc {
+    font-size: 16px;
+    line-height: 1.5;
+    color: #666666;
+    margin: 0;
 }

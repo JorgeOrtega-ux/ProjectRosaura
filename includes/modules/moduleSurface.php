@@ -90,6 +90,7 @@ $isMainArea = !$isAdminArea && !$isSettingsArea;
 
     <?php if ($isAdminUser): ?>
     <div class="component-menu component-menu--w265 component-menu--h-full component-menu--no-padding <?php echo $isAdminArea ? 'active' : 'disabled'; ?>" id="sidebar-menu-admin">
+        
         <div class="component-menu-top">
             <div class="component-menu-list">
                 <div class="component-menu-link component-menu-link--bordered nav-item" data-nav="/ProjectRosaura/">
@@ -119,6 +120,11 @@ $isMainArea = !$isAdminArea && !$isSettingsArea;
                         <span><?php echo __('menu_admin_users'); ?></span>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <div class="component-menu-bottom">
+            <div class="component-menu-list">
                 <div class="component-menu-link nav-item" data-nav="/ProjectRosaura/admin/backups">
                     <div class="component-menu-link-icon">
                         <span class="material-symbols-rounded">backup</span>
@@ -137,6 +143,7 @@ $isMainArea = !$isAdminArea && !$isSettingsArea;
                 </div>
             </div>
         </div>
+
     </div>
     <?php endif; ?>
 

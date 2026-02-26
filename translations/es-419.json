@@ -142,5 +142,8 @@
     "suspended_desc": "Tu cuenta ha sido suspendida temporal o permanentemente por violar nuestros términos de servicio. Si crees que esto es un error, por favor contacta a soporte.",
     "deleted_title": "Cuenta Eliminada",
     "deleted_desc": "Esta cuenta ha sido eliminada y ya no se encuentra disponible. Todos los datos asociados han sido borrados de forma irreversible.",
-    "btn_back_login": "Volver a Iniciar sesión"
+    "btn_back_login": "Volver a Iniciar sesión",
+    "require_2fa_title": "Autenticación requerida",
+    "require_2fa_desc": "Para acceder a esta sección, necesitas tener activada la Autenticación de Dos Factores (2FA) en tu cuenta por motivos de seguridad.",
+    "btn_configure_2fa": "Configurar 2FA"
 }

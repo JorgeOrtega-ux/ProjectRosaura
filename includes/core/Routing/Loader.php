@@ -18,7 +18,17 @@ class Loader {
             require $file;
         } else {
             http_response_code(404);
-            echo "<div class='view-content' style='padding: 24px; text-align: center;'><h1 style='color: #d32f2f;'>404 - Vista no encontrada</h1><p style='color: #666;'>No se localizó el archivo: " . htmlspecialchars($viewName) . "</p></div>";
+            // Mensaje de error genérico en caso de que la vista física no exista
+            // Reutiliza las clases de componentes para no usar estilos inline ni revelar datos del servidor
+            echo '<div class="view-content component-message-layout">
+                <div class="component-message-box">
+                    <div class="component-message-icon-wrapper">
+                        <span class="material-symbols-rounded component-message-icon">error_outline</span>
+                    </div>
+                    <h1 class="component-message-title">Ocurrió un problema</h1>
+                    <p class="component-message-desc">No pudimos cargar la sección solicitada. Por favor, intenta regresar al inicio o recargar la página.</p>
+                </div>
+            </div>';
         }
     }
 }
