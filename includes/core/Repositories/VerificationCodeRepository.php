@@ -19,9 +19,19 @@ class VerificationCodeRepository implements VerificationCodeRepositoryInterface 
     }
 
     public function findLatestValidByIdentifierAndType(string $identifier, string $codeType): ?array {
-        $stmt = $this->pdo->prepare("SELECT * FROM verification_codes WHERE identifier = ? AND code_type = ? AND expires_at > NOW() ORDER BY created_at DESC LIMIT 1");
-        $stmt->execute([$identifier, $codeType]);
+        // Pasamos la fecha de PHP en vez de usar NOW() para la expiración y evitamos desincronizaciones
+        $now = date('Y-m-d H:i:s');
+        
+        // Pedimos a MySQL que calcule los segundos exactos desde la creación para evitar el strtotime()
+        $stmt = $this->pdo->prepare("
+            SELECT *, TIMESTAMPDIFF(SECOND, created_at, NOW()) AS seconds_elapsed 
+            FROM verification_codes 
+            WHERE identifier = ? AND code_type = ? AND expires_at > ? 
+            ORDER BY created_at DESC LIMIT 1
+        ");
+        $stmt->execute([$identifier, $codeType, $now]);
         $code = $stmt->fetch(PDO::FETCH_ASSOC);
+        
         return $code ?: null;
     }
 

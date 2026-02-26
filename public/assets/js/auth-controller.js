@@ -412,9 +412,14 @@ export class AuthController {
             this.startResendTimer(btn, __('btn_resend_code'), 60, true);
         } else {
             this.showError(result.message);
-            btn.style.pointerEvents = 'auto';
-            btn.style.color = '';
-            btn.textContent = __('btn_resend_code');
+            
+            if (result.cooldown) {
+                this.startResendTimer(btn, __('btn_resend_code'), result.cooldown, true);
+            } else {
+                btn.style.pointerEvents = 'auto';
+                btn.style.color = '';
+                btn.textContent = __('btn_resend_code');
+            }
         }
     }
 
@@ -440,6 +445,10 @@ export class AuthController {
         } else {
             this.restoreButton(btn);
             this.showError(result.message);
+            
+            if (result.cooldown) {
+                this.startResendTimer(btn, __('btn_resend_email'), result.cooldown, false);
+            }
         }
     }
 

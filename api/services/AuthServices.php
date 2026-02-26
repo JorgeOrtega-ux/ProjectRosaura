@@ -211,11 +211,11 @@ class AuthServices {
         $username = $this->sessionManager->get('reg_username');
         $password = $this->sessionManager->get('reg_password');
 
-        // Protección de 60 segundos basada en base de datos
+        // Protección de 60 segundos basada en base de datos sin errores de timezone
         $lastCode = $this->verificationCodeRepository->findLatestValidByIdentifierAndType($email, 'account_activation');
-        if ($lastCode && (time() - strtotime($lastCode['created_at'])) < 60) {
-            $timeLeft = 60 - (time() - strtotime($lastCode['created_at']));
-            return ['success' => false, 'message' => "Por favor, espera {$timeLeft} segundos antes de solicitar otro código."];
+        if ($lastCode && isset($lastCode['seconds_elapsed']) && $lastCode['seconds_elapsed'] < 60) {
+            $timeLeft = 60 - (int)$lastCode['seconds_elapsed'];
+            return ['success' => false, 'message' => "Por favor, espera {$timeLeft} segundos antes de solicitar otro código.", 'cooldown' => $timeLeft];
         }
 
         $code = Utils::generateNumericCode(12);
@@ -443,10 +443,10 @@ class AuthServices {
 
         // --- PROTECCIÓN COOLDOWN 60 SEGUNDOS AL REENVIAR ---
         $lastCode = $this->verificationCodeRepository->findLatestValidByIdentifierAndType($email, 'password_reset');
-        if ($lastCode && (time() - strtotime($lastCode['created_at'])) < 60) {
-            $timeLeft = 60 - (time() - strtotime($lastCode['created_at']));
+        if ($lastCode && isset($lastCode['seconds_elapsed']) && $lastCode['seconds_elapsed'] < 60) {
+            $timeLeft = 60 - (int)$lastCode['seconds_elapsed'];
             $this->rateLimiter->record('forgot_password', $attempts, $minutes);
-            return ['success' => false, 'message' => "Por favor, espera {$timeLeft} segundos antes de solicitar otro correo."];
+            return ['success' => false, 'message' => "Por favor, espera {$timeLeft} segundos antes de solicitar otro correo.", 'cooldown' => $timeLeft];
         }
 
         $token = bin2hex(random_bytes(32)); 
