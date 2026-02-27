@@ -26,7 +26,10 @@ export class MainController {
         this.initBottomSheets(); 
         this.syncUIPreferences(); 
         
-        window.addEventListener('viewLoaded', () => this.syncUIPreferences());
+        window.addEventListener('viewLoaded', () => {
+            this.syncUIPreferences();
+            this.initBottomSheets(); // Re-inicia listeners para módulos nuevos que cargue el router
+        });
     }
 
     initPreferences() {
@@ -258,7 +261,9 @@ export class MainController {
     }
 
     initBottomSheets() {
-        document.querySelectorAll('.component-module--dropdown').forEach(module => {
+        // Ignora los que ya fueron procesados previamente para evitar duplicar escuchadores
+        document.querySelectorAll('.component-module--dropdown:not(.bs-initialized)').forEach(module => {
+            module.classList.add('bs-initialized');
             module.querySelectorAll('.component-menu').forEach(panel => {
                 const dragHandle = panel.querySelector('.pill-container');
                 if (dragHandle) {
@@ -304,7 +309,6 @@ export class MainController {
         if (this.dragState.currentDiff > this.dragState.panel.offsetHeight * 0.40) {
             this.closeModule(this.dragState.module); 
         } else {
-            // Eliminamos el atributo style por completo
             this.dragState.panel.removeAttribute('style');
         }
         this.dragState.currentDiff = 0;
@@ -324,7 +328,6 @@ export class MainController {
     
     closeModule(module) { 
         module.classList.replace('active', 'disabled'); 
-        // Eliminamos el atributo style por completo
         module.querySelectorAll('.component-menu').forEach(p => p.removeAttribute('style'));
     }
     
@@ -339,7 +342,6 @@ export class MainController {
             document.querySelectorAll('.is-dragging').forEach(m => {
                 m.classList.remove('is-dragging');
                 const p = m.querySelector('.component-menu');
-                // Eliminamos el atributo style por completo
                 if (p) p.removeAttribute('style');
             });
             this.dragState.isDragging = false;

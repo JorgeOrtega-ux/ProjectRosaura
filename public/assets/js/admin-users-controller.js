@@ -37,15 +37,6 @@ export class AdminUsersController {
             }
 
             if (deselectBtn) this.deselectUser();
-
-            // Clic fuera para cerrar el módulo de filtros
-            const filtersModule = document.getElementById('moduleUserFilters');
-            if (filtersModule && !filtersModule.classList.contains('disabled')) {
-                if (!e.target.closest('#moduleUserFilters') && !e.target.closest('[data-action="toggleUserFilters"]')) {
-                    filtersModule.classList.add('disabled');
-                    this.backToMainFilters(); // Resetear el estado para la próxima vez
-                }
-            }
         });
 
         // Eventos para filtros (Buscar y Checkboxes)
@@ -89,7 +80,7 @@ export class AdminUsersController {
 
     backToMainFilters() {
         const mainFilters = document.getElementById('menuMainFilters');
-        const subMenus = document.querySelectorAll('#moduleUserFilters .component-menu:not(#menuMainFilters)');
+        const subMenus = document.querySelectorAll('[data-module="moduleUserFilters"] .component-menu:not(#menuMainFilters)');
         
         if (mainFilters) {
             subMenus.forEach(menu => {
@@ -103,11 +94,11 @@ export class AdminUsersController {
     }
 
     toggleFiltersModule() {
-        const filtersModule = document.getElementById('moduleUserFilters');
-        if (filtersModule) {
-            filtersModule.classList.toggle('disabled');
-            if (!filtersModule.classList.contains('disabled')) {
-                this.backToMainFilters(); // Asegurar que abra en el menú principal
+        if (window.appInstance) {
+            window.appInstance.toggleModule('moduleUserFilters');
+            const filtersModule = document.querySelector('[data-module="moduleUserFilters"]');
+            if (filtersModule && !filtersModule.classList.contains('disabled')) {
+                this.backToMainFilters(); // Resetear el estado para que siempre abra en la vista principal
             }
         }
     }
@@ -143,9 +134,9 @@ export class AdminUsersController {
             secondaryToolbar.classList.remove('active');
         }
         
-        const filtersModule = document.getElementById('moduleUserFilters');
+        const filtersModule = document.querySelector('[data-module="moduleUserFilters"]');
         if (filtersModule && !filtersModule.classList.contains('disabled')) {
-            filtersModule.classList.add('disabled');
+            if (window.appInstance) window.appInstance.closeModule(filtersModule);
         }
     }
 
@@ -168,11 +159,11 @@ export class AdminUsersController {
     toggleSearchToolbar() {
         const secondaryToolbar = document.getElementById('secondary-toolbar');
         const searchInput = document.getElementById('user-search-input');
-        const filtersModule = document.getElementById('moduleUserFilters');
+        const filtersModule = document.querySelector('[data-module="moduleUserFilters"]');
         
-        // Cerrar módulo de filtros al abrir el buscador para que no choquen visualmente
+        // Cerrar módulo de filtros al abrir el buscador
         if (filtersModule && !filtersModule.classList.contains('disabled')) {
-            filtersModule.classList.add('disabled');
+            if (window.appInstance) window.appInstance.closeModule(filtersModule);
         }
 
         if (secondaryToolbar) {
@@ -230,7 +221,6 @@ export class AdminUsersController {
         const checkedRoles = roleCheckboxes.filter(cb => cb.checked).map(cb => cb.value);
         const checkedStatuses = statusCheckboxes.filter(cb => cb.checked).map(cb => cb.value);
 
-        // --- ACTUALIZAR INDICADORES DE ESTADO ACTIVO EN TOOLBAR ---
         const searchBtn = document.getElementById('btn-toggle-search');
         if (searchBtn) {
             if (query.length > 0) searchBtn.classList.add('has-active-filter');
@@ -239,7 +229,6 @@ export class AdminUsersController {
 
         const filtersBtn = document.getElementById('btn-toggle-filters');
         if (filtersBtn) {
-            // Si hay algun checkbox desmarcado, significa que hay un filtro activo limitando resultados
             const hasRoleFilter = checkedRoles.length < roleCheckboxes.length;
             const hasStatusFilter = checkedStatuses.length < statusCheckboxes.length;
             if (hasRoleFilter || hasStatusFilter) {
@@ -248,7 +237,6 @@ export class AdminUsersController {
                 filtersBtn.classList.remove('has-active-filter');
             }
         }
-        // ------------------------------------------------------------
 
         const processContainer = (containerId, emptyId) => {
             const container = document.getElementById(containerId);

@@ -375,7 +375,6 @@
     display: block;
 }
 
-/* Custom Checkbox para menús */
 .component-menu-link input[type="checkbox"] {
     width: 18px;
     height: 18px;
@@ -824,8 +823,8 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
     }
 
     .component-module--dropdown {
-        position: fixed;
-        top: 0; left: 0; right: 0; bottom: 0;
+        position: fixed !important;
+        top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
         z-index: 1000;
         display: flex;
         width: 100%;
@@ -836,7 +835,7 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
     }
 
     .component-module--dropdown.disabled {
-        display: none;
+        display: none !important;
         background-color: rgba(0, 0, 0, 0);
     }
 
@@ -1061,7 +1060,6 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
     visibility: visible;
 }
 
-/* NUEVO: Contenedor Wrapper para el Box y el Botón X en Desktop */
 .component-dialog-wrapper {
     display: flex;
     flex-direction: row;
@@ -1082,14 +1080,13 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
     border-radius: 12px;
     padding: 24px;
     width: 100%;
-    max-width: 425px; /* MODIFICADO A 425px */
+    max-width: 425px;
     display: flex;
     flex-direction: column;
     gap: 16px;
     box-shadow: 0 10px 25px rgba(0,0,0,0.1);
 }
 
-/* NUEVO: Botón cerrar externo para Desktop */
 .component-dialog-close-btn {
     width: 40px;
     height: 40px;
@@ -1115,7 +1112,6 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
     transform: scale(0.95);
 }
 
-/* UTILIDAD PARA OCULTAR ELEMENTOS SOLO EN ESCRITORIO */
 .hide-on-desktop {
     display: none !important;
 }
@@ -1144,16 +1140,13 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
     display: flex;
     justify-content: flex-end;
     gap: 8px;
-    /* Margin top removido */
 }
 
-/* Mobile Dialog Ajustes */
 @media (max-width: 768px) {
     .component-dialog-overlay {
         align-items: flex-end;
     }
 
-    /* El Drag ahora funciona transformando el Wrapper completo */
     .component-dialog-wrapper {
         padding: 0;
         margin: 0;
@@ -1177,12 +1170,10 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
         margin: 0;
     }
 
-    /* Ocultar el botón externo transparente en móviles */
     .component-dialog-close-btn {
         display: none;
     }
 
-    /* Mostrar botón interno cancelar en móviles */
     .hide-on-desktop {
         display: inline-flex !important;
     }
@@ -1463,4 +1454,270 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
     line-height: 1.5;
     color: #666666;
     margin: 0;
+}
+
+/* ========================================= */
+/* --- COMPONENT: MANAGE USERS SYSTEM ---    */
+/* ========================================= */
+
+.component-wrapper--full { max-width: 100% !important; }
+
+.component-list { display: flex; flex-direction: column; gap: 16px; width: 100%; }
+
+.component-item-card {
+    background-color: #ffffff;
+    border: 1px solid #00000020;
+    border-radius: 12px;
+    padding: 16px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+    cursor: pointer; 
+}
+
+.component-item-card:hover { border-color: #000000; }
+.component-item-card.selected {
+    border-color: #111111;
+    box-shadow: 0 0 0 1px #111111;
+    background-color: #ffffff;
+}
+
+.component-badge-list { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+
+.component-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    background-color: #ffffff;
+    color: #111111;
+    border: 1px solid #00000020;
+    white-space: nowrap;
+}
+.component-badge .material-symbols-rounded { font-size: 16px; color: #666666; }
+
+/* ========================================= */
+/* --- COMPONENT: MANAGE USERS SYSTEM ---    */
+/* ========================================= */
+
+.component-wrapper--full { max-width: 100% !important; }
+
+.component-list { display: flex; flex-direction: column; gap: 16px; width: 100%; }
+
+.component-item-card {
+    background-color: #ffffff;
+    border: 1px solid #00000020;
+    border-radius: 12px;
+    padding: 16px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+    cursor: pointer; 
+}
+
+.component-item-card:hover { border-color: #000000; }
+.component-item-card.selected {
+    border-color: #111111;
+    box-shadow: 0 0 0 1px #111111;
+    background-color: #ffffff;
+}
+
+.component-badge-list { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+
+.component-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    background-color: #ffffff;
+    color: #111111;
+    border: 1px solid #00000020;
+    white-space: nowrap;
+}
+.component-badge .material-symbols-rounded { font-size: 16px; color: #666666; }
+
+/* --- TOOLBAR REFACTORIZADO PARA WRAP --- */
+.component-sticky-toolbar {
+    position: sticky;
+    top: 24px;
+    width: 100%;
+    max-width: 365px; 
+    min-height: 50px; 
+    height: auto; /* Permite que el contenedor crezca hacia abajo */
+    margin: 0 auto;
+    background-color: #ffffff;
+    border: 1px solid #00000020;
+    border-radius: 12px;
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    padding: 4px 6px; 
+    transition: box-shadow 0.3s ease;
+}
+
+.component-toolbar-primary { 
+    display: flex; 
+    width: 100%; 
+    min-height: 40px; 
+    height: auto; /* Permite a la fila principal crecer en altura */
+    position: relative; 
+}
+
+.component-toolbar-mode { 
+    display: flex; 
+    flex-wrap: wrap; /* LA MAGIA: Si los elementos no caben, bajan a otra línea */
+    justify-content: space-between; 
+    align-items: center; 
+    width: 100%; 
+    min-height: 40px;
+    height: auto; 
+    gap: 8px; 
+    padding: 2px 0; /* Ligero respiro vertical cuando hay wrap */
+}
+
+.component-toolbar-mode.disabled { display: none !important; }
+
+/* Los contenedores internos también pueden hacer wrap si la pantalla es ultra pequeña */
+.component-toolbar-left, 
+.component-toolbar-right { 
+    display: flex; 
+    flex-wrap: wrap; 
+    align-items: center; 
+    gap: 8px; 
+}
+
+.component-toolbar-title {
+    display: flex;
+    align-items: center;
+    height: 40px;
+    padding: 0 12px;
+    border: 1px solid #00000020;
+    border-radius: 8px;
+    background-color: transparent;
+    font-size: 14px;
+    font-weight: 600;
+    color: #111111;
+    white-space: nowrap;
+}
+
+.component-button.has-active-filter::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 10px;
+    height: 10px;
+    background-color: #111111;
+    border-radius: 50%;
+    border: 2px solid #ffffff;
+    box-sizing: border-box;
+}
+
+.component-toolbar-secondary {
+    display: none;
+    position: absolute;
+    top: calc(100% + 5px);
+    left: 0;
+    width: 100%;
+    background-color: #ffffff;
+    border: 1px solid #00000020;
+    border-radius: 12px;
+    padding: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    z-index: 60;
+}
+.component-toolbar-secondary.active { display: block; }
+.component-toolbar-secondary .component-search { width: 100%; height: 40px; }
+
+/* ... (El resto de estilos de la tabla y componentes de paginación siguen igual) ... */
+.component-toolbar-secondary .component-search { width: 100%; height: 40px; }
+
+.component-table-wrapper { background-color: #ffffff; border: 1px solid #00000020; border-radius: 12px; overflow-x: auto; width: 100%; }
+.component-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.component-table th, .component-table td { padding: 12px 16px; border-bottom: 1px solid #00000020; text-align: left; white-space: nowrap; color: #111111; }
+.component-table th { color: #666666; font-weight: 600; background-color: #ffffff; }
+.component-table tr:last-child td { border-bottom: none; }
+.component-table tr.user-card-item { cursor: pointer; transition: background-color 0.2s ease; }
+.component-table tr.user-card-item:hover { background-color: #fcfcfc; }
+.component-table tr.user-card-item.selected { background-color: #ffffff; }
+.component-table tr.user-card-item.selected td:first-child { box-shadow: inset 4px 0 0 0 #111111; }
+.td-user-info { display: flex; align-items: center; gap: 12px; }
+
+/* ========================================= */
+/* --- COMPONENT: INLINE CONTROL ---         */
+/* ========================================= */
+.component-inline-control {
+    display: inline-flex;
+    align-items: center;
+    height: 40px;
+    padding: 3px;         /* Espacio interno para que los botones "floten" */
+    gap: 3px;             /* Separación entre los grupos y el centro */
+    border: 1px solid #00000020;
+    border-radius: 10px;  /* Radio ligeramente mayor para envolver los elementos internos */
+    background-color: #ffffff;
+    box-sizing: border-box;
+}
+
+/* Contenedor para agrupar múltiples botones a la izquierda o derecha */
+.component-inline-control__group {
+    display: flex;
+    align-items: center;
+    gap: 3px;             /* Misma separación interna si agregas más botones */
+    height: 100%;
+}
+
+.component-inline-control__btn {
+    background: transparent;
+    border: 1px solid #00000020; /* Borde completo independiente */
+    border-radius: 6px;          /* Radio interno acorde al diseño */
+    height: 32px;
+    width: 32px;                 /* Botones perfectamente cuadrados */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #111111;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.component-inline-control__btn .material-symbols-rounded {
+    font-size: 18px; /* Ícono adaptado al tamaño de 32px */
+}
+
+.component-inline-control__btn:hover:not(.disabled-interaction) {
+    background-color: #f5f5fa;
+    border-color: #00000040;
+}
+
+.component-inline-control__btn:active:not(.disabled-interaction) {
+    background-color: #ececf1;
+}
+
+.component-inline-control__center {
+    height: 32px;
+    min-width: 44px;
+    padding: 0 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: #111111;
+    border: 1px solid #00000020; /* Borde completo para el elemento central */
+    border-radius: 6px;
+    background-color: transparent;
+    user-select: none;
+    box-sizing: border-box;
+}
+
+/* ========================================= */
+/* --- UTILITIES ---                         */
+/* ========================================= */
+.disabled-interaction {
+    opacity: 0.6;
+    pointer-events: none !important;
 }

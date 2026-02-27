@@ -5,133 +5,34 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 use App\Config\Database;
 use PDO;
 
-// Obtenemos los usuarios
+// --- LÓGICA DE PAGINACIÓN ---
+$limit = 1; // Solo cargar 25 usuarios por página
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+if ($page < 1) $page = 1;
+$offset = ($page - 1) * $limit;
+
 $db = new Database();
 $pdo = $db->getConnection();
-$stmt = $pdo->query("SELECT id, uuid, username, email, role, user_status, profile_picture, created_at FROM users ORDER BY id DESC LIMIT 50");
+
+// 1. Obtener el total de registros para calcular las páginas
+$stmtCount = $pdo->query("SELECT COUNT(*) FROM users");
+$totalUsers = (int)$stmtCount->fetchColumn();
+
+$totalPages = ceil($totalUsers / $limit);
+if ($totalPages < 1) $totalPages = 1;
+if ($page > $totalPages) {
+    $page = $totalPages;
+    $offset = ($page - 1) * $limit;
+}
+
+// 2. Obtener solo los usuarios de la página actual
+$stmt = $pdo->query("SELECT id, uuid, username, email, role, user_status, profile_picture, created_at FROM users ORDER BY id DESC LIMIT $limit OFFSET $offset");
 $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// URLs para el SPA Router
+$prevPageUrl = $page > 1 ? '/ProjectRosaura/admin/manage-users?page=' . ($page - 1) : '#';
+$nextPageUrl = $page < $totalPages ? '/ProjectRosaura/admin/manage-users?page=' . ($page + 1) : '#';
 ?>
-
-<style>
-    /* === MODIFICADOR WRAPPER FULL === */
-    .component-wrapper--full { max-width: 100% !important; }
-
-    /* Bloque de estilos genéricos y reutilizables */
-    .component-list { display: flex; flex-direction: column; gap: 16px; width: 100%; }
-
-    .component-item-card {
-        background-color: #ffffff;
-        border: 1px solid #00000020;
-        border-radius: 12px;
-        padding: 16px;
-        transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
-        cursor: pointer; 
-    }
-    
-    .component-item-card:hover { border-color: #000000; }
-    .component-item-card.selected {
-        border-color: #111111;
-        box-shadow: 0 0 0 1px #111111;
-        background-color: #ffffff;
-    }
-
-    .component-badge-list { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-
-    .component-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 6px 12px;
-        border-radius: 20px;
-        font-size: 13px;
-        font-weight: 500;
-        background-color: #ffffff;
-        color: #111111;
-        border: 1px solid #00000020;
-        white-space: nowrap;
-    }
-    .component-badge .material-symbols-rounded { font-size: 16px; color: #666666; }
-
-    /* === TOOLBAR STICKY === */
-    .component-sticky-toolbar {
-        position: sticky;
-        top: 24px;
-        width: 100%;
-        max-width: 365px; 
-        min-height: 50px; 
-        margin: 0 auto;
-        background-color: #ffffff;
-        border: 1px solid #00000020;
-        border-radius: 12px;
-        z-index: 50;
-        display: flex;
-        flex-direction: column;
-        padding: 4px 6px; 
-    }
-
-    .component-toolbar-primary { display: flex; width: 100%; height: 40px; position: relative; }
-    .component-toolbar-mode { display: flex; justify-content: space-between; align-items: center; width: 100%; height: 100%; }
-    .component-toolbar-mode.disabled { display: none !important; }
-    .component-toolbar-left, .component-toolbar-right { display: flex; align-items: center; gap: 8px; }
-
-    /* === TITULO DINÁMICO TOOLBAR === */
-    .component-toolbar-title {
-        display: flex;
-        align-items: center;
-        height: 40px;
-        padding: 0 12px;
-        border: 1px solid #00000020;
-        border-radius: 8px;
-        background-color: transparent;
-        font-size: 14px;
-        font-weight: 600;
-        color: #111111;
-        white-space: nowrap;
-    }
-
-    /* === INDICADOR DE FILTROS ACTIVOS === */
-    .component-button.has-active-filter::after {
-        content: '';
-        position: absolute;
-        top: -2px;
-        right: -2px;
-        width: 10px;
-        height: 10px;
-        background-color: #111111;
-        border-radius: 50%;
-        border: 2px solid #ffffff;
-        box-sizing: border-box;
-    }
-
-    /* === TOOLBAR SECUNDARIA === */
-    .component-toolbar-secondary {
-        display: none;
-        position: absolute;
-        top: calc(100% + 5px);
-        left: 0;
-        width: 100%;
-        background-color: #ffffff;
-        border: 1px solid #00000020;
-        border-radius: 12px;
-        padding: 8px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        z-index: 60;
-    }
-    .component-toolbar-secondary.active { display: block; }
-    .component-toolbar-secondary .component-search { width: 100%; height: 40px; }
-
-    /* === ESTILOS MODO TABLA === */
-    .component-table-wrapper { background-color: #ffffff; border: 1px solid #00000020; border-radius: 12px; overflow-x: auto; width: 100%; }
-    .component-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-    .component-table th, .component-table td { padding: 12px 16px; border-bottom: 1px solid #00000020; text-align: left; white-space: nowrap; color: #111111; }
-    .component-table th { color: #666666; font-weight: 600; background-color: #ffffff; }
-    .component-table tr:last-child td { border-bottom: none; }
-    .component-table tr.user-card-item { cursor: pointer; transition: background-color 0.2s ease; }
-    .component-table tr.user-card-item:hover { background-color: #fcfcfc; }
-    .component-table tr.user-card-item.selected { background-color: #ffffff; }
-    .component-table tr.user-card-item.selected td:first-child { box-shadow: inset 4px 0 0 0 #111111; }
-    .td-user-info { display: flex; align-items: center; gap: 12px; }
-</style>
 
 <div class="view-content">
     <div class="component-wrapper" id="manage-users-wrapper">
@@ -153,7 +54,7 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <span class="material-symbols-rounded">tune</span>
                             </button>
                             
-                            <div class="component-module component-module--dropdown component-module--dropdown-left disabled" id="moduleUserFilters" style="top: calc(100% + 10px);">
+                            <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="moduleUserFilters" style="top: calc(100% + 10px);">
                                 
                                 <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding active" id="menuMainFilters">
                                     <div class="pill-container"><div class="drag-handle"></div></div>
@@ -284,6 +185,27 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
                     </div>
                     <div class="component-toolbar-right">
+                        
+                       <div class="component-inline-control" data-tooltip="Página <?php echo $page; ?> de <?php echo $totalPages; ?>" data-position="bottom">
+    
+    <div class="component-inline-control__group">
+        <button class="component-inline-control__btn <?php echo $page <= 1 ? 'disabled-interaction' : ''; ?>" <?php echo $page > 1 ? 'data-nav="'.$prevPageUrl.'"' : ''; ?>>
+            <span class="material-symbols-rounded">chevron_left</span>
+        </button>
+    </div>
+    
+    <div class="component-inline-control__center">
+        <?php echo $page; ?>
+    </div>
+    
+    <div class="component-inline-control__group">
+        <button class="component-inline-control__btn <?php echo $page >= $totalPages ? 'disabled-interaction' : ''; ?>" <?php echo $page < $totalPages ? 'data-nav="'.$nextPageUrl.'"' : ''; ?>>
+            <span class="material-symbols-rounded">chevron_right</span>
+        </button>
+    </div>
+    
+</div>
+
                         <button class="component-button component-button--icon component-button--h40" data-action="toggleViewMode" data-tooltip="Cambiar vista" data-position="bottom">
                             <span class="material-symbols-rounded">table_rows</span>
                         </button>
@@ -380,7 +302,7 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <?php else: ?>
                 <div style="text-align: center; padding: 40px; background: #fff; border-radius: 12px; border: 1px solid #00000020;">
                     <span class="material-symbols-rounded" style="font-size: 48px; color: #ccc;">group_off</span>
-                    <p style="color: #666; font-size: 15px; margin-top: 8px;">No hay usuarios registrados.</p>
+                    <p style="color: #666; font-size: 15px; margin-top: 8px;">No hay usuarios registrados en esta página.</p>
                 </div>
             <?php endif; ?>
         </div>
@@ -458,7 +380,7 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <tr>
                             <td colspan="6" style="text-align: center; padding: 40px; color: #666; background: #fff;">
                                 <span class="material-symbols-rounded" style="font-size: 48px; color: #ccc;">group_off</span>
-                                <p style="color: #666; font-size: 15px; margin-top: 8px;">No hay usuarios registrados en el sistema.</p>
+                                <p style="color: #666; font-size: 15px; margin-top: 8px;">No hay usuarios registrados en esta página.</p>
                             </td>
                         </tr>
                     <?php endif; ?>
