@@ -80,6 +80,7 @@
     user-select: none;
     white-space: nowrap;
     font-family: inherit; 
+    position: relative;
 }
 
 .component-button:hover {
@@ -233,7 +234,6 @@
 .component-module--dropdown-left {
     right: auto;
     left: 0;
-    width: 100%;
 }
 
 .component-module--sidebar {
@@ -1497,47 +1497,6 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
 }
 .component-badge .material-symbols-rounded { font-size: 16px; color: #666666; }
 
-/* ========================================= */
-/* --- COMPONENT: MANAGE USERS SYSTEM ---    */
-/* ========================================= */
-
-.component-wrapper--full { max-width: 100% !important; }
-
-.component-list { display: flex; flex-direction: column; gap: 16px; width: 100%; }
-
-.component-item-card {
-    background-color: #ffffff;
-    border: 1px solid #00000020;
-    border-radius: 12px;
-    padding: 16px;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
-    cursor: pointer; 
-}
-
-.component-item-card:hover { border-color: #000000; }
-.component-item-card.selected {
-    border-color: #111111;
-    box-shadow: 0 0 0 1px #111111;
-    background-color: #ffffff;
-}
-
-.component-badge-list { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-
-.component-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 13px;
-    font-weight: 500;
-    background-color: #ffffff;
-    color: #111111;
-    border: 1px solid #00000020;
-    white-space: nowrap;
-}
-.component-badge .material-symbols-rounded { font-size: 16px; color: #666666; }
-
 /* --- TOOLBAR REFACTORIZADO PARA WRAP --- */
 .component-sticky-toolbar {
     position: sticky;
@@ -1545,7 +1504,7 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
     width: 100%;
     max-width: 365px; 
     min-height: 50px; 
-    height: auto; /* Permite que el contenedor crezca hacia abajo */
+    height: auto; 
     margin: 0 auto;
     background-color: #ffffff;
     border: 1px solid #00000020;
@@ -1561,25 +1520,24 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
     display: flex; 
     width: 100%; 
     min-height: 40px; 
-    height: auto; /* Permite a la fila principal crecer en altura */
+    height: auto; 
     position: relative; 
 }
 
 .component-toolbar-mode { 
     display: flex; 
-    flex-wrap: wrap; /* LA MAGIA: Si los elementos no caben, bajan a otra línea */
+    flex-wrap: wrap; 
     justify-content: space-between; 
     align-items: center; 
     width: 100%; 
     min-height: 40px;
     height: auto; 
     gap: 8px; 
-    padding: 2px 0; /* Ligero respiro vertical cuando hay wrap */
+    padding: 2px 0; 
 }
 
 .component-toolbar-mode.disabled { display: none !important; }
 
-/* Los contenedores internos también pueden hacer wrap si la pantalla es ultra pequeña */
 .component-toolbar-left, 
 .component-toolbar-right { 
     display: flex; 
@@ -1631,9 +1589,6 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
 .component-toolbar-secondary.active { display: block; }
 .component-toolbar-secondary .component-search { width: 100%; height: 40px; }
 
-/* ... (El resto de estilos de la tabla y componentes de paginación siguen igual) ... */
-.component-toolbar-secondary .component-search { width: 100%; height: 40px; }
-
 .component-table-wrapper { background-color: #ffffff; border: 1px solid #00000020; border-radius: 12px; overflow-x: auto; width: 100%; }
 .component-table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .component-table th, .component-table td { padding: 12px 16px; border-bottom: 1px solid #00000020; text-align: left; white-space: nowrap; color: #111111; }
@@ -1652,28 +1607,27 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
     display: inline-flex;
     align-items: center;
     height: 40px;
-    padding: 3px;         /* Espacio interno para que los botones "floten" */
-    gap: 3px;             /* Separación entre los grupos y el centro */
+    padding: 3px;         
+    gap: 3px;             
     border: 1px solid #00000020;
-    border-radius: 10px;  /* Radio ligeramente mayor para envolver los elementos internos */
+    border-radius: 10px;  
     background-color: #ffffff;
     box-sizing: border-box;
 }
 
-/* Contenedor para agrupar múltiples botones a la izquierda o derecha */
 .component-inline-control__group {
     display: flex;
     align-items: center;
-    gap: 3px;             /* Misma separación interna si agregas más botones */
+    gap: 3px;             
     height: 100%;
 }
 
 .component-inline-control__btn {
     background: transparent;
-    border: 1px solid #00000020; /* Borde completo independiente */
-    border-radius: 6px;          /* Radio interno acorde al diseño */
+    border: 1px solid #00000020; 
+    border-radius: 6px;          
     height: 32px;
-    width: 32px;                 /* Botones perfectamente cuadrados */
+    width: 32px;                 
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1685,7 +1639,7 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
 }
 
 .component-inline-control__btn .material-symbols-rounded {
-    font-size: 18px; /* Ícono adaptado al tamaño de 32px */
+    font-size: 18px; 
 }
 
 .component-inline-control__btn:hover:not(.disabled-interaction) {
@@ -1707,7 +1661,7 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
     font-size: 12px;
     font-weight: 700;
     color: #111111;
-    border: 1px solid #00000020; /* Borde completo para el elemento central */
+    border: 1px solid #00000020; 
     border-radius: 6px;
     background-color: transparent;
     user-select: none;
@@ -1721,10 +1675,6 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
     opacity: 0.6;
     pointer-events: none !important;
 }
-
-
-
-
 
 /* ========================================= */
 /* --- COMPONENT: CALENDAR MODULE ---        */
@@ -1831,4 +1781,106 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
     display: flex;
     justify-content: space-between;
     margin-top: 16px;
+}
+
+/* ========================================= */
+/* --- FILTROS Y CABECERAS (NUEVO) ---       */
+/* ========================================= */
+.component-dropdown-wrapper--fit {
+    max-width: fit-content;
+}
+
+.component-module--dropdown-fixed {
+    width: max-content;
+}
+
+.component-module--spaced {
+    top: calc(100% + 10px);
+}
+
+.component-menu-header-box {
+    padding: 8px 12px;
+    border: 1px solid #00000020;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.component-menu-header-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #111111;
+}
+
+.component-menu-list--compact {
+    padding: 8px;
+    gap: 8px;
+}
+
+.component-button--back {
+    border: none;
+    box-shadow: none;
+    margin-left: -6px;
+    background: transparent;
+}
+
+.component-button--back .material-symbols-rounded {
+    font-size: 18px;
+}
+
+/* Avatares Estáticos para listas/tablas */
+.component-avatar--static {
+    margin: 0;
+    cursor: default;
+}
+
+.component-avatar--static-sm {
+    margin: 0;
+    cursor: default;
+    width: 30px;
+    height: 30px;
+}
+
+/* Badges pequeños para tablas */
+.component-badge--sm {
+    padding: 4px 10px;
+    font-size: 12px;
+}
+
+.component-badge--sm .material-symbols-rounded {
+    font-size: 14px;
+}
+
+/* ========================================= */
+/* --- EMPTY STATES (NUEVO) ---              */
+/* ========================================= */
+.component-empty-state {
+    text-align: center;
+    padding: 40px;
+    background: #ffffff;
+    border-radius: 12px;
+    border: 1px solid #00000020;
+}
+
+.component-empty-state-icon {
+    font-size: 48px !important;
+    color: #cccccc;
+}
+
+.component-empty-state-text {
+    color: #666666;
+    font-size: 15px;
+    margin-top: 8px;
+    margin-bottom: 0;
+}
+
+.component-empty-table-cell {
+    padding: 0 !important;
+}
+
+.component-empty-state--table {
+    border-radius: 0;
+    border: none;
+    background: transparent;
 }

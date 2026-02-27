@@ -31,37 +31,37 @@ $nextPageUrl = $page < $totalPages ? '/ProjectRosaura/admin/manage-users?page=' 
 ?>
 
 <div class="view-content">
-    <div class="component-wrapper" id="manage-users-wrapper">
+    <div class="component-wrapper" data-ref="manage-users-wrapper">
         
         <div class="component-sticky-toolbar">
             
             <div class="component-toolbar-primary">
-                <div id="toolbar-default-mode" class="component-toolbar-mode active">
+                <div class="component-toolbar-mode active" data-ref="toolbar-default-mode">
                     <div class="component-toolbar-left">
-                        <div class="component-toolbar-title disabled" id="toolbar-dynamic-title">
+                        <div class="component-toolbar-title disabled" data-ref="toolbar-dynamic-title">
                             <?php echo __('admin_users_title'); ?>
                         </div>
-                        <button class="component-button component-button--icon component-button--h40" data-action="searchUser" id="btn-toggle-search" data-tooltip="Buscar" data-position="bottom" style="position: relative;">
+                        <button class="component-button component-button--icon component-button--h40" data-action="searchUser" data-ref="btn-toggle-search" data-tooltip="Buscar" data-position="bottom">
                             <span class="material-symbols-rounded">search</span>
                         </button>
                         
-                        <div class="component-dropdown-wrapper" style="max-width: fit-content;">
-                            <button class="component-button component-button--icon component-button--h40" data-action="toggleUserFilters" id="btn-toggle-filters" data-tooltip="Filtros" data-position="bottom" style="position: relative;">
+                        <div class="component-dropdown-wrapper component-dropdown-wrapper--fit">
+                            <button class="component-button component-button--icon component-button--h40" data-action="toggleUserFilters" data-ref="btn-toggle-filters" data-tooltip="Filtros" data-position="bottom">
                                 <span class="material-symbols-rounded">tune</span>
                             </button>
                             
-                            <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="moduleUserFilters" style="top: calc(100% + 10px);">
+                            <div class="component-module component-module--dropdown component-module--dropdown-left component-module--dropdown-fixed component-module--spaced disabled" data-module="moduleUserFilters">
                                 
-                                <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding active" id="menuMainFilters">
+                                <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding active" data-ref="menuMainFilters">
                                     <div class="pill-container"><div class="drag-handle"></div></div>
                                     
-                                    <div class="component-menu-header" style="padding: 8px;">
-                                        <div style="padding: 8px 12px; border: 1px solid #00000020; border-radius: 8px; display: flex; align-items: center;">
-                                            <span style="font-size: 14px; font-weight: 600; color: #111;">Filtros de búsqueda</span>
+                                    <div class="component-menu-header">
+                                        <div class="component-menu-header-box">
+                                            <span class="component-menu-header-title">Filtros de búsqueda</span>
                                         </div>
                                     </div>
                                     
-                                    <div class="component-menu-list" style="padding: 8px; gap: 8px;">
+                                    <div class="component-menu-list component-menu-list--compact">
                                         <div class="component-menu-link component-menu-link--bordered" data-action="openFilterSubMenu" data-target="menuFilterRoles">
                                             <div class="component-menu-link-icon">
                                                 <span class="material-symbols-rounded">admin_panel_settings</span>
@@ -88,19 +88,19 @@ $nextPageUrl = $page < $totalPages ? '/ProjectRosaura/admin/manage-users?page=' 
                                     </div>
                                 </div>
 
-                                <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding disabled" id="menuFilterRoles">
+                                <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding disabled" data-ref="menuFilterRoles">
                                     <div class="pill-container"><div class="drag-handle"></div></div>
                                     
-                                    <div class="component-menu-header" style="padding: 8px;">
-                                        <div style="padding: 8px 12px; border: 1px solid #00000020; border-radius: 8px; display: flex; align-items: center; gap: 8px;">
-                                            <button class="component-button component-button--icon component-button--h30" data-action="backToMainFilters" style="border: none; box-shadow: none; margin-left: -6px; background: transparent;">
-                                                <span class="material-symbols-rounded" style="font-size: 18px;">arrow_back</span>
+                                    <div class="component-menu-header">
+                                        <div class="component-menu-header-box">
+                                            <button class="component-button component-button--icon component-button--h30 component-button--back" data-action="backToMainFilters">
+                                                <span class="material-symbols-rounded">arrow_back</span>
                                             </button>
-                                            <span style="font-size: 14px; font-weight: 600; color: #111;">Filtrar por Rol</span>
+                                            <span class="component-menu-header-title">Filtrar por Rol</span>
                                         </div>
                                     </div>
                                     
-                                    <div class="component-menu-list component-menu-list--scrollable" style="padding: 8px; gap: 8px;">
+                                    <div class="component-menu-list component-menu-list--scrollable component-menu-list--compact">
                                         <label class="component-menu-link component-menu-link--bordered">
                                             <div class="component-menu-link-icon">
                                                 <input type="checkbox" class="filter-checkbox" data-filter-type="role" value="founder" checked>
@@ -136,19 +136,19 @@ $nextPageUrl = $page < $totalPages ? '/ProjectRosaura/admin/manage-users?page=' 
                                     </div>
                                 </div>
 
-                                <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding disabled" id="menuFilterStatus">
+                                <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding disabled" data-ref="menuFilterStatus">
                                     <div class="pill-container"><div class="drag-handle"></div></div>
                                     
-                                    <div class="component-menu-header" style="padding: 8px;">
-                                        <div style="padding: 8px 12px; border: 1px solid #00000020; border-radius: 8px; display: flex; align-items: center; gap: 8px;">
-                                            <button class="component-button component-button--icon component-button--h30" data-action="backToMainFilters" style="border: none; box-shadow: none; margin-left: -6px; background: transparent;">
-                                                <span class="material-symbols-rounded" style="font-size: 18px;">arrow_back</span>
+                                    <div class="component-menu-header">
+                                        <div class="component-menu-header-box">
+                                            <button class="component-button component-button--icon component-button--h30 component-button--back" data-action="backToMainFilters">
+                                                <span class="material-symbols-rounded">arrow_back</span>
                                             </button>
-                                            <span style="font-size: 14px; font-weight: 600; color: #111;">Filtrar por Estado</span>
+                                            <span class="component-menu-header-title">Filtrar por Estado</span>
                                         </div>
                                     </div>
                                     
-                                    <div class="component-menu-list component-menu-list--scrollable" style="padding: 8px; gap: 8px;">
+                                    <div class="component-menu-list component-menu-list--scrollable component-menu-list--compact">
                                         <label class="component-menu-link component-menu-link--bordered">
                                             <div class="component-menu-link-icon">
                                                 <input type="checkbox" class="filter-checkbox" data-filter-type="status" value="active" checked>
@@ -208,7 +208,7 @@ $nextPageUrl = $page < $totalPages ? '/ProjectRosaura/admin/manage-users?page=' 
                     </div>
                 </div>
 
-                <div id="toolbar-selection-mode" class="component-toolbar-mode disabled">
+                <div class="component-toolbar-mode disabled" data-ref="toolbar-selection-mode">
                     <div class="component-toolbar-left">
                         <button class="component-button component-button--icon component-button--h40" data-action="editSelectedUser" data-tooltip="Gestionar cuenta" data-position="bottom">
                             <span class="material-symbols-rounded">manage_accounts</span>
@@ -229,24 +229,24 @@ $nextPageUrl = $page < $totalPages ? '/ProjectRosaura/admin/manage-users?page=' 
 
             </div>
 
-            <div class="component-toolbar-secondary" id="secondary-toolbar">
+            <div class="component-toolbar-secondary" data-ref="secondary-toolbar">
                 <div class="component-search">
                     <div class="component-search-icon">
                         <span class="material-symbols-rounded">search</span>
                     </div>
                     <div class="component-search-input">
-                        <input type="text" id="user-search-input" placeholder="Buscar por nombre, correo, uuid...">
+                        <input type="text" data-ref="user-search-input" placeholder="Buscar por nombre, correo, uuid...">
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="component-header-card" id="manage-users-header">
+        <div class="component-header-card" data-ref="manage-users-header">
             <h1 class="component-page-title"><?php echo __('admin_users_title'); ?></h1>
             <p class="component-page-description"><?php echo __('admin_users_desc'); ?></p>
         </div>
 
-        <div class="component-list active" id="view-cards">
+        <div class="component-list active" data-ref="view-cards">
             <?php if ($users): ?>
                 <?php foreach ($users as $user): ?>
                     <?php 
@@ -256,7 +256,7 @@ $nextPageUrl = $page < $totalPages ? '/ProjectRosaura/admin/manage-users?page=' 
                     ?>
                     <div class="component-item-card user-card-item" data-action="selectUser" data-user-id="<?php echo htmlspecialchars($user['id']); ?>" data-role="<?php echo htmlspecialchars($user['role']); ?>" data-status="<?php echo htmlspecialchars($dataStatus); ?>">
                         <div class="component-badge-list">
-                            <div class="component-button--profile role-<?php echo htmlspecialchars($user['role']); ?>" style="margin: 0; cursor: default;">
+                            <div class="component-button--profile role-<?php echo htmlspecialchars($user['role']); ?> component-avatar--static">
                                 <img src="/ProjectRosaura/<?php echo htmlspecialchars($user['profile_picture']); ?>" alt="Avatar">
                             </div>
                             
@@ -295,20 +295,20 @@ $nextPageUrl = $page < $totalPages ? '/ProjectRosaura/admin/manage-users?page=' 
                     </div>
                 <?php endforeach; ?>
                 
-                <div id="empty-search-cards" style="display: none; text-align: center; padding: 40px; background: #fff; border-radius: 12px; border: 1px solid #00000020;">
-                    <span class="material-symbols-rounded" style="font-size: 48px; color: #ccc;">search_off</span>
-                    <p style="color: #666; font-size: 15px; margin-top: 8px;">No se encontraron usuarios para tu búsqueda/filtro.</p>
+                <div class="component-empty-state disabled" data-ref="empty-search-cards">
+                    <span class="material-symbols-rounded component-empty-state-icon">search_off</span>
+                    <p class="component-empty-state-text">No se encontraron usuarios para tu búsqueda/filtro.</p>
                 </div>
 
             <?php else: ?>
-                <div style="text-align: center; padding: 40px; background: #fff; border-radius: 12px; border: 1px solid #00000020;">
-                    <span class="material-symbols-rounded" style="font-size: 48px; color: #ccc;">group_off</span>
-                    <p style="color: #666; font-size: 15px; margin-top: 8px;">No hay usuarios registrados en esta página.</p>
+                <div class="component-empty-state">
+                    <span class="material-symbols-rounded component-empty-state-icon">group_off</span>
+                    <p class="component-empty-state-text">No hay usuarios registrados en esta página.</p>
                 </div>
             <?php endif; ?>
         </div>
 
-        <div class="component-table-wrapper disabled" id="view-table">
+        <div class="component-table-wrapper disabled" data-ref="view-table">
             <table class="component-table">
                 <thead>
                     <tr>
@@ -331,62 +331,66 @@ $nextPageUrl = $page < $totalPages ? '/ProjectRosaura/admin/manage-users?page=' 
                             <tr class="user-card-item" data-action="selectUser" data-user-id="<?php echo htmlspecialchars($user['id']); ?>" data-role="<?php echo htmlspecialchars($user['role']); ?>" data-status="<?php echo htmlspecialchars($dataStatus); ?>">
                                 <td>
                                     <div class="td-user-info">
-                                        <div class="component-button--profile role-<?php echo htmlspecialchars($user['role']); ?>" style="margin: 0; cursor: default; width: 30px; height: 30px;">
+                                        <div class="component-button--profile role-<?php echo htmlspecialchars($user['role']); ?> component-avatar--static-sm">
                                             <img src="/ProjectRosaura/<?php echo htmlspecialchars($user['profile_picture']); ?>" alt="Avatar">
                                         </div>
-                                        <div class="component-badge" style="padding: 4px 10px; font-size: 12px;">
-                                            <span class="material-symbols-rounded" style="font-size: 14px;">person</span>
+                                        <div class="component-badge component-badge--sm">
+                                            <span class="material-symbols-rounded">person</span>
                                             <span class="search-target font-medium"><?php echo htmlspecialchars($user['username']); ?></span>
                                         </div>
                                     </div>
                                 </td>
                                 <td>
-                                    <div class="component-badge" style="padding: 4px 10px; font-size: 12px;">
-                                        <span class="material-symbols-rounded" style="font-size: 14px;">mail</span>
+                                    <div class="component-badge component-badge--sm">
+                                        <span class="material-symbols-rounded">mail</span>
                                         <span class="search-target"><?php echo htmlspecialchars($user['email']); ?></span>
                                     </div>
                                 </td>
                                 <td>
-                                    <div class="component-badge" style="padding: 4px 10px; font-size: 12px;">
-                                        <span class="material-symbols-rounded" style="font-size: 14px;">shield_person</span>
+                                    <div class="component-badge component-badge--sm">
+                                        <span class="material-symbols-rounded">shield_person</span>
                                         <span class="search-target"><?php echo ucfirst(htmlspecialchars($user['role'])); ?></span>
                                     </div>
                                 </td>
                                 <td>
-                                    <div class="component-badge" style="padding: 4px 10px; font-size: 12px;">
-                                        <span class="material-symbols-rounded" style="font-size: 14px;">
+                                    <div class="component-badge component-badge--sm">
+                                        <span class="material-symbols-rounded">
                                             <?php echo $statusIcon; ?>
                                         </span>
                                         <span class="search-target"><?php echo $displayStatus; ?></span>
                                     </div>
                                 </td>
                                 <td>
-                                    <div class="component-badge" style="padding: 4px 10px; font-size: 12px;">
-                                        <span class="material-symbols-rounded" style="font-size: 14px;">fingerprint</span>
+                                    <div class="component-badge component-badge--sm">
+                                        <span class="material-symbols-rounded">fingerprint</span>
                                         <span class="search-target"><?php echo htmlspecialchars($user['uuid']); ?></span>
                                     </div>
                                 </td>
                                 <td>
-                                    <div class="component-badge" style="padding: 4px 10px; font-size: 12px;">
-                                        <span class="material-symbols-rounded" style="font-size: 14px;">calendar_month</span>
+                                    <div class="component-badge component-badge--sm">
+                                        <span class="material-symbols-rounded">calendar_month</span>
                                         <span><?php echo date('d/m/Y', strtotime($user['created_at'])); ?></span>
                                     </div>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
                         
-                        <tr id="empty-search-table" style="display: none;">
-                            <td colspan="6" style="text-align: center; padding: 40px; background: #fff;">
-                                <span class="material-symbols-rounded" style="font-size: 48px; color: #ccc;">search_off</span>
-                                <p style="color: #666; font-size: 15px; margin-top: 8px;">No se encontraron usuarios para tu búsqueda/filtro.</p>
+                        <tr class="disabled" data-ref="empty-search-table">
+                            <td colspan="6" class="component-empty-table-cell">
+                                <div class="component-empty-state component-empty-state--table">
+                                    <span class="material-symbols-rounded component-empty-state-icon">search_off</span>
+                                    <p class="component-empty-state-text">No se encontraron usuarios para tu búsqueda/filtro.</p>
+                                </div>
                             </td>
                         </tr>
 
                     <?php else: ?>
                         <tr>
-                            <td colspan="6" style="text-align: center; padding: 40px; color: #666; background: #fff;">
-                                <span class="material-symbols-rounded" style="font-size: 48px; color: #ccc;">group_off</span>
-                                <p style="color: #666; font-size: 15px; margin-top: 8px;">No hay usuarios registrados en esta página.</p>
+                            <td colspan="6" class="component-empty-table-cell">
+                                <div class="component-empty-state component-empty-state--table">
+                                    <span class="material-symbols-rounded component-empty-state-icon">group_off</span>
+                                    <p class="component-empty-state-text">No hay usuarios registrados en esta página.</p>
+                                </div>
                             </td>
                         </tr>
                     <?php endif; ?>

@@ -48,7 +48,9 @@ export class AdminUsersController {
 
         // Eventos para filtros (Buscar y Checkboxes)
         document.addEventListener('input', (e) => {
-            if (e.target && e.target.id === 'user-search-input') this.applyAllFilters();
+            if (e.target && e.target.getAttribute('data-ref') === 'user-search-input') {
+                this.applyAllFilters();
+            }
         });
 
         document.addEventListener('change', (e) => {
@@ -59,7 +61,7 @@ export class AdminUsersController {
 
         window.addEventListener('viewLoaded', (e) => {
             if (e.detail.url.includes('/admin/manage-users')) {
-                const searchInput = document.getElementById('user-search-input');
+                const searchInput = document.querySelector('[data-ref="user-search-input"]');
                 if (searchInput) searchInput.value = '';
                 
                 document.querySelectorAll('.filter-checkbox').forEach(cb => cb.checked = true);
@@ -100,8 +102,8 @@ export class AdminUsersController {
 
     openFilterSubMenu(btn) {
         const targetId = btn.getAttribute('data-target');
-        const targetMenu = document.getElementById(targetId);
-        const mainFilters = document.getElementById('menuMainFilters');
+        const targetMenu = document.querySelector(`[data-ref="${targetId}"]`);
+        const mainFilters = document.querySelector('[data-ref="menuMainFilters"]');
         
         if (targetMenu && mainFilters) {
             mainFilters.classList.add('disabled');
@@ -113,8 +115,8 @@ export class AdminUsersController {
     }
 
     backToMainFilters() {
-        const mainFilters = document.getElementById('menuMainFilters');
-        const subMenus = document.querySelectorAll('[data-module="moduleUserFilters"] .component-menu:not(#menuMainFilters)');
+        const mainFilters = document.querySelector('[data-ref="menuMainFilters"]');
+        const subMenus = document.querySelectorAll('[data-module="moduleUserFilters"] .component-menu:not([data-ref="menuMainFilters"])');
         
         if (mainFilters) {
             subMenus.forEach(menu => {
@@ -155,9 +157,9 @@ export class AdminUsersController {
             el.classList.add('selected');
         });
 
-        const defaultMode = document.getElementById('toolbar-default-mode');
-        const selectionMode = document.getElementById('toolbar-selection-mode');
-        const secondaryToolbar = document.getElementById('secondary-toolbar');
+        const defaultMode = document.querySelector('[data-ref="toolbar-default-mode"]');
+        const selectionMode = document.querySelector('[data-ref="toolbar-selection-mode"]');
+        const secondaryToolbar = document.querySelector('[data-ref="secondary-toolbar"]');
 
         if (defaultMode && selectionMode) {
             defaultMode.classList.replace('active', 'disabled');
@@ -181,8 +183,8 @@ export class AdminUsersController {
             el.classList.remove('selected');
         });
 
-        const defaultMode = document.getElementById('toolbar-default-mode');
-        const selectionMode = document.getElementById('toolbar-selection-mode');
+        const defaultMode = document.querySelector('[data-ref="toolbar-default-mode"]');
+        const selectionMode = document.querySelector('[data-ref="toolbar-selection-mode"]');
 
         if (defaultMode && selectionMode) {
             selectionMode.classList.replace('active', 'disabled');
@@ -191,8 +193,8 @@ export class AdminUsersController {
     }
 
     toggleSearchToolbar() {
-        const secondaryToolbar = document.getElementById('secondary-toolbar');
-        const searchInput = document.getElementById('user-search-input');
+        const secondaryToolbar = document.querySelector('[data-ref="secondary-toolbar"]');
+        const searchInput = document.querySelector('[data-ref="user-search-input"]');
         const filtersModule = document.querySelector('[data-module="moduleUserFilters"]');
         
         if (filtersModule && !filtersModule.classList.contains('disabled')) {
@@ -214,11 +216,11 @@ export class AdminUsersController {
     }
 
     toggleViewMode(btn) {
-        const wrapper = document.getElementById('manage-users-wrapper');
-        const header = document.getElementById('manage-users-header');
-        const viewCards = document.getElementById('view-cards');
-        const viewTable = document.getElementById('view-table');
-        const dynamicTitle = document.getElementById('toolbar-dynamic-title');
+        const wrapper = document.querySelector('[data-ref="manage-users-wrapper"]');
+        const header = document.querySelector('[data-ref="manage-users-header"]');
+        const viewCards = document.querySelector('[data-ref="view-cards"]');
+        const viewTable = document.querySelector('[data-ref="view-table"]');
+        const dynamicTitle = document.querySelector('[data-ref="toolbar-dynamic-title"]');
         const iconElement = btn.querySelector('.material-symbols-rounded');
 
         if (!wrapper || !header || !viewCards || !viewTable) return;
@@ -245,7 +247,7 @@ export class AdminUsersController {
     }
 
     applyAllFilters() {
-        const queryInput = document.getElementById('user-search-input');
+        const queryInput = document.querySelector('[data-ref="user-search-input"]');
         const query = (queryInput ? queryInput.value : '').toLowerCase().trim();
         
         const roleCheckboxes = Array.from(document.querySelectorAll('.filter-checkbox[data-filter-type="role"]'));
@@ -254,13 +256,13 @@ export class AdminUsersController {
         const checkedRoles = roleCheckboxes.filter(cb => cb.checked).map(cb => cb.value);
         const checkedStatuses = statusCheckboxes.filter(cb => cb.checked).map(cb => cb.value);
 
-        const searchBtn = document.getElementById('btn-toggle-search');
+        const searchBtn = document.querySelector('[data-ref="btn-toggle-search"]');
         if (searchBtn) {
             if (query.length > 0) searchBtn.classList.add('has-active-filter');
             else searchBtn.classList.remove('has-active-filter');
         }
 
-        const filtersBtn = document.getElementById('btn-toggle-filters');
+        const filtersBtn = document.querySelector('[data-ref="btn-toggle-filters"]');
         if (filtersBtn) {
             const hasRoleFilter = checkedRoles.length < roleCheckboxes.length;
             const hasStatusFilter = checkedStatuses.length < statusCheckboxes.length;
@@ -271,8 +273,8 @@ export class AdminUsersController {
             }
         }
 
-        const processContainer = (containerId, emptyId) => {
-            const container = document.getElementById(containerId);
+        const processContainer = (containerRef, emptyRef) => {
+            const container = document.querySelector(`[data-ref="${containerRef}"]`);
             if (!container) return;
 
             let visibleCount = 0;
@@ -291,17 +293,20 @@ export class AdminUsersController {
                 const matchesStatus = checkedStatuses.includes(itemStatus);
 
                 if (matchesSearch && matchesRole && matchesStatus) {
-                    item.style.display = '';
+                    item.classList.remove('disabled');
                     visibleCount++;
                 } else {
-                    item.style.display = 'none';
+                    item.classList.add('disabled');
                 }
             });
 
-            const emptyElement = document.getElementById(emptyId);
+            const emptyElement = document.querySelector(`[data-ref="${emptyRef}"]`);
             if (emptyElement) {
-                const displayType = emptyId === 'empty-search-table' ? 'table-row' : 'block';
-                emptyElement.style.display = (visibleCount === 0 && items.length > 0) ? displayType : 'none';
+                if (visibleCount === 0 && items.length > 0) {
+                    emptyElement.classList.remove('disabled');
+                } else {
+                    emptyElement.classList.add('disabled');
+                }
             }
         };
 
