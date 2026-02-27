@@ -60,6 +60,8 @@ CREATE TABLE IF NOT EXISTS auth_tokens (
     selector VARCHAR(255) NOT NULL,
     hashed_validator VARCHAR(255) NOT NULL,
     expires_at DATETIME NOT NULL,
+    user_agent VARCHAR(255) DEFAULT NULL,
+    ip_address VARCHAR(45) DEFAULT NULL,
     CONSTRAINT fk_user_tokens FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     INDEX (selector)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
