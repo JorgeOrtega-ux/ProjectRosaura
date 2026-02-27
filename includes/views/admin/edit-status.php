@@ -20,6 +20,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
         <div id="admin-status-form" class="disabled">
             
             <div class="component-card--grouped">
+                
                 <div class="component-group-item component-group-item--stacked">
                     <div class="component-card__content">
                         <div class="component-card__text">
@@ -52,10 +53,9 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div id="section-deleted-decision" class="disabled" style="margin-top: 16px;">
-                <div class="component-card--grouped">
+                <div id="section-deleted-decision" class="disabled">
+                    <hr class="component-divider">
                     <div class="component-group-item component-group-item--stacked">
                         <div class="component-card__content">
                             <div class="component-card__text">
@@ -89,14 +89,14 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div id="section-deleted-admin-reason" class="disabled" style="margin-top: 16px;">
-                <div class="component-card--grouped">
+                <div id="section-deleted-admin-reason" class="disabled">
+                    <hr class="component-divider">
                     <div class="component-group-item component-group-item--stacked">
                         <div class="component-card__content">
                             <div class="component-card__text">
                                 <h2 class="component-card__title">Motivo de eliminación (Admin)</h2>
+                                <p class="component-card__description">Selecciona la razón por la cual se está eliminando esta cuenta de forma administrativa.</p>
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--start">
@@ -126,14 +126,14 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div id="section-deleted-user-reason" class="disabled" style="margin-top: 16px;">
-                <div class="component-card--grouped">
+                <div id="section-deleted-user-reason" class="disabled">
+                    <hr class="component-divider">
                     <div class="component-group-item component-group-item--stacked">
                         <div class="component-card__content component-card__content--full">
                             <div class="component-card__text">
                                 <h2 class="component-card__title">Feedback del usuario</h2>
+                                <p class="component-card__description">A continuación se muestra el motivo proporcionado por el usuario al solicitar la eliminación.</p>
                                 <div class="component-card__form-area">
                                     <textarea id="inp_deleted_reason_user" class="component-input-field" placeholder="Razón proporcionada por el usuario..." style="border: 1px solid #00000030; border-radius: 8px; resize: vertical; min-height: 80px; padding-top: 12px;"></textarea>
                                 </div>
@@ -141,11 +141,11 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                         </div>
                     </div>
                 </div>
+
             </div>
 
-            <hr style="border: none; border-top: 2px dashed #00000015; margin: 32px 0;">
-
-            <div class="component-card--grouped">
+            <div class="component-card--grouped" style="margin-top: 16px;">
+                
                 <div class="component-group-item component-group-item--stacked">
                     <div class="component-card__content">
                         <div class="component-card__text">
@@ -166,11 +166,11 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                     <div class="component-menu-list component-menu-list--scrollable">
                                         <div class="component-menu-link" data-action="adminSetDropdown" data-key="isSuspended" data-value="0">
                                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">lock_open</span></div>
-                                            <div class="component-menu-link-text"><span>Sin restricción</span></div>
+                                            <div class="component-menu-link-text"><span>Cuenta sin restricciones</span></div>
                                         </div>
                                         <div class="component-menu-link" data-action="adminSetDropdown" data-key="isSuspended" data-value="1">
                                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">block</span></div>
-                                            <div class="component-menu-link-text"><span>Suspendida</span></div>
+                                            <div class="component-menu-link-text"><span>Cuenta con suspensión</span></div>
                                         </div>
                                     </div>
                                 </div>
@@ -178,14 +178,14 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div id="section-suspended-type" class="disabled" style="margin-top: 16px;">
-                <div class="component-card--grouped">
+                <div id="section-suspended-type" class="disabled">
+                    <hr class="component-divider">
                     <div class="component-group-item component-group-item--stacked">
                         <div class="component-card__content">
                             <div class="component-card__text">
                                 <h2 class="component-card__title">Tipo de Suspensión</h2>
+                                <p class="component-card__description">Establece si el bloqueo tiene una duración definida o es de carácter definitivo.</p>
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--start">
@@ -201,11 +201,11 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                         <div class="component-menu-list component-menu-list--scrollable">
                                             <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspendedType" data-value="temporary">
                                                 <div class="component-menu-link-icon"><span class="material-symbols-rounded">timer</span></div>
-                                                <div class="component-menu-link-text"><span>Temporal</span></div>
+                                                <div class="component-menu-link-text"><span>Suspensión temporal</span></div>
                                             </div>
                                             <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspendedType" data-value="permanent">
                                                 <div class="component-menu-link-icon"><span class="material-symbols-rounded">lock_clock</span></div>
-                                                <div class="component-menu-link-text"><span>Permanente</span></div>
+                                                <div class="component-menu-link-text"><span>Suspensión permanente</span></div>
                                             </div>
                                         </div>
                                     </div>
@@ -214,31 +214,37 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div id="section-suspended-date" class="disabled" style="margin-top: 16px;">
-                <div class="component-card--grouped">
+                <div id="section-suspended-date" class="disabled">
+                    <hr class="component-divider">
                     <div class="component-group-item component-group-item--stacked">
-                        <div class="component-card__content component-card__content--full">
+                        <div class="component-card__content">
                             <div class="component-card__text">
                                 <h2 class="component-card__title">Fin de la Suspensión</h2>
-                                <div class="component-card__form-area">
-                                    <div class="component-input-group">
-                                        <input type="datetime-local" id="inp_end_date" class="component-input-field" placeholder=" ">
-                                    </div>
-                                </div>
+                                <p class="component-card__description">Indica la fecha y hora exacta en la que se levantará la restricción temporal.</p>
                             </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--start">
+                            
+                            <div class="component-dropdown-wrapper">
+                                <div class="component-dropdown-trigger" data-action="adminToggleModule" data-target="adminModuleCalendar">
+                                    <span class="material-symbols-rounded">calendar_month</span>
+                                    <span class="component-dropdown-text" id="admin-endDate-text">Seleccionar fecha y hora...</span>
+                                </div>
+                                <?php include __DIR__ . '/../../modules/moduleCalendar.php'; ?>
+                            </div>
+
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div id="section-suspended-reason" class="disabled" style="margin-top: 16px;">
-                <div class="component-card--grouped">
+                <div id="section-suspended-reason" class="disabled">
+                    <hr class="component-divider">
                     <div class="component-group-item component-group-item--stacked">
                         <div class="component-card__content">
                             <div class="component-card__text">
                                 <h2 class="component-card__title">Motivo de la suspensión</h2>
+                                <p class="component-card__description">Selecciona la razón principal por la cual se restringe el acceso a la plataforma.</p>
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--start">
@@ -271,9 +277,10 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                         </div>
                     </div>
                 </div>
+
             </div>
 
-            <div id="admin-status-password-area" style="margin-top: 32px;">
+            <div id="admin-status-password-area" style="margin-top: 16px;">
                 <div class="component-card--grouped">
                     <div class="component-group-item component-group-item--stacked">
                         <div class="component-card__content component-card__content--full component-card__content--start">

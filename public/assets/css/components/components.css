@@ -1721,3 +1721,114 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
     opacity: 0.6;
     pointer-events: none !important;
 }
+
+
+
+
+
+/* ========================================= */
+/* --- COMPONENT: CALENDAR MODULE ---        */
+/* ========================================= */
+.component-calendar {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+}
+
+.component-calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.component-calendar-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #111111;
+    text-transform: capitalize;
+}
+
+.component-calendar-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: #666666;
+    margin-bottom: 8px;
+}
+
+.component-calendar-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    justify-items: center;
+}
+
+.component-calendar-day {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: none;
+    background-color: transparent;
+    color: #111111;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s ease, color 0.2s ease, transform 0.1s ease;
+}
+
+.component-calendar-day:hover:not(.muted):not(.active) {
+    background-color: #f5f5fa;
+}
+
+.component-calendar-day:active:not(.muted) {
+    transform: scale(0.9);
+}
+
+.component-calendar-day.active {
+    background-color: #111111;
+    color: #ffffff;
+    font-weight: 700;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.component-calendar-day.muted {
+    color: #cccccc;
+    cursor: default;
+}
+
+.component-calendar-time {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    padding-top: 16px;
+    border-top: 1px dashed #00000015;
+    font-weight: 700;
+    color: #111111;
+}
+
+.component-calendar-time input[type="number"]::-webkit-inner-spin-button,
+.component-calendar-time input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.component-calendar-time input[type="number"] {
+    -moz-appearance: textfield;
+    text-align: center;
+    font-weight: 700;
+    font-size: 15px;
+}
+
+.component-calendar-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 16px;
+}
