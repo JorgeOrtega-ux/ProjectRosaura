@@ -31,5 +31,13 @@ export const ApiRoutes = {
         GetDevices: 'settings.get_devices',
         RevokeDevice: 'settings.revoke_device',
         RevokeAllDevices: 'settings.revoke_all_devices'
+    },
+    Admin: {
+        GetUser: 'admin.get_user',
+        UpdateAvatar: 'admin.update_avatar',
+        DeleteAvatar: 'admin.delete_avatar',
+        UpdateUsername: 'admin.update_username',
+        UpdateEmail: 'admin.update_email',
+        UpdatePreference: 'admin.update_preference'
     }
 };

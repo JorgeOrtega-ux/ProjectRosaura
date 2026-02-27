@@ -3,7 +3,8 @@ import { MainController } from './main-controller.js';
 import { SpaRouter } from './core/spa-router.js';
 import { AuthController } from './auth-controller.js';
 import { ProfileController } from './profile-controller.js';
-import { AdminUsersController } from './admin-users-controller.js'; // <-- AGREGAR
+import { AdminUsersController } from './admin-users-controller.js';
+import { AdminUserEditController } from './admin-user-edit-controller.js'; // <-- NUEVO
 import { DialogSystem } from './core/dialog-system.js';
 import { TooltipSystem } from './core/tooltip-system.js';
 
@@ -21,18 +22,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const profile = new ProfileController();
     profile.init();
 
-    // NUEVO: Instanciamos la lógica del Admin Users
-    const adminUsers = new AdminUsersController(); // <-- AGREGAR
+    // 4. Instanciamos la lógica del Admin Users
+    const adminUsers = new AdminUsersController();
 
-    // 4. Instanciamos el Sistema de Diálogos y lo guardamos global
+    // NUEVO: Instanciamos el controlador para Edición de Usuario como Admin
+    const adminUserEdit = new AdminUserEditController(); // <-- NUEVO
+    adminUserEdit.init();
+
+    // 5. Instanciamos el Sistema de Diálogos y lo guardamos global
     window.dialogSystem = new DialogSystem();
 
-    // 5. Instanciamos el Router SPA
+    // 6. Instanciamos el Router SPA
     window.spaRouter = new SpaRouter({
         outlet: '#app-router-outlet'
     });
 
-    // 6. Instanciamos e inicializamos el Sistema de Tooltips
+    // 7. Instanciamos e inicializamos el Sistema de Tooltips
     window.tooltipSystem = new TooltipSystem();
     window.tooltipSystem.init();
 });

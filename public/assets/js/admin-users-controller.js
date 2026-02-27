@@ -21,6 +21,9 @@ export class AdminUsersController {
             const openSubMenuBtn = e.target.closest('[data-action="openFilterSubMenu"]');
             const backToMainFiltersBtn = e.target.closest('[data-action="backToMainFilters"]');
             
+            // NUEVO EVENTO PARA EL BOTÓN GESTIONAR CUENTA
+            const editUserBtn = e.target.closest('[data-action="editSelectedUser"]');
+            
             if (searchBtn) this.toggleSearchToolbar();
             if (toggleFiltersBtn) this.toggleFiltersModule();
             if (viewBtn) this.toggleViewMode(viewBtn);
@@ -37,6 +40,7 @@ export class AdminUsersController {
             }
 
             if (deselectBtn) this.deselectUser();
+            if (editUserBtn) this.editSelectedUser();
         });
 
         // Eventos para filtros (Buscar y Checkboxes)
@@ -62,6 +66,15 @@ export class AdminUsersController {
                 this.deselectUser(); 
             }
         });
+    }
+
+    editSelectedUser() {
+        if (!this.selectedUserId) return;
+        if (window.spaRouter) {
+            window.spaRouter.navigate(`/ProjectRosaura/admin/edit-user?id=${this.selectedUserId}`);
+        } else {
+            window.location.href = `/ProjectRosaura/admin/edit-user?id=${this.selectedUserId}`;
+        }
     }
 
     openFilterSubMenu(btn) {
