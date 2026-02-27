@@ -20,10 +20,6 @@ export class AdminStatusEditController {
             endDate: '' // Guardará YYYY-MM-DDTHH:mm
         };
 
-        // Estado interno del calendario custom
-        this.currentCalendarDate = new Date();
-        this.selectedCalendarDate = null;
-
         this.maps = {
             status: { 'active': 'Activa', 'deleted': 'Eliminada' },
             deletedBy: { 'user': 'Por el usuario', 'admin': 'Administrativa' },
@@ -62,10 +58,23 @@ export class AdminStatusEditController {
             if (btnToggleModule && !btnToggleModule.classList.contains('disabled-interaction')) {
                 const target = btnToggleModule.getAttribute('data-target');
                 
-                // Si abren el calendario, reiniciamos el view al mes seleccionado o actual
+                // Inicializar el calendario global antes de mostrar el módulo
                 if (target === 'adminModuleCalendar') {
-                    this.currentCalendarDate = this.selectedCalendarDate ? new Date(this.selectedCalendarDate) : new Date();
-                    this.renderCalendar();
+                    if (window.calendarSystem) {
+                        window.calendarSystem.setup(
+                            this.state.endDate,
+                            (isoString, displayString) => {
+                                this.state.endDate = isoString;
+                                const textEl = document.getElementById('admin-endDate-text');
+                                if (textEl) textEl.textContent = displayString;
+                            },
+                            () => {
+                                this.state.endDate = '';
+                                const textEl = document.getElementById('admin-endDate-text');
+                                if (textEl) textEl.textContent = 'Seleccionar fecha y hora...';
+                            }
+                        );
+                    }
                 }
 
                 if (window.appInstance) window.appInstance.toggleModule(target);
@@ -82,24 +91,6 @@ export class AdminStatusEditController {
                 
                 this.syncVisuals();
                 this.renderUI();
-            }
-
-            // Lógica Calendario Custom
-            const btnCalPrev = e.target.closest('[data-action="calendarPrevMonth"]');
-            const btnCalNext = e.target.closest('[data-action="calendarNextMonth"]');
-            const btnCalDay = e.target.closest('[data-action="calendarSelectDay"]');
-            const btnCalConfirm = e.target.closest('[data-action="calendarConfirm"]');
-            const btnCalCancel = e.target.closest('[data-action="calendarCancel"]');
-            const btnCalClear = e.target.closest('[data-action="calendarClear"]');
-
-            if (btnCalPrev) this.changeCalendarMonth(-1);
-            if (btnCalNext) this.changeCalendarMonth(1);
-            if (btnCalDay) this.selectCalendarDay(btnCalDay);
-            if (btnCalConfirm) this.confirmCalendar();
-            if (btnCalClear) this.clearCalendar();
-            
-            if (btnCalCancel) {
-                if (window.appInstance) window.appInstance.closeModule(document.querySelector('[data-module="adminModuleCalendar"]'));
             }
 
             // Lógica de Formulario Final
@@ -125,23 +116,6 @@ export class AdminStatusEditController {
             }
         });
 
-        // Validaciones en blur de tiempo del calendario
-        document.addEventListener('focusout', (e) => {
-            if (!window.location.pathname.includes('/admin/edit-status')) return;
-            if (e.target.id === 'calendar-hours') {
-                let val = parseInt(e.target.value) || 0;
-                if (val < 0) val = 0;
-                if (val > 23) val = 23;
-                e.target.value = String(val).padStart(2, '0');
-            }
-            if (e.target.id === 'calendar-minutes') {
-                let val = parseInt(e.target.value) || 0;
-                if (val < 0) val = 0;
-                if (val > 59) val = 59;
-                e.target.value = String(val).padStart(2, '0');
-            }
-        });
-
         document.addEventListener('input', (e) => {
             if (!window.location.pathname.includes('/admin/edit-status')) return;
             if (e.target.id === 'inp_deleted_reason_user') this.state.deletedReasonUser = e.target.value;
@@ -153,109 +127,6 @@ export class AdminStatusEditController {
             window.appInstance.showToast(msg, type);
         } else alert(msg);
     }
-
-    /* === MÉTODOS DEL CALENDARIO CUSTOM === */
-    renderCalendar() {
-        const year = this.currentCalendarDate.getFullYear();
-        const month = this.currentCalendarDate.getMonth();
-        
-        const firstDay = new Date(year, month, 1).getDay();
-        const daysInMonth = new Date(year, month + 1, 0).getDate();
-        const daysInPrevMonth = new Date(year, month, 0).getDate();
-        
-        const title = document.getElementById('calendar-title');
-        const monthsStr = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-        if (title) title.textContent = `${monthsStr[month]} ${year}`;
-        
-        const daysContainer = document.getElementById('calendar-days');
-        if (!daysContainer) return;
-        daysContainer.innerHTML = '';
-        
-        // Días grises del mes pasado
-        for (let i = firstDay - 1; i >= 0; i--) {
-            const dayNum = daysInPrevMonth - i;
-            daysContainer.innerHTML += `<button type="button" class="component-calendar-day muted" disabled>${dayNum}</button>`;
-        }
-        
-        // Días interactivos del mes actual
-        for (let i = 1; i <= daysInMonth; i++) {
-            let isSelected = false;
-            if (this.selectedCalendarDate && 
-                this.selectedCalendarDate.getDate() === i && 
-                this.selectedCalendarDate.getMonth() === month && 
-                this.selectedCalendarDate.getFullYear() === year) {
-                isSelected = true;
-            }
-            const cls = isSelected ? 'component-calendar-day active' : 'component-calendar-day';
-            daysContainer.innerHTML += `<button type="button" class="${cls}" data-action="calendarSelectDay" data-day="${i}">${i}</button>`;
-        }
-        
-        // Días grises del próximo mes (para rellenar celdas)
-        const totalCells = firstDay + daysInMonth;
-        const nextDays = Math.ceil(totalCells / 7) * 7 - totalCells;
-        for (let i = 1; i <= nextDays; i++) {
-            daysContainer.innerHTML += `<button type="button" class="component-calendar-day muted" disabled>${i}</button>`;
-        }
-    }
-
-    changeCalendarMonth(dir) {
-        this.currentCalendarDate.setMonth(this.currentCalendarDate.getMonth() + dir);
-        this.renderCalendar();
-    }
-
-    selectCalendarDay(btn) {
-        const day = parseInt(btn.getAttribute('data-day'));
-        this.selectedCalendarDate = new Date(this.currentCalendarDate.getFullYear(), this.currentCalendarDate.getMonth(), day);
-        this.renderCalendar(); // Re-renderiza para aplicar la clase active
-    }
-
-    confirmCalendar() {
-        if (!this.selectedCalendarDate) {
-            this.showMessage('Selecciona un día en el calendario.', 'error');
-            return;
-        }
-        const hInput = document.getElementById('calendar-hours');
-        const mInput = document.getElementById('calendar-minutes');
-        
-        const h = hInput ? hInput.value.padStart(2, '0') : '00';
-        const m = mInput ? mInput.value.padStart(2, '0') : '00';
-        
-        const y = this.selectedCalendarDate.getFullYear();
-        const mo = String(this.selectedCalendarDate.getMonth() + 1).padStart(2, '0');
-        const d = String(this.selectedCalendarDate.getDate()).padStart(2, '0');
-        
-        this.state.endDate = `${y}-${mo}-${d}T${h}:${m}`;
-        this.updateCalendarText();
-        
-        if (window.appInstance) window.appInstance.closeModule(document.querySelector('[data-module="adminModuleCalendar"]'));
-    }
-
-    clearCalendar() {
-        this.selectedCalendarDate = null;
-        this.state.endDate = '';
-        this.updateCalendarText();
-        this.renderCalendar();
-        
-        if (window.appInstance) window.appInstance.closeModule(document.querySelector('[data-module="adminModuleCalendar"]'));
-    }
-
-    updateCalendarText() {
-        const textEl = document.getElementById('admin-endDate-text');
-        if (!textEl) return;
-        
-        if (!this.state.endDate) {
-            textEl.textContent = 'Seleccionar fecha y hora...';
-            return;
-        }
-        
-        const d = new Date(this.state.endDate);
-        const monthsStr = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-        const h = String(d.getHours()).padStart(2, '0');
-        const m = String(d.getMinutes()).padStart(2, '0');
-        
-        textEl.textContent = `${d.getDate()} de ${monthsStr[d.getMonth()]} ${d.getFullYear()}, ${h}:${m}`;
-    }
-    /* === FIN MÉTODOS CALENDARIO === */
 
     async loadUserData() {
         const loader = document.getElementById('admin-status-loader');
@@ -297,17 +168,9 @@ export class AdminStatusEditController {
             if (u.suspension_end_date) {
                 const d = new Date(u.suspension_end_date.replace(' ', 'T') + 'Z');
                 const localD = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
-                
                 this.state.endDate = localD.toISOString().slice(0, 16);
-                this.selectedCalendarDate = new Date(localD.getFullYear(), localD.getMonth(), localD.getDate());
-                
-                const hInput = document.getElementById('calendar-hours');
-                const mInput = document.getElementById('calendar-minutes');
-                if (hInput) hInput.value = String(localD.getHours()).padStart(2, '0');
-                if (mInput) mInput.value = String(localD.getMinutes()).padStart(2, '0');
             } else {
                 this.state.endDate = '';
-                this.selectedCalendarDate = null;
             }
 
             const inpUserReason = document.getElementById('inp_deleted_reason_user');
@@ -323,6 +186,23 @@ export class AdminStatusEditController {
             this.showMessage(res.message, 'error');
             if (window.spaRouter) window.spaRouter.navigate('/ProjectRosaura/admin/manage-users');
         }
+    }
+
+    updateCalendarText() {
+        const textEl = document.getElementById('admin-endDate-text');
+        if (!textEl) return;
+        
+        if (!this.state.endDate) {
+            textEl.textContent = 'Seleccionar fecha y hora...';
+            return;
+        }
+        
+        const d = new Date(this.state.endDate);
+        const monthsStr = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+        const h = String(d.getHours()).padStart(2, '0');
+        const m = String(d.getMinutes()).padStart(2, '0');
+        
+        textEl.textContent = `${d.getDate()} de ${monthsStr[d.getMonth()]} ${d.getFullYear()}, ${h}:${m}`;
     }
 
     syncVisuals() {

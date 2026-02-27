@@ -9,6 +9,7 @@ import { AdminRoleEditController } from './admin-role-edit-controller.js';
 import { AdminStatusEditController } from './admin-status-edit-controller.js';
 import { DialogSystem } from './core/dialog-system.js';
 import { TooltipSystem } from './core/tooltip-system.js';
+import { CalendarSystem } from './core/calendar-system.js'; // <- IMPORTAR CALENDARIO
 
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Instanciamos lógica UI base
@@ -40,12 +41,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // 6. Instanciamos el Sistema de Diálogos y lo guardamos global
     window.dialogSystem = new DialogSystem();
 
-    // 7. Instanciamos el Router SPA
+    // 7. Instanciamos e inicializamos el Sistema de Calendario Global
+    window.calendarSystem = new CalendarSystem();
+    window.calendarSystem.init();
+
+    // 8. Instanciamos el Router SPA
     window.spaRouter = new SpaRouter({
         outlet: '#app-router-outlet'
     });
 
-    // 8. Instanciamos e inicializamos el Sistema de Tooltips
+    // 9. Instanciamos e inicializamos el Sistema de Tooltips
     window.tooltipSystem = new TooltipSystem();
     window.tooltipSystem.init();
 });
