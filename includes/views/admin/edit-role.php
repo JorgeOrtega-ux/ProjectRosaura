@@ -1,6 +1,9 @@
 <?php
 // includes/views/admin/edit-role.php
 if (session_status() === PHP_SESSION_NONE) session_start();
+
+$currentUserRole = $_SESSION['user_role'] ?? 'user';
+$isFounder = ($currentUserRole === 'founder');
 ?>
 <div class="view-content">
     <div class="component-wrapper">
@@ -22,8 +25,8 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                 <div class="component-group-item component-group-item--stacked">
                     <div class="component-card__content">
                         <div class="component-card__text">
-                            <h2 class="component-card__title">Rol de la cuenta</h2>
-                            <p class="component-card__description">Selecciona el rol que deseas asignar a este usuario en la plataforma.</p>
+                            <h2 class="component-card__title">Asignar Rol</h2>
+                            <p class="component-card__description" id="admin-role-desc">Selecciona el rol que deseas asignar a este usuario en la plataforma.</p>
                         </div>
                     </div>
                     <div class="component-card__actions component-card__actions--start">
@@ -47,14 +50,19 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                         </div>
                                     </div>
                                     <div class="component-menu-list component-menu-list--scrollable">
-                                        <div class="component-menu-link" data-action="adminSetRole" data-value="founder">
-                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">local_police</span></div>
-                                            <div class="component-menu-link-text"><span>Fundador</span></div>
-                                        </div>
-                                        <div class="component-menu-link" data-action="adminSetRole" data-value="administrator">
-                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">shield_person</span></div>
-                                            <div class="component-menu-link-text"><span>Administrador</span></div>
-                                        </div>
+                                        
+                                        <?php if ($isFounder): ?>
+                                            <div class="component-menu-link disabled-interaction" data-action="adminSetRole" data-value="founder" style="opacity: 0.6;" title="Solo asignable desde Base de Datos">
+                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">local_police</span></div>
+                                                <div class="component-menu-link-text"><span>Fundador</span></div>
+                                                <div class="component-menu-link-icon" style="width: auto; padding-right: 12px;"><span class="material-symbols-rounded" style="font-size: 18px;">lock</span></div>
+                                            </div>
+                                            <div class="component-menu-link" data-action="adminSetRole" data-value="administrator">
+                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">shield_person</span></div>
+                                                <div class="component-menu-link-text"><span>Administrador</span></div>
+                                            </div>
+                                        <?php endif; ?>
+                                        
                                         <div class="component-menu-link" data-action="adminSetRole" data-value="moderator">
                                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">gavel</span></div>
                                             <div class="component-menu-link-text"><span>Moderador</span></div>
@@ -70,6 +78,37 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                     </div>
                 </div>
             </div>
+            
+            <div id="admin-role-password-area" class="disabled" style="margin-top: 16px;">
+                <div class="component-card--grouped">
+                    <div class="component-group-item component-group-item--stacked">
+                        <div class="component-card__content component-card__content--full component-card__content--start">
+                            
+                            <div class="component-card__icon-container component-card__icon-container--bordered">
+                                <span class="material-symbols-rounded">lock</span>
+                            </div>
+
+                            <div class="component-card__text">
+                                <h2 class="component-card__title">Verificar identidad</h2>
+                                <p class="component-card__description">Por razones de seguridad, ingresa tu contraseña actual para autorizar el cambio de rol a <b id="admin-role-preview"></b>.</p>
+                                
+                                <div class="component-card__form-area">
+                                    <div class="component-input-group">
+                                        <input type="password" id="admin_role_confirm_password" class="component-input-field component-input-field--with-icon" placeholder=" ">
+                                        <label for="admin_role_confirm_password" class="component-input-label">Tu contraseña actual</label>
+                                        <span class="material-symbols-rounded component-input-toggle" data-action="togglePassword">visibility_off</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--end">
+                            <button class="component-button component-button--h36" data-action="cancelRoleUpdate">Cancelar</button>
+                            <button class="component-button component-button--h36 component-button--dark" data-action="submitRoleUpdate">Verificar y Ejecutar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
 
     </div>
