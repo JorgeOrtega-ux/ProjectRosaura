@@ -17,6 +17,7 @@ export const ApiRoutes = {
         DeleteAvatar: 'settings.delete_avatar',
         UpdateUsername: 'settings.update_username',
         RequestEmailCode: 'settings.request_email_code',
+        ResendEmailCode: 'settings.resend_email_code',
         VerifyEmailCode: 'settings.verify_email_code',
         UpdateEmail: 'settings.update_email',
         UpdatePreferences: 'settings.update_preferences',

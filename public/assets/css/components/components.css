@@ -22,12 +22,10 @@
     background-color: #ffffff;
 }
 
-/* Modificador para que el buscador tome el 100% de su contenedor */
 .component-search--full {
     width: 100%;
 }
 
-/* Modificador de altura */
 .component-search--h36 {
     height: 36px;
 }
@@ -558,6 +556,12 @@
     width: 100%;
 }
 
+.component-link-container--start {
+    justify-content: flex-start;
+    gap: 8px;
+    margin-top: 8px;
+}
+
 .component-link-container--right {
     justify-content: flex-end;
 }
@@ -993,7 +997,6 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
     color: #111111;
 }
 
-/* Variantes de Toast (Éxito y Error) */
 .component-toast--success {
     border-left: 4px solid #16a34a;
 }
@@ -1008,7 +1011,6 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
     color: #d32f2f;
 }
 
-/* Responsividad en Móviles */
 @media (max-width: 600px) {
     .toast-container {
         left: 16px;
@@ -1050,22 +1052,63 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
     visibility: visible;
 }
 
+/* NUEVO: Contenedor Wrapper para el Box y el Botón X en Desktop */
+.component-dialog-wrapper {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: center;
+    width: 100%;
+    padding: 0 24px;
+    transform: scale(0.95);
+    transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.component-dialog-overlay.active .component-dialog-wrapper {
+    transform: scale(1);
+}
+
 .component-dialog-box {
     background-color: #ffffff;
     border-radius: 12px;
     padding: 24px;
     width: 100%;
-    max-width: 400px; 
+    max-width: 425px; /* MODIFICADO A 425px */
     display: flex;
     flex-direction: column;
     gap: 16px;
-    transform: scale(0.95);
-    transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
     box-shadow: 0 10px 25px rgba(0,0,0,0.1);
 }
 
-.component-dialog-overlay.active .component-dialog-box {
-    transform: scale(1);
+/* NUEVO: Botón cerrar externo para Desktop */
+.component-dialog-close-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: rgba(0, 0, 0, 0.5);
+    color: #ffffff;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+    margin-left: 16px;
+    flex-shrink: 0;
+}
+
+.component-dialog-close-btn:hover {
+    background-color: rgba(0, 0, 0, 0.8);
+    transform: scale(1.05);
+}
+
+.component-dialog-close-btn:active {
+    transform: scale(0.95);
+}
+
+/* UTILIDAD PARA OCULTAR ELEMENTOS SOLO EN ESCRITORIO */
+.hide-on-desktop {
+    display: none !important;
 }
 
 .component-dialog-header {
@@ -1092,31 +1135,47 @@ input:checked + .component-toggle-slider:before { transform: translateX(20px); }
     display: flex;
     justify-content: flex-end;
     gap: 8px;
-    margin-top: 8px;
+    /* Margin top removido */
 }
 
-/* Mobile Dialog */
+/* Mobile Dialog Ajustes */
 @media (max-width: 768px) {
     .component-dialog-overlay {
         align-items: flex-end;
+    }
+
+    /* El Drag ahora funciona transformando el Wrapper completo */
+    .component-dialog-wrapper {
+        padding: 0;
+        margin: 0;
+        transform: translateY(100%);
+    }
+
+    .component-dialog-overlay.active .component-dialog-wrapper {
+        transform: translateY(0);
+    }
+
+    .component-dialog-overlay.is-dragging .component-dialog-wrapper {
+        transition: none; 
     }
 
     .component-dialog-box {
         max-width: 100%;
         border-bottom-left-radius: 0;
         border-bottom-right-radius: 0;
-        transform: translateY(100%);
         padding-top: 0; 
         padding-bottom: 24px;
         margin: 0;
     }
 
-    .component-dialog-overlay.active .component-dialog-box {
-        transform: translateY(0);
+    /* Ocultar el botón externo transparente en móviles */
+    .component-dialog-close-btn {
+        display: none;
     }
 
-    .component-dialog-overlay.is-dragging .component-dialog-box {
-        transition: none; 
+    /* Mostrar botón interno cancelar en móviles */
+    .hide-on-desktop {
+        display: inline-flex !important;
     }
     
     .component-dialog-actions {

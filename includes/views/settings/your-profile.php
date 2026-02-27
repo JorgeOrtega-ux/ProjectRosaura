@@ -2,6 +2,15 @@
 // includes/views/settings/your-profile.php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
+// 1. Rescatamos la configuración global de forma estricta
+global $serverConfig;
+$maxAvatarSize = 2; // Valor por defecto blindado
+
+// Verificamos que exista y que realmente sea un número válido
+if (!empty($serverConfig['max_avatar_size_mb']) && is_numeric($serverConfig['max_avatar_size_mb'])) {
+    $maxAvatarSize = $serverConfig['max_avatar_size_mb'];
+}
+
 $isLoggedIn = isset($_SESSION['user_id']);
 $userName = $_SESSION['user_name'] ?? 'Usuario';
 $userEmail = $_SESSION['user_email'] ?? 'usuario@ejemplo.com';
@@ -51,7 +60,7 @@ $currentLangText = $languages[$prefLang] ?? 'Español (Latinoamérica)';
                     </div>
                     <div class="component-card__text">
                         <h2 class="component-card__title"><?php echo __('prof_avatar_title'); ?></h2>
-                        <p class="component-card__description"><?php echo __('prof_avatar_desc'); ?></p>
+                        <p class="component-card__description"><?php echo __('prof_avatar_desc', ['max_mb' => (string)$maxAvatarSize]); ?></p>
                         
                         <input type="file" id="input-avatar-file" accept="image/png, image/jpeg, image/jpg" class="disabled">
                     </div>

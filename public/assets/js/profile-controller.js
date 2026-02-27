@@ -49,6 +49,9 @@ export class ProfileController {
             const btnRequestEmail = e.target.closest('[data-action="requestEmailUpdate"]');
             if (btnRequestEmail) this.handleEmailUpdateRequest();
 
+            const btnResendDialog = e.target.closest('#btn-dialog-resend-code');
+            if (btnResendDialog) this.resendEmailUpdateCode(btnResendDialog);
+
             const btnSaveEmail = e.target.closest('[data-action="saveEmail"]');
             if (btnSaveEmail) this.saveEmail(btnSaveEmail);
 
@@ -233,7 +236,6 @@ export class ProfileController {
             this.isDefaultAvatar = false; 
             this.toggleAvatarButtons(false);
             
-            // Actualizar texto del botón primario a "Cambiar foto" tras subir con éxito
             const btnChange = document.getElementById('btn-change-avatar');
             if (btnChange && typeof window.__ === 'function') {
                 btnChange.textContent = __('btn_change_avatar');
@@ -257,7 +259,6 @@ export class ProfileController {
             this.isDefaultAvatar = true; 
             this.toggleAvatarButtons(false);
             
-            // Actualizar texto del botón primario a "Subir foto" tras eliminar con éxito
             const btnChange = document.getElementById('btn-change-avatar');
             if (btnChange && typeof window.__ === 'function') {
                 btnChange.textContent = __('btn_upload_avatar');
@@ -287,18 +288,89 @@ export class ProfileController {
         const res = await this.api.post(ApiRoutes.Settings.RequestEmailCode);
         window.dialogSystem.closeCurrent(false);
         await new Promise(resolve => setTimeout(resolve, 350));
+        
         if (res.success) {
             if (res.skip_verification) { window.appInstance.toggleEditState('email'); return; }
             this.showMessage(res.message, 'success');
-            const verifyDialog = await window.dialogSystem.show('verifyEmailCode');
+            
+            const currentEmail = document.getElementById('display-email').textContent.trim();
+            const verifyDialogPromise = window.dialogSystem.show('verifyEmailCode', { email: currentEmail });
+            
+            const resendBtn = document.getElementById('btn-dialog-resend-code');
+            if (resendBtn) {
+                let elapsed = res.elapsed || 0;
+                let remainingTime = Math.max(0, 60 - elapsed);
+                this.startDialogResendTimer(resendBtn, remainingTime);
+            }
+
+            const verifyDialog = await verifyDialogPromise;
+            
+            if (this.dialogResendInterval) clearInterval(this.dialogResendInterval);
+
             if (verifyDialog.confirmed) {
                 const code = verifyDialog.data['dialog_email_code'];
                 if (!code) { this.showMessage('El código de verificación es obligatorio.', 'error'); return; }
                 const verifyRes = await this.api.post(ApiRoutes.Settings.VerifyEmailCode, { code });
-                if (verifyRes.success) { this.showMessage(verifyRes.message, 'success'); window.appInstance.toggleEditState('email'); } 
+                if (verifyRes.success) { 
+                    this.showMessage(verifyRes.message, 'success'); 
+                    window.appInstance.toggleEditState('email'); 
+                } 
                 else this.showMessage(verifyRes.message, 'error');
             }
-        } else this.showMessage(res.message, 'error');
+        } else {
+            this.showMessage(res.message, 'error');
+        }
+    }
+
+    async resendEmailUpdateCode(btn) {
+        if (btn.style.pointerEvents === 'none') return;
+        
+        btn.style.pointerEvents = 'none';
+        btn.style.color = '#999999';
+        btn.textContent = 'Enviando...';
+
+        const result = await this.api.post(ApiRoutes.Settings.ResendEmailCode);
+
+        if (result.success) {
+            this.showMessage(result.message, 'success');
+            this.startDialogResendTimer(btn, 60);
+        } else {
+            this.showMessage(result.message, 'error');
+            if (result.cooldown) {
+                this.startDialogResendTimer(btn, result.cooldown);
+            } else {
+                btn.style.pointerEvents = 'auto';
+                btn.style.color = '';
+                btn.textContent = 'Reenviar código de verificación';
+            }
+        }
+    }
+
+    startDialogResendTimer(element, seconds) {
+        if (this.dialogResendInterval) clearInterval(this.dialogResendInterval);
+        let timeLeft = seconds;
+        
+        const updateUI = () => {
+            if (timeLeft <= 0) {
+                clearInterval(this.dialogResendInterval);
+                element.style.pointerEvents = 'auto';
+                element.style.color = ''; 
+                element.textContent = 'Reenviar código de verificación';
+            } else {
+                element.style.pointerEvents = 'none';
+                element.style.color = '#999999';
+                element.textContent = `Reenviar código de verificación (${timeLeft})`;
+            }
+        };
+        
+        updateUI(); 
+        
+        if (timeLeft > 0) {
+            this.dialogResendInterval = setInterval(() => {
+                timeLeft--;
+                updateUI();
+            }, 1000);
+        }
     }
 
     async saveEmail(btn) {
@@ -574,8 +646,6 @@ export class ProfileController {
             const parsedUA = this.parseUserAgent(device.user_agent);
             
             const div = document.createElement('div');
-            // Nota: Aquí se dejó un style para la maqueta generada dinámicamente desde JS por diseño simplificado, 
-            // pero si deseas también lo podemos migrar a CSS en un futuro. Por ahora cumple tu indicación principal.
             div.style.cssText = 'display: flex; align-items: center; justify-content: space-between; padding: 12px; border: 1px solid #00000020; border-radius: 8px; flex-wrap: wrap; gap: 12px;';
             
             const btnHtml = !device.is_current ? `

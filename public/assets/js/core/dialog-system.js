@@ -30,11 +30,23 @@ export class DialogSystem {
             const overlay = document.createElement('div');
             overlay.className = 'component-dialog-overlay';
             
+            // Creamos un wrapper para contener la caja y el botón 'X' en modo Row
+            const wrapper = document.createElement('div');
+            wrapper.className = 'component-dialog-wrapper';
+            
             const box = document.createElement('div');
             box.className = 'component-dialog-box';
             box.innerHTML = this.templates[templateName].build(data);
             
-            overlay.appendChild(box);
+            // Botón 'X' externo (Se ocultará en móvil mediante CSS)
+            const closeBtn = document.createElement('button');
+            closeBtn.className = 'component-dialog-close-btn';
+            closeBtn.innerHTML = '<span class="material-symbols-rounded">close</span>';
+            closeBtn.addEventListener('click', () => closeDialog(false));
+            
+            wrapper.appendChild(box);
+            wrapper.appendChild(closeBtn);
+            overlay.appendChild(wrapper);
             container.appendChild(overlay);
 
             requestAnimationFrame(() => overlay.classList.add('active'));
@@ -49,8 +61,7 @@ export class DialogSystem {
                     });
                 }
 
-                // Eliminamos completamente el atributo style del DOM
-                box.removeAttribute('style'); 
+                wrapper.removeAttribute('style'); 
                 overlay.classList.remove('active');
                 
                 setTimeout(() => {
@@ -74,12 +85,14 @@ export class DialogSystem {
             if(btnCancel) btnCancel.addEventListener('click', () => closeDialog(false));
             
             overlay.addEventListener('click', (e) => {
-                if (e.target === overlay) closeDialog(false);
+                // Cerramos si clickean el fondo (overlay) o el contenedor de filas (wrapper)
+                if (e.target === overlay || e.target === wrapper) closeDialog(false);
             });
 
             const pill = box.querySelector('.pill-container');
             if (pill) {
-                this.bindDragEvents(pill, box, overlay, () => closeDialog(false));
+                // Ahora arrastramos el wrapper completo en lugar del box
+                this.bindDragEvents(pill, wrapper, overlay, () => closeDialog(false));
             }
         });
     }
@@ -90,7 +103,7 @@ export class DialogSystem {
         }
     }
 
-    bindDragEvents(pill, box, overlay, closeCallback) {
+    bindDragEvents(pill, wrapper, overlay, closeCallback) {
         let startY = 0;
         let currentDiff = 0;
         let isDragging = false;
@@ -103,15 +116,15 @@ export class DialogSystem {
             startY = e.clientY;
             
             overlay.classList.add('is-dragging');
-            box.setPointerCapture(e.pointerId);
+            wrapper.setPointerCapture(e.pointerId);
         });
 
-        box.addEventListener('pointermove', (e) => {
+        wrapper.addEventListener('pointermove', (e) => {
             if (!isDragging) return;
             currentDiff = e.clientY - startY;
             
             if (currentDiff > 0) {
-                box.style.transform = `translateY(${currentDiff}px)`;
+                wrapper.style.transform = `translateY(${currentDiff}px)`;
             }
         });
 
@@ -121,20 +134,20 @@ export class DialogSystem {
             
             overlay.classList.remove('is-dragging');
             
-            if (box.hasPointerCapture(e.pointerId)) {
-                box.releasePointerCapture(e.pointerId);
+            if (wrapper.hasPointerCapture(e.pointerId)) {
+                wrapper.releasePointerCapture(e.pointerId);
             }
 
-            if (currentDiff > box.offsetHeight * 0.35) {
+            if (currentDiff > wrapper.offsetHeight * 0.35) {
                 closeCallback();
             } else {
-                box.removeAttribute('style'); // Remover style
+                wrapper.removeAttribute('style'); 
             }
             
             currentDiff = 0;
         };
 
-        box.addEventListener('pointerup', endDrag);
-        box.addEventListener('pointercancel', endDrag);
+        wrapper.addEventListener('pointerup', endDrag);
+        wrapper.addEventListener('pointercancel', endDrag);
     }
 }

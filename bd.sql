@@ -21,28 +21,6 @@ CREATE TABLE `users` (
   UNIQUE KEY `username` (`username`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-CREATE TABLE IF NOT EXISTS verification_codes (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    identifier VARCHAR(100) NOT NULL,
-    code_type VARCHAR(50) NOT NULL DEFAULT 'account_activation',
-    code VARCHAR(128) NOT NULL,
-    payload JSON NOT NULL,
-    expires_at DATETIME NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    INDEX (identifier),
-    INDEX (code)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS rate_limits (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    ip_address VARCHAR(45) NOT NULL,
-    action VARCHAR(50) NOT NULL COMMENT 'e.g., login, forgot_password',
-    attempts INT DEFAULT 1,
-    last_attempt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    blocked_until DATETIME DEFAULT NULL,
-    UNIQUE KEY ip_action (ip_address, action)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 CREATE TABLE IF NOT EXISTS profile_changes_log (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT(11) NOT NULL,
@@ -80,7 +58,6 @@ CREATE TABLE IF NOT EXISTS auth_tokens (
     INDEX (selector)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- NUEVA TABLA: Configuración Dinámica del Servidor
 CREATE TABLE IF NOT EXISTS server_config (
     id INT AUTO_INCREMENT PRIMARY KEY,
     min_password_length INT NOT NULL DEFAULT 8,
@@ -101,10 +78,9 @@ CREATE TABLE IF NOT EXISTS server_config (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Insertar configuración inicial por defecto (Solo si la tabla está vacía)
 INSERT INTO server_config (id) 
 SELECT 1 WHERE NOT EXISTS (SELECT * FROM server_config);
 
--- SI TUS TABLAS YA EXISTEN, EJECUTA ESTO EN TU GESTOR SQL:
--- ALTER TABLE users ADD COLUMN user_status ENUM('active', 'suspended', 'deleted') DEFAULT 'active' AFTER role;
--- ALTER TABLE profile_changes_log MODIFY COLUMN change_type ENUM('avatar', 'username', 'email', 'password', '2fa') NOT NULL;
+-- Si actualizas tu BD local, ejecuta:
+-- DROP TABLE verification_codes;
+-- DROP TABLE rate_limits;

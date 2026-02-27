@@ -18,6 +18,7 @@ class SettingsController {
     public function delete_avatar() { return $this->settingsServices->deleteAvatar(); }
     public function update_username($input) { return $this->settingsServices->updateUsername($input); }
     public function request_email_code() { return $this->settingsServices->requestEmailCode(); }
+    public function resend_email_code() { return $this->settingsServices->resendEmailCode(); }
     public function verify_email_code($input) { return $this->settingsServices->verifyEmailCode($input); }
     public function update_email($input) { return $this->settingsServices->updateEmail($input); }
     public function update_preferences($input) { return $this->settingsServices->updatePreferences($input); }
