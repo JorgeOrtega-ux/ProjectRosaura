@@ -90,5 +90,10 @@ class UserRepository implements UserRepositoryInterface {
         $stmt = $this->pdo->prepare("UPDATE user_preferences SET {$key} = ? WHERE user_id = ?");
         return $stmt->execute([$value, $userId]);
     }
+
+    public function updateRole(int $id, string $role): bool {
+        $stmt = $this->pdo->prepare("UPDATE users SET role = ? WHERE id = ?");
+        return $stmt->execute([$role, $id]);
+    }
 }
 ?>

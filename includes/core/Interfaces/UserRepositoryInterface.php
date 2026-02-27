@@ -18,5 +18,6 @@ interface UserRepositoryInterface {
     public function update2FA(int $id, ?string $secret, int $enabled, ?string $recoveryCodes): bool;
     public function updateRecoveryCodes(int $id, string $recoveryCodes): bool;
     public function updatePreference(int $userId, string $key, $value): bool;
+    public function updateRole(int $id, string $role): bool;
 }
 ?>

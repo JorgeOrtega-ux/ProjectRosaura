@@ -21,8 +21,8 @@ export class AdminUsersController {
             const openSubMenuBtn = e.target.closest('[data-action="openFilterSubMenu"]');
             const backToMainFiltersBtn = e.target.closest('[data-action="backToMainFilters"]');
             
-            // NUEVO EVENTO PARA EL BOTÓN GESTIONAR CUENTA
             const editUserBtn = e.target.closest('[data-action="editSelectedUser"]');
+            const editRoleBtn = e.target.closest('[data-action="editSelectedUserRole"]');
             
             if (searchBtn) this.toggleSearchToolbar();
             if (toggleFiltersBtn) this.toggleFiltersModule();
@@ -41,6 +41,7 @@ export class AdminUsersController {
 
             if (deselectBtn) this.deselectUser();
             if (editUserBtn) this.editSelectedUser();
+            if (editRoleBtn) this.editSelectedUserRole();
         });
 
         // Eventos para filtros (Buscar y Checkboxes)
@@ -74,6 +75,15 @@ export class AdminUsersController {
             window.spaRouter.navigate(`/ProjectRosaura/admin/edit-user?id=${this.selectedUserId}`);
         } else {
             window.location.href = `/ProjectRosaura/admin/edit-user?id=${this.selectedUserId}`;
+        }
+    }
+
+    editSelectedUserRole() {
+        if (!this.selectedUserId) return;
+        if (window.spaRouter) {
+            window.spaRouter.navigate(`/ProjectRosaura/admin/edit-role?id=${this.selectedUserId}`);
+        } else {
+            window.location.href = `/ProjectRosaura/admin/edit-role?id=${this.selectedUserId}`;
         }
     }
 
@@ -111,7 +121,7 @@ export class AdminUsersController {
             window.appInstance.toggleModule('moduleUserFilters');
             const filtersModule = document.querySelector('[data-module="moduleUserFilters"]');
             if (filtersModule && !filtersModule.classList.contains('disabled')) {
-                this.backToMainFilters(); // Resetear el estado para que siempre abra en la vista principal
+                this.backToMainFilters(); 
             }
         }
     }
@@ -174,7 +184,6 @@ export class AdminUsersController {
         const searchInput = document.getElementById('user-search-input');
         const filtersModule = document.querySelector('[data-module="moduleUserFilters"]');
         
-        // Cerrar módulo de filtros al abrir el buscador
         if (filtersModule && !filtersModule.classList.contains('disabled')) {
             if (window.appInstance) window.appInstance.closeModule(filtersModule);
         }

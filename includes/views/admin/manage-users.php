@@ -217,7 +217,7 @@ $nextPageUrl = $page < $totalPages ? '/ProjectRosaura/admin/manage-users?page=' 
                         <button class="component-button component-button--icon component-button--h40" data-action="editSelectedUser" data-tooltip="Gestionar cuenta" data-position="bottom">
                             <span class="material-symbols-rounded">manage_accounts</span>
                         </button>
-                        <button class="component-button component-button--icon component-button--h40" data-tooltip="Gestionar rol" data-position="bottom">
+                        <button class="component-button component-button--icon component-button--h40" data-action="editSelectedUserRole" data-tooltip="Gestionar rol" data-position="bottom">
                             <span class="material-symbols-rounded">admin_panel_settings</span>
                         </button>
                         <button class="component-button component-button--icon component-button--h40" data-tooltip="Gestionar estado" data-position="bottom">

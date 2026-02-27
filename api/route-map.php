@@ -48,5 +48,6 @@ return [
     'admin.update_username'   => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'update_username'],
     'admin.update_email'      => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'update_email'],
     'admin.update_preference' => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'update_preference'],
+    'admin.update_role'       => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'update_role'],
 ];
 ?>

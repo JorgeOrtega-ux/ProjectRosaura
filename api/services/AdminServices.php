@@ -198,5 +198,31 @@ class AdminServices {
         }
         return ['success' => false, 'message' => 'Error al actualizar preferencia.'];
     }
+
+    public function updateRole($data) {
+        if (!$this->checkAdmin()) return ['success' => false, 'message' => 'No autorizado.'];
+
+        $targetId = (int)($data['target_user_id'] ?? 0);
+        $role = $data['role'] ?? '';
+
+        $validRoles = ['user', 'moderator', 'administrator', 'founder'];
+        if (!in_array($role, $validRoles)) {
+            return ['success' => false, 'message' => 'Rol no válido.'];
+        }
+
+        $user = $this->userRepository->findById($targetId);
+        if (!$user) return ['success' => false, 'message' => 'Usuario no encontrado.'];
+
+        $currentAdminRole = $this->sessionManager->get('user_role');
+        if ($user['role'] === 'founder' && $currentAdminRole !== 'founder') {
+            return ['success' => false, 'message' => 'No tienes permisos para modificar a un fundador.'];
+        }
+
+        if ($this->userRepository->updateRole($targetId, $role)) {
+            Logger::security("Admin " . $this->sessionManager->get('user_id') . " actualizó rol del usuario $targetId a $role", 'info');
+            return ['success' => true, 'message' => 'Rol actualizado exitosamente.', 'new_role' => $role];
+        }
+        return ['success' => false, 'message' => 'Error al actualizar el rol.'];
+    }
 }
 ?>
