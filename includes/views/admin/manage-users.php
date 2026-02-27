@@ -89,6 +89,20 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
         white-space: nowrap;
     }
 
+    /* === INDICADOR DE FILTROS ACTIVOS === */
+    .component-button.has-active-filter::after {
+        content: '';
+        position: absolute;
+        top: -2px;
+        right: -2px;
+        width: 10px;
+        height: 10px;
+        background-color: #111111;
+        border-radius: 50%;
+        border: 2px solid #ffffff;
+        box-sizing: border-box;
+    }
+
     /* === TOOLBAR SECUNDARIA === */
     .component-toolbar-secondary {
         display: none;
@@ -130,46 +144,141 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <div class="component-toolbar-title disabled" id="toolbar-dynamic-title">
                             <?php echo __('admin_users_title'); ?>
                         </div>
-                        <button class="component-button component-button--icon component-button--h40" data-action="searchUser" data-tooltip="Buscar" data-position="bottom">
+                        <button class="component-button component-button--icon component-button--h40" data-action="searchUser" id="btn-toggle-search" data-tooltip="Buscar" data-position="bottom" style="position: relative;">
                             <span class="material-symbols-rounded">search</span>
                         </button>
                         
                         <div class="component-dropdown-wrapper" style="max-width: fit-content;">
-                            <button class="component-button component-button--icon component-button--h40" data-action="toggleUserFilters" data-tooltip="Filtros" data-position="bottom">
+                            <button class="component-button component-button--icon component-button--h40" data-action="toggleUserFilters" id="btn-toggle-filters" data-tooltip="Filtros" data-position="bottom" style="position: relative;">
                                 <span class="material-symbols-rounded">tune</span>
                             </button>
                             
-                            <div class="component-module component-module--dropdown disabled" id="moduleUserFilters">
-                                <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding">
+                            <div class="component-module component-module--dropdown component-module--dropdown-left disabled" id="moduleUserFilters" style="top: calc(100% + 10px);">
+                                
+                                <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding active" id="menuMainFilters">
                                     <div class="pill-container"><div class="drag-handle"></div></div>
-                                    <div class="component-menu-header" style="padding: 12px; border-bottom: none;">
-                                        <span style="font-size: 15px; font-weight: 600; color: #111;">Filtros de búsqueda</span>
+                                    
+                                    <div class="component-menu-header" style="padding: 8px;">
+                                        <div style="padding: 8px 12px; border: 1px solid #00000020; border-radius: 8px; display: flex; align-items: center;">
+                                            <span style="font-size: 14px; font-weight: 600; color: #111;">Filtros de búsqueda</span>
+                                        </div>
                                     </div>
-                                    <div class="component-menu-list" style="padding: 0 12px 12px 12px; gap: 12px;">
+                                    
+                                    <div class="component-menu-list" style="padding: 8px; gap: 8px;">
+                                        <div class="component-menu-link component-menu-link--bordered" data-action="openFilterSubMenu" data-target="menuFilterRoles">
+                                            <div class="component-menu-link-icon">
+                                                <span class="material-symbols-rounded">admin_panel_settings</span>
+                                            </div>
+                                            <div class="component-menu-link-text">
+                                                <span>Rol de cuenta</span>
+                                            </div>
+                                            <div class="component-menu-link-icon">
+                                                <span class="material-symbols-rounded">chevron_right</span>
+                                            </div>
+                                        </div>
                                         
-                                        <div class="component-input-group component-input-group--h40">
-                                            <select id="filter-role" class="component-input-field" style="padding-top: 12px; padding-bottom: 0; cursor: pointer;">
-                                                <option value="all">Todos los roles</option>
-                                                <option value="founder">Fundador</option>
-                                                <option value="administrator">Administrador</option>
-                                                <option value="moderator">Moderador</option>
-                                                <option value="user">Usuario</option>
-                                            </select>
-                                            <label class="component-input-label" style="top: 8px; font-size: 11px; font-weight: 500; color: #111;">Rol de cuenta</label>
+                                        <div class="component-menu-link component-menu-link--bordered" data-action="openFilterSubMenu" data-target="menuFilterStatus">
+                                            <div class="component-menu-link-icon">
+                                                <span class="material-symbols-rounded">rule</span>
+                                            </div>
+                                            <div class="component-menu-link-text">
+                                                <span>Estado de cuenta</span>
+                                            </div>
+                                            <div class="component-menu-link-icon">
+                                                <span class="material-symbols-rounded">chevron_right</span>
+                                            </div>
                                         </div>
-
-                                        <div class="component-input-group component-input-group--h40">
-                                            <select id="filter-status" class="component-input-field" style="padding-top: 12px; padding-bottom: 0; cursor: pointer;">
-                                                <option value="all">Todos los estados</option>
-                                                <option value="active">Activo</option>
-                                                <option value="suspended">Suspendido</option>
-                                                <option value="deleted">Eliminado</option>
-                                            </select>
-                                            <label class="component-input-label" style="top: 8px; font-size: 11px; font-weight: 500; color: #111;">Estado</label>
-                                        </div>
-
                                     </div>
                                 </div>
+
+                                <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding disabled" id="menuFilterRoles">
+                                    <div class="pill-container"><div class="drag-handle"></div></div>
+                                    
+                                    <div class="component-menu-header" style="padding: 8px;">
+                                        <div style="padding: 8px 12px; border: 1px solid #00000020; border-radius: 8px; display: flex; align-items: center; gap: 8px;">
+                                            <button class="component-button component-button--icon component-button--h30" data-action="backToMainFilters" style="border: none; box-shadow: none; margin-left: -6px; background: transparent;">
+                                                <span class="material-symbols-rounded" style="font-size: 18px;">arrow_back</span>
+                                            </button>
+                                            <span style="font-size: 14px; font-weight: 600; color: #111;">Filtrar por Rol</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="component-menu-list component-menu-list--scrollable" style="padding: 8px; gap: 8px;">
+                                        <label class="component-menu-link component-menu-link--bordered">
+                                            <div class="component-menu-link-icon">
+                                                <input type="checkbox" class="filter-checkbox" data-filter-type="role" value="founder" checked>
+                                            </div>
+                                            <div class="component-menu-link-text">
+                                                <span>Fundador</span>
+                                            </div>
+                                        </label>
+                                        <label class="component-menu-link component-menu-link--bordered">
+                                            <div class="component-menu-link-icon">
+                                                <input type="checkbox" class="filter-checkbox" data-filter-type="role" value="administrator" checked>
+                                            </div>
+                                            <div class="component-menu-link-text">
+                                                <span>Administrador</span>
+                                            </div>
+                                        </label>
+                                        <label class="component-menu-link component-menu-link--bordered">
+                                            <div class="component-menu-link-icon">
+                                                <input type="checkbox" class="filter-checkbox" data-filter-type="role" value="moderator" checked>
+                                            </div>
+                                            <div class="component-menu-link-text">
+                                                <span>Moderador</span>
+                                            </div>
+                                        </label>
+                                        <label class="component-menu-link component-menu-link--bordered">
+                                            <div class="component-menu-link-icon">
+                                                <input type="checkbox" class="filter-checkbox" data-filter-type="role" value="user" checked>
+                                            </div>
+                                            <div class="component-menu-link-text">
+                                                <span>Usuario</span>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding disabled" id="menuFilterStatus">
+                                    <div class="pill-container"><div class="drag-handle"></div></div>
+                                    
+                                    <div class="component-menu-header" style="padding: 8px;">
+                                        <div style="padding: 8px 12px; border: 1px solid #00000020; border-radius: 8px; display: flex; align-items: center; gap: 8px;">
+                                            <button class="component-button component-button--icon component-button--h30" data-action="backToMainFilters" style="border: none; box-shadow: none; margin-left: -6px; background: transparent;">
+                                                <span class="material-symbols-rounded" style="font-size: 18px;">arrow_back</span>
+                                            </button>
+                                            <span style="font-size: 14px; font-weight: 600; color: #111;">Filtrar por Estado</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="component-menu-list component-menu-list--scrollable" style="padding: 8px; gap: 8px;">
+                                        <label class="component-menu-link component-menu-link--bordered">
+                                            <div class="component-menu-link-icon">
+                                                <input type="checkbox" class="filter-checkbox" data-filter-type="status" value="active" checked>
+                                            </div>
+                                            <div class="component-menu-link-text">
+                                                <span>Activo</span>
+                                            </div>
+                                        </label>
+                                        <label class="component-menu-link component-menu-link--bordered">
+                                            <div class="component-menu-link-icon">
+                                                <input type="checkbox" class="filter-checkbox" data-filter-type="status" value="suspended" checked>
+                                            </div>
+                                            <div class="component-menu-link-text">
+                                                <span>Suspendido</span>
+                                            </div>
+                                        </label>
+                                        <label class="component-menu-link component-menu-link--bordered">
+                                            <div class="component-menu-link-icon">
+                                                <input type="checkbox" class="filter-checkbox" data-filter-type="status" value="deleted" checked>
+                                            </div>
+                                            <div class="component-menu-link-text">
+                                                <span>Eliminado</span>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+
                             </div>
                         </div>
 

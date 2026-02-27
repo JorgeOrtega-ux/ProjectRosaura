@@ -18,10 +18,19 @@ export class AdminUsersController {
             const viewBtn = e.target.closest('[data-action="toggleViewMode"]');
             const selectTarget = e.target.closest('[data-action="selectUser"]');
             const deselectBtn = e.target.closest('[data-action="deselectUser"]');
+            const openSubMenuBtn = e.target.closest('[data-action="openFilterSubMenu"]');
+            const backToMainFiltersBtn = e.target.closest('[data-action="backToMainFilters"]');
             
             if (searchBtn) this.toggleSearchToolbar();
             if (toggleFiltersBtn) this.toggleFiltersModule();
             if (viewBtn) this.toggleViewMode(viewBtn);
+
+            if (openSubMenuBtn) this.openFilterSubMenu(openSubMenuBtn);
+            if (backToMainFiltersBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                this.backToMainFilters();
+            }
 
             if (selectTarget && !e.target.closest('button') && !e.target.closest('.component-dropdown-wrapper')) {
                 this.handleUserSelection(selectTarget);
@@ -34,17 +43,18 @@ export class AdminUsersController {
             if (filtersModule && !filtersModule.classList.contains('disabled')) {
                 if (!e.target.closest('#moduleUserFilters') && !e.target.closest('[data-action="toggleUserFilters"]')) {
                     filtersModule.classList.add('disabled');
+                    this.backToMainFilters(); // Resetear el estado para la próxima vez
                 }
             }
         });
 
-        // Eventos para filtros (Buscar y Selects)
+        // Eventos para filtros (Buscar y Checkboxes)
         document.addEventListener('input', (e) => {
             if (e.target && e.target.id === 'user-search-input') this.applyAllFilters();
         });
 
         document.addEventListener('change', (e) => {
-            if (e.target && (e.target.id === 'filter-role' || e.target.id === 'filter-status')) {
+            if (e.target && e.target.classList.contains('filter-checkbox')) {
                 this.applyAllFilters();
             }
         });
@@ -52,23 +62,53 @@ export class AdminUsersController {
         window.addEventListener('viewLoaded', (e) => {
             if (e.detail.url.includes('/admin/manage-users')) {
                 const searchInput = document.getElementById('user-search-input');
-                const roleSelect = document.getElementById('filter-role');
-                const statusSelect = document.getElementById('filter-status');
-                
                 if (searchInput) searchInput.value = '';
-                if (roleSelect) roleSelect.value = 'all';
-                if (statusSelect) statusSelect.value = 'all';
                 
+                document.querySelectorAll('.filter-checkbox').forEach(cb => cb.checked = true);
+                
+                this.backToMainFilters();
                 this.applyAllFilters();
                 this.deselectUser(); 
             }
         });
     }
 
+    openFilterSubMenu(btn) {
+        const targetId = btn.getAttribute('data-target');
+        const targetMenu = document.getElementById(targetId);
+        const mainFilters = document.getElementById('menuMainFilters');
+        
+        if (targetMenu && mainFilters) {
+            mainFilters.classList.add('disabled');
+            mainFilters.classList.remove('active');
+            
+            targetMenu.classList.remove('disabled');
+            targetMenu.classList.add('active');
+        }
+    }
+
+    backToMainFilters() {
+        const mainFilters = document.getElementById('menuMainFilters');
+        const subMenus = document.querySelectorAll('#moduleUserFilters .component-menu:not(#menuMainFilters)');
+        
+        if (mainFilters) {
+            subMenus.forEach(menu => {
+                menu.classList.add('disabled');
+                menu.classList.remove('active');
+            });
+            
+            mainFilters.classList.remove('disabled');
+            mainFilters.classList.add('active');
+        }
+    }
+
     toggleFiltersModule() {
         const filtersModule = document.getElementById('moduleUserFilters');
         if (filtersModule) {
             filtersModule.classList.toggle('disabled');
+            if (!filtersModule.classList.contains('disabled')) {
+                this.backToMainFilters(); // Asegurar que abra en el menú principal
+            }
         }
     }
 
@@ -182,12 +222,33 @@ export class AdminUsersController {
 
     applyAllFilters() {
         const queryInput = document.getElementById('user-search-input');
-        const roleSelect = document.getElementById('filter-role');
-        const statusSelect = document.getElementById('filter-status');
-        
         const query = (queryInput ? queryInput.value : '').toLowerCase().trim();
-        const role = roleSelect ? roleSelect.value : 'all';
-        const status = statusSelect ? statusSelect.value : 'all';
+        
+        const roleCheckboxes = Array.from(document.querySelectorAll('.filter-checkbox[data-filter-type="role"]'));
+        const statusCheckboxes = Array.from(document.querySelectorAll('.filter-checkbox[data-filter-type="status"]'));
+        
+        const checkedRoles = roleCheckboxes.filter(cb => cb.checked).map(cb => cb.value);
+        const checkedStatuses = statusCheckboxes.filter(cb => cb.checked).map(cb => cb.value);
+
+        // --- ACTUALIZAR INDICADORES DE ESTADO ACTIVO EN TOOLBAR ---
+        const searchBtn = document.getElementById('btn-toggle-search');
+        if (searchBtn) {
+            if (query.length > 0) searchBtn.classList.add('has-active-filter');
+            else searchBtn.classList.remove('has-active-filter');
+        }
+
+        const filtersBtn = document.getElementById('btn-toggle-filters');
+        if (filtersBtn) {
+            // Si hay algun checkbox desmarcado, significa que hay un filtro activo limitando resultados
+            const hasRoleFilter = checkedRoles.length < roleCheckboxes.length;
+            const hasStatusFilter = checkedStatuses.length < statusCheckboxes.length;
+            if (hasRoleFilter || hasStatusFilter) {
+                filtersBtn.classList.add('has-active-filter');
+            } else {
+                filtersBtn.classList.remove('has-active-filter');
+            }
+        }
+        // ------------------------------------------------------------
 
         const processContainer = (containerId, emptyId) => {
             const container = document.getElementById(containerId);
@@ -205,8 +266,8 @@ export class AdminUsersController {
                     .join(' ');
                 
                 const matchesSearch = textContent.includes(query);
-                const matchesRole = (role === 'all' || itemRole === role);
-                const matchesStatus = (status === 'all' || itemStatus === status);
+                const matchesRole = checkedRoles.includes(itemRole);
+                const matchesStatus = checkedStatuses.includes(itemStatus);
 
                 if (matchesSearch && matchesRole && matchesStatus) {
                     item.style.display = '';
@@ -218,7 +279,6 @@ export class AdminUsersController {
 
             const emptyElement = document.getElementById(emptyId);
             if (emptyElement) {
-                // Como es una tabla usamos table-row, para cards usamos block
                 const displayType = emptyId === 'empty-search-table' ? 'table-row' : 'block';
                 emptyElement.style.display = (visibleCount === 0 && items.length > 0) ? displayType : 'none';
             }
