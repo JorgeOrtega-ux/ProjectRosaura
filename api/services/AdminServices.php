@@ -9,23 +9,27 @@ use App\Core\Interfaces\UserRepositoryInterface;
 use App\Core\Interfaces\SessionManagerInterface;
 use App\Core\Interfaces\ServerConfigRepositoryInterface;
 use App\Core\Interfaces\UserPrefsManagerInterface;
+use App\Core\Interfaces\TokenRepositoryInterface;
 
 class AdminServices {
     private $userRepository;
     private $sessionManager;
     private $config;
     private $prefsManager;
+    private $tokenRepository;
 
     public function __construct(
         UserRepositoryInterface $userRepository,
         SessionManagerInterface $sessionManager,
         ServerConfigRepositoryInterface $configRepository,
-        UserPrefsManagerInterface $prefsManager
+        UserPrefsManagerInterface $prefsManager,
+        TokenRepositoryInterface $tokenRepository
     ) {
         $this->userRepository = $userRepository;
         $this->sessionManager = $sessionManager;
         $this->config = $configRepository->getConfig();
         $this->prefsManager = $prefsManager;
+        $this->tokenRepository = $tokenRepository;
     }
 
     private function checkAdmin() {
@@ -68,10 +72,6 @@ class AdminServices {
         $user = $this->userRepository->findById($targetId);
         
         if (!$user) return ['success' => false, 'message' => 'Usuario no encontrado.'];
-        
-        // Nota: NO bloqueamos con canEditUser() aquí para permitir que el Frontend
-        // cargue la vista y aplique las clases de 'disabled-interaction'.
-        // La protección real está en los métodos de actualización (Update).
 
         $userPrefs = $this->prefsManager->ensureDefaultPreferences($targetId);
 
@@ -82,7 +82,17 @@ class AdminServices {
                 'username' => $user['username'],
                 'email' => $user['email'],
                 'profile_picture' => $user['profile_picture'],
-                'role' => $user['role']
+                'role' => $user['role'],
+                
+                // Columnas independientes
+                'user_status' => $user['user_status'],
+                'deleted_by' => $user['deleted_by'],
+                'deleted_reason' => $user['deleted_reason'],
+                
+                'is_suspended' => $user['is_suspended'],
+                'suspension_type' => $user['suspension_type'],
+                'suspension_reason' => $user['suspension_reason'],
+                'suspension_end_date' => $user['suspension_end_date']
             ],
             'preferences' => $userPrefs
         ];
@@ -234,7 +244,6 @@ class AdminServices {
             return ['success' => false, 'message' => 'Rol no válido.'];
         }
 
-        // --- REGLA ESTRICTA 1: NADIE PUEDE ASIGNAR EL ROL FOUNDER DESDE LA WEB ---
         if ($role === 'founder') {
             Logger::security("Intento bloqueado de asignar rol Founder a través de API web.", 'critical');
             return ['success' => false, 'message' => 'El rol de Fundador no puede ser asignado desde la interfaz web. Contacta al administrador de la base de datos.'];
@@ -243,19 +252,16 @@ class AdminServices {
         $user = $this->userRepository->findById($targetId);
         if (!$user) return ['success' => false, 'message' => 'Usuario no encontrado.'];
 
-        // --- REGLA ESTRICTA 2: NADIE PUEDE MODIFICAR EL ROL DE UN FOUNDER ACTUAL ---
         if ($user['role'] === 'founder') {
             Logger::security("Intento bloqueado de modificar a un Fundador (Target ID: {$targetId}).", 'critical');
             return ['success' => false, 'message' => 'No es posible modificar el rol de un Fundador desde la plataforma.'];
         }
 
-        // 3. Validar Jerarquía Normal
         $authCheck = $this->canEditUser($user);
         if (!$authCheck['allowed']) {
             return ['success' => false, 'message' => $authCheck['message']];
         }
 
-        // 4. Validar Escalada de Privilegios (Admins no pueden subir a otros a Admin)
         $currentUserRole = $this->sessionManager->get('user_role');
         $currentWeight = $this->getRoleWeight($currentUserRole);
         $newRoleWeight = $this->getRoleWeight($role);
@@ -264,7 +270,6 @@ class AdminServices {
             return ['success' => false, 'message' => 'No puedes asignar un rol que sea de un nivel jerárquico igual o superior al tuyo.'];
         }
 
-        // 5. Verificación de Contraseña del administrador que realiza la acción
         $currentUserId = $this->sessionManager->get('user_id');
         $adminData = $this->userRepository->findById($currentUserId);
 
@@ -279,6 +284,72 @@ class AdminServices {
         }
         
         return ['success' => false, 'message' => 'Error al actualizar el rol en la base de datos.'];
+    }
+
+    public function updateStatus($data) {
+        if (!$this->checkAdmin()) return ['success' => false, 'message' => 'No autorizado.'];
+
+        $targetId = (int)($data['target_user_id'] ?? 0);
+        $password = $data['password'] ?? '';
+        
+        $user = $this->userRepository->findById($targetId);
+        if (!$user) return ['success' => false, 'message' => 'Usuario no encontrado.'];
+
+        if ($user['role'] === 'founder') {
+            Logger::security("Intento bloqueado de modificar estado de un Fundador (Target ID: {$targetId}).", 'critical');
+            return ['success' => false, 'message' => 'No es posible modificar el estado de un Fundador desde la plataforma.'];
+        }
+
+        $authCheck = $this->canEditUser($user);
+        if (!$authCheck['allowed']) {
+            return ['success' => false, 'message' => $authCheck['message']];
+        }
+
+        $currentUserId = $this->sessionManager->get('user_id');
+        $adminData = $this->userRepository->findById($currentUserId);
+
+        if (!$adminData || !password_verify($password, $adminData['password'])) {
+            Logger::security("Fallo de cambio de estado: Contraseña incorrecta por el Admin ID: $currentUserId", 'warning');
+            return ['success' => false, 'message' => 'Contraseña incorrecta. Acción denegada.'];
+        }
+
+        // LÓGICA DE SEPARACIÓN ABSOLUTA: 
+        // Eliminación y Suspensión se tratan como variables diferentes.
+
+        $dbStatus = ($data['status'] === 'deleted') ? 'deleted' : 'active';
+        $dbDeletedBy = null;
+        $dbDeletedReason = null;
+
+        if ($dbStatus === 'deleted') {
+            $dbDeletedBy = ($data['deleted_by'] === 'user') ? 'user' : 'admin';
+            $dbDeletedReason = ($data['deleted_by'] === 'user') ? ($data['deleted_reason_user'] ?? null) : ($data['deleted_reason_admin'] ?? null);
+        }
+
+        $dbIsSuspended = (isset($data['is_suspended']) && $data['is_suspended'] == 1) ? 1 : 0;
+        $dbSuspensionType = null;
+        $dbSuspensionReason = null;
+        $dbEndDate = null;
+
+        if ($dbIsSuspended === 1) {
+            $dbSuspensionType = ($data['suspension_type'] === 'temporary') ? 'temporary' : 'permanent';
+            $dbSuspensionReason = $data['suspension_reason'] ?? null;
+            if ($dbSuspensionType === 'temporary' && !empty($data['end_date'])) {
+                $dbEndDate = $data['end_date'];
+            }
+        }
+
+        if ($this->userRepository->updateStatus($targetId, $dbStatus, $dbDeletedBy, $dbDeletedReason, $dbIsSuspended, $dbSuspensionType, $dbSuspensionReason, $dbEndDate)) {
+            Logger::security("Admin ID: $currentUserId actualizó restricciones/estado del usuario $targetId", 'warning');
+            
+            // Si lo acaban de eliminar O lo acaban de suspender, forzar cierre de sesiones
+            if ($dbStatus === 'deleted' || $dbIsSuspended === 1) {
+                $this->tokenRepository->deleteAllByUserId($targetId);
+            }
+
+            return ['success' => true, 'message' => 'Las configuraciones de acceso han sido guardadas.'];
+        }
+        
+        return ['success' => false, 'message' => 'Error al guardar los cambios en la base de datos.'];
     }
 }
 ?>

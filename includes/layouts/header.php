@@ -24,6 +24,9 @@ $userPic = $_SESSION['user_pic'] ?? '';
         '/admin': "<?php echo __('route_admin_dashboard'); ?>",
         '/admin/dashboard': "<?php echo __('route_admin_dashboard'); ?>",
         '/admin/manage-users': "<?php echo __('route_admin_users'); ?>",
+        '/admin/edit-user': "Gestionar Cuenta",
+        '/admin/edit-role': "Gestionar Rol",
+        '/admin/edit-status': "Gestionar Estado",
         '/admin/backups': "<?php echo __('route_admin_backups'); ?>",
         '/admin/server-config': "<?php echo __('route_admin_server'); ?>"
     };

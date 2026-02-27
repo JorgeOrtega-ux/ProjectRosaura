@@ -5,8 +5,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 use App\Config\Database;
 use PDO;
 
-// --- LÓGICA DE PAGINACIÓN ---
-$limit = 1; // Solo cargar 25 usuarios por página
+$limit = 25; 
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 if ($page < 1) $page = 1;
 $offset = ($page - 1) * $limit;
@@ -14,7 +13,6 @@ $offset = ($page - 1) * $limit;
 $db = new Database();
 $pdo = $db->getConnection();
 
-// 1. Obtener el total de registros para calcular las páginas
 $stmtCount = $pdo->query("SELECT COUNT(*) FROM users");
 $totalUsers = (int)$stmtCount->fetchColumn();
 
@@ -25,11 +23,9 @@ if ($page > $totalPages) {
     $offset = ($page - 1) * $limit;
 }
 
-// 2. Obtener solo los usuarios de la página actual
-$stmt = $pdo->query("SELECT id, uuid, username, email, role, user_status, profile_picture, created_at FROM users ORDER BY id DESC LIMIT $limit OFFSET $offset");
+$stmt = $pdo->query("SELECT id, uuid, username, email, role, user_status, is_suspended, profile_picture, created_at FROM users ORDER BY id DESC LIMIT $limit OFFSET $offset");
 $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// URLs para el SPA Router
 $prevPageUrl = $page > 1 ? '/ProjectRosaura/admin/manage-users?page=' . ($page - 1) : '#';
 $nextPageUrl = $page < $totalPages ? '/ProjectRosaura/admin/manage-users?page=' . ($page + 1) : '#';
 ?>
@@ -188,23 +184,23 @@ $nextPageUrl = $page < $totalPages ? '/ProjectRosaura/admin/manage-users?page=' 
                         
                        <div class="component-inline-control" data-tooltip="Página <?php echo $page; ?> de <?php echo $totalPages; ?>" data-position="bottom">
     
-    <div class="component-inline-control__group">
-        <button class="component-inline-control__btn <?php echo $page <= 1 ? 'disabled-interaction' : ''; ?>" <?php echo $page > 1 ? 'data-nav="'.$prevPageUrl.'"' : ''; ?>>
-            <span class="material-symbols-rounded">chevron_left</span>
-        </button>
-    </div>
-    
-    <div class="component-inline-control__center">
-        <?php echo $page; ?>
-    </div>
-    
-    <div class="component-inline-control__group">
-        <button class="component-inline-control__btn <?php echo $page >= $totalPages ? 'disabled-interaction' : ''; ?>" <?php echo $page < $totalPages ? 'data-nav="'.$nextPageUrl.'"' : ''; ?>>
-            <span class="material-symbols-rounded">chevron_right</span>
-        </button>
-    </div>
-    
-</div>
+                            <div class="component-inline-control__group">
+                                <button class="component-inline-control__btn <?php echo $page <= 1 ? 'disabled-interaction' : ''; ?>" <?php echo $page > 1 ? 'data-nav="'.$prevPageUrl.'"' : ''; ?>>
+                                    <span class="material-symbols-rounded">chevron_left</span>
+                                </button>
+                            </div>
+                            
+                            <div class="component-inline-control__center">
+                                <?php echo $page; ?>
+                            </div>
+                            
+                            <div class="component-inline-control__group">
+                                <button class="component-inline-control__btn <?php echo $page >= $totalPages ? 'disabled-interaction' : ''; ?>" <?php echo $page < $totalPages ? 'data-nav="'.$nextPageUrl.'"' : ''; ?>>
+                                    <span class="material-symbols-rounded">chevron_right</span>
+                                </button>
+                            </div>
+                            
+                        </div>
 
                         <button class="component-button component-button--icon component-button--h40" data-action="toggleViewMode" data-tooltip="Cambiar vista" data-position="bottom">
                             <span class="material-symbols-rounded">table_rows</span>
@@ -220,7 +216,7 @@ $nextPageUrl = $page < $totalPages ? '/ProjectRosaura/admin/manage-users?page=' 
                         <button class="component-button component-button--icon component-button--h40" data-action="editSelectedUserRole" data-tooltip="Gestionar rol" data-position="bottom">
                             <span class="material-symbols-rounded">admin_panel_settings</span>
                         </button>
-                        <button class="component-button component-button--icon component-button--h40" data-tooltip="Gestionar estado" data-position="bottom">
+                        <button class="component-button component-button--icon component-button--h40" data-action="editSelectedUserStatus" data-tooltip="Gestionar estado" data-position="bottom">
                             <span class="material-symbols-rounded">rule</span>
                         </button>
                     </div>
@@ -253,7 +249,12 @@ $nextPageUrl = $page < $totalPages ? '/ProjectRosaura/admin/manage-users?page=' 
         <div class="component-list active" id="view-cards">
             <?php if ($users): ?>
                 <?php foreach ($users as $user): ?>
-                    <div class="component-item-card user-card-item" data-action="selectUser" data-user-id="<?php echo htmlspecialchars($user['id']); ?>" data-role="<?php echo htmlspecialchars($user['role']); ?>" data-status="<?php echo htmlspecialchars($user['user_status']); ?>">
+                    <?php 
+                        $dataStatus = $user['user_status'] === 'deleted' ? 'deleted' : ($user['is_suspended'] ? 'suspended' : 'active');
+                        $displayStatus = $user['user_status'] === 'deleted' ? 'Eliminado' : ($user['is_suspended'] ? 'Suspendido' : 'Activo');
+                        $statusIcon = $user['user_status'] === 'deleted' ? 'person_off' : ($user['is_suspended'] ? 'block' : 'check_circle');
+                    ?>
+                    <div class="component-item-card user-card-item" data-action="selectUser" data-user-id="<?php echo htmlspecialchars($user['id']); ?>" data-role="<?php echo htmlspecialchars($user['role']); ?>" data-status="<?php echo htmlspecialchars($dataStatus); ?>">
                         <div class="component-badge-list">
                             <div class="component-button--profile role-<?php echo htmlspecialchars($user['role']); ?>" style="margin: 0; cursor: default;">
                                 <img src="/ProjectRosaura/<?php echo htmlspecialchars($user['profile_picture']); ?>" alt="Avatar">
@@ -276,9 +277,9 @@ $nextPageUrl = $page < $totalPages ? '/ProjectRosaura/admin/manage-users?page=' 
 
                             <div class="component-badge">
                                 <span class="material-symbols-rounded">
-                                    <?php echo $user['user_status'] === 'active' ? 'check_circle' : 'cancel'; ?>
+                                    <?php echo $statusIcon; ?>
                                 </span>
-                                <span class="search-target"><?php echo ucfirst(htmlspecialchars($user['user_status'])); ?></span>
+                                <span class="search-target"><?php echo $displayStatus; ?></span>
                             </div>
 
                             <div class="component-badge">
@@ -322,7 +323,12 @@ $nextPageUrl = $page < $totalPages ? '/ProjectRosaura/admin/manage-users?page=' 
                 <tbody>
                     <?php if ($users): ?>
                         <?php foreach ($users as $user): ?>
-                            <tr class="user-card-item" data-action="selectUser" data-user-id="<?php echo htmlspecialchars($user['id']); ?>" data-role="<?php echo htmlspecialchars($user['role']); ?>" data-status="<?php echo htmlspecialchars($user['user_status']); ?>">
+                            <?php 
+                                $dataStatus = $user['user_status'] === 'deleted' ? 'deleted' : ($user['is_suspended'] ? 'suspended' : 'active');
+                                $displayStatus = $user['user_status'] === 'deleted' ? 'Eliminado' : ($user['is_suspended'] ? 'Suspendido' : 'Activo');
+                                $statusIcon = $user['user_status'] === 'deleted' ? 'person_off' : ($user['is_suspended'] ? 'block' : 'check_circle');
+                            ?>
+                            <tr class="user-card-item" data-action="selectUser" data-user-id="<?php echo htmlspecialchars($user['id']); ?>" data-role="<?php echo htmlspecialchars($user['role']); ?>" data-status="<?php echo htmlspecialchars($dataStatus); ?>">
                                 <td>
                                     <div class="td-user-info">
                                         <div class="component-button--profile role-<?php echo htmlspecialchars($user['role']); ?>" style="margin: 0; cursor: default; width: 30px; height: 30px;">
@@ -349,9 +355,9 @@ $nextPageUrl = $page < $totalPages ? '/ProjectRosaura/admin/manage-users?page=' 
                                 <td>
                                     <div class="component-badge" style="padding: 4px 10px; font-size: 12px;">
                                         <span class="material-symbols-rounded" style="font-size: 14px;">
-                                            <?php echo $user['user_status'] === 'active' ? 'check_circle' : 'cancel'; ?>
+                                            <?php echo $statusIcon; ?>
                                         </span>
-                                        <span class="search-target"><?php echo ucfirst(htmlspecialchars($user['user_status'])); ?></span>
+                                        <span class="search-target"><?php echo $displayStatus; ?></span>
                                     </div>
                                 </td>
                                 <td>

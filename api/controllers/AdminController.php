@@ -20,5 +20,6 @@ class AdminController {
     public function update_email($input) { return $this->adminServices->updateEmail($input); }
     public function update_preference($input) { return $this->adminServices->updatePreference($input); }
     public function update_role($input) { return $this->adminServices->updateRole($input); }
+    public function update_status($input) { return $this->adminServices->updateStatus($input); }
 }
 ?>

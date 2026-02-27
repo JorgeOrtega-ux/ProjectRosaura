@@ -5,7 +5,8 @@ import { AuthController } from './auth-controller.js';
 import { ProfileController } from './profile-controller.js';
 import { AdminUsersController } from './admin-users-controller.js';
 import { AdminUserEditController } from './admin-user-edit-controller.js'; 
-import { AdminRoleEditController } from './admin-role-edit-controller.js'; // <-- NUEVO
+import { AdminRoleEditController } from './admin-role-edit-controller.js';
+import { AdminStatusEditController } from './admin-status-edit-controller.js';
 import { DialogSystem } from './core/dialog-system.js';
 import { TooltipSystem } from './core/tooltip-system.js';
 
@@ -26,23 +27,25 @@ document.addEventListener('DOMContentLoaded', () => {
     // 4. Instanciamos la lógica del Admin Users
     const adminUsers = new AdminUsersController();
 
-    // 5. Instanciamos el controlador para Edición de Usuario como Admin
+    // 5. Instanciamos controladores de Edición como Admin
     const adminUserEdit = new AdminUserEditController(); 
     adminUserEdit.init();
 
-    // 6. Instanciamos el controlador para Edición de Rol como Admin
-    const adminRoleEdit = new AdminRoleEditController(); // <-- NUEVO
+    const adminRoleEdit = new AdminRoleEditController(); 
     adminRoleEdit.init();
 
-    // 7. Instanciamos el Sistema de Diálogos y lo guardamos global
+    const adminStatusEdit = new AdminStatusEditController();
+    adminStatusEdit.init();
+
+    // 6. Instanciamos el Sistema de Diálogos y lo guardamos global
     window.dialogSystem = new DialogSystem();
 
-    // 8. Instanciamos el Router SPA
+    // 7. Instanciamos el Router SPA
     window.spaRouter = new SpaRouter({
         outlet: '#app-router-outlet'
     });
 
-    // 9. Instanciamos e inicializamos el Sistema de Tooltips
+    // 8. Instanciamos e inicializamos el Sistema de Tooltips
     window.tooltipSystem = new TooltipSystem();
     window.tooltipSystem.init();
 });

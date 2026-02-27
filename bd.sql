@@ -12,7 +12,12 @@ CREATE TABLE `users` (
   `two_factor_enabled` tinyint(1) DEFAULT 0,
   `two_factor_recovery_codes` text DEFAULT NULL,
   `role` enum('user','moderator','administrator','founder') DEFAULT 'user',
-  `user_status` enum('active','suspended','deleted') DEFAULT 'active',
+  `user_status` enum('active','deleted') DEFAULT 'active',
+  `is_suspended` tinyint(1) DEFAULT 0,
+  `suspension_type` enum('temporary','permanent') DEFAULT NULL,
+  `status_action_by` enum('user','admin') DEFAULT NULL,
+  `status_reason` text DEFAULT NULL,
+  `suspension_end_date` datetime DEFAULT NULL,
   `profile_picture` varchar(255) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
@@ -80,7 +85,3 @@ CREATE TABLE IF NOT EXISTS server_config (
 
 INSERT INTO server_config (id) 
 SELECT 1 WHERE NOT EXISTS (SELECT * FROM server_config);
-
--- Si actualizas tu BD local, ejecuta:
--- DROP TABLE verification_codes;
--- DROP TABLE rate_limits;

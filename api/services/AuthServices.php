@@ -24,7 +24,6 @@ class AuthServices {
     private $verificationCodeRepository;
     private $config; 
 
-    // 100% CLEAN ARCHITECTURE: Ninguna dependencia de base de datos relacional
     public function __construct(
         RateLimiterInterface $rateLimiter, 
         UserPrefsManagerInterface $prefsManager,
@@ -103,11 +102,24 @@ class AuthServices {
                 $user = $this->userRepository->findById($token['user_id']);
 
                 if ($user) {
-                    if ($user['user_status'] !== 'active') {
-                        Logger::security("Intento de autologin en cuenta inactiva (Estado: {$user['user_status']})", 'warning', ['user_id' => $user['id'], 'ip' => Utils::getIpAddress()]);
+                    if ($user['user_status'] === 'deleted') {
+                        Logger::security("Intento de autologin en cuenta eliminada.", 'warning', ['user_id' => $user['id'], 'ip' => Utils::getIpAddress()]);
                         $this->tokenRepository->deleteAllByUserId($user['id']);
                         $this->clearRememberToken();
                         return false;
+                    }
+
+                    if ($user['is_suspended'] == 1) {
+                        if ($user['suspension_type'] === 'temporary' && $user['suspension_end_date'] && strtotime($user['suspension_end_date']) <= time()) {
+                            // Expira la suspensión automáticamente SIN alterar el user_status (active/deleted)
+                            $this->userRepository->liftSuspension($user['id']);
+                            $user['is_suspended'] = 0;
+                        } else {
+                            Logger::security("Intento de autologin en cuenta suspendida.", 'warning', ['user_id' => $user['id'], 'ip' => Utils::getIpAddress()]);
+                            $this->tokenRepository->deleteAllByUserId($user['id']);
+                            $this->clearRememberToken();
+                            return false;
+                        }
                     }
                     
                     $this->sessionManager->regenerate(true);
@@ -317,9 +329,16 @@ class AuthServices {
         if ($user && password_verify($password, $user['password'])) {
             $this->rateLimiter->clear('login');
             
-            // SE AÑADIÓ LA CLAVE STATUS PARA QUE EL FRONTEND NAVEGUE A MESSAGE.PHP
             if ($user['user_status'] === 'deleted') return ['success' => false, 'status' => 'deleted', 'message' => 'Cuenta eliminada.'];
-            if ($user['user_status'] === 'suspended') return ['success' => false, 'status' => 'suspended', 'message' => 'Cuenta suspendida.'];
+            
+            if ($user['is_suspended'] == 1) {
+                if ($user['suspension_type'] === 'temporary' && $user['suspension_end_date'] && strtotime($user['suspension_end_date']) <= time()) {
+                    $this->userRepository->liftSuspension($user['id']);
+                    $user['is_suspended'] = 0;
+                } else {
+                    return ['success' => false, 'status' => 'suspended', 'message' => 'Cuenta suspendida.'];
+                }
+            }
             
             if (!empty($user['two_factor_enabled'])) {
                 $this->sessionManager->set('pending_2fa_user_id', $user['id']);
@@ -367,9 +386,9 @@ class AuthServices {
 
         $user = $this->userRepository->findById($userId);
 
-        if (!$user || empty($user['two_factor_enabled']) || $user['user_status'] !== 'active') {
+        if (!$user || empty($user['two_factor_enabled']) || $user['user_status'] === 'deleted' || $user['is_suspended'] == 1) {
             $this->rateLimiter->record('login_2fa', $attempts, $minutes);
-            return ['success' => false, 'message' => 'Error de validación.'];
+            return ['success' => false, 'message' => 'Error de validación de estado de cuenta.'];
         }
 
         $isValid = false;
@@ -435,9 +454,9 @@ class AuthServices {
 
         $user = $this->userRepository->findByEmail($email);
 
-        if (!$user || $user['user_status'] !== 'active') {
+        if (!$user || $user['user_status'] === 'deleted' || $user['is_suspended'] == 1) {
             $this->rateLimiter->record('forgot_password', $attempts, $minutes);
-            return ['success' => false, 'message' => 'Cuenta no existe o está inactiva.'];
+            return ['success' => false, 'message' => 'Cuenta no existe o está suspendida.'];
         }
 
         $lastCode = $this->verificationCodeRepository->findLatestValidByIdentifierAndType($email, 'password_reset');

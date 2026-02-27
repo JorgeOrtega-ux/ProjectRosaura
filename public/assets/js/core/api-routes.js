@@ -39,6 +39,7 @@ export const ApiRoutes = {
         UpdateUsername: 'admin.update_username',
         UpdateEmail: 'admin.update_email',
         UpdatePreference: 'admin.update_preference',
-        UpdateRole: 'admin.update_role'
+        UpdateRole: 'admin.update_role',
+        UpdateStatus: 'admin.update_status'
     }
 };

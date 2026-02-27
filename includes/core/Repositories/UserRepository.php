@@ -35,7 +35,7 @@ class UserRepository implements UserRepositoryInterface {
     }
 
     public function createUser(array $data): int {
-        $stmt = $this->pdo->prepare("INSERT INTO users (uuid, username, email, password, role, user_status, profile_picture) VALUES (?, ?, ?, ?, 'user', 'active', ?)");
+        $stmt = $this->pdo->prepare("INSERT INTO users (uuid, username, email, password, role, user_status, is_suspended, profile_picture) VALUES (?, ?, ?, ?, 'user', 'active', 0, ?)");
         $stmt->execute([
             $data['uuid'], 
             $data['username'], 
@@ -46,12 +46,24 @@ class UserRepository implements UserRepositoryInterface {
         return (int) $this->pdo->lastInsertId();
     }
 
-    public function updateStatus(int $id, string $status): bool {
-        $stmt = $this->pdo->prepare("UPDATE users SET user_status = ? WHERE id = ?");
-        return $stmt->execute([$status, $id]);
+    public function updateStatus(int $id, string $status, ?string $deletedBy, ?string $deletedReason, int $isSuspended, ?string $suspensionType, ?string $suspensionReason, ?string $endDate): bool {
+        $stmt = $this->pdo->prepare("
+            UPDATE users 
+            SET user_status = ?, deleted_by = ?, deleted_reason = ?, 
+                is_suspended = ?, suspension_type = ?, suspension_reason = ?, suspension_end_date = ? 
+            WHERE id = ?
+        ");
+        return $stmt->execute([$status, $deletedBy, $deletedReason, $isSuspended, $suspensionType, $suspensionReason, $endDate, $id]);
     }
 
-    // --- NUEVOS MÉTODOS DE MUTACIÓN ---
+    public function liftSuspension(int $id): bool {
+        $stmt = $this->pdo->prepare("
+            UPDATE users 
+            SET is_suspended = 0, suspension_type = NULL, suspension_reason = NULL, suspension_end_date = NULL 
+            WHERE id = ?
+        ");
+        return $stmt->execute([$id]);
+    }
 
     public function updateAvatar(int $id, string $path): bool {
         $stmt = $this->pdo->prepare("UPDATE users SET profile_picture = ? WHERE id = ?");

@@ -173,7 +173,6 @@ class SettingsServices
             return ['success' => false, 'message' => $rateCheck['message']];
         }
 
-        // Consultamos si ya existe un código y cuánto tiempo ha pasado
         $lastCode = $this->verificationCodeRepository->findLatestValidByIdentifierAndType($email, 'email_update');
         if ($lastCode) {
             $elapsed = (int)($lastCode['seconds_elapsed'] ?? 0);
@@ -210,7 +209,6 @@ class SettingsServices
             return ['success' => false, 'message' => "Por favor, espera {$timeLeft} segundos antes de solicitar otro código.", 'cooldown' => $timeLeft];
         }
 
-        // Eliminamos el código anterior
         $this->verificationCodeRepository->deleteByIdentifierAndType($email, 'email_update');
 
         $code = Utils::generateNumericCode(12);
@@ -385,10 +383,20 @@ class SettingsServices
         $user = $this->userRepository->findById($userId);
 
         if ($user && password_verify(trim($data['password'] ?? ''), $user['password'])) {
-            if ($this->userRepository->updateStatus($userId, 'deleted')) {
+            // Pasamos los 8 argumentos requeridos a updateStatus. Mantenemos intactos los de suspensión.
+            if ($this->userRepository->updateStatus(
+                $userId, 
+                'deleted', 
+                'user', 
+                'Eliminada por el propio usuario desde la configuración.', 
+                (int)($user['is_suspended'] ?? 0), 
+                $user['suspension_type'] ?? null, 
+                $user['suspension_reason'] ?? null, 
+                $user['suspension_end_date'] ?? null
+            )) {
                 $this->tokenRepository->deleteAllByUserId($userId);
                 if (isset($_COOKIE['remember_token'])) setcookie('remember_token', '', ['expires' => time() - 3600, 'path' => '/ProjectRosaura/']);
-                Logger::security("Cuenta de usuario marcada como eliminada", 'warning', ['user_id' => $userId, 'ip' => Utils::getIpAddress()]);
+                Logger::security("Cuenta de usuario eliminada por si mismo", 'warning', ['user_id' => $userId, 'ip' => Utils::getIpAddress()]);
 
                 $this->sessionManager->destroy();
                 return ['success' => true, 'message' => 'Tu cuenta ha sido eliminada.'];

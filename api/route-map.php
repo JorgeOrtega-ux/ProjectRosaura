@@ -41,7 +41,7 @@ return [
     'settings.revoke_device'     => ['controller' => 'App\Api\Controllers\SettingsController', 'action' => 'revoke_device'],
     'settings.revoke_all_devices'=> ['controller' => 'App\Api\Controllers\SettingsController', 'action' => 'revoke_all_devices'],
 
-    // --- RUTAS ADMINISTRADOR (Gestión de cuentas directas) ---
+    // --- RUTAS ADMINISTRADOR ---
     'admin.get_user'          => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'get_user'],
     'admin.update_avatar'     => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'update_avatar'],
     'admin.delete_avatar'     => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'delete_avatar'],
@@ -49,5 +49,6 @@ return [
     'admin.update_email'      => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'update_email'],
     'admin.update_preference' => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'update_preference'],
     'admin.update_role'       => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'update_role'],
+    'admin.update_status'     => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'update_status'],
 ];
 ?>

@@ -23,6 +23,7 @@ export class AdminUsersController {
             
             const editUserBtn = e.target.closest('[data-action="editSelectedUser"]');
             const editRoleBtn = e.target.closest('[data-action="editSelectedUserRole"]');
+            const editStatusBtn = e.target.closest('[data-action="editSelectedUserStatus"]');
             
             if (searchBtn) this.toggleSearchToolbar();
             if (toggleFiltersBtn) this.toggleFiltersModule();
@@ -42,6 +43,7 @@ export class AdminUsersController {
             if (deselectBtn) this.deselectUser();
             if (editUserBtn) this.editSelectedUser();
             if (editRoleBtn) this.editSelectedUserRole();
+            if (editStatusBtn) this.editSelectedUserStatus();
         });
 
         // Eventos para filtros (Buscar y Checkboxes)
@@ -84,6 +86,15 @@ export class AdminUsersController {
             window.spaRouter.navigate(`/ProjectRosaura/admin/edit-role?id=${this.selectedUserId}`);
         } else {
             window.location.href = `/ProjectRosaura/admin/edit-role?id=${this.selectedUserId}`;
+        }
+    }
+
+    editSelectedUserStatus() {
+        if (!this.selectedUserId) return;
+        if (window.spaRouter) {
+            window.spaRouter.navigate(`/ProjectRosaura/admin/edit-status?id=${this.selectedUserId}`);
+        } else {
+            window.location.href = `/ProjectRosaura/admin/edit-status?id=${this.selectedUserId}`;
         }
     }
 

@@ -8,9 +8,13 @@ interface UserRepositoryInterface {
     public function findByEmail(string $email): ?array;
     public function findByUsername(string $username): ?array;
     public function createUser(array $data): int;
-    public function updateStatus(int $id, string $status): bool;
     
-    // Nuevas firmas para operaciones que mutan el perfil del usuario
+    // Firma actualizada para soportar columnas independientes
+    public function updateStatus(int $id, string $status, ?string $deletedBy, ?string $deletedReason, int $isSuspended, ?string $suspensionType, ?string $suspensionReason, ?string $endDate): bool;
+    
+    // Nuevo método para expirar suspensiones automáticamente sin afectar si la cuenta está eliminada
+    public function liftSuspension(int $id): bool;
+
     public function updateAvatar(int $id, string $path): bool;
     public function updateUsername(int $id, string $username): bool;
     public function updateEmail(int $id, string $email): bool;
