@@ -238,7 +238,7 @@ export class MainController {
         }
 
         const toast = document.createElement('div');
-        toast.className = `component-toast component-toast--${type}`;
+        toast.className = 'component-toast';
         let iconName = type === 'success' ? 'check_circle' : 'error';
         toast.innerHTML = `<div class="component-toast-icon"><span class="material-symbols-rounded">${iconName}</span></div><div class="component-toast-text">${message}</div>`;
 
