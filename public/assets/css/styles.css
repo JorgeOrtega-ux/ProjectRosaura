@@ -27,7 +27,7 @@ body,html {
     width: 100%;
     height: 100%;
     padding: 12px;
-    background-color: #f5f5fa;
+    background-color: var(--bg-app);
 }
 
 .general-content {
@@ -35,21 +35,39 @@ body,html {
     height: 100%;
     display: flex;
     flex-direction: column;
-    background-color: #ffffff;
+    background-color: var(--bg-surface);
     border-radius: 12px;
+    
+    /* Por defecto (Modo Claro): Sombra suave sin borde */
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+    border: none;
+}
+
+/* Override para Modo Oscuro: Borde #ffffff20 y sin sombra */
+html[data-theme="dark"] .general-content,
+html.dark-theme .general-content {
+    box-shadow: none;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+@media (prefers-color-scheme: dark) {
+    html:not([data-theme="light"]):not(.light-theme) .general-content {
+        box-shadow: none;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+    }
 }
 
 .general-content-top {
     width: 100%;
     height: auto;
     padding: 8px;
-    border-bottom: 1px solid #00000020;
+    border-bottom: 1px solid var(--border-color);
     position: relative;
     z-index: 10;
     transition: border-bottom-color 0.3s ease;
 }
 
-/* --- Estado Active (Shadow del Header al hacer scroll) --- */
+/* --- Estado Active (Shadow del Header al hacer scroll en Modo Claro) --- */
 .general-content-top::after {
     content: '';
     position: absolute;
@@ -57,7 +75,7 @@ body,html {
     left: 0;
     width: 100%;
     height: 16px;
-    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.06), transparent);
+    background: linear-gradient(to bottom, var(--border-lighter), transparent);
     opacity: 0;
     transition: opacity 0.3s ease;
     pointer-events: none;
@@ -71,8 +89,24 @@ body,html {
     opacity: 1;
 }
 
-.general-content-top.disabled {
+/* Override para Modo Oscuro: Desactivar sombra de scroll y mantener borde */
+html[data-theme="dark"] .general-content-top::after,
+html.dark-theme .general-content-top::after {
     display: none;
+}
+
+html[data-theme="dark"] .general-content-top.shadow,
+html.dark-theme .general-content-top.shadow {
+    border-bottom-color: var(--border-color);
+}
+
+@media (prefers-color-scheme: dark) {
+    html:not([data-theme="light"]):not(.light-theme) .general-content-top::after {
+        display: none;
+    }
+    html:not([data-theme="light"]):not(.light-theme) .general-content-top.shadow {
+        border-bottom-color: var(--border-color);
+    }
 }
 
 .general-content-bottom {
@@ -89,6 +123,7 @@ body,html {
     height: 100%;
     overflow-y: auto;
     scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
 
 /* ========================================= */
@@ -143,6 +178,7 @@ body,html {
 
     .general-content {
         border-radius: 0;
+        border: none !important; /* Forzar que en móvil pegue a los bordes de la pantalla */
     }
 
     .header {
@@ -185,15 +221,15 @@ body,html {
     font-size: 24px;
     font-weight: 600;
     margin-bottom: 8px;
-    color: #111111;
+    color: var(--text-primary);
 }
 
 .settings-desc {
-    color: #666666;
+    color: var(--text-secondary);
     font-size: 15px;
 }
 
-/* Aseguramos que los elementos .disabled verdaderamente se oculten, inclusive si un componente (ej. button) fuerza su display inline/flex */
+/* Aseguramos que los elementos .disabled verdaderamente se oculten */
 .disabled {
     display: none !important;
 }

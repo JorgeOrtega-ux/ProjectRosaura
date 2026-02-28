@@ -13,6 +13,7 @@ global $serverConfig; // Rescatamos la config generada en bootstrap.php
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded" />
     <link rel="stylesheet" type="text/css" href="assets/css/styles.css">
     <link rel="stylesheet" type="text/css" href="assets/css/components/components.css">
+    <link rel="stylesheet" type="text/css" href="assets/css/root.css">
     <title>Project Rosaura</title>
     
     <script>
