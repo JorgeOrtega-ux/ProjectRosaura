@@ -21,5 +21,9 @@ class AdminController {
     public function update_preference($input) { return $this->adminServices->updatePreference($input); }
     public function update_role($input) { return $this->adminServices->updateRole($input); }
     public function update_status($input) { return $this->adminServices->updateStatus($input); }
+    
+    // --- NUEVAS ACCIONES PARA KARDEX ---
+    public function get_moderation_kardex($input) { return $this->adminServices->getModerationKardex($input); }
+    public function add_admin_note($input) { return $this->adminServices->addAdminNote($input); }
 }
 ?>

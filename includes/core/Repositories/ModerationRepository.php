@@ -45,5 +45,19 @@ class ModerationRepository implements ModerationRepositoryInterface {
         ");
         return $stmt->execute([$userId, $adminId, $actionType, $reason, $endDate, $adminNotes]);
     }
+
+    public function getKardex(int $userId): array {
+        $stmt = $this->pdo->prepare("
+            SELECT 
+                m.id, m.action_type, m.reason, m.end_date, m.admin_notes, m.created_at,
+                u.username as admin_username, u.profile_picture as admin_profile_picture, u.role as admin_role
+            FROM moderation_logs m
+            LEFT JOIN users u ON m.admin_id = u.id
+            WHERE m.user_id = ?
+            ORDER BY m.created_at DESC
+        ");
+        $stmt->execute([$userId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }
 ?>

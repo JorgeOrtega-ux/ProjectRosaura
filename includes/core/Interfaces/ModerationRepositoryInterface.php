@@ -13,5 +13,10 @@ interface ModerationRepositoryInterface {
      * Registra una acción de moderación en el historial inmutable (Kardex).
      */
     public function logAction(int $userId, ?int $adminId, string $actionType, ?string $reason, ?string $endDate, ?string $adminNotes = null): bool;
+
+    /**
+     * Obtiene el historial inmutable de moderación (Kardex) de un usuario.
+     */
+    public function getKardex(int $userId): array;
 }
 ?>

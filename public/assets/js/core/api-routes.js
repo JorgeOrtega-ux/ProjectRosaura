@@ -40,6 +40,8 @@ export const ApiRoutes = {
         UpdateEmail: 'admin.update_email',
         UpdatePreference: 'admin.update_preference',
         UpdateRole: 'admin.update_role',
-        UpdateStatus: 'admin.update_status'
+        UpdateStatus: 'admin.update_status',
+        GetModerationKardex: 'admin.get_moderation_kardex', // NUEVO
+        AddAdminNote: 'admin.add_admin_note'                // NUEVO
     }
 };

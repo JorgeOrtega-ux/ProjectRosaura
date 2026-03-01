@@ -42,13 +42,15 @@ return [
     'settings.revoke_all_devices'=> ['controller' => 'App\Api\Controllers\SettingsController', 'action' => 'revoke_all_devices'],
 
     // --- RUTAS ADMINISTRADOR ---
-    'admin.get_user'          => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'get_user'],
-    'admin.update_avatar'     => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'update_avatar'],
-    'admin.delete_avatar'     => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'delete_avatar'],
-    'admin.update_username'   => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'update_username'],
-    'admin.update_email'      => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'update_email'],
-    'admin.update_preference' => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'update_preference'],
-    'admin.update_role'       => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'update_role'],
-    'admin.update_status'     => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'update_status'],
+    'admin.get_user'              => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'get_user'],
+    'admin.update_avatar'         => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'update_avatar'],
+    'admin.delete_avatar'         => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'delete_avatar'],
+    'admin.update_username'       => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'update_username'],
+    'admin.update_email'          => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'update_email'],
+    'admin.update_preference'     => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'update_preference'],
+    'admin.update_role'           => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'update_role'],
+    'admin.update_status'         => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'update_status'],
+    'admin.get_moderation_kardex' => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'get_moderation_kardex'],
+    'admin.add_admin_note'        => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'add_admin_note'],
 ];
 ?>

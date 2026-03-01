@@ -386,9 +386,11 @@ class AdminServices {
         // Ejecutar Update con el nuevo repositorio de Moderación
         if ($this->moderationRepository->updateStatus($targetId, $dbStatus, $dbDeletedBy, $dbDeletedReason, $dbIsSuspended, $dbSuspensionType, $dbSuspensionReason, $dbEndDate, $dbAdminNotes)) {
             
-            // Guardar Log Inmutable en el historial
-            $this->moderationRepository->logAction($targetId, $currentUserId, $actionType, $logReason, $dbEndDate, $dbAdminNotes);
-            Logger::security("Admin ID: $currentUserId actualizó restricciones/estado del usuario $targetId", 'critical');
+            // Guardar Log Inmutable en el historial si hubo cambio relevante
+            if ($actionType !== 'note_updated') {
+                $this->moderationRepository->logAction($targetId, $currentUserId, $actionType, $logReason, $dbEndDate, null);
+                Logger::security("Admin ID: $currentUserId actualizó restricciones/estado del usuario $targetId", 'critical');
+            }
             
             if ($dbStatus === 'deleted' || $dbIsSuspended === 1) {
                 // Cerrar todas las sesiones
@@ -407,6 +409,50 @@ class AdminServices {
         }
         
         return ['success' => false, 'message' => 'Error al guardar los cambios en la base de datos.'];
+    }
+
+    // --- NUEVAS FUNCIONES DE KARDEX ---
+
+    public function getModerationKardex($data) {
+        if (!$this->checkAdmin()) return ['success' => false, 'message' => 'No autorizado.'];
+        
+        $targetId = (int)($data['target_user_id'] ?? 0);
+        
+        $user = $this->userRepository->findById($targetId);
+        if (!$user) return ['success' => false, 'message' => 'Usuario no encontrado.'];
+
+        $logs = $this->moderationRepository->getKardex($targetId);
+
+        return [
+            'success' => true,
+            'logs' => $logs
+        ];
+    }
+
+    public function addAdminNote($data) {
+        if (!$this->checkAdmin()) return ['success' => false, 'message' => 'No autorizado.'];
+        
+        $targetId = (int)($data['target_user_id'] ?? 0);
+        $note = trim($data['note'] ?? '');
+        
+        if (empty($note)) {
+            return ['success' => false, 'message' => 'La nota no puede estar vacía.'];
+        }
+
+        $user = $this->userRepository->findById($targetId);
+        if (!$user) return ['success' => false, 'message' => 'Usuario no encontrado.'];
+
+        $authCheck = $this->canEditUser($user);
+        if (!$authCheck['allowed']) return ['success' => false, 'message' => $authCheck['message']];
+
+        $currentUserId = $this->sessionManager->get('user_id');
+
+        if ($this->moderationRepository->logAction($targetId, $currentUserId, 'note_updated', null, null, $note)) {
+            Logger::security("Admin ID: $currentUserId agregó una nota al Kardex del usuario $targetId", 'info');
+            return ['success' => true, 'message' => 'Nota administrativa agregada correctamente.'];
+        }
+
+        return ['success' => false, 'message' => 'Ocurrió un error al guardar la nota.'];
     }
 }
 ?>

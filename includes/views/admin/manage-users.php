@@ -23,7 +23,15 @@ if ($page > $totalPages) {
     $offset = ($page - 1) * $limit;
 }
 
-$stmt = $pdo->query("SELECT id, uuid, username, email, role, user_status, is_suspended, profile_picture, created_at FROM users ORDER BY id DESC LIMIT $limit OFFSET $offset");
+// === CONSULTA CORREGIDA CON LEFT JOIN PARA OBTENER is_suspended ===
+$stmt = $pdo->query("
+    SELECT u.id, u.uuid, u.username, u.email, u.role, u.user_status, 
+           ur.is_suspended, u.profile_picture, u.created_at 
+    FROM users u
+    LEFT JOIN user_restrictions ur ON u.id = ur.user_id
+    ORDER BY u.id DESC 
+    LIMIT $limit OFFSET $offset
+");
 $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $prevPageUrl = $page > 1 ? '/ProjectRosaura/admin/manage-users?page=' . ($page - 1) : '#';

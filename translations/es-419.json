@@ -145,5 +145,13 @@
     "btn_back_login": "Volver a Iniciar sesión",
     "require_2fa_title": "Autenticación requerida",
     "require_2fa_desc": "Para acceder a esta sección, necesitas tener activada la Autenticación de Dos Factores (2FA) en tu cuenta por motivos de seguridad.",
-    "btn_configure_2fa": "Configurar 2FA"
+    "btn_configure_2fa": "Configurar 2FA",
+    "admin_status_tab_config": "Configurar estado",
+    "admin_status_tab_kardex": "Kardex y Notas",
+    "admin_kardex_title": "Kardex de Moderación",
+    "admin_kardex_desc": "Historial inmutable de cambios de estado y notas administrativas.",
+    "admin_kardex_add_title": "Agregar nota administrativa",
+    "admin_kardex_add_desc": "Añade contexto adicional, enlaces a evidencias o reportes. Esta nota no modificará el estado actual de la cuenta.",
+    "btn_add_note": "Guardar nota",
+    "admin_kardex_empty": "No hay registros ni notas en el historial de este usuario."
 }
