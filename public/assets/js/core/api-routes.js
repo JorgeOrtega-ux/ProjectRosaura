@@ -41,7 +41,9 @@ export const ApiRoutes = {
         UpdatePreference: 'admin.update_preference',
         UpdateRole: 'admin.update_role',
         UpdateStatus: 'admin.update_status',
-        GetModerationKardex: 'admin.get_moderation_kardex', // NUEVO
-        AddAdminNote: 'admin.add_admin_note'                // NUEVO
+        GetModerationKardex: 'admin.get_moderation_kardex',
+        AddAdminNote: 'admin.add_admin_note',
+        GetServerConfig: 'admin.get_server_config',
+        UpdateServerConfig: 'admin.update_server_config'
     }
 };

@@ -9,5 +9,12 @@ interface ServerConfigRepositoryInterface {
      * @return array
      */
     public function getConfig(): array;
+
+    /**
+     * Actualiza múltiples valores de la configuración del servidor.
+     * @param array $data
+     * @return bool
+     */
+    public function updateConfig(array $data): bool;
 }
 ?>

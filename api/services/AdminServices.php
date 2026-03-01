@@ -18,6 +18,7 @@ class AdminServices {
     private $userRepository;
     private $moderationRepository;
     private $sessionManager;
+    private $configRepository;
     private $config;
     private $prefsManager;
     private $tokenRepository;
@@ -35,6 +36,7 @@ class AdminServices {
         $this->userRepository = $userRepository;
         $this->moderationRepository = $moderationRepository;
         $this->sessionManager = $sessionManager;
+        $this->configRepository = $configRepository;
         $this->config = $configRepository->getConfig();
         $this->prefsManager = $prefsManager;
         $this->tokenRepository = $tokenRepository;
@@ -376,7 +378,6 @@ class AdminServices {
             return ['success' => false, 'message' => 'Contraseña incorrecta. Acción denegada.'];
         }
 
-        // --- 1. SANITIZACIÓN ESTRICTA PARA EVITAR XSS ---
         $sanitizeText = function($text) {
             if (empty($text)) return null;
             $clean = strip_tags($text);
@@ -391,11 +392,8 @@ class AdminServices {
         if ($dbStatus === 'deleted') {
             $dbDeletedBy = ($data['deleted_by'] === 'user') ? 'user' : 'admin';
             $rawDeletedReason = ($data['deleted_by'] === 'user') ? ($data['deleted_reason_user'] ?? null) : ($data['deleted_reason_admin'] ?? null);
-            
-            // Sanitizar la variable recibida
             $dbDeletedReason = $sanitizeText($rawDeletedReason);
 
-            // --- 2. VALIDACIÓN DE LÍMITE DE CARACTERES ---
             if ($dbDeletedReason && mb_strlen($dbDeletedReason) > 500) {
                 return ['success' => false, 'message' => 'El motivo de eliminación no puede exceder los 500 caracteres.'];
             }
@@ -410,18 +408,14 @@ class AdminServices {
 
         if ($dbIsSuspended === 1) {
             $dbSuspensionType = ($data['suspension_type'] === 'temporary') ? 'temporary' : 'permanent';
-            
             $rawSuspensionReason = $data['suspension_reason'] ?? null;
-            // Sanitizar la variable recibida
             $dbSuspensionReason = $sanitizeText($rawSuspensionReason);
 
-            // --- 2. VALIDACIÓN DE LÍMITE DE CARACTERES ---
             if ($dbSuspensionReason && mb_strlen($dbSuspensionReason) > 500) {
                 return ['success' => false, 'message' => 'El motivo de suspensión no puede exceder los 500 caracteres.'];
             }
             
             if ($dbSuspensionType === 'temporary' && !empty($data['end_date'])) {
-                // --- 3. VERIFICACIÓN ESTRICTA DEL FORMATO DE FECHA ---
                 $format = 'Y-m-d H:i:s';
                 $d = \DateTime::createFromFormat($format, $data['end_date']);
                 
@@ -501,20 +495,15 @@ class AdminServices {
         if (!$this->checkAdmin()) return ['success' => false, 'message' => 'No autorizado.'];
         
         $targetId = (int)($data['target_user_id'] ?? 0);
-        
-        // --- 1. SANITIZACIÓN ULTRA ESTRICTA ---
         $rawNote = $data['note'] ?? '';
         
-        // Remover cualquier etiqueta HTML o PHP inyectada
         $cleanNote = strip_tags($rawNote);
-        // Convertir caracteres especiales (como comillas, '&') en entidades seguras
         $cleanNote = htmlspecialchars(trim($cleanNote), ENT_QUOTES, 'UTF-8');
         
         if (empty($cleanNote)) {
             return ['success' => false, 'message' => 'La nota no puede estar vacía o contener código no válido.'];
         }
 
-        // --- 2. VALIDACIÓN DE LONGITUD MÁXIMA ---
         if (mb_strlen($cleanNote) > 1000) {
             return ['success' => false, 'message' => 'La nota no puede exceder los 1000 caracteres.'];
         }
@@ -536,6 +525,61 @@ class AdminServices {
         }
 
         return ['success' => false, 'message' => 'Ocurrió un error al guardar la nota.'];
+    }
+
+    // --- NUEVAS FUNCIONES PARA SERVER CONFIG ---
+    
+    public function getServerConfig() {
+        if (!$this->checkAdmin()) return ['success' => false, 'message' => 'No autorizado.'];
+        
+        // Obtenemos la configuración fresca desde el repositorio (DB)
+        $freshConfig = $this->configRepository->getConfig();
+        return ['success' => true, 'config' => $freshConfig];
+    }
+
+    public function updateServerConfig($data) {
+        if (!$this->checkAdmin()) return ['success' => false, 'message' => 'No autorizado.'];
+
+        $password = $data['password'] ?? '';
+        $currentUserId = $this->sessionManager->get('user_id');
+        $adminData = $this->userRepository->findById($currentUserId);
+
+        if (!$adminData || !password_verify($password, $adminData['password'])) {
+            Logger::security("Fallo en configuración del servidor: Contraseña de admin incorrecta por el Admin ID: $currentUserId", 'warning');
+            return ['success' => false, 'message' => 'Contraseña incorrecta. Acción denegada.'];
+        }
+
+        $allowedFields = [
+            'min_password_length', 'max_password_length', 'min_username_length', 'max_username_length', 'max_avatar_size_mb',
+            'username_change_cooldown_days', 'username_change_max_attempts', 'email_change_cooldown_days', 'email_change_max_attempts',
+            'avatar_change_cooldown_days', 'avatar_change_max_attempts', 'login_rate_limit_attempts', 'login_rate_limit_minutes',
+            'forgot_password_rate_limit_attempts', 'forgot_password_rate_limit_minutes', 'admin_edit_avatar_attempts', 'admin_edit_avatar_minutes',
+            'admin_edit_username_attempts', 'admin_edit_username_minutes', 'admin_edit_email_attempts', 'admin_edit_email_minutes',
+            'admin_edit_prefs_attempts', 'admin_edit_prefs_minutes', 'admin_edit_role_attempts', 'admin_edit_role_minutes',
+            'admin_edit_status_attempts', 'admin_edit_status_minutes', 'admin_add_note_attempts', 'admin_add_note_minutes'
+        ];
+
+        $updateData = [];
+        if (isset($data['config']) && is_array($data['config'])) {
+            foreach ($allowedFields as $field) {
+                if (isset($data['config'][$field])) {
+                    $val = (int)$data['config'][$field];
+                    if ($val < 0) $val = 0; // Prevent negative values
+                    $updateData[$field] = $val;
+                }
+            }
+        }
+
+        if (empty($updateData)) {
+            return ['success' => false, 'message' => 'No se enviaron datos válidos para actualizar.'];
+        }
+
+        if ($this->configRepository->updateConfig($updateData)) {
+            Logger::security("Admin ID: $currentUserId actualizó la configuración global del servidor.", 'critical');
+            return ['success' => true, 'message' => 'Configuración actualizada exitosamente.'];
+        }
+
+        return ['success' => false, 'message' => 'Error al guardar en la base de datos.'];
     }
 }
 ?>

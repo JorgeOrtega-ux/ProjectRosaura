@@ -62,5 +62,22 @@ class ServerConfigRepository implements ServerConfigRepositoryInterface {
         
         return $config;
     }
+
+    public function updateConfig(array $data): bool {
+        $fields = [];
+        $values = [];
+        
+        foreach ($data as $key => $val) {
+            $fields[] = "$key = ?";
+            $values[] = (int)$val;
+        }
+
+        if (empty($fields)) return true;
+
+        $sql = "UPDATE server_config SET " . implode(', ', $fields) . " WHERE id = 1";
+        $stmt = $this->pdo->prepare($sql);
+        
+        return $stmt->execute($values);
+    }
 }
 ?>

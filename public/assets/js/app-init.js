@@ -7,9 +7,10 @@ import { AdminUsersController } from './admin-users-controller.js';
 import { AdminUserEditController } from './admin-user-edit-controller.js'; 
 import { AdminRoleEditController } from './admin-role-edit-controller.js';
 import { AdminStatusEditController } from './admin-status-edit-controller.js';
+import { AdminServerConfigController } from './admin-server-config-controller.js';
 import { DialogSystem } from './core/dialog-system.js';
 import { TooltipSystem } from './core/tooltip-system.js';
-import { CalendarSystem } from './core/calendar-system.js'; // <- IMPORTAR CALENDARIO
+import { CalendarSystem } from './core/calendar-system.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Instanciamos lógica UI base
@@ -37,6 +38,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const adminStatusEdit = new AdminStatusEditController();
     adminStatusEdit.init();
+
+    const adminServerConfig = new AdminServerConfigController();
+    adminServerConfig.init();
 
     // 6. Instanciamos el Sistema de Diálogos y lo guardamos global
     window.dialogSystem = new DialogSystem();

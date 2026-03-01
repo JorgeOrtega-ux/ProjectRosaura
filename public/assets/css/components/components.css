@@ -1910,4 +1910,23 @@ textarea.component-input-field:focus {
    ya que el componente base general lo pone transparente */
 textarea.component-input-field::placeholder {
     color: var(--text-secondary);
+}/* Modificador de ancho fijo que ya agregaste */
+.component-inline-control--fixed {
+    width: 240px; 
+    max-width: 100%;
+}
+
+/* El contenedor principal debe ser flex (probablemente ya lo tengas así) */
+.component-inline-control {
+    display: flex;
+    align-items: center;
+    /* ... tus otros estilos ... */
+}
+
+/* Hacer que el centro ocupe el 100% del espacio disponible */
+.component-inline-control__center {
+    flex: 1; /* Esto es la clave para empujar los botones a los extremos */
+    text-align: center; /* Mantiene el número centrado en ese gran espacio */
+    
+    /* ... tus otros estilos (font-size, color, etc.) ... */
 }

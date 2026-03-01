@@ -52,5 +52,9 @@ return [
     'admin.update_status'         => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'update_status'],
     'admin.get_moderation_kardex' => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'get_moderation_kardex'],
     'admin.add_admin_note'        => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'add_admin_note'],
+    
+    // --- RUTAS DE CONFIGURACIÓN DEL SERVIDOR ---
+    'admin.get_server_config'     => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'get_server_config'],
+    'admin.update_server_config'  => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'update_server_config'],
 ];
 ?>
