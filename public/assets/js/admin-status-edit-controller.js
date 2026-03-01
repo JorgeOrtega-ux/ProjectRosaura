@@ -7,7 +7,7 @@ export class AdminStatusEditController {
         this.api = new ApiService();
         this.targetUserId = null;
         this.initialState = null; 
-        this.activeTab = 'view-status-config'; // Tab inicial
+        this.activeTab = 'view-status-config';
         
         this.state = {
             status: 'active',
@@ -176,7 +176,6 @@ export class AdminStatusEditController {
                 this.checkForChanges(); 
             }
 
-            // CONTADOR DE CARACTERES
             if (ref === 'inp_new_admin_note') {
                 const counter = document.querySelector('[data-ref="admin-note-counter"]');
                 if (counter) {
@@ -227,8 +226,16 @@ export class AdminStatusEditController {
         
         const viewConfig = document.querySelector('[data-ref="view-status-config"]');
         const viewKardex = document.querySelector('[data-ref="view-status-kardex"]');
-        if (viewConfig) viewConfig.classList.toggle('disabled', targetId !== 'view-status-config');
-        if (viewKardex) viewKardex.classList.toggle('disabled', targetId !== 'view-status-kardex');
+        
+        if (viewConfig) {
+            viewConfig.classList.toggle('disabled', targetId !== 'view-status-config');
+            viewConfig.classList.toggle('active', targetId === 'view-status-config');
+        }
+        
+        if (viewKardex) {
+            viewKardex.classList.toggle('disabled', targetId !== 'view-status-kardex');
+            viewKardex.classList.toggle('active', targetId === 'view-status-kardex');
+        }
         
         const title = document.querySelector('[data-ref="page-main-title"]');
         const desc = document.querySelector('[data-ref="page-main-desc"]');
@@ -256,14 +263,27 @@ export class AdminStatusEditController {
     }
 
     async loadUserData() {
-        const loader = document.querySelector('[data-ref="admin-status-loader"]');
         const form = document.querySelector('[data-ref="admin-status-form"]');
+        
+        // 1. Inyectar Loader Dinámico
+        if (form) {
+            let loader = document.createElement('div');
+            loader.id = 'dynamic-admin-status-loader';
+            loader.style.cssText = 'display: flex; justify-content: center; padding: 40px; width: 100%;';
+            loader.innerHTML = '<div class="component-spinner"></div>';
+            form.classList.add('disabled');
+            form.parentNode.insertBefore(loader, form);
+        }
         
         const passInput = document.querySelector('[data-ref="admin_status_confirm_password"]');
         if (passInput) passInput.value = '';
 
         const res = await this.api.post(ApiRoutes.Admin.GetUser, { target_user_id: this.targetUserId });
         
+        // 2. Destruir Loader Dinámico
+        const existingLoader = document.getElementById('dynamic-admin-status-loader');
+        if (existingLoader) existingLoader.remove();
+
         if (res.success) {
             const u = res.user;
 
@@ -272,12 +292,11 @@ export class AdminStatusEditController {
             const triggerSuspended = document.querySelector('[data-action="adminToggleModule"][data-target="adminModuleSuspended"]');
             const descSuspended = document.querySelector('[data-ref="admin-isSuspended-desc"]');
 
-            // Cero estilos inline para el mensaje de Fundador (dejando el HTML plano para que el CSS nativo de la app o sus clases base actúen)
             if (u.role === 'founder') {
                 if (triggerStatus) triggerStatus.classList.add('disabled-interaction');
-                if (descStatus) descStatus.innerHTML = 'Esta cuenta pertenece a un Fundador. Su estado no puede ser modificado por seguridad.';
+                if (descStatus) descStatus.innerHTML = '<span style="color: var(--color-error); font-weight: 600;">Esta cuenta pertenece a un Fundador. Su estado no puede ser modificado por seguridad.</span>';
                 if (triggerSuspended) triggerSuspended.classList.add('disabled-interaction');
-                if (descSuspended) descSuspended.innerHTML = 'Esta cuenta pertenece a un Fundador. No puede ser suspendida por seguridad.';
+                if (descSuspended) descSuspended.innerHTML = '<span style="color: var(--color-error); font-weight: 600;">Esta cuenta pertenece a un Fundador. No puede ser suspendida por seguridad.</span>';
             } else {
                 if (triggerStatus) triggerStatus.classList.remove('disabled-interaction');
                 if (descStatus) descStatus.textContent = 'Determina si la cuenta está en uso o eliminada permanentemente.';
@@ -344,7 +363,6 @@ export class AdminStatusEditController {
             this.initialState = JSON.parse(JSON.stringify(this.state)); 
             this.checkForChanges(); 
 
-            if (loader) loader.classList.add('disabled');
             if (form) form.classList.remove('disabled');
         } else {
             this.showMessage(res.message, 'error');
@@ -406,6 +424,7 @@ export class AdminStatusEditController {
         const secSuspDate = document.querySelector('[data-ref="section-suspended-date"]');
 
         const secNotifyUser = document.querySelector('[data-ref="section-notify-user"]');
+        const passArea = document.querySelector('[data-ref="admin-status-password-area"]');
         const warningBox = document.querySelector('[data-ref="admin-status-warning"]');
 
         [secDelDecision, secDelReasonAdmin, secDelCustomAdmin, secDelReasonUser, 
@@ -536,7 +555,7 @@ export class AdminStatusEditController {
         const container = document.querySelector('[data-ref="kardex-list-container"]');
         if (!container) return;
         
-        container.innerHTML = '<div class="component-spinner"></div>';
+        container.innerHTML = '<div class="component-spinner" style="margin: 0 auto;"></div>';
         
         const res = await this.api.post(ApiRoutes.Admin.GetModerationKardex, { target_user_id: this.targetUserId });
         
@@ -584,34 +603,39 @@ export class AdminStatusEditController {
             }
 
             let extraInfo = '';
-            // HTML plano sin los estilos inline solicitados
-            if (log.reason) extraInfo += `<p><b>Motivo:</b> ${log.reason}</p>`;
-            if (log.end_date) extraInfo += `<p>Expira: ${new Date(log.end_date).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' })}</p>`;
-            if (log.admin_notes) extraInfo += `<div>${log.admin_notes}</div>`;
+            if (log.reason) extraInfo += `<p class="component-card__description"><strong>Motivo:</strong> ${log.reason}</p>`;
+            if (log.end_date) extraInfo += `<p class="component-card__description"><strong>Expira:</strong> ${new Date(log.end_date).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' })}</p>`;
+            if (log.admin_notes) extraInfo += `<p class="component-card__description"><strong>Notas:</strong> ${log.admin_notes}</p>`;
 
-            // HTML principal renderizado limpiamente sin estilos inline
             div.innerHTML = `
-                <div class="component-group-item component-group-item--stacked">
-                    <div>
-                        <div>
-                            <div class="component-button--profile component-avatar--static-sm role-${log.admin_role || 'user'}">
-                                <img src="${adminPic}" alt="Admin">
-                            </div>
-                            <div>
-                                <div>${adminName}</div>
-                                <div>${dateStr}</div>
-                            </div>
+                <div class="component-group-item component-group-item--wrap">
+                    <div class="component-card__content">
+                        <div class="component-button--profile component-avatar--static role-${log.admin_role || 'user'}">
+                            <img src="${adminPic}" alt="Admin">
                         </div>
-                        <div class="component-badge component-badge--sm">
+                        <div class="component-card__text">
+                            <h2 class="component-card__title">${adminName}</h2>
+                            <p class="component-card__description">${dateStr}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="component-card__actions component-card__actions--end">
+                        <div class="component-badge">
                             <span class="material-symbols-rounded">${actionIcon}</span>
                             <span>${actionText}</span>
                         </div>
                     </div>
-                    
-                    <div class="component-card__text">
-                        ${extraInfo}
+                </div>
+                ${extraInfo ? `
+                <hr class="component-divider">
+                <div class="component-group-item component-group-item--stacked">
+                    <div class="component-card__content component-card__content--full">
+                        <div class="component-card__text">
+                            ${extraInfo}
+                        </div>
                     </div>
                 </div>
+                ` : ''}
             `;
             container.appendChild(div);
         });

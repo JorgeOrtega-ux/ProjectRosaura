@@ -31,13 +31,10 @@ if (session_status() === PHP_SESSION_NONE) session_start();
             <p class="component-page-description" data-ref="page-main-desc">Administra el ciclo de vida y bloqueos independientes de la cuenta.</p>
         </div>
 
-        <div data-ref="admin-status-loader">
-            <div class="component-spinner"></div>
-        </div>
-
         <div class="disabled" data-ref="admin-status-form">
             
-            <div data-ref="view-status-config">
+            <div class="component-setup-container active" data-ref="view-status-config">
+                
                 <div class="component-card--grouped">
                     
                     <div class="component-group-item component-group-item--stacked">
@@ -177,7 +174,6 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             </div>
                         </div>
                     </div>
-
                 </div>
 
                 <div class="component-card--grouped">
@@ -235,7 +231,6 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                         <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding">
                                             <div class="pill-container"><div class="drag-handle"></div></div>
                                             <div class="component-menu-list component-menu-list--scrollable">
-                                                
                                                 <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionReason" data-value="Incumplimiento de los Términos y Condiciones">
                                                     <div class="component-menu-link-text"><span>Incumplimiento de los Términos y Condiciones</span></div>
                                                     <div><span class="component-badge component-badge--sm">7 días</span></div>
@@ -279,179 +274,6 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                                 <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionReason" data-value="Otro">
                                                     <div class="component-menu-link-text"><span>Otro</span></div>
                                                 </div>
-
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="disabled" data-ref="section-suspended-custom-reason">
-                            <hr class="component-divider">
-                            <div class="component-group-item component-group-item--stacked">
-                                <div class="component-card__content component-card__content--full">
-                                    <div class="component-card__text">
-                                        <h2 class="component-card__title">Especificar otro motivo (Suspensión)</h2>
-                                        <div class="component-card__form-area">
-                                            <textarea class="component-input-field" data-ref="inp_custom_suspension_reason" placeholder="Escribe la razón detallada para el usuario..."></textarea>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="disabled" data-ref="section-suspended-type">
-                            <hr class="component-divider">
-                            <div class="component-group-item component-group-item--stacked">
-                                <div class="component-card__content">
-                                    <div class="component-card__text">
-                                        <h2 class="component-card__title">Tipo de Suspensión</h2>
-                                        <p class="component-card__description">Establece si el bloqueo tiene una duración definida o es de carácter definitivo.</p>
-                                    </div>
-                                </div>
-                                <div class="component-card__actions component-card__actions--start">
-                                    <div class="component-dropdown-wrapper">
-                                        <div class="component-dropdown-trigger" data-action="adminToggleModule" data-target="adminModuleSuspendedType">
-                                            <span class="material-symbols-rounded">hourglass_empty</span>
-                                            <span class="component-dropdown-text" data-ref="admin-suspendedType-text">Cargando...</span>
-                                            <span class="material-symbols-rounded">expand_more</span>
-                                        </div>
-                                        <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="adminModuleSuspendedType">
-                                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding">
-                                                <div class="pill-container"><div class="drag-handle"></div></div>
-                                                <div class="component-menu-list component-menu-list--scrollable">
-                                                    <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspendedType" data-value="temporary">
-                                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">timer</span></div>
-                                                        <div class="component-menu-link-text"><span>Suspensión temporal</span></div>
-                                                    </div>
-                                                    <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspendedType" data-value="permanent">
-                                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">lock_clock</span></div>
-                                                        <div class="component-menu-link-text"><span>Suspensión permanente</span></div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="disabled" data-ref="section-suspended-duration">
-                            <hr class="component-divider">
-                            <div class="component-group-item component-group-item--stacked">
-                                <div class="component-card__content">
-                                    <div class="component-card__text">
-                                        <h2 class="component-card__title">Duración de la suspensión</h2>
-                                        <p class="component-card__description">Selecciona el tiempo que durará el bloqueo de la cuenta.</p>
-                                    </div>
-                                </div>
-                                <div class="component-card__actions component-card__actions--start">
-                                    <div class="component-dropdown-wrapper">
-                                        <div class="component-dropdown-trigger" data-action="adminToggleModule" data-target="adminModuleSuspensionDuration">
-                                            <span class="material-symbols-rounded">schedule</span>
-                                            <span class="component-dropdown-text" data-ref="admin-suspensionDuration-text">Cargando...</span>
-                                            <span class="material-symbols-rounded">expand_more</span>
-                                        </div>
-                                        <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="adminModuleSuspensionDuration">
-                                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding">
-                                                <div class="pill-container"><div class="drag-handle"></div></div>
-                                                <div class="component-menu-list component-menu-list--scrollable">
-                                                    <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionDuration" data-value="1">
-                                                        <div class="component-menu-link-text"><span>1 día</span></div>
-                                                    </div>
-                                                    <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionDuration" data-value="3">
-                                                        <div class="component-menu-link-text"><span>3 días</span></div>
-                                                    </div>
-                                                    <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionDuration" data-value="7">
-                                                        <div class="component-menu-link-text"><span>7 días</span></div>
-                                                    </div>
-                                                    <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionDuration" data-value="14">
-                                                        <div class="component-menu-link-text"><span>14 días</span></div>
-                                                    </div>
-                                                    <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionDuration" data-value="30">
-                                                        <div class="component-menu-link-text"><span>30 días</span></div>
-                                                    </div>
-                                                    <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionDuration" data-value="custom">
-                                                        <div class="component-menu-link-text"><span>Establecer tiempo manual</span></div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="disabled" data-ref="section-suspended-date">
-                            <hr class="component-divider">
-                            <div class="component-group-item component-group-item--stacked">
-                                <div class="component-card__content">
-                                    <div class="component-card__text">
-                                        <h2 class="component-card__title">Fin de la Suspensión</h2>
-                                        <p class="component-card__description">Indica la fecha y hora exacta en la que se levantará la restricción temporal.</p>
-                                    </div>
-                                </div>
-                                <div class="component-card__actions component-card__actions--start">
-                                    
-                                    <div class="component-dropdown-wrapper">
-                                        <div class="component-dropdown-trigger" data-action="adminToggleModule" data-target="adminModuleCalendar">
-                                            <span class="material-symbols-rounded">calendar_month</span>
-                                            <span class="component-dropdown-text" data-ref="admin-endDate-text">Seleccionar fecha y hora...</span>
-                                        </div>
-                                        <?php include __DIR__ . '/../../modules/moduleCalendar.php'; ?>
-                                    </div>
-
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-                    
-                    <div class="component-card--grouped disabled" data-ref="section-notify-user">
-                        <div class="component-group-item component-group-item--wrap">
-                            <div class="component-card__content">
-                                <div class="component-card__icon-container component-card__icon-container--bordered">
-                                    <span class="material-symbols-rounded">forward_to_inbox</span>
-                                </div>
-                                <div class="component-card__text">
-                                    <h2 class="component-card__title">Notificar al usuario</h2>
-                                    <p class="component-card__description">Se enviará un correo electrónico informando sobre la restricción y el motivo exacto.</p>
-                                </div>
-                            </div>
-                            <div class="component-card__actions component-card__actions--end">
-                                <label class="component-toggle-switch">
-                                    <input type="checkbox" data-ref="chk_notify_user" checked>
-                                    <span class="component-toggle-slider"></span>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="disabled" data-ref="admin-status-password-area">
-                        <div class="component-card--grouped">
-                            <div class="component-group-item component-group-item--stacked">
-                                
-                                <div class="component-alert-error disabled" data-ref="admin-status-warning">
-                                    <span class="material-symbols-rounded">warning</span>
-                                    <div>
-                                        <strong>Atención:</strong> Al aplicar o modificar una suspensión o eliminación, se cerrarán inmediatamente todas las sesiones activas de este usuario.
-                                    </div>
-                                </div>
-
-                                <div class="component-card__content component-card__content--full component-card__content--start">
-                                    <div class="component-card__icon-container component-card__icon-container--bordered">
-                                        <span class="material-symbols-rounded">lock</span>
-                                    </div>
-                                    <div class="component-card__text">
-                                        <h2 class="component-card__title">Verificar identidad</h2>
-                                        <p class="component-card__description">Para aplicar cambios en el estado o suspensiones, ingresa tu contraseña actual de administrador.</p>
-                                        
-                                        <div class="component-card__form-area">
-                                            <div class="component-input-group">
-                                                <input type="password" class="component-input-field component-input-field--with-icon" data-ref="admin_status_confirm_password" placeholder=" ">
-                                                <label class="component-input-label">Tu contraseña actual</label>
-                                                <span class="material-symbols-rounded component-input-toggle" data-action="togglePassword">visibility_off</span>
                                             </div>
                                         </div>
                                     </div>
@@ -459,34 +281,205 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="disabled" data-ref="view-status-kardex">
-                    
-                    <div class="component-card--grouped">
+                    <div class="disabled" data-ref="section-suspended-custom-reason">
+                        <hr class="component-divider">
                         <div class="component-group-item component-group-item--stacked">
                             <div class="component-card__content component-card__content--full">
                                 <div class="component-card__text">
-                                    <h2 class="component-card__title"><?php echo __('admin_kardex_add_title', ['default' => 'Agregar nota administrativa']); ?></h2>
-                                    <p class="component-card__description"><?php echo __('admin_kardex_add_desc', ['default' => 'Añade contexto adicional, enlaces a evidencias o reportes. Esta nota no modificará el estado actual de la cuenta.']); ?></p>
+                                    <h2 class="component-card__title">Especificar otro motivo (Suspensión)</h2>
                                     <div class="component-card__form-area">
-                                        <textarea class="component-input-field" data-ref="inp_new_admin_note" placeholder="Escribe tu nota aquí..." maxlength="1000"></textarea>
-                                        <div data-ref="admin-note-counter">0 / 1000 caracteres</div>
+                                        <textarea class="component-input-field" data-ref="inp_custom_suspension_reason" placeholder="Escribe la razón detallada para el usuario..."></textarea>
                                     </div>
                                 </div>
-                            </div>
-                            <div class="component-card__actions component-card__actions--end">
-                                <button class="component-button component-button--h36 component-button--dark" data-action="submitAdminNote" data-ref="btn-submit-note"><?php echo __('btn_add_note', ['default' => 'Guardar nota']); ?></button>
                             </div>
                         </div>
                     </div>
 
-                    <div data-ref="kardex-list-container">
+                    <div class="disabled" data-ref="section-suspended-type">
+                        <hr class="component-divider">
+                        <div class="component-group-item component-group-item--stacked">
+                            <div class="component-card__content">
+                                <div class="component-card__text">
+                                    <h2 class="component-card__title">Tipo de Suspensión</h2>
+                                    <p class="component-card__description">Establece si el bloqueo tiene una duración definida o es de carácter definitivo.</p>
+                                </div>
+                            </div>
+                            <div class="component-card__actions component-card__actions--start">
+                                <div class="component-dropdown-wrapper">
+                                    <div class="component-dropdown-trigger" data-action="adminToggleModule" data-target="adminModuleSuspendedType">
+                                        <span class="material-symbols-rounded">hourglass_empty</span>
+                                        <span class="component-dropdown-text" data-ref="admin-suspendedType-text">Cargando...</span>
+                                        <span class="material-symbols-rounded">expand_more</span>
+                                    </div>
+                                    <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="adminModuleSuspendedType">
+                                        <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding">
+                                            <div class="pill-container"><div class="drag-handle"></div></div>
+                                            <div class="component-menu-list component-menu-list--scrollable">
+                                                <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspendedType" data-value="temporary">
+                                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">timer</span></div>
+                                                    <div class="component-menu-link-text"><span>Suspensión temporal</span></div>
+                                                </div>
+                                                <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspendedType" data-value="permanent">
+                                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">lock_clock</span></div>
+                                                    <div class="component-menu-link-text"><span>Suspensión permanente</span></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
+                    </div>
+
+                    <div class="disabled" data-ref="section-suspended-duration">
+                        <hr class="component-divider">
+                        <div class="component-group-item component-group-item--stacked">
+                            <div class="component-card__content">
+                                <div class="component-card__text">
+                                    <h2 class="component-card__title">Duración de la suspensión</h2>
+                                    <p class="component-card__description">Selecciona el tiempo que durará el bloqueo de la cuenta.</p>
+                                </div>
+                            </div>
+                            <div class="component-card__actions component-card__actions--start">
+                                <div class="component-dropdown-wrapper">
+                                    <div class="component-dropdown-trigger" data-action="adminToggleModule" data-target="adminModuleSuspensionDuration">
+                                        <span class="material-symbols-rounded">schedule</span>
+                                        <span class="component-dropdown-text" data-ref="admin-suspensionDuration-text">Cargando...</span>
+                                        <span class="material-symbols-rounded">expand_more</span>
+                                    </div>
+                                    <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="adminModuleSuspensionDuration">
+                                        <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding">
+                                            <div class="pill-container"><div class="drag-handle"></div></div>
+                                            <div class="component-menu-list component-menu-list--scrollable">
+                                                <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionDuration" data-value="1">
+                                                    <div class="component-menu-link-text"><span>1 día</span></div>
+                                                </div>
+                                                <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionDuration" data-value="3">
+                                                    <div class="component-menu-link-text"><span>3 días</span></div>
+                                                </div>
+                                                <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionDuration" data-value="7">
+                                                    <div class="component-menu-link-text"><span>7 días</span></div>
+                                                </div>
+                                                <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionDuration" data-value="14">
+                                                    <div class="component-menu-link-text"><span>14 días</span></div>
+                                                </div>
+                                                <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionDuration" data-value="30">
+                                                    <div class="component-menu-link-text"><span>30 días</span></div>
+                                                </div>
+                                                <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionDuration" data-value="custom">
+                                                    <div class="component-menu-link-text"><span>Establecer tiempo manual</span></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="disabled" data-ref="section-suspended-date">
+                        <hr class="component-divider">
+                        <div class="component-group-item component-group-item--stacked">
+                            <div class="component-card__content">
+                                <div class="component-card__text">
+                                    <h2 class="component-card__title">Fin de la Suspensión</h2>
+                                    <p class="component-card__description">Indica la fecha y hora exacta en la que se levantará la restricción temporal.</p>
+                                </div>
+                            </div>
+                            <div class="component-card__actions component-card__actions--start">
+                                <div class="component-dropdown-wrapper">
+                                    <div class="component-dropdown-trigger" data-action="adminToggleModule" data-target="adminModuleCalendar">
+                                        <span class="material-symbols-rounded">calendar_month</span>
+                                        <span class="component-dropdown-text" data-ref="admin-endDate-text">Seleccionar fecha y hora...</span>
+                                    </div>
+                                    <?php include __DIR__ . '/../../modules/moduleCalendar.php'; ?>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
                 </div>
 
+                <div class="component-card--grouped disabled" data-ref="section-notify-user">
+                    <div class="component-group-item component-group-item--wrap">
+                        <div class="component-card__content">
+                            <div class="component-card__icon-container component-card__icon-container--bordered">
+                                <span class="material-symbols-rounded">forward_to_inbox</span>
+                            </div>
+                            <div class="component-card__text">
+                                <h2 class="component-card__title">Notificar al usuario</h2>
+                                <p class="component-card__description">Se enviará un correo electrónico informando sobre la restricción y el motivo exacto.</p>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--end">
+                            <label class="component-toggle-switch">
+                                <input type="checkbox" data-ref="chk_notify_user" checked>
+                                <span class="component-toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="component-card--grouped disabled" data-ref="admin-status-password-area">
+                    <div class="component-group-item component-group-item--stacked">
+                        
+                        <div class="component-card__content component-card__content--full">
+                            <div class="component-alert-error disabled" data-ref="admin-status-warning" style="width: 100%;">
+                                <span class="material-symbols-rounded">warning</span>
+                                <div>
+                                    <strong>Atención:</strong> Al aplicar o modificar una suspensión o eliminación, se cerrarán inmediatamente todas las sesiones activas de este usuario.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="component-card__content component-card__content--full component-card__content--start">
+                            <div class="component-card__icon-container component-card__icon-container--bordered">
+                                <span class="material-symbols-rounded">lock</span>
+                            </div>
+                            <div class="component-card__text">
+                                <h2 class="component-card__title">Verificar identidad</h2>
+                                <p class="component-card__description">Para aplicar cambios en el estado o suspensiones, ingresa tu contraseña actual de administrador.</p>
+                                
+                                <div class="component-card__form-area">
+                                    <div class="component-input-group">
+                                        <input type="password" class="component-input-field component-input-field--with-icon" data-ref="admin_status_confirm_password" placeholder=" ">
+                                        <label class="component-input-label">Tu contraseña actual</label>
+                                        <span class="material-symbols-rounded component-input-toggle" data-action="togglePassword">visibility_off</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
+
+            <div class="component-setup-container disabled" data-ref="view-status-kardex">
+                
+                <div class="component-card--grouped">
+                    <div class="component-group-item component-group-item--stacked">
+                        <div class="component-card__content component-card__content--full">
+                            <div class="component-card__text">
+                                <h2 class="component-card__title"><?php echo __('admin_kardex_add_title', ['default' => 'Agregar nota administrativa']); ?></h2>
+                                <p class="component-card__description"><?php echo __('admin_kardex_add_desc', ['default' => 'Añade contexto adicional, enlaces a evidencias o reportes. Esta nota no modificará el estado actual de la cuenta.']); ?></p>
+                                <div class="component-card__form-area">
+                                    <textarea class="component-input-field" data-ref="inp_new_admin_note" placeholder="Escribe tu nota aquí..." maxlength="1000"></textarea>
+                                    <div data-ref="admin-note-counter" style="font-size: 13px; color: var(--text-secondary); text-align: right; margin-top: -6px;">0 / 1000 caracteres</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--end">
+                            <button class="component-button component-button--h36 component-button--dark" data-action="submitAdminNote" data-ref="btn-submit-note"><?php echo __('btn_add_note', ['default' => 'Guardar nota']); ?></button>
+                        </div>
+                    </div>
+                </div>
+
+                <div data-ref="kardex-list-container" class="component-setup-container active">
+                </div>
+
+            </div>
+
         </div>
     </div>
 </div>
