@@ -28,6 +28,7 @@ $userPic = $_SESSION['user_pic'] ?? '';
         '/admin/edit-role': "Gestionar Rol",
         '/admin/edit-status': "Gestionar Estado",
         '/admin/backups': "<?php echo __('route_admin_backups'); ?>",
+        '/admin/backups/automation': "<?php echo __('route_admin_backups_automation'); ?>",
         '/admin/server-config': "<?php echo __('route_admin_server'); ?>"
     };
     window.AppName = "ProjectRosaura";

@@ -547,6 +547,7 @@ class AdminServices {
             return ['success' => false, 'message' => 'Contraseña incorrecta. Acción denegada.'];
         }
 
+        // --- AÑADIDOS LOS 3 NUEVOS CAMPOS DE AUTOMATIZACIÓN DE BACKUPS ---
         $allowedFields = [
             'min_password_length', 'max_password_length', 'min_username_length', 'max_username_length', 'max_avatar_size_mb',
             'username_change_cooldown_days', 'username_change_max_attempts', 'email_change_cooldown_days', 'email_change_max_attempts',
@@ -554,7 +555,8 @@ class AdminServices {
             'forgot_password_rate_limit_attempts', 'forgot_password_rate_limit_minutes', 'admin_edit_avatar_attempts', 'admin_edit_avatar_minutes',
             'admin_edit_username_attempts', 'admin_edit_username_minutes', 'admin_edit_email_attempts', 'admin_edit_email_minutes',
             'admin_edit_prefs_attempts', 'admin_edit_prefs_minutes', 'admin_edit_role_attempts', 'admin_edit_role_minutes',
-            'admin_edit_status_attempts', 'admin_edit_status_minutes', 'admin_add_note_attempts', 'admin_add_note_minutes'
+            'admin_edit_status_attempts', 'admin_edit_status_minutes', 'admin_add_note_attempts', 'admin_add_note_minutes',
+            'auto_backup_enabled', 'auto_backup_frequency_hours', 'auto_backup_retention_count'
         ];
 
         $updateData = [];

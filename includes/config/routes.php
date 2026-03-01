@@ -41,6 +41,7 @@ return [
     '/admin/edit-role' => ['view' => 'admin/edit-role.php', 'auth' => true, 'roles' => ['founder', 'administrator'], 'requires_2fa' => true],
     '/admin/edit-status' => ['view' => 'admin/edit-status.php', 'auth' => true, 'roles' => ['founder', 'administrator'], 'requires_2fa' => true],
     '/admin/backups' => ['view' => 'admin/backups.php', 'auth' => true, 'roles' => ['founder', 'administrator'], 'requires_2fa' => true],
+    '/admin/backups/automation' => ['view' => 'admin/backups-automation.php', 'auth' => true, 'roles' => ['founder', 'administrator'], 'requires_2fa' => true],
     '/admin/server-config' => ['view' => 'admin/server-config.php', 'auth' => true, 'roles' => ['founder', 'administrator'], 'requires_2fa' => true]
 ];
 ?>

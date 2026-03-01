@@ -19,7 +19,7 @@ if (is_dir($backupDir)) {
             $backups[] = [
                 'id' => base64_encode($file),
                 'filename' => $file,
-                'type' => strpos($file, 'auto') !== false ? 'auto' : 'manual',
+                'type' => strpos($file, 'auto_backup_') !== false ? 'auto' : 'manual',
                 'status' => 'success',
                 'size' => $sizeFormatted,
                 'created_at' => date('Y-m-d H:i:s', filemtime($filepath))
@@ -161,6 +161,9 @@ if (is_dir($backupDir)) {
                     <div class="component-toolbar-right">
                         <button class="component-button component-button--icon component-button--h40" data-action="toggleViewMode" data-tooltip="Cambiar vista" data-position="bottom">
                             <span class="material-symbols-rounded">table_rows</span>
+                        </button>
+                        <button class="component-button component-button--h40" data-nav="/ProjectRosaura/admin/backups/automation">
+                            <span class="material-symbols-rounded">schedule</span> Automatizar
                         </button>
                         <button class="component-button component-button--dark component-button--h40" data-action="createBackup">
                             <span class="material-symbols-rounded">add</span> Crear Copia

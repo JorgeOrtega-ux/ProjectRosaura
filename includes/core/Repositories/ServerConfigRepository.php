@@ -56,7 +56,12 @@ class ServerConfigRepository implements ServerConfigRepositoryInterface {
                 'admin_edit_status_minutes' => 30,
                 
                 'admin_add_note_attempts' => 30,
-                'admin_add_note_minutes' => 30
+                'admin_add_note_minutes' => 30,
+                
+                // Configuración por defecto Automatización de Backups
+                'auto_backup_enabled' => 0,
+                'auto_backup_frequency_hours' => 24,
+                'auto_backup_retention_count' => 5
             ];
         }
         

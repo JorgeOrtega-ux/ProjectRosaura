@@ -104,7 +104,7 @@ CREATE TABLE IF NOT EXISTS server_config (
     forgot_password_rate_limit_attempts INT NOT NULL DEFAULT 3,
     forgot_password_rate_limit_minutes INT NOT NULL DEFAULT 30,
     
-    -- === NUEVAS COLUMNAS DE LÍMITES ADMINISTRATIVOS ===
+    -- === COLUMNAS DE LÍMITES ADMINISTRATIVOS ===
     admin_edit_avatar_attempts INT NOT NULL DEFAULT 20,
     admin_edit_avatar_minutes INT NOT NULL DEFAULT 30,
     admin_edit_username_attempts INT NOT NULL DEFAULT 20,
@@ -119,6 +119,11 @@ CREATE TABLE IF NOT EXISTS server_config (
     admin_edit_status_minutes INT NOT NULL DEFAULT 30,
     admin_add_note_attempts INT NOT NULL DEFAULT 30,
     admin_add_note_minutes INT NOT NULL DEFAULT 30,
+    
+    -- === NUEVAS COLUMNAS DE AUTOMATIZACIÓN DE BACKUPS ===
+    auto_backup_enabled TINYINT(1) NOT NULL DEFAULT 0,
+    auto_backup_frequency_hours INT NOT NULL DEFAULT 24,
+    auto_backup_retention_count INT NOT NULL DEFAULT 5,
     
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

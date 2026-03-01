@@ -153,5 +153,14 @@
     "admin_kardex_add_title": "Agregar nota administrativa",
     "admin_kardex_add_desc": "Añade contexto adicional, enlaces a evidencias o reportes. Esta nota no modificará el estado actual de la cuenta.",
     "btn_add_note": "Guardar nota",
-    "admin_kardex_empty": "No hay registros ni notas en el historial de este usuario."
+    "admin_kardex_empty": "No hay registros ni notas en el historial de este usuario.",
+    "route_admin_backups_automation": "Automatización de copias",
+    "admin_backups_auto_title": "Automatizar Copias",
+    "admin_backups_auto_desc": "Configura el motor en segundo plano para generar respaldos automáticos.",
+    "auto_backup_enabled_title": "Habilitar automatización",
+    "auto_backup_enabled_desc": "Activa o desactiva el worker en segundo plano que genera los respaldos.",
+    "auto_backup_freq_title": "Frecuencia (Horas)",
+    "auto_backup_freq_desc": "Cada cuántas horas debe ejecutarse una nueva copia de seguridad.",
+    "auto_backup_retention_title": "Límite de retención",
+    "auto_backup_retention_desc": "Cantidad de copias automáticas que se conservarán antes de eliminar las más antiguas."
 }
