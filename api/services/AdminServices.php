@@ -12,6 +12,7 @@ use App\Core\Interfaces\SessionManagerInterface;
 use App\Core\Interfaces\ServerConfigRepositoryInterface;
 use App\Core\Interfaces\UserPrefsManagerInterface;
 use App\Core\Interfaces\TokenRepositoryInterface;
+use App\Core\Interfaces\RateLimiterInterface;
 
 class AdminServices {
     private $userRepository;
@@ -20,6 +21,7 @@ class AdminServices {
     private $config;
     private $prefsManager;
     private $tokenRepository;
+    private $rateLimiter;
 
     public function __construct(
         UserRepositoryInterface $userRepository,
@@ -27,7 +29,8 @@ class AdminServices {
         SessionManagerInterface $sessionManager,
         ServerConfigRepositoryInterface $configRepository,
         UserPrefsManagerInterface $prefsManager,
-        TokenRepositoryInterface $tokenRepository
+        TokenRepositoryInterface $tokenRepository,
+        RateLimiterInterface $rateLimiter
     ) {
         $this->userRepository = $userRepository;
         $this->moderationRepository = $moderationRepository;
@@ -35,6 +38,7 @@ class AdminServices {
         $this->config = $configRepository->getConfig();
         $this->prefsManager = $prefsManager;
         $this->tokenRepository = $tokenRepository;
+        $this->rateLimiter = $rateLimiter;
     }
 
     private function checkAdmin() {
@@ -70,6 +74,28 @@ class AdminServices {
         return ['allowed' => true];
     }
 
+    /**
+     * Helper para aplicar y registrar Rate Limits específicos para acciones de administrador.
+     * Añade el ID del administrador a la key para no bloquear por IP general si hay varios admins en la misma red.
+     */
+    private function applyAdminRateLimit($action, $defaultAttempts, $defaultMinutes, $customMsg) {
+        $attempts = $this->config[$action . '_attempts'] ?? $defaultAttempts;
+        $minutes = $this->config[$action . '_minutes'] ?? $defaultMinutes;
+        
+        $currentUserId = $this->sessionManager->get('user_id');
+        $actionKey = $action . '_admin_' . $currentUserId;
+        
+        $rateCheck = $this->rateLimiter->check($actionKey, $attempts, $minutes, $customMsg);
+        
+        if (!$rateCheck['allowed']) {
+            Logger::security("Rate limit alcanzado por Admin ID: {$currentUserId} en acción: {$action}", 'warning', ['ip' => Utils::getIpAddress()]);
+            return $rateCheck;
+        }
+        
+        $this->rateLimiter->record($actionKey, $attempts, $minutes);
+        return ['allowed' => true];
+    }
+
     public function getUser($data) {
         if (!$this->checkAdmin()) return ['success' => false, 'message' => 'No autorizado.'];
         
@@ -89,7 +115,6 @@ class AdminServices {
                 'profile_picture' => $user['profile_picture'],
                 'role' => $user['role'],
                 
-                // Columnas independientes (ahora leídas desde el LEFT JOIN)
                 'user_status' => $user['user_status'],
                 'deleted_by' => $user['deleted_by'],
                 'deleted_reason' => $user['deleted_reason'],
@@ -113,6 +138,10 @@ class AdminServices {
 
         $authCheck = $this->canEditUser($user);
         if (!$authCheck['allowed']) return ['success' => false, 'message' => $authCheck['message']];
+
+        // Rate Limit (Ej: max 20 cambios por 30 mins)
+        $rl = $this->applyAdminRateLimit('admin_edit_avatar', 20, 30, "Límite de seguridad: Has modificado demasiados avatares. Espera {minutes} minutos.");
+        if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
 
         $files = $data['_files'] ?? [];
         if (!isset($files['avatar']) || $files['avatar']['error'] !== UPLOAD_ERR_OK) {
@@ -161,6 +190,10 @@ class AdminServices {
         $authCheck = $this->canEditUser($user);
         if (!$authCheck['allowed']) return ['success' => false, 'message' => $authCheck['message']];
 
+        // Rate Limit (Ej: max 20 cambios por 30 mins)
+        $rl = $this->applyAdminRateLimit('admin_edit_avatar', 20, 30, "Límite de seguridad: Has modificado demasiados avatares. Espera {minutes} minutos.");
+        if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
+
         $oldPic = $user['profile_picture'];
         if (strpos($oldPic, '/default/') !== false) return ['success' => false, 'message' => 'Ya tiene foto por defecto.'];
 
@@ -186,6 +219,10 @@ class AdminServices {
 
         $authCheck = $this->canEditUser($user);
         if (!$authCheck['allowed']) return ['success' => false, 'message' => $authCheck['message']];
+
+        // Rate Limit (Ej: max 20 cambios por 30 mins)
+        $rl = $this->applyAdminRateLimit('admin_edit_username', 20, 30, "Límite de seguridad: Has cambiado demasiados nombres de usuario. Espera {minutes} minutos.");
+        if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
 
         $username = trim($data['username'] ?? '');
         $minLen = $this->config['min_username_length'] ?? 3;
@@ -213,6 +250,10 @@ class AdminServices {
 
         $authCheck = $this->canEditUser($user);
         if (!$authCheck['allowed']) return ['success' => false, 'message' => $authCheck['message']];
+
+        // Rate Limit (Ej: max 20 cambios por 30 mins)
+        $rl = $this->applyAdminRateLimit('admin_edit_email', 20, 30, "Límite de seguridad: Has cambiado demasiados correos electrónicos. Espera {minutes} minutos.");
+        if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
 
         $email = trim($data['email'] ?? '');
         $emailValidation = Utils::validateEmailFormat($email);
@@ -242,6 +283,10 @@ class AdminServices {
 
         $authCheck = $this->canEditUser($user);
         if (!$authCheck['allowed']) return ['success' => false, 'message' => $authCheck['message']];
+
+        // Rate Limit (Ej: max 50 cambios por 30 mins)
+        $rl = $this->applyAdminRateLimit('admin_edit_prefs', 50, 30, "Límite de seguridad: Has actualizado demasiadas preferencias. Espera {minutes} minutos.");
+        if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
 
         $key = $data['key'] ?? '';
         $value = $data['value'] ?? '';
@@ -282,6 +327,10 @@ class AdminServices {
         if (!$authCheck['allowed']) {
             return ['success' => false, 'message' => $authCheck['message']];
         }
+
+        // Rate Limit ULTRA RESTRICTIVO (Ej: Máximo 10 por 30 mins) para prevenir elevación de privilegios masiva
+        $rl = $this->applyAdminRateLimit('admin_edit_role', 10, 30, "Protección contra cambios masivos: Límite de modificación de roles alcanzado. Espera {minutes} minutos.");
+        if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
 
         $currentUserRole = $this->sessionManager->get('user_role');
         $currentWeight = $this->getRoleWeight($currentUserRole);
@@ -326,6 +375,10 @@ class AdminServices {
             return ['success' => false, 'message' => $authCheck['message']];
         }
 
+        // Rate Limit (Ej: Máximo 20 por 30 mins) para evitar bloqueos masivos
+        $rl = $this->applyAdminRateLimit('admin_edit_status', 20, 30, "Protección del sistema: Límite de sanciones y cambios de estado alcanzado. Espera {minutes} minutos.");
+        if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
+
         $currentUserId = $this->sessionManager->get('user_id');
 
         $adminData = $this->userRepository->findById($currentUserId);
@@ -362,7 +415,6 @@ class AdminServices {
             }
         }
 
-        // Lógica inteligente para determinar la acción registrada en el Log de Moderación
         $actionType = 'note_updated';
         $logReason = null;
         
@@ -383,20 +435,16 @@ class AdminServices {
             }
         }
 
-        // Ejecutar Update con el nuevo repositorio de Moderación
         if ($this->moderationRepository->updateStatus($targetId, $dbStatus, $dbDeletedBy, $dbDeletedReason, $dbIsSuspended, $dbSuspensionType, $dbSuspensionReason, $dbEndDate, $dbAdminNotes)) {
             
-            // Guardar Log Inmutable en el historial si hubo cambio relevante
             if ($actionType !== 'note_updated') {
                 $this->moderationRepository->logAction($targetId, $currentUserId, $actionType, $logReason, $dbEndDate, null);
                 Logger::security("Admin ID: $currentUserId actualizó restricciones/estado del usuario $targetId", 'critical');
             }
             
             if ($dbStatus === 'deleted' || $dbIsSuspended === 1) {
-                // Cerrar todas las sesiones
                 $this->tokenRepository->deleteAllByUserId($targetId);
                 
-                // NOTIFICAR AL USUARIO POR CORREO SI FUE SOLICITADO
                 if ($notifyUser) {
                     $action = ($dbStatus === 'deleted') ? 'deleted' : 'suspended';
                     $reasonText = ($dbStatus === 'deleted') ? $dbDeletedReason : $dbSuspensionReason;
@@ -410,8 +458,6 @@ class AdminServices {
         
         return ['success' => false, 'message' => 'Error al guardar los cambios en la base de datos.'];
     }
-
-    // --- NUEVAS FUNCIONES DE KARDEX ---
 
     public function getModerationKardex($data) {
         if (!$this->checkAdmin()) return ['success' => false, 'message' => 'No autorizado.'];
@@ -444,6 +490,10 @@ class AdminServices {
 
         $authCheck = $this->canEditUser($user);
         if (!$authCheck['allowed']) return ['success' => false, 'message' => $authCheck['message']];
+
+        // Rate Limit para evitar spam de notas en el Kardex
+        $rl = $this->applyAdminRateLimit('admin_add_note', 30, 30, "Límite de seguridad: Has agregado demasiadas notas. Espera {minutes} minutos.");
+        if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
 
         $currentUserId = $this->sessionManager->get('user_id');
 

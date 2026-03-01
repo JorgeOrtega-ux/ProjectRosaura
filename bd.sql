@@ -103,6 +103,23 @@ CREATE TABLE IF NOT EXISTS server_config (
     login_rate_limit_minutes INT NOT NULL DEFAULT 15,
     forgot_password_rate_limit_attempts INT NOT NULL DEFAULT 3,
     forgot_password_rate_limit_minutes INT NOT NULL DEFAULT 30,
+    
+    -- === NUEVAS COLUMNAS DE LÍMITES ADMINISTRATIVOS ===
+    admin_edit_avatar_attempts INT NOT NULL DEFAULT 20,
+    admin_edit_avatar_minutes INT NOT NULL DEFAULT 30,
+    admin_edit_username_attempts INT NOT NULL DEFAULT 20,
+    admin_edit_username_minutes INT NOT NULL DEFAULT 30,
+    admin_edit_email_attempts INT NOT NULL DEFAULT 20,
+    admin_edit_email_minutes INT NOT NULL DEFAULT 30,
+    admin_edit_prefs_attempts INT NOT NULL DEFAULT 50,
+    admin_edit_prefs_minutes INT NOT NULL DEFAULT 30,
+    admin_edit_role_attempts INT NOT NULL DEFAULT 10,
+    admin_edit_role_minutes INT NOT NULL DEFAULT 30,
+    admin_edit_status_attempts INT NOT NULL DEFAULT 20,
+    admin_edit_status_minutes INT NOT NULL DEFAULT 30,
+    admin_add_note_attempts INT NOT NULL DEFAULT 30,
+    admin_add_note_minutes INT NOT NULL DEFAULT 30,
+    
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
