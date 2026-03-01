@@ -63,7 +63,7 @@ export class AdminStatusEditController {
         const urlParams = new URLSearchParams(window.location.search);
         this.targetUserId = urlParams.get('id');
         if (this.targetUserId) {
-            this.switchTab('view-status-config'); // Asegurar estado inicial en Configuración
+            this.switchTab('view-status-config'); 
             this.loadUserData();
         } else {
             if (window.spaRouter) window.spaRouter.navigate('/ProjectRosaura/admin/manage-users');
@@ -78,7 +78,6 @@ export class AdminStatusEditController {
         document.addEventListener('click', (e) => {
             if (!window.location.pathname.includes('/admin/edit-status')) return;
 
-            // Manejo de las pestañas
             const btnSwitchTab = e.target.closest('[data-action="switchTab"]');
             if (btnSwitchTab) {
                 const target = btnSwitchTab.getAttribute('data-target');
@@ -95,13 +94,13 @@ export class AdminStatusEditController {
                             this.state.endDate,
                             (isoString, displayString) => {
                                 this.state.endDate = isoString;
-                                const textEl = document.getElementById('admin-endDate-text');
+                                const textEl = document.querySelector('[data-ref="admin-endDate-text"]');
                                 if (textEl) textEl.textContent = displayString;
                                 this.checkForChanges(); 
                             },
                             () => {
                                 this.state.endDate = '';
-                                const textEl = document.getElementById('admin-endDate-text');
+                                const textEl = document.querySelector('[data-ref="admin-endDate-text"]');
                                 if (textEl) textEl.textContent = 'Seleccionar fecha y hora...';
                                 this.checkForChanges(); 
                             }
@@ -151,7 +150,7 @@ export class AdminStatusEditController {
             const togglePassBtn = e.target.closest('[data-action="togglePassword"]');
             if (togglePassBtn) {
                 const inputField = togglePassBtn.parentElement.querySelector('.component-input-field');
-                if (inputField && inputField.id === 'admin_status_confirm_password') {
+                if (inputField && inputField.getAttribute('data-ref') === 'admin_status_confirm_password') {
                     if (inputField.type === 'password') {
                         inputField.type = 'text';
                         togglePassBtn.textContent = 'visibility';
@@ -165,18 +164,32 @@ export class AdminStatusEditController {
 
         document.addEventListener('input', (e) => {
             if (!window.location.pathname.includes('/admin/edit-status')) return;
-            if (e.target.id === 'inp_deleted_reason_user') this.state.deletedReasonUser = e.target.value;
-            if (e.target.id === 'inp_custom_deleted_reason_admin') this.state.customDeletedReasonAdmin = e.target.value;
-            if (e.target.id === 'inp_custom_suspension_reason') this.state.customSuspensionReason = e.target.value;
+            
+            const ref = e.target.getAttribute('data-ref');
+            if (!ref) return;
 
-            if (['inp_deleted_reason_user', 'inp_custom_deleted_reason_admin', 'inp_custom_suspension_reason'].includes(e.target.id)) {
+            if (ref === 'inp_deleted_reason_user') this.state.deletedReasonUser = e.target.value;
+            if (ref === 'inp_custom_deleted_reason_admin') this.state.customDeletedReasonAdmin = e.target.value;
+            if (ref === 'inp_custom_suspension_reason') this.state.customSuspensionReason = e.target.value;
+
+            if (['inp_deleted_reason_user', 'inp_custom_deleted_reason_admin', 'inp_custom_suspension_reason'].includes(ref)) {
                 this.checkForChanges(); 
+            }
+
+            // CONTADOR DE CARACTERES
+            if (ref === 'inp_new_admin_note') {
+                const counter = document.querySelector('[data-ref="admin-note-counter"]');
+                if (counter) {
+                    counter.textContent = `${e.target.value.length} / 1000 caracteres`;
+                }
             }
         });
 
         document.addEventListener('change', (e) => {
             if (!window.location.pathname.includes('/admin/edit-status')) return;
-            if (e.target.id === 'chk_notify_user') {
+            
+            const ref = e.target.getAttribute('data-ref');
+            if (ref === 'chk_notify_user') {
                 this.state.notifyUser = e.target.checked;
                 this.checkForChanges(); 
             }
@@ -204,38 +217,22 @@ export class AdminStatusEditController {
     switchTab(targetId) {
         this.activeTab = targetId;
         
-        // Estilos visuales de los botones del Toolbar
-        const tabBtnConfig = document.getElementById('tab-btn-config');
-        const tabBtnKardex = document.getElementById('tab-btn-kardex');
+        const tabBtnConfig = document.querySelector('[data-ref="tab-btn-config"]');
+        const tabBtnKardex = document.querySelector('[data-ref="tab-btn-kardex"]');
         
         if (tabBtnConfig && tabBtnKardex) {
             tabBtnConfig.classList.toggle('active', targetId === 'view-status-config');
             tabBtnKardex.classList.toggle('active', targetId === 'view-status-kardex');
-            
-            // Ajustes visuales para el botón inactivo (estilo "fantasma")
-            if (targetId === 'view-status-config') {
-                tabBtnKardex.style.background = 'transparent';
-                tabBtnKardex.style.borderColor = 'transparent';
-                tabBtnConfig.style.background = '';
-                tabBtnConfig.style.borderColor = '';
-            } else {
-                tabBtnConfig.style.background = 'transparent';
-                tabBtnConfig.style.borderColor = 'transparent';
-                tabBtnKardex.style.background = '';
-                tabBtnKardex.style.borderColor = '';
-            }
         }
         
-        // Mostrar / Ocultar Vistas
-        const viewConfig = document.getElementById('view-status-config');
-        const viewKardex = document.getElementById('view-status-kardex');
+        const viewConfig = document.querySelector('[data-ref="view-status-config"]');
+        const viewKardex = document.querySelector('[data-ref="view-status-kardex"]');
         if (viewConfig) viewConfig.classList.toggle('disabled', targetId !== 'view-status-config');
         if (viewKardex) viewKardex.classList.toggle('disabled', targetId !== 'view-status-kardex');
         
-        // Header Dinámico y Lógica específica de la pestaña
-        const title = document.getElementById('page-main-title');
-        const desc = document.getElementById('page-main-desc');
-        const toolbarActions = document.getElementById('toolbar-actions-config');
+        const title = document.querySelector('[data-ref="page-main-title"]');
+        const desc = document.querySelector('[data-ref="page-main-desc"]');
+        const toolbarActions = document.querySelector('[data-ref="toolbar-actions-config"]');
         
         if (targetId === 'view-status-config') {
             if (title) title.textContent = 'Gestionar Estado';
@@ -259,10 +256,10 @@ export class AdminStatusEditController {
     }
 
     async loadUserData() {
-        const loader = document.getElementById('admin-status-loader');
-        const form = document.getElementById('admin-status-form');
+        const loader = document.querySelector('[data-ref="admin-status-loader"]');
+        const form = document.querySelector('[data-ref="admin-status-form"]');
         
-        const passInput = document.getElementById('admin_status_confirm_password');
+        const passInput = document.querySelector('[data-ref="admin_status_confirm_password"]');
         if (passInput) passInput.value = '';
 
         const res = await this.api.post(ApiRoutes.Admin.GetUser, { target_user_id: this.targetUserId });
@@ -271,15 +268,16 @@ export class AdminStatusEditController {
             const u = res.user;
 
             const triggerStatus = document.querySelector('[data-action="adminToggleModule"][data-target="adminModuleStatus"]');
-            const descStatus = document.getElementById('admin-status-desc');
+            const descStatus = document.querySelector('[data-ref="admin-status-desc"]');
             const triggerSuspended = document.querySelector('[data-action="adminToggleModule"][data-target="adminModuleSuspended"]');
-            const descSuspended = document.getElementById('admin-isSuspended-desc');
+            const descSuspended = document.querySelector('[data-ref="admin-isSuspended-desc"]');
 
+            // Cero estilos inline para el mensaje de Fundador (dejando el HTML plano para que el CSS nativo de la app o sus clases base actúen)
             if (u.role === 'founder') {
                 if (triggerStatus) triggerStatus.classList.add('disabled-interaction');
-                if (descStatus) descStatus.innerHTML = '<span style="color: #d32f2f; font-weight: 600;">Esta cuenta pertenece a un Fundador. Su estado no puede ser modificado por seguridad.</span>';
+                if (descStatus) descStatus.innerHTML = 'Esta cuenta pertenece a un Fundador. Su estado no puede ser modificado por seguridad.';
                 if (triggerSuspended) triggerSuspended.classList.add('disabled-interaction');
-                if (descSuspended) descSuspended.innerHTML = '<span style="color: #d32f2f; font-weight: 600;">Esta cuenta pertenece a un Fundador. No puede ser suspendida por seguridad.</span>';
+                if (descSuspended) descSuspended.innerHTML = 'Esta cuenta pertenece a un Fundador. No puede ser suspendida por seguridad.';
             } else {
                 if (triggerStatus) triggerStatus.classList.remove('disabled-interaction');
                 if (descStatus) descStatus.textContent = 'Determina si la cuenta está en uso o eliminada permanentemente.';
@@ -329,10 +327,10 @@ export class AdminStatusEditController {
 
             this.state.notifyUser = true; 
 
-            const inpUserReason = document.getElementById('inp_deleted_reason_user');
-            const inpAdminCustom = document.getElementById('inp_custom_deleted_reason_admin');
-            const inpSuspCustom = document.getElementById('inp_custom_suspension_reason');
-            const chkNotify = document.getElementById('chk_notify_user');
+            const inpUserReason = document.querySelector('[data-ref="inp_deleted_reason_user"]');
+            const inpAdminCustom = document.querySelector('[data-ref="inp_custom_deleted_reason_admin"]');
+            const inpSuspCustom = document.querySelector('[data-ref="inp_custom_suspension_reason"]');
+            const chkNotify = document.querySelector('[data-ref="chk_notify_user"]');
 
             if (inpUserReason) inpUserReason.value = this.state.deletedReasonUser;
             if (inpAdminCustom) inpAdminCustom.value = this.state.customDeletedReasonAdmin;
@@ -355,7 +353,7 @@ export class AdminStatusEditController {
     }
 
     updateCalendarText() {
-        const textEl = document.getElementById('admin-endDate-text');
+        const textEl = document.querySelector('[data-ref="admin-endDate-text"]');
         if (!textEl) return;
         
         if (!this.state.endDate) {
@@ -373,7 +371,7 @@ export class AdminStatusEditController {
     syncVisuals() {
         const syncLabel = (key) => {
             const val = this.state[key];
-            const el = document.getElementById(`admin-${key}-text`);
+            const el = document.querySelector(`[data-ref="admin-${key}-text"]`);
             if (el) {
                 if (key === 'suspensionReason' && !val) {
                     el.textContent = 'Seleccionar razón de suspensión...';
@@ -396,19 +394,19 @@ export class AdminStatusEditController {
     renderUI() {
         const s = this.state;
         
-        const secDelDecision = document.getElementById('section-deleted-decision');
-        const secDelReasonAdmin = document.getElementById('section-deleted-admin-reason');
-        const secDelCustomAdmin = document.getElementById('section-deleted-admin-custom-reason');
-        const secDelReasonUser = document.getElementById('section-deleted-user-reason');
+        const secDelDecision = document.querySelector('[data-ref="section-deleted-decision"]');
+        const secDelReasonAdmin = document.querySelector('[data-ref="section-deleted-admin-reason"]');
+        const secDelCustomAdmin = document.querySelector('[data-ref="section-deleted-admin-custom-reason"]');
+        const secDelReasonUser = document.querySelector('[data-ref="section-deleted-user-reason"]');
         
-        const secSuspReason = document.getElementById('section-suspended-reason');
-        const secSuspCustom = document.getElementById('section-suspended-custom-reason');
-        const secSuspType = document.getElementById('section-suspended-type');
-        const secSuspDuration = document.getElementById('section-suspended-duration');
-        const secSuspDate = document.getElementById('section-suspended-date');
+        const secSuspReason = document.querySelector('[data-ref="section-suspended-reason"]');
+        const secSuspCustom = document.querySelector('[data-ref="section-suspended-custom-reason"]');
+        const secSuspType = document.querySelector('[data-ref="section-suspended-type"]');
+        const secSuspDuration = document.querySelector('[data-ref="section-suspended-duration"]');
+        const secSuspDate = document.querySelector('[data-ref="section-suspended-date"]');
 
-        const secNotifyUser = document.getElementById('section-notify-user');
-        const warningBox = document.getElementById('admin-status-warning');
+        const secNotifyUser = document.querySelector('[data-ref="section-notify-user"]');
+        const warningBox = document.querySelector('[data-ref="admin-status-warning"]');
 
         [secDelDecision, secDelReasonAdmin, secDelCustomAdmin, secDelReasonUser, 
          secSuspReason, secSuspCustom, secSuspType, secSuspDuration, secSuspDate, 
@@ -457,8 +455,8 @@ export class AdminStatusEditController {
             }
         }
 
-        const passArea = document.getElementById('admin-status-password-area');
-        const btnSave = document.getElementById('admin-btn-save-status');
+        const passArea = document.querySelector('[data-ref="admin-status-password-area"]');
+        const btnSave = document.querySelector('[data-ref="admin-btn-save-status"]');
 
         if (hasChanges) {
             if (passArea) passArea.classList.remove('disabled');
@@ -495,7 +493,7 @@ export class AdminStatusEditController {
             return;
         }
 
-        const passInput = document.getElementById('admin_status_confirm_password');
+        const passInput = document.querySelector('[data-ref="admin_status_confirm_password"]');
         const password = passInput ? passInput.value.trim() : '';
 
         if (!password) {
@@ -517,7 +515,7 @@ export class AdminStatusEditController {
             suspension_reason: this.state.isSuspended === '1' ? (this.state.suspensionReason === 'Otro' ? this.state.customSuspensionReason : this.state.suspensionReason) : null,
             end_date: (this.state.isSuspended === '1' && this.state.suspendedType === 'temporary') ? this.formatDateForDB(this.state.endDate) : null,
             
-            admin_notes: null, // Ya no se envía por aquí, se maneja individualmente en el Kardex
+            admin_notes: null, 
             notify_user: this.state.notifyUser,
             password: password
         };
@@ -534,26 +532,23 @@ export class AdminStatusEditController {
         }
     }
 
-    // ==========================================
-    // MÉTODOS DEL KARDEX (HISTORIAL DE NOTAS)
-    // ==========================================
-
     async loadKardex() {
-        const container = document.getElementById('kardex-list-container');
+        const container = document.querySelector('[data-ref="kardex-list-container"]');
         if (!container) return;
-        container.innerHTML = '<div class="component-spinner" style="margin: 0 auto;"></div>';
+        
+        container.innerHTML = '<div class="component-spinner"></div>';
         
         const res = await this.api.post(ApiRoutes.Admin.GetModerationKardex, { target_user_id: this.targetUserId });
         
         if (res.success) {
             this.renderKardex(res.logs);
         } else {
-            container.innerHTML = `<div class="component-alert-error active" style="text-align:left;">${res.message}</div>`;
+            container.innerHTML = `<div class="component-alert-error active">${res.message}</div>`;
         }
     }
 
     renderKardex(logs) {
-        const container = document.getElementById('kardex-list-container');
+        const container = document.querySelector('[data-ref="kardex-list-container"]');
         if (!container) return;
         container.innerHTML = '';
         
@@ -577,37 +572,38 @@ export class AdminStatusEditController {
             const adminName = log.admin_username || 'Sistema';
             const dateStr = new Date(log.created_at).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' });
             
-            let actionColor = 'var(--text-primary)';
-            let actionIcon = 'info';
             let actionText = 'Actualizado';
+            let actionIcon = 'info';
             
             switch(log.action_type) {
-                case 'suspended': actionColor = 'var(--color-error)'; actionIcon = 'block'; actionText = 'Suspendido'; break;
-                case 'unsuspended': actionColor = 'var(--color-success)'; actionIcon = 'lock_open'; actionText = 'Suspensión Levantada'; break;
-                case 'deleted': actionColor = 'var(--color-error)'; actionIcon = 'person_off'; actionText = 'Eliminado'; break;
-                case 'restored': actionColor = 'var(--color-success)'; actionIcon = 'settings_backup_restore'; actionText = 'Restaurado'; break;
-                case 'note_updated': actionColor = 'var(--text-secondary)'; actionIcon = 'sticky_note_2'; actionText = 'Nota Agregada'; break;
+                case 'suspended': actionIcon = 'block'; actionText = 'Suspendido'; break;
+                case 'unsuspended': actionIcon = 'lock_open'; actionText = 'Suspensión Levantada'; break;
+                case 'deleted': actionIcon = 'person_off'; actionText = 'Eliminado'; break;
+                case 'restored': actionIcon = 'settings_backup_restore'; actionText = 'Restaurado'; break;
+                case 'note_updated': actionIcon = 'sticky_note_2'; actionText = 'Nota Agregada'; break;
             }
 
             let extraInfo = '';
-            if (log.reason) extraInfo += `<p style="font-size: 14px; color: var(--text-primary); margin: 0 0 8px 0; line-height: 1.4;"><b>Motivo:</b> ${log.reason}</p>`;
-            if (log.end_date) extraInfo += `<p style="font-size: 13px; color: var(--text-secondary); margin: 0 0 8px 0;">Expira: ${new Date(log.end_date).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' })}</p>`;
-            if (log.admin_notes) extraInfo += `<div style="background: var(--bg-app); padding: 12px; border-radius: 8px; border: 1px solid var(--border-lighter); font-size: 14px; color: var(--text-secondary); white-space: pre-wrap; line-height: 1.5; margin-top: 8px;">${log.admin_notes}</div>`;
+            // HTML plano sin los estilos inline solicitados
+            if (log.reason) extraInfo += `<p><b>Motivo:</b> ${log.reason}</p>`;
+            if (log.end_date) extraInfo += `<p>Expira: ${new Date(log.end_date).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' })}</p>`;
+            if (log.admin_notes) extraInfo += `<div>${log.admin_notes}</div>`;
 
+            // HTML principal renderizado limpiamente sin estilos inline
             div.innerHTML = `
-                <div class="component-group-item component-group-item--stacked" style="padding: 16px;">
-                    <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; border-bottom: 1px solid var(--border-lighter); padding-bottom: 12px; margin-bottom: 12px; gap: 8px; flex-wrap: wrap;">
-                        <div style="display: flex; align-items: center; gap: 12px;">
-                            <div class="component-button--profile component-avatar--static-sm role-${log.admin_role || 'user'}" style="width: 36px; height: 36px;">
+                <div class="component-group-item component-group-item--stacked">
+                    <div>
+                        <div>
+                            <div class="component-button--profile component-avatar--static-sm role-${log.admin_role || 'user'}">
                                 <img src="${adminPic}" alt="Admin">
                             </div>
                             <div>
-                                <div style="font-size: 14px; font-weight: 600; color: var(--text-primary);">${adminName}</div>
-                                <div style="font-size: 12px; color: var(--text-secondary);">${dateStr}</div>
+                                <div>${adminName}</div>
+                                <div>${dateStr}</div>
                             </div>
                         </div>
-                        <div class="component-badge component-badge--sm" style="color: ${actionColor}; border-color: ${actionColor}40; background-color: ${actionColor}10;">
-                            <span class="material-symbols-rounded" style="color: inherit;">${actionIcon}</span>
+                        <div class="component-badge component-badge--sm">
+                            <span class="material-symbols-rounded">${actionIcon}</span>
                             <span>${actionText}</span>
                         </div>
                     </div>
@@ -622,12 +618,19 @@ export class AdminStatusEditController {
     }
 
     async submitAdminNote(btn) {
-        const textarea = document.getElementById('inp_new_admin_note');
+        const textarea = document.querySelector('[data-ref="inp_new_admin_note"]');
         if (!textarea) return;
-        const note = textarea.value.trim();
+        
+        let note = textarea.value;
+        note = note.replace(/<[^>]*>?/gm, '').trim();
         
         if (!note) {
-            this.showMessage('La nota no puede estar vacía.', 'error');
+            this.showMessage('La nota no puede estar vacía o contener solo código HTML.', 'error');
+            return;
+        }
+
+        if (note.length > 1000) {
+            this.showMessage('La nota no puede exceder los 1000 caracteres.', 'error');
             return;
         }
 
@@ -643,6 +646,8 @@ export class AdminStatusEditController {
         if (res.success) {
             this.showMessage(res.message, 'success');
             textarea.value = '';
+            const counter = document.querySelector('[data-ref="admin-note-counter"]');
+            if (counter) counter.textContent = '0 / 1000 caracteres';
             this.loadKardex();
         } else {
             this.showMessage(res.message, 'error');

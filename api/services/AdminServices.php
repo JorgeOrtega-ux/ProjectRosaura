@@ -74,10 +74,6 @@ class AdminServices {
         return ['allowed' => true];
     }
 
-    /**
-     * Helper para aplicar y registrar Rate Limits específicos para acciones de administrador.
-     * Añade el ID del administrador a la key para no bloquear por IP general si hay varios admins en la misma red.
-     */
     private function applyAdminRateLimit($action, $defaultAttempts, $defaultMinutes, $customMsg) {
         $attempts = $this->config[$action . '_attempts'] ?? $defaultAttempts;
         $minutes = $this->config[$action . '_minutes'] ?? $defaultMinutes;
@@ -139,7 +135,6 @@ class AdminServices {
         $authCheck = $this->canEditUser($user);
         if (!$authCheck['allowed']) return ['success' => false, 'message' => $authCheck['message']];
 
-        // Rate Limit (Ej: max 20 cambios por 30 mins)
         $rl = $this->applyAdminRateLimit('admin_edit_avatar', 20, 30, "Límite de seguridad: Has modificado demasiados avatares. Espera {minutes} minutos.");
         if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
 
@@ -190,7 +185,6 @@ class AdminServices {
         $authCheck = $this->canEditUser($user);
         if (!$authCheck['allowed']) return ['success' => false, 'message' => $authCheck['message']];
 
-        // Rate Limit (Ej: max 20 cambios por 30 mins)
         $rl = $this->applyAdminRateLimit('admin_edit_avatar', 20, 30, "Límite de seguridad: Has modificado demasiados avatares. Espera {minutes} minutos.");
         if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
 
@@ -220,7 +214,6 @@ class AdminServices {
         $authCheck = $this->canEditUser($user);
         if (!$authCheck['allowed']) return ['success' => false, 'message' => $authCheck['message']];
 
-        // Rate Limit (Ej: max 20 cambios por 30 mins)
         $rl = $this->applyAdminRateLimit('admin_edit_username', 20, 30, "Límite de seguridad: Has cambiado demasiados nombres de usuario. Espera {minutes} minutos.");
         if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
 
@@ -251,7 +244,6 @@ class AdminServices {
         $authCheck = $this->canEditUser($user);
         if (!$authCheck['allowed']) return ['success' => false, 'message' => $authCheck['message']];
 
-        // Rate Limit (Ej: max 20 cambios por 30 mins)
         $rl = $this->applyAdminRateLimit('admin_edit_email', 20, 30, "Límite de seguridad: Has cambiado demasiados correos electrónicos. Espera {minutes} minutos.");
         if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
 
@@ -284,7 +276,6 @@ class AdminServices {
         $authCheck = $this->canEditUser($user);
         if (!$authCheck['allowed']) return ['success' => false, 'message' => $authCheck['message']];
 
-        // Rate Limit (Ej: max 50 cambios por 30 mins)
         $rl = $this->applyAdminRateLimit('admin_edit_prefs', 50, 30, "Límite de seguridad: Has actualizado demasiadas preferencias. Espera {minutes} minutos.");
         if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
 
@@ -328,7 +319,6 @@ class AdminServices {
             return ['success' => false, 'message' => $authCheck['message']];
         }
 
-        // Rate Limit ULTRA RESTRICTIVO (Ej: Máximo 10 por 30 mins) para prevenir elevación de privilegios masiva
         $rl = $this->applyAdminRateLimit('admin_edit_role', 10, 30, "Protección contra cambios masivos: Límite de modificación de roles alcanzado. Espera {minutes} minutos.");
         if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
 
@@ -375,7 +365,6 @@ class AdminServices {
             return ['success' => false, 'message' => $authCheck['message']];
         }
 
-        // Rate Limit (Ej: Máximo 20 por 30 mins) para evitar bloqueos masivos
         $rl = $this->applyAdminRateLimit('admin_edit_status', 20, 30, "Protección del sistema: Límite de sanciones y cambios de estado alcanzado. Espera {minutes} minutos.");
         if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
 
@@ -479,10 +468,22 @@ class AdminServices {
         if (!$this->checkAdmin()) return ['success' => false, 'message' => 'No autorizado.'];
         
         $targetId = (int)($data['target_user_id'] ?? 0);
-        $note = trim($data['note'] ?? '');
         
-        if (empty($note)) {
-            return ['success' => false, 'message' => 'La nota no puede estar vacía.'];
+        // --- 1. SANITIZACIÓN ULTRA ESTRICTA ---
+        $rawNote = $data['note'] ?? '';
+        
+        // Remover cualquier etiqueta HTML o PHP inyectada
+        $cleanNote = strip_tags($rawNote);
+        // Convertir caracteres especiales (como comillas, '&') en entidades seguras
+        $cleanNote = htmlspecialchars(trim($cleanNote), ENT_QUOTES, 'UTF-8');
+        
+        if (empty($cleanNote)) {
+            return ['success' => false, 'message' => 'La nota no puede estar vacía o contener código no válido.'];
+        }
+
+        // --- 2. VALIDACIÓN DE LONGITUD MÁXIMA ---
+        if (mb_strlen($cleanNote) > 1000) {
+            return ['success' => false, 'message' => 'La nota no puede exceder los 1000 caracteres.'];
         }
 
         $user = $this->userRepository->findById($targetId);
@@ -491,13 +492,12 @@ class AdminServices {
         $authCheck = $this->canEditUser($user);
         if (!$authCheck['allowed']) return ['success' => false, 'message' => $authCheck['message']];
 
-        // Rate Limit para evitar spam de notas en el Kardex
         $rl = $this->applyAdminRateLimit('admin_add_note', 30, 30, "Límite de seguridad: Has agregado demasiadas notas. Espera {minutes} minutos.");
         if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
 
         $currentUserId = $this->sessionManager->get('user_id');
 
-        if ($this->moderationRepository->logAction($targetId, $currentUserId, 'note_updated', null, null, $note)) {
+        if ($this->moderationRepository->logAction($targetId, $currentUserId, 'note_updated', null, null, $cleanNote)) {
             Logger::security("Admin ID: $currentUserId agregó una nota al Kardex del usuario $targetId", 'info');
             return ['success' => true, 'message' => 'Nota administrativa agregada correctamente.'];
         }
