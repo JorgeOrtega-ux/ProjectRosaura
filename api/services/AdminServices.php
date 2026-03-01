@@ -588,43 +588,99 @@ class AdminServices {
         return $dir;
     }
 
+    // --- LÓGICA REESCRITA PARA ENCOLAR EN REDIS (USANDO PREDIS) ---
     public function createBackup() {
         if (!$this->checkAdmin()) return ['success' => false, 'message' => 'No autorizado.'];
 
         $rl = $this->applyAdminRateLimit('admin_backup_create', 5, 30, "Límite de seguridad: Has creado demasiados backups manualmente. Espera {minutes} minutos.");
         if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
         
-        $dir = $this->getBackupDir();
-        $date = date('Y-m-d_H-i-s');
-        $filename = "backup_manual_{$date}.sql";
-        $filepath = $dir . $filename;
-        
-        $host = escapeshellarg($_ENV['DB_HOST'] ?? 'localhost');
-        $user = escapeshellarg($_ENV['DB_USER'] ?? 'root');
-        $pass = $_ENV['DB_PASS'] ?? '';
-        $dbname = escapeshellarg($_ENV['DB_NAME'] ?? 'projectrosaura');
-        
-        // Uso de variables de entorno para evitar exposición en CLI (ps aux, top)
-        if ($pass) {
-            putenv("MYSQL_PWD=" . $pass);
-        }
-        
-        $command = "mysqldump -h {$host} -u {$user} {$dbname} > " . escapeshellarg($filepath) . " 2>&1";
-        exec($command, $output, $returnVar);
-        
-        // Limpiar la variable del entorno una vez concluido el comando
-        if ($pass) {
-            putenv("MYSQL_PWD"); 
-        }
-        
-        if ($returnVar === 0) {
+        try {
+            $redisHost = $_ENV['REDIS_HOST'] ?? '127.0.0.1';
+            $redisPort = (int)($_ENV['REDIS_PORT'] ?? 6379);
+            
+            $connectionParams = [
+                'scheme' => 'tcp',
+                'host'   => $redisHost,
+                'port'   => $redisPort,
+            ];
+            
+            if (!empty($_ENV['REDIS_PASS'])) {
+                $connectionParams['password'] = $_ENV['REDIS_PASS'];
+            }
+
+            $redis = new \Predis\Client($connectionParams);
+
+            $jobId = Utils::generateUUID();
+            $jobKey = "backup_job:{$jobId}";
+
+            // Crear el registro de la tarea en Redis
+            $redis->hmset($jobKey, [
+                'status' => 'pending',
+                'message' => 'En cola para ejecución...',
+                'created_at' => time()
+            ]);
+            
+            // Expirar la llave después de 1 hora para evitar basura si falla el worker
+            $redis->expire($jobKey, 3600);
+
+            // Encolar la orden
+            $redis->rpush('backup_queue', [json_encode([
+                'job_id' => $jobId,
+                'type' => 'manual',
+                'requested_by' => $this->sessionManager->get('user_id')
+            ])]);
+
             $currentUserId = $this->sessionManager->get('user_id');
-            Logger::security("Admin ID: {$currentUserId} creó una copia de seguridad manual: {$filename}", 'info');
-            return ['success' => true, 'message' => 'Copia de seguridad creada con éxito.'];
-        } else {
-            @unlink($filepath);
-            Logger::security("Error al crear backup: " . implode("\n", $output), 'error');
-            return ['success' => false, 'message' => 'Error al crear la copia de seguridad. Verifique la configuración del servidor.'];
+            Logger::security("Admin ID: {$currentUserId} encoló una tarea de backup manual con ID: {$jobId}", 'info');
+
+            return ['success' => true, 'message' => 'Copia de seguridad enviada a la cola.', 'job_id' => $jobId];
+
+        } catch (\Exception $e) {
+            Logger::security("Error de Redis al encolar backup: " . $e->getMessage(), 'error');
+            return ['success' => false, 'message' => 'Error al comunicar con el sistema de trabajos en segundo plano.'];
+        }
+    }
+
+    // --- MÉTODO PARA CONSULTAR EL ESTADO EN REDIS (USANDO PREDIS) ---
+    public function backupStatus($data) {
+        if (!$this->checkAdmin()) return ['success' => false, 'message' => 'No autorizado.'];
+
+        $jobId = $data['job_id'] ?? '';
+        if (empty($jobId)) return ['success' => false, 'message' => 'ID de tarea no proporcionado.'];
+
+        try {
+            $redisHost = $_ENV['REDIS_HOST'] ?? '127.0.0.1';
+            $redisPort = (int)($_ENV['REDIS_PORT'] ?? 6379);
+            
+            $connectionParams = [
+                'scheme' => 'tcp',
+                'host'   => $redisHost,
+                'port'   => $redisPort,
+            ];
+            
+            if (!empty($_ENV['REDIS_PASS'])) {
+                $connectionParams['password'] = $_ENV['REDIS_PASS'];
+            }
+
+            $redis = new \Predis\Client($connectionParams);
+
+            $jobKey = "backup_job:{$jobId}";
+            
+            if (!$redis->exists($jobKey)) {
+                return ['success' => false, 'status' => 'not_found', 'message' => 'La tarea no existe o ya ha expirado.'];
+            }
+
+            $statusData = $redis->hgetall($jobKey);
+            
+            return [
+                'success' => true,
+                'status' => $statusData['status'] ?? 'unknown',
+                'job_message' => $statusData['message'] ?? ''
+            ];
+
+        } catch (\Exception $e) {
+            return ['success' => false, 'message' => 'Error al consultar el estado de la tarea en Redis.'];
         }
     }
 

@@ -59,6 +59,7 @@ return [
 
     // --- RUTAS DE COPIAS DE SEGURIDAD ---
     'admin.create_backup'         => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'create_backup'],
+    'admin.backup_status'         => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'backup_status'], // Nueva ruta asíncrona
     'admin.restore_backup'        => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'restore_backup'],
     'admin.delete_backup'         => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'delete_backup'],
 ];

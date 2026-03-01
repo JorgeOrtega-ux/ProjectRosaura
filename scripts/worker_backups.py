@@ -4,6 +4,8 @@ import sys
 import glob
 import time
 import subprocess
+import json
+import redis
 from datetime import datetime
 import mysql.connector
 from dotenv import load_dotenv
@@ -21,11 +23,25 @@ DB_USER = os.getenv('DB_USER', 'root')
 DB_PASS = os.getenv('DB_PASS', '')
 DB_NAME = os.getenv('DB_NAME', 'projectrosaura')
 
+REDIS_HOST = os.getenv('REDIS_HOST', '127.0.0.1')
+REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
+REDIS_PASS = os.getenv('REDIS_PASS', '')
+
 # Frecuencia base del "latido" del worker (en segundos)
-WORKER_TICK_SECONDS = 10
+# Reducido a 3 para procesar trabajos manuales rápidamente
+WORKER_TICK_SECONDS = 3 
 
 def log(message):
     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {message}", flush=True)
+
+def get_redis_connection():
+    try:
+        r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASS, decode_responses=True)
+        r.ping()
+        return r
+    except Exception as e:
+        log(f"Error de conexión con Redis: {str(e)}")
+        return None
 
 def get_server_config():
     try:
@@ -45,17 +61,13 @@ def get_server_config():
         log(f"Error al conectar con la base de datos: {str(e)}")
         return None
 
-def create_backup():
+def execute_mysqldump(filename):
     if not os.path.exists(BACKUP_DIR):
         os.makedirs(BACKUP_DIR)
         
-    date_str = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-    filename = f"auto_backup_{date_str}.sql"
     filepath = os.path.join(BACKUP_DIR, filename)
-    
     dump_cmd = ["mysqldump", "-h", DB_HOST, "-u", DB_USER, DB_NAME]
     
-    # Usar variables de entorno para evitar exposición de credenciales
     env = os.environ.copy()
     if DB_PASS:
         env["MYSQL_PWD"] = DB_PASS
@@ -64,10 +76,7 @@ def create_backup():
         with open(filepath, 'w') as f:
             subprocess.run(dump_cmd, env=env, stdout=f, stderr=subprocess.PIPE, check=True)
             
-        # Restringir permisos del archivo (Solo dueño)
         os.chmod(filepath, 0o600)
-        
-        log(f"✅ Copia de seguridad generada con éxito: {filename}")
         return True
     except subprocess.CalledProcessError as e:
         log(f"❌ Error ejecutando mysqldump: {e.stderr.decode('utf-8')}")
@@ -75,11 +84,18 @@ def create_backup():
             os.remove(filepath)
         return False
 
+def create_auto_backup():
+    date_str = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    filename = f"auto_backup_{date_str}.sql"
+    if execute_mysqldump(filename):
+        log(f"✅ Copia de seguridad automática generada: {filename}")
+        return True
+    return False
+
 def clean_old_backups(retention_count):
     search_pattern = os.path.join(BACKUP_DIR, "auto_backup_*.sql")
     files = glob.glob(search_pattern)
     
-    # Ordenar por fecha de modificación (los más recientes primero)
     files.sort(key=os.path.getmtime, reverse=True)
     
     if len(files) > retention_count:
@@ -91,13 +107,40 @@ def clean_old_backups(retention_count):
             except Exception as e:
                 log(f"❌ Error al eliminar backup antiguo {os.path.basename(file)}: {str(e)}")
 
+def process_manual_backups():
+    r = get_redis_connection()
+    if not r:
+        return
+
+    # Usamos LPOP en lugar de BLPOP para no bloquear el worker y permitir que los backups automáticos funcionen
+    job_data_raw = r.lpop('backup_queue')
+    
+    if job_data_raw:
+        try:
+            job_data = json.loads(job_data_raw)
+            job_id = job_data.get('job_id')
+            job_key = f"backup_job:{job_id}"
+            
+            # Actualizar estado a procesando
+            r.hset(job_key, mapping={'status': 'processing', 'message': 'Generando archivo de respaldo...'})
+            log(f"⚙️ Procesando solicitud manual de backup ID: {job_id}")
+            
+            date_str = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+            filename = f"backup_manual_{date_str}.sql"
+            
+            if execute_mysqldump(filename):
+                log(f"✅ Copia de seguridad manual generada: {filename}")
+                r.hset(job_key, mapping={'status': 'completed', 'message': 'Copia de seguridad creada con éxito.'})
+            else:
+                r.hset(job_key, mapping={'status': 'failed', 'message': 'Error interno al generar el respaldo.'})
+                
+        except Exception as e:
+            log(f"❌ Error al procesar trabajo manual de Redis: {str(e)}")
+
 def run_worker_cycle():
     config = get_server_config()
     
-    if not config:
-        return 
-        
-    if config['auto_backup_enabled'] != 1:
+    if not config or config['auto_backup_enabled'] != 1:
         return 
         
     freq_hours = config['auto_backup_frequency_hours']
@@ -126,18 +169,23 @@ def run_worker_cycle():
             should_backup = True
             
     if should_backup:
-        if create_backup():
+        if create_auto_backup():
             clean_old_backups(retention_count)
 
 def main():
     log("==================================================")
-    log("🚀 Iniciando Worker de Backups (Modo Reactivo)...")
-    log(f"⏱️ El worker leerá los ajustes de la web cada {WORKER_TICK_SECONDS} segundos.")
+    log("🚀 Iniciando Worker de Backups (Modo Mixto)...")
+    log(f"⏱️ El worker buscará tareas manuales/automáticas cada {WORKER_TICK_SECONDS} segundos.")
     log("==================================================")
     
     while True:
         try:
+            # 1. Atender tareas manuales encoladas por el admin
+            process_manual_backups()
+            
+            # 2. Revisar si toca un backup automático
             run_worker_cycle()
+            
         except Exception as e:
             log(f"⚠️ Error crítico en el ciclo del worker: {str(e)}")
             

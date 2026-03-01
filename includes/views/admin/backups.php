@@ -33,8 +33,16 @@ if (is_dir($backupDir)) {
 ?>
 
 <div class="view-content">
-    <div class="component-wrapper" data-ref="manage-backups-wrapper">
+    <div class="component-wrapper" data-ref="manage-backups-wrapper" style="position: relative;">
         
+        <div data-ref="backup-loading-overlay" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-surface-opacity, rgba(0,0,0,0.5)); z-index: 100; backdrop-filter: blur(3px); border-radius: inherit; flex-direction: column; align-items: center; justify-content: center; color: var(--text-primary);">
+            <span class="material-symbols-rounded" style="font-size: 48px; margin-bottom: 16px; animation: spin 1s linear infinite;">autorenew</span>
+            <h3 style="margin: 0;">Respaldando Base de Datos</h3>
+            <p style="margin-top: 8px; color: var(--text-secondary);">El proceso se está ejecutando en segundo plano. Por favor, espere...</p>
+            <style>
+                @keyframes spin { 100% { transform: rotate(360deg); } }
+            </style>
+        </div>
         <div class="component-sticky-toolbar">
             
             <div class="component-toolbar-primary">
