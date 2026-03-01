@@ -6,6 +6,7 @@ export class AdminStatusEditController {
     constructor() {
         this.api = new ApiService();
         this.targetUserId = null;
+        this.initialState = null; 
         
         this.state = {
             status: 'active',
@@ -88,11 +89,13 @@ export class AdminStatusEditController {
                                 this.state.endDate = isoString;
                                 const textEl = document.getElementById('admin-endDate-text');
                                 if (textEl) textEl.textContent = displayString;
+                                this.checkForChanges(); 
                             },
                             () => {
                                 this.state.endDate = '';
                                 const textEl = document.getElementById('admin-endDate-text');
                                 if (textEl) textEl.textContent = 'Seleccionar fecha y hora...';
+                                this.checkForChanges(); 
                             }
                         );
                     }
@@ -128,6 +131,7 @@ export class AdminStatusEditController {
                 
                 this.syncVisuals();
                 this.renderUI();
+                this.checkForChanges(); 
             }
 
             const btnSubmitUpdate = e.target.closest('[data-action="submitStatusUpdate"]');
@@ -154,11 +158,18 @@ export class AdminStatusEditController {
             if (e.target.id === 'inp_custom_deleted_reason_admin') this.state.customDeletedReasonAdmin = e.target.value;
             if (e.target.id === 'inp_custom_suspension_reason') this.state.customSuspensionReason = e.target.value;
             if (e.target.id === 'inp_admin_notes') this.state.adminNotes = e.target.value;
+
+            if (['inp_deleted_reason_user', 'inp_custom_deleted_reason_admin', 'inp_custom_suspension_reason', 'inp_admin_notes'].includes(e.target.id)) {
+                this.checkForChanges(); 
+            }
         });
 
         document.addEventListener('change', (e) => {
             if (!window.location.pathname.includes('/admin/edit-status')) return;
-            if (e.target.id === 'chk_notify_user') this.state.notifyUser = e.target.checked;
+            if (e.target.id === 'chk_notify_user') {
+                this.state.notifyUser = e.target.checked;
+                this.checkForChanges(); 
+            }
         });
     }
 
@@ -247,7 +258,7 @@ export class AdminStatusEditController {
             }
 
             this.state.adminNotes = u.admin_notes || '';
-            this.state.notifyUser = true; // Por defecto siempre lo habilitamos en la UI al cargar
+            this.state.notifyUser = true; 
 
             const inpUserReason = document.getElementById('inp_deleted_reason_user');
             const inpAdminCustom = document.getElementById('inp_custom_deleted_reason_admin');
@@ -264,6 +275,9 @@ export class AdminStatusEditController {
             this.updateCalendarText();
             this.syncVisuals();
             this.renderUI();
+
+            this.initialState = JSON.parse(JSON.stringify(this.state)); 
+            this.checkForChanges(); 
 
             if (loader) loader.classList.add('disabled');
             if (form) form.classList.remove('disabled');
@@ -360,12 +374,34 @@ export class AdminStatusEditController {
             }
         }
 
-        // Notas internas siempre visibles para los admins al editar el estado
         if (secAdminNotes) secAdminNotes.classList.remove('disabled');
 
         if (s.status === 'deleted' || s.isSuspended === '1') {
             if (secNotifyUser) secNotifyUser.classList.remove('disabled');
             if (warningBox) warningBox.classList.remove('disabled');
+        }
+    }
+
+    checkForChanges() {
+        if (!this.initialState) return;
+
+        let hasChanges = false;
+        for (const key in this.state) {
+            if (this.state[key] !== this.initialState[key]) {
+                hasChanges = true;
+                break;
+            }
+        }
+
+        const passArea = document.getElementById('admin-status-password-area');
+        const btnSave = document.getElementById('admin-btn-save-status');
+
+        if (hasChanges) {
+            if (passArea) passArea.classList.remove('disabled');
+            if (btnSave) btnSave.classList.remove('disabled-interaction');
+        } else {
+            if (passArea) passArea.classList.add('disabled');
+            if (btnSave) btnSave.classList.add('disabled-interaction');
         }
     }
 
