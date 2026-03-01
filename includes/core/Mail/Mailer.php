@@ -114,5 +114,29 @@ class Mailer {
             return false;
         }
     }
+
+    public function sendAccountStatusNotification($toEmail, $username, $action, $reason, $endDate = null) {
+        try {
+            $this->mail->clearAddresses();
+            $this->mail->addAddress($toEmail, $username);
+
+            $this->mail->isHTML(true);
+            $this->mail->Subject = 'Aviso de moderación de cuenta - Project Rosaura';
+            
+            $this->mail->Body = EmailTemplates::get('account_status_update', [
+                'username' => $username,
+                'action' => $action,
+                'reason' => $reason,
+                'endDate' => $endDate
+            ]);
+            
+            $this->mail->AltBody = "Hola {$username},\n\nTu cuenta ha sido restringida o eliminada.\n\nMotivo: {$reason}\n\nContacta a soporte si consideras que es un error.\n\nEl equipo de Project Rosaura";
+
+            return $this->mail->send();
+        } catch (Exception $e) {
+            Logger::security("Fallo al enviar correo de restricción a {$toEmail}: {$this->mail->ErrorInfo}", 'error');
+            return false;
+        }
+    }
 }
 ?>

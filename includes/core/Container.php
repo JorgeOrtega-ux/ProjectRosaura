@@ -27,6 +27,8 @@ use App\Core\Repositories\ProfileLogRepository;
 use App\Core\Interfaces\ProfileLogRepositoryInterface;
 use App\Core\Repositories\ServerConfigRepository;
 use App\Core\Interfaces\ServerConfigRepositoryInterface;
+use App\Core\Repositories\ModerationRepository;
+use App\Core\Interfaces\ModerationRepositoryInterface;
 
 class Container implements ContainerInterface {
     private $instances = [];
@@ -43,16 +45,17 @@ class Container implements ContainerInterface {
         $this->instances[Client::class] = $redis->getClient();
         
         // 2. Registrar Bindings (Interfaces conectadas a Implementaciones)
-        $this->bindings[RateLimiterInterface::class] = RedisRateLimiter::class; // INYECCIÓN CAMBIADA A REDIS
+        $this->bindings[RateLimiterInterface::class] = RedisRateLimiter::class; 
         $this->bindings[UserPrefsManagerInterface::class] = UserPrefsManager::class;
         $this->bindings[SessionManagerInterface::class] = SessionManager::class;
         $this->bindings[UserRepositoryInterface::class] = UserRepository::class;
         
         // 3. Repositorios Clean Architecture
         $this->bindings[TokenRepositoryInterface::class] = TokenRepository::class;
-        $this->bindings[VerificationCodeRepositoryInterface::class] = RedisVerificationCodeRepository::class; // INYECCIÓN CAMBIADA A REDIS
+        $this->bindings[VerificationCodeRepositoryInterface::class] = RedisVerificationCodeRepository::class; 
         $this->bindings[ProfileLogRepositoryInterface::class] = ProfileLogRepository::class;
         $this->bindings[ServerConfigRepositoryInterface::class] = ServerConfigRepository::class;
+        $this->bindings[ModerationRepositoryInterface::class] = ModerationRepository::class;
     }
 
     public function get(string $id) {

@@ -72,6 +72,34 @@ class EmailTemplates {
                 ";
                 break;
 
+            case 'account_status_update':
+                $actionText = $action === 'deleted' ? 'eliminada permanentemente' : 'suspendida temporal o definitivamente';
+                $timeText = '';
+                
+                if ($action === 'suspended') {
+                    if (!empty($endDate)) {
+                        $formattedDate = date('d/m/Y h:i A', strtotime($endDate));
+                        $timeText = "<p style='color: #666666; font-size: 14px;'>La suspensión finalizará el: <b style='color: #111111;'>{$formattedDate}</b>.</p>";
+                    } else {
+                        $timeText = "<p style='color: #666666; font-size: 14px;'>La suspensión es de carácter <b style='color: #111111;'>permanente</b>.</p>";
+                    }
+                }
+
+                $content = "
+                    <h2 style='color: #111111; margin-top: 0;'>Aviso de seguridad, {$username}</h2>
+                    <p style='color: #666666; font-size: 15px; line-height: 1.5;'>Te informamos que tu cuenta ha sido <b>{$actionText}</b> por nuestro equipo de moderación.</p>
+                    
+                    <div style='background-color: #fffaf9; padding: 15px; border-radius: 8px; margin: 20px 0; border: 1px solid #d32f2f30;'>
+                        <p style='margin: 0; color: #d32f2f; font-size: 14px;'><b>Motivo:</b> " . htmlspecialchars($reason ?? 'No especificado') . "</p>
+                    </div>
+                    
+                    {$timeText}
+                    
+                    <hr style='border: none; border-top: 1px solid #00000020; margin: 25px 0;'>
+                    <p style='font-size: 12px; color: #999999;'>Si consideras que esto es un error, por favor contacta a nuestro equipo de soporte.</p>
+                ";
+                break;
+
             default:
                 $content = "<p style='color: #111;'>Contenido del correo no especificado o plantilla no encontrada.</p>";
                 break;

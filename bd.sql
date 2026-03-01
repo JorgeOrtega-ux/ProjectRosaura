@@ -13,18 +13,38 @@ CREATE TABLE `users` (
   `two_factor_recovery_codes` text DEFAULT NULL,
   `role` enum('user','moderator','administrator','founder') DEFAULT 'user',
   `user_status` enum('active','deleted') DEFAULT 'active',
-  `deleted_by` enum('user','admin') DEFAULT NULL,
-  `deleted_reason` text DEFAULT NULL,
-  `is_suspended` tinyint(1) DEFAULT 0,
-  `suspension_type` enum('temporary','permanent') DEFAULT NULL,
-  `suspension_reason` text DEFAULT NULL,
-  `suspension_end_date` datetime DEFAULT NULL,
   `profile_picture` varchar(255) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
   UNIQUE KEY `uuid` (`uuid`),
   UNIQUE KEY `email` (`email`),
   UNIQUE KEY `username` (`username`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE IF NOT EXISTS user_restrictions (
+    user_id INT(11) NOT NULL PRIMARY KEY,
+    is_suspended TINYINT(1) DEFAULT 0,
+    suspension_type ENUM('temporary', 'permanent') DEFAULT NULL,
+    suspension_reason TEXT DEFAULT NULL,
+    suspension_end_date DATETIME DEFAULT NULL,
+    deleted_by ENUM('user', 'admin') DEFAULT NULL,
+    deleted_reason TEXT DEFAULT NULL,
+    admin_notes TEXT DEFAULT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_user_restrictions FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE IF NOT EXISTS moderation_logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT(11) NOT NULL,
+    admin_id INT(11) DEFAULT NULL,
+    action_type ENUM('suspended', 'unsuspended', 'deleted', 'restored', 'note_updated') NOT NULL,
+    reason TEXT DEFAULT NULL,
+    end_date DATETIME DEFAULT NULL,
+    admin_notes TEXT DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_mod_log_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_mod_log_admin FOREIGN KEY (admin_id) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE IF NOT EXISTS profile_changes_log (

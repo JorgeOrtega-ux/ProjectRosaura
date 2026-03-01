@@ -7,6 +7,7 @@ use App\Core\Helpers\Utils;
 use App\Core\System\Logger;
 use App\Core\Mail\Mailer;
 use App\Core\Interfaces\UserRepositoryInterface;
+use App\Core\Interfaces\ModerationRepositoryInterface;
 use App\Core\Interfaces\SessionManagerInterface;
 use App\Core\Interfaces\ServerConfigRepositoryInterface;
 use App\Core\Interfaces\UserPrefsManagerInterface;
@@ -14,6 +15,7 @@ use App\Core\Interfaces\TokenRepositoryInterface;
 
 class AdminServices {
     private $userRepository;
+    private $moderationRepository;
     private $sessionManager;
     private $config;
     private $prefsManager;
@@ -21,12 +23,14 @@ class AdminServices {
 
     public function __construct(
         UserRepositoryInterface $userRepository,
+        ModerationRepositoryInterface $moderationRepository,
         SessionManagerInterface $sessionManager,
         ServerConfigRepositoryInterface $configRepository,
         UserPrefsManagerInterface $prefsManager,
         TokenRepositoryInterface $tokenRepository
     ) {
         $this->userRepository = $userRepository;
+        $this->moderationRepository = $moderationRepository;
         $this->sessionManager = $sessionManager;
         $this->config = $configRepository->getConfig();
         $this->prefsManager = $prefsManager;
@@ -85,15 +89,17 @@ class AdminServices {
                 'profile_picture' => $user['profile_picture'],
                 'role' => $user['role'],
                 
-                // Columnas independientes
+                // Columnas independientes (ahora leídas desde el LEFT JOIN)
                 'user_status' => $user['user_status'],
                 'deleted_by' => $user['deleted_by'],
                 'deleted_reason' => $user['deleted_reason'],
                 
-                'is_suspended' => $user['is_suspended'],
+                'is_suspended' => $user['is_suspended'] ?? 0,
                 'suspension_type' => $user['suspension_type'],
                 'suspension_reason' => $user['suspension_reason'],
-                'suspension_end_date' => $user['suspension_end_date']
+                'suspension_end_date' => $user['suspension_end_date'],
+
+                'admin_notes' => $user['admin_notes'] ?? ''
             ],
             'preferences' => $userPrefs
         ];
@@ -217,11 +223,9 @@ class AdminServices {
 
         $oldEmail = $user['email'];
         if ($this->userRepository->updateEmail($targetId, $email)) {
-            // 1. Agregar Log de auditoría obligatorio
             $currentUserId = $this->sessionManager->get('user_id');
             Logger::security("Admin ID: {$currentUserId} cambió el email del Usuario ID: {$targetId} de {$oldEmail} a {$email}", 'critical');
             
-            // 2. Enviar correo a la dirección anterior informando el cambio
             $mailer = new Mailer();
             $mailer->sendSecurityAlertEmailChanged($oldEmail, $user['username'], $email);
 
@@ -297,7 +301,6 @@ class AdminServices {
 
         if ($this->userRepository->updateRole($targetId, $role)) {
             Logger::security("Admin ID: $currentUserId actualizó rol del usuario $targetId a $role", 'critical');
-            // NOTA: Confiamos en la validación de hidratación en tiempo real, por lo que NO se cierran las sesiones aquí.
             return ['success' => true, 'message' => 'El rol de la cuenta ha sido actualizado.', 'new_role' => $role];
         }
         
@@ -325,14 +328,12 @@ class AdminServices {
 
         $currentUserId = $this->sessionManager->get('user_id');
 
-        // Validación estricta de contraseña del Admin antes de procesar cambios destructivos
         $adminData = $this->userRepository->findById($currentUserId);
         if (!$adminData || !password_verify($password, $adminData['password'])) {
             Logger::security("Fallo en cambio de estado: Contraseña de admin incorrecta por el Admin ID: $currentUserId", 'warning');
             return ['success' => false, 'message' => 'Contraseña incorrecta. Acción denegada.'];
         }
 
-        // LÓGICA DE SEPARACIÓN ABSOLUTA: 
         $dbStatus = ($data['status'] === 'deleted') ? 'deleted' : 'active';
         $dbDeletedBy = null;
         $dbDeletedReason = null;
@@ -346,12 +347,13 @@ class AdminServices {
         $dbSuspensionType = null;
         $dbSuspensionReason = null;
         $dbEndDate = null;
+        $dbAdminNotes = $data['admin_notes'] ?? null;
+        $notifyUser = (isset($data['notify_user']) && $data['notify_user'] == true);
 
         if ($dbIsSuspended === 1) {
             $dbSuspensionType = ($data['suspension_type'] === 'temporary') ? 'temporary' : 'permanent';
             $dbSuspensionReason = $data['suspension_reason'] ?? null;
             
-            // Validación estricta de fecha en el servidor
             if ($dbSuspensionType === 'temporary' && !empty($data['end_date'])) {
                 if (strtotime($data['end_date']) <= time()) {
                     return ['success' => false, 'message' => 'La fecha de fin de suspensión debe estar en el futuro.'];
@@ -360,16 +362,48 @@ class AdminServices {
             }
         }
 
-        if ($this->userRepository->updateStatus($targetId, $dbStatus, $dbDeletedBy, $dbDeletedReason, $dbIsSuspended, $dbSuspensionType, $dbSuspensionReason, $dbEndDate)) {
+        // Lógica inteligente para determinar la acción registrada en el Log de Moderación
+        $actionType = 'note_updated';
+        $logReason = null;
+        
+        if ($dbStatus === 'deleted' && $user['user_status'] !== 'deleted') {
+            $actionType = 'deleted';
+            $logReason = $dbDeletedReason;
+        } elseif ($dbStatus === 'active' && $user['user_status'] === 'deleted') {
+            $actionType = 'restored';
+        } elseif ($dbIsSuspended === 1 && (!isset($user['is_suspended']) || $user['is_suspended'] != 1)) {
+            $actionType = 'suspended';
+            $logReason = $dbSuspensionReason;
+        } elseif ($dbIsSuspended === 0 && (isset($user['is_suspended']) && $user['is_suspended'] == 1)) {
+            $actionType = 'unsuspended';
+        } elseif ($dbIsSuspended === 1 && (isset($user['is_suspended']) && $user['is_suspended'] == 1)) {
+            if ($dbSuspensionReason !== $user['suspension_reason'] || $dbEndDate !== $user['suspension_end_date']) {
+                 $actionType = 'suspended'; 
+                 $logReason = $dbSuspensionReason;
+            }
+        }
+
+        // Ejecutar Update con el nuevo repositorio de Moderación
+        if ($this->moderationRepository->updateStatus($targetId, $dbStatus, $dbDeletedBy, $dbDeletedReason, $dbIsSuspended, $dbSuspensionType, $dbSuspensionReason, $dbEndDate, $dbAdminNotes)) {
+            
+            // Guardar Log Inmutable en el historial
+            $this->moderationRepository->logAction($targetId, $currentUserId, $actionType, $logReason, $dbEndDate, $dbAdminNotes);
             Logger::security("Admin ID: $currentUserId actualizó restricciones/estado del usuario $targetId", 'critical');
             
-            // Si lo acaban de eliminar O lo acaban de suspender, forzamos cierre de sesiones (Best Practice)
-            // Esto complementa la hidratación en tiempo real con una revocación dura a nivel BD
             if ($dbStatus === 'deleted' || $dbIsSuspended === 1) {
+                // Cerrar todas las sesiones
                 $this->tokenRepository->deleteAllByUserId($targetId);
+                
+                // NOTIFICAR AL USUARIO POR CORREO SI FUE SOLICITADO
+                if ($notifyUser) {
+                    $action = ($dbStatus === 'deleted') ? 'deleted' : 'suspended';
+                    $reasonText = ($dbStatus === 'deleted') ? $dbDeletedReason : $dbSuspensionReason;
+                    $mailer = new Mailer();
+                    $mailer->sendAccountStatusNotification($user['email'], $user['username'], $action, $reasonText, $dbEndDate);
+                }
             }
 
-            return ['success' => true, 'message' => 'Las configuraciones de acceso han sido guardadas.'];
+            return ['success' => true, 'message' => 'Las configuraciones de acceso han sido guardadas y registradas.'];
         }
         
         return ['success' => false, 'message' => 'Error al guardar los cambios en la base de datos.'];

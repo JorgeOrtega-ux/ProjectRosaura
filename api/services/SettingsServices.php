@@ -10,6 +10,7 @@ use App\Core\System\Logger;
 use App\Core\Interfaces\RateLimiterInterface;
 use App\Core\Interfaces\SessionManagerInterface;
 use App\Core\Interfaces\UserRepositoryInterface;
+use App\Core\Interfaces\ModerationRepositoryInterface;
 use App\Core\Interfaces\TokenRepositoryInterface;
 use App\Core\Interfaces\VerificationCodeRepositoryInterface;
 use App\Core\Interfaces\ProfileLogRepositoryInterface;
@@ -20,6 +21,7 @@ class SettingsServices
     private $rateLimiter;
     private $sessionManager;
     private $userRepository;
+    private $moderationRepository;
     private $tokenRepository;
     private $verificationCodeRepository;
     private $profileLogRepository;
@@ -29,6 +31,7 @@ class SettingsServices
         RateLimiterInterface $rateLimiter,
         SessionManagerInterface $sessionManager,
         UserRepositoryInterface $userRepository,
+        ModerationRepositoryInterface $moderationRepository,
         TokenRepositoryInterface $tokenRepository,
         VerificationCodeRepositoryInterface $verificationCodeRepository,
         ProfileLogRepositoryInterface $profileLogRepository,
@@ -37,6 +40,7 @@ class SettingsServices
         $this->rateLimiter = $rateLimiter;
         $this->sessionManager = $sessionManager;
         $this->userRepository = $userRepository;
+        $this->moderationRepository = $moderationRepository;
         $this->tokenRepository = $tokenRepository;
         $this->verificationCodeRepository = $verificationCodeRepository;
         $this->profileLogRepository = $profileLogRepository;
@@ -383,8 +387,8 @@ class SettingsServices
         $user = $this->userRepository->findById($userId);
 
         if ($user && password_verify(trim($data['password'] ?? ''), $user['password'])) {
-            // Pasamos los 8 argumentos requeridos a updateStatus. Mantenemos intactos los de suspensión.
-            if ($this->userRepository->updateStatus(
+            // Pasamos los 9 argumentos requeridos a updateStatus con el nuevo ModerationRepository
+            if ($this->moderationRepository->updateStatus(
                 $userId, 
                 'deleted', 
                 'user', 
@@ -392,8 +396,12 @@ class SettingsServices
                 (int)($user['is_suspended'] ?? 0), 
                 $user['suspension_type'] ?? null, 
                 $user['suspension_reason'] ?? null, 
-                $user['suspension_end_date'] ?? null
+                $user['suspension_end_date'] ?? null,
+                $user['admin_notes'] ?? null
             )) {
+                // Registrar que el usuario eliminó su propia cuenta
+                $this->moderationRepository->logAction($userId, null, 'deleted', 'Eliminada por el propio usuario desde la configuración.', null, null);
+                
                 $this->tokenRepository->deleteAllByUserId($userId);
                 if (isset($_COOKIE['remember_token'])) setcookie('remember_token', '', ['expires' => time() - 3600, 'path' => '/ProjectRosaura/']);
                 Logger::security("Cuenta de usuario eliminada por si mismo", 'warning', ['user_id' => $userId, 'ip' => Utils::getIpAddress()]);

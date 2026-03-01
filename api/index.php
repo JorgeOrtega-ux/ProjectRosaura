@@ -42,7 +42,8 @@ if (isset($_SESSION['user_id'])) {
             exit;
         }
         
-        if ($liveUser['is_suspended'] == 1) {
+        // Validación segura con isset
+        if (isset($liveUser['is_suspended']) && $liveUser['is_suspended'] == 1) {
             if ($liveUser['suspension_type'] === 'temporary' && $liveUser['suspension_end_date'] && strtotime($liveUser['suspension_end_date']) <= time()) {
                 $userRepo->liftSuspension($liveUser['id']);
             } else {

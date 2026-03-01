@@ -14,14 +14,28 @@ class UserRepository implements UserRepositoryInterface {
     }
 
     public function findById(int $id): ?array {
-        $stmt = $this->pdo->prepare("SELECT * FROM users WHERE id = ?");
+        $stmt = $this->pdo->prepare("
+            SELECT u.*, 
+                   ur.is_suspended, ur.suspension_type, ur.suspension_reason, ur.suspension_end_date, 
+                   ur.deleted_by, ur.deleted_reason, ur.admin_notes 
+            FROM users u 
+            LEFT JOIN user_restrictions ur ON u.id = ur.user_id 
+            WHERE u.id = ?
+        ");
         $stmt->execute([$id]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
         return $user ?: null;
     }
 
     public function findByEmail(string $email): ?array {
-        $stmt = $this->pdo->prepare("SELECT * FROM users WHERE email = ?");
+        $stmt = $this->pdo->prepare("
+            SELECT u.*, 
+                   ur.is_suspended, ur.suspension_type, ur.suspension_reason, ur.suspension_end_date, 
+                   ur.deleted_by, ur.deleted_reason, ur.admin_notes 
+            FROM users u 
+            LEFT JOIN user_restrictions ur ON u.id = ur.user_id 
+            WHERE u.email = ?
+        ");
         $stmt->execute([$email]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
         return $user ?: null;
@@ -35,32 +49,37 @@ class UserRepository implements UserRepositoryInterface {
     }
 
     public function createUser(array $data): int {
-        $stmt = $this->pdo->prepare("INSERT INTO users (uuid, username, email, password, role, user_status, is_suspended, profile_picture) VALUES (?, ?, ?, ?, 'user', 'active', 0, ?)");
-        $stmt->execute([
-            $data['uuid'], 
-            $data['username'], 
-            $data['email'], 
-            $data['password'], 
-            $data['profile_picture']
-        ]);
-        return (int) $this->pdo->lastInsertId();
-    }
+        try {
+            $this->pdo->beginTransaction();
+            
+            // 1. Insertamos en users
+            $stmtUser = $this->pdo->prepare("INSERT INTO users (uuid, username, email, password, role, user_status, profile_picture) VALUES (?, ?, ?, ?, 'user', 'active', ?)");
+            $stmtUser->execute([
+                $data['uuid'], 
+                $data['username'], 
+                $data['email'], 
+                $data['password'], 
+                $data['profile_picture']
+            ]);
+            $userId = (int) $this->pdo->lastInsertId();
 
-    public function updateStatus(int $id, string $status, ?string $deletedBy, ?string $deletedReason, int $isSuspended, ?string $suspensionType, ?string $suspensionReason, ?string $endDate): bool {
-        $stmt = $this->pdo->prepare("
-            UPDATE users 
-            SET user_status = ?, deleted_by = ?, deleted_reason = ?, 
-                is_suspended = ?, suspension_type = ?, suspension_reason = ?, suspension_end_date = ? 
-            WHERE id = ?
-        ");
-        return $stmt->execute([$status, $deletedBy, $deletedReason, $isSuspended, $suspensionType, $suspensionReason, $endDate, $id]);
+            // 2. Insertamos el perfil base en user_restrictions
+            $stmtRest = $this->pdo->prepare("INSERT INTO user_restrictions (user_id) VALUES (?)");
+            $stmtRest->execute([$userId]);
+
+            $this->pdo->commit();
+            return $userId;
+        } catch (\Exception $e) {
+            $this->pdo->rollBack();
+            return 0;
+        }
     }
 
     public function liftSuspension(int $id): bool {
         $stmt = $this->pdo->prepare("
-            UPDATE users 
+            UPDATE user_restrictions 
             SET is_suspended = 0, suspension_type = NULL, suspension_reason = NULL, suspension_end_date = NULL 
-            WHERE id = ?
+            WHERE user_id = ?
         ");
         return $stmt->execute([$id]);
     }

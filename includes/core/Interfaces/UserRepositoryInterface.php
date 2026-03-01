@@ -9,10 +9,7 @@ interface UserRepositoryInterface {
     public function findByUsername(string $username): ?array;
     public function createUser(array $data): int;
     
-    // Firma actualizada para soportar columnas independientes
-    public function updateStatus(int $id, string $status, ?string $deletedBy, ?string $deletedReason, int $isSuspended, ?string $suspensionType, ?string $suspensionReason, ?string $endDate): bool;
-    
-    // Nuevo método para expirar suspensiones automáticamente sin afectar si la cuenta está eliminada
+    // Este método se mantiene aquí para levantamientos automáticos rápidos (AutoLogin)
     public function liftSuspension(int $id): bool;
 
     public function updateAvatar(int $id, string $path): bool;

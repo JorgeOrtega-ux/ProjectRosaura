@@ -129,8 +129,25 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                             <div class="component-menu-link" data-action="adminSetDropdown" data-key="deletedReasonAdmin" data-value="Violación de políticas">
                                                 <div class="component-menu-link-text" style="padding-left: 12px;"><span>Violación de políticas</span></div>
                                             </div>
+                                            <div class="component-menu-link" data-action="adminSetDropdown" data-key="deletedReasonAdmin" data-value="Otro">
+                                                <div class="component-menu-link-text" style="padding-left: 12px;"><span>Otro</span></div>
+                                            </div>
                                         </div>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="section-deleted-admin-custom-reason" class="disabled">
+                    <hr class="component-divider">
+                    <div class="component-group-item component-group-item--stacked">
+                        <div class="component-card__content component-card__content--full">
+                            <div class="component-card__text">
+                                <h2 class="component-card__title">Especificar otro motivo (Eliminación)</h2>
+                                <div class="component-card__form-area">
+                                    <textarea id="inp_custom_deleted_reason_admin" class="component-input-field" placeholder="Escribe el motivo exacto..." style="border: 1px solid var(--border-color); border-radius: 8px; resize: vertical; min-height: 80px; padding-top: 12px;"></textarea>
                                 </div>
                             </div>
                         </div>
@@ -145,7 +162,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                 <h2 class="component-card__title">Feedback del usuario</h2>
                                 <p class="component-card__description">A continuación se muestra el motivo proporcionado por el usuario al solicitar la eliminación.</p>
                                 <div class="component-card__form-area">
-                                    <textarea id="inp_deleted_reason_user" class="component-input-field" placeholder="Razón proporcionada por el usuario..." style="border: 1px solid #00000030; border-radius: 8px; resize: vertical; min-height: 80px; padding-top: 12px;"></textarea>
+                                    <textarea id="inp_deleted_reason_user" class="component-input-field" placeholder="Razón proporcionada por el usuario..." style="border: 1px solid var(--border-color); border-radius: 8px; resize: vertical; min-height: 80px; padding-top: 12px;"></textarea>
                                 </div>
                             </div>
                         </div>
@@ -262,6 +279,20 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                     </div>
                 </div>
 
+                <div id="section-suspended-custom-reason" class="disabled">
+                    <hr class="component-divider">
+                    <div class="component-group-item component-group-item--stacked">
+                        <div class="component-card__content component-card__content--full">
+                            <div class="component-card__text">
+                                <h2 class="component-card__title">Especificar otro motivo (Suspensión)</h2>
+                                <div class="component-card__form-area">
+                                    <textarea id="inp_custom_suspension_reason" class="component-input-field" placeholder="Escribe la razón detallada para el usuario..." style="border: 1px solid var(--border-color); border-radius: 8px; resize: vertical; min-height: 80px; padding-top: 12px;"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div id="section-suspended-type" class="disabled">
                     <hr class="component-divider">
                     <div class="component-group-item component-group-item--stacked">
@@ -368,9 +399,54 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                 </div>
 
             </div>
+            
+            <div class="component-card--grouped" style="margin-top: 16px;">
+                <div id="section-admin-notes" class="disabled">
+                    <div class="component-group-item component-group-item--stacked">
+                        <div class="component-card__content component-card__content--full">
+                            <div class="component-card__text">
+                                <h2 class="component-card__title">Notas de Moderación / Evidencia (Interno)</h2>
+                                <p class="component-card__description">Solo visible para el equipo administrativo. Agrega enlaces, IDs de transacciones o el contexto de la decisión para mantener un historial limpio.</p>
+                                <div class="component-card__form-area">
+                                    <textarea id="inp_admin_notes" class="component-input-field" placeholder="Ej. Se detectaron múltiples cuentas creadas con la misma IP para evasión..." style="border: 1px solid var(--border-color); border-radius: 8px; resize: vertical; min-height: 80px; padding-top: 12px;"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="section-notify-user" class="disabled">
+                    <hr class="component-divider">
+                    <div class="component-group-item component-group-item--wrap">
+                        <div class="component-card__content">
+                            <div class="component-card__icon-container component-card__icon-container--bordered">
+                                <span class="material-symbols-rounded">forward_to_inbox</span>
+                            </div>
+                            <div class="component-card__text">
+                                <h2 class="component-card__title">Notificar al usuario</h2>
+                                <p class="component-card__description">Se enviará un correo electrónico informando sobre la restricción y el motivo exacto.</p>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--end">
+                            <label class="component-toggle-switch">
+                                <input type="checkbox" id="chk_notify_user" checked>
+                                <span class="component-toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <div class="component-card--grouped" style="margin-top: 16px;">
                 <div class="component-group-item component-group-item--stacked">
+                    
+                    <div id="admin-status-warning" class="component-alert-error disabled" style="margin-bottom: 16px; text-align: left; display: flex; gap: 8px; align-items: flex-start; width: 100%;">
+                        <span class="material-symbols-rounded" style="font-size: 20px;">warning</span>
+                        <div>
+                            <strong>Atención:</strong> Al aplicar o modificar una suspensión o eliminación, se cerrarán inmediatamente todas las sesiones activas de este usuario.
+                        </div>
+                    </div>
+
                     <div class="component-card__content component-card__content--full component-card__content--start">
                         <div class="component-card__icon-container component-card__icon-container--bordered">
                             <span class="material-symbols-rounded">lock</span>

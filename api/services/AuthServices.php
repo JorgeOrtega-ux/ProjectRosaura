@@ -109,7 +109,7 @@ class AuthServices {
                         return false;
                     }
 
-                    if ($user['is_suspended'] == 1) {
+                    if (isset($user['is_suspended']) && $user['is_suspended'] == 1) {
                         if ($user['suspension_type'] === 'temporary' && $user['suspension_end_date'] && strtotime($user['suspension_end_date']) <= time()) {
                             // Expira la suspensión automáticamente SIN alterar el user_status (active/deleted)
                             $this->userRepository->liftSuspension($user['id']);
@@ -331,7 +331,7 @@ class AuthServices {
             
             if ($user['user_status'] === 'deleted') return ['success' => false, 'status' => 'deleted', 'message' => 'Cuenta eliminada.'];
             
-            if ($user['is_suspended'] == 1) {
+            if (isset($user['is_suspended']) && $user['is_suspended'] == 1) {
                 if ($user['suspension_type'] === 'temporary' && $user['suspension_end_date'] && strtotime($user['suspension_end_date']) <= time()) {
                     $this->userRepository->liftSuspension($user['id']);
                     $user['is_suspended'] = 0;
@@ -386,7 +386,7 @@ class AuthServices {
 
         $user = $this->userRepository->findById($userId);
 
-        if (!$user || empty($user['two_factor_enabled']) || $user['user_status'] === 'deleted' || $user['is_suspended'] == 1) {
+        if (!$user || empty($user['two_factor_enabled']) || $user['user_status'] === 'deleted' || (isset($user['is_suspended']) && $user['is_suspended'] == 1)) {
             $this->rateLimiter->record('login_2fa', $attempts, $minutes);
             return ['success' => false, 'message' => 'Error de validación de estado de cuenta.'];
         }
@@ -454,7 +454,7 @@ class AuthServices {
 
         $user = $this->userRepository->findByEmail($email);
 
-        if (!$user || $user['user_status'] === 'deleted' || $user['is_suspended'] == 1) {
+        if (!$user || $user['user_status'] === 'deleted' || (isset($user['is_suspended']) && $user['is_suspended'] == 1)) {
             $this->rateLimiter->record('forgot_password', $attempts, $minutes);
             return ['success' => false, 'message' => 'Cuenta no existe o está suspendida.'];
         }
