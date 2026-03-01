@@ -229,7 +229,6 @@
     position: absolute;
     top: calc(100% + 5px);
     right: 0;
-    width: 100%;
     z-index: 100;
 }
 
