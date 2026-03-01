@@ -21,9 +21,9 @@ DB_USER = os.getenv('DB_USER', 'root')
 DB_PASS = os.getenv('DB_PASS', '')
 DB_NAME = os.getenv('DB_NAME', 'projectrosaura')
 
-# Cada cuántos segundos el worker despertará para revisar la base de datos
-# 600 segundos = 10 minutos. Es un buen balance para no saturar MySQL.
-CHECK_INTERVAL_SECONDS = 600 
+# Frecuencia base del "latido" del worker (en segundos)
+# El worker despierta cada 10s, lee la BD y evalúa si debe actuar.
+WORKER_TICK_SECONDS = 10
 
 def log(message):
     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {message}", flush=True)
@@ -62,10 +62,10 @@ def create_backup():
     try:
         with open(filepath, 'w') as f:
             subprocess.run(dump_cmd, stdout=f, stderr=subprocess.PIPE, check=True)
-        log(f"Copia de seguridad generada con éxito: {filename}")
+        log(f"✅ Copia de seguridad generada con éxito: {filename}")
         return True
     except subprocess.CalledProcessError as e:
-        log(f"Error ejecutando mysqldump: {e.stderr.decode('utf-8')}")
+        log(f"❌ Error ejecutando mysqldump: {e.stderr.decode('utf-8')}")
         if os.path.exists(filepath):
             os.remove(filepath)
         return False
@@ -82,23 +82,27 @@ def clean_old_backups(retention_count):
         for file in files_to_delete:
             try:
                 os.remove(file)
-                log(f"Backup antiguo eliminado por límite de retención: {os.path.basename(file)}")
+                log(f"🗑️ Backup antiguo eliminado por límite de retención: {os.path.basename(file)}")
             except Exception as e:
-                log(f"Error al eliminar backup antiguo {os.path.basename(file)}: {str(e)}")
+                log(f"❌ Error al eliminar backup antiguo {os.path.basename(file)}: {str(e)}")
 
 def run_worker_cycle():
     config = get_server_config()
     
     if not config:
-        log("No se pudo obtener la configuración del servidor. Se reintentará en el próximo ciclo.")
-        return
+        # Falla de BD, no hacemos nada y el loop lo reintentará en 10s
+        return 
         
     if config['auto_backup_enabled'] != 1:
-        # No imprimimos nada aquí para no llenar el log de spam cuando está apagado.
-        return
+        # Sistema apagado en panel, no hacemos nada
+        return 
         
     freq_hours = config['auto_backup_frequency_hours']
     retention_count = config['auto_backup_retention_count']
+
+    # Determinar objetivo en segundos
+    is_test_mode = (freq_hours == 0)
+    target_seconds = 10 if is_test_mode else (float(freq_hours) * 3600.0)
     
     search_pattern = os.path.join(BACKUP_DIR, "auto_backup_*.sql")
     existing_backups = glob.glob(search_pattern)
@@ -106,16 +110,18 @@ def run_worker_cycle():
     should_backup = False
     
     if not existing_backups:
-        log("No hay backups automáticos previos. Se forzará la creación.")
+        log("No hay backups automáticos previos. Se forzará la creación inicial.")
         should_backup = True
     else:
         existing_backups.sort(key=os.path.getmtime, reverse=True)
         latest_backup = existing_backups[0]
         mod_time = os.path.getmtime(latest_backup)
-        time_diff_hours = (time.time() - mod_time) / 3600
+        time_diff_seconds = time.time() - mod_time
         
-        if time_diff_hours >= freq_hours:
-            log(f"Han pasado {time_diff_hours:.2f} hrs desde el último backup (Frecuencia: {freq_hours} hrs). Iniciando respaldo...")
+        # Si ya pasó el tiempo necesario (10s en test o X horas en prod)
+        if time_diff_seconds >= target_seconds:
+            label = "10 segundos (Modo Prueba)" if is_test_mode else f"{freq_hours} hrs"
+            log(f"Han pasado {int(time_diff_seconds)}s desde el último backup. Objetivo: {label}. Iniciando respaldo...")
             should_backup = True
             
     if should_backup:
@@ -124,8 +130,8 @@ def run_worker_cycle():
 
 def main():
     log("==================================================")
-    log("🚀 Iniciando Worker de Backups en modo continuo...")
-    log(f"⏱️  Intervalo de revisión: Cada {CHECK_INTERVAL_SECONDS / 60} minutos.")
+    log("🚀 Iniciando Worker de Backups (Modo Reactivo)...")
+    log(f"⏱️ El worker leerá los ajustes de la web cada {WORKER_TICK_SECONDS} segundos.")
     log("==================================================")
     
     while True:
@@ -134,10 +140,9 @@ def main():
         except Exception as e:
             log(f"⚠️ Error crítico en el ciclo del worker: {str(e)}")
             
-        # El script "duerme" para no consumir CPU y despierta en X segundos
-        time.sleep(CHECK_INTERVAL_SECONDS)
+        # El script siempre duerme poco tiempo para estar alerta a tus cambios en la web
+        time.sleep(WORKER_TICK_SECONDS)
 
 if __name__ == "__main__":
-    # Prevenir que se cierre si hay errores de codificación en la consola
     sys.stdout.reconfigure(encoding='utf-8')
     main()

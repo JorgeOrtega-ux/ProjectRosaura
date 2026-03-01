@@ -20,6 +20,9 @@ error_log
 logs/
 !logs/.gitkeep
 
+# === IGNORAR COPIAS DE SEGURIDAD DE LA BASE DE DATOS ===
+storage/backups/*.sql
+
 # Ignorar archivos generados por editores / IDEs
 .idea/
 .vscode/
