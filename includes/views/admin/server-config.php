@@ -1,3 +1,4 @@
+
 <?php
 // includes/views/admin/server-config.php
 if (session_status() === PHP_SESSION_NONE) session_start();
@@ -59,9 +60,15 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             </div>
                             <div class="component-card__actions component-card__actions--start">
                                 <div class="component-inline-control component-inline-control--fixed">
-                                    <div class="component-inline-control__group"><button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="min_password_length" data-step="-1" data-min="4"><span class="material-symbols-rounded">remove</span></button></div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="min_password_length" data-step="-5" data-min="4"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="min_password_length" data-step="-1" data-min="4"><span class="material-symbols-rounded">chevron_left</span></button>
+                                    </div>
                                     <div class="component-inline-control__center" id="val_min_password_length" data-val="8">8</div>
-                                    <div class="component-inline-control__group"><button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="min_password_length" data-step="1" data-max="64"><span class="material-symbols-rounded">add</span></button></div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="min_password_length" data-step="1" data-max="64"><span class="material-symbols-rounded">chevron_right</span></button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="min_password_length" data-step="5" data-max="64"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -77,9 +84,15 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             </div>
                             <div class="component-card__actions component-card__actions--start">
                                 <div class="component-inline-control component-inline-control--fixed">
-                                    <div class="component-inline-control__group"><button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="max_password_length" data-step="-1" data-min="8"><span class="material-symbols-rounded">remove</span></button></div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="max_password_length" data-step="-10" data-min="8"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="max_password_length" data-step="-1" data-min="8"><span class="material-symbols-rounded">chevron_left</span></button>
+                                    </div>
                                     <div class="component-inline-control__center" id="val_max_password_length" data-val="64">64</div>
-                                    <div class="component-inline-control__group"><button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="max_password_length" data-step="1" data-max="255"><span class="material-symbols-rounded">add</span></button></div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="max_password_length" data-step="1" data-max="255"><span class="material-symbols-rounded">chevron_right</span></button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="max_password_length" data-step="10" data-max="255"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -95,9 +108,15 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             </div>
                             <div class="component-card__actions component-card__actions--start">
                                 <div class="component-inline-control component-inline-control--fixed">
-                                    <div class="component-inline-control__group"><button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="min_username_length" data-step="-1" data-min="2"><span class="material-symbols-rounded">remove</span></button></div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="min_username_length" data-step="-5" data-min="2"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="min_username_length" data-step="-1" data-min="2"><span class="material-symbols-rounded">chevron_left</span></button>
+                                    </div>
                                     <div class="component-inline-control__center" id="val_min_username_length" data-val="3">3</div>
-                                    <div class="component-inline-control__group"><button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="min_username_length" data-step="1" data-max="32"><span class="material-symbols-rounded">add</span></button></div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="min_username_length" data-step="1" data-max="32"><span class="material-symbols-rounded">chevron_right</span></button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="min_username_length" data-step="5" data-max="32"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -113,9 +132,15 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             </div>
                             <div class="component-card__actions component-card__actions--start">
                                 <div class="component-inline-control component-inline-control--fixed">
-                                    <div class="component-inline-control__group"><button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="max_username_length" data-step="-1" data-min="3"><span class="material-symbols-rounded">remove</span></button></div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="max_username_length" data-step="-5" data-min="3"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="max_username_length" data-step="-1" data-min="3"><span class="material-symbols-rounded">chevron_left</span></button>
+                                    </div>
                                     <div class="component-inline-control__center" id="val_max_username_length" data-val="32">32</div>
-                                    <div class="component-inline-control__group"><button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="max_username_length" data-step="1" data-max="64"><span class="material-symbols-rounded">add</span></button></div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="max_username_length" data-step="1" data-max="64"><span class="material-symbols-rounded">chevron_right</span></button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="max_username_length" data-step="5" data-max="64"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -131,9 +156,15 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             </div>
                             <div class="component-card__actions component-card__actions--start">
                                 <div class="component-inline-control component-inline-control--fixed">
-                                    <div class="component-inline-control__group"><button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="max_avatar_size_mb" data-step="-1" data-min="1"><span class="material-symbols-rounded">remove</span></button></div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="max_avatar_size_mb" data-step="-2" data-min="1"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="max_avatar_size_mb" data-step="-1" data-min="1"><span class="material-symbols-rounded">chevron_left</span></button>
+                                    </div>
                                     <div class="component-inline-control__center" id="val_max_avatar_size_mb" data-val="2">2</div>
-                                    <div class="component-inline-control__group"><button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="max_avatar_size_mb" data-step="1" data-max="10"><span class="material-symbols-rounded">add</span></button></div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="max_avatar_size_mb" data-step="1" data-max="10"><span class="material-symbols-rounded">chevron_right</span></button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="max_avatar_size_mb" data-step="2" data-max="10"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -169,9 +200,15 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             </div>
                             <div class="component-card__actions component-card__actions--start">
                                 <div class="component-inline-control component-inline-control--fixed">
-                                    <div class="component-inline-control__group"><button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="username_change_max_attempts" data-step="-1" data-min="1"><span class="material-symbols-rounded">remove</span></button></div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="username_change_max_attempts" data-step="-3" data-min="1"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="username_change_max_attempts" data-step="-1" data-min="1"><span class="material-symbols-rounded">chevron_left</span></button>
+                                    </div>
                                     <div class="component-inline-control__center" id="val_username_change_max_attempts" data-val="1">1</div>
-                                    <div class="component-inline-control__group"><button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="username_change_max_attempts" data-step="1" data-max="10"><span class="material-symbols-rounded">add</span></button></div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="username_change_max_attempts" data-step="1" data-max="10"><span class="material-symbols-rounded">chevron_right</span></button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="username_change_max_attempts" data-step="3" data-max="10"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -187,9 +224,15 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             </div>
                             <div class="component-card__actions component-card__actions--start">
                                 <div class="component-inline-control component-inline-control--fixed">
-                                    <div class="component-inline-control__group"><button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="username_change_cooldown_days" data-step="-1" data-min="1"><span class="material-symbols-rounded">remove</span></button></div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="username_change_cooldown_days" data-step="-7" data-min="1"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="username_change_cooldown_days" data-step="-1" data-min="1"><span class="material-symbols-rounded">chevron_left</span></button>
+                                    </div>
                                     <div class="component-inline-control__center" id="val_username_change_cooldown_days" data-val="7">7</div>
-                                    <div class="component-inline-control__group"><button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="username_change_cooldown_days" data-step="1" data-max="90"><span class="material-symbols-rounded">add</span></button></div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="username_change_cooldown_days" data-step="1" data-max="90"><span class="material-symbols-rounded">chevron_right</span></button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="username_change_cooldown_days" data-step="7" data-max="90"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -205,9 +248,15 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             </div>
                             <div class="component-card__actions component-card__actions--start">
                                 <div class="component-inline-control component-inline-control--fixed">
-                                    <div class="component-inline-control__group"><button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="email_change_max_attempts" data-step="-1" data-min="1"><span class="material-symbols-rounded">remove</span></button></div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="email_change_max_attempts" data-step="-3" data-min="1"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="email_change_max_attempts" data-step="-1" data-min="1"><span class="material-symbols-rounded">chevron_left</span></button>
+                                    </div>
                                     <div class="component-inline-control__center" id="val_email_change_max_attempts" data-val="1">1</div>
-                                    <div class="component-inline-control__group"><button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="email_change_max_attempts" data-step="1" data-max="10"><span class="material-symbols-rounded">add</span></button></div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="email_change_max_attempts" data-step="1" data-max="10"><span class="material-symbols-rounded">chevron_right</span></button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="email_change_max_attempts" data-step="3" data-max="10"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -223,9 +272,15 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             </div>
                             <div class="component-card__actions component-card__actions--start">
                                 <div class="component-inline-control component-inline-control--fixed">
-                                    <div class="component-inline-control__group"><button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="email_change_cooldown_days" data-step="-1" data-min="1"><span class="material-symbols-rounded">remove</span></button></div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="email_change_cooldown_days" data-step="-7" data-min="1"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="email_change_cooldown_days" data-step="-1" data-min="1"><span class="material-symbols-rounded">chevron_left</span></button>
+                                    </div>
                                     <div class="component-inline-control__center" id="val_email_change_cooldown_days" data-val="7">7</div>
-                                    <div class="component-inline-control__group"><button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="email_change_cooldown_days" data-step="1" data-max="90"><span class="material-symbols-rounded">add</span></button></div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="email_change_cooldown_days" data-step="1" data-max="90"><span class="material-symbols-rounded">chevron_right</span></button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="email_change_cooldown_days" data-step="7" data-max="90"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -241,9 +296,15 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             </div>
                             <div class="component-card__actions component-card__actions--start">
                                 <div class="component-inline-control component-inline-control--fixed">
-                                    <div class="component-inline-control__group"><button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="avatar_change_max_attempts" data-step="-1" data-min="1"><span class="material-symbols-rounded">remove</span></button></div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="avatar_change_max_attempts" data-step="-5" data-min="1"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="avatar_change_max_attempts" data-step="-1" data-min="1"><span class="material-symbols-rounded">chevron_left</span></button>
+                                    </div>
                                     <div class="component-inline-control__center" id="val_avatar_change_max_attempts" data-val="3">3</div>
-                                    <div class="component-inline-control__group"><button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="avatar_change_max_attempts" data-step="1" data-max="50"><span class="material-symbols-rounded">add</span></button></div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="avatar_change_max_attempts" data-step="1" data-max="50"><span class="material-symbols-rounded">chevron_right</span></button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="avatar_change_max_attempts" data-step="5" data-max="50"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -259,9 +320,15 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             </div>
                             <div class="component-card__actions component-card__actions--start">
                                 <div class="component-inline-control component-inline-control--fixed">
-                                    <div class="component-inline-control__group"><button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="avatar_change_cooldown_days" data-step="-1" data-min="1"><span class="material-symbols-rounded">remove</span></button></div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="avatar_change_cooldown_days" data-step="-7" data-min="1"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="avatar_change_cooldown_days" data-step="-1" data-min="1"><span class="material-symbols-rounded">chevron_left</span></button>
+                                    </div>
                                     <div class="component-inline-control__center" id="val_avatar_change_cooldown_days" data-val="1">1</div>
-                                    <div class="component-inline-control__group"><button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="avatar_change_cooldown_days" data-step="1" data-max="90"><span class="material-symbols-rounded">add</span></button></div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="avatar_change_cooldown_days" data-step="1" data-max="90"><span class="material-symbols-rounded">chevron_right</span></button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="avatar_change_cooldown_days" data-step="7" data-max="90"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -297,9 +364,15 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             </div>
                             <div class="component-card__actions component-card__actions--start">
                                 <div class="component-inline-control component-inline-control--fixed">
-                                    <div class="component-inline-control__group"><button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="login_rate_limit_attempts" data-step="-1" data-min="1"><span class="material-symbols-rounded">remove</span></button></div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="login_rate_limit_attempts" data-step="-5" data-min="1"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="login_rate_limit_attempts" data-step="-1" data-min="1"><span class="material-symbols-rounded">chevron_left</span></button>
+                                    </div>
                                     <div class="component-inline-control__center" id="val_login_rate_limit_attempts" data-val="5">5</div>
-                                    <div class="component-inline-control__group"><button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="login_rate_limit_attempts" data-step="1" data-max="20"><span class="material-symbols-rounded">add</span></button></div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="login_rate_limit_attempts" data-step="1" data-max="20"><span class="material-symbols-rounded">chevron_right</span></button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="login_rate_limit_attempts" data-step="5" data-max="20"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -315,9 +388,15 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             </div>
                             <div class="component-card__actions component-card__actions--start">
                                 <div class="component-inline-control component-inline-control--fixed">
-                                    <div class="component-inline-control__group"><button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="login_rate_limit_minutes" data-step="-5" data-min="1"><span class="material-symbols-rounded">remove</span></button></div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="login_rate_limit_minutes" data-step="-10" data-min="1"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="login_rate_limit_minutes" data-step="-1" data-min="1"><span class="material-symbols-rounded">chevron_left</span></button>
+                                    </div>
                                     <div class="component-inline-control__center" id="val_login_rate_limit_minutes" data-val="15">15</div>
-                                    <div class="component-inline-control__group"><button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="login_rate_limit_minutes" data-step="5" data-max="120"><span class="material-symbols-rounded">add</span></button></div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="login_rate_limit_minutes" data-step="1" data-max="120"><span class="material-symbols-rounded">chevron_right</span></button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="login_rate_limit_minutes" data-step="10" data-max="120"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -333,9 +412,15 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             </div>
                             <div class="component-card__actions component-card__actions--start">
                                 <div class="component-inline-control component-inline-control--fixed">
-                                    <div class="component-inline-control__group"><button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="forgot_password_rate_limit_attempts" data-step="-1" data-min="1"><span class="material-symbols-rounded">remove</span></button></div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="forgot_password_rate_limit_attempts" data-step="-5" data-min="1"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="forgot_password_rate_limit_attempts" data-step="-1" data-min="1"><span class="material-symbols-rounded">chevron_left</span></button>
+                                    </div>
                                     <div class="component-inline-control__center" id="val_forgot_password_rate_limit_attempts" data-val="3">3</div>
-                                    <div class="component-inline-control__group"><button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="forgot_password_rate_limit_attempts" data-step="1" data-max="20"><span class="material-symbols-rounded">add</span></button></div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="forgot_password_rate_limit_attempts" data-step="1" data-max="20"><span class="material-symbols-rounded">chevron_right</span></button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="forgot_password_rate_limit_attempts" data-step="5" data-max="20"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -351,9 +436,15 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             </div>
                             <div class="component-card__actions component-card__actions--start">
                                 <div class="component-inline-control component-inline-control--fixed">
-                                    <div class="component-inline-control__group"><button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="forgot_password_rate_limit_minutes" data-step="-5" data-min="1"><span class="material-symbols-rounded">remove</span></button></div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="forgot_password_rate_limit_minutes" data-step="-10" data-min="1"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="forgot_password_rate_limit_minutes" data-step="-1" data-min="1"><span class="material-symbols-rounded">chevron_left</span></button>
+                                    </div>
                                     <div class="component-inline-control__center" id="val_forgot_password_rate_limit_minutes" data-val="30">30</div>
-                                    <div class="component-inline-control__group"><button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="forgot_password_rate_limit_minutes" data-step="5" data-max="120"><span class="material-symbols-rounded">add</span></button></div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="forgot_password_rate_limit_minutes" data-step="1" data-max="120"><span class="material-symbols-rounded">chevron_right</span></button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="forgot_password_rate_limit_minutes" data-step="10" data-max="120"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -389,9 +480,15 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             </div>
                             <div class="component-card__actions component-card__actions--start">
                                 <div class="component-inline-control component-inline-control--fixed">
-                                    <div class="component-inline-control__group"><button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="admin_edit_avatar_attempts" data-step="-1" data-min="1"><span class="material-symbols-rounded">remove</span></button></div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="admin_edit_avatar_attempts" data-step="-10" data-min="1"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="admin_edit_avatar_attempts" data-step="-1" data-min="1"><span class="material-symbols-rounded">chevron_left</span></button>
+                                    </div>
                                     <div class="component-inline-control__center" id="val_admin_edit_avatar_attempts" data-val="20">20</div>
-                                    <div class="component-inline-control__group"><button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="admin_edit_avatar_attempts" data-step="1" data-max="100"><span class="material-symbols-rounded">add</span></button></div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="admin_edit_avatar_attempts" data-step="1" data-max="100"><span class="material-symbols-rounded">chevron_right</span></button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="admin_edit_avatar_attempts" data-step="10" data-max="100"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -407,9 +504,15 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             </div>
                             <div class="component-card__actions component-card__actions--start">
                                 <div class="component-inline-control component-inline-control--fixed">
-                                    <div class="component-inline-control__group"><button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="admin_edit_avatar_minutes" data-step="-5" data-min="1"><span class="material-symbols-rounded">remove</span></button></div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="admin_edit_avatar_minutes" data-step="-10" data-min="1"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="admin_edit_avatar_minutes" data-step="-1" data-min="1"><span class="material-symbols-rounded">chevron_left</span></button>
+                                    </div>
                                     <div class="component-inline-control__center" id="val_admin_edit_avatar_minutes" data-val="30">30</div>
-                                    <div class="component-inline-control__group"><button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="admin_edit_avatar_minutes" data-step="5" data-max="240"><span class="material-symbols-rounded">add</span></button></div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="admin_edit_avatar_minutes" data-step="1" data-max="240"><span class="material-symbols-rounded">chevron_right</span></button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="admin_edit_avatar_minutes" data-step="10" data-max="240"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -425,9 +528,15 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             </div>
                             <div class="component-card__actions component-card__actions--start">
                                 <div class="component-inline-control component-inline-control--fixed">
-                                    <div class="component-inline-control__group"><button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="admin_edit_email_attempts" data-step="-1" data-min="1"><span class="material-symbols-rounded">remove</span></button></div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="admin_edit_email_attempts" data-step="-10" data-min="1"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="admin_edit_email_attempts" data-step="-1" data-min="1"><span class="material-symbols-rounded">chevron_left</span></button>
+                                    </div>
                                     <div class="component-inline-control__center" id="val_admin_edit_email_attempts" data-val="20">20</div>
-                                    <div class="component-inline-control__group"><button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="admin_edit_email_attempts" data-step="1" data-max="100"><span class="material-symbols-rounded">add</span></button></div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="admin_edit_email_attempts" data-step="1" data-max="100"><span class="material-symbols-rounded">chevron_right</span></button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="admin_edit_email_attempts" data-step="10" data-max="100"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -443,9 +552,15 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             </div>
                             <div class="component-card__actions component-card__actions--start">
                                 <div class="component-inline-control component-inline-control--fixed">
-                                    <div class="component-inline-control__group"><button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="admin_edit_email_minutes" data-step="-5" data-min="1"><span class="material-symbols-rounded">remove</span></button></div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="admin_edit_email_minutes" data-step="-10" data-min="1"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="admin_edit_email_minutes" data-step="-1" data-min="1"><span class="material-symbols-rounded">chevron_left</span></button>
+                                    </div>
                                     <div class="component-inline-control__center" id="val_admin_edit_email_minutes" data-val="30">30</div>
-                                    <div class="component-inline-control__group"><button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="admin_edit_email_minutes" data-step="5" data-max="240"><span class="material-symbols-rounded">add</span></button></div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="admin_edit_email_minutes" data-step="1" data-max="240"><span class="material-symbols-rounded">chevron_right</span></button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="admin_edit_email_minutes" data-step="10" data-max="240"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -461,9 +576,15 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             </div>
                             <div class="component-card__actions component-card__actions--start">
                                 <div class="component-inline-control component-inline-control--fixed">
-                                    <div class="component-inline-control__group"><button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="admin_edit_role_attempts" data-step="-1" data-min="1"><span class="material-symbols-rounded">remove</span></button></div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="admin_edit_role_attempts" data-step="-10" data-min="1"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="admin_edit_role_attempts" data-step="-1" data-min="1"><span class="material-symbols-rounded">chevron_left</span></button>
+                                    </div>
                                     <div class="component-inline-control__center" id="val_admin_edit_role_attempts" data-val="10">10</div>
-                                    <div class="component-inline-control__group"><button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="admin_edit_role_attempts" data-step="1" data-max="100"><span class="material-symbols-rounded">add</span></button></div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="admin_edit_role_attempts" data-step="1" data-max="100"><span class="material-symbols-rounded">chevron_right</span></button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="admin_edit_role_attempts" data-step="10" data-max="100"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -479,9 +600,15 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             </div>
                             <div class="component-card__actions component-card__actions--start">
                                 <div class="component-inline-control component-inline-control--fixed">
-                                    <div class="component-inline-control__group"><button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="admin_edit_role_minutes" data-step="-5" data-min="1"><span class="material-symbols-rounded">remove</span></button></div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="admin_edit_role_minutes" data-step="-10" data-min="1"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="admin_edit_role_minutes" data-step="-1" data-min="1"><span class="material-symbols-rounded">chevron_left</span></button>
+                                    </div>
                                     <div class="component-inline-control__center" id="val_admin_edit_role_minutes" data-val="30">30</div>
-                                    <div class="component-inline-control__group"><button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="admin_edit_role_minutes" data-step="5" data-max="240"><span class="material-symbols-rounded">add</span></button></div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="admin_edit_role_minutes" data-step="1" data-max="240"><span class="material-symbols-rounded">chevron_right</span></button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="admin_edit_role_minutes" data-step="10" data-max="240"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -497,9 +624,15 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             </div>
                             <div class="component-card__actions component-card__actions--start">
                                 <div class="component-inline-control component-inline-control--fixed">
-                                    <div class="component-inline-control__group"><button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="admin_edit_status_attempts" data-step="-1" data-min="1"><span class="material-symbols-rounded">remove</span></button></div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="admin_edit_status_attempts" data-step="-10" data-min="1"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="admin_edit_status_attempts" data-step="-1" data-min="1"><span class="material-symbols-rounded">chevron_left</span></button>
+                                    </div>
                                     <div class="component-inline-control__center" id="val_admin_edit_status_attempts" data-val="20">20</div>
-                                    <div class="component-inline-control__group"><button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="admin_edit_status_attempts" data-step="1" data-max="100"><span class="material-symbols-rounded">add</span></button></div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="admin_edit_status_attempts" data-step="1" data-max="100"><span class="material-symbols-rounded">chevron_right</span></button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="admin_edit_status_attempts" data-step="10" data-max="100"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -515,9 +648,15 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             </div>
                             <div class="component-card__actions component-card__actions--start">
                                 <div class="component-inline-control component-inline-control--fixed">
-                                    <div class="component-inline-control__group"><button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="admin_edit_status_minutes" data-step="-5" data-min="1"><span class="material-symbols-rounded">remove</span></button></div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="admin_edit_status_minutes" data-step="-10" data-min="1"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="admin_edit_status_minutes" data-step="-1" data-min="1"><span class="material-symbols-rounded">chevron_left</span></button>
+                                    </div>
                                     <div class="component-inline-control__center" id="val_admin_edit_status_minutes" data-val="30">30</div>
-                                    <div class="component-inline-control__group"><button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="admin_edit_status_minutes" data-step="5" data-max="240"><span class="material-symbols-rounded">add</span></button></div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="admin_edit_status_minutes" data-step="1" data-max="240"><span class="material-symbols-rounded">chevron_right</span></button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustConfig" data-field="admin_edit_status_minutes" data-step="10" data-max="240"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
