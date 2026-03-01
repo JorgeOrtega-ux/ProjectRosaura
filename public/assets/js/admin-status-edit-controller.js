@@ -93,27 +93,8 @@ export class AdminStatusEditController {
                 this.renderUI();
             }
 
-            // Lógica de Formulario Final
-            const btnCancelUpdate = e.target.closest('[data-action="cancelStatusUpdate"]');
-            if (btnCancelUpdate) this.loadUserData();
-
             const btnSubmitUpdate = e.target.closest('[data-action="submitStatusUpdate"]');
             if (btnSubmitUpdate) this.submitStatusUpdate(btnSubmitUpdate);
-
-            // Toggle Password
-            const togglePassBtn = e.target.closest('[data-action="togglePassword"]');
-            if (togglePassBtn) {
-                const inputField = togglePassBtn.parentElement.querySelector('.component-input-field');
-                if (inputField && inputField.id === 'admin_status_confirm_password') {
-                    if (inputField.type === 'password') {
-                        inputField.type = 'text';
-                        togglePassBtn.textContent = 'visibility';
-                    } else {
-                        inputField.type = 'password';
-                        togglePassBtn.textContent = 'visibility_off';
-                    }
-                }
-            }
         });
 
         document.addEventListener('input', (e) => {
@@ -131,9 +112,6 @@ export class AdminStatusEditController {
     async loadUserData() {
         const loader = document.getElementById('admin-status-loader');
         const form = document.getElementById('admin-status-form');
-        
-        const passInput = document.getElementById('admin_status_confirm_password');
-        if (passInput) passInput.value = '';
 
         const res = await this.api.post(ApiRoutes.Admin.GetUser, { target_user_id: this.targetUserId });
         
@@ -263,13 +241,6 @@ export class AdminStatusEditController {
     }
 
     async submitStatusUpdate(btn) {
-        const passInput = document.getElementById('admin_status_confirm_password');
-        const password = passInput ? passInput.value.trim() : '';
-
-        if (!password) {
-            this.showMessage('Debes ingresar tu contraseña actual para confirmar.', 'error');
-            return;
-        }
 
         if (this.state.isSuspended === '1' && this.state.suspendedType === 'temporary' && !this.state.endDate) {
             this.showMessage('Debes seleccionar una fecha para la suspensión temporal.', 'error');
@@ -282,7 +253,6 @@ export class AdminStatusEditController {
 
         const payload = {
             target_user_id: this.targetUserId,
-            password: password,
             status: this.state.status,
             deleted_by: this.state.deletedBy,
             deleted_reason_admin: this.state.deletedReasonAdmin,
@@ -300,7 +270,6 @@ export class AdminStatusEditController {
 
         if (result.success) {
             this.showMessage(result.message, 'success');
-            if (passInput) passInput.value = '';
             this.loadUserData(); 
         } else {
             this.showMessage(result.message, 'error');

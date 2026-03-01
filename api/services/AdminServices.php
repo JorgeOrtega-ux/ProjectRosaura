@@ -290,7 +290,6 @@ class AdminServices {
         if (!$this->checkAdmin()) return ['success' => false, 'message' => 'No autorizado.'];
 
         $targetId = (int)($data['target_user_id'] ?? 0);
-        $password = $data['password'] ?? '';
         
         $user = $this->userRepository->findById($targetId);
         if (!$user) return ['success' => false, 'message' => 'Usuario no encontrado.'];
@@ -306,12 +305,6 @@ class AdminServices {
         }
 
         $currentUserId = $this->sessionManager->get('user_id');
-        $adminData = $this->userRepository->findById($currentUserId);
-
-        if (!$adminData || !password_verify($password, $adminData['password'])) {
-            Logger::security("Fallo de cambio de estado: Contraseña incorrecta por el Admin ID: $currentUserId", 'warning');
-            return ['success' => false, 'message' => 'Contraseña incorrecta. Acción denegada.'];
-        }
 
         // LÓGICA DE SEPARACIÓN ABSOLUTA: 
         // Eliminación y Suspensión se tratan como variables diferentes.

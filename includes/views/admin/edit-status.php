@@ -3,6 +3,19 @@
 if (session_status() === PHP_SESSION_NONE) session_start();
 ?>
 <div class="view-content">
+
+    <div class="component-sticky-toolbar">
+        <div class="component-toolbar-primary">
+            <div class="component-toolbar-mode active">
+                <div class="component-toolbar-left">
+                    </div>
+                <div class="component-toolbar-right">
+                    <button class="component-button component-button--h36 component-button--dark" data-action="submitStatusUpdate">Guardar cambios</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="component-wrapper">
         
         <div class="component-header-card" style="position: relative;">
@@ -278,33 +291,6 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                     </div>
                 </div>
 
-            </div>
-
-            <div id="admin-status-password-area" style="margin-top: 16px;">
-                <div class="component-card--grouped">
-                    <div class="component-group-item component-group-item--stacked">
-                        <div class="component-card__content component-card__content--full component-card__content--start">
-                            <div class="component-card__icon-container component-card__icon-container--bordered">
-                                <span class="material-symbols-rounded">lock</span>
-                            </div>
-                            <div class="component-card__text">
-                                <h2 class="component-card__title">Autorizar cambios</h2>
-                                <p class="component-card__description">Ingresa tu contraseña actual para guardar este nuevo esquema de acceso.</p>
-                                <div class="component-card__form-area">
-                                    <div class="component-input-group">
-                                        <input type="password" id="admin_status_confirm_password" class="component-input-field component-input-field--with-icon" placeholder=" ">
-                                        <label for="admin_status_confirm_password" class="component-input-label">Tu contraseña actual</label>
-                                        <span class="material-symbols-rounded component-input-toggle" data-action="togglePassword">visibility_off</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--end">
-                            <button class="component-button component-button--h36" data-action="cancelStatusUpdate">Cancelar</button>
-                            <button class="component-button component-button--h36 component-button--dark" data-action="submitStatusUpdate">Guardar Ajustes</button>
-                        </div>
-                    </div>
-                </div>
             </div>
 
         </div>
