@@ -8,10 +8,7 @@ $isFounder = ($currentUserRole === 'founder');
 <div class="view-content">
     <div class="component-wrapper">
         
-        <div class="component-header-card" style="position: relative;">
-            <button class="component-button component-button--icon component-button--h36" data-nav="/ProjectRosaura/admin/manage-users" style="position: absolute; left: 24px; top: 24px;">
-                <span class="material-symbols-rounded">arrow_back</span>
-            </button>
+        <div class="component-header-card">
             <h1 class="component-page-title">Gestionar Rol</h1>
             <p class="component-page-description">Modifica el nivel de acceso y permisos de la cuenta.</p>
         </div>

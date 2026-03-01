@@ -4,24 +4,21 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 ?>
 <div class="view-content">
 
-    <div class="component-sticky-toolbar">
-        <div class="component-toolbar-primary">
-            <div class="component-toolbar-mode active">
-                <div class="component-toolbar-left">
+    <div class="component-wrapper">
+        
+        <div class="component-sticky-toolbar">
+            <div class="component-toolbar-primary">
+                <div class="component-toolbar-mode active">
+                    <div class="component-toolbar-left">
+                        </div>
+                    <div class="component-toolbar-right">
+                        <button class="component-button component-button--h36 component-button--dark" data-action="submitStatusUpdate">Guardar cambios</button>
                     </div>
-                <div class="component-toolbar-right">
-                    <button class="component-button component-button--h36 component-button--dark" data-action="submitStatusUpdate">Guardar cambios</button>
                 </div>
             </div>
         </div>
-    </div>
 
-    <div class="component-wrapper">
-        
-        <div class="component-header-card" style="position: relative;">
-            <button class="component-button component-button--icon component-button--h36" data-nav="/ProjectRosaura/admin/manage-users" style="position: absolute; left: 24px; top: 24px;">
-                <span class="material-symbols-rounded">arrow_back</span>
-            </button>
+        <div class="component-header-card">
             <h1 class="component-page-title">Gestionar Estado</h1>
             <p class="component-page-description">Administra el ciclo de vida y bloqueos independientes de la cuenta.</p>
         </div>
