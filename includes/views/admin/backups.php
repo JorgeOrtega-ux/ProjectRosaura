@@ -8,7 +8,7 @@ $backupDir = __DIR__ . '/../../../storage/backups/';
 if (is_dir($backupDir)) {
     $files = scandir($backupDir);
     foreach ($files as $file) {
-        if (pathinfo($file, PATHINFO_EXTENSION) === 'sql') {
+        if (pathinfo($file, PATHINFO_EXTENSION) === 'enc') {
             $filepath = $backupDir . $file;
             $sizeBytes = filesize($filepath);
             
@@ -32,17 +32,14 @@ if (is_dir($backupDir)) {
 }
 ?>
 
+<style>
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+    .spin-icon { animation: spin 1s linear infinite; }
+</style>
+
 <div class="view-content">
     <div class="component-wrapper" data-ref="manage-backups-wrapper" style="position: relative;">
         
-        <div data-ref="backup-loading-overlay" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-surface-opacity, rgba(0,0,0,0.5)); z-index: 100; backdrop-filter: blur(3px); border-radius: inherit; flex-direction: column; align-items: center; justify-content: center; color: var(--text-primary);">
-            <span class="material-symbols-rounded" style="font-size: 48px; margin-bottom: 16px; animation: spin 1s linear infinite;">autorenew</span>
-            <h3 style="margin: 0;">Respaldando Base de Datos</h3>
-            <p style="margin-top: 8px; color: var(--text-secondary);">El proceso se está ejecutando en segundo plano. Por favor, espere...</p>
-            <style>
-                @keyframes spin { 100% { transform: rotate(360deg); } }
-            </style>
-        </div>
         <div class="component-sticky-toolbar">
             
             <div class="component-toolbar-primary">
@@ -237,7 +234,7 @@ if (is_dir($backupDir)) {
                             </div>
                             
                             <div class="component-badge">
-                                <span class="material-symbols-rounded">description</span>
+                                <span class="material-symbols-rounded">lock</span>
                                 <span class="search-target font-medium"><?php echo htmlspecialchars($backup['filename']); ?></span>
                             </div>
                             
@@ -304,7 +301,7 @@ if (is_dir($backupDir)) {
                                             <span class="material-symbols-rounded" style="color: var(--text-primary); font-size: 16px;">database</span>
                                         </div>
                                         <div class="component-badge component-badge--sm">
-                                            <span class="material-symbols-rounded">description</span>
+                                            <span class="material-symbols-rounded">lock</span>
                                             <span class="search-target font-medium"><?php echo htmlspecialchars($backup['filename']); ?></span>
                                         </div>
                                     </div>

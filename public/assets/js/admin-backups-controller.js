@@ -316,39 +316,32 @@ export class AdminBackupsController {
         processContainer('view-table', 'empty-search-table');
     }
 
-    // --- NUEVO FLUJO ASÍNCRONO DE CREACIÓN ---
     async createBackup() {
         if (this.isBackingUp) return;
         this.isBackingUp = true;
 
         const btn = document.querySelector('[data-action="createBackup"]');
         const originalText = btn ? btn.innerHTML : '';
-        const overlay = document.querySelector('[data-ref="backup-loading-overlay"]');
 
         if (btn) {
-            btn.innerHTML = '<span class="material-symbols-rounded" style="animation: spin 1s linear infinite;">autorenew</span> Respaldando...';
+            btn.innerHTML = '<span class="material-symbols-rounded spin-icon">autorenew</span> Respaldando...';
             btn.style.pointerEvents = 'none';
             btn.style.opacity = '0.7';
         }
 
-        if (overlay) overlay.style.display = 'flex';
-
         if (window.appInstance) window.appInstance.showToast('Enviando solicitud al servidor...', 'info');
         
-        // 1. Enviar petición para encolar el trabajo
         const res = await this.api.post('admin.create_backup');
         
         if (res.success && res.job_id) {
-            // 2. Iniciar polling
-            this.pollBackupStatus(res.job_id, btn, originalText, overlay);
+            this.pollBackupStatus(res.job_id, btn, originalText);
         } else {
-            // Fallo inmediato al encolar
             if (window.appInstance) window.appInstance.showToast(res.message || 'Error al iniciar la copia de seguridad.', 'error');
-            this.resetBackupUI(btn, originalText, overlay);
+            this.resetBackupUI(btn, originalText);
         }
     }
 
-    async pollBackupStatus(jobId, btn, originalText, overlay) {
+    async pollBackupStatus(jobId, btn, originalText) {
         const pollInterval = setInterval(async () => {
             const res = await this.api.post('admin.backup_status', { job_id: jobId });
             
@@ -356,34 +349,31 @@ export class AdminBackupsController {
                 if (res.status === 'completed') {
                     clearInterval(pollInterval);
                     if (window.appInstance) window.appInstance.showToast(res.job_message || 'Copia de seguridad finalizada.', 'success');
-                    this.resetBackupUI(btn, originalText, overlay);
+                    this.resetBackupUI(btn, originalText);
                     
-                    // Recargar vista para ver el archivo nuevo
                     if (window.spaRouter) window.spaRouter.loadRoute('/ProjectRosaura/admin/backups');
                     else window.location.reload();
 
                 } else if (res.status === 'failed' || res.status === 'not_found') {
                     clearInterval(pollInterval);
                     if (window.appInstance) window.appInstance.showToast(res.job_message || 'Fallo en la creación del backup.', 'error');
-                    this.resetBackupUI(btn, originalText, overlay);
+                    this.resetBackupUI(btn, originalText);
                 }
-                // Si es "pending" o "processing", sigue el ciclo sin hacer nada.
             } else {
                 clearInterval(pollInterval);
                 if (window.appInstance) window.appInstance.showToast(res.message || 'Error de conexión durante el proceso.', 'error');
-                this.resetBackupUI(btn, originalText, overlay);
+                this.resetBackupUI(btn, originalText);
             }
-        }, 2500); // Consulta cada 2.5 segundos
+        }, 2500); 
     }
 
-    resetBackupUI(btn, originalText, overlay) {
+    resetBackupUI(btn, originalText) {
         this.isBackingUp = false;
         if (btn) {
             btn.innerHTML = originalText;
             btn.style.pointerEvents = 'auto';
             btn.style.opacity = '1';
         }
-        if (overlay) overlay.style.display = 'none';
     }
 
     async restoreSelectedBackup() {
@@ -398,18 +388,57 @@ export class AdminBackupsController {
         }
         
         if (confirm('¿Estás totalmente seguro de restaurar esta copia? Los datos actuales de la base de datos se sobreescribirán.')) {
-            if (window.appInstance) window.appInstance.showToast('Restaurando base de datos...', 'info');
+            if (this.isBackingUp) return;
+            this.isBackingUp = true;
+            
+            const btn = document.querySelector('[data-action="restoreSelectedBackup"]');
+            const originalText = btn ? btn.innerHTML : '';
+            
+            if (btn) {
+                btn.innerHTML = '<span class="material-symbols-rounded spin-icon">autorenew</span>';
+                btn.style.pointerEvents = 'none';
+                btn.style.opacity = '0.7';
+            }
+
+            if (window.appInstance) window.appInstance.showToast('Enviando solicitud al servidor...', 'info');
             
             const res = await this.api.post(ApiRoutes.Admin.RestoreBackup, { backup_id: this.selectedBackupId, password: password });
             
-            if (res.success) {
-                if (window.appInstance) window.appInstance.showToast(res.message, 'success');
+            if (res.success && res.job_id) {
                 if (passInput) passInput.value = '';
                 this.deselectBackup();
+                this.pollRestoreStatus(res.job_id, btn, originalText);
             } else {
-                if (window.appInstance) window.appInstance.showToast(res.message, 'error');
+                this.resetBackupUI(btn, originalText);
+                if (window.appInstance) window.appInstance.showToast(res.message || 'Error al iniciar la restauración.', 'error');
             }
         }
+    }
+
+    async pollRestoreStatus(jobId, btn, originalText) {
+        const pollInterval = setInterval(async () => {
+            const res = await this.api.post('admin.backup_status', { job_id: jobId });
+            
+            if (res.success) {
+                if (res.status === 'completed') {
+                    clearInterval(pollInterval);
+                    this.resetBackupUI(btn, originalText);
+                    if (window.appInstance) window.appInstance.showToast(res.job_message || 'Base de datos restaurada correctamente.', 'success');
+                    
+                    if (window.spaRouter) window.spaRouter.loadRoute('/ProjectRosaura/admin/backups');
+                    else window.location.reload();
+
+                } else if (res.status === 'failed' || res.status === 'not_found') {
+                    clearInterval(pollInterval);
+                    this.resetBackupUI(btn, originalText);
+                    if (window.appInstance) window.appInstance.showToast(res.job_message || 'Fallo en la restauración.', 'error');
+                }
+            } else {
+                clearInterval(pollInterval);
+                this.resetBackupUI(btn, originalText);
+                if (window.appInstance) window.appInstance.showToast(res.message || 'Error de conexión.', 'error');
+            }
+        }, 2500);
     }
 
     async deleteSelectedBackup() {

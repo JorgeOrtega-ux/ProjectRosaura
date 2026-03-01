@@ -588,7 +588,6 @@ class AdminServices {
         return $dir;
     }
 
-    // --- LÓGICA REESCRITA PARA ENCOLAR EN REDIS (USANDO PREDIS) ---
     public function createBackup() {
         if (!$this->checkAdmin()) return ['success' => false, 'message' => 'No autorizado.'];
 
@@ -614,17 +613,14 @@ class AdminServices {
             $jobId = Utils::generateUUID();
             $jobKey = "backup_job:{$jobId}";
 
-            // Crear el registro de la tarea en Redis
             $redis->hmset($jobKey, [
                 'status' => 'pending',
                 'message' => 'En cola para ejecución...',
                 'created_at' => time()
             ]);
             
-            // Expirar la llave después de 1 hora para evitar basura si falla el worker
             $redis->expire($jobKey, 3600);
 
-            // Encolar la orden
             $redis->rpush('backup_queue', [json_encode([
                 'job_id' => $jobId,
                 'type' => 'manual',
@@ -642,7 +638,6 @@ class AdminServices {
         }
     }
 
-    // --- MÉTODO PARA CONSULTAR EL ESTADO EN REDIS (USANDO PREDIS) ---
     public function backupStatus($data) {
         if (!$this->checkAdmin()) return ['success' => false, 'message' => 'No autorizado.'];
 
@@ -702,37 +697,55 @@ class AdminServices {
         $backupId = $data['backup_id'] ?? '';
         if (empty($backupId)) return ['success' => false, 'message' => 'ID de copia no válido.'];
         
-        // Saneamiento estricto del nombre (Prevención de Path Traversal)
         $filename = basename(base64_decode($backupId));
         $dir = $this->getBackupDir();
         $filepath = $dir . $filename;
         
-        if (!file_exists($filepath) || pathinfo($filename, PATHINFO_EXTENSION) !== 'sql') {
+        if (!file_exists($filepath) || pathinfo($filename, PATHINFO_EXTENSION) !== 'enc') {
             return ['success' => false, 'message' => 'El archivo de copia de seguridad no existe o es inválido.'];
         }
-        
-        $host = escapeshellarg($_ENV['DB_HOST'] ?? 'localhost');
-        $user = escapeshellarg($_ENV['DB_USER'] ?? 'root');
-        $pass = $_ENV['DB_PASS'] ?? '';
-        $dbname = escapeshellarg($_ENV['DB_NAME'] ?? 'projectrosaura');
-        
-        if ($pass) {
-            putenv("MYSQL_PWD=" . $pass);
-        }
-        
-        $command = "mysql -h {$host} -u {$user} {$dbname} < " . escapeshellarg($filepath) . " 2>&1";
-        exec($command, $output, $returnVar);
-        
-        if ($pass) {
-            putenv("MYSQL_PWD");
-        }
-        
-        if ($returnVar === 0) {
-            Logger::security("Admin ID: {$currentUserId} restauró la base de datos usando: {$filename}", 'critical');
-            return ['success' => true, 'message' => 'Base de datos restaurada correctamente.'];
-        } else {
-            Logger::security("Error al restaurar backup: " . implode("\n", $output), 'error');
-            return ['success' => false, 'message' => 'Error al restaurar la base de datos.'];
+
+        try {
+            $redisHost = $_ENV['REDIS_HOST'] ?? '127.0.0.1';
+            $redisPort = (int)($_ENV['REDIS_PORT'] ?? 6379);
+            
+            $connectionParams = [
+                'scheme' => 'tcp',
+                'host'   => $redisHost,
+                'port'   => $redisPort,
+            ];
+            
+            if (!empty($_ENV['REDIS_PASS'])) {
+                $connectionParams['password'] = $_ENV['REDIS_PASS'];
+            }
+
+            $redis = new \Predis\Client($connectionParams);
+
+            $jobId = Utils::generateUUID();
+            $jobKey = "backup_job:{$jobId}";
+
+            $redis->hmset($jobKey, [
+                'status' => 'pending',
+                'message' => 'En cola para restauración...',
+                'created_at' => time()
+            ]);
+            
+            $redis->expire($jobKey, 3600);
+
+            $redis->rpush('backup_queue', [json_encode([
+                'job_id' => $jobId,
+                'type' => 'restore',
+                'backup_file' => $filename,
+                'requested_by' => $currentUserId
+            ])]);
+
+            Logger::security("Admin ID: {$currentUserId} encoló una tarea de restauración con ID: {$jobId} para el archivo: {$filename}", 'critical');
+
+            return ['success' => true, 'message' => 'Restauración enviada a la cola.', 'job_id' => $jobId];
+
+        } catch (\Exception $e) {
+            Logger::security("Error de Redis al encolar restauración: " . $e->getMessage(), 'error');
+            return ['success' => false, 'message' => 'Error al comunicar con el sistema de trabajos en segundo plano.'];
         }
     }
 
@@ -754,14 +767,13 @@ class AdminServices {
         $backupId = $data['backup_id'] ?? '';
         if (empty($backupId)) return ['success' => false, 'message' => 'ID de copia no válido.'];
         
-        // Saneamiento estricto del nombre (Prevención de Path Traversal)
         $filename = basename(base64_decode($backupId));
         $dir = $this->getBackupDir();
         $filepath = $dir . $filename;
         
-        if (file_exists($filepath) && pathinfo($filename, PATHINFO_EXTENSION) === 'sql') {
+        if (file_exists($filepath) && pathinfo($filename, PATHINFO_EXTENSION) === 'enc') {
             unlink($filepath);
-            Logger::security("Admin ID: {$currentUserId} eliminó la copia de seguridad: {$filename}", 'info');
+            Logger::security("Admin ID: {$currentUserId} eliminó la copia de seguridad cifrada: {$filename}", 'info');
             return ['success' => true, 'message' => 'Copia de seguridad eliminada.'];
         }
         

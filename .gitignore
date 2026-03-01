@@ -8,7 +8,7 @@
 Thumbs.db
 desktop.ini
 
-# Directorios de dependencias (por si decides usar Composer o Node en el futuro)
+# Directorios de dependencias
 vendor/
 node_modules/
 
@@ -22,6 +22,9 @@ logs/
 
 # === IGNORAR COPIAS DE SEGURIDAD DE LA BASE DE DATOS ===
 storage/backups/*.sql
+storage/backups/*.enc
+storage/backups/*.gz
+!storage/backups/.htaccess
 
 # Ignorar archivos generados por editores / IDEs
 .idea/
