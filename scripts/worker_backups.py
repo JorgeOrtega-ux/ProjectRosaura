@@ -22,7 +22,6 @@ DB_PASS = os.getenv('DB_PASS', '')
 DB_NAME = os.getenv('DB_NAME', 'projectrosaura')
 
 # Frecuencia base del "latido" del worker (en segundos)
-# El worker despierta cada 10s, lee la BD y evalúa si debe actuar.
 WORKER_TICK_SECONDS = 10
 
 def log(message):
@@ -54,14 +53,20 @@ def create_backup():
     filename = f"auto_backup_{date_str}.sql"
     filepath = os.path.join(BACKUP_DIR, filename)
     
-    dump_cmd = ["mysqldump", "-h", DB_HOST, "-u", DB_USER]
+    dump_cmd = ["mysqldump", "-h", DB_HOST, "-u", DB_USER, DB_NAME]
+    
+    # Usar variables de entorno para evitar exposición de credenciales
+    env = os.environ.copy()
     if DB_PASS:
-        dump_cmd.append(f"-p{DB_PASS}")
-    dump_cmd.append(DB_NAME)
+        env["MYSQL_PWD"] = DB_PASS
 
     try:
         with open(filepath, 'w') as f:
-            subprocess.run(dump_cmd, stdout=f, stderr=subprocess.PIPE, check=True)
+            subprocess.run(dump_cmd, env=env, stdout=f, stderr=subprocess.PIPE, check=True)
+            
+        # Restringir permisos del archivo (Solo dueño)
+        os.chmod(filepath, 0o600)
+        
         log(f"✅ Copia de seguridad generada con éxito: {filename}")
         return True
     except subprocess.CalledProcessError as e:
@@ -90,17 +95,14 @@ def run_worker_cycle():
     config = get_server_config()
     
     if not config:
-        # Falla de BD, no hacemos nada y el loop lo reintentará en 10s
         return 
         
     if config['auto_backup_enabled'] != 1:
-        # Sistema apagado en panel, no hacemos nada
         return 
         
     freq_hours = config['auto_backup_frequency_hours']
     retention_count = config['auto_backup_retention_count']
 
-    # Determinar objetivo en segundos
     is_test_mode = (freq_hours == 0)
     target_seconds = 10 if is_test_mode else (float(freq_hours) * 3600.0)
     
@@ -118,7 +120,6 @@ def run_worker_cycle():
         mod_time = os.path.getmtime(latest_backup)
         time_diff_seconds = time.time() - mod_time
         
-        # Si ya pasó el tiempo necesario (10s en test o X horas en prod)
         if time_diff_seconds >= target_seconds:
             label = "10 segundos (Modo Prueba)" if is_test_mode else f"{freq_hours} hrs"
             log(f"Han pasado {int(time_diff_seconds)}s desde el último backup. Objetivo: {label}. Iniciando respaldo...")
@@ -140,7 +141,6 @@ def main():
         except Exception as e:
             log(f"⚠️ Error crítico en el ciclo del worker: {str(e)}")
             
-        # El script siempre duerme poco tiempo para estar alerta a tus cambios en la web
         time.sleep(WORKER_TICK_SECONDS)
 
 if __name__ == "__main__":

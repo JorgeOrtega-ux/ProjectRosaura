@@ -172,7 +172,14 @@ if (is_dir($backupDir)) {
                 </div>
 
                 <div class="component-toolbar-mode disabled" data-ref="toolbar-selection-mode">
-                    <div class="component-toolbar-left">
+                    <div class="component-toolbar-left" style="align-items: center; gap: 12px;">
+                        
+                        <div class="component-input-group component-input-group--h40" style="width: 210px; margin-right: 8px;">
+                            <input type="password" id="backup_action_password" class="component-input-field component-input-field--with-icon" placeholder=" ">
+                            <label for="backup_action_password" class="component-input-label">Contraseña actual</label>
+                            <span class="material-symbols-rounded component-input-toggle" data-action="togglePassword" style="font-size: 18px; right: 8px;">visibility_off</span>
+                        </div>
+
                         <button class="component-button component-button--icon component-button--h40" data-action="restoreSelectedBackup" data-tooltip="Restaurar copia" data-position="bottom">
                             <span class="material-symbols-rounded">settings_backup_restore</span>
                         </button>

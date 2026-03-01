@@ -17,7 +17,6 @@ export class AdminBackupsController {
 
     bindEvents() {
         document.addEventListener('click', (e) => {
-            // Asegurarnos de que el código solo actúe si estamos en la ruta correcta
             if (!window.location.pathname.includes('/admin/backups')) return;
 
             const searchBtn = e.target.closest('[data-action="searchBackup"]');
@@ -31,6 +30,8 @@ export class AdminBackupsController {
             const createBtn = e.target.closest('[data-action="createBackup"]');
             const restoreBtn = e.target.closest('[data-action="restoreSelectedBackup"]');
             const deleteBtn = e.target.closest('[data-action="deleteSelectedBackup"]');
+            
+            const togglePassBtn = e.target.closest('[data-action="togglePassword"]');
             
             if (searchBtn) this.toggleSearchToolbar();
             if (toggleFiltersBtn) this.toggleFiltersModule();
@@ -52,6 +53,19 @@ export class AdminBackupsController {
             if (createBtn) this.createBackup();
             if (restoreBtn) this.restoreSelectedBackup();
             if (deleteBtn) this.deleteSelectedBackup();
+
+            if (togglePassBtn) {
+                const inputField = togglePassBtn.parentElement.querySelector('.component-input-field');
+                if (inputField && inputField.id === 'backup_action_password') {
+                    if (inputField.type === 'password') {
+                        inputField.type = 'text';
+                        togglePassBtn.textContent = 'visibility';
+                    } else {
+                        inputField.type = 'password';
+                        togglePassBtn.textContent = 'visibility_off';
+                    }
+                }
+            }
         });
 
         document.addEventListener('input', (e) => {
@@ -67,7 +81,6 @@ export class AdminBackupsController {
             }
         });
 
-        // Limpiar estados y filtros al cargar la vista mediante SPA
         window.addEventListener('viewLoaded', (e) => {
             if (e.detail.url.includes('/admin/backups')) {
                 const searchInput = document.querySelector('[data-ref="backup-search-input"]');
@@ -142,6 +155,9 @@ export class AdminBackupsController {
         const defaultMode = document.querySelector('[data-ref="toolbar-default-mode"]');
         const selectionMode = document.querySelector('[data-ref="toolbar-selection-mode"]');
         const secondaryToolbar = document.querySelector('[data-ref="secondary-toolbar"]');
+        
+        const passInput = document.getElementById('backup_action_password');
+        if (passInput) passInput.value = '';
 
         if (defaultMode && selectionMode) {
             defaultMode.classList.replace('active', 'disabled');
@@ -167,6 +183,9 @@ export class AdminBackupsController {
 
         const defaultMode = document.querySelector('[data-ref="toolbar-default-mode"]');
         const selectionMode = document.querySelector('[data-ref="toolbar-selection-mode"]');
+        
+        const passInput = document.getElementById('backup_action_password');
+        if (passInput) passInput.value = '';
 
         if (defaultMode && selectionMode) {
             selectionMode.classList.replace('active', 'disabled');
@@ -313,13 +332,22 @@ export class AdminBackupsController {
     async restoreSelectedBackup() {
         if (!this.selectedBackupId) return;
         
+        const passInput = document.getElementById('backup_action_password');
+        const password = passInput ? passInput.value.trim() : '';
+
+        if (!password) {
+            if (window.appInstance) window.appInstance.showToast('Ingresa tu contraseña para autorizar la restauración.', 'error');
+            return;
+        }
+        
         if (confirm('¿Estás totalmente seguro de restaurar esta copia? Los datos actuales de la base de datos se sobreescribirán.')) {
             if (window.appInstance) window.appInstance.showToast('Restaurando base de datos...', 'info');
             
-            const res = await this.api.post(ApiRoutes.Admin.RestoreBackup, { backup_id: this.selectedBackupId });
+            const res = await this.api.post(ApiRoutes.Admin.RestoreBackup, { backup_id: this.selectedBackupId, password: password });
             
             if (res.success) {
                 if (window.appInstance) window.appInstance.showToast(res.message, 'success');
+                if (passInput) passInput.value = '';
                 this.deselectBackup();
             } else {
                 if (window.appInstance) window.appInstance.showToast(res.message, 'error');
@@ -330,11 +358,20 @@ export class AdminBackupsController {
     async deleteSelectedBackup() {
         if (!this.selectedBackupId) return;
         
+        const passInput = document.getElementById('backup_action_password');
+        const password = passInput ? passInput.value.trim() : '';
+
+        if (!password) {
+            if (window.appInstance) window.appInstance.showToast('Ingresa tu contraseña para autorizar la eliminación.', 'error');
+            return;
+        }
+        
         if (confirm('¿Estás seguro de que deseas eliminar esta copia de seguridad de forma permanente?')) {
-            const res = await this.api.post(ApiRoutes.Admin.DeleteBackup, { backup_id: this.selectedBackupId });
+            const res = await this.api.post(ApiRoutes.Admin.DeleteBackup, { backup_id: this.selectedBackupId, password: password });
             
             if (res.success) {
                 if (window.appInstance) window.appInstance.showToast(res.message, 'success');
+                if (passInput) passInput.value = '';
                 this.deselectBackup();
                 if (window.spaRouter) window.spaRouter.loadRoute('/ProjectRosaura/admin/backups');
                 else window.location.reload();

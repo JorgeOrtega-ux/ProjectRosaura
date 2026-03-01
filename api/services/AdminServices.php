@@ -527,8 +527,6 @@ class AdminServices {
         return ['success' => false, 'message' => 'Ocurrió un error al guardar la nota.'];
     }
 
-    // --- FUNCIONES PARA SERVER CONFIG ---
-    
     public function getServerConfig() {
         if (!$this->checkAdmin()) return ['success' => false, 'message' => 'No autorizado.'];
         $freshConfig = $this->configRepository->getConfig();
@@ -547,7 +545,6 @@ class AdminServices {
             return ['success' => false, 'message' => 'Contraseña incorrecta. Acción denegada.'];
         }
 
-        // --- AÑADIDOS LOS 3 NUEVOS CAMPOS DE AUTOMATIZACIÓN DE BACKUPS ---
         $allowedFields = [
             'min_password_length', 'max_password_length', 'min_username_length', 'max_username_length', 'max_avatar_size_mb',
             'username_change_cooldown_days', 'username_change_max_attempts', 'email_change_cooldown_days', 'email_change_max_attempts',
@@ -582,7 +579,6 @@ class AdminServices {
         return ['success' => false, 'message' => 'Error al guardar en la base de datos.'];
     }
 
-    // --- NUEVAS FUNCIONES PARA COPIAS DE SEGURIDAD (BACKUPS) ---
     private function getBackupDir() {
         $dir = __DIR__ . '/../../storage/backups/';
         if (!is_dir($dir)) {
@@ -594,6 +590,9 @@ class AdminServices {
 
     public function createBackup() {
         if (!$this->checkAdmin()) return ['success' => false, 'message' => 'No autorizado.'];
+
+        $rl = $this->applyAdminRateLimit('admin_backup_create', 5, 30, "Límite de seguridad: Has creado demasiados backups manualmente. Espera {minutes} minutos.");
+        if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
         
         $dir = $this->getBackupDir();
         $date = date('Y-m-d_H-i-s');
@@ -605,11 +604,18 @@ class AdminServices {
         $pass = $_ENV['DB_PASS'] ?? '';
         $dbname = escapeshellarg($_ENV['DB_NAME'] ?? 'projectrosaura');
         
-        $passArg = $pass ? "-p" . escapeshellarg($pass) : "";
+        // Uso de variables de entorno para evitar exposición en CLI (ps aux, top)
+        if ($pass) {
+            putenv("MYSQL_PWD=" . $pass);
+        }
         
-        // Ejecución nativa (asume que mysqldump está en el PATH del sistema)
-        $command = "mysqldump -h {$host} -u {$user} {$passArg} {$dbname} > " . escapeshellarg($filepath) . " 2>&1";
+        $command = "mysqldump -h {$host} -u {$user} {$dbname} > " . escapeshellarg($filepath) . " 2>&1";
         exec($command, $output, $returnVar);
+        
+        // Limpiar la variable del entorno una vez concluido el comando
+        if ($pass) {
+            putenv("MYSQL_PWD"); 
+        }
         
         if ($returnVar === 0) {
             $currentUserId = $this->sessionManager->get('user_id');
@@ -618,22 +624,35 @@ class AdminServices {
         } else {
             @unlink($filepath);
             Logger::security("Error al crear backup: " . implode("\n", $output), 'error');
-            return ['success' => false, 'message' => 'Error al crear la copia de seguridad. Verifique que mysqldump esté instalado en las variables de entorno.'];
+            return ['success' => false, 'message' => 'Error al crear la copia de seguridad. Verifique la configuración del servidor.'];
         }
     }
 
     public function restoreBackup($data) {
         if (!$this->checkAdmin()) return ['success' => false, 'message' => 'No autorizado.'];
         
+        $password = $data['password'] ?? '';
+        $currentUserId = $this->sessionManager->get('user_id');
+        $adminData = $this->userRepository->findById($currentUserId);
+        
+        if (!$adminData || !password_verify($password, $adminData['password'])) {
+            Logger::security("Intento de restauración fallido: Contraseña incorrecta por el Admin ID: $currentUserId", 'critical');
+            return ['success' => false, 'message' => 'Contraseña incorrecta. Acción denegada.'];
+        }
+
+        $rl = $this->applyAdminRateLimit('admin_backup_restore', 3, 30, "Límite de seguridad: Has intentado restaurar copias demasiadas veces. Espera {minutes} minutos.");
+        if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
+
         $backupId = $data['backup_id'] ?? '';
         if (empty($backupId)) return ['success' => false, 'message' => 'ID de copia no válido.'];
         
-        $filename = base64_decode($backupId);
+        // Saneamiento estricto del nombre (Prevención de Path Traversal)
+        $filename = basename(base64_decode($backupId));
         $dir = $this->getBackupDir();
         $filepath = $dir . $filename;
         
         if (!file_exists($filepath) || pathinfo($filename, PATHINFO_EXTENSION) !== 'sql') {
-            return ['success' => false, 'message' => 'El archivo de copia de seguridad no existe.'];
+            return ['success' => false, 'message' => 'El archivo de copia de seguridad no existe o es inválido.'];
         }
         
         $host = escapeshellarg($_ENV['DB_HOST'] ?? 'localhost');
@@ -641,35 +660,51 @@ class AdminServices {
         $pass = $_ENV['DB_PASS'] ?? '';
         $dbname = escapeshellarg($_ENV['DB_NAME'] ?? 'projectrosaura');
         
-        $passArg = $pass ? "-p" . escapeshellarg($pass) : "";
+        if ($pass) {
+            putenv("MYSQL_PWD=" . $pass);
+        }
         
-        // Ejecución nativa (asume que mysql está en el PATH del sistema)
-        $command = "mysql -h {$host} -u {$user} {$passArg} {$dbname} < " . escapeshellarg($filepath) . " 2>&1";
+        $command = "mysql -h {$host} -u {$user} {$dbname} < " . escapeshellarg($filepath) . " 2>&1";
         exec($command, $output, $returnVar);
         
+        if ($pass) {
+            putenv("MYSQL_PWD");
+        }
+        
         if ($returnVar === 0) {
-            $currentUserId = $this->sessionManager->get('user_id');
             Logger::security("Admin ID: {$currentUserId} restauró la base de datos usando: {$filename}", 'critical');
             return ['success' => true, 'message' => 'Base de datos restaurada correctamente.'];
         } else {
             Logger::security("Error al restaurar backup: " . implode("\n", $output), 'error');
-            return ['success' => false, 'message' => 'Error al restaurar la base de datos. Verifique que mysql esté instalado en las variables de entorno.'];
+            return ['success' => false, 'message' => 'Error al restaurar la base de datos.'];
         }
     }
 
     public function deleteBackup($data) {
         if (!$this->checkAdmin()) return ['success' => false, 'message' => 'No autorizado.'];
         
+        $password = $data['password'] ?? '';
+        $currentUserId = $this->sessionManager->get('user_id');
+        $adminData = $this->userRepository->findById($currentUserId);
+        
+        if (!$adminData || !password_verify($password, $adminData['password'])) {
+            Logger::security("Intento de eliminación de backup fallido: Contraseña incorrecta por el Admin ID: $currentUserId", 'warning');
+            return ['success' => false, 'message' => 'Contraseña incorrecta. Acción denegada.'];
+        }
+
+        $rl = $this->applyAdminRateLimit('admin_backup_delete', 10, 30, "Límite de seguridad: Has eliminado demasiadas copias de seguridad. Espera {minutes} minutos.");
+        if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
+
         $backupId = $data['backup_id'] ?? '';
         if (empty($backupId)) return ['success' => false, 'message' => 'ID de copia no válido.'];
         
-        $filename = base64_decode($backupId);
+        // Saneamiento estricto del nombre (Prevención de Path Traversal)
+        $filename = basename(base64_decode($backupId));
         $dir = $this->getBackupDir();
         $filepath = $dir . $filename;
         
         if (file_exists($filepath) && pathinfo($filename, PATHINFO_EXTENSION) === 'sql') {
             unlink($filepath);
-            $currentUserId = $this->sessionManager->get('user_id');
             Logger::security("Admin ID: {$currentUserId} eliminó la copia de seguridad: {$filename}", 'info');
             return ['success' => true, 'message' => 'Copia de seguridad eliminada.'];
         }
