@@ -44,6 +44,9 @@ export const ApiRoutes = {
         GetModerationKardex: 'admin.get_moderation_kardex',
         AddAdminNote: 'admin.add_admin_note',
         GetServerConfig: 'admin.get_server_config',
-        UpdateServerConfig: 'admin.update_server_config'
+        UpdateServerConfig: 'admin.update_server_config',
+        CreateBackup: 'admin.create_backup',
+        RestoreBackup: 'admin.restore_backup',
+        DeleteBackup: 'admin.delete_backup'
     }
 };

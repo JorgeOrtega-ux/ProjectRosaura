@@ -1,8 +1,12 @@
 // public/assets/js/admin-backups-controller.js
 
+import { ApiService } from './core/api-services.js';
+import { ApiRoutes } from './core/api-routes.js';
+
 export class AdminBackupsController {
     constructor() {
         this.selectedBackupId = null; 
+        this.api = new ApiService();
         this.init();
     }
 
@@ -292,27 +296,51 @@ export class AdminBackupsController {
         processContainer('view-table', 'empty-search-table');
     }
 
-    createBackup() {
-        if (window.appInstance) {
-            window.appInstance.showToast('Funcionalidad en desarrollo: Creando copia...', 'success');
+    async createBackup() {
+        if (window.appInstance) window.appInstance.showToast('Creando copia de seguridad, por favor espera...', 'info');
+        
+        const res = await this.api.post(ApiRoutes.Admin.CreateBackup);
+        
+        if (res.success) {
+            if (window.appInstance) window.appInstance.showToast(res.message, 'success');
+            if (window.spaRouter) window.spaRouter.loadRoute('/ProjectRosaura/admin/backups');
+            else window.location.reload();
+        } else {
+            if (window.appInstance) window.appInstance.showToast(res.message, 'error');
         }
     }
 
-    restoreSelectedBackup() {
+    async restoreSelectedBackup() {
         if (!this.selectedBackupId) return;
-        if (window.appInstance) {
-            window.appInstance.showToast('Funcionalidad en desarrollo: Restaurando copia ID ' + this.selectedBackupId, 'success');
-        }
-        this.deselectBackup();
-    }
-
-    deleteSelectedBackup() {
-        if (!this.selectedBackupId) return;
-        if (confirm('¿Estás seguro de que deseas eliminar esta copia de seguridad de forma permanente?')) {
-            if (window.appInstance) {
-                window.appInstance.showToast('Funcionalidad en desarrollo: Copia eliminada correctamente.', 'success');
+        
+        if (confirm('¿Estás totalmente seguro de restaurar esta copia? Los datos actuales de la base de datos se sobreescribirán.')) {
+            if (window.appInstance) window.appInstance.showToast('Restaurando base de datos...', 'info');
+            
+            const res = await this.api.post(ApiRoutes.Admin.RestoreBackup, { backup_id: this.selectedBackupId });
+            
+            if (res.success) {
+                if (window.appInstance) window.appInstance.showToast(res.message, 'success');
+                this.deselectBackup();
+            } else {
+                if (window.appInstance) window.appInstance.showToast(res.message, 'error');
             }
-            this.deselectBackup();
+        }
+    }
+
+    async deleteSelectedBackup() {
+        if (!this.selectedBackupId) return;
+        
+        if (confirm('¿Estás seguro de que deseas eliminar esta copia de seguridad de forma permanente?')) {
+            const res = await this.api.post(ApiRoutes.Admin.DeleteBackup, { backup_id: this.selectedBackupId });
+            
+            if (res.success) {
+                if (window.appInstance) window.appInstance.showToast(res.message, 'success');
+                this.deselectBackup();
+                if (window.spaRouter) window.spaRouter.loadRoute('/ProjectRosaura/admin/backups');
+                else window.location.reload();
+            } else {
+                if (window.appInstance) window.appInstance.showToast(res.message, 'error');
+            }
         }
     }
 }

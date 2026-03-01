@@ -527,12 +527,10 @@ class AdminServices {
         return ['success' => false, 'message' => 'Ocurrió un error al guardar la nota.'];
     }
 
-    // --- NUEVAS FUNCIONES PARA SERVER CONFIG ---
+    // --- FUNCIONES PARA SERVER CONFIG ---
     
     public function getServerConfig() {
         if (!$this->checkAdmin()) return ['success' => false, 'message' => 'No autorizado.'];
-        
-        // Obtenemos la configuración fresca desde el repositorio (DB)
         $freshConfig = $this->configRepository->getConfig();
         return ['success' => true, 'config' => $freshConfig];
     }
@@ -564,7 +562,7 @@ class AdminServices {
             foreach ($allowedFields as $field) {
                 if (isset($data['config'][$field])) {
                     $val = (int)$data['config'][$field];
-                    if ($val < 0) $val = 0; // Prevent negative values
+                    if ($val < 0) $val = 0; 
                     $updateData[$field] = $val;
                 }
             }
@@ -580,6 +578,101 @@ class AdminServices {
         }
 
         return ['success' => false, 'message' => 'Error al guardar en la base de datos.'];
+    }
+
+    // --- NUEVAS FUNCIONES PARA COPIAS DE SEGURIDAD (BACKUPS) ---
+    private function getBackupDir() {
+        $dir = __DIR__ . '/../../storage/backups/';
+        if (!is_dir($dir)) {
+            mkdir($dir, 0777, true);
+            file_put_contents($dir . '.htaccess', "Deny from all\nOptions -Indexes");
+        }
+        return $dir;
+    }
+
+    public function createBackup() {
+        if (!$this->checkAdmin()) return ['success' => false, 'message' => 'No autorizado.'];
+        
+        $dir = $this->getBackupDir();
+        $date = date('Y-m-d_H-i-s');
+        $filename = "backup_manual_{$date}.sql";
+        $filepath = $dir . $filename;
+        
+        $host = escapeshellarg($_ENV['DB_HOST'] ?? 'localhost');
+        $user = escapeshellarg($_ENV['DB_USER'] ?? 'root');
+        $pass = $_ENV['DB_PASS'] ?? '';
+        $dbname = escapeshellarg($_ENV['DB_NAME'] ?? 'projectrosaura');
+        
+        $passArg = $pass ? "-p" . escapeshellarg($pass) : "";
+        
+        // Ejecución nativa (asume que mysqldump está en el PATH del sistema)
+        $command = "mysqldump -h {$host} -u {$user} {$passArg} {$dbname} > " . escapeshellarg($filepath) . " 2>&1";
+        exec($command, $output, $returnVar);
+        
+        if ($returnVar === 0) {
+            $currentUserId = $this->sessionManager->get('user_id');
+            Logger::security("Admin ID: {$currentUserId} creó una copia de seguridad manual: {$filename}", 'info');
+            return ['success' => true, 'message' => 'Copia de seguridad creada con éxito.'];
+        } else {
+            @unlink($filepath);
+            Logger::security("Error al crear backup: " . implode("\n", $output), 'error');
+            return ['success' => false, 'message' => 'Error al crear la copia de seguridad. Verifique que mysqldump esté instalado en las variables de entorno.'];
+        }
+    }
+
+    public function restoreBackup($data) {
+        if (!$this->checkAdmin()) return ['success' => false, 'message' => 'No autorizado.'];
+        
+        $backupId = $data['backup_id'] ?? '';
+        if (empty($backupId)) return ['success' => false, 'message' => 'ID de copia no válido.'];
+        
+        $filename = base64_decode($backupId);
+        $dir = $this->getBackupDir();
+        $filepath = $dir . $filename;
+        
+        if (!file_exists($filepath) || pathinfo($filename, PATHINFO_EXTENSION) !== 'sql') {
+            return ['success' => false, 'message' => 'El archivo de copia de seguridad no existe.'];
+        }
+        
+        $host = escapeshellarg($_ENV['DB_HOST'] ?? 'localhost');
+        $user = escapeshellarg($_ENV['DB_USER'] ?? 'root');
+        $pass = $_ENV['DB_PASS'] ?? '';
+        $dbname = escapeshellarg($_ENV['DB_NAME'] ?? 'projectrosaura');
+        
+        $passArg = $pass ? "-p" . escapeshellarg($pass) : "";
+        
+        // Ejecución nativa (asume que mysql está en el PATH del sistema)
+        $command = "mysql -h {$host} -u {$user} {$passArg} {$dbname} < " . escapeshellarg($filepath) . " 2>&1";
+        exec($command, $output, $returnVar);
+        
+        if ($returnVar === 0) {
+            $currentUserId = $this->sessionManager->get('user_id');
+            Logger::security("Admin ID: {$currentUserId} restauró la base de datos usando: {$filename}", 'critical');
+            return ['success' => true, 'message' => 'Base de datos restaurada correctamente.'];
+        } else {
+            Logger::security("Error al restaurar backup: " . implode("\n", $output), 'error');
+            return ['success' => false, 'message' => 'Error al restaurar la base de datos. Verifique que mysql esté instalado en las variables de entorno.'];
+        }
+    }
+
+    public function deleteBackup($data) {
+        if (!$this->checkAdmin()) return ['success' => false, 'message' => 'No autorizado.'];
+        
+        $backupId = $data['backup_id'] ?? '';
+        if (empty($backupId)) return ['success' => false, 'message' => 'ID de copia no válido.'];
+        
+        $filename = base64_decode($backupId);
+        $dir = $this->getBackupDir();
+        $filepath = $dir . $filename;
+        
+        if (file_exists($filepath) && pathinfo($filename, PATHINFO_EXTENSION) === 'sql') {
+            unlink($filepath);
+            $currentUserId = $this->sessionManager->get('user_id');
+            Logger::security("Admin ID: {$currentUserId} eliminó la copia de seguridad: {$filename}", 'info');
+            return ['success' => true, 'message' => 'Copia de seguridad eliminada.'];
+        }
+        
+        return ['success' => false, 'message' => 'El archivo no existe o no es válido.'];
     }
 }
 ?>

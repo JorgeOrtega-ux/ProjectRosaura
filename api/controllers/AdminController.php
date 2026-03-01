@@ -27,5 +27,10 @@ class AdminController {
     // --- NUEVAS ACCIONES PARA SERVER CONFIG ---
     public function get_server_config() { return $this->adminServices->getServerConfig(); }
     public function update_server_config($input) { return $this->adminServices->updateServerConfig($input); }
+
+    // --- NUEVAS ACCIONES PARA BACKUPS ---
+    public function create_backup() { return $this->adminServices->createBackup(); }
+    public function restore_backup($input) { return $this->adminServices->restoreBackup($input); }
+    public function delete_backup($input) { return $this->adminServices->deleteBackup($input); }
 }
 ?>

@@ -2,33 +2,34 @@
 // includes/views/admin/backups.php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
-// Datos simulados para la UI (listos para ser reemplazados por la Base de Datos)
-$backups = [
-    [
-        'id' => 1,
-        'filename' => 'backup_2026-03-01_14-30-00.sql',
-        'type' => 'manual',
-        'status' => 'success',
-        'size' => '15.4 MB',
-        'created_at' => '2026-03-01 14:30:00'
-    ],
-    [
-        'id' => 2,
-        'filename' => 'backup_2026-02-28_02-00-00.sql',
-        'type' => 'auto',
-        'status' => 'success',
-        'size' => '15.1 MB',
-        'created_at' => '2026-02-28 02:00:00'
-    ],
-    [
-        'id' => 3,
-        'filename' => 'backup_2026-02-27_02-00-00.sql',
-        'type' => 'auto',
-        'status' => 'failed',
-        'size' => '0 KB',
-        'created_at' => '2026-02-27 02:00:00'
-    ]
-];
+$backups = [];
+$backupDir = __DIR__ . '/../../../storage/backups/';
+
+if (is_dir($backupDir)) {
+    $files = scandir($backupDir);
+    foreach ($files as $file) {
+        if (pathinfo($file, PATHINFO_EXTENSION) === 'sql') {
+            $filepath = $backupDir . $file;
+            $sizeBytes = filesize($filepath);
+            
+            $sizeFormatted = $sizeBytes >= 1048576 
+                            ? round($sizeBytes / 1048576, 2) . ' MB' 
+                            : round($sizeBytes / 1024, 2) . ' KB';
+                            
+            $backups[] = [
+                'id' => base64_encode($file),
+                'filename' => $file,
+                'type' => strpos($file, 'auto') !== false ? 'auto' : 'manual',
+                'status' => 'success',
+                'size' => $sizeFormatted,
+                'created_at' => date('Y-m-d H:i:s', filemtime($filepath))
+            ];
+        }
+    }
+    usort($backups, function($a, $b) {
+        return strtotime($b['created_at']) - strtotime($a['created_at']);
+    });
+}
 ?>
 
 <div class="view-content">

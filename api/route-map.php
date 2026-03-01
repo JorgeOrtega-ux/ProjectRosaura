@@ -56,5 +56,10 @@ return [
     // --- RUTAS DE CONFIGURACIÓN DEL SERVIDOR ---
     'admin.get_server_config'     => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'get_server_config'],
     'admin.update_server_config'  => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'update_server_config'],
+
+    // --- RUTAS DE COPIAS DE SEGURIDAD ---
+    'admin.create_backup'         => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'create_backup'],
+    'admin.restore_backup'        => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'restore_backup'],
+    'admin.delete_backup'         => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'delete_backup'],
 ];
 ?>
