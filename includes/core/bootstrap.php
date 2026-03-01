@@ -6,7 +6,6 @@ session_start();
 // Cabeceras de seguridad
 header("X-Frame-Options: SAMEORIGIN");
 header("X-Content-Type-Options: nosniff");
-// CORRECCIÓN APLICADA: Se añadió https://unpkg.com a connect-src para permitir la carga del mapa de Popper.js
 header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://api.qrserver.com; connect-src 'self' https://unpkg.com; frame-ancestors 'none';");
 
 require_once __DIR__ . '/../../vendor/autoload.php';
@@ -19,7 +18,6 @@ require_once __DIR__ . '/../../vendor/autoload.php';
 ini_set('display_errors', 0);
 error_reporting(E_ALL);
 
-// Función para mostrar la vista genérica de error con tu diseño modular
 // Función para mostrar la vista genérica de error simulando la interfaz de la web
 function render_fatal_error_view() {
     http_response_code(500);
@@ -77,16 +75,15 @@ function render_fatal_error_view() {
     exit;
 }
 
-// Capturar cualquier Excepción no atrapada (como la inyección de dependencias)
+// Capturar cualquier Excepción no atrapada
 set_exception_handler(function (\Throwable $e) {
     \App\Core\System\Logger::security("Fatal Exception: " . $e->getMessage() . " en " . $e->getFile() . " línea " . $e->getLine(), 'critical');
     render_fatal_error_view();
 });
 
-// Capturar Errores Fatales nativos de PHP (Sintaxis, Memoria, etc)
+// Capturar Errores Fatales nativos de PHP
 register_shutdown_function(function () {
     $error = error_get_last();
-    // Identificar si el error es uno que detiene la ejecución del script
     if ($error !== null && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
         \App\Core\System\Logger::security("Fatal Error: " . $error['message'] . " en " . $error['file'] . " línea " . $error['line'], 'critical');
         render_fatal_error_view();
@@ -101,6 +98,7 @@ use App\Core\Container;
 use App\Api\Services\AuthServices;
 use App\Core\Interfaces\UserPrefsManagerInterface;
 use App\Core\Interfaces\ServerConfigRepositoryInterface;
+use App\Core\Interfaces\UserRepositoryInterface;
 
 // 1. Instanciar el Contenedor
 $container = new Container();
@@ -112,13 +110,36 @@ $serverConfig = $configRepo->getConfig();
 // 3. Obtener servicios
 $authService = $container->get(AuthServices::class);
 $prefsManager = $container->get(UserPrefsManagerInterface::class);
+$userRepo = $container->get(UserRepositoryInterface::class);
 
-// Manejo de Seguridad de Dispositivos y AutoLogin
+// Manejo de Seguridad de Dispositivos, AutoLogin e Hidratación en Tiempo Real
 if (isset($_SESSION['user_id'])) {
     if (!$authService->isCurrentDeviceValid()) {
         $authService->logout();
         header("Location: /ProjectRosaura/login");
         exit;
+    } else {
+        // --- HIDRATACIÓN EN TIEMPO REAL ---
+        $liveUser = $userRepo->findById($_SESSION['user_id']);
+        
+        if (!$liveUser || $liveUser['user_status'] === 'deleted') {
+            $authService->logout();
+            header("Location: /ProjectRosaura/account-deleted");
+            exit;
+        }
+        
+        if ($liveUser['is_suspended'] == 1) {
+            if ($liveUser['suspension_type'] === 'temporary' && $liveUser['suspension_end_date'] && strtotime($liveUser['suspension_end_date']) <= time()) {
+                $userRepo->liftSuspension($liveUser['id']);
+            } else {
+                $authService->logout();
+                header("Location: /ProjectRosaura/account-suspended");
+                exit;
+            }
+        }
+        
+        // Sincronizar el rol en la sesión con la BD en cada carga
+        $_SESSION['user_role'] = $liveUser['role'];
     }
 } elseif (isset($_COOKIE['remember_token'])) {
     $authService->autoLogin(); 
@@ -148,7 +169,6 @@ if ($isLoggedIn && !empty($_SESSION['user_prefs']['language'])) {
 
 Translator::init($lang);
 
-// Actualizado para permitir parámetros en las traducciones (__('clave', ['var' => 'valor']))
 if (!function_exists('__')) { 
     function __($key, $params = []) { return Translator::get($key, $params); } 
 }

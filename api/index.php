@@ -14,14 +14,16 @@ use App\Core\Helpers\Utils;
 use App\Core\Container;
 use App\Core\System\Logger;
 use App\Api\Services\AuthServices;
+use App\Core\Interfaces\UserRepositoryInterface;
 
 // 1. Instanciar el Contenedor de Dependencias
 $container = new Container();
 
 // 2. Obtener servicios necesarios del contenedor (PSR-11)
 $authService = $container->get(AuthServices::class);
+$userRepo = $container->get(UserRepositoryInterface::class);
 
-// Manejo de Sesión y AutoLogin
+// Manejo de Sesión, AutoLogin e Hidratación en Tiempo Real (Capa API)
 if (isset($_SESSION['user_id'])) {
     if (!$authService->isCurrentDeviceValid()) {
         Logger::security("Sesión revocada para usuario ID: " . $_SESSION['user_id'], 'warning', ['ip' => Utils::getIpAddress()]);
@@ -29,6 +31,30 @@ if (isset($_SESSION['user_id'])) {
         http_response_code(401);
         echo json_encode(['success' => false, 'message' => 'Sesión revocada.']);
         exit;
+    } else {
+        // --- HIDRATACIÓN EN TIEMPO REAL PARA RUTAS API ---
+        $liveUser = $userRepo->findById($_SESSION['user_id']);
+        
+        if (!$liveUser || $liveUser['user_status'] === 'deleted') {
+            $authService->logout();
+            http_response_code(403); 
+            echo json_encode(['success' => false, 'status' => 'deleted', 'message' => 'Cuenta eliminada.']);
+            exit;
+        }
+        
+        if ($liveUser['is_suspended'] == 1) {
+            if ($liveUser['suspension_type'] === 'temporary' && $liveUser['suspension_end_date'] && strtotime($liveUser['suspension_end_date']) <= time()) {
+                $userRepo->liftSuspension($liveUser['id']);
+            } else {
+                $authService->logout();
+                http_response_code(403);
+                echo json_encode(['success' => false, 'status' => 'suspended', 'message' => 'Cuenta suspendida.']);
+                exit;
+            }
+        }
+        
+        // Sincronizar el rol de la petición actual
+        $_SESSION['user_role'] = $liveUser['role'];
     }
 } elseif (isset($_COOKIE['remember_token'])) {
     $authService->autoLogin(); 

@@ -92,5 +92,27 @@ class Mailer {
             return false;
         }
     }
+
+    public function sendSecurityAlertEmailChanged($toEmail, $username, $newEmail) {
+        try {
+            $this->mail->clearAddresses();
+            $this->mail->addAddress($toEmail, $username);
+
+            $this->mail->isHTML(true);
+            $this->mail->Subject = 'Aviso de seguridad: Cambio de correo - Project Rosaura';
+            
+            $this->mail->Body = EmailTemplates::get('security_alert_email_changed', [
+                'username' => $username,
+                'newEmail' => $newEmail
+            ]);
+            
+            $this->mail->AltBody = "Hola {$username},\n\nTe informamos que un administrador ha modificado tu correo electrónico a: {$newEmail}.\n\nSi no solicitaste este cambio, ponte en contacto con nuestro equipo de soporte inmediatamente.\n\nAtentamente,\nEl equipo de Project Rosaura";
+
+            return $this->mail->send();
+        } catch (Exception $e) {
+            Logger::security("Fallo al enviar correo de alerta de cambio de email a {$toEmail}: {$this->mail->ErrorInfo}", 'error');
+            return false;
+        }
+    }
 }
 ?>

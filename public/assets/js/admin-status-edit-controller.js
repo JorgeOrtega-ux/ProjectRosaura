@@ -133,6 +133,21 @@ export class AdminStatusEditController {
 
             const btnSubmitUpdate = e.target.closest('[data-action="submitStatusUpdate"]');
             if (btnSubmitUpdate) this.submitStatusUpdate(btnSubmitUpdate);
+
+            // Mostrar/Ocultar contraseña del administrador
+            const togglePassBtn = e.target.closest('[data-action="togglePassword"]');
+            if (togglePassBtn) {
+                const inputField = togglePassBtn.parentElement.querySelector('.component-input-field');
+                if (inputField && inputField.id === 'admin_status_confirm_password') {
+                    if (inputField.type === 'password') {
+                        inputField.type = 'text';
+                        togglePassBtn.textContent = 'visibility';
+                    } else {
+                        inputField.type = 'password';
+                        togglePassBtn.textContent = 'visibility_off';
+                    }
+                }
+            }
         });
 
         document.addEventListener('input', (e) => {
@@ -160,6 +175,10 @@ export class AdminStatusEditController {
     async loadUserData() {
         const loader = document.getElementById('admin-status-loader');
         const form = document.getElementById('admin-status-form');
+        
+        // Limpiar el campo de contraseña al cargar
+        const passInput = document.getElementById('admin_status_confirm_password');
+        if (passInput) passInput.value = '';
 
         const res = await this.api.post(ApiRoutes.Admin.GetUser, { target_user_id: this.targetUserId });
         
@@ -334,6 +353,14 @@ export class AdminStatusEditController {
             }
         }
 
+        const passInput = document.getElementById('admin_status_confirm_password');
+        const password = passInput ? passInput.value.trim() : '';
+
+        if (!password) {
+            this.showMessage('Debes ingresar tu contraseña de administrador para guardar los cambios.', 'error');
+            return;
+        }
+
         btn.dataset.originalText = btn.innerHTML;
         btn.innerHTML = '<div class="component-spinner"></div>';
         btn.disabled = true;
@@ -348,7 +375,8 @@ export class AdminStatusEditController {
             is_suspended: this.state.isSuspended,
             suspension_type: this.state.isSuspended === '1' ? this.state.suspendedType : null,
             suspension_reason: this.state.isSuspended === '1' ? this.state.suspensionReason : null,
-            end_date: (this.state.isSuspended === '1' && this.state.suspendedType === 'temporary') ? this.formatDateForDB(this.state.endDate) : null
+            end_date: (this.state.isSuspended === '1' && this.state.suspendedType === 'temporary') ? this.formatDateForDB(this.state.endDate) : null,
+            password: password
         };
 
         const result = await this.api.post(ApiRoutes.Admin.UpdateStatus, payload);

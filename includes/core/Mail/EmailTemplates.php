@@ -59,6 +59,19 @@ class EmailTemplates {
                 ";
                 break;
 
+            case 'security_alert_email_changed':
+                $content = "
+                    <h2 style='color: #111111; margin-top: 0;'>Alerta de Seguridad, {$username}</h2>
+                    <p style='color: #666666; font-size: 15px; line-height: 1.5;'>Te informamos que un administrador ha modificado la dirección de correo electrónico asociada a tu cuenta.</p>
+                    
+                    <p style='color: #666666; font-size: 15px; line-height: 1.5;'>Tu nuevo correo registrado es: <br><b style='color: #111111; font-size: 16px;'>{$newEmail}</b></p>
+                    
+                    <hr style='border: none; border-top: 1px solid #00000020; margin: 25px 0;'>
+                    <p style='font-size: 13px; color: #d32f2f; font-weight: bold;'>¿No reconoces esta acción?</p>
+                    <p style='font-size: 13px; color: #666666;'>Si tú no solicitaste este cambio o crees que fue un error, por favor ponte en contacto con nuestro equipo de soporte inmediatamente para asegurar tu cuenta.</p>
+                ";
+                break;
+
             default:
                 $content = "<p style='color: #111;'>Contenido del correo no especificado o plantilla no encontrada.</p>";
                 break;

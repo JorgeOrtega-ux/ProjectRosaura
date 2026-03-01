@@ -229,12 +229,18 @@
     position: absolute;
     top: calc(100% + 5px);
     right: 0;
+    /* Se ha eliminado width: 100% global para evitar que rompa el módulo principal de Opciones del Header */
     z-index: 100;
 }
 
 .component-module--dropdown-left {
     right: auto;
     left: 0;
+}
+
+/* APLICAR EL ANCHO DEL 100% EXCLUSIVAMENTE A LOS DROPDOWNS QUE PERTENECEN A UN TRIGGER */
+.component-dropdown-wrapper .component-module--dropdown:not(.component-module--dropdown-fixed) {
+    width: 100%;
 }
 
 .component-module--sidebar {

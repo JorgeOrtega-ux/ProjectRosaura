@@ -5,6 +5,7 @@ namespace App\Api\Services;
 
 use App\Core\Helpers\Utils;
 use App\Core\System\Logger;
+use App\Core\Mail\Mailer;
 use App\Core\Interfaces\UserRepositoryInterface;
 use App\Core\Interfaces\SessionManagerInterface;
 use App\Core\Interfaces\ServerConfigRepositoryInterface;
@@ -137,6 +138,8 @@ class AdminServices {
             
             $newRelPath = 'public/storage/profilePictures/uploaded/' . $fileName;
             if ($this->userRepository->updateAvatar($targetId, $newRelPath)) {
+                $currentUserId = $this->sessionManager->get('user_id');
+                Logger::security("Admin ID: {$currentUserId} actualizó el avatar del Usuario ID: {$targetId}", 'warning');
                 return ['success' => true, 'message' => 'Foto actualizada exitosamente.', 'new_avatar' => '/ProjectRosaura/' . $newRelPath];
             }
         }
@@ -162,6 +165,8 @@ class AdminServices {
 
         $newRelPath = Utils::generateProfilePicture($user['username'], $user['uuid']);
         if ($this->userRepository->updateAvatar($targetId, $newRelPath)) {
+            $currentUserId = $this->sessionManager->get('user_id');
+            Logger::security("Admin ID: {$currentUserId} eliminó el avatar del Usuario ID: {$targetId}", 'warning');
             return ['success' => true, 'message' => 'Foto eliminada.', 'new_avatar' => '/ProjectRosaura/' . $newRelPath];
         }
         return ['success' => false, 'message' => 'Error en la base de datos.'];
@@ -185,7 +190,10 @@ class AdminServices {
         $existingUser = $this->userRepository->findByUsername($username);
         if ($existingUser && $existingUser['id'] != $targetId) return ['success' => false, 'message' => 'Este nombre de usuario ya está en uso.'];
 
+        $oldUsername = $user['username'];
         if ($this->userRepository->updateUsername($targetId, $username)) {
+            $currentUserId = $this->sessionManager->get('user_id');
+            Logger::security("Admin ID: {$currentUserId} cambió el username del Usuario ID: {$targetId} de {$oldUsername} a {$username}", 'warning');
             return ['success' => true, 'message' => 'Nombre de usuario actualizado.', 'new_username' => $username];
         }
         return ['success' => false, 'message' => 'Error al actualizar.'];
@@ -207,7 +215,16 @@ class AdminServices {
         $existingUser = $this->userRepository->findByEmail($email);
         if ($existingUser && $existingUser['id'] != $targetId) return ['success' => false, 'message' => 'Correo registrado en otra cuenta.'];
 
+        $oldEmail = $user['email'];
         if ($this->userRepository->updateEmail($targetId, $email)) {
+            // 1. Agregar Log de auditoría obligatorio
+            $currentUserId = $this->sessionManager->get('user_id');
+            Logger::security("Admin ID: {$currentUserId} cambió el email del Usuario ID: {$targetId} de {$oldEmail} a {$email}", 'critical');
+            
+            // 2. Enviar correo a la dirección anterior informando el cambio
+            $mailer = new Mailer();
+            $mailer->sendSecurityAlertEmailChanged($oldEmail, $user['username'], $email);
+
             return ['success' => true, 'message' => 'Correo actualizado.', 'new_email' => $email];
         }
         return ['success' => false, 'message' => 'Error al actualizar.'];
@@ -280,6 +297,7 @@ class AdminServices {
 
         if ($this->userRepository->updateRole($targetId, $role)) {
             Logger::security("Admin ID: $currentUserId actualizó rol del usuario $targetId a $role", 'critical');
+            // NOTA: Confiamos en la validación de hidratación en tiempo real, por lo que NO se cierran las sesiones aquí.
             return ['success' => true, 'message' => 'El rol de la cuenta ha sido actualizado.', 'new_role' => $role];
         }
         
@@ -290,6 +308,7 @@ class AdminServices {
         if (!$this->checkAdmin()) return ['success' => false, 'message' => 'No autorizado.'];
 
         $targetId = (int)($data['target_user_id'] ?? 0);
+        $password = $data['password'] ?? '';
         
         $user = $this->userRepository->findById($targetId);
         if (!$user) return ['success' => false, 'message' => 'Usuario no encontrado.'];
@@ -306,9 +325,14 @@ class AdminServices {
 
         $currentUserId = $this->sessionManager->get('user_id');
 
-        // LÓGICA DE SEPARACIÓN ABSOLUTA: 
-        // Eliminación y Suspensión se tratan como variables diferentes.
+        // Validación estricta de contraseña del Admin antes de procesar cambios destructivos
+        $adminData = $this->userRepository->findById($currentUserId);
+        if (!$adminData || !password_verify($password, $adminData['password'])) {
+            Logger::security("Fallo en cambio de estado: Contraseña de admin incorrecta por el Admin ID: $currentUserId", 'warning');
+            return ['success' => false, 'message' => 'Contraseña incorrecta. Acción denegada.'];
+        }
 
+        // LÓGICA DE SEPARACIÓN ABSOLUTA: 
         $dbStatus = ($data['status'] === 'deleted') ? 'deleted' : 'active';
         $dbDeletedBy = null;
         $dbDeletedReason = null;
@@ -326,15 +350,21 @@ class AdminServices {
         if ($dbIsSuspended === 1) {
             $dbSuspensionType = ($data['suspension_type'] === 'temporary') ? 'temporary' : 'permanent';
             $dbSuspensionReason = $data['suspension_reason'] ?? null;
+            
+            // Validación estricta de fecha en el servidor
             if ($dbSuspensionType === 'temporary' && !empty($data['end_date'])) {
+                if (strtotime($data['end_date']) <= time()) {
+                    return ['success' => false, 'message' => 'La fecha de fin de suspensión debe estar en el futuro.'];
+                }
                 $dbEndDate = $data['end_date'];
             }
         }
 
         if ($this->userRepository->updateStatus($targetId, $dbStatus, $dbDeletedBy, $dbDeletedReason, $dbIsSuspended, $dbSuspensionType, $dbSuspensionReason, $dbEndDate)) {
-            Logger::security("Admin ID: $currentUserId actualizó restricciones/estado del usuario $targetId", 'warning');
+            Logger::security("Admin ID: $currentUserId actualizó restricciones/estado del usuario $targetId", 'critical');
             
-            // Si lo acaban de eliminar O lo acaban de suspender, forzar cierre de sesiones
+            // Si lo acaban de eliminar O lo acaban de suspender, forzamos cierre de sesiones (Best Practice)
+            // Esto complementa la hidratación en tiempo real con una revocación dura a nivel BD
             if ($dbStatus === 'deleted' || $dbIsSuspended === 1) {
                 $this->tokenRepository->deleteAllByUserId($targetId);
             }

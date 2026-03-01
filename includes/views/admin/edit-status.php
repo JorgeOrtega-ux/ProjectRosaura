@@ -369,6 +369,28 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 
             </div>
 
+            <div class="component-card--grouped" style="margin-top: 16px;">
+                <div class="component-group-item component-group-item--stacked">
+                    <div class="component-card__content component-card__content--full component-card__content--start">
+                        <div class="component-card__icon-container component-card__icon-container--bordered">
+                            <span class="material-symbols-rounded">lock</span>
+                        </div>
+                        <div class="component-card__text">
+                            <h2 class="component-card__title">Verificar identidad</h2>
+                            <p class="component-card__description">Para aplicar cambios en el estado o suspensiones, ingresa tu contraseña actual de administrador.</p>
+                            
+                            <div class="component-card__form-area">
+                                <div class="component-input-group">
+                                    <input type="password" id="admin_status_confirm_password" class="component-input-field component-input-field--with-icon" placeholder=" ">
+                                    <label for="admin_status_confirm_password" class="component-input-label">Tu contraseña actual</label>
+                                    <span class="material-symbols-rounded component-input-toggle" data-action="togglePassword">visibility_off</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 </div>
