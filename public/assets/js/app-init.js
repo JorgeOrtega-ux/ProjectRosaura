@@ -8,6 +8,7 @@ import { AdminUserEditController } from './admin-user-edit-controller.js';
 import { AdminRoleEditController } from './admin-role-edit-controller.js';
 import { AdminStatusEditController } from './admin-status-edit-controller.js';
 import { AdminServerConfigController } from './admin-server-config-controller.js';
+import { AdminBackupsController } from './admin-backups-controller.js'; // <-- IMPORTACIÓN NUEVA
 import { DialogSystem } from './core/dialog-system.js';
 import { TooltipSystem } from './core/tooltip-system.js';
 import { CalendarSystem } from './core/calendar-system.js';
@@ -41,6 +42,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const adminServerConfig = new AdminServerConfigController();
     adminServerConfig.init();
+
+    // <-- INICIALIZACIÓN NUEVA PARA BACKUPS -->
+    const adminBackups = new AdminBackupsController(); 
 
     // 6. Instanciamos el Sistema de Diálogos y lo guardamos global
     window.dialogSystem = new DialogSystem();
