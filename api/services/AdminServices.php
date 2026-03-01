@@ -376,30 +376,63 @@ class AdminServices {
             return ['success' => false, 'message' => 'Contraseña incorrecta. Acción denegada.'];
         }
 
+        // --- 1. SANITIZACIÓN ESTRICTA PARA EVITAR XSS ---
+        $sanitizeText = function($text) {
+            if (empty($text)) return null;
+            $clean = strip_tags($text);
+            $clean = htmlspecialchars(trim($clean), ENT_QUOTES, 'UTF-8');
+            return empty($clean) ? null : $clean;
+        };
+
         $dbStatus = ($data['status'] === 'deleted') ? 'deleted' : 'active';
         $dbDeletedBy = null;
         $dbDeletedReason = null;
 
         if ($dbStatus === 'deleted') {
             $dbDeletedBy = ($data['deleted_by'] === 'user') ? 'user' : 'admin';
-            $dbDeletedReason = ($data['deleted_by'] === 'user') ? ($data['deleted_reason_user'] ?? null) : ($data['deleted_reason_admin'] ?? null);
+            $rawDeletedReason = ($data['deleted_by'] === 'user') ? ($data['deleted_reason_user'] ?? null) : ($data['deleted_reason_admin'] ?? null);
+            
+            // Sanitizar la variable recibida
+            $dbDeletedReason = $sanitizeText($rawDeletedReason);
+
+            // --- 2. VALIDACIÓN DE LÍMITE DE CARACTERES ---
+            if ($dbDeletedReason && mb_strlen($dbDeletedReason) > 500) {
+                return ['success' => false, 'message' => 'El motivo de eliminación no puede exceder los 500 caracteres.'];
+            }
         }
 
         $dbIsSuspended = (isset($data['is_suspended']) && $data['is_suspended'] == 1) ? 1 : 0;
         $dbSuspensionType = null;
         $dbSuspensionReason = null;
         $dbEndDate = null;
-        $dbAdminNotes = $data['admin_notes'] ?? null;
+        $dbAdminNotes = $sanitizeText($data['admin_notes'] ?? null);
         $notifyUser = (isset($data['notify_user']) && $data['notify_user'] == true);
 
         if ($dbIsSuspended === 1) {
             $dbSuspensionType = ($data['suspension_type'] === 'temporary') ? 'temporary' : 'permanent';
-            $dbSuspensionReason = $data['suspension_reason'] ?? null;
+            
+            $rawSuspensionReason = $data['suspension_reason'] ?? null;
+            // Sanitizar la variable recibida
+            $dbSuspensionReason = $sanitizeText($rawSuspensionReason);
+
+            // --- 2. VALIDACIÓN DE LÍMITE DE CARACTERES ---
+            if ($dbSuspensionReason && mb_strlen($dbSuspensionReason) > 500) {
+                return ['success' => false, 'message' => 'El motivo de suspensión no puede exceder los 500 caracteres.'];
+            }
             
             if ($dbSuspensionType === 'temporary' && !empty($data['end_date'])) {
-                if (strtotime($data['end_date']) <= time()) {
+                // --- 3. VERIFICACIÓN ESTRICTA DEL FORMATO DE FECHA ---
+                $format = 'Y-m-d H:i:s';
+                $d = \DateTime::createFromFormat($format, $data['end_date']);
+                
+                if (!$d || $d->format($format) !== $data['end_date']) {
+                    return ['success' => false, 'message' => 'El formato de la fecha de fin de suspensión es inválido. Utilice AAAA-MM-DD HH:MM:SS.'];
+                }
+
+                if ($d->getTimestamp() <= time()) {
                     return ['success' => false, 'message' => 'La fecha de fin de suspensión debe estar en el futuro.'];
                 }
+                
                 $dbEndDate = $data['end_date'];
             }
         }
