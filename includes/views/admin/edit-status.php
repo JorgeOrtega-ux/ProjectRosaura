@@ -160,7 +160,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                     <div class="component-card__content">
                         <div class="component-card__text">
                             <h2 class="component-card__title">Restricción de Acceso</h2>
-                            <p class="component-card__description">Aplica una suspensión para bloquear el acceso sin borrar el historial.</p>
+                            <p class="component-card__description" id="admin-isSuspended-desc">Aplica una suspensión para bloquear el acceso sin borrar el historial.</p>
                         </div>
                     </div>
                     <div class="component-card__actions component-card__actions--start">
@@ -181,6 +181,79 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                         <div class="component-menu-link" data-action="adminSetDropdown" data-key="isSuspended" data-value="1">
                                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">block</span></div>
                                             <div class="component-menu-link-text"><span>Cuenta con suspensión</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="section-suspended-reason" class="disabled">
+                    <hr class="component-divider">
+                    <div class="component-group-item component-group-item--stacked">
+                        <div class="component-card__content">
+                            <div class="component-card__text">
+                                <h2 class="component-card__title">Motivo de la suspensión</h2>
+                                <p class="component-card__description">Selecciona la razón principal por la cual se restringe el acceso a la plataforma.</p>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--start">
+                            <div class="component-dropdown-wrapper" style="max-width: 100%;">
+                                <div class="component-dropdown-trigger" data-action="adminToggleModule" data-target="adminModuleSuspensionReason" style="max-width: 100%;">
+                                    <span class="material-symbols-rounded">format_list_bulleted</span>
+                                    <span class="component-dropdown-text" id="admin-suspensionReason-text" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Seleccionar razón de suspensión...</span>
+                                    <span class="material-symbols-rounded">expand_more</span>
+                                </div>
+                                <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="adminModuleSuspensionReason">
+                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding">
+                                        <div class="pill-container"><div class="drag-handle"></div></div>
+                                        <div class="component-menu-list component-menu-list--scrollable">
+                                            
+                                            <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionReason" data-value="Incumplimiento de los Términos y Condiciones">
+                                                <div class="component-menu-link-text" style="padding-left: 12px;"><span>Incumplimiento de los Términos y Condiciones</span></div>
+                                                <div style="padding-right: 12px;"><span class="component-badge component-badge--sm" style="background: var(--bg-app); border: 1px solid var(--border-color);">7 días</span></div>
+                                            </div>
+                                            <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionReason" data-value="Información falsa o suplantación de identidad">
+                                                <div class="component-menu-link-text" style="padding-left: 12px;"><span>Información falsa o suplantación de identidad</span></div>
+                                                <div style="padding-right: 12px;"><span class="component-badge component-badge--sm" style="background: var(--bg-app); border: 1px solid var(--border-color);">30 días</span></div>
+                                            </div>
+                                            <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionReason" data-value="Actividades ilegales">
+                                                <div class="component-menu-link-text" style="padding-left: 12px;"><span>Actividades ilegales</span></div>
+                                                <div style="padding-right: 12px;"><span class="component-badge component-badge--sm" style="background: var(--bg-app); border: 1px solid var(--border-color);">30 días</span></div>
+                                            </div>
+                                            <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionReason" data-value="Uso indebido o fraudulento del servicio">
+                                                <div class="component-menu-link-text" style="padding-left: 12px;"><span>Uso indebido o fraudulento del servicio</span></div>
+                                                <div style="padding-right: 12px;"><span class="component-badge component-badge--sm" style="background: var(--bg-app); border: 1px solid var(--border-color);">14 días</span></div>
+                                            </div>
+                                            <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionReason" data-value="Conducta abusiva o inapropiada">
+                                                <div class="component-menu-link-text" style="padding-left: 12px;"><span>Conducta abusiva o inapropiada</span></div>
+                                                <div style="padding-right: 12px;"><span class="component-badge component-badge--sm" style="background: var(--bg-app); border: 1px solid var(--border-color);">3 días</span></div>
+                                            </div>
+                                            <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionReason" data-value="Publicación de contenido prohibido">
+                                                <div class="component-menu-link-text" style="padding-left: 12px;"><span>Publicación de contenido prohibido</span></div>
+                                                <div style="padding-right: 12px;"><span class="component-badge component-badge--sm" style="background: var(--bg-app); border: 1px solid var(--border-color);">7 días</span></div>
+                                            </div>
+                                            <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionReason" data-value="Violación de propiedad intelectual">
+                                                <div class="component-menu-link-text" style="padding-left: 12px;"><span>Violación de propiedad intelectual</span></div>
+                                                <div style="padding-right: 12px;"><span class="component-badge component-badge--sm" style="background: var(--bg-app); border: 1px solid var(--border-color);">14 días</span></div>
+                                            </div>
+                                            <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionReason" data-value="Envío de spam o uso de automatización no autorizada">
+                                                <div class="component-menu-link-text" style="padding-left: 12px;"><span>Envío de spam o uso de automatización no autorizada</span></div>
+                                                <div style="padding-right: 12px;"><span class="component-badge component-badge--sm" style="background: var(--bg-app); border: 1px solid var(--border-color);">7 días</span></div>
+                                            </div>
+                                            <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionReason" data-value="Intentos de vulnerar la seguridad de la plataforma">
+                                                <div class="component-menu-link-text" style="padding-left: 12px;"><span>Intentos de vulnerar la seguridad de la plataforma</span></div>
+                                                <div style="padding-right: 12px;"><span class="component-badge component-badge--sm" style="background: var(--bg-app); border: 1px solid var(--border-color);">30 días</span></div>
+                                            </div>
+                                            <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionReason" data-value="Uso de la cuenta para fines comerciales no autorizados">
+                                                <div class="component-menu-link-text" style="padding-left: 12px;"><span>Uso de la cuenta para fines comerciales no autorizados</span></div>
+                                                <div style="padding-right: 12px;"><span class="component-badge component-badge--sm" style="background: var(--bg-app); border: 1px solid var(--border-color);">14 días</span></div>
+                                            </div>
+                                            <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionReason" data-value="Otro">
+                                                <div class="component-menu-link-text" style="padding-left: 12px;"><span>Otro</span></div>
+                                            </div>
+
                                         </div>
                                     </div>
                                 </div>
@@ -225,6 +298,52 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                     </div>
                 </div>
 
+                <div id="section-suspended-duration" class="disabled">
+                    <hr class="component-divider">
+                    <div class="component-group-item component-group-item--stacked">
+                        <div class="component-card__content">
+                            <div class="component-card__text">
+                                <h2 class="component-card__title">Duración de la suspensión</h2>
+                                <p class="component-card__description">Selecciona el tiempo que durará el bloqueo de la cuenta.</p>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--start">
+                            <div class="component-dropdown-wrapper">
+                                <div class="component-dropdown-trigger" data-action="adminToggleModule" data-target="adminModuleSuspensionDuration">
+                                    <span class="material-symbols-rounded">schedule</span>
+                                    <span class="component-dropdown-text" id="admin-suspensionDuration-text">Cargando...</span>
+                                    <span class="material-symbols-rounded">expand_more</span>
+                                </div>
+                                <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="adminModuleSuspensionDuration">
+                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding">
+                                        <div class="pill-container"><div class="drag-handle"></div></div>
+                                        <div class="component-menu-list component-menu-list--scrollable">
+                                            <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionDuration" data-value="1">
+                                                <div class="component-menu-link-text" style="padding-left: 12px;"><span>1 día</span></div>
+                                            </div>
+                                            <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionDuration" data-value="3">
+                                                <div class="component-menu-link-text" style="padding-left: 12px;"><span>3 días</span></div>
+                                            </div>
+                                            <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionDuration" data-value="7">
+                                                <div class="component-menu-link-text" style="padding-left: 12px;"><span>7 días</span></div>
+                                            </div>
+                                            <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionDuration" data-value="14">
+                                                <div class="component-menu-link-text" style="padding-left: 12px;"><span>14 días</span></div>
+                                            </div>
+                                            <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionDuration" data-value="30">
+                                                <div class="component-menu-link-text" style="padding-left: 12px;"><span>30 días</span></div>
+                                            </div>
+                                            <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionDuration" data-value="custom">
+                                                <div class="component-menu-link-text" style="padding-left: 12px;"><span>Establecer tiempo manual</span></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div id="section-suspended-date" class="disabled">
                     <hr class="component-divider">
                     <div class="component-group-item component-group-item--stacked">
@@ -244,46 +363,6 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                 <?php include __DIR__ . '/../../modules/moduleCalendar.php'; ?>
                             </div>
 
-                        </div>
-                    </div>
-                </div>
-
-                <div id="section-suspended-reason" class="disabled">
-                    <hr class="component-divider">
-                    <div class="component-group-item component-group-item--stacked">
-                        <div class="component-card__content">
-                            <div class="component-card__text">
-                                <h2 class="component-card__title">Motivo de la suspensión</h2>
-                                <p class="component-card__description">Selecciona la razón principal por la cual se restringe el acceso a la plataforma.</p>
-                            </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--start">
-                            <div class="component-dropdown-wrapper">
-                                <div class="component-dropdown-trigger" data-action="adminToggleModule" data-target="adminModuleSuspensionReason">
-                                    <span class="material-symbols-rounded">format_list_bulleted</span>
-                                    <span class="component-dropdown-text" id="admin-suspensionReason-text">Cargando...</span>
-                                    <span class="material-symbols-rounded">expand_more</span>
-                                </div>
-                                <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="adminModuleSuspensionReason">
-                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding">
-                                        <div class="pill-container"><div class="drag-handle"></div></div>
-                                        <div class="component-menu-list component-menu-list--scrollable">
-                                            <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionReason" data-value="Multi-cuenta no permitida">
-                                                <div class="component-menu-link-text" style="padding-left: 12px;"><span>Multi-cuenta no permitida</span></div>
-                                            </div>
-                                            <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionReason" data-value="Comportamiento tóxico">
-                                                <div class="component-menu-link-text" style="padding-left: 12px;"><span>Comportamiento tóxico</span></div>
-                                            </div>
-                                            <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionReason" data-value="Violación de políticas">
-                                                <div class="component-menu-link-text" style="padding-left: 12px;"><span>Violación de políticas</span></div>
-                                            </div>
-                                            <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionReason" data-value="Otro">
-                                                <div class="component-menu-link-text" style="padding-left: 12px;"><span>Otro</span></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
