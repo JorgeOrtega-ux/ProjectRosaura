@@ -78,7 +78,6 @@ export class AdminServerConfigController {
 
     async loadData() {
         const loader = document.getElementById('admin-config-loader');
-        const form = document.getElementById('admin-config-form');
         const passInput = document.getElementById('admin_config_password');
         if (passInput) passInput.value = '';
 
@@ -92,7 +91,7 @@ export class AdminServerConfigController {
             this.checkForChanges();
 
             if (loader) loader.classList.add('disabled');
-            if (form) form.classList.remove('disabled');
+            document.querySelectorAll('.admin-config-group').forEach(el => el.classList.remove('disabled'));
         } else {
             this.showMessage(res.message, 'error');
         }

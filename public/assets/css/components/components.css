@@ -1076,6 +1076,33 @@ input:checked + .component-toggle-slider:before {
     overflow: hidden;
 }
 
+
+
+
+
+
+
+/* Evitar el borde doble/grueso sobreescribiendo el borde automático del grupo cuando está contraído */
+.component-card--grouped > .component-group-item.component-accordion-header:not(:last-child) {
+    border-bottom-color: transparent;
+}
+
+/* Mostrar el separador únicamente cuando el acordeón está activo (expandido) */
+.component-accordion.active .component-accordion-header,
+.component-card--grouped.component-accordion.active > .component-group-item.component-accordion-header:not(:last-child) {
+    border-bottom-color: var(--border-lighter);
+}
+
+
+
+
+
+
+
+
+
+
+
 .component-accordion-header {
     cursor: pointer;
     user-select: none;
@@ -1110,16 +1137,17 @@ input:checked + .component-toggle-slider:before {
     grid-template-rows: 1fr;
 }
 
+/* Busca las clases .component-accordion-content y reemplázalas por estas: */
+
 .component-accordion-content {
     min-height: 0;
     overflow: hidden;
-    padding: 0 24px;
+    padding: 0;
     opacity: 0;
     transition: opacity 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), padding 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .component-accordion.active .component-accordion-content {
-    padding-top: 16px;
     padding-bottom: 24px;
     opacity: 1;
 }

@@ -41,8 +41,6 @@ if (isset($_SESSION['user_id'])) {
                     <button type="button" class="component-button component-button--h36" data-nav="/ProjectRosaura/settings/change-password"><?php echo __('btn_change_password'); ?></button>
                 </div>
             </div>
-            
-            <hr class="component-divider">
 
             <div class="component-group-item component-group-item--wrap">
                 <div class="component-card__content">

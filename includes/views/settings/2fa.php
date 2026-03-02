@@ -131,8 +131,6 @@ $text2FA = $is2FAActive ? __('2fa_status_active') : __('2fa_status_inactive');
                         <button type="button" class="component-button component-button--h36" data-nav="/ProjectRosaura/settings/2fa/recovery-codes"><?php echo __('btn_generate_codes'); ?></button>
                     </div>
                 </div>
-                
-                <hr class="component-divider">
 
                 <div class="component-group-item component-group-item--wrap">
                     <div class="component-card__content">
