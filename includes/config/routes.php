@@ -42,6 +42,7 @@ return [
     '/admin/edit-status' => ['view' => 'admin/edit-status.php', 'auth' => true, 'roles' => ['founder', 'administrator'], 'requires_2fa' => true],
     '/admin/backups' => ['view' => 'admin/backups.php', 'auth' => true, 'roles' => ['founder', 'administrator'], 'requires_2fa' => true],
     '/admin/backups/automation' => ['view' => 'admin/backups-automation.php', 'auth' => true, 'roles' => ['founder', 'administrator'], 'requires_2fa' => true],
-    '/admin/server-config' => ['view' => 'admin/server-config.php', 'auth' => true, 'roles' => ['founder', 'administrator'], 'requires_2fa' => true]
+    '/admin/server-config' => ['view' => 'admin/server-config.php', 'auth' => true, 'roles' => ['founder', 'administrator'], 'requires_2fa' => true],
+    '/admin/logs' => ['view' => 'admin/logs.php', 'auth' => true, 'roles' => ['founder', 'administrator'], 'requires_2fa' => true]
 ];
 ?>

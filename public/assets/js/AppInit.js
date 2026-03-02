@@ -10,6 +10,7 @@ import { AdminStatusEditController } from './modules/admin/users/AdminStatusEdit
 import { AdminServerConfigController } from './modules/admin/server/AdminServerConfigController.js';
 import { AdminBackupsController } from './modules/admin/backups/AdminBackupsController.js';
 import { AdminBackupsAutomationController } from './modules/admin/backups/AdminBackupsAutomationController.js';
+import { AdminLogsController } from './modules/admin/logs/AdminLogsController.js';
 import { DialogSystem } from './core/components/DialogSystem.js';
 import { TooltipSystem } from './core/components/TooltipSystem.js';
 import { CalendarSystem } from './core/components/CalendarSystem.js';
@@ -50,19 +51,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const adminBackupsAuto = new AdminBackupsAutomationController();
     adminBackupsAuto.init();
 
-    // 7. Instanciamos el Sistema de Diálogos y lo guardamos global
+    // 7. Instanciamos el controlador de Logs
+    const adminLogs = new AdminLogsController();
+
+    // 8. Instanciamos el Sistema de Diálogos y lo guardamos global
     window.dialogSystem = new DialogSystem();
 
-    // 8. Instanciamos e inicializamos el Sistema de Calendario Global
+    // 9. Instanciamos e inicializamos el Sistema de Calendario Global
     window.calendarSystem = new CalendarSystem();
     window.calendarSystem.init();
 
-    // 9. Instanciamos el Router SPA
+    // 10. Instanciamos el Router SPA
     window.spaRouter = new SpaRouter({
         outlet: '#app-router-outlet'
     });
 
-    // 10. Instanciamos e inicializamos el Sistema de Tooltips
+    // 11. Instanciamos e inicializamos el Sistema de Tooltips
     window.tooltipSystem = new TooltipSystem();
     window.tooltipSystem.init();
 });

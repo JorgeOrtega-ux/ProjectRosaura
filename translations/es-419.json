@@ -167,5 +167,8 @@
     "maintenance_desc": "El sistema se encuentra temporalmente en mantenimiento para mejoras y actualizaciones. Por favor, vuelve más tarde.",
     "maintenance_tooltip": "¡Atención: El sitio está en Modo Mantenimiento!",
     "admin_maintenance_title": "Modo Mantenimiento",
-    "admin_maintenance_desc": "Bloquea el acceso a toda la plataforma. Solo fundadores y administradores podrán interactuar con el sitio web y la API."
+    "admin_maintenance_desc": "Bloquea el acceso a toda la plataforma. Solo fundadores y administradores podrán interactuar con el sitio web y la API.",
+    "route_admin_logs": "Registros del Sistema",
+    "admin_logs_title": "Registros del Sistema",
+    "admin_logs_desc": "Visualiza y administra los archivos de registro (logs) generados por los eventos de la plataforma."
 }
