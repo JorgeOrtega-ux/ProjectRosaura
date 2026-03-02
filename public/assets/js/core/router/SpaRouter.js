@@ -1,4 +1,4 @@
-// public/assets/js/core/spa-router.js
+// public/assets/js/core/router/SpaRouter.js
 export class SpaRouter {
     constructor(options = {}) {
         this.outlet = document.querySelector(options.outlet || '#app-router-outlet');
@@ -213,7 +213,7 @@ export class SpaRouter {
         loaderContainer.style.cssText = 'width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; min-height: 250px;';
 
         const spinner = document.createElement('div');
-        spinner.style.cssText = 'width: 44px; height: 44px; border: 4px solid #00000015; border-top-color: #111; border-radius: 50%; animation: spin 0.8s linear infinite;';
+        spinner.style.cssText = 'width: 44px; height: 44px; border: 4px solid var(--border-color); border-top-color: var(--action-primary); border-radius: 50%; animation: spin 0.8s linear infinite;';
 
         if (!document.getElementById('spa-spinner-keyframe')) {
             const style = document.createElement('style');
