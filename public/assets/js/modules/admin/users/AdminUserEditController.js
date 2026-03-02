@@ -127,7 +127,6 @@ export class AdminUserEditController {
 
     async loadUserData() {
         const loader = document.getElementById('admin-edit-loader');
-        const form = document.getElementById('admin-edit-form');
         
         const res = await this.api.post(ApiRoutes.Admin.GetUser, { target_user_id: this.targetUserId });
         
@@ -193,7 +192,8 @@ export class AdminUserEditController {
             }
 
             if (loader) loader.classList.add('disabled');
-            if (form) form.classList.remove('disabled');
+            document.querySelectorAll('.admin-edit-group').forEach(el => el.classList.remove('disabled'));
+
         } else {
             this.showMessage(res.message, 'error');
             if (window.spaRouter) window.spaRouter.navigate('/ProjectRosaura/admin/manage-users');
