@@ -197,48 +197,59 @@ def process_manual_backups():
                 r.hset(job_key, mapping={'status': 'processing', 'message': 'Descifrando y restaurando base de datos...'})
                 log(f"⚙️ Procesando restauración del archivo: {backup_file} (ID: {job_id})")
                 
+                # Inicializar variables para manejo seguro en el finally
                 enc_filepath = os.path.join(BACKUP_DIR, backup_file)
-                if not os.path.exists(enc_filepath):
-                    r.hset(job_key, mapping={'status': 'failed', 'message': 'El archivo cifrado no existe.'})
-                    return
-                
-                # Descifrar
-                gz_filepath = decrypt_file(enc_filepath)
-                if not gz_filepath:
-                    r.hset(job_key, mapping={'status': 'failed', 'message': 'Error al descifrar (Clave inválida o archivo corrupto).'})
-                    return
-                
-                # Descomprimir
-                sql_filepath = gz_filepath.replace('.gz', '')
+                gz_filepath = None
+                sql_filepath = None
+
                 try:
-                    with gzip.open(gz_filepath, 'rb') as f_in, open(sql_filepath, 'wb') as f_out:
-                        f_out.writelines(f_in)
-                except Exception as e:
-                    os.remove(gz_filepath)
-                    r.hset(job_key, mapping={'status': 'failed', 'message': 'Error al descomprimir el archivo.'})
-                    return
-                
-                # Restaurar MySQL
-                restore_cmd = ["mysql", "-h", DB_HOST, "-u", DB_USER, DB_NAME]
-                env = os.environ.copy()
-                if DB_PASS:
-                    env["MYSQL_PWD"] = DB_PASS
+                    if not os.path.exists(enc_filepath):
+                        r.hset(job_key, mapping={'status': 'failed', 'message': 'El archivo cifrado no existe.'})
+                        return
                     
-                try:
-                    with open(sql_filepath, 'r') as f:
-                        subprocess.run(restore_cmd, env=env, stdin=f, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
-                    log(f"✅ Base de datos restaurada correctamente desde: {backup_file}")
-                    r.hset(job_key, mapping={'status': 'completed', 'message': 'Base de datos restaurada correctamente.'})
-                except subprocess.CalledProcessError as e:
-                    log(f"❌ Error restaurando mysql: {e.stderr.decode('utf-8')}")
-                    r.hset(job_key, mapping={'status': 'failed', 'message': 'Error de MySQL al restaurar los datos.'})
+                    # Descifrar
+                    gz_filepath = decrypt_file(enc_filepath)
+                    if not gz_filepath:
+                        r.hset(job_key, mapping={'status': 'failed', 'message': 'Error al descifrar (Clave inválida o archivo corrupto).'})
+                        return
+                    
+                    # Descomprimir
+                    sql_filepath = gz_filepath.replace('.gz', '')
+                    try:
+                        with gzip.open(gz_filepath, 'rb') as f_in, open(sql_filepath, 'wb') as f_out:
+                            f_out.writelines(f_in)
+                    except Exception as e:
+                        r.hset(job_key, mapping={'status': 'failed', 'message': 'Error al descomprimir el archivo.'})
+                        return
+                    
+                    # Restaurar MySQL
+                    restore_cmd = ["mysql", "-h", DB_HOST, "-u", DB_USER, DB_NAME]
+                    env = os.environ.copy()
+                    if DB_PASS:
+                        env["MYSQL_PWD"] = DB_PASS
+                        
+                    try:
+                        with open(sql_filepath, 'r') as f:
+                            subprocess.run(restore_cmd, env=env, stdin=f, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+                        log(f"✅ Base de datos restaurada correctamente desde: {backup_file}")
+                        r.hset(job_key, mapping={'status': 'completed', 'message': 'Base de datos restaurada correctamente.'})
+                    except subprocess.CalledProcessError as e:
+                        log(f"❌ Error restaurando mysql: {e.stderr.decode('utf-8')}")
+                        r.hset(job_key, mapping={'status': 'failed', 'message': 'Error de MySQL al restaurar los datos.'})
+                
                 finally:
-                    # Limpiar rastros descifrados
-                    if os.path.exists(gz_filepath): os.remove(gz_filepath)
-                    if os.path.exists(sql_filepath): os.remove(sql_filepath)
+                    # Pase lo que pase, se ejecuta la limpieza y liberación
+                    if gz_filepath and os.path.exists(gz_filepath): os.remove(gz_filepath)
+                    if sql_filepath and os.path.exists(sql_filepath): os.remove(sql_filepath)
+                    
+                    # === LIBERAR CANDADO DE RESTAURACIÓN ===
+                    r.delete('system_status:restoring')
+                    log("🔓 Candado de restauración liberado en Redis.")
                 
         except Exception as e:
             log(f"❌ Error al procesar trabajo manual de Redis: {str(e)}")
+            # Asegurar liberación de lock si falló el try externo por un mal JSON
+            r.delete('system_status:restoring')
 
 def run_worker_cycle():
     config = get_server_config()

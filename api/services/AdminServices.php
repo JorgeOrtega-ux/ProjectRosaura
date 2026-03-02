@@ -554,7 +554,7 @@ class AdminServices {
             'admin_edit_prefs_attempts', 'admin_edit_prefs_minutes', 'admin_edit_role_attempts', 'admin_edit_role_minutes',
             'admin_edit_status_attempts', 'admin_edit_status_minutes', 'admin_add_note_attempts', 'admin_add_note_minutes',
             'auto_backup_enabled', 'auto_backup_frequency_hours', 'auto_backup_retention_count',
-            'maintenance_mode' // NUEVA COLUMNA
+            'maintenance_mode' 
         ];
 
         $updateData = [];
@@ -732,6 +732,10 @@ class AdminServices {
             ]);
             
             $redis->expire($jobKey, 3600);
+
+            // === ACTIVAMOS EL CANDADO DE RESTAURACIÓN DE FORMA GLOBAL ===
+            // TTL de 15 MIN (900 seg) como seguridad en caso de que el worker muera sin borrarlo
+            $redis->setex('system_status:restoring', 900, '1');
 
             $redis->rpush('backup_queue', [json_encode([
                 'job_id' => $jobId,
