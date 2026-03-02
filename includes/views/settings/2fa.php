@@ -2,6 +2,7 @@
 // includes/views/settings/2fa.php
 if (session_status() === PHP_SESSION_NONE) session_start();
 $is2FAActive = !empty($_SESSION['user_2fa']);
+$text2FA = $is2FAActive ? __('2fa_status_active') : __('2fa_status_inactive');
 ?>
 <div class="view-content">
     <div class="component-wrapper">
@@ -22,8 +23,8 @@ $is2FAActive = !empty($_SESSION['user_2fa']);
                                 <span class="material-symbols-rounded">qr_code_scanner</span>
                             </div>
                             <div class="component-card__text">
-                                <h2 class="component-card__title">1. Configura tu aplicación</h2>
-                                <p class="component-card__description">Vincula tu cuenta con tu aplicación de autenticación preferida.</p>
+                                <h2 class="component-card__title"><?php echo __('2fa_step1_title'); ?></h2>
+                                <p class="component-card__description"><?php echo __('2fa_step1_desc'); ?></p>
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--end">
@@ -41,17 +42,17 @@ $is2FAActive = !empty($_SESSION['user_2fa']);
                                 </div>
                                 
                                 <div class="component-2fa-secret-col">
-                                    <h3>¿No puedes escanear?</h3>
-                                    <p>Ingresa esta clave en tu aplicación:</p>
-                                    <div id="2fa-secret-text" class="component-2fa-secret-box">CARGANDO...</div>
+                                    <h3><?php echo __('2fa_cant_scan'); ?></h3>
+                                    <p><?php echo __('2fa_enter_key'); ?></p>
+                                    <div id="2fa-secret-text" class="component-2fa-secret-box"><?php echo __('loading_text'); ?></div>
                                 </div>
                                 
                                 <div class="component-2fa-instructions-col">
-                                    <h3>Pasos a seguir:</h3>
+                                    <h3><?php echo __('2fa_steps_title'); ?></h3>
                                     <ol>
-                                        <li>Descarga <b>Google Authenticator</b> o <b>Authy</b>.</li>
-                                        <li>Escanea el código QR a la izquierda o usa la clave.</li>
-                                        <li>Ingresa el código en el paso 2 de abajo.</li>
+                                        <li><?php echo __('2fa_step_download'); ?></li>
+                                        <li><?php echo __('2fa_step_scan'); ?></li>
+                                        <li><?php echo __('2fa_step_enter'); ?></li>
                                     </ol>
                                 </div>
                             </div>
@@ -67,8 +68,8 @@ $is2FAActive = !empty($_SESSION['user_2fa']);
                                 <span class="material-symbols-rounded">verified_user</span>
                             </div>
                             <div class="component-card__text">
-                                <h2 class="component-card__title">2. Verifica el código</h2>
-                                <p class="component-card__description">Ingresa el código de 6 dígitos generado por tu aplicación.</p>
+                                <h2 class="component-card__title"><?php echo __('2fa_step2_title'); ?></h2>
+                                <p class="component-card__description"><?php echo __('2fa_step2_desc'); ?></p>
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--end">
@@ -80,12 +81,12 @@ $is2FAActive = !empty($_SESSION['user_2fa']);
                             <div class="component-card__form-area">
                                 <div class="component-input-group">
                                     <input type="text" id="2fa_app_code" class="component-input-field" placeholder=" " maxlength="6">
-                                    <label for="2fa_app_code" class="component-input-label">Código de la aplicación</label>
+                                    <label for="2fa_app_code" class="component-input-label"><?php echo __('lbl_app_code'); ?></label>
                                 </div>
                             </div>
                             <div class="component-card__actions component-card__actions--end">
                                 <button class="component-button component-button--h36" data-nav="/ProjectRosaura/settings/security"><?php echo __('btn_cancel'); ?></button>
-                                <button class="component-button component-button--h36 component-button--dark" data-action="submitActivate2FA">Activar</button>
+                                <button class="component-button component-button--h36 component-button--dark" data-action="submitActivate2FA"><?php echo __('btn_activate'); ?></button>
                             </div>
                         </div>
                     </div>
@@ -100,15 +101,15 @@ $is2FAActive = !empty($_SESSION['user_2fa']);
                             <span class="material-symbols-rounded">shield</span>
                         </div>
                         <div class="component-card__text">
-                            <h2 class="component-card__title">2FA Activado Correctamente</h2>
-                            <p class="component-card__description">Guarda estos 10 códigos de recuperación en un lugar seguro. Podrás usarlos para iniciar sesión si pierdes acceso a tu dispositivo.</p>
+                            <h2 class="component-card__title"><?php echo __('2fa_activated_title'); ?></h2>
+                            <p class="component-card__description"><?php echo __('2fa_new_codes_desc'); ?></p>
                             <div id="2fa-recovery-codes-list">
                             </div>
                         </div>
                     </div>
                     <div class="component-card__actions component-card__actions--end">
-                        <button class="component-button component-button--h36" data-action="copyRecoveryCodes">Copiar códigos</button>
-                        <button class="component-button component-button--h36 component-button--dark" data-action="finish2FA">Terminar</button>
+                        <button class="component-button component-button--h36" data-action="copyRecoveryCodes"><?php echo __('btn_copy_codes'); ?></button>
+                        <button class="component-button component-button--h36 component-button--dark" data-action="finish2FA"><?php echo __('btn_finish'); ?></button>
                     </div>
                 </div>
             </div>
@@ -122,12 +123,12 @@ $is2FAActive = !empty($_SESSION['user_2fa']);
                             <span class="material-symbols-rounded">key</span>
                         </div>
                         <div class="component-card__text">
-                            <h2 class="component-card__title">Códigos de recuperación</h2>
-                            <p class="component-card__description">Genera 10 nuevos códigos de recuperación. Los códigos anteriores dejarán de funcionar.</p>
+                            <h2 class="component-card__title"><?php echo __('2fa_recovery_title_card'); ?></h2>
+                            <p class="component-card__description"><?php echo __('2fa_recovery_desc_card'); ?></p>
                         </div>
                     </div>
                     <div class="component-card__actions component-card__actions--end">
-                        <button type="button" class="component-button component-button--h36" data-nav="/ProjectRosaura/settings/2fa/recovery-codes">Generar códigos</button>
+                        <button type="button" class="component-button component-button--h36" data-nav="/ProjectRosaura/settings/2fa/recovery-codes"><?php echo __('btn_generate_codes'); ?></button>
                     </div>
                 </div>
                 
@@ -139,12 +140,12 @@ $is2FAActive = !empty($_SESSION['user_2fa']);
                             <span class="material-symbols-rounded">verified_user</span>
                         </div>
                         <div class="component-card__text">
-                            <h2 class="component-card__title">Desactivar 2FA</h2>
-                            <p class="component-card__description">Al desactivar esta función, tu cuenta será menos segura.</p>
+                            <h2 class="component-card__title"><?php echo __('2fa_deactivate_title_card'); ?></h2>
+                            <p class="component-card__description"><?php echo __('2fa_deactivate_desc_card'); ?></p>
                         </div>
                     </div>
                     <div class="component-card__actions component-card__actions--end">
-                        <button type="button" class="component-button component-button--h36 component-button--danger" data-nav="/ProjectRosaura/settings/2fa/deactivate">Desactivar</button>
+                        <button type="button" class="component-button component-button--h36 component-button--danger" data-nav="/ProjectRosaura/settings/2fa/deactivate"><?php echo __('btn_deactivate'); ?></button>
                     </div>
                 </div>
             </div>

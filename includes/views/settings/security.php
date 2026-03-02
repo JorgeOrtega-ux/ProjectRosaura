@@ -3,9 +3,9 @@
 if (session_status() === PHP_SESSION_NONE) session_start();
 use App\Config\Database;
 
-$lastUpdateText = "Nunca se ha actualizado";
+$lastUpdateText = __('sec_never_updated');
 $is2FAActive = !empty($_SESSION['user_2fa']);
-$text2FA = $is2FAActive ? 'Activado' : 'Añade una capa adicional de seguridad a tu cuenta.';
+$text2FA = $is2FAActive ? __('2fa_status_active') : __('2fa_status_inactive');
 
 if (isset($_SESSION['user_id'])) {
     $db = new Database();
@@ -33,12 +33,12 @@ if (isset($_SESSION['user_id'])) {
                         <span class="material-symbols-rounded">lock</span>
                     </div>
                     <div class="component-card__text">
-                        <h2 class="component-card__title">Contraseña</h2>
-                        <p class="component-card__description">Última actualización: <?php echo htmlspecialchars($lastUpdateText); ?></p>
+                        <h2 class="component-card__title"><?php echo __('sec_password_title'); ?></h2>
+                        <p class="component-card__description"><?php echo __('sec_last_update'); ?> <?php echo htmlspecialchars($lastUpdateText); ?></p>
                     </div>
                 </div>
                 <div class="component-card__actions component-card__actions--end">
-                    <button type="button" class="component-button component-button--h36" data-nav="/ProjectRosaura/settings/change-password">Cambiar contraseña</button>
+                    <button type="button" class="component-button component-button--h36" data-nav="/ProjectRosaura/settings/change-password"><?php echo __('btn_change_password'); ?></button>
                 </div>
             </div>
             
@@ -50,13 +50,13 @@ if (isset($_SESSION['user_id'])) {
                         <span class="material-symbols-rounded">shield</span>
                     </div>
                     <div class="component-card__text">
-                        <h2 class="component-card__title">Autenticación de dos factores (2FA)</h2>
+                        <h2 class="component-card__title"><?php echo __('sec_2fa_title'); ?></h2>
                         <p class="component-card__description"><?php echo $text2FA; ?></p>
                     </div>
                 </div>
                 <div class="component-card__actions component-card__actions--end">
                     <button type="button" class="component-button component-button--h36 component-button--dark" data-nav="/ProjectRosaura/settings/2fa">
-                        <?php echo $is2FAActive ? 'Gestionar' : 'Configurar'; ?>
+                        <?php echo $is2FAActive ? __('btn_manage') : __('btn_configure'); ?>
                     </button>
                 </div>
             </div>
@@ -69,12 +69,12 @@ if (isset($_SESSION['user_id'])) {
                         <span class="material-symbols-rounded">devices</span>
                     </div>
                     <div class="component-card__text">
-                        <h2 class="component-card__title">Tus dispositivos</h2>
-                        <p class="component-card__description">Gestiona los dispositivos en los que has iniciado sesión actualmente.</p>
+                        <h2 class="component-card__title"><?php echo __('sec_devices_title'); ?></h2>
+                        <p class="component-card__description"><?php echo __('sec_devices_desc'); ?></p>
                     </div>
                 </div>
                 <div class="component-card__actions component-card__actions--end">
-                    <button type="button" class="component-button component-button--h36" data-nav="/ProjectRosaura/settings/devices">Gestionar dispositivos</button>
+                    <button type="button" class="component-button component-button--h36" data-nav="/ProjectRosaura/settings/devices"><?php echo __('btn_manage_devices'); ?></button>
                 </div>
             </div>
         </div>
@@ -83,12 +83,12 @@ if (isset($_SESSION['user_id'])) {
             <div class="component-group-item component-group-item--wrap">
                 <div class="component-card__content">
                     <div class="component-card__text">
-                        <h2 class="component-card__title">Eliminar cuenta</h2>
-                        <p class="component-card__description">Elimina tu cuenta y todos tus datos de forma permanente e irrecuperable.</p>
+                        <h2 class="component-card__title"><?php echo __('sec_delete_account_title'); ?></h2>
+                        <p class="component-card__description"><?php echo __('sec_delete_account_desc'); ?></p>
                     </div>
                 </div>
                 <div class="component-card__actions component-card__actions--end">
-                    <button type="button" class="component-button component-button--h36 component-button--danger" data-nav="/ProjectRosaura/settings/delete-account">Eliminar cuenta</button>
+                    <button type="button" class="component-button component-button--h36 component-button--danger" data-nav="/ProjectRosaura/settings/delete-account"><?php echo __('btn_delete_account'); ?></button>
                 </div>
             </div>
         </div>

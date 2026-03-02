@@ -34,7 +34,7 @@ if ($relativePath === '/register/aditional-data') {
         
         <?php if ($errorMsg): ?>
             <div class="component-form-header">
-                <h1 class="component-form-title" style="color: #d32f2f;"><?php echo __('reg_access_denied'); ?></h1>
+                <h1 class="component-form-title"><?php echo __('reg_access_denied'); ?></h1>
                 <p class="component-form-desc"><?php echo htmlspecialchars($errorMsg); ?></p>
             </div>
             <div class="component-form-body">
@@ -117,7 +117,7 @@ if ($relativePath === '/register/aditional-data') {
                     <div class="component-alert-success" id="auth-success-message"></div>
                     
                     <div class="component-link-container component-link-container--center">
-                        <span class="component-link" id="btn-resend-register-code" data-action="resendRegisterCode" style="pointer-events: none; color: #999999;"><?php echo __('btn_resend_code'); ?></span>
+                        <span class="component-link" id="btn-resend-register-code" data-action="resendRegisterCode"><?php echo __('btn_resend_code'); ?></span>
                     </div>
                 </div>
             <?php endif; ?>

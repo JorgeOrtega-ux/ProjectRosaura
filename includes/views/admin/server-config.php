@@ -3,16 +3,16 @@
 if (session_status() === PHP_SESSION_NONE) session_start();
 ?>
 <div class="view-content">
-    <div class="component-wrapper" style="max-width: 800px;">
+    <div class="component-wrapper">
         
         <div class="component-sticky-toolbar">
             <div class="component-toolbar-primary">
                 <div class="component-toolbar-mode active">
                     <div class="component-toolbar-left">
-                        <span class="component-toolbar-title" style="border: none; padding-left: 4px; font-size: 16px;">Ajustes del Sistema</span>
+                        <span class="component-toolbar-title"><?php echo __('admin_server_settings_title'); ?></span>
                     </div>
                     <div class="component-toolbar-right">
-                        <button class="component-button component-button--icon component-button--h40 component-button--dark disabled-interaction" data-action="submitServerConfig" id="btn-save-config" data-tooltip="Guardar configuración" data-position="bottom">
+                        <button class="component-button component-button--icon component-button--h40 component-button--dark disabled-interaction" data-action="submitServerConfig" id="btn-save-config" data-tooltip="<?php echo __('tooltip_save_config'); ?>" data-position="bottom">
                             <span class="material-symbols-rounded">save</span>
                         </button>
                     </div>
@@ -25,21 +25,21 @@ if (session_status() === PHP_SESSION_NONE) session_start();
             <p class="component-page-description"><?php echo __('admin_server_desc'); ?></p>
         </div>
 
-        <div id="admin-config-loader" style="display: flex; justify-content: center; padding: 40px;">
-            <div class="component-spinner"></div>
+        <div id="admin-config-loader">
+            <div class="component-spinner component-spinner--centered"></div>
         </div>
 
-        <div id="admin-config-form" class="disabled" style="display: flex; flex-direction: column; gap: 16px;">
+        <div id="admin-config-form" class="disabled">
             
             <div class="component-card--grouped">
                 <div class="component-group-item component-group-item--wrap">
                     <div class="component-card__content">
                         <div class="component-card__icon-container component-card__icon-container--bordered">
-                            <span class="material-symbols-rounded" style="color: var(--accent-color-error);">construction</span>
+                            <span class="material-symbols-rounded">construction</span>
                         </div>
                         <div class="component-card__text">
-                            <h2 class="component-card__title">Modo Mantenimiento</h2>
-                            <p class="component-card__description">Bloquea el acceso a toda la plataforma. Solo fundadores y administradores podrán interactuar con el sitio web y la API.</p>
+                            <h2 class="component-card__title"><?php echo __('admin_maintenance_title'); ?></h2>
+                            <p class="component-card__description"><?php echo __('admin_maintenance_desc'); ?></p>
                         </div>
                     </div>
                     <div class="component-card__actions component-card__actions--end">
@@ -58,8 +58,8 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             <span class="material-symbols-rounded">manage_accounts</span>
                         </div>
                         <div class="component-card__text">
-                            <h2 class="component-card__title">Parámetros de Cuenta y Perfil</h2>
-                            <p class="component-card__description">Límites generales permitidos al crear cuentas y establecer perfiles.</p>
+                            <h2 class="component-card__title"><?php echo __('admin_config_account_title'); ?></h2>
+                            <p class="component-card__description"><?php echo __('admin_config_account_desc'); ?></p>
                         </div>
                     </div>
                     <div class="component-card__actions component-card__actions--end">
@@ -67,14 +67,14 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                     </div>
                 </div>
                 <div class="component-accordion-body">
-                    <div class="component-accordion-content" style="padding-top: 0;">
-                        <hr class="component-divider" style="margin: 0 -24px; width: auto; display: block;">
+                    <div class="component-accordion-content">
+                        <hr class="component-divider">
                         
-                        <div class="component-group-item component-group-item--stacked" style="padding: 16px 0;">
+                        <div class="component-group-item component-group-item--stacked">
                             <div class="component-card__content">
                                 <div class="component-card__text">
-                                    <h2 class="component-card__title">Longitud mínima de contraseña</h2>
-                                    <p class="component-card__description">Define la cantidad mínima de caracteres que un usuario debe ingresar al crear o cambiar su contraseña.</p>
+                                    <h2 class="component-card__title"><?php echo __('admin_config_min_pass_title'); ?></h2>
+                                    <p class="component-card__description"><?php echo __('admin_config_min_pass_desc'); ?></p>
                                 </div>
                             </div>
                             <div class="component-card__actions component-card__actions--start">
@@ -92,13 +92,13 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             </div>
                         </div>
 
-                        <hr class="component-divider" style="margin: 0 -24px; width: auto; display: block;">
+                        <hr class="component-divider">
                         
-                        <div class="component-group-item component-group-item--stacked" style="padding: 16px 0;">
+                        <div class="component-group-item component-group-item--stacked">
                             <div class="component-card__content">
                                 <div class="component-card__text">
-                                    <h2 class="component-card__title">Longitud máxima de contraseña</h2>
-                                    <p class="component-card__description">Establece el límite máximo de caracteres permitidos para una contraseña por seguridad y almacenamiento.</p>
+                                    <h2 class="component-card__title"><?php echo __('admin_config_max_pass_title'); ?></h2>
+                                    <p class="component-card__description"><?php echo __('admin_config_max_pass_desc'); ?></p>
                                 </div>
                             </div>
                             <div class="component-card__actions component-card__actions--start">
@@ -116,13 +116,13 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             </div>
                         </div>
 
-                        <hr class="component-divider" style="margin: 0 -24px; width: auto; display: block;">
+                        <hr class="component-divider">
                         
-                        <div class="component-group-item component-group-item--stacked" style="padding: 16px 0;">
+                        <div class="component-group-item component-group-item--stacked">
                             <div class="component-card__content">
                                 <div class="component-card__text">
-                                    <h2 class="component-card__title">Longitud mínima de usuario</h2>
-                                    <p class="component-card__description">El número mínimo de caracteres que debe tener un nombre de usuario válido en la plataforma.</p>
+                                    <h2 class="component-card__title"><?php echo __('admin_config_min_user_title'); ?></h2>
+                                    <p class="component-card__description"><?php echo __('admin_config_min_user_desc'); ?></p>
                                 </div>
                             </div>
                             <div class="component-card__actions component-card__actions--start">
@@ -140,13 +140,13 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             </div>
                         </div>
 
-                        <hr class="component-divider" style="margin: 0 -24px; width: auto; display: block;">
+                        <hr class="component-divider">
                         
-                        <div class="component-group-item component-group-item--stacked" style="padding: 16px 0;">
+                        <div class="component-group-item component-group-item--stacked">
                             <div class="component-card__content">
                                 <div class="component-card__text">
-                                    <h2 class="component-card__title">Longitud máxima de usuario</h2>
-                                    <p class="component-card__description">El límite máximo de caracteres para evitar nombres de usuario excesivamente largos que rompan la interfaz.</p>
+                                    <h2 class="component-card__title"><?php echo __('admin_config_max_user_title'); ?></h2>
+                                    <p class="component-card__description"><?php echo __('admin_config_max_user_desc'); ?></p>
                                 </div>
                             </div>
                             <div class="component-card__actions component-card__actions--start">
@@ -164,13 +164,13 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             </div>
                         </div>
 
-                        <hr class="component-divider" style="margin: 0 -24px; width: auto; display: block;">
+                        <hr class="component-divider">
                         
-                        <div class="component-group-item component-group-item--stacked" style="padding: 16px 0 0 0;">
+                        <div class="component-group-item component-group-item--stacked">
                             <div class="component-card__content">
                                 <div class="component-card__text">
-                                    <h2 class="component-card__title">Peso máximo de Avatar (MB)</h2>
-                                    <p class="component-card__description">Controla el tamaño máximo de los archivos de imagen que los usuarios pueden subir como foto de perfil.</p>
+                                    <h2 class="component-card__title"><?php echo __('admin_config_max_avatar_title'); ?></h2>
+                                    <p class="component-card__description"><?php echo __('admin_config_max_avatar_desc'); ?></p>
                                 </div>
                             </div>
                             <div class="component-card__actions component-card__actions--start">
@@ -198,8 +198,8 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             <span class="material-symbols-rounded">hourglass_top</span>
                         </div>
                         <div class="component-card__text">
-                            <h2 class="component-card__title">Límites de Edición de Perfil</h2>
-                            <p class="component-card__description">Controla cada cuántos días y cuántas veces un usuario puede modificar su perfil de forma autónoma.</p>
+                            <h2 class="component-card__title"><?php echo __('admin_config_profile_limits_title'); ?></h2>
+                            <p class="component-card__description"><?php echo __('admin_config_profile_limits_desc'); ?></p>
                         </div>
                     </div>
                     <div class="component-card__actions component-card__actions--end">
@@ -207,14 +207,14 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                     </div>
                 </div>
                 <div class="component-accordion-body">
-                    <div class="component-accordion-content" style="padding-top: 0;">
-                        <hr class="component-divider" style="margin: 0 -24px; width: auto; display: block;">
+                    <div class="component-accordion-content">
+                        <hr class="component-divider">
                         
-                        <div class="component-group-item component-group-item--stacked" style="padding: 16px 0;">
+                        <div class="component-group-item component-group-item--stacked">
                             <div class="component-card__content">
                                 <div class="component-card__text">
-                                    <h2 class="component-card__title">Cambio de usuario: Intentos</h2>
-                                    <p class="component-card__description">Cuántas veces permites que un usuario modifique su @usuario antes de aplicar un periodo de espera.</p>
+                                    <h2 class="component-card__title"><?php echo __('admin_config_user_attempts_title'); ?></h2>
+                                    <p class="component-card__description"><?php echo __('admin_config_user_attempts_desc'); ?></p>
                                 </div>
                             </div>
                             <div class="component-card__actions component-card__actions--start">
@@ -232,13 +232,13 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             </div>
                         </div>
 
-                        <hr class="component-divider" style="margin: 0 -24px; width: auto; display: block;">
+                        <hr class="component-divider">
                         
-                        <div class="component-group-item component-group-item--stacked" style="padding: 16px 0;">
+                        <div class="component-group-item component-group-item--stacked">
                             <div class="component-card__content">
                                 <div class="component-card__text">
-                                    <h2 class="component-card__title">Cambio de usuario: Días de espera</h2>
-                                    <p class="component-card__description">Días de penalización (enfriamiento) tras agotar los intentos para cambiar el nombre de usuario.</p>
+                                    <h2 class="component-card__title"><?php echo __('admin_config_user_cooldown_title'); ?></h2>
+                                    <p class="component-card__description"><?php echo __('admin_config_user_cooldown_desc'); ?></p>
                                 </div>
                             </div>
                             <div class="component-card__actions component-card__actions--start">
@@ -256,13 +256,13 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             </div>
                         </div>
 
-                        <hr class="component-divider" style="margin: 0 -24px; width: auto; display: block;">
+                        <hr class="component-divider">
                         
-                        <div class="component-group-item component-group-item--stacked" style="padding: 16px 0;">
+                        <div class="component-group-item component-group-item--stacked">
                             <div class="component-card__content">
                                 <div class="component-card__text">
-                                    <h2 class="component-card__title">Cambio de correo: Intentos</h2>
-                                    <p class="component-card__description">Cantidad de veces que un usuario puede actualizar la dirección de correo electrónico asociada a su cuenta.</p>
+                                    <h2 class="component-card__title"><?php echo __('admin_config_email_attempts_title'); ?></h2>
+                                    <p class="component-card__description"><?php echo __('admin_config_email_attempts_desc'); ?></p>
                                 </div>
                             </div>
                             <div class="component-card__actions component-card__actions--start">
@@ -280,13 +280,13 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             </div>
                         </div>
 
-                        <hr class="component-divider" style="margin: 0 -24px; width: auto; display: block;">
+                        <hr class="component-divider">
                         
-                        <div class="component-group-item component-group-item--stacked" style="padding: 16px 0;">
+                        <div class="component-group-item component-group-item--stacked">
                             <div class="component-card__content">
                                 <div class="component-card__text">
-                                    <h2 class="component-card__title">Cambio de correo: Días de espera</h2>
-                                    <p class="component-card__description">Días que el usuario debe esperar para volver a cambiar su correo tras agotar sus intentos disponibles.</p>
+                                    <h2 class="component-card__title"><?php echo __('admin_config_email_cooldown_title'); ?></h2>
+                                    <p class="component-card__description"><?php echo __('admin_config_email_cooldown_desc'); ?></p>
                                 </div>
                             </div>
                             <div class="component-card__actions component-card__actions--start">
@@ -304,13 +304,13 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             </div>
                         </div>
 
-                        <hr class="component-divider" style="margin: 0 -24px; width: auto; display: block;">
+                        <hr class="component-divider">
 
-                        <div class="component-group-item component-group-item--stacked" style="padding: 16px 0;">
+                        <div class="component-group-item component-group-item--stacked">
                             <div class="component-card__content">
                                 <div class="component-card__text">
-                                    <h2 class="component-card__title">Cambio de avatar: Intentos</h2>
-                                    <p class="component-card__description">Número máximo de veces que se puede actualizar o eliminar la foto de perfil consecutivamente.</p>
+                                    <h2 class="component-card__title"><?php echo __('admin_config_avatar_attempts_title'); ?></h2>
+                                    <p class="component-card__description"><?php echo __('admin_config_avatar_attempts_desc'); ?></p>
                                 </div>
                             </div>
                             <div class="component-card__actions component-card__actions--start">
@@ -328,13 +328,13 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             </div>
                         </div>
 
-                        <hr class="component-divider" style="margin: 0 -24px; width: auto; display: block;">
+                        <hr class="component-divider">
                         
-                        <div class="component-group-item component-group-item--stacked" style="padding: 16px 0 0 0;">
+                        <div class="component-group-item component-group-item--stacked">
                             <div class="component-card__content">
                                 <div class="component-card__text">
-                                    <h2 class="component-card__title">Cambio de avatar: Días de espera</h2>
-                                    <p class="component-card__description">Días de bloqueo para subir una nueva imagen tras alcanzar el límite de cambios de avatar permitido.</p>
+                                    <h2 class="component-card__title"><?php echo __('admin_config_avatar_cooldown_title'); ?></h2>
+                                    <p class="component-card__description"><?php echo __('admin_config_avatar_cooldown_desc'); ?></p>
                                 </div>
                             </div>
                             <div class="component-card__actions component-card__actions--start">
@@ -362,8 +362,8 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             <span class="material-symbols-rounded">security</span>
                         </div>
                         <div class="component-card__text">
-                            <h2 class="component-card__title">Prevención de Abuso (Público)</h2>
-                            <p class="component-card__description">Límites de solicitudes para inicio de sesión y recuperación de cuentas para evitar ataques de fuerza bruta.</p>
+                            <h2 class="component-card__title"><?php echo __('admin_config_abuse_title'); ?></h2>
+                            <p class="component-card__description"><?php echo __('admin_config_abuse_desc'); ?></p>
                         </div>
                     </div>
                     <div class="component-card__actions component-card__actions--end">
@@ -371,14 +371,14 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                     </div>
                 </div>
                 <div class="component-accordion-body">
-                    <div class="component-accordion-content" style="padding-top: 0;">
-                        <hr class="component-divider" style="margin: 0 -24px; width: auto; display: block;">
+                    <div class="component-accordion-content">
+                        <hr class="component-divider">
                         
-                        <div class="component-group-item component-group-item--stacked" style="padding: 16px 0;">
+                        <div class="component-group-item component-group-item--stacked">
                             <div class="component-card__content">
                                 <div class="component-card__text">
-                                    <h2 class="component-card__title">Login: Intentos permitidos</h2>
-                                    <p class="component-card__description">Número de intentos de inicio de sesión fallidos antes de aplicar un bloqueo temporal a la cuenta o IP.</p>
+                                    <h2 class="component-card__title"><?php echo __('admin_config_login_attempts_title'); ?></h2>
+                                    <p class="component-card__description"><?php echo __('admin_config_login_attempts_desc'); ?></p>
                                 </div>
                             </div>
                             <div class="component-card__actions component-card__actions--start">
@@ -396,13 +396,13 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             </div>
                         </div>
 
-                        <hr class="component-divider" style="margin: 0 -24px; width: auto; display: block;">
+                        <hr class="component-divider">
                         
-                        <div class="component-group-item component-group-item--stacked" style="padding: 16px 0;">
+                        <div class="component-group-item component-group-item--stacked">
                             <div class="component-card__content">
                                 <div class="component-card__text">
-                                    <h2 class="component-card__title">Login: Bloqueo (Minutos)</h2>
-                                    <p class="component-card__description">Duración en minutos del bloqueo temporal tras exceder los intentos fallidos de inicio de sesión.</p>
+                                    <h2 class="component-card__title"><?php echo __('admin_config_login_cooldown_title'); ?></h2>
+                                    <p class="component-card__description"><?php echo __('admin_config_login_cooldown_desc'); ?></p>
                                 </div>
                             </div>
                             <div class="component-card__actions component-card__actions--start">
@@ -420,13 +420,13 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             </div>
                         </div>
 
-                        <hr class="component-divider" style="margin: 0 -24px; width: auto; display: block;">
+                        <hr class="component-divider">
 
-                        <div class="component-group-item component-group-item--stacked" style="padding: 16px 0;">
+                        <div class="component-group-item component-group-item--stacked">
                             <div class="component-card__content">
                                 <div class="component-card__text">
-                                    <h2 class="component-card__title">Recuperación: Intentos permitidos</h2>
-                                    <p class="component-card__description">Límites de envíos de correo para recuperación de contraseña que se pueden solicitar en un corto periodo.</p>
+                                    <h2 class="component-card__title"><?php echo __('admin_config_recover_attempts_title'); ?></h2>
+                                    <p class="component-card__description"><?php echo __('admin_config_recover_attempts_desc'); ?></p>
                                 </div>
                             </div>
                             <div class="component-card__actions component-card__actions--start">
@@ -444,13 +444,13 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             </div>
                         </div>
 
-                        <hr class="component-divider" style="margin: 0 -24px; width: auto; display: block;">
+                        <hr class="component-divider">
                         
-                        <div class="component-group-item component-group-item--stacked" style="padding: 16px 0 0 0;">
+                        <div class="component-group-item component-group-item--stacked">
                             <div class="component-card__content">
                                 <div class="component-card__text">
-                                    <h2 class="component-card__title">Recuperación: Bloqueo (Minutos)</h2>
-                                    <p class="component-card__description">Minutos a esperar antes de poder volver a solicitar enlaces o códigos de recuperación de cuenta.</p>
+                                    <h2 class="component-card__title"><?php echo __('admin_config_recover_cooldown_title'); ?></h2>
+                                    <p class="component-card__description"><?php echo __('admin_config_recover_cooldown_desc'); ?></p>
                                 </div>
                             </div>
                             <div class="component-card__actions component-card__actions--start">
@@ -478,8 +478,8 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             <span class="material-symbols-rounded">admin_panel_settings</span>
                         </div>
                         <div class="component-card__text">
-                            <h2 class="component-card__title">Seguridad Administrativa</h2>
-                            <p class="component-card__description">Protección contra ediciones masivas y límites anti-hackeo para el panel de moderación.</p>
+                            <h2 class="component-card__title"><?php echo __('admin_config_admin_security_title'); ?></h2>
+                            <p class="component-card__description"><?php echo __('admin_config_admin_security_desc'); ?></p>
                         </div>
                     </div>
                     <div class="component-card__actions component-card__actions--end">
@@ -487,14 +487,14 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                     </div>
                 </div>
                 <div class="component-accordion-body">
-                    <div class="component-accordion-content" style="padding-top: 0;">
-                        <hr class="component-divider" style="margin: 0 -24px; width: auto; display: block;">
+                    <div class="component-accordion-content">
+                        <hr class="component-divider">
                         
-                        <div class="component-group-item component-group-item--stacked" style="padding: 16px 0;">
+                        <div class="component-group-item component-group-item--stacked">
                             <div class="component-card__content">
                                 <div class="component-card__text">
-                                    <h2 class="component-card__title">Edición masiva de Avatares (Intentos)</h2>
-                                    <p class="component-card__description">Cuántos avatares de usuarios puede editar o eliminar un administrador antes de ser bloqueado.</p>
+                                    <h2 class="component-card__title"><?php echo __('admin_config_admin_avatar_attempts_title'); ?></h2>
+                                    <p class="component-card__description"><?php echo __('admin_config_admin_avatar_attempts_desc'); ?></p>
                                 </div>
                             </div>
                             <div class="component-card__actions component-card__actions--start">
@@ -512,13 +512,13 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             </div>
                         </div>
 
-                        <hr class="component-divider" style="margin: 0 -24px; width: auto; display: block;">
+                        <hr class="component-divider">
                         
-                        <div class="component-group-item component-group-item--stacked" style="padding: 16px 0;">
+                        <div class="component-group-item component-group-item--stacked">
                             <div class="component-card__content">
                                 <div class="component-card__text">
-                                    <h2 class="component-card__title">Edición masiva de Avatares (Bloqueo min)</h2>
-                                    <p class="component-card__description">Minutos que debe esperar el administrador tras superar el límite de modificación de avatares.</p>
+                                    <h2 class="component-card__title"><?php echo __('admin_config_admin_avatar_cooldown_title'); ?></h2>
+                                    <p class="component-card__description"><?php echo __('admin_config_admin_avatar_cooldown_desc'); ?></p>
                                 </div>
                             </div>
                             <div class="component-card__actions component-card__actions--start">
@@ -536,13 +536,13 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             </div>
                         </div>
 
-                        <hr class="component-divider" style="margin: 0 -24px; width: auto; display: block;">
+                        <hr class="component-divider">
 
-                        <div class="component-group-item component-group-item--stacked" style="padding: 16px 0;">
+                        <div class="component-group-item component-group-item--stacked">
                             <div class="component-card__content">
                                 <div class="component-card__text">
-                                    <h2 class="component-card__title">Edición masiva de Correos (Intentos)</h2>
-                                    <p class="component-card__description">Límite de correos electrónicos que un administrador puede cambiar de forma consecutiva.</p>
+                                    <h2 class="component-card__title"><?php echo __('admin_config_admin_email_attempts_title'); ?></h2>
+                                    <p class="component-card__description"><?php echo __('admin_config_admin_email_attempts_desc'); ?></p>
                                 </div>
                             </div>
                             <div class="component-card__actions component-card__actions--start">
@@ -560,13 +560,13 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             </div>
                         </div>
 
-                        <hr class="component-divider" style="margin: 0 -24px; width: auto; display: block;">
+                        <hr class="component-divider">
                         
-                        <div class="component-group-item component-group-item--stacked" style="padding: 16px 0;">
+                        <div class="component-group-item component-group-item--stacked">
                             <div class="component-card__content">
                                 <div class="component-card__text">
-                                    <h2 class="component-card__title">Edición masiva de Correos (Bloqueo min)</h2>
-                                    <p class="component-card__description">Tiempo de bloqueo que impide seguir editando correos en el panel de administración.</p>
+                                    <h2 class="component-card__title"><?php echo __('admin_config_admin_email_cooldown_title'); ?></h2>
+                                    <p class="component-card__description"><?php echo __('admin_config_admin_email_cooldown_desc'); ?></p>
                                 </div>
                             </div>
                             <div class="component-card__actions component-card__actions--start">
@@ -584,13 +584,13 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             </div>
                         </div>
 
-                        <hr class="component-divider" style="margin: 0 -24px; width: auto; display: block;">
+                        <hr class="component-divider">
 
-                        <div class="component-group-item component-group-item--stacked" style="padding: 16px 0;">
+                        <div class="component-group-item component-group-item--stacked">
                             <div class="component-card__content">
                                 <div class="component-card__text">
-                                    <h2 class="component-card__title">Cambios masivos de Rol (Intentos)</h2>
-                                    <p class="component-card__description">Número máximo de veces que se puede ascender/descender usuarios antes de pausar la acción.</p>
+                                    <h2 class="component-card__title"><?php echo __('admin_config_admin_role_attempts_title'); ?></h2>
+                                    <p class="component-card__description"><?php echo __('admin_config_admin_role_attempts_desc'); ?></p>
                                 </div>
                             </div>
                             <div class="component-card__actions component-card__actions--start">
@@ -608,13 +608,13 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             </div>
                         </div>
 
-                        <hr class="component-divider" style="margin: 0 -24px; width: auto; display: block;">
+                        <hr class="component-divider">
                         
-                        <div class="component-group-item component-group-item--stacked" style="padding: 16px 0;">
+                        <div class="component-group-item component-group-item--stacked">
                             <div class="component-card__content">
                                 <div class="component-card__text">
-                                    <h2 class="component-card__title">Cambios masivos de Rol (Bloqueo min)</h2>
-                                    <p class="component-card__description">Minutos de penalización aplicados al administrador para proteger la integridad de los roles.</p>
+                                    <h2 class="component-card__title"><?php echo __('admin_config_admin_role_cooldown_title'); ?></h2>
+                                    <p class="component-card__description"><?php echo __('admin_config_admin_role_cooldown_desc'); ?></p>
                                 </div>
                             </div>
                             <div class="component-card__actions component-card__actions--start">
@@ -632,13 +632,13 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             </div>
                         </div>
 
-                        <hr class="component-divider" style="margin: 0 -24px; width: auto; display: block;">
+                        <hr class="component-divider">
 
-                        <div class="component-group-item component-group-item--stacked" style="padding: 16px 0;">
+                        <div class="component-group-item component-group-item--stacked">
                             <div class="component-card__content">
                                 <div class="component-card__text">
-                                    <h2 class="component-card__title">Sanciones masivas de cuenta (Intentos)</h2>
-                                    <p class="component-card__description">Límite de suspensiones o eliminaciones de cuentas seguidas por un administrador.</p>
+                                    <h2 class="component-card__title"><?php echo __('admin_config_admin_status_attempts_title'); ?></h2>
+                                    <p class="component-card__description"><?php echo __('admin_config_admin_status_attempts_desc'); ?></p>
                                 </div>
                             </div>
                             <div class="component-card__actions component-card__actions--start">
@@ -656,13 +656,13 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             </div>
                         </div>
 
-                        <hr class="component-divider" style="margin: 0 -24px; width: auto; display: block;">
+                        <hr class="component-divider">
                         
-                        <div class="component-group-item component-group-item--stacked" style="padding: 16px 0 0 0;">
+                        <div class="component-group-item component-group-item--stacked">
                             <div class="component-card__content">
                                 <div class="component-card__text">
-                                    <h2 class="component-card__title">Sanciones masivas de cuenta (Bloqueo min)</h2>
-                                    <p class="component-card__description">Tiempo que detiene al administrador de seguir sancionando usuarios excesivamente.</p>
+                                    <h2 class="component-card__title"><?php echo __('admin_config_admin_status_cooldown_title'); ?></h2>
+                                    <p class="component-card__description"><?php echo __('admin_config_admin_status_cooldown_desc'); ?></p>
                                 </div>
                             </div>
                             <div class="component-card__actions component-card__actions--start">
@@ -690,12 +690,12 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             <span class="material-symbols-rounded">lock</span>
                         </div>
                         <div class="component-card__text">
-                            <h2 class="component-card__title">Verificar identidad</h2>
-                            <p class="component-card__description">Para aplicar y guardar los cambios globales en el servidor, ingresa tu contraseña de administrador.</p>
+                            <h2 class="component-card__title"><?php echo __('admin_verify_identity_title'); ?></h2>
+                            <p class="component-card__description"><?php echo __('admin_verify_identity_desc_config'); ?></p>
                             <div class="component-card__form-area">
                                 <div class="component-input-group">
                                     <input type="password" class="component-input-field component-input-field--with-icon" id="admin_config_password" placeholder=" ">
-                                    <label class="component-input-label">Tu contraseña actual</label>
+                                    <label class="component-input-label"><?php echo __('lbl_current_password'); ?></label>
                                     <span class="material-symbols-rounded component-input-toggle" data-action="togglePassword">visibility_off</span>
                                 </div>
                             </div>

@@ -18,13 +18,13 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                         <span class="material-symbols-rounded">devices</span>
                     </div>
                     <div class="component-card__text">
-                        <h2 class="component-card__title">Sesiones Activas</h2>
-                        <p class="component-card__description">A continuación, se muestran los dispositivos y navegadores donde has iniciado sesión. Si no reconoces alguno, ciérralo inmediatamente.</p>
+                        <h2 class="component-card__title"><?php echo __('devices_active_title'); ?></h2>
+                        <p class="component-card__description"><?php echo __('devices_active_desc'); ?></p>
                     </div>
                 </div>
                 <div class="component-card__actions component-card__actions--end">
                     <button class="component-button component-button--danger component-button--h36" data-action="revokeAllDevices">
-                        <span class="material-symbols-rounded">logout</span> Cerrar todas las demás
+                        <span class="material-symbols-rounded">logout</span> <?php echo __('btn_revoke_all'); ?>
                     </button>
                 </div>
             </div>
@@ -34,8 +34,8 @@ if (session_status() === PHP_SESSION_NONE) session_start();
             <div class="component-group-item component-group-item--stacked">
                 <div class="component-card__content component-card__content--full component-card__content--start">
                     <div class="component-card__text">
-                        <div id="devices-list" style="display: flex; flex-direction: column; gap: 12px;">
-                            <div class="component-spinner" style="margin: 0 auto;"></div>
+                        <div id="devices-list">
+                            <div class="component-spinner component-spinner--centered"></div>
                         </div>
                     </div>
                 </div>

@@ -10,15 +10,15 @@ if (session_status() === PHP_SESSION_NONE) session_start();
             <div class="component-toolbar-primary">
                 <div class="component-toolbar-mode active">
                     <div class="component-toolbar-left">
-                        <button class="component-button component-button--icon component-button--h40 active" data-action="switchTab" data-target="view-status-config" data-ref="tab-btn-config" data-tooltip="<?php echo __('admin_status_tab_config', ['default' => 'Configurar estado']); ?>" data-position="bottom">
+                        <button class="component-button component-button--icon component-button--h40 active" data-action="switchTab" data-target="view-status-config" data-ref="tab-btn-config" data-tooltip="<?php echo __('admin_status_tab_config'); ?>" data-position="bottom">
                             <span class="material-symbols-rounded">toggle_on</span>
                         </button>
-                        <button class="component-button component-button--icon component-button--h40" data-action="switchTab" data-target="view-status-kardex" data-ref="tab-btn-kardex" data-tooltip="<?php echo __('admin_status_tab_kardex', ['default' => 'Kardex y Notas']); ?>" data-position="bottom">
+                        <button class="component-button component-button--icon component-button--h40" data-action="switchTab" data-target="view-status-kardex" data-ref="tab-btn-kardex" data-tooltip="<?php echo __('admin_status_tab_kardex'); ?>" data-position="bottom">
                             <span class="material-symbols-rounded">history</span>
                         </button>
                     </div>
                     <div class="component-toolbar-right" data-ref="toolbar-actions-config">
-                        <button class="component-button component-button--icon component-button--h40 component-button--dark disabled-interaction" data-action="submitStatusUpdate" data-ref="admin-btn-save-status" data-tooltip="Guardar cambios de estado" data-position="bottom">
+                        <button class="component-button component-button--icon component-button--h40 component-button--dark disabled-interaction" data-action="submitStatusUpdate" data-ref="admin-btn-save-status" data-tooltip="<?php echo __('tooltip_save_status'); ?>" data-position="bottom">
                             <span class="material-symbols-rounded">save</span>
                         </button>
                     </div>
@@ -27,8 +27,8 @@ if (session_status() === PHP_SESSION_NONE) session_start();
         </div>
 
         <div class="component-header-card">
-            <h1 class="component-page-title" data-ref="page-main-title">Gestionar Estado</h1>
-            <p class="component-page-description" data-ref="page-main-desc">Administra el ciclo de vida y bloqueos independientes de la cuenta.</p>
+            <h1 class="component-page-title" data-ref="page-main-title"><?php echo __('admin_manage_status_title'); ?></h1>
+            <p class="component-page-description" data-ref="page-main-desc"><?php echo __('admin_manage_status_desc'); ?></p>
         </div>
 
         <div class="disabled" data-ref="admin-status-form">
@@ -40,15 +40,15 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                     <div class="component-group-item component-group-item--stacked">
                         <div class="component-card__content">
                             <div class="component-card__text">
-                                <h2 class="component-card__title">Estado de la cuenta</h2>
-                                <p class="component-card__description" data-ref="admin-status-desc">Determina si la cuenta está en uso o eliminada permanentemente.</p>
+                                <h2 class="component-card__title"><?php echo __('admin_account_status_title'); ?></h2>
+                                <p class="component-card__description" data-ref="admin-status-desc"><?php echo __('admin_account_status_desc'); ?></p>
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--start">
                             <div class="component-dropdown-wrapper">
                                 <div class="component-dropdown-trigger" data-action="adminToggleModule" data-target="adminModuleStatus">
                                     <span class="material-symbols-rounded">account_circle</span>
-                                    <span class="component-dropdown-text" data-ref="admin-status-text">Cargando...</span>
+                                    <span class="component-dropdown-text" data-ref="admin-status-text"><?php echo __('loading_text'); ?></span>
                                     <span class="material-symbols-rounded">expand_more</span>
                                 </div>
                                 <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="adminModuleStatus">
@@ -57,11 +57,11 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                         <div class="component-menu-list component-menu-list--scrollable">
                                             <div class="component-menu-link" data-action="adminSetDropdown" data-key="status" data-value="active">
                                                 <div class="component-menu-link-icon"><span class="material-symbols-rounded">check_circle</span></div>
-                                                <div class="component-menu-link-text"><span>Activa</span></div>
+                                                <div class="component-menu-link-text"><span><?php echo __('status_active'); ?></span></div>
                                             </div>
                                             <div class="component-menu-link" data-action="adminSetDropdown" data-key="status" data-value="deleted">
                                                 <div class="component-menu-link-icon"><span class="material-symbols-rounded">person_off</span></div>
-                                                <div class="component-menu-link-text"><span>Eliminada</span></div>
+                                                <div class="component-menu-link-text"><span><?php echo __('status_deleted'); ?></span></div>
                                             </div>
                                         </div>
                                     </div>
@@ -75,15 +75,15 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                         <div class="component-group-item component-group-item--stacked">
                             <div class="component-card__content">
                                 <div class="component-card__text">
-                                    <h2 class="component-card__title">Eliminada por</h2>
-                                    <p class="component-card__description">Indica si esta cuenta fue eliminada por voluntad del usuario o administrativamente.</p>
+                                    <h2 class="component-card__title"><?php echo __('admin_deleted_by_title'); ?></h2>
+                                    <p class="component-card__description"><?php echo __('admin_deleted_by_desc'); ?></p>
                                 </div>
                             </div>
                             <div class="component-card__actions component-card__actions--start">
                                 <div class="component-dropdown-wrapper">
                                     <div class="component-dropdown-trigger" data-action="adminToggleModule" data-target="adminModuleDeletedBy">
                                         <span class="material-symbols-rounded">gavel</span>
-                                        <span class="component-dropdown-text" data-ref="admin-deletedBy-text">Cargando...</span>
+                                        <span class="component-dropdown-text" data-ref="admin-deletedBy-text"><?php echo __('loading_text'); ?></span>
                                         <span class="material-symbols-rounded">expand_more</span>
                                     </div>
                                     <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="adminModuleDeletedBy">
@@ -92,11 +92,11 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                             <div class="component-menu-list component-menu-list--scrollable">
                                                 <div class="component-menu-link" data-action="adminSetDropdown" data-key="deletedBy" data-value="user">
                                                     <div class="component-menu-link-icon"><span class="material-symbols-rounded">person_remove</span></div>
-                                                    <div class="component-menu-link-text"><span>Por el usuario</span></div>
+                                                    <div class="component-menu-link-text"><span><?php echo __('deleted_by_user'); ?></span></div>
                                                 </div>
                                                 <div class="component-menu-link" data-action="adminSetDropdown" data-key="deletedBy" data-value="admin">
                                                     <div class="component-menu-link-icon"><span class="material-symbols-rounded">admin_panel_settings</span></div>
-                                                    <div class="component-menu-link-text"><span>Administrativa</span></div>
+                                                    <div class="component-menu-link-text"><span><?php echo __('deleted_by_admin'); ?></span></div>
                                                 </div>
                                             </div>
                                         </div>
@@ -111,15 +111,15 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                         <div class="component-group-item component-group-item--stacked">
                             <div class="component-card__content">
                                 <div class="component-card__text">
-                                    <h2 class="component-card__title">Motivo de eliminación (Admin)</h2>
-                                    <p class="component-card__description">Selecciona la razón por la cual se está eliminando esta cuenta de forma administrativa.</p>
+                                    <h2 class="component-card__title"><?php echo __('admin_deleted_reason_title'); ?></h2>
+                                    <p class="component-card__description"><?php echo __('admin_deleted_reason_desc'); ?></p>
                                 </div>
                             </div>
                             <div class="component-card__actions component-card__actions--start">
                                 <div class="component-dropdown-wrapper">
                                     <div class="component-dropdown-trigger" data-action="adminToggleModule" data-target="adminModuleDeletedAdminReason">
                                         <span class="material-symbols-rounded">format_list_bulleted</span>
-                                        <span class="component-dropdown-text" data-ref="admin-deletedReasonAdmin-text">Cargando...</span>
+                                        <span class="component-dropdown-text" data-ref="admin-deletedReasonAdmin-text"><?php echo __('loading_text'); ?></span>
                                         <span class="material-symbols-rounded">expand_more</span>
                                     </div>
                                     <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="adminModuleDeletedAdminReason">
@@ -127,16 +127,16 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                             <div class="pill-container"><div class="drag-handle"></div></div>
                                             <div class="component-menu-list component-menu-list--scrollable">
                                                 <div class="component-menu-link" data-action="adminSetDropdown" data-key="deletedReasonAdmin" data-value="Spam">
-                                                    <div class="component-menu-link-text"><span>Spam</span></div>
+                                                    <div class="component-menu-link-text"><span><?php echo __('reason_spam'); ?></span></div>
                                                 </div>
                                                 <div class="component-menu-link" data-action="adminSetDropdown" data-key="deletedReasonAdmin" data-value="Fraude o estafa">
-                                                    <div class="component-menu-link-text"><span>Fraude o estafa</span></div>
+                                                    <div class="component-menu-link-text"><span><?php echo __('reason_fraud'); ?></span></div>
                                                 </div>
                                                 <div class="component-menu-link" data-action="adminSetDropdown" data-key="deletedReasonAdmin" data-value="Violación de políticas">
-                                                    <div class="component-menu-link-text"><span>Violación de políticas</span></div>
+                                                    <div class="component-menu-link-text"><span><?php echo __('reason_policy'); ?></span></div>
                                                 </div>
                                                 <div class="component-menu-link" data-action="adminSetDropdown" data-key="deletedReasonAdmin" data-value="Otro">
-                                                    <div class="component-menu-link-text"><span>Otro</span></div>
+                                                    <div class="component-menu-link-text"><span><?php echo __('reason_other'); ?></span></div>
                                                 </div>
                                             </div>
                                         </div>
@@ -151,9 +151,9 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                         <div class="component-group-item component-group-item--stacked">
                             <div class="component-card__content component-card__content--full">
                                 <div class="component-card__text">
-                                    <h2 class="component-card__title">Especificar otro motivo (Eliminación)</h2>
+                                    <h2 class="component-card__title"><?php echo __('admin_custom_reason_delete_title'); ?></h2>
                                     <div class="component-card__form-area">
-                                        <textarea class="component-input-field" data-ref="inp_custom_deleted_reason_admin" placeholder="Escribe el motivo exacto..."></textarea>
+                                        <textarea class="component-input-field" data-ref="inp_custom_deleted_reason_admin" placeholder="<?php echo __('placeholder_custom_reason'); ?>"></textarea>
                                     </div>
                                 </div>
                             </div>
@@ -165,10 +165,10 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                         <div class="component-group-item component-group-item--stacked">
                             <div class="component-card__content component-card__content--full">
                                 <div class="component-card__text">
-                                    <h2 class="component-card__title">Feedback del usuario</h2>
-                                    <p class="component-card__description">A continuación se muestra el motivo proporcionado por el usuario al solicitar la eliminación.</p>
+                                    <h2 class="component-card__title"><?php echo __('admin_user_feedback_title'); ?></h2>
+                                    <p class="component-card__description"><?php echo __('admin_user_feedback_desc'); ?></p>
                                     <div class="component-card__form-area">
-                                        <textarea class="component-input-field" data-ref="inp_deleted_reason_user" placeholder="Razón proporcionada por el usuario..."></textarea>
+                                        <textarea class="component-input-field" data-ref="inp_deleted_reason_user" placeholder="<?php echo __('placeholder_user_feedback'); ?>"></textarea>
                                     </div>
                                 </div>
                             </div>
@@ -181,15 +181,15 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                     <div class="component-group-item component-group-item--stacked">
                         <div class="component-card__content">
                             <div class="component-card__text">
-                                <h2 class="component-card__title">Restricción de Acceso</h2>
-                                <p class="component-card__description" data-ref="admin-isSuspended-desc">Aplica una suspensión para bloquear el acceso sin borrar el historial.</p>
+                                <h2 class="component-card__title"><?php echo __('admin_access_restriction_title'); ?></h2>
+                                <p class="component-card__description" data-ref="admin-isSuspended-desc"><?php echo __('admin_access_restriction_desc'); ?></p>
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--start">
                             <div class="component-dropdown-wrapper">
                                 <div class="component-dropdown-trigger" data-action="adminToggleModule" data-target="adminModuleSuspended">
                                     <span class="material-symbols-rounded">shield</span>
-                                    <span class="component-dropdown-text" data-ref="admin-isSuspended-text">Cargando...</span>
+                                    <span class="component-dropdown-text" data-ref="admin-isSuspended-text"><?php echo __('loading_text'); ?></span>
                                     <span class="material-symbols-rounded">expand_more</span>
                                 </div>
                                 <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="adminModuleSuspended">
@@ -198,11 +198,11 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                         <div class="component-menu-list component-menu-list--scrollable">
                                             <div class="component-menu-link" data-action="adminSetDropdown" data-key="isSuspended" data-value="0">
                                                 <div class="component-menu-link-icon"><span class="material-symbols-rounded">lock_open</span></div>
-                                                <div class="component-menu-link-text"><span>Cuenta sin restricciones</span></div>
+                                                <div class="component-menu-link-text"><span><?php echo __('restriction_none'); ?></span></div>
                                             </div>
                                             <div class="component-menu-link" data-action="adminSetDropdown" data-key="isSuspended" data-value="1">
                                                 <div class="component-menu-link-icon"><span class="material-symbols-rounded">block</span></div>
-                                                <div class="component-menu-link-text"><span>Cuenta con suspensión</span></div>
+                                                <div class="component-menu-link-text"><span><?php echo __('restriction_suspended'); ?></span></div>
                                             </div>
                                         </div>
                                     </div>
@@ -216,15 +216,15 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                         <div class="component-group-item component-group-item--stacked">
                             <div class="component-card__content">
                                 <div class="component-card__text">
-                                    <h2 class="component-card__title">Motivo de la suspensión</h2>
-                                    <p class="component-card__description">Selecciona la razón principal por la cual se restringe el acceso a la plataforma.</p>
+                                    <h2 class="component-card__title"><?php echo __('admin_suspension_reason_title'); ?></h2>
+                                    <p class="component-card__description"><?php echo __('admin_suspension_reason_desc'); ?></p>
                                 </div>
                             </div>
                             <div class="component-card__actions component-card__actions--start">
                                 <div class="component-dropdown-wrapper">
                                     <div class="component-dropdown-trigger" data-action="adminToggleModule" data-target="adminModuleSuspensionReason">
                                         <span class="material-symbols-rounded">format_list_bulleted</span>
-                                        <span class="component-dropdown-text" data-ref="admin-suspensionReason-text">Seleccionar razón de suspensión...</span>
+                                        <span class="component-dropdown-text" data-ref="admin-suspensionReason-text"><?php echo __('dropdown_select_reason'); ?></span>
                                         <span class="material-symbols-rounded">expand_more</span>
                                     </div>
                                     <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="adminModuleSuspensionReason">
@@ -287,9 +287,9 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                         <div class="component-group-item component-group-item--stacked">
                             <div class="component-card__content component-card__content--full">
                                 <div class="component-card__text">
-                                    <h2 class="component-card__title">Especificar otro motivo (Suspensión)</h2>
+                                    <h2 class="component-card__title"><?php echo __('admin_custom_reason_suspension_title'); ?></h2>
                                     <div class="component-card__form-area">
-                                        <textarea class="component-input-field" data-ref="inp_custom_suspension_reason" placeholder="Escribe la razón detallada para el usuario..."></textarea>
+                                        <textarea class="component-input-field" data-ref="inp_custom_suspension_reason" placeholder="<?php echo __('placeholder_suspension_reason'); ?>"></textarea>
                                     </div>
                                 </div>
                             </div>
@@ -301,15 +301,15 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                         <div class="component-group-item component-group-item--stacked">
                             <div class="component-card__content">
                                 <div class="component-card__text">
-                                    <h2 class="component-card__title">Tipo de Suspensión</h2>
-                                    <p class="component-card__description">Establece si el bloqueo tiene una duración definida o es de carácter definitivo.</p>
+                                    <h2 class="component-card__title"><?php echo __('admin_suspension_type_title'); ?></h2>
+                                    <p class="component-card__description"><?php echo __('admin_suspension_type_desc'); ?></p>
                                 </div>
                             </div>
                             <div class="component-card__actions component-card__actions--start">
                                 <div class="component-dropdown-wrapper">
                                     <div class="component-dropdown-trigger" data-action="adminToggleModule" data-target="adminModuleSuspendedType">
                                         <span class="material-symbols-rounded">hourglass_empty</span>
-                                        <span class="component-dropdown-text" data-ref="admin-suspendedType-text">Cargando...</span>
+                                        <span class="component-dropdown-text" data-ref="admin-suspendedType-text"><?php echo __('loading_text'); ?></span>
                                         <span class="material-symbols-rounded">expand_more</span>
                                     </div>
                                     <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="adminModuleSuspendedType">
@@ -318,11 +318,11 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                             <div class="component-menu-list component-menu-list--scrollable">
                                                 <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspendedType" data-value="temporary">
                                                     <div class="component-menu-link-icon"><span class="material-symbols-rounded">timer</span></div>
-                                                    <div class="component-menu-link-text"><span>Suspensión temporal</span></div>
+                                                    <div class="component-menu-link-text"><span><?php echo __('suspension_temp'); ?></span></div>
                                                 </div>
                                                 <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspendedType" data-value="permanent">
                                                     <div class="component-menu-link-icon"><span class="material-symbols-rounded">lock_clock</span></div>
-                                                    <div class="component-menu-link-text"><span>Suspensión permanente</span></div>
+                                                    <div class="component-menu-link-text"><span><?php echo __('suspension_perm'); ?></span></div>
                                                 </div>
                                             </div>
                                         </div>
@@ -337,15 +337,15 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                         <div class="component-group-item component-group-item--stacked">
                             <div class="component-card__content">
                                 <div class="component-card__text">
-                                    <h2 class="component-card__title">Duración de la suspensión</h2>
-                                    <p class="component-card__description">Selecciona el tiempo que durará el bloqueo de la cuenta.</p>
+                                    <h2 class="component-card__title"><?php echo __('admin_suspension_duration_title'); ?></h2>
+                                    <p class="component-card__description"><?php echo __('admin_suspension_duration_desc'); ?></p>
                                 </div>
                             </div>
                             <div class="component-card__actions component-card__actions--start">
                                 <div class="component-dropdown-wrapper">
                                     <div class="component-dropdown-trigger" data-action="adminToggleModule" data-target="adminModuleSuspensionDuration">
                                         <span class="material-symbols-rounded">schedule</span>
-                                        <span class="component-dropdown-text" data-ref="admin-suspensionDuration-text">Cargando...</span>
+                                        <span class="component-dropdown-text" data-ref="admin-suspensionDuration-text"><?php echo __('loading_text'); ?></span>
                                         <span class="material-symbols-rounded">expand_more</span>
                                     </div>
                                     <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="adminModuleSuspensionDuration">
@@ -368,7 +368,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                                     <div class="component-menu-link-text"><span>30 días</span></div>
                                                 </div>
                                                 <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionDuration" data-value="custom">
-                                                    <div class="component-menu-link-text"><span>Establecer tiempo manual</span></div>
+                                                    <div class="component-menu-link-text"><span><?php echo __('suspension_custom_time'); ?></span></div>
                                                 </div>
                                             </div>
                                         </div>
@@ -383,15 +383,15 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                         <div class="component-group-item component-group-item--stacked">
                             <div class="component-card__content">
                                 <div class="component-card__text">
-                                    <h2 class="component-card__title">Fin de la Suspensión</h2>
-                                    <p class="component-card__description">Indica la fecha y hora exacta en la que se levantará la restricción temporal.</p>
+                                    <h2 class="component-card__title"><?php echo __('admin_suspension_end_title'); ?></h2>
+                                    <p class="component-card__description"><?php echo __('admin_suspension_end_desc'); ?></p>
                                 </div>
                             </div>
                             <div class="component-card__actions component-card__actions--start">
                                 <div class="component-dropdown-wrapper">
                                     <div class="component-dropdown-trigger" data-action="adminToggleModule" data-target="adminModuleCalendar">
                                         <span class="material-symbols-rounded">calendar_month</span>
-                                        <span class="component-dropdown-text" data-ref="admin-endDate-text">Seleccionar fecha y hora...</span>
+                                        <span class="component-dropdown-text" data-ref="admin-endDate-text"><?php echo __('dropdown_select_date_time'); ?></span>
                                     </div>
                                     <?php include __DIR__ . '/../../modules/moduleCalendar.php'; ?>
                                 </div>
@@ -408,8 +408,8 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                 <span class="material-symbols-rounded">forward_to_inbox</span>
                             </div>
                             <div class="component-card__text">
-                                <h2 class="component-card__title">Notificar al usuario</h2>
-                                <p class="component-card__description">Se enviará un correo electrónico informando sobre la restricción y el motivo exacto.</p>
+                                <h2 class="component-card__title"><?php echo __('admin_notify_user_title'); ?></h2>
+                                <p class="component-card__description"><?php echo __('admin_notify_user_desc'); ?></p>
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--end">
@@ -425,10 +425,10 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                     <div class="component-group-item component-group-item--stacked">
                         
                         <div class="component-card__content component-card__content--full">
-                            <div class="component-alert-error disabled" data-ref="admin-status-warning" style="width: 100%;">
+                            <div class="component-alert-error disabled" data-ref="admin-status-warning">
                                 <span class="material-symbols-rounded">warning</span>
                                 <div>
-                                    <strong>Atención:</strong> Al aplicar o modificar una suspensión o eliminación, se cerrarán inmediatamente todas las sesiones activas de este usuario.
+                                    <strong><?php echo __('admin_warning_label'); ?>:</strong> <?php echo __('admin_warning_status_change'); ?>
                                 </div>
                             </div>
                         </div>
@@ -438,13 +438,13 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                 <span class="material-symbols-rounded">lock</span>
                             </div>
                             <div class="component-card__text">
-                                <h2 class="component-card__title">Verificar identidad</h2>
-                                <p class="component-card__description">Para aplicar cambios en el estado o suspensiones, ingresa tu contraseña actual de administrador.</p>
+                                <h2 class="component-card__title"><?php echo __('admin_verify_identity_title'); ?></h2>
+                                <p class="component-card__description"><?php echo __('admin_verify_identity_status_desc'); ?></p>
                                 
                                 <div class="component-card__form-area">
                                     <div class="component-input-group">
                                         <input type="password" class="component-input-field component-input-field--with-icon" data-ref="admin_status_confirm_password" placeholder=" ">
-                                        <label class="component-input-label">Tu contraseña actual</label>
+                                        <label class="component-input-label"><?php echo __('lbl_current_password'); ?></label>
                                         <span class="material-symbols-rounded component-input-toggle" data-action="togglePassword">visibility_off</span>
                                     </div>
                                 </div>
@@ -461,16 +461,16 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                     <div class="component-group-item component-group-item--stacked">
                         <div class="component-card__content component-card__content--full">
                             <div class="component-card__text">
-                                <h2 class="component-card__title"><?php echo __('admin_kardex_add_title', ['default' => 'Agregar nota administrativa']); ?></h2>
-                                <p class="component-card__description"><?php echo __('admin_kardex_add_desc', ['default' => 'Añade contexto adicional, enlaces a evidencias o reportes. Esta nota no modificará el estado actual de la cuenta.']); ?></p>
+                                <h2 class="component-card__title"><?php echo __('admin_kardex_add_title'); ?></h2>
+                                <p class="component-card__description"><?php echo __('admin_kardex_add_desc'); ?></p>
                                 <div class="component-card__form-area">
-                                    <textarea class="component-input-field" data-ref="inp_new_admin_note" placeholder="Escribe tu nota aquí..." maxlength="1000"></textarea>
-                                    <div data-ref="admin-note-counter" style="font-size: 13px; color: var(--text-secondary); text-align: right; margin-top: -6px;">0 / 1000 caracteres</div>
+                                    <textarea class="component-input-field" data-ref="inp_new_admin_note" placeholder="<?php echo __('placeholder_admin_note'); ?>" maxlength="1000"></textarea>
+                                    <div data-ref="admin-note-counter">0 / 1000</div>
                                 </div>
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--end">
-                            <button class="component-button component-button--h36 component-button--dark" data-action="submitAdminNote" data-ref="btn-submit-note"><?php echo __('btn_add_note', ['default' => 'Guardar nota']); ?></button>
+                            <button class="component-button component-button--h36 component-button--dark" data-action="submitAdminNote" data-ref="btn-submit-note"><?php echo __('btn_add_note'); ?></button>
                         </div>
                     </div>
                 </div>

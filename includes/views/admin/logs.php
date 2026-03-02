@@ -41,7 +41,7 @@ if (is_dir($logBaseDir)) {
 ?>
 
 <div class="view-content">
-    <div class="component-wrapper" data-ref="manage-logs-wrapper" style="position: relative;">
+    <div class="component-wrapper" data-ref="manage-logs-wrapper">
         
         <div class="component-sticky-toolbar">
             
@@ -51,12 +51,12 @@ if (is_dir($logBaseDir)) {
                         <div class="component-toolbar-title disabled" data-ref="toolbar-dynamic-title">
                             <?php echo __('admin_logs_title'); ?>
                         </div>
-                        <button class="component-button component-button--icon component-button--h40" data-action="searchLog" data-ref="btn-toggle-search" data-tooltip="Buscar" data-position="bottom">
+                        <button class="component-button component-button--icon component-button--h40" data-action="searchLog" data-ref="btn-toggle-search" data-tooltip="<?php echo __('tooltip_search'); ?>" data-position="bottom">
                             <span class="material-symbols-rounded">search</span>
                         </button>
                         
                         <div class="component-dropdown-wrapper component-dropdown-wrapper--fit">
-                            <button class="component-button component-button--icon component-button--h40" data-action="toggleLogFilters" data-ref="btn-toggle-filters" data-tooltip="Filtros" data-position="bottom">
+                            <button class="component-button component-button--icon component-button--h40" data-action="toggleLogFilters" data-ref="btn-toggle-filters" data-tooltip="<?php echo __('tooltip_filters'); ?>" data-position="bottom">
                                 <span class="material-symbols-rounded">tune</span>
                             </button>
                             
@@ -67,7 +67,7 @@ if (is_dir($logBaseDir)) {
                                     
                                     <div class="component-menu-header">
                                         <div class="component-menu-header-box">
-                                            <span class="component-menu-header-title">Filtros de búsqueda</span>
+                                            <span class="component-menu-header-title"><?php echo __('filter_search_title'); ?></span>
                                         </div>
                                     </div>
                                     
@@ -77,7 +77,7 @@ if (is_dir($logBaseDir)) {
                                                 <span class="material-symbols-rounded">category</span>
                                             </div>
                                             <div class="component-menu-link-text">
-                                                <span>Categoría de log</span>
+                                                <span><?php echo __('filter_log_category'); ?></span>
                                             </div>
                                             <div class="component-menu-link-icon">
                                                 <span class="material-symbols-rounded">chevron_right</span>
@@ -94,7 +94,7 @@ if (is_dir($logBaseDir)) {
                                             <button class="component-button component-button--icon component-button--h30 component-button--back" data-action="backToMainFilters">
                                                 <span class="material-symbols-rounded">arrow_back</span>
                                             </button>
-                                            <span class="component-menu-header-title">Filtrar por Categoría</span>
+                                            <span class="component-menu-header-title"><?php echo __('filter_by_category'); ?></span>
                                         </div>
                                     </div>
                                     
@@ -104,7 +104,7 @@ if (is_dir($logBaseDir)) {
                                                 <input type="checkbox" class="filter-checkbox" data-filter-type="category" value="app" checked>
                                             </div>
                                             <div class="component-menu-link-text">
-                                                <span>App (General)</span>
+                                                <span><?php echo __('log_category_app'); ?></span>
                                             </div>
                                         </label>
                                         <label class="component-menu-link component-menu-link--bordered">
@@ -112,7 +112,7 @@ if (is_dir($logBaseDir)) {
                                                 <input type="checkbox" class="filter-checkbox" data-filter-type="category" value="database" checked>
                                             </div>
                                             <div class="component-menu-link-text">
-                                                <span>Database</span>
+                                                <span><?php echo __('log_category_database'); ?></span>
                                             </div>
                                         </label>
                                         <label class="component-menu-link component-menu-link--bordered">
@@ -120,7 +120,7 @@ if (is_dir($logBaseDir)) {
                                                 <input type="checkbox" class="filter-checkbox" data-filter-type="category" value="security" checked>
                                             </div>
                                             <div class="component-menu-link-text">
-                                                <span>Security</span>
+                                                <span><?php echo __('log_category_security'); ?></span>
                                             </div>
                                         </label>
                                     </div>
@@ -131,32 +131,32 @@ if (is_dir($logBaseDir)) {
 
                     </div>
                     <div class="component-toolbar-right">
-                        <button class="component-button component-button--icon component-button--h40" data-action="toggleViewMode" data-tooltip="Cambiar vista" data-position="bottom">
+                        <button class="component-button component-button--icon component-button--h40" data-action="toggleViewMode" data-tooltip="<?php echo __('tooltip_change_view'); ?>" data-position="bottom">
                             <span class="material-symbols-rounded">table_rows</span>
                         </button>
                     </div>
                 </div>
 
                 <div class="component-toolbar-mode disabled" data-ref="toolbar-selection-mode">
-                    <div class="component-toolbar-left" style="align-items: center; gap: 12px;">
-                        <span id="logs-selection-count" class="component-badge component-badge--sm" style="background: var(--action-primary); color: var(--text-inverse); border: none;">0 seleccionados</span>
+                    <div class="component-toolbar-left">
+                        <span id="logs-selection-count" class="component-badge component-badge--sm"><?php echo __('logs_selected_count'); ?></span>
                         
-                        <button class="component-button component-button--icon component-button--h40" data-action="viewSelectedLogs" data-tooltip="Visualizar archivos" data-position="bottom">
+                        <button class="component-button component-button--icon component-button--h40" data-action="viewSelectedLogs" data-tooltip="<?php echo __('tooltip_view_files'); ?>" data-position="bottom">
                             <span class="material-symbols-rounded">visibility</span>
                         </button>
                         
-                        <div class="component-input-group component-input-group--h40" style="width: 200px; margin-left: 8px;">
+                        <div class="component-input-group component-input-group--h40">
                             <input type="password" id="log_action_password" class="component-input-field component-input-field--with-icon" placeholder=" ">
-                            <label for="log_action_password" class="component-input-label">Contraseña admin</label>
-                            <span class="material-symbols-rounded component-input-toggle" data-action="togglePassword" style="font-size: 18px; right: 8px;">visibility_off</span>
+                            <label for="log_action_password" class="component-input-label"><?php echo __('lbl_admin_password'); ?></label>
+                            <span class="material-symbols-rounded component-input-toggle" data-action="togglePassword">visibility_off</span>
                         </div>
 
-                        <button class="component-button component-button--icon component-button--h40 component-button--danger" data-action="deleteSelectedLogs" data-tooltip="Eliminar seleccionados" data-position="bottom">
+                        <button class="component-button component-button--icon component-button--h40 component-button--danger" data-action="deleteSelectedLogs" data-tooltip="<?php echo __('tooltip_delete_selected'); ?>" data-position="bottom">
                             <span class="material-symbols-rounded">delete</span>
                         </button>
                     </div>
                     <div class="component-toolbar-right">
-                        <button class="component-button component-button--icon component-button--h40" data-action="deselectLog" data-tooltip="Cancelar selección" data-position="bottom">
+                        <button class="component-button component-button--icon component-button--h40" data-action="deselectLog" data-tooltip="<?php echo __('tooltip_cancel_selection'); ?>" data-position="bottom">
                             <span class="material-symbols-rounded">close</span>
                         </button>
                     </div>
@@ -170,7 +170,7 @@ if (is_dir($logBaseDir)) {
                         <span class="material-symbols-rounded">search</span>
                     </div>
                     <div class="component-search-input">
-                        <input type="text" data-ref="log-search-input" placeholder="Buscar por nombre de archivo o fecha...">
+                        <input type="text" data-ref="log-search-input" placeholder="<?php echo __('search_log_placeholder'); ?>">
                     </div>
                 </div>
             </div>
@@ -186,14 +186,13 @@ if (is_dir($logBaseDir)) {
                 <?php foreach ($logFiles as $log): ?>
                     <?php 
                         $catIcon = 'description';
-                        $catColor = 'var(--text-secondary)';
-                        if ($log['category'] === 'security') { $catIcon = 'security'; $catColor = 'var(--color-error)'; }
-                        if ($log['category'] === 'database') { $catIcon = 'database'; $catColor = 'var(--color-toast-info)'; }
+                        if ($log['category'] === 'security') { $catIcon = 'security'; }
+                        if ($log['category'] === 'database') { $catIcon = 'database'; }
                     ?>
                     <div class="component-item-card log-card-item" data-action="selectLog" data-log-id="<?php echo htmlspecialchars($log['id']); ?>" data-category="<?php echo htmlspecialchars($log['category']); ?>">
                         <div class="component-badge-list">
-                            <div class="component-button--profile component-avatar--static" style="background: var(--bg-surface-alt); border: 1px solid var(--border-color);">
-                                <span class="material-symbols-rounded" style="color: <?php echo $catColor; ?>;"><?php echo $catIcon; ?></span>
+                            <div class="component-button--profile component-avatar--static">
+                                <span class="material-symbols-rounded"><?php echo $catIcon; ?></span>
                             </div>
                             
                             <div class="component-badge">
@@ -203,7 +202,7 @@ if (is_dir($logBaseDir)) {
                             
                             <div class="component-badge">
                                 <span class="material-symbols-rounded">folder_open</span>
-                                <span class="search-target" style="text-transform: capitalize;"><?php echo htmlspecialchars($log['category']); ?></span>
+                                <span class="search-target"><?php echo htmlspecialchars($log['category']); ?></span>
                             </div>
 
                             <div class="component-badge">
@@ -221,13 +220,13 @@ if (is_dir($logBaseDir)) {
                 
                 <div class="component-empty-state disabled" data-ref="empty-search-cards">
                     <span class="material-symbols-rounded component-empty-state-icon">search_off</span>
-                    <p class="component-empty-state-text">No se encontraron archivos de log para tu búsqueda/filtro.</p>
+                    <p class="component-empty-state-text"><?php echo __('empty_search_logs'); ?></p>
                 </div>
 
             <?php else: ?>
                 <div class="component-empty-state">
                     <span class="material-symbols-rounded component-empty-state-icon">folder_off</span>
-                    <p class="component-empty-state-text">No hay archivos de registro en el servidor.</p>
+                    <p class="component-empty-state-text"><?php echo __('empty_logs_system'); ?></p>
                 </div>
             <?php endif; ?>
         </div>
@@ -236,10 +235,10 @@ if (is_dir($logBaseDir)) {
             <table class="component-table">
                 <thead>
                     <tr>
-                        <th>Archivo</th>
-                        <th>Categoría</th>
-                        <th>Tamaño</th>
-                        <th>Última modificación</th>
+                        <th><?php echo __('table_header_file'); ?></th>
+                        <th><?php echo __('table_header_category'); ?></th>
+                        <th><?php echo __('table_header_size'); ?></th>
+                        <th><?php echo __('table_header_modified'); ?></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -247,15 +246,14 @@ if (is_dir($logBaseDir)) {
                         <?php foreach ($logFiles as $log): ?>
                             <?php 
                                 $catIcon = 'description';
-                                $catColor = 'var(--text-secondary)';
-                                if ($log['category'] === 'security') { $catIcon = 'security'; $catColor = 'var(--color-error)'; }
-                                if ($log['category'] === 'database') { $catIcon = 'database'; $catColor = 'var(--color-toast-info)'; }
+                                if ($log['category'] === 'security') { $catIcon = 'security'; }
+                                if ($log['category'] === 'database') { $catIcon = 'database'; }
                             ?>
                             <tr class="log-card-item" data-action="selectLog" data-log-id="<?php echo htmlspecialchars($log['id']); ?>" data-category="<?php echo htmlspecialchars($log['category']); ?>">
                                 <td>
                                     <div class="td-user-info">
-                                        <div class="component-button--profile component-avatar--static-sm" style="background: var(--bg-surface-alt); border: 1px solid var(--border-color);">
-                                            <span class="material-symbols-rounded" style="color: <?php echo $catColor; ?>; font-size: 16px;"><?php echo $catIcon; ?></span>
+                                        <div class="component-button--profile component-avatar--static-sm">
+                                            <span class="material-symbols-rounded"><?php echo $catIcon; ?></span>
                                         </div>
                                         <div class="component-badge component-badge--sm">
                                             <span class="material-symbols-rounded">draft</span>
@@ -266,7 +264,7 @@ if (is_dir($logBaseDir)) {
                                 <td>
                                     <div class="component-badge component-badge--sm">
                                         <span class="material-symbols-rounded">folder_open</span>
-                                        <span class="search-target" style="text-transform: capitalize;"><?php echo htmlspecialchars($log['category']); ?></span>
+                                        <span class="search-target"><?php echo htmlspecialchars($log['category']); ?></span>
                                     </div>
                                 </td>
                                 <td>
@@ -288,7 +286,7 @@ if (is_dir($logBaseDir)) {
                             <td colspan="4" class="component-empty-table-cell">
                                 <div class="component-empty-state component-empty-state--table">
                                     <span class="material-symbols-rounded component-empty-state-icon">search_off</span>
-                                    <p class="component-empty-state-text">No se encontraron archivos de log para tu búsqueda/filtro.</p>
+                                    <p class="component-empty-state-text"><?php echo __('empty_search_logs'); ?></p>
                                 </div>
                             </td>
                         </tr>
@@ -298,7 +296,7 @@ if (is_dir($logBaseDir)) {
                             <td colspan="4" class="component-empty-table-cell">
                                 <div class="component-empty-state component-empty-state--table">
                                     <span class="material-symbols-rounded component-empty-state-icon">folder_off</span>
-                                    <p class="component-empty-state-text">No hay archivos de registro en el servidor.</p>
+                                    <p class="component-empty-state-text"><?php echo __('empty_logs_system'); ?></p>
                                 </div>
                             </td>
                         </tr>

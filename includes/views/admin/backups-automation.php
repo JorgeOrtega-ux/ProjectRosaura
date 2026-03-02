@@ -8,7 +8,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
         
         <div class="component-toolbar-mode active">
             <div class="component-toolbar-left">
-                <button class="component-button component-button--icon component-button--h40" data-nav="/ProjectRosaura/admin/backups" data-tooltip="Volver a copias" data-position="bottom">
+                <button class="component-button component-button--icon component-button--h40" data-nav="/ProjectRosaura/admin/backups" data-tooltip="<?php echo __('btn_back_to_backups'); ?>" data-position="bottom">
                     <span class="material-symbols-rounded">arrow_back</span>
                 </button>
             </div>
@@ -19,11 +19,11 @@ if (session_status() === PHP_SESSION_NONE) session_start();
             <p class="component-page-description"><?php echo __('admin_backups_auto_desc'); ?></p>
         </div>
 
-        <div id="admin-auto-loader" style="display: flex; justify-content: center; padding: 40px;">
+        <div id="admin-auto-loader">
             <div class="component-spinner"></div>
         </div>
 
-        <div id="admin-auto-form" class="disabled" style="display: flex; flex-direction: column; gap: 16px;">
+        <div id="admin-auto-form" class="disabled">
             
             <div class="component-card--grouped">
                 <div class="component-group-item component-group-item--wrap">
@@ -47,7 +47,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 
             <div class="component-card--grouped disabled" id="wrapper-auto-options">
                 
-                <div class="component-group-item component-group-item--stacked" style="padding: 24px;">
+                <div class="component-group-item component-group-item--stacked">
                     <div class="component-card__content">
                         <div class="component-card__text">
                             <h2 class="component-card__title"><?php echo __('auto_backup_freq_title'); ?></h2>
@@ -56,10 +56,10 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                     </div>
                     <div class="component-card__actions component-card__actions--start">
                         
-                        <div class="component-dropdown-wrapper" style="max-width: 320px;">
+                        <div class="component-dropdown-wrapper">
                             <div class="component-dropdown-trigger" data-action="adminToggleModule" data-target="adminModuleAutoFreq">
                                 <span class="material-symbols-rounded">update</span>
-                                <span class="component-dropdown-text" data-ref="admin-autoFreq-text">Cargando...</span>
+                                <span class="component-dropdown-text" data-ref="admin-autoFreq-text"><?php echo __('loading_text'); ?></span>
                                 <span class="material-symbols-rounded">expand_more</span>
                             </div>
                             <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="adminModuleAutoFreq">
@@ -67,37 +67,37 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                     <div class="pill-container"><div class="drag-handle"></div></div>
                                     <div class="component-menu-list component-menu-list--scrollable">
                                         <div class="component-menu-link" data-action="adminSetDropdown" data-key="auto_backup_frequency_hours" data-value="0">
-                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded" style="color: var(--color-error);">bug_report</span></div>
-                                            <div class="component-menu-link-text"><span>Modo prueba (10 segundos)</span></div>
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">bug_report</span></div>
+                                            <div class="component-menu-link-text"><span><?php echo __('auto_freq_test'); ?></span></div>
                                         </div>
                                         <div class="component-menu-divider"></div>
                                         <div class="component-menu-link" data-action="adminSetDropdown" data-key="auto_backup_frequency_hours" data-value="1">
                                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">schedule</span></div>
-                                            <div class="component-menu-link-text"><span>Cada 1 hora</span></div>
+                                            <div class="component-menu-link-text"><span><?php echo __('auto_freq_1h'); ?></span></div>
                                         </div>
                                         <div class="component-menu-link" data-action="adminSetDropdown" data-key="auto_backup_frequency_hours" data-value="3">
                                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">schedule</span></div>
-                                            <div class="component-menu-link-text"><span>Cada 3 horas</span></div>
+                                            <div class="component-menu-link-text"><span><?php echo __('auto_freq_3h'); ?></span></div>
                                         </div>
                                         <div class="component-menu-link" data-action="adminSetDropdown" data-key="auto_backup_frequency_hours" data-value="6">
                                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">schedule</span></div>
-                                            <div class="component-menu-link-text"><span>Cada 6 horas</span></div>
+                                            <div class="component-menu-link-text"><span><?php echo __('auto_freq_6h'); ?></span></div>
                                         </div>
                                         <div class="component-menu-link" data-action="adminSetDropdown" data-key="auto_backup_frequency_hours" data-value="12">
                                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">schedule</span></div>
-                                            <div class="component-menu-link-text"><span>Cada 12 horas</span></div>
+                                            <div class="component-menu-link-text"><span><?php echo __('auto_freq_12h'); ?></span></div>
                                         </div>
                                         <div class="component-menu-link" data-action="adminSetDropdown" data-key="auto_backup_frequency_hours" data-value="24">
                                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">today</span></div>
-                                            <div class="component-menu-link-text"><span>Cada 1 día (24 hrs)</span></div>
+                                            <div class="component-menu-link-text"><span><?php echo __('auto_freq_24h'); ?></span></div>
                                         </div>
                                         <div class="component-menu-link" data-action="adminSetDropdown" data-key="auto_backup_frequency_hours" data-value="48">
                                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">calendar_month</span></div>
-                                            <div class="component-menu-link-text"><span>Cada 2 días (48 hrs)</span></div>
+                                            <div class="component-menu-link-text"><span><?php echo __('auto_freq_48h'); ?></span></div>
                                         </div>
                                         <div class="component-menu-link" data-action="adminSetDropdown" data-key="auto_backup_frequency_hours" data-value="168">
                                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">date_range</span></div>
-                                            <div class="component-menu-link-text"><span>Cada 1 semana (168 hrs)</span></div>
+                                            <div class="component-menu-link-text"><span><?php echo __('auto_freq_168h'); ?></span></div>
                                         </div>
                                     </div>
                                 </div>
@@ -109,7 +109,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 
                 <hr class="component-divider">
 
-                <div class="component-group-item component-group-item--stacked" style="padding: 24px;">
+                <div class="component-group-item component-group-item--stacked">
                     <div class="component-card__content">
                         <div class="component-card__text">
                             <h2 class="component-card__title"><?php echo __('auto_backup_retention_title'); ?></h2>
@@ -140,19 +140,19 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             <span class="material-symbols-rounded">lock</span>
                         </div>
                         <div class="component-card__text">
-                            <h2 class="component-card__title">Verificar identidad</h2>
-                            <p class="component-card__description">Para aplicar y guardar los cambios globales en el servidor, ingresa tu contraseña de administrador.</p>
+                            <h2 class="component-card__title"><?php echo __('admin_verify_identity_title'); ?></h2>
+                            <p class="component-card__description"><?php echo __('admin_verify_identity_desc_auto'); ?></p>
                             <div class="component-card__form-area">
                                 <div class="component-input-group">
                                     <input type="password" class="component-input-field component-input-field--with-icon" id="admin_auto_password" placeholder=" ">
-                                    <label for="admin_auto_password" class="component-input-label">Tu contraseña actual</label>
+                                    <label for="admin_auto_password" class="component-input-label"><?php echo __('lbl_current_password'); ?></label>
                                     <span class="material-symbols-rounded component-input-toggle" data-action="togglePassword">visibility_off</span>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="component-card__actions component-card__actions--end">
-                        <button class="component-button component-button--h36 component-button--dark disabled-interaction" data-action="submitAutoBackupConfig" id="btn-save-auto-backup">Guardar Configuración</button>
+                        <button class="component-button component-button--h36 component-button--dark disabled-interaction" data-action="submitAutoBackupConfig" id="btn-save-auto-backup"><?php echo __('btn_save_config'); ?></button>
                     </div>
                 </div>
             </div>

@@ -326,8 +326,7 @@ export class ProfileController {
         if (btn.style.pointerEvents === 'none') return;
         
         btn.style.pointerEvents = 'none';
-        btn.style.color = '#999999';
-        btn.textContent = 'Enviando...';
+        btn.classList.add('disabled');
 
         const result = await this.api.post(ApiRoutes.Settings.ResendEmailCode);
 
@@ -340,8 +339,8 @@ export class ProfileController {
                 this.startDialogResendTimer(btn, result.cooldown);
             } else {
                 btn.style.pointerEvents = 'auto';
-                btn.style.color = '';
-                btn.textContent = 'Reenviar código de verificación';
+                btn.classList.remove('disabled');
+                btn.textContent = typeof window.__ === 'function' ? __('btn_resend_code') : 'Reenviar código de verificación';
             }
         }
     }
@@ -349,17 +348,18 @@ export class ProfileController {
     startDialogResendTimer(element, seconds) {
         if (this.dialogResendInterval) clearInterval(this.dialogResendInterval);
         let timeLeft = seconds;
+        const defaultText = typeof window.__ === 'function' ? __('btn_resend_code') : 'Reenviar código de verificación';
         
         const updateUI = () => {
             if (timeLeft <= 0) {
                 clearInterval(this.dialogResendInterval);
                 element.style.pointerEvents = 'auto';
-                element.style.color = ''; 
-                element.textContent = 'Reenviar código de verificación';
+                element.classList.remove('disabled'); 
+                element.textContent = defaultText;
             } else {
                 element.style.pointerEvents = 'none';
-                element.style.color = '#999999';
-                element.textContent = `Reenviar código de verificación (${timeLeft})`;
+                element.classList.add('disabled');
+                element.textContent = `${defaultText} (${timeLeft})`;
             }
         };
         
@@ -473,14 +473,12 @@ export class ProfileController {
 
                         const qrElement = qrContainer.querySelector('canvas, svg');
                         if (qrElement) {
-                            qrElement.style.width = '100%';
-                            qrElement.style.height = '100%';
-                            qrElement.style.display = 'block';
+                            qrElement.classList.add('component-qr');
                         }
 
                     } catch (error) {
                         console.error("No se pudo cargar qr-code-styling, utilizando fallback.", error);
-                        qrContainer.innerHTML = `<p style="font-size: 12px; color: #d32f2f; text-align: center;">Error renderizando QR. Usa la clave secreta abajo.</p>`;
+                        qrContainer.innerHTML = `<p class="component-text--danger">Error renderizando QR. Usa la clave secreta abajo.</p>`;
                     }
                 }
                 
@@ -561,7 +559,7 @@ export class ProfileController {
         if (!this.currentRecoveryCodes) return;
         navigator.clipboard.writeText(this.currentRecoveryCodes).then(() => {
             const originalText = btn.textContent;
-            btn.textContent = 'Copiado!';
+            btn.textContent = typeof window.__ === 'function' ? __('btn_copied') : 'Copiado!';
             setTimeout(() => btn.textContent = originalText, 2000);
         });
     }
@@ -613,7 +611,7 @@ export class ProfileController {
         if (!this.newRecoveryCodes) return;
         navigator.clipboard.writeText(this.newRecoveryCodes).then(() => {
             const originalText = btn.textContent;
-            btn.textContent = 'Copiado!';
+            btn.textContent = typeof window.__ === 'function' ? __('btn_copied') : 'Copiado!';
             setTimeout(() => btn.textContent = originalText, 2000);
         });
     }
@@ -622,13 +620,13 @@ export class ProfileController {
         const listContainer = document.getElementById('devices-list');
         if (!listContainer) return;
 
-        listContainer.innerHTML = '<div class="component-spinner" style="margin: 0 auto;"></div>';
+        listContainer.innerHTML = '<div class="component-spinner component-spinner--centered"></div>';
 
         const res = await this.api.post(ApiRoutes.Settings.GetDevices);
         if (res.success) {
             this.renderDevices(res.devices);
         } else {
-            listContainer.innerHTML = `<p style="color: #d32f2f;">${res.message}</p>`;
+            listContainer.innerHTML = `<p class="component-text--danger">${res.message}</p>`;
         }
     }
 
@@ -638,7 +636,8 @@ export class ProfileController {
         listContainer.innerHTML = '';
 
         if (devices.length === 0) {
-            listContainer.innerHTML = '<p class="component-card__description">No hay dispositivos activos.</p>';
+            const emptyText = typeof window.__ === 'function' ? __('devices_empty') : 'No hay dispositivos activos.';
+            listContainer.innerHTML = `<p class="component-card__description">${emptyText}</p>`;
             return;
         }
 
@@ -646,30 +645,36 @@ export class ProfileController {
             const parsedUA = this.parseUserAgent(device.user_agent);
             
             const div = document.createElement('div');
-            div.style.cssText = 'display: flex; align-items: center; justify-content: space-between; padding: 12px; border: 1px solid #00000020; border-radius: 8px; flex-wrap: wrap; gap: 12px;';
+            div.className = 'component-group-item';
             
+            const revokeText = typeof window.__ === 'function' ? __('btn_revoke_device') : 'Cerrar sesión';
             const btnHtml = !device.is_current ? `
-                <button class="component-button component-button--icon component-button--h36 component-button--danger" data-action="revokeDevice" data-id="${device.id}" title="Cerrar sesión">
+                <button class="component-button component-button--danger" data-action="revokeDevice" data-id="${device.id}" title="${revokeText}">
                     <span class="material-symbols-rounded">close</span>
+                    <span class="component-button__text">${revokeText}</span>
                 </button>
             ` : '';
 
+            const statusCurrentText = typeof window.__ === 'function' ? __('device_current') : 'Este dispositivo (Actual)';
+            const statusActiveText = typeof window.__ === 'function' ? __('device_active') : 'Activo';
+            const unknownIpText = typeof window.__ === 'function' ? __('device_unknown_ip') : 'Desconocida';
+
             const statusText = device.is_current ? 
-                '<p style="font-size: 13px; color: #16a34a; font-weight: 500; margin: 4px 0 0 0;">Este dispositivo (Actual)</p>' : 
-                '<p style="font-size: 13px; color: #666; margin: 4px 0 0 0;">Activo</p>';
+                `<p class="component-group-item__status component-group-item__status--success">${statusCurrentText}</p>` : 
+                `<p class="component-group-item__status">${statusActiveText}</p>`;
 
             div.innerHTML = `
-                <div style="display: flex; align-items: center; gap: 12px;">
+                <div class="component-group-item__content">
                     <div class="component-card__icon-container component-card__icon-container--bordered">
                         <span class="material-symbols-rounded">${parsedUA.icon}</span>
                     </div>
-                    <div>
-                        <h3 style="font-size: 15px; font-weight: 600; margin: 0; color: #111;">${parsedUA.os} - ${parsedUA.browser}</h3>
-                        <p style="font-size: 13px; color: #666; margin: 4px 0 0 0;">IP: ${device.ip_address || 'Desconocida'}</p>
+                    <div class="component-group-item__text">
+                        <h3 class="component-group-item__title">${parsedUA.os} - ${parsedUA.browser}</h3>
+                        <p class="component-group-item__desc">IP: ${device.ip_address || unknownIpText}</p>
                         ${statusText}
                     </div>
                 </div>
-                <div>${btnHtml}</div>
+                <div class="component-group-item__actions">${btnHtml}</div>
             `;
             listContainer.appendChild(div);
         });

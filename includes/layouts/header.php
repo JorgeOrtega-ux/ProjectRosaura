@@ -27,14 +27,14 @@ $isPrivileged = in_array($userRole, ['administrator', 'founder']);
         '/admin': "<?php echo __('route_admin_dashboard'); ?>",
         '/admin/dashboard': "<?php echo __('route_admin_dashboard'); ?>",
         '/admin/manage-users': "<?php echo __('route_admin_users'); ?>",
-        '/admin/edit-user': "Gestionar Cuenta",
-        '/admin/edit-role': "Gestionar Rol",
-        '/admin/edit-status': "Gestionar Estado",
+        '/admin/edit-user': "<?php echo __('route_admin_edit_user'); ?>",
+        '/admin/edit-role': "<?php echo __('route_admin_edit_role'); ?>",
+        '/admin/edit-status': "<?php echo __('route_admin_edit_status'); ?>",
         '/admin/backups': "<?php echo __('route_admin_backups'); ?>",
         '/admin/backups/automation': "<?php echo __('route_admin_backups_automation'); ?>",
         '/admin/server-config': "<?php echo __('route_admin_server'); ?>",
         '/admin/logs': "<?php echo __('route_admin_logs'); ?>",
-        '/admin/logs/viewer': "Visor de Archivos"
+        '/admin/logs/viewer': "<?php echo __('route_admin_logs_viewer'); ?>"
     };
     window.AppName = "ProjectRosaura";
 </script>
@@ -42,7 +42,7 @@ $isPrivileged = in_array($userRole, ['administrator', 'founder']);
 <div class="header">
     <div class="header-left">
         <div class="component-actions">
-            <button class="component-button component-button--icon component-button--h40" data-action="toggleModuleSurface" data-tooltip="Menú principal" data-position="bottom">
+            <button class="component-button component-button--icon component-button--h40" data-action="toggleModuleSurface" data-tooltip="<?php echo __('tooltip_main_menu'); ?>" data-position="bottom">
                 <span class="material-symbols-rounded">menu</span>
             </button>
         </div>
@@ -60,12 +60,12 @@ $isPrivileged = in_array($userRole, ['administrator', 'founder']);
     <div class="header-right">
         <div class="component-actions">
             
-            <button class="component-button component-button--icon component-button--h40 mobile-search-btn" data-action="toggleMobileSearch" data-tooltip="Buscar" data-position="bottom">
+            <button class="component-button component-button--icon component-button--h40 mobile-search-btn" data-action="toggleMobileSearch" data-tooltip="<?php echo __('tooltip_search'); ?>" data-position="bottom">
                 <span class="material-symbols-rounded">search</span>
             </button>
 
             <?php if ($isMaintenanceActive && $isPrivileged): ?>
-                <button class="component-button component-button--icon component-button--h40" style="color: #ff9800; background-color: rgba(255, 152, 0, 0.1);" data-tooltip="¡Sitio en Mantenimiento!" data-position="bottom">
+                <button class="component-button component-button--icon component-button--h40" data-tooltip="<?php echo __('tooltip_maintenance'); ?>" data-position="bottom">
                     <span class="material-symbols-rounded">warning</span>
                 </button>
             <?php endif; ?>
@@ -74,11 +74,11 @@ $isPrivileged = in_array($userRole, ['administrator', 'founder']);
                 <button class="component-button component-button--dark component-button--h40" data-nav="/ProjectRosaura/login">
                     <?php echo __('btn_login'); ?>
                 </button>
-                <button class="component-button component-button--icon component-button--h40" data-action="toggleModuleMainOptions" data-tooltip="Opciones" data-position="bottom">
+                <button class="component-button component-button--icon component-button--h40" data-action="toggleModuleMainOptions" data-tooltip="<?php echo __('tooltip_options'); ?>" data-position="bottom">
                     <span class="material-symbols-rounded">more_vert</span>
                 </button>
             <?php else: ?>
-                <button class="component-button component-button--profile role-<?php echo htmlspecialchars($userRole); ?>" data-action="toggleModuleMainOptions" data-tooltip="Tu cuenta" data-position="bottom">
+                <button class="component-button component-button--profile role-<?php echo htmlspecialchars($userRole); ?>" data-action="toggleModuleMainOptions" data-tooltip="<?php echo __('tooltip_your_account'); ?>" data-position="bottom">
                     <img src="/ProjectRosaura/<?php echo htmlspecialchars($userPic); ?>" alt="<?php echo __('alt_profile'); ?>">
                 </button>
             <?php endif; ?>

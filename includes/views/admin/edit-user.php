@@ -8,12 +8,12 @@ $maxAvatarSize = $serverConfig['max_avatar_size_mb'] ?? 2;
     <div class="component-wrapper">
         
         <div class="component-header-card">
-            <h1 class="component-page-title">Gestionar Cuenta</h1>
-            <p class="component-page-description">Editando información directamente desde el panel de administración.</p>
+            <h1 class="component-page-title"><?php echo __('admin_manage_account_title'); ?></h1>
+            <p class="component-page-description"><?php echo __('admin_manage_account_desc'); ?></p>
         </div>
 
-        <div id="admin-edit-loader" style="display: flex; justify-content: center; padding: 40px;">
-            <div class="component-spinner"></div>
+        <div id="admin-edit-loader">
+            <div class="component-spinner component-spinner--centered"></div>
         </div>
 
         <div id="admin-edit-form" class="disabled">
@@ -21,25 +21,25 @@ $maxAvatarSize = $serverConfig['max_avatar_size_mb'] ?? 2;
                 <div class="component-group-item">
                      <div class="component-card__content">
                         <div class="component-avatar" id="admin-profile-avatar-container">
-                            <img src="" alt="Avatar" id="admin-profile-avatar-img" data-original-src="">
+                            <img src="" alt="<?php echo __('alt_profile'); ?>" id="admin-profile-avatar-img" data-original-src="">
                             <div class="component-avatar__overlay" id="admin-profile-avatar-overlay">
                                 <span class="material-symbols-rounded">photo_camera</span>
                             </div>
                         </div>
                         <div class="component-card__text">
-                            <h2 class="component-card__title">Foto de perfil</h2>
-                            <p class="component-card__description">Se recomienda una imagen cuadrada de máximo <?php echo htmlspecialchars($maxAvatarSize); ?>MB (PNG o JPG).</p>
+                            <h2 class="component-card__title"><?php echo __('prof_avatar_title'); ?></h2>
+                            <p class="component-card__description"><?php echo str_replace('{max_mb}', htmlspecialchars($maxAvatarSize), __('prof_avatar_desc')); ?></p>
                             
                             <input type="file" id="admin-input-avatar-file" accept="image/png, image/jpeg, image/jpg" class="disabled">
                         </div>
                     </div>
                     
                     <div class="component-card__actions component-card__actions--stretch" id="admin-profile-avatar-actions">
-                        <button type="button" class="component-button component-button--h34 component-button--dark" id="admin-btn-change-avatar">Subir foto</button>
-                        <button type="button" class="component-button component-button--h34 disabled" id="admin-btn-delete-avatar">Eliminar</button>
+                        <button type="button" class="component-button component-button--h34 component-button--dark" id="admin-btn-change-avatar"><?php echo __('btn_upload_avatar'); ?></button>
+                        <button type="button" class="component-button component-button--h34 disabled" id="admin-btn-delete-avatar"><?php echo __('btn_delete'); ?></button>
                         
-                        <button type="button" class="component-button component-button--h34 disabled" id="admin-btn-cancel-avatar">Cancelar</button>
-                        <button type="button" class="component-button component-button--h34 component-button--dark disabled" id="admin-btn-save-avatar">Guardar</button>
+                        <button type="button" class="component-button component-button--h34 disabled" id="admin-btn-cancel-avatar"><?php echo __('btn_cancel'); ?></button>
+                        <button type="button" class="component-button component-button--h34 component-button--dark disabled" id="admin-btn-save-avatar"><?php echo __('btn_save'); ?></button>
                     </div>
                 </div>
 
@@ -50,26 +50,26 @@ $maxAvatarSize = $serverConfig['max_avatar_size_mb'] ?? 2;
                     <div class="active component-state-box" data-state="admin-username-view">
                         <div class="component-card__content">
                             <div class="component-card__text">
-                                <h2 class="component-card__title">Nombre de usuario</h2>
-                                <span class="component-display-value" id="admin-display-username">Cargando...</span>
+                                <h2 class="component-card__title"><?php echo __('lbl_username'); ?></h2>
+                                <span class="component-display-value" id="admin-display-username"><?php echo __('loading_text'); ?></span>
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--stretch">
-                            <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="admin-username">Editar</button>
+                            <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="admin-username"><?php echo __('btn_edit'); ?></button>
                         </div>
                     </div>
 
                     <div class="disabled component-state-box" data-state="admin-username-edit">
                         <div class="component-card__content">
                             <div class="component-card__text">
-                                <h2 class="component-card__title">Nombre de usuario</h2>
+                                <h2 class="component-card__title"><?php echo __('lbl_username'); ?></h2>
                                 <div class="component-edit-row">
                                     <div class="component-input-group component-input-group--h34">
-                                        <input type="text" id="input-admin-username" class="component-input-field component-input-field--simple" value="" data-original-value="" placeholder="Ingresa el usuario">
+                                        <input type="text" id="input-admin-username" class="component-input-field component-input-field--simple" value="" data-original-value="" placeholder="<?php echo __('ph_username'); ?>">
                                     </div>
                                     <div class="component-card__actions component-card__actions--stretch">
-                                        <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="admin-username">Cancelar</button>
-                                        <button type="button" class="component-button component-button--h34 component-button--dark" data-action="adminSaveUsername">Guardar</button>
+                                        <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="admin-username"><?php echo __('btn_cancel'); ?></button>
+                                        <button type="button" class="component-button component-button--h34 component-button--dark" data-action="adminSaveUsername"><?php echo __('btn_save'); ?></button>
                                     </div>
                                 </div>
                             </div>
@@ -85,26 +85,26 @@ $maxAvatarSize = $serverConfig['max_avatar_size_mb'] ?? 2;
                     <div class="active component-state-box" data-state="admin-email-view">
                         <div class="component-card__content">
                             <div class="component-card__text">
-                                <h2 class="component-card__title">Correo electrónico</h2>
-                                <span class="component-display-value" id="admin-display-email">Cargando...</span>
+                                <h2 class="component-card__title"><?php echo __('lbl_email'); ?></h2>
+                                <span class="component-display-value" id="admin-display-email"><?php echo __('loading_text'); ?></span>
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--stretch">
-                            <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="admin-email">Editar</button>
+                            <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="admin-email"><?php echo __('btn_edit'); ?></button>
                         </div>
                     </div>
 
                     <div class="disabled component-state-box" data-state="admin-email-edit">
                         <div class="component-card__content">
                             <div class="component-card__text">
-                                <h2 class="component-card__title">Correo electrónico</h2>
+                                <h2 class="component-card__title"><?php echo __('lbl_email'); ?></h2>
                                 <div class="component-edit-row">
                                     <div class="component-input-group component-input-group--h34">
-                                        <input type="email" id="input-admin-email" class="component-input-field component-input-field--simple" value="" data-original-value="" placeholder="Ingresa el correo">
+                                        <input type="email" id="input-admin-email" class="component-input-field component-input-field--simple" value="" data-original-value="" placeholder="<?php echo __('ph_email'); ?>">
                                     </div>
                                     <div class="component-card__actions component-card__actions--stretch">
-                                        <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="admin-email">Cancelar</button>
-                                        <button type="button" class="component-button component-button--h34 component-button--dark" data-action="adminSaveEmail">Guardar</button>
+                                        <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="admin-email"><?php echo __('btn_cancel'); ?></button>
+                                        <button type="button" class="component-button component-button--h34 component-button--dark" data-action="adminSaveEmail"><?php echo __('btn_save'); ?></button>
                                     </div>
                                 </div>
                             </div>
@@ -114,19 +114,19 @@ $maxAvatarSize = $serverConfig['max_avatar_size_mb'] ?? 2;
                 </div>
             </div>
 
-            <div class="component-card--grouped" style="margin-top: 16px;">
+            <div class="component-card--grouped">
                 <div class="component-group-item component-group-item--stacked">
                     <div class="component-card__content">
                         <div class="component-card__text">
-                            <h2 class="component-card__title">Idioma de la interfaz</h2>
-                            <p class="component-card__description">Selecciona tu idioma preferido para la plataforma.</p>
+                            <h2 class="component-card__title"><?php echo __('pref_lang_title'); ?></h2>
+                            <p class="component-card__description"><?php echo __('pref_lang_desc'); ?></p>
                         </div>
                     </div>
                     <div class="component-card__actions component-card__actions--start">
                         <div class="component-dropdown-wrapper">
                             <div class="component-dropdown-trigger" data-action="adminToggleModuleLanguage">
                                 <span class="material-symbols-rounded">language</span>
-                                <span class="component-dropdown-text" id="admin-lang-text">Cargando...</span>
+                                <span class="component-dropdown-text" id="admin-lang-text"><?php echo __('loading_text'); ?></span>
                                 <span class="material-symbols-rounded">expand_more</span>
                             </div>
                             <div class="component-module component-module--dropdown component-module--dropdown-left disabled bs-initialized" data-module="adminModuleLanguage">
@@ -138,7 +138,7 @@ $maxAvatarSize = $serverConfig['max_avatar_size_mb'] ?? 2;
                                                 <span class="material-symbols-rounded">search</span>
                                             </div>
                                             <div class="component-search-input">
-                                                <input type="text" placeholder="Buscar idioma...">
+                                                <input type="text" placeholder="<?php echo __('search_language'); ?>">
                                             </div>
                                         </div>
                                     </div>
@@ -191,19 +191,19 @@ $maxAvatarSize = $serverConfig['max_avatar_size_mb'] ?? 2;
                 </div>
             </div>
 
-            <div class="component-card--grouped" style="margin-top: 16px;">
+            <div class="component-card--grouped">
                 <div class="component-group-item component-group-item--stacked">
                     <div class="component-card__content">
                         <div class="component-card__text">
-                            <h2 class="component-card__title">Tema de la interfaz</h2>
-                            <p class="component-card__description">Elige el tema de colores para la plataforma.</p>
+                            <h2 class="component-card__title"><?php echo __('pref_theme_title'); ?></h2>
+                            <p class="component-card__description"><?php echo __('pref_theme_desc'); ?></p>
                         </div>
                     </div>
                     <div class="component-card__actions component-card__actions--start">
                         <div class="component-dropdown-wrapper">
                             <div class="component-dropdown-trigger" data-action="adminToggleModuleTheme">
                                 <span class="material-symbols-rounded">brightness_auto</span>
-                                <span class="component-dropdown-text" id="admin-theme-text">Cargando...</span>
+                                <span class="component-dropdown-text" id="admin-theme-text"><?php echo __('loading_text'); ?></span>
                                 <span class="material-symbols-rounded">expand_more</span>
                             </div>
                             <div class="component-module component-module--dropdown component-module--dropdown-left disabled bs-initialized" data-module="adminModuleTheme">
@@ -212,15 +212,15 @@ $maxAvatarSize = $serverConfig['max_avatar_size_mb'] ?? 2;
                                     <div class="component-menu-list component-menu-list--scrollable">
                                         <div class="component-menu-link" data-action="adminSetPref" data-key="theme" data-value="system">
                                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">brightness_auto</span></div>
-                                            <div class="component-menu-link-text"><span>Sincronizar con el sistema</span></div>
+                                            <div class="component-menu-link-text"><span><?php echo __('theme_system'); ?></span></div>
                                         </div>
                                         <div class="component-menu-link" data-action="adminSetPref" data-key="theme" data-value="light">
                                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">light_mode</span></div>
-                                            <div class="component-menu-link-text"><span>Tema claro</span></div>
+                                            <div class="component-menu-link-text"><span><?php echo __('theme_light'); ?></span></div>
                                         </div>
                                         <div class="component-menu-link" data-action="adminSetPref" data-key="theme" data-value="dark">
                                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">dark_mode</span></div>
-                                            <div class="component-menu-link-text"><span>Tema oscuro</span></div>
+                                            <div class="component-menu-link-text"><span><?php echo __('theme_dark'); ?></span></div>
                                         </div>
                                     </div>
                                 </div>
@@ -230,12 +230,12 @@ $maxAvatarSize = $serverConfig['max_avatar_size_mb'] ?? 2;
                 </div>
             </div>
             
-            <div class="component-card--grouped" style="margin-top: 16px;">
+            <div class="component-card--grouped">
                 <div class="component-group-item component-group-item--wrap">
                     <div class="component-card__content">
                         <div class="component-card__text">
-                            <h2 class="component-card__title">Abrir enlaces en una pestaña nueva</h2>
-                            <p class="component-card__description">Los enlaces externos se abrirán en una nueva pestaña del navegador.</p>
+                            <h2 class="component-card__title"><?php echo __('pref_links_title'); ?></h2>
+                            <p class="component-card__description"><?php echo __('pref_links_desc'); ?></p>
                         </div>
                     </div>
                     <div class="component-card__actions component-card__actions--end">
@@ -247,12 +247,12 @@ $maxAvatarSize = $serverConfig['max_avatar_size_mb'] ?? 2;
                 </div>
             </div>
 
-            <div class="component-card--grouped" style="margin-top: 16px;">
+            <div class="component-card--grouped">
                 <div class="component-group-item component-group-item--wrap">
                     <div class="component-card__content">
                         <div class="component-card__text">
-                            <h2 class="component-card__title">Aumentar el tiempo de las alertas</h2>
-                            <p class="component-card__description">Las notificaciones y mensajes durarán más tiempo en la pantalla antes de desaparecer.</p>
+                            <h2 class="component-card__title"><?php echo __('pref_alerts_title'); ?></h2>
+                            <p class="component-card__description"><?php echo __('pref_alerts_desc'); ?></p>
                         </div>
                     </div>
                     <div class="component-card__actions component-card__actions--end">

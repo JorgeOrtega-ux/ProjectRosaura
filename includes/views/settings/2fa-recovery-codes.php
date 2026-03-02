@@ -18,21 +18,21 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                     </div>
 
                     <div class="component-card__text">
-                        <h2 class="component-card__title">Verificar identidad</h2>
-                        <p class="component-card__description">Por razones de seguridad, ingresa tu contraseña actual para continuar y generar los nuevos códigos.</p>
+                        <h2 class="component-card__title"><?php echo __('admin_verify_identity_title'); ?></h2>
+                        <p class="component-card__description"><?php echo __('2fa_recovery_verify_desc'); ?></p>
                         
                         <div class="component-card__form-area">
                             <div class="component-input-group">
                                 <input type="password" id="2fa_regenerate_password" class="component-input-field component-input-field--with-icon" placeholder=" ">
-                                <label for="2fa_regenerate_password" class="component-input-label">Contraseña actual</label>
+                                <label for="2fa_regenerate_password" class="component-input-label"><?php echo __('lbl_current_password'); ?></label>
                                 <span class="material-symbols-rounded component-input-toggle" data-action="togglePassword">visibility_off</span>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="component-card__actions component-card__actions--end">
-                    <button class="component-button component-button--h36" data-nav="/ProjectRosaura/settings/2fa">Cancelar</button>
-                    <button class="component-button component-button--h36 component-button--dark" data-action="submitRegenerateRecoveryCodes">Confirmar</button>
+                    <button class="component-button component-button--h36" data-nav="/ProjectRosaura/settings/2fa"><?php echo __('btn_cancel'); ?></button>
+                    <button class="component-button component-button--h36 component-button--dark" data-action="submitRegenerateRecoveryCodes"><?php echo __('btn_confirm'); ?></button>
                 </div>
             </div>
         </div>
@@ -46,16 +46,16 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                     </div>
 
                     <div class="component-card__text">
-                        <h2 class="component-card__title">Nuevos códigos generados</h2>
-                        <p class="component-card__description">Guarda estos 10 códigos de recuperación en un lugar seguro. Podrás usarlos para iniciar sesión si pierdes acceso a tu dispositivo.</p>
+                        <h2 class="component-card__title"><?php echo __('2fa_new_codes_title'); ?></h2>
+                        <p class="component-card__description"><?php echo __('2fa_new_codes_desc'); ?></p>
                         
                         <div id="2fa-new-recovery-codes-list">
                             </div>
                     </div>
                 </div>
                 <div class="component-card__actions component-card__actions--end">
-                    <button class="component-button component-button--h36" data-action="copyNewRecoveryCodes">Copiar códigos</button>
-                    <button class="component-button component-button--h36 component-button--dark" data-nav="/ProjectRosaura/settings/2fa">Terminar</button>
+                    <button class="component-button component-button--h36" data-action="copyNewRecoveryCodes"><?php echo __('btn_copy_codes'); ?></button>
+                    <button class="component-button component-button--h36 component-button--dark" data-nav="/ProjectRosaura/settings/2fa"><?php echo __('btn_finish'); ?></button>
                 </div>
             </div>
         </div>

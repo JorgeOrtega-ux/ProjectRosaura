@@ -23,7 +23,6 @@ if ($page > $totalPages) {
     $offset = ($page - 1) * $limit;
 }
 
-// === CONSULTA CORREGIDA CON LEFT JOIN PARA OBTENER is_suspended ===
 $stmt = $pdo->query("
     SELECT u.id, u.uuid, u.username, u.email, u.role, u.user_status, 
            ur.is_suspended, u.profile_picture, u.created_at 
@@ -49,12 +48,12 @@ $nextPageUrl = $page < $totalPages ? '/ProjectRosaura/admin/manage-users?page=' 
                         <div class="component-toolbar-title disabled" data-ref="toolbar-dynamic-title">
                             <?php echo __('admin_users_title'); ?>
                         </div>
-                        <button class="component-button component-button--icon component-button--h40" data-action="searchUser" data-ref="btn-toggle-search" data-tooltip="Buscar" data-position="bottom">
+                        <button class="component-button component-button--icon component-button--h40" data-action="searchUser" data-ref="btn-toggle-search" data-tooltip="<?php echo __('tooltip_search'); ?>" data-position="bottom">
                             <span class="material-symbols-rounded">search</span>
                         </button>
                         
                         <div class="component-dropdown-wrapper component-dropdown-wrapper--fit">
-                            <button class="component-button component-button--icon component-button--h40" data-action="toggleUserFilters" data-ref="btn-toggle-filters" data-tooltip="Filtros" data-position="bottom">
+                            <button class="component-button component-button--icon component-button--h40" data-action="toggleUserFilters" data-ref="btn-toggle-filters" data-tooltip="<?php echo __('tooltip_filters'); ?>" data-position="bottom">
                                 <span class="material-symbols-rounded">tune</span>
                             </button>
                             
@@ -65,7 +64,7 @@ $nextPageUrl = $page < $totalPages ? '/ProjectRosaura/admin/manage-users?page=' 
                                     
                                     <div class="component-menu-header">
                                         <div class="component-menu-header-box">
-                                            <span class="component-menu-header-title">Filtros de búsqueda</span>
+                                            <span class="component-menu-header-title"><?php echo __('filter_search_title'); ?></span>
                                         </div>
                                     </div>
                                     
@@ -75,7 +74,7 @@ $nextPageUrl = $page < $totalPages ? '/ProjectRosaura/admin/manage-users?page=' 
                                                 <span class="material-symbols-rounded">admin_panel_settings</span>
                                             </div>
                                             <div class="component-menu-link-text">
-                                                <span>Rol de cuenta</span>
+                                                <span><?php echo __('filter_role'); ?></span>
                                             </div>
                                             <div class="component-menu-link-icon">
                                                 <span class="material-symbols-rounded">chevron_right</span>
@@ -87,7 +86,7 @@ $nextPageUrl = $page < $totalPages ? '/ProjectRosaura/admin/manage-users?page=' 
                                                 <span class="material-symbols-rounded">rule</span>
                                             </div>
                                             <div class="component-menu-link-text">
-                                                <span>Estado de cuenta</span>
+                                                <span><?php echo __('filter_status'); ?></span>
                                             </div>
                                             <div class="component-menu-link-icon">
                                                 <span class="material-symbols-rounded">chevron_right</span>
@@ -104,7 +103,7 @@ $nextPageUrl = $page < $totalPages ? '/ProjectRosaura/admin/manage-users?page=' 
                                             <button class="component-button component-button--icon component-button--h30 component-button--back" data-action="backToMainFilters">
                                                 <span class="material-symbols-rounded">arrow_back</span>
                                             </button>
-                                            <span class="component-menu-header-title">Filtrar por Rol</span>
+                                            <span class="component-menu-header-title"><?php echo __('filter_by_role'); ?></span>
                                         </div>
                                     </div>
                                     
@@ -114,7 +113,7 @@ $nextPageUrl = $page < $totalPages ? '/ProjectRosaura/admin/manage-users?page=' 
                                                 <input type="checkbox" class="filter-checkbox" data-filter-type="role" value="founder" checked>
                                             </div>
                                             <div class="component-menu-link-text">
-                                                <span>Fundador</span>
+                                                <span><?php echo __('role_founder'); ?></span>
                                             </div>
                                         </label>
                                         <label class="component-menu-link component-menu-link--bordered">
@@ -122,7 +121,7 @@ $nextPageUrl = $page < $totalPages ? '/ProjectRosaura/admin/manage-users?page=' 
                                                 <input type="checkbox" class="filter-checkbox" data-filter-type="role" value="administrator" checked>
                                             </div>
                                             <div class="component-menu-link-text">
-                                                <span>Administrador</span>
+                                                <span><?php echo __('role_admin'); ?></span>
                                             </div>
                                         </label>
                                         <label class="component-menu-link component-menu-link--bordered">
@@ -130,7 +129,7 @@ $nextPageUrl = $page < $totalPages ? '/ProjectRosaura/admin/manage-users?page=' 
                                                 <input type="checkbox" class="filter-checkbox" data-filter-type="role" value="moderator" checked>
                                             </div>
                                             <div class="component-menu-link-text">
-                                                <span>Moderador</span>
+                                                <span><?php echo __('role_moderator'); ?></span>
                                             </div>
                                         </label>
                                         <label class="component-menu-link component-menu-link--bordered">
@@ -138,7 +137,7 @@ $nextPageUrl = $page < $totalPages ? '/ProjectRosaura/admin/manage-users?page=' 
                                                 <input type="checkbox" class="filter-checkbox" data-filter-type="role" value="user" checked>
                                             </div>
                                             <div class="component-menu-link-text">
-                                                <span>Usuario</span>
+                                                <span><?php echo __('role_user'); ?></span>
                                             </div>
                                         </label>
                                     </div>
@@ -152,7 +151,7 @@ $nextPageUrl = $page < $totalPages ? '/ProjectRosaura/admin/manage-users?page=' 
                                             <button class="component-button component-button--icon component-button--h30 component-button--back" data-action="backToMainFilters">
                                                 <span class="material-symbols-rounded">arrow_back</span>
                                             </button>
-                                            <span class="component-menu-header-title">Filtrar por Estado</span>
+                                            <span class="component-menu-header-title"><?php echo __('filter_by_status'); ?></span>
                                         </div>
                                     </div>
                                     
@@ -162,7 +161,7 @@ $nextPageUrl = $page < $totalPages ? '/ProjectRosaura/admin/manage-users?page=' 
                                                 <input type="checkbox" class="filter-checkbox" data-filter-type="status" value="active" checked>
                                             </div>
                                             <div class="component-menu-link-text">
-                                                <span>Activo</span>
+                                                <span><?php echo __('status_active'); ?></span>
                                             </div>
                                         </label>
                                         <label class="component-menu-link component-menu-link--bordered">
@@ -170,7 +169,7 @@ $nextPageUrl = $page < $totalPages ? '/ProjectRosaura/admin/manage-users?page=' 
                                                 <input type="checkbox" class="filter-checkbox" data-filter-type="status" value="suspended" checked>
                                             </div>
                                             <div class="component-menu-link-text">
-                                                <span>Suspendido</span>
+                                                <span><?php echo __('status_suspended'); ?></span>
                                             </div>
                                         </label>
                                         <label class="component-menu-link component-menu-link--bordered">
@@ -178,7 +177,7 @@ $nextPageUrl = $page < $totalPages ? '/ProjectRosaura/admin/manage-users?page=' 
                                                 <input type="checkbox" class="filter-checkbox" data-filter-type="status" value="deleted" checked>
                                             </div>
                                             <div class="component-menu-link-text">
-                                                <span>Eliminado</span>
+                                                <span><?php echo __('status_deleted'); ?></span>
                                             </div>
                                         </label>
                                     </div>
@@ -190,7 +189,7 @@ $nextPageUrl = $page < $totalPages ? '/ProjectRosaura/admin/manage-users?page=' 
                     </div>
                     <div class="component-toolbar-right">
                         
-                       <div class="component-inline-control" data-tooltip="Página <?php echo $page; ?> de <?php echo $totalPages; ?>" data-position="bottom">
+                       <div class="component-inline-control" data-tooltip="<?php echo __('pagination_tooltip', ['page' => $page, 'total' => $totalPages]); ?>" data-position="bottom">
     
                             <div class="component-inline-control__group">
                                 <button class="component-inline-control__btn <?php echo $page <= 1 ? 'disabled-interaction' : ''; ?>" <?php echo $page > 1 ? 'data-nav="'.$prevPageUrl.'"' : ''; ?>>
@@ -210,7 +209,7 @@ $nextPageUrl = $page < $totalPages ? '/ProjectRosaura/admin/manage-users?page=' 
                             
                         </div>
 
-                        <button class="component-button component-button--icon component-button--h40" data-action="toggleViewMode" data-tooltip="Cambiar vista" data-position="bottom">
+                        <button class="component-button component-button--icon component-button--h40" data-action="toggleViewMode" data-tooltip="<?php echo __('tooltip_change_view'); ?>" data-position="bottom">
                             <span class="material-symbols-rounded">table_rows</span>
                         </button>
                     </div>
@@ -218,18 +217,18 @@ $nextPageUrl = $page < $totalPages ? '/ProjectRosaura/admin/manage-users?page=' 
 
                 <div class="component-toolbar-mode disabled" data-ref="toolbar-selection-mode">
                     <div class="component-toolbar-left">
-                        <button class="component-button component-button--icon component-button--h40" data-action="editSelectedUser" data-tooltip="Gestionar cuenta" data-position="bottom">
+                        <button class="component-button component-button--icon component-button--h40" data-action="editSelectedUser" data-tooltip="<?php echo __('tooltip_manage_account'); ?>" data-position="bottom">
                             <span class="material-symbols-rounded">manage_accounts</span>
                         </button>
-                        <button class="component-button component-button--icon component-button--h40" data-action="editSelectedUserRole" data-tooltip="Gestionar rol" data-position="bottom">
+                        <button class="component-button component-button--icon component-button--h40" data-action="editSelectedUserRole" data-tooltip="<?php echo __('tooltip_manage_role'); ?>" data-position="bottom">
                             <span class="material-symbols-rounded">admin_panel_settings</span>
                         </button>
-                        <button class="component-button component-button--icon component-button--h40" data-action="editSelectedUserStatus" data-tooltip="Gestionar estado" data-position="bottom">
+                        <button class="component-button component-button--icon component-button--h40" data-action="editSelectedUserStatus" data-tooltip="<?php echo __('tooltip_manage_status'); ?>" data-position="bottom">
                             <span class="material-symbols-rounded">rule</span>
                         </button>
                     </div>
                     <div class="component-toolbar-right">
-                        <button class="component-button component-button--icon component-button--h40" data-action="deselectUser" data-tooltip="Cancelar selección" data-position="bottom">
+                        <button class="component-button component-button--icon component-button--h40" data-action="deselectUser" data-tooltip="<?php echo __('tooltip_cancel_selection'); ?>" data-position="bottom">
                             <span class="material-symbols-rounded">close</span>
                         </button>
                     </div>
@@ -243,7 +242,7 @@ $nextPageUrl = $page < $totalPages ? '/ProjectRosaura/admin/manage-users?page=' 
                         <span class="material-symbols-rounded">search</span>
                     </div>
                     <div class="component-search-input">
-                        <input type="text" data-ref="user-search-input" placeholder="Buscar por nombre, correo, uuid...">
+                        <input type="text" data-ref="user-search-input" placeholder="<?php echo __('search_user_placeholder'); ?>">
                     </div>
                 </div>
             </div>
@@ -259,7 +258,7 @@ $nextPageUrl = $page < $totalPages ? '/ProjectRosaura/admin/manage-users?page=' 
                 <?php foreach ($users as $user): ?>
                     <?php 
                         $dataStatus = $user['user_status'] === 'deleted' ? 'deleted' : ($user['is_suspended'] ? 'suspended' : 'active');
-                        $displayStatus = $user['user_status'] === 'deleted' ? 'Eliminado' : ($user['is_suspended'] ? 'Suspendido' : 'Activo');
+                        $displayStatus = $user['user_status'] === 'deleted' ? __('status_deleted') : ($user['is_suspended'] ? __('status_suspended') : __('status_active'));
                         $statusIcon = $user['user_status'] === 'deleted' ? 'person_off' : ($user['is_suspended'] ? 'block' : 'check_circle');
                     ?>
                     <div class="component-item-card user-card-item" data-action="selectUser" data-user-id="<?php echo htmlspecialchars($user['id']); ?>" data-role="<?php echo htmlspecialchars($user['role']); ?>" data-status="<?php echo htmlspecialchars($dataStatus); ?>">
@@ -305,13 +304,13 @@ $nextPageUrl = $page < $totalPages ? '/ProjectRosaura/admin/manage-users?page=' 
                 
                 <div class="component-empty-state disabled" data-ref="empty-search-cards">
                     <span class="material-symbols-rounded component-empty-state-icon">search_off</span>
-                    <p class="component-empty-state-text">No se encontraron usuarios para tu búsqueda/filtro.</p>
+                    <p class="component-empty-state-text"><?php echo __('empty_search_users'); ?></p>
                 </div>
 
             <?php else: ?>
                 <div class="component-empty-state">
                     <span class="material-symbols-rounded component-empty-state-icon">group_off</span>
-                    <p class="component-empty-state-text">No hay usuarios registrados en esta página.</p>
+                    <p class="component-empty-state-text"><?php echo __('empty_users_system'); ?></p>
                 </div>
             <?php endif; ?>
         </div>
@@ -320,12 +319,12 @@ $nextPageUrl = $page < $totalPages ? '/ProjectRosaura/admin/manage-users?page=' 
             <table class="component-table">
                 <thead>
                     <tr>
-                        <th>Usuario</th>
-                        <th>Correo</th>
-                        <th>Rol</th>
-                        <th>Estado</th>
-                        <th>UUID</th>
-                        <th>Registro</th>
+                        <th><?php echo __('table_header_user'); ?></th>
+                        <th><?php echo __('table_header_email'); ?></th>
+                        <th><?php echo __('table_header_role'); ?></th>
+                        <th><?php echo __('table_header_status'); ?></th>
+                        <th><?php echo __('table_header_uuid'); ?></th>
+                        <th><?php echo __('table_header_registered'); ?></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -333,7 +332,7 @@ $nextPageUrl = $page < $totalPages ? '/ProjectRosaura/admin/manage-users?page=' 
                         <?php foreach ($users as $user): ?>
                             <?php 
                                 $dataStatus = $user['user_status'] === 'deleted' ? 'deleted' : ($user['is_suspended'] ? 'suspended' : 'active');
-                                $displayStatus = $user['user_status'] === 'deleted' ? 'Eliminado' : ($user['is_suspended'] ? 'Suspendido' : 'Activo');
+                                $displayStatus = $user['user_status'] === 'deleted' ? __('status_deleted') : ($user['is_suspended'] ? __('status_suspended') : __('status_active'));
                                 $statusIcon = $user['user_status'] === 'deleted' ? 'person_off' : ($user['is_suspended'] ? 'block' : 'check_circle');
                             ?>
                             <tr class="user-card-item" data-action="selectUser" data-user-id="<?php echo htmlspecialchars($user['id']); ?>" data-role="<?php echo htmlspecialchars($user['role']); ?>" data-status="<?php echo htmlspecialchars($dataStatus); ?>">
@@ -387,7 +386,7 @@ $nextPageUrl = $page < $totalPages ? '/ProjectRosaura/admin/manage-users?page=' 
                             <td colspan="6" class="component-empty-table-cell">
                                 <div class="component-empty-state component-empty-state--table">
                                     <span class="material-symbols-rounded component-empty-state-icon">search_off</span>
-                                    <p class="component-empty-state-text">No se encontraron usuarios para tu búsqueda/filtro.</p>
+                                    <p class="component-empty-state-text"><?php echo __('empty_search_users'); ?></p>
                                 </div>
                             </td>
                         </tr>
@@ -397,7 +396,7 @@ $nextPageUrl = $page < $totalPages ? '/ProjectRosaura/admin/manage-users?page=' 
                             <td colspan="6" class="component-empty-table-cell">
                                 <div class="component-empty-state component-empty-state--table">
                                     <span class="material-symbols-rounded component-empty-state-icon">group_off</span>
-                                    <p class="component-empty-state-text">No hay usuarios registrados en esta página.</p>
+                                    <p class="component-empty-state-text"><?php echo __('empty_users_system'); ?></p>
                                 </div>
                             </td>
                         </tr>

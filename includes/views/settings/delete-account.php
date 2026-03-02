@@ -17,7 +17,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                         <span class="material-symbols-rounded">warning</span>
                     </div>
                     <div class="component-card__text">
-                        <h2 class="component-card__title">Acción irreversible</h2>
+                        <h2 class="component-card__title"><?php echo __('del_acc_irreversible_title'); ?></h2>
                         <p class="component-card__description"><?php echo __('del_acc_warning'); ?></p>
                     </div>
                 </div>
@@ -31,7 +31,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                         <span class="material-symbols-rounded">fact_check</span>
                     </div>
                     <div class="component-card__text">
-                        <h2 class="component-card__title">Confirmar eliminación</h2>
+                        <h2 class="component-card__title"><?php echo __('del_acc_confirm_title'); ?></h2>
                         <p class="component-card__description"><?php echo __('lbl_confirm_delete'); ?></p>
                     </div>
                 </div>
@@ -51,8 +51,8 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             <span class="material-symbols-rounded">lock</span>
                         </div>
                         <div class="component-card__text">
-                            <h2 class="component-card__title">Verificar identidad</h2>
-                            <p class="component-card__description">Para confirmar y proceder, ingresa tu contraseña actual:</p>
+                            <h2 class="component-card__title"><?php echo __('admin_verify_identity_title'); ?></h2>
+                            <p class="component-card__description"><?php echo __('del_acc_verify_desc'); ?></p>
                             
                             <div class="component-card__form-area">
                                 <div class="component-input-group">
@@ -64,7 +64,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                         </div>
                     </div>
                     <div class="component-card__actions component-card__actions--end">
-                        <button class="component-button component-button--h36" data-nav="/ProjectRosaura/settings/security">Cancelar</button>
+                        <button class="component-button component-button--h36" data-nav="/ProjectRosaura/settings/security"><?php echo __('btn_cancel'); ?></button>
                         <button class="component-button component-button--h36 component-button--danger" data-action="submitDeleteAccount"><?php echo __('btn_delete_account_final'); ?></button>
                     </div>
                 </div>
