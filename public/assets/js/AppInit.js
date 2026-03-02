@@ -54,7 +54,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 7. Instanciamos los controladores de Logs y el nuevo Visor
     const adminLogs = new AdminLogsController();
+    adminLogs.init(); // <- Faltaba inicializar el controlador
+
     const adminLogsViewer = new AdminLogsViewerController();
+    adminLogsViewer.init(); // <- Faltaba inicializar el visor de logs
 
     // 8. Instanciamos el Sistema de Diálogos y lo guardamos global
     window.dialogSystem = new DialogSystem();
