@@ -1,6 +1,6 @@
-// public/assets/js/admin-server-config-controller.js
-import { ApiService } from './core/api-services.js';
-import { ApiRoutes } from './core/api-routes.js';
+// public/assets/js/modules/admin/server/AdminServerConfigController.js
+import { ApiService } from '../../../core/api/ApiServices.js';
+import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 
 export class AdminServerConfigController {
     constructor() {

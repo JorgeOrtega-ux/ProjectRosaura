@@ -1,4 +1,4 @@
-// public/assets/js/core/dialog-system.js
+// public/assets/js/core/components/DialogSystem.js
 import { DialogTemplates } from './DialogTemplates.js';
 
 export class DialogSystem {

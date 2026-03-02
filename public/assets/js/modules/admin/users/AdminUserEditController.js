@@ -1,6 +1,6 @@
-// public/assets/js/admin-user-edit-controller.js
-import { ApiService } from './core/api-services.js';
-import { ApiRoutes } from './core/api-routes.js';
+// public/assets/js/modules/admin/users/AdminUserEditController.js
+import { ApiService } from '../../../core/api/ApiServices.js';
+import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 
 export class AdminUserEditController {
     constructor() {

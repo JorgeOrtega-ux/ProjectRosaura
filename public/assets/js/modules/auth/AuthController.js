@@ -1,6 +1,6 @@
-// public/assets/js/auth-controller.js
-import { ApiService } from './core/api-services.js';
-import { ApiRoutes } from './core/api-routes.js';
+// public/assets/js/modules/auth/AuthController.js
+import { ApiService } from '../../core/api/ApiServices.js';
+import { ApiRoutes } from '../../core/api/ApiRoutes.js';
 
 export class AuthController {
     constructor() {

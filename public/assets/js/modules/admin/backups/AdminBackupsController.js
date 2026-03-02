@@ -1,7 +1,6 @@
-// public/assets/js/admin-backups-controller.js
-
-import { ApiService } from './core/api-services.js';
-import { ApiRoutes } from './core/api-routes.js';
+// public/assets/js/modules/admin/backups/AdminBackupsController.js
+import { ApiService } from '../../../core/api/ApiServices.js';
+import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 
 export class AdminBackupsController {
     constructor() {

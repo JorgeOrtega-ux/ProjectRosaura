@@ -1,18 +1,18 @@
-// public/assets/js/app-init.js
+// public/assets/js/AppInit.js
 import { MainController } from './MainController.js';
-import { SpaRouter } from './core/spa-router.js';
-import { AuthController } from './auth-controller.js';
-import { ProfileController } from './profile-controller.js';
-import { AdminUsersController } from './admin-users-controller.js';
-import { AdminUserEditController } from './admin-user-edit-controller.js'; 
-import { AdminRoleEditController } from './admin-role-edit-controller.js';
-import { AdminStatusEditController } from './admin-status-edit-controller.js';
-import { AdminServerConfigController } from './admin-server-config-controller.js';
-import { AdminBackupsController } from './admin-backups-controller.js';
-import { AdminBackupsAutomationController } from './admin-backups-automation-controller.js';
-import { DialogSystem } from './core/dialog-system.js';
-import { TooltipSystem } from './core/tooltip-system.js';
-import { CalendarSystem } from './core/calendar-system.js';
+import { SpaRouter } from './core/router/SpaRouter.js';
+import { AuthController } from './modules/auth/AuthController.js';
+import { ProfileController } from './modules/settings/ProfileController.js';
+import { AdminUsersController } from './modules/admin/users/AdminUsersController.js';
+import { AdminUserEditController } from './modules/admin/users/AdminUserEditController.js'; 
+import { AdminRoleEditController } from './modules/admin/users/AdminRoleEditController.js';
+import { AdminStatusEditController } from './modules/admin/users/AdminStatusEditController.js';
+import { AdminServerConfigController } from './modules/admin/server/AdminServerConfigController.js';
+import { AdminBackupsController } from './modules/admin/backups/AdminBackupsController.js';
+import { AdminBackupsAutomationController } from './modules/admin/backups/AdminBackupsAutomationController.js';
+import { DialogSystem } from './core/components/DialogSystem.js';
+import { TooltipSystem } from './core/components/TooltipSystem.js';
+import { CalendarSystem } from './core/components/CalendarSystem.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Instanciamos lógica UI base

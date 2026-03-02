@@ -74,6 +74,6 @@ $topBarClass = ($isAuthRoute || $isMaintenanceRestricted) ? 'disabled' : '';
     </div>
     
     <script src="https://unpkg.com/@popperjs/core@2"></script>
-    <script type="module" src="assets/js/app-init.js"></script>
+    <script type="module" src="assets/js/AppInit.js"></script>
 </body>
 </html>

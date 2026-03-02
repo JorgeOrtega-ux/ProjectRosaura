@@ -1,6 +1,6 @@
-// public/assets/js/admin-status-edit-controller.js
-import { ApiService } from './core/api-services.js';
-import { ApiRoutes } from './core/api-routes.js';
+// public/assets/js/modules/admin/users/AdminStatusEditController.js
+import { ApiService } from '../../../core/api/ApiServices.js';
+import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 
 export class AdminStatusEditController {
     constructor() {
