@@ -33,7 +33,8 @@ $isPrivileged = in_array($userRole, ['administrator', 'founder']);
         '/admin/backups': "<?php echo __('route_admin_backups'); ?>",
         '/admin/backups/automation': "<?php echo __('route_admin_backups_automation'); ?>",
         '/admin/server-config': "<?php echo __('route_admin_server'); ?>",
-        '/admin/logs': "<?php echo __('route_admin_logs'); ?>"
+        '/admin/logs': "<?php echo __('route_admin_logs'); ?>",
+        '/admin/logs/viewer': "Visor de Archivos"
     };
     window.AppName = "ProjectRosaura";
 </script>

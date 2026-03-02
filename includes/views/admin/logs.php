@@ -139,10 +139,19 @@ if (is_dir($logBaseDir)) {
 
                 <div class="component-toolbar-mode disabled" data-ref="toolbar-selection-mode">
                     <div class="component-toolbar-left" style="align-items: center; gap: 12px;">
-                        <button class="component-button component-button--icon component-button--h40" data-action="viewSelectedLog" data-tooltip="Visualizar archivo" data-position="bottom">
+                        <span id="logs-selection-count" class="component-badge component-badge--sm" style="background: var(--action-primary); color: var(--text-inverse); border: none;">0 seleccionados</span>
+                        
+                        <button class="component-button component-button--icon component-button--h40" data-action="viewSelectedLogs" data-tooltip="Visualizar archivos" data-position="bottom">
                             <span class="material-symbols-rounded">visibility</span>
                         </button>
-                        <button class="component-button component-button--icon component-button--h40 component-button--danger" data-action="deleteSelectedLog" data-tooltip="Eliminar archivo" data-position="bottom">
+                        
+                        <div class="component-input-group component-input-group--h40" style="width: 200px; margin-left: 8px;">
+                            <input type="password" id="log_action_password" class="component-input-field component-input-field--with-icon" placeholder=" ">
+                            <label for="log_action_password" class="component-input-label">Contraseña admin</label>
+                            <span class="material-symbols-rounded component-input-toggle" data-action="togglePassword" style="font-size: 18px; right: 8px;">visibility_off</span>
+                        </div>
+
+                        <button class="component-button component-button--icon component-button--h40 component-button--danger" data-action="deleteSelectedLogs" data-tooltip="Eliminar seleccionados" data-position="bottom">
                             <span class="material-symbols-rounded">delete</span>
                         </button>
                     </div>

@@ -47,6 +47,8 @@ export const ApiRoutes = {
         UpdateServerConfig: 'admin.update_server_config',
         CreateBackup: 'admin.create_backup',
         RestoreBackup: 'admin.restore_backup',
-        DeleteBackup: 'admin.delete_backup'
+        DeleteBackup: 'admin.delete_backup',
+        ReadLogs: 'admin.read_logs',
+        DeleteLogs: 'admin.delete_logs'
     }
 };

@@ -11,6 +11,7 @@ import { AdminServerConfigController } from './modules/admin/server/AdminServerC
 import { AdminBackupsController } from './modules/admin/backups/AdminBackupsController.js';
 import { AdminBackupsAutomationController } from './modules/admin/backups/AdminBackupsAutomationController.js';
 import { AdminLogsController } from './modules/admin/logs/AdminLogsController.js';
+import { AdminLogsViewerController } from './modules/admin/logs/AdminLogsViewerController.js';
 import { DialogSystem } from './core/components/DialogSystem.js';
 import { TooltipSystem } from './core/components/TooltipSystem.js';
 import { CalendarSystem } from './core/components/CalendarSystem.js';
@@ -51,8 +52,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const adminBackupsAuto = new AdminBackupsAutomationController();
     adminBackupsAuto.init();
 
-    // 7. Instanciamos el controlador de Logs
+    // 7. Instanciamos los controladores de Logs y el nuevo Visor
     const adminLogs = new AdminLogsController();
+    const adminLogsViewer = new AdminLogsViewerController();
 
     // 8. Instanciamos el Sistema de Diálogos y lo guardamos global
     window.dialogSystem = new DialogSystem();

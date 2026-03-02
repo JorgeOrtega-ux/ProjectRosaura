@@ -1929,4 +1929,101 @@ textarea.component-input-field::placeholder {
     text-align: center; /* Mantiene el número centrado en ese gran espacio */
     
     /* ... tus otros estilos (font-size, color, etc.) ... */
+}/* ========================================= */
+/* --- COMPONENT: FILE VIEWER (LOGS) ---     */
+/* ========================================= */
+.component-file-viewer {
+    flex: 1;
+    display: none; 
+    flex-direction: column;
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    overflow: hidden;
+    min-height: 0; 
+    box-shadow: var(--shadow-card);
+}
+.component-file-viewer.active {
+    display: flex;
+}
+
+.component-tabs-header {
+    display: flex;
+    flex-direction: row;
+    overflow-x: auto;
+    background-color: var(--bg-surface-alt);
+    border-bottom: 1px solid var(--border-color);
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-color) transparent;
+    flex-shrink: 0;
+}
+
+.component-tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 12px;
+    height: 40px;
+    border-right: 1px solid var(--border-color);
+    background-color: transparent;
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-family: var(--sl-font-mono);
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.component-tab:hover {
+    background-color: var(--bg-hover-light);
+}
+
+.component-tab.active {
+    background-color: var(--bg-surface);
+    color: var(--text-primary);
+    border-bottom: 2px solid var(--action-primary);
+}
+
+.component-tab-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    color: var(--text-tertiary);
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.component-tab-close:hover {
+    background-color: var(--border-color);
+    color: var(--color-error);
+}
+
+.component-tab-close .material-symbols-rounded {
+    font-size: 14px;
+}
+
+.component-viewer-area {
+    flex: 1;
+    display: flex;
+    min-height: 0; 
+}
+
+.component-viewer-textarea {
+    width: 100%;
+    height: 100%;
+    resize: none;
+    border: none;
+    padding: 16px;
+    background-color: var(--bg-code-editor);
+    color: var(--text-code-base);
+    font-family: var(--sl-font-mono);
+    font-size: 13px;
+    line-height: 1.5;
+    outline: none;
+    white-space: pre; 
+    overflow-wrap: normal;
+    overflow-x: auto;
 }

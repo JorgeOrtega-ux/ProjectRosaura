@@ -62,5 +62,9 @@ return [
     'admin.backup_status'         => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'backup_status'], // Nueva ruta asíncrona
     'admin.restore_backup'        => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'restore_backup'],
     'admin.delete_backup'         => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'delete_backup'],
+
+    // --- RUTAS DE LOGS ---
+    'admin.read_logs'             => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'read_logs'],
+    'admin.delete_logs'           => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'delete_logs'],
 ];
 ?>

@@ -784,5 +784,68 @@ class AdminServices {
         
         return ['success' => false, 'message' => 'El archivo no existe o no es válido.'];
     }
+
+    public function readLogs($data) {
+        if (!$this->checkAdmin()) return ['success' => false, 'message' => 'No autorizado.'];
+        
+        $files = $data['files'] ?? [];
+        if (!is_array($files) || empty($files)) return ['success' => false, 'message' => 'No se especificaron archivos.'];
+        if (count($files) > 50) return ['success' => false, 'message' => 'Máximo 50 archivos a la vez.'];
+
+        $contents = [];
+        $logBaseDir = realpath(__DIR__ . '/../../logs/');
+
+        foreach ($files as $encodedFile) {
+            $filename = base64_decode($encodedFile);
+            $filepath = realpath($logBaseDir . '/' . $filename);
+            
+            // Prevenir directory traversal vulnerabilidades
+            if ($filepath && strpos($filepath, $logBaseDir) === 0 && file_exists($filepath) && !is_dir($filepath)) {
+                $contents[$encodedFile] = [
+                    'filename' => basename($filepath),
+                    'category' => basename(dirname($filepath)),
+                    'content' => file_get_contents($filepath)
+                ];
+            } else {
+                $contents[$encodedFile] = [
+                    'filename' => htmlspecialchars($filename),
+                    'error' => 'Archivo no encontrado o acceso denegado.'
+                ];
+            }
+        }
+
+        return ['success' => true, 'data' => $contents];
+    }
+
+    public function deleteLogs($data) {
+        if (!$this->checkAdmin()) return ['success' => false, 'message' => 'No autorizado.'];
+        
+        $password = $data['password'] ?? '';
+        $currentUserId = $this->sessionManager->get('user_id');
+        $adminData = $this->userRepository->findById($currentUserId);
+        
+        if (!$adminData || !password_verify($password, $adminData['password'])) {
+            return ['success' => false, 'message' => 'Contraseña incorrecta. Acción denegada.'];
+        }
+
+        $files = $data['files'] ?? [];
+        if (!is_array($files) || empty($files)) return ['success' => false, 'message' => 'No se especificaron archivos.'];
+        if (count($files) > 50) return ['success' => false, 'message' => 'Solo puedes eliminar hasta 50 archivos a la vez.'];
+        
+        $logBaseDir = realpath(__DIR__ . '/../../logs/');
+        $deleted = 0;
+        
+        foreach ($files as $encodedFile) {
+            $filename = base64_decode($encodedFile);
+            $filepath = realpath($logBaseDir . '/' . $filename);
+            if ($filepath && strpos($filepath, $logBaseDir) === 0 && file_exists($filepath) && !is_dir($filepath)) {
+                unlink($filepath);
+                $deleted++;
+            }
+        }
+        
+        Logger::security("Admin ID: {$currentUserId} eliminó {$deleted} archivos de log de forma masiva.", 'info');
+        return ['success' => true, 'message' => "Se eliminaron {$deleted} archivos correctamente."];
+    }
 }
 ?>

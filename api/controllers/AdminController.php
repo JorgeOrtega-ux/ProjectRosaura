@@ -30,8 +30,12 @@ class AdminController {
 
     // --- NUEVAS ACCIONES PARA BACKUPS ---
     public function create_backup() { return $this->adminServices->createBackup(); }
-    public function backup_status($input) { return $this->adminServices->backupStatus($input); } // Nuevo endpoint
+    public function backup_status($input) { return $this->adminServices->backupStatus($input); } 
     public function restore_backup($input) { return $this->adminServices->restoreBackup($input); }
     public function delete_backup($input) { return $this->adminServices->deleteBackup($input); }
+
+    // --- NUEVAS ACCIONES PARA LOGS ---
+    public function read_logs($input) { return $this->adminServices->readLogs($input); }
+    public function delete_logs($input) { return $this->adminServices->deleteLogs($input); }
 }
 ?>
