@@ -790,7 +790,9 @@ class AdminServices {
         
         $files = $data['files'] ?? [];
         if (!is_array($files) || empty($files)) return ['success' => false, 'message' => 'No se especificaron archivos.'];
-        if (count($files) > 50) return ['success' => false, 'message' => 'Máximo 50 archivos a la vez.'];
+        
+        // MODIFICACIÓN: Reducido de 50 a 10 archivos máximos
+        if (count($files) > 10) return ['success' => false, 'message' => 'Máximo 10 archivos a la vez.'];
 
         $contents = [];
         $logBaseDir = realpath(__DIR__ . '/../../logs/');
@@ -799,16 +801,31 @@ class AdminServices {
             $filename = base64_decode($encodedFile);
             $filepath = realpath($logBaseDir . '/' . $filename);
             
-            // Prevenir directory traversal vulnerabilidades
-            if ($filepath && strpos($filepath, $logBaseDir) === 0 && file_exists($filepath) && !is_dir($filepath)) {
+            // CORRECCIÓN: Prevención estricta de Path Traversal concatenando el separador de directorios
+            if ($filepath && strpos($filepath, $logBaseDir . DIRECTORY_SEPARATOR) === 0 && file_exists($filepath) && !is_dir($filepath)) {
+                
+                // CORRECCIÓN: Prevención de DoS por agotamiento de memoria
+                $maxBytes = 2 * 1024 * 1024; // Límite de 2 MB por archivo
+                $filesize = filesize($filepath);
+                
+                if ($filesize > $maxBytes) {
+                    // Solo leemos los últimos 2MB del archivo
+                    $content = file_get_contents($filepath, false, null, $filesize - $maxBytes, $maxBytes);
+                    $content = "[ALERTA DE SISTEMA: El archivo original es demasiado grande (" . round($filesize / 1048576, 2) . " MB). Mostrando únicamente los últimos 2 MB para prevenir la caída del servidor.]\n\n" . $content;
+                } else {
+                    $content = file_get_contents($filepath);
+                }
+
                 $contents[$encodedFile] = [
-                    'filename' => basename($filepath),
-                    'category' => basename(dirname($filepath)),
-                    'content' => file_get_contents($filepath)
+                    // CORRECCIÓN: Sanitización de variables para prevenir Stored XSS en el frontend
+                    'filename' => htmlspecialchars(basename($filepath), ENT_QUOTES, 'UTF-8'),
+                    'category' => htmlspecialchars(basename(dirname($filepath)), ENT_QUOTES, 'UTF-8'),
+                    'content' => $content
                 ];
             } else {
                 $contents[$encodedFile] = [
-                    'filename' => htmlspecialchars($filename),
+                    // CORRECCIÓN: Sanitización de nombre devuelto en el error
+                    'filename' => htmlspecialchars($filename, ENT_QUOTES, 'UTF-8'),
                     'error' => 'Archivo no encontrado o acceso denegado.'
                 ];
             }
@@ -830,7 +847,9 @@ class AdminServices {
 
         $files = $data['files'] ?? [];
         if (!is_array($files) || empty($files)) return ['success' => false, 'message' => 'No se especificaron archivos.'];
-        if (count($files) > 50) return ['success' => false, 'message' => 'Solo puedes eliminar hasta 50 archivos a la vez.'];
+        
+        // MODIFICACIÓN: Reducido de 50 a 10 archivos máximos
+        if (count($files) > 10) return ['success' => false, 'message' => 'Solo puedes eliminar hasta 10 archivos a la vez.'];
         
         $logBaseDir = realpath(__DIR__ . '/../../logs/');
         $deleted = 0;
@@ -838,7 +857,9 @@ class AdminServices {
         foreach ($files as $encodedFile) {
             $filename = base64_decode($encodedFile);
             $filepath = realpath($logBaseDir . '/' . $filename);
-            if ($filepath && strpos($filepath, $logBaseDir) === 0 && file_exists($filepath) && !is_dir($filepath)) {
+            
+            // CORRECCIÓN: Prevención estricta de Path Traversal
+            if ($filepath && strpos($filepath, $logBaseDir . DIRECTORY_SEPARATOR) === 0 && file_exists($filepath) && !is_dir($filepath)) {
                 unlink($filepath);
                 $deleted++;
             }
