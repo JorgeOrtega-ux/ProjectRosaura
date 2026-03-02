@@ -14,7 +14,7 @@ export class AdminLogsController {
 
     bindEvents() {
         document.addEventListener('click', (e) => {
-            if (!window.location.pathname.includes('/admin/logs')) return;
+            if (!window.location.pathname.includes('/admin/logs') || window.location.pathname.includes('viewer')) return;
 
             const searchBtn = e.target.closest('[data-action="searchLog"]');
             const toggleFiltersBtn = e.target.closest('[data-action="toggleLogFilters"]');
@@ -39,7 +39,6 @@ export class AdminLogsController {
                 this.backToMainFilters();
             }
 
-            // Seleccionar Item
             if (selectTarget && !e.target.closest('button') && !e.target.closest('.component-dropdown-wrapper')) {
                 this.handleLogSelection(selectTarget);
             }
@@ -62,7 +61,6 @@ export class AdminLogsController {
             }
         });
 
-        // Buscador y filtros
         document.addEventListener('input', (e) => {
             if (e.target && e.target.getAttribute('data-ref') === 'log-search-input') {
                 this.applyAllFilters();
@@ -76,7 +74,6 @@ export class AdminLogsController {
             }
         });
 
-        // SPA Route Load Event
         window.addEventListener('viewLoaded', (e) => {
             if (e.detail.url.includes('/admin/logs') && !e.detail.url.includes('viewer')) {
                 const searchInput = document.querySelector('[data-ref="log-search-input"]');
@@ -289,9 +286,6 @@ export class AdminLogsController {
         processContainer('view-table', 'empty-search-table');
     }
 
-    // ===========================================
-    // NAVEGACIÓN HACIA EL VISOR DE LOGS
-    // ===========================================
     viewSelectedLogs() {
         if (this.selectedLogs.size === 0) return;
         
@@ -306,7 +300,6 @@ export class AdminLogsController {
         
         const url = `/ProjectRosaura/admin/logs/viewer?${urlParams.toString()}`;
         
-        // Carga dinámicamente con el Router
         if (window.spaRouter) {
             window.spaRouter.navigate(url);
         } else {

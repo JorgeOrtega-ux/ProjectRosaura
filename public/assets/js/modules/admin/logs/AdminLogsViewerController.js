@@ -11,18 +11,22 @@ export class AdminLogsViewerController {
 
     init() {
         this.bindEvents();
+        // Carga inicial si se entra a la URL de forma directa (refresco de página)
         if (window.location.pathname.includes('/admin/logs/viewer')) {
-            this.loadLogs();
+            this.loadLogs(window.location.href);
         }
     }
 
     bindEvents() {
+        // Escucha la navegación del SPA Router
         window.addEventListener('viewLoaded', (e) => {
             if (e.detail.url.includes('/admin/logs/viewer')) {
-                this.loadLogs();
+                // Pasamos la URL exacta del evento para evitar desfases con window.location
+                this.loadLogs(e.detail.url);
             }
         });
 
+        // Delegación de eventos global
         document.addEventListener('click', (e) => {
             if (!window.location.pathname.includes('/admin/logs/viewer')) return;
 
@@ -40,7 +44,7 @@ export class AdminLogsViewerController {
         });
     }
 
-    async loadLogs() {
+    async loadLogs(urlStr) {
         const loader = document.getElementById('logs-viewer-loader');
         const container = document.getElementById('logs-viewer-container');
         
@@ -53,8 +57,9 @@ export class AdminLogsViewerController {
             container.classList.remove('active');
         }
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const filesParam = urlParams.get('files');
+        // Parseamos la URL de forma robusta
+        const urlObj = new URL(urlStr, window.location.origin);
+        const filesParam = urlObj.searchParams.get('files');
         
         if (!filesParam) {
             if (window.appInstance) window.appInstance.showToast('No se especificaron archivos para visualizar.', 'error');
@@ -142,7 +147,7 @@ export class AdminLogsViewerController {
                 textarea.value = this.logsData[id].content || '(El archivo de registro está vacío)';
                 textarea.style.color = 'var(--text-code-base)';
             }
-            textarea.scrollTop = textarea.scrollHeight; // Deslizar automáticamente hasta abajo
+            textarea.scrollTop = textarea.scrollHeight;
         }
     }
 
@@ -162,7 +167,6 @@ export class AdminLogsViewerController {
             this.renderTabs();
         }
 
-        // Actualizar URL dinámicamente sin recargar la página SPA
         const urlParams = new URLSearchParams(window.location.search);
         urlParams.set('files', remainingIds.join(','));
         const newUrl = `${window.location.pathname}?${urlParams.toString()}`;

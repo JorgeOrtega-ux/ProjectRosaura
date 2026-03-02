@@ -17,8 +17,8 @@ node_modules/
 error_log
 
 # === IGNORAR LA CARPETA DEL NUEVO SISTEMA DE LOGS ===
-
-!logs/.gitkeep
+/logs/
+!/logs/.gitkeep
 
 # === IGNORAR COPIAS DE SEGURIDAD DE LA BASE DE DATOS ===
 storage/backups/*.sql
