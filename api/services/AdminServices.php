@@ -553,7 +553,8 @@ class AdminServices {
             'admin_edit_username_attempts', 'admin_edit_username_minutes', 'admin_edit_email_attempts', 'admin_edit_email_minutes',
             'admin_edit_prefs_attempts', 'admin_edit_prefs_minutes', 'admin_edit_role_attempts', 'admin_edit_role_minutes',
             'admin_edit_status_attempts', 'admin_edit_status_minutes', 'admin_add_note_attempts', 'admin_add_note_minutes',
-            'auto_backup_enabled', 'auto_backup_frequency_hours', 'auto_backup_retention_count'
+            'auto_backup_enabled', 'auto_backup_frequency_hours', 'auto_backup_retention_count',
+            'maintenance_mode' // NUEVA COLUMNA
         ];
 
         $updateData = [];

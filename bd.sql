@@ -125,6 +125,9 @@ CREATE TABLE IF NOT EXISTS server_config (
     auto_backup_frequency_hours INT NOT NULL DEFAULT 24,
     auto_backup_retention_count INT NOT NULL DEFAULT 5,
     
+    -- === MODO MANTENIMIENTO ===
+    maintenance_mode TINYINT(1) NOT NULL DEFAULT 0,
+    
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

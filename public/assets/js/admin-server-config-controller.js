@@ -46,6 +46,16 @@ export class AdminServerConfigController {
                 }
             }
         });
+
+        // Evento 'change' para leer el estado del Switch del Modo Mantenimiento
+        document.addEventListener('change', (e) => {
+            if (!window.location.pathname.includes('/admin/server-config')) return;
+            
+            if (e.target && e.target.getAttribute('data-action') === 'toggleMaintenance') {
+                this.state['maintenance_mode'] = e.target.checked ? 1 : 0;
+                this.checkForChanges();
+            }
+        });
     }
 
     showMessage(msg, type = 'error') {
@@ -95,6 +105,12 @@ export class AdminServerConfigController {
                 el.textContent = this.state[key];
                 el.setAttribute('data-val', this.state[key]);
             }
+        }
+
+        // Renderizar el estado visual del Switch del Mantenimiento
+        const maintenanceSwitch = document.getElementById('toggle_maintenance_mode');
+        if (maintenanceSwitch && this.state.maintenance_mode !== undefined) {
+            maintenanceSwitch.checked = (parseInt(this.state.maintenance_mode) === 1);
         }
     }
 

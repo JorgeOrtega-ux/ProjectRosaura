@@ -3,6 +3,9 @@
 $isLoggedIn = isset($_SESSION['user_id']);
 $userRole = $_SESSION['user_role'] ?? 'user';
 $userPic = $_SESSION['user_pic'] ?? '';
+global $serverConfig;
+$isMaintenanceActive = isset($serverConfig['maintenance_mode']) && $serverConfig['maintenance_mode'] == 1;
+$isPrivileged = in_array($userRole, ['administrator', 'founder']);
 ?>
 <script>
     window.AppRouteTitles = {
@@ -58,6 +61,12 @@ $userPic = $_SESSION['user_pic'] ?? '';
             <button class="component-button component-button--icon component-button--h40 mobile-search-btn" data-action="toggleMobileSearch" data-tooltip="Buscar" data-position="bottom">
                 <span class="material-symbols-rounded">search</span>
             </button>
+
+            <?php if ($isMaintenanceActive && $isPrivileged): ?>
+                <button class="component-button component-button--icon component-button--h40" style="color: #ff9800; background-color: rgba(255, 152, 0, 0.1);" data-tooltip="¡Sitio en Mantenimiento!" data-position="bottom">
+                    <span class="material-symbols-rounded">warning</span>
+                </button>
+            <?php endif; ?>
 
             <?php if (!$isLoggedIn): ?>
                 <button class="component-button component-button--dark component-button--h40" data-nav="/ProjectRosaura/login">

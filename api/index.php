@@ -15,6 +15,7 @@ use App\Core\Container;
 use App\Core\System\Logger;
 use App\Api\Services\AuthServices;
 use App\Core\Interfaces\UserRepositoryInterface;
+use App\Core\Interfaces\ServerConfigRepositoryInterface;
 
 // 1. Instanciar el Contenedor de Dependencias
 $container = new Container();
@@ -88,6 +89,28 @@ if (empty($route)) {
     echo json_encode(['success' => false, 'message' => 'Ruta no especificada.']);
     exit;
 }
+
+// === DEFENSA PROFUNDA: MODO MANTENIMIENTO (API) ===
+$serverConfigRepo = $container->get(ServerConfigRepositoryInterface::class);
+$serverConfig = $serverConfigRepo->getConfig();
+
+if (isset($serverConfig['maintenance_mode']) && $serverConfig['maintenance_mode'] == 1) {
+    $currentUserRole = $_SESSION['user_role'] ?? 'user';
+    $isPrivileged = in_array($currentUserRole, ['administrator', 'founder']);
+    
+    // Si no es admin/founder y la ruta no es logout (para no dejarlos atrapados)
+    if (!$isPrivileged && $route !== 'auth.logout') {
+        Logger::security("Petición API bloqueada por Mantenimiento. Ruta: {$route}", 'info', ['ip' => Utils::getIpAddress()]);
+        http_response_code(403);
+        echo json_encode([
+            'success' => false, 
+            'status' => 'maintenance', 
+            'message' => 'El sistema se encuentra en mantenimiento. Por favor, intente más tarde.'
+        ]);
+        exit;
+    }
+}
+// ==================================================
 
 // Cargar el mapa de rutas
 $routes = require __DIR__ . '/route-map.php';

@@ -1,4 +1,3 @@
-
 <?php
 // includes/views/admin/server-config.php
 if (session_status() === PHP_SESSION_NONE) session_start();
@@ -32,6 +31,26 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 
         <div id="admin-config-form" class="disabled" style="display: flex; flex-direction: column; gap: 16px;">
             
+            <div class="component-card--grouped">
+                <div class="component-group-item component-group-item--wrap">
+                    <div class="component-card__content">
+                        <div class="component-card__icon-container component-card__icon-container--bordered">
+                            <span class="material-symbols-rounded" style="color: var(--accent-color-error);">construction</span>
+                        </div>
+                        <div class="component-card__text">
+                            <h2 class="component-card__title">Modo Mantenimiento</h2>
+                            <p class="component-card__description">Bloquea el acceso a toda la plataforma. Solo fundadores y administradores podrán interactuar con el sitio web y la API.</p>
+                        </div>
+                    </div>
+                    <div class="component-card__actions component-card__actions--end">
+                        <label class="component-toggle-switch">
+                            <input type="checkbox" id="toggle_maintenance_mode" data-action="toggleMaintenance">
+                            <span class="component-toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
             <div class="component-card--grouped component-accordion active">
                 <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
                     <div class="component-card__content">

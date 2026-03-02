@@ -78,7 +78,8 @@ export class SpaRouter {
             const delayPromise = new Promise(resolve => setTimeout(resolve, 200));
             const [response] = await Promise.all([fetchPromise, delayPromise]);
 
-            if (response.ok || response.status === 404 || response.status === 403) {
+            // Se agregó el status 503 para aceptar la respuesta HTML del Modo Mantenimiento
+            if (response.ok || response.status === 404 || response.status === 403 || response.status === 503) {
                 const updateUrl = response.headers.get('X-SPA-Update-URL');
                 if (updateUrl) {
                     window.history.replaceState(null, '', updateUrl);
@@ -92,17 +93,20 @@ export class SpaRouter {
 
                 // ACTUALIZACIÓN DE RUTAS DE "PANTALLA COMPLETA / SIN HEADER"
                 const isAuthRoute = url.includes('/login') || url.includes('/register') || url.includes('/forgot-password') || url.includes('/reset-password') || url.includes('/account-suspended') || url.includes('/account-deleted');
+                // Detectar si la respuesta es de Mantenimiento por status o contenido HTML (Message Component)
+                const isMaintenanceRoute = response.status === 503 || html.includes('component-message-icon');
+                
                 const topBar = document.querySelector('.general-content-top');
 
                 if (topBar) {
-                    if (isAuthRoute) {
+                    if (isAuthRoute || isMaintenanceRoute) {
                         topBar.classList.add('disabled');
                     } else {
                         topBar.classList.remove('disabled');
                     }
                 }
 
-                if (isAuthRoute) {
+                if (isAuthRoute || isMaintenanceRoute) {
                     const sidebar = document.querySelector('.component-module--sidebar');
                     if (sidebar && sidebar.classList.contains('active')) {
                         sidebar.classList.remove('active');

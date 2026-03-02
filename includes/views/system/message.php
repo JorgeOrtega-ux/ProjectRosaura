@@ -8,6 +8,15 @@ $type = $systemMessageType ?? '404';
 $config = [];
 
 switch ($type) {
+    case 'maintenance':
+        http_response_code(503); // Standard status code for service unavailable
+        $config = [
+            'icon' => 'construction',
+            'title' => __('maintenance_title') ?? 'Modo Mantenimiento',
+            'desc' => __('maintenance_desc') ?? 'El sistema se encuentra en mantenimiento para mejoras y actualizaciones. Por favor, vuelve más tarde.'
+        ];
+        break;
+
     case 'require_2fa':
         http_response_code(403);
         $config = [

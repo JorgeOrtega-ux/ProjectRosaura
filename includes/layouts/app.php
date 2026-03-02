@@ -1,6 +1,14 @@
 <?php
 // includes/layouts/app.php
 global $serverConfig; // Rescatamos la config generada en bootstrap.php
+
+// Evaluar restricción de mantenimiento para la UI
+$isMaintenanceActive = isset($serverConfig['maintenance_mode']) && $serverConfig['maintenance_mode'] == 1;
+$currentUserRole = $_SESSION['user_role'] ?? 'user';
+$isPrivileged = in_array($currentUserRole, ['administrator', 'founder']);
+$isMaintenanceRestricted = ($isMaintenanceActive && !$isPrivileged);
+// Ocultamos la barra superior si es auth route o si el usuario está bloqueado por el mantenimiento
+$topBarClass = ($isAuthRoute || $isMaintenanceRestricted) ? 'disabled' : '';
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -52,7 +60,7 @@ global $serverConfig; // Rescatamos la config generada en bootstrap.php
     <div class="page-wrapper">
         <div class="main-content">
             <div class="general-content">
-                <div class="general-content-top <?php echo $isAuthRoute ? 'disabled' : ''; ?>">
+                <div class="general-content-top <?php echo $topBarClass; ?>">
                     <?php include __DIR__ . '/header.php'; ?>
                 </div>
                 <div class="general-content-bottom">

@@ -61,7 +61,10 @@ class ServerConfigRepository implements ServerConfigRepositoryInterface {
                 // Configuración por defecto Automatización de Backups
                 'auto_backup_enabled' => 0,
                 'auto_backup_frequency_hours' => 24,
-                'auto_backup_retention_count' => 5
+                'auto_backup_retention_count' => 5,
+
+                // Modo Mantenimiento
+                'maintenance_mode' => 0
             ];
         }
         

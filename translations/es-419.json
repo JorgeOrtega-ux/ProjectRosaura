@@ -162,5 +162,10 @@
     "auto_backup_freq_title": "Frecuencia (Horas)",
     "auto_backup_freq_desc": "Cada cuántas horas debe ejecutarse una nueva copia de seguridad.",
     "auto_backup_retention_title": "Límite de retención",
-    "auto_backup_retention_desc": "Cantidad de copias automáticas que se conservarán antes de eliminar las más antiguas."
+    "auto_backup_retention_desc": "Cantidad de copias automáticas que se conservarán antes de eliminar las más antiguas.",
+    "maintenance_title": "Mantenimiento en curso",
+    "maintenance_desc": "El sistema se encuentra temporalmente en mantenimiento para mejoras y actualizaciones. Por favor, vuelve más tarde.",
+    "maintenance_tooltip": "¡Atención: El sitio está en Modo Mantenimiento!",
+    "admin_maintenance_title": "Modo Mantenimiento",
+    "admin_maintenance_desc": "Bloquea el acceso a toda la plataforma. Solo fundadores y administradores podrán interactuar con el sitio web y la API."
 }
