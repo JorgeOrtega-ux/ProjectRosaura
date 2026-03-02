@@ -1,5 +1,5 @@
 // public/assets/js/core/dialog-system.js
-import { DialogTemplates } from './dialog-templates.js';
+import { DialogTemplates } from './DialogTemplates.js';
 
 export class DialogSystem {
     constructor() {

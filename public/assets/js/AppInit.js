@@ -1,5 +1,5 @@
 // public/assets/js/app-init.js
-import { MainController } from './main-controller.js';
+import { MainController } from './MainController.js';
 import { SpaRouter } from './core/spa-router.js';
 import { AuthController } from './auth-controller.js';
 import { ProfileController } from './profile-controller.js';
