@@ -19,64 +19,87 @@ $requestUriPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 global $systemMessageType;
 $systemMessageType = null;
 
-// Validar y configurar las vistas de mensajes especiales del sistema
-if ($requestUriPath === '/ProjectRosaura/account-suspended' || $requestUriPath === '/ProjectRosaura/account-suspended/') {
-    $systemMessageType = 'suspended';
-} elseif ($requestUriPath === '/ProjectRosaura/account-deleted' || $requestUriPath === '/ProjectRosaura/account-deleted/') {
-    $systemMessageType = 'deleted';
-}
+// Extraemos la configuración que fue cargada en bootstrap.php
+global $serverConfig; 
+$isMaintenanceActive = isset($serverConfig['maintenance_mode']) && $serverConfig['maintenance_mode'] == 1;
+$isPrivileged = in_array($userRole, ['administrator', 'founder']);
 
-// 1. Validar rutas de "Solo Invitados" (guest_only)
-if (!empty($routeData['guest_only']) && $isLoggedIn) {
-    if ($currentView === 'settings/guest.php') {
-        $currentView = 'settings/your-profile.php';
-        $redirectUrl = '/ProjectRosaura/settings/your-profile';
-    } else {
-        $redirectUrl = '/ProjectRosaura/';
-    }
-}
-
-// 2. Validar rutas protegidas (auth)
-if (!empty($routeData['auth']) && !$isLoggedIn) {
-    if (strpos($currentView, 'admin/') === 0) {
-        $currentView = 'system/message.php';
-        $systemMessageType = '404';
-    } else {
-        $currentView = 'settings/guest.php';
-        $redirectUrl = '/ProjectRosaura/settings/guest';
-    }
-}
-
-// 3. Validar rutas por roles permitidos (roles)
-if (!empty($routeData['roles']) && $isLoggedIn) {
-    if (!in_array($userRole, $routeData['roles'])) {
-        $currentView = 'system/message.php';
-        $systemMessageType = '404';
-    }
-}
-
-// 4. Validar rutas que requieren 2FA (requires_2fa)
-if (!empty($routeData['requires_2fa']) && $isLoggedIn && $currentView !== 'system/message.php') {
-    if (empty($_SESSION['user_2fa'])) {
-        $currentView = 'system/message.php';
-        $systemMessageType = 'require_2fa';
-    }
-}
-
-// Interceptar el 404 del Router nativo
-if ($currentView === 'system/404.php') {
+// ====================================================================
+// --- 0. INTERCEPCIÓN PRINCIPAL: MODO MANTENIMIENTO ---
+// ====================================================================
+if ($isMaintenanceActive && !$isPrivileged) {
+    
+    // Anulamos cualquier vista solicitada y forzamos el mensaje del sistema
     $currentView = 'system/message.php';
-    $systemMessageType = '404';
-}
+    $systemMessageType = 'maintenance';
+    
+    // Limpiamos cualquier redirección para evitar bucles
+    $redirectUrl = null; 
 
-// 5. Alias y Redirecciones internas
-if ($currentView !== 'system/message.php' && !$redirectUrl) {
-    if ($requestUriPath === '/ProjectRosaura/admin' || $requestUriPath === '/ProjectRosaura/admin/') {
-        $currentView = 'admin/dashboard.php';
-        $redirectUrl = '/ProjectRosaura/admin/dashboard';
-    } elseif ($currentView === 'settings/index.php') {
-        $currentView = $isLoggedIn ? 'settings/your-profile.php' : 'settings/guest.php';
-        $redirectUrl = $isLoggedIn ? '/ProjectRosaura/settings/your-profile' : '/ProjectRosaura/settings/guest';
+} else {
+    // ====================================================================
+    // --- LÓGICA DE RUTEO NORMAL (Si no hay mantenimiento o si es Admin) ---
+    // ====================================================================
+    
+    // Validar y configurar las vistas de mensajes especiales del sistema
+    if ($requestUriPath === '/ProjectRosaura/account-suspended' || $requestUriPath === '/ProjectRosaura/account-suspended/') {
+        $systemMessageType = 'suspended';
+    } elseif ($requestUriPath === '/ProjectRosaura/account-deleted' || $requestUriPath === '/ProjectRosaura/account-deleted/') {
+        $systemMessageType = 'deleted';
+    }
+
+    // 1. Validar rutas de "Solo Invitados" (guest_only)
+    if (!empty($routeData['guest_only']) && $isLoggedIn) {
+        if ($currentView === 'settings/guest.php') {
+            $currentView = 'settings/your-profile.php';
+            $redirectUrl = '/ProjectRosaura/settings/your-profile';
+        } else {
+            $redirectUrl = '/ProjectRosaura/';
+        }
+    }
+
+    // 2. Validar rutas protegidas (auth)
+    if (!empty($routeData['auth']) && !$isLoggedIn) {
+        if (strpos($currentView, 'admin/') === 0) {
+            $currentView = 'system/message.php';
+            $systemMessageType = '404';
+        } else {
+            $currentView = 'settings/guest.php';
+            $redirectUrl = '/ProjectRosaura/settings/guest';
+        }
+    }
+
+    // 3. Validar rutas por roles permitidos (roles)
+    if (!empty($routeData['roles']) && $isLoggedIn) {
+        if (!in_array($userRole, $routeData['roles'])) {
+            $currentView = 'system/message.php';
+            $systemMessageType = '404';
+        }
+    }
+
+    // 4. Validar rutas que requieren 2FA (requires_2fa)
+    if (!empty($routeData['requires_2fa']) && $isLoggedIn && $currentView !== 'system/message.php') {
+        if (empty($_SESSION['user_2fa'])) {
+            $currentView = 'system/message.php';
+            $systemMessageType = 'require_2fa';
+        }
+    }
+
+    // Interceptar el 404 del Router nativo
+    if ($currentView === 'system/404.php') {
+        $currentView = 'system/message.php';
+        $systemMessageType = '404';
+    }
+
+    // 5. Alias y Redirecciones internas
+    if ($currentView !== 'system/message.php' && !$redirectUrl) {
+        if ($requestUriPath === '/ProjectRosaura/admin' || $requestUriPath === '/ProjectRosaura/admin/') {
+            $currentView = 'admin/dashboard.php';
+            $redirectUrl = '/ProjectRosaura/admin/dashboard';
+        } elseif ($currentView === 'settings/index.php') {
+            $currentView = $isLoggedIn ? 'settings/your-profile.php' : 'settings/guest.php';
+            $redirectUrl = $isLoggedIn ? '/ProjectRosaura/settings/your-profile' : '/ProjectRosaura/settings/guest';
+        }
     }
 }
 
