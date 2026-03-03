@@ -125,17 +125,31 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                     <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="adminModuleDeletedAdminReason">
                                         <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding">
                                             <div class="pill-container"><div class="drag-handle"></div></div>
+                                            <div class="component-menu-header">
+                                                <div class="component-search component-search--full component-search--h36">
+                                                    <div class="component-search-icon">
+                                                        <span class="material-symbols-rounded">search</span>
+                                                    </div>
+                                                    <div class="component-search-input">
+                                                        <input type="text" class="search-dropdown-input" placeholder="Buscar razón...">
+                                                    </div>
+                                                </div>
+                                            </div>
                                             <div class="component-menu-list component-menu-list--scrollable">
                                                 <div class="component-menu-link" data-action="adminSetDropdown" data-key="deletedReasonAdmin" data-value="Spam">
+                                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">delete_sweep</span></div>
                                                     <div class="component-menu-link-text"><span><?php echo __('reason_spam'); ?></span></div>
                                                 </div>
                                                 <div class="component-menu-link" data-action="adminSetDropdown" data-key="deletedReasonAdmin" data-value="Fraude o estafa">
+                                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">warning</span></div>
                                                     <div class="component-menu-link-text"><span><?php echo __('reason_fraud'); ?></span></div>
                                                 </div>
                                                 <div class="component-menu-link" data-action="adminSetDropdown" data-key="deletedReasonAdmin" data-value="Violación de políticas">
+                                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">policy</span></div>
                                                     <div class="component-menu-link-text"><span><?php echo __('reason_policy'); ?></span></div>
                                                 </div>
                                                 <div class="component-menu-link" data-action="adminSetDropdown" data-key="deletedReasonAdmin" data-value="Otro">
+                                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">more_horiz</span></div>
                                                     <div class="component-menu-link-text"><span><?php echo __('reason_other'); ?></span></div>
                                                 </div>
                                             </div>
@@ -230,48 +244,69 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                     <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="adminModuleSuspensionReason">
                                         <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding">
                                             <div class="pill-container"><div class="drag-handle"></div></div>
+                                            <div class="component-menu-header">
+                                                <div class="component-search component-search--full component-search--h36">
+                                                    <div class="component-search-icon">
+                                                        <span class="material-symbols-rounded">search</span>
+                                                    </div>
+                                                    <div class="component-search-input">
+                                                        <input type="text" class="search-dropdown-input" placeholder="Buscar razón...">
+                                                    </div>
+                                                </div>
+                                            </div>
                                             <div class="component-menu-list component-menu-list--scrollable">
                                                 <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionReason" data-value="Incumplimiento de los Términos y Condiciones">
+                                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">gavel</span></div>
                                                     <div class="component-menu-link-text"><span>Incumplimiento de los Términos y Condiciones</span></div>
                                                     <div><span class="component-badge component-badge--sm">7 días</span></div>
                                                 </div>
                                                 <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionReason" data-value="Información falsa o suplantación de identidad">
+                                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">account_circle_off</span></div>
                                                     <div class="component-menu-link-text"><span>Información falsa o suplantación de identidad</span></div>
                                                     <div><span class="component-badge component-badge--sm">30 días</span></div>
                                                 </div>
                                                 <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionReason" data-value="Actividades ilegales">
+                                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">local_police</span></div>
                                                     <div class="component-menu-link-text"><span>Actividades ilegales</span></div>
                                                     <div><span class="component-badge component-badge--sm">30 días</span></div>
                                                 </div>
                                                 <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionReason" data-value="Uso indebido o fraudulento del servicio">
+                                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">warning</span></div>
                                                     <div class="component-menu-link-text"><span>Uso indebido o fraudulento del servicio</span></div>
                                                     <div><span class="component-badge component-badge--sm">14 días</span></div>
                                                 </div>
                                                 <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionReason" data-value="Conducta abusiva o inapropiada">
+                                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">thumb_down</span></div>
                                                     <div class="component-menu-link-text"><span>Conducta abusiva o inapropiada</span></div>
                                                     <div><span class="component-badge component-badge--sm">3 días</span></div>
                                                 </div>
                                                 <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionReason" data-value="Publicación de contenido prohibido">
+                                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">block</span></div>
                                                     <div class="component-menu-link-text"><span>Publicación de contenido prohibido</span></div>
                                                     <div><span class="component-badge component-badge--sm">7 días</span></div>
                                                 </div>
                                                 <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionReason" data-value="Violación de propiedad intelectual">
+                                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">copyright</span></div>
                                                     <div class="component-menu-link-text"><span>Violación de propiedad intelectual</span></div>
                                                     <div><span class="component-badge component-badge--sm">14 días</span></div>
                                                 </div>
                                                 <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionReason" data-value="Envío de spam o uso de automatización no autorizada">
+                                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">smart_toy</span></div>
                                                     <div class="component-menu-link-text"><span>Envío de spam o uso de automatización no autorizada</span></div>
                                                     <div><span class="component-badge component-badge--sm">7 días</span></div>
                                                 </div>
                                                 <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionReason" data-value="Intentos de vulnerar la seguridad de la plataforma">
+                                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">security</span></div>
                                                     <div class="component-menu-link-text"><span>Intentos de vulnerar la seguridad de la plataforma</span></div>
                                                     <div><span class="component-badge component-badge--sm">30 días</span></div>
                                                 </div>
                                                 <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionReason" data-value="Uso de la cuenta para fines comerciales no autorizados">
+                                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">storefront</span></div>
                                                     <div class="component-menu-link-text"><span>Uso de la cuenta para fines comerciales no autorizados</span></div>
                                                     <div><span class="component-badge component-badge--sm">14 días</span></div>
                                                 </div>
                                                 <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionReason" data-value="Otro">
+                                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">more_horiz</span></div>
                                                     <div class="component-menu-link-text"><span>Otro</span></div>
                                                 </div>
                                             </div>
@@ -353,21 +388,27 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                             <div class="pill-container"><div class="drag-handle"></div></div>
                                             <div class="component-menu-list component-menu-list--scrollable">
                                                 <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionDuration" data-value="1">
+                                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">timer</span></div>
                                                     <div class="component-menu-link-text"><span>1 día</span></div>
                                                 </div>
                                                 <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionDuration" data-value="3">
+                                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">timer</span></div>
                                                     <div class="component-menu-link-text"><span>3 días</span></div>
                                                 </div>
                                                 <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionDuration" data-value="7">
+                                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">timer</span></div>
                                                     <div class="component-menu-link-text"><span>7 días</span></div>
                                                 </div>
                                                 <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionDuration" data-value="14">
+                                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">timer</span></div>
                                                     <div class="component-menu-link-text"><span>14 días</span></div>
                                                 </div>
                                                 <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionDuration" data-value="30">
+                                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">timer</span></div>
                                                     <div class="component-menu-link-text"><span>30 días</span></div>
                                                 </div>
                                                 <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionDuration" data-value="custom">
+                                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">edit_calendar</span></div>
                                                     <div class="component-menu-link-text"><span><?php echo __('suspension_custom_time'); ?></span></div>
                                                 </div>
                                             </div>

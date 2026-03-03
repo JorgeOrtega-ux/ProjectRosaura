@@ -166,6 +166,23 @@ export class AdminStatusEditController {
         document.addEventListener('input', (e) => {
             if (!window.location.pathname.includes('/admin/edit-status')) return;
             
+            if (e.target && e.target.classList.contains('search-dropdown-input')) {
+                const query = e.target.value.toLowerCase().trim();
+                const list = e.target.closest('.component-menu').querySelector('.component-menu-list');
+                if (list) {
+                    const items = list.querySelectorAll('.component-menu-link');
+                    items.forEach(item => {
+                        const text = item.textContent.toLowerCase();
+                        if (text.includes(query)) {
+                            item.style.display = '';
+                        } else {
+                            item.style.display = 'none';
+                        }
+                    });
+                }
+                return;
+            }
+
             const ref = e.target.getAttribute('data-ref');
             if (!ref) return;
 
@@ -266,7 +283,6 @@ export class AdminStatusEditController {
     async loadUserData() {
         const form = document.querySelector('[data-ref="admin-status-form"]');
         
-        // 1. Inyectar Loader Dinámico utilizando clases BEM
         if (form) {
             let loader = document.createElement('div');
             loader.id = 'dynamic-admin-status-loader';
@@ -280,7 +296,6 @@ export class AdminStatusEditController {
 
         const res = await this.api.post(ApiRoutes.Admin.GetUser, { target_user_id: this.targetUserId });
         
-        // 2. Destruir Loader Dinámico
         const existingLoader = document.getElementById('dynamic-admin-status-loader');
         if (existingLoader) existingLoader.remove();
 

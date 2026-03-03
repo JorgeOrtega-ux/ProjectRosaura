@@ -253,9 +253,11 @@ export class AdminLogsController {
             if (!container) return;
 
             let visibleCount = 0;
+            let lastVisibleItem = null;
             const items = container.querySelectorAll('.log-card-item');
             
             items.forEach(item => {
+                item.classList.remove('last-visible-row');
                 const itemCat = item.getAttribute('data-category');
                 
                 const textContent = Array.from(item.querySelectorAll('.search-target'))
@@ -268,10 +270,15 @@ export class AdminLogsController {
                 if (matchesSearch && matchesCat) {
                     item.classList.remove('disabled');
                     visibleCount++;
+                    lastVisibleItem = item;
                 } else {
                     item.classList.add('disabled');
                 }
             });
+
+            if (lastVisibleItem) {
+                lastVisibleItem.classList.add('last-visible-row');
+            }
 
             const emptyElement = document.querySelector(`[data-ref="${emptyRef}"]`);
             if (emptyElement) {

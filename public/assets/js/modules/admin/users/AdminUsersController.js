@@ -279,9 +279,11 @@ export class AdminUsersController {
             if (!container) return;
 
             let visibleCount = 0;
+            let lastVisibleItem = null;
             const items = container.querySelectorAll('.user-card-item');
             
             items.forEach(item => {
+                item.classList.remove('last-visible-row');
                 const itemRole = item.getAttribute('data-role');
                 const itemStatus = item.getAttribute('data-status');
                 
@@ -296,10 +298,15 @@ export class AdminUsersController {
                 if (matchesSearch && matchesRole && matchesStatus) {
                     item.classList.remove('disabled');
                     visibleCount++;
+                    lastVisibleItem = item;
                 } else {
                     item.classList.add('disabled');
                 }
             });
+
+            if (lastVisibleItem) {
+                lastVisibleItem.classList.add('last-visible-row');
+            }
 
             const emptyElement = document.querySelector(`[data-ref="${emptyRef}"]`);
             if (emptyElement) {

@@ -280,9 +280,11 @@ export class AdminBackupsController {
             if (!container) return;
 
             let visibleCount = 0;
+            let lastVisibleItem = null;
             const items = container.querySelectorAll('.backup-card-item');
             
             items.forEach(item => {
+                item.classList.remove('last-visible-row');
                 const itemType = item.getAttribute('data-type');
                 const itemStatus = item.getAttribute('data-status');
                 
@@ -297,10 +299,15 @@ export class AdminBackupsController {
                 if (matchesSearch && matchesType && matchesStatus) {
                     item.classList.remove('disabled');
                     visibleCount++;
+                    lastVisibleItem = item;
                 } else {
                     item.classList.add('disabled');
                 }
             });
+
+            if (lastVisibleItem) {
+                lastVisibleItem.classList.add('last-visible-row');
+            }
 
             const emptyElement = document.querySelector(`[data-ref="${emptyRef}"]`);
             if (emptyElement) {
