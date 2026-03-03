@@ -737,13 +737,22 @@ export class ProfileController {
         const isConfirmed = await window.dialogSystem.show('confirmRevokeAllDevices');
         if (!isConfirmed.confirmed) return;
 
+        const actionType = isConfirmed.action;
+
         this.setButtonLoading(btn);
-        const res = await this.api.post(ApiRoutes.Settings.RevokeAllDevices);
+        const res = await this.api.post(ApiRoutes.Settings.RevokeAllDevices, { type: actionType });
         this.restoreButton(btn);
 
         if (res.success) {
             this.showMessage(res.message, 'success');
-            this.initDevicesView(); 
+            if (actionType === 'revoke_all') {
+                setTimeout(() => {
+                    if (window.spaRouter) window.spaRouter.navigate('/ProjectRosaura/login');
+                    else window.location.href = '/ProjectRosaura/login';
+                }, 1000);
+            } else {
+                this.initDevicesView(); 
+            }
         } else {
             this.showMessage(res.message, 'error');
         }

@@ -52,12 +52,13 @@ export const DialogTemplates = {
         build: () => `
             <div class="pill-container"><div class="drag-handle"></div></div>
             <div class="component-dialog-header">
-                <h2 class="component-dialog-title">Cerrar todas las sesiones</h2>
-                <p class="component-dialog-desc">¿Estás seguro de que deseas cerrar sesión en todos los demás dispositivos? Tendrás que volver a iniciar sesión en ellos.</p>
+                <h2 class="component-dialog-title">Cerrar sesiones</h2>
+                <p class="component-dialog-desc">Elige qué sesiones deseas cerrar. Tendrás que volver a iniciar sesión en los dispositivos cerrados.</p>
             </div>
-            <div class="component-dialog-actions">
-                <button class="component-button component-button--h45 hide-on-desktop" data-dialog-action="cancel">Cancelar</button>
-                <button class="component-button component-button--h45 component-button--danger component-button--full" data-dialog-action="confirm">Cerrar todas</button>
+            <div class="component-dialog-actions" style="flex-direction: column; gap: 8px;">
+                <button class="component-button component-button--h45 component-button--danger component-button--full" data-dialog-action="revoke_all">Cerrar TODAS (incluso esta)</button>
+                <button class="component-button component-button--h45 component-button--dark component-button--full" data-dialog-action="revoke_other">Cerrar todas EXCEPTO esta</button>
+                <button class="component-button component-button--h45 component-button--full hide-on-desktop" data-dialog-action="cancel">Cancelar</button>
             </div>
         `
     }

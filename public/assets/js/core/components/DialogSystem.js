@@ -54,7 +54,7 @@ export class DialogSystem {
             const closeDialog = (result) => {
                 let formData = {};
                 
-                if (result === true) {
+                if (result !== false) {
                     const inputs = box.querySelectorAll('input');
                     inputs.forEach(inp => {
                         if (inp.id) formData[inp.id] = inp.value;
@@ -72,17 +72,25 @@ export class DialogSystem {
                         container.remove();
                     }
                     
-                    resolve({ confirmed: result === true, data: formData });
+                    resolve({ confirmed: result !== false, action: result, data: formData });
                 }, 300); 
             };
 
             this.activeCloseFn = closeDialog;
 
-            const btnConfirm = box.querySelector('[data-dialog-action="confirm"]');
-            const btnCancel = box.querySelector('[data-dialog-action="cancel"]');
-            
-            if(btnConfirm) btnConfirm.addEventListener('click', () => closeDialog(true));
-            if(btnCancel) btnCancel.addEventListener('click', () => closeDialog(false));
+            const actionBtns = box.querySelectorAll('[data-dialog-action]');
+            actionBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const action = btn.getAttribute('data-dialog-action');
+                    if (action === 'cancel') {
+                        closeDialog(false);
+                    } else if (action === 'confirm') {
+                        closeDialog(true);
+                    } else {
+                        closeDialog(action);
+                    }
+                });
+            });
             
             overlay.addEventListener('click', (e) => {
                 // Cerramos si clickean el fondo (overlay) o el contenedor de filas (wrapper)

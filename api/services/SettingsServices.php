@@ -531,17 +531,38 @@ class SettingsServices
         return ['success' => false, 'message' => 'Error.'];
     }
 
-    public function revokeAllDevices()
+    public function revokeAllDevices($data = [])
     {
         if (!$this->sessionManager->has('user_id')) return ['success' => false, 'message' => 'Sesión no válida.'];
 
         $userId = $this->sessionManager->get('user_id');
         $currentSelector = isset($_COOKIE['remember_token']) ? explode(':', $_COOKIE['remember_token'])[0] : '';
+        
+        $type = $data['type'] ?? 'revoke_other';
 
-        if ($this->tokenRepository->revokeOtherDevices($userId, $currentSelector)) {
-            Logger::security("Todas las demás sesiones de dispositivos fueron revocadas", 'info', ['user_id' => $userId, 'ip' => Utils::getIpAddress()]);
-            return ['success' => true, 'message' => 'Todas cerradas.'];
+        if ($type === 'revoke_all') {
+            if ($this->tokenRepository->deleteAllByUserId($userId)) {
+                Logger::security("Todas las sesiones de dispositivos fueron revocadas (incluyendo la actual)", 'info', ['user_id' => $userId, 'ip' => Utils::getIpAddress()]);
+                $this->sessionManager->destroy();
+                if (isset($_COOKIE['remember_token'])) {
+                    setcookie('remember_token', '', [
+                        'expires' => time() - 3600, 
+                        'path' => '/ProjectRosaura/', 
+                        'secure' => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on', 
+                        'httponly' => true, 
+                        'samesite' => 'Strict'
+                    ]);
+                    unset($_COOKIE['remember_token']);
+                }
+                return ['success' => true, 'message' => 'Todas las sesiones cerradas.'];
+            }
+        } else {
+            if ($this->tokenRepository->revokeOtherDevices($userId, $currentSelector)) {
+                Logger::security("Todas las demás sesiones de dispositivos fueron revocadas", 'info', ['user_id' => $userId, 'ip' => Utils::getIpAddress()]);
+                return ['success' => true, 'message' => 'Todas cerradas excepto esta.'];
+            }
         }
+        
         return ['success' => false, 'message' => 'Error.'];
     }
 
