@@ -703,10 +703,6 @@ textarea.component-input-field::placeholder {
     gap: 16px;
 }
 
-.component-card--grouped > .component-group-item:not(:last-child) {
-    border-bottom: 1px solid var(--border-color);
-}
-
 .component-group-item--wrap {
     flex-wrap: wrap;
 }
@@ -1075,33 +1071,6 @@ input:checked + .component-toggle-slider:before {
 .component-accordion {
     overflow: hidden;
 }
-
-
-
-
-
-
-
-/* Evitar el borde doble/grueso sobreescribiendo el borde automático del grupo cuando está contraído */
-.component-card--grouped > .component-group-item.component-accordion-header:not(:last-child) {
-    border-bottom-color: transparent;
-}
-
-/* Mostrar el separador únicamente cuando el acordeón está activo (expandido) */
-.component-accordion.active .component-accordion-header,
-.component-card--grouped.component-accordion.active > .component-group-item.component-accordion-header:not(:last-child) {
-    border-bottom-color: var(--border-lighter);
-}
-
-
-
-
-
-
-
-
-
-
 
 .component-accordion-header {
     cursor: pointer;

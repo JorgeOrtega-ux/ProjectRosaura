@@ -42,6 +42,8 @@ if (isset($_SESSION['user_id'])) {
                 </div>
             </div>
 
+            <hr class="component-divider">
+
             <div class="component-group-item component-group-item--wrap">
                 <div class="component-card__content">
                     <div class="component-card__icon-container component-card__icon-container--bordered">

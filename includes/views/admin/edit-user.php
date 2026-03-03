@@ -42,6 +42,8 @@ $maxAvatarSize = $serverConfig['max_avatar_size_mb'] ?? 2;
                 </div>
             </div>
 
+            <hr class="component-divider">
+
             <div class="component-group-item component-group-item--stateful">
                 
                 <div class="active component-state-box" data-state="admin-username-view">
@@ -74,6 +76,8 @@ $maxAvatarSize = $serverConfig['max_avatar_size_mb'] ?? 2;
                 </div>
 
             </div>
+
+            <hr class="component-divider">
 
             <div class="component-group-item component-group-item--stateful">
                 

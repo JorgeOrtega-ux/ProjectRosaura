@@ -46,34 +46,25 @@ function render_restoring_view() {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Restaurando Sistema - Project Rosaura</title>
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded" />
+        <link rel="stylesheet" type="text/css" href="/ProjectRosaura/public/assets/css/root.css">
         <link rel="stylesheet" type="text/css" href="/ProjectRosaura/public/assets/css/styles.css">
         <link rel="stylesheet" type="text/css" href="/ProjectRosaura/public/assets/css/components/components.css">
     </head>
     <body>
-        <div class="page-wrapper">
-            <div class="main-content">
-                <div class="general-content">
-                    <div class="general-content-top">
-                        <div class="header" style="height: 48px; padding: 0 12px; display: flex; align-items: center; border-bottom: 1px solid #00000020;">
-                            <span style="font-size: 18px; font-weight: bold; color: #111;">Project Rosaura</span>
-                        </div>
-                    </div>
-                    <div class="general-content-bottom" style="background-color: #fcfcfc;">
-                        <div class="general-content-scrolleable" style="display: flex; justify-content: center; align-items: center; padding: 24px; width: 100%;">
-                            <div class="view-content" style="padding: 40px 24px; text-align: center; max-width: 500px; background: #fff; border-radius: 12px; border: 1px solid #00000020; box-shadow: 0 10px 25px rgba(0,0,0,0.05);">
-                                <div class="component-card__icon-container component-card__icon-container--bordered" style="width: 64px; height: 64px; margin: 0 auto 16px auto;">
-                                    <span class="material-symbols-rounded spin-icon" style="font-size: 32px; color: #1a73e8; animation: spin 2s linear infinite;">autorenew</span>
-                                </div>
-                                <h1 style="font-size: 24px; font-weight: 700; color: #111111; margin-bottom: 8px;">Restaurando Sistema</h1>
-                                <p style="color: #666; font-size: 15px; margin-bottom: 24px; line-height: 1.5;">Estamos aplicando una copia de seguridad y reconstruyendo la base de datos. Para evitar corrupción de datos, el acceso al sistema se ha bloqueado temporalmente. Vuelve a intentar en unos instantes.</p>
-                                <button class="component-button component-button--dark component-button--h45" onclick="window.location.reload();" style="text-decoration: none;">Actualizar página</button>
-                            </div>
-                        </div>
+        <div class="view-content">
+            <div class="component-layout-centered">
+                <div class="component-wrapper">
+                    <div class="component-header-card">
+                        <div class="component-spinner component-spinner--centered"></div>
+                        <br>
+                        <h1 class="component-page-title">Restaurando Sistema</h1>
+                        <p class="component-page-description">Estamos aplicando una copia de seguridad y reconstruyendo la base de datos. Para evitar corrupción de datos, el acceso al sistema se ha bloqueado temporalmente. Vuelve a intentar en unos instantes.</p>
+                        <br>
+                        <button class="component-button component-button--dark component-button--h45" onclick="window.location.reload();">Actualizar página</button>
                     </div>
                 </div>
             </div>
         </div>
-        <style>@keyframes spin { 100% { transform: rotate(360deg); } }</style>
     </body>
     </html>';
     exit;
@@ -118,37 +109,21 @@ function render_fatal_error_view() {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Error 500 - Project Rosaura</title>
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded" />
+        <link rel="stylesheet" type="text/css" href="/ProjectRosaura/public/assets/css/root.css">
         <link rel="stylesheet" type="text/css" href="/ProjectRosaura/public/assets/css/styles.css">
         <link rel="stylesheet" type="text/css" href="/ProjectRosaura/public/assets/css/components/components.css">
     </head>
     <body>
-        <div class="page-wrapper">
-            <div class="main-content">
-                <div class="general-content">
-                    
-                    <div class="general-content-top">
-                        <div class="header" style="height: 48px; padding: 0 12px; display: flex; align-items: center; border-bottom: 1px solid #00000020;">
-                            <span style="font-size: 18px; font-weight: bold; color: #111;">Project Rosaura</span>
-                        </div>
+        <div class="view-content">
+            <div class="component-message-layout">
+                <div class="component-message-box">
+                    <div class="component-message-icon-wrapper">
+                        <span class="material-symbols-rounded component-message-icon">gpp_bad</span>
                     </div>
-
-                    <div class="general-content-bottom" style="background-color: #fcfcfc;">
-                        <div class="component-module component-module--sidebar" style="width: 265px; border-right: 1px solid #00000020; display: none;"></div>
-
-                        <div class="general-content-scrolleable" style="display: flex; justify-content: center; align-items: center; padding: 24px; width: 100%;">
-                            
-                            <div class="view-content" style="padding: 40px 24px; text-align: center; max-width: 500px; background: #fff; border-radius: 12px; border: 1px solid #00000020; box-shadow: 0 10px 25px rgba(0,0,0,0.05);">
-                                <div class="component-card__icon-container component-card__icon-container--bordered" style="width: 64px; height: 64px; margin: 0 auto 16px auto;">
-                                    <span class="material-symbols-rounded" style="font-size: 32px; color: #d32f2f;">gpp_bad</span>
-                                </div>
-                                <h1 style="font-size: 24px; font-weight: 700; color: #111111; margin-bottom: 8px;">Error Interno del Servidor</h1>
-                                <p style="color: #666; font-size: 15px; margin-bottom: 24px; line-height: 1.5;">Lo sentimos, no pudimos cargar esta sección. Ha ocurrido un problema técnico en el servidor y nuestro equipo ha sido notificado.</p>
-                                <a href="/ProjectRosaura/" class="component-button component-button--dark component-button--h45" style="text-decoration: none;">Volver a recargar</a>
-                            </div>
-
-                        </div>
-                    </div>
-
+                    <h1 class="component-message-title">Error Interno del Servidor</h1>
+                    <p class="component-message-desc">Lo sentimos, no pudimos cargar esta sección. Ha ocurrido un problema técnico en el servidor y nuestro equipo ha sido notificado.</p>
+                    <br>
+                    <a href="/ProjectRosaura/" class="component-button component-button--dark component-button--h45" style="text-decoration: none;">Volver a recargar</a>
                 </div>
             </div>
         </div>

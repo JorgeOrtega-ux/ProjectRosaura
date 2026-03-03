@@ -75,6 +75,8 @@ $currentLangText = $languages[$prefLang] ?? 'Español (Latinoamérica)';
                 </div>
             </div>
 
+            <hr class="component-divider">
+
             <div class="component-group-item component-group-item--stateful">
                 
                 <div class="active component-state-box" data-state="username-view">
@@ -107,6 +109,8 @@ $currentLangText = $languages[$prefLang] ?? 'Español (Latinoamérica)';
                 </div>
 
             </div>
+
+            <hr class="component-divider">
 
             <div class="component-group-item component-group-item--stateful">
                 
