@@ -28,20 +28,8 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                     </button>
                 </div>
             </div>
-
-            <hr class="component-divider">
-
-            <div class="component-group-item component-group-item--stacked">
-                <div class="component-card__content component-card__content--full component-card__content--start">
-                    <div class="component-card__text">
-                        <div id="devices-list">
-                            <div class="component-spinner component-spinner--centered"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
             
-        </div>
+            </div>
 
     </div>
 </div>

@@ -617,27 +617,39 @@ export class ProfileController {
     }
 
     async initDevicesView() {
-        const listContainer = document.getElementById('devices-list');
-        if (!listContainer) return;
+        const container = document.getElementById('devices-container');
+        if (!container) return;
 
-        listContainer.innerHTML = '<div class="component-spinner component-spinner--centered"></div>';
+        // Limpiar filas previas si existen (excepto el header que no tiene estas clases)
+        const existingRows = container.querySelectorAll('.device-item-row, .spinner-row, .empty-row');
+        existingRows.forEach(row => row.remove());
+
+        const spinnerRow = document.createElement('div');
+        spinnerRow.className = 'component-group-item spinner-row';
+        spinnerRow.innerHTML = '<div class="component-spinner component-spinner--centered"></div>';
+        container.appendChild(spinnerRow);
 
         const res = await this.api.post(ApiRoutes.Settings.GetDevices);
+        
+        spinnerRow.remove();
+
         if (res.success) {
-            this.renderDevices(res.devices);
+            this.renderDevices(res.devices, container);
         } else {
-            listContainer.innerHTML = `<p class="component-text--danger">${res.message}</p>`;
+            const errorRow = document.createElement('div');
+            errorRow.className = 'component-group-item empty-row';
+            errorRow.innerHTML = `<p class="component-text--danger">${res.message}</p>`;
+            container.appendChild(errorRow);
         }
     }
 
-    renderDevices(devices) {
-        const listContainer = document.getElementById('devices-list');
-        if (!listContainer) return;
-        listContainer.innerHTML = '';
-
+    renderDevices(devices, container) {
         if (devices.length === 0) {
             const emptyText = typeof window.__ === 'function' ? __('devices_empty') : 'No hay dispositivos activos.';
-            listContainer.innerHTML = `<p class="component-card__description">${emptyText}</p>`;
+            const emptyRow = document.createElement('div');
+            emptyRow.className = 'component-group-item empty-row';
+            emptyRow.innerHTML = `<p class="component-card__description">${emptyText}</p>`;
+            container.appendChild(emptyRow);
             return;
         }
 
@@ -645,13 +657,11 @@ export class ProfileController {
             const parsedUA = this.parseUserAgent(device.user_agent);
             
             const div = document.createElement('div');
-            div.className = 'component-group-item';
+            div.className = 'component-group-item device-item-row';
             
-            const revokeText = typeof window.__ === 'function' ? __('btn_revoke_device') : 'Cerrar sesión';
             const btnHtml = !device.is_current ? `
-                <button class="component-button component-button--danger" data-action="revokeDevice" data-id="${device.id}" title="${revokeText}">
-                    <span class="material-symbols-rounded">close</span>
-                    <span class="component-button__text">${revokeText}</span>
+                <button class="component-button component-button--danger component-button--h36" data-action="revokeDevice" data-id="${device.id}">
+                    Cerrar sesión
                 </button>
             ` : '';
 
@@ -659,9 +669,9 @@ export class ProfileController {
             const statusActiveText = typeof window.__ === 'function' ? __('device_active') : 'Activo';
             const unknownIpText = typeof window.__ === 'function' ? __('device_unknown_ip') : 'Desconocida';
 
-            const statusText = device.is_current ? 
-                `<p class="component-group-item__status component-group-item__status--success">${statusCurrentText}</p>` : 
-                `<p class="component-group-item__status">${statusActiveText}</p>`;
+            const statusText = device.is_current ? statusCurrentText : statusActiveText;
+            const statusClass = device.is_current ? 'component-group-item__status--success' : '';
+            const statusIcon = device.is_current ? 'check_circle' : 'bolt';
 
             div.innerHTML = `
                 <div class="component-group-item__content">
@@ -670,13 +680,21 @@ export class ProfileController {
                     </div>
                     <div class="component-group-item__text">
                         <h3 class="component-group-item__title">${parsedUA.os} - ${parsedUA.browser}</h3>
-                        <p class="component-group-item__desc">IP: ${device.ip_address || unknownIpText}</p>
-                        ${statusText}
+                        <div class="component-badge-list" style="margin-top: 6px;">
+                            <div class="component-badge component-badge--sm">
+                                <span class="material-symbols-rounded">wifi</span>
+                                <span>IP: ${device.ip_address || unknownIpText}</span>
+                            </div>
+                            <div class="component-badge component-badge--sm">
+                                <span class="material-symbols-rounded">${statusIcon}</span>
+                                <span class="${statusClass}">${statusText}</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="component-group-item__actions">${btnHtml}</div>
             `;
-            listContainer.appendChild(div);
+            container.appendChild(div);
         });
     }
 
