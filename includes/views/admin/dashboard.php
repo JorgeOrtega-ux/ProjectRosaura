@@ -11,7 +11,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                     <div class="component-toolbar-left">
                         </div>
                     <div class="component-toolbar-right">
-                        <button class="component-button component-button--dark component-button--icon component-button--h40" data-nav="/ProjectRosaura/admin/logs" title="<?php echo __('btn_view_logs'); ?>">
+                        <button class="component-button component-button--dark component-button--icon component-button--h40" data-nav="<?php echo APP_URL; ?>/admin/logs" title="<?php echo __('btn_view_logs'); ?>">
                             <span class="material-symbols-rounded">receipt_long</span>
                         </button>
                     </div>

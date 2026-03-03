@@ -3,19 +3,22 @@
 
 session_start();
 
+// Definimos la constante de la raíz del proyecto (2 niveles arriba: incluye/core -> incluye -> raíz)
+define('ROOT_PATH', dirname(__DIR__, 2));
+
 // Cabeceras de seguridad
 header("X-Frame-Options: SAMEORIGIN");
 header("X-Content-Type-Options: nosniff");
 header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://api.qrserver.com; connect-src 'self' https://unpkg.com; frame-ancestors 'none';");
 
-require_once __DIR__ . '/../../vendor/autoload.php';
+require_once ROOT_PATH . '/vendor/autoload.php';
 
 // =========================================================================
 // --- 0. INTERCEPCIÓN DE RESTAURACIÓN DE EMERGENCIA (RESTORE LOCK) ---
 // =========================================================================
 
 // Cargamos variables de entorno mínimas para conectarnos a Redis temprano
-$envPath = __DIR__ . '/../../.env';
+$envPath = ROOT_PATH . '/.env';
 if (file_exists($envPath)) {
     $lines = file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     foreach ($lines as $line) {
@@ -29,6 +32,9 @@ if (file_exists($envPath)) {
         }
     }
 }
+
+// DEFINIMOS APP_URL globalmente. Quitamos la barra final para consistencia
+define('APP_URL', rtrim($_ENV['APP_URL'] ?? '', '/'));
 
 function render_restoring_view() {
     http_response_code(503); // Service Unavailable
@@ -46,9 +52,9 @@ function render_restoring_view() {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Restaurando Sistema - Project Rosaura</title>
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded" />
-        <link rel="stylesheet" type="text/css" href="/ProjectRosaura/public/assets/css/root.css">
-        <link rel="stylesheet" type="text/css" href="/ProjectRosaura/public/assets/css/styles.css">
-        <link rel="stylesheet" type="text/css" href="/ProjectRosaura/public/assets/css/components/components.css">
+        <link rel="stylesheet" type="text/css" href="' . APP_URL . '/public/assets/css/root.css">
+        <link rel="stylesheet" type="text/css" href="' . APP_URL . '/public/assets/css/styles.css">
+        <link rel="stylesheet" type="text/css" href="' . APP_URL . '/public/assets/css/components/components.css">
     </head>
     <body>
         <div class="view-content">
@@ -109,9 +115,9 @@ function render_fatal_error_view() {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Error 500 - Project Rosaura</title>
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded" />
-        <link rel="stylesheet" type="text/css" href="/ProjectRosaura/public/assets/css/root.css">
-        <link rel="stylesheet" type="text/css" href="/ProjectRosaura/public/assets/css/styles.css">
-        <link rel="stylesheet" type="text/css" href="/ProjectRosaura/public/assets/css/components/components.css">
+        <link rel="stylesheet" type="text/css" href="' . APP_URL . '/public/assets/css/root.css">
+        <link rel="stylesheet" type="text/css" href="' . APP_URL . '/public/assets/css/styles.css">
+        <link rel="stylesheet" type="text/css" href="' . APP_URL . '/public/assets/css/components/components.css">
     </head>
     <body>
         <div class="view-content">
@@ -123,7 +129,7 @@ function render_fatal_error_view() {
                     <h1 class="component-message-title">Error Interno del Servidor</h1>
                     <p class="component-message-desc">Lo sentimos, no pudimos cargar esta sección. Ha ocurrido un problema técnico en el servidor y nuestro equipo ha sido notificado.</p>
                     <br>
-                    <a href="/ProjectRosaura/" class="component-button component-button--dark component-button--h45">Volver a recargar</a>
+                    <a href="' . APP_URL . '/" class="component-button component-button--dark component-button--h45">Volver a recargar</a>
                 </div>
             </div>
         </div>
@@ -171,7 +177,7 @@ $userRepo = $container->get(UserRepositoryInterface::class);
 if (isset($_SESSION['user_id'])) {
     if (!$authService->isCurrentDeviceValid()) {
         $authService->logout();
-        header("Location: /ProjectRosaura/login");
+        header("Location: " . APP_URL . "/login");
         exit;
     } else {
         // --- HIDRATACIÓN EN TIEMPO REAL ---
@@ -179,7 +185,7 @@ if (isset($_SESSION['user_id'])) {
         
         if (!$liveUser || $liveUser['user_status'] === 'deleted') {
             $authService->logout();
-            header("Location: /ProjectRosaura/account-deleted");
+            header("Location: " . APP_URL . "/account-deleted");
             exit;
         }
         
@@ -188,7 +194,7 @@ if (isset($_SESSION['user_id'])) {
                 $userRepo->liftSuspension($liveUser['id']);
             } else {
                 $authService->logout();
-                header("Location: /ProjectRosaura/account-suspended");
+                header("Location: " . APP_URL . "/account-suspended");
                 exit;
             }
         }

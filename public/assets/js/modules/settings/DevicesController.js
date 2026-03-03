@@ -5,6 +5,7 @@ import { ApiRoutes } from '../../core/api/ApiRoutes.js';
 export class DevicesController {
     constructor() {
         this.api = new ApiService();
+        this.basePath = window.AppBasePath || '';
     }
 
     init() {
@@ -186,8 +187,8 @@ export class DevicesController {
             this.showMessage(res.message, 'success');
             if (actionType === 'revoke_all') {
                 setTimeout(() => {
-                    if (window.spaRouter) window.spaRouter.navigate('/ProjectRosaura/login');
-                    else window.location.href = '/ProjectRosaura/login';
+                    if (window.spaRouter) window.spaRouter.navigate(this.basePath + '/login');
+                    else window.location.href = this.basePath + '/login';
                 }, 1000);
             } else {
                 this.initDevicesView(); 

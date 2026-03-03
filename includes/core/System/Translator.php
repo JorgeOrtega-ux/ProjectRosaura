@@ -7,8 +7,8 @@ class Translator {
     private static $translations = null;
 
     public static function init($lang) {
-        // SE AGREGÓ UN ../ EXTRA A LA RUTA
-        $file = __DIR__ . '/../../../translations/' . $lang . '.json';
+        // Utilizamos la constante absoluta para no depender de la ubicación del archivo
+        $file = ROOT_PATH . '/translations/' . $lang . '.json';
         
         if (file_exists($file)) {
             $json = file_get_contents($file);

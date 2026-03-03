@@ -5,7 +5,7 @@ use App\Core\Routing\Loader;
 use App\Core\Routing\Router;
 
 // Configuración de Rutas y Navegación
-$routes = require __DIR__ . '/../config/routes.php';
+$routes = require ROOT_PATH . '/includes/config/routes.php';
 $loader = new Loader();
 $router = new Router($routes);
 
@@ -42,9 +42,9 @@ if ($isMaintenanceActive && !$isPrivileged) {
     // ====================================================================
     
     // Validar y configurar las vistas de mensajes especiales del sistema
-    if ($requestUriPath === '/ProjectRosaura/account-suspended' || $requestUriPath === '/ProjectRosaura/account-suspended/') {
+    if ($requestUriPath === APP_URL . '/account-suspended' || $requestUriPath === APP_URL . '/account-suspended/') {
         $systemMessageType = 'suspended';
-    } elseif ($requestUriPath === '/ProjectRosaura/account-deleted' || $requestUriPath === '/ProjectRosaura/account-deleted/') {
+    } elseif ($requestUriPath === APP_URL . '/account-deleted' || $requestUriPath === APP_URL . '/account-deleted/') {
         $systemMessageType = 'deleted';
     }
 
@@ -52,9 +52,9 @@ if ($isMaintenanceActive && !$isPrivileged) {
     if (!empty($routeData['guest_only']) && $isLoggedIn) {
         if ($currentView === 'settings/guest.php') {
             $currentView = 'settings/your-profile.php';
-            $redirectUrl = '/ProjectRosaura/settings/your-profile';
+            $redirectUrl = APP_URL . '/settings/your-profile';
         } else {
-            $redirectUrl = '/ProjectRosaura/';
+            $redirectUrl = APP_URL . '/';
         }
     }
 
@@ -65,7 +65,7 @@ if ($isMaintenanceActive && !$isPrivileged) {
             $systemMessageType = '404';
         } else {
             $currentView = 'settings/guest.php';
-            $redirectUrl = '/ProjectRosaura/settings/guest';
+            $redirectUrl = APP_URL . '/settings/guest';
         }
     }
 
@@ -93,19 +93,19 @@ if ($isMaintenanceActive && !$isPrivileged) {
 
     // 5. Alias y Redirecciones internas
     if ($currentView !== 'system/message.php' && !$redirectUrl) {
-        if ($requestUriPath === '/ProjectRosaura/admin' || $requestUriPath === '/ProjectRosaura/admin/') {
+        if ($requestUriPath === APP_URL . '/admin' || $requestUriPath === APP_URL . '/admin/') {
             $currentView = 'admin/dashboard.php';
-            $redirectUrl = '/ProjectRosaura/admin/dashboard';
+            $redirectUrl = APP_URL . '/admin/dashboard';
         } elseif ($currentView === 'settings/index.php') {
             $currentView = $isLoggedIn ? 'settings/your-profile.php' : 'settings/guest.php';
-            $redirectUrl = $isLoggedIn ? '/ProjectRosaura/settings/your-profile' : '/ProjectRosaura/settings/guest';
+            $redirectUrl = $isLoggedIn ? APP_URL . '/settings/your-profile' : APP_URL . '/settings/guest';
         }
     }
 }
 
 // Lógica de Redirección SPA
 $isSpaRequest = !empty($_SERVER['HTTP_X_SPA_REQUEST']);
-$isAuthRoute = (strpos($currentView, 'auth/') === 0) || in_array($requestUriPath, ['/ProjectRosaura/account-suspended', '/ProjectRosaura/account-suspended/', '/ProjectRosaura/account-deleted', '/ProjectRosaura/account-deleted/']);
+$isAuthRoute = (strpos($currentView, 'auth/') === 0) || in_array($requestUriPath, [APP_URL . '/account-suspended', APP_URL . '/account-suspended/', APP_URL . '/account-deleted', APP_URL . '/account-deleted/']);
 
 if ($redirectUrl) {
     if ($isSpaRequest) header("X-SPA-Update-URL: " . $redirectUrl);

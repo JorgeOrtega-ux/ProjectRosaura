@@ -3,7 +3,8 @@
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 $logFiles = [];
-$logBaseDir = __DIR__ . '/../../../logs/';
+// Utilizamos la constante absoluta
+$logBaseDir = ROOT_PATH . '/logs/';
 
 if (is_dir($logBaseDir)) {
     // Buscamos dentro de las carpetas de log conocidas

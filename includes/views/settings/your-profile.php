@@ -16,7 +16,9 @@ $userName = $_SESSION['user_name'] ?? 'Usuario';
 $userEmail = $_SESSION['user_email'] ?? 'usuario@ejemplo.com';
 $userRole = $_SESSION['user_role'] ?? 'user';
 $userPic = $_SESSION['user_pic'] ?? 'public/storage/profilePictures/default/default.png';
-$formattedAvatar = '/ProjectRosaura/' . ltrim($userPic, '/');
+
+// Generar URL completa dinámicamente con APP_URL
+$formattedAvatar = APP_URL . '/' . ltrim($userPic, '/');
 
 // Verificamos si la imagen actual pertenece al directorio default
 $isDefaultAvatar = strpos($userPic, '/default/') !== false;

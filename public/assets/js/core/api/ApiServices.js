@@ -1,8 +1,9 @@
-// public/assets/js/core/api-services.js
+// public/assets/js/core/api/ApiServices.js
 
 export class ApiService {
     constructor() {
-        this.baseUrl = '/ProjectRosaura/api/index.php'; 
+        // Usamos la variable inyectada en app.php
+        this.baseUrl = (window.AppBasePath || '') + '/api/index.php'; 
     }
 
     async post(route, data = {}) {
@@ -27,7 +28,7 @@ export class ApiService {
             if (!response.ok) {
                 // Interceptar explícitamente el 401 (Sesión Revocada)
                 if (response.status === 401) {
-                    window.location.href = '/ProjectRosaura/login';
+                    window.location.href = (window.AppBasePath || '') + '/login';
                     return { success: false, message: 'Sesión revocada.' };
                 }
 
@@ -63,7 +64,7 @@ export class ApiService {
             if (!response.ok) {
                 // Interceptar explícitamente el 401 (Sesión Revocada)
                 if (response.status === 401) {
-                    window.location.href = '/ProjectRosaura/login';
+                    window.location.href = (window.AppBasePath || '') + '/login';
                     return { success: false, message: 'Sesión revocada.' };
                 }
 

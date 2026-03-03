@@ -31,7 +31,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                     </div>
                 </div>
                 <div class="component-card__actions component-card__actions--end">
-                    <button class="component-button component-button--h36" data-nav="/ProjectRosaura/settings/2fa"><?php echo __('btn_cancel'); ?></button>
+                    <button class="component-button component-button--h36" data-nav="<?php echo APP_URL; ?>/settings/2fa"><?php echo __('btn_cancel'); ?></button>
                     <button class="component-button component-button--h36 component-button--dark" data-action="submitRegenerateRecoveryCodes"><?php echo __('btn_confirm'); ?></button>
                 </div>
             </div>
@@ -55,7 +55,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                 </div>
                 <div class="component-card__actions component-card__actions--end">
                     <button class="component-button component-button--h36" data-action="copyNewRecoveryCodes"><?php echo __('btn_copy_codes'); ?></button>
-                    <button class="component-button component-button--h36 component-button--dark" data-nav="/ProjectRosaura/settings/2fa"><?php echo __('btn_finish'); ?></button>
+                    <button class="component-button component-button--h36 component-button--dark" data-nav="<?php echo APP_URL; ?>/settings/2fa"><?php echo __('btn_finish'); ?></button>
                 </div>
             </div>
         </div>

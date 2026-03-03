@@ -7,6 +7,7 @@ export class AdminRoleEditController {
         this.api = new ApiService();
         this.targetUserId = null;
         this.pendingRole = null; 
+        this.basePath = window.AppBasePath || '';
         
         this.roleMap = {
             'founder': 'Fundador',
@@ -25,8 +26,8 @@ export class AdminRoleEditController {
             if (this.targetUserId) {
                 this.loadUserData();
             } else {
-                if (window.spaRouter) window.spaRouter.navigate('/ProjectRosaura/admin/manage-users');
-                else window.location.href = '/ProjectRosaura/admin/manage-users';
+                if (window.spaRouter) window.spaRouter.navigate(this.basePath + '/admin/manage-users');
+                else window.location.href = this.basePath + '/admin/manage-users';
             }
         }
     }
@@ -39,7 +40,7 @@ export class AdminRoleEditController {
                 if (this.targetUserId) {
                     this.loadUserData();
                 } else {
-                    if (window.spaRouter) window.spaRouter.navigate('/ProjectRosaura/admin/manage-users');
+                    if (window.spaRouter) window.spaRouter.navigate(this.basePath + '/admin/manage-users');
                 }
             }
         });
@@ -125,7 +126,7 @@ export class AdminRoleEditController {
             if (form) form.classList.remove('disabled');
         } else {
             this.showMessage(res.message, 'error');
-            if (window.spaRouter) window.spaRouter.navigate('/ProjectRosaura/admin/manage-users');
+            if (window.spaRouter) window.spaRouter.navigate(this.basePath + '/admin/manage-users');
         }
     }
 

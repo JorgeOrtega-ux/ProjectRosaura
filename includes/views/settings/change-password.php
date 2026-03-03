@@ -32,7 +32,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                     </div>
                 </div>
                 <div class="component-card__actions component-card__actions--end">
-                    <button class="component-button component-button--h36" data-nav="/ProjectRosaura/settings/security"><?php echo __('btn_cancel'); ?></button>
+                    <button class="component-button component-button--h36" data-nav="<?php echo APP_URL; ?>/settings/security"><?php echo __('btn_cancel'); ?></button>
                     <button class="component-button component-button--h36 component-button--dark" data-action="submitVerifyCurrentPassword"><?php echo __('btn_verify'); ?></button>
                 </div>
             </div>
@@ -66,7 +66,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                     </div>
                 </div>
                 <div class="component-card__actions component-card__actions--end">
-                    <button class="component-button component-button--h36" data-nav="/ProjectRosaura/settings/security"><?php echo __('btn_cancel'); ?></button>
+                    <button class="component-button component-button--h36" data-nav="<?php echo APP_URL; ?>/settings/security"><?php echo __('btn_cancel'); ?></button>
                     <button class="component-button component-button--h36 component-button--dark" data-action="submitUpdatePassword"><?php echo __('btn_save_password'); ?></button>
                 </div>
             </div>

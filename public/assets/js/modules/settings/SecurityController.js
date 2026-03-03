@@ -6,6 +6,7 @@ export class SecurityController {
     constructor() {
         this.api = new ApiService();
         this.config = window.AppServerConfig || {};
+        this.basePath = window.AppBasePath || '';
     }
 
     init() {
@@ -99,8 +100,8 @@ export class SecurityController {
         if (result.success) {
             this.showMessage(result.message, 'success');
             setTimeout(() => {
-                if (window.spaRouter) window.spaRouter.navigate('/ProjectRosaura/settings/security');
-                else window.location.href = '/ProjectRosaura/settings/security';
+                if (window.spaRouter) window.spaRouter.navigate(this.basePath + '/settings/security');
+                else window.location.href = this.basePath + '/settings/security';
             }, 1000);
         } else this.showMessage(result.message, 'error');
     }
@@ -118,7 +119,7 @@ export class SecurityController {
         const res = await this.api.post(ApiRoutes.Settings.DeleteAccount, { password: pass });
         
         if (res.success) {
-            window.location.href = '/ProjectRosaura/';
+            window.location.href = this.basePath + '/';
         } else {
             this.restoreButton(btn);
             this.showMessage(res.message, 'error');

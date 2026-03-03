@@ -38,7 +38,7 @@ if (isset($_SESSION['user_id'])) {
                     </div>
                 </div>
                 <div class="component-card__actions component-card__actions--end">
-                    <button type="button" class="component-button component-button--h36" data-nav="/ProjectRosaura/settings/change-password"><?php echo __('btn_change_password'); ?></button>
+                    <button type="button" class="component-button component-button--h36" data-nav="<?php echo APP_URL; ?>/settings/change-password"><?php echo __('btn_change_password'); ?></button>
                 </div>
             </div>
 
@@ -55,7 +55,7 @@ if (isset($_SESSION['user_id'])) {
                     </div>
                 </div>
                 <div class="component-card__actions component-card__actions--end">
-                    <button type="button" class="component-button component-button--h36 component-button--dark" data-nav="/ProjectRosaura/settings/2fa">
+                    <button type="button" class="component-button component-button--h36 component-button--dark" data-nav="<?php echo APP_URL; ?>/settings/2fa">
                         <?php echo $is2FAActive ? __('btn_manage') : __('btn_configure'); ?>
                     </button>
                 </div>
@@ -74,7 +74,7 @@ if (isset($_SESSION['user_id'])) {
                     </div>
                 </div>
                 <div class="component-card__actions component-card__actions--end">
-                    <button type="button" class="component-button component-button--h36" data-nav="/ProjectRosaura/settings/devices"><?php echo __('btn_manage_devices'); ?></button>
+                    <button type="button" class="component-button component-button--h36" data-nav="<?php echo APP_URL; ?>/settings/devices"><?php echo __('btn_manage_devices'); ?></button>
                 </div>
             </div>
         </div>
@@ -88,7 +88,7 @@ if (isset($_SESSION['user_id'])) {
                     </div>
                 </div>
                 <div class="component-card__actions component-card__actions--end">
-                    <button type="button" class="component-button component-button--h36 component-button--danger" data-nav="/ProjectRosaura/settings/delete-account"><?php echo __('btn_delete_account'); ?></button>
+                    <button type="button" class="component-button component-button--h36 component-button--danger" data-nav="<?php echo APP_URL; ?>/settings/delete-account"><?php echo __('btn_delete_account'); ?></button>
                 </div>
             </div>
         </div>

@@ -8,6 +8,7 @@ export class AdminUserEditController {
         this.targetUserId = null;
         this.selectedFile = null;
         this.isDefaultAvatar = false;
+        this.basePath = window.AppBasePath || '';
         this.config = window.AppServerConfig || {};
         
         this.langMap = {
@@ -39,8 +40,8 @@ export class AdminUserEditController {
             if (this.targetUserId) {
                 this.loadUserData();
             } else {
-                if (window.spaRouter) window.spaRouter.navigate('/ProjectRosaura/admin/manage-users');
-                else window.location.href = '/ProjectRosaura/admin/manage-users';
+                if (window.spaRouter) window.spaRouter.navigate(this.basePath + '/admin/manage-users');
+                else window.location.href = this.basePath + '/admin/manage-users';
             }
         }
     }
@@ -53,7 +54,7 @@ export class AdminUserEditController {
                 if (this.targetUserId) {
                     this.loadUserData();
                 } else {
-                    if (window.spaRouter) window.spaRouter.navigate('/ProjectRosaura/admin/manage-users');
+                    if (window.spaRouter) window.spaRouter.navigate(this.basePath + '/admin/manage-users');
                 }
             }
         });
@@ -137,7 +138,7 @@ export class AdminUserEditController {
             // Re-hidratar Avatar
             const imgEl = document.getElementById('admin-profile-avatar-img');
             const avatarContainer = document.getElementById('admin-profile-avatar-container');
-            const formattedAvatar = `/ProjectRosaura/${user.profile_picture.replace(/^\//, '')}`;
+            const formattedAvatar = `${this.basePath}/${user.profile_picture.replace(/^\//, '')}`;
             
             if (imgEl) {
                 imgEl.src = formattedAvatar;
@@ -196,7 +197,7 @@ export class AdminUserEditController {
 
         } else {
             this.showMessage(res.message, 'error');
-            if (window.spaRouter) window.spaRouter.navigate('/ProjectRosaura/admin/manage-users');
+            if (window.spaRouter) window.spaRouter.navigate(this.basePath + '/admin/manage-users');
         }
     }
 

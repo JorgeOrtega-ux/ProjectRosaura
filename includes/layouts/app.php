@@ -15,7 +15,7 @@ $topBarClass = ($isAuthRoute || $isMaintenanceRestricted) ? 'disabled' : '';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <base href="/ProjectRosaura/">
+    <base href="<?php echo APP_URL; ?>/">
     <meta name="csrf-token" content="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
     
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded" />
@@ -25,6 +25,9 @@ $topBarClass = ($isAuthRoute || $isMaintenanceRestricted) ? 'disabled' : '';
     <title>Project Rosaura</title>
     
     <script>
+        // Inyectar URL Base para JS (Para que SpaRouter.js y ApiServices.js la consuman)
+        window.AppBasePath = "<?php echo APP_URL; ?>";
+
         // Inyectar Preferencias de Usuario
         window.AppUserPrefs = <?php echo ($isLoggedIn && isset($_SESSION['user_prefs'])) ? json_encode($_SESSION['user_prefs']) : 'null'; ?>;
         

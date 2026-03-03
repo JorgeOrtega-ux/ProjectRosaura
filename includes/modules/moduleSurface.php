@@ -14,7 +14,7 @@ $isMainArea = !$isAdminArea && !$isSettingsArea;
     <div class="component-menu component-menu--w265 component-menu--h-full component-menu--no-padding <?php echo $isMainArea ? 'active' : 'disabled'; ?>" id="sidebar-menu-main">
         <div class="component-menu-top">
             <div class="component-menu-list">
-                <div class="component-menu-link nav-item" data-nav="/ProjectRosaura/">
+                <div class="component-menu-link nav-item" data-nav="<?php echo APP_URL; ?>/">
                     <div class="component-menu-link-icon">
                         <span class="material-symbols-rounded">home</span>
                     </div>
@@ -22,7 +22,7 @@ $isMainArea = !$isAdminArea && !$isSettingsArea;
                         <span><?php echo __('menu_home'); ?></span>
                     </div>
                 </div>
-                <div class="component-menu-link nav-item" data-nav="/ProjectRosaura/explore">
+                <div class="component-menu-link nav-item" data-nav="<?php echo APP_URL; ?>/explore">
                     <div class="component-menu-link-icon">
                         <span class="material-symbols-rounded">explore</span>
                     </div>
@@ -37,7 +37,7 @@ $isMainArea = !$isAdminArea && !$isSettingsArea;
     <div class="component-menu component-menu--w265 component-menu--h-full component-menu--no-padding <?php echo $isSettingsArea ? 'active' : 'disabled'; ?>" id="sidebar-menu-settings">
         <div class="component-menu-top">
             <div class="component-menu-list">
-                <div class="component-menu-link component-menu-link--bordered nav-item" data-nav="/ProjectRosaura/">
+                <div class="component-menu-link component-menu-link--bordered nav-item" data-nav="<?php echo APP_URL; ?>/">
                     <div class="component-menu-link-icon">
                         <span class="material-symbols-rounded">arrow_back</span>
                     </div>
@@ -49,7 +49,7 @@ $isMainArea = !$isAdminArea && !$isSettingsArea;
                 <div class="component-menu-divider"></div>
                 
                 <?php if ($isLoggedIn): ?>
-                <div class="component-menu-link nav-item" data-nav="/ProjectRosaura/settings/your-profile">
+                <div class="component-menu-link nav-item" data-nav="<?php echo APP_URL; ?>/settings/your-profile">
                     <div class="component-menu-link-icon">
                         <span class="material-symbols-rounded">person</span>
                     </div>
@@ -57,7 +57,7 @@ $isMainArea = !$isAdminArea && !$isSettingsArea;
                         <span><?php echo __('menu_profile'); ?></span>
                     </div>
                 </div>
-                <div class="component-menu-link nav-item" data-nav="/ProjectRosaura/settings/security">
+                <div class="component-menu-link nav-item" data-nav="<?php echo APP_URL; ?>/settings/security">
                     <div class="component-menu-link-icon">
                         <span class="material-symbols-rounded">security</span>
                     </div>
@@ -65,7 +65,7 @@ $isMainArea = !$isAdminArea && !$isSettingsArea;
                         <span><?php echo __('menu_security'); ?></span>
                     </div>
                 </div>
-                <div class="component-menu-link nav-item" data-nav="/ProjectRosaura/settings/accessibility">
+                <div class="component-menu-link nav-item" data-nav="<?php echo APP_URL; ?>/settings/accessibility">
                     <div class="component-menu-link-icon">
                         <span class="material-symbols-rounded">accessibility_new</span>
                     </div>
@@ -74,7 +74,7 @@ $isMainArea = !$isAdminArea && !$isSettingsArea;
                     </div>
                 </div>
                 <?php else: ?>
-                <div class="component-menu-link nav-item" data-nav="/ProjectRosaura/settings/guest">
+                <div class="component-menu-link nav-item" data-nav="<?php echo APP_URL; ?>/settings/guest">
                     <div class="component-menu-link-icon">
                         <span class="material-symbols-rounded">person_off</span>
                     </div>
@@ -93,7 +93,7 @@ $isMainArea = !$isAdminArea && !$isSettingsArea;
         
         <div class="component-menu-top">
             <div class="component-menu-list">
-                <div class="component-menu-link component-menu-link--bordered nav-item" data-nav="/ProjectRosaura/">
+                <div class="component-menu-link component-menu-link--bordered nav-item" data-nav="<?php echo APP_URL; ?>/">
                     <div class="component-menu-link-icon">
                         <span class="material-symbols-rounded">arrow_back</span>
                     </div>
@@ -104,7 +104,7 @@ $isMainArea = !$isAdminArea && !$isSettingsArea;
 
                 <div class="component-menu-divider"></div>
                 
-                <div class="component-menu-link nav-item" data-nav="/ProjectRosaura/admin/dashboard">
+                <div class="component-menu-link nav-item" data-nav="<?php echo APP_URL; ?>/admin/dashboard">
                     <div class="component-menu-link-icon">
                         <span class="material-symbols-rounded">dashboard</span>
                     </div>
@@ -112,7 +112,7 @@ $isMainArea = !$isAdminArea && !$isSettingsArea;
                         <span><?php echo __('menu_admin_dashboard'); ?></span>
                     </div>
                 </div>
-                <div class="component-menu-link nav-item" data-nav="/ProjectRosaura/admin/manage-users">
+                <div class="component-menu-link nav-item" data-nav="<?php echo APP_URL; ?>/admin/manage-users">
                     <div class="component-menu-link-icon">
                         <span class="material-symbols-rounded">group</span>
                     </div>
@@ -125,7 +125,7 @@ $isMainArea = !$isAdminArea && !$isSettingsArea;
 
         <div class="component-menu-bottom">
             <div class="component-menu-list">
-                <div class="component-menu-link nav-item" data-nav="/ProjectRosaura/admin/backups">
+                <div class="component-menu-link nav-item" data-nav="<?php echo APP_URL; ?>/admin/backups">
                     <div class="component-menu-link-icon">
                         <span class="material-symbols-rounded">backup</span>
                     </div>
@@ -133,7 +133,7 @@ $isMainArea = !$isAdminArea && !$isSettingsArea;
                         <span><?php echo __('menu_admin_backups'); ?></span>
                     </div>
                 </div>
-                <div class="component-menu-link nav-item" data-nav="/ProjectRosaura/admin/server-config">
+                <div class="component-menu-link nav-item" data-nav="<?php echo APP_URL; ?>/admin/server-config">
                     <div class="component-menu-link-icon">
                         <span class="material-symbols-rounded">dns</span>
                     </div>

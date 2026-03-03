@@ -11,8 +11,8 @@ class RedisCache {
     private $client;
 
     public function __construct() {
-        // Cargar variables de entorno desde el archivo .env en la raíz
-        $this->loadEnv(__DIR__ . '/../../.env');
+        // Cargar variables de entorno desde el archivo .env usando la raíz absoluta
+        $this->loadEnv(ROOT_PATH . '/.env');
 
         // Leer credenciales del entorno o usar valores por defecto
         $host = $_ENV['REDIS_HOST'] ?? '127.0.0.1';

@@ -69,7 +69,7 @@ class AuthServices {
         $cookieValue = $selector . ':' . $validator;
         setcookie('remember_token', $cookieValue, [
             'expires' => time() + (86400 * $days),
-            'path' => '/ProjectRosaura/',
+            'path' => APP_URL ?: '/',
             'secure' => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on',
             'httponly' => true,
             'samesite' => 'Strict'
@@ -82,7 +82,13 @@ class AuthServices {
             if (count($parts) === 2) {
                 $this->tokenRepository->deleteBySelector($parts[0]);
             }
-            setcookie('remember_token', '', ['expires' => time() - 3600, 'path' => '/ProjectRosaura/', 'secure' => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on', 'httponly' => true, 'samesite' => 'Strict']);
+            setcookie('remember_token', '', [
+                'expires' => time() - 3600, 
+                'path' => APP_URL ?: '/', 
+                'secure' => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on', 
+                'httponly' => true, 
+                'samesite' => 'Strict'
+            ]);
             unset($_COOKIE['remember_token']);
         }
     }
@@ -477,7 +483,7 @@ class AuthServices {
         
         if ($this->verificationCodeRepository->createCode($email, 'password_reset', $token, $payload, $expiresAt)) {
             $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
-            $resetLink = $protocol . $_SERVER['HTTP_HOST'] . "/ProjectRosaura/reset-password?token=" . $token;
+            $resetLink = $protocol . $_SERVER['HTTP_HOST'] . APP_URL . "/reset-password?token=" . $token;
             $mailer = new Mailer();
             if ($mailer->sendPasswordResetLink($email, $user['username'], $resetLink)) {
                 $this->rateLimiter->record('forgot_password', $attempts, $minutes);

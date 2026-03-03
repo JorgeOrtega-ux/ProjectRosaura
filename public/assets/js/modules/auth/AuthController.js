@@ -7,6 +7,7 @@ export class AuthController {
         this.api = new ApiService();
         this.config = window.AppServerConfig || {};
         this.resendInterval = null; 
+        this.basePath = window.AppBasePath || '';
     }
 
     init() {
@@ -177,21 +178,21 @@ export class AuthController {
 
         if (result.success) {
             if (result.requires_2fa) {
-                if (window.spaRouter) window.spaRouter.navigate('/ProjectRosaura/login/two-factor');
-                else window.location.href = '/ProjectRosaura/login/two-factor';
+                if (window.spaRouter) window.spaRouter.navigate(this.basePath + '/login/two-factor');
+                else window.location.href = this.basePath + '/login/two-factor';
             } else {
-                window.location.href = '/ProjectRosaura/';
+                window.location.href = this.basePath + '/';
             }
         } else {
             this.restoreButton(btn);
             
             // REDIRECCIONES PARA CUENTAS INACTIVAS
             if (result.status === 'suspended') {
-                if (window.spaRouter) window.spaRouter.navigate('/ProjectRosaura/account-suspended');
-                else window.location.href = '/ProjectRosaura/account-suspended';
+                if (window.spaRouter) window.spaRouter.navigate(this.basePath + '/account-suspended');
+                else window.location.href = this.basePath + '/account-suspended';
             } else if (result.status === 'deleted') {
-                if (window.spaRouter) window.spaRouter.navigate('/ProjectRosaura/account-deleted');
-                else window.location.href = '/ProjectRosaura/account-deleted';
+                if (window.spaRouter) window.spaRouter.navigate(this.basePath + '/account-deleted');
+                else window.location.href = this.basePath + '/account-deleted';
             } else {
                 this.showError(result.message);
             }
@@ -218,7 +219,7 @@ export class AuthController {
         const result = await this.api.post(ApiRoutes.Auth.LoginVerify2FA, data);
 
         if (result.success) {
-            window.location.href = '/ProjectRosaura/';
+            window.location.href = this.basePath + '/';
         } else {
             this.restoreButton(btn);
             this.showError(result.message);
@@ -290,8 +291,8 @@ export class AuthController {
         const result = await this.api.post(ApiRoutes.Auth.RegisterStep1, data);
 
         if (result.success) {
-            if (window.spaRouter) window.spaRouter.navigate('/ProjectRosaura/register/aditional-data');
-            else window.location.href = '/ProjectRosaura/register/aditional-data';
+            if (window.spaRouter) window.spaRouter.navigate(this.basePath + '/register/aditional-data');
+            else window.location.href = this.basePath + '/register/aditional-data';
         } else {
             this.restoreButton(btn);
             this.showError(result.message);
@@ -321,8 +322,8 @@ export class AuthController {
         const result = await this.api.post(ApiRoutes.Auth.RegisterStep2, data);
 
         if (result.success) {
-            if (window.spaRouter) window.spaRouter.navigate('/ProjectRosaura/register/verification-account');
-            else window.location.href = '/ProjectRosaura/register/verification-account';
+            if (window.spaRouter) window.spaRouter.navigate(this.basePath + '/register/verification-account');
+            else window.location.href = this.basePath + '/register/verification-account';
         } else {
             this.restoreButton(btn);
             this.showError(result.message);
@@ -342,7 +343,7 @@ export class AuthController {
         const result = await this.api.post(ApiRoutes.Auth.RegisterVerify, data);
 
         if (result.success) {
-            window.location.href = '/ProjectRosaura/';
+            window.location.href = this.basePath + '/';
         } else {
             this.restoreButton(btn);
             this.showError(result.message);
@@ -433,8 +434,8 @@ export class AuthController {
         if (result.success) {
             this.showSuccess(result.message);
             setTimeout(() => {
-                if (window.spaRouter) window.spaRouter.navigate('/ProjectRosaura/login');
-                else window.location.href = '/ProjectRosaura/login';
+                if (window.spaRouter) window.spaRouter.navigate(this.basePath + '/login');
+                else window.location.href = this.basePath + '/login';
             }, 2000);
         } else {
             this.restoreButton(btn);
@@ -454,7 +455,7 @@ export class AuthController {
         const result = await this.api.post(ApiRoutes.Auth.Logout);
 
         if (result.success) {
-            window.location.href = '/ProjectRosaura/';
+            window.location.href = this.basePath + '/';
         } else {
             spinnerDiv.remove();
             logoutBtn.dataset.loading = 'false';

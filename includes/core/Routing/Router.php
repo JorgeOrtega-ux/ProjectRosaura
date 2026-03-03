@@ -9,7 +9,8 @@ class Router {
 
     public function __construct($routes) {
         $this->routes = $routes;
-        $this->basePath = '/ProjectRosaura'; 
+        // Asignamos el valor de la variable de entorno, si no existe asume vacío
+        $this->basePath = defined('APP_URL') ? APP_URL : ''; 
     }
 
     public function resolve() {

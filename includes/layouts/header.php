@@ -71,7 +71,7 @@ $isPrivileged = in_array($userRole, ['administrator', 'founder']);
             <?php endif; ?>
 
             <?php if (!$isLoggedIn): ?>
-                <button class="component-button component-button--dark component-button--h40" data-nav="/ProjectRosaura/login">
+                <button class="component-button component-button--dark component-button--h40" data-nav="<?php echo APP_URL; ?>/login">
                     <?php echo __('btn_login'); ?>
                 </button>
                 <button class="component-button component-button--icon component-button--h40" data-action="toggleModuleMainOptions" data-tooltip="<?php echo __('tooltip_options'); ?>" data-position="bottom">
@@ -79,7 +79,7 @@ $isPrivileged = in_array($userRole, ['administrator', 'founder']);
                 </button>
             <?php else: ?>
                 <button class="component-button component-button--profile role-<?php echo htmlspecialchars($userRole); ?>" data-action="toggleModuleMainOptions" data-tooltip="<?php echo __('tooltip_your_account'); ?>" data-position="bottom">
-                    <img src="/ProjectRosaura/<?php echo htmlspecialchars($userPic); ?>" alt="<?php echo __('alt_profile'); ?>">
+                    <img src="<?php echo APP_URL; ?>/<?php echo ltrim(htmlspecialchars($userPic), '/'); ?>" alt="<?php echo __('alt_profile'); ?>">
                 </button>
             <?php endif; ?>
 

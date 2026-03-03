@@ -1,7 +1,7 @@
 <?php
 // Resolvemos la ruta actual para saber qué etapa mostrar
 $requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-$basePath = '/ProjectRosaura';
+$basePath = defined('APP_URL') ? APP_URL : '';
 $relativePath = substr($requestUri, strlen($basePath));
 if ($relativePath === '' || $relativePath === false) {
     $relativePath = '/';
@@ -29,7 +29,7 @@ if ($relativePath === '/login/two-factor') {
                 <p class="component-form-desc"><?php echo htmlspecialchars($errorMsg); ?></p>
             </div>
             <div class="component-form-body">
-                <button class="component-button component-button--dark component-button--h45 component-button--full" data-nav="/ProjectRosaura/login">
+                <button class="component-button component-button--dark component-button--h45 component-button--full" data-nav="<?php echo APP_URL; ?>/login">
                     <?php echo __('link_back_login'); ?>
                 </button>
             </div>
@@ -54,7 +54,7 @@ if ($relativePath === '/login/two-factor') {
                     <div class="component-alert-error" id="auth-error-message"></div>
 
                     <div class="component-link-container component-link-container--center">
-                        <span class="component-link" data-nav="/ProjectRosaura/login"><?php echo __('link_back_to_login'); ?></span>
+                        <span class="component-link" data-nav="<?php echo APP_URL; ?>/login"><?php echo __('link_back_to_login'); ?></span>
                     </div>
                 </div>
 
@@ -78,7 +78,7 @@ if ($relativePath === '/login/two-factor') {
                     </div>
 
                     <div class="component-link-container component-link-container--right">
-                        <span class="component-link" data-nav="/ProjectRosaura/forgot-password"><?php echo __('link_forgot_password'); ?></span>
+                        <span class="component-link" data-nav="<?php echo APP_URL; ?>/forgot-password"><?php echo __('link_forgot_password'); ?></span>
                     </div>
 
                     <button class="component-button component-button--dark component-button--h45 component-button--full" data-action="submitLogin">
@@ -89,7 +89,7 @@ if ($relativePath === '/login/two-factor') {
 
                     <div class="component-link-container component-link-container--center">
                         <span class="component-link-text"><?php echo __('txt_no_account'); ?></span>
-                        <span class="component-link" data-nav="/ProjectRosaura/register"><?php echo __('link_create_account'); ?></span>
+                        <span class="component-link" data-nav="<?php echo APP_URL; ?>/register"><?php echo __('link_create_account'); ?></span>
                     </div>
 
                 </div>

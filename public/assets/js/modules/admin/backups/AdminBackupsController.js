@@ -7,6 +7,7 @@ export class AdminBackupsController {
         this.selectedBackupId = null; 
         this.isBackingUp = false;
         this.api = new ApiService();
+        this.basePath = window.AppBasePath || '';
         this.init();
     }
 
@@ -349,7 +350,7 @@ export class AdminBackupsController {
                     if (window.appInstance) window.appInstance.showToast(res.job_message || 'Copia de seguridad finalizada.', 'success');
                     this.resetBackupUI(btn, originalText);
                     
-                    if (window.spaRouter) window.spaRouter.loadRoute('/ProjectRosaura/admin/backups');
+                    if (window.spaRouter) window.spaRouter.loadRoute(this.basePath + '/admin/backups');
                     else window.location.reload();
 
                 } else if (res.status === 'failed' || res.status === 'not_found') {
@@ -421,7 +422,7 @@ export class AdminBackupsController {
                     this.resetBackupUI(btn, originalText);
                     if (window.appInstance) window.appInstance.showToast(res.job_message || 'Base de datos restaurada correctamente.', 'success');
                     
-                    if (window.spaRouter) window.spaRouter.loadRoute('/ProjectRosaura/admin/backups');
+                    if (window.spaRouter) window.spaRouter.loadRoute(this.basePath + '/admin/backups');
                     else window.location.reload();
 
                 } else if (res.status === 'failed' || res.status === 'not_found') {
@@ -455,7 +456,7 @@ export class AdminBackupsController {
                 if (window.appInstance) window.appInstance.showToast(res.message, 'success');
                 if (passInput) passInput.value = '';
                 this.deselectBackup();
-                if (window.spaRouter) window.spaRouter.loadRoute('/ProjectRosaura/admin/backups');
+                if (window.spaRouter) window.spaRouter.loadRoute(this.basePath + '/admin/backups');
                 else window.location.reload();
             } else {
                 if (window.appInstance) window.appInstance.showToast(res.message, 'error');

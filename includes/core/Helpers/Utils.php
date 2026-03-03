@@ -21,8 +21,8 @@ class Utils {
         $imageContent = @file_get_contents($url);
         if ($imageContent === false) return false;
 
-        // SE AGREGÓ UN ../ EXTRA A LA RUTA
-        $storageDir = __DIR__ . '/../../../public/storage/profilePictures/default/';
+        // Utilizamos la constante absoluta para no depender de rutas relativas
+        $storageDir = ROOT_PATH . '/public/storage/profilePictures/default/';
         if (!is_dir($storageDir)) mkdir($storageDir, 0777, true);
         $fileName = $uuid . '.png';
         $filePath = $storageDir . $fileName;
@@ -95,7 +95,6 @@ class Utils {
         return $codes;
     }
 
-    // AHORA ACEPTA PARÁMETROS DINÁMICOS
     public static function validateEmailFormat($email, $minTotal = 6, $maxTotal = 254, $minLocal = 2, $maxLocal = 64, $minDomain = 3, $maxDomain = 255) {
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) return ['valid' => false, 'message' => 'El formato del correo electrónico no es válido.'];
         $emailLen = strlen($email);
@@ -117,7 +116,6 @@ class Utils {
         return ['valid' => true];
     }
 
-    // AHORA ACEPTA PARÁMETROS DINÁMICOS
     public static function validatePasswordFormat($password, $minLen = 8, $maxLen = 64) {
         $passLen = strlen($password);
         if ($passLen < $minLen || $passLen > $maxLen) return ['valid' => false, 'message' => "La contraseña debe tener entre {$minLen} y {$maxLen} caracteres."];

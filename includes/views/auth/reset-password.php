@@ -27,11 +27,11 @@ if (!empty($token)) {
             </div>
             
             <div class="component-form-body">
-                <button class="component-button component-button--dark component-button--h45 component-button--full" data-nav="/ProjectRosaura/forgot-password">
+                <button class="component-button component-button--dark component-button--h45 component-button--full" data-nav="<?php echo APP_URL; ?>/forgot-password">
                     <?php echo __('btn_try_again'); ?>
                 </button>
                 <div class="component-link-container component-link-container--center">
-                    <span class="component-link" data-nav="/ProjectRosaura/login"><?php echo __('link_go_login'); ?></span>
+                    <span class="component-link" data-nav="<?php echo APP_URL; ?>/login"><?php echo __('link_go_login'); ?></span>
                 </div>
             </div>
         <?php else: ?>

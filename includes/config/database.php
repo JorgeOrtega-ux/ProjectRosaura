@@ -11,8 +11,8 @@ class Database {
     private $pdo;
 
     public function __construct() {
-        // Cargar variables de entorno desde el archivo .env en la raíz
-        $this->loadEnv(__DIR__ . '/../../.env');
+        // Cargar variables de entorno desde el archivo .env usando la raíz absoluta
+        $this->loadEnv(ROOT_PATH . '/.env');
 
         // Leer credenciales del entorno o usar valores por defecto
         $host = $_ENV['DB_HOST'] ?? 'localhost';
@@ -25,7 +25,7 @@ class Database {
             $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         } catch (PDOException $e) {
             // El error real se queda en el servidor, no en la respuesta HTTP
-Logger::database("Error de conexión a la base de datos: " . $e->getMessage(), 'error');
+            Logger::database("Error de conexión a la base de datos: " . $e->getMessage(), 'error');
             
             die(json_encode(['success' => false, 'message' => 'Ocurrió un error interno en el servidor.']));
         }

@@ -7,6 +7,7 @@ export class TwoFactorController {
         this.api = new ApiService();
         this.currentRecoveryCodes = null;
         this.newRecoveryCodes = null;
+        this.basePath = window.AppBasePath || '';
     }
 
     init() {
@@ -37,8 +38,8 @@ export class TwoFactorController {
 
             const btnFinish2FA = e.target.closest('[data-action="finish2FA"]');
             if (btnFinish2FA) {
-                if (window.spaRouter) window.spaRouter.navigate('/ProjectRosaura/settings/security');
-                else window.location.href = '/ProjectRosaura/settings/security';
+                if (window.spaRouter) window.spaRouter.navigate(this.basePath + '/settings/security');
+                else window.location.href = this.basePath + '/settings/security';
             }
         });
 
@@ -186,8 +187,8 @@ export class TwoFactorController {
         if (result.success) {
             this.showMessage(result.message, 'success');
             setTimeout(() => {
-                if (window.spaRouter) window.spaRouter.navigate('/ProjectRosaura/settings/2fa');
-                else window.location.href = '/ProjectRosaura/settings/2fa';
+                if (window.spaRouter) window.spaRouter.navigate(this.basePath + '/settings/2fa');
+                else window.location.href = this.basePath + '/settings/2fa';
             }, 1000);
         } else {
             this.showMessage(result.message, 'error');

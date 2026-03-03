@@ -1,8 +1,9 @@
-// public/assets/js/admin-users-controller.js
+// public/assets/js/modules/admin/users/AdminUsersController.js
 
 export class AdminUsersController {
     constructor() {
         this.selectedUserId = null; 
+        this.basePath = window.AppBasePath || '';
         this.init();
     }
 
@@ -76,27 +77,27 @@ export class AdminUsersController {
     editSelectedUser() {
         if (!this.selectedUserId) return;
         if (window.spaRouter) {
-            window.spaRouter.navigate(`/ProjectRosaura/admin/edit-user?id=${this.selectedUserId}`);
+            window.spaRouter.navigate(`${this.basePath}/admin/edit-user?id=${this.selectedUserId}`);
         } else {
-            window.location.href = `/ProjectRosaura/admin/edit-user?id=${this.selectedUserId}`;
+            window.location.href = `${this.basePath}/admin/edit-user?id=${this.selectedUserId}`;
         }
     }
 
     editSelectedUserRole() {
         if (!this.selectedUserId) return;
         if (window.spaRouter) {
-            window.spaRouter.navigate(`/ProjectRosaura/admin/edit-role?id=${this.selectedUserId}`);
+            window.spaRouter.navigate(`${this.basePath}/admin/edit-role?id=${this.selectedUserId}`);
         } else {
-            window.location.href = `/ProjectRosaura/admin/edit-role?id=${this.selectedUserId}`;
+            window.location.href = `${this.basePath}/admin/edit-role?id=${this.selectedUserId}`;
         }
     }
 
     editSelectedUserStatus() {
         if (!this.selectedUserId) return;
         if (window.spaRouter) {
-            window.spaRouter.navigate(`/ProjectRosaura/admin/edit-status?id=${this.selectedUserId}`);
+            window.spaRouter.navigate(`${this.basePath}/admin/edit-status?id=${this.selectedUserId}`);
         } else {
-            window.location.href = `/ProjectRosaura/admin/edit-status?id=${this.selectedUserId}`;
+            window.location.href = `${this.basePath}/admin/edit-status?id=${this.selectedUserId}`;
         }
     }
 

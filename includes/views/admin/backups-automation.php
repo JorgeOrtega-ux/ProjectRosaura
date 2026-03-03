@@ -8,7 +8,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
         
         <div class="component-toolbar-mode active">
             <div class="component-toolbar-left">
-                <button class="component-button component-button--icon component-button--h40" data-nav="/ProjectRosaura/admin/backups" data-tooltip="<?php echo __('btn_back_to_backups'); ?>" data-position="bottom">
+                <button class="component-button component-button--icon component-button--h40" data-nav="<?php echo APP_URL; ?>/admin/backups" data-tooltip="<?php echo __('btn_back_to_backups'); ?>" data-position="bottom">
                     <span class="material-symbols-rounded">arrow_back</span>
                 </button>
             </div>

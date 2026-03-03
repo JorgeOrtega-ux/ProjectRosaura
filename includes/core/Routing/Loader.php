@@ -7,8 +7,8 @@ class Loader {
     private $viewsPath;
 
     public function __construct() {
-        // SE AGREGÓ UN ../ EXTRA A LA RUTA
-        $this->viewsPath = __DIR__ . '/../../../includes/views/';
+        // Utilizamos la constante absoluta para apuntar a las vistas
+        $this->viewsPath = ROOT_PATH . '/includes/views/';
     }
 
     public function load($viewName) {

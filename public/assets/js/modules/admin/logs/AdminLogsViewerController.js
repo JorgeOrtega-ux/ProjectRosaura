@@ -7,6 +7,7 @@ export class AdminLogsViewerController {
         this.api = new ApiService();
         this.logsData = {};
         this.activeTabId = null;
+        this.basePath = window.AppBasePath || '';
     }
 
     init() {
@@ -63,8 +64,8 @@ export class AdminLogsViewerController {
         
         if (!filesParam) {
             if (window.appInstance) window.appInstance.showToast('No se especificaron archivos para visualizar.', 'error');
-            if (window.spaRouter) window.spaRouter.navigate('/ProjectRosaura/admin/logs');
-            else window.location.href = '/ProjectRosaura/admin/logs';
+            if (window.spaRouter) window.spaRouter.navigate(this.basePath + '/admin/logs');
+            else window.location.href = this.basePath + '/admin/logs';
             return;
         }
 
@@ -91,8 +92,8 @@ export class AdminLogsViewerController {
             }
         } else {
             if (window.appInstance) window.appInstance.showToast(res.message || 'Error al obtener los logs.', 'error');
-            if (window.spaRouter) window.spaRouter.navigate('/ProjectRosaura/admin/logs');
-            else window.location.href = '/ProjectRosaura/admin/logs';
+            if (window.spaRouter) window.spaRouter.navigate(this.basePath + '/admin/logs');
+            else window.location.href = this.basePath + '/admin/logs';
         }
     }
 
@@ -156,8 +157,8 @@ export class AdminLogsViewerController {
         const remainingIds = Object.keys(this.logsData);
         
         if (remainingIds.length === 0) {
-            if (window.spaRouter) window.spaRouter.navigate('/ProjectRosaura/admin/logs');
-            else window.location.href = '/ProjectRosaura/admin/logs';
+            if (window.spaRouter) window.spaRouter.navigate(this.basePath + '/admin/logs');
+            else window.location.href = this.basePath + '/admin/logs';
             return;
         }
 

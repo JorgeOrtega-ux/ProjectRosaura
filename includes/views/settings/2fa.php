@@ -85,7 +85,7 @@ $text2FA = $is2FAActive ? __('2fa_status_active') : __('2fa_status_inactive');
                                 </div>
                             </div>
                             <div class="component-card__actions component-card__actions--end">
-                                <button class="component-button component-button--h36" data-nav="/ProjectRosaura/settings/security"><?php echo __('btn_cancel'); ?></button>
+                                <button class="component-button component-button--h36" data-nav="<?php echo APP_URL; ?>/settings/security"><?php echo __('btn_cancel'); ?></button>
                                 <button class="component-button component-button--h36 component-button--dark" data-action="submitActivate2FA"><?php echo __('btn_activate'); ?></button>
                             </div>
                         </div>
@@ -128,7 +128,7 @@ $text2FA = $is2FAActive ? __('2fa_status_active') : __('2fa_status_inactive');
                         </div>
                     </div>
                     <div class="component-card__actions component-card__actions--end">
-                        <button type="button" class="component-button component-button--h36" data-nav="/ProjectRosaura/settings/2fa/recovery-codes"><?php echo __('btn_generate_codes'); ?></button>
+                        <button type="button" class="component-button component-button--h36" data-nav="<?php echo APP_URL; ?>/settings/2fa/recovery-codes"><?php echo __('btn_generate_codes'); ?></button>
                     </div>
                 </div>
 
@@ -145,7 +145,7 @@ $text2FA = $is2FAActive ? __('2fa_status_active') : __('2fa_status_inactive');
                         </div>
                     </div>
                     <div class="component-card__actions component-card__actions--end">
-                        <button type="button" class="component-button component-button--h36 component-button--danger" data-nav="/ProjectRosaura/settings/2fa/deactivate"><?php echo __('btn_deactivate'); ?></button>
+                        <button type="button" class="component-button component-button--h36 component-button--danger" data-nav="<?php echo APP_URL; ?>/settings/2fa/deactivate"><?php echo __('btn_deactivate'); ?></button>
                     </div>
                 </div>
             </div>

@@ -65,7 +65,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                         </div>
                     </div>
                     <div class="component-card__actions component-card__actions--end">
-                        <button class="component-button component-button--h36" data-nav="/ProjectRosaura/settings/2fa"><?php echo __('btn_cancel'); ?></button>
+                        <button class="component-button component-button--h36" data-nav="<?php echo APP_URL; ?>/settings/2fa"><?php echo __('btn_cancel'); ?></button>
                         <button class="component-button component-button--h36 component-button--danger" data-action="submitDeactivate2FA"><?php echo __('btn_deactivate_permanently'); ?></button>
                     </div>
                 </div>

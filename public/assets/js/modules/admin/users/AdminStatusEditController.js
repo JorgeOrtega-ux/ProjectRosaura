@@ -8,6 +8,7 @@ export class AdminStatusEditController {
         this.targetUserId = null;
         this.initialState = null; 
         this.activeTab = 'view-status-config';
+        this.basePath = window.AppBasePath || '';
         
         this.state = {
             status: 'active',
@@ -66,7 +67,7 @@ export class AdminStatusEditController {
             this.switchTab('view-status-config'); 
             this.loadUserData();
         } else {
-            if (window.spaRouter) window.spaRouter.navigate('/ProjectRosaura/admin/manage-users');
+            if (window.spaRouter) window.spaRouter.navigate(this.basePath + '/admin/manage-users');
         }
     }
 
@@ -365,7 +366,7 @@ export class AdminStatusEditController {
             if (form) form.classList.remove('disabled');
         } else {
             this.showMessage(res.message, 'error');
-            if (window.spaRouter) window.spaRouter.navigate('/ProjectRosaura/admin/manage-users');
+            if (window.spaRouter) window.spaRouter.navigate(this.basePath + '/admin/manage-users');
         }
     }
 
@@ -586,7 +587,7 @@ export class AdminStatusEditController {
             const div = document.createElement('div');
             div.className = 'component-card--grouped';
             
-            const adminPic = log.admin_profile_picture ? `/ProjectRosaura/${log.admin_profile_picture.replace(/^\//, '')}` : '/ProjectRosaura/public/assets/images/default-avatar.png';
+            const adminPic = log.admin_profile_picture ? `${this.basePath}/${log.admin_profile_picture.replace(/^\//, '')}` : this.basePath + '/public/assets/images/default-avatar.png';
             const adminName = log.admin_username || 'Sistema';
             const dateStr = new Date(log.created_at).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' });
             

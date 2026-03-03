@@ -21,7 +21,7 @@
             <div class="component-alert-success" id="auth-success-message"></div>
 
             <div class="component-link-container component-link-container--center">
-                <span class="component-link" data-nav="/ProjectRosaura/login"><?php echo __('link_back_login'); ?></span>
+                <span class="component-link" data-nav="<?php echo APP_URL; ?>/login"><?php echo __('link_back_login'); ?></span>
             </div>
 
         </div>

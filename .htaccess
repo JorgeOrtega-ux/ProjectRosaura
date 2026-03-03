@@ -4,7 +4,7 @@
     # IMPORTANTE: +FollowSymLinks es obligatorio en servidores Windows para mod_rewrite
     Options +FollowSymLinks -Indexes -MultiViews
 
-    # Base de tu proyecto
+    # Base de tu proyecto local (Apunta a la subcarpeta)
     RewriteBase /ProjectRosaura/
 
     # 1. Enrutar archivos estáticos (JS, CSS) directamente hacia la carpeta public
@@ -14,7 +14,6 @@
     RewriteRule ^public/ - [L]
 
     # 3. Si piden un archivo físico que SÍ existe (ej. un .png subido fuera de assets), dejarlo pasar
-    # Omitimos la validación de directorios (-d) para que la raíz "/" no provoque un 403
     RewriteCond %{REQUEST_FILENAME} -f
     RewriteRule ^ - [L]
 

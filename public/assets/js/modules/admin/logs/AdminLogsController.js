@@ -6,6 +6,7 @@ export class AdminLogsController {
     constructor() {
         this.selectedLogs = new Set();
         this.api = new ApiService();
+        this.basePath = window.AppBasePath || '';
     }
 
     init() {
@@ -298,7 +299,7 @@ export class AdminLogsController {
         const urlParams = new URLSearchParams();
         urlParams.set('files', filesArray.join(','));
         
-        const url = `/ProjectRosaura/admin/logs/viewer?${urlParams.toString()}`;
+        const url = `${this.basePath}/admin/logs/viewer?${urlParams.toString()}`;
         
         if (window.spaRouter) {
             window.spaRouter.navigate(url);
@@ -326,7 +327,7 @@ export class AdminLogsController {
                 if (window.appInstance) window.appInstance.showToast(res.message, 'success');
                 if (passInput) passInput.value = '';
                 this.deselectLogs();
-                if (window.spaRouter) window.spaRouter.loadRoute('/ProjectRosaura/admin/logs');
+                if (window.spaRouter) window.spaRouter.loadRoute(this.basePath + '/admin/logs');
                 else window.location.reload();
             } else {
                 if (window.appInstance) window.appInstance.showToast(res.message, 'error');

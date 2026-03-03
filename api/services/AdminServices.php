@@ -157,14 +157,15 @@ class AdminServices {
         if ($mime !== 'image/png' && $mime !== 'image/jpeg') return ['success' => false, 'message' => 'Solo formatos PNG y JPG.'];
 
         $fileName = Utils::generateUUID() . (($mime === 'image/png') ? '.png' : '.jpg');
-        $uploadDir = __DIR__ . '/../../public/storage/profilePictures/uploaded/';
+        $uploadDir = ROOT_PATH . '/public/storage/profilePictures/uploaded/';
         if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
         $destPath = $uploadDir . $fileName;
 
         if (move_uploaded_file($file['tmp_name'], $destPath)) {
             $oldPic = $user['profile_picture'];
             if (!empty($oldPic) && strpos($oldPic, 'uploaded/') !== false) {
-                $oldPath = __DIR__ . '/../../' . ltrim($oldPic, '/ProjectRosaura/');
+                $oldPicRelative = str_replace(['/ProjectRosaura/', APP_URL . '/'], '', $oldPic);
+                $oldPath = ROOT_PATH . '/' . ltrim($oldPicRelative, '/');
                 if (file_exists($oldPath)) unlink($oldPath);
             }
             
@@ -172,7 +173,7 @@ class AdminServices {
             if ($this->userRepository->updateAvatar($targetId, $newRelPath)) {
                 $currentUserId = $this->sessionManager->get('user_id');
                 Logger::security("Admin ID: {$currentUserId} actualizó el avatar del Usuario ID: {$targetId}", 'warning');
-                return ['success' => true, 'message' => 'Foto actualizada exitosamente.', 'new_avatar' => '/ProjectRosaura/' . $newRelPath];
+                return ['success' => true, 'message' => 'Foto actualizada exitosamente.', 'new_avatar' => APP_URL . '/' . ltrim($newRelPath, '/')];
             }
         }
         return ['success' => false, 'message' => 'Error en el servidor.'];
@@ -194,7 +195,8 @@ class AdminServices {
         if (strpos($oldPic, '/default/') !== false) return ['success' => false, 'message' => 'Ya tiene foto por defecto.'];
 
         if (!empty($oldPic) && strpos($oldPic, 'uploaded/') !== false) {
-            $oldPath = __DIR__ . '/../../' . ltrim($oldPic, '/ProjectRosaura/');
+            $oldPicRelative = str_replace(['/ProjectRosaura/', APP_URL . '/'], '', $oldPic);
+            $oldPath = ROOT_PATH . '/' . ltrim($oldPicRelative, '/');
             if (file_exists($oldPath)) unlink($oldPath);
         }
 
@@ -202,7 +204,7 @@ class AdminServices {
         if ($this->userRepository->updateAvatar($targetId, $newRelPath)) {
             $currentUserId = $this->sessionManager->get('user_id');
             Logger::security("Admin ID: {$currentUserId} eliminó el avatar del Usuario ID: {$targetId}", 'warning');
-            return ['success' => true, 'message' => 'Foto eliminada.', 'new_avatar' => '/ProjectRosaura/' . $newRelPath];
+            return ['success' => true, 'message' => 'Foto eliminada.', 'new_avatar' => APP_URL . '/' . ltrim($newRelPath, '/')];
         }
         return ['success' => false, 'message' => 'Error en la base de datos.'];
     }
@@ -581,7 +583,7 @@ class AdminServices {
     }
 
     private function getBackupDir() {
-        $dir = __DIR__ . '/../../storage/backups/';
+        $dir = ROOT_PATH . '/storage/backups/';
         if (!is_dir($dir)) {
             mkdir($dir, 0777, true);
             file_put_contents($dir . '.htaccess', "Deny from all\nOptions -Indexes");
@@ -795,7 +797,7 @@ class AdminServices {
         if (count($files) > 10) return ['success' => false, 'message' => 'Máximo 10 archivos a la vez.'];
 
         $contents = [];
-        $logBaseDir = realpath(__DIR__ . '/../../logs/');
+        $logBaseDir = realpath(ROOT_PATH . '/logs/');
 
         foreach ($files as $encodedFile) {
             $filename = base64_decode($encodedFile);
@@ -851,7 +853,7 @@ class AdminServices {
         // MODIFICACIÓN: Reducido de 50 a 10 archivos máximos
         if (count($files) > 10) return ['success' => false, 'message' => 'Solo puedes eliminar hasta 10 archivos a la vez.'];
         
-        $logBaseDir = realpath(__DIR__ . '/../../logs/');
+        $logBaseDir = realpath(ROOT_PATH . '/logs/');
         $deleted = 0;
         
         foreach ($files as $encodedFile) {

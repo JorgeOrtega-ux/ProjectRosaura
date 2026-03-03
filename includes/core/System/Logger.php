@@ -30,8 +30,8 @@ class Logger implements LoggerInterface {
         $date = date('Y-m-d');
         $time = date('H:i:s');
         
-        // SE AGREGÓ UN ../ EXTRA A LA RUTA
-        $logDir = __DIR__ . '/../../../logs/' . $category;
+        // Utilizamos la constante absoluta
+        $logDir = ROOT_PATH . '/logs/' . $category;
 
         if (!is_dir($logDir)) {
             mkdir($logDir, 0777, true);

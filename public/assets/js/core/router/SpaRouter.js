@@ -2,7 +2,7 @@
 export class SpaRouter {
     constructor(options = {}) {
         this.outlet = document.querySelector(options.outlet || '#app-router-outlet');
-        this.basePath = '/ProjectRosaura';
+        this.basePath = window.AppBasePath || ''; // Dinámico desde app.php
         this.init();
     }
 
@@ -200,13 +200,14 @@ export class SpaRouter {
             }
         }
 
+        // Dinamizamos la búsqueda de los dropdown items usando template literals
         if (normalizedPath.includes('/settings')) {
-            const dropdownSettingsItem = document.querySelector('.component-module--dropdown [data-nav^="/ProjectRosaura/settings"]');
+            const dropdownSettingsItem = document.querySelector(`.component-module--dropdown [data-nav^="${this.basePath}/settings"]`);
             if (dropdownSettingsItem) {
                 dropdownSettingsItem.classList.add('active');
             }
         } else if (normalizedPath.includes('/admin')) {
-            const dropdownAdminItem = document.querySelector('.component-module--dropdown [data-nav^="/ProjectRosaura/admin"]');
+            const dropdownAdminItem = document.querySelector(`.component-module--dropdown [data-nav^="${this.basePath}/admin"]`);
             if (dropdownAdminItem) {
                 dropdownAdminItem.classList.add('active');
             }

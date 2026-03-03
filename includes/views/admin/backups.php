@@ -3,7 +3,8 @@
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 $backups = [];
-$backupDir = __DIR__ . '/../../../storage/backups/';
+// Utilizamos la constante absoluta
+$backupDir = ROOT_PATH . '/storage/backups/';
 
 if (is_dir($backupDir)) {
     $files = scandir($backupDir);
@@ -162,7 +163,7 @@ if (is_dir($backupDir)) {
                         <button class="component-button component-button--icon component-button--h40" data-action="toggleViewMode" data-tooltip="<?php echo __('tooltip_change_view'); ?>" data-position="bottom">
                             <span class="material-symbols-rounded">table_rows</span>
                         </button>
-                        <button class="component-button component-button--h40" data-nav="/ProjectRosaura/admin/backups/automation">
+                        <button class="component-button component-button--h40" data-nav="<?php echo APP_URL; ?>/admin/backups/automation">
                             <span class="material-symbols-rounded">schedule</span> <?php echo __('btn_automate'); ?>
                         </button>
                         <button class="component-button component-button--dark component-button--h40" data-action="createBackup">

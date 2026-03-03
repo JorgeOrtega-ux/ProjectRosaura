@@ -74,14 +74,15 @@ class SettingsServices
         if ($mime !== 'image/png' && $mime !== 'image/jpeg') return ['success' => false, 'message' => 'Solo se permiten formatos PNG y JPG.'];
 
         $fileName = Utils::generateUUID() . (($mime === 'image/png') ? '.png' : '.jpg');
-        $uploadDir = __DIR__ . '/../../public/storage/profilePictures/uploaded/';
+        $uploadDir = ROOT_PATH . '/public/storage/profilePictures/uploaded/';
         if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
         $destPath = $uploadDir . $fileName;
 
         if (move_uploaded_file($file['tmp_name'], $destPath)) {
             $oldPic = $this->sessionManager->get('user_pic', '');
             if (!empty($oldPic) && strpos($oldPic, 'uploaded/') !== false) {
-                $oldPath = __DIR__ . '/../../' . ltrim($oldPic, '/ProjectRosaura/');
+                $oldPicRelative = str_replace(['/ProjectRosaura/', APP_URL . '/'], '', $oldPic);
+                $oldPath = ROOT_PATH . '/' . ltrim($oldPicRelative, '/');
                 if (file_exists($oldPath)) unlink($oldPath);
             }
             $newRelPath = 'public/storage/profilePictures/uploaded/' . $fileName;
@@ -90,7 +91,7 @@ class SettingsServices
                 $this->logProfileChange($userId, 'avatar', $oldPic, $newRelPath);
                 $this->sessionManager->set('user_pic', $newRelPath);
                 Logger::security("Avatar de usuario actualizado", 'info', ['user_id' => $userId]);
-                return ['success' => true, 'message' => 'Foto actualizada.', 'new_avatar' => '/ProjectRosaura/' . $newRelPath];
+                return ['success' => true, 'message' => 'Foto actualizada.', 'new_avatar' => APP_URL . '/' . ltrim($newRelPath, '/')];
             }
         }
         return ['success' => false, 'message' => 'Error en el servidor.'];
@@ -108,7 +109,8 @@ class SettingsServices
         }
 
         if (!empty($oldPic) && strpos($oldPic, 'uploaded/') !== false) {
-            $oldPath = __DIR__ . '/../../' . ltrim($oldPic, '/ProjectRosaura/');
+            $oldPicRelative = str_replace(['/ProjectRosaura/', APP_URL . '/'], '', $oldPic);
+            $oldPath = ROOT_PATH . '/' . ltrim($oldPicRelative, '/');
             if (file_exists($oldPath)) unlink($oldPath);
         }
 
@@ -117,7 +119,7 @@ class SettingsServices
             $this->logProfileChange($userId, 'avatar', $oldPic, $newRelPath);
             $this->sessionManager->set('user_pic', $newRelPath);
             Logger::security("Avatar de usuario eliminado", 'info', ['user_id' => $userId]);
-            return ['success' => true, 'message' => 'Foto eliminada.', 'new_avatar' => '/ProjectRosaura/' . $newRelPath];
+            return ['success' => true, 'message' => 'Foto eliminada.', 'new_avatar' => APP_URL . '/' . ltrim($newRelPath, '/')];
         }
         return ['success' => false, 'message' => 'Error en la base de datos.'];
     }
@@ -403,7 +405,7 @@ class SettingsServices
                 $this->moderationRepository->logAction($userId, null, 'deleted', 'Eliminada por el propio usuario desde la configuración.', null, null);
                 
                 $this->tokenRepository->deleteAllByUserId($userId);
-                if (isset($_COOKIE['remember_token'])) setcookie('remember_token', '', ['expires' => time() - 3600, 'path' => '/ProjectRosaura/']);
+                if (isset($_COOKIE['remember_token'])) setcookie('remember_token', '', ['expires' => time() - 3600, 'path' => APP_URL ?: '/']);
                 Logger::security("Cuenta de usuario eliminada por si mismo", 'warning', ['user_id' => $userId, 'ip' => Utils::getIpAddress()]);
 
                 $this->sessionManager->destroy();
@@ -547,7 +549,7 @@ class SettingsServices
                 if (isset($_COOKIE['remember_token'])) {
                     setcookie('remember_token', '', [
                         'expires' => time() - 3600, 
-                        'path' => '/ProjectRosaura/', 
+                        'path' => APP_URL ?: '/', 
                         'secure' => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on', 
                         'httponly' => true, 
                         'samesite' => 'Strict'
