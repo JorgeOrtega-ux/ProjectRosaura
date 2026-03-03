@@ -831,6 +831,21 @@ textarea.component-input-field::placeholder {
     color: var(--text-primary);
 }
 
+.component-text-notice {
+    font-size: 14px;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.component-text-notice--error {
+    color: var(--color-error);
+    font-weight: 600;
+}
+
+.component-text-notice--muted {
+    color: var(--text-tertiary);
+}
+
 .component-card__actions {
     display: flex;
     align-items: center;
@@ -1105,8 +1120,6 @@ input:checked + .component-toggle-slider:before {
 .component-accordion.active .component-accordion-body {
     grid-template-rows: 1fr;
 }
-
-/* Busca las clases .component-accordion-content y reemplázalas por estas: */
 
 .component-accordion-content {
     min-height: 0;
@@ -1718,6 +1731,10 @@ input:checked + .component-toggle-slider:before {
     overflow-x: auto;
 }
 
+.component-viewer-textarea--error {
+    color: var(--color-error);
+}
+
 .component-empty-state {
     text-align: center;
     padding: 40px;
@@ -1950,6 +1967,17 @@ input:checked + .component-toggle-slider:before {
     flex-direction: column;
     gap: 16px;
     box-shadow: var(--shadow-card);
+}
+
+.component-dialog-content--centered {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 16px 0;
+    gap: 16px;
+    width: 100%;
 }
 
 .component-dialog-close-btn {

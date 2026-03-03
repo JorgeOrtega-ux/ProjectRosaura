@@ -115,7 +115,7 @@ export class AdminRoleEditController {
 
             if (user.role === 'founder') {
                 if (trigger) trigger.classList.add('disabled-interaction');
-                if (desc) desc.innerHTML = '<span style="color: #d32f2f; font-weight: 600;">Esta cuenta pertenece a un Fundador. Su rol no puede ser modificado por seguridad.</span>';
+                if (desc) desc.innerHTML = '<span class="component-text-notice--error">Esta cuenta pertenece a un Fundador. Su rol no puede ser modificado por seguridad.</span>';
             } else {
                 if (trigger) trigger.classList.remove('disabled-interaction');
                 if (desc) desc.textContent = 'Selecciona el rol que deseas asignar a este usuario en la plataforma.';

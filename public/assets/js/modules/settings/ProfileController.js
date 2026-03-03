@@ -323,10 +323,9 @@ export class ProfileController {
     }
 
     async resendEmailUpdateCode(btn) {
-        if (btn.style.pointerEvents === 'none') return;
+        if (btn.classList.contains('disabled-interaction')) return;
         
-        btn.style.pointerEvents = 'none';
-        btn.classList.add('disabled');
+        btn.classList.add('disabled-interaction', 'component-text-notice--muted', 'disabled');
 
         const result = await this.api.post(ApiRoutes.Settings.ResendEmailCode);
 
@@ -338,8 +337,7 @@ export class ProfileController {
             if (result.cooldown) {
                 this.startDialogResendTimer(btn, result.cooldown);
             } else {
-                btn.style.pointerEvents = 'auto';
-                btn.classList.remove('disabled');
+                btn.classList.remove('disabled-interaction', 'component-text-notice--muted', 'disabled');
                 btn.textContent = typeof window.__ === 'function' ? __('btn_resend_code') : 'Reenviar código de verificación';
             }
         }
@@ -353,12 +351,10 @@ export class ProfileController {
         const updateUI = () => {
             if (timeLeft <= 0) {
                 clearInterval(this.dialogResendInterval);
-                element.style.pointerEvents = 'auto';
-                element.classList.remove('disabled'); 
+                element.classList.remove('disabled-interaction', 'component-text-notice--muted', 'disabled');
                 element.textContent = defaultText;
             } else {
-                element.style.pointerEvents = 'none';
-                element.classList.add('disabled');
+                element.classList.add('disabled-interaction', 'component-text-notice--muted', 'disabled');
                 element.textContent = `${defaultText} (${timeLeft})`;
             }
         };
@@ -621,7 +617,7 @@ export class ProfileController {
         if (!container) return;
 
         // Limpiar filas previas si existen (excepto el header que no tiene estas clases)
-        const existingRows = container.querySelectorAll('.device-item-row, .spinner-row, .empty-row');
+        const existingRows = container.querySelectorAll('.device-item-row, .spinner-row, .empty-row, .component-divider');
         existingRows.forEach(row => row.remove());
 
         const spinnerRow = document.createElement('div');
@@ -653,7 +649,13 @@ export class ProfileController {
             return;
         }
 
-        devices.forEach(device => {
+        devices.forEach((device, index) => {
+            if (index > 0) {
+                const hr = document.createElement('hr');
+                hr.className = 'component-divider';
+                container.appendChild(hr);
+            }
+
             const parsedUA = this.parseUserAgent(device.user_agent);
             
             const div = document.createElement('div');
@@ -680,7 +682,7 @@ export class ProfileController {
                     </div>
                     <div class="component-group-item__text">
                         <h3 class="component-group-item__title">${parsedUA.os} - ${parsedUA.browser}</h3>
-                        <div class="component-badge-list" style="margin-top: 6px;">
+                        <div class="component-badge-list">
                             <div class="component-badge component-badge--sm">
                                 <span class="material-symbols-rounded">wifi</span>
                                 <span>IP: ${device.ip_address || unknownIpText}</span>

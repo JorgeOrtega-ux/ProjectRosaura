@@ -265,12 +265,11 @@ export class AdminStatusEditController {
     async loadUserData() {
         const form = document.querySelector('[data-ref="admin-status-form"]');
         
-        // 1. Inyectar Loader Dinámico
+        // 1. Inyectar Loader Dinámico utilizando clases BEM
         if (form) {
             let loader = document.createElement('div');
             loader.id = 'dynamic-admin-status-loader';
-            loader.style.cssText = 'display: flex; justify-content: center; padding: 40px; width: 100%;';
-            loader.innerHTML = '<div class="component-spinner"></div>';
+            loader.className = 'component-spinner component-spinner--centered';
             form.classList.add('disabled');
             form.parentNode.insertBefore(loader, form);
         }
@@ -294,9 +293,9 @@ export class AdminStatusEditController {
 
             if (u.role === 'founder') {
                 if (triggerStatus) triggerStatus.classList.add('disabled-interaction');
-                if (descStatus) descStatus.innerHTML = '<span style="color: var(--color-error); font-weight: 600;">Esta cuenta pertenece a un Fundador. Su estado no puede ser modificado por seguridad.</span>';
+                if (descStatus) descStatus.innerHTML = '<span class="component-text-notice--error">Esta cuenta pertenece a un Fundador. Su estado no puede ser modificado por seguridad.</span>';
                 if (triggerSuspended) triggerSuspended.classList.add('disabled-interaction');
-                if (descSuspended) descSuspended.innerHTML = '<span style="color: var(--color-error); font-weight: 600;">Esta cuenta pertenece a un Fundador. No puede ser suspendida por seguridad.</span>';
+                if (descSuspended) descSuspended.innerHTML = '<span class="component-text-notice--error">Esta cuenta pertenece a un Fundador. No puede ser suspendida por seguridad.</span>';
             } else {
                 if (triggerStatus) triggerStatus.classList.remove('disabled-interaction');
                 if (descStatus) descStatus.textContent = 'Determina si la cuenta está en uso o eliminada permanentemente.';
@@ -555,7 +554,7 @@ export class AdminStatusEditController {
         const container = document.querySelector('[data-ref="kardex-list-container"]');
         if (!container) return;
         
-        container.innerHTML = '<div class="component-spinner" style="margin: 0 auto;"></div>';
+        container.innerHTML = '<div class="component-spinner component-spinner--centered"></div>';
         
         const res = await this.api.post(ApiRoutes.Admin.GetModerationKardex, { target_user_id: this.targetUserId });
         

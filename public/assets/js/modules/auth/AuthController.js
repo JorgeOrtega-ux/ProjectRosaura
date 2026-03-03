@@ -69,8 +69,7 @@ export class AuthController {
         let timeLeft = seconds;
         
         if (isLink) {
-            element.style.pointerEvents = 'none';
-            element.style.color = '#999999';
+            element.classList.add('disabled-interaction', 'component-text-notice--muted');
         } else {
             element.disabled = true;
         }
@@ -82,8 +81,7 @@ export class AuthController {
             if (timeLeft <= 0) {
                 clearInterval(this.resendInterval);
                 if (isLink) {
-                    element.style.pointerEvents = 'auto';
-                    element.style.color = ''; 
+                    element.classList.remove('disabled-interaction', 'component-text-notice--muted');
                 } else {
                     element.disabled = false;
                     element.dataset.originalText = defaultText; 
@@ -353,10 +351,9 @@ export class AuthController {
 
     async handleResendRegisterCode(btn) {
         this.clearMessages();
-        if(btn.style.pointerEvents === 'none') return;
+        if(btn.classList.contains('disabled-interaction')) return;
         
-        btn.style.pointerEvents = 'none';
-        btn.style.color = '#999999';
+        btn.classList.add('disabled-interaction', 'component-text-notice--muted');
         btn.textContent = 'Enviando...';
 
         const result = await this.api.post(ApiRoutes.Auth.RegisterResendCode);
@@ -369,8 +366,7 @@ export class AuthController {
             if (result.cooldown) {
                 this.startResendTimer(btn, __('btn_resend_code'), result.cooldown, true);
             } else {
-                btn.style.pointerEvents = 'auto';
-                btn.style.color = '';
+                btn.classList.remove('disabled-interaction', 'component-text-notice--muted');
                 btn.textContent = __('btn_resend_code');
             }
         }

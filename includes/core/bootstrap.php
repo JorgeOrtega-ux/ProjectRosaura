@@ -123,7 +123,7 @@ function render_fatal_error_view() {
                     <h1 class="component-message-title">Error Interno del Servidor</h1>
                     <p class="component-message-desc">Lo sentimos, no pudimos cargar esta sección. Ha ocurrido un problema técnico en el servidor y nuestro equipo ha sido notificado.</p>
                     <br>
-                    <a href="/ProjectRosaura/" class="component-button component-button--dark component-button--h45" style="text-decoration: none;">Volver a recargar</a>
+                    <a href="/ProjectRosaura/" class="component-button component-button--dark component-button--h45">Volver a recargar</a>
                 </div>
             </div>
         </div>

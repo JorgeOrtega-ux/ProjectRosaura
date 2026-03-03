@@ -107,10 +107,10 @@ export class AdminLogsViewerController {
             const filename = log.error ? `Error: ${log.filename}` : log.filename;
             
             let iconStr = 'description';
-            let colorStr = 'var(--text-secondary)';
+            let iconErrorClass = '';
             
             if (log.error) {
-                colorStr = 'var(--color-error)';
+                iconErrorClass = 'component-text-notice--error';
             } else if (log.category === 'security') {
                 iconStr = 'security';
             } else if (log.category === 'database') {
@@ -119,7 +119,7 @@ export class AdminLogsViewerController {
 
             const tabHtml = `
                 <div class="component-tab ${isActive}" data-tab-id="${id}" title="${log.category ? log.category + '/' : ''}${filename}">
-                    <span class="material-symbols-rounded" style="font-size: 16px; color: ${colorStr};">
+                    <span class="material-symbols-rounded ${iconErrorClass}">
                         ${iconStr}
                     </span>
                     <span>${filename}</span>
@@ -142,10 +142,10 @@ export class AdminLogsViewerController {
         if (textarea) {
             if (this.logsData[id].error) {
                 textarea.value = this.logsData[id].error;
-                textarea.style.color = 'var(--color-error)';
+                textarea.classList.add('component-viewer-textarea--error');
             } else {
                 textarea.value = this.logsData[id].content || '(El archivo de registro está vacío)';
-                textarea.style.color = 'var(--text-code-base)';
+                textarea.classList.remove('component-viewer-textarea--error');
             }
             textarea.scrollTop = textarea.scrollHeight;
         }

@@ -324,8 +324,7 @@ export class AdminBackupsController {
 
         if (btn) {
             btn.innerHTML = '<span class="material-symbols-rounded spin-icon">autorenew</span> Respaldando...';
-            btn.style.pointerEvents = 'none';
-            btn.style.opacity = '0.7';
+            btn.classList.add('disabled-interaction');
         }
 
         if (window.appInstance) window.appInstance.showToast('Enviando solicitud al servidor...', 'info');
@@ -370,8 +369,7 @@ export class AdminBackupsController {
         this.isBackingUp = false;
         if (btn) {
             btn.innerHTML = originalText;
-            btn.style.pointerEvents = 'auto';
-            btn.style.opacity = '1';
+            btn.classList.remove('disabled-interaction');
         }
     }
 
@@ -395,8 +393,7 @@ export class AdminBackupsController {
             
             if (btn) {
                 btn.innerHTML = '<span class="material-symbols-rounded spin-icon">autorenew</span>';
-                btn.style.pointerEvents = 'none';
-                btn.style.opacity = '0.7';
+                btn.classList.add('disabled-interaction');
             }
 
             if (window.appInstance) window.appInstance.showToast('Enviando solicitud al servidor...', 'info');

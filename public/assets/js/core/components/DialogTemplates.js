@@ -17,8 +17,10 @@ export const DialogTemplates = {
     loadingEmailCode: {
         build: () => `
             <div class="pill-container"><div class="drag-handle"></div></div>
-            <div class="component-dialog-header" style="align-items: center; text-align: center; padding: 16px 0;">
-                <div class="component-spinner" style="width: 44px; height: 44px; border-width: 4px; margin-bottom: 16px;"></div>
+            <div class="component-dialog-header component-dialog-content--centered">
+                <div class="component-card__icon-container">
+                    <div class="component-spinner component-spinner--centered"></div>
+                </div>
                 <h2 class="component-dialog-title">Enviando código...</h2>
                 <p class="component-dialog-desc">Por favor espera un momento mientras procesamos tu solicitud.</p>
             </div>
@@ -39,7 +41,7 @@ export const DialogTemplates = {
                 
                 <div class="component-link-container component-link-container--start">
                     <span class="component-link-text">¿No recibiste el código?</span>
-                    <span class="component-link" id="btn-dialog-resend-code" style="pointer-events: none; color: #999999;">Reenviar código de verificación (60)</span>
+                    <span class="component-link disabled-interaction component-text-notice--muted" id="btn-dialog-resend-code">Reenviar código de verificación (60)</span>
                 </div>
             </div>
             <div class="component-dialog-actions">
@@ -55,7 +57,7 @@ export const DialogTemplates = {
                 <h2 class="component-dialog-title">Cerrar sesiones</h2>
                 <p class="component-dialog-desc">Elige qué sesiones deseas cerrar. Tendrás que volver a iniciar sesión en los dispositivos cerrados.</p>
             </div>
-            <div class="component-dialog-actions" style="flex-direction: column; gap: 8px;">
+            <div class="component-form-body">
                 <button class="component-button component-button--h45 component-button--danger component-button--full" data-dialog-action="revoke_all">Cerrar TODAS (incluso esta)</button>
                 <button class="component-button component-button--h45 component-button--dark component-button--full" data-dialog-action="revoke_other">Cerrar todas EXCEPTO esta</button>
                 <button class="component-button component-button--h45 component-button--full hide-on-desktop" data-dialog-action="cancel">Cancelar</button>

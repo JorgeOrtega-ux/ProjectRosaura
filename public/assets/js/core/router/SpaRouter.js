@@ -116,10 +116,30 @@ export class SpaRouter {
 
                 window.dispatchEvent(new CustomEvent('viewLoaded', { detail: { url } }));
             } else {
-                this.render('<div class="view-content" style="padding: 24px; text-align: center;"><h1 style="color: #d32f2f;">Error HTTP</h1><p>No se pudo cargar la vista solicitada. Código: ' + response.status + '</p></div>');
+                this.render(`
+                    <div class="component-message-layout">
+                        <div class="component-message-box">
+                            <div class="component-message-icon-wrapper">
+                                <span class="material-symbols-rounded component-message-icon">error</span>
+                            </div>
+                            <h1 class="component-message-title">Error HTTP</h1>
+                            <p class="component-message-desc">No se pudo cargar la vista solicitada. Código: ${response.status}</p>
+                        </div>
+                    </div>
+                `);
             }
         } catch (error) {
-            this.render('<div class="view-content" style="padding: 24px; text-align: center;"><h1 style="color: #d32f2f;">Error de Red</h1><p>Revise su conexión a internet.</p></div>');
+            this.render(`
+                <div class="component-message-layout">
+                    <div class="component-message-box">
+                        <div class="component-message-icon-wrapper">
+                            <span class="material-symbols-rounded component-message-icon">wifi_off</span>
+                        </div>
+                        <h1 class="component-message-title">Error de Red</h1>
+                        <p class="component-message-desc">Revise su conexión a internet.</p>
+                    </div>
+                </div>
+            `);
         }
     }
 
@@ -210,17 +230,10 @@ export class SpaRouter {
 
     _showLoaderInOutlet() {
         const loaderContainer = document.createElement('div');
-        loaderContainer.style.cssText = 'width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; min-height: 250px;';
+        loaderContainer.className = 'component-layout-centered';
 
         const spinner = document.createElement('div');
-        spinner.style.cssText = 'width: 44px; height: 44px; border: 4px solid var(--border-color); border-top-color: var(--action-primary); border-radius: 50%; animation: spin 0.8s linear infinite;';
-
-        if (!document.getElementById('spa-spinner-keyframe')) {
-            const style = document.createElement('style');
-            style.id = 'spa-spinner-keyframe';
-            style.textContent = `@keyframes spin { to { transform: rotate(360deg); } }`;
-            document.head.appendChild(style);
-        }
+        spinner.className = 'component-spinner component-spinner--centered';
 
         loaderContainer.appendChild(spinner);
         this.outlet.appendChild(loaderContainer);
