@@ -3,6 +3,9 @@ import { MainController } from './MainController.js';
 import { SpaRouter } from './core/router/SpaRouter.js';
 import { AuthController } from './modules/auth/AuthController.js';
 import { ProfileController } from './modules/settings/ProfileController.js';
+import { SecurityController } from './modules/settings/SecurityController.js';
+import { TwoFactorController } from './modules/settings/TwoFactorController.js';
+import { DevicesController } from './modules/settings/DevicesController.js';
 import { AdminUsersController } from './modules/admin/users/AdminUsersController.js';
 import { AdminUserEditController } from './modules/admin/users/AdminUserEditController.js'; 
 import { AdminRoleEditController } from './modules/admin/users/AdminRoleEditController.js';
@@ -26,9 +29,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const auth = new AuthController();
     auth.init();
     
-    // 3. Instanciamos la lógica del Perfil (Settings)
+    // 3. Instanciamos las lógicas de Configuración (Settings) subdivididas
     const profile = new ProfileController();
     profile.init();
+
+    const security = new SecurityController();
+    security.init();
+
+    const twoFactor = new TwoFactorController();
+    twoFactor.init();
+
+    const devices = new DevicesController();
+    devices.init();
 
     // 4. Instanciamos la lógica del Admin Users
     const adminUsers = new AdminUsersController();
@@ -54,10 +66,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 7. Instanciamos los controladores de Logs y el nuevo Visor
     const adminLogs = new AdminLogsController();
-    adminLogs.init(); // <- Faltaba inicializar el controlador
+    adminLogs.init(); 
 
     const adminLogsViewer = new AdminLogsViewerController();
-    adminLogsViewer.init(); // <- Faltaba inicializar el visor de logs
+    adminLogsViewer.init(); 
 
     // 8. Instanciamos el Sistema de Diálogos y lo guardamos global
     window.dialogSystem = new DialogSystem();
