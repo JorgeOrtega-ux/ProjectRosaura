@@ -31,60 +31,80 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ========================================================
-    // MOTOR DE CARGA DIFERIDA (LAZY LOADING CON DYNAMIC IMPORTS)
+    // MOTOR DE CARGA DIFERIDA (LAZY LOADING) REFORZADO
     // ========================================================
     
-    // Registro global de controladores para aplicar un patrón Singleton
-    // Esto evita que hagamos "new Controller()" múltiples veces si el usuario navega a la misma vista repetidas veces.
     window.loadedControllers = {}; 
+    // Mutex Lock: Evita descargas concurrentes del mismo módulo si hay race-conditions
+    window.importLocks = {}; 
 
     window.addEventListener('viewLoaded', async (e) => {
-        // Recibimos la URL ya normalizada (sin parámetros ?id=...) desde nuestro nuevo SpaRouter
         const cleanUrl = e.detail.cleanUrl; 
         
-        // Removemos el AppBasePath (Ej. "/projectrosaura") para que coincida exactamente con las llaves de nuestro RouteModulesMap
         let relativePath = cleanUrl;
         if (window.AppBasePath && cleanUrl.startsWith(window.AppBasePath)) {
             relativePath = cleanUrl.replace(window.AppBasePath, '');
         }
         
-        // Asegurarnos de que si la ruta quedó vacía, sea un slash '/'
         if (relativePath === '') relativePath = '/';
 
-        // Buscamos si existe una configuración para esta ruta
         const moduleConfig = RouteModulesMap[relativePath];
 
         if (moduleConfig) {
+            const className = moduleConfig.className;
+
+            // Si ya hay un proceso de carga activo para esta clase, esperamos a que termine
+            if (window.importLocks[className]) {
+                await window.importLocks[className];
+            }
+
             try {
-                // AQUÍ OCURRE LA MAGIA: El navegador descarga el archivo JS solo en este momento
-                const module = await import(moduleConfig.path);
-                
-                // Evaluamos si el controlador no ha sido cargado/instanciado previamente
-                if (!window.loadedControllers[moduleConfig.className]) {
+                if (!window.loadedControllers[className]) {
                     
-                    // Extraemos la clase del módulo descargado y la instanciamos
-                    const ControllerClass = module[moduleConfig.className];
+                    // Bloqueamos para evitar instanciaciones dobles concurrentes
+                    window.importLocks[className] = import(moduleConfig.path);
+                    const module = await window.importLocks[className];
+                    
+                    const ControllerClass = module[className];
                     const instance = new ControllerClass();
                     
-                    // Guardamos la instancia en nuestro registro
-                    window.loadedControllers[moduleConfig.className] = instance;
+                    window.loadedControllers[className] = instance;
 
-                    // Ejecutamos su método init() de forma segura
                     if (typeof instance.init === 'function') {
                         instance.init();
                     }
                 } else {
-                    // Si el controlador YA existe en memoria, significa que el usuario volvió a esta ruta.
-                    // Simplemente re-ejecutamos su init() para que vuelva a vincular eventos a los nuevos elementos del DOM recién inyectados.
-                    // (En el siguiente paso prepararemos los controladores para que soporten esto sin duplicar eventos).
-                    const existingInstance = window.loadedControllers[moduleConfig.className];
+                    // Si ya existe, reciclamos
+                    const existingInstance = window.loadedControllers[className];
                     if (typeof existingInstance.init === 'function') {
                         existingInstance.init(); 
                     }
                 }
             } catch (error) {
-                console.error(`[ProjectRosaura] Error al hacer Lazy Load del módulo para: ${relativePath}`, error);
+                console.error(`[ProjectRosaura] Error al hacer Lazy Load de: ${relativePath}`, error);
+            } finally {
+                // Liberamos el candado
+                delete window.importLocks[className];
             }
         }
     });
+
+    // ========================================================
+    // AUTO-ARRANQUE DE LAZY LOADING PARA LA CARGA INICIAL (F5)
+    // ========================================================
+    // Ejecución síncrona, directa y sin setTimeouts. Analiza la URL 
+    // real con la que arrancó la página y dispara el inyector del JS.
+    let currentPath = window.location.pathname;
+    let initialCleanUrl = currentPath.split('?')[0].split('#')[0];
+    
+    if (initialCleanUrl.endsWith('/') && initialCleanUrl.length > 1) {
+        initialCleanUrl = initialCleanUrl.slice(0, -1);
+    }
+
+    window.dispatchEvent(new CustomEvent('viewLoaded', { 
+        detail: { 
+            url: currentPath,
+            cleanUrl: initialCleanUrl 
+        } 
+    }));
 });

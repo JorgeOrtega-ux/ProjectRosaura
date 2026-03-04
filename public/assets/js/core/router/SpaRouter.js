@@ -3,6 +3,7 @@ export class SpaRouter {
     constructor(options = {}) {
         this.outlet = document.querySelector(options.outlet || '#app-router-outlet');
         this.basePath = window.AppBasePath || ''; // Dinámico desde app.php
+        this.abortController = null; // Gestor nativo para matar peticiones fantasma
         this.init();
     }
 
@@ -65,6 +66,15 @@ export class SpaRouter {
     }
 
     async loadRoute(url) {
+        // Matar cualquier petición de navegación anterior que siga viva
+        if (this.abortController) {
+            this.abortController.abort();
+        }
+        
+        // Crear una nueva señal de vida para esta navegación exacta
+        this.abortController = new AbortController();
+        const signal = this.abortController.signal;
+
         if (this.outlet) {
             this.outlet.innerHTML = '';
             this._showLoaderInOutlet();
@@ -73,7 +83,8 @@ export class SpaRouter {
         try {
             const fetchPromise = fetch(url, {
                 method: 'GET',
-                headers: { 'X-SPA-Request': 'true' }
+                headers: { 'X-SPA-Request': 'true' },
+                signal: signal // Vinculamos el fetch a la guillotina del abort
             });
             const delayPromise = new Promise(resolve => setTimeout(resolve, 200));
             const [response] = await Promise.all([fetchPromise, delayPromise]);
@@ -111,20 +122,16 @@ export class SpaRouter {
                     }
                 }
 
-                // --- NUEVA LÓGICA DE NORMALIZACIÓN DE URL PARA LAZY LOADING ---
-                // Eliminamos cualquier query string (?id=1) o fragmento de anclaje (#seccion)
                 let cleanUrl = url.split('?')[0].split('#')[0];
                 
-                // Eliminamos el slash (/) final si lo tiene para mantener consistencia
                 if (cleanUrl.endsWith('/') && cleanUrl.length > 1) {
                     cleanUrl = cleanUrl.slice(0, -1);
                 }
 
-                // Disparamos la vista cargada inyectando la URL original y la URL limpia
                 window.dispatchEvent(new CustomEvent('viewLoaded', { 
                     detail: { 
                         url: url,
-                        cleanUrl: cleanUrl // Esta la usa AppInit para el Dictionary Map
+                        cleanUrl: cleanUrl 
                     } 
                 }));
             } else {
@@ -141,6 +148,11 @@ export class SpaRouter {
                 `);
             }
         } catch (error) {
+            // Si el error es porque nosotros matamos la petición (AbortError), no renderizamos error de red, silenciamos el proceso.
+            if (error.name === 'AbortError') {
+                return;
+            }
+
             this.render(`
                 <div class="component-message-layout">
                     <div class="component-message-box">
