@@ -7,6 +7,7 @@ export class SecurityController {
         this.api = new ApiService();
         this.config = window.AppServerConfig || {};
         this.basePath = window.AppBasePath || '';
+        this.eventsBound = false; // <-- BANDERA DE BLINDAJE
     }
 
     init() {
@@ -15,6 +16,8 @@ export class SecurityController {
     }
 
     bindEvents() {
+        if (this.eventsBound) return; // <-- EVITA DUPLICAR EVENTOS
+
         document.addEventListener('click', (e) => {
             const btnVerifyPass = e.target.closest('[data-action="submitVerifyCurrentPassword"]');
             if (btnVerifyPass) this.verifyCurrentPassword(btnVerifyPass);
@@ -35,6 +38,8 @@ export class SecurityController {
                 }
             }
         });
+
+        this.eventsBound = true; // <-- SELLA LOS EVENTOS
     }
 
     showMessage(msg, type = 'error') {

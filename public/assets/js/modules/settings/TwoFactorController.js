@@ -8,18 +8,22 @@ export class TwoFactorController {
         this.currentRecoveryCodes = null;
         this.newRecoveryCodes = null;
         this.basePath = window.AppBasePath || '';
+        this.eventsBound = false; // <-- BANDERA DE BLINDAJE
     }
 
     init() {
         this.bindEvents();
         console.log("TwoFactorController inicializado.");
 
+        // Esta lógica debe ejecutarse cada vez que init() es llamado tras renderizar la vista
         if (document.getElementById('2fa-setup-container')) {
             this.init2FAView();
         }
     }
 
     bindEvents() {
+        if (this.eventsBound) return; // <-- EVITA DUPLICAR EVENTOS
+
         document.addEventListener('click', (e) => {
             const btnActivate2FA = e.target.closest('[data-action="submitActivate2FA"]');
             if (btnActivate2FA) this.enable2FA(btnActivate2FA);
@@ -58,6 +62,8 @@ export class TwoFactorController {
                 this.init2FAView();
             }
         });
+
+        this.eventsBound = true; // <-- SELLA LOS EVENTOS
     }
 
     showMessage(msg, type = 'error') {

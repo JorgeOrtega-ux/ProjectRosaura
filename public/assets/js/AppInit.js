@@ -1,89 +1,90 @@
 // public/assets/js/AppInit.js
 import { MainController } from './MainController.js';
 import { SpaRouter } from './core/router/SpaRouter.js';
-import { AuthController } from './modules/auth/AuthController.js';
-import { ProfileController } from './modules/settings/ProfileController.js';
-import { SecurityController } from './modules/settings/SecurityController.js';
-import { TwoFactorController } from './modules/settings/TwoFactorController.js';
-import { DevicesController } from './modules/settings/DevicesController.js';
-import { AdminUsersController } from './modules/admin/users/AdminUsersController.js';
-import { AdminUserEditController } from './modules/admin/users/AdminUserEditController.js'; 
-import { AdminRoleEditController } from './modules/admin/users/AdminRoleEditController.js';
-import { AdminStatusEditController } from './modules/admin/users/AdminStatusEditController.js';
-import { AdminServerConfigController } from './modules/admin/server/AdminServerConfigController.js';
-import { AdminBackupsController } from './modules/admin/backups/AdminBackupsController.js';
-import { AdminBackupsAutomationController } from './modules/admin/backups/AdminBackupsAutomationController.js';
-import { AdminLogsController } from './modules/admin/logs/AdminLogsController.js';
-import { AdminLogsViewerController } from './modules/admin/logs/AdminLogsViewerController.js';
 import { DialogSystem } from './core/components/DialogSystem.js';
 import { TooltipSystem } from './core/components/TooltipSystem.js';
 import { CalendarSystem } from './core/components/CalendarSystem.js';
 
+// Importamos nuestro nuevo Mapa de Rutas
+import { RouteModulesMap } from './core/router/RouteModulesMap.js';
+
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Instanciamos lógica UI base
+    // 1. Instanciamos lógica UI base (Global)
     const app = new MainController();
     app.init();
     window.appInstance = app; 
 
-    // 2. Instanciamos la lógica de autenticación
-    const auth = new AuthController();
-    auth.init();
-    
-    // 3. Instanciamos las lógicas de Configuración (Settings) subdivididas
-    const profile = new ProfileController();
-    profile.init();
-
-    const security = new SecurityController();
-    security.init();
-
-    const twoFactor = new TwoFactorController();
-    twoFactor.init();
-
-    const devices = new DevicesController();
-    devices.init();
-
-    // 4. Instanciamos la lógica del Admin Users
-    const adminUsers = new AdminUsersController();
-
-    // 5. Instanciamos controladores de Edición como Admin
-    const adminUserEdit = new AdminUserEditController(); 
-    adminUserEdit.init();
-
-    const adminRoleEdit = new AdminRoleEditController(); 
-    adminRoleEdit.init();
-
-    const adminStatusEdit = new AdminStatusEditController();
-    adminStatusEdit.init();
-
-    const adminServerConfig = new AdminServerConfigController();
-    adminServerConfig.init();
-
-    const adminBackups = new AdminBackupsController(); 
-
-    // 6. Instanciamos el controlador de Automatización de Backups
-    const adminBackupsAuto = new AdminBackupsAutomationController();
-    adminBackupsAuto.init();
-
-    // 7. Instanciamos los controladores de Logs y el nuevo Visor
-    const adminLogs = new AdminLogsController();
-    adminLogs.init(); 
-
-    const adminLogsViewer = new AdminLogsViewerController();
-    adminLogsViewer.init(); 
-
-    // 8. Instanciamos el Sistema de Diálogos y lo guardamos global
+    // 2. Instanciamos el Sistema de Diálogos global
     window.dialogSystem = new DialogSystem();
 
-    // 9. Instanciamos e inicializamos el Sistema de Calendario Global
+    // 3. Instanciamos e inicializamos el Sistema de Calendario Global
     window.calendarSystem = new CalendarSystem();
     window.calendarSystem.init();
 
-    // 10. Instanciamos el Router SPA
+    // 4. Instanciamos e inicializamos el Sistema de Tooltips
+    window.tooltipSystem = new TooltipSystem();
+    window.tooltipSystem.init();
+
+    // 5. Instanciamos el Router SPA
     window.spaRouter = new SpaRouter({
         outlet: '#app-router-outlet'
     });
 
-    // 11. Instanciamos e inicializamos el Sistema de Tooltips
-    window.tooltipSystem = new TooltipSystem();
-    window.tooltipSystem.init();
+    // ========================================================
+    // MOTOR DE CARGA DIFERIDA (LAZY LOADING CON DYNAMIC IMPORTS)
+    // ========================================================
+    
+    // Registro global de controladores para aplicar un patrón Singleton
+    // Esto evita que hagamos "new Controller()" múltiples veces si el usuario navega a la misma vista repetidas veces.
+    window.loadedControllers = {}; 
+
+    window.addEventListener('viewLoaded', async (e) => {
+        // Recibimos la URL ya normalizada (sin parámetros ?id=...) desde nuestro nuevo SpaRouter
+        const cleanUrl = e.detail.cleanUrl; 
+        
+        // Removemos el AppBasePath (Ej. "/projectrosaura") para que coincida exactamente con las llaves de nuestro RouteModulesMap
+        let relativePath = cleanUrl;
+        if (window.AppBasePath && cleanUrl.startsWith(window.AppBasePath)) {
+            relativePath = cleanUrl.replace(window.AppBasePath, '');
+        }
+        
+        // Asegurarnos de que si la ruta quedó vacía, sea un slash '/'
+        if (relativePath === '') relativePath = '/';
+
+        // Buscamos si existe una configuración para esta ruta
+        const moduleConfig = RouteModulesMap[relativePath];
+
+        if (moduleConfig) {
+            try {
+                // AQUÍ OCURRE LA MAGIA: El navegador descarga el archivo JS solo en este momento
+                const module = await import(moduleConfig.path);
+                
+                // Evaluamos si el controlador no ha sido cargado/instanciado previamente
+                if (!window.loadedControllers[moduleConfig.className]) {
+                    
+                    // Extraemos la clase del módulo descargado y la instanciamos
+                    const ControllerClass = module[moduleConfig.className];
+                    const instance = new ControllerClass();
+                    
+                    // Guardamos la instancia en nuestro registro
+                    window.loadedControllers[moduleConfig.className] = instance;
+
+                    // Ejecutamos su método init() de forma segura
+                    if (typeof instance.init === 'function') {
+                        instance.init();
+                    }
+                } else {
+                    // Si el controlador YA existe en memoria, significa que el usuario volvió a esta ruta.
+                    // Simplemente re-ejecutamos su init() para que vuelva a vincular eventos a los nuevos elementos del DOM recién inyectados.
+                    // (En el siguiente paso prepararemos los controladores para que soporten esto sin duplicar eventos).
+                    const existingInstance = window.loadedControllers[moduleConfig.className];
+                    if (typeof existingInstance.init === 'function') {
+                        existingInstance.init(); 
+                    }
+                }
+            } catch (error) {
+                console.error(`[ProjectRosaura] Error al hacer Lazy Load del módulo para: ${relativePath}`, error);
+            }
+        }
+    });
 });

@@ -7,6 +7,7 @@ export class AdminBackupsAutomationController {
         this.api = new ApiService();
         this.initialState = null;
         this.state = {};
+        this.eventsBound = false; // <-- BANDERA DE BLINDAJE
 
         this.freqMap = {
             0: 'Modo prueba (10 segundos)',
@@ -23,12 +24,15 @@ export class AdminBackupsAutomationController {
 
     init() {
         this.bindEvents();
+        // Esta lógica debe ejecutarse cada vez que init() es llamado tras renderizar la vista
         if (window.location.pathname.includes('/admin/backups/automation')) {
             this.loadCurrentConfig();
         }
     }
 
     bindEvents() {
+        if (this.eventsBound) return; // <-- EVITA DUPLICAR EVENTOS
+
         window.addEventListener('viewLoaded', (e) => {
             if (e.detail.url.includes('/admin/backups/automation')) {
                 this.loadCurrentConfig();
@@ -94,6 +98,8 @@ export class AdminBackupsAutomationController {
                 this.checkForChanges();
             }
         });
+
+        this.eventsBound = true; // <-- SELLA LOS EVENTOS
     }
 
     showMessage(msg, type = 'error') {

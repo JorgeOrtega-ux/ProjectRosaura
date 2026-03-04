@@ -7,6 +7,7 @@ export class AdminLogsController {
         this.selectedLogs = new Set();
         this.api = new ApiService();
         this.basePath = window.AppBasePath || '';
+        this.eventsBound = false; // <-- BANDERA DE BLINDAJE
     }
 
     init() {
@@ -14,6 +15,8 @@ export class AdminLogsController {
     }
 
     bindEvents() {
+        if (this.eventsBound) return; // <-- EVITA DUPLICAR EVENTOS
+
         document.addEventListener('click', (e) => {
             if (!window.location.pathname.includes('/admin/logs') || window.location.pathname.includes('viewer')) return;
 
@@ -87,6 +90,8 @@ export class AdminLogsController {
                 this.deselectLogs(); 
             }
         });
+
+        this.eventsBound = true; // <-- SELLA LOS EVENTOS
     }
 
     openFilterSubMenu(btn) {

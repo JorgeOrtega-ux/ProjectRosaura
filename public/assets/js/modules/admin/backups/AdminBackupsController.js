@@ -8,6 +8,7 @@ export class AdminBackupsController {
         this.isBackingUp = false;
         this.api = new ApiService();
         this.basePath = window.AppBasePath || '';
+        this.eventsBound = false; // <-- BANDERA DE BLINDAJE
         this.init();
     }
 
@@ -17,6 +18,8 @@ export class AdminBackupsController {
     }
 
     bindEvents() {
+        if (this.eventsBound) return; // <-- EVITA DUPLICAR EVENTOS
+
         document.addEventListener('click', (e) => {
             if (!window.location.pathname.includes('/admin/backups')) return;
 
@@ -94,6 +97,8 @@ export class AdminBackupsController {
                 this.deselectBackup(); 
             }
         });
+
+        this.eventsBound = true; // <-- SELLA LOS EVENTOS
     }
 
     openFilterSubMenu(btn) {

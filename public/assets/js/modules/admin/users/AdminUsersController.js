@@ -4,6 +4,7 @@ export class AdminUsersController {
     constructor() {
         this.selectedUserId = null; 
         this.basePath = window.AppBasePath || '';
+        this.eventsBound = false; // <-- BANDERA DE BLINDAJE
         this.init();
     }
 
@@ -13,6 +14,8 @@ export class AdminUsersController {
     }
 
     bindEvents() {
+        if (this.eventsBound) return; // <-- EVITA DUPLICAR EVENTOS
+
         document.addEventListener('click', (e) => {
             const searchBtn = e.target.closest('[data-action="searchUser"]');
             const toggleFiltersBtn = e.target.closest('[data-action="toggleUserFilters"]');
@@ -72,6 +75,8 @@ export class AdminUsersController {
                 this.deselectUser(); 
             }
         });
+
+        this.eventsBound = true; // <-- SELLA LOS EVENTOS
     }
 
     editSelectedUser() {

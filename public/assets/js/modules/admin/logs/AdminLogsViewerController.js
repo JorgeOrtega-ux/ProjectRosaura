@@ -8,6 +8,7 @@ export class AdminLogsViewerController {
         this.logsData = {};
         this.activeTabId = null;
         this.basePath = window.AppBasePath || '';
+        this.eventsBound = false; // <-- BANDERA DE BLINDAJE
     }
 
     init() {
@@ -19,6 +20,8 @@ export class AdminLogsViewerController {
     }
 
     bindEvents() {
+        if (this.eventsBound) return; // <-- EVITA DUPLICAR EVENTOS
+
         // Escucha la navegación del SPA Router
         window.addEventListener('viewLoaded', (e) => {
             if (e.detail.url.includes('/admin/logs/viewer')) {
@@ -43,6 +46,8 @@ export class AdminLogsViewerController {
                 this.switchTab(tabId);
             }
         });
+
+        this.eventsBound = true; // <-- SELLA LOS EVENTOS
     }
 
     async loadLogs(urlStr) {

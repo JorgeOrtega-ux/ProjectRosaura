@@ -78,7 +78,6 @@ export class SpaRouter {
             const delayPromise = new Promise(resolve => setTimeout(resolve, 200));
             const [response] = await Promise.all([fetchPromise, delayPromise]);
 
-            // Se agregó el status 503 para aceptar la respuesta HTML del Modo Mantenimiento
             if (response.ok || response.status === 404 || response.status === 403 || response.status === 503) {
                 const updateUrl = response.headers.get('X-SPA-Update-URL');
                 if (updateUrl) {
@@ -91,9 +90,7 @@ export class SpaRouter {
                 this.highlightCurrentRoute();
                 this.updateDocumentTitle(url);
 
-                // ACTUALIZACIÓN DE RUTAS DE "PANTALLA COMPLETA / SIN HEADER"
                 const isAuthRoute = url.includes('/login') || url.includes('/register') || url.includes('/forgot-password') || url.includes('/reset-password') || url.includes('/account-suspended') || url.includes('/account-deleted');
-                // Detectar si la respuesta es de Mantenimiento por status o contenido HTML (Message Component)
                 const isMaintenanceRoute = response.status === 503 || html.includes('component-message-icon');
                 
                 const topBar = document.querySelector('.general-content-top');
@@ -114,7 +111,22 @@ export class SpaRouter {
                     }
                 }
 
-                window.dispatchEvent(new CustomEvent('viewLoaded', { detail: { url } }));
+                // --- NUEVA LÓGICA DE NORMALIZACIÓN DE URL PARA LAZY LOADING ---
+                // Eliminamos cualquier query string (?id=1) o fragmento de anclaje (#seccion)
+                let cleanUrl = url.split('?')[0].split('#')[0];
+                
+                // Eliminamos el slash (/) final si lo tiene para mantener consistencia
+                if (cleanUrl.endsWith('/') && cleanUrl.length > 1) {
+                    cleanUrl = cleanUrl.slice(0, -1);
+                }
+
+                // Disparamos la vista cargada inyectando la URL original y la URL limpia
+                window.dispatchEvent(new CustomEvent('viewLoaded', { 
+                    detail: { 
+                        url: url,
+                        cleanUrl: cleanUrl // Esta la usa AppInit para el Dictionary Map
+                    } 
+                }));
             } else {
                 this.render(`
                     <div class="component-message-layout">
@@ -200,7 +212,6 @@ export class SpaRouter {
             }
         }
 
-        // Dinamizamos la búsqueda de los dropdown items usando template literals
         if (normalizedPath.includes('/settings')) {
             const dropdownSettingsItem = document.querySelector(`.component-module--dropdown [data-nav^="${this.basePath}/settings"]`);
             if (dropdownSettingsItem) {

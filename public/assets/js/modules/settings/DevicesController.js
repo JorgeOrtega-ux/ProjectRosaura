@@ -6,18 +6,22 @@ export class DevicesController {
     constructor() {
         this.api = new ApiService();
         this.basePath = window.AppBasePath || '';
+        this.eventsBound = false; // <-- BANDERA DE BLINDAJE
     }
 
     init() {
         this.bindEvents();
         console.log("DevicesController inicializado.");
 
+        // Esta lógica debe ejecutarse cada vez que init() es llamado tras renderizar la vista
         if (document.getElementById('devices-container')) {
             this.initDevicesView();
         }
     }
 
     bindEvents() {
+        if (this.eventsBound) return; // <-- EVITA DUPLICAR EVENTOS
+
         document.addEventListener('click', (e) => {
             const btnRevokeAll = e.target.closest('[data-action="revokeAllDevices"]');
             if (btnRevokeAll) this.revokeAllDevices(btnRevokeAll);
@@ -31,6 +35,8 @@ export class DevicesController {
                 this.initDevicesView();
             }
         });
+
+        this.eventsBound = true; // <-- SELLA LOS EVENTOS
     }
 
     showMessage(msg, type = 'error') {

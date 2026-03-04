@@ -8,12 +8,14 @@ export class ProfileController {
         this.selectedFile = null;
         this.isDefaultAvatar = false;
         this.config = window.AppServerConfig || {};
+        this.eventsBound = false; // <-- BANDERA DE BLINDAJE
     }
 
     init() {
         this.bindEvents();
         console.log("ProfileController inicializado.");
 
+        // Esta lógica debe actualizarse con los elementos inyectados en el DOM por el Router
         const imgEl = document.getElementById('profile-avatar-img');
         if (imgEl && imgEl.src.includes('/default/')) {
             this.isDefaultAvatar = true;
@@ -21,6 +23,8 @@ export class ProfileController {
     }
 
     bindEvents() {
+        if (this.eventsBound) return; // <-- EVITA DUPLICAR EVENTOS
+
         document.addEventListener('click', (e) => {
             if (e.target.closest('#btn-change-avatar') || e.target.closest('#profile-avatar-overlay')) {
                 const input = document.getElementById('input-avatar-file');
@@ -63,6 +67,8 @@ export class ProfileController {
                 e.target.value = formatted;
             }
         });
+
+        this.eventsBound = true; // <-- SELLA LOS EVENTOS
     }
 
     showMessage(msg, type = 'error') {

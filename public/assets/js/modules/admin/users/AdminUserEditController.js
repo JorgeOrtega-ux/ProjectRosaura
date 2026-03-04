@@ -10,6 +10,7 @@ export class AdminUserEditController {
         this.isDefaultAvatar = false;
         this.basePath = window.AppBasePath || '';
         this.config = window.AppServerConfig || {};
+        this.eventsBound = false; // <-- BANDERA DE BLINDAJE
         
         this.langMap = {
             'en-US': 'English (United States)',
@@ -34,6 +35,7 @@ export class AdminUserEditController {
     init() {
         this.bindEvents();
         
+        // Esta lógica debe ejecutarse cada vez que init() es llamado tras renderizar la vista
         if (window.location.pathname.includes('/admin/edit-user')) {
             const urlParams = new URLSearchParams(window.location.search);
             this.targetUserId = urlParams.get('id');
@@ -47,6 +49,8 @@ export class AdminUserEditController {
     }
 
     bindEvents() {
+        if (this.eventsBound) return; // <-- EVITA DUPLICAR EVENTOS
+
         window.addEventListener('viewLoaded', (e) => {
             if (e.detail.url.includes('/admin/edit-user')) {
                 const urlParams = new URLSearchParams(window.location.search);
@@ -106,6 +110,8 @@ export class AdminUserEditController {
                 this.savePreference(key, value);
             }
         });
+
+        this.eventsBound = true; // <-- SELLA LOS EVENTOS
     }
 
     showMessage(msg, type = 'error') {

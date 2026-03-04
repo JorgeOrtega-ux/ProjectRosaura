@@ -8,12 +8,14 @@ export class AuthController {
         this.config = window.AppServerConfig || {};
         this.resendInterval = null; 
         this.basePath = window.AppBasePath || '';
+        this.eventsBound = false; // <-- BANDERA DE BLINDAJE
     }
 
     init() {
         this.bindEvents();
         console.log("AuthController inicializado.");
         
+        // Esta validación debe ejecutarse cada vez que se llama a init()
         if (window.location.pathname.includes('/register/verification-account')) {
             const resendBtn = document.getElementById('btn-resend-register-code');
             if (resendBtn) this.startResendTimer(resendBtn, __('btn_resend_code'), 60, true);
@@ -21,6 +23,8 @@ export class AuthController {
     }
 
     bindEvents() {
+        if (this.eventsBound) return; // <-- EVITA DUPLICAR EVENTOS
+
         window.addEventListener('viewLoaded', (e) => {
             if (e.detail.url.includes('/register/verification-account')) {
                 const resendBtn = document.getElementById('btn-resend-register-code');
@@ -63,6 +67,8 @@ export class AuthController {
                 e.target.value = formatted;
             }
         });
+
+        this.eventsBound = true; // <-- SELLA LOS EVENTOS
     }
 
     startResendTimer(element, defaultText, seconds = 60, isLink = false) {

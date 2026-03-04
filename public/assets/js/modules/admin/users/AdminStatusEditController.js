@@ -9,6 +9,7 @@ export class AdminStatusEditController {
         this.initialState = null; 
         this.activeTab = 'view-status-config';
         this.basePath = window.AppBasePath || '';
+        this.eventsBound = false; // <-- BANDERA DE BLINDAJE
         
         this.state = {
             status: 'active',
@@ -55,6 +56,7 @@ export class AdminStatusEditController {
 
     init() {
         this.bindEvents();
+        // Esta lógica debe ejecutarse cada vez que init() es llamado tras renderizar la vista
         if (window.location.pathname.includes('/admin/edit-status')) {
             this.handleLoad();
         }
@@ -72,6 +74,8 @@ export class AdminStatusEditController {
     }
 
     bindEvents() {
+        if (this.eventsBound) return; // <-- EVITA DUPLICAR EVENTOS
+
         window.addEventListener('viewLoaded', (e) => {
             if (e.detail.url.includes('/admin/edit-status')) this.handleLoad();
         });
@@ -211,6 +215,8 @@ export class AdminStatusEditController {
                 this.checkForChanges(); 
             }
         });
+
+        this.eventsBound = true; // <-- SELLA LOS EVENTOS
     }
 
     showMessage(msg, type = 'error') {

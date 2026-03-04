@@ -7,16 +7,20 @@ export class AdminServerConfigController {
         this.api = new ApiService();
         this.initialState = null;
         this.state = {};
+        this.eventsBound = false; // <-- BANDERA DE BLINDAJE
     }
 
     init() {
         this.bindEvents();
+        // Esta lógica debe ejecutarse cada vez que init() es llamado tras renderizar la vista
         if (window.location.pathname.includes('/admin/server-config')) {
             this.loadData();
         }
     }
 
     bindEvents() {
+        if (this.eventsBound) return; // <-- EVITA DUPLICAR EVENTOS
+
         window.addEventListener('viewLoaded', (e) => {
             if (e.detail.url.includes('/admin/server-config')) {
                 this.loadData();
@@ -56,6 +60,8 @@ export class AdminServerConfigController {
                 this.checkForChanges();
             }
         });
+
+        this.eventsBound = true; // <-- SELLA LOS EVENTOS
     }
 
     showMessage(msg, type = 'error') {

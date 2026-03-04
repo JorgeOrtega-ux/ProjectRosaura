@@ -8,6 +8,7 @@ export class AdminRoleEditController {
         this.targetUserId = null;
         this.pendingRole = null; 
         this.basePath = window.AppBasePath || '';
+        this.eventsBound = false; // <-- BANDERA DE BLINDAJE
         
         this.roleMap = {
             'founder': 'Fundador',
@@ -20,6 +21,7 @@ export class AdminRoleEditController {
     init() {
         this.bindEvents();
         
+        // Esta lógica debe ejecutarse cada vez que init() es llamado tras renderizar la vista
         if (window.location.pathname.includes('/admin/edit-role')) {
             const urlParams = new URLSearchParams(window.location.search);
             this.targetUserId = urlParams.get('id');
@@ -33,6 +35,8 @@ export class AdminRoleEditController {
     }
 
     bindEvents() {
+        if (this.eventsBound) return; // <-- EVITA DUPLICAR EVENTOS
+
         window.addEventListener('viewLoaded', (e) => {
             if (e.detail.url.includes('/admin/edit-role')) {
                 const urlParams = new URLSearchParams(window.location.search);
@@ -79,6 +83,8 @@ export class AdminRoleEditController {
                 }
             }
         });
+
+        this.eventsBound = true; // <-- SELLA LOS EVENTOS
     }
 
     showMessage(msg, type = 'error') {
