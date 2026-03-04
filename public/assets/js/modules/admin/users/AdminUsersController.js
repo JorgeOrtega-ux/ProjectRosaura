@@ -5,7 +5,7 @@ export class AdminUsersController {
         this.selectedUserId = null; 
         this.basePath = window.AppBasePath || '';
         this.eventsBound = false; // <-- BANDERA DE BLINDAJE
-        this.init();
+        // this.init(); <-- ELIMINADO PARA EVITAR DOBLE INICIALIZACIÓN
     }
 
     init() {

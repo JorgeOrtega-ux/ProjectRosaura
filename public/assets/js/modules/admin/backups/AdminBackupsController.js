@@ -9,7 +9,7 @@ export class AdminBackupsController {
         this.api = new ApiService();
         this.basePath = window.AppBasePath || '';
         this.eventsBound = false; // <-- BANDERA DE BLINDAJE
-        this.init();
+        // this.init(); <-- ELIMINADO PARA EVITAR DOBLE INICIALIZACIÓN
     }
 
     init() {
