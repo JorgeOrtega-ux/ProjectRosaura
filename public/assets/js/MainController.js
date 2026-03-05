@@ -168,6 +168,7 @@ export class MainController {
                 else if (action === 'toggleModuleLanguage') this.toggleModule('moduleLanguage');
                 else if (action === 'toggleModuleTheme') this.toggleModule('moduleTheme');
                 else if (action === 'toggleMobileSearch') this.toggleMobileSearch();
+                else if (action === 'submitLogout') { e.preventDefault(); this.handleLogout(btn); }
                 else if (action === 'toggleAccordion') {
                     const accordion = btn.closest('.component-accordion');
                     if (accordion) accordion.classList.toggle('active');
@@ -359,5 +360,25 @@ export class MainController {
         const width = window.innerWidth;
         let newDevice = width <= 768 ? 'Móvil' : (width <= 1024 ? 'Tablet' : 'Escritorio');
         if (this.state.currentDevice !== newDevice) this.state.currentDevice = newDevice;
+    }
+
+    async handleLogout(logoutBtn) {
+        if (logoutBtn.dataset.loading === 'true') return; 
+        logoutBtn.dataset.loading = 'true';
+
+        const spinnerDiv = document.createElement('div');
+        spinnerDiv.className = 'component-menu-link-icon';
+        spinnerDiv.innerHTML = '<div class="component-spinner"></div>';
+        logoutBtn.appendChild(spinnerDiv);
+
+        const result = await this.api.post(ApiRoutes.Auth.Logout);
+
+        if (result.success) {
+            const basePath = window.AppBasePath || '';
+            window.location.href = basePath + '/';
+        } else {
+            spinnerDiv.remove();
+            logoutBtn.dataset.loading = 'false';
+        }
     }
 }

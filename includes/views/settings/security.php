@@ -51,7 +51,7 @@ if (isset($_SESSION['user_id'])) {
                     </div>
                     <div class="component-card__text">
                         <h2 class="component-card__title"><?php echo __('sec_2fa_title'); ?></h2>
-                        <p class="component-card__description"><?php echo $text2FA;</p>
+                        <p class="component-card__description"><?php echo $text2FA; ?></p>
                     </div>
                 </div>
                 <div class="component-card__actions component-card__actions--end">

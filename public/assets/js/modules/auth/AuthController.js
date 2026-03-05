@@ -42,7 +42,6 @@ export class AuthController {
             const resendRegisterCodeBtn = e.target.closest('[data-action="resendRegisterCode"]');
             const forgotPasswordBtn = e.target.closest('[data-action="submitForgotPassword"]');
             const resetPasswordBtn = e.target.closest('[data-action="submitResetPassword"]');
-            const logoutBtn = e.target.closest('[data-action="submitLogout"]');
             
             if (toggleBtn) this.togglePasswordVisibility(toggleBtn);
             if (loginBtn) { e.preventDefault(); this.handleLogin(loginBtn); }
@@ -53,7 +52,6 @@ export class AuthController {
             if (resendRegisterCodeBtn) { e.preventDefault(); this.handleResendRegisterCode(resendRegisterCodeBtn); }
             if (forgotPasswordBtn) { e.preventDefault(); this.handleForgotPassword(forgotPasswordBtn); }
             if (resetPasswordBtn) { e.preventDefault(); this.handleResetPassword(resetPasswordBtn); }
-            if (logoutBtn) { e.preventDefault(); this.handleLogout(logoutBtn); }
         });
 
         document.addEventListener('input', (e) => {
@@ -446,25 +444,6 @@ export class AuthController {
         } else {
             this.restoreButton(btn);
             this.showError(result.message);
-        }
-    }
-
-    async handleLogout(logoutBtn) {
-        if (logoutBtn.dataset.loading === 'true') return; 
-        logoutBtn.dataset.loading = 'true';
-
-        const spinnerDiv = document.createElement('div');
-        spinnerDiv.className = 'component-menu-link-icon';
-        spinnerDiv.innerHTML = '<div class="component-spinner"></div>';
-        logoutBtn.appendChild(spinnerDiv);
-
-        const result = await this.api.post(ApiRoutes.Auth.Logout);
-
-        if (result.success) {
-            window.location.href = this.basePath + '/';
-        } else {
-            spinnerDiv.remove();
-            logoutBtn.dataset.loading = 'false';
         }
     }
 }
