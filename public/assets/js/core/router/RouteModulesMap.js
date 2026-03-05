@@ -33,5 +33,9 @@ export const RouteModulesMap = {
 
     // ---- MÓDULOS DE LOGS ----
     '/admin/logs': { path: './modules/admin/logs/AdminLogsController.js', className: 'AdminLogsController' },
-    '/admin/logs-viewer': { path: './modules/admin/logs/AdminLogsViewerController.js', className: 'AdminLogsViewerController' }
+    '/admin/logs-viewer': { path: './modules/admin/logs/AdminLogsViewerController.js', className: 'AdminLogsViewerController' },
+
+    // ---- MÓDULOS DE STUDIO (WEBSOCKET) ----
+    '/studio/management-panel': { path: './modules/studio/StudioController.js', className: 'StudioController' },
+    '/studio/manage-content': { path: './modules/studio/StudioController.js', className: 'StudioController' }
 };

@@ -26,7 +26,6 @@ document.addEventListener('DOMContentLoaded', () => {
     window.tooltipSystem.init();
 
     // 5. Instanciamos el Router SPA
-    // CORRECCIÓN APLICADA AQUÍ: Cambio de '#app-router-outlet' a '[data-ref="app-router-outlet"]'
     window.spaRouter = new SpaRouter({
         outlet: '[data-ref="app-router-outlet"]'
     });
@@ -49,7 +48,15 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (relativePath === '') relativePath = '/';
 
-        const moduleConfig = RouteModulesMap[relativePath];
+        let moduleConfig = RouteModulesMap[relativePath];
+
+        // Soporte para rutas dinámicas (Ej: /studio/management-panel/ID_DEL_PROYECTO)
+        if (!moduleConfig) {
+            const baseRoute = Object.keys(RouteModulesMap).find(route => relativePath.startsWith(route + '/'));
+            if (baseRoute) {
+                moduleConfig = RouteModulesMap[baseRoute];
+            }
+        }
 
         if (moduleConfig) {
             const className = moduleConfig.className;

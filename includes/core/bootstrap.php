@@ -7,7 +7,8 @@ define('ROOT_PATH', dirname(__DIR__, 2));
 // Cabeceras de seguridad
 header("X-Frame-Options: SAMEORIGIN");
 header("X-Content-Type-Options: nosniff");
-header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://api.qrserver.com; connect-src 'self' https://unpkg.com; frame-ancestors 'none';");
+// ACTUALIZADO: Se añadieron ws: y wss: a la directiva connect-src para permitir WebSockets
+header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://api.qrserver.com; connect-src 'self' https://unpkg.com ws: wss:; frame-ancestors 'none';");
 
 require_once ROOT_PATH . '/vendor/autoload.php';
 
