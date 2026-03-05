@@ -33,6 +33,11 @@ return [
     '/settings/devices' => ['view' => 'settings/devices.php', 'auth' => true],
     '/settings/delete-account' => ['view' => 'settings/delete-account.php', 'auth' => true],
 
+    // --- RUTAS DE STUDIO ---
+    '/studio' => ['view' => 'studio/index.php', 'auth' => true],
+    '/studio/management-panel/{uuid}' => ['view' => 'studio/management-panel.php', 'auth' => true],
+    '/studio/manage-content/{uuid}' => ['view' => 'studio/manage-content.php', 'auth' => true],
+
     // --- RUTAS DE ADMINISTRADOR (Requieren autenticación + Roles específicos + 2FA) ---
     '/admin' => ['view' => 'admin/dashboard.php', 'auth' => true, 'roles' => ['founder', 'administrator'], 'requires_2fa' => true],
     '/admin/dashboard' => ['view' => 'admin/dashboard.php', 'auth' => true, 'roles' => ['founder', 'administrator'], 'requires_2fa' => true],

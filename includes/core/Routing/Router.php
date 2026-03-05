@@ -30,11 +30,31 @@ class Router {
             $relativePath = '/';
         }
 
-        if (!array_key_exists($relativePath, $this->routes)) {
-            return ['view' => 'system/404.php'];
+        // 1. Búsqueda de coincidencia exacta
+        if (array_key_exists($relativePath, $this->routes)) {
+            return $this->routes[$relativePath];
         }
 
-        return $this->routes[$relativePath];
+        // 2. Búsqueda con parámetros dinámicos (ej: {uuid})
+        foreach ($this->routes as $route => $config) {
+            if (strpos($route, '{') !== false) {
+                // Convertir {param} a un grupo de captura Regex
+                $pattern = preg_replace('/\{([a-zA-Z0-9_]+)\}/', '(?P<\1>[a-zA-Z0-9_-]+)', $route);
+                $pattern = '#^' . $pattern . '$#';
+                
+                if (preg_match($pattern, $relativePath, $matches)) {
+                    // Pasar parámetros atrapados a $_GET
+                    foreach ($matches as $key => $value) {
+                        if (is_string($key)) {
+                            $_GET[$key] = $value;
+                        }
+                    }
+                    return $config;
+                }
+            }
+        }
+
+        return ['view' => 'system/404.php'];
     }
 }
 ?>

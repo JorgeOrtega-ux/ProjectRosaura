@@ -19,6 +19,10 @@ $requestUriPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 global $systemMessageType;
 $systemMessageType = null;
 
+// Variables globales de sesión
+$isLoggedIn = isset($_SESSION['user_id']);
+$userRole = $_SESSION['user_role'] ?? 'user';
+
 // Extraemos la configuración que fue cargada en bootstrap.php
 global $serverConfig; 
 $isMaintenanceActive = isset($serverConfig['maintenance_mode']) && $serverConfig['maintenance_mode'] == 1;
@@ -60,7 +64,7 @@ if ($isMaintenanceActive && !$isPrivileged) {
 
     // 2. Validar rutas protegidas (auth)
     if (!empty($routeData['auth']) && !$isLoggedIn) {
-        if (strpos($currentView, 'admin/') === 0) {
+        if (strpos($currentView, 'admin/') === 0 || strpos($currentView, 'studio/') === 0) {
             $currentView = 'system/message.php';
             $systemMessageType = '404';
         } else {
@@ -82,6 +86,25 @@ if ($isMaintenanceActive && !$isPrivileged) {
         if (empty($_SESSION['user_2fa'])) {
             $currentView = 'system/message.php';
             $systemMessageType = 'require_2fa';
+        }
+    }
+
+    // 4.5 Validar Rutas de Studio (Validación de UUID y Redirección)
+    if ($isLoggedIn && strpos($currentView, 'studio/') === 0) {
+        $userIdentifier = $_SESSION['user_uuid'] ?? $_SESSION['user_id'];
+        
+        if ($requestUriPath === APP_URL . '/studio' || $requestUriPath === APP_URL . '/studio/') {
+            // Redirigir al management panel del usuario
+            $currentView = 'studio/management-panel.php';
+            $redirectUrl = APP_URL . '/studio/management-panel/' . $userIdentifier;
+        } else {
+            // Validar que el uuid en la URL existe y sea igual al de la sesión
+            $requestedUuid = $_GET['uuid'] ?? '';
+            if (empty($requestedUuid) || $requestedUuid !== (string)$userIdentifier) {
+                $currentView = 'system/message.php';
+                $systemMessageType = 'unauthorized_studio';
+                $redirectUrl = null;
+            }
         }
     }
 

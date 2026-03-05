@@ -44,6 +44,15 @@ switch ($type) {
         ];
         break;
 
+    case 'unauthorized_studio': // NUEVO MENSAJE DE STUDIO
+        http_response_code(403);
+        $config = [
+            'icon' => 'lock',
+            'title' => __('unauthorized_studio_title') ?? 'Acceso Denegado',
+            'desc' => __('unauthorized_studio_desc') ?? 'Esta sección de Rosaura Studio no existe o no tienes los permisos necesarios para acceder al estudio de otro usuario.'
+        ];
+        break;
+
     case '404':
     default:
         http_response_code(404);

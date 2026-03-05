@@ -2,8 +2,8 @@
 export class SpaRouter {
     constructor(options = {}) {
         this.outlet = document.querySelector(options.outlet || '[data-ref="app-router-outlet"]');
-        this.basePath = window.AppBasePath || ''; // Dinámico desde app.php
-        this.abortController = null; // Gestor nativo para matar peticiones fantasma
+        this.basePath = window.AppBasePath || ''; 
+        this.abortController = null; 
         this.init();
     }
 
@@ -66,12 +66,10 @@ export class SpaRouter {
     }
 
     async loadRoute(url) {
-        // Matar cualquier petición de navegación anterior que siga viva
         if (this.abortController) {
             this.abortController.abort();
         }
         
-        // Crear una nueva señal de vida para esta navegación exacta
         this.abortController = new AbortController();
         const signal = this.abortController.signal;
 
@@ -84,7 +82,7 @@ export class SpaRouter {
             const fetchPromise = fetch(url, {
                 method: 'GET',
                 headers: { 'X-SPA-Request': 'true' },
-                signal: signal // Vinculamos el fetch a la guillotina del abort
+                signal: signal
             });
             const delayPromise = new Promise(resolve => setTimeout(resolve, 200));
             const [response] = await Promise.all([fetchPromise, delayPromise]);
@@ -148,7 +146,6 @@ export class SpaRouter {
                 `);
             }
         } catch (error) {
-            // Si el error es porque nosotros matamos la petición (AbortError), no renderizamos error de red, silenciamos el proceso.
             if (error.name === 'AbortError') {
                 return;
             }
@@ -185,55 +182,47 @@ export class SpaRouter {
             target.classList.add('active');
         });
 
+        // REFERENCIAS A TODOS LOS MENÚS DEL SIDEBAR
         const mainMenu = document.querySelector('[data-ref="sidebar-menu-main"]');
         const settingsMenu = document.querySelector('[data-ref="sidebar-menu-settings"]');
         const adminMenu = document.querySelector('[data-ref="sidebar-menu-admin"]');
-        
-        if (mainMenu && settingsMenu) {
-            if (normalizedPath.includes('/admin') && adminMenu) {
-                mainMenu.classList.remove('active');
-                mainMenu.classList.add('disabled');
-                
-                settingsMenu.classList.remove('active');
-                settingsMenu.classList.add('disabled');
-                
-                adminMenu.classList.remove('disabled');
-                adminMenu.classList.add('active');
-            } else if (normalizedPath.includes('/settings')) {
-                mainMenu.classList.remove('active');
-                mainMenu.classList.add('disabled');
-                
-                if (adminMenu) {
-                    adminMenu.classList.remove('active');
-                    adminMenu.classList.add('disabled');
-                }
-                
-                settingsMenu.classList.remove('disabled');
-                settingsMenu.classList.add('active');
-            } else {
-                settingsMenu.classList.remove('active');
-                settingsMenu.classList.add('disabled');
-                
-                if (adminMenu) {
-                    adminMenu.classList.remove('active');
-                    adminMenu.classList.add('disabled');
-                }
-                
-                mainMenu.classList.remove('disabled');
-                mainMenu.classList.add('active');
-            }
+        const studioMenu = document.querySelector('[data-ref="sidebar-menu-studio"]');
+
+        // FUNCIÓN PARA OCULTAR TODOS LOS MENÚS
+        const hideAllMenus = () => {
+            if (mainMenu) { mainMenu.classList.remove('active'); mainMenu.classList.add('disabled'); }
+            if (settingsMenu) { settingsMenu.classList.remove('active'); settingsMenu.classList.add('disabled'); }
+            if (adminMenu) { adminMenu.classList.remove('active'); adminMenu.classList.add('disabled'); }
+            if (studioMenu) { studioMenu.classList.remove('active'); studioMenu.classList.add('disabled'); }
+        };
+
+        // APLICAR LÓGICA DE VISIBILIDAD
+        hideAllMenus();
+
+        if (normalizedPath.includes('/admin') && adminMenu) {
+            adminMenu.classList.remove('disabled');
+            adminMenu.classList.add('active');
+        } else if (normalizedPath.includes('/settings') && settingsMenu) {
+            settingsMenu.classList.remove('disabled');
+            settingsMenu.classList.add('active');
+        } else if (normalizedPath.includes('/studio') && studioMenu) {
+            studioMenu.classList.remove('disabled');
+            studioMenu.classList.add('active');
+        } else if (mainMenu) {
+            mainMenu.classList.remove('disabled');
+            mainMenu.classList.add('active');
         }
 
+        // LÓGICA PARA LOS DROPDOWNS (Menú de opciones móviles/perfil)
         if (normalizedPath.includes('/settings')) {
             const dropdownSettingsItem = document.querySelector(`.component-module--dropdown [data-nav^="${this.basePath}/settings"]`);
-            if (dropdownSettingsItem) {
-                dropdownSettingsItem.classList.add('active');
-            }
+            if (dropdownSettingsItem) dropdownSettingsItem.classList.add('active');
         } else if (normalizedPath.includes('/admin')) {
             const dropdownAdminItem = document.querySelector(`.component-module--dropdown [data-nav^="${this.basePath}/admin"]`);
-            if (dropdownAdminItem) {
-                dropdownAdminItem.classList.add('active');
-            }
+            if (dropdownAdminItem) dropdownAdminItem.classList.add('active');
+        } else if (normalizedPath.includes('/studio')) {
+            const dropdownStudioItem = document.querySelector(`.component-module--dropdown [data-nav^="${this.basePath}/studio"]`);
+            if (dropdownStudioItem) dropdownStudioItem.classList.add('active');
         }
     }
 

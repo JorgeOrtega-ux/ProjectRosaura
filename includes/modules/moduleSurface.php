@@ -2,12 +2,14 @@
 // includes/modules/moduleSurface.php
 $isLoggedIn = isset($_SESSION['user_id']);
 $userRole = $_SESSION['user_role'] ?? 'user';
+$userIdentifier = $_SESSION['user_uuid'] ?? $_SESSION['user_id'] ?? '';
 $isAdminUser = ($userRole === 'founder' || $userRole === 'administrator');
 
 $requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $isAdminArea = strpos($requestUri, '/admin') !== false && $isAdminUser;
 $isSettingsArea = strpos($requestUri, '/settings') !== false;
-$isMainArea = !$isAdminArea && !$isSettingsArea;
+$isStudioArea = strpos($requestUri, '/studio') !== false && $isLoggedIn;
+$isMainArea = !$isAdminArea && !$isSettingsArea && !$isStudioArea;
 ?>
 <div class="component-module component-module--sidebar disabled" data-module="moduleSurface">
     
@@ -33,6 +35,42 @@ $isMainArea = !$isAdminArea && !$isSettingsArea;
             </div>
         </div>
     </div>
+
+    <?php if ($isLoggedIn): ?>
+    <div class="component-menu component-menu--w265 component-menu--h-full component-menu--no-padding <?php echo $isStudioArea ? 'active' : 'disabled'; ?>" data-ref="sidebar-menu-studio">
+        <div class="component-menu-top">
+            <div class="component-menu-list">
+                <div class="component-menu-link component-menu-link--bordered nav-item" data-nav="<?php echo APP_URL; ?>/">
+                    <div class="component-menu-link-icon">
+                        <span class="material-symbols-rounded">arrow_back</span>
+                    </div>
+                    <div class="component-menu-link-text">
+                        <span><?php echo __('menu_back_home'); ?></span>
+                    </div>
+                </div>
+
+                <div class="component-menu-divider"></div>
+                
+                <div class="component-menu-link nav-item" data-nav="<?php echo APP_URL; ?>/studio/management-panel/<?php echo $userIdentifier; ?>">
+                    <div class="component-menu-link-icon">
+                        <span class="material-symbols-rounded">dashboard</span>
+                    </div>
+                    <div class="component-menu-link-text">
+                        <span><?php echo __('menu_studio_management'); ?></span>
+                    </div>
+                </div>
+                <div class="component-menu-link nav-item" data-nav="<?php echo APP_URL; ?>/studio/manage-content/<?php echo $userIdentifier; ?>">
+                    <div class="component-menu-link-icon">
+                        <span class="material-symbols-rounded">video_library</span>
+                    </div>
+                    <div class="component-menu-link-text">
+                        <span><?php echo __('menu_studio_content'); ?></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
 
     <div class="component-menu component-menu--w265 component-menu--h-full component-menu--no-padding <?php echo $isSettingsArea ? 'active' : 'disabled'; ?>" data-ref="sidebar-menu-settings">
         <div class="component-menu-top">
@@ -90,7 +128,6 @@ $isMainArea = !$isAdminArea && !$isSettingsArea;
 
     <?php if ($isAdminUser): ?>
     <div class="component-menu component-menu--w265 component-menu--h-full component-menu--no-padding <?php echo $isAdminArea ? 'active' : 'disabled'; ?>" data-ref="sidebar-menu-admin">
-        
         <div class="component-menu-top">
             <div class="component-menu-list">
                 <div class="component-menu-link component-menu-link--bordered nav-item" data-nav="<?php echo APP_URL; ?>/">
