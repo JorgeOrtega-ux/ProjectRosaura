@@ -1,8 +1,6 @@
 <?php
 // includes/core/bootstrap.php
 
-session_start();
-
 // Definimos la constante de la raíz del proyecto (2 niveles arriba: incluye/core -> incluye -> raíz)
 define('ROOT_PATH', dirname(__DIR__, 2));
 
@@ -14,7 +12,7 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-i
 require_once ROOT_PATH . '/vendor/autoload.php';
 
 // =========================================================================
-// --- 0. INTERCEPCIÓN DE RESTAURACIÓN DE EMERGENCIA (RESTORE LOCK) ---
+// --- 0. CARGA DE ENTORNO Y CONEXIÓN A REDIS ---
 // =========================================================================
 
 // Cargamos variables de entorno mínimas para conectarnos a Redis temprano
@@ -35,6 +33,38 @@ if (file_exists($envPath)) {
 
 // DEFINIMOS APP_URL globalmente. Quitamos la barra final para consistencia
 define('APP_URL', rtrim($_ENV['APP_URL'] ?? '', '/'));
+
+// Configuración centralizada de Redis (Se usará para Sesiones y Restore Lock de forma eficiente)
+$redisClient = null;
+try {
+    $redisHost = $_ENV['REDIS_HOST'] ?? '127.0.0.1';
+    $redisPort = (int)($_ENV['REDIS_PORT'] ?? 6379);
+    $redisParams = ['scheme' => 'tcp', 'host' => $redisHost, 'port' => $redisPort];
+    if (!empty($_ENV['REDIS_PASS'])) {
+        $redisParams['password'] = $_ENV['REDIS_PASS'];
+    }
+    
+    $redisClient = new \Predis\Client($redisParams);
+    $redisClient->ping(); // Probar conexión
+    
+    // =========================================================================
+    // --- 1. INTERCEPCIÓN DE SESIONES CON REDIS ---
+    // =========================================================================
+    $sessionHandler = new \App\Core\System\RedisSessionHandler($redisClient);
+    session_set_save_handler($sessionHandler, true);
+    
+} catch (\Exception $e) {
+    // Fallback: Si Redis está caído, lo ignoramos para no botar el sistema. 
+    // PHP usará el almacenamiento en archivos por defecto automáticamente.
+    error_log("No se pudo conectar a Redis para el manejo de sesiones. Error: " . $e->getMessage());
+}
+
+// AHORA SÍ: Con el manejador inyectado, iniciamos la sesión
+session_start();
+
+// =========================================================================
+// --- 2. INTERCEPCIÓN DE RESTAURACIÓN DE EMERGENCIA (RESTORE LOCK) ---
+// =========================================================================
 
 function render_restoring_view() {
     http_response_code(503); // Service Unavailable
@@ -76,25 +106,17 @@ function render_restoring_view() {
     exit;
 }
 
+// Si la llave de restauración existe, detenemos TODO aquí mismo.
 try {
-    $redisHost = $_ENV['REDIS_HOST'] ?? '127.0.0.1';
-    $redisPort = (int)($_ENV['REDIS_PORT'] ?? 6379);
-    $redisParams = ['scheme' => 'tcp', 'host' => $redisHost, 'port' => $redisPort];
-    if (!empty($_ENV['REDIS_PASS'])) {
-        $redisParams['password'] = $_ENV['REDIS_PASS'];
-    }
-    $redis = new \Predis\Client($redisParams);
-    
-    // Si la llave existe, detenemos TODO aquí mismo. Nada más cargará.
-    if ($redis->exists('system_status:restoring')) {
+    if ($redisClient && $redisClient->exists('system_status:restoring')) {
         render_restoring_view();
     }
 } catch (\Exception $e) {
-    // Si Redis está apagado, ignoramos el error para no botar la plataforma por completo
+    // Ignoramos el error si Redis falla para no interrumpir el flujo
 }
 
 // =========================================================================
-// --- 1. MANEJO GLOBAL DE ERRORES Y EXCEPCIONES (Ocultar PHP) ---
+// --- 3. MANEJO GLOBAL DE ERRORES Y EXCEPCIONES (Ocultar PHP) ---
 // =========================================================================
 
 ini_set('display_errors', 0);
