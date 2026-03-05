@@ -1,6 +1,6 @@
 <?php
 // api/index.php
-session_start();
+
 header('Content-Type: application/json');
 
 // Cabeceras de seguridad
@@ -33,6 +33,31 @@ if (file_exists($envPath)) {
 }
 // Definimos APP_URL a partir de lo que cargó el .env
 define('APP_URL', rtrim($_ENV['APP_URL'] ?? '', '/'));
+
+// =========================================================================
+// INTERCEPCIÓN DE SESIONES CON REDIS EN LA API
+// =========================================================================
+try {
+    $redisHost = $_ENV['REDIS_HOST'] ?? '127.0.0.1';
+    $redisPort = (int)($_ENV['REDIS_PORT'] ?? 6379);
+    $redisParams = ['scheme' => 'tcp', 'host' => $redisHost, 'port' => $redisPort];
+    if (!empty($_ENV['REDIS_PASS'])) {
+        $redisParams['password'] = $_ENV['REDIS_PASS'];
+    }
+    
+    $redisClient = new \Predis\Client($redisParams);
+    $redisClient->ping(); // Probar conexión
+    
+    $sessionHandler = new \App\Core\System\RedisSessionHandler($redisClient);
+    session_set_save_handler($sessionHandler, true);
+    
+} catch (\Exception $e) {
+    // Si falla Redis, PHP usará archivos por defecto.
+    error_log("API: No se pudo conectar a Redis para el manejo de sesiones. " . $e->getMessage());
+}
+
+// AHORA SÍ: Iniciamos la sesión después de decirle a PHP que busque en Redis
+session_start();
 // =========================================================================
 
 use App\Core\Helpers\Utils;
