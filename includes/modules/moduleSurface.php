@@ -11,7 +11,7 @@ $isMainArea = !$isAdminArea && !$isSettingsArea;
 ?>
 <div class="component-module component-module--sidebar disabled" data-module="moduleSurface">
     
-    <div class="component-menu component-menu--w265 component-menu--h-full component-menu--no-padding <?php echo $isMainArea ? 'active' : 'disabled'; ?>" id="sidebar-menu-main">
+    <div class="component-menu component-menu--w265 component-menu--h-full component-menu--no-padding <?php echo $isMainArea ? 'active' : 'disabled'; ?>" data-ref="sidebar-menu-main">
         <div class="component-menu-top">
             <div class="component-menu-list">
                 <div class="component-menu-link nav-item" data-nav="<?php echo APP_URL; ?>/">
@@ -34,7 +34,7 @@ $isMainArea = !$isAdminArea && !$isSettingsArea;
         </div>
     </div>
 
-    <div class="component-menu component-menu--w265 component-menu--h-full component-menu--no-padding <?php echo $isSettingsArea ? 'active' : 'disabled'; ?>" id="sidebar-menu-settings">
+    <div class="component-menu component-menu--w265 component-menu--h-full component-menu--no-padding <?php echo $isSettingsArea ? 'active' : 'disabled'; ?>" data-ref="sidebar-menu-settings">
         <div class="component-menu-top">
             <div class="component-menu-list">
                 <div class="component-menu-link component-menu-link--bordered nav-item" data-nav="<?php echo APP_URL; ?>/">
@@ -89,7 +89,7 @@ $isMainArea = !$isAdminArea && !$isSettingsArea;
     </div>
 
     <?php if ($isAdminUser): ?>
-    <div class="component-menu component-menu--w265 component-menu--h-full component-menu--no-padding <?php echo $isAdminArea ? 'active' : 'disabled'; ?>" id="sidebar-menu-admin">
+    <div class="component-menu component-menu--w265 component-menu--h-full component-menu--no-padding <?php echo $isAdminArea ? 'active' : 'disabled'; ?>" data-ref="sidebar-menu-admin">
         
         <div class="component-menu-top">
             <div class="component-menu-list">

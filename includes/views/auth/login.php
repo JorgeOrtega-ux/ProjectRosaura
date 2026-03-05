@@ -43,15 +43,15 @@ if ($relativePath === '/login/two-factor') {
 
                 <div class="component-form-body">
                     <div class="component-input-group">
-                        <input type="text" id="2fa_code" name="2fa_code" class="component-input-field" placeholder=" " maxlength="8" autocomplete="one-time-code">
-                        <label for="2fa_code" class="component-input-label"><?php echo __('lbl_2fa_code'); ?></label>
+                        <input type="text" data-ref="2fa_code" name="2fa_code" class="component-input-field" placeholder=" " maxlength="8" autocomplete="one-time-code">
+                        <label class="component-input-label"><?php echo __('lbl_2fa_code'); ?></label>
                     </div>
 
                     <button class="component-button component-button--dark component-button--h45 component-button--full" data-action="submitLogin2FA">
                         <?php echo __('btn_verify_login'); ?>
                     </button>
                     
-                    <div class="component-alert-error" id="auth-error-message"></div>
+                    <div class="component-alert-error" data-ref="auth-error-message"></div>
 
                     <div class="component-link-container component-link-container--center">
                         <span class="component-link" data-nav="<?php echo APP_URL; ?>/login"><?php echo __('link_back_to_login'); ?></span>
@@ -67,13 +67,13 @@ if ($relativePath === '/login/two-factor') {
                 <div class="component-form-body">
                     
                     <div class="component-input-group">
-                        <input type="email" id="email" name="email" class="component-input-field" placeholder=" ">
-                        <label for="email" class="component-input-label"><?php echo __('lbl_email'); ?></label>
+                        <input type="email" data-ref="email" name="email" class="component-input-field" placeholder=" ">
+                        <label class="component-input-label"><?php echo __('lbl_email'); ?></label>
                     </div>
 
                     <div class="component-input-group">
-                        <input type="password" id="password" name="password" class="component-input-field component-input-field--with-icon" placeholder=" ">
-                        <label for="password" class="component-input-label"><?php echo __('lbl_password'); ?></label>
+                        <input type="password" data-ref="password" name="password" class="component-input-field component-input-field--with-icon" placeholder=" ">
+                        <label class="component-input-label"><?php echo __('lbl_password'); ?></label>
                         <span class="material-symbols-rounded component-input-toggle" data-action="togglePassword">visibility_off</span>
                     </div>
 
@@ -85,7 +85,7 @@ if ($relativePath === '/login/two-factor') {
                         <?php echo __('btn_continue'); ?>
                     </button>
                     
-                    <div class="component-alert-error" id="auth-error-message"></div>
+                    <div class="component-alert-error" data-ref="auth-error-message"></div>
 
                     <div class="component-link-container component-link-container--center">
                         <span class="component-link-text"><?php echo __('txt_no_account'); ?></span>

@@ -140,15 +140,15 @@ if (is_dir($logBaseDir)) {
 
                 <div class="component-toolbar-mode disabled" data-ref="toolbar-selection-mode">
                     <div class="component-toolbar-left">
-                        <span id="logs-selection-count" class="component-badge component-badge--sm"><?php echo __('logs_selected_count'); ?></span>
+                        <span data-ref="logs-selection-count" class="component-badge component-badge--sm"><?php echo __('logs_selected_count'); ?></span>
                         
                         <button class="component-button component-button--icon component-button--h40" data-action="viewSelectedLogs" data-tooltip="<?php echo __('tooltip_view_files'); ?>" data-position="bottom">
                             <span class="material-symbols-rounded">visibility</span>
                         </button>
                         
                         <div class="component-input-group component-input-group--h40">
-                            <input type="password" id="log_action_password" class="component-input-field component-input-field--with-icon" placeholder=" ">
-                            <label for="log_action_password" class="component-input-label"><?php echo __('lbl_admin_password'); ?></label>
+                            <input type="password" data-ref="log_action_password" class="component-input-field component-input-field--with-icon" placeholder=" ">
+                            <label class="component-input-label"><?php echo __('lbl_admin_password'); ?></label>
                             <span class="material-symbols-rounded component-input-toggle" data-action="togglePassword">visibility_off</span>
                         </div>
 

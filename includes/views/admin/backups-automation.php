@@ -19,11 +19,11 @@ if (session_status() === PHP_SESSION_NONE) session_start();
             <p class="component-page-description"><?php echo __('admin_backups_auto_desc'); ?></p>
         </div>
 
-        <div id="admin-auto-loader">
+        <div data-ref="admin-auto-loader">
             <div class="component-spinner"></div>
         </div>
 
-        <div id="admin-auto-form" class="disabled">
+        <div data-ref="admin-auto-form" class="disabled">
             
             <div class="component-card--grouped">
                 <div class="component-group-item component-group-item--wrap">
@@ -38,14 +38,14 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                     </div>
                     <div class="component-card__actions component-card__actions--end">
                         <label class="component-toggle-switch">
-                            <input type="checkbox" id="toggle-auto-backup" data-action="toggleAutoBackup">
+                            <input type="checkbox" data-ref="toggle-auto-backup" data-action="toggleAutoBackup">
                             <span class="component-toggle-slider"></span>
                         </label>
                     </div>
                 </div>
             </div>
 
-            <div class="component-card--grouped disabled" id="wrapper-auto-options">
+            <div class="component-card--grouped disabled" data-ref="wrapper-auto-options">
                 
                 <div class="component-group-item component-group-item--stacked">
                     <div class="component-card__content">
@@ -122,7 +122,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                 <button type="button" class="component-inline-control__btn" data-action="adjustAutoConfig" data-field="auto_backup_retention_count" data-step="-5" data-min="1"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
                                 <button type="button" class="component-inline-control__btn" data-action="adjustAutoConfig" data-field="auto_backup_retention_count" data-step="-1" data-min="1"><span class="material-symbols-rounded">chevron_left</span></button>
                             </div>
-                            <div class="component-inline-control__center" id="val_auto_backup_retention_count" data-val="5">5</div>
+                            <div class="component-inline-control__center" data-ref="val_auto_backup_retention_count" data-val="5">5</div>
                             <div class="component-inline-control__group">
                                 <button type="button" class="component-inline-control__btn" data-action="adjustAutoConfig" data-field="auto_backup_retention_count" data-step="1" data-max="100"><span class="material-symbols-rounded">chevron_right</span></button>
                                 <button type="button" class="component-inline-control__btn" data-action="adjustAutoConfig" data-field="auto_backup_retention_count" data-step="5" data-max="100"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
@@ -133,7 +133,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 
             </div>
 
-            <div class="component-card--grouped disabled" id="admin-auto-password-area">
+            <div class="component-card--grouped disabled" data-ref="admin-auto-password-area">
                 <div class="component-group-item component-group-item--stacked">
                     <div class="component-card__content component-card__content--full component-card__content--start">
                         <div class="component-card__icon-container component-card__icon-container--bordered">
@@ -144,15 +144,15 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             <p class="component-card__description"><?php echo __('admin_verify_identity_desc_auto'); ?></p>
                             <div class="component-card__form-area">
                                 <div class="component-input-group">
-                                    <input type="password" class="component-input-field component-input-field--with-icon" id="admin_auto_password" placeholder=" ">
-                                    <label for="admin_auto_password" class="component-input-label"><?php echo __('lbl_current_password'); ?></label>
+                                    <input type="password" class="component-input-field component-input-field--with-icon" data-ref="admin_auto_password" placeholder=" ">
+                                    <label class="component-input-label"><?php echo __('lbl_current_password'); ?></label>
                                     <span class="material-symbols-rounded component-input-toggle" data-action="togglePassword">visibility_off</span>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="component-card__actions component-card__actions--end">
-                        <button class="component-button component-button--h36 component-button--dark disabled-interaction" data-action="submitAutoBackupConfig" id="btn-save-auto-backup"><?php echo __('btn_save_config'); ?></button>
+                        <button class="component-button component-button--h36 component-button--dark disabled-interaction" data-action="submitAutoBackupConfig" data-ref="btn-save-auto-backup"><?php echo __('btn_save_config'); ?></button>
                     </div>
                 </div>
             </div>

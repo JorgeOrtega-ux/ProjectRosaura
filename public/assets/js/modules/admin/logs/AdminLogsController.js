@@ -53,7 +53,7 @@ export class AdminLogsController {
 
             if (togglePassBtn) {
                 const inputField = togglePassBtn.parentElement.querySelector('.component-input-field');
-                if (inputField && inputField.id === 'log_action_password') {
+                if (inputField && inputField.getAttribute('data-ref') === 'log_action_password') {
                     if (inputField.type === 'password') {
                         inputField.type = 'text';
                         togglePassBtn.textContent = 'visibility';
@@ -162,8 +162,8 @@ export class AdminLogsController {
 
         const defaultMode = document.querySelector('[data-ref="toolbar-default-mode"]');
         const selectionMode = document.querySelector('[data-ref="toolbar-selection-mode"]');
-        const countBadge = document.getElementById('logs-selection-count');
-        const passInput = document.getElementById('log_action_password');
+        const countBadge = document.querySelector('[data-ref="logs-selection-count"]');
+        const passInput = document.querySelector('[data-ref="log_action_password"]');
 
         if (this.selectedLogs.size > 0) {
             if (defaultMode && selectionMode) {
@@ -323,7 +323,7 @@ export class AdminLogsController {
     async deleteSelectedLogs() {
         if (this.selectedLogs.size === 0) return;
         
-        const passInput = document.getElementById('log_action_password');
+        const passInput = document.querySelector('[data-ref="log_action_password"]');
         const password = passInput ? passInput.value.trim() : '';
 
         if (!password) {

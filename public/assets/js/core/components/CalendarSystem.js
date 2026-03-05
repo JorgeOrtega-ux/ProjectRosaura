@@ -36,16 +36,16 @@ export class CalendarSystem {
             this.selectedDate = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
             this.currentDate = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
 
-            const hInput = document.getElementById('calendar-hours');
-            const mInput = document.getElementById('calendar-minutes');
+            const hInput = document.querySelector('[data-ref="calendar-hours"]');
+            const mInput = document.querySelector('[data-ref="calendar-minutes"]');
             if (hInput) hInput.value = timeParts[0];
             if (mInput) mInput.value = timeParts[1];
         } else {
             this.selectedDate = null;
             this.currentDate = new Date();
             
-            const hInput = document.getElementById('calendar-hours');
-            const mInput = document.getElementById('calendar-minutes');
+            const hInput = document.querySelector('[data-ref="calendar-hours"]');
+            const mInput = document.querySelector('[data-ref="calendar-minutes"]');
             if (hInput) hInput.value = '00';
             if (mInput) mInput.value = '00';
         }
@@ -73,13 +73,13 @@ export class CalendarSystem {
 
         // Validaciones en blur de tiempo del calendario
         document.addEventListener('focusout', (e) => {
-            if (e.target.id === 'calendar-hours') {
+            if (e.target.getAttribute('data-ref') === 'calendar-hours') {
                 let val = parseInt(e.target.value) || 0;
                 if (val < 0) val = 0;
                 if (val > 23) val = 23;
                 e.target.value = String(val).padStart(2, '0');
             }
-            if (e.target.id === 'calendar-minutes') {
+            if (e.target.getAttribute('data-ref') === 'calendar-minutes') {
                 let val = parseInt(e.target.value) || 0;
                 if (val < 0) val = 0;
                 if (val > 59) val = 59;
@@ -96,10 +96,10 @@ export class CalendarSystem {
         const daysInMonth = new Date(year, month + 1, 0).getDate();
         const daysInPrevMonth = new Date(year, month, 0).getDate();
         
-        const title = document.getElementById('calendar-title');
+        const title = document.querySelector('[data-ref="calendar-title"]');
         if (title) title.textContent = `${this.monthsStr[month]} ${year}`;
         
-        const daysContainer = document.getElementById('calendar-days');
+        const daysContainer = document.querySelector('[data-ref="calendar-days"]');
         if (!daysContainer) return;
         daysContainer.innerHTML = '';
         
@@ -151,8 +151,8 @@ export class CalendarSystem {
             return;
         }
         
-        const hInput = document.getElementById('calendar-hours');
-        const mInput = document.getElementById('calendar-minutes');
+        const hInput = document.querySelector('[data-ref="calendar-hours"]');
+        const mInput = document.querySelector('[data-ref="calendar-minutes"]');
         
         const h = hInput ? hInput.value.padStart(2, '0') : '00';
         const m = mInput ? mInput.value.padStart(2, '0') : '00';
@@ -180,7 +180,7 @@ export class CalendarSystem {
     }
 
     closeModule() {
-        const daysContainer = document.getElementById('calendar-days');
+        const daysContainer = document.querySelector('[data-ref="calendar-days"]');
         if (daysContainer && window.appInstance) {
             // Encuentra el módulo contenedor dinámicamente y lo cierra
             const module = daysContainer.closest('.component-module');

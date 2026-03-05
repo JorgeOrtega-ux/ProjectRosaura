@@ -9,16 +9,16 @@
         <div class="component-form-body">
             
             <div class="component-input-group">
-                <input type="email" id="forgot_email" name="email" class="component-input-field" placeholder=" ">
-                <label for="forgot_email" class="component-input-label"><?php echo __('lbl_email'); ?></label>
+                <input type="email" data-ref="forgot_email" name="email" class="component-input-field" placeholder=" ">
+                <label class="component-input-label"><?php echo __('lbl_email'); ?></label>
             </div>
 
-            <button class="component-button component-button--dark component-button--h45 component-button--full" id="btn-forgot-password" data-action="submitForgotPassword">
+            <button class="component-button component-button--dark component-button--h45 component-button--full" data-ref="btn-forgot-password" data-action="submitForgotPassword">
                 <?php echo __('btn_continue'); ?>
             </button>
             
-            <div class="component-alert-error" id="auth-error-message"></div>
-            <div class="component-alert-success" id="auth-success-message"></div>
+            <div class="component-alert-error" data-ref="auth-error-message"></div>
+            <div class="component-alert-success" data-ref="auth-success-message"></div>
 
             <div class="component-link-container component-link-container--center">
                 <span class="component-link" data-nav="<?php echo APP_URL; ?>/login"><?php echo __('link_back_login'); ?></span>

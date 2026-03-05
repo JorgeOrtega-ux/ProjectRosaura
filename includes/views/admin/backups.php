@@ -176,8 +176,8 @@ if (is_dir($backupDir)) {
                     <div class="component-toolbar-left">
                         
                         <div class="component-input-group component-input-group--h40">
-                            <input type="password" id="backup_action_password" class="component-input-field component-input-field--with-icon" placeholder=" ">
-                            <label for="backup_action_password" class="component-input-label"><?php echo __('lbl_current_password'); ?></label>
+                            <input type="password" data-ref="backup_action_password" class="component-input-field component-input-field--with-icon" placeholder=" ">
+                            <label class="component-input-label"><?php echo __('lbl_current_password'); ?></label>
                             <span class="material-symbols-rounded component-input-toggle" data-action="togglePassword">visibility_off</span>
                         </div>
 

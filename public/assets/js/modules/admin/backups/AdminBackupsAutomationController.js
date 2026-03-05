@@ -76,7 +76,7 @@ export class AdminBackupsAutomationController {
             const togglePassBtn = e.target.closest('[data-action="togglePassword"]');
             if (togglePassBtn) {
                 const inputField = togglePassBtn.parentElement.querySelector('.component-input-field');
-                if (inputField && inputField.id === 'admin_auto_password') {
+                if (inputField && inputField.getAttribute('data-ref') === 'admin_auto_password') {
                     if (inputField.type === 'password') {
                         inputField.type = 'text';
                         togglePassBtn.textContent = 'visibility';
@@ -92,7 +92,7 @@ export class AdminBackupsAutomationController {
         document.addEventListener('change', (e) => {
             if (!window.location.pathname.includes('/admin/backups/automation')) return;
 
-            if (e.target && e.target.id === 'toggle-auto-backup') {
+            if (e.target && e.target.getAttribute('data-ref') === 'toggle-auto-backup') {
                 this.state.auto_backup_enabled = e.target.checked ? 1 : 0;
                 this.renderVisibility();
                 this.checkForChanges();
@@ -123,9 +123,9 @@ export class AdminBackupsAutomationController {
     }
 
     async loadCurrentConfig() {
-        const loader = document.getElementById('admin-auto-loader');
-        const form = document.getElementById('admin-auto-form');
-        const passInput = document.getElementById('admin_auto_password');
+        const loader = document.querySelector('[data-ref="admin-auto-loader"]');
+        const form = document.querySelector('[data-ref="admin-auto-form"]');
+        const passInput = document.querySelector('[data-ref="admin_auto_password"]');
         
         if (passInput) passInput.value = '';
 
@@ -157,7 +157,7 @@ export class AdminBackupsAutomationController {
     }
 
     renderValues() {
-        const toggle = document.getElementById('toggle-auto-backup');
+        const toggle = document.querySelector('[data-ref="toggle-auto-backup"]');
         if (toggle) toggle.checked = this.state.auto_backup_enabled === 1;
 
         // Render Dropdown Text (Frecuencia)
@@ -172,7 +172,7 @@ export class AdminBackupsAutomationController {
         });
 
         // Render Inline Control (Retención)
-        const elRet = document.getElementById('val_auto_backup_retention_count');
+        const elRet = document.querySelector('[data-ref="val_auto_backup_retention_count"]');
         if (elRet) {
             elRet.textContent = this.state.auto_backup_retention_count;
             elRet.setAttribute('data-val', this.state.auto_backup_retention_count);
@@ -180,7 +180,7 @@ export class AdminBackupsAutomationController {
     }
 
     renderVisibility() {
-        const wrapperOptions = document.getElementById('wrapper-auto-options');
+        const wrapperOptions = document.querySelector('[data-ref="wrapper-auto-options"]');
         if (wrapperOptions) {
             if (this.state.auto_backup_enabled === 1) {
                 wrapperOptions.classList.remove('disabled');
@@ -221,8 +221,8 @@ export class AdminBackupsAutomationController {
             }
         }
 
-        const passArea = document.getElementById('admin-auto-password-area');
-        const btnSave = document.getElementById('btn-save-auto-backup');
+        const passArea = document.querySelector('[data-ref="admin-auto-password-area"]');
+        const btnSave = document.querySelector('[data-ref="btn-save-auto-backup"]');
 
         if (hasChanges) {
             if (passArea) passArea.classList.remove('disabled');
@@ -234,7 +234,7 @@ export class AdminBackupsAutomationController {
     }
 
     async handleSave(btn) {
-        const passInput = document.getElementById('admin_auto_password');
+        const passInput = document.querySelector('[data-ref="admin_auto_password"]');
         const password = passInput ? passInput.value.trim() : '';
 
         if (!password) {

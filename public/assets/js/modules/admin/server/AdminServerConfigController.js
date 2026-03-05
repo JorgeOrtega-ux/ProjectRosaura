@@ -39,7 +39,7 @@ export class AdminServerConfigController {
             const togglePassBtn = e.target.closest('[data-action="togglePassword"]');
             if (togglePassBtn) {
                 const inputField = togglePassBtn.parentElement.querySelector('.component-input-field');
-                if (inputField && inputField.id === 'admin_config_password') {
+                if (inputField && inputField.getAttribute('data-ref') === 'admin_config_password') {
                     if (inputField.type === 'password') {
                         inputField.type = 'text';
                         togglePassBtn.textContent = 'visibility';
@@ -83,8 +83,8 @@ export class AdminServerConfigController {
     }
 
     async loadData() {
-        const loader = document.getElementById('admin-config-loader');
-        const passInput = document.getElementById('admin_config_password');
+        const loader = document.querySelector('[data-ref="admin-config-loader"]');
+        const passInput = document.querySelector('[data-ref="admin_config_password"]');
         if (passInput) passInput.value = '';
 
         const res = await this.api.post(ApiRoutes.Admin.GetServerConfig);
@@ -105,7 +105,7 @@ export class AdminServerConfigController {
 
     renderValues() {
         for (const key in this.state) {
-            const el = document.getElementById(`val_${key}`);
+            const el = document.querySelector(`[data-ref="val_${key}"]`);
             if (el) {
                 el.textContent = this.state[key];
                 el.setAttribute('data-val', this.state[key]);
@@ -113,7 +113,7 @@ export class AdminServerConfigController {
         }
 
         // Renderizar el estado visual del Switch del Mantenimiento
-        const maintenanceSwitch = document.getElementById('toggle_maintenance_mode');
+        const maintenanceSwitch = document.querySelector('[data-ref="toggle_maintenance_mode"]');
         if (maintenanceSwitch && this.state.maintenance_mode !== undefined) {
             maintenanceSwitch.checked = (parseInt(this.state.maintenance_mode) === 1);
         }
@@ -149,8 +149,8 @@ export class AdminServerConfigController {
             }
         }
 
-        const passArea = document.getElementById('admin-config-password-area');
-        const btnSave = document.getElementById('btn-save-config');
+        const passArea = document.querySelector('[data-ref="admin-config-password-area"]');
+        const btnSave = document.querySelector('[data-ref="btn-save-config"]');
 
         if (hasChanges) {
             if (passArea) passArea.classList.remove('disabled');
@@ -162,7 +162,7 @@ export class AdminServerConfigController {
     }
 
     async submitConfig(btn) {
-        const passInput = document.getElementById('admin_config_password');
+        const passInput = document.querySelector('[data-ref="admin_config_password"]');
         const password = passInput ? passInput.value.trim() : '';
 
         if (!password) {

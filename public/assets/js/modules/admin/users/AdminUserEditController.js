@@ -66,17 +66,17 @@ export class AdminUserEditController {
         document.addEventListener('click', (e) => {
             if (!window.location.pathname.includes('/admin/edit-user')) return;
 
-            if (e.target.closest('#admin-btn-change-avatar') || e.target.closest('#admin-profile-avatar-overlay')) {
-                const input = document.getElementById('admin-input-avatar-file');
+            if (e.target.closest('[data-ref="admin-btn-change-avatar"]') || e.target.closest('[data-ref="admin-profile-avatar-overlay"]')) {
+                const input = document.querySelector('[data-ref="admin-input-avatar-file"]');
                 if (input) input.click();
             }
 
-            if (e.target.closest('#admin-btn-cancel-avatar')) this.cancelAvatarPreview();
+            if (e.target.closest('[data-ref="admin-btn-cancel-avatar"]')) this.cancelAvatarPreview();
             
-            const btnSaveAvatar = e.target.closest('#admin-btn-save-avatar');
+            const btnSaveAvatar = e.target.closest('[data-ref="admin-btn-save-avatar"]');
             if (btnSaveAvatar) this.saveAvatar(btnSaveAvatar);
 
-            const btnDelAvatar = e.target.closest('#admin-btn-delete-avatar');
+            const btnDelAvatar = e.target.closest('[data-ref="admin-btn-delete-avatar"]');
             if (btnDelAvatar) this.deleteAvatar(btnDelAvatar);
 
             const btnSaveUsername = e.target.closest('[data-action="adminSaveUsername"]');
@@ -102,7 +102,7 @@ export class AdminUserEditController {
 
         document.addEventListener('change', (e) => {
             if (!window.location.pathname.includes('/admin/edit-user')) return;
-            if (e.target && e.target.id === 'admin-input-avatar-file') this.handleFileSelection(e);
+            if (e.target && e.target.getAttribute('data-ref') === 'admin-input-avatar-file') this.handleFileSelection(e);
 
             if (e.target.matches('[data-action="adminTogglePreference"]')) {
                 const key = e.target.getAttribute('data-key');
@@ -133,7 +133,7 @@ export class AdminUserEditController {
     }
 
     async loadUserData() {
-        const loader = document.getElementById('admin-edit-loader');
+        const loader = document.querySelector('[data-ref="admin-edit-loader"]');
         
         const res = await this.api.post(ApiRoutes.Admin.GetUser, { target_user_id: this.targetUserId });
         
@@ -142,8 +142,8 @@ export class AdminUserEditController {
             const prefs = res.preferences;
             
             // Re-hidratar Avatar
-            const imgEl = document.getElementById('admin-profile-avatar-img');
-            const avatarContainer = document.getElementById('admin-profile-avatar-container');
+            const imgEl = document.querySelector('[data-ref="admin-profile-avatar-img"]');
+            const avatarContainer = document.querySelector('[data-ref="admin-profile-avatar-container"]');
             const formattedAvatar = `${this.basePath}/${user.profile_picture.replace(/^\//, '')}`;
             
             if (imgEl) {
@@ -158,8 +158,8 @@ export class AdminUserEditController {
             this.toggleAvatarButtons(false);
 
             // Re-hidratar Usuario
-            const dispUser = document.getElementById('admin-display-username');
-            const inpUser = document.getElementById('input-admin-username');
+            const dispUser = document.querySelector('[data-ref="admin-display-username"]');
+            const inpUser = document.querySelector('[data-ref="input-admin-username"]');
             if (dispUser) dispUser.textContent = user.username;
             if (inpUser) {
                 inpUser.value = user.username;
@@ -167,8 +167,8 @@ export class AdminUserEditController {
             }
 
             // Re-hidratar Correo
-            const dispEmail = document.getElementById('admin-display-email');
-            const inpEmail = document.getElementById('input-admin-email');
+            const dispEmail = document.querySelector('[data-ref="admin-display-email"]');
+            const inpEmail = document.querySelector('[data-ref="input-admin-email"]');
             if (dispEmail) dispEmail.textContent = user.email;
             if (inpEmail) {
                 inpEmail.value = user.email;
@@ -177,15 +177,15 @@ export class AdminUserEditController {
 
             // Re-hidratar Preferencias
             if (prefs) {
-                const toggleLinks = document.getElementById('admin-toggle-links');
-                const toggleAlerts = document.getElementById('admin-toggle-alerts');
+                const toggleLinks = document.querySelector('[data-ref="admin-toggle-links"]');
+                const toggleAlerts = document.querySelector('[data-ref="admin-toggle-alerts"]');
                 if (toggleLinks) toggleLinks.checked = (prefs.open_links_new_tab == 1);
                 if (toggleAlerts) toggleAlerts.checked = (prefs.extended_alerts == 1);
 
-                const langText = document.getElementById('admin-lang-text');
+                const langText = document.querySelector('[data-ref="admin-lang-text"]');
                 if (langText) langText.textContent = this.langMap[prefs.language] || prefs.language;
 
-                const themeText = document.getElementById('admin-theme-text');
+                const themeText = document.querySelector('[data-ref="admin-theme-text"]');
                 if (themeText) themeText.textContent = this.themeMap[prefs.theme] || prefs.theme;
 
                 document.querySelectorAll('[data-action="adminSetPref"]').forEach(item => {
@@ -228,7 +228,7 @@ export class AdminUserEditController {
         this.selectedFile = file;
         const reader = new FileReader();
         reader.onload = (ev) => {
-            const imgEl = document.getElementById('admin-profile-avatar-img');
+            const imgEl = document.querySelector('[data-ref="admin-profile-avatar-img"]');
             if (imgEl) imgEl.src = ev.target.result;
             this.toggleAvatarButtons(true);
         };
@@ -236,8 +236,8 @@ export class AdminUserEditController {
     }
 
     cancelAvatarPreview() {
-        const imgEl = document.getElementById('admin-profile-avatar-img');
-        const fileInput = document.getElementById('admin-input-avatar-file');
+        const imgEl = document.querySelector('[data-ref="admin-profile-avatar-img"]');
+        const fileInput = document.querySelector('[data-ref="admin-input-avatar-file"]');
         if (imgEl) imgEl.src = imgEl.getAttribute('data-original-src');
         if (fileInput) fileInput.value = '';
         this.selectedFile = null;
@@ -245,10 +245,10 @@ export class AdminUserEditController {
     }
 
     toggleAvatarButtons(isPreview) {
-        const btnChange = document.getElementById('admin-btn-change-avatar');
-        const btnDelete = document.getElementById('admin-btn-delete-avatar');
-        const btnCancel = document.getElementById('admin-btn-cancel-avatar');
-        const btnSave = document.getElementById('admin-btn-save-avatar');
+        const btnChange = document.querySelector('[data-ref="admin-btn-change-avatar"]');
+        const btnDelete = document.querySelector('[data-ref="admin-btn-delete-avatar"]');
+        const btnCancel = document.querySelector('[data-ref="admin-btn-cancel-avatar"]');
+        const btnSave = document.querySelector('[data-ref="admin-btn-save-avatar"]');
         if (!btnChange || !btnDelete || !btnCancel || !btnSave) return;
         
         if (isPreview) {
@@ -283,12 +283,12 @@ export class AdminUserEditController {
         
         if (result.success) {
             this.showMessage(result.message, 'success');
-            const imgEl = document.getElementById('admin-profile-avatar-img');
+            const imgEl = document.querySelector('[data-ref="admin-profile-avatar-img"]');
             if (imgEl) { 
                 imgEl.src = result.new_avatar; 
                 imgEl.setAttribute('data-original-src', result.new_avatar); 
             }
-            const fileInput = document.getElementById('admin-input-avatar-file');
+            const fileInput = document.querySelector('[data-ref="admin-input-avatar-file"]');
             if (fileInput) fileInput.value = '';
             
             this.selectedFile = null;
@@ -308,7 +308,7 @@ export class AdminUserEditController {
         
         if (result.success) {
             this.showMessage(result.message, 'success');
-            const imgEl = document.getElementById('admin-profile-avatar-img');
+            const imgEl = document.querySelector('[data-ref="admin-profile-avatar-img"]');
             if (imgEl) { 
                 imgEl.src = result.new_avatar; 
                 imgEl.setAttribute('data-original-src', result.new_avatar); 
@@ -322,7 +322,7 @@ export class AdminUserEditController {
     }
 
     async saveUsername(btn) {
-        const input = document.getElementById('input-admin-username');
+        const input = document.querySelector('[data-ref="input-admin-username"]');
         if (!input) return;
         const val = input.value.trim();
         const originalVal = input.getAttribute('data-original-value');
@@ -334,7 +334,7 @@ export class AdminUserEditController {
         
         if (result.success) {
             this.showMessage(result.message, 'success');
-            document.getElementById('admin-display-username').textContent = result.new_username;
+            document.querySelector('[data-ref="admin-display-username"]').textContent = result.new_username;
             input.setAttribute('data-original-value', result.new_username);
             window.appInstance.toggleEditState('admin-username');
         } else {
@@ -343,7 +343,7 @@ export class AdminUserEditController {
     }
 
     async saveEmail(btn) {
-        const input = document.getElementById('input-admin-email');
+        const input = document.querySelector('[data-ref="input-admin-email"]');
         if (!input) return;
         const val = input.value.trim();
         const originalVal = input.getAttribute('data-original-value');
@@ -355,7 +355,7 @@ export class AdminUserEditController {
         
         if (result.success) {
             this.showMessage(result.message, 'success');
-            document.getElementById('admin-display-email').textContent = result.new_email;
+            document.querySelector('[data-ref="admin-display-email"]').textContent = result.new_email;
             input.setAttribute('data-original-value', result.new_email);
             window.appInstance.toggleEditState('admin-email');
         } else {
@@ -371,11 +371,11 @@ export class AdminUserEditController {
         btn.classList.add('active');
 
         if (key === 'language') {
-            const langText = document.getElementById('admin-lang-text');
+            const langText = document.querySelector('[data-ref="admin-lang-text"]');
             if (langText) langText.textContent = btn.querySelector('.component-menu-link-text span').textContent;
             if (window.appInstance) window.appInstance.closeModule(document.querySelector('[data-module="adminModuleLanguage"]'));
         } else if (key === 'theme') {
-            const themeText = document.getElementById('admin-theme-text');
+            const themeText = document.querySelector('[data-ref="admin-theme-text"]');
             if (themeText) themeText.textContent = btn.querySelector('.component-menu-link-text span').textContent;
             if (window.appInstance) window.appInstance.closeModule(document.querySelector('[data-module="adminModuleTheme"]'));
         }

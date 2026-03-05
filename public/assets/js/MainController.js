@@ -215,7 +215,7 @@ export class MainController {
             viewBox.classList.replace('active', 'disabled');
             editBox.classList.replace('disabled', 'active');
             setTimeout(() => {
-                const input = document.getElementById('input-' + field);
+                const input = document.querySelector('[data-ref="input-' + field + '"]');
                 if (input) {
                     input.focus();
                     const valLength = input.value.length;
@@ -229,10 +229,10 @@ export class MainController {
     }
 
     showToast(message, type = 'success') {
-        let container = document.getElementById('toast-container');
+        let container = document.querySelector('[data-ref="toast-container"]');
         if (!container) {
             container = document.createElement('div');
-            container.id = 'toast-container';
+            container.setAttribute('data-ref', 'toast-container');
             container.className = 'toast-container';
             document.body.appendChild(container);
         }

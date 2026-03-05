@@ -1,7 +1,7 @@
 // public/assets/js/core/router/SpaRouter.js
 export class SpaRouter {
     constructor(options = {}) {
-        this.outlet = document.querySelector(options.outlet || '#app-router-outlet');
+        this.outlet = document.querySelector(options.outlet || '[data-ref="app-router-outlet"]');
         this.basePath = window.AppBasePath || ''; // Dinámico desde app.php
         this.abortController = null; // Gestor nativo para matar peticiones fantasma
         this.init();
@@ -185,9 +185,9 @@ export class SpaRouter {
             target.classList.add('active');
         });
 
-        const mainMenu = document.getElementById('sidebar-menu-main');
-        const settingsMenu = document.getElementById('sidebar-menu-settings');
-        const adminMenu = document.getElementById('sidebar-menu-admin');
+        const mainMenu = document.querySelector('[data-ref="sidebar-menu-main"]');
+        const settingsMenu = document.querySelector('[data-ref="sidebar-menu-settings"]');
+        const adminMenu = document.querySelector('[data-ref="sidebar-menu-admin"]');
         
         if (mainMenu && settingsMenu) {
             if (normalizedPath.includes('/admin') && adminMenu) {

@@ -17,7 +17,7 @@ export class AuthController {
         
         // Esta validación debe ejecutarse cada vez que se llama a init()
         if (window.location.pathname.includes('/register/verification-account')) {
-            const resendBtn = document.getElementById('btn-resend-register-code');
+            const resendBtn = document.querySelector('[data-ref="btn-resend-register-code"]');
             if (resendBtn) this.startResendTimer(resendBtn, __('btn_resend_code'), 60, true);
         }
     }
@@ -27,7 +27,7 @@ export class AuthController {
 
         window.addEventListener('viewLoaded', (e) => {
             if (e.detail.url.includes('/register/verification-account')) {
-                const resendBtn = document.getElementById('btn-resend-register-code');
+                const resendBtn = document.querySelector('[data-ref="btn-resend-register-code"]');
                 if (resendBtn) this.startResendTimer(resendBtn, __('btn_resend_code'), 60, true);
             }
         });
@@ -57,7 +57,7 @@ export class AuthController {
         });
 
         document.addEventListener('input', (e) => {
-            if (e.target && e.target.id === 'verification_code') {
+            if (e.target && e.target.getAttribute('data-ref') === 'verification_code') {
                 let val = e.target.value.replace(/\D/g, ''); 
                 let formatted = '';
                 for (let i = 0; i < val.length; i++) {
@@ -118,7 +118,7 @@ export class AuthController {
 
     showError(msg) {
         this.clearMessages();
-        const errorBox = document.getElementById('auth-error-message');
+        const errorBox = document.querySelector('[data-ref="auth-error-message"]');
         if (errorBox) {
             errorBox.textContent = msg;
             errorBox.classList.add('active');
@@ -129,7 +129,7 @@ export class AuthController {
 
     showSuccess(msg) {
         this.clearMessages();
-        const successBox = document.getElementById('auth-success-message');
+        const successBox = document.querySelector('[data-ref="auth-success-message"]');
         if (successBox) {
             successBox.textContent = msg;
             successBox.classList.add('active');
@@ -139,13 +139,13 @@ export class AuthController {
     }
 
     clearMessages() {
-        const errorBox = document.getElementById('auth-error-message');
+        const errorBox = document.querySelector('[data-ref="auth-error-message"]');
         if (errorBox) {
             errorBox.textContent = '';
             errorBox.classList.remove('active');
         }
         
-        const successBox = document.getElementById('auth-success-message');
+        const successBox = document.querySelector('[data-ref="auth-success-message"]');
         if (successBox) {
             successBox.textContent = '';
             successBox.classList.remove('active');
@@ -168,8 +168,8 @@ export class AuthController {
 
     async handleLogin(btn) {
         this.clearMessages();
-        const emailInput = document.getElementById('email');
-        const passwordInput = document.getElementById('password');
+        const emailInput = document.querySelector('[data-ref="email"]');
+        const passwordInput = document.querySelector('[data-ref="password"]');
 
         if (!emailInput || !passwordInput) return;
 
@@ -207,7 +207,7 @@ export class AuthController {
 
     async handleLogin2FA(btn) {
         this.clearMessages();
-        const codeInput = document.getElementById('2fa_code');
+        const codeInput = document.querySelector('[data-ref="2fa_code"]');
 
         if (!codeInput) return;
 
@@ -234,8 +234,8 @@ export class AuthController {
 
     async handleRegisterStep1(btn) {
         this.clearMessages();
-        const emailInput = document.getElementById('email');
-        const passwordInput = document.getElementById('password');
+        const emailInput = document.querySelector('[data-ref="email"]');
+        const passwordInput = document.querySelector('[data-ref="password"]');
 
         if (!emailInput || !passwordInput) return;
 
@@ -307,7 +307,7 @@ export class AuthController {
 
     async handleRegisterStep2(btn) {
         this.clearMessages();
-        const usernameInput = document.getElementById('username');
+        const usernameInput = document.querySelector('[data-ref="username"]');
 
         if (!usernameInput) return;
         
@@ -338,7 +338,7 @@ export class AuthController {
 
     async handleRegisterVerify(btn) {
         this.clearMessages();
-        const codeInput = document.getElementById('verification_code');
+        const codeInput = document.querySelector('[data-ref="verification_code"]');
 
         if (!codeInput) return;
 
@@ -381,7 +381,7 @@ export class AuthController {
 
     async handleForgotPassword(btn) {
         this.clearMessages();
-        const emailInput = document.getElementById('forgot_email');
+        const emailInput = document.querySelector('[data-ref="forgot_email"]');
         if (!emailInput) return;
 
         const email = emailInput.value.trim();
@@ -409,9 +409,9 @@ export class AuthController {
 
     async handleResetPassword(btn) {
         this.clearMessages();
-        const tokenInput = document.getElementById('reset_token');
-        const passInput = document.getElementById('new_password');
-        const confirmInput = document.getElementById('confirm_password');
+        const tokenInput = document.querySelector('[data-ref="reset_token"]');
+        const passInput = document.querySelector('[data-ref="new_password"]');
+        const confirmInput = document.querySelector('[data-ref="confirm_password"]');
 
         if (!tokenInput || !passInput || !confirmInput) return;
 

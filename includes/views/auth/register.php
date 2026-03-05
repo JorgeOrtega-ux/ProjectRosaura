@@ -52,13 +52,13 @@ if ($relativePath === '/register/aditional-data') {
 
                 <div class="component-form-body">
                     <div class="component-input-group">
-                        <input type="email" id="email" name="email" class="component-input-field" placeholder=" " maxlength="254">
-                        <label for="email" class="component-input-label"><?php echo __('lbl_email'); ?></label>
+                        <input type="email" data-ref="email" name="email" class="component-input-field" placeholder=" " maxlength="254">
+                        <label class="component-input-label"><?php echo __('lbl_email'); ?></label>
                     </div>
 
                     <div class="component-input-group">
-                        <input type="password" id="password" name="password" class="component-input-field component-input-field--with-icon" placeholder=" " maxlength="<?php echo htmlspecialchars($maxPasswordLen); ?>">
-                        <label for="password" class="component-input-label"><?php echo __('lbl_password'); ?></label>
+                        <input type="password" data-ref="password" name="password" class="component-input-field component-input-field--with-icon" placeholder=" " maxlength="<?php echo htmlspecialchars($maxPasswordLen); ?>">
+                        <label class="component-input-label"><?php echo __('lbl_password'); ?></label>
                         <span class="material-symbols-rounded component-input-toggle" data-action="togglePassword">visibility_off</span>
                     </div>
 
@@ -66,7 +66,7 @@ if ($relativePath === '/register/aditional-data') {
                         <?php echo __('btn_continue'); ?>
                     </button>
                     
-                    <div class="component-alert-error" id="auth-error-message"></div>
+                    <div class="component-alert-error" data-ref="auth-error-message"></div>
 
                     <div class="component-link-container component-link-container--center">
                         <span class="component-link-text"><?php echo __('txt_has_account'); ?></span>
@@ -82,15 +82,15 @@ if ($relativePath === '/register/aditional-data') {
 
                 <div class="component-form-body">
                     <div class="component-input-group">
-                        <input type="text" id="username" name="username" class="component-input-field" placeholder=" " maxlength="<?php echo htmlspecialchars($maxUsernameLen); ?>">
-                        <label for="username" class="component-input-label"><?php echo __('lbl_username'); ?></label>
+                        <input type="text" data-ref="username" name="username" class="component-input-field" placeholder=" " maxlength="<?php echo htmlspecialchars($maxUsernameLen); ?>">
+                        <label class="component-input-label"><?php echo __('lbl_username'); ?></label>
                     </div>
 
                     <button class="component-button component-button--dark component-button--h45 component-button--full" data-action="submitRegisterStep2">
                         <?php echo __('btn_continue'); ?>
                     </button>
                     
-                    <div class="component-alert-error" id="auth-error-message"></div>
+                    <div class="component-alert-error" data-ref="auth-error-message"></div>
 
                     <div class="component-link-container component-link-container--center">
                         <span class="component-link" data-nav="<?php echo APP_URL; ?>/register"><?php echo __('link_go_back'); ?></span>
@@ -105,19 +105,19 @@ if ($relativePath === '/register/aditional-data') {
 
                 <div class="component-form-body">
                     <div class="component-input-group">
-                        <input type="text" id="verification_code" name="verification_code" class="component-input-field" placeholder=" " maxlength="14">
-                        <label for="verification_code" class="component-input-label"><?php echo __('lbl_verify_code'); ?></label>
+                        <input type="text" data-ref="verification_code" name="verification_code" class="component-input-field" placeholder=" " maxlength="14">
+                        <label class="component-input-label"><?php echo __('lbl_verify_code'); ?></label>
                     </div>
 
                     <button class="component-button component-button--dark component-button--h45 component-button--full" data-action="submitRegisterVerify">
                         <?php echo __('btn_create_account'); ?>
                     </button>
                     
-                    <div class="component-alert-error" id="auth-error-message"></div>
-                    <div class="component-alert-success" id="auth-success-message"></div>
+                    <div class="component-alert-error" data-ref="auth-error-message"></div>
+                    <div class="component-alert-success" data-ref="auth-success-message"></div>
                     
                     <div class="component-link-container component-link-container--center">
-                        <span class="component-link" id="btn-resend-register-code" data-action="resendRegisterCode"><?php echo __('btn_resend_code'); ?></span>
+                        <span class="component-link" data-ref="btn-resend-register-code" data-action="resendRegisterCode"><?php echo __('btn_resend_code'); ?></span>
                     </div>
                 </div>
             <?php endif; ?>

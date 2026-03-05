@@ -38,13 +38,13 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                 </div>
                 <div class="component-card__actions component-card__actions--end">
                     <label class="component-toggle-switch">
-                        <input type="checkbox" id="chk_confirm_deactivate_2fa">
+                        <input type="checkbox" data-ref="chk_confirm_deactivate_2fa">
                         <span class="component-toggle-slider"></span>
                     </label>
                 </div>
             </div>
 
-            <div id="deactivate_2fa_password_area" class="disabled">
+            <div data-ref="deactivate_2fa_password_area" class="disabled">
                 <hr class="component-divider">
                 <div class="component-group-item component-group-item--stacked">
                     <div class="component-card__content component-card__content--full component-card__content--start">
@@ -57,8 +57,8 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             
                             <div class="component-card__form-area">
                                 <div class="component-input-group">
-                                    <input type="password" id="2fa_disable_password" class="component-input-field component-input-field--with-icon" placeholder=" ">
-                                    <label for="2fa_disable_password" class="component-input-label"><?php echo __('lbl_current_password'); ?></label>
+                                    <input type="password" data-ref="2fa_disable_password" class="component-input-field component-input-field--with-icon" placeholder=" ">
+                                    <label class="component-input-label"><?php echo __('lbl_current_password'); ?></label>
                                     <span class="material-symbols-rounded component-input-toggle" data-action="togglePassword">visibility_off</span>
                                 </div>
                             </div>

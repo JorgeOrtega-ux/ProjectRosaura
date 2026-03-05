@@ -42,17 +42,17 @@ if (!empty($token)) {
 
             <div class="component-form-body">
                 
-                <input type="hidden" id="reset_token" value="<?php echo htmlspecialchars($token); ?>">
+                <input type="hidden" data-ref="reset_token" value="<?php echo htmlspecialchars($token); ?>">
 
                 <div class="component-input-group">
-                    <input type="password" id="new_password" name="password" class="component-input-field component-input-field--with-icon" placeholder=" ">
-                    <label for="new_password" class="component-input-label"><?php echo __('lbl_new_password'); ?></label>
+                    <input type="password" data-ref="new_password" name="password" class="component-input-field component-input-field--with-icon" placeholder=" ">
+                    <label class="component-input-label"><?php echo __('lbl_new_password'); ?></label>
                     <span class="material-symbols-rounded component-input-toggle" data-action="togglePassword">visibility_off</span>
                 </div>
 
                 <div class="component-input-group">
-                    <input type="password" id="confirm_password" name="confirm_password" class="component-input-field component-input-field--with-icon" placeholder=" ">
-                    <label for="confirm_password" class="component-input-label"><?php echo __('lbl_confirm_password'); ?></label>
+                    <input type="password" data-ref="confirm_password" name="confirm_password" class="component-input-field component-input-field--with-icon" placeholder=" ">
+                    <label class="component-input-label"><?php echo __('lbl_confirm_password'); ?></label>
                     <span class="material-symbols-rounded component-input-toggle" data-action="togglePassword">visibility_off</span>
                 </div>
 
@@ -60,8 +60,8 @@ if (!empty($token)) {
                     <?php echo __('btn_save_password'); ?>
                 </button>
                 
-                <div class="component-alert-error" id="auth-error-message"></div>
-                <div class="component-alert-success" id="auth-success-message"></div>
+                <div class="component-alert-error" data-ref="auth-error-message"></div>
+                <div class="component-alert-success" data-ref="auth-success-message"></div>
 
             </div>
         <?php endif; ?>

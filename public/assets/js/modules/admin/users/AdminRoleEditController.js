@@ -72,7 +72,7 @@ export class AdminRoleEditController {
             const togglePassBtn = e.target.closest('[data-action="togglePassword"]');
             if (togglePassBtn) {
                 const inputField = togglePassBtn.parentElement.querySelector('.component-input-field');
-                if (inputField && inputField.id === 'admin_role_confirm_password') {
+                if (inputField && inputField.getAttribute('data-ref') === 'admin_role_confirm_password') {
                     if (inputField.type === 'password') {
                         inputField.type = 'text';
                         togglePassBtn.textContent = 'visibility';
@@ -94,10 +94,10 @@ export class AdminRoleEditController {
     }
 
     async loadUserData() {
-        const loader = document.getElementById('admin-role-loader');
-        const form = document.getElementById('admin-role-form');
-        const passArea = document.getElementById('admin-role-password-area');
-        const passInput = document.getElementById('admin_role_confirm_password');
+        const loader = document.querySelector('[data-ref="admin-role-loader"]');
+        const form = document.querySelector('[data-ref="admin-role-form"]');
+        const passArea = document.querySelector('[data-ref="admin-role-password-area"]');
+        const passInput = document.querySelector('[data-ref="admin_role_confirm_password"]');
         
         // Limpiamos estados visuales al cargar/recargar
         this.pendingRole = null;
@@ -109,7 +109,7 @@ export class AdminRoleEditController {
         if (res.success) {
             const user = res.user;
             
-            const roleText = document.getElementById('admin-role-text');
+            const roleText = document.querySelector('[data-ref="admin-role-text"]');
             if (roleText) roleText.textContent = this.roleMap[user.role] || user.role;
 
             document.querySelectorAll('[data-action="adminSetRole"]').forEach(item => {
@@ -118,7 +118,7 @@ export class AdminRoleEditController {
 
             // --- REGLA 1: BLOQUEAR INTERACCIÓN SI EL TARGET ES FUNDADOR ---
             const trigger = document.querySelector('[data-action="adminToggleModuleRole"]');
-            const desc = document.getElementById('admin-role-desc');
+            const desc = document.querySelector('[data-ref="admin-role-desc"]');
 
             if (user.role === 'founder') {
                 if (trigger) trigger.classList.add('disabled-interaction');
@@ -143,20 +143,20 @@ export class AdminRoleEditController {
         document.querySelectorAll(`[data-action="adminSetRole"]`).forEach(el => el.classList.remove('active'));
         btn.classList.add('active');
 
-        const roleText = document.getElementById('admin-role-text');
+        const roleText = document.querySelector('[data-ref="admin-role-text"]');
         const roleLabel = btn.querySelector('.component-menu-link-text span').textContent;
         if (roleText) roleText.textContent = roleLabel;
         
         if (window.appInstance) window.appInstance.closeModule(document.querySelector('[data-module="adminModuleRole"]'));
 
-        const passArea = document.getElementById('admin-role-password-area');
-        const rolePreview = document.getElementById('admin-role-preview');
+        const passArea = document.querySelector('[data-ref="admin-role-password-area"]');
+        const rolePreview = document.querySelector('[data-ref="admin-role-preview"]');
         
         if (rolePreview) rolePreview.textContent = roleLabel;
         if (passArea) {
             passArea.classList.remove('disabled');
             setTimeout(() => {
-                const passInput = document.getElementById('admin_role_confirm_password');
+                const passInput = document.querySelector('[data-ref="admin_role_confirm_password"]');
                 if (passInput) passInput.focus();
             }, 100);
         }
@@ -169,7 +169,7 @@ export class AdminRoleEditController {
     async submitRoleUpdate(btn) {
         if (!this.pendingRole) return;
 
-        const passInput = document.getElementById('admin_role_confirm_password');
+        const passInput = document.querySelector('[data-ref="admin_role_confirm_password"]');
         const password = passInput ? passInput.value.trim() : '';
 
         if (!password) {

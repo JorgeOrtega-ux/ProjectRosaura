@@ -14,7 +14,7 @@ export class DevicesController {
         console.log("DevicesController inicializado.");
 
         // Esta lógica debe ejecutarse cada vez que init() es llamado tras renderizar la vista
-        if (document.getElementById('devices-container')) {
+        if (document.querySelector('[data-ref="devices-container"]')) {
             this.initDevicesView();
         }
     }
@@ -58,7 +58,7 @@ export class DevicesController {
     }
 
     async initDevicesView() {
-        const container = document.getElementById('devices-container');
+        const container = document.querySelector('[data-ref="devices-container"]');
         if (!container) return;
 
         const existingRows = container.querySelectorAll('.device-item-row, .spinner-row, .empty-row, .component-divider');

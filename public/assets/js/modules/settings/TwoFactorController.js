@@ -16,7 +16,7 @@ export class TwoFactorController {
         console.log("TwoFactorController inicializado.");
 
         // Esta lógica debe ejecutarse cada vez que init() es llamado tras renderizar la vista
-        if (document.getElementById('2fa-setup-container')) {
+        if (document.querySelector('[data-ref="2fa-setup-container"]')) {
             this.init2FAView();
         }
     }
@@ -48,8 +48,8 @@ export class TwoFactorController {
         });
 
         document.addEventListener('change', (e) => {
-            if (e.target && e.target.id === 'chk_confirm_deactivate_2fa') {
-                const passArea = document.getElementById('deactivate_2fa_password_area');
+            if (e.target && e.target.getAttribute('data-ref') === 'chk_confirm_deactivate_2fa') {
+                const passArea = document.querySelector('[data-ref="deactivate_2fa_password_area"]');
                 if (passArea) {
                     if (e.target.checked) passArea.classList.remove('disabled');
                     else passArea.classList.add('disabled');
@@ -85,11 +85,11 @@ export class TwoFactorController {
     }
 
     async init2FAView() {
-        const setupContainer = document.getElementById('2fa-setup-container');
+        const setupContainer = document.querySelector('[data-ref="2fa-setup-container"]');
         if (setupContainer && setupContainer.classList.contains('active')) {
             const res = await this.api.post(ApiRoutes.Settings.Generate2FA);
             if (res.success) {
-                const qrContainer = document.getElementById('2fa-qr-container');
+                const qrContainer = document.querySelector('[data-ref="2fa-qr-container"]');
                 if (qrContainer) {
                     try {
                         if (!window.QRCodeStyling) {
@@ -128,7 +128,7 @@ export class TwoFactorController {
                     }
                 }
                 
-                const secretText = document.getElementById('2fa-secret-text');
+                const secretText = document.querySelector('[data-ref="2fa-secret-text"]');
                 if (secretText) {
                     secretText.textContent = res.secret;
                 }
@@ -139,7 +139,7 @@ export class TwoFactorController {
     }
 
     async enable2FA(btn) {
-        const input = document.getElementById('2fa_app_code');
+        const input = document.querySelector('[data-ref="2fa_app_code"]');
         if (!input) return;
         const code = input.value.trim();
         if (code.length !== 6) {
@@ -154,11 +154,11 @@ export class TwoFactorController {
         if (result.success) {
             this.showMessage(result.message, 'success');
             
-            document.getElementById('2fa-setup-container').classList.replace('active', 'disabled');
-            const recoveryContainer = document.getElementById('2fa-recovery-container');
+            document.querySelector('[data-ref="2fa-setup-container"]').classList.replace('active', 'disabled');
+            const recoveryContainer = document.querySelector('[data-ref="2fa-recovery-container"]');
             recoveryContainer.classList.replace('disabled', 'active');
             
-            const codeList = document.getElementById('2fa-recovery-codes-list');
+            const codeList = document.querySelector('[data-ref="2fa-recovery-codes-list"]');
             codeList.innerHTML = '';
             result.recovery_codes.forEach(c => {
                 const div = document.createElement('div');
@@ -178,7 +178,7 @@ export class TwoFactorController {
     }
 
     async disable2FA(btn) {
-        const input = document.getElementById('2fa_disable_password');
+        const input = document.querySelector('[data-ref="2fa_disable_password"]');
         if (!input) return;
         const pass = input.value;
         if (!pass) {
@@ -211,7 +211,7 @@ export class TwoFactorController {
     }
 
     async regenerateRecoveryCodes(btn) {
-        const input = document.getElementById('2fa_regenerate_password');
+        const input = document.querySelector('[data-ref="2fa_regenerate_password"]');
         if (!input) return;
         const pass = input.value;
         if (!pass) {
@@ -226,13 +226,13 @@ export class TwoFactorController {
         if (result.success) {
             this.showMessage(result.message, 'success');
             
-            const step1 = document.getElementById('step-1-generate-codes');
-            const wrapper = document.getElementById('2fa-new-recovery-codes-wrapper');
+            const step1 = document.querySelector('[data-ref="step-1-generate-codes"]');
+            const wrapper = document.querySelector('[data-ref="2fa-new-recovery-codes-wrapper"]');
             
             if (step1) step1.classList.replace('active', 'disabled');
             if (wrapper) wrapper.classList.replace('disabled', 'active');
             
-            const codeList = document.getElementById('2fa-new-recovery-codes-list');
+            const codeList = document.querySelector('[data-ref="2fa-new-recovery-codes-list"]');
             if (codeList) {
                 codeList.innerHTML = '';
                 result.recovery_codes.forEach(c => {

@@ -9,7 +9,6 @@ export class AdminBackupsController {
         this.api = new ApiService();
         this.basePath = window.AppBasePath || '';
         this.eventsBound = false; // <-- BANDERA DE BLINDAJE
-        // this.init(); <-- ELIMINADO PARA EVITAR DOBLE INICIALIZACIÓN
     }
 
     init() {
@@ -60,7 +59,7 @@ export class AdminBackupsController {
 
             if (togglePassBtn) {
                 const inputField = togglePassBtn.parentElement.querySelector('.component-input-field');
-                if (inputField && inputField.id === 'backup_action_password') {
+                if (inputField && inputField.getAttribute('data-ref') === 'backup_action_password') {
                     if (inputField.type === 'password') {
                         inputField.type = 'text';
                         togglePassBtn.textContent = 'visibility';
@@ -162,7 +161,7 @@ export class AdminBackupsController {
         const selectionMode = document.querySelector('[data-ref="toolbar-selection-mode"]');
         const secondaryToolbar = document.querySelector('[data-ref="secondary-toolbar"]');
         
-        const passInput = document.getElementById('backup_action_password');
+        const passInput = document.querySelector('[data-ref="backup_action_password"]');
         if (passInput) passInput.value = '';
 
         if (defaultMode && selectionMode) {
@@ -190,7 +189,7 @@ export class AdminBackupsController {
         const defaultMode = document.querySelector('[data-ref="toolbar-default-mode"]');
         const selectionMode = document.querySelector('[data-ref="toolbar-selection-mode"]');
         
-        const passInput = document.getElementById('backup_action_password');
+        const passInput = document.querySelector('[data-ref="backup_action_password"]');
         if (passInput) passInput.value = '';
 
         if (defaultMode && selectionMode) {
@@ -389,7 +388,7 @@ export class AdminBackupsController {
     async restoreSelectedBackup() {
         if (!this.selectedBackupId) return;
         
-        const passInput = document.getElementById('backup_action_password');
+        const passInput = document.querySelector('[data-ref="backup_action_password"]');
         const password = passInput ? passInput.value.trim() : '';
 
         if (!password) {
@@ -453,7 +452,7 @@ export class AdminBackupsController {
     async deleteSelectedBackup() {
         if (!this.selectedBackupId) return;
         
-        const passInput = document.getElementById('backup_action_password');
+        const passInput = document.querySelector('[data-ref="backup_action_password"]');
         const password = passInput ? passInput.value.trim() : '';
 
         if (!password) {

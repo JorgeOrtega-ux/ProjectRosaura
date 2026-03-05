@@ -68,7 +68,7 @@ $topBarClass = ($isAuthRoute || $isMaintenanceRestricted) ? 'disabled' : '';
                 </div>
                 <div class="general-content-bottom">
                     <?php include __DIR__ . '/../modules/moduleSurface.php'; ?>
-                    <div class="general-content-scrolleable" id="app-router-outlet">
+                    <div class="general-content-scrolleable" data-ref="app-router-outlet">
                         <?php $loader->load($currentView); ?>
                     </div>
                 </div>

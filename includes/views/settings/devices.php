@@ -10,7 +10,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
             <p class="component-page-description"><?php echo __('devices_desc'); ?></p>
         </div>
 
-        <div class="component-card--grouped active" id="devices-container">
+        <div class="component-card--grouped active" data-ref="devices-container">
             
             <div class="component-group-item component-group-item--wrap">
                 <div class="component-card__content">

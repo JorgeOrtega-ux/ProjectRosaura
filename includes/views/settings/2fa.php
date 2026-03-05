@@ -14,7 +14,7 @@ $text2FA = $is2FAActive ? __('2fa_status_active') : __('2fa_status_inactive');
 
         <?php if (!$is2FAActive): ?>
             
-            <div id="2fa-setup-container" class="component-setup-container active">
+            <div data-ref="2fa-setup-container" class="component-setup-container active">
                 
                 <div class="component-card--grouped component-accordion active">
                     <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion">
@@ -36,7 +36,7 @@ $text2FA = $is2FAActive ? __('2fa_status_active') : __('2fa_status_inactive');
                             
                             <div class="component-2fa-setup">
                                 <div class="component-2fa-qr-col">
-                                    <div id="2fa-qr-container">
+                                    <div data-ref="2fa-qr-container">
                                         <div class="component-spinner"></div>
                                     </div>
                                 </div>
@@ -44,7 +44,7 @@ $text2FA = $is2FAActive ? __('2fa_status_active') : __('2fa_status_inactive');
                                 <div class="component-2fa-secret-col">
                                     <h3><?php echo __('2fa_cant_scan'); ?></h3>
                                     <p><?php echo __('2fa_enter_key'); ?></p>
-                                    <div id="2fa-secret-text" class="component-2fa-secret-box"><?php echo __('loading_text'); ?></div>
+                                    <div data-ref="2fa-secret-text" class="component-2fa-secret-box"><?php echo __('loading_text'); ?></div>
                                 </div>
                                 
                                 <div class="component-2fa-instructions-col">
@@ -80,8 +80,8 @@ $text2FA = $is2FAActive ? __('2fa_status_active') : __('2fa_status_inactive');
                         <div class="component-accordion-content">
                             <div class="component-card__form-area">
                                 <div class="component-input-group">
-                                    <input type="text" id="2fa_app_code" class="component-input-field" placeholder=" " maxlength="6">
-                                    <label for="2fa_app_code" class="component-input-label"><?php echo __('lbl_app_code'); ?></label>
+                                    <input type="text" data-ref="2fa_app_code" class="component-input-field" placeholder=" " maxlength="6">
+                                    <label class="component-input-label"><?php echo __('lbl_app_code'); ?></label>
                                 </div>
                             </div>
                             <div class="component-card__actions component-card__actions--end">
@@ -94,7 +94,7 @@ $text2FA = $is2FAActive ? __('2fa_status_active') : __('2fa_status_inactive');
                 
             </div>
 
-            <div class="component-card--grouped disabled" id="2fa-recovery-container">
+            <div class="component-card--grouped disabled" data-ref="2fa-recovery-container">
                 <div class="component-group-item component-group-item--stacked">
                     <div class="component-card__content component-card__content--full component-card__content--start">
                         <div class="component-card__icon-container component-card__icon-container--bordered">
@@ -103,7 +103,7 @@ $text2FA = $is2FAActive ? __('2fa_status_active') : __('2fa_status_inactive');
                         <div class="component-card__text">
                             <h2 class="component-card__title"><?php echo __('2fa_activated_title'); ?></h2>
                             <p class="component-card__description"><?php echo __('2fa_new_codes_desc'); ?></p>
-                            <div id="2fa-recovery-codes-list">
+                            <div data-ref="2fa-recovery-codes-list">
                             </div>
                         </div>
                     </div>

@@ -10,7 +10,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
             <p class="component-page-description"><?php echo __('cp_desc'); ?></p>
         </div>
 
-        <div class="component-card--grouped active" id="step-1-current-password">
+        <div class="component-card--grouped active" data-ref="step-1-current-password">
             <div class="component-group-item component-group-item--stacked">
                 <div class="component-card__content component-card__content--full component-card__content--start">
                     
@@ -24,8 +24,8 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                         
                         <div class="component-card__form-area">
                             <div class="component-input-group">
-                                <input type="password" id="cp_current_password" class="component-input-field component-input-field--with-icon" placeholder=" ">
-                                <label for="cp_current_password" class="component-input-label"><?php echo __('lbl_current_password'); ?></label>
+                                <input type="password" data-ref="cp_current_password" class="component-input-field component-input-field--with-icon" placeholder=" ">
+                                <label class="component-input-label"><?php echo __('lbl_current_password'); ?></label>
                                 <span class="material-symbols-rounded component-input-toggle" data-action="togglePassword">visibility_off</span>
                             </div>
                         </div>
@@ -38,7 +38,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
             </div>
         </div>
 
-        <div class="component-card--grouped disabled" id="step-2-new-password">
+        <div class="component-card--grouped disabled" data-ref="step-2-new-password">
             <div class="component-group-item component-group-item--stacked">
                 <div class="component-card__content component-card__content--full component-card__content--start">
                     
@@ -52,14 +52,14 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                         
                         <div class="component-card__form-area">
                             <div class="component-input-group">
-                                <input type="password" id="cp_new_password" class="component-input-field component-input-field--with-icon" placeholder=" ">
-                                <label for="cp_new_password" class="component-input-label"><?php echo __('lbl_new_password'); ?></label>
+                                <input type="password" data-ref="cp_new_password" class="component-input-field component-input-field--with-icon" placeholder=" ">
+                                <label class="component-input-label"><?php echo __('lbl_new_password'); ?></label>
                                 <span class="material-symbols-rounded component-input-toggle" data-action="togglePassword">visibility_off</span>
                             </div>
 
                             <div class="component-input-group">
-                                <input type="password" id="cp_confirm_password" class="component-input-field component-input-field--with-icon" placeholder=" ">
-                                <label for="cp_confirm_password" class="component-input-label"><?php echo __('lbl_confirm_password'); ?></label>
+                                <input type="password" data-ref="cp_confirm_password" class="component-input-field component-input-field--with-icon" placeholder=" ">
+                                <label class="component-input-label"><?php echo __('lbl_confirm_password'); ?></label>
                                 <span class="material-symbols-rounded component-input-toggle" data-action="togglePassword">visibility_off</span>
                             </div>
                         </div>

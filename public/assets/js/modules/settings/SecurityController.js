@@ -30,8 +30,8 @@ export class SecurityController {
         });
 
         document.addEventListener('change', (e) => {
-            if (e.target && e.target.id === 'chk_confirm_delete') {
-                const passArea = document.getElementById('delete_password_area');
+            if (e.target && e.target.getAttribute('data-ref') === 'chk_confirm_delete') {
+                const passArea = document.querySelector('[data-ref="delete_password_area"]');
                 if (passArea) {
                     if (e.target.checked) passArea.classList.remove('disabled');
                     else passArea.classList.add('disabled');
@@ -61,7 +61,7 @@ export class SecurityController {
     }
 
     async verifyCurrentPassword(btn) {
-        const input = document.getElementById('cp_current_password');
+        const input = document.querySelector('[data-ref="cp_current_password"]');
         if (!input) return;
         const val = input.value.trim();
         if (val === '') { this.showMessage('Ingresa tu contraseña actual.', 'error'); return; }
@@ -71,15 +71,15 @@ export class SecurityController {
         this.restoreButton(btn);
         
         if (result.success) {
-            document.getElementById('step-1-current-password').classList.replace('active', 'disabled');
-            document.getElementById('step-2-new-password').classList.replace('disabled', 'active');
-            setTimeout(() => { const nextInput = document.getElementById('cp_new_password'); if (nextInput) nextInput.focus(); }, 50);
+            document.querySelector('[data-ref="step-1-current-password"]').classList.replace('active', 'disabled');
+            document.querySelector('[data-ref="step-2-new-password"]').classList.replace('disabled', 'active');
+            setTimeout(() => { const nextInput = document.querySelector('[data-ref="cp_new_password"]'); if (nextInput) nextInput.focus(); }, 50);
         } else this.showMessage(result.message, 'error');
     }
 
     async updatePassword(btn) {
-        const newPass = document.getElementById('cp_new_password');
-        const confirmPass = document.getElementById('cp_confirm_password');
+        const newPass = document.querySelector('[data-ref="cp_new_password"]');
+        const confirmPass = document.querySelector('[data-ref="cp_confirm_password"]');
         if (!newPass || !confirmPass) return;
         
         const valNew = newPass.value; 
@@ -112,7 +112,7 @@ export class SecurityController {
     }
 
     async deleteAccount(btn) {
-        const input = document.getElementById('delete_account_password');
+        const input = document.querySelector('[data-ref="delete_account_password"]');
         if (!input) return;
         const pass = input.value;
         if (!pass) {

@@ -9,7 +9,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
             <p class="component-page-description"><?php echo __('2fa_recovery_desc'); ?></p>
         </div>
 
-        <div class="component-card--grouped active" id="step-1-generate-codes">
+        <div class="component-card--grouped active" data-ref="step-1-generate-codes">
             <div class="component-group-item component-group-item--stacked">
                 <div class="component-card__content component-card__content--full component-card__content--start">
                     
@@ -23,8 +23,8 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                         
                         <div class="component-card__form-area">
                             <div class="component-input-group">
-                                <input type="password" id="2fa_regenerate_password" class="component-input-field component-input-field--with-icon" placeholder=" ">
-                                <label for="2fa_regenerate_password" class="component-input-label"><?php echo __('lbl_current_password'); ?></label>
+                                <input type="password" data-ref="2fa_regenerate_password" class="component-input-field component-input-field--with-icon" placeholder=" ">
+                                <label class="component-input-label"><?php echo __('lbl_current_password'); ?></label>
                                 <span class="material-symbols-rounded component-input-toggle" data-action="togglePassword">visibility_off</span>
                             </div>
                         </div>
@@ -37,7 +37,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
             </div>
         </div>
 
-        <div class="component-card--grouped disabled" id="2fa-new-recovery-codes-wrapper">
+        <div class="component-card--grouped disabled" data-ref="2fa-new-recovery-codes-wrapper">
             <div class="component-group-item component-group-item--stacked">
                 <div class="component-card__content component-card__content--full component-card__content--start">
                     
@@ -49,7 +49,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                         <h2 class="component-card__title"><?php echo __('2fa_new_codes_title'); ?></h2>
                         <p class="component-card__description"><?php echo __('2fa_new_codes_desc'); ?></p>
                         
-                        <div id="2fa-new-recovery-codes-list">
+                        <div data-ref="2fa-new-recovery-codes-list">
                             </div>
                     </div>
                 </div>

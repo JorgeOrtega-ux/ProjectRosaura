@@ -13,24 +13,24 @@ $isFounder = ($currentUserRole === 'founder');
             <p class="component-page-description"><?php echo __('admin_manage_role_desc'); ?></p>
         </div>
 
-        <div id="admin-role-loader">
+        <div data-ref="admin-role-loader">
             <div class="component-spinner component-spinner--centered"></div>
         </div>
 
-        <div id="admin-role-form" class="disabled">
+        <div data-ref="admin-role-form" class="disabled">
             <div class="component-card--grouped">
                 <div class="component-group-item component-group-item--stacked">
                     <div class="component-card__content">
                         <div class="component-card__text">
                             <h2 class="component-card__title"><?php echo __('admin_assign_role_title'); ?></h2>
-                            <p class="component-card__description" id="admin-role-desc"><?php echo __('admin_assign_role_desc'); ?></p>
+                            <p class="component-card__description" data-ref="admin-role-desc"><?php echo __('admin_assign_role_desc'); ?></p>
                         </div>
                     </div>
                     <div class="component-card__actions component-card__actions--start">
                         <div class="component-dropdown-wrapper">
                             <div class="component-dropdown-trigger" data-action="adminToggleModuleRole">
                                 <span class="material-symbols-rounded">admin_panel_settings</span>
-                                <span class="component-dropdown-text" id="admin-role-text"><?php echo __('loading_text'); ?></span>
+                                <span class="component-dropdown-text" data-ref="admin-role-text"><?php echo __('loading_text'); ?></span>
                                 <span class="material-symbols-rounded">expand_more</span>
                             </div>
                             <div class="component-module component-module--dropdown component-module--dropdown-left disabled bs-initialized" data-module="adminModuleRole">
@@ -76,7 +76,7 @@ $isFounder = ($currentUserRole === 'founder');
                 </div>
             </div>
             
-            <div id="admin-role-password-area" class="disabled">
+            <div data-ref="admin-role-password-area" class="disabled">
                 <div class="component-card--grouped">
                     <div class="component-group-item component-group-item--stacked">
                         <div class="component-card__content component-card__content--full component-card__content--start">
@@ -87,12 +87,12 @@ $isFounder = ($currentUserRole === 'founder');
 
                             <div class="component-card__text">
                                 <h2 class="component-card__title"><?php echo __('admin_verify_identity_title'); ?></h2>
-                                <p class="component-card__description"><?php echo __('admin_verify_identity_role_desc'); ?> <b id="admin-role-preview"></b>.</p>
+                                <p class="component-card__description"><?php echo __('admin_verify_identity_role_desc'); ?> <b data-ref="admin-role-preview"></b>.</p>
                                 
                                 <div class="component-card__form-area">
                                     <div class="component-input-group">
-                                        <input type="password" id="admin_role_confirm_password" class="component-input-field component-input-field--with-icon" placeholder=" ">
-                                        <label for="admin_role_confirm_password" class="component-input-label"><?php echo __('lbl_current_password'); ?></label>
+                                        <input type="password" data-ref="admin_role_confirm_password" class="component-input-field component-input-field--with-icon" placeholder=" ">
+                                        <label class="component-input-label"><?php echo __('lbl_current_password'); ?></label>
                                         <span class="material-symbols-rounded component-input-toggle" data-action="togglePassword">visibility_off</span>
                                     </div>
                                 </div>

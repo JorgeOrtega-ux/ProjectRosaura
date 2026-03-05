@@ -11,7 +11,7 @@
                 <button type="button" class="component-button component-button--icon component-button--h30" data-action="calendarPrevMonth">
                     <span class="material-symbols-rounded">chevron_left</span>
                 </button>
-                <div class="component-calendar-title" id="calendar-title"><?php echo __('calendar_month_year'); ?></div>
+                <div class="component-calendar-title" data-ref="calendar-title"><?php echo __('calendar_month_year'); ?></div>
                 <button type="button" class="component-button component-button--icon component-button--h30" data-action="calendarNextMonth">
                     <span class="material-symbols-rounded">chevron_right</span>
                 </button>
@@ -21,16 +21,16 @@
                 <span><?php echo __('cal_su'); ?></span><span><?php echo __('cal_mo'); ?></span><span><?php echo __('cal_tu'); ?></span><span><?php echo __('cal_we'); ?></span><span><?php echo __('cal_th'); ?></span><span><?php echo __('cal_fr'); ?></span><span><?php echo __('cal_sa'); ?></span>
             </div>
 
-            <div class="component-calendar-days" id="calendar-days">
+            <div class="component-calendar-days" data-ref="calendar-days">
             </div>
 
             <div class="component-calendar-time">
                 <div class="component-input-group component-input-group--h34">
-                    <input type="number" id="calendar-hours" class="component-input-field component-input-field--simple" placeholder="HH" min="0" max="23" value="00">
+                    <input type="number" data-ref="calendar-hours" class="component-input-field component-input-field--simple" placeholder="HH" min="0" max="23" value="00">
                 </div>
                 <span>:</span>
                 <div class="component-input-group component-input-group--h34">
-                    <input type="number" id="calendar-minutes" class="component-input-field component-input-field--simple" placeholder="MM" min="0" max="59" value="00">
+                    <input type="number" data-ref="calendar-minutes" class="component-input-field component-input-field--simple" placeholder="MM" min="0" max="59" value="00">
                 </div>
             </div>
 

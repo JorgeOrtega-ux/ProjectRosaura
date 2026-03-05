@@ -16,15 +16,15 @@ if (session_status() === PHP_SESSION_NONE) session_start();
             </div>
         </div>
 
-        <div id="logs-viewer-loader" class="active">
+        <div data-ref="logs-viewer-loader" class="active">
             <div class="component-spinner"></div>
         </div>
 
-        <div class="component-file-viewer disabled" id="logs-viewer-container">
-            <div class="component-tabs-header" id="logs-viewer-tabs">
+        <div class="component-file-viewer disabled" data-ref="logs-viewer-container">
+            <div class="component-tabs-header" data-ref="logs-viewer-tabs">
             </div>
             <div class="component-viewer-area">
-                <textarea id="logs-viewer-textarea" class="component-viewer-textarea" readonly spellcheck="false" placeholder="<?php echo __('admin_logs_viewer_placeholder'); ?>"></textarea>
+                <textarea data-ref="logs-viewer-textarea" class="component-viewer-textarea" readonly spellcheck="false" placeholder="<?php echo __('admin_logs_viewer_placeholder'); ?>"></textarea>
             </div>
         </div>
 

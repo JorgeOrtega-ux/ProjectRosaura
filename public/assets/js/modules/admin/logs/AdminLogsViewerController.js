@@ -51,8 +51,8 @@ export class AdminLogsViewerController {
     }
 
     async loadLogs(urlStr) {
-        const loader = document.getElementById('logs-viewer-loader');
-        const container = document.getElementById('logs-viewer-container');
+        const loader = document.querySelector('[data-ref="logs-viewer-loader"]');
+        const container = document.querySelector('[data-ref="logs-viewer-container"]');
         
         if (loader) {
             loader.classList.add('active');
@@ -103,7 +103,7 @@ export class AdminLogsViewerController {
     }
 
     renderTabs() {
-        const tabsContainer = document.getElementById('logs-viewer-tabs');
+        const tabsContainer = document.querySelector('[data-ref="logs-viewer-tabs"]');
         if (!tabsContainer) return;
 
         tabsContainer.innerHTML = '';
@@ -144,7 +144,7 @@ export class AdminLogsViewerController {
         this.activeTabId = id;
         this.renderTabs();
 
-        const textarea = document.getElementById('logs-viewer-textarea');
+        const textarea = document.querySelector('[data-ref="logs-viewer-textarea"]');
         if (textarea) {
             if (this.logsData[id].error) {
                 textarea.value = this.logsData[id].error;

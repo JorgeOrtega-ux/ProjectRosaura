@@ -16,7 +16,7 @@ export class ProfileController {
         console.log("ProfileController inicializado.");
 
         // Esta lógica debe actualizarse con los elementos inyectados en el DOM por el Router
-        const imgEl = document.getElementById('profile-avatar-img');
+        const imgEl = document.querySelector('[data-ref="profile-avatar-img"]');
         if (imgEl && imgEl.src.includes('/default/')) {
             this.isDefaultAvatar = true;
         }
@@ -26,17 +26,17 @@ export class ProfileController {
         if (this.eventsBound) return; // <-- EVITA DUPLICAR EVENTOS
 
         document.addEventListener('click', (e) => {
-            if (e.target.closest('#btn-change-avatar') || e.target.closest('#profile-avatar-overlay')) {
-                const input = document.getElementById('input-avatar-file');
+            if (e.target.closest('[data-ref="btn-change-avatar"]') || e.target.closest('[data-ref="profile-avatar-overlay"]')) {
+                const input = document.querySelector('[data-ref="input-avatar-file"]');
                 if (input) input.click();
             }
 
-            if (e.target.closest('#btn-cancel-avatar')) this.cancelAvatarPreview();
+            if (e.target.closest('[data-ref="btn-cancel-avatar"]')) this.cancelAvatarPreview();
             
-            const btnSaveAvatar = e.target.closest('#btn-save-avatar');
+            const btnSaveAvatar = e.target.closest('[data-ref="btn-save-avatar"]');
             if (btnSaveAvatar) this.saveAvatar(btnSaveAvatar);
 
-            const btnDelAvatar = e.target.closest('#btn-delete-avatar');
+            const btnDelAvatar = e.target.closest('[data-ref="btn-delete-avatar"]');
             if (btnDelAvatar) this.deleteAvatar(btnDelAvatar);
 
             const btnSaveUsername = e.target.closest('[data-action="saveUsername"]');
@@ -45,6 +45,7 @@ export class ProfileController {
             const btnRequestEmail = e.target.closest('[data-action="requestEmailUpdate"]');
             if (btnRequestEmail) this.handleEmailUpdateRequest();
 
+            // Mantenemos id para el botón del modal ya que el DialogSystem inyecta IDs fijos
             const btnResendDialog = e.target.closest('#btn-dialog-resend-code');
             if (btnResendDialog) this.resendEmailUpdateCode(btnResendDialog);
 
@@ -53,10 +54,11 @@ export class ProfileController {
         });
 
         document.addEventListener('change', (e) => {
-            if (e.target && e.target.id === 'input-avatar-file') this.handleFileSelection(e);
+            if (e.target && e.target.getAttribute('data-ref') === 'input-avatar-file') this.handleFileSelection(e);
         });
 
         document.addEventListener('input', (e) => {
+            // Mantenemos id para el input del modal ya que DialogSystem inyecta IDs fijos
             if (e.target && e.target.id === 'dialog_email_code') {
                 let val = e.target.value.replace(/\D/g, ''); 
                 let formatted = '';
@@ -110,7 +112,7 @@ export class ProfileController {
         this.selectedFile = file;
         const reader = new FileReader();
         reader.onload = (ev) => {
-            const imgEl = document.getElementById('profile-avatar-img');
+            const imgEl = document.querySelector('[data-ref="profile-avatar-img"]');
             if (imgEl) imgEl.src = ev.target.result;
             this.toggleAvatarButtons(true);
         };
@@ -118,8 +120,8 @@ export class ProfileController {
     }
 
     cancelAvatarPreview() {
-        const imgEl = document.getElementById('profile-avatar-img');
-        const fileInput = document.getElementById('input-avatar-file');
+        const imgEl = document.querySelector('[data-ref="profile-avatar-img"]');
+        const fileInput = document.querySelector('[data-ref="input-avatar-file"]');
         if (imgEl) imgEl.src = imgEl.getAttribute('data-original-src');
         if (fileInput) fileInput.value = '';
         this.selectedFile = null;
@@ -127,10 +129,10 @@ export class ProfileController {
     }
 
     toggleAvatarButtons(isPreview) {
-        const btnChange = document.getElementById('btn-change-avatar');
-        const btnDelete = document.getElementById('btn-delete-avatar');
-        const btnCancel = document.getElementById('btn-cancel-avatar');
-        const btnSave = document.getElementById('btn-save-avatar');
+        const btnChange = document.querySelector('[data-ref="btn-change-avatar"]');
+        const btnDelete = document.querySelector('[data-ref="btn-delete-avatar"]');
+        const btnCancel = document.querySelector('[data-ref="btn-cancel-avatar"]');
+        const btnSave = document.querySelector('[data-ref="btn-save-avatar"]');
         if (!btnChange || !btnDelete || !btnCancel || !btnSave) return;
         
         if (isPreview) {
@@ -159,18 +161,18 @@ export class ProfileController {
         this.restoreButton(btn);
         if (result.success) {
             this.showMessage(result.message, 'success');
-            const imgEl = document.getElementById('profile-avatar-img');
+            const imgEl = document.querySelector('[data-ref="profile-avatar-img"]');
             if (imgEl) { imgEl.src = result.new_avatar; imgEl.setAttribute('data-original-src', result.new_avatar); }
             const headerAvatar = document.querySelector('.header .component-button--profile img');
             if (headerAvatar) headerAvatar.src = result.new_avatar;
-            const fileInput = document.getElementById('input-avatar-file');
+            const fileInput = document.querySelector('[data-ref="input-avatar-file"]');
             if (fileInput) fileInput.value = '';
             
             this.selectedFile = null;
             this.isDefaultAvatar = false; 
             this.toggleAvatarButtons(false);
             
-            const btnChange = document.getElementById('btn-change-avatar');
+            const btnChange = document.querySelector('[data-ref="btn-change-avatar"]');
             if (btnChange && typeof window.__ === 'function') {
                 btnChange.textContent = __('btn_change_avatar');
             }
@@ -185,7 +187,7 @@ export class ProfileController {
         this.restoreButton(btn);
         if (result.success) {
             this.showMessage(result.message, 'success');
-            const imgEl = document.getElementById('profile-avatar-img');
+            const imgEl = document.querySelector('[data-ref="profile-avatar-img"]');
             if (imgEl) { imgEl.src = result.new_avatar; imgEl.setAttribute('data-original-src', result.new_avatar); }
             const headerAvatar = document.querySelector('.header .component-button--profile img');
             if (headerAvatar) headerAvatar.src = result.new_avatar;
@@ -193,7 +195,7 @@ export class ProfileController {
             this.isDefaultAvatar = true; 
             this.toggleAvatarButtons(false);
             
-            const btnChange = document.getElementById('btn-change-avatar');
+            const btnChange = document.querySelector('[data-ref="btn-change-avatar"]');
             if (btnChange && typeof window.__ === 'function') {
                 btnChange.textContent = __('btn_upload_avatar');
             }
@@ -201,7 +203,7 @@ export class ProfileController {
     }
 
     async saveUsername(btn) {
-        const input = document.getElementById('input-username');
+        const input = document.querySelector('[data-ref="input-username"]');
         if (!input) return;
         const val = input.value.trim();
         const originalVal = input.getAttribute('data-original-value');
@@ -211,7 +213,7 @@ export class ProfileController {
         this.restoreButton(btn);
         if (result.success) {
             this.showMessage(result.message, 'success');
-            document.getElementById('display-username').textContent = result.new_username;
+            document.querySelector('[data-ref="display-username"]').textContent = result.new_username;
             input.setAttribute('data-original-value', result.new_username);
             window.appInstance.toggleEditState('username');
         } else this.showMessage(result.message, 'error');
@@ -227,7 +229,7 @@ export class ProfileController {
             if (res.skip_verification) { window.appInstance.toggleEditState('email'); return; }
             this.showMessage(res.message, 'success');
             
-            const currentEmail = document.getElementById('display-email').textContent.trim();
+            const currentEmail = document.querySelector('[data-ref="display-email"]').textContent.trim();
             const verifyDialogPromise = window.dialogSystem.show('verifyEmailCode', { email: currentEmail });
             
             const resendBtn = document.getElementById('btn-dialog-resend-code');
@@ -304,7 +306,7 @@ export class ProfileController {
     }
 
     async saveEmail(btn) {
-        const input = document.getElementById('input-email');
+        const input = document.querySelector('[data-ref="input-email"]');
         if (!input) return;
         const val = input.value.trim();
         const originalVal = input.getAttribute('data-original-value');
@@ -314,7 +316,7 @@ export class ProfileController {
         this.restoreButton(btn);
         if (result.success) {
             this.showMessage(result.message, 'success');
-            document.getElementById('display-email').textContent = result.new_email;
+            document.querySelector('[data-ref="display-email"]').textContent = result.new_email;
             input.setAttribute('data-original-value', result.new_email);
             window.appInstance.toggleEditState('email');
         } else this.showMessage(result.message, 'error');
