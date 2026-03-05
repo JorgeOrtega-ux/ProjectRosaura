@@ -3,55 +3,105 @@
 class StudioWebSocketManager {
     constructor() {
         this.ws = null;
-        // Detecta automáticamente el host actual (localhost o la IP de red local)
-        const host = window.location.hostname;
-        this.wsUrl = `ws://${host}:8765`; 
         this.isConnecting = false;
         
-        // Escuchamos los cambios de vista lanzados por el SpaRouter
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const host = window.location.hostname;
+        const portOrPath = window.location.protocol === 'https:' ? '/studio-ws/' : ':8765';
+        this.wsUrl = `${protocol}//${host}${portOrPath}`;
+        
         window.addEventListener('viewLoaded', this.handleRouteUpdate.bind(this));
     }
 
+    getAuthToken() {
+        return 'mi_token_super_secreto_y_seguro_2026'; 
+    }
+
+    // Generador para simular el "request id" estilo Canva/Sentry
+    generateRequestId() {
+        return Math.random().toString(16).substring(2, 10) + Math.random().toString(16).substring(2, 10);
+    }
+
     connect() {
-        // Prevenir intentos múltiples de conexión si navegamos entre submódulos de /studio
         if (this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) {
             return;
         }
 
         this.isConnecting = true;
-        console.log(`[Studio WS] Iniciando conexión WebSocket con el servidor en ${this.wsUrl}...`);
+        
+        // LOG 1: Intento de conexión con timestamp
+        console.log(`websocket_client: ${Date.now()} connecting...`);
         
         try {
             this.ws = new WebSocket(this.wsUrl);
 
             this.ws.onopen = () => {
                 this.isConnecting = false;
-                console.log('[Studio WS] Conectado exitosamente.');
+                
+                // LOG 2: Conexión física establecida
+                console.log('websocket_client: connected');
+                
+                const requestId = this.generateRequestId();
+                
+                // LOG 3: ID de la petición generada
+                console.log(`websocket_client: request id ${requestId}`);
+                
+                const authPayload = {
+                    type: "auth",
+                    token: this.getAuthToken(),
+                    requestId: requestId 
+                };
+                
+                this.ws.send(JSON.stringify(authPayload));
             };
 
             this.ws.onmessage = (event) => {
-                console.log('[Studio WS] Mensaje recibido del servidor:', event.data);
+                try {
+                    const data = JSON.parse(event.data);
+                    
+                    if (data.status === "error") {
+                        if (data.code === "AUTH_FAILED" || data.code === "AUTH_TIMEOUT") {
+                            this.disconnect();
+                        }
+                    } else if (data.status === "success" && data.message === "Autenticación exitosa") {
+                        // LOG 4: Autenticación confirmada por el servidor
+                        console.log('websocket_client: status CONNECTED');
+                    }
+
+                } catch (error) {
+                    // Silenciado para mantener la consola limpia
+                }
             };
 
             this.ws.onclose = () => {
                 this.isConnecting = false;
                 this.ws = null;
-                console.log('[Studio WS] Conexión cerrada.');
+                
+                // LOG 5: Desconexión (ya sea manual o por error de red)
+                console.log('websocket_client: disconnected');
             };
 
-            this.ws.onerror = (error) => {
+            this.ws.onerror = () => {
                 this.isConnecting = false;
-                console.error('[Studio WS] Error en la conexión:', error);
             };
         } catch (error) {
-            console.error('[Studio WS] No se pudo inicializar WebSocket:', error);
+            // Silenciado
+        }
+    }
+
+    sendAction(actionName, payloadData = {}) {
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            const message = {
+                action: actionName,
+                data: payloadData
+            };
+            this.ws.send(JSON.stringify(message));
         }
     }
 
     disconnect() {
         if (this.ws) {
-            console.log('[Studio WS] Saliendo de la sección Studio. Desconectando WebSocket...');
-            this.ws.close();
+            this.ws.close(1000, "Navegación fuera de Studio");
             this.ws = null;
         }
     }
@@ -59,16 +109,16 @@ class StudioWebSocketManager {
     handleRouteUpdate(event) {
         const { cleanUrl } = event.detail;
         
-        // Validamos si la nueva ruta pertenece al ecosistema del Studio
         if (!cleanUrl.includes('/studio')) {
             this.disconnect();
+        } else {
+            this.connect();
         }
     }
 }
 
 export class StudioController {
     constructor() {
-        // Implementación de patrón Singleton para mantener un solo administrador de conexión vivo
         if (window.AppStudioWSManager) {
             this.manager = window.AppStudioWSManager;
         } else {
@@ -80,7 +130,6 @@ export class StudioController {
     }
 
     init() {
-        // Al instanciar este controlador (porque entramos a una vista /studio/*), aseguramos la conexión
         this.manager.connect();
     }
 }
