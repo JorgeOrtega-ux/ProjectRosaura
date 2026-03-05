@@ -26,8 +26,9 @@ document.addEventListener('DOMContentLoaded', () => {
     window.tooltipSystem.init();
 
     // 5. Instanciamos el Router SPA
+    // CORRECCIÓN APLICADA AQUÍ: Cambio de '#app-router-outlet' a '[data-ref="app-router-outlet"]'
     window.spaRouter = new SpaRouter({
-        outlet: '#app-router-outlet'
+        outlet: '[data-ref="app-router-outlet"]'
     });
 
     // ========================================================
