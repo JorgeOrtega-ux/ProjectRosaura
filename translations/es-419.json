@@ -457,5 +457,13 @@
     "btn_accept": "Aceptar",
     "2fa_status_active": "Activada",
     "2fa_status_inactive": "Inactiva",
-    "status_suspended": "Suspendida"
+    "status_suspended": "Suspendida",
+    "route_studio_content": "Gestionar contenido",
+    "studio_manage_content_desc": "Esta sección está reservada para que puedas gestionar y organizar todo tu contenido.",
+    "route_studio_management": "Panel de gestión",
+    "studio_management_desc": "Esta sección se encuentra actualmente vacía, pero pronto será el Panel de Gestión central de Rosaura Studio.",
+    "unauthorized_studio_title": "Acceso Denegado",
+    "unauthorized_studio_desc": "Esta sección de Rosaura Studio no existe o no tienes los permisos necesarios para acceder al estudio de otro usuario.",
+    "menu_studio_management": "Panel de gestión",
+    "menu_studio_content": "Gestionar contenido"
 }
