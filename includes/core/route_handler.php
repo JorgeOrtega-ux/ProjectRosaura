@@ -98,10 +98,18 @@ if ($isMaintenanceActive && !$isPrivileged) {
             $currentView = 'studio/management-panel.php';
             $redirectUrl = APP_URL . '/studio/management-panel/' . $userIdentifier;
         
-        // AQUÍ ESTÁ LA CORRECCIÓN: Exceptuamos la vista de subida de la validación del UUID
-        } elseif ($currentView !== 'studio/upload-video.php') {
+        // CORRECCIÓN: Añadimos 'studio/uploading.php' a la lista de excepciones que no requieren UUID en la URL
+        } elseif ($currentView !== 'studio/upload-video.php' && $currentView !== 'studio/uploading.php') {
+            
             // Validar que el uuid en la URL existe y sea igual al de la sesión
             $requestedUuid = $_GET['uuid'] ?? '';
+            
+            // Intentar extraer el UUID si viene en el path (para rutas SPA amigables)
+            if (empty($requestedUuid)) {
+                $pathParts = explode('/', trim($requestUriPath, '/'));
+                $requestedUuid = end($pathParts);
+            }
+
             if (empty($requestedUuid) || $requestedUuid !== (string)$userIdentifier) {
                 $currentView = 'system/message.php';
                 $systemMessageType = 'unauthorized_studio';

@@ -1,10 +1,5 @@
 // public/assets/js/core/router/RouteModulesMap.js
 
-/**
- * Mapeo de Rutas a Módulos JS (Lazy Loading)
- * Las llaves son las rutas limpias (sin dominio, sin basePath y sin parámetros ?id=1)
- * Los paths de importación son relativos a la ubicación de AppInit.js
- */
 export const RouteModulesMap = {
     // ---- MÓDULOS DE AUTENTICACIÓN ----
     '/login': { path: './modules/auth/AuthController.js', className: 'AuthController' },
@@ -37,5 +32,6 @@ export const RouteModulesMap = {
 
     // ---- MÓDULOS DE STUDIO (WEBSOCKET) ----
     '/studio/management-panel': { path: './modules/studio/StudioController.js', className: 'StudioController' },
-    '/studio/manage-content': { path: './modules/studio/StudioController.js', className: 'StudioController' }
+    '/studio/manage-content': { path: './modules/studio/StudioController.js', className: 'StudioController' },
+    '/studio/uploading': { path: './modules/studio/StudioController.js', className: 'StudioController' } /* NUEVA RUTA JS */
 };

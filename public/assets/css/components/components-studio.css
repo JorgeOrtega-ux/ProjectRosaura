@@ -161,4 +161,122 @@
     .component-upload-content {
         padding: 24px 16px;
     }
+}/* ==========================================================================
+   Componente: Subiendo / Detalles de Video (Uploading)
+   ========================================================================== */
+
+/* Badges en la parte superior */
+.studio-badge-container {
+    display: flex;
+    gap: 12px;
+}
+
+.studio-badge {
+    padding: 6px 16px;
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.studio-badge:hover {
+    background-color: var(--border-color);
+}
+
+.studio-badge.active {
+    background-color: var(--text-primary, #0f0f0f);
+    color: var(--bg-surface, #ffffff);
+    border-color: var(--text-primary, #0f0f0f);
+}
+
+/* Layout de la vista inferior */
+.studio-uploading-wrapper {
+    display: flex;
+    gap: 32px;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    align-items: flex-start;
+}
+
+.studio-uploading-details {
+    flex: 1; /* Ocupa el espacio restante para los formularios */
+}
+
+.studio-uploading-preview {
+    flex: 0 0 320px; /* Ancho fijo para la previsualización del video */
+    position: sticky;
+    top: 24px;
+}
+
+/* Card del video en miniatura (Fondo negro) */
+.studio-video-card {
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.studio-video-card__player {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background-color: #000000; /* Simula el video negro */
+    position: relative;
+}
+
+.studio-video-card__info {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background-color: var(--bg-surface);
+}
+
+.studio-video-card__meta-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.meta-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.meta-link {
+    font-size: 14px;
+    color: #065fd4;
+    text-decoration: none;
+    word-break: break-all;
+}
+
+.meta-link:hover {
+    text-decoration: underline;
+}
+
+.meta-value {
+    font-size: 14px;
+    color: var(--text-primary);
+    word-break: break-all;
+}
+
+/* Responsividad para móviles */
+@media (max-width: 900px) {
+    .studio-uploading-wrapper {
+        flex-direction: column-reverse; /* Pone el video arriba en móvil */
+        gap: 24px;
+    }
+
+    .studio-uploading-preview {
+        width: 100%;
+        flex: none;
+        position: relative;
+        top: 0;
+    }
 }
