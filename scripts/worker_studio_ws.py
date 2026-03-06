@@ -7,7 +7,7 @@ import json
 import os
 import time
 import sys
-import aioredis
+import redis.asyncio as aioredis # <-- LÍNEA CORREGIDA
 from dotenv import load_dotenv
 
 logging.basicConfig(

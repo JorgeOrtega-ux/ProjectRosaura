@@ -16,94 +16,119 @@ class StudioController {
         $this->sessionManager = $sessionManager;
     }
 
+    /**
+     * Verifica la sesión utilizando los métodos nativos del SessionManager.
+     * Retorna el ID del usuario si está autenticado, o false en caso contrario.
+     */
     private function requireAuth() {
-        if (!$this->sessionManager->isLoggedIn()) {
-            echo json_encode(['status' => 'error', 'message' => 'No autorizado']);
+        if (!$this->sessionManager->has('user_id')) {
+            return false;
+        }
+        return $this->sessionManager->get('user_id');
+    }
+
+    public function upload_video($input) {
+        $userId = $this->requireAuth();
+        if (!$userId) {
             http_response_code(401);
-            exit;
+            return ['success' => false, 'status' => 'error', 'message' => 'No autorizado'];
         }
-        return $this->sessionManager->getUserId();
-    }
 
-    public function upload_video() {
-        $userId = $this->requireAuth();
+        // api/index.php intercepta los archivos y los manda dentro de $input['_files']
+        $files = $input['_files'] ?? $_FILES;
 
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_FILES['video'])) {
-            echo json_encode(['status' => 'error', 'message' => 'Método no permitido o archivo no enviado.']);
-            return;
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($files['video'])) {
+            http_response_code(400);
+            return ['success' => false, 'status' => 'error', 'message' => 'Método no permitido o archivo no enviado.'];
         }
 
         try {
-            $videoData = $this->studioServices->queueVideoUpload($userId, $_FILES['video']);
-            echo json_encode(['status' => 'success', 'data' => $videoData]);
+            $videoData = $this->studioServices->queueVideoUpload($userId, $files['video']);
+            return ['success' => true, 'status' => 'success', 'data' => $videoData];
         } catch (\Exception $e) {
-            echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
             http_response_code(400);
+            return ['success' => false, 'status' => 'error', 'message' => $e->getMessage()];
         }
     }
 
-    public function upload_thumbnail() {
+    public function upload_thumbnail($input) {
         $userId = $this->requireAuth();
+        if (!$userId) {
+            http_response_code(401);
+            return ['success' => false, 'status' => 'error', 'message' => 'No autorizado'];
+        }
+
+        $files = $input['_files'] ?? $_FILES;
         
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_FILES['thumbnail']) || !isset($_POST['video_id'])) {
-            echo json_encode(['status' => 'error', 'message' => 'Faltan datos obligatorios.']);
-            return;
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($files['thumbnail']) || !isset($input['video_id'])) {
+            http_response_code(400);
+            return ['success' => false, 'status' => 'error', 'message' => 'Faltan datos obligatorios.'];
         }
 
         try {
-            $data = $this->studioServices->uploadThumbnail($userId, (int)$_POST['video_id'], $_FILES['thumbnail']);
-            echo json_encode(['status' => 'success', 'data' => $data]);
+            $data = $this->studioServices->uploadThumbnail($userId, (int)$input['video_id'], $files['thumbnail']);
+            return ['success' => true, 'status' => 'success', 'data' => $data];
         } catch (\Exception $e) {
-            echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
             http_response_code(400);
+            return ['success' => false, 'status' => 'error', 'message' => $e->getMessage()];
         }
     }
 
-    public function update_title() {
+    public function update_title($input) {
         $userId = $this->requireAuth();
-        $input = json_decode(file_get_contents('php://input'), true);
+        if (!$userId) {
+            http_response_code(401);
+            return ['success' => false, 'status' => 'error', 'message' => 'No autorizado'];
+        }
 
         if (!isset($input['video_id']) || !isset($input['title'])) {
-            echo json_encode(['status' => 'error', 'message' => 'Faltan datos obligatorios.']);
-            return;
+            http_response_code(400);
+            return ['success' => false, 'status' => 'error', 'message' => 'Faltan datos obligatorios.'];
         }
 
         try {
             $this->studioServices->updateVideoTitle($userId, (int)$input['video_id'], $input['title']);
-            echo json_encode(['status' => 'success']);
+            return ['success' => true, 'status' => 'success'];
         } catch (\Exception $e) {
-            echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
             http_response_code(400);
+            return ['success' => false, 'status' => 'error', 'message' => $e->getMessage()];
         }
     }
 
-    public function get_active_uploads() {
+    public function get_active_uploads($input) {
         $userId = $this->requireAuth();
+        if (!$userId) {
+            http_response_code(401);
+            return ['success' => false, 'status' => 'error', 'message' => 'No autorizado'];
+        }
         
         try {
             $videos = $this->studioServices->getActiveUploads($userId);
-            echo json_encode(['status' => 'success', 'data' => $videos]);
+            return ['success' => true, 'status' => 'success', 'data' => $videos];
         } catch (\Exception $e) {
-            echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
             http_response_code(500);
+            return ['success' => false, 'status' => 'error', 'message' => $e->getMessage()];
         }
     }
     
-    public function publish_video() {
+    public function publish_video($input) {
         $userId = $this->requireAuth();
-        $input = json_decode(file_get_contents('php://input'), true);
+        if (!$userId) {
+            http_response_code(401);
+            return ['success' => false, 'status' => 'error', 'message' => 'No autorizado'];
+        }
 
         if (!isset($input['video_id'])) {
-            echo json_encode(['status' => 'error', 'message' => 'ID de video faltante.']);
-            return;
+            http_response_code(400);
+            return ['success' => false, 'status' => 'error', 'message' => 'ID de video faltante.'];
         }
 
         try {
             $result = $this->studioServices->publishVideo($userId, (int)$input['video_id']);
-            echo json_encode(['status' => 'success', 'data' => $result]);
+            return ['success' => true, 'status' => 'success', 'data' => $result];
         } catch (\Exception $e) {
-            echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
             http_response_code(400);
+            return ['success' => false, 'status' => 'error', 'message' => $e->getMessage()];
         }
     }
 }
