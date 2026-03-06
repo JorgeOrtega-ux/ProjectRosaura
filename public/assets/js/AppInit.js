@@ -73,7 +73,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     window.importLocks[className] = import(moduleConfig.path);
                     const module = await window.importLocks[className];
                     
-                    const ControllerClass = module[className];
+                    // CORRECCIÓN VITAL: Soporta export nombrados (export class) y por defecto (export default class)
+                    const ControllerClass = module[className] || module.default;
+
+                    if (!ControllerClass) {
+                        throw new Error(`La clase '${className}' no se encontró en el módulo importado.`);
+                    }
+
                     const instance = new ControllerClass();
                     
                     window.loadedControllers[className] = instance;

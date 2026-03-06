@@ -2,80 +2,102 @@
 
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
-import {DialogSystem} from '../../../core/components/DialogSystem.js';
+import { DialogSystem } from '../../../core/components/DialogSystem.js';
 
-export default class AdminTagsController {
+export class AdminTagsController {
     constructor() {
-        // La API se instancia como propiedad de la clase, no suelta en el módulo
         this.api = new ApiService();
         this.tags = [];
+        this.eventsBound = false; // <-- BANDERA DE BLINDAJE
     }
 
     async init() {
-        // En una SPA, mapear el DOM debe hacerse AQUÍ, no en el constructor.
-        // Esto garantiza que el router ya haya inyectado la vista.
-        this.tbody = document.getElementById('tagsTableBody');
-        this.emptyState = document.getElementById('tagsEmptyState');
-        this.modal = document.getElementById('tagModalOverlay');
-        this.form = document.getElementById('tagForm');
-        this.table = document.getElementById('tagsTable');
-
         this.bindEvents();
         await this.loadTags();
+        console.log("AdminTagsController inicializado.");
     }
 
     bindEvents() {
-        // Usamos .onclick para elementos estáticos de la vista.
-        // Esto previene que los eventos se acumulen si init() se ejecuta más de una vez.
-        const addTagBtn = document.querySelector('[data-action="openAddTagModal"]');
-        if (addTagBtn) {
-            addTagBtn.onclick = () => this.openModal();
-        }
+        if (this.eventsBound) return; // <-- EVITA DUPLICAR EVENTOS EN SPA
 
-        document.querySelectorAll('[data-action="closeTagModal"]').forEach(btn => {
-            btn.onclick = (e) => {
+        // DELEGACIÓN DE EVENTOS
+        document.addEventListener('click', (e) => {
+            const addTagBtn = e.target.closest('[data-action="openAddTagModal"]');
+            const closeTagBtn = e.target.closest('[data-action="closeTagModal"]');
+            const submitTagBtn = e.target.closest('[data-action="submitTagForm"]');
+            const editBtn = e.target.closest('[data-action="edit"]');
+            const deleteBtn = e.target.closest('[data-action="delete"]');
+
+            if (addTagBtn) {
+                e.preventDefault();
+                this.openModal();
+            }
+
+            if (closeTagBtn) {
                 e.preventDefault();
                 this.closeModal();
-            };
-        });
+            }
 
-        const submitBtn = document.querySelector('[data-action="submitTagForm"]');
-        if (submitBtn) {
-            submitBtn.onclick = (e) => {
+            if (submitTagBtn) {
                 e.preventDefault();
                 this.submitForm();
-            };
-        }
+            }
+
+            if (editBtn) {
+                e.preventDefault();
+                const id = editBtn.getAttribute('data-id');
+                const tag = this.tags.find(t => t.id == id);
+                if (tag) this.openModal(tag);
+            }
+
+            if (deleteBtn) {
+                e.preventDefault();
+                const id = deleteBtn.getAttribute('data-id');
+                this.deleteTag(id);
+            }
+        });
+
+        // Evento que recarga la info si el router inyecta de nuevo la vista
+        window.addEventListener('viewLoaded', (e) => {
+            if (e.detail.url.includes('/admin/tags')) {
+                this.loadTags();
+            }
+        });
+
+        this.eventsBound = true; // <-- SELLA LOS EVENTOS
     }
 
     async loadTags() {
         try {
-            // Se cambia el hardcode por el estándar de ApiRoutes
             const res = await this.api.post(ApiRoutes.Admin.GetTags, {});
             if (res.success) {
                 this.tags = res.tags;
                 this.renderTable();
             } else {
-                DialogSystem.show('error', 'Error', res.message || 'Error al obtener las etiquetas.');
+                window.dialogSystem.show('error', 'Error', res.message || 'Error al obtener las etiquetas.');
             }
         } catch (error) {
             console.error('Error fetching tags:', error);
-            DialogSystem.show('error', 'Error', 'Ocurrió un error inesperado al cargar la lista.');
+            window.dialogSystem.show('error', 'Error', 'Ocurrió un error inesperado al cargar la lista.');
         }
     }
 
     renderTable() {
-        if (!this.tbody) return;
-        this.tbody.innerHTML = '';
+        const tbody = document.getElementById('tagsTableBody');
+        const emptyState = document.getElementById('tagsEmptyState');
+        const table = document.getElementById('tagsTable');
+
+        if (!tbody) return;
+        tbody.innerHTML = '';
         
         if (this.tags.length === 0) {
-            if (this.emptyState) this.emptyState.style.display = 'block';
-            if (this.table) this.table.style.display = 'none';
+            if (emptyState) emptyState.style.display = 'block';
+            if (table) table.style.display = 'none';
             return;
         }
 
-        if (this.emptyState) this.emptyState.style.display = 'none';
-        if (this.table) this.table.style.display = 'table';
+        if (emptyState) emptyState.style.display = 'none';
+        if (table) table.style.display = 'table';
 
         this.tags.forEach(tag => {
             const tr = document.createElement('tr');
@@ -96,30 +118,17 @@ export default class AdminTagsController {
                     </button>
                 </td>
             `;
-            this.tbody.appendChild(tr);
-        });
-
-        // Estos botones son dinámicos (se recrean en cada render), aquí sí usamos addEventListener
-        this.tbody.querySelectorAll('[data-action="edit"]').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const id = e.currentTarget.getAttribute('data-id');
-                const tag = this.tags.find(t => t.id == id);
-                if (tag) this.openModal(tag);
-            });
-        });
-
-        this.tbody.querySelectorAll('[data-action="delete"]').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const id = e.currentTarget.getAttribute('data-id');
-                this.deleteTag(id);
-            });
+            tbody.appendChild(tr);
         });
     }
 
     openModal(tag = null) {
-        if (!this.form || !this.modal) return;
+        const modal = document.getElementById('tagModalOverlay');
+        const form = document.getElementById('tagForm');
+        
+        if (!form || !modal) return;
 
-        this.form.reset();
+        form.reset();
         document.getElementById('tagId').value = tag ? tag.id : '';
         
         if (tag) {
@@ -130,18 +139,21 @@ export default class AdminTagsController {
             document.getElementById('tagModalTitle').innerText = 'Nueva Etiqueta';
         }
         
-        this.modal.style.display = 'flex';
+        modal.style.display = 'flex';
     }
 
     closeModal() {
-        if (this.modal) {
-            this.modal.style.display = 'none';
+        const modal = document.getElementById('tagModalOverlay');
+        if (modal) {
+            modal.style.display = 'none';
         }
     }
 
     async submitForm() {
-        if (!this.form || !this.form.checkValidity()) {
-            this.form.reportValidity();
+        const form = document.getElementById('tagForm');
+        
+        if (!form || !form.checkValidity()) {
+            if (form) form.reportValidity();
             return;
         }
 
@@ -149,26 +161,25 @@ export default class AdminTagsController {
         const name = document.getElementById('tagName').value;
         const type = document.getElementById('tagType').value;
 
-        // Validamos si es actualización o creación usando las rutas estandarizadas
         const action = id ? ApiRoutes.Admin.UpdateTag : ApiRoutes.Admin.CreateTag;
         const payload = id ? { id, name, type } : { name, type };
 
         try {
             const res = await this.api.post(action, payload);
             if (res.success) {
-                DialogSystem.show('success', 'Éxito', res.message || 'La etiqueta se ha guardado correctamente.');
+                window.dialogSystem.show('success', 'Éxito', res.message || 'La etiqueta se ha guardado correctamente.');
                 this.closeModal();
                 await this.loadTags();
             } else {
-                DialogSystem.show('error', 'Error', res.message || 'No se pudo guardar la etiqueta.');
+                window.dialogSystem.show('error', 'Error', res.message || 'No se pudo guardar la etiqueta.');
             }
         } catch (error) {
-            DialogSystem.show('error', 'Error', 'Ocurrió un error inesperado al procesar la solicitud.');
+            window.dialogSystem.show('error', 'Error', 'Ocurrió un error inesperado al procesar la solicitud.');
         }
     }
 
     async deleteTag(id) {
-        DialogSystem.show('warning', 'Eliminar etiqueta', '¿Estás seguro de que deseas eliminar esta etiqueta? Esta acción afectará a los videos vinculados.', [
+        window.dialogSystem.show('warning', 'Eliminar etiqueta', '¿Estás seguro de que deseas eliminar esta etiqueta? Esta acción afectará a los videos vinculados.', [
             { text: 'Cancelar', style: 'light' },
             { 
                 text: 'Eliminar', 
@@ -177,13 +188,13 @@ export default class AdminTagsController {
                     try {
                         const res = await this.api.post(ApiRoutes.Admin.DeleteTag, { id });
                         if (res.success) {
-                            DialogSystem.show('success', 'Eliminado', res.message || 'La etiqueta ha sido eliminada.');
+                            window.dialogSystem.show('success', 'Eliminado', res.message || 'La etiqueta ha sido eliminada.');
                             await this.loadTags();
                         } else {
-                            DialogSystem.show('error', 'Error', res.message || 'No se pudo eliminar la etiqueta.');
+                            window.dialogSystem.show('error', 'Error', res.message || 'No se pudo eliminar la etiqueta.');
                         }
                     } catch (error) {
-                        DialogSystem.show('error', 'Error', 'Ocurrió un error interno al intentar eliminar.');
+                        window.dialogSystem.show('error', 'Error', 'Ocurrió un error interno al intentar eliminar.');
                     }
                 }
             }
