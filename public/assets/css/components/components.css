@@ -2301,4 +2301,6 @@ input:checked + .component-toggle-slider:before {
     .component-dialog-actions .component-button {
         width: 100%; 
     }
+}.no-padding {
+    padding: 0 !important;
 }

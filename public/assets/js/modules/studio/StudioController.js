@@ -29,7 +29,6 @@ class StudioWebSocketManager {
 
         this.isConnecting = true;
         
-        // LOG 1: Intento de conexión con timestamp
         console.log(`websocket_client: ${Date.now()} connecting...`);
         
         try {
@@ -37,13 +36,9 @@ class StudioWebSocketManager {
 
             this.ws.onopen = () => {
                 this.isConnecting = false;
-                
-                // LOG 2: Conexión física establecida
                 console.log('websocket_client: connected');
                 
                 const requestId = this.generateRequestId();
-                
-                // LOG 3: ID de la petición generada
                 console.log(`websocket_client: request id ${requestId}`);
                 
                 const authPayload = {
@@ -64,7 +59,6 @@ class StudioWebSocketManager {
                             this.disconnect();
                         }
                     } else if (data.status === "success" && data.message === "Autenticación exitosa") {
-                        // LOG 4: Autenticación confirmada por el servidor
                         console.log('websocket_client: status CONNECTED');
                     }
 
@@ -76,8 +70,6 @@ class StudioWebSocketManager {
             this.ws.onclose = () => {
                 this.isConnecting = false;
                 this.ws = null;
-                
-                // LOG 5: Desconexión (ya sea manual o por error de red)
                 console.log('websocket_client: disconnected');
             };
 
@@ -131,5 +123,85 @@ export class StudioController {
 
     init() {
         this.manager.connect();
+        this.attachEvents();
+    }
+
+    attachEvents() {
+        // Delegación de eventos para capturar los clics en los botones de acción
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-action]');
+            if (!btn) return;
+            
+            const action = btn.getAttribute('data-action');
+            
+            if (action === 'toggleEditState') {
+                this.toggleEditState(btn.getAttribute('data-target'));
+            } else if (action === 'saveTitle') {
+                this.saveTitle();
+            }
+        });
+    }
+
+    toggleEditState(target) {
+        const viewBox = document.querySelector(`[data-state="${target}-view"]`);
+        const editBox = document.querySelector(`[data-state="${target}-edit"]`);
+        
+        if (!viewBox || !editBox) return;
+
+        if (viewBox.classList.contains('active')) {
+            // Pasar a modo edición
+            viewBox.classList.remove('active');
+            viewBox.classList.add('disabled');
+            viewBox.style.display = 'none';
+
+            editBox.classList.remove('disabled');
+            editBox.classList.add('active');
+            editBox.style.display = ''; 
+            
+            // Foco en el input
+            const input = editBox.querySelector(`[data-ref="input-${target}"]`);
+            if (input) {
+                input.focus();
+                // Opcional: poner el cursor al final del texto
+                input.selectionStart = input.selectionEnd = input.value.length; 
+            }
+        } else {
+            // Pasar a modo vista (Cancelar)
+            editBox.classList.remove('active');
+            editBox.classList.add('disabled');
+            editBox.style.display = 'none';
+
+            viewBox.classList.remove('disabled');
+            viewBox.classList.add('active');
+            viewBox.style.display = '';
+
+            // Restaurar el valor original si el usuario presiona "Cancelar"
+            const input = editBox.querySelector(`[data-ref="input-${target}"]`);
+            if (input) {
+                input.value = input.getAttribute('data-original-value');
+            }
+        }
+    }
+
+    saveTitle() {
+        const input = document.querySelector('[data-ref="input-title"]');
+        const display = document.querySelector('[data-ref="display-title"]');
+        
+        if (!input || !display) return;
+        
+        const newTitle = input.value.trim();
+        if (newTitle !== "") {
+            // Actualizar la vista
+            display.textContent = newTitle;
+            
+            // Sellar el nuevo valor como el valor original en caso de futuras cancelaciones
+            input.setAttribute('data-original-value', newTitle);
+            
+            // (Opcional) Enviar la actualización por WebSockets al backend
+            // this.manager.sendAction('updateVideoInfo', { title: newTitle });
+            
+            // Cerrar el modo edición
+            this.toggleEditState('title');
+        }
     }
 }
