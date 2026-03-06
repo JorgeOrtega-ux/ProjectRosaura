@@ -21,7 +21,6 @@ class StudioWebSocketManager {
     }
 
     getUserId() {
-        // Asumiendo que guardaste el user ID en algún lugar global como meta tag
         const meta = document.querySelector('meta[name="user-id"]');
         return meta ? meta.getAttribute('content') : '0';
     }
@@ -68,7 +67,6 @@ class StudioWebSocketManager {
                         return;
                     }
 
-                    // Si es un evento de progreso que viene desde Python/Redis
                     if (data.type === 'progress' || data.type === 'completed' || data.type === 'failed') {
                         if (this.callbacks['progressUpdate']) {
                             this.callbacks['progressUpdate'](data);
@@ -119,9 +117,11 @@ export class StudioController {
             window.AppStudioWSManager = this.manager;
         }
         
+        window.currentStudioController = this;
+
         this.api = new ApiService();
-        this.currentVideos = new Map(); // Para rastrear estado de videos en UI
-        this.selectedVideoId = null; // Video seleccionado en /uploading
+        this.currentVideos = new Map();
+        this.selectedVideoId = null;
         
         this.init();
     }
@@ -130,7 +130,6 @@ export class StudioController {
         this.manager.connect();
         this.manager.onMessage('progressUpdate', this.handleWsProgress.bind(this));
         
-        // Determinar en qué vista estamos
         const path = window.location.pathname;
         if (path.includes('/studio/uploading')) {
             this.initUploadingView();
@@ -145,44 +144,19 @@ export class StudioController {
     // LOGICA DE /studio/upload
     // ==========================================
     initUploadView() {
-        const dropZone = document.getElementById('videoDropZone');
-        const fileInput = document.getElementById('videoFileInput');
-        
-        if (!dropZone || !fileInput) return;
-
-        dropZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropZone.classList.add('dragover');
-        });
-
-        dropZone.addEventListener('dragleave', () => {
-            dropZone.classList.remove('dragover');
-        });
-
-        dropZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropZone.classList.remove('dragover');
-            this.handleFilesSelection(e.dataTransfer.files);
-        });
-
-        fileInput.addEventListener('change', (e) => {
-            this.handleFilesSelection(e.target.files);
-        });
+        // Delegado en attachEvents
     }
 
     async handleFilesSelection(files) {
         if (!files || files.length === 0) return;
 
-        // Mostrar UI de carga de red si existe
         const uploadProgressContainer = document.getElementById('uploadProgressContainer');
         const uploadProgressBar = document.getElementById('uploadProgressBar');
         if(uploadProgressContainer) uploadProgressContainer.style.display = 'block';
 
-        // Subir uno por uno a PHP
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
             try {
-                // Subida por red (XHR)
                 const result = await this.api.uploadFileWithProgress(
                     ApiRoutes.Studio.UploadVideo, 
                     file, 
@@ -203,7 +177,6 @@ export class StudioController {
             }
         }
 
-        // Una vez subidos todos al temporal, redirigir a uploading
         window.history.pushState({}, '', (window.AppBasePath || '') + '/studio/uploading');
         window.dispatchEvent(new CustomEvent('routeChange', { detail: { url: '/studio/uploading' }}));
     }
@@ -212,12 +185,10 @@ export class StudioController {
     // LOGICA DE /studio/uploading
     // ==========================================
     async initUploadingView() {
-        // Obtener estado actual de videos desde el backend
         const response = await this.api.post(ApiRoutes.Studio.GetActiveUploads);
         if (response.status === 'success') {
             const videos = response.data;
             if (videos.length === 0) {
-                // Si no hay videos, regresar a upload
                 window.history.pushState({}, '', (window.AppBasePath || '') + '/studio/upload');
                 window.dispatchEvent(new CustomEvent('routeChange', { detail: { url: '/studio/upload' }}));
                 return;
@@ -232,8 +203,6 @@ export class StudioController {
             });
 
             this.renderBadges();
-            
-            // Seleccionar el primer video por defecto
             this.selectVideo(videos[0].id);
         }
     }
@@ -263,26 +232,36 @@ export class StudioController {
 
     selectVideo(id) {
         this.selectedVideoId = id;
-        this.renderBadges(); // Para actualizar clase active
+        this.renderBadges(); 
         
         const video = this.currentVideos.get(id);
         if (!video) return;
 
-        // Rellenar formulario
+        // Actualizar el Título en la vista de lectura
+        const displayTitle = document.querySelector('[data-ref="display-title"]');
         const titleInput = document.getElementById('videoTitleInput');
-        if(titleInput) titleInput.value = video.title || video.original_filename;
+        
+        const currentTitle = video.title || video.original_filename;
+        
+        if(displayTitle) displayTitle.textContent = currentTitle;
+        if(titleInput) titleInput.value = currentTitle;
+
+        // Asegurarnos de que estamos en modo "lectura" y no "edición"
+        this.setEditState('title', false);
+
+        // Actualizar nombre de archivo en la tarjeta derecha
+        const previewOriginalFilename = document.getElementById('previewOriginalFilename');
+        if(previewOriginalFilename) previewOriginalFilename.textContent = video.original_filename;
         
         this.validatePublishButton();
     }
 
     handleWsProgress(data) {
-        // data.video_id, data.progress, data.status
         if (this.currentVideos.has(data.video_id)) {
             const video = this.currentVideos.get(data.video_id);
             video.status = data.status;
             video.processing_progress = data.progress;
             
-            // Actualizar UI del Badge
             const statusSpan = document.getElementById(`badge-status-${data.video_id}`);
             if (statusSpan) {
                 if (data.status === 'processing') statusSpan.textContent = `${data.progress}%`;
@@ -290,67 +269,159 @@ export class StudioController {
                 else if (data.status === 'failed') statusSpan.textContent = 'Error';
             }
 
-            // Si es el video actual seleccionado, validar botón publicar
             if (this.selectedVideoId === data.video_id) {
                 this.validatePublishButton();
             }
         }
     }
 
+    // --- MANEJO DE VISTAS LECTURA/EDICIÓN ---
+    setEditState(target, isEditing) {
+        const viewState = document.querySelector(`[data-state="${target}-view"]`);
+        const editState = document.querySelector(`[data-state="${target}-edit"]`);
+
+        if (viewState && editState) {
+            if (isEditing) {
+                viewState.style.display = 'none';
+                viewState.classList.remove('active');
+                viewState.classList.add('disabled');
+
+                editState.style.display = 'flex';
+                editState.classList.remove('disabled');
+                editState.classList.add('active');
+            } else {
+                editState.style.display = 'none';
+                editState.classList.remove('active');
+                editState.classList.add('disabled');
+
+                viewState.style.display = 'flex';
+                viewState.classList.remove('disabled');
+                viewState.classList.add('active');
+            }
+        }
+    }
+
+    async saveTitleField() {
+        if (!this.selectedVideoId) return;
+        
+        const inputEl = document.getElementById('videoTitleInput');
+        const displayEl = document.querySelector('[data-ref="display-title"]');
+        if (!inputEl) return;
+
+        const newTitle = inputEl.value.trim();
+        
+        if (newTitle.length > 0) {
+            const res = await this.api.post(ApiRoutes.Studio.UpdateTitle, {
+                video_id: this.selectedVideoId,
+                title: newTitle
+            });
+            
+            if(res.status === 'success') {
+                const video = this.currentVideos.get(this.selectedVideoId);
+                if (video) {
+                    video.title = newTitle;
+                    video.tituloValido = true;
+                    if (displayEl) displayEl.textContent = newTitle;
+                    this.setEditState('title', false); // Volver a modo lectura
+                    this.validatePublishButton();
+                }
+            } else {
+                alert("Error guardando el título: " + res.message);
+            }
+        } else {
+            alert("El título no puede estar vacío.");
+        }
+    }
+
     attachEvents() {
+        if (window.AppStudioEventsBound) return;
+        window.AppStudioEventsBound = true;
+
         document.addEventListener('click', (e) => {
+            const controller = window.currentStudioController;
+            if (!controller) return;
+
             const btn = e.target.closest('[data-action]');
             if (!btn) return;
             
             const action = btn.getAttribute('data-action');
+            const target = btn.getAttribute('data-target');
+
+            // Toggle Edit View
+            if (action === 'toggleEditState') {
+                const currentState = document.querySelector(`[data-state="${target}-edit"]`).style.display !== 'none';
+                controller.setEditState(target, !currentState);
+            }
+
+            // Save Title explicitly
+            if (action === 'saveTitle') {
+                controller.saveTitleField();
+            }
+
+            // Publish Video
             if (action === 'publishVideo') {
-                this.publishVideo();
+                controller.publishVideo();
             }
         });
 
-        // Evento para subir miniatura
-        const thumbInput = document.getElementById('thumbnailInput');
-        if (thumbInput) {
-            thumbInput.addEventListener('change', async (e) => {
-                if (!e.target.files.length || !this.selectedVideoId) return;
+        // Changes delegados (Inputs de Archivos)
+        document.addEventListener('change', async (e) => {
+            const controller = window.currentStudioController;
+            if (!controller) return;
+
+            // Thumbnail
+            if (e.target && e.target.id === 'thumbnailInput') {
+                if (!e.target.files.length || !controller.selectedVideoId) return;
                 
                 const formData = new FormData();
                 formData.append('thumbnail', e.target.files[0]);
-                formData.append('video_id', this.selectedVideoId);
+                formData.append('video_id', controller.selectedVideoId);
 
-                const res = await this.api.postForm(ApiRoutes.Studio.UploadThumbnail, formData);
+                const res = await controller.api.postForm(ApiRoutes.Studio.UploadThumbnail, formData);
                 if(res.status === 'success') {
-                    const video = this.currentVideos.get(this.selectedVideoId);
-                    video.thumbnailSubida = true;
-                    video.thumbnail_path = res.data.thumbnail_path;
-                    this.validatePublishButton();
-                    alert("Miniatura subida con éxito");
-                }
-            });
-        }
-
-        // Evento para guardar título al salir del input (blur) o teclear
-        const titleInput = document.getElementById('videoTitleInput');
-        if (titleInput) {
-            titleInput.addEventListener('blur', async (e) => {
-                if (!this.selectedVideoId) return;
-                const newTitle = e.target.value.trim();
-                
-                if (newTitle.length > 0) {
-                    const res = await this.api.post(ApiRoutes.Studio.UpdateTitle, {
-                        video_id: this.selectedVideoId,
-                        title: newTitle
-                    });
-                    
-                    if(res.status === 'success') {
-                        const video = this.currentVideos.get(this.selectedVideoId);
-                        video.title = newTitle;
-                        video.tituloValido = true;
-                        this.validatePublishButton();
+                    const video = controller.currentVideos.get(controller.selectedVideoId);
+                    if (video) {
+                        video.thumbnailSubida = true;
+                        video.thumbnail_path = res.data.thumbnail_path;
+                        controller.validatePublishButton();
                     }
+                    console.log("Miniatura subida con éxito");
+                } else {
+                    alert("Error subiendo miniatura: " + res.message);
                 }
-            });
-        }
+            }
+
+            // Video Upload Input
+            if (e.target && e.target.id === 'videoFileInput') {
+                controller.handleFilesSelection(e.target.files);
+            }
+        });
+
+        // Drag & Drop delegados
+        document.addEventListener('dragover', (e) => {
+            const dropZone = e.target.closest('#videoDropZone');
+            if (dropZone) {
+                e.preventDefault();
+                dropZone.classList.add('dragover');
+            }
+        });
+
+        document.addEventListener('dragleave', (e) => {
+            const dropZone = e.target.closest('#videoDropZone');
+            if (dropZone) {
+                dropZone.classList.remove('dragover');
+            }
+        });
+
+        document.addEventListener('drop', (e) => {
+            const dropZone = e.target.closest('#videoDropZone');
+            if (dropZone) {
+                e.preventDefault();
+                dropZone.classList.remove('dragover');
+                const controller = window.currentStudioController;
+                if(controller) controller.handleFilesSelection(e.dataTransfer.files);
+            }
+        });
     }
 
     validatePublishButton() {
@@ -358,10 +429,10 @@ export class StudioController {
         if (!btn || !this.selectedVideoId) return;
 
         const video = this.currentVideos.get(this.selectedVideoId);
+        if (!video) return;
         
-        // Reglas de validación
         const isProcessed = video.status === 'processed';
-        const hasTitle = document.getElementById('videoTitleInput').value.trim().length > 0;
+        const hasTitle = (video.title && video.title.trim().length > 0) || (video.original_filename && video.original_filename.trim().length > 0);
         const hasThumb = video.thumbnailSubida === true;
 
         if (isProcessed && hasTitle && hasThumb) {
@@ -382,11 +453,9 @@ export class StudioController {
 
         if (res.status === 'success') {
             alert("¡Video publicado con éxito!");
-            // Quitar de la lista local
             this.currentVideos.delete(this.selectedVideoId);
             this.renderBadges();
             
-            // Si quedan videos, seleccionar el primero, sino redirigir
             if (this.currentVideos.size > 0) {
                 this.selectVideo(this.currentVideos.keys().next().value);
             } else {

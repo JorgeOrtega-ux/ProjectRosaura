@@ -11,7 +11,6 @@ class StudioServices {
     private $videoRepo;
     private $redis;
     
-    // Rutas de almacenamiento local temporal (asegúrate de crear estas carpetas)
     private $tempVideoDir = __DIR__ . '/../../storage/temp_videos/';
     private $thumbnailDir = __DIR__ . '/../../public/storage/thumbnails/';
 
@@ -19,7 +18,6 @@ class StudioServices {
         $this->videoRepo = $videoRepo;
         $this->redis = $redis;
         
-        // Crear directorios si no existen
         if (!is_dir($this->tempVideoDir)) mkdir($this->tempVideoDir, 0755, true);
         if (!is_dir($this->thumbnailDir)) mkdir($this->thumbnailDir, 0755, true);
     }
@@ -36,15 +34,12 @@ class StudioServices {
         $tempFilename = $uuid . '.' . $extension;
         $tempFilePath = $this->tempVideoDir . $tempFilename;
 
-        // Movemos el archivo a la carpeta temporal
         if (!move_uploaded_file($file['tmp_name'], $tempFilePath)) {
             throw new Exception("No se pudo guardar el archivo de video temporal.");
         }
 
-        // 1. Guardar en Base de Datos (Estado inicial: queued)
         $videoId = $this->videoRepo->create($userId, $uuid, $originalFilename, $tempFilePath);
 
-        // 2. Avisar a Redis (Meter a la cola)
         $jobData = json_encode([
             'video_id' => $videoId,
             'user_id' => $userId,
@@ -52,7 +47,6 @@ class StudioServices {
             'file_path' => $tempFilePath
         ]);
         
-        // Usamos lpush o rpush para que Python lo lea con blpop
         $this->redis->rpush('video_processing_queue', $jobData);
 
         return [
@@ -81,7 +75,7 @@ class StudioServices {
         $publicPath = '/storage/thumbnails/' . $filename;
 
         if (!move_uploaded_file($file['tmp_name'], $destination)) {
-            throw new Exception("No se pudo guardar la miniatura.");
+            throw new Exception("No se pudo guardar la miniatura físicamente.");
         }
 
         $this->videoRepo->updateMetadata($videoId, ['thumbnail_path' => $publicPath]);
@@ -113,11 +107,15 @@ class StudioServices {
         }
         
         if ($video['status'] !== 'processed') {
-            throw new Exception("El video debe estar completamente procesado para publicarse.");
+            throw new Exception("El video debe estar completamente procesado para publicarse. Estado actual: " . $video['status']);
         }
         
-        if (empty($video['title']) || empty($video['thumbnail_path'])) {
-            throw new Exception("Falta título o miniatura.");
+        $missing = [];
+        if (empty($video['title'])) $missing[] = 'título';
+        if (empty($video['thumbnail_path'])) $missing[] = 'miniatura';
+        
+        if (!empty($missing)) {
+            throw new Exception("Faltan los siguientes datos en la DB para publicar: " . implode(' y ', $missing));
         }
         
         $this->videoRepo->updateStatus($videoId, 'published', 100);

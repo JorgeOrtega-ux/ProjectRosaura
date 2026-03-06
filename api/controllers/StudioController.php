@@ -16,10 +16,6 @@ class StudioController {
         $this->sessionManager = $sessionManager;
     }
 
-    /**
-     * Verifica la sesión utilizando los métodos nativos del SessionManager.
-     * Retorna el ID del usuario si está autenticado, o false en caso contrario.
-     */
     private function requireAuth() {
         if (!$this->sessionManager->has('user_id')) {
             return false;
@@ -34,7 +30,6 @@ class StudioController {
             return ['success' => false, 'status' => 'error', 'message' => 'No autorizado'];
         }
 
-        // api/index.php intercepta los archivos y los manda dentro de $input['_files']
         $files = $input['_files'] ?? $_FILES;
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($files['video'])) {
@@ -60,13 +55,16 @@ class StudioController {
 
         $files = $input['_files'] ?? $_FILES;
         
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($files['thumbnail']) || !isset($input['video_id'])) {
+        // Garantizamos extraer el video_id aunque venga por Multipart Form-Data (POST nativo)
+        $videoId = $input['video_id'] ?? $_POST['video_id'] ?? null;
+        
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($files['thumbnail']) || !$videoId) {
             http_response_code(400);
-            return ['success' => false, 'status' => 'error', 'message' => 'Faltan datos obligatorios.'];
+            return ['success' => false, 'status' => 'error', 'message' => 'Faltan datos obligatorios para la miniatura.'];
         }
 
         try {
-            $data = $this->studioServices->uploadThumbnail($userId, (int)$input['video_id'], $files['thumbnail']);
+            $data = $this->studioServices->uploadThumbnail($userId, (int)$videoId, $files['thumbnail']);
             return ['success' => true, 'status' => 'success', 'data' => $data];
         } catch (\Exception $e) {
             http_response_code(400);
@@ -81,13 +79,16 @@ class StudioController {
             return ['success' => false, 'status' => 'error', 'message' => 'No autorizado'];
         }
 
-        if (!isset($input['video_id']) || !isset($input['title'])) {
+        $videoId = $input['video_id'] ?? $_POST['video_id'] ?? null;
+        $title = $input['title'] ?? $_POST['title'] ?? null;
+
+        if (!$videoId || !$title) {
             http_response_code(400);
-            return ['success' => false, 'status' => 'error', 'message' => 'Faltan datos obligatorios.'];
+            return ['success' => false, 'status' => 'error', 'message' => 'Faltan datos obligatorios para el título.'];
         }
 
         try {
-            $this->studioServices->updateVideoTitle($userId, (int)$input['video_id'], $input['title']);
+            $this->studioServices->updateVideoTitle($userId, (int)$videoId, $title);
             return ['success' => true, 'status' => 'success'];
         } catch (\Exception $e) {
             http_response_code(400);
@@ -118,13 +119,15 @@ class StudioController {
             return ['success' => false, 'status' => 'error', 'message' => 'No autorizado'];
         }
 
-        if (!isset($input['video_id'])) {
+        $videoId = $input['video_id'] ?? $_POST['video_id'] ?? null;
+
+        if (!$videoId) {
             http_response_code(400);
-            return ['success' => false, 'status' => 'error', 'message' => 'ID de video faltante.'];
+            return ['success' => false, 'status' => 'error', 'message' => 'ID de video faltante en la petición de publicación.'];
         }
 
         try {
-            $result = $this->studioServices->publishVideo($userId, (int)$input['video_id']);
+            $result = $this->studioServices->publishVideo($userId, (int)$videoId);
             return ['success' => true, 'status' => 'success', 'data' => $result];
         } catch (\Exception $e) {
             http_response_code(400);

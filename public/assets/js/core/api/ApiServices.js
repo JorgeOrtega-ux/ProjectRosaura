@@ -30,14 +30,19 @@ export class ApiService {
                     return { success: false, message: 'Sesión revocada.' };
                 }
 
-                if (response.status === 403) return await response.json(); 
-                throw new Error(`Error HTTP: ${response.status}`);
+                // Intentamos extraer el mensaje de error del backend (ej. error 400, 403, etc.)
+                try {
+                    const errorData = await response.json();
+                    return errorData;
+                } catch (jsonError) {
+                    throw new Error(`Error HTTP: ${response.status}`);
+                }
             }
 
             return await response.json();
         } catch (error) {
             console.error(`[ApiService] Fallo en JSON hacia '${route}':`, error);
-            return { success: false, message: 'Error de conexión con el servidor.' };
+            return { success: false, message: 'Error de conexión con el servidor. Verifica la consola.' };
         }
     }
 
@@ -62,18 +67,22 @@ export class ApiService {
                     return { success: false, message: 'Sesión revocada.' };
                 }
 
-                if (response.status === 403) return await response.json(); 
-                throw new Error(`Error HTTP: ${response.status}`);
+                // Intentamos extraer el mensaje de error del backend
+                try {
+                    const errorData = await response.json();
+                    return errorData;
+                } catch (jsonError) {
+                    throw new Error(`Error HTTP: ${response.status}`);
+                }
             }
 
             return await response.json();
         } catch (error) {
             console.error(`[ApiService] Fallo en FormData hacia '${route}':`, error);
-            return { success: false, message: 'Error de conexión con el servidor.' };
+            return { success: false, message: 'Error de conexión con el servidor. Verifica la consola.' };
         }
     }
 
-    // NUEVO: Método para subidas XHR con seguimiento de progreso
     uploadFileWithProgress(route, file, inputName, extraData = {}, onProgress) {
         return new Promise((resolve, reject) => {
             const formData = new FormData();
@@ -107,7 +116,13 @@ export class ApiService {
                         reject('Error parseando JSON');
                     }
                 } else {
-                    reject(`Error HTTP: ${xhr.status}`);
+                    // Si el servidor devolvió un error (ej. 400), intentamos leer el JSON
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        resolve(response); // Lo resolvemos para que el controlador pueda leer success: false y el message
+                    } catch (e) {
+                        reject(`Error HTTP: ${xhr.status}`);
+                    }
                 }
             };
 
