@@ -7,13 +7,10 @@ import json
 import os
 import time
 import sys
-import redis.asyncio as aioredis # <-- LÍNEA CORREGIDA
+import redis.asyncio as aioredis
 from dotenv import load_dotenv
 
-logging.basicConfig(
-    level=logging.INFO, 
-    format='%(asctime)s - %(levelname)s - [Studio WS] %(message)s'
-)
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - [WS Listener] %(message)s')
 
 load_dotenv()
 
@@ -56,11 +53,11 @@ async def authenticate_client(websocket, client_ip):
         auth_data = json.loads(auth_message_raw)
         
         if auth_data.get("type") == "auth" and auth_data.get("token") == AUTH_TOKEN_SECRET:
-            user_id = auth_data.get("userId") # <-- Extraemos el ID del usuario
+            user_id = auth_data.get("userId")
             if not user_id:
                 raise ValueError("Falta userId")
                 
-            logging.info(f"Cliente {client_ip} (User ID: {user_id}) autenticado.")
+            logging.info(f"✅ Auth OK | IP: {client_ip} | Frontend solicitó canal para userId: '{user_id}'")
             await websocket.send(json.dumps({"status": "success", "message": "Autenticación exitosa"}))
             return True, user_id
         else:
@@ -73,21 +70,20 @@ async def authenticate_client(websocket, client_ip):
         await websocket.send(json.dumps({"status": "error", "code": "AUTH_FAILED"}))
         return False, None
 
-# Tarea en segundo plano para escuchar Redis y enviar al WebSocket
 async def redis_listener(websocket, user_id):
     try:
         redis_url = f"redis://{REDIS_HOST}:{REDIS_PORT}"
         redis = await aioredis.from_url(redis_url)
         pubsub = redis.pubsub()
         channel_name = f"studio_updates_{user_id}"
-        await pubsub.subscribe(channel_name)
         
-        logging.info(f"Suscrito a canal Redis: {channel_name}")
+        await pubsub.subscribe(channel_name)
+        logging.info(f"🎧 Suscrito exitosamente a Redis en canal: {channel_name}")
         
         async for message in pubsub.listen():
             if message['type'] == 'message':
                 data = message['data'].decode('utf-8')
-                # Retransmitir al frontend
+                logging.info(f"📤 Reenviando por WebSocket al frontend -> {data}")
                 await websocket.send(data)
     except asyncio.CancelledError:
         pass
@@ -105,23 +101,15 @@ async def studio_connection_handler(websocket):
             await websocket.close(code=4000)
             return
 
-        # Iniciamos el listener de Redis asociado a esta conexión
         redis_task = asyncio.create_task(redis_listener(websocket, user_id))
 
         async for message in websocket:
             if is_rate_limited(client_ip):
                 await websocket.send(json.dumps({"status": "error", "error": "Rate limit."}))
                 continue
-
-            try:
-                data = json.loads(message)
-                logging.info(f"Comando de {client_ip}: {data}")
-                # Lógica extra de WS entrante aquí...
-            except json.JSONDecodeError:
-                continue
             
     except websockets.exceptions.ConnectionClosed:
-        pass
+        logging.info(f"🔴 Cliente {client_ip} desconectado.")
     finally:
         if 'redis_task' in locals():
             redis_task.cancel()
@@ -129,7 +117,7 @@ async def studio_connection_handler(websocket):
             del client_message_tracker[client_ip]
 
 async def main():
-    logging.info(f"Iniciando WS seguro en ws://{WS_HOST}:{WS_PORT}")
+    logging.info(f"🚀 Iniciando WS seguro en ws://{WS_HOST}:{WS_PORT}")
     async with websockets.serve(studio_connection_handler, WS_HOST, WS_PORT, max_size=1048576, ping_interval=20, ping_timeout=20):
         await asyncio.Future()
 

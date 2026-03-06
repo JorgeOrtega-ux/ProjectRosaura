@@ -44,9 +44,15 @@ class StudioServices {
         $titleWithoutExt = pathinfo($originalFilename, PATHINFO_FILENAME);
         $this->videoRepo->updateMetadata($videoId, ['title' => $titleWithoutExt]);
 
+        // ==========================================
+        // LA SOLUCIÓN: Usar el UUID de la sesión para encolar el trabajo
+        // Así Python y Javascript hablarán por el mismo canal
+        // ==========================================
+        $userIdentifier = $_SESSION['user_uuid'] ?? $userId;
+
         $jobData = json_encode([
             'video_id' => $videoId,
-            'user_id' => $userId,
+            'user_id' => $userIdentifier, // <-- Ahora enviamos el UUID (Ej: 3b94...)
             'uuid' => $uuid,
             'file_path' => $tempFilePath
         ]);

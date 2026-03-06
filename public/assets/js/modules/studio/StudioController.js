@@ -21,8 +21,16 @@ class StudioWebSocketManager {
     }
 
     getUserId() {
-        const meta = document.querySelector('meta[name="user-id"]');
-        return meta ? meta.getAttribute('content') : '0';
+        if (window.AppRouteTitles) {
+            const routes = Object.keys(window.AppRouteTitles);
+            const panelRoute = routes.find(r => r.startsWith('/studio/management-panel/'));
+            
+            if (panelRoute) {
+                const extractedId = panelRoute.replace('/studio/management-panel/', '');
+                return extractedId;
+            }
+        }
+        return '0';
     }
 
     generateRequestId() {
@@ -39,14 +47,12 @@ class StudioWebSocketManager {
         }
 
         this.isConnecting = true;
-        console.log(`[WS] Conectando a ${this.wsUrl}...`);
         
         try {
             this.ws = new WebSocket(this.wsUrl);
 
             this.ws.onopen = () => {
                 this.isConnecting = false;
-                console.log('[WS] Conectado');
                 
                 const authPayload = {
                     type: "auth",
@@ -80,7 +86,6 @@ class StudioWebSocketManager {
             this.ws.onclose = () => {
                 this.isConnecting = false;
                 this.ws = null;
-                console.log('[WS] Desconectado');
             };
 
             this.ws.onerror = () => {
@@ -164,9 +169,7 @@ export class StudioController {
                     }
                 );
                 
-                if (result.status === 'success') {
-                    console.log(`Video encolado: ${result.data.uuid}`);
-                } else {
+                if (result.status !== 'success') {
                     alert(`Error subiendo ${file.name}: ${result.message}`);
                 }
             } catch (error) {
@@ -174,7 +177,6 @@ export class StudioController {
             }
         }
 
-        // Se usa dispatchEvent puro para aprovechar el SpaRouter arreglado
         window.dispatchEvent(new CustomEvent('routeChange', { detail: { url: '/studio/uploading' }}));
     }
 
@@ -188,16 +190,16 @@ export class StudioController {
             }
 
             videos.forEach(v => {
-                this.currentVideos.set(v.id, {
+                this.currentVideos.set(String(v.id), {
                     ...v,
+                    id: String(v.id), 
                     thumbnailSubida: v.thumbnail_path ? true : false,
-                    // Se asegura la validación real de un título para el sistema
                     tituloValido: v.title && v.title.trim() !== '' ? true : false
                 });
             });
 
             this.renderBadges();
-            this.selectVideo(videos[0].id);
+            this.selectVideo(String(videos[0].id));
         }
     }
 
@@ -210,7 +212,8 @@ export class StudioController {
             const badge = document.createElement('div');
             badge.className = `video-badge ${this.selectedVideoId === video.id ? 'active' : ''}`;
             badge.setAttribute('data-id', video.id);
-            badge.onclick = () => this.selectVideo(video.id);
+            
+            badge.onclick = () => this.selectVideo(String(video.id));
 
             let statusText = video.status === 'queued' ? 'En cola' : 
                              video.status === 'processing' ? `${video.processing_progress}%` : 
@@ -225,13 +228,12 @@ export class StudioController {
     }
 
     selectVideo(id) {
-        this.selectedVideoId = id;
+        this.selectedVideoId = String(id);
         this.renderBadges(); 
         
-        const video = this.currentVideos.get(id);
+        const video = this.currentVideos.get(this.selectedVideoId);
         if (!video) return;
 
-        // Actualizar el Título en la vista de lectura
         const displayTitle = document.querySelector('[data-ref="display-title"]');
         const titleInput = document.getElementById('videoTitleInput');
         const descInput = document.getElementById('videoDescriptionInput');
@@ -244,7 +246,6 @@ export class StudioController {
 
         this.setEditState('title', false);
 
-        // Actualizar nombre de archivo y miniatura en la tarjeta
         const previewOriginalFilename = document.getElementById('previewOriginalFilename');
         if(previewOriginalFilename) previewOriginalFilename.textContent = video.original_filename;
         
@@ -260,7 +261,7 @@ export class StudioController {
                 container.style.backgroundSize = 'cover';
                 container.style.backgroundPosition = 'center';
                 container.style.backgroundColor = 'transparent';
-                container.innerHTML = ''; // Ocultar el icono play de placeholder
+                container.innerHTML = ''; 
             } else {
                 container.style.backgroundImage = 'none';
                 container.style.backgroundColor = 'var(--background-secondary, #2a2a2a)';
@@ -270,21 +271,42 @@ export class StudioController {
     }
 
     handleWsProgress(data) {
-        if (this.currentVideos.has(data.video_id)) {
-            const video = this.currentVideos.get(data.video_id);
-            video.status = data.status;
-            video.processing_progress = data.progress;
+        const wsVideoIdStr = String(data.video_id);
+        const wsUuidStr = String(data.uuid);
+        
+        let matchedKey = null;
+        let videoObj = null;
+
+        // Búsqueda inteligente: intentamos ID exacto, si no, buscamos por UUID.
+        if (this.currentVideos.has(wsVideoIdStr)) {
+            matchedKey = wsVideoIdStr;
+            videoObj = this.currentVideos.get(wsVideoIdStr);
+        } else {
+            for (const [key, v] of this.currentVideos.entries()) {
+                if (String(v.uuid) === wsUuidStr || String(v.id) === wsUuidStr || String(v.id) === wsVideoIdStr) {
+                    matchedKey = key;
+                    videoObj = v;
+                    break;
+                }
+            }
+        }
+
+        if (videoObj && matchedKey) {
+            videoObj.status = data.status;
+            videoObj.processing_progress = data.progress || 100;
             
-            const statusSpan = document.getElementById(`badge-status-${data.video_id}`);
+            const statusSpan = document.getElementById(`badge-status-${matchedKey}`);
             if (statusSpan) {
                 if (data.status === 'processing') statusSpan.textContent = `${data.progress}%`;
                 else if (data.status === 'processed') statusSpan.textContent = '100% OK';
                 else if (data.status === 'failed') statusSpan.textContent = 'Error';
             }
 
-            if (this.selectedVideoId === data.video_id) {
+            if (this.selectedVideoId === matchedKey) {
                 this.validatePublishButton();
             }
+        } else {
+            console.log(`[WS] Progreso recibido pero vista aún cargando... (ID: ${wsVideoIdStr})`);
         }
     }
 
@@ -359,7 +381,7 @@ export class StudioController {
         const video = this.currentVideos.get(this.selectedVideoId);
         const currentTitle = video ? video.title : (titleInput ? titleInput.value.trim() : '');
 
-        if (!currentTitle) return; // No intentamos guardar descripción si falta el título base
+        if (!currentTitle) return;
 
         const res = await this.api.post(ApiRoutes.Studio.UpdateTitle, {
             video_id: this.selectedVideoId,
@@ -406,7 +428,6 @@ export class StudioController {
             }
         });
 
-        // Autoguardado al salir del textarea de descripción (blur/focusout)
         document.addEventListener('focusout', (e) => {
             if (e.target && e.target.id === 'videoDescriptionInput') {
                 const controller = window.currentStudioController;
@@ -432,9 +453,8 @@ export class StudioController {
                         video.thumbnailSubida = true;
                         video.thumbnail_path = res.data.thumbnail_path;
                         controller.validatePublishButton();
-                        controller.updateThumbnailPreview(video.thumbnail_path); // Actuliza UI al momento
+                        controller.updateThumbnailPreview(video.thumbnail_path); 
                     }
-                    console.log("Miniatura subida con éxito");
                 } else {
                     alert("Error subiendo miniatura: " + res.message);
                 }
@@ -479,7 +499,7 @@ export class StudioController {
         if (!video) return;
         
         const isProcessed = video.status === 'processed';
-        const hasTitle = (video.title && video.title.trim().length > 0); // Validación estricta solo para 'title' en BD
+        const hasTitle = (video.title && video.title.trim().length > 0); 
         const hasThumb = video.thumbnailSubida === true;
 
         if (isProcessed && hasTitle && hasThumb) {

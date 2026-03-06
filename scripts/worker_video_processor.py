@@ -12,7 +12,7 @@ import redis
 import mysql.connector
 from mysql.connector import Error
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - [Video Processor] %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - [Video Worker] %(message)s')
 
 load_dotenv()
 
@@ -74,6 +74,9 @@ def process_video(redis_client, job):
     uuid = job.get('uuid')
     input_file = job.get('file_path')
     
+    logging.info(f"🚀 INICIANDO PROCESAMIENTO | Video ID: {video_id} | UUID: {uuid}")
+    logging.info(f"👤 ATENCIÓN: El ID de usuario extraído del Job de PHP es: '{user_id}'")
+    
     # Comprobar si fue cancelado antes de siquiera arrancar el procesamiento
     cancel_key = f"cancel_video_{video_id}"
     if redis_client.exists(cancel_key):
@@ -88,8 +91,10 @@ def process_video(redis_client, job):
 
     update_db_status(video_id, 'processing', 0)
     
-    # Notificar inicio
-    redis_client.publish(f"studio_updates_{user_id}", json.dumps({
+    channel_name = f"studio_updates_{user_id}"
+    logging.info(f"📡 Publicando INICIO al canal Redis: {channel_name}")
+    
+    redis_client.publish(channel_name, json.dumps({
         "type": "progress",
         "video_id": video_id,
         "uuid": uuid,
@@ -103,7 +108,6 @@ def process_video(redis_client, job):
     
     duration = get_video_duration(input_file)
     
-    # Comando FFmpeg básico para HLS (1080p, puedes añadir más resoluciones mapeadas)
     cmd = [
         'ffmpeg', '-y', '-i', input_file,
         '-profile:v', 'main', '-vf', 'scale=-2:1080',
@@ -114,15 +118,19 @@ def process_video(redis_client, job):
         master_playlist
     ]
 
-    process = subprocess.Popen(cmd, stderr=subprocess.PIPE, universal_newlines=True)
+    process = subprocess.Popen(cmd, stderr=subprocess.PIPE, universal_newlines=True, bufsize=1)
     
     time_pattern = re.compile(r"time=(\d+):(\d+):(\d+\.\d+)")
     last_reported_progress = 0
     last_cancel_check = time.time()
     was_cancelled = False
+    buffer = ""
 
-    for line in process.stderr:
-        # Verificar en Redis si PHP mandó la señal de cancelación (chequeo cada 2 segundos)
+    logging.info("🎬 FFmpeg corriendo, esperando datos de progreso...")
+
+    while True:
+        char = process.stderr.read(1)
+        
         current_time = time.time()
         if current_time - last_cancel_check > 2.0:
             last_cancel_check = current_time
@@ -132,45 +140,52 @@ def process_video(redis_client, job):
                 was_cancelled = True
                 break
 
-        match = time_pattern.search(line)
-        if match and duration > 0:
-            hours, minutes, seconds = map(float, match.groups())
-            current_time_vid = hours * 3600 + minutes * 60 + seconds
-            progress = int((current_time_vid / duration) * 100)
+        if not char and process.poll() is not None:
+            break
             
-            # Solo actualizar si el progreso cambia al menos un 5% para no saturar WebSockets/DB
-            if progress >= last_reported_progress + 5 and progress <= 100:
-                last_reported_progress = progress
-                update_db_status(video_id, 'processing', progress)
-                redis_client.publish(f"studio_updates_{user_id}", json.dumps({
-                    "type": "progress",
-                    "video_id": video_id,
-                    "uuid": uuid,
-                    "status": "processing",
-                    "progress": progress
-                }))
+        if char in ['\r', '\n']:
+            line = buffer
+            buffer = ""
+            if not line:
+                continue
+                
+            match = time_pattern.search(line)
+            if match and duration > 0:
+                hours, minutes, seconds = map(float, match.groups())
+                current_time_vid = hours * 3600 + minutes * 60 + seconds
+                progress = int((current_time_vid / duration) * 100)
+                
+                if progress >= last_reported_progress + 5 and progress <= 100:
+                    last_reported_progress = progress
+                    update_db_status(video_id, 'processing', progress)
+                    logging.info(f"📊 Progreso: {progress}% -> Publicando en: {channel_name}")
+                    redis_client.publish(channel_name, json.dumps({
+                        "type": "progress",
+                        "video_id": video_id,
+                        "uuid": uuid,
+                        "status": "processing",
+                        "progress": progress
+                    }))
+        else:
+            buffer += char
 
     process.wait()
 
-    # Si se canceló durante el procesamiento, limpiamos todo de forma segura
     if was_cancelled:
         logging.info(f"Limpieza de archivos huérfanos post-cancelación para {uuid}.")
         redis_client.delete(cancel_key)
-        # Forzar borrado de directorio HLS que pudo haber creado FFmpeg justo antes de morir
         if os.path.exists(output_dir):
             shutil.rmtree(output_dir, ignore_errors=True)
-        # Limpieza de archivo original por seguridad
         try:
             if os.path.exists(input_file):
                 os.remove(input_file)
         except OSError:
             pass
-        return  # Terminamos la función de éxito y evitamos marcar estado 'failed'
+        return
 
     if process.returncode == 0:
         hls_public_path = f"/storage/videos/{uuid}/master.m3u8"
         
-        # Actualizar a finalizado en BD
         conn = get_db_connection()
         if conn:
             cursor = conn.cursor()
@@ -179,44 +194,41 @@ def process_video(redis_client, job):
             cursor.close()
             conn.close()
 
-        redis_client.publish(f"studio_updates_{user_id}", json.dumps({
+        logging.info("✅ Procesamiento completado al 100%")
+        redis_client.publish(channel_name, json.dumps({
             "type": "completed",
             "video_id": video_id,
             "uuid": uuid,
             "status": "processed",
             "progress": 100
         }))
-        logging.info(f"Video {uuid} procesado correctamente.")
         
-        # Eliminar archivo temporal
         try:
             os.remove(input_file)
         except OSError:
             pass
     else:
+        logging.error(f"❌ Fallo al procesar {uuid}")
         update_db_status(video_id, 'failed')
-        redis_client.publish(f"studio_updates_{user_id}", json.dumps({
+        redis_client.publish(channel_name, json.dumps({
             "type": "failed",
             "video_id": video_id,
             "uuid": uuid,
             "status": "failed"
         }))
-        logging.error(f"Fallo al procesar {uuid}")
 
 def main():
     redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD, decode_responses=True)
-    logging.info("Worker de Video iniciado. Esperando trabajos en la cola 'video_processing_queue'...")
+    logging.info("Esperando trabajos en la cola 'video_processing_queue'...")
     
     while True:
         try:
-            # Lectura bloqueante: Espera hasta que haya algo en la cola
             result = redis_client.blpop('video_processing_queue', timeout=0)
             if result:
                 job_data = json.loads(result[1])
-                logging.info(f"Procesando trabajo: {job_data['uuid']}")
                 process_video(redis_client, job_data)
         except Exception as e:
-            logging.error(f"Error en el bucle del worker: {e}")
+            logging.error(f"Error en el worker: {e}")
             time.sleep(5)
 
 if __name__ == "__main__":
