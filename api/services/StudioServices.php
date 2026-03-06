@@ -63,6 +63,59 @@ class StudioServices {
         ];
     }
 
+    public function handleChunkUpload(int $userId, array $file, string $uploadId, int $chunkIndex, int $totalChunks, string $originalFilename): array {
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            throw new Exception("Error al subir el fragmento.");
+        }
+
+        $uploadId = preg_replace('/[^a-zA-Z0-9_-]/', '', $uploadId);
+        if (empty($uploadId)) throw new Exception("Upload ID inválido.");
+
+        $tempFilePath = $this->tempVideoDir . $uploadId . '.part';
+
+        $chunkData = file_get_contents($file['tmp_name']);
+        if ($chunkData === false || file_put_contents($tempFilePath, $chunkData, FILE_APPEND) === false) {
+            throw new Exception("Error al escribir el fragmento en el disco.");
+        }
+
+        if ($chunkIndex === $totalChunks - 1) {
+            $uuid = sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x', mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0x0fff) | 0x4000, mt_rand(0, 0x3fff) | 0x8000, mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff));
+            $extension = pathinfo($originalFilename, PATHINFO_EXTENSION);
+            $finalTempName = $uuid . '.' . $extension;
+            $finalTempPath = $this->tempVideoDir . $finalTempName;
+
+            rename($tempFilePath, $finalTempPath);
+
+            $videoId = $this->videoRepo->create($userId, $uuid, $originalFilename, $finalTempPath);
+            $titleWithoutExt = pathinfo($originalFilename, PATHINFO_FILENAME);
+            $this->videoRepo->updateMetadata($videoId, ['title' => $titleWithoutExt]);
+
+            $userIdentifier = $_SESSION['user_uuid'] ?? $userId;
+            $jobData = json_encode([
+                'video_id' => $videoId,
+                'user_id' => $userIdentifier,
+                'uuid' => $uuid,
+                'file_path' => $finalTempPath
+            ]);
+            
+            $this->redis->rpush('video_processing_queue', $jobData);
+
+            return [
+                'id' => $videoId,
+                'uuid' => $uuid,
+                'original_filename' => $originalFilename,
+                'status' => 'queued',
+                'progress' => 0
+            ];
+        }
+
+        return [
+            'chunk_index' => $chunkIndex,
+            'total_chunks' => $totalChunks,
+            'status' => 'chunk_uploaded'
+        ];
+    }
+
     public function uploadThumbnail(int $userId, int $videoId, array $file): array {
         $video = $this->videoRepo->findById($videoId);
         if (!$video || $video['user_id'] != $userId) {
@@ -78,8 +131,6 @@ class StudioServices {
         $filename = $video['uuid'] . '_thumb.' . $extension;
         $destination = $this->thumbnailDir . $filename;
         
-        // CORRECCIÓN: Guardamos la ruta relativa al directorio público.
-        // Esto permite que Javascript resuelva la URL base inteligentemente sin importar el servidor.
         $publicPath = 'storage/thumbnails/' . $filename;
 
         if (!move_uploaded_file($file['tmp_name'], $destination)) {

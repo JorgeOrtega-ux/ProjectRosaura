@@ -158,7 +158,7 @@ export class StudioController {
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
             try {
-                const result = await this.api.uploadFileWithProgress(
+                const result = await this.api.uploadFileInChunks(
                     ApiRoutes.Studio.UploadVideo, 
                     file, 
                     'video', 
@@ -260,15 +260,12 @@ export class StudioController {
             let finalUrl = thumbnailPath;
             
             if (!finalUrl.startsWith('http') && !finalUrl.startsWith('blob:')) {
-                // Removemos el slash inicial si existe
                 let cleanPath = thumbnailPath.replace(/^\//, '');
                 
-                // Aseguramos que tenga public/ para el primer intento
                 if (!cleanPath.startsWith('public/')) {
                     cleanPath = 'public/' + cleanPath;
                 }
 
-                // Utilizamos APP_URL que provee el backend de manera segura
                 let base = window.AppBasePath || window.location.origin;
                 if (base.endsWith('/')) base = base.slice(0, -1);
 
@@ -279,8 +276,6 @@ export class StudioController {
             container.style.backgroundColor = 'transparent';
             container.style.position = 'relative';
             
-            // ATENCIÓN AL ONERROR: Este "Fallback" automático arregla el 404. 
-            // Si /public/storage/ falla porque XAMPP ya apunta ahí, el onError intentará /storage/ dinámicamente.
             container.innerHTML = `
                 <img src="${finalUrl}" 
                      alt="Miniatura" 
@@ -466,7 +461,6 @@ export class StudioController {
                 
                 const file = e.target.files[0];
 
-                // Blob pre-carga para mostrar en tiempo real. Ahora funcionará gracias al CSP de bootstrap.php
                 const localPreviewUrl = URL.createObjectURL(file);
                 controller.updateThumbnailPreview(localPreviewUrl);
 
@@ -482,7 +476,6 @@ export class StudioController {
                         video.thumbnail_path = res.data.thumbnail_path;
                         controller.validatePublishButton();
                         
-                        // Una vez finalizada la carga de la imagen real, reemplazamos el blob
                         controller.updateThumbnailPreview(video.thumbnail_path); 
                     }
                 } else {
@@ -490,7 +483,7 @@ export class StudioController {
                     controller.updateThumbnailPreview(null);
                 }
                 
-                e.target.value = ''; // Resetear input
+                e.target.value = ''; 
             }
 
             if (e.target && e.target.id === 'videoFileInput') {

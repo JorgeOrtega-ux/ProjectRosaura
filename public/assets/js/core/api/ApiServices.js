@@ -30,7 +30,6 @@ export class ApiService {
                     return { success: false, message: 'Sesión revocada.' };
                 }
 
-                // Intentamos extraer el mensaje de error del backend (ej. error 400, 403, etc.)
                 try {
                     const errorData = await response.json();
                     return errorData;
@@ -67,7 +66,6 @@ export class ApiService {
                     return { success: false, message: 'Sesión revocada.' };
                 }
 
-                // Intentamos extraer el mensaje de error del backend
                 try {
                     const errorData = await response.json();
                     return errorData;
@@ -116,10 +114,9 @@ export class ApiService {
                         reject('Error parseando JSON');
                     }
                 } else {
-                    // Si el servidor devolvió un error (ej. 400), intentamos leer el JSON
                     try {
                         const response = JSON.parse(xhr.responseText);
-                        resolve(response); // Lo resolvemos para que el controlador pueda leer success: false y el message
+                        resolve(response); 
                     } catch (e) {
                         reject(`Error HTTP: ${xhr.status}`);
                     }
@@ -129,5 +126,70 @@ export class ApiService {
             xhr.onerror = () => reject('Error de red durante la subida');
             xhr.send(formData);
         });
+    }
+
+    async uploadFileInChunks(route, file, inputName, extraData = {}, onProgress) {
+        const chunkSize = 10 * 1024 * 1024; // 10MB por fragmento
+        const totalChunks = Math.ceil(file.size / chunkSize);
+        const uploadId = Date.now().toString(36) + '-' + Math.random().toString(36).substr(2, 9);
+        let finalResponse = null;
+
+        for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+            const start = chunkIndex * chunkSize;
+            const end = Math.min(start + chunkSize, file.size);
+            const chunk = file.slice(start, end);
+
+            const formData = new FormData();
+            formData.append('route', route);
+            formData.append(inputName, chunk, file.name);
+            formData.append('upload_id', uploadId);
+            formData.append('chunk_index', chunkIndex);
+            formData.append('total_chunks', totalChunks);
+            formData.append('original_filename', file.name);
+
+            for (const key in extraData) {
+                formData.append(key, extraData[key]);
+            }
+
+            finalResponse = await new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+                const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+
+                xhr.open('POST', this.baseUrl, true);
+                if (csrfToken) xhr.setRequestHeader('X-CSRF-Token', csrfToken);
+
+                xhr.upload.onprogress = (event) => {
+                    if (event.lengthComputable && onProgress) {
+                        const chunkPercent = event.loaded / event.total;
+                        const overallPercent = Math.round(((chunkIndex + chunkPercent) / totalChunks) * 100);
+                        onProgress(overallPercent);
+                    }
+                };
+
+                xhr.onload = () => {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        try {
+                            resolve(JSON.parse(xhr.responseText));
+                        } catch (e) {
+                            reject('Error parseando JSON');
+                        }
+                    } else {
+                        try {
+                            resolve(JSON.parse(xhr.responseText));
+                        } catch (e) {
+                            reject(`Error HTTP: ${xhr.status}`);
+                        }
+                    }
+                };
+                xhr.onerror = () => reject('Error de red durante la subida');
+                xhr.send(formData);
+            });
+
+            if (finalResponse && finalResponse.status === 'error') {
+                return finalResponse; 
+            }
+        }
+        return finalResponse;
     }
 }
