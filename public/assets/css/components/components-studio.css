@@ -12,8 +12,8 @@
     align-items: center;
     justify-content: space-between;
     width: 100%;
-    height: auto;        /* Actualizado a auto */
-    min-height: auto;    /* Actualizado a auto */
+    height: auto;
+    min-height: auto;
     padding: 8px;
     border-bottom: 1px solid var(--border-color);
     background-color: var(--bg-surface);
@@ -32,6 +32,8 @@
     width: 100%;
     padding: 24px;
     overflow-y: auto;
+    display: flex;
+    flex-direction: column;
 }
 
 /* Modificador para la tabla de contenido multimedia */
@@ -41,6 +43,100 @@
 
 .component-table--media th:nth-child(1) {
     width: 35%;
+}
+
+/* ==========================================================================
+   Componente: Área de Subida de Video
+   ========================================================================== */
+.component-upload-area {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    flex: 1;
+    width: 100%;
+    text-align: center;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background-color: var(--bg-surface);
+}
+
+.component-upload-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    width: 100%;
+    max-width: 600px;
+    padding: 24px;
+}
+
+.component-upload-icon-wrapper {
+    background-color: color-mix(in srgb, var(--text-primary) 5%, transparent);
+    border-radius: 50%;
+    width: 130px;
+    height: 130px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 24px;
+}
+
+.component-upload-icon {
+    font-size: 64px;
+    color: var(--text-secondary);
+}
+
+.component-upload-title {
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin: 0 0 10px 0;
+}
+
+.component-upload-subtitle {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin: 0 0 24px 0;
+}
+
+.component-upload-button {
+    background-color: #0f0f0f;
+    color: #ffffff;
+    border: none;
+    border-radius: 50px; /* Borde de píldora */
+    padding: 10px 24px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease, opacity 0.2s ease;
+}
+
+.component-upload-button:hover {
+    background-color: #272727;
+}
+
+.component-upload-footer {
+    padding: 16px;
+    width: 100%;
+    text-align: center;
+}
+
+.component-upload-terms {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.5;
+}
+
+.component-upload-terms-link {
+    color: #065fd4;
+    text-decoration: none;
+}
+
+.component-upload-terms-link:hover {
+    text-decoration: underline;
 }
 
 /* ==========================================================================
@@ -54,5 +150,15 @@
     .component-view-bottom .component-table-wrapper {
         border: none;
         border-radius: 0;
+    }
+
+    .component-upload-area {
+        border: none;
+        border-radius: 0;
+        background-color: transparent;
+    }
+
+    .component-upload-content {
+        padding: 24px 16px;
     }
 }
