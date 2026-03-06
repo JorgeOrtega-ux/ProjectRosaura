@@ -90,5 +90,27 @@ class VideoRepository implements VideoRepositoryInterface {
         $stmt = $this->db->prepare("DELETE FROM videos WHERE id = :id");
         return $stmt->execute([':id' => $id]);
     }
+
+    // Cuenta cuántos videos tiene el usuario en estado de cola o procesando
+    public function countProcessingUploads(int $userId): int {
+        $stmt = $this->db->prepare("
+            SELECT COUNT(*) FROM videos 
+            WHERE user_id = :user_id 
+            AND status IN ('queued', 'processing')
+        ");
+        $stmt->execute([':user_id' => $userId]);
+        return (int) $stmt->fetchColumn();
+    }
+
+    // Cuenta cuántos videos ha subido el usuario en el día actual
+    public function countDailyUploads(int $userId): int {
+        $stmt = $this->db->prepare("
+            SELECT COUNT(*) FROM videos 
+            WHERE user_id = :user_id 
+            AND DATE(created_at) = CURDATE()
+        ");
+        $stmt->execute([':user_id' => $userId]);
+        return (int) $stmt->fetchColumn();
+    }
 }
 ?>

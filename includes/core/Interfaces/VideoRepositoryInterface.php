@@ -11,5 +11,9 @@ interface VideoRepositoryInterface {
     public function findById(int $id);
     public function findByUuid(string $uuid);
     public function delete(int $id): bool;
+    
+    // Nuevos métodos para validación de límites
+    public function countProcessingUploads(int $userId): int;
+    public function countDailyUploads(int $userId): int;
 }
 ?>

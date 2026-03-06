@@ -22,10 +22,46 @@ class StudioServices {
         if (!is_dir($this->thumbnailDir)) mkdir($this->thumbnailDir, 0755, true);
     }
 
-    public function queueVideoUpload(int $userId, array $file): array {
+    private function checkLimits(int $userId, string $role) {
+        $maxActive = in_array($role, ['founder', 'administrator']) ? 3 : 1;
+        $maxDaily = in_array($role, ['founder', 'administrator']) ? 100 : 25;
+
+        // Comprobar limite de procesos activos (cola o procesando)
+        $activeUploads = $this->videoRepo->countProcessingUploads($userId);
+        if ($activeUploads >= $maxActive) {
+            throw new Exception("Has alcanzado el límite máximo de videos en proceso simultáneamente ($maxActive). Espera a que terminen de procesarse.");
+        }
+
+        // Comprobar límite de subidas al día
+        $dailyUploads = $this->videoRepo->countDailyUploads($userId);
+        if ($dailyUploads >= $maxDaily) {
+            throw new Exception("Has alcanzado el límite de subida diario ($maxDaily videos).");
+        }
+    }
+
+    private function checkFileSize(string $role, int $newBytes, ?string $existingFilePath = null) {
+        // Limites: 50GB o 25GB calculados en bytes
+        $maxSize = in_array($role, ['founder', 'administrator']) ? 50 * 1024 * 1024 * 1024 : 25 * 1024 * 1024 * 1024;
+        
+        $currentSize = 0;
+        if ($existingFilePath && file_exists($existingFilePath)) {
+            $currentSize = filesize($existingFilePath);
+        }
+
+        if (($currentSize + $newBytes) > $maxSize) {
+            $gbLimit = in_array($role, ['founder', 'administrator']) ? 50 : 25;
+            throw new Exception("El archivo excede el límite de tamaño permitido ($gbLimit GB).");
+        }
+    }
+
+    public function queueVideoUpload(int $userId, string $role, array $file): array {
         if ($file['error'] !== UPLOAD_ERR_OK) {
             throw new Exception("Error al subir el archivo.");
         }
+
+        // Aplicamos validaciones de seguridad de subida
+        $this->checkLimits($userId, $role);
+        $this->checkFileSize($role, $file['size']);
 
         $originalFilename = basename($file['name']);
         $uuid = sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x', mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0x0fff) | 0x4000, mt_rand(0, 0x3fff) | 0x8000, mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff));
@@ -63,15 +99,21 @@ class StudioServices {
         ];
     }
 
-    public function handleChunkUpload(int $userId, array $file, string $uploadId, int $chunkIndex, int $totalChunks, string $originalFilename): array {
+    public function handleChunkUpload(int $userId, string $role, array $file, string $uploadId, int $chunkIndex, int $totalChunks, string $originalFilename): array {
         if ($file['error'] !== UPLOAD_ERR_OK) {
             throw new Exception("Error al subir el fragmento.");
         }
+
+        // Verificamos si se pueden subir mas videos antes de procesar el fragmento
+        $this->checkLimits($userId, $role);
 
         $uploadId = preg_replace('/[^a-zA-Z0-9_-]/', '', $uploadId);
         if (empty($uploadId)) throw new Exception("Upload ID inválido.");
 
         $tempFilePath = $this->tempVideoDir . $uploadId . '.part';
+
+        // Verificamos el tamaño del archivo acumulado
+        $this->checkFileSize($role, $file['size'], $tempFilePath);
 
         $chunkData = file_get_contents($file['tmp_name']);
         if ($chunkData === false || file_put_contents($tempFilePath, $chunkData, FILE_APPEND) === false) {

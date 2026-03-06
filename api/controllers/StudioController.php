@@ -30,6 +30,9 @@ class StudioController {
             return ['success' => false, 'status' => 'error', 'message' => 'No autorizado'];
         }
 
+        // Obtener el rol de la sesión (se asume 'user' por defecto si no existe)
+        $role = strtolower($this->sessionManager->get('role') ?? 'user');
+
         $files = $input['_files'] ?? $_FILES;
         $uploadId = $input['upload_id'] ?? $_POST['upload_id'] ?? null;
         $chunkIndex = isset($input['chunk_index']) ? (int)$input['chunk_index'] : (isset($_POST['chunk_index']) ? (int)$_POST['chunk_index'] : null);
@@ -43,10 +46,10 @@ class StudioController {
 
         try {
             if ($uploadId !== null && $chunkIndex !== null && $totalChunks !== null && $originalFilename) {
-                $videoData = $this->studioServices->handleChunkUpload($userId, $files['video'], $uploadId, $chunkIndex, $totalChunks, $originalFilename);
+                $videoData = $this->studioServices->handleChunkUpload($userId, $role, $files['video'], $uploadId, $chunkIndex, $totalChunks, $originalFilename);
                 return ['success' => true, 'status' => 'success', 'data' => $videoData];
             } else {
-                $videoData = $this->studioServices->queueVideoUpload($userId, $files['video']);
+                $videoData = $this->studioServices->queueVideoUpload($userId, $role, $files['video']);
                 return ['success' => true, 'status' => 'success', 'data' => $videoData];
             }
         } catch (\Exception $e) {
