@@ -1,4 +1,4 @@
-// public/assets/js/core/dialog-templates.js
+// public/assets/js/core/components/DialogTemplates.js
 
 export const DialogTemplates = {
     // --- NUEVAS PLANTILLAS DE ESTADOS GENERALES ---
@@ -45,6 +45,21 @@ export const DialogTemplates = {
             <div class="component-dialog-actions">
                 <button class="component-button component-button--h45 hide-on-desktop" data-dialog-action="cancel">Cancelar</button>
                 <button class="component-button component-button--h45 component-button--dark component-button--full" data-dialog-action="confirm">Continuar</button>
+            </div>
+        `
+    },
+
+    // --- NUEVA PLANTILLA DE CONFIRMACIÓN GENÉRICA ---
+    confirm: {
+        build: (data) => `
+            <div class="pill-container"><div class="drag-handle"></div></div>
+            <div class="component-dialog-header">
+                <h2 class="component-dialog-title">${data.title || 'Confirmar acción'}</h2>
+                <p class="component-dialog-desc">${data.message || '¿Estás seguro de que deseas realizar esta acción? No se podrá deshacer.'}</p>
+            </div>
+            <div class="component-dialog-actions" style="display: flex; gap: 12px; margin-top: 24px;">
+                <button class="component-button component-button--h45 component-button--light component-button--full" data-dialog-action="cancel">${data.cancelText || 'Cancelar'}</button>
+                <button class="component-button component-button--h45 component-button--dark component-button--full" data-dialog-action="confirm">${data.confirmText || 'Confirmar'}</button>
             </div>
         `
     },
