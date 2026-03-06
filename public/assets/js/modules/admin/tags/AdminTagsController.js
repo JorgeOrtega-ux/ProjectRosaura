@@ -2,13 +2,12 @@
 
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
-import { DialogSystem } from '../../../core/components/DialogSystem.js';
 
 export class AdminTagsController {
     constructor() {
         this.api = new ApiService();
         this.tags = [];
-        this.eventsBound = false; // <-- BANDERA DE BLINDAJE
+        this.eventsBound = false; 
     }
 
     async init() {
@@ -18,15 +17,18 @@ export class AdminTagsController {
     }
 
     bindEvents() {
-        if (this.eventsBound) return; // <-- EVITA DUPLICAR EVENTOS EN SPA
+        if (this.eventsBound) return; 
 
-        // DELEGACIÓN DE EVENTOS
         document.addEventListener('click', (e) => {
             const addTagBtn = e.target.closest('[data-action="openAddTagModal"]');
             const closeTagBtn = e.target.closest('[data-action="closeTagModal"]');
             const submitTagBtn = e.target.closest('[data-action="submitTagForm"]');
             const editBtn = e.target.closest('[data-action="edit"]');
             const deleteBtn = e.target.closest('[data-action="delete"]');
+            
+            // Detección de clicks fuera del modal (overlay o wrapper) para cerrarlo
+            const isOverlay = e.target.classList.contains('component-dialog-overlay');
+            const isWrapper = e.target.classList.contains('component-dialog-wrapper');
 
             if (addTagBtn) {
                 e.preventDefault();
@@ -55,16 +57,79 @@ export class AdminTagsController {
                 const id = deleteBtn.getAttribute('data-id');
                 this.deleteTag(id);
             }
+
+            // Cerrar al clickear el fondo (overlay o wrapper)
+            if ((isOverlay || isWrapper) && e.target.closest('#tagModalOverlay')) {
+                this.closeModal();
+            }
         });
 
-        // Evento que recarga la info si el router inyecta de nuevo la vista
+        // Bindeo del arrastre (drag) en móvil, replicando la función de tu DialogSystem
+        this.bindStaticModalDragEvents();
+
         window.addEventListener('viewLoaded', (e) => {
             if (e.detail.url.includes('/admin/tags')) {
                 this.loadTags();
             }
         });
 
-        this.eventsBound = true; // <-- SELLA LOS EVENTOS
+        this.eventsBound = true; 
+    }
+
+    bindStaticModalDragEvents() {
+        const overlay = document.getElementById('tagModalOverlay');
+        if (!overlay) return;
+        
+        const wrapper = overlay.querySelector('.component-dialog-wrapper');
+        const pill = overlay.querySelector('.pill-container');
+        
+        if (!wrapper || !pill) return;
+
+        let startY = 0;
+        let currentDiff = 0;
+        let isDragging = false;
+
+        pill.addEventListener('pointerdown', (e) => {
+            if (window.innerWidth > 768) return;
+            if (e.pointerType === 'mouse' && e.button !== 0) return; 
+
+            isDragging = true;
+            startY = e.clientY;
+            
+            overlay.classList.add('is-dragging');
+            wrapper.setPointerCapture(e.pointerId);
+        });
+
+        wrapper.addEventListener('pointermove', (e) => {
+            if (!isDragging) return;
+            currentDiff = e.clientY - startY;
+            
+            if (currentDiff > 0) {
+                wrapper.style.transform = `translateY(${currentDiff}px)`;
+            }
+        });
+
+        const endDrag = (e) => {
+            if (!isDragging) return;
+            isDragging = false;
+            
+            overlay.classList.remove('is-dragging');
+            
+            if (wrapper.hasPointerCapture(e.pointerId)) {
+                wrapper.releasePointerCapture(e.pointerId);
+            }
+
+            if (currentDiff > wrapper.offsetHeight * 0.35) {
+                this.closeModal();
+            } else {
+                wrapper.removeAttribute('style'); 
+            }
+            
+            currentDiff = 0;
+        };
+
+        wrapper.addEventListener('pointerup', endDrag);
+        wrapper.addEventListener('pointercancel', endDrag);
     }
 
     async loadTags() {
@@ -74,11 +139,11 @@ export class AdminTagsController {
                 this.tags = res.tags;
                 this.renderTable();
             } else {
-                window.dialogSystem.show('error', 'Error', res.message || 'Error al obtener las etiquetas.');
+                window.dialogSystem.show('error', { title: 'Error', message: res.message || 'Error al obtener las etiquetas.' });
             }
         } catch (error) {
             console.error('Error fetching tags:', error);
-            window.dialogSystem.show('error', 'Error', 'Ocurrió un error inesperado al cargar la lista.');
+            window.dialogSystem.show('error', { title: 'Error', message: 'Ocurrió un error inesperado al cargar la lista.' });
         }
     }
 
@@ -125,6 +190,7 @@ export class AdminTagsController {
     openModal(tag = null) {
         const modal = document.getElementById('tagModalOverlay');
         const form = document.getElementById('tagForm');
+        const wrapper = modal ? modal.querySelector('.component-dialog-wrapper') : null;
         
         if (!form || !modal) return;
 
@@ -138,14 +204,24 @@ export class AdminTagsController {
         } else {
             document.getElementById('tagModalTitle').innerText = 'Nueva Etiqueta';
         }
+
+        if (wrapper) wrapper.removeAttribute('style'); // Resetea cualquier transform de drag anterior
         
-        modal.style.display = 'flex';
+        requestAnimationFrame(() => {
+            modal.classList.add('active');
+        });
     }
 
     closeModal() {
         const modal = document.getElementById('tagModalOverlay');
         if (modal) {
-            modal.style.display = 'none';
+            modal.classList.remove('active');
+            
+            // Limpiamos el formulario después de que la animación termine (300ms)
+            setTimeout(() => {
+                const form = document.getElementById('tagForm');
+                if (form) form.reset();
+            }, 300);
         }
     }
 
@@ -167,38 +243,41 @@ export class AdminTagsController {
         try {
             const res = await this.api.post(action, payload);
             if (res.success) {
-                window.dialogSystem.show('success', 'Éxito', res.message || 'La etiqueta se ha guardado correctamente.');
+                // Invocación corregida usando objetos para el Data del DialogSystem
+                window.dialogSystem.show('success', { title: 'Éxito', message: res.message || 'La etiqueta se ha guardado correctamente.' });
                 this.closeModal();
                 await this.loadTags();
             } else {
-                window.dialogSystem.show('error', 'Error', res.message || 'No se pudo guardar la etiqueta.');
+                window.dialogSystem.show('error', { title: 'Error', message: res.message || 'No se pudo guardar la etiqueta.' });
             }
         } catch (error) {
-            window.dialogSystem.show('error', 'Error', 'Ocurrió un error inesperado al procesar la solicitud.');
+            window.dialogSystem.show('error', { title: 'Error', message: 'Ocurrió un error inesperado al procesar la solicitud.' });
         }
     }
 
     async deleteTag(id) {
-        window.dialogSystem.show('warning', 'Eliminar etiqueta', '¿Estás seguro de que deseas eliminar esta etiqueta? Esta acción afectará a los videos vinculados.', [
-            { text: 'Cancelar', style: 'light' },
-            { 
-                text: 'Eliminar', 
-                style: 'dark', 
-                callback: async () => {
-                    try {
-                        const res = await this.api.post(ApiRoutes.Admin.DeleteTag, { id });
-                        if (res.success) {
-                            window.dialogSystem.show('success', 'Eliminado', res.message || 'La etiqueta ha sido eliminada.');
-                            await this.loadTags();
-                        } else {
-                            window.dialogSystem.show('error', 'Error', res.message || 'No se pudo eliminar la etiqueta.');
-                        }
-                    } catch (error) {
-                        window.dialogSystem.show('error', 'Error', 'Ocurrió un error interno al intentar eliminar.');
-                    }
+        // Implementación correcta: DialogSystem.show retorna una Promise con un objeto de resultado
+        const result = await window.dialogSystem.show('confirm', {
+            title: 'Eliminar etiqueta',
+            message: '¿Estás seguro de que deseas eliminar esta etiqueta? Esta acción afectará a los videos vinculados.',
+            confirmText: 'Eliminar',
+            cancelText: 'Cancelar'
+        });
+
+        // Verificamos si el usuario le dio al botón de confirmar
+        if (result.confirmed) {
+            try {
+                const res = await this.api.post(ApiRoutes.Admin.DeleteTag, { id });
+                if (res.success) {
+                    window.dialogSystem.show('success', { title: 'Eliminado', message: res.message || 'La etiqueta ha sido eliminada.' });
+                    await this.loadTags();
+                } else {
+                    window.dialogSystem.show('error', { title: 'Error', message: res.message || 'No se pudo eliminar la etiqueta.' });
                 }
+            } catch (error) {
+                window.dialogSystem.show('error', { title: 'Error', message: 'Ocurrió un error interno al intentar eliminar.' });
             }
-        ]);
+        }
     }
 
     escapeHtml(unsafe) {
