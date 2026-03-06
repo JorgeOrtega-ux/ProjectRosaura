@@ -35,6 +35,7 @@ return [
 
     // --- RUTAS DE STUDIO ---
     '/studio' => ['view' => 'studio/index.php', 'auth' => true],
+    '/studio/upload' => ['view' => 'studio/upload-video.php', 'auth' => true],
     '/studio/management-panel/{uuid}' => ['view' => 'studio/management-panel.php', 'auth' => true],
     '/studio/manage-content/{uuid}' => ['view' => 'studio/manage-content.php', 'auth' => true],
 

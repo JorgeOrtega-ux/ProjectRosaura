@@ -97,7 +97,9 @@ if ($isMaintenanceActive && !$isPrivileged) {
             // Redirigir al management panel del usuario
             $currentView = 'studio/management-panel.php';
             $redirectUrl = APP_URL . '/studio/management-panel/' . $userIdentifier;
-        } else {
+        
+        // AQUÍ ESTÁ LA CORRECCIÓN: Exceptuamos la vista de subida de la validación del UUID
+        } elseif ($currentView !== 'studio/upload-video.php') {
             // Validar que el uuid en la URL existe y sea igual al de la sesión
             $requestedUuid = $_GET['uuid'] ?? '';
             if (empty($requestedUuid) || $requestedUuid !== (string)$userIdentifier) {

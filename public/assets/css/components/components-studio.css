@@ -1,0 +1,58 @@
+/* public/assets/css/components/components-studio.css */
+
+.component-view-layout {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+}
+
+.component-view-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    height: auto;        /* Actualizado a auto */
+    min-height: auto;    /* Actualizado a auto */
+    padding: 8px;
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--bg-surface);
+    flex-shrink: 0;
+}
+
+.component-view-top-left,
+.component-view-top-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.component-view-bottom {
+    flex: 1 1 auto;
+    width: 100%;
+    padding: 24px;
+    overflow-y: auto;
+}
+
+/* Modificador para la tabla de contenido multimedia */
+.component-table--media th {
+    white-space: nowrap;
+}
+
+.component-table--media th:nth-child(1) {
+    width: 35%;
+}
+
+/* ==========================================================================
+   Responsividad (Mobile)
+   ========================================================================== */
+@media (max-width: 768px) {
+    .component-view-bottom {
+        padding: 0; 
+    }
+
+    .component-view-bottom .component-table-wrapper {
+        border: none;
+        border-radius: 0;
+    }
+}
