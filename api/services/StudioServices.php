@@ -40,6 +40,10 @@ class StudioServices {
 
         $videoId = $this->videoRepo->create($userId, $uuid, $originalFilename, $tempFilePath);
 
+        // Se asigna automáticamente el nombre del archivo como Título base en BD
+        $titleWithoutExt = pathinfo($originalFilename, PATHINFO_FILENAME);
+        $this->videoRepo->updateMetadata($videoId, ['title' => $titleWithoutExt]);
+
         $jobData = json_encode([
             'video_id' => $videoId,
             'user_id' => $userId,
@@ -82,7 +86,7 @@ class StudioServices {
         return ['thumbnail_path' => $publicPath];
     }
 
-    public function updateVideoTitle(int $userId, int $videoId, string $title): array {
+    public function updateVideoDetails(int $userId, int $videoId, string $title, ?string $description = null): array {
         $video = $this->videoRepo->findById($videoId);
         if (!$video || $video['user_id'] != $userId) {
             throw new Exception("Video no encontrado o no autorizado.");
@@ -92,7 +96,12 @@ class StudioServices {
             throw new Exception("El título no puede estar vacío.");
         }
 
-        $this->videoRepo->updateMetadata($videoId, ['title' => trim($title)]);
+        $metadata = ['title' => trim($title)];
+        if ($description !== null) {
+            $metadata['description'] = trim($description);
+        }
+
+        $this->videoRepo->updateMetadata($videoId, $metadata);
         return ['success' => true];
     }
 

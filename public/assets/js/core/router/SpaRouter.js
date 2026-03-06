@@ -51,6 +51,17 @@ export class SpaRouter {
             }
         });
 
+        // NUEVO: Listener para cambios de ruta por eventos (Corrige Issue #1)
+        window.addEventListener('routeChange', (e) => {
+            if (e.detail && e.detail.url) {
+                let url = e.detail.url;
+                if (!url.startsWith(this.basePath) && this.basePath) {
+                    url = this.basePath + url;
+                }
+                this.navigate(url);
+            }
+        });
+
         this.highlightCurrentRoute();
     }
 
@@ -182,13 +193,11 @@ export class SpaRouter {
             target.classList.add('active');
         });
 
-        // REFERENCIAS A TODOS LOS MENÚS DEL SIDEBAR
         const mainMenu = document.querySelector('[data-ref="sidebar-menu-main"]');
         const settingsMenu = document.querySelector('[data-ref="sidebar-menu-settings"]');
         const adminMenu = document.querySelector('[data-ref="sidebar-menu-admin"]');
         const studioMenu = document.querySelector('[data-ref="sidebar-menu-studio"]');
 
-        // FUNCIÓN PARA OCULTAR TODOS LOS MENÚS
         const hideAllMenus = () => {
             if (mainMenu) { mainMenu.classList.remove('active'); mainMenu.classList.add('disabled'); }
             if (settingsMenu) { settingsMenu.classList.remove('active'); settingsMenu.classList.add('disabled'); }
@@ -196,7 +205,6 @@ export class SpaRouter {
             if (studioMenu) { studioMenu.classList.remove('active'); studioMenu.classList.add('disabled'); }
         };
 
-        // APLICAR LÓGICA DE VISIBILIDAD
         hideAllMenus();
 
         if (normalizedPath.includes('/admin') && adminMenu) {
@@ -213,7 +221,6 @@ export class SpaRouter {
             mainMenu.classList.add('active');
         }
 
-        // LÓGICA PARA LOS DROPDOWNS (Menú de opciones móviles/perfil)
         if (normalizedPath.includes('/settings')) {
             const dropdownSettingsItem = document.querySelector(`.component-module--dropdown [data-nav^="${this.basePath}/settings"]`);
             if (dropdownSettingsItem) dropdownSettingsItem.classList.add('active');

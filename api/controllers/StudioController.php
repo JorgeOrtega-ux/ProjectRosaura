@@ -55,7 +55,6 @@ class StudioController {
 
         $files = $input['_files'] ?? $_FILES;
         
-        // Garantizamos extraer el video_id aunque venga por Multipart Form-Data (POST nativo)
         $videoId = $input['video_id'] ?? $_POST['video_id'] ?? null;
         
         if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($files['thumbnail']) || !$videoId) {
@@ -81,14 +80,15 @@ class StudioController {
 
         $videoId = $input['video_id'] ?? $_POST['video_id'] ?? null;
         $title = $input['title'] ?? $_POST['title'] ?? null;
+        $description = $input['description'] ?? $_POST['description'] ?? null;
 
-        if (!$videoId || !$title) {
+        if (!$videoId || $title === null) {
             http_response_code(400);
             return ['success' => false, 'status' => 'error', 'message' => 'Faltan datos obligatorios para el título.'];
         }
 
         try {
-            $this->studioServices->updateVideoTitle($userId, (int)$videoId, $title);
+            $this->studioServices->updateVideoDetails($userId, (int)$videoId, $title, $description);
             return ['success' => true, 'status' => 'success'];
         } catch (\Exception $e) {
             http_response_code(400);
