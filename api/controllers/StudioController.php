@@ -134,5 +134,28 @@ class StudioController {
             return ['success' => false, 'status' => 'error', 'message' => $e->getMessage()];
         }
     }
+
+    public function cancel_upload($input) {
+        $userId = $this->requireAuth();
+        if (!$userId) {
+            http_response_code(401);
+            return ['success' => false, 'status' => 'error', 'message' => 'No autorizado'];
+        }
+
+        $videoId = $input['video_id'] ?? $_POST['video_id'] ?? null;
+
+        if (!$videoId) {
+            http_response_code(400);
+            return ['success' => false, 'status' => 'error', 'message' => 'ID de video faltante en la petición de cancelación.'];
+        }
+
+        try {
+            $this->studioServices->cancelUpload($userId, (int)$videoId);
+            return ['success' => true, 'status' => 'success'];
+        } catch (\Exception $e) {
+            http_response_code(400);
+            return ['success' => false, 'status' => 'error', 'message' => $e->getMessage()];
+        }
+    }
 }
 ?>

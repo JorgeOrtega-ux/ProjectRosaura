@@ -130,5 +130,50 @@ class StudioServices {
         $this->videoRepo->updateStatus($videoId, 'published', 100);
         return ['success' => true, 'status' => 'published'];
     }
+
+    public function cancelUpload(int $userId, int $videoId): array {
+        $video = $this->videoRepo->findById($videoId);
+        if (!$video || $video['user_id'] != $userId) {
+            throw new Exception("Video no encontrado o no autorizado.");
+        }
+
+        // 1. Notificar inmediatamente al Worker de Python para que mate el proceso FFmpeg si está activo
+        $this->redis->setex('cancel_video_' . $videoId, 3600, '1');
+
+        // 2. Eliminar el archivo de video temporal (Si aún no se procesa)
+        if (!empty($video['temp_file_path']) && file_exists($video['temp_file_path'])) {
+            @unlink($video['temp_file_path']);
+        }
+
+        // 3. Eliminar la miniatura física asociada
+        if (!empty($video['thumbnail_path'])) {
+            $thumbnailFilename = basename($video['thumbnail_path']);
+            $thumbnailFilePath = $this->thumbnailDir . $thumbnailFilename;
+            if (file_exists($thumbnailFilePath)) {
+                @unlink($thumbnailFilePath);
+            }
+        }
+
+        // 4. Eliminar los archivos procesados HLS (si ya pasó por el worker o está pasando)
+        $hlsDir = __DIR__ . '/../../public/storage/videos/' . $video['uuid'];
+        if (is_dir($hlsDir)) {
+            $this->deleteDirectory($hlsDir);
+        }
+
+        // 5. Eliminar el registro en Base de Datos.
+        $this->videoRepo->delete($videoId);
+
+        return ['success' => true];
+    }
+
+    private function deleteDirectory(string $dir): bool {
+        if (!file_exists($dir)) return true;
+        if (!is_dir($dir)) return unlink($dir);
+        foreach (scandir($dir) as $item) {
+            if ($item == '.' || $item == '..') continue;
+            if (!$this->deleteDirectory($dir . DIRECTORY_SEPARATOR . $item)) return false;
+        }
+        return rmdir($dir);
+    }
 }
 ?>

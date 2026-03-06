@@ -398,6 +398,12 @@ export class StudioController {
             if (action === 'publishVideo') {
                 controller.publishVideo();
             }
+
+            if (action === 'cancelVideo') {
+                if (confirm("¿Estás seguro de que deseas cancelar la subida/procesamiento de este video? Se eliminará permanentemente.")) {
+                    controller.cancelVideo();
+                }
+            }
         });
 
         // Autoguardado al salir del textarea de descripción (blur/focusout)
@@ -504,6 +510,31 @@ export class StudioController {
             }
         } else {
             alert(res.message);
+        }
+    }
+
+    async cancelVideo() {
+        if (!this.selectedVideoId) return;
+        
+        const btn = document.getElementById('btnCancelVideo');
+        if (btn) btn.classList.add('disabled');
+
+        const res = await this.api.post(ApiRoutes.Studio.CancelUpload, {
+            video_id: this.selectedVideoId
+        });
+
+        if (res.status === 'success') {
+            this.currentVideos.delete(this.selectedVideoId);
+            this.renderBadges();
+            
+            if (this.currentVideos.size > 0) {
+                this.selectVideo(this.currentVideos.keys().next().value);
+            } else {
+                window.dispatchEvent(new CustomEvent('routeChange', { detail: { url: '/studio/upload' }}));
+            }
+        } else {
+            alert("Error al cancelar el video: " + res.message);
+            if (btn) btn.classList.remove('disabled');
         }
     }
 }

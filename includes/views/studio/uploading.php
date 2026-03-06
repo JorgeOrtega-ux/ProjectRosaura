@@ -20,7 +20,11 @@
             <div class="component-view-top">
                 <div class="component-view-top-left studio-badge-container" id="badgesContainer">
                     </div>
-                <div class="component-view-top-right">
+                <div class="component-view-top-right" style="display: flex; gap: 8px;">
+                    <button type="button" class="component-button" id="btnCancelVideo" data-action="cancelVideo" style="color: #dc3545; border-color: #dc3545;">
+                        <span class="material-symbols-rounded">delete</span>
+                        <span data-i18n="studio_cancel">Cancelar</span>
+                    </button>
                     <button type="button" class="component-button component-button--dark disabled" id="btnPublishVideo" data-action="publishVideo" disabled>
                         <span data-i18n="studio_publish">Publicar</span>
                     </button>

@@ -73,5 +73,6 @@ return [
     'studio.update_title'         => ['controller' => 'App\Api\Controllers\StudioController', 'action' => 'update_title'],
     'studio.get_active_uploads'   => ['controller' => 'App\Api\Controllers\StudioController', 'action' => 'get_active_uploads'],
     'studio.publish_video'        => ['controller' => 'App\Api\Controllers\StudioController', 'action' => 'publish_video'],
+    'studio.cancel_upload'        => ['controller' => 'App\Api\Controllers\StudioController', 'action' => 'cancel_upload'],
 ];
 ?>

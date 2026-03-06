@@ -6,6 +6,7 @@ import time
 import subprocess
 import re
 import logging
+import shutil
 from dotenv import load_dotenv
 import redis
 import mysql.connector
@@ -73,6 +74,13 @@ def process_video(redis_client, job):
     uuid = job.get('uuid')
     input_file = job.get('file_path')
     
+    # Comprobar si fue cancelado antes de siquiera arrancar el procesamiento
+    cancel_key = f"cancel_video_{video_id}"
+    if redis_client.exists(cancel_key):
+        logging.info(f"El video {uuid} ({video_id}) fue cancelado en cola. Saltando procesamiento.")
+        redis_client.delete(cancel_key)
+        return
+
     if not os.path.exists(input_file):
         logging.error(f"Archivo no encontrado: {input_file}")
         update_db_status(video_id, 'failed')
@@ -110,13 +118,25 @@ def process_video(redis_client, job):
     
     time_pattern = re.compile(r"time=(\d+):(\d+):(\d+\.\d+)")
     last_reported_progress = 0
+    last_cancel_check = time.time()
+    was_cancelled = False
 
     for line in process.stderr:
+        # Verificar en Redis si PHP mandó la señal de cancelación (chequeo cada 2 segundos)
+        current_time = time.time()
+        if current_time - last_cancel_check > 2.0:
+            last_cancel_check = current_time
+            if redis_client.exists(cancel_key):
+                logging.warning(f"Se detectó señal de CANCELACIÓN para {uuid}. Terminando FFmpeg...")
+                process.terminate()
+                was_cancelled = True
+                break
+
         match = time_pattern.search(line)
         if match and duration > 0:
             hours, minutes, seconds = map(float, match.groups())
-            current_time = hours * 3600 + minutes * 60 + seconds
-            progress = int((current_time / duration) * 100)
+            current_time_vid = hours * 3600 + minutes * 60 + seconds
+            progress = int((current_time_vid / duration) * 100)
             
             # Solo actualizar si el progreso cambia al menos un 5% para no saturar WebSockets/DB
             if progress >= last_reported_progress + 5 and progress <= 100:
@@ -131,6 +151,21 @@ def process_video(redis_client, job):
                 }))
 
     process.wait()
+
+    # Si se canceló durante el procesamiento, limpiamos todo de forma segura
+    if was_cancelled:
+        logging.info(f"Limpieza de archivos huérfanos post-cancelación para {uuid}.")
+        redis_client.delete(cancel_key)
+        # Forzar borrado de directorio HLS que pudo haber creado FFmpeg justo antes de morir
+        if os.path.exists(output_dir):
+            shutil.rmtree(output_dir, ignore_errors=True)
+        # Limpieza de archivo original por seguridad
+        try:
+            if os.path.exists(input_file):
+                os.remove(input_file)
+        except OSError:
+            pass
+        return  # Terminamos la función de éxito y evitamos marcar estado 'failed'
 
     if process.returncode == 0:
         hls_public_path = f"/storage/videos/{uuid}/master.m3u8"

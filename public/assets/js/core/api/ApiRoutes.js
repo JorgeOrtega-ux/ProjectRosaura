@@ -56,6 +56,7 @@ export const ApiRoutes = {
         UploadThumbnail: 'studio.upload_thumbnail',
         UpdateTitle: 'studio.update_title',
         GetActiveUploads: 'studio.get_active_uploads',
-        PublishVideo: 'studio.publish_video'
+        PublishVideo: 'studio.publish_video',
+        CancelUpload: 'studio.cancel_upload'
     }
 };
