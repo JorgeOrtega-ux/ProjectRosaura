@@ -1,4 +1,6 @@
 // public/assets/js/modules/studio/StudioController.js
+import { ApiService } from '../../core/api/ApiServices.js';
+import { ApiRoutes } from '../../core/api/ApiRoutes.js';
 
 class StudioWebSocketManager {
     constructor() {
@@ -10,6 +12,7 @@ class StudioWebSocketManager {
         const portOrPath = window.location.protocol === 'https:' ? '/studio-ws/' : ':8765';
         this.wsUrl = `${protocol}//${host}${portOrPath}`;
         
+        this.callbacks = {};
         window.addEventListener('viewLoaded', this.handleRouteUpdate.bind(this));
     }
 
@@ -17,9 +20,18 @@ class StudioWebSocketManager {
         return 'mi_token_super_secreto_y_seguro_2026'; 
     }
 
-    // Generador para simular el "request id" estilo Canva/Sentry
+    getUserId() {
+        // Asumiendo que guardaste el user ID en algún lugar global como meta tag
+        const meta = document.querySelector('meta[name="user-id"]');
+        return meta ? meta.getAttribute('content') : '0';
+    }
+
     generateRequestId() {
         return Math.random().toString(16).substring(2, 10) + Math.random().toString(16).substring(2, 10);
+    }
+
+    onMessage(type, callback) {
+        this.callbacks[type] = callback;
     }
 
     connect() {
@@ -28,23 +40,20 @@ class StudioWebSocketManager {
         }
 
         this.isConnecting = true;
-        
-        console.log(`websocket_client: ${Date.now()} connecting...`);
+        console.log(`[WS] Conectando a ${this.wsUrl}...`);
         
         try {
             this.ws = new WebSocket(this.wsUrl);
 
             this.ws.onopen = () => {
                 this.isConnecting = false;
-                console.log('websocket_client: connected');
-                
-                const requestId = this.generateRequestId();
-                console.log(`websocket_client: request id ${requestId}`);
+                console.log('[WS] Conectado');
                 
                 const authPayload = {
                     type: "auth",
                     token: this.getAuthToken(),
-                    requestId: requestId 
+                    userId: this.getUserId(),
+                    requestId: this.generateRequestId()
                 };
                 
                 this.ws.send(JSON.stringify(authPayload));
@@ -54,40 +63,33 @@ class StudioWebSocketManager {
                 try {
                     const data = JSON.parse(event.data);
                     
-                    if (data.status === "error") {
-                        if (data.code === "AUTH_FAILED" || data.code === "AUTH_TIMEOUT") {
-                            this.disconnect();
-                        }
-                    } else if (data.status === "success" && data.message === "Autenticación exitosa") {
-                        console.log('websocket_client: status CONNECTED');
+                    if (data.status === "error" && (data.code === "AUTH_FAILED" || data.code === "AUTH_TIMEOUT")) {
+                        this.disconnect();
+                        return;
                     }
 
+                    // Si es un evento de progreso que viene desde Python/Redis
+                    if (data.type === 'progress' || data.type === 'completed' || data.type === 'failed') {
+                        if (this.callbacks['progressUpdate']) {
+                            this.callbacks['progressUpdate'](data);
+                        }
+                    }
                 } catch (error) {
-                    // Silenciado para mantener la consola limpia
+                    console.error('[WS] Error parseando mensaje', error);
                 }
             };
 
             this.ws.onclose = () => {
                 this.isConnecting = false;
                 this.ws = null;
-                console.log('websocket_client: disconnected');
+                console.log('[WS] Desconectado');
             };
 
             this.ws.onerror = () => {
                 this.isConnecting = false;
             };
         } catch (error) {
-            // Silenciado
-        }
-    }
-
-    sendAction(actionName, payloadData = {}) {
-        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-            const message = {
-                action: actionName,
-                data: payloadData
-            };
-            this.ws.send(JSON.stringify(message));
+            console.error('[WS] Error iniciando conexión', error);
         }
     }
 
@@ -100,7 +102,6 @@ class StudioWebSocketManager {
 
     handleRouteUpdate(event) {
         const { cleanUrl } = event.detail;
-        
         if (!cleanUrl.includes('/studio')) {
             this.disconnect();
         } else {
@@ -118,90 +119,282 @@ export class StudioController {
             window.AppStudioWSManager = this.manager;
         }
         
+        this.api = new ApiService();
+        this.currentVideos = new Map(); // Para rastrear estado de videos en UI
+        this.selectedVideoId = null; // Video seleccionado en /uploading
+        
         this.init();
     }
 
     init() {
         this.manager.connect();
+        this.manager.onMessage('progressUpdate', this.handleWsProgress.bind(this));
+        
+        // Determinar en qué vista estamos
+        const path = window.location.pathname;
+        if (path.includes('/studio/uploading')) {
+            this.initUploadingView();
+        } else if (path.includes('/studio/upload')) {
+            this.initUploadView();
+        }
+
         this.attachEvents();
     }
 
+    // ==========================================
+    // LOGICA DE /studio/upload
+    // ==========================================
+    initUploadView() {
+        const dropZone = document.getElementById('videoDropZone');
+        const fileInput = document.getElementById('videoFileInput');
+        
+        if (!dropZone || !fileInput) return;
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            this.handleFilesSelection(e.dataTransfer.files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            this.handleFilesSelection(e.target.files);
+        });
+    }
+
+    async handleFilesSelection(files) {
+        if (!files || files.length === 0) return;
+
+        // Mostrar UI de carga de red si existe
+        const uploadProgressContainer = document.getElementById('uploadProgressContainer');
+        const uploadProgressBar = document.getElementById('uploadProgressBar');
+        if(uploadProgressContainer) uploadProgressContainer.style.display = 'block';
+
+        // Subir uno por uno a PHP
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            try {
+                // Subida por red (XHR)
+                const result = await this.api.uploadFileWithProgress(
+                    ApiRoutes.Studio.UploadVideo, 
+                    file, 
+                    'video', 
+                    {}, 
+                    (percent) => {
+                        if(uploadProgressBar) uploadProgressBar.style.width = `${percent}%`;
+                    }
+                );
+                
+                if (result.status === 'success') {
+                    console.log(`Video encolado: ${result.data.uuid}`);
+                } else {
+                    alert(`Error subiendo ${file.name}: ${result.message}`);
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        // Una vez subidos todos al temporal, redirigir a uploading
+        window.history.pushState({}, '', (window.AppBasePath || '') + '/studio/uploading');
+        window.dispatchEvent(new CustomEvent('routeChange', { detail: { url: '/studio/uploading' }}));
+    }
+
+    // ==========================================
+    // LOGICA DE /studio/uploading
+    // ==========================================
+    async initUploadingView() {
+        // Obtener estado actual de videos desde el backend
+        const response = await this.api.post(ApiRoutes.Studio.GetActiveUploads);
+        if (response.status === 'success') {
+            const videos = response.data;
+            if (videos.length === 0) {
+                // Si no hay videos, regresar a upload
+                window.history.pushState({}, '', (window.AppBasePath || '') + '/studio/upload');
+                window.dispatchEvent(new CustomEvent('routeChange', { detail: { url: '/studio/upload' }}));
+                return;
+            }
+
+            videos.forEach(v => {
+                this.currentVideos.set(v.id, {
+                    ...v,
+                    thumbnailSubida: v.thumbnail_path ? true : false,
+                    tituloValido: v.title ? true : false
+                });
+            });
+
+            this.renderBadges();
+            
+            // Seleccionar el primer video por defecto
+            this.selectVideo(videos[0].id);
+        }
+    }
+
+    renderBadges() {
+        const container = document.getElementById('badgesContainer');
+        if (!container) return;
+        
+        container.innerHTML = '';
+        this.currentVideos.forEach(video => {
+            const badge = document.createElement('div');
+            badge.className = `video-badge ${this.selectedVideoId === video.id ? 'active' : ''}`;
+            badge.setAttribute('data-id', video.id);
+            badge.onclick = () => this.selectVideo(video.id);
+
+            let statusText = video.status === 'queued' ? 'En cola' : 
+                             video.status === 'processing' ? `${video.processing_progress}%` : 
+                             video.status === 'processed' ? '100% OK' : 'Error';
+
+            badge.innerHTML = `
+                <span class="name">${video.original_filename}</span>
+                <span class="status" id="badge-status-${video.id}">${statusText}</span>
+            `;
+            container.appendChild(badge);
+        });
+    }
+
+    selectVideo(id) {
+        this.selectedVideoId = id;
+        this.renderBadges(); // Para actualizar clase active
+        
+        const video = this.currentVideos.get(id);
+        if (!video) return;
+
+        // Rellenar formulario
+        const titleInput = document.getElementById('videoTitleInput');
+        if(titleInput) titleInput.value = video.title || video.original_filename;
+        
+        this.validatePublishButton();
+    }
+
+    handleWsProgress(data) {
+        // data.video_id, data.progress, data.status
+        if (this.currentVideos.has(data.video_id)) {
+            const video = this.currentVideos.get(data.video_id);
+            video.status = data.status;
+            video.processing_progress = data.progress;
+            
+            // Actualizar UI del Badge
+            const statusSpan = document.getElementById(`badge-status-${data.video_id}`);
+            if (statusSpan) {
+                if (data.status === 'processing') statusSpan.textContent = `${data.progress}%`;
+                else if (data.status === 'processed') statusSpan.textContent = '100% OK';
+                else if (data.status === 'failed') statusSpan.textContent = 'Error';
+            }
+
+            // Si es el video actual seleccionado, validar botón publicar
+            if (this.selectedVideoId === data.video_id) {
+                this.validatePublishButton();
+            }
+        }
+    }
+
     attachEvents() {
-        // Delegación de eventos para capturar los clics en los botones de acción
         document.addEventListener('click', (e) => {
             const btn = e.target.closest('[data-action]');
             if (!btn) return;
             
             const action = btn.getAttribute('data-action');
-            
-            if (action === 'toggleEditState') {
-                this.toggleEditState(btn.getAttribute('data-target'));
-            } else if (action === 'saveTitle') {
-                this.saveTitle();
+            if (action === 'publishVideo') {
+                this.publishVideo();
             }
         });
-    }
 
-    toggleEditState(target) {
-        const viewBox = document.querySelector(`[data-state="${target}-view"]`);
-        const editBox = document.querySelector(`[data-state="${target}-edit"]`);
-        
-        if (!viewBox || !editBox) return;
+        // Evento para subir miniatura
+        const thumbInput = document.getElementById('thumbnailInput');
+        if (thumbInput) {
+            thumbInput.addEventListener('change', async (e) => {
+                if (!e.target.files.length || !this.selectedVideoId) return;
+                
+                const formData = new FormData();
+                formData.append('thumbnail', e.target.files[0]);
+                formData.append('video_id', this.selectedVideoId);
 
-        if (viewBox.classList.contains('active')) {
-            // Pasar a modo edición
-            viewBox.classList.remove('active');
-            viewBox.classList.add('disabled');
-            viewBox.style.display = 'none';
+                const res = await this.api.postForm(ApiRoutes.Studio.UploadThumbnail, formData);
+                if(res.status === 'success') {
+                    const video = this.currentVideos.get(this.selectedVideoId);
+                    video.thumbnailSubida = true;
+                    video.thumbnail_path = res.data.thumbnail_path;
+                    this.validatePublishButton();
+                    alert("Miniatura subida con éxito");
+                }
+            });
+        }
 
-            editBox.classList.remove('disabled');
-            editBox.classList.add('active');
-            editBox.style.display = ''; 
-            
-            // Foco en el input
-            const input = editBox.querySelector(`[data-ref="input-${target}"]`);
-            if (input) {
-                input.focus();
-                // Opcional: poner el cursor al final del texto
-                input.selectionStart = input.selectionEnd = input.value.length; 
-            }
-        } else {
-            // Pasar a modo vista (Cancelar)
-            editBox.classList.remove('active');
-            editBox.classList.add('disabled');
-            editBox.style.display = 'none';
-
-            viewBox.classList.remove('disabled');
-            viewBox.classList.add('active');
-            viewBox.style.display = '';
-
-            // Restaurar el valor original si el usuario presiona "Cancelar"
-            const input = editBox.querySelector(`[data-ref="input-${target}"]`);
-            if (input) {
-                input.value = input.getAttribute('data-original-value');
-            }
+        // Evento para guardar título al salir del input (blur) o teclear
+        const titleInput = document.getElementById('videoTitleInput');
+        if (titleInput) {
+            titleInput.addEventListener('blur', async (e) => {
+                if (!this.selectedVideoId) return;
+                const newTitle = e.target.value.trim();
+                
+                if (newTitle.length > 0) {
+                    const res = await this.api.post(ApiRoutes.Studio.UpdateTitle, {
+                        video_id: this.selectedVideoId,
+                        title: newTitle
+                    });
+                    
+                    if(res.status === 'success') {
+                        const video = this.currentVideos.get(this.selectedVideoId);
+                        video.title = newTitle;
+                        video.tituloValido = true;
+                        this.validatePublishButton();
+                    }
+                }
+            });
         }
     }
 
-    saveTitle() {
-        const input = document.querySelector('[data-ref="input-title"]');
-        const display = document.querySelector('[data-ref="display-title"]');
+    validatePublishButton() {
+        const btn = document.getElementById('btnPublishVideo');
+        if (!btn || !this.selectedVideoId) return;
+
+        const video = this.currentVideos.get(this.selectedVideoId);
         
-        if (!input || !display) return;
+        // Reglas de validación
+        const isProcessed = video.status === 'processed';
+        const hasTitle = document.getElementById('videoTitleInput').value.trim().length > 0;
+        const hasThumb = video.thumbnailSubida === true;
+
+        if (isProcessed && hasTitle && hasThumb) {
+            btn.removeAttribute('disabled');
+            btn.classList.remove('disabled');
+        } else {
+            btn.setAttribute('disabled', 'true');
+            btn.classList.add('disabled');
+        }
+    }
+
+    async publishVideo() {
+        if (!this.selectedVideoId) return;
         
-        const newTitle = input.value.trim();
-        if (newTitle !== "") {
-            // Actualizar la vista
-            display.textContent = newTitle;
+        const res = await this.api.post(ApiRoutes.Studio.PublishVideo, {
+            video_id: this.selectedVideoId
+        });
+
+        if (res.status === 'success') {
+            alert("¡Video publicado con éxito!");
+            // Quitar de la lista local
+            this.currentVideos.delete(this.selectedVideoId);
+            this.renderBadges();
             
-            // Sellar el nuevo valor como el valor original en caso de futuras cancelaciones
-            input.setAttribute('data-original-value', newTitle);
-            
-            // (Opcional) Enviar la actualización por WebSockets al backend
-            // this.manager.sendAction('updateVideoInfo', { title: newTitle });
-            
-            // Cerrar el modo edición
-            this.toggleEditState('title');
+            // Si quedan videos, seleccionar el primero, sino redirigir
+            if (this.currentVideos.size > 0) {
+                this.selectVideo(this.currentVideos.keys().next().value);
+            } else {
+                window.history.pushState({}, '', (window.AppBasePath || '') + '/studio/manage-content');
+                window.dispatchEvent(new CustomEvent('routeChange', { detail: { url: '/studio/manage-content' }}));
+            }
+        } else {
+            alert(res.message);
         }
     }
 }

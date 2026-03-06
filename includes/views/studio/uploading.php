@@ -3,13 +3,13 @@
 ?>
 <div class="view-content">
 
-    <div class="component-wrapper disabled" id="uploading-empty-state" style="margin-top: 48px;">
+    <div class="component-wrapper disabled" id="uploading-empty-state" style="margin-top: 48px; display: none;">
         <div class="component-empty-state">
             <span class="material-symbols-rounded component-empty-state-icon" style="font-size: 64px !important;">upload_file</span>
-            <p class="component-empty-state-text" style="margin-bottom: 24px; font-size: 16px;">No tienes contenido subiéndose en estos momentos.</p>
+            <p class="component-empty-state-text" style="margin-bottom: 24px; font-size: 16px;" data-i18n="studio_no_uploading">No tienes contenido subiéndose en estos momentos.</p>
             <button type="button" class="component-button component-button--dark component-button--h40" data-nav="<?php echo APP_URL; ?>/studio/upload">
                 <span class="material-symbols-rounded">upload</span>
-                Subir videos
+                <span data-i18n="studio_upload_btn">Subir videos</span>
             </button>
         </div>
     </div>
@@ -18,10 +18,12 @@
         
         <div class="component-view-layout">
             <div class="component-view-top">
-                <div class="component-view-top-left studio-badge-container">
-                    <span class="studio-badge active">Video 1</span>
-                    <span class="studio-badge">Video 2</span>
-                    <span class="studio-badge">Video 3</span>
+                <div class="component-view-top-left studio-badge-container" id="badgesContainer">
+                    </div>
+                <div class="component-view-top-right">
+                    <button type="button" class="component-button component-button--dark disabled" id="btnPublishVideo" data-action="publishVideo" disabled>
+                        <span data-i18n="studio_publish">Publicar</span>
+                    </button>
                 </div>
             </div>
 
@@ -29,33 +31,33 @@
                 <div class="studio-uploading-wrapper">
                     
                     <div class="studio-uploading-details">
-                        <h1 style="margin-top: 0; font-size: 24px; margin-bottom: 24px;">Detalles</h1>
+                        <h1 style="margin-top: 0; font-size: 24px; margin-bottom: 24px;" data-i18n="studio_details">Detalles</h1>
                         
                         <div class="component-card--grouped">
                             <div class="component-group-item component-group-item--stateful">
                                 <div class="active component-state-box" data-state="title-view">
                                     <div class="component-card__content">
                                         <div class="component-card__text">
-                                            <h2 class="component-card__title">Título del video (obligatorio)</h2>
-                                            <span class="component-display-value" data-ref="display-title">Mi Video de Prueba 1</span>
+                                            <h2 class="component-card__title" data-i18n="studio_title_req">Título del video (obligatorio)</h2>
+                                            <span class="component-display-value" data-ref="display-title">Cargando...</span>
                                         </div>
                                     </div>
                                     <div class="component-card__actions component-card__actions--stretch">
-                                        <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="title">Editar</button>
+                                        <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="title" data-i18n="btn_edit">Editar</button>
                                     </div>
                                 </div>
 
                                 <div class="disabled component-state-box" data-state="title-edit" style="display: none;">
                                     <div class="component-card__content">
                                         <div class="component-card__text">
-                                            <h2 class="component-card__title">Título del video (obligatorio)</h2>
+                                            <h2 class="component-card__title" data-i18n="studio_title_req">Título del video (obligatorio)</h2>
                                             <div class="component-edit-row">
                                                 <div class="component-input-group component-input-group--h34">
-                                                    <input type="text" data-ref="input-title" class="component-input-field component-input-field--simple" value="Mi Video de Prueba 1" data-original-value="Mi Video de Prueba 1" placeholder="Ingresa un título que destaque">
+                                                    <input type="text" id="videoTitleInput" data-ref="input-title" class="component-input-field component-input-field--simple" placeholder="Ingresa un título que destaque">
                                                 </div>
                                                 <div class="component-card__actions component-card__actions--stretch">
-                                                    <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="title">Cancelar</button>
-                                                    <button type="button" class="component-button component-button--h34 component-button--dark" data-action="saveTitle">Guardar</button>
+                                                    <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="title" data-i18n="btn_cancel">Cancelar</button>
+                                                    <button type="button" class="component-button component-button--h34 component-button--dark" data-action="saveTitle" data-i18n="btn_save">Guardar</button>
                                                 </div>
                                             </div>
                                         </div>
@@ -68,10 +70,10 @@
                             <div class="component-group-item component-group-item--stacked">
                                 <div class="component-card__content component-card__content--full">
                                     <div class="component-card__text">
-                                        <h2 class="component-card__title">Descripción</h2>
-                                        <p class="component-card__description">Cuenta a los espectadores de qué trata tu video.</p>
+                                        <h2 class="component-card__title" data-i18n="studio_desc">Descripción</h2>
+                                        <p class="component-card__description" data-i18n="studio_desc_hint">Cuenta a los espectadores de qué trata tu video.</p>
                                         <div class="component-card__form-area">
-                                            <textarea class="component-input-field" data-ref="inp_video_description" placeholder="Añade tu descripción aquí..." maxlength="1000" rows="5"></textarea>
+                                            <textarea id="videoDescriptionInput" class="component-input-field" data-ref="inp_video_description" placeholder="Añade tu descripción aquí..." maxlength="1000" rows="5"></textarea>
                                         </div>
                                     </div>
                                 </div>
@@ -82,22 +84,24 @@
                     <div class="studio-uploading-preview">
                         <div class="studio-video-card">
                             <div class="studio-video-card__player">
-                                </div>
+                                <span class="material-symbols-rounded" style="color: white; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 48px;">play_circle</span>
+                            </div>
                             <div class="studio-video-card__info">
                                 <div class="studio-video-card__meta-group">
-                                    <span class="meta-label">Enlace del video</span>
-                                    <a href="#" class="meta-link">https://192.168.8.13/v/xyz123</a>
+                                    <span class="meta-label" data-i18n="studio_video_link">Enlace del video</span>
+                                    <span class="meta-value" style="color: var(--text-secondary); font-size: 13px;" data-i18n="studio_link_pending">Se generará al publicar</span>
                                 </div>
                                 <div class="studio-video-card__meta-group">
-                                    <span class="meta-label">Nombre del archivo</span>
-                                    <span class="meta-value">video_prueba_1.mp4</span>
+                                    <span class="meta-label" data-i18n="studio_file_name">Nombre del archivo</span>
+                                    <span class="meta-value" id="previewOriginalFilename">Cargando...</span>
                                 </div>
                             </div>
                         </div>
 
-                        <button type="button" class="component-button component-button--full component-button--h40" style="margin-top: 16px;">
+                        <input type="file" id="thumbnailInput" accept="image/png, image/jpeg, image/webp" style="display: none;">
+                        <button type="button" class="component-button component-button--full component-button--h40" style="margin-top: 16px;" onclick="document.getElementById('thumbnailInput').click();">
                             <span class="material-symbols-rounded">add_photo_alternate</span>
-                            Subir miniatura
+                            <span data-i18n="studio_upload_thumb">Subir miniatura</span>
                         </button>
                     </div>
 

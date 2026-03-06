@@ -33,5 +33,6 @@ export const RouteModulesMap = {
     // ---- MÓDULOS DE STUDIO (WEBSOCKET) ----
     '/studio/management-panel': { path: './modules/studio/StudioController.js', className: 'StudioController' },
     '/studio/manage-content': { path: './modules/studio/StudioController.js', className: 'StudioController' },
-    '/studio/uploading': { path: './modules/studio/StudioController.js', className: 'StudioController' } /* NUEVA RUTA JS */
+    '/studio/upload': { path: './modules/studio/StudioController.js', className: 'StudioController' },
+    '/studio/uploading': { path: './modules/studio/StudioController.js', className: 'StudioController' }
 };

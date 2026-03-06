@@ -26,6 +26,15 @@ storage/backups/*.enc
 storage/backups/*.gz
 !storage/backups/.htaccess
 
+# === IGNORAR ARCHIVOS MULTIMEDIA DEL STUDIO ===
+storage/temp_videos/*
+!storage/temp_videos/.gitkeep
+public/storage/videos/*
+!public/storage/videos/.gitkeep
+public/storage/thumbnails/*
+!public/storage/thumbnails/.gitkeep
+!public/storage/thumbnails/default/
+
 # Ignorar archivos generados por editores / IDEs
 .idea/
 .vscode/

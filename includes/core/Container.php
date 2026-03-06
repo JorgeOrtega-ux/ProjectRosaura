@@ -29,6 +29,8 @@ use App\Core\Repositories\ServerConfigRepository;
 use App\Core\Interfaces\ServerConfigRepositoryInterface;
 use App\Core\Repositories\ModerationRepository;
 use App\Core\Interfaces\ModerationRepositoryInterface;
+use App\Core\Interfaces\VideoRepositoryInterface;
+use App\Core\Repositories\VideoRepository;
 
 class Container implements ContainerInterface {
     private $instances = [];
@@ -56,6 +58,9 @@ class Container implements ContainerInterface {
         $this->bindings[ProfileLogRepositoryInterface::class] = ProfileLogRepository::class;
         $this->bindings[ServerConfigRepositoryInterface::class] = ServerConfigRepository::class;
         $this->bindings[ModerationRepositoryInterface::class] = ModerationRepository::class;
+        
+        // 4. Repositorios de Contenido (Studio)
+        $this->bindings[VideoRepositoryInterface::class] = VideoRepository::class;
     }
 
     public function get(string $id) {

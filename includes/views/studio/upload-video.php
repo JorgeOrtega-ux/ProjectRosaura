@@ -11,14 +11,23 @@
             </div>
 
             <div class="component-view-bottom">
-                <div class="component-upload-area">
+                <div class="component-upload-area" id="videoDropZone">
                     <div class="component-upload-content">
                         <div class="component-upload-icon-wrapper">
                             <span class="material-symbols-rounded component-upload-icon">upload</span>
                         </div>
-                        <h2 class="component-upload-title">Arrastra y suelta archivos de video para subirlos</h2>
-                        <p class="component-upload-subtitle">Tus videos serán privados hasta que los publiques.</p>
-                        <button class="component-upload-button" type="button">Seleccionar archivos</button>
+                        <h2 class="component-upload-title" data-i18n="studio_drag_drop">Arrastra y suelta archivos de video para subirlos</h2>
+                        <p class="component-upload-subtitle" data-i18n="studio_private_until_publish">Tus videos serán privados hasta que los publiques.</p>
+                        
+                        <input type="file" id="videoFileInput" multiple accept="video/*" style="display: none;">
+                        <button class="component-upload-button" type="button" onclick="document.getElementById('videoFileInput').click();" data-i18n="studio_select_files">Seleccionar archivos</button>
+                        
+                        <div id="uploadProgressContainer" style="display: none; width: 100%; max-width: 400px; margin-top: 24px;">
+                            <div style="width: 100%; background-color: var(--border-color); border-radius: 8px; height: 8px; overflow: hidden;">
+                                <div id="uploadProgressBar" style="width: 0%; height: 100%; background-color: #065fd4; transition: width 0.2s ease;"></div>
+                            </div>
+                            <p style="margin-top: 8px; font-size: 12px; color: var(--text-secondary);" data-i18n="studio_uploading_network">Subiendo archivos...</p>
+                        </div>
                     </div>
                     
                     <div class="component-upload-footer">

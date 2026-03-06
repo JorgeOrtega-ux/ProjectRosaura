@@ -104,7 +104,6 @@ CREATE TABLE IF NOT EXISTS server_config (
     forgot_password_rate_limit_attempts INT NOT NULL DEFAULT 3,
     forgot_password_rate_limit_minutes INT NOT NULL DEFAULT 30,
     
-    -- === COLUMNAS DE LÍMITES ADMINISTRATIVOS ===
     admin_edit_avatar_attempts INT NOT NULL DEFAULT 20,
     admin_edit_avatar_minutes INT NOT NULL DEFAULT 30,
     admin_edit_username_attempts INT NOT NULL DEFAULT 20,
@@ -120,12 +119,10 @@ CREATE TABLE IF NOT EXISTS server_config (
     admin_add_note_attempts INT NOT NULL DEFAULT 30,
     admin_add_note_minutes INT NOT NULL DEFAULT 30,
     
-    -- === NUEVAS COLUMNAS DE AUTOMATIZACIÓN DE BACKUPS ===
     auto_backup_enabled TINYINT(1) NOT NULL DEFAULT 0,
     auto_backup_frequency_hours INT NOT NULL DEFAULT 24,
     auto_backup_retention_count INT NOT NULL DEFAULT 5,
     
-    -- === MODO MANTENIMIENTO ===
     maintenance_mode TINYINT(1) NOT NULL DEFAULT 0,
     
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -133,3 +130,21 @@ CREATE TABLE IF NOT EXISTS server_config (
 
 INSERT INTO server_config (id) 
 SELECT 1 WHERE NOT EXISTS (SELECT * FROM server_config);
+
+-- === NUEVA TABLA PARA VIDEOS DEL STUDIO ===
+CREATE TABLE IF NOT EXISTS videos (
+    id INT(11) AUTO_INCREMENT PRIMARY KEY,
+    uuid VARCHAR(36) NOT NULL UNIQUE,
+    user_id INT(11) NOT NULL,
+    original_filename VARCHAR(255) NOT NULL,
+    title VARCHAR(255) DEFAULT NULL,
+    description TEXT DEFAULT NULL,
+    thumbnail_path VARCHAR(255) DEFAULT NULL,
+    temp_file_path VARCHAR(255) DEFAULT NULL,
+    hls_path VARCHAR(255) DEFAULT NULL,
+    status ENUM('uploading', 'queued', 'processing', 'processed', 'failed', 'published') DEFAULT 'uploading',
+    processing_progress INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_video_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

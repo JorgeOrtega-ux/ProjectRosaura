@@ -2,7 +2,6 @@
 
 export class ApiService {
     constructor() {
-        // Usamos la variable inyectada en app.php
         this.baseUrl = (window.AppBasePath || '') + '/api/index.php'; 
     }
 
@@ -26,7 +25,6 @@ export class ApiService {
             });
 
             if (!response.ok) {
-                // Interceptar explícitamente el 401 (Sesión Revocada)
                 if (response.status === 401) {
                     window.location.href = (window.AppBasePath || '') + '/login';
                     return { success: false, message: 'Sesión revocada.' };
@@ -43,9 +41,7 @@ export class ApiService {
         }
     }
 
-    // MÉTODO PARA ENVIAR FORMDATA (Archivos)
     async postForm(route, formData) {
-        // Añadimos la ruta al FormData
         formData.append('route', route);
         
         const csrfMeta = document.querySelector('meta[name="csrf-token"]');
@@ -55,14 +51,12 @@ export class ApiService {
             const response = await fetch(this.baseUrl, {
                 method: 'POST',
                 headers: {
-                    // Importante: No establecer Content-Type, el navegador lo genera con el boundary
                     'X-CSRF-Token': csrfToken
                 },
                 body: formData
             });
 
             if (!response.ok) {
-                // Interceptar explícitamente el 401 (Sesión Revocada)
                 if (response.status === 401) {
                     window.location.href = (window.AppBasePath || '') + '/login';
                     return { success: false, message: 'Sesión revocada.' };
@@ -77,5 +71,48 @@ export class ApiService {
             console.error(`[ApiService] Fallo en FormData hacia '${route}':`, error);
             return { success: false, message: 'Error de conexión con el servidor.' };
         }
+    }
+
+    // NUEVO: Método para subidas XHR con seguimiento de progreso
+    uploadFileWithProgress(route, file, inputName, extraData = {}, onProgress) {
+        return new Promise((resolve, reject) => {
+            const formData = new FormData();
+            formData.append('route', route);
+            formData.append(inputName, file);
+            
+            for (const key in extraData) {
+                formData.append(key, extraData[key]);
+            }
+
+            const xhr = new XMLHttpRequest();
+            const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+            const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+
+            xhr.open('POST', this.baseUrl, true);
+            if (csrfToken) xhr.setRequestHeader('X-CSRF-Token', csrfToken);
+
+            xhr.upload.onprogress = (event) => {
+                if (event.lengthComputable) {
+                    const percentComplete = Math.round((event.loaded / event.total) * 100);
+                    if (onProgress) onProgress(percentComplete);
+                }
+            };
+
+            xhr.onload = () => {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        resolve(response);
+                    } catch (e) {
+                        reject('Error parseando JSON');
+                    }
+                } else {
+                    reject(`Error HTTP: ${xhr.status}`);
+                }
+            };
+
+            xhr.onerror = () => reject('Error de red durante la subida');
+            xhr.send(formData);
+        });
     }
 }

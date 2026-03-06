@@ -1,4 +1,4 @@
-// public/assets/js/core/api-routes.js
+// public/assets/js/core/api/ApiRoutes.js
 
 export const ApiRoutes = {
     Auth: {
@@ -50,5 +50,12 @@ export const ApiRoutes = {
         DeleteBackup: 'admin.delete_backup',
         ReadLogs: 'admin.read_logs',
         DeleteLogs: 'admin.delete_logs'
+    },
+    Studio: {
+        UploadVideo: 'studio.upload_video',
+        UploadThumbnail: 'studio.upload_thumbnail',
+        UpdateTitle: 'studio.update_title',
+        GetActiveUploads: 'studio.get_active_uploads',
+        PublishVideo: 'studio.publish_video'
     }
 };

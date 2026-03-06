@@ -56,9 +56,15 @@
     flex: 1;
     width: 100%;
     text-align: center;
-    border: 1px solid var(--border-color);
+    border: 1px dashed var(--border-color);
     border-radius: 8px;
     background-color: var(--bg-surface);
+    transition: all 0.3s ease;
+}
+
+.component-upload-area.dragover {
+    background-color: color-mix(in srgb, var(--text-primary) 5%, transparent);
+    border-color: var(--text-primary);
 }
 
 .component-upload-content {
@@ -140,28 +146,6 @@
 }
 
 /* ==========================================================================
-   Responsividad (Mobile)
-   ========================================================================== */
-@media (max-width: 768px) {
-    .component-view-bottom {
-        padding: 0; 
-    }
-
-    .component-view-bottom .component-table-wrapper {
-        border: none;
-        border-radius: 0;
-    }
-
-    .component-upload-area {
-        border: none;
-        border-radius: 0;
-        background-color: transparent;
-    }
-
-    .component-upload-content {
-        padding: 24px 16px;
-    }
-}/* ==========================================================================
    Componente: Subiendo / Detalles de Video (Uploading)
    ========================================================================== */
 
@@ -169,6 +153,7 @@
 .studio-badge-container {
     display: flex;
     gap: 12px;
+    flex-wrap: wrap;
 }
 
 .studio-badge {
@@ -181,6 +166,9 @@
     color: var(--text-primary);
     cursor: pointer;
     transition: all 0.2s ease;
+    display: flex;
+    gap: 8px;
+    align-items: center;
 }
 
 .studio-badge:hover {
@@ -191,6 +179,18 @@
     background-color: var(--text-primary, #0f0f0f);
     color: var(--bg-surface, #ffffff);
     border-color: var(--text-primary, #0f0f0f);
+}
+
+.studio-badge .name {
+    max-width: 150px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.studio-badge .status {
+    font-size: 12px;
+    opacity: 0.8;
 }
 
 /* Layout de la vista inferior */
@@ -278,5 +278,26 @@
         flex: none;
         position: relative;
         top: 0;
+    }
+}
+
+@media (max-width: 768px) {
+    .component-view-bottom {
+        padding: 0; 
+    }
+
+    .component-view-bottom .component-table-wrapper {
+        border: none;
+        border-radius: 0;
+    }
+
+    .component-upload-area {
+        border: none;
+        border-radius: 0;
+        background-color: transparent;
+    }
+
+    .component-upload-content {
+        padding: 24px 16px;
     }
 }

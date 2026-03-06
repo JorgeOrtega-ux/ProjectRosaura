@@ -465,5 +465,20 @@
     "unauthorized_studio_title": "Acceso Denegado",
     "unauthorized_studio_desc": "Esta sección de Rosaura Studio no existe o no tienes los permisos necesarios para acceder al estudio de otro usuario.",
     "menu_studio_management": "Panel de gestión",
-    "menu_studio_content": "Gestionar contenido"
+    "menu_studio_content": "Gestionar contenido",
+    "studio_drag_drop": "Arrastra y suelta archivos de video para subirlos",
+    "studio_private_until_publish": "Tus videos serán privados hasta que los publiques.",
+    "studio_select_files": "Seleccionar archivos",
+    "studio_uploading_network": "Subiendo archivos...",
+    "studio_no_uploading": "No tienes contenido subiéndose en estos momentos.",
+    "studio_upload_btn": "Subir videos",
+    "studio_publish": "Publicar",
+    "studio_details": "Detalles",
+    "studio_title_req": "Título del video (obligatorio)",
+    "studio_desc": "Descripción",
+    "studio_desc_hint": "Cuenta a los espectadores de qué trata tu video.",
+    "studio_video_link": "Enlace del video",
+    "studio_link_pending": "Se generará al publicar",
+    "studio_file_name": "Nombre del archivo",
+    "studio_upload_thumb": "Subir miniatura"
 }

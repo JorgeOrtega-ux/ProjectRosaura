@@ -59,12 +59,19 @@ return [
 
     // --- RUTAS DE COPIAS DE SEGURIDAD ---
     'admin.create_backup'         => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'create_backup'],
-    'admin.backup_status'         => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'backup_status'], // Nueva ruta asíncrona
+    'admin.backup_status'         => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'backup_status'],
     'admin.restore_backup'        => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'restore_backup'],
     'admin.delete_backup'         => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'delete_backup'],
 
     // --- RUTAS DE LOGS ---
     'admin.read_logs'             => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'read_logs'],
     'admin.delete_logs'           => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'delete_logs'],
+    
+    // --- RUTAS DEL STUDIO (VIDEOS) ---
+    'studio.upload_video'         => ['controller' => 'App\Api\Controllers\StudioController', 'action' => 'upload_video'],
+    'studio.upload_thumbnail'     => ['controller' => 'App\Api\Controllers\StudioController', 'action' => 'upload_thumbnail'],
+    'studio.update_title'         => ['controller' => 'App\Api\Controllers\StudioController', 'action' => 'update_title'],
+    'studio.get_active_uploads'   => ['controller' => 'App\Api\Controllers\StudioController', 'action' => 'get_active_uploads'],
+    'studio.publish_video'        => ['controller' => 'App\Api\Controllers\StudioController', 'action' => 'publish_video'],
 ];
 ?>
