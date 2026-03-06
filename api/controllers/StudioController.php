@@ -33,11 +33,26 @@ class StudioController {
         // Obtener el rol de la sesión (se asume 'user' por defecto si no existe)
         $role = strtolower($this->sessionManager->get('role') ?? 'user');
 
+        // --- NUEVA LÓGICA DE PRE-VALIDACIÓN (Evita gastar ancho de banda y disco) ---
+        $isPreCheck = isset($input['pre_check']) ? (bool)$input['pre_check'] : (isset($_POST['pre_check']) ? (bool)$_POST['pre_check'] : false);
+        if ($isPreCheck) {
+            $totalSize = isset($input['total_size']) ? (int)$input['total_size'] : (isset($_POST['total_size']) ? (int)$_POST['total_size'] : 0);
+            try {
+                $this->studioServices->validatePreUpload($userId, $role, $totalSize);
+                return ['success' => true, 'status' => 'success', 'message' => 'Validación pre-subida exitosa'];
+            } catch (\Exception $e) {
+                http_response_code(400);
+                return ['success' => false, 'status' => 'error', 'message' => $e->getMessage()];
+            }
+        }
+        // -----------------------------------------------------------------------------
+
         $files = $input['_files'] ?? $_FILES;
         $uploadId = $input['upload_id'] ?? $_POST['upload_id'] ?? null;
         $chunkIndex = isset($input['chunk_index']) ? (int)$input['chunk_index'] : (isset($_POST['chunk_index']) ? (int)$_POST['chunk_index'] : null);
         $totalChunks = isset($input['total_chunks']) ? (int)$input['total_chunks'] : (isset($_POST['total_chunks']) ? (int)$_POST['total_chunks'] : null);
         $originalFilename = $input['original_filename'] ?? $_POST['original_filename'] ?? null;
+        $totalSize = isset($input['total_size']) ? (int)$input['total_size'] : (isset($_POST['total_size']) ? (int)$_POST['total_size'] : null);
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($files['video'])) {
             http_response_code(400);
@@ -46,7 +61,8 @@ class StudioController {
 
         try {
             if ($uploadId !== null && $chunkIndex !== null && $totalChunks !== null && $originalFilename) {
-                $videoData = $this->studioServices->handleChunkUpload($userId, $role, $files['video'], $uploadId, $chunkIndex, $totalChunks, $originalFilename);
+                // Pasamos el $totalSize para que el primer chunk valide el tamaño real
+                $videoData = $this->studioServices->handleChunkUpload($userId, $role, $files['video'], $uploadId, $chunkIndex, $totalChunks, $originalFilename, $totalSize);
                 return ['success' => true, 'status' => 'success', 'data' => $videoData];
             } else {
                 $videoData = $this->studioServices->queueVideoUpload($userId, $role, $files['video']);

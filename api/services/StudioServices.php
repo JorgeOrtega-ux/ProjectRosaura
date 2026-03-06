@@ -54,6 +54,12 @@ class StudioServices {
         }
     }
 
+    // Método para validar todo ANTES de que el usuario envíe 1 solo byte de archivo.
+    public function validatePreUpload(int $userId, string $role, int $totalSize): void {
+        $this->checkLimits($userId, $role);
+        $this->checkFileSize($role, $totalSize, null);
+    }
+
     public function queueVideoUpload(int $userId, string $role, array $file): array {
         if ($file['error'] !== UPLOAD_ERR_OK) {
             throw new Exception("Error al subir el archivo.");
@@ -99,9 +105,15 @@ class StudioServices {
         ];
     }
 
-    public function handleChunkUpload(int $userId, string $role, array $file, string $uploadId, int $chunkIndex, int $totalChunks, string $originalFilename): array {
+    // Aceptamos $totalSize para frenarlo en el primer chunk si evade el front
+    public function handleChunkUpload(int $userId, string $role, array $file, string $uploadId, int $chunkIndex, int $totalChunks, string $originalFilename, ?int $totalSize = null): array {
         if ($file['error'] !== UPLOAD_ERR_OK) {
             throw new Exception("Error al subir el fragmento.");
+        }
+
+        // Validación extra: si es el primer fragmento y el cliente mandó el total size, abortamos de inmediato.
+        if ($chunkIndex === 0 && $totalSize !== null) {
+            $this->checkFileSize($role, $totalSize, null);
         }
 
         // Verificamos si se pueden subir mas videos antes de procesar el fragmento
@@ -112,7 +124,7 @@ class StudioServices {
 
         $tempFilePath = $this->tempVideoDir . $uploadId . '.part';
 
-        // Verificamos el tamaño del archivo acumulado
+        // Verificamos el tamaño del archivo acumulado (si el usuario mandó un total_size falso, aquí caerá)
         $this->checkFileSize($role, $file['size'], $tempFilePath);
 
         $chunkData = file_get_contents($file['tmp_name']);

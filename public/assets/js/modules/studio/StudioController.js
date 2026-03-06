@@ -151,6 +151,28 @@ export class StudioController {
     async handleFilesSelection(files) {
         if (!files || files.length === 0) return;
 
+        // FASE 1: Validación Previa "Pre-flight"
+        // Consultamos al servidor si podemos subir estos archivos ANTES de enviar un solo mega.
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            try {
+                const preCheckRes = await this.api.post(ApiRoutes.Studio.UploadVideo, {
+                    pre_check: true,
+                    total_size: file.size
+                });
+                
+                if (preCheckRes.status !== 'success') {
+                    alert(`No se puede subir "${file.name}": ${preCheckRes.message}`);
+                    return; // Abortamos todo si un archivo no pasa
+                }
+            } catch (error) {
+                console.error(error);
+                alert(`Error verificando permisos para "${file.name}".`);
+                return;
+            }
+        }
+
+        // FASE 2: Iniciar proceso visual y subida por chunks
         const uploadProgressContainer = document.getElementById('uploadProgressContainer');
         const uploadProgressBar = document.getElementById('uploadProgressBar');
         if(uploadProgressContainer) uploadProgressContainer.style.display = 'block';
@@ -162,7 +184,7 @@ export class StudioController {
                     ApiRoutes.Studio.UploadVideo, 
                     file, 
                     'video', 
-                    {}, 
+                    { total_size: file.size }, // Le enviamos el peso real al backend en cada chunk
                     (percent) => {
                         if(uploadProgressBar) uploadProgressBar.style.width = `${percent}%`;
                     }
