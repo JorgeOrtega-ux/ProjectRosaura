@@ -49,7 +49,13 @@ export const ApiRoutes = {
         RestoreBackup: 'admin.restore_backup',
         DeleteBackup: 'admin.delete_backup',
         ReadLogs: 'admin.read_logs',
-        DeleteLogs: 'admin.delete_logs'
+        DeleteLogs: 'admin.delete_logs',
+        
+        // --- NUEVAS RUTAS DE ETIQUETAS AÑADIDAS ---
+        GetTags: 'admin.get_tags',
+        CreateTag: 'admin.create_tag',
+        UpdateTag: 'admin.update_tag',
+        DeleteTag: 'admin.delete_tag'
     },
     Studio: {
         UploadVideo: 'studio.upload_video',
