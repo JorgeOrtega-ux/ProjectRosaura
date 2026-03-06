@@ -19,13 +19,14 @@
         <div class="component-view-layout">
             <div class="component-view-top">
                 <div class="component-view-top-left studio-badge-container" id="badgesContainer">
-                    </div>
+                </div>
                 <div class="component-view-top-right" style="display: flex; gap: 8px;">
-                    <button type="button" class="component-button" id="btnCancelVideo" data-action="cancelVideo" style="color: #dc3545; border-color: #dc3545;">
+                    <button type="button" class="component-button component-button--danger component-button--h36" id="btnCancelVideo" data-action="cancelVideo">
                         <span class="material-symbols-rounded">delete</span>
                         <span data-i18n="studio_cancel">Cancelar</span>
                     </button>
-                    <button type="button" class="component-button component-button--dark disabled" id="btnPublishVideo" data-action="publishVideo" disabled>
+                    <button type="button" class="component-button component-button--dark component-button--h36 disabled" id="btnPublishVideo" data-action="publishVideo" disabled>
+                        <span class="material-symbols-rounded">publish</span>
                         <span data-i18n="studio_publish">Publicar</span>
                     </button>
                 </div>
@@ -35,7 +36,6 @@
                 <div class="studio-uploading-wrapper">
                     
                     <div class="studio-uploading-details">
-                        <h1 style="margin-top: 0; font-size: 24px; margin-bottom: 24px;" data-i18n="studio_details">Detalles</h1>
                         
                         <div class="component-card--grouped">
                             <div class="component-group-item component-group-item--stateful">

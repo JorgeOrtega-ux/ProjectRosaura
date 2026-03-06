@@ -82,7 +82,10 @@ class StudioServices {
 
         $filename = $video['uuid'] . '_thumb.' . $extension;
         $destination = $this->thumbnailDir . $filename;
-        $publicPath = '/storage/thumbnails/' . $filename;
+        
+        // CORRECCIÓN DEL PATH: Aseguramos la ruta con prefijo /public para que 
+        // concuerde si estás sirviendo la aplicación desde la carpeta raíz.
+        $publicPath = '/public/storage/thumbnails/' . $filename;
 
         if (!move_uploaded_file($file['tmp_name'], $destination)) {
             throw new Exception("No se pudo guardar la miniatura físicamente.");

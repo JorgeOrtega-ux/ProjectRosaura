@@ -210,7 +210,7 @@ export class StudioController {
         container.innerHTML = '';
         this.currentVideos.forEach(video => {
             const badge = document.createElement('div');
-            badge.className = `video-badge ${this.selectedVideoId === video.id ? 'active' : ''}`;
+            badge.className = `studio-badge ${this.selectedVideoId === video.id ? 'active' : ''}`;
             badge.setAttribute('data-id', video.id);
             
             badge.onclick = () => this.selectVideo(String(video.id));
@@ -277,7 +277,6 @@ export class StudioController {
         let matchedKey = null;
         let videoObj = null;
 
-        // Búsqueda inteligente: intentamos ID exacto, si no, buscamos por UUID.
         if (this.currentVideos.has(wsVideoIdStr)) {
             matchedKey = wsVideoIdStr;
             videoObj = this.currentVideos.get(wsVideoIdStr);
