@@ -40,19 +40,14 @@ class StudioServices {
 
         $videoId = $this->videoRepo->create($userId, $uuid, $originalFilename, $tempFilePath);
 
-        // Se asigna automáticamente el nombre del archivo como Título base en BD
         $titleWithoutExt = pathinfo($originalFilename, PATHINFO_FILENAME);
         $this->videoRepo->updateMetadata($videoId, ['title' => $titleWithoutExt]);
 
-        // ==========================================
-        // LA SOLUCIÓN: Usar el UUID de la sesión para encolar el trabajo
-        // Así Python y Javascript hablarán por el mismo canal
-        // ==========================================
         $userIdentifier = $_SESSION['user_uuid'] ?? $userId;
 
         $jobData = json_encode([
             'video_id' => $videoId,
-            'user_id' => $userIdentifier, // <-- Ahora enviamos el UUID (Ej: 3b94...)
+            'user_id' => $userIdentifier,
             'uuid' => $uuid,
             'file_path' => $tempFilePath
         ]);
@@ -83,9 +78,9 @@ class StudioServices {
         $filename = $video['uuid'] . '_thumb.' . $extension;
         $destination = $this->thumbnailDir . $filename;
         
-        // CORRECCIÓN DEL PATH: Aseguramos la ruta con prefijo /public para que 
-        // concuerde si estás sirviendo la aplicación desde la carpeta raíz.
-        $publicPath = '/public/storage/thumbnails/' . $filename;
+        // CORRECCIÓN: Guardamos la ruta relativa al directorio público.
+        // Esto permite que Javascript resuelva la URL base inteligentemente sin importar el servidor.
+        $publicPath = 'storage/thumbnails/' . $filename;
 
         if (!move_uploaded_file($file['tmp_name'], $destination)) {
             throw new Exception("No se pudo guardar la miniatura físicamente.");
@@ -146,15 +141,12 @@ class StudioServices {
             throw new Exception("Video no encontrado o no autorizado.");
         }
 
-        // 1. Notificar inmediatamente al Worker de Python para que mate el proceso FFmpeg si está activo
         $this->redis->setex('cancel_video_' . $videoId, 3600, '1');
 
-        // 2. Eliminar el archivo de video temporal (Si aún no se procesa)
         if (!empty($video['temp_file_path']) && file_exists($video['temp_file_path'])) {
             @unlink($video['temp_file_path']);
         }
 
-        // 3. Eliminar la miniatura física asociada
         if (!empty($video['thumbnail_path'])) {
             $thumbnailFilename = basename($video['thumbnail_path']);
             $thumbnailFilePath = $this->thumbnailDir . $thumbnailFilename;
@@ -163,13 +155,11 @@ class StudioServices {
             }
         }
 
-        // 4. Eliminar los archivos procesados HLS (si ya pasó por el worker o está pasando)
         $hlsDir = __DIR__ . '/../../public/storage/videos/' . $video['uuid'];
         if (is_dir($hlsDir)) {
             $this->deleteDirectory($hlsDir);
         }
 
-        // 5. Eliminar el registro en Base de Datos.
         $this->videoRepo->delete($videoId);
 
         return ['success' => true];

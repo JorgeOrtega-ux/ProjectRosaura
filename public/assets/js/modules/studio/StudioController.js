@@ -146,7 +146,6 @@ export class StudioController {
     }
 
     initUploadView() {
-        // Delegado en attachEvents
     }
 
     async handleFilesSelection(files) {
@@ -255,18 +254,44 @@ export class StudioController {
 
     updateThumbnailPreview(thumbnailPath) {
         const container = document.querySelector('.studio-video-card__player');
-        if (container) {
-            if (thumbnailPath) {
-                container.style.backgroundImage = `url(${thumbnailPath})`;
-                container.style.backgroundSize = 'cover';
-                container.style.backgroundPosition = 'center';
-                container.style.backgroundColor = 'transparent';
-                container.innerHTML = ''; 
-            } else {
-                container.style.backgroundImage = 'none';
-                container.style.backgroundColor = 'var(--background-secondary, #2a2a2a)';
-                container.innerHTML = '<span class="material-symbols-rounded" style="color: white; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 48px;">play_circle</span>';
+        if (!container) return;
+
+        if (thumbnailPath) {
+            let finalUrl = thumbnailPath;
+            
+            if (!finalUrl.startsWith('http') && !finalUrl.startsWith('blob:')) {
+                // Removemos el slash inicial si existe
+                let cleanPath = thumbnailPath.replace(/^\//, '');
+                
+                // Aseguramos que tenga public/ para el primer intento
+                if (!cleanPath.startsWith('public/')) {
+                    cleanPath = 'public/' + cleanPath;
+                }
+
+                // Utilizamos APP_URL que provee el backend de manera segura
+                let base = window.AppBasePath || window.location.origin;
+                if (base.endsWith('/')) base = base.slice(0, -1);
+
+                finalUrl = base + '/' + cleanPath;
             }
+
+            container.style.backgroundImage = 'none';
+            container.style.backgroundColor = 'transparent';
+            container.style.position = 'relative';
+            
+            // ATENCIÓN AL ONERROR: Este "Fallback" automático arregla el 404. 
+            // Si /public/storage/ falla porque XAMPP ya apunta ahí, el onError intentará /storage/ dinámicamente.
+            container.innerHTML = `
+                <img src="${finalUrl}" 
+                     alt="Miniatura" 
+                     style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit; position: absolute; top: 0; left: 0;" 
+                     onerror="if(!this.dataset.retried) { this.dataset.retried = 'true'; this.src = this.src.replace('/public/storage/', '/storage/'); } else { this.style.display='none'; this.nextElementSibling.style.display='block'; }">
+                <span class="material-symbols-rounded" style="color: white; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 48px; z-index: 2; text-shadow: 0 2px 5px rgba(0,0,0,0.7);">play_circle</span>
+            `;
+        } else {
+            container.style.backgroundImage = 'none';
+            container.style.backgroundColor = 'var(--background-secondary, #2a2a2a)';
+            container.innerHTML = '<span class="material-symbols-rounded" style="color: white; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 48px;">play_circle</span>';
         }
     }
 
@@ -304,8 +329,6 @@ export class StudioController {
             if (this.selectedVideoId === matchedKey) {
                 this.validatePublishButton();
             }
-        } else {
-            console.log(`[WS] Progreso recibido pero vista aún cargando... (ID: ${wsVideoIdStr})`);
         }
     }
 
@@ -441,8 +464,14 @@ export class StudioController {
             if (e.target && e.target.id === 'thumbnailInput') {
                 if (!e.target.files.length || !controller.selectedVideoId) return;
                 
+                const file = e.target.files[0];
+
+                // Blob pre-carga para mostrar en tiempo real. Ahora funcionará gracias al CSP de bootstrap.php
+                const localPreviewUrl = URL.createObjectURL(file);
+                controller.updateThumbnailPreview(localPreviewUrl);
+
                 const formData = new FormData();
-                formData.append('thumbnail', e.target.files[0]);
+                formData.append('thumbnail', file);
                 formData.append('video_id', controller.selectedVideoId);
 
                 const res = await controller.api.postForm(ApiRoutes.Studio.UploadThumbnail, formData);
@@ -452,11 +481,16 @@ export class StudioController {
                         video.thumbnailSubida = true;
                         video.thumbnail_path = res.data.thumbnail_path;
                         controller.validatePublishButton();
+                        
+                        // Una vez finalizada la carga de la imagen real, reemplazamos el blob
                         controller.updateThumbnailPreview(video.thumbnail_path); 
                     }
                 } else {
                     alert("Error subiendo miniatura: " + res.message);
+                    controller.updateThumbnailPreview(null);
                 }
+                
+                e.target.value = ''; // Resetear input
             }
 
             if (e.target && e.target.id === 'videoFileInput') {
