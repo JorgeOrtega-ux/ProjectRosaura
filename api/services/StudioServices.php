@@ -14,6 +14,21 @@ class StudioServices {
     private $tempVideoDir = __DIR__ . '/../../storage/temp_videos/';
     private $thumbnailDir = __DIR__ . '/../../public/storage/thumbnails/';
 
+    // Listas blancas de seguridad
+    private $allowedVideoMimes = [
+        'video/mp4',
+        'video/webm',
+        'video/x-matroska', // mkv
+        'video/quicktime',  // mov
+        'video/x-msvideo',  // avi
+        'video/mpeg',
+        'application/mp4'   // En ocasiones algunos MP4 se leen así parcialmente
+    ];
+
+    private $allowedVideoExtensions = [
+        'mp4', 'webm', 'mkv', 'mov', 'avi', 'mpeg', 'mpg'
+    ];
+
     public function __construct(VideoRepositoryInterface $videoRepo, RedisClient $redis) {
         $this->videoRepo = $videoRepo;
         $this->redis = $redis;
@@ -54,6 +69,30 @@ class StudioServices {
         }
     }
 
+    /**
+     * Valida los Magic Bytes del archivo para asegurar que sea un video real
+     */
+    private function validateVideoMimeType(string $filePath): void {
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mime = finfo_file($finfo, $filePath);
+        finfo_close($finfo);
+
+        if (!in_array($mime, $this->allowedVideoMimes)) {
+            throw new Exception("Por seguridad, el formato del archivo fue rechazado. Tipo detectado: " . $mime);
+        }
+    }
+
+    /**
+     * Valida que la extensión sea explícitamente segura y corresponda a video
+     */
+    private function validateVideoExtension(string $filename): string {
+        $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+        if (!in_array($extension, $this->allowedVideoExtensions)) {
+            throw new Exception("La extensión del archivo (.$extension) no está permitida.");
+        }
+        return $extension;
+    }
+
     // Método para validar todo ANTES de que el usuario envíe 1 solo byte de archivo.
     public function validatePreUpload(int $userId, string $role, int $totalSize): void {
         $this->checkLimits($userId, $role);
@@ -69,10 +108,16 @@ class StudioServices {
         $this->checkLimits($userId, $role);
         $this->checkFileSize($role, $file['size']);
 
+        // NUEVO: Validación estricta de MIME Type mediante Magic Bytes
+        $this->validateVideoMimeType($file['tmp_name']);
+
         $originalFilename = basename($file['name']);
+        
+        // NUEVO: Validación de lista blanca de extensión para evitar inyección de .php, .sh, etc.
+        $extension = $this->validateVideoExtension($originalFilename);
+
         $uuid = sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x', mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0x0fff) | 0x4000, mt_rand(0, 0x3fff) | 0x8000, mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff));
         
-        $extension = pathinfo($originalFilename, PATHINFO_EXTENSION);
         $tempFilename = $uuid . '.' . $extension;
         $tempFilePath = $this->tempVideoDir . $tempFilename;
 
@@ -116,6 +161,9 @@ class StudioServices {
             $this->checkFileSize($role, $totalSize, null);
         }
 
+        // Validamos explícitamente la extensión del nombre original enviado en los chunks
+        $extension = $this->validateVideoExtension($originalFilename);
+
         // Verificamos si se pueden subir mas videos antes de procesar el fragmento
         $this->checkLimits($userId, $role);
 
@@ -124,7 +172,7 @@ class StudioServices {
 
         $tempFilePath = $this->tempVideoDir . $uploadId . '.part';
 
-        // Verificamos el tamaño del archivo acumulado (si el usuario mandó un total_size falso, aquí caerá)
+        // Verificamos el tamaño del archivo acumulado
         $this->checkFileSize($role, $file['size'], $tempFilePath);
 
         $chunkData = file_get_contents($file['tmp_name']);
@@ -132,9 +180,21 @@ class StudioServices {
             throw new Exception("Error al escribir el fragmento en el disco.");
         }
 
+        // NUEVO: Verificamos los Magic Bytes en el primer fragmento subido
+        if ($chunkIndex === 0) {
+            try {
+                // Almacena suficiente del encabezado para identificar el archivo (finfo necesita leer solo los primeros bytes)
+                $this->validateVideoMimeType($tempFilePath);
+            } catch (Exception $e) {
+                // Si el primer fragmento no es de video, abortamos y purgamos el archivo temporal
+                @unlink($tempFilePath);
+                throw $e;
+            }
+        }
+
         if ($chunkIndex === $totalChunks - 1) {
             $uuid = sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x', mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0x0fff) | 0x4000, mt_rand(0, 0x3fff) | 0x8000, mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff));
-            $extension = pathinfo($originalFilename, PATHINFO_EXTENSION);
+            
             $finalTempName = $uuid . '.' . $extension;
             $finalTempPath = $this->tempVideoDir . $finalTempName;
 
@@ -176,10 +236,20 @@ class StudioServices {
             throw new Exception("Video no encontrado o no autorizado.");
         }
 
+        // NUEVO: Validación de Magic Bytes también para la imagen
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mime = finfo_file($finfo, $file['tmp_name']);
+        finfo_close($finfo);
+
+        $validImageMimes = ['image/jpeg', 'image/png', 'image/webp'];
+        if (!in_array($mime, $validImageMimes)) {
+            throw new Exception("El archivo enviado no es una imagen válida o está manipulado.");
+        }
+
         $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
         $validExtensions = ['jpg', 'jpeg', 'png', 'webp'];
         if (!in_array($extension, $validExtensions)) {
-            throw new Exception("Formato de imagen inválido.");
+            throw new Exception("Extensión de imagen inválida.");
         }
 
         $filename = $video['uuid'] . '_thumb.' . $extension;
