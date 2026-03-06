@@ -31,6 +31,8 @@ use App\Core\Repositories\ModerationRepository;
 use App\Core\Interfaces\ModerationRepositoryInterface;
 use App\Core\Interfaces\VideoRepositoryInterface;
 use App\Core\Repositories\VideoRepository;
+use App\Core\Interfaces\TagRepositoryInterface; /* NUEVO */
+use App\Core\Repositories\TagRepository; /* NUEVO */
 
 class Container implements ContainerInterface {
     private $instances = [];
@@ -58,6 +60,7 @@ class Container implements ContainerInterface {
         $this->bindings[ProfileLogRepositoryInterface::class] = ProfileLogRepository::class;
         $this->bindings[ServerConfigRepositoryInterface::class] = ServerConfigRepository::class;
         $this->bindings[ModerationRepositoryInterface::class] = ModerationRepository::class;
+        $this->bindings[TagRepositoryInterface::class] = TagRepository::class; /* NUEVO BINDING */
         
         // 4. Repositorios de Contenido (Studio)
         $this->bindings[VideoRepositoryInterface::class] = VideoRepository::class;

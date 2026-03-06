@@ -157,6 +157,14 @@ $isMainArea = !$isAdminArea && !$isSettingsArea && !$isStudioArea;
                         <span><?php echo __('menu_admin_users'); ?></span>
                     </div>
                 </div>
+                <div class="component-menu-link nav-item" data-nav="<?php echo APP_URL; ?>/admin/tags">
+                    <div class="component-menu-link-icon">
+                        <span class="material-symbols-rounded">label</span>
+                    </div>
+                    <div class="component-menu-link-text">
+                        <span><?php echo __('route_admin_tags'); ?></span>
+                    </div>
+                </div>
             </div>
         </div>
 

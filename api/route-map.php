@@ -67,6 +67,12 @@ return [
     'admin.read_logs'             => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'read_logs'],
     'admin.delete_logs'           => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'delete_logs'],
     
+    // --- NUEVAS RUTAS DE ETIQUETAS/TAGS ---
+    'admin.get_tags'              => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'get_tags'],
+    'admin.create_tag'            => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'create_tag'],
+    'admin.update_tag'            => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'update_tag'],
+    'admin.delete_tag'            => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'delete_tag'],
+    
     // --- RUTAS DEL STUDIO (VIDEOS) ---
     'studio.upload_video'         => ['controller' => 'App\Api\Controllers\StudioController', 'action' => 'upload_video'],
     'studio.upload_thumbnail'     => ['controller' => 'App\Api\Controllers\StudioController', 'action' => 'upload_thumbnail'],

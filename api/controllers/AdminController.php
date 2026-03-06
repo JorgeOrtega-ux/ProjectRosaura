@@ -24,18 +24,24 @@ class AdminController {
     public function get_moderation_kardex($input) { return $this->adminServices->getModerationKardex($input); }
     public function add_admin_note($input) { return $this->adminServices->addAdminNote($input); }
 
-    // --- NUEVAS ACCIONES PARA SERVER CONFIG ---
+    // --- ACCIONES PARA SERVER CONFIG ---
     public function get_server_config() { return $this->adminServices->getServerConfig(); }
     public function update_server_config($input) { return $this->adminServices->updateServerConfig($input); }
 
-    // --- NUEVAS ACCIONES PARA BACKUPS ---
+    // --- ACCIONES PARA BACKUPS ---
     public function create_backup() { return $this->adminServices->createBackup(); }
     public function backup_status($input) { return $this->adminServices->backupStatus($input); } 
     public function restore_backup($input) { return $this->adminServices->restoreBackup($input); }
     public function delete_backup($input) { return $this->adminServices->deleteBackup($input); }
 
-    // --- NUEVAS ACCIONES PARA LOGS ---
+    // --- ACCIONES PARA LOGS ---
     public function read_logs($input) { return $this->adminServices->readLogs($input); }
     public function delete_logs($input) { return $this->adminServices->deleteLogs($input); }
+    
+    // --- NUEVAS ACCIONES PARA TAGS ---
+    public function get_tags() { return $this->adminServices->getTags(); }
+    public function create_tag($input) { return $this->adminServices->createTag($input); }
+    public function update_tag($input) { return $this->adminServices->updateTag($input); }
+    public function delete_tag($input) { return $this->adminServices->deleteTag($input); }
 }
 ?>

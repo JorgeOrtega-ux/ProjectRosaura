@@ -13,6 +13,7 @@ use App\Core\Interfaces\ServerConfigRepositoryInterface;
 use App\Core\Interfaces\UserPrefsManagerInterface;
 use App\Core\Interfaces\TokenRepositoryInterface;
 use App\Core\Interfaces\RateLimiterInterface;
+use App\Core\Interfaces\TagRepositoryInterface; /* NUEVO */
 
 class AdminServices {
     private $userRepository;
@@ -23,6 +24,7 @@ class AdminServices {
     private $prefsManager;
     private $tokenRepository;
     private $rateLimiter;
+    private $tagRepository; /* NUEVO */
 
     public function __construct(
         UserRepositoryInterface $userRepository,
@@ -31,7 +33,8 @@ class AdminServices {
         ServerConfigRepositoryInterface $configRepository,
         UserPrefsManagerInterface $prefsManager,
         TokenRepositoryInterface $tokenRepository,
-        RateLimiterInterface $rateLimiter
+        RateLimiterInterface $rateLimiter,
+        TagRepositoryInterface $tagRepository /* NUEVO */
     ) {
         $this->userRepository = $userRepository;
         $this->moderationRepository = $moderationRepository;
@@ -41,6 +44,7 @@ class AdminServices {
         $this->prefsManager = $prefsManager;
         $this->tokenRepository = $tokenRepository;
         $this->rateLimiter = $rateLimiter;
+        $this->tagRepository = $tagRepository; /* NUEVO */
     }
 
     private function checkAdmin() {
@@ -735,8 +739,6 @@ class AdminServices {
             
             $redis->expire($jobKey, 3600);
 
-            // === ACTIVAMOS EL CANDADO DE RESTAURACIÓN DE FORMA GLOBAL ===
-            // TTL de 15 MIN (900 seg) como seguridad en caso de que el worker muera sin borrarlo
             $redis->setex('system_status:restoring', 900, '1');
 
             $redis->rpush('backup_queue', [json_encode([
@@ -793,7 +795,6 @@ class AdminServices {
         $files = $data['files'] ?? [];
         if (!is_array($files) || empty($files)) return ['success' => false, 'message' => 'No se especificaron archivos.'];
         
-        // MODIFICACIÓN: Reducido de 50 a 10 archivos máximos
         if (count($files) > 10) return ['success' => false, 'message' => 'Máximo 10 archivos a la vez.'];
 
         $contents = [];
@@ -803,15 +804,12 @@ class AdminServices {
             $filename = base64_decode($encodedFile);
             $filepath = realpath($logBaseDir . '/' . $filename);
             
-            // CORRECCIÓN: Prevención estricta de Path Traversal concatenando el separador de directorios
             if ($filepath && strpos($filepath, $logBaseDir . DIRECTORY_SEPARATOR) === 0 && file_exists($filepath) && !is_dir($filepath)) {
                 
-                // CORRECCIÓN: Prevención de DoS por agotamiento de memoria
-                $maxBytes = 2 * 1024 * 1024; // Límite de 2 MB por archivo
+                $maxBytes = 2 * 1024 * 1024;
                 $filesize = filesize($filepath);
                 
                 if ($filesize > $maxBytes) {
-                    // Solo leemos los últimos 2MB del archivo
                     $content = file_get_contents($filepath, false, null, $filesize - $maxBytes, $maxBytes);
                     $content = "[ALERTA DE SISTEMA: El archivo original es demasiado grande (" . round($filesize / 1048576, 2) . " MB). Mostrando únicamente los últimos 2 MB para prevenir la caída del servidor.]\n\n" . $content;
                 } else {
@@ -819,14 +817,12 @@ class AdminServices {
                 }
 
                 $contents[$encodedFile] = [
-                    // CORRECCIÓN: Sanitización de variables para prevenir Stored XSS en el frontend
                     'filename' => htmlspecialchars(basename($filepath), ENT_QUOTES, 'UTF-8'),
                     'category' => htmlspecialchars(basename(dirname($filepath)), ENT_QUOTES, 'UTF-8'),
                     'content' => $content
                 ];
             } else {
                 $contents[$encodedFile] = [
-                    // CORRECCIÓN: Sanitización de nombre devuelto en el error
                     'filename' => htmlspecialchars($filename, ENT_QUOTES, 'UTF-8'),
                     'error' => 'Archivo no encontrado o acceso denegado.'
                 ];
@@ -850,7 +846,6 @@ class AdminServices {
         $files = $data['files'] ?? [];
         if (!is_array($files) || empty($files)) return ['success' => false, 'message' => 'No se especificaron archivos.'];
         
-        // MODIFICACIÓN: Reducido de 50 a 10 archivos máximos
         if (count($files) > 10) return ['success' => false, 'message' => 'Solo puedes eliminar hasta 10 archivos a la vez.'];
         
         $logBaseDir = realpath(ROOT_PATH . '/logs/');
@@ -860,7 +855,6 @@ class AdminServices {
             $filename = base64_decode($encodedFile);
             $filepath = realpath($logBaseDir . '/' . $filename);
             
-            // CORRECCIÓN: Prevención estricta de Path Traversal
             if ($filepath && strpos($filepath, $logBaseDir . DIRECTORY_SEPARATOR) === 0 && file_exists($filepath) && !is_dir($filepath)) {
                 unlink($filepath);
                 $deleted++;
@@ -869,6 +863,74 @@ class AdminServices {
         
         Logger::security("Admin ID: {$currentUserId} eliminó {$deleted} archivos de log de forma masiva.", 'info');
         return ['success' => true, 'message' => "Se eliminaron {$deleted} archivos correctamente."];
+    }
+    
+    // --- NUEVAS FUNCIONES DE TAGS ---
+
+    public function getTags() {
+        if (!$this->checkAdmin()) return ['success' => false, 'message' => 'No autorizado.'];
+        $tags = $this->tagRepository->getAll();
+        return ['success' => true, 'tags' => $tags];
+    }
+
+    public function createTag($data) {
+        if (!$this->checkAdmin()) return ['success' => false, 'message' => 'No autorizado.'];
+        
+        $name = trim($data['name'] ?? '');
+        $type = $data['type'] ?? '';
+        
+        if (empty($name) || !in_array($type, ['actor', 'category'])) {
+            return ['success' => false, 'message' => 'Datos inválidos.'];
+        }
+
+        $existing = $this->tagRepository->findByName($name);
+        if ($existing) {
+            return ['success' => false, 'message' => 'La etiqueta ya existe.'];
+        }
+
+        if ($this->tagRepository->create($name, $type)) {
+            $currentUserId = $this->sessionManager->get('user_id');
+            Logger::security("Admin ID: {$currentUserId} creó la etiqueta/categoría: {$name}", 'info');
+            return ['success' => true, 'message' => 'Etiqueta creada exitosamente.'];
+        }
+        
+        return ['success' => false, 'message' => 'Error al crear la etiqueta.'];
+    }
+
+    public function updateTag($data) {
+        if (!$this->checkAdmin()) return ['success' => false, 'message' => 'No autorizado.'];
+        
+        $id = (int)($data['id'] ?? 0);
+        $name = trim($data['name'] ?? '');
+        $type = $data['type'] ?? '';
+        
+        if ($id <= 0 || empty($name) || !in_array($type, ['actor', 'category'])) {
+            return ['success' => false, 'message' => 'Datos inválidos.'];
+        }
+
+        $existing = $this->tagRepository->findByName($name);
+        if ($existing && $existing['id'] != $id) {
+            return ['success' => false, 'message' => 'El nombre de etiqueta ya está en uso.'];
+        }
+
+        if ($this->tagRepository->update($id, $name, $type)) {
+            return ['success' => true, 'message' => 'Etiqueta actualizada exitosamente.'];
+        }
+        
+        return ['success' => false, 'message' => 'Error al actualizar la etiqueta.'];
+    }
+
+    public function deleteTag($data) {
+        if (!$this->checkAdmin()) return ['success' => false, 'message' => 'No autorizado.'];
+        
+        $id = (int)($data['id'] ?? 0);
+        if ($id <= 0) return ['success' => false, 'message' => 'ID inválido.'];
+
+        if ($this->tagRepository->delete($id)) {
+            return ['success' => true, 'message' => 'Etiqueta eliminada.'];
+        }
+        
+        return ['success' => false, 'message' => 'Error al eliminar la etiqueta.'];
     }
 }
 ?>

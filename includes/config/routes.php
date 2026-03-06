@@ -36,7 +36,7 @@ return [
     // --- RUTAS DE STUDIO ---
     '/studio' => ['view' => 'studio/index.php', 'auth' => true],
     '/studio/upload' => ['view' => 'studio/upload-video.php', 'auth' => true],
-    '/studio/uploading' => ['view' => 'studio/uploading.php', 'auth' => true], /* NUEVA RUTA */
+    '/studio/uploading' => ['view' => 'studio/uploading.php', 'auth' => true],
     '/studio/management-panel/{uuid}' => ['view' => 'studio/management-panel.php', 'auth' => true],
     '/studio/manage-content/{uuid}' => ['view' => 'studio/manage-content.php', 'auth' => true],
 
@@ -51,6 +51,7 @@ return [
     '/admin/backups/automation' => ['view' => 'admin/backups-automation.php', 'auth' => true, 'roles' => ['founder', 'administrator'], 'requires_2fa' => true],
     '/admin/server-config' => ['view' => 'admin/server-config.php', 'auth' => true, 'roles' => ['founder', 'administrator'], 'requires_2fa' => true],
     '/admin/logs' => ['view' => 'admin/logs.php', 'auth' => true, 'roles' => ['founder', 'administrator'], 'requires_2fa' => true],
-    '/admin/logs/viewer' => ['view' => 'admin/logs-viewer.php', 'auth' => true, 'roles' => ['founder', 'administrator'], 'requires_2fa' => true]
+    '/admin/logs/viewer' => ['view' => 'admin/logs-viewer.php', 'auth' => true, 'roles' => ['founder', 'administrator'], 'requires_2fa' => true],
+    '/admin/tags' => ['view' => 'admin/tags.php', 'auth' => true, 'roles' => ['founder', 'administrator'], 'requires_2fa' => true] /* NUEVA RUTA DE TAGS */
 ];
 ?>
