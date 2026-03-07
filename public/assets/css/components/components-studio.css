@@ -413,4 +413,76 @@
     .component-thumbnail-grid {
         grid-template-columns: repeat(3, 1fr); 
     }
+}/* ==========================================================================
+   Estilos del Sistema de Etiquetas (Tags) y Buscador
+   ========================================================================== */
+
+/* Ajustes para el menú desplegable del buscador */
+.component-menu[id$="SelectorMenu"] {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    border: 1px solid var(--border-color);
+    margin-top: 8px;
+    border-radius: 8px;
+}
+
+/* Opciones dentro del buscador */
+.tag-option-link {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.tag-option-link:hover {
+    background-color: var(--border-color);
+}
+
+/* Píldoras (Pills) de los tags seleccionados */
+.tag-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background-color: var(--background-secondary, #2a2a2a);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 6px 12px;
+    font-size: 13px;
+    color: var(--text-primary);
+    transition: background-color 0.2s;
+    user-select: none;
+}
+
+.tag-pill:hover {
+    background-color: var(--border-color);
+}
+
+.tag-pill-text {
+    font-weight: 500;
+}
+
+.tag-pill-remove {
+    font-size: 16px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    border-radius: 50%;
+    transition: color 0.2s, background-color 0.2s;
+    padding: 2px;
+    margin-right: -4px; /* Ajuste visual para alinear con el borde redondeado */
+}
+
+.tag-pill-remove:hover {
+    color: var(--text-primary);
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Modo oscuro para los botones (si usas variables) */
+@media (prefers-color-scheme: dark) {
+    .tag-pill {
+        background-color: #1a1a1a;
+        border-color: #333;
+    }
+    .tag-pill:hover {
+        background-color: #333;
+    }
+    .tag-pill-remove:hover {
+        background-color: rgba(255, 255, 255, 0.2);
+    }
 }

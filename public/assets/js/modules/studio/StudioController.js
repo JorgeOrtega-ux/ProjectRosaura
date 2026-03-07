@@ -16,23 +16,16 @@ class StudioWebSocketManager {
         window.addEventListener('viewLoaded', this.handleRouteUpdate.bind(this));
     }
 
-    getAuthToken() {
-        return 'mi_token_super_secreto_y_seguro_2026'; 
-    }
+    getAuthToken() { return 'mi_token_super_secreto_y_seguro_2026'; }
 
     getUserId() {
         if (window.AppRouteTitles) {
             const routes = Object.keys(window.AppRouteTitles);
             const panelRoute = routes.find(r => r.startsWith('/studio/management-panel/'));
-            
-            if (panelRoute) {
-                return panelRoute.replace('/studio/management-panel/', '');
-            }
+            if (panelRoute) return panelRoute.replace('/studio/management-panel/', '');
         }
-        
         const match = window.location.pathname.match(/\/studio\/(?:manage-content|management-panel|edit)\/([a-f0-9\-]{36})/);
         if (match) return match[1];
-        
         return '0';
     }
 
@@ -40,79 +33,42 @@ class StudioWebSocketManager {
         return Math.random().toString(16).substring(2, 10) + Math.random().toString(16).substring(2, 10);
     }
 
-    onMessage(type, callback) {
-        this.callbacks[type] = callback;
-    }
+    onMessage(type, callback) { this.callbacks[type] = callback; }
 
     connect() {
-        if (this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) {
-            return;
-        }
-
+        if (this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) return;
         this.isConnecting = true;
-        
         try {
             this.ws = new WebSocket(this.wsUrl);
-
             this.ws.onopen = () => {
                 this.isConnecting = false;
-                
-                const authPayload = {
-                    type: "auth",
-                    token: this.getAuthToken(),
-                    userId: this.getUserId(),
-                    requestId: this.generateRequestId()
-                };
-                
+                const authPayload = { type: "auth", token: this.getAuthToken(), userId: this.getUserId(), requestId: this.generateRequestId() };
                 this.ws.send(JSON.stringify(authPayload));
             };
-
             this.ws.onmessage = (event) => {
                 try {
                     const data = JSON.parse(event.data);
-                    
                     if (data.status === "error" && (data.code === "AUTH_FAILED" || data.code === "AUTH_TIMEOUT")) {
-                        this.disconnect();
-                        return;
+                        this.disconnect(); return;
                     }
-
                     if (data.type === 'progress' || data.type === 'completed' || data.type === 'failed') {
-                        if (this.callbacks['progressUpdate']) {
-                            this.callbacks['progressUpdate'](data);
-                        }
+                        if (this.callbacks['progressUpdate']) this.callbacks['progressUpdate'](data);
                     }
-                } catch (error) {
-                    console.error('[WS] Error parseando mensaje', error);
-                }
+                } catch (error) { console.error('[WS] Error parseando mensaje', error); }
             };
-
-            this.ws.onclose = () => {
-                this.isConnecting = false;
-                this.ws = null;
-            };
-
-            this.ws.onerror = () => {
-                this.isConnecting = false;
-            };
-        } catch (error) {
-            console.error('[WS] Error iniciando conexión', error);
-        }
+            this.ws.onclose = () => { this.isConnecting = false; this.ws = null; };
+            this.ws.onerror = () => { this.isConnecting = false; };
+        } catch (error) { console.error('[WS] Error iniciando conexión', error); }
     }
 
     disconnect() {
-        if (this.ws) {
-            this.ws.close(1000, "Navegación fuera de Studio");
-            this.ws = null;
-        }
+        if (this.ws) { this.ws.close(1000, "Navegación fuera de Studio"); this.ws = null; }
     }
 
     handleRouteUpdate(event) {
         const { cleanUrl } = event.detail;
-        if (!cleanUrl.includes('/studio')) {
-            this.disconnect();
-        } else {
-            this.connect();
-        }
+        if (!cleanUrl.includes('/studio')) this.disconnect();
+        else this.connect();
     }
 }
 
@@ -132,6 +88,10 @@ export class StudioController {
         
         this.selectedVideoId = null;
         this.selectedManageVideoId = null; 
+
+        // --- SISTEMA DE TAGS ---
+        this.selectedModels = [];
+        this.selectedCategories = [];
         
         this.init();
     }
@@ -141,21 +101,15 @@ export class StudioController {
         this.manager.onMessage('progressUpdate', this.handleWsProgress.bind(this));
         
         const path = window.location.pathname;
-        if (path.includes('/studio/uploading')) {
-            this.initUploadingView();
-        } else if (path.includes('/studio/upload')) {
-            this.initUploadView();
-        } else if (path.includes('/studio/manage-content')) {
-            this.initManageContentView();
-        } else if (path.includes('/studio/edit/')) {
-            this.initEditView(); 
-        }
+        if (path.includes('/studio/uploading')) this.initUploadingView();
+        else if (path.includes('/studio/upload')) this.initUploadView();
+        else if (path.includes('/studio/manage-content')) this.initManageContentView();
+        else if (path.includes('/studio/edit/')) this.initEditView(); 
 
         this.attachEvents();
     }
 
-    initUploadView() {
-    }
+    initUploadView() {}
 
     async initManageContentView() {
         const routeName = ApiRoutes.Studio?.GetAllVideos || 'studio.get_all_videos';
@@ -172,7 +126,6 @@ export class StudioController {
                 if (template) tbody.innerHTML = template.innerHTML;
                 return;
             }
-            
             tbody.innerHTML = '';
             this.currentVideos.clear();
             
@@ -189,7 +142,6 @@ export class StudioController {
     createVideoRow(video) {
         const tr = document.createElement('tr');
         tr.id = `video-row-${video.id}`;
-        
         tr.onclick = () => this.selectManageContentVideo(video.id);
 
         let statusBadge = '';
@@ -205,25 +157,16 @@ export class StudioController {
         let thumbUrl = video.thumbnail_path ? video.thumbnail_path : '';
         if (thumbUrl && !thumbUrl.startsWith('http')) {
             let base = window.AppBasePath || '';
-            if (!base.startsWith('http')) {
-                base = window.location.origin + (base.startsWith('/') ? '' : '/') + base;
-            }
+            if (!base.startsWith('http')) base = window.location.origin + (base.startsWith('/') ? '' : '/') + base;
             if (base.endsWith('/')) base = base.slice(0, -1);
-            
             let cleanPath = thumbUrl.replace(/^\//, '');
             let baseNoSlash = (window.AppBasePath || '').replace(/^\//, '');
-            if (baseNoSlash && cleanPath.startsWith(baseNoSlash + '/')) {
-                cleanPath = cleanPath.substring(baseNoSlash.length + 1);
-            }
-
+            if (baseNoSlash && cleanPath.startsWith(baseNoSlash + '/')) cleanPath = cleanPath.substring(baseNoSlash.length + 1);
             if (!cleanPath.startsWith('public/')) cleanPath = 'public/' + cleanPath;
             thumbUrl = base + '/' + cleanPath;
         }
         
-        const thumbHtml = thumbUrl 
-            ? `<img src="${thumbUrl}" class="table-video-thumb" alt="Miniatura">` 
-            : `<div class="table-video-thumb empty"><span class="material-symbols-rounded">video_file</span></div>`;
-            
+        const thumbHtml = thumbUrl ? `<img src="${thumbUrl}" class="table-video-thumb" alt="Miniatura">` : `<div class="table-video-thumb empty"><span class="material-symbols-rounded">video_file</span></div>`;
         const title = video.title || video.original_filename || 'Sin título';
         const date = video.created_at ? new Date(video.created_at).toLocaleDateString() : '-';
 
@@ -244,17 +187,12 @@ export class StudioController {
             <td>0</td>
             <td>0</td>
         `;
-        
         return tr;
     }
 
     selectManageContentVideo(id) {
         this.selectedManageVideoId = id;
-        
-        document.querySelectorAll('#manageContentTableBody tr').forEach(row => {
-            row.classList.remove('component-table-row--selected');
-        });
-        
+        document.querySelectorAll('#manageContentTableBody tr').forEach(row => row.classList.remove('component-table-row--selected'));
         const row = document.getElementById(`video-row-${id}`);
         if (row) row.classList.add('component-table-row--selected');
 
@@ -262,13 +200,11 @@ export class StudioController {
         if (editBtn) {
             editBtn.removeAttribute('disabled');
             editBtn.classList.remove('disabled');
-            
             editBtn.onclick = () => {
                 const video = this.currentVideos.get(String(id));
                 if (video) {
-                    if (video.status === 'processing' || video.status === 'queued') {
-                        window.dispatchEvent(new CustomEvent('routeChange', { detail: { url: '/studio/uploading' }}));
-                    } else {
+                    if (video.status === 'processing' || video.status === 'queued') window.dispatchEvent(new CustomEvent('routeChange', { detail: { url: '/studio/uploading' }}));
+                    else {
                         let base = window.AppBasePath || '';
                         let userUuid = this.manager.getUserId();
                         window.dispatchEvent(new CustomEvent('routeChange', { detail: { url: `${base}/studio/edit/${userUuid}/${video.uuid}` }}));
@@ -280,28 +216,19 @@ export class StudioController {
 
     async handleFilesSelection(files) {
         if (!files || files.length === 0) return;
-
         const routeName = ApiRoutes.Studio?.UploadVideo || 'studio.upload_video';
-
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
             try {
-                const preCheckRes = await this.api.post(routeName, {
-                    pre_check: true,
-                    total_size: file.size
-                });
-                
+                const preCheckRes = await this.api.post(routeName, { pre_check: true, total_size: file.size });
                 if (preCheckRes.status !== 'success') {
                     alert(`No se puede subir "${file.name}": ${preCheckRes.message}`);
                     return; 
                 }
             } catch (error) {
-                console.error(error);
-                alert(`Error verificando permisos para "${file.name}".`);
-                return;
+                console.error(error); alert(`Error verificando permisos para "${file.name}".`); return;
             }
         }
-
         const uploadProgressContainer = document.getElementById('uploadProgressContainer');
         const uploadProgressBar = document.getElementById('uploadProgressBar');
         if(uploadProgressContainer) uploadProgressContainer.style.display = 'block';
@@ -310,46 +237,26 @@ export class StudioController {
             const file = files[i];
             try {
                 const result = await this.api.uploadFileInChunks(
-                    routeName, 
-                    file, 
-                    'video', 
-                    { total_size: file.size },
-                    (percent) => {
-                        if(uploadProgressBar) uploadProgressBar.style.width = `${percent}%`;
-                    }
+                    routeName, file, 'video', { total_size: file.size },
+                    (percent) => { if(uploadProgressBar) uploadProgressBar.style.width = `${percent}%`; }
                 );
-                
-                if (result.status !== 'success') {
-                    alert(`Error subiendo ${file.name}: ${result.message}`);
-                }
-            } catch (error) {
-                console.error(error);
-            }
+                if (result.status !== 'success') alert(`Error subiendo ${file.name}: ${result.message}`);
+            } catch (error) { console.error(error); }
         }
-
         window.dispatchEvent(new CustomEvent('routeChange', { detail: { url: '/studio/uploading' }}));
     }
 
     async initUploadingView() {
         const routeName = ApiRoutes.Studio?.GetActiveUploads || 'studio.get_active_uploads';
         const response = await this.api.post(routeName);
-        
         if (response.status === 'success') {
             const videos = response.data;
             if (videos.length === 0) {
                 window.dispatchEvent(new CustomEvent('routeChange', { detail: { url: '/studio/upload' }}));
                 return;
             }
-
             this.currentVideos.clear();
-
-            videos.forEach(v => {
-                this.currentVideos.set(String(v.id), {
-                    ...v,
-                    id: String(v.id)
-                });
-            });
-
+            videos.forEach(v => { this.currentVideos.set(String(v.id), { ...v, id: String(v.id) }); });
             this.renderBadges();
             this.selectVideo(String(videos[0].id));
         }
@@ -375,6 +282,19 @@ export class StudioController {
             if (descInput) descInput.value = video.description || '';
             
             this.updateThumbnailPreview(video.thumbnail_path);
+
+            // --- CARGAR TAGS EXISTENTES ---
+            this.selectedModels = [];
+            this.selectedCategories = [];
+            if (video.tags && Array.isArray(video.tags)) {
+                video.tags.forEach(tag => {
+                    if (tag.type === 'modelo') this.selectedModels.push(tag);
+                    else if (tag.type === 'category') this.selectedCategories.push(tag);
+                });
+            }
+            this.renderSelectedTags('modelo');
+            this.renderSelectedTags('category');
+            // ------------------------------
             
             const btnSave = document.getElementById('btnSaveChanges');
             if (btnSave) {
@@ -392,61 +312,44 @@ export class StudioController {
                         return;
                     }
 
-                    console.log('[FRONTEND DEBUG] Iniciando guardado de cambios. Video ID:', this.selectedVideoId);
+                    // Arrays de Tags Listos
+                    const modelsIds = this.selectedModels.map(t => parseInt(t.id));
+                    const categoriesIds = this.selectedCategories.map(t => parseInt(t.id));
 
-                    // 1. Guardar Título y Descripción
                     let hasError = false;
                     const updateRoute = ApiRoutes.Studio?.UpdateTitle || 'studio.update_title';
                     const updateRes = await this.api.post(updateRoute, {
                         video_id: this.selectedVideoId,
                         title: newTitle,
-                        description: newDesc
+                        description: newDesc,
+                        models: modelsIds,
+                        categories: categoriesIds
                     });
 
                     if (updateRes.status === 'success') {
                         video.title = newTitle;
                         video.description = newDesc;
-                        console.log('[FRONTEND DEBUG] Título y descripción actualizados con éxito.');
                     } else {
-                        console.error('[FRONTEND DEBUG] Error al actualizar título:', updateRes.message);
                         alert("Error guardando datos: " + updateRes.message);
                         hasError = true;
                     }
 
-                    // 2. Guardar Miniatura (Si el usuario la cambió durante esta edición)
                     if (!hasError && video.draftThumbnailType) {
-                        console.log('[FRONTEND DEBUG] Nueva miniatura detectada. Tipo:', video.draftThumbnailType);
-                        
                         const formData = new FormData();
                         formData.append('video_id', this.selectedVideoId);
 
-                        if (video.draftThumbnailType === 'file') {
-                            formData.append('thumbnail', video.draftThumbnailData);
-                            console.log('[FRONTEND DEBUG] Preparando subida de archivo de miniatura.');
-                        } else if (video.draftThumbnailType === 'generated') {
-                            formData.append('generated_path', video.draftThumbnailData);
-                            console.log('[FRONTEND DEBUG] Preparando asignación de miniatura generada:', video.draftThumbnailData);
-                        }
+                        if (video.draftThumbnailType === 'file') formData.append('thumbnail', video.draftThumbnailData);
+                        else if (video.draftThumbnailType === 'generated') formData.append('generated_path', video.draftThumbnailData);
 
                         const thumbRoute = ApiRoutes.Studio?.UploadThumbnail || 'studio.upload_thumbnail';
                         try {
                             const thumbRes = await this.api.postForm(thumbRoute, formData);
-                            console.log('[FRONTEND DEBUG] Respuesta del backend al procesar miniatura:', thumbRes);
-                            
                             if (thumbRes.status === 'success') {
-                                video.draftThumbnailType = null; // Reiniciar estado
-                                if (thumbRes.data && thumbRes.data.thumbnail_dominant_color) {
-                                    console.log('[FRONTEND DEBUG] ¡ÉXITO! Color dominante guardado en BD:', thumbRes.data.thumbnail_dominant_color);
-                                }
+                                video.draftThumbnailType = null;
                             } else {
-                                console.error('[FRONTEND DEBUG] Error del backend al guardar la miniatura:', thumbRes.message);
-                                alert("Los textos se guardaron, pero hubo un error con la miniatura: " + thumbRes.message);
+                                alert("Textos guardados, pero error con la miniatura: " + thumbRes.message);
                             }
-                        } catch (error) {
-                            console.error('[FRONTEND DEBUG] Excepción de red al enviar la miniatura:', error);
-                        }
-                    } else if (!hasError) {
-                         console.log('[FRONTEND DEBUG] No se detectaron cambios en la miniatura durante esta edición.');
+                        } catch (error) { console.error(error); }
                     }
                     
                     if(!hasError) alert('Los cambios se han guardado con éxito.');
@@ -463,23 +366,18 @@ export class StudioController {
     renderBadges() {
         const container = document.getElementById('badgesContainer');
         if (!container) return;
-        
         container.innerHTML = '';
         this.currentVideos.forEach(video => {
             const badge = document.createElement('div');
             badge.className = `studio-badge ${this.selectedVideoId === video.id ? 'active' : ''}`;
             badge.setAttribute('data-id', video.id);
-            
             badge.onclick = () => this.selectVideo(String(video.id));
 
             let statusText = video.status === 'queued' ? 'En cola' : 
                              video.status === 'processing' ? `${video.processing_progress}%` : 
                              video.status === 'processed' ? '100% OK' : 'Error';
 
-            badge.innerHTML = `
-                <span class="name">${video.original_filename}</span>
-                <span class="status" id="badge-status-${video.id}">${statusText}</span>
-            `;
+            badge.innerHTML = `<span class="name">${video.original_filename}</span><span class="status" id="badge-status-${video.id}">${statusText}</span>`;
             container.appendChild(badge);
         });
     }
@@ -517,18 +415,127 @@ export class StudioController {
         }
 
         const thumbGrid = document.getElementById('generatedThumbnailsContainer');
-        if(thumbGrid) {
-            thumbGrid.innerHTML = '';
-            thumbGrid.style.display = 'none';
+        if(thumbGrid) { thumbGrid.innerHTML = ''; thumbGrid.style.display = 'none'; }
+
+        // --- RESET TAGS ---
+        this.selectedModels = [];
+        this.selectedCategories = [];
+        if (video.tags && Array.isArray(video.tags)) {
+            video.tags.forEach(tag => {
+                if (tag.type === 'modelo') this.selectedModels.push(tag);
+                else if (tag.type === 'category') this.selectedCategories.push(tag);
+            });
         }
+        this.renderSelectedTags('modelo');
+        this.renderSelectedTags('category');
 
         this.validatePublishButton();
     }
 
+    // --- LÓGICA DE ETIQUETAS Y BÚSQUEDA ---
+    async toggleTagsMenu(menu, type) {
+        if (menu.style.display === 'flex') {
+            menu.style.display = 'none';
+            return;
+        }
+
+        document.querySelectorAll('.component-menu[id$="SelectorMenu"]').forEach(m => m.style.display = 'none');
+        
+        menu.style.display = 'flex';
+        const list = menu.querySelector('.tag-results-list');
+        list.innerHTML = '<div style="padding: 16px; text-align: center; color: var(--text-secondary);"><span class="material-symbols-rounded">sync</span> Cargando...</div>';
+
+        try {
+            const res = type === 'modelo' ? await this.api.fetchModels() : await this.api.fetchCategories();
+            
+            if (res.status === 'success') {
+                list.innerHTML = '';
+                const currentSelection = type === 'modelo' ? this.selectedModels : this.selectedCategories;
+                const currentIds = currentSelection.map(t => parseInt(t.id));
+
+                if (res.data.length === 0) {
+                    list.innerHTML = '<div style="padding: 16px; text-align: center; color: var(--text-secondary); font-size: 13px;">No hay opciones registradas en el sistema.</div>';
+                    return;
+                }
+
+                res.data.forEach(tag => {
+                    if (currentIds.includes(parseInt(tag.id))) return; // Ocultar si ya está seleccionado
+
+                    const item = document.createElement('div');
+                    item.className = 'component-menu-link tag-option-link';
+                    item.setAttribute('data-id', tag.id);
+                    item.setAttribute('data-name', tag.name);
+                    item.setAttribute('data-type', tag.type);
+
+                    let icon = tag.type === 'modelo' ? 'person' : 'category';
+                    item.innerHTML = `
+                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">${icon}</span></div>
+                        <div class="component-menu-link-text"><span>${tag.name}</span></div>
+                    `;
+                    list.appendChild(item);
+                });
+            } else {
+                list.innerHTML = `<div style="padding: 16px; color: red;">Error: ${res.message}</div>`;
+            }
+        } catch (error) {
+            list.innerHTML = '<div style="padding: 16px; color: red;">Error de red</div>';
+        }
+    }
+
+    addTag(id, name, type) {
+        const arr = type === 'modelo' ? this.selectedModels : this.selectedCategories;
+        if (!arr.find(t => parseInt(t.id) === parseInt(id))) {
+            arr.push({ id, name, type });
+            this.renderSelectedTags(type);
+            
+            // Eliminar de la lista visible para no volver a seleccionar
+            const menuId = type === 'modelo' ? 'modelsSelectorMenu' : 'categoriesSelectorMenu';
+            const option = document.querySelector(`#${menuId} .tag-option-link[data-id="${id}"]`);
+            if (option) option.remove();
+            
+            this.validatePublishButton();
+        }
+    }
+
+    removeTag(id, type) {
+        if (type === 'modelo') {
+            this.selectedModels = this.selectedModels.filter(t => parseInt(t.id) !== parseInt(id));
+        } else {
+            this.selectedCategories = this.selectedCategories.filter(t => parseInt(t.id) !== parseInt(id));
+        }
+        this.renderSelectedTags(type);
+        this.validatePublishButton();
+    }
+
+    renderSelectedTags(type) {
+        const arr = type === 'modelo' ? this.selectedModels : this.selectedCategories;
+        const containerId = type === 'modelo' ? 'selectedModelsContainer' : 'selectedCategoriesContainer';
+        const hiddenId = type === 'modelo' ? 'hiddenModelsArray' : 'hiddenCategoriesArray';
+
+        const container = document.getElementById(containerId);
+        const hiddenInput = document.getElementById(hiddenId);
+
+        if (!container || !hiddenInput) return;
+
+        container.innerHTML = '';
+        arr.forEach(tag => {
+            const pill = document.createElement('div');
+            pill.className = 'tag-pill';
+            pill.innerHTML = `
+                <span class="tag-pill-text">${tag.name}</span>
+                <span class="material-symbols-rounded tag-pill-remove" data-id="${tag.id}" data-type="${type}">close</span>
+            `;
+            container.appendChild(pill);
+        });
+
+        // Actualizamos los inputs ocultos para que sean fácilmente serializables
+        hiddenInput.value = JSON.stringify(arr.map(t => parseInt(t.id)));
+    }
+    // ----------------------------------------
+
     async generateThumbnails() {
         if (!this.selectedVideoId) return;
         const videoData = this.currentVideos.get(this.selectedVideoId);
-        
         if (!videoData || (videoData.status !== 'processed' && videoData.status !== 'published')) {
             alert("El video debe terminar de procesarse al 100% para poder generar sus miniaturas.");
             return;
@@ -545,14 +552,9 @@ export class StudioController {
 
         try {
             await new Promise(r => setTimeout(r, 600));
-
             const uuid = videoData.uuid;
-            
-            // Fix para garantizar base url absoluta
             let baseUrl = window.AppBasePath || '';
-            if (!baseUrl.startsWith('http')) {
-                baseUrl = window.location.origin + (baseUrl.startsWith('/') ? '' : '/') + baseUrl;
-            }
+            if (!baseUrl.startsWith('http')) baseUrl = window.location.origin + (baseUrl.startsWith('/') ? '' : '/') + baseUrl;
             if (baseUrl.endsWith('/')) baseUrl = baseUrl.slice(0, -1);
 
             for (let i = 1; i <= 6; i++) {
@@ -562,24 +564,18 @@ export class StudioController {
                 const item = document.createElement('div');
                 item.className = 'component-thumbnail-item';
                 item.innerHTML = `<img src="${thumbUrl}" alt="Opción ${i}" onerror="this.parentElement.style.display='none'">`;
-                
                 item.onclick = () => this.selectGeneratedThumbnail(item, thumbUrl, relativePath);
                 grid.appendChild(item);
             }
 
         } catch (error) {
-            console.error(error);
-            alert("Error al cargar las miniaturas.");
-            grid.style.display = 'none';
+            console.error(error); alert("Error al cargar las miniaturas."); grid.style.display = 'none';
         } finally {
-            btn.innerHTML = originalBtnText;
-            btn.disabled = false;
+            btn.innerHTML = originalBtnText; btn.disabled = false;
         }
     }
 
     async selectGeneratedThumbnail(itemElement, fullUrl, relativePath) {
-        console.log('[FRONTEND DEBUG] Usuario seleccionó miniatura autogenerada:', relativePath);
-        
         document.querySelectorAll('.component-thumbnail-item').forEach(el => el.classList.remove('component-thumbnail-selected'));
         itemElement.classList.add('component-thumbnail-selected');
         
@@ -591,7 +587,6 @@ export class StudioController {
             video.draftThumbnailType = 'generated';
             video.draftThumbnailData = relativePath;
             video.draftThumbnailPreview = fullUrl;
-            
             this.updateThumbnailPreview(fullUrl);
             this.validatePublishButton();
         }
@@ -606,34 +601,22 @@ export class StudioController {
             let isBlob = finalUrl.startsWith('blob:') || finalUrl.startsWith('data:');
             
             if (!isBlob && !finalUrl.startsWith('http')) {
-                // Fix evitar duplicidad asegurando rutas absolutas y limpiando base de la ruta
                 let base = window.AppBasePath || '';
-                if (!base.startsWith('http')) {
-                    base = window.location.origin + (base.startsWith('/') ? '' : '/') + base;
-                }
+                if (!base.startsWith('http')) base = window.location.origin + (base.startsWith('/') ? '' : '/') + base;
                 if (base.endsWith('/')) base = base.slice(0, -1);
-
                 let cleanPath = thumbnailPath.replace(/^\//, '');
-                
                 let baseNoSlash = (window.AppBasePath || '').replace(/^\//, '');
-                if (baseNoSlash && cleanPath.startsWith(baseNoSlash + '/')) {
-                    cleanPath = cleanPath.substring(baseNoSlash.length + 1);
-                }
-
-                if (!cleanPath.startsWith('public/')) {
-                    cleanPath = 'public/' + cleanPath;
-                }
+                if (baseNoSlash && cleanPath.startsWith(baseNoSlash + '/')) cleanPath = cleanPath.substring(baseNoSlash.length + 1);
+                if (!cleanPath.startsWith('public/')) cleanPath = 'public/' + cleanPath;
                 finalUrl = base + '/' + cleanPath;
             }
 
-            // Eliminar cb residual si quedó atrapado en el estado
             if (finalUrl.includes('?cb=')) finalUrl = finalUrl.split('?cb=')[0];
 
             container.style.backgroundImage = 'none';
             container.style.backgroundColor = 'transparent';
             container.style.position = 'relative';
             
-            // Asignamos imagen inmediata (sin parámetros en la URL)
             container.innerHTML = `
                 <img id="dynamicThumbPreview" src="${finalUrl}" 
                      alt="Miniatura" 
@@ -642,7 +625,6 @@ export class StudioController {
                 <span class="material-symbols-rounded" style="color: white; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 48px; z-index: 2; text-shadow: 0 2px 5px rgba(0,0,0,0.7);">play_circle</span>
             `;
 
-            // Bypass de caché "silencioso": usamos Fetch para forzar recarga en vez de ensuciar la URL con ?cb=
             if (!isBlob && !finalUrl.includes('/generated/')) {
                 const fetchImage = async (url) => {
                     try {
@@ -650,14 +632,11 @@ export class StudioController {
                         if (response.ok) {
                             const blob = await response.blob();
                             const img = document.getElementById('dynamicThumbPreview');
-                            if (img) img.src = URL.createObjectURL(blob); // Renderizamos blob limpio
+                            if (img) img.src = URL.createObjectURL(blob); 
                         } else if (url.includes('/public/storage/')) {
-                            // Fallback de ruta segura si public/ no era el destino correcto
                             fetchImage(url.replace('/public/storage/', '/storage/'));
                         }
-                    } catch (e) {
-                        console.warn("No se pudo saltar el caché visual (modo estricto de red):", e);
-                    }
+                    } catch (e) { console.warn("Cache visual error:", e); }
                 };
                 fetchImage(finalUrl);
             }
@@ -671,19 +650,14 @@ export class StudioController {
     handleWsProgress(data) {
         const wsVideoIdStr = String(data.video_id);
         const wsUuidStr = String(data.uuid);
-        
-        let matchedKey = null;
-        let videoObj = null;
+        let matchedKey = null; let videoObj = null;
 
         if (this.currentVideos.has(wsVideoIdStr)) {
-            matchedKey = wsVideoIdStr;
-            videoObj = this.currentVideos.get(wsVideoIdStr);
+            matchedKey = wsVideoIdStr; videoObj = this.currentVideos.get(wsVideoIdStr);
         } else {
             for (const [key, v] of this.currentVideos.entries()) {
                 if (String(v.uuid) === wsUuidStr || String(v.id) === wsUuidStr || String(v.id) === wsVideoIdStr) {
-                    matchedKey = key;
-                    videoObj = v;
-                    break;
+                    matchedKey = key; videoObj = v; break;
                 }
             }
         }
@@ -699,9 +673,7 @@ export class StudioController {
                 else if (data.status === 'failed') statusSpan.textContent = 'Error';
             }
 
-            if (this.selectedVideoId === matchedKey) {
-                this.validatePublishButton();
-            }
+            if (this.selectedVideoId === matchedKey) this.validatePublishButton();
 
             const row = document.getElementById(`video-row-${matchedKey}`);
             if (row && row.children[1]) {
@@ -720,28 +692,17 @@ export class StudioController {
 
         if (viewState && editState) {
             if (isEditing) {
-                viewState.style.display = 'none';
-                viewState.classList.remove('active');
-                viewState.classList.add('disabled');
-
-                editState.style.display = 'flex';
-                editState.classList.remove('disabled');
-                editState.classList.add('active');
+                viewState.style.display = 'none'; viewState.classList.remove('active'); viewState.classList.add('disabled');
+                editState.style.display = 'flex'; editState.classList.remove('disabled'); editState.classList.add('active');
             } else {
-                editState.style.display = 'none';
-                editState.classList.remove('active');
-                editState.classList.add('disabled');
-
-                viewState.style.display = 'flex';
-                viewState.classList.remove('disabled');
-                viewState.classList.add('active');
+                editState.style.display = 'none'; editState.classList.remove('active'); editState.classList.add('disabled');
+                viewState.style.display = 'flex'; viewState.classList.remove('disabled'); viewState.classList.add('active');
             }
         }
     }
 
     async saveTitleField() {
         if (!this.selectedVideoId) return;
-        
         const inputEl = document.getElementById('videoTitleInput');
         const descInput = document.getElementById('videoDescriptionInput');
         const displayEl = document.querySelector('[data-ref="display-title"]');
@@ -759,36 +720,80 @@ export class StudioController {
                 this.setEditState('title', false);
                 this.validatePublishButton();
             }
-        } else {
-            alert("El título no puede estar vacío.");
-        }
+        } else alert("El título no puede estar vacío.");
     }
 
     async saveDescriptionField() {
         if (!this.selectedVideoId) return;
         const descInput = document.getElementById('videoDescriptionInput');
         if (!descInput) return;
-
-        const newDesc = descInput.value.trim();
         const video = this.currentVideos.get(this.selectedVideoId);
-        if (video) {
-            video.draftDescription = newDesc;
-        }
+        if (video) video.draftDescription = descInput.value.trim();
     }
 
     attachEvents() {
         if (window.AppStudioEventsBound) return;
         window.AppStudioEventsBound = true;
 
+        // Búsqueda en los inputs de los menús
+        document.addEventListener('input', (e) => {
+            if (e.target.classList.contains('tag-search-input')) {
+                const term = e.target.value.toLowerCase();
+                const list = e.target.closest('.component-menu').querySelector('.tag-results-list');
+                if(list) {
+                    list.querySelectorAll('.tag-option-link').forEach(item => {
+                        const name = item.getAttribute('data-name').toLowerCase();
+                        item.style.display = name.includes(term) ? 'flex' : 'none';
+                    });
+                }
+            }
+        });
+
         document.addEventListener('click', (e) => {
             const controller = window.currentStudioController;
             if (!controller) return;
 
-            const btnGen = e.target.closest('#btnGenerateThumbnails');
-            if (btnGen) {
-                controller.generateThumbnails();
+            // Mostrar/Ocultar menú de Modelos
+            if (e.target.closest('#btnSelectModels')) {
+                const menu = document.getElementById('modelsSelectorMenu');
+                if(menu) controller.toggleTagsMenu(menu, 'modelo');
                 return;
             }
+
+            // Mostrar/Ocultar menú de Categorías
+            if (e.target.closest('#btnSelectCategories')) {
+                const menu = document.getElementById('categoriesSelectorMenu');
+                if(menu) controller.toggleTagsMenu(menu, 'category');
+                return;
+            }
+
+            // Clic en una opción del menú de tags
+            const tagOption = e.target.closest('.tag-option-link');
+            if (tagOption) {
+                const id = tagOption.getAttribute('data-id');
+                const name = tagOption.getAttribute('data-name');
+                const type = tagOption.getAttribute('data-type');
+                controller.addTag(id, name, type);
+                return;
+            }
+
+            // Clic en la "X" para remover un tag seleccionado
+            const removePill = e.target.closest('.tag-pill-remove');
+            if (removePill) {
+                const id = removePill.getAttribute('data-id');
+                const type = removePill.getAttribute('data-type');
+                controller.removeTag(id, type);
+                return;
+            }
+
+            // Cerrar menús al hacer clic fuera
+            if (!e.target.closest('.component-menu') && !e.target.closest('#btnSelectModels') && !e.target.closest('#btnSelectCategories')) {
+                document.querySelectorAll('.component-menu[id$="SelectorMenu"]').forEach(m => m.style.display = 'none');
+            }
+
+            // Resto de eventos (botones de estudio)
+            const btnGen = e.target.closest('#btnGenerateThumbnails');
+            if (btnGen) { controller.generateThumbnails(); return; }
 
             const btn = e.target.closest('[data-action]');
             if (!btn) return;
@@ -800,15 +805,8 @@ export class StudioController {
                 const currentState = document.querySelector(`[data-state="${target}-edit"]`).style.display !== 'none';
                 controller.setEditState(target, !currentState);
             }
-
-            if (action === 'saveTitle') {
-                controller.saveTitleField();
-            }
-
-            if (action === 'publishVideo') {
-                controller.publishVideo();
-            }
-
+            if (action === 'saveTitle') controller.saveTitleField();
+            if (action === 'publishVideo') controller.publishVideo();
             if (action === 'cancelVideo') {
                 if (confirm("¿Estás seguro de que deseas cancelar la subida/procesamiento de este video? Se eliminará permanentemente.")) {
                     controller.cancelVideo();
@@ -819,9 +817,7 @@ export class StudioController {
         document.addEventListener('focusout', (e) => {
             if (e.target && e.target.id === 'videoDescriptionInput') {
                 const controller = window.currentStudioController;
-                if (controller && !window.location.pathname.includes('/studio/edit/')) {
-                    controller.saveDescriptionField();
-                }
+                if (controller && !window.location.pathname.includes('/studio/edit/')) controller.saveDescriptionField();
             }
         });
 
@@ -831,50 +827,28 @@ export class StudioController {
 
             if (e.target && e.target.id === 'thumbnailInput') {
                 if (!e.target.files.length || !controller.selectedVideoId) return;
-                
                 const file = e.target.files[0];
-                console.log('[FRONTEND DEBUG] Usuario seleccionó archivo de miniatura local:', file.name);
-
                 const localPreviewUrl = URL.createObjectURL(file);
-                
                 const video = controller.currentVideos.get(controller.selectedVideoId);
                 if (video) {
                     video.draftThumbnailType = 'file';
                     video.draftThumbnailData = file;
                     video.draftThumbnailPreview = localPreviewUrl;
-                    
                     controller.updateThumbnailPreview(localPreviewUrl);
                     controller.validatePublishButton();
                 }
-                
                 e.target.value = ''; 
             }
 
-            if (e.target && e.target.id === 'videoFileInput') {
-                controller.handleFilesSelection(e.target.files);
-            }
+            if (e.target && e.target.id === 'videoFileInput') controller.handleFilesSelection(e.target.files);
         });
 
-        document.addEventListener('dragover', (e) => {
-            const dropZone = e.target.closest('#videoDropZone');
-            if (dropZone) {
-                e.preventDefault();
-                dropZone.classList.add('dragover');
-            }
-        });
-
-        document.addEventListener('dragleave', (e) => {
-            const dropZone = e.target.closest('#videoDropZone');
-            if (dropZone) {
-                dropZone.classList.remove('dragover');
-            }
-        });
-
+        document.addEventListener('dragover', (e) => { const dropZone = e.target.closest('#videoDropZone'); if (dropZone) { e.preventDefault(); dropZone.classList.add('dragover'); }});
+        document.addEventListener('dragleave', (e) => { const dropZone = e.target.closest('#videoDropZone'); if (dropZone) dropZone.classList.remove('dragover');});
         document.addEventListener('drop', (e) => {
             const dropZone = e.target.closest('#videoDropZone');
             if (dropZone) {
-                e.preventDefault();
-                dropZone.classList.remove('dragover');
+                e.preventDefault(); dropZone.classList.remove('dragover');
                 const controller = window.currentStudioController;
                 if(controller) controller.handleFilesSelection(e.dataTransfer.files);
             }
@@ -928,78 +902,51 @@ export class StudioController {
         formData.append('video_id', this.selectedVideoId);
         formData.append('title', video.draftTitle);
         formData.append('description', video.draftDescription || '');
+        
+        // --- ADJUNTAMOS LOS TAGS A LA SUBIDA ---
+        const modelsArr = document.getElementById('hiddenModelsArray') ? document.getElementById('hiddenModelsArray').value : '[]';
+        const categoriesArr = document.getElementById('hiddenCategoriesArray') ? document.getElementById('hiddenCategoriesArray').value : '[]';
+        formData.append('models', modelsArr);
+        formData.append('categories', categoriesArr);
 
-        if (video.draftThumbnailType === 'file') {
-            formData.append('thumbnail', video.draftThumbnailData);
-        } else if (video.draftThumbnailType === 'generated') {
-            formData.append('generated_path', video.draftThumbnailData);
-        }
+        if (video.draftThumbnailType === 'file') formData.append('thumbnail', video.draftThumbnailData);
+        else if (video.draftThumbnailType === 'generated') formData.append('generated_path', video.draftThumbnailData);
 
         const routeName = ApiRoutes.Studio?.PublishVideo || 'studio.publish_video';
-        
         try {
-            console.log('[FRONTEND DEBUG] Iniciando petición de Publicar video.');
             const res = await this.api.postForm(routeName, formData);
-
             if (res.status === 'success') {
-                console.log('[FRONTEND DEBUG] Video publicado exitosamente. Respuesta:', res.data);
                 alert("¡Video publicado con éxito!");
                 this.currentVideos.delete(this.selectedVideoId);
                 this.renderBadges();
-                
-                if (this.currentVideos.size > 0) {
-                    this.selectVideo(this.currentVideos.keys().next().value);
-                } else {
-                    window.dispatchEvent(new CustomEvent('routeChange', { detail: { url: '/studio/manage-content' }}));
-                }
+                if (this.currentVideos.size > 0) this.selectVideo(this.currentVideos.keys().next().value);
+                else window.dispatchEvent(new CustomEvent('routeChange', { detail: { url: '/studio/manage-content' }}));
             } else {
                 alert("Error al publicar: " + res.message);
-                if (btn) {
-                    btn.removeAttribute('disabled');
-                    btn.classList.remove('disabled');
-                    btn.innerHTML = '<span class="material-symbols-rounded">publish</span><span data-i18n="studio_publish">Publicar</span>';
-                }
+                if (btn) { btn.removeAttribute('disabled'); btn.classList.remove('disabled'); btn.innerHTML = '<span class="material-symbols-rounded">publish</span><span data-i18n="studio_publish">Publicar</span>'; }
             }
         } catch (error) {
-            console.error(error);
-            alert("Error de conexión al publicar.");
-            if (btn) {
-                btn.removeAttribute('disabled');
-                btn.classList.remove('disabled');
-                btn.innerHTML = '<span class="material-symbols-rounded">publish</span><span data-i18n="studio_publish">Publicar</span>';
-            }
+            console.error(error); alert("Error de conexión al publicar.");
+            if (btn) { btn.removeAttribute('disabled'); btn.classList.remove('disabled'); btn.innerHTML = '<span class="material-symbols-rounded">publish</span><span data-i18n="studio_publish">Publicar</span>'; }
         }
     }
 
     async cancelVideo() {
         if (!this.selectedVideoId) return;
-        
         const btn = document.getElementById('btnCancelVideo');
-        if (btn) {
-            btn.classList.add('disabled');
-            btn.setAttribute('disabled', 'true');
-        }
+        if (btn) { btn.classList.add('disabled'); btn.setAttribute('disabled', 'true'); }
 
         const routeName = ApiRoutes.Studio?.CancelUpload || 'studio.cancel_upload';
-        const res = await this.api.post(routeName, {
-            video_id: this.selectedVideoId
-        });
+        const res = await this.api.post(routeName, { video_id: this.selectedVideoId });
 
         if (res.status === 'success') {
             this.currentVideos.delete(this.selectedVideoId);
             this.renderBadges();
-            
-            if (this.currentVideos.size > 0) {
-                this.selectVideo(this.currentVideos.keys().next().value);
-            } else {
-                window.dispatchEvent(new CustomEvent('routeChange', { detail: { url: '/studio/upload' }}));
-            }
+            if (this.currentVideos.size > 0) this.selectVideo(this.currentVideos.keys().next().value);
+            else window.dispatchEvent(new CustomEvent('routeChange', { detail: { url: '/studio/upload' }}));
         } else {
             alert("Error al cancelar el video: " + res.message);
-            if (btn) {
-                btn.classList.remove('disabled');
-                btn.removeAttribute('disabled');
-            }
+            if (btn) { btn.classList.remove('disabled'); btn.removeAttribute('disabled'); }
         }
     }
 }

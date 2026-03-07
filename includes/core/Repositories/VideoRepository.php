@@ -5,6 +5,7 @@ namespace App\Core\Repositories;
 
 use App\Core\Interfaces\VideoRepositoryInterface;
 use PDO;
+use Exception;
 
 class VideoRepository implements VideoRepositoryInterface {
     private $db;
@@ -131,6 +132,55 @@ class VideoRepository implements VideoRepositoryInterface {
         ");
         $stmt->execute([':user_id' => $userId]);
         return (int) $stmt->fetchColumn();
+    }
+
+    // --- NUEVOS MÉTODOS PARA SISTEMA DE TAGS ---
+
+    public function syncTags(int $videoId, array $tagIds): bool {
+        try {
+            $this->db->beginTransaction();
+
+            // 1. Eliminar tags actuales vinculados a este video
+            $stmtDelete = $this->db->prepare("DELETE FROM video_tags WHERE video_id = :video_id");
+            $stmtDelete->execute([':video_id' => $videoId]);
+
+            // 2. Insertar las nuevas relaciones si el arreglo no está vacío
+            if (!empty($tagIds)) {
+                $sql = "INSERT IGNORE INTO video_tags (video_id, tag_id) VALUES ";
+                $insertValues = [];
+                $params = [];
+                
+                // Construimos la consulta dinámicamente según la cantidad de tags
+                foreach ($tagIds as $index => $tagId) {
+                    $insertValues[] = "(:video_id_{$index}, :tag_id_{$index})";
+                    $params[":video_id_{$index}"] = $videoId;
+                    $params[":tag_id_{$index}"] = (int) $tagId;
+                }
+                
+                $sql .= implode(", ", $insertValues);
+                $stmtInsert = $this->db->prepare($sql);
+                $stmtInsert->execute($params);
+            }
+
+            $this->db->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->db->rollBack();
+            error_log("Error sincronizando etiquetas del video: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function getVideoTags(int $videoId): array {
+        // Hacemos un JOIN para traer toda la información de la tabla tags que esté vinculada
+        $stmt = $this->db->prepare("
+            SELECT t.* FROM tags t
+            INNER JOIN video_tags vt ON t.id = vt.tag_id
+            WHERE vt.video_id = :video_id
+            ORDER BY t.type ASC, t.name ASC
+        ");
+        $stmt->execute([':video_id' => $videoId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 }
 ?>

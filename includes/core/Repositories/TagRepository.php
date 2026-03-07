@@ -18,6 +18,13 @@ class TagRepository implements TagRepositoryInterface {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    // NUEVO MÉTODO IMPLEMENTADO
+    public function getByType($type) {
+        $stmt = $this->db->prepare("SELECT * FROM tags WHERE type = :type ORDER BY name ASC");
+        $stmt->execute(['type' => $type]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function findById($id) {
         $stmt = $this->db->prepare("SELECT * FROM tags WHERE id = :id");
         $stmt->execute(['id' => $id]);

@@ -53,6 +53,48 @@ $userUuid = $_GET['uuid'] ?? '';
                                 </div>
                             </div>
                         </div>
+
+                        <div class="component-card--grouped" style="margin-top: 24px;">
+                            <div class="component-group-item component-group-item--stacked">
+                                <div class="component-card__content component-card__content--full">
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title">Etiquetas / Tags</h2>
+                                        <p class="component-card__description" style="margin-bottom: 12px;">Agrega modelos y categorías a tu video para facilitar la búsqueda.</p>
+                                        
+                                        <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+                                            <div style="flex: 1; min-width: 250px; position: relative;">
+                                                <button type="button" class="component-button component-button--full" id="btnSelectModels">
+                                                    <span class="material-symbols-rounded">person_add</span> Asignar Modelos
+                                                </button>
+                                                <div id="selectedModelsContainer" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px;"></div>
+                                                <?php 
+                                                    $selectorId = 'modelsSelectorMenu';
+                                                    $placeholder = 'Buscar modelos...';
+                                                    include __DIR__ . '/../../modules/moduleTagsSelector.php'; 
+                                                ?>
+                                            </div>
+
+                                            <div style="flex: 1; min-width: 250px; position: relative;">
+                                                <button type="button" class="component-button component-button--full" id="btnSelectCategories">
+                                                    <span class="material-symbols-rounded">category</span> Asignar Categorías
+                                                </button>
+                                                <div id="selectedCategoriesContainer" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px;"></div>
+                                                <?php 
+                                                    $selectorId = 'categoriesSelectorMenu';
+                                                    $placeholder = 'Buscar categorías...';
+                                                    include __DIR__ . '/../../modules/moduleTagsSelector.php'; 
+                                                ?>
+                                            </div>
+                                        </div>
+
+                                        <input type="hidden" id="hiddenModelsArray" name="models" value="[]">
+                                        <input type="hidden" id="hiddenCategoriesArray" name="categories" value="[]">
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
 
                     <div class="studio-uploading-preview">

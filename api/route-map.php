@@ -67,7 +67,7 @@ return [
     'admin.read_logs'             => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'read_logs'],
     'admin.delete_logs'           => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'delete_logs'],
     
-    // --- NUEVAS RUTAS DE ETIQUETAS/TAGS ---
+    // --- RUTAS DE ETIQUETAS/TAGS (ADMIN) ---
     'admin.get_tags'              => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'get_tags'],
     'admin.create_tag'            => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'create_tag'],
     'admin.update_tag'            => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'update_tag'],
@@ -82,5 +82,9 @@ return [
     'studio.get_video'            => ['controller' => 'App\Api\Controllers\StudioController', 'action' => 'get_video'],
     'studio.publish_video'        => ['controller' => 'App\Api\Controllers\StudioController', 'action' => 'publish_video'],
     'studio.cancel_upload'        => ['controller' => 'App\Api\Controllers\StudioController', 'action' => 'cancel_upload'],
+    
+    // --- NUEVAS RUTAS DE TAGS PARA EL STUDIO ---
+    'studio.get_models'           => ['controller' => 'App\Api\Controllers\StudioController', 'action' => 'get_models'],
+    'studio.get_categories'       => ['controller' => 'App\Api\Controllers\StudioController', 'action' => 'get_categories'],
 ];
 ?>

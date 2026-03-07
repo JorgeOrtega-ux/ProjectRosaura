@@ -23,6 +23,37 @@ class StudioController {
         return $this->sessionManager->get('user_id');
     }
 
+    // --- NUEVOS MÉTODOS PARA OBTENER TAGS ---
+    public function get_models($input) {
+        $userId = $this->requireAuth();
+        if (!$userId) {
+            http_response_code(401);
+            return ['success' => false, 'status' => 'error', 'message' => 'No autorizado'];
+        }
+        try {
+            $models = $this->studioServices->getTagsByType('modelo');
+            return ['success' => true, 'status' => 'success', 'data' => $models];
+        } catch (\Exception $e) {
+            http_response_code(500);
+            return ['success' => false, 'status' => 'error', 'message' => $e->getMessage()];
+        }
+    }
+
+    public function get_categories($input) {
+        $userId = $this->requireAuth();
+        if (!$userId) {
+            http_response_code(401);
+            return ['success' => false, 'status' => 'error', 'message' => 'No autorizado'];
+        }
+        try {
+            $categories = $this->studioServices->getTagsByType('category');
+            return ['success' => true, 'status' => 'success', 'data' => $categories];
+        } catch (\Exception $e) {
+            http_response_code(500);
+            return ['success' => false, 'status' => 'error', 'message' => $e->getMessage()];
+        }
+    }
+
     public function upload_video($input) {
         $userId = $this->requireAuth();
         if (!$userId) {
@@ -106,6 +137,10 @@ class StudioController {
         $videoId = $input['video_id'] ?? $_POST['video_id'] ?? null;
         $title = $input['title'] ?? $_POST['title'] ?? null;
         $description = $input['description'] ?? $_POST['description'] ?? null;
+        
+        // RECIBIR TAGS (Suelen venir como array o JSON string desde FormData)
+        $models = isset($_POST['models']) ? json_decode($_POST['models'], true) : ($input['models'] ?? []);
+        $categories = isset($_POST['categories']) ? json_decode($_POST['categories'], true) : ($input['categories'] ?? []);
 
         if (!$videoId || $title === null) {
             http_response_code(400);
@@ -113,7 +148,7 @@ class StudioController {
         }
 
         try {
-            $this->studioServices->updateVideoDetails($userId, (int)$videoId, $title, $description);
+            $this->studioServices->updateVideoDetails($userId, (int)$videoId, $title, $description, $models, $categories);
             return ['success' => true, 'status' => 'success'];
         } catch (\Exception $e) {
             http_response_code(400);
@@ -186,6 +221,10 @@ class StudioController {
         $title = $input['title'] ?? $_POST['title'] ?? null;
         $description = $input['description'] ?? $_POST['description'] ?? '';
 
+        // RECIBIR TAGS
+        $models = isset($_POST['models']) ? json_decode($_POST['models'], true) : ($input['models'] ?? []);
+        $categories = isset($_POST['categories']) ? json_decode($_POST['categories'], true) : ($input['categories'] ?? []);
+
         $files = $input['_files'] ?? $_FILES;
         $thumbnailFile = $files['thumbnail'] ?? null;
         $generatedPath = $input['generated_path'] ?? $_POST['generated_path'] ?? null;
@@ -201,7 +240,7 @@ class StudioController {
         }
 
         try {
-            $result = $this->studioServices->publishVideo($userId, (int)$videoId, $title, $description, $thumbnailFile, $generatedPath);
+            $result = $this->studioServices->publishVideo($userId, (int)$videoId, $title, $description, $models, $categories, $thumbnailFile, $generatedPath);
             return ['success' => true, 'status' => 'success', 'data' => $result];
         } catch (\Exception $e) {
             http_response_code(400);

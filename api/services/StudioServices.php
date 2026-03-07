@@ -4,11 +4,13 @@
 namespace App\Api\Services;
 
 use App\Core\Interfaces\VideoRepositoryInterface;
+use App\Core\Interfaces\TagRepositoryInterface;
 use Predis\Client as RedisClient;
 use Exception;
 
 class StudioServices {
     private $videoRepo;
+    private $tagRepo;
     private $redis;
     
     private $tempVideoDir = __DIR__ . '/../../storage/temp_videos/';
@@ -28,12 +30,19 @@ class StudioServices {
         'mp4', 'webm', 'mkv', 'mov', 'avi', 'mpeg', 'mpg'
     ];
 
-    public function __construct(VideoRepositoryInterface $videoRepo, RedisClient $redis) {
+    // INYECTAMOS EL TAG REPOSITORY AQUÍ
+    public function __construct(VideoRepositoryInterface $videoRepo, TagRepositoryInterface $tagRepo, RedisClient $redis) {
         $this->videoRepo = $videoRepo;
+        $this->tagRepo = $tagRepo;
         $this->redis = $redis;
         
         if (!is_dir($this->tempVideoDir)) mkdir($this->tempVideoDir, 0755, true);
         if (!is_dir($this->thumbnailDir)) mkdir($this->thumbnailDir, 0755, true);
+    }
+
+    // --- NUEVO MÉTODO PARA OBTENER TAGS POR TIPO ---
+    public function getTagsByType(string $type): array {
+        return $this->tagRepo->getByType($type);
     }
 
     private function checkLimits(int $userId, string $role) {
@@ -222,7 +231,6 @@ class StudioServices {
         
         if (!$img) return null;
         
-        // Redimensionar la imagen a 1x1 píxel obtiene el color promedio (dominante) de toda la imagen
         $thumb = imagecreatetruecolor(1, 1);
         imagecopyresampled($thumb, $img, 0, 0, 0, 0, 1, 1, imagesx($img), imagesy($img));
         
@@ -322,7 +330,6 @@ class StudioServices {
             }
         }
 
-        // Obtener el color dominante y guardar la meta-data de la imagen
         $dominantColor = $this->getAverageColor($destination);
         
         $metadata = ['thumbnail_path' => $publicPath];
@@ -340,7 +347,8 @@ class StudioServices {
         return $result;
     }
 
-    public function updateVideoDetails(int $userId, int $videoId, string $title, ?string $description = null): array {
+    // --- MÉTODO MODIFICADO PARA RECIBIR TAGS ---
+    public function updateVideoDetails(int $userId, int $videoId, string $title, ?string $description = null, array $models = [], array $categories = []): array {
         $video = $this->videoRepo->findById($videoId);
         if (!$video || $video['user_id'] != $userId) {
             throw new Exception("Video no encontrado o no autorizado.");
@@ -356,6 +364,11 @@ class StudioServices {
         }
 
         $this->videoRepo->updateMetadata($videoId, $metadata);
+
+        // SINCRONIZAR TAGS
+        $tagIds = array_merge($models, $categories);
+        $this->videoRepo->syncTags($videoId, $tagIds);
+
         return ['success' => true];
     }
 
@@ -370,17 +383,21 @@ class StudioServices {
         return $this->videoRepo->getActiveUploadsByUserId($userId);
     }
 
+    // --- MÉTODO MODIFICADO PARA DEVOLVER TAGS AL FRONTEND ---
     public function getVideoByUuid(int $userId, string $uuid): array {
         $videos = $this->getAllVideos($userId);
         foreach ($videos as $v) {
             if ($v['uuid'] === $uuid) {
+                // Agregar tags al video devuelto
+                $v['tags'] = $this->videoRepo->getVideoTags($v['id']);
                 return $v;
             }
         }
         throw new Exception("Video no encontrado.");
     }
 
-    public function publishVideo(int $userId, int $videoId, string $title, string $description, ?array $thumbnailFile = null, ?string $generatedPath = null): array {
+    // --- MÉTODO MODIFICADO PARA RECIBIR TAGS ---
+    public function publishVideo(int $userId, int $videoId, string $title, string $description, array $models = [], array $categories = [], ?array $thumbnailFile = null, ?string $generatedPath = null): array {
         $video = $this->videoRepo->findById($videoId);
         if (!$video || $video['user_id'] != $userId) {
             throw new Exception("Video no encontrado o no autorizado.");
@@ -390,20 +407,17 @@ class StudioServices {
             throw new Exception("El video debe estar completamente procesado para publicarse. Estado actual: " . $video['status']);
         }
         
-        // 1. Guardar o reemplazar la miniatura (si fue suministrada en el borrador)
         $newThumbnailPath = null;
         if ($thumbnailFile || $generatedPath) {
             $thumbResult = $this->uploadThumbnail($userId, $videoId, $thumbnailFile, null, $generatedPath);
             $newThumbnailPath = $thumbResult['thumbnail_path'];
         }
         
-        // Validar que exista una miniatura al final (la nueva o la que ya tuviera)
         $finalThumbnail = $newThumbnailPath ?? $video['thumbnail_path'];
         if (empty($finalThumbnail)) {
             throw new Exception("Falta la miniatura del video.");
         }
 
-        // 2. Actualizar Metadatos (título y descripción) y Estado
         $metadata = [
             'title' => trim($title),
             'description' => trim($description)
@@ -411,6 +425,10 @@ class StudioServices {
         
         $this->videoRepo->updateMetadata($videoId, $metadata);
         $this->videoRepo->updateStatus($videoId, 'published', 100);
+
+        // SINCRONIZAR TAGS
+        $tagIds = array_merge($models, $categories);
+        $this->videoRepo->syncTags($videoId, $tagIds);
         
         return ['success' => true, 'status' => 'published'];
     }

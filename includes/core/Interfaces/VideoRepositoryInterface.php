@@ -19,5 +19,9 @@ interface VideoRepositoryInterface {
     // Métodos para validación de límites
     public function countProcessingUploads(int $userId): int;
     public function countDailyUploads(int $userId): int;
+
+    // --- NUEVOS MÉTODOS PARA SISTEMA DE TAGS ---
+    public function syncTags(int $videoId, array $tagIds): bool;
+    public function getVideoTags(int $videoId): array;
 }
 ?>

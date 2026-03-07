@@ -51,7 +51,6 @@ export const ApiRoutes = {
         ReadLogs: 'admin.read_logs',
         DeleteLogs: 'admin.delete_logs',
         
-        // --- NUEVAS RUTAS DE ETIQUETAS AÑADIDAS ---
         GetTags: 'admin.get_tags',
         CreateTag: 'admin.create_tag',
         UpdateTag: 'admin.update_tag',
@@ -63,8 +62,12 @@ export const ApiRoutes = {
         UpdateTitle: 'studio.update_title',
         GetActiveUploads: 'studio.get_active_uploads',
         GetAllVideos: 'studio.get_all_videos',
-        GetVideo: 'studio.get_video', // <--- CORRECCIÓN AQUÍ
+        GetVideo: 'studio.get_video',
         PublishVideo: 'studio.publish_video',
-        CancelUpload: 'studio.cancel_upload'
+        CancelUpload: 'studio.cancel_upload',
+        
+        // --- NUEVAS RUTAS DE ETIQUETAS AÑADIDAS ---
+        GetModels: 'studio.get_models',
+        GetCategories: 'studio.get_categories'
     }
 };

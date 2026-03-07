@@ -37,6 +37,40 @@
                         </p>
                     </div>
                 </div>
+
+                <div id="uploadTagsSection" style="display: none; margin-top: 24px; padding: 16px; background: var(--background-secondary); border-radius: 8px;">
+                    <h3 style="margin-bottom: 12px; font-size: 14px;">Etiquetas (Modelos y Categorías)</h3>
+                    
+                    <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+                        <div style="flex: 1; min-width: 200px; position: relative;">
+                            <button type="button" class="component-button component-button--full" id="btnSelectModels">
+                                <span class="material-symbols-rounded">person_add</span> Añadir Modelos
+                            </button>
+                            <div id="selectedModelsContainer" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;"></div>
+                            <?php 
+                                $selectorId = 'modelsSelectorMenu';
+                                $placeholder = 'Buscar modelos...';
+                                include __DIR__ . '/../../modules/moduleTagsSelector.php'; 
+                            ?>
+                        </div>
+
+                        <div style="flex: 1; min-width: 200px; position: relative;">
+                            <button type="button" class="component-button component-button--full" id="btnSelectCategories">
+                                <span class="material-symbols-rounded">category</span> Añadir Categorías
+                            </button>
+                            <div id="selectedCategoriesContainer" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;"></div>
+                            <?php 
+                                $selectorId = 'categoriesSelectorMenu';
+                                $placeholder = 'Buscar categorías...';
+                                include __DIR__ . '/../../modules/moduleTagsSelector.php'; 
+                            ?>
+                        </div>
+                    </div>
+                    
+                    <input type="hidden" id="hiddenModelsArray" name="models" value="[]">
+                    <input type="hidden" id="hiddenCategoriesArray" name="categories" value="[]">
+                </div>
+
             </div>
 
         </div>

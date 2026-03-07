@@ -127,7 +127,13 @@ export class ApiService {
             xhr.send(formData);
         });
     }
+async fetchModels() {
+        return await this.post('studio.get_models');
+    }
 
+    async fetchCategories() {
+        return await this.post('studio.get_categories');
+    }
     async uploadFileInChunks(route, file, inputName, extraData = {}, onProgress) {
         const chunkSize = 10 * 1024 * 1024; // 10MB por fragmento
         const totalChunks = Math.ceil(file.size / chunkSize);
