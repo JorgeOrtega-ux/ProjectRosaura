@@ -152,7 +152,6 @@ export class StudioController {
         if (!files || files.length === 0) return;
 
         // FASE 1: Validación Previa "Pre-flight"
-        // Consultamos al servidor si podemos subir estos archivos ANTES de enviar un solo mega.
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
             try {
@@ -163,7 +162,7 @@ export class StudioController {
                 
                 if (preCheckRes.status !== 'success') {
                     alert(`No se puede subir "${file.name}": ${preCheckRes.message}`);
-                    return; // Abortamos todo si un archivo no pasa
+                    return; 
                 }
             } catch (error) {
                 console.error(error);
@@ -184,7 +183,7 @@ export class StudioController {
                     ApiRoutes.Studio.UploadVideo, 
                     file, 
                     'video', 
-                    { total_size: file.size }, // Le enviamos el peso real al backend en cada chunk
+                    { total_size: file.size },
                     (percent) => {
                         if(uploadProgressBar) uploadProgressBar.style.width = `${percent}%`;
                     }
@@ -271,6 +270,16 @@ export class StudioController {
         if(previewOriginalFilename) previewOriginalFilename.textContent = video.original_filename;
         
         this.updateThumbnailPreview(video.thumbnail_path);
+
+        // --- CORRECCIÓN AQUÍ ---
+        // Reactivamos el botón de cancelar video cada vez que se selecciona un nuevo video.
+        // Esto soluciona el problema de que el botón se quedaba bloqueado tras eliminar otro video.
+        const cancelBtn = document.getElementById('btnCancelVideo');
+        if (cancelBtn) {
+            cancelBtn.classList.remove('disabled');
+            cancelBtn.removeAttribute('disabled');
+        }
+
         this.validatePublishButton();
     }
 
@@ -585,7 +594,10 @@ export class StudioController {
         if (!this.selectedVideoId) return;
         
         const btn = document.getElementById('btnCancelVideo');
-        if (btn) btn.classList.add('disabled');
+        if (btn) {
+            btn.classList.add('disabled');
+            btn.setAttribute('disabled', 'true'); // Aseguramos que también pierda la funcionalidad de clic nativa
+        }
 
         const res = await this.api.post(ApiRoutes.Studio.CancelUpload, {
             video_id: this.selectedVideoId
@@ -596,13 +608,18 @@ export class StudioController {
             this.renderBadges();
             
             if (this.currentVideos.size > 0) {
+                // Al ejecutarse esto, se llama a selectVideo() que ahora reactivará el botón gracias al arreglo anterior
                 this.selectVideo(this.currentVideos.keys().next().value);
             } else {
                 window.dispatchEvent(new CustomEvent('routeChange', { detail: { url: '/studio/upload' }}));
             }
         } else {
             alert("Error al cancelar el video: " + res.message);
-            if (btn) btn.classList.remove('disabled');
+            // Si hubo un error en backend, lo volvemos a habilitar para que lo intente de nuevo
+            if (btn) {
+                btn.classList.remove('disabled');
+                btn.removeAttribute('disabled');
+            }
         }
     }
 }

@@ -30,8 +30,9 @@ class StudioController {
             return ['success' => false, 'status' => 'error', 'message' => 'No autorizado'];
         }
 
-        // Obtener el rol de la sesión (se asume 'user' por defecto si no existe)
-        $role = strtolower($this->sessionManager->get('role') ?? 'user');
+        // --- CORRECCIÓN AQUÍ ---
+        // AuthServices guarda el rol como 'user_role', no como 'role'
+        $role = strtolower($this->sessionManager->get('user_role') ?? 'user');
 
         // --- NUEVA LÓGICA DE PRE-VALIDACIÓN (Evita gastar ancho de banda y disco) ---
         $isPreCheck = isset($input['pre_check']) ? (bool)$input['pre_check'] : (isset($_POST['pre_check']) ? (bool)$_POST['pre_check'] : false);
