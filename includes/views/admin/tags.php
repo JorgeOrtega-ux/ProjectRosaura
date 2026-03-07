@@ -45,12 +45,22 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                                 <span class="material-symbols-rounded">chevron_right</span>
                                             </div>
                                         </div>
+                                        <div class="component-menu-link component-menu-link--bordered" data-action="openFilterSubMenu" data-target="menuFilterGender">
+                                            <div class="component-menu-link-icon">
+                                                <span class="material-symbols-rounded">wc</span>
+                                            </div>
+                                            <div class="component-menu-link-text">
+                                                <span>Género del Modelo</span>
+                                            </div>
+                                            <div class="component-menu-link-icon">
+                                                <span class="material-symbols-rounded">chevron_right</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
 
                                 <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding disabled" data-ref="menuFilterType">
                                     <div class="pill-container"><div class="drag-handle"></div></div>
-                                    
                                     <div class="component-menu-header">
                                         <div class="component-menu-header-box">
                                             <button class="component-button component-button--icon component-button--h30 component-button--back" data-action="backToMainFilters">
@@ -59,7 +69,6 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                             <span class="component-menu-header-title">Filtrar por tipo</span>
                                         </div>
                                     </div>
-                                    
                                     <div class="component-menu-list component-menu-list--scrollable component-menu-list--compact">
                                         <label class="component-menu-link component-menu-link--bordered">
                                             <div class="component-menu-link-icon">
@@ -71,10 +80,56 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                         </label>
                                         <label class="component-menu-link component-menu-link--bordered">
                                             <div class="component-menu-link-icon">
-                                                <input type="checkbox" class="filter-checkbox" data-filter-type="type" value="actor" checked>
+                                                <input type="checkbox" class="filter-checkbox" data-filter-type="type" value="modelo" checked>
                                             </div>
                                             <div class="component-menu-link-text">
-                                                <span data-i18n="tag_type_actor">Actor / Actriz</span>
+                                                <span data-i18n="tag_type_modelo">Modelo</span>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding disabled" data-ref="menuFilterGender">
+                                    <div class="pill-container"><div class="drag-handle"></div></div>
+                                    <div class="component-menu-header">
+                                        <div class="component-menu-header-box">
+                                            <button class="component-button component-button--icon component-button--h30 component-button--back" data-action="backToMainFilters">
+                                                <span class="material-symbols-rounded">arrow_back</span>
+                                            </button>
+                                            <span class="component-menu-header-title">Filtrar por género</span>
+                                        </div>
+                                    </div>
+                                    <div class="component-menu-list component-menu-list--scrollable component-menu-list--compact">
+                                        <label class="component-menu-link component-menu-link--bordered">
+                                            <div class="component-menu-link-icon">
+                                                <input type="checkbox" class="filter-checkbox" data-filter-type="gender" value="female" checked>
+                                            </div>
+                                            <div class="component-menu-link-text">
+                                                <span data-i18n="tag_gender_female">Femenino</span>
+                                            </div>
+                                        </label>
+                                        <label class="component-menu-link component-menu-link--bordered">
+                                            <div class="component-menu-link-icon">
+                                                <input type="checkbox" class="filter-checkbox" data-filter-type="gender" value="male" checked>
+                                            </div>
+                                            <div class="component-menu-link-text">
+                                                <span data-i18n="tag_gender_male">Masculino</span>
+                                            </div>
+                                        </label>
+                                        <label class="component-menu-link component-menu-link--bordered">
+                                            <div class="component-menu-link-icon">
+                                                <input type="checkbox" class="filter-checkbox" data-filter-type="gender" value="trans" checked>
+                                            </div>
+                                            <div class="component-menu-link-text">
+                                                <span data-i18n="tag_gender_trans">Trans</span>
+                                            </div>
+                                        </label>
+                                        <label class="component-menu-link component-menu-link--bordered">
+                                            <div class="component-menu-link-icon">
+                                                <input type="checkbox" class="filter-checkbox" data-filter-type="gender" value="other" checked>
+                                            </div>
+                                            <div class="component-menu-link-text">
+                                                <span data-i18n="tag_gender_other">Otro</span>
                                             </div>
                                         </label>
                                     </div>
@@ -127,12 +182,11 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 
         <div class="component-header-card" data-ref="manage-tags-header">
             <h1 class="component-page-title" data-i18n="admin_tags_title">Etiquetas y Categorías</h1>
-            <p class="component-page-description" data-i18n="admin_tags_desc">Administra las etiquetas de actores, actrices y categorías para clasificar el contenido de los videos.</p>
+            <p class="component-page-description" data-i18n="admin_tags_desc">Administra las categorías y los modelos (pornstars) para clasificar el contenido de los videos.</p>
         </div>
         
         <div class="component-list active" data-ref="view-cards" id="tagsCardsContainer">
-            <div id="tagsCardsBody" style="display: contents;">
-                </div>
+            <div id="tagsCardsBody" style="display: contents;"></div>
             
             <div class="component-empty-state disabled" data-ref="empty-search-cards">
                 <span class="material-symbols-rounded component-empty-state-icon">search_off</span>
@@ -149,12 +203,12 @@ if (session_status() === PHP_SESSION_NONE) session_start();
             <table class="component-table" id="tagsTable">
                 <thead>
                     <tr>
-                        <th data-i18n="table_header_tag_name">Nombre de Etiqueta</th>
+                        <th data-i18n="table_header_tag_name">Nombre</th>
                         <th data-i18n="table_header_tag_type">Tipo</th>
+                        <th data-i18n="table_header_tag_gender">Género</th>
                     </tr>
                 </thead>
-                <tbody id="tagsTableBody">
-                    </tbody>
+                <tbody id="tagsTableBody"></tbody>
             </table>
 
             <div class="component-empty-table-cell disabled" data-ref="empty-search-table" style="border-bottom: none;">
@@ -189,14 +243,24 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                     
                     <div class="component-input-group">
                         <label class="component-label" for="tagName" data-i18n="lbl_tag_name">Nombre</label>
-                        <input type="text" class="component-input" id="tagName" name="name" placeholder="Ej. Drama, John Doe..." required>
+                        <input type="text" class="component-input" id="tagName" name="name" placeholder="Ej. Amateur, Mia Khalifa..." required>
                     </div>
 
                     <div class="component-input-group">
-                        <label class="component-label" for="tagType" data-i18n="lbl_tag_type">Tipo</label>
+                        <label class="component-label" for="tagType" data-i18n="lbl_tag_type">Tipo de etiqueta</label>
                         <select class="component-input" id="tagType" name="type" required>
                             <option value="category" data-i18n="tag_type_category">Categoría</option>
-                            <option value="actor" data-i18n="tag_type_actor">Actor / Actriz</option>
+                            <option value="modelo" data-i18n="tag_type_modelo">Modelo</option>
+                        </select>
+                    </div>
+
+                    <div class="component-input-group" id="tagGenderGroup" style="display: none;">
+                        <label class="component-label" for="tagGender" data-i18n="lbl_tag_gender">Género del modelo</label>
+                        <select class="component-input" id="tagGender" name="gender">
+                            <option value="female" data-i18n="tag_gender_female">Femenino</option>
+                            <option value="male" data-i18n="tag_gender_male">Masculino</option>
+                            <option value="trans" data-i18n="tag_gender_trans">Trans</option>
+                            <option value="other" data-i18n="tag_gender_other">Otro</option>
                         </select>
                     </div>
                 </form>

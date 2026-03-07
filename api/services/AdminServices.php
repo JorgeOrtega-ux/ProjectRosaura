@@ -874,14 +874,22 @@ class AdminServices {
         return ['success' => true, 'tags' => $tags];
     }
 
-    public function createTag($data) {
+  public function createTag($data) {
         if (!$this->checkAdmin()) return ['success' => false, 'message' => 'No autorizado.'];
         
         $name = trim($data['name'] ?? '');
         $type = $data['type'] ?? '';
+        $gender = null;
         
-        if (empty($name) || !in_array($type, ['actor', 'category'])) {
+        if (empty($name) || !in_array($type, ['modelo', 'category'])) {
             return ['success' => false, 'message' => 'Datos inválidos.'];
+        }
+
+        if ($type === 'modelo') {
+            $gender = $data['gender'] ?? '';
+            if (!in_array($gender, ['female', 'male', 'trans', 'other'])) {
+                return ['success' => false, 'message' => 'Género inválido para el modelo.'];
+            }
         }
 
         $existing = $this->tagRepository->findByName($name);
@@ -889,9 +897,9 @@ class AdminServices {
             return ['success' => false, 'message' => 'La etiqueta ya existe.'];
         }
 
-        if ($this->tagRepository->create($name, $type)) {
+        if ($this->tagRepository->create($name, $type, $gender)) {
             $currentUserId = $this->sessionManager->get('user_id');
-            Logger::security("Admin ID: {$currentUserId} creó la etiqueta/categoría: {$name}", 'info');
+            Logger::security("Admin ID: {$currentUserId} creó la etiqueta/modelo: {$name}", 'info');
             return ['success' => true, 'message' => 'Etiqueta creada exitosamente.'];
         }
         
@@ -904,9 +912,17 @@ class AdminServices {
         $id = (int)($data['id'] ?? 0);
         $name = trim($data['name'] ?? '');
         $type = $data['type'] ?? '';
+        $gender = null;
         
-        if ($id <= 0 || empty($name) || !in_array($type, ['actor', 'category'])) {
+        if ($id <= 0 || empty($name) || !in_array($type, ['modelo', 'category'])) {
             return ['success' => false, 'message' => 'Datos inválidos.'];
+        }
+
+        if ($type === 'modelo') {
+            $gender = $data['gender'] ?? '';
+            if (!in_array($gender, ['female', 'male', 'trans', 'other'])) {
+                return ['success' => false, 'message' => 'Género inválido para el modelo.'];
+            }
         }
 
         $existing = $this->tagRepository->findByName($name);
@@ -914,7 +930,7 @@ class AdminServices {
             return ['success' => false, 'message' => 'El nombre de etiqueta ya está en uso.'];
         }
 
-        if ($this->tagRepository->update($id, $name, $type)) {
+        if ($this->tagRepository->update($id, $name, $type, $gender)) {
             return ['success' => true, 'message' => 'Etiqueta actualizada exitosamente.'];
         }
         

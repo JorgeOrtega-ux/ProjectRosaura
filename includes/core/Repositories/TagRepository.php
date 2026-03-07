@@ -30,14 +30,14 @@ class TagRepository implements TagRepositoryInterface {
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    public function create($name, $type) {
-        $stmt = $this->db->prepare("INSERT INTO tags (name, type) VALUES (:name, :type)");
-        return $stmt->execute(['name' => $name, 'type' => $type]);
+    public function create($name, $type, $gender = null) {
+        $stmt = $this->db->prepare("INSERT INTO tags (name, type, gender) VALUES (:name, :type, :gender)");
+        return $stmt->execute(['name' => $name, 'type' => $type, 'gender' => $gender]);
     }
 
-    public function update($id, $name, $type) {
-        $stmt = $this->db->prepare("UPDATE tags SET name = :name, type = :type WHERE id = :id");
-        return $stmt->execute(['id' => $id, 'name' => $name, 'type' => $type]);
+    public function update($id, $name, $type, $gender = null) {
+        $stmt = $this->db->prepare("UPDATE tags SET name = :name, type = :type, gender = :gender WHERE id = :id");
+        return $stmt->execute(['id' => $id, 'name' => $name, 'type' => $type, 'gender' => $gender]);
     }
 
     public function delete($id) {

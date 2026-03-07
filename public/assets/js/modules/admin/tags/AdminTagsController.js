@@ -14,19 +14,17 @@ export class AdminTagsController {
     async init() {
         this.bindEvents();
         await this.loadTags();
-        console.log("AdminTagsController inicializado con interfaz avanzada.");
+        console.log("AdminTagsController inicializado con soporte de Modelos y Género.");
     }
 
     bindEvents() {
         if (this.eventsBound) return; 
 
         document.addEventListener('click', (e) => {
-            // Acciones del modal
             const addTagBtn = e.target.closest('[data-action="openAddTagModal"]');
             const closeTagBtn = e.target.closest('[data-action="closeTagModal"]');
             const submitTagBtn = e.target.closest('[data-action="submitTagForm"]');
             
-            // Acciones de la barra de herramientas avanzada
             const searchBtn = e.target.closest('[data-action="searchTag"]');
             const toggleFiltersBtn = e.target.closest('[data-action="toggleTagFilters"]');
             const viewBtn = e.target.closest('[data-action="toggleViewMode"]');
@@ -35,42 +33,23 @@ export class AdminTagsController {
             const openSubMenuBtn = e.target.closest('[data-action="openFilterSubMenu"]');
             const backToMainFiltersBtn = e.target.closest('[data-action="backToMainFilters"]');
             
-            // Acciones de edición en modo selección
             const editTagBtn = e.target.closest('[data-action="editSelectedTag"]');
             const deleteTagBtn = e.target.closest('[data-action="deleteSelectedTag"]');
             
-            // Detección de clicks fuera del modal
             const isOverlay = e.target.classList.contains('component-dialog-overlay');
             const isWrapper = e.target.classList.contains('component-dialog-wrapper');
 
-            // --- Handlers del Modal ---
-            if (addTagBtn) {
-                e.preventDefault();
-                this.openModal();
-            }
-            if (closeTagBtn) {
-                e.preventDefault();
-                this.closeModal();
-            }
-            if (submitTagBtn) {
-                e.preventDefault();
-                this.submitForm();
-            }
-            if ((isOverlay || isWrapper) && e.target.closest('#tagModalOverlay')) {
-                this.closeModal();
-            }
+            if (addTagBtn) { e.preventDefault(); this.openModal(); }
+            if (closeTagBtn) { e.preventDefault(); this.closeModal(); }
+            if (submitTagBtn) { e.preventDefault(); this.submitForm(); }
+            if ((isOverlay || isWrapper) && e.target.closest('#tagModalOverlay')) this.closeModal();
 
-            // --- Handlers del Toolbar y Listas ---
             if (searchBtn) this.toggleSearchToolbar();
             if (toggleFiltersBtn) this.toggleFiltersModule();
             if (viewBtn) this.toggleViewMode(viewBtn);
 
             if (openSubMenuBtn) this.openFilterSubMenu(openSubMenuBtn);
-            if (backToMainFiltersBtn) {
-                e.preventDefault();
-                e.stopPropagation();
-                this.backToMainFilters();
-            }
+            if (backToMainFiltersBtn) { e.preventDefault(); e.stopPropagation(); this.backToMainFilters(); }
 
             if (selectTarget && !e.target.closest('button') && !e.target.closest('.component-dropdown-wrapper')) {
                 this.handleTagSelection(selectTarget);
@@ -90,7 +69,6 @@ export class AdminTagsController {
             }
         });
 
-        // Eventos para filtros (Buscar y Checkboxes)
         document.addEventListener('input', (e) => {
             if (e.target && e.target.getAttribute('data-ref') === 'tag-search-input') {
                 this.applyAllFilters();
@@ -100,6 +78,11 @@ export class AdminTagsController {
         document.addEventListener('change', (e) => {
             if (e.target && e.target.classList.contains('filter-checkbox')) {
                 this.applyAllFilters();
+            }
+            
+            // Lógica para mostrar/ocultar género en el modal
+            if (e.target && e.target.id === 'tagType') {
+                this.handleTypeChange(e.target.value);
             }
         });
 
@@ -118,6 +101,20 @@ export class AdminTagsController {
         });
 
         this.eventsBound = true; 
+    }
+
+    handleTypeChange(type) {
+        const genderGroup = document.getElementById('tagGenderGroup');
+        const genderSelect = document.getElementById('tagGender');
+        if (genderGroup && genderSelect) {
+            if (type === 'modelo') {
+                genderGroup.style.display = 'block';
+                genderSelect.setAttribute('required', 'required');
+            } else {
+                genderGroup.style.display = 'none';
+                genderSelect.removeAttribute('required');
+            }
+        }
     }
 
     bindStaticModalDragEvents() {
@@ -193,6 +190,26 @@ export class AdminTagsController {
         }
     }
 
+    getGenderLabel(gender) {
+        const labels = {
+            'female': 'Femenino',
+            'male': 'Masculino',
+            'trans': 'Trans',
+            'other': 'Otro'
+        };
+        return labels[gender] || '-';
+    }
+
+    getGenderIcon(gender) {
+        const icons = {
+            'female': 'female',
+            'male': 'male',
+            'trans': 'transgender',
+            'other': 'person'
+        };
+        return icons[gender] || 'remove';
+    }
+
     renderTags() {
         const cardsBody = document.getElementById('tagsCardsBody');
         const tableBody = document.getElementById('tagsTableBody');
@@ -217,8 +234,10 @@ export class AdminTagsController {
         if (table) table.style.display = 'table';
 
         this.tags.forEach(tag => {
-            const typeLabel = tag.type === 'actor' ? 'Actor / Actriz' : 'Categoría';
-            const typeIcon = tag.type === 'actor' ? 'recent_actors' : 'category';
+            const typeLabel = tag.type === 'modelo' ? 'Modelo' : 'Categoría';
+            const typeIcon = tag.type === 'modelo' ? 'star' : 'category';
+            const genderLabel = tag.type === 'modelo' ? this.getGenderLabel(tag.gender) : 'N/A';
+            const genderIcon = tag.type === 'modelo' ? this.getGenderIcon(tag.gender) : 'horizontal_rule';
 
             // --- Generar Tarjeta ---
             const card = document.createElement('div');
@@ -226,6 +245,7 @@ export class AdminTagsController {
             card.setAttribute('data-action', 'selectTag');
             card.setAttribute('data-tag-id', tag.id);
             card.setAttribute('data-type', tag.type);
+            card.setAttribute('data-gender', tag.gender || '');
             
             card.innerHTML = `
                 <div class="component-badge-list">
@@ -237,16 +257,22 @@ export class AdminTagsController {
                         <span class="material-symbols-rounded">${typeIcon}</span>
                         <span class="search-target">${typeLabel}</span>
                     </div>
+                    ${tag.type === 'modelo' ? `
+                    <div class="component-badge" style="background: var(--surface-hover);">
+                        <span class="material-symbols-rounded">${genderIcon}</span>
+                        <span class="search-target">${genderLabel}</span>
+                    </div>` : ''}
                 </div>
             `;
             cardsBody.appendChild(card);
 
             // --- Generar Fila de Tabla ---
             const tr = document.createElement('tr');
-            tr.className = 'tag-card-item'; // Reutilizamos clase para el filtro JS
+            tr.className = 'tag-card-item';
             tr.setAttribute('data-action', 'selectTag');
             tr.setAttribute('data-tag-id', tag.id);
             tr.setAttribute('data-type', tag.type);
+            tr.setAttribute('data-gender', tag.gender || '');
             
             tr.innerHTML = `
                 <td>
@@ -261,14 +287,17 @@ export class AdminTagsController {
                         <span class="search-target">${typeLabel}</span>
                     </div>
                 </td>
+                <td>
+                    ${tag.type === 'modelo' ? `
+                    <div class="component-badge component-badge--sm" style="background: var(--surface-hover);">
+                        <span class="material-symbols-rounded">${genderIcon}</span>
+                        <span class="search-target">${genderLabel}</span>
+                    </div>` : '<span style="color:var(--text-tertiary); margin-left:10px;">-</span>'}
+                </td>
             `;
             tableBody.appendChild(tr);
         });
     }
-
-    // ==========================================
-    // LOGICA DE BARRA DE HERRAMIENTAS Y VISTAS
-    // ==========================================
 
     openFilterSubMenu(btn) {
         const targetId = btn.getAttribute('data-target');
@@ -417,13 +446,16 @@ export class AdminTagsController {
     }
 
     applyAllFilters() {
-        if (this.tags.length === 0) return; // Si no hay data real, no iteramos dom.
+        if (this.tags.length === 0) return; 
 
         const queryInput = document.querySelector('[data-ref="tag-search-input"]');
         const query = (queryInput ? queryInput.value : '').toLowerCase().trim();
         
         const typeCheckboxes = Array.from(document.querySelectorAll('.filter-checkbox[data-filter-type="type"]'));
         const checkedTypes = typeCheckboxes.filter(cb => cb.checked).map(cb => cb.value);
+
+        const genderCheckboxes = Array.from(document.querySelectorAll('.filter-checkbox[data-filter-type="gender"]'));
+        const checkedGenders = genderCheckboxes.filter(cb => cb.checked).map(cb => cb.value);
 
         const searchBtn = document.querySelector('[data-ref="btn-toggle-search"]');
         if (searchBtn) {
@@ -434,7 +466,8 @@ export class AdminTagsController {
         const filtersBtn = document.querySelector('[data-ref="btn-toggle-filters"]');
         if (filtersBtn) {
             const hasTypeFilter = checkedTypes.length < typeCheckboxes.length;
-            if (hasTypeFilter) {
+            const hasGenderFilter = checkedGenders.length < genderCheckboxes.length;
+            if (hasTypeFilter || hasGenderFilter) {
                 filtersBtn.classList.add('has-active-filter');
             } else {
                 filtersBtn.classList.remove('has-active-filter');
@@ -452,6 +485,7 @@ export class AdminTagsController {
             items.forEach(item => {
                 item.classList.remove('last-visible-row');
                 const itemType = item.getAttribute('data-type');
+                const itemGender = item.getAttribute('data-gender');
                 
                 const textContent = Array.from(item.querySelectorAll('.search-target'))
                     .map(el => el.textContent.toLowerCase())
@@ -459,8 +493,13 @@ export class AdminTagsController {
                 
                 const matchesSearch = textContent.includes(query);
                 const matchesType = checkedTypes.includes(itemType);
+                
+                let matchesGender = true;
+                if (itemType === 'modelo') {
+                    matchesGender = checkedGenders.includes(itemGender);
+                }
 
-                if (matchesSearch && matchesType) {
+                if (matchesSearch && matchesType && matchesGender) {
                     item.classList.remove('disabled');
                     visibleCount++;
                     lastVisibleItem = item;
@@ -487,10 +526,6 @@ export class AdminTagsController {
         processContainer('view-table', 'empty-search-table');
     }
 
-    // ==========================================
-    // LOGICA DEL MODAL Y PETICIONES API
-    // ==========================================
-
     openModal(tag = null) {
         const modal = document.getElementById('tagModalOverlay');
         const form = document.getElementById('tagForm');
@@ -505,9 +540,14 @@ export class AdminTagsController {
             document.getElementById('tagModalTitle').innerText = 'Editar Etiqueta';
             document.getElementById('tagName').value = tag.name;
             document.getElementById('tagType').value = tag.type;
+            if (tag.type === 'modelo') {
+                document.getElementById('tagGender').value = tag.gender;
+            }
         } else {
             document.getElementById('tagModalTitle').innerText = 'Nueva Etiqueta';
         }
+
+        this.handleTypeChange(document.getElementById('tagType').value);
 
         if (wrapper) wrapper.removeAttribute('style'); 
         
@@ -524,6 +564,7 @@ export class AdminTagsController {
             setTimeout(() => {
                 const form = document.getElementById('tagForm');
                 if (form) form.reset();
+                this.handleTypeChange('category'); // Reset visual
             }, 300);
         }
     }
@@ -539,9 +580,13 @@ export class AdminTagsController {
         const id = document.getElementById('tagId').value;
         const name = document.getElementById('tagName').value;
         const type = document.getElementById('tagType').value;
+        const gender = document.getElementById('tagGender').value;
 
         const action = id ? ApiRoutes.Admin.UpdateTag : ApiRoutes.Admin.CreateTag;
-        const payload = id ? { id, name, type } : { name, type };
+        
+        const payload = { name, type };
+        if (id) payload.id = id;
+        if (type === 'modelo') payload.gender = gender;
 
         try {
             const res = await this.api.post(action, payload);
