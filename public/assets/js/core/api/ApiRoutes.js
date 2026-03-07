@@ -4,6 +4,9 @@ export const ApiRoutes = {
     App: {
         GetFeed: 'app.get_feed'
     },
+    Channel: {
+        ToggleSubscription: 'channel.toggle_subscription'
+    },
     Auth: {
         Login: 'auth.login',
         LoginVerify2FA: 'auth.login.verify_2fa',
@@ -69,7 +72,6 @@ export const ApiRoutes = {
         PublishVideo: 'studio.publish_video',
         CancelUpload: 'studio.cancel_upload',
 
-        // --- NUEVAS RUTAS DE ETIQUETAS AÑADIDAS ---
         GetModels: 'studio.get_models',
         GetCategories: 'studio.get_categories'
     }
