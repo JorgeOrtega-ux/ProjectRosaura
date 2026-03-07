@@ -102,11 +102,29 @@
                             </div>
                         </div>
 
-                        <input type="file" id="thumbnailInput" accept="image/png, image/jpeg, image/webp" style="display: none;">
-                        <button type="button" class="component-button component-button--full component-button--h40" style="margin-top: 16px;" onclick="document.getElementById('thumbnailInput').click();">
-                            <span class="material-symbols-rounded">add_photo_alternate</span>
-                            <span data-i18n="studio_upload_thumb">Subir miniatura</span>
-                        </button>
+                        <div class="component-thumbnail-section" style="margin-top: 16px;">
+                            <h3 class="meta-label" style="margin-bottom: 8px; font-weight: 500;">Miniatura</h3>
+                            <p class="meta-label" style="margin-bottom: 12px; font-size: 11px;">Selecciona o sube una imagen que muestre el contenido de tu video.</p>
+                            
+                            <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                                <input type="file" id="thumbnailInput" accept="image/png, image/jpeg, image/webp" style="display: none;">
+                                <button type="button" class="component-button component-button--full component-button--h40" onclick="document.getElementById('thumbnailInput').click();">
+                                    <span class="material-symbols-rounded">add_photo_alternate</span>
+                                    <span data-i18n="studio_upload_thumb">Subir</span>
+                                </button>
+                                
+                                <button type="button" id="btnGenerateThumbnails" class="component-button component-button--full component-button--h40">
+                                    <span class="material-symbols-rounded">auto_awesome</span>
+                                    <span>Generar opciones</span>
+                                </button>
+                            </div>
+
+                            <input type="hidden" id="selectedGeneratedThumbnail" name="selected_generated_thumbnail" value="">
+
+                            <div class="component-thumbnail-grid" id="generatedThumbnailsContainer" style="display: none;">
+                                </div>
+                        </div>
+
                     </div>
 
                 </div>

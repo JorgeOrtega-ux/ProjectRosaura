@@ -8,8 +8,8 @@ define('ROOT_PATH', dirname(__DIR__, 2));
 header("X-Frame-Options: SAMEORIGIN");
 header("X-Content-Type-Options: nosniff");
 // ACTUALIZADO: Se añadió 'blob:' a img-src para permitir las previsualizaciones instantáneas en el Studio
-header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: blob: https://fonts.gstatic.com https://api.qrserver.com; img-src 'self' data: blob: https://api.qrserver.com; connect-src 'self' https://unpkg.com ws: wss:; frame-ancestors 'none';");
-
+// ACTUALIZADO: Se añadió 'blob:' a img-src y se creó la directiva media-src con 'blob:' para procesar videos en memoria
+header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: blob: https://fonts.gstatic.com https://api.qrserver.com; img-src 'self' data: blob: https://api.qrserver.com; media-src 'self' blob:; connect-src 'self' https://unpkg.com ws: wss:; frame-ancestors 'none';");
 require_once ROOT_PATH . '/vendor/autoload.php';
 
 // =========================================================================

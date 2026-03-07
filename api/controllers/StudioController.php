@@ -30,11 +30,8 @@ class StudioController {
             return ['success' => false, 'status' => 'error', 'message' => 'No autorizado'];
         }
 
-        // --- CORRECCIÓN AQUÍ ---
-        // AuthServices guarda el rol como 'user_role', no como 'role'
         $role = strtolower($this->sessionManager->get('user_role') ?? 'user');
 
-        // --- NUEVA LÓGICA DE PRE-VALIDACIÓN (Evita gastar ancho de banda y disco) ---
         $isPreCheck = isset($input['pre_check']) ? (bool)$input['pre_check'] : (isset($_POST['pre_check']) ? (bool)$_POST['pre_check'] : false);
         if ($isPreCheck) {
             $totalSize = isset($input['total_size']) ? (int)$input['total_size'] : (isset($_POST['total_size']) ? (int)$_POST['total_size'] : 0);
@@ -46,7 +43,6 @@ class StudioController {
                 return ['success' => false, 'status' => 'error', 'message' => $e->getMessage()];
             }
         }
-        // -----------------------------------------------------------------------------
 
         $files = $input['_files'] ?? $_FILES;
         $uploadId = $input['upload_id'] ?? $_POST['upload_id'] ?? null;
@@ -62,7 +58,6 @@ class StudioController {
 
         try {
             if ($uploadId !== null && $chunkIndex !== null && $totalChunks !== null && $originalFilename) {
-                // Pasamos el $totalSize para que el primer chunk valide el tamaño real
                 $videoData = $this->studioServices->handleChunkUpload($userId, $role, $files['video'], $uploadId, $chunkIndex, $totalChunks, $originalFilename, $totalSize);
                 return ['success' => true, 'status' => 'success', 'data' => $videoData];
             } else {
@@ -83,16 +78,18 @@ class StudioController {
         }
 
         $files = $input['_files'] ?? $_FILES;
-        
         $videoId = $input['video_id'] ?? $_POST['video_id'] ?? null;
+        $thumbnailBase64 = $input['thumbnail_base64'] ?? $_POST['thumbnail_base64'] ?? null;
         
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($files['thumbnail']) || !$videoId) {
+        // Exigimos que haya ID de video y que venga o el File tradicional O el string Base64 generado
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST' || (!$thumbnailBase64 && !isset($files['thumbnail'])) || !$videoId) {
             http_response_code(400);
-            return ['success' => false, 'status' => 'error', 'message' => 'Faltan datos obligatorios para la miniatura.'];
+            return ['success' => false, 'status' => 'error', 'message' => 'Faltan datos obligatorios para procesar la miniatura.'];
         }
 
         try {
-            $data = $this->studioServices->uploadThumbnail($userId, (int)$videoId, $files['thumbnail']);
+            // Pasamos ambas posibilidades al servicio
+            $data = $this->studioServices->uploadThumbnail($userId, (int)$videoId, $files['thumbnail'] ?? null, $thumbnailBase64);
             return ['success' => true, 'status' => 'success', 'data' => $data];
         } catch (\Exception $e) {
             http_response_code(400);

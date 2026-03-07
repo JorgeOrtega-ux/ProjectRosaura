@@ -14,15 +14,14 @@ class StudioServices {
     private $tempVideoDir = __DIR__ . '/../../storage/temp_videos/';
     private $thumbnailDir = __DIR__ . '/../../public/storage/thumbnails/';
 
-    // Listas blancas de seguridad
     private $allowedVideoMimes = [
         'video/mp4',
         'video/webm',
-        'video/x-matroska', // mkv
-        'video/quicktime',  // mov
-        'video/x-msvideo',  // avi
+        'video/x-matroska', 
+        'video/quicktime',  
+        'video/x-msvideo',  
         'video/mpeg',
-        'application/mp4'   // En ocasiones algunos MP4 se leen así parcialmente
+        'application/mp4'   
     ];
 
     private $allowedVideoExtensions = [
@@ -41,13 +40,11 @@ class StudioServices {
         $maxActive = in_array($role, ['founder', 'administrator']) ? 3 : 1;
         $maxDaily = in_array($role, ['founder', 'administrator']) ? 100 : 25;
 
-        // Comprobar limite de procesos activos (cola o procesando)
         $activeUploads = $this->videoRepo->countProcessingUploads($userId);
         if ($activeUploads >= $maxActive) {
             throw new Exception("Has alcanzado el límite máximo de videos en proceso simultáneamente ($maxActive). Espera a que terminen de procesarse.");
         }
 
-        // Comprobar límite de subidas al día
         $dailyUploads = $this->videoRepo->countDailyUploads($userId);
         if ($dailyUploads >= $maxDaily) {
             throw new Exception("Has alcanzado el límite de subida diario ($maxDaily videos).");
@@ -55,7 +52,6 @@ class StudioServices {
     }
 
     private function checkFileSize(string $role, int $newBytes, ?string $existingFilePath = null) {
-        // Limites: 50GB o 25GB calculados en bytes
         $maxSize = in_array($role, ['founder', 'administrator']) ? 50 * 1024 * 1024 * 1024 : 25 * 1024 * 1024 * 1024;
         
         $currentSize = 0;
@@ -69,9 +65,6 @@ class StudioServices {
         }
     }
 
-    /**
-     * Valida los Magic Bytes del archivo para asegurar que sea un video real
-     */
     private function validateVideoMimeType(string $filePath): void {
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
         $mime = finfo_file($finfo, $filePath);
@@ -82,9 +75,6 @@ class StudioServices {
         }
     }
 
-    /**
-     * Valida que la extensión sea explícitamente segura y corresponda a video
-     */
     private function validateVideoExtension(string $filename): string {
         $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
         if (!in_array($extension, $this->allowedVideoExtensions)) {
@@ -93,7 +83,6 @@ class StudioServices {
         return $extension;
     }
 
-    // Método para validar todo ANTES de que el usuario envíe 1 solo byte de archivo.
     public function validatePreUpload(int $userId, string $role, int $totalSize): void {
         $this->checkLimits($userId, $role);
         $this->checkFileSize($role, $totalSize, null);
@@ -104,16 +93,11 @@ class StudioServices {
             throw new Exception("Error al subir el archivo.");
         }
 
-        // Aplicamos validaciones de seguridad de subida
         $this->checkLimits($userId, $role);
         $this->checkFileSize($role, $file['size']);
-
-        // NUEVO: Validación estricta de MIME Type mediante Magic Bytes
         $this->validateVideoMimeType($file['tmp_name']);
 
         $originalFilename = basename($file['name']);
-        
-        // NUEVO: Validación de lista blanca de extensión para evitar inyección de .php, .sh, etc.
         $extension = $this->validateVideoExtension($originalFilename);
 
         $uuid = sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x', mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0x0fff) | 0x4000, mt_rand(0, 0x3fff) | 0x8000, mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff));
@@ -126,7 +110,6 @@ class StudioServices {
         }
 
         $videoId = $this->videoRepo->create($userId, $uuid, $originalFilename, $tempFilePath);
-
         $titleWithoutExt = pathinfo($originalFilename, PATHINFO_FILENAME);
         $this->videoRepo->updateMetadata($videoId, ['title' => $titleWithoutExt]);
 
@@ -150,21 +133,16 @@ class StudioServices {
         ];
     }
 
-    // Aceptamos $totalSize para frenarlo en el primer chunk si evade el front
     public function handleChunkUpload(int $userId, string $role, array $file, string $uploadId, int $chunkIndex, int $totalChunks, string $originalFilename, ?int $totalSize = null): array {
         if ($file['error'] !== UPLOAD_ERR_OK) {
             throw new Exception("Error al subir el fragmento.");
         }
 
-        // Validación extra: si es el primer fragmento y el cliente mandó el total size, abortamos de inmediato.
         if ($chunkIndex === 0 && $totalSize !== null) {
             $this->checkFileSize($role, $totalSize, null);
         }
 
-        // Validamos explícitamente la extensión del nombre original enviado en los chunks
         $extension = $this->validateVideoExtension($originalFilename);
-
-        // Verificamos si se pueden subir mas videos antes de procesar el fragmento
         $this->checkLimits($userId, $role);
 
         $uploadId = preg_replace('/[^a-zA-Z0-9_-]/', '', $uploadId);
@@ -172,7 +150,6 @@ class StudioServices {
 
         $tempFilePath = $this->tempVideoDir . $uploadId . '.part';
 
-        // Verificamos el tamaño del archivo acumulado
         $this->checkFileSize($role, $file['size'], $tempFilePath);
 
         $chunkData = file_get_contents($file['tmp_name']);
@@ -180,13 +157,10 @@ class StudioServices {
             throw new Exception("Error al escribir el fragmento en el disco.");
         }
 
-        // NUEVO: Verificamos los Magic Bytes en el primer fragmento subido
         if ($chunkIndex === 0) {
             try {
-                // Almacena suficiente del encabezado para identificar el archivo (finfo necesita leer solo los primeros bytes)
                 $this->validateVideoMimeType($tempFilePath);
             } catch (Exception $e) {
-                // Si el primer fragmento no es de video, abortamos y purgamos el archivo temporal
                 @unlink($tempFilePath);
                 throw $e;
             }
@@ -230,37 +204,82 @@ class StudioServices {
         ];
     }
 
-    public function uploadThumbnail(int $userId, int $videoId, array $file): array {
+    // Adaptado para soportar Archivos Normales (Files) y Strings Base64 Dinámicos
+    public function uploadThumbnail(int $userId, int $videoId, ?array $file = null, ?string $base64 = null): array {
         $video = $this->videoRepo->findById($videoId);
         if (!$video || $video['user_id'] != $userId) {
             throw new Exception("Video no encontrado o no autorizado.");
         }
 
-        // NUEVO: Validación de Magic Bytes también para la imagen
+        $extension = '';
+        $targetPathToValidate = '';
+        $isTempFile = false;
+
+        // 1. Manejar decodificación si se envió por Base64 (Opciones autogeneradas)
+        if ($base64) {
+            if (preg_match('/^data:image\/(\w+);base64,/', $base64, $type)) {
+                $base64Data = substr($base64, strpos($base64, ',') + 1);
+                $typeStr = strtolower($type[1]);
+                
+                if (!in_array($typeStr, ['jpg', 'jpeg', 'png', 'webp'])) {
+                    throw new Exception('Formato de imagen base64 no soportado.');
+                }
+                
+                $extension = $typeStr === 'jpeg' ? 'jpg' : $typeStr;
+                $decodedData = base64_decode(str_replace(' ', '+', $base64Data));
+                
+                if ($decodedData === false) {
+                    throw new Exception('Fallo al decodificar la imagen base64.');
+                }
+                
+                // Lo guardamos físicamente de forma temporal para someterlo a Magic Bytes
+                $targetPathToValidate = tempnam(sys_get_temp_dir(), 'rosaura_thumb_');
+                file_put_contents($targetPathToValidate, $decodedData);
+                $isTempFile = true;
+            } else {
+                throw new Exception('Formato base64 inválido.');
+            }
+        } 
+        // 2. Manejar archivo tradicional subido manualmente por el cliente
+        else if ($file && isset($file['tmp_name'])) {
+            $targetPathToValidate = $file['tmp_name'];
+            $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        } else {
+            throw new Exception("No se proporcionó ninguna imagen.");
+        }
+
+        // 3. Validación de Magic Bytes en la ruta temporal para mayor seguridad contra inyección de exploits
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
-        $mime = finfo_file($finfo, $file['tmp_name']);
+        $mime = finfo_file($finfo, $targetPathToValidate);
         finfo_close($finfo);
 
         $validImageMimes = ['image/jpeg', 'image/png', 'image/webp'];
         if (!in_array($mime, $validImageMimes)) {
-            throw new Exception("El archivo enviado no es una imagen válida o está manipulado.");
+            if ($isTempFile) @unlink($targetPathToValidate); // Limpiar basura
+            throw new Exception("El archivo procesado no es una imagen válida o está corrompido.");
         }
 
-        $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
         $validExtensions = ['jpg', 'jpeg', 'png', 'webp'];
         if (!in_array($extension, $validExtensions)) {
-            throw new Exception("Extensión de imagen inválida.");
+            if ($isTempFile) @unlink($targetPathToValidate); // Limpiar basura
+            throw new Exception("Extensión de imagen inválida (.$extension).");
         }
 
+        // 4. Ubicación Final
         $filename = $video['uuid'] . '_thumb.' . $extension;
         $destination = $this->thumbnailDir . $filename;
-        
         $publicPath = 'storage/thumbnails/' . $filename;
 
-        if (!move_uploaded_file($file['tmp_name'], $destination)) {
-            throw new Exception("No se pudo guardar la miniatura físicamente.");
+        // Mover o renombrar el archivo a la carpeta publica según su origen
+        if ($isTempFile) {
+            rename($targetPathToValidate, $destination);
+        } else {
+            if (!move_uploaded_file($targetPathToValidate, $destination)) {
+                throw new Exception("No se pudo guardar la miniatura físicamente.");
+            }
         }
 
+        // 5. Vincular a la Base de Datos
         $this->videoRepo->updateMetadata($videoId, ['thumbnail_path' => $publicPath]);
         return ['thumbnail_path' => $publicPath];
     }
