@@ -4,8 +4,14 @@ $isLoggedIn = isset($_SESSION['user_id']);
 $userRole = $_SESSION['user_role'] ?? 'user';
 $isAdmin = ($userRole === 'founder' || $userRole === 'administrator');
 
+// CORRECCIÓN: Usamos 'user_name' que es la clave exacta que utiliza AuthServices
+$currentUsername = $_SESSION['user_name'] ?? ''; 
+
 // 1. Asignamos la ruta final directamente para que coincida con el backend
 $settingsLink = $isLoggedIn ? APP_URL . '/settings/your-profile' : APP_URL . '/settings/guest';
+
+// 2. Ruta para el canal dinámico
+$channelLink = $isLoggedIn && $currentUsername ? APP_URL . '/@' . $currentUsername : '#';
 ?>
 <div class="component-module component-module--dropdown disabled" data-module="moduleMainOptions">
     <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding">
@@ -21,6 +27,18 @@ $settingsLink = $isLoggedIn ? APP_URL . '/settings/your-profile' : APP_URL . '/s
                 </div>
                 <div class="component-menu-link-text">
                     <span>Panel de administración</span>
+                </div>
+            </div>
+            <div class="component-menu-divider"></div>
+            <?php endif; ?>
+
+            <?php if ($isLoggedIn): ?>
+            <div class="component-menu-link nav-item" data-nav="<?php echo $channelLink; ?>">
+                <div class="component-menu-link-icon">
+                    <span class="material-symbols-rounded">account_box</span>
+                </div>
+                <div class="component-menu-link-text">
+                    <span>Tu canal</span>
                 </div>
             </div>
             <div class="component-menu-divider"></div>

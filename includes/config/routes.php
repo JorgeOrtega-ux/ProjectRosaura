@@ -5,6 +5,9 @@ return [
     '/' => ['view' => 'app/home.php'],
     '/explore' => ['view' => 'app/explore.php'],
     
+    // --- RUTA DINÁMICA DE CANALES ---
+    '/@{username}' => ['view' => 'app/channel.php'], // <--- NUEVA RUTA AQUÍ
+    
     // --- RUTAS DE AUTENTICACIÓN (Solo invitados) ---
     '/login' => ['view' => 'auth/login.php', 'guest_only' => true],
     '/login/two-factor' => ['view' => 'auth/login.php', 'guest_only' => true],
@@ -39,7 +42,7 @@ return [
     '/studio/uploading' => ['view' => 'studio/uploading.php', 'auth' => true],
     '/studio/management-panel/{uuid}' => ['view' => 'studio/management-panel.php', 'auth' => true],
     '/studio/manage-content/{uuid}' => ['view' => 'studio/manage-content.php', 'auth' => true],
-    '/studio/edit/{uuid}/{video_uuid}' => ['view' => 'studio/edit-video.php', 'auth' => true], // <--- CORRECCIÓN AQUÍ
+    '/studio/edit/{uuid}/{video_uuid}' => ['view' => 'studio/edit-video.php', 'auth' => true],
 
     // --- RUTAS DE ADMINISTRADOR (Requieren autenticación + Roles específicos + 2FA) ---
     '/admin' => ['view' => 'admin/dashboard.php', 'auth' => true, 'roles' => ['founder', 'administrator'], 'requires_2fa' => true],
