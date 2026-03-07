@@ -345,20 +345,23 @@ class StudioServices {
         return $result;
     }
 
-    // --- HELPER PRIVADO PARA PROCESAR TAGS MÚLTIPLES ---
+    // --- HELPER PRIVADO MODIFICADO PARA PROCESAR TAGS MIXTOS ---
     private function processTags(array $tagsData, string $type): array {
-        $finalIds = [];
+        $processedTags = [];
         foreach ($tagsData as $tagItem) {
-            // Si el valor es numérico, significa que es el ID de un tag que ya existe
             if (is_numeric($tagItem)) {
-                $finalIds[] = (int) $tagItem;
-            } 
-            // Si es un string (texto), el usuario escribió uno nuevo, así que lo buscamos o creamos
-            else if (is_string($tagItem) && trim($tagItem) !== '') {
-                $finalIds[] = $this->tagRepo->findOrCreate($tagItem, $type);
+                $processedTags[] = [
+                    'id' => (int) $tagItem,
+                    'type' => $type
+                ];
+            } else if (is_string($tagItem) && trim($tagItem) !== '') {
+                $processedTags[] = [
+                    'name' => trim($tagItem),
+                    'type' => $type
+                ];
             }
         }
-        return $finalIds;
+        return $processedTags;
     }
 
     public function updateVideoDetails(int $userId, int $videoId, string $title, ?string $description = null, array $models = [], array $categories = []): array {
@@ -378,15 +381,20 @@ class StudioServices {
 
         $this->videoRepo->updateMetadata($videoId, $metadata);
 
-        // PROCESAMIENTO MÁGICO DE TAGS (Modelos y Categorías)
-        $modelIds = $this->processTags($models, 'modelo');
-        $categoryIds = $this->processTags($categories, 'category');
+        // PROCESAMIENTO MÁGICO DE TAGS MIXTOS
+        $modelsData = $this->processTags($models, 'modelo');
+        $categoriesData = $this->processTags($categories, 'category');
         
-        // Juntamos ambos arreglos y eliminamos IDs duplicados por seguridad
-        $allTagIds = array_unique(array_merge($modelIds, $categoryIds));
+        $allTags = array_merge($modelsData, $categoriesData);
+        $uniqueTags = [];
         
-        // Sincronizamos con la base de datos
-        $this->videoRepo->syncTags($videoId, $allTagIds);
+        // Evitar duplicados
+        foreach ($allTags as $t) {
+            $key = isset($t['id']) ? 'id_'.$t['id'] : 'name_'.strtolower($t['name']);
+            $uniqueTags[$key] = $t;
+        }
+
+        $this->videoRepo->syncTags($videoId, array_values($uniqueTags));
 
         return ['success' => true];
     }
@@ -442,11 +450,19 @@ class StudioServices {
         $this->videoRepo->updateMetadata($videoId, $metadata);
         $this->videoRepo->updateStatus($videoId, 'published', 100);
 
-        // PROCESAMIENTO MÁGICO DE TAGS AL PUBLICAR
-        $modelIds = $this->processTags($models, 'modelo');
-        $categoryIds = $this->processTags($categories, 'category');
-        $allTagIds = array_unique(array_merge($modelIds, $categoryIds));
-        $this->videoRepo->syncTags($videoId, $allTagIds);
+        // PROCESAMIENTO MÁGICO DE TAGS MIXTOS AL PUBLICAR
+        $modelsData = $this->processTags($models, 'modelo');
+        $categoriesData = $this->processTags($categories, 'category');
+        
+        $allTags = array_merge($modelsData, $categoriesData);
+        $uniqueTags = [];
+        
+        foreach ($allTags as $t) {
+            $key = isset($t['id']) ? 'id_'.$t['id'] : 'name_'.strtolower($t['name']);
+            $uniqueTags[$key] = $t;
+        }
+
+        $this->videoRepo->syncTags($videoId, array_values($uniqueTags));
         
         return ['success' => true, 'status' => 'published'];
     }

@@ -283,13 +283,14 @@ export class StudioController {
             
             this.updateThumbnailPreview(video.thumbnail_path);
 
-            // --- CARGAR TAGS EXISTENTES ---
+            // --- CARGAR TAGS EXISTENTES Y DETERMINAR SI SON LOCALES/OFICIALES ---
             this.selectedModels = [];
             this.selectedCategories = [];
             if (video.tags && Array.isArray(video.tags)) {
                 video.tags.forEach(tag => {
-                    if (tag.type === 'modelo') this.selectedModels.push({...tag, isNew: false});
-                    else if (tag.type === 'category') this.selectedCategories.push({...tag, isNew: false});
+                    const isNew = tag.is_official === 0 || tag.is_official === "0";
+                    if (tag.type === 'modelo') this.selectedModels.push({...tag, isNew: isNew});
+                    else if (tag.type === 'category') this.selectedCategories.push({...tag, isNew: isNew});
                 });
             }
             this.renderSelectedTags('modelo');
@@ -422,8 +423,9 @@ export class StudioController {
         this.selectedCategories = [];
         if (video.tags && Array.isArray(video.tags)) {
             video.tags.forEach(tag => {
-                if (tag.type === 'modelo') this.selectedModels.push({...tag, isNew: false});
-                else if (tag.type === 'category') this.selectedCategories.push({...tag, isNew: false});
+                const isNew = tag.is_official === 0 || tag.is_official === "0";
+                if (tag.type === 'modelo') this.selectedModels.push({...tag, isNew: isNew});
+                else if (tag.type === 'category') this.selectedCategories.push({...tag, isNew: isNew});
             });
         }
         this.renderSelectedTags('modelo');
@@ -457,12 +459,11 @@ export class StudioController {
                 const currentIds = currentSelection.map(t => t.isNew ? t.name : parseInt(t.id));
 
                 if (res.data.length === 0) {
-                    list.innerHTML = '<div style="padding: 16px; text-align: center; color: var(--text-secondary); font-size: 13px;">No hay opciones registradas en el sistema.</div>';
+                    list.innerHTML = '<div style="padding: 16px; text-align: center; color: var(--text-secondary); font-size: 13px;">No hay opciones oficiales. Escribe para crear una local.</div>';
                     return;
                 }
 
                 res.data.forEach(tag => {
-                    // Si ya está en la lista de seleccionados, no mostrar
                     if (currentIds.includes(parseInt(tag.id))) return; 
 
                     const item = document.createElement('div');
@@ -490,7 +491,6 @@ export class StudioController {
     addTag(id, name, type, isNew = false) {
         const arr = type === 'modelo' ? this.selectedModels : this.selectedCategories;
         
-        // Evitar duplicados (comparando por nombre para el caso de nuevas vs existentes)
         if (!arr.find(t => t.name.toLowerCase() === name.toLowerCase())) {
             arr.push({ id, name, type, isNew });
             this.renderSelectedTags(type);
@@ -498,7 +498,6 @@ export class StudioController {
             const menuId = type === 'modelo' ? 'modelsSelectorMenu' : 'categoriesSelectorMenu';
             const menu = document.getElementById(menuId);
             
-            // Limpiar buscador si existe y reiniciar filtro
             if (menu) {
                 const input = menu.querySelector('.tag-search-input');
                 if (input) {
@@ -507,7 +506,6 @@ export class StudioController {
                 }
             }
             
-            // Eliminar de la lista visible para no volver a seleccionar
             if (!isNew) {
                 const option = document.querySelector(`#${menuId} .tag-option-link[data-id="${id}"]`);
                 if (option) option.remove();
@@ -541,14 +539,26 @@ export class StudioController {
         arr.forEach(tag => {
             const pill = document.createElement('div');
             pill.className = 'tag-pill';
+            
+            // Indicador visual de si es local (isNew) o global
+            const iconHtml = tag.isNew 
+                ? '<span class="material-symbols-rounded" style="font-size: 14px; margin-right: 4px; color: var(--accent-color);" title="Etiqueta local (Sólo para este video)">push_pin</span>' 
+                : '';
+                
             pill.innerHTML = `
+                ${iconHtml}
                 <span class="tag-pill-text">${tag.name}</span>
                 <span class="material-symbols-rounded tag-pill-remove" data-id="${tag.id}" data-type="${type}">close</span>
             `;
+
+            if (tag.isNew) {
+                pill.style.border = '1px dashed var(--border-color)';
+                pill.style.backgroundColor = 'transparent';
+            }
+
             container.appendChild(pill);
         });
 
-        // Actualizamos inputs ocultos: IDs(int) para existentes, Nombres(string) para nuevos
         hiddenInput.value = JSON.stringify(arr.map(t => t.isNew ? t.name : parseInt(t.id)));
     }
     // ----------------------------------------
@@ -755,7 +765,7 @@ export class StudioController {
         if (window.AppStudioEventsBound) return;
         window.AppStudioEventsBound = true;
 
-        // Búsqueda interactiva e inyección del botón "Crear"
+        // Búsqueda interactiva e inyección del botón "Crear Local"
         document.addEventListener('input', (e) => {
             if (e.target.classList.contains('tag-search-input')) {
                 const term = e.target.value.toLowerCase().trim();
@@ -777,21 +787,25 @@ export class StudioController {
                     const existingCreateBtn = list.querySelector('.tag-create-link');
                     if (existingCreateBtn) existingCreateBtn.remove();
 
-                    // Si hay texto y no es una coincidencia exacta, mostrar "Crear"
+                    // Si hay texto y no es una coincidencia exacta, mostrar opción de Crear
                     if (term.length > 0 && !exactMatch) {
                         const type = menu.id.includes('models') ? 'modelo' : 'category';
                         const originalTerm = e.target.value.trim();
                         
                         const createBtn = document.createElement('div');
                         createBtn.className = 'component-menu-link tag-option-link tag-create-link';
-                        createBtn.setAttribute('data-id', 'new_' + Date.now()); // ID Temporal negativo
+                        createBtn.setAttribute('data-id', 'new_' + Date.now()); 
                         createBtn.setAttribute('data-name', originalTerm);
                         createBtn.setAttribute('data-type', type);
                         createBtn.setAttribute('data-is-new', 'true');
                         
+                        // Diseño explícito de que es una etiqueta local
                         createBtn.innerHTML = `
-                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">add_circle</span></div>
-                            <div class="component-menu-link-text"><span>Añadir "<b>${originalTerm}</b>"</span></div>
+                            <div class="component-menu-link-icon" style="color: var(--accent-color);"><span class="material-symbols-rounded">add_box</span></div>
+                            <div class="component-menu-link-text">
+                                <span style="display:block; line-height:1.2;">Crear "<b>${originalTerm}</b>"</span>
+                                <span style="font-size: 11px; color: var(--text-secondary);">Etiqueta local (sólo para este video)</span>
+                            </div>
                         `;
                         list.appendChild(createBtn);
                     }

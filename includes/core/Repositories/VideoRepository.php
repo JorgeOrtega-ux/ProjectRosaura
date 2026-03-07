@@ -129,24 +129,27 @@ class VideoRepository implements VideoRepositoryInterface {
         return (int) $stmt->fetchColumn();
     }
 
-    // --- MÉTODOS PARA SISTEMA DE TAGS ---
+    // --- MÉTODOS PARA SISTEMA DE TAGS (MODIFICADOS PARA MIXTOS) ---
 
-    public function syncTags(int $videoId, array $tagIds): bool {
+    public function syncTags(int $videoId, array $tags): bool {
         try {
             $this->db->beginTransaction();
 
             $stmtDelete = $this->db->prepare("DELETE FROM video_tags WHERE video_id = :video_id");
             $stmtDelete->execute([':video_id' => $videoId]);
 
-            if (!empty($tagIds)) {
-                $sql = "INSERT IGNORE INTO video_tags (video_id, tag_id) VALUES ";
+            if (!empty($tags)) {
+                $sql = "INSERT INTO video_tags (video_id, tag_id, custom_tag_name, custom_tag_type) VALUES ";
                 $insertValues = [];
                 $params = [];
                 
-                foreach ($tagIds as $index => $tagId) {
-                    $insertValues[] = "(:video_id_{$index}, :tag_id_{$index})";
+                foreach ($tags as $index => $tag) {
+                    $insertValues[] = "(:video_id_{$index}, :tag_id_{$index}, :custom_name_{$index}, :custom_type_{$index})";
+                    
                     $params[":video_id_{$index}"] = $videoId;
-                    $params[":tag_id_{$index}"] = (int) $tagId;
+                    $params[":tag_id_{$index}"] = isset($tag['id']) ? $tag['id'] : null;
+                    $params[":custom_name_{$index}"] = isset($tag['name']) ? $tag['name'] : null;
+                    $params[":custom_type_{$index}"] = $tag['type'];
                 }
                 
                 $sql .= implode(", ", $insertValues);
@@ -163,12 +166,20 @@ class VideoRepository implements VideoRepositoryInterface {
         }
     }
 
-    public function getVideoTags(int $videoId): array {
+   public function getVideoTags(int $videoId): array {
+        // Obtenemos los oficiales uniendo por ID, y los personalizados rescatando la columna de texto.
+        // Usamos ORDER BY 3, 2 para evitar el error de "columna ambigua" en MySQL
         $stmt = $this->db->prepare("
-            SELECT t.* FROM tags t
-            INNER JOIN video_tags vt ON t.id = vt.tag_id
+            SELECT 
+                COALESCE(t.id, CONCAT('custom_', vt.id)) as id,
+                COALESCE(t.name, vt.custom_tag_name) as name,
+                COALESCE(t.type, vt.custom_tag_type) as type,
+                t.gender,
+                CASE WHEN t.id IS NOT NULL THEN 1 ELSE 0 END as is_official
+            FROM video_tags vt
+            LEFT JOIN tags t ON vt.tag_id = t.id
             WHERE vt.video_id = :video_id
-            ORDER BY t.type ASC, t.name ASC
+            ORDER BY 3 ASC, 2 ASC
         ");
         $stmt->execute([':video_id' => $videoId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];

@@ -21,7 +21,7 @@ interface VideoRepositoryInterface {
     public function countDailyUploads(int $userId): int;
 
     // --- NUEVOS MÉTODOS PARA SISTEMA DE TAGS ---
-    public function syncTags(int $videoId, array $tagIds): bool;
+    public function syncTags(int $videoId, array $tags): bool;
     public function getVideoTags(int $videoId): array;
 }
 ?>
