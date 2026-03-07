@@ -18,16 +18,20 @@ class FeedController {
         
         $videos = $this->videoRepo->getPublicFeed($limit, $offset);
 
-        // Preparamos las URLs completas para el frontend
+        // Preparamos las URLs completas y campos extra para el frontend
         foreach ($videos as &$video) {
             // Validamos si tiene avatar_path, sino ponemos uno por defecto
             $video['avatar_url'] = !empty($video['avatar_path']) 
                 ? APP_URL . '/' . $video['avatar_path'] 
-                : APP_URL . '/public/storage/profilePictures/default/default.png'; // Ajusta la ruta a tu default
+                : APP_URL . '/public/storage/profilePictures/default/default.png'; 
                 
             $video['thumbnail_url'] = !empty($video['thumbnail_path'])
                 ? APP_URL . '/' . $video['thumbnail_path']
-                : APP_URL . '/public/assets/images/default-thumb.png'; // Ajusta tu imagen default si no tiene miniatura
+                : APP_URL . '/public/assets/images/default-thumb.png'; 
+
+            // Asegurar valores por defecto para evitar nulos en el front
+            $video['duration'] = $video['duration'] ?? 0;
+            $video['thumbnail_dominant_color'] = $video['thumbnail_dominant_color'] ?? 'transparent';
         }
 
         return ['success' => true, 'data' => $videos];

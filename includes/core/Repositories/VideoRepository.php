@@ -130,11 +130,9 @@ class VideoRepository implements VideoRepositoryInterface {
     }
 
     // --- NUEVO: MÉTODO PARA OBTENER FEED PÚBLICO EN EL HOME ---
-// --- NUEVO: MÉTODO PARA OBTENER FEED PÚBLICO EN EL HOME ---
     public function getPublicFeed(int $limit = 20, int $offset = 0): array {
-        // Se corrigió u.avatar_path por u.profile_picture y v.views por un 0 directo
         $stmt = $this->db->prepare("
-            SELECT v.id, v.uuid, v.title, v.thumbnail_path, v.created_at, v.status,
+            SELECT v.id, v.uuid, v.title, v.thumbnail_path, v.thumbnail_dominant_color, v.duration, v.created_at, v.status,
                    u.username, u.profile_picture AS avatar_path, 
                    0 AS views 
             FROM videos v

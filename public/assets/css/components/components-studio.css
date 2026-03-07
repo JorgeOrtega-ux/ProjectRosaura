@@ -520,14 +520,16 @@
 /* Estilos de los wrappers de etiquetas (Reemplazando estilos en línea) */
 [data-component="tags-wrapper"] {
     width: 100%;
-    padding: 0; /* Padding eliminado como lo solicitaste */
+    padding: 0; 
 }
 
 [data-component="tags-container"] {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-}/* =========================================================
+}
+
+/* =========================================================
    VIDEO FEED CARDS (Home)
    ========================================================= */
 .video-feed-grid {
@@ -544,7 +546,14 @@
     gap: 12px;
     cursor: pointer;
     background-color: transparent;
-    transition: transform 0.2s ease;
+    border-radius: 12px; /* Añadido para que la sombra y fondo de hover no se corten cuadrados */
+    transition: transform 0.2s ease, background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Efecto Hover dinámico con opacidad del 15% para que parezca un resplandor elegante */
+.video-card:hover {
+    background-color: color-mix(in srgb, var(--local-dominant-color, transparent) 15%, transparent);
+    box-shadow: 0 0 0 8px color-mix(in srgb, var(--local-dominant-color, transparent) 15%, transparent);
 }
 
 .video-card:hover .video-card__thumbnail {
@@ -559,6 +568,23 @@
     background-color: var(--bg-surface-alt);
     border: 1px solid var(--border-color);
     position: relative;
+}
+
+/* El nuevo badge de duración de video */
+.component-video-card__duration {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3px 6px;
+    border-radius: 6px;
+    font-family: var(--sl-font-mono, monospace);
+    line-height: 1;
+    z-index: 2;
+    pointer-events: none;
 }
 
 .video-card__thumbnail {
@@ -595,7 +621,7 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
-    min-width: 0; /* Prevents overflow */
+    min-width: 0; 
 }
 
 .video-card__title {
@@ -604,7 +630,6 @@
     color: var(--text-primary);
     margin: 0;
     line-height: 1.4;
-    /* Truncate a 2 lineas */
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
@@ -630,12 +655,12 @@
 
 @media (max-width: 600px) {
     .video-feed-grid {
-        grid-template-columns: 1fr; /* 1 card por columna en móvil */
+        grid-template-columns: 1fr; 
         gap: 20px;
     }
     
     .video-card__top {
-        border-radius: 0; /* Estilo clásico móvil de borde a borde */
+        border-radius: 0; 
         border-left: none;
         border-right: none;
     }

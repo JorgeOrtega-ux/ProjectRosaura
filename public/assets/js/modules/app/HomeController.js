@@ -47,17 +47,21 @@ export class HomeController {
         });
 
         this.container.innerHTML = html;
+        this.attachHoverEvents();
     }
 
     createCardHTML(video) {
         const title = video.title || 'Video sin título';
         const views = video.views || 0;
         const timeAgo = this.timeSince(new Date(video.created_at));
+        const formattedDuration = this.formatDuration(video.duration);
+        const dominantColor = video.thumbnail_dominant_color !== 'transparent' ? video.thumbnail_dominant_color : '#333'; // Color base por si falla
 
         return `
-            <div class="video-card" onclick="window.location.href='${window.AppBasePath || ''}/watch/${video.uuid}'">
+            <div class="video-card component-video-card" style="--local-dominant-color: ${dominantColor};" onclick="window.location.href='${window.AppBasePath || ''}/watch/${video.uuid}'">
                 <div class="video-card__top">
                     <img src="${video.thumbnail_url}" alt="Miniatura de ${title}" class="video-card__thumbnail" loading="lazy">
+                    <span class="component-video-card__duration">${formattedDuration}</span>
                 </div>
                 <div class="video-card__bottom">
                     <div class="video-card__avatar">
@@ -71,6 +75,37 @@ export class HomeController {
                 </div>
             </div>
         `;
+    }
+
+    attachHoverEvents() {
+        const cards = this.container.querySelectorAll('.component-video-card');
+        
+        cards.forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                const dominantColor = card.style.getPropertyValue('--local-dominant-color');
+                if (dominantColor && dominantColor.trim() !== '') {
+                    // Seteamos la variable en el root para que otros módulos/componentes puedan usarla
+                    document.documentElement.style.setProperty('--global-dominant-color', dominantColor);
+                }
+            });
+        });
+    }
+
+    formatDuration(seconds) {
+        const totalSeconds = parseInt(seconds, 10);
+        if (isNaN(totalSeconds) || totalSeconds <= 0) return '00:00';
+
+        const h = Math.floor(totalSeconds / 3600);
+        const m = Math.floor((totalSeconds % 3600) / 60);
+        const s = totalSeconds % 60;
+
+        const mStr = m.toString().padStart(2, '0');
+        const sStr = s.toString().padStart(2, '0');
+
+        if (h > 0) {
+            return `${h}:${mStr}:${sStr}`;
+        }
+        return `${mStr}:${sStr}`;
     }
 
     showError(msg) {

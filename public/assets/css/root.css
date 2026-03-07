@@ -444,6 +444,9 @@
     /* SCROLLBAR CUSTOM COLORS (LIGHT) */
     --scrollbar-track: transparent;
     --scrollbar-thumb: #cccccc;
+
+    /* VARIABLE GLOBAL PARA COLOR DOMINANTE */
+    --global-dominant-color: transparent;
 }
 
 /* ========================================================================
