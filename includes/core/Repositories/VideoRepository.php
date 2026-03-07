@@ -55,6 +55,10 @@ class VideoRepository implements VideoRepositoryInterface {
             $fields[] = "thumbnail_dominant_color = :thumbnail_dominant_color";
             $params[':thumbnail_dominant_color'] = $data['thumbnail_dominant_color'];
         }
+        if (isset($data['duration'])) {
+            $fields[] = "duration = :duration";
+            $params[':duration'] = (int) $data['duration'];
+        }
         if (isset($data['description'])) {
             $fields[] = "description = :description";
             $params[':description'] = $data['description'];
@@ -129,7 +133,7 @@ class VideoRepository implements VideoRepositoryInterface {
         return (int) $stmt->fetchColumn();
     }
 
-    // --- NUEVO: MÉTODO PARA OBTENER FEED PÚBLICO EN EL HOME ---
+    // --- MÉTODOS PARA OBTENER FEED PÚBLICO EN EL HOME ---
     public function getPublicFeed(int $limit = 20, int $offset = 0): array {
         $stmt = $this->db->prepare("
             SELECT v.id, v.uuid, v.title, v.thumbnail_path, v.thumbnail_dominant_color, v.duration, v.created_at, v.status,

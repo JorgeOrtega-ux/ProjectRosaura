@@ -186,7 +186,7 @@ def process_video(redis_client, job):
     if not target_qualities:
         target_qualities = [ALL_QUALITIES[-1]]
         
-    logging.info(f"🎞️ Resolución original detectada: {width}x{height}")
+    logging.info(f"🎞️ Resolución original detectada: {width}x{height} | Duración: {duration}s")
     logging.info(f"⚙️ Construyendo multi-HLS para: {[q['name'] for q in target_qualities]}")
 
     # Comando Base
@@ -303,11 +303,12 @@ def process_video(redis_client, job):
         conn = get_db_connection()
         if conn:
             cursor = conn.cursor()
+            # AQUÍ ES LA MAGIA: Guardamos la duración (int) en la base de datos
             cursor.execute("""
                 UPDATE videos 
-                SET status = 'processed', processing_progress = 100, hls_path = %s, generated_thumbnails = %s 
+                SET status = 'processed', processing_progress = 100, hls_path = %s, generated_thumbnails = %s, duration = %s 
                 WHERE id = %s
-            """, (hls_public_path, thumbs_json, video_id))
+            """, (hls_public_path, thumbs_json, int(duration), video_id))
             conn.commit()
             cursor.close()
             conn.close()
