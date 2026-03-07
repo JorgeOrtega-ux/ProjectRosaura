@@ -170,10 +170,8 @@ export class StudioController {
         const title = video.title || video.original_filename || 'Sin título';
         const date = video.created_at ? new Date(video.created_at).toLocaleDateString() : '-';
 
-        // Estilos para los datos usando badges transparentes
         const badgeStyle = 'display: inline-flex; align-items: center; gap: 4px;';
 
-        // Lógica de Orientación visual (Badge)
         let orientationBadge = video.orientation === 'vertical' 
             ? '<span class="material-symbols-rounded" style="font-size: 14px; margin-right: 4px;">smartphone</span> Vertical' 
             : '<span class="material-symbols-rounded" style="font-size: 14px; margin-right: 4px;">desktop_windows</span> Normal';
@@ -242,10 +240,6 @@ export class StudioController {
         const uploadProgressBar = document.getElementById('uploadProgressBar');
         if(uploadProgressContainer) uploadProgressContainer.style.display = 'block';
 
-        // BUG FIX: Eliminado la línea que forzaba la aparición del contenedor de tags en /upload 
-        // const uploadTagsSection = document.getElementById('uploadTagsSection');
-        // if(uploadTagsSection) uploadTagsSection.style.display = 'block';
-
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
             try {
@@ -290,11 +284,12 @@ export class StudioController {
             
             const titleInput = document.getElementById('videoTitleInput');
             const descInput = document.getElementById('videoDescriptionInput');
-            const visibilitySelect = document.getElementById('videoVisibilitySelect');
             
             if (titleInput) titleInput.value = video.title || video.original_filename || '';
             if (descInput) descInput.value = video.description || '';
-            if (visibilitySelect) visibilitySelect.value = video.visibility || 'public';
+            
+            // Sincronizar UI de Visibilidad Modular
+            this.syncVisibilityUI(video.visibility || 'public');
             
             this.updateThumbnailPreview(video.thumbnail_path);
 
@@ -318,6 +313,7 @@ export class StudioController {
                     
                     const newTitle = titleInput ? titleInput.value.trim() : '';
                     const newDesc = descInput ? descInput.value.trim() : '';
+                    const visibilitySelect = document.getElementById('videoVisibilitySelect');
                     const newVisibility = visibilitySelect ? visibilitySelect.value : 'public';
                     
                     if (newTitle.length === 0) {
@@ -413,12 +409,12 @@ export class StudioController {
         const displayTitle = document.querySelector('[data-ref="display-title"]');
         const titleInput = document.getElementById('videoTitleInput');
         const descInput = document.getElementById('videoDescriptionInput');
-        const visibilitySelect = document.getElementById('videoVisibilitySelect');
         
         if(displayTitle) displayTitle.textContent = video.draftTitle;
         if(titleInput) titleInput.value = video.draftTitle;
         if(descInput) descInput.value = video.draftDescription;
-        if(visibilitySelect) visibilitySelect.value = video.draftVisibility;
+        
+        this.syncVisibilityUI(video.draftVisibility);
 
         this.setEditState('title', false);
 
@@ -449,6 +445,31 @@ export class StudioController {
         this.renderSelectedTags('category');
 
         this.validatePublishButton();
+    }
+
+    // --- NUEVO METODO PARA SINCRONIZAR VISIBILIDAD UI ---
+    syncVisibilityUI(value) {
+        const select = document.getElementById('videoVisibilitySelect');
+        if (select) select.value = value;
+        
+        const menu = document.getElementById('visibilitySelectorMenu');
+        if (!menu) return;
+
+        menu.querySelectorAll('.component-menu-link').forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('data-value') === value) {
+                link.classList.add('active');
+                
+                const icon = link.getAttribute('data-icon');
+                const text = link.getAttribute('data-text');
+                
+                const triggerIcon = document.getElementById('visibilityIcon');
+                const triggerText = document.getElementById('visibilityText');
+                
+                if (triggerIcon) triggerIcon.textContent = icon;
+                if (triggerText) triggerText.textContent = text;
+            }
+        });
     }
 
     // --- LÓGICA DE ETIQUETAS Y BÚSQUEDA ---
@@ -518,7 +539,6 @@ export class StudioController {
     addTag(id, name, type, isNew = false) {
         const arr = type === 'modelo' ? this.selectedModels : this.selectedCategories;
         
-        // Validación de límites máximos por tipo
         if (type === 'modelo' && arr.length >= 25) {
             alert("Has alcanzado el límite máximo de 25 modelos por video.");
             return;
@@ -577,26 +597,23 @@ export class StudioController {
 
         let wrapper = document.getElementById(wrapperId);
 
-        // Si el arreglo está vacío, removemos el contenedor del DOM
         if (arr.length === 0) {
             if (wrapper) wrapper.remove();
             hiddenInput.value = '[]';
             return;
         }
 
-        // Si hay elementos pero el contenedor no existe, lo creamos
         if (!wrapper) {
             wrapper = document.createElement('div');
             wrapper.id = wrapperId;
-            wrapper.setAttribute('data-component', 'tags-wrapper'); // Se utiliza atributo data en lugar de style en línea
+            wrapper.setAttribute('data-component', 'tags-wrapper'); 
             
             const innerContainer = document.createElement('div');
             innerContainer.id = containerId;
-            innerContainer.setAttribute('data-component', 'tags-container'); // Se utiliza atributo data en lugar de style en línea
+            innerContainer.setAttribute('data-component', 'tags-container'); 
             
             wrapper.appendChild(innerContainer);
             
-            // Buscar en dónde montarlo (al final del padre del trigger)
             const triggerEl = document.querySelector(`[data-target="${triggerAttr}"]`);
             if (triggerEl) {
                 const parentGroup = triggerEl.closest('.component-group-item');
@@ -884,8 +901,58 @@ export class StudioController {
             const controller = window.currentStudioController;
             if (!controller) return;
 
+            // --- NUEVOS EVENTOS PARA VISIBILIDAD MODULAR ---
+            const toggleVisibilityBtn = e.target.closest('[data-action="toggleVisibilityMenu"]');
+            if (toggleVisibilityBtn) {
+                const targetId = toggleVisibilityBtn.getAttribute('data-target');
+                const menu = document.getElementById(targetId);
+                if (menu) {
+                    const isClosing = menu.classList.contains('active');
+                    
+                    // Cierra los menús de etiquetas por si estuvieran abiertos
+                    document.querySelectorAll('.component-module[id$="SelectorMenu"]').forEach(m => {
+                        m.classList.remove('active');
+                        m.classList.add('disabled');
+                    });
+
+                    if (isClosing) {
+                        menu.classList.remove('active');
+                        menu.classList.add('disabled');
+                    } else {
+                        menu.classList.remove('disabled');
+                        menu.classList.add('active');
+                    }
+                }
+                return;
+            }
+
+            const selectVisOption = e.target.closest('[data-action="selectVisibility"]');
+            if (selectVisOption) {
+                const value = selectVisOption.getAttribute('data-value');
+                controller.syncVisibilityUI(value);
+                
+                // Dispara el evento change en el select oculto para guardar en el estado global
+                const select = document.getElementById('videoVisibilitySelect');
+                if (select) {
+                    select.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+
+                // Cierra el menú tras seleccionar
+                const menu = selectVisOption.closest('.component-module');
+                if (menu) {
+                    menu.classList.remove('active');
+                    menu.classList.add('disabled');
+                }
+                return;
+            }
+            // ------------------------------------------------
+
             const toggleTagsBtn = e.target.closest('[data-action="toggleStudioTags"]');
             if (toggleTagsBtn) {
+                // Si abrimos un menú de tags, cerramos el de visibilidad por si estaba abierto
+                const visMenu = document.getElementById('visibilitySelectorMenu');
+                if(visMenu) { visMenu.classList.remove('active'); visMenu.classList.add('disabled'); }
+
                 const targetId = toggleTagsBtn.getAttribute('data-target');
                 const type = toggleTagsBtn.getAttribute('data-type');
                 const menu = document.getElementById(targetId);
@@ -893,7 +960,6 @@ export class StudioController {
                 return; 
             }
 
-            // Click en tag desde el menú
             const tagOption = e.target.closest('.tag-option-link');
             if (tagOption) {
                 const id = tagOption.getAttribute('data-id');
@@ -901,7 +967,6 @@ export class StudioController {
                 const type = tagOption.getAttribute('data-type');
                 const isNew = tagOption.getAttribute('data-is-new') === 'true';
                 
-                // Si ya estaba activo, lo eliminamos; si no, lo agregamos.
                 if (tagOption.classList.contains('active')) {
                     controller.removeTag(id, type);
                 } else {
@@ -910,7 +975,6 @@ export class StudioController {
                 return;
             }
 
-            // Clic en la "X" del pill para remover un tag seleccionado
             const removePill = e.target.closest('.tag-pill-remove');
             if (removePill) {
                 const id = removePill.getAttribute('data-id');
@@ -952,7 +1016,6 @@ export class StudioController {
             const controller = window.currentStudioController;
             if (!controller) return;
 
-            // Escuchador para cambios en visibilidad
             if (e.target && e.target.id === 'videoVisibilitySelect') {
                 if (controller.selectedVideoId) {
                     const video = controller.currentVideos.get(controller.selectedVideoId);

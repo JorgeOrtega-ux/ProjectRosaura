@@ -56,22 +56,62 @@ $userUuid = $_GET['uuid'] ?? '';
 
                         <div class="component-card--grouped" style="margin-top: 24px;">
                             <div class="component-group-item component-group-item--stacked">
-                                <div class="component-card__content component-card__content--full">
+                                <div class="component-card__content">
                                     <div class="component-card__text">
                                         <h2 class="component-card__title">Visibilidad</h2>
-                                        <p class="component-card__description" style="margin-bottom: 8px;">Elige quién puede ver tu video.</p>
-                                        <div class="component-input-group component-input-group--h34">
-                                            <select id="videoVisibilitySelect" class="component-input-field component-input-field--simple" style="padding: 0 12px; height: 34px;">
-                                                <option value="public">Público (Cualquier persona puede mirar tu video)</option>
-                                                <option value="unlisted">No listado (Cualquier persona con el vínculo puede mirarlo)</option>
-                                                <option value="private">Privado (Solo tú y las personas que elijas pueden mirar tu video)</option>
-                                            </select>
+                                        <p class="component-card__description">Elige quién puede ver tu video.</p>
+                                    </div>
+                                </div>
+                                <div class="component-card__actions component-card__actions--start">
+                                    <div class="component-dropdown-wrapper">
+                                        <div class="component-dropdown-trigger" data-action="toggleVisibilityMenu" data-target="visibilitySelectorMenu">
+                                            <span class="material-symbols-rounded" id="visibilityIcon">public</span>
+                                            <span class="component-dropdown-text" id="visibilityText">Público</span>
+                                            <span class="material-symbols-rounded">expand_more</span>
                                         </div>
+                                        
+                                        <div class="component-module component-module--dropdown component-module--dropdown-left disabled bs-initialized" data-module="moduleVisibility" id="visibilitySelectorMenu">
+                                            <div class="component-menu component-menu--w-auto component-menu--h-auto component-menu--no-padding">
+                                                <div class="pill-container"><div class="drag-handle"></div></div>
+                                                <div class="component-menu-list">
+                                                    
+                                                    <div class="component-menu-link active" data-action="selectVisibility" data-value="public" data-icon="public" data-text="Público">
+                                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">public</span></div>
+                                                        <div class="component-menu-link-text">
+                                                            <span style="display:block; line-height:1.2;">Público</span>
+                                                            <span style="font-size: 11px; color: var(--text-secondary);">Cualquier persona puede mirar tu video</span>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="component-menu-link" data-action="selectVisibility" data-value="unlisted" data-icon="link" data-text="No listado">
+                                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">link</span></div>
+                                                        <div class="component-menu-link-text">
+                                                            <span style="display:block; line-height:1.2;">No listado</span>
+                                                            <span style="font-size: 11px; color: var(--text-secondary);">Cualquier persona con el vínculo puede mirarlo</span>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="component-menu-link" data-action="selectVisibility" data-value="private" data-icon="lock" data-text="Privado">
+                                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">lock</span></div>
+                                                        <div class="component-menu-link-text">
+                                                            <span style="display:block; line-height:1.2;">Privado</span>
+                                                            <span style="font-size: 11px; color: var(--text-secondary);">Solo tú y los elegidos pueden mirar tu video</span>
+                                                        </div>
+                                                    </div>
+
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <select id="videoVisibilitySelect" style="display: none;">
+                                            <option value="public" selected>public</option>
+                                            <option value="unlisted">unlisted</option>
+                                            <option value="private">private</option>
+                                        </select>
                                     </div>
                                 </div>
                             </div>
                         </div>
-
                         <div class="component-card--grouped" style="margin-top: 24px;">
                             <div class="component-group-item component-group-item--stacked" style="border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.05));">
                                 <div class="component-card__content component-card__content--full">
