@@ -51,7 +51,6 @@ export class SpaRouter {
             }
         });
 
-        // NUEVO: Listener para cambios de ruta por eventos (Corrige Issue #1)
         window.addEventListener('routeChange', (e) => {
             if (e.detail && e.detail.url) {
                 let url = e.detail.url;
@@ -137,10 +136,16 @@ export class SpaRouter {
                     cleanUrl = cleanUrl.slice(0, -1);
                 }
 
+                // CORRECCIÓN: Normalizar rutas dinámicas para que el RouteModulesMap las entienda
+                let moduleKey = cleanUrl;
+                if (moduleKey.startsWith(this.basePath + '/@') || moduleKey.startsWith('/@')) {
+                    moduleKey = '/@';
+                }
+
                 window.dispatchEvent(new CustomEvent('viewLoaded', { 
                     detail: { 
                         url: url,
-                        cleanUrl: cleanUrl 
+                        cleanUrl: moduleKey // Usamos la llave normalizada
                     } 
                 }));
             } else {

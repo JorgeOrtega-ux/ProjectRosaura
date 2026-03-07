@@ -8,6 +8,7 @@ global $container;
 $channelVideos = [];
 $channelShorts = [];
 $totalVideos = 0;
+$appUrl = defined('APP_URL') ? APP_URL : '';
 
 // Función Helper para fechas relativas (ej. "Hace 2 días")
 if (!function_exists('time_elapsed_string')) {
@@ -101,9 +102,9 @@ if ($isLoggedIn && $channelExists && $currentUsername) {
 }
 
 // Determinar la foto de perfil (o la por defecto)
-$avatarPath = '/storage/profilePictures/default/3b9475a1-65c1-40d2-95f4-1dcbc5cb2ef2.png';
+$avatarPath = $appUrl . '/public/storage/profilePictures/default/3b9475a1-65c1-40d2-95f4-1dcbc5cb2ef2.png';
 if ($channelExists && !empty($channelUser['profile_picture'])) {
-    $avatarPath = $channelUser['profile_picture'];
+    $avatarPath = $appUrl . '/' . ltrim($channelUser['profile_picture'], '/');
 }
 
 $displayName = $channelExists ? ($channelUser['display_name'] ?? $channelUser['username']) : $targetUsername;
@@ -230,6 +231,20 @@ $displayName = $channelExists ? ($channelUser['display_name'] ?? $channelUser['u
     .component-channel-content-section.is-active { display: block; }
     .component-section-title { margin: 0 0 20px 0; font-size: 20px; font-weight: 600; }
     .component-empty-state { color: #aaa; font-style: italic; }
+
+    /* Grid específico para Shorts (Tarjetas más pequeñas) */
+    .shorts-feed-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 16px;
+    }
+
+    @media (max-width: 768px) {
+        .shorts-feed-grid {
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 12px;
+        }
+    }
 </style>
 
 <?php if (!$channelExists): ?>
@@ -258,7 +273,7 @@ $displayName = $channelExists ? ($channelUser['display_name'] ?? $channelUser['u
                 <h1 class="component-channel-title"><?php echo htmlspecialchars($displayName); ?></h1>
                 
                 <p class="component-channel-meta">
-                    @<?php echo htmlspecialchars($channelUser['username']); ?> • 
+                    @<?php echo htmlspecialchars($channelUser['username'] ?? ''); ?> • 
                     1.5M suscriptores • 
                     <?php echo $totalVideos; ?> videos
                 </p>
@@ -287,11 +302,14 @@ $displayName = $channelExists ? ($channelUser['display_name'] ?? $channelUser['u
                     <p class="component-empty-state">Este canal aún no tiene contenido publicado.</p>
                 <?php else: ?>
                     <div class="video-feed-grid">
-                        <?php foreach(array_slice($channelVideos, 0, 8) as $video): ?>
+                        <?php foreach(array_slice($channelVideos, 0, 8) as $video): 
+                            $thumbSrc = !empty($video['thumbnail_path']) ? $appUrl . '/' . ltrim($video['thumbnail_path'], '/') : '';
+                            $videoSrc = !empty($video['hls_path']) ? $appUrl . '/' . ltrim($video['hls_path'], '/') : $appUrl . '/public/storage/videos/' . $video['uuid'] . '/master.m3u8';
+                        ?>
                             <div class="video-card component-video-card" style="--local-dominant-color: <?php echo htmlspecialchars($video['thumbnail_dominant_color'] ?? '#272727'); ?>;" onclick="window.router.navigate('/watch?v=<?php echo htmlspecialchars($video['uuid']); ?>')">
                                 <div class="video-card__top" style="aspect-ratio: 16/9; position: relative; overflow: hidden;">
-                                    <img src="<?php echo htmlspecialchars($video['thumbnail_path'] ?? ''); ?>" alt="Miniatura de <?php echo htmlspecialchars($video['title']); ?>" class="component-video-card__thumbnail video-card__thumbnail" loading="lazy">
-                                    <video data-src="/storage/videos/<?php echo htmlspecialchars($video['uuid']); ?>/master.m3u8" class="component-video-card__player" muted loop playsinline></video>
+                                    <img src="<?php echo htmlspecialchars($thumbSrc); ?>" alt="Miniatura de <?php echo htmlspecialchars($video['title']); ?>" class="component-video-card__thumbnail video-card__thumbnail" loading="lazy">
+                                    <video data-src="<?php echo htmlspecialchars($videoSrc); ?>" class="component-video-card__player" muted loop playsinline></video>
                                     <div class="component-video-card__duration-badge">
                                         <span class="component-video-card__duration"><?php echo format_duration($video['duration']); ?></span>
                                     </div>
@@ -318,11 +336,14 @@ $displayName = $channelExists ? ($channelUser['display_name'] ?? $channelUser['u
                     <p class="component-empty-state">No hay videos horizontales disponibles.</p>
                 <?php else: ?>
                     <div class="video-feed-grid">
-                        <?php foreach($channelVideos as $video): ?>
+                        <?php foreach($channelVideos as $video): 
+                            $thumbSrc = !empty($video['thumbnail_path']) ? $appUrl . '/' . ltrim($video['thumbnail_path'], '/') : '';
+                            $videoSrc = !empty($video['hls_path']) ? $appUrl . '/' . ltrim($video['hls_path'], '/') : $appUrl . '/public/storage/videos/' . $video['uuid'] . '/master.m3u8';
+                        ?>
                             <div class="video-card component-video-card" style="--local-dominant-color: <?php echo htmlspecialchars($video['thumbnail_dominant_color'] ?? '#272727'); ?>;" onclick="window.router.navigate('/watch?v=<?php echo htmlspecialchars($video['uuid']); ?>')">
                                 <div class="video-card__top" style="aspect-ratio: 16/9; position: relative; overflow: hidden;">
-                                    <img src="<?php echo htmlspecialchars($video['thumbnail_path'] ?? ''); ?>" alt="Miniatura de <?php echo htmlspecialchars($video['title']); ?>" class="component-video-card__thumbnail video-card__thumbnail" loading="lazy">
-                                    <video data-src="/storage/videos/<?php echo htmlspecialchars($video['uuid']); ?>/master.m3u8" class="component-video-card__player" muted loop playsinline></video>
+                                    <img src="<?php echo htmlspecialchars($thumbSrc); ?>" alt="Miniatura de <?php echo htmlspecialchars($video['title']); ?>" class="component-video-card__thumbnail video-card__thumbnail" loading="lazy">
+                                    <video data-src="<?php echo htmlspecialchars($videoSrc); ?>" class="component-video-card__player" muted loop playsinline></video>
                                     <div class="component-video-card__duration-badge">
                                         <span class="component-video-card__duration"><?php echo format_duration($video['duration']); ?></span>
                                     </div>
@@ -348,23 +369,22 @@ $displayName = $channelExists ? ($channelUser['display_name'] ?? $channelUser['u
                 <?php if (empty($channelShorts)): ?>
                     <p class="component-empty-state">No hay shorts disponibles.</p>
                 <?php else: ?>
-                    <div class="video-feed-grid">
-                        <?php foreach($channelShorts as $short): ?>
+                    <div class="shorts-feed-grid">
+                        <?php foreach($channelShorts as $short): 
+                            $thumbSrc = !empty($short['thumbnail_path']) ? $appUrl . '/' . ltrim($short['thumbnail_path'], '/') : '';
+                            $videoSrc = !empty($short['hls_path']) ? $appUrl . '/' . ltrim($short['hls_path'], '/') : $appUrl . '/public/storage/videos/' . $short['uuid'] . '/master.m3u8';
+                        ?>
                             <div class="video-card component-video-card" style="--local-dominant-color: <?php echo htmlspecialchars($short['thumbnail_dominant_color'] ?? '#272727'); ?>;" onclick="window.router.navigate('/shorts/<?php echo htmlspecialchars($short['uuid']); ?>')">
-                                <div class="video-card__top" style="aspect-ratio: 9/16; position: relative; overflow: hidden;">
-                                    <img src="<?php echo htmlspecialchars($short['thumbnail_path'] ?? ''); ?>" alt="Miniatura de <?php echo htmlspecialchars($short['title']); ?>" class="component-video-card__thumbnail video-card__thumbnail" loading="lazy">
-                                    <video data-src="/storage/videos/<?php echo htmlspecialchars($short['uuid']); ?>/master.m3u8" class="component-video-card__player" muted loop playsinline></video>
+                                <div class="video-card__top" style="aspect-ratio: 9/16; position: relative; overflow: hidden; border-radius: 12px;">
+                                    <img src="<?php echo htmlspecialchars($thumbSrc); ?>" alt="Miniatura de <?php echo htmlspecialchars($short['title']); ?>" class="component-video-card__thumbnail video-card__thumbnail" loading="lazy">
+                                    <video data-src="<?php echo htmlspecialchars($videoSrc); ?>" class="component-video-card__player" muted loop playsinline></video>
                                     <div class="component-video-card__duration-badge">
                                         <span class="component-video-card__duration"><?php echo format_duration($short['duration']); ?></span>
                                     </div>
                                 </div>
-                                <div class="video-card__bottom">
-                                    <div class="video-card__avatar">
-                                        <img src="<?php echo htmlspecialchars($avatarPath); ?>" alt="Perfil de <?php echo htmlspecialchars($displayName); ?>" loading="lazy">
-                                    </div>
-                                    <div class="video-card__info">
-                                        <h3 class="video-card__title" title="<?php echo htmlspecialchars($short['title']); ?>"><?php echo htmlspecialchars($short['title']); ?></h3>
-                                        <p class="video-card__user"><?php echo htmlspecialchars($displayName); ?></p>
+                                <div class="video-card__bottom" style="margin-top: 8px;">
+                                    <div class="video-card__info" style="margin-left: 0;">
+                                        <h3 class="video-card__title" title="<?php echo htmlspecialchars($short['title']); ?>" style="font-size: 14px; margin-bottom: 4px;"><?php echo htmlspecialchars($short['title']); ?></h3>
                                         <p class="video-card__meta"><?php echo $short['views'] ?? 0; ?> vistas</p>
                                     </div>
                                 </div>

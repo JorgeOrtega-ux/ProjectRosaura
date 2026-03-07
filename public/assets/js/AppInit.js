@@ -4,12 +4,14 @@ import { SpaRouter } from './core/router/SpaRouter.js';
 import { DialogSystem } from './core/components/DialogSystem.js';
 import { TooltipSystem } from './core/components/TooltipSystem.js';
 import { CalendarSystem } from './core/components/CalendarSystem.js';
-import { VideoCardSystem } from './core/components/VideoCardSystem.js'; // <-- IMPORTACIÓN AÑADIDA
+import { VideoCardSystem } from './core/components/VideoCardSystem.js';
 
 // Importamos nuestro nuevo Mapa de Rutas
 import { RouteModulesMap } from './core/router/RouteModulesMap.js';
 
 document.addEventListener('DOMContentLoaded', () => {
+    console.log("[AppInit] Iniciando arranque de la aplicación...");
+
     // 1. Instanciamos lógica UI base (Global)
     const app = new MainController();
     app.init();
@@ -26,7 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.tooltipSystem = new TooltipSystem();
     window.tooltipSystem.init();
 
-    // 5. Instanciamos e inicializamos el Sistema de Video Cards (Global) <-- INICIALIZACIÓN AÑADIDA
+    // 5. Instanciamos e inicializamos el Sistema de Video Cards (Global)
     window.videoCardSystem = new VideoCardSystem();
     window.videoCardSystem.init();
 
@@ -40,11 +42,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // ========================================================
     
     window.loadedControllers = {}; 
-    // Mutex Lock: Evita descargas concurrentes del mismo módulo si hay race-conditions
+    // Mutex Lock: Evita descargas concurrentes del mismo módulo
     window.importLocks = {}; 
 
     window.addEventListener('viewLoaded', async (e) => {
         const cleanUrl = e.detail.cleanUrl; 
+        console.log(`[Router] viewLoaded disparado -> cleanUrl recibida: "${cleanUrl}"`);
         
         let relativePath = cleanUrl;
         if (window.AppBasePath && cleanUrl.startsWith(window.AppBasePath)) {
@@ -53,47 +56,58 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (relativePath === '') relativePath = '/';
 
+        // --- SOLUCIÓN PARA RUTAS DINÁMICAS TIPO PERFIL (Ej: /@jorge) ---
+        if (relativePath.startsWith('/@')) {
+            console.log(`[Router] Ruta de perfil detectada, normalizando a "/@"`);
+            relativePath = '/@';
+        }
+
         let moduleConfig = RouteModulesMap[relativePath];
 
-        // Soporte para rutas dinámicas (Ej: /studio/management-panel/ID_DEL_PROYECTO)
+        // Soporte para otras rutas dinámicas (Ej: /studio/management-panel/ID)
         if (!moduleConfig) {
             const baseRoute = Object.keys(RouteModulesMap).find(route => relativePath.startsWith(route + '/'));
             if (baseRoute) {
                 moduleConfig = RouteModulesMap[baseRoute];
+                console.log(`[Router] Se usó ruta dinámica base: "${baseRoute}"`);
             }
         }
 
         if (moduleConfig) {
             const className = moduleConfig.className;
+            console.log(`[Router] Módulo mapeado: ${className} -> ${moduleConfig.path}`);
 
-            // Si ya hay un proceso de carga activo para esta clase, esperamos a que termine
+            // Si ya hay un proceso de carga activo para esta clase, esperamos
             if (window.importLocks[className]) {
+                console.log(`[Router] Esperando a que el lock de ${className} se libere...`);
                 await window.importLocks[className];
             }
 
             try {
                 if (!window.loadedControllers[className]) {
+                    console.log(`[Router] Descargando/Importando ${className}...`);
                     
                     // Bloqueamos para evitar instanciaciones dobles concurrentes
                     window.importLocks[className] = import(moduleConfig.path);
                     const module = await window.importLocks[className];
                     
-                    // CORRECCIÓN VITAL: Soporta export nombrados (export class) y por defecto (export default class)
                     const ControllerClass = module[className] || module.default;
 
                     if (!ControllerClass) {
                         throw new Error(`La clase '${className}' no se encontró en el módulo importado.`);
                     }
 
+                    console.log(`[Router] Instanciando ${className}...`);
                     const instance = new ControllerClass();
                     
                     window.loadedControllers[className] = instance;
 
                     if (typeof instance.init === 'function') {
                         instance.init();
+                        console.log(`[Router] ${className}.init() ejecutado exitosamente.`);
                     }
                 } else {
-                    // Si ya existe, reciclamos
+                    console.log(`[Router] ${className} ya estaba en memoria. Reciclando instancia...`);
                     const existingInstance = window.loadedControllers[className];
                     if (typeof existingInstance.init === 'function') {
                         existingInstance.init(); 
@@ -105,14 +119,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Liberamos el candado
                 delete window.importLocks[className];
             }
+        } else {
+            console.warn(`[Router] No se encontró ninguna configuración en RouteModulesMap para: "${relativePath}"`);
         }
     });
 
     // ========================================================
     // AUTO-ARRANQUE DE LAZY LOADING PARA LA CARGA INICIAL (F5)
     // ========================================================
-    // Ejecución síncrona, directa y sin setTimeouts. Analiza la URL 
-    // real con la que arrancó la página y dispara el inyector del JS.
     let currentPath = window.location.pathname;
     let initialCleanUrl = currentPath.split('?')[0].split('#')[0];
     
@@ -120,6 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
         initialCleanUrl = initialCleanUrl.slice(0, -1);
     }
 
+    console.log(`[AppInit] Disparando viewLoaded inicial para: "${initialCleanUrl}"`);
     window.dispatchEvent(new CustomEvent('viewLoaded', { 
         detail: { 
             url: currentPath,

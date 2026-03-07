@@ -42,7 +42,14 @@ class UserRepository implements UserRepositoryInterface {
     }
 
     public function findByUsername(string $username): ?array {
-        $stmt = $this->pdo->prepare("SELECT id FROM users WHERE username = ?");
+        $stmt = $this->pdo->prepare("
+            SELECT u.*, 
+                   ur.is_suspended, ur.suspension_type, ur.suspension_reason, ur.suspension_end_date, 
+                   ur.deleted_by, ur.deleted_reason, ur.admin_notes 
+            FROM users u 
+            LEFT JOIN user_restrictions ur ON u.id = ur.user_id 
+            WHERE u.username = ?
+        ");
         $stmt->execute([$username]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
         return $user ?: null;
