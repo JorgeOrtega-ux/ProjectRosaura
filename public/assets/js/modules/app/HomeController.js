@@ -6,11 +6,12 @@ import { ApiRoutes } from '../../core/api/ApiRoutes.js';
 export class HomeController {
     constructor() {
         this.api = new ApiService();
-        this.container = document.getElementById('video-feed-container');
+        this.horizontalContainer = document.getElementById('video-feed-container');
+        this.verticalContainer = document.getElementById('vertical-feed-container');
     }
 
     async init() {
-        if (this.container) {
+        if (this.horizontalContainer || this.verticalContainer) {
             await this.loadFeed();
         }
     }
@@ -20,7 +21,9 @@ export class HomeController {
             const response = await this.api.post(ApiRoutes.App.GetFeed, { limit: 20, offset: 0 });
             
             if (response && response.success) {
-                this.renderFeed(response.data);
+                // Renderizamos ambos feeds pasándole su contenedor y orientación
+                this.renderFeed(response.data.vertical, this.verticalContainer, 'vertical');
+                this.renderFeed(response.data.horizontal, this.horizontalContainer, 'horizontal');
             } else {
                 this.showError('No se pudieron cargar los videos en este momento.');
             }
@@ -30,45 +33,55 @@ export class HomeController {
         }
     }
 
-    renderFeed(videos) {
+    renderFeed(videos, container, orientation) {
+        if (!container) return;
+
         if (!videos || videos.length === 0) {
-            this.container.innerHTML = `
-                <div class="component-empty-state">
-                    <span class="material-symbols-rounded component-empty-state-icon">videocam_off</span>
-                    <p class="component-empty-state-text">No hay videos publicados aún. ¡Sé el primero en subir uno!</p>
-                </div>
-            `;
+            // Si no hay videos verticales, ocultamos toda la sección para no dejar un espacio vacío
+            if (orientation === 'vertical') {
+                container.previousElementSibling.style.display = 'none'; // Oculta el título "Shorts"
+                container.style.display = 'none';
+            } else {
+                container.innerHTML = `
+                    <div class="component-empty-state">
+                        <span class="material-symbols-rounded component-empty-state-icon">videocam_off</span>
+                        <p class="component-empty-state-text">No hay videos publicados aún. ¡Sé el primero en subir uno!</p>
+                    </div>
+                `;
+            }
             return;
         }
 
         let html = '';
         videos.forEach(video => {
-            html += this.createCardHTML(video);
+            html += this.createCardHTML(video, orientation);
         });
 
-        this.container.innerHTML = html;
-        this.attachHoverEvents();
+        container.innerHTML = html;
+        this.attachHoverEvents(container);
     }
 
-    createCardHTML(video) {
+    createCardHTML(video, orientation) {
         const title = video.title || 'Video sin título';
         const views = video.views || 0;
         const timeAgo = this.timeSince(new Date(video.created_at));
         const formattedDuration = this.formatDuration(video.duration);
         const dominantColor = video.thumbnail_dominant_color !== 'transparent' ? video.thumbnail_dominant_color : '#333'; 
-        
-        // ASUNCIÓN: Asegúrate de que tu API (GetFeed) esté devolviendo la ruta del video, 
-        // por ejemplo en "video.video_url" o "video.file_url".
         const videoSrc = video.video_url || ''; 
 
+        // Evaluamos si es vertical para inyectar clases y estilos específicos
+        const isVertical = orientation === 'vertical';
+        const cardModifierClass = isVertical ? 'video-card--vertical' : '';
+        const aspectRatio = isVertical ? '9/16' : '16/9';
+
         return `
-            <div class="video-card component-video-card" style="--local-dominant-color: ${dominantColor};" onclick="window.location.href='${window.AppBasePath || ''}/watch/${video.uuid}'">
+            <div class="video-card component-video-card ${cardModifierClass}" style="--local-dominant-color: ${dominantColor};" onclick="window.location.href='${window.AppBasePath || ''}/watch/${video.uuid}'">
                 
-                <div class="video-card__top" style="position: relative; overflow: hidden; aspect-ratio: 16/9;">
+                <div class="video-card__top" style="position: relative; overflow: hidden; aspect-ratio: ${aspectRatio};">
                     
                     <img src="${video.thumbnail_url}" alt="Miniatura de ${title}" class="component-video-card__thumbnail video-card__thumbnail" loading="lazy">
                     
-                  <video 
+                    <video 
                         data-src="${videoSrc}" 
                         class="component-video-card__player" 
                         muted 
@@ -82,9 +95,11 @@ export class HomeController {
                 </div>
 
                 <div class="video-card__bottom">
+                    ${!isVertical ? `
                     <div class="video-card__avatar">
                         <img src="${video.avatar_url}" alt="Perfil de ${video.username}" loading="lazy">
                     </div>
+                    ` : ''}
                     <div class="video-card__info">
                         <h3 class="video-card__title" title="${title}">${title}</h3>
                         <p class="video-card__user">${video.username}</p>
@@ -95,14 +110,13 @@ export class HomeController {
         `;
     }
 
-    attachHoverEvents() {
-        const cards = this.container.querySelectorAll('.component-video-card');
+    attachHoverEvents(container) {
+        const cards = container.querySelectorAll('.component-video-card');
         
         cards.forEach(card => {
             card.addEventListener('mouseenter', () => {
                 const dominantColor = card.style.getPropertyValue('--local-dominant-color');
                 if (dominantColor && dominantColor.trim() !== '') {
-                    // Seteamos la variable en el root para que otros módulos/componentes puedan usarla
                     document.documentElement.style.setProperty('--global-dominant-color', dominantColor);
                 }
             });
@@ -127,7 +141,9 @@ export class HomeController {
     }
 
     showError(msg) {
-        this.container.innerHTML = `<p class="component-text-notice component-text-notice--error">${msg}</p>`;
+        if (this.horizontalContainer) {
+            this.horizontalContainer.innerHTML = `<p class="component-text-notice component-text-notice--error">${msg}</p>`;
+        }
     }
 
     timeSince(date) {

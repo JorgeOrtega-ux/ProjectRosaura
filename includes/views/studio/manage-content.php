@@ -40,6 +40,7 @@
                         <thead>
                             <tr>
                                 <th>Video</th>
+                                <th>Orientación</th>
                                 <th>Estado / Visibilidad</th>
                                 <th>Restricciones</th>
                                 <th>Fecha</th>
@@ -54,7 +55,7 @@
 
                     <template id="emptyTableTemplate">
                         <tr>
-                            <td colspan="7" class="component-empty-table-cell">
+                            <td colspan="8" class="component-empty-table-cell">
                                 <div class="component-empty-state component-empty-state--table">
                                     <span class="material-symbols-rounded component-empty-state-icon">video_library</span>
                                     <p class="component-empty-state-text">No hay videos disponibles por el momento.</p>

@@ -480,5 +480,9 @@
     "studio_video_link": "Enlace del video",
     "studio_link_pending": "Se generará al publicar",
     "studio_file_name": "Nombre del archivo",
-    "studio_upload_thumb": "Subir miniatura"
+    "studio_upload_thumb": "Subir miniatura",
+    "home_shorts_title": "Videos Cortos",
+    "home_recommended_title": "Videos Recomendados",
+    "studio_orientation_vertical": "Vertical",
+    "studio_orientation_horizontal": "Horizontal"
 }

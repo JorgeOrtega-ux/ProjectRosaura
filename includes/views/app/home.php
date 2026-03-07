@@ -5,6 +5,12 @@
             <p class="component-page-description"><?php echo __('home_desc'); ?></p>
         </div>
         
+        <h2 class="component-section-title" style="margin: 24px 0 16px; font-size: 1.25rem; font-weight: 600;">Shorts</h2>
+        <div id="vertical-feed-container" class="video-feed-grid vertical-feed-grid" style="margin-bottom: 40px;">
+            <div class="component-spinner component-spinner--centered" style="margin-top: 40px;"></div>
+        </div>
+
+        <h2 class="component-section-title" style="margin: 24px 0 16px; font-size: 1.25rem; font-weight: 600;">Videos Recomendados</h2>
         <div id="video-feed-container" class="video-feed-grid">
             <div class="component-spinner component-spinner--centered" style="margin-top: 40px;"></div>
         </div>

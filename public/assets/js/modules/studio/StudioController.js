@@ -173,6 +173,11 @@ export class StudioController {
         // Estilos para los datos usando badges transparentes
         const badgeStyle = 'display: inline-flex; align-items: center; gap: 4px;';
 
+        // Lógica de Orientación visual (Badge)
+        let orientationBadge = video.orientation === 'vertical' 
+            ? '<span class="material-symbols-rounded" style="font-size: 14px; margin-right: 4px;">smartphone</span> Vertical' 
+            : '<span class="material-symbols-rounded" style="font-size: 14px; margin-right: 4px;">desktop_windows</span> Normal';
+
         tr.innerHTML = `
             <td>
                 <div class="table-video-info">
@@ -183,6 +188,7 @@ export class StudioController {
                     </div>
                 </div>
             </td>
+            <td><span class="component-badge component-badge--sm" style="${badgeStyle}">${orientationBadge}</span></td>
             <td>${statusBadge}</td>
             <td><span class="component-badge component-badge--sm" style="${badgeStyle}">Ninguna</span></td>
             <td><span class="component-badge component-badge--sm" style="${badgeStyle}">${date}</span></td>
