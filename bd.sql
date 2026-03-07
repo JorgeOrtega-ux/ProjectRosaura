@@ -140,6 +140,7 @@ CREATE TABLE IF NOT EXISTS videos (
     title VARCHAR(255) DEFAULT NULL,
     description TEXT DEFAULT NULL,
     thumbnail_path VARCHAR(255) DEFAULT NULL,
+    thumbnail_dominant_color VARCHAR(7) DEFAULT NULL,
     temp_file_path VARCHAR(255) DEFAULT NULL,
     hls_path VARCHAR(255) DEFAULT NULL,
     generated_thumbnails JSON DEFAULT NULL,

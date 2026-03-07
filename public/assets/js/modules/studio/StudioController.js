@@ -392,6 +392,10 @@ export class StudioController {
                         return;
                     }
 
+                    console.log('[FRONTEND DEBUG] Iniciando guardado de cambios. Video ID:', this.selectedVideoId);
+
+                    // 1. Guardar Título y Descripción
+                    let hasError = false;
                     const updateRoute = ApiRoutes.Studio?.UpdateTitle || 'studio.update_title';
                     const updateRes = await this.api.post(updateRoute, {
                         video_id: this.selectedVideoId,
@@ -402,10 +406,50 @@ export class StudioController {
                     if (updateRes.status === 'success') {
                         video.title = newTitle;
                         video.description = newDesc;
-                        alert('Los cambios se han guardado con éxito.');
+                        console.log('[FRONTEND DEBUG] Título y descripción actualizados con éxito.');
                     } else {
+                        console.error('[FRONTEND DEBUG] Error al actualizar título:', updateRes.message);
                         alert("Error guardando datos: " + updateRes.message);
+                        hasError = true;
                     }
+
+                    // 2. Guardar Miniatura (Si el usuario la cambió durante esta edición)
+                    if (!hasError && video.draftThumbnailType) {
+                        console.log('[FRONTEND DEBUG] Nueva miniatura detectada. Tipo:', video.draftThumbnailType);
+                        
+                        const formData = new FormData();
+                        formData.append('video_id', this.selectedVideoId);
+
+                        if (video.draftThumbnailType === 'file') {
+                            formData.append('thumbnail', video.draftThumbnailData);
+                            console.log('[FRONTEND DEBUG] Preparando subida de archivo de miniatura.');
+                        } else if (video.draftThumbnailType === 'generated') {
+                            formData.append('generated_path', video.draftThumbnailData);
+                            console.log('[FRONTEND DEBUG] Preparando asignación de miniatura generada:', video.draftThumbnailData);
+                        }
+
+                        const thumbRoute = ApiRoutes.Studio?.UploadThumbnail || 'studio.upload_thumbnail';
+                        try {
+                            const thumbRes = await this.api.postForm(thumbRoute, formData);
+                            console.log('[FRONTEND DEBUG] Respuesta del backend al procesar miniatura:', thumbRes);
+                            
+                            if (thumbRes.status === 'success') {
+                                video.draftThumbnailType = null; // Reiniciar estado
+                                if (thumbRes.data && thumbRes.data.thumbnail_dominant_color) {
+                                    console.log('[FRONTEND DEBUG] ¡ÉXITO! Color dominante guardado en BD:', thumbRes.data.thumbnail_dominant_color);
+                                }
+                            } else {
+                                console.error('[FRONTEND DEBUG] Error del backend al guardar la miniatura:', thumbRes.message);
+                                alert("Los textos se guardaron, pero hubo un error con la miniatura: " + thumbRes.message);
+                            }
+                        } catch (error) {
+                            console.error('[FRONTEND DEBUG] Excepción de red al enviar la miniatura:', error);
+                        }
+                    } else if (!hasError) {
+                         console.log('[FRONTEND DEBUG] No se detectaron cambios en la miniatura durante esta edición.');
+                    }
+                    
+                    if(!hasError) alert('Los cambios se han guardado con éxito.');
                     
                     btnSave.disabled = false;
                     btnSave.innerHTML = '<span class="material-symbols-rounded">save</span> <span>Guardar cambios</span>';
@@ -534,6 +578,8 @@ export class StudioController {
     }
 
     async selectGeneratedThumbnail(itemElement, fullUrl, relativePath) {
+        console.log('[FRONTEND DEBUG] Usuario seleccionó miniatura autogenerada:', relativePath);
+        
         document.querySelectorAll('.component-thumbnail-item').forEach(el => el.classList.remove('component-thumbnail-selected'));
         itemElement.classList.add('component-thumbnail-selected');
         
@@ -787,6 +833,8 @@ export class StudioController {
                 if (!e.target.files.length || !controller.selectedVideoId) return;
                 
                 const file = e.target.files[0];
+                console.log('[FRONTEND DEBUG] Usuario seleccionó archivo de miniatura local:', file.name);
+
                 const localPreviewUrl = URL.createObjectURL(file);
                 
                 const video = controller.currentVideos.get(controller.selectedVideoId);
@@ -890,9 +938,11 @@ export class StudioController {
         const routeName = ApiRoutes.Studio?.PublishVideo || 'studio.publish_video';
         
         try {
+            console.log('[FRONTEND DEBUG] Iniciando petición de Publicar video.');
             const res = await this.api.postForm(routeName, formData);
 
             if (res.status === 'success') {
+                console.log('[FRONTEND DEBUG] Video publicado exitosamente. Respuesta:', res.data);
                 alert("¡Video publicado con éxito!");
                 this.currentVideos.delete(this.selectedVideoId);
                 this.renderBadges();

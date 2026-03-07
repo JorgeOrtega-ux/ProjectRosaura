@@ -50,6 +50,10 @@ class VideoRepository implements VideoRepositoryInterface {
             $fields[] = "thumbnail_path = :thumbnail_path";
             $params[':thumbnail_path'] = $data['thumbnail_path'];
         }
+        if (isset($data['thumbnail_dominant_color'])) {
+            $fields[] = "thumbnail_dominant_color = :thumbnail_dominant_color";
+            $params[':thumbnail_dominant_color'] = $data['thumbnail_dominant_color'];
+        }
         if (isset($data['description'])) {
             $fields[] = "description = :description";
             $params[':description'] = $data['description'];

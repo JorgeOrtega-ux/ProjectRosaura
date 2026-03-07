@@ -204,6 +204,39 @@ class StudioServices {
         ];
     }
 
+    private function getAverageColor(string $filepath): ?string {
+        $mime = mime_content_type($filepath);
+        $img = null;
+        
+        switch ($mime) {
+            case 'image/jpeg': 
+                $img = @imagecreatefromjpeg($filepath); 
+                break;
+            case 'image/png': 
+                $img = @imagecreatefrompng($filepath); 
+                break;
+            case 'image/webp': 
+                $img = @imagecreatefromwebp($filepath); 
+                break;
+        }
+        
+        if (!$img) return null;
+        
+        // Redimensionar la imagen a 1x1 píxel obtiene el color promedio (dominante) de toda la imagen
+        $thumb = imagecreatetruecolor(1, 1);
+        imagecopyresampled($thumb, $img, 0, 0, 0, 0, 1, 1, imagesx($img), imagesy($img));
+        
+        $rgb = imagecolorat($thumb, 0, 0);
+        $r = ($rgb >> 16) & 0xFF;
+        $g = ($rgb >> 8) & 0xFF;
+        $b = $rgb & 0xFF;
+        
+        imagedestroy($img);
+        imagedestroy($thumb);
+        
+        return sprintf("#%02x%02x%02x", $r, $g, $b);
+    }
+
     public function uploadThumbnail(int $userId, int $videoId, ?array $file = null, ?string $base64 = null, ?string $generatedPath = null): array {
         $video = $this->videoRepo->findById($videoId);
         if (!$video || $video['user_id'] != $userId) {
@@ -289,8 +322,22 @@ class StudioServices {
             }
         }
 
-        $this->videoRepo->updateMetadata($videoId, ['thumbnail_path' => $publicPath]);
-        return ['thumbnail_path' => $publicPath];
+        // Obtener el color dominante y guardar la meta-data de la imagen
+        $dominantColor = $this->getAverageColor($destination);
+        
+        $metadata = ['thumbnail_path' => $publicPath];
+        if ($dominantColor) {
+            $metadata['thumbnail_dominant_color'] = $dominantColor;
+        }
+
+        $this->videoRepo->updateMetadata($videoId, $metadata);
+        
+        $result = ['thumbnail_path' => $publicPath];
+        if ($dominantColor) {
+            $result['thumbnail_dominant_color'] = $dominantColor;
+        }
+
+        return $result;
     }
 
     public function updateVideoDetails(int $userId, int $videoId, string $title, ?string $description = null): array {
