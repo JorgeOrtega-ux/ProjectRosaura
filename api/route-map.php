@@ -2,6 +2,9 @@
 // api/route-map.php
 
 return [
+    // --- RUTAS APP FRONTEND ---
+    'app.get_feed'         => ['controller' => 'App\Api\Controllers\FeedController', 'action' => 'get_feed'],
+
     // --- RUTAS DE AUTENTICACIÓN ---
     'auth.register.step1'  => ['controller' => 'App\Api\Controllers\AuthController', 'action' => 'register_step1'],
     'auth.register.step2'  => ['controller' => 'App\Api\Controllers\AuthController', 'action' => 'register_step2'],
@@ -83,7 +86,7 @@ return [
     'studio.publish_video'        => ['controller' => 'App\Api\Controllers\StudioController', 'action' => 'publish_video'],
     'studio.cancel_upload'        => ['controller' => 'App\Api\Controllers\StudioController', 'action' => 'cancel_upload'],
     
-    // --- NUEVAS RUTAS DE TAGS PARA EL STUDIO ---
+    // --- RUTAS DE TAGS PARA EL STUDIO ---
     'studio.get_models'           => ['controller' => 'App\Api\Controllers\StudioController', 'action' => 'get_models'],
     'studio.get_categories'       => ['controller' => 'App\Api\Controllers\StudioController', 'action' => 'get_categories'],
 ];

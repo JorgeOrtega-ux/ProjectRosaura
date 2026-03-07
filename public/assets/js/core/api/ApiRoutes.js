@@ -1,6 +1,9 @@
 // public/assets/js/core/api/ApiRoutes.js
 
 export const ApiRoutes = {
+    App: {
+        GetFeed: 'app.get_feed'
+    },
     Auth: {
         Login: 'auth.login',
         LoginVerify2FA: 'auth.login.verify_2fa',
@@ -50,7 +53,7 @@ export const ApiRoutes = {
         DeleteBackup: 'admin.delete_backup',
         ReadLogs: 'admin.read_logs',
         DeleteLogs: 'admin.delete_logs',
-        
+
         GetTags: 'admin.get_tags',
         CreateTag: 'admin.create_tag',
         UpdateTag: 'admin.update_tag',
@@ -65,7 +68,7 @@ export const ApiRoutes = {
         GetVideo: 'studio.get_video',
         PublishVideo: 'studio.publish_video',
         CancelUpload: 'studio.cancel_upload',
-        
+
         // --- NUEVAS RUTAS DE ETIQUETAS AÑADIDAS ---
         GetModels: 'studio.get_models',
         GetCategories: 'studio.get_categories'

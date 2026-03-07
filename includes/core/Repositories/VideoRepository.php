@@ -129,12 +129,29 @@ class VideoRepository implements VideoRepositoryInterface {
         return (int) $stmt->fetchColumn();
     }
 
-    // --- MÉTODOS PARA SISTEMA DE TAGS (MODIFICADOS PARA MIXTOS) ---
+    // --- NUEVO: MÉTODO PARA OBTENER FEED PÚBLICO EN EL HOME ---
+    public function getPublicFeed(int $limit = 20, int $offset = 0): array {
+        // Se hace un JOIN con users para traer username y avatar
+        $stmt = $this->db->prepare("
+            SELECT v.id, v.uuid, v.title, v.thumbnail_path, v.created_at, v.status,
+                   u.username, u.avatar_path, 
+                   COALESCE(v.views, 0) as views -- Asumiendo o preparando columna views
+            FROM videos v
+            JOIN users u ON v.user_id = u.id
+            WHERE v.status IN ('published', 'processed') 
+            ORDER BY v.created_at DESC
+            LIMIT :limit OFFSET :offset
+        ");
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
 
+    // --- MÉTODOS PARA SISTEMA DE TAGS ---
     public function syncTags(int $videoId, array $tags): bool {
         try {
             $this->db->beginTransaction();
-
             $stmtDelete = $this->db->prepare("DELETE FROM video_tags WHERE video_id = :video_id");
             $stmtDelete->execute([':video_id' => $videoId]);
 
@@ -145,7 +162,6 @@ class VideoRepository implements VideoRepositoryInterface {
                 
                 foreach ($tags as $index => $tag) {
                     $insertValues[] = "(:video_id_{$index}, :tag_id_{$index}, :custom_name_{$index}, :custom_type_{$index})";
-                    
                     $params[":video_id_{$index}"] = $videoId;
                     $params[":tag_id_{$index}"] = isset($tag['id']) ? $tag['id'] : null;
                     $params[":custom_name_{$index}"] = isset($tag['name']) ? $tag['name'] : null;
@@ -167,8 +183,6 @@ class VideoRepository implements VideoRepositoryInterface {
     }
 
    public function getVideoTags(int $videoId): array {
-        // Obtenemos los oficiales uniendo por ID, y los personalizados rescatando la columna de texto.
-        // Usamos ORDER BY 3, 2 para evitar el error de "columna ambigua" en MySQL
         $stmt = $this->db->prepare("
             SELECT 
                 COALESCE(t.id, CONCAT('custom_', vt.id)) as id,

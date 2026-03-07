@@ -1,6 +1,9 @@
 // public/assets/js/core/router/RouteModulesMap.js
 
 export const RouteModulesMap = {
+    // ---- MÓDULO APP PRINCIPAL ----
+    '/': { path: './modules/app/HomeController.js', className: 'HomeController' },
+    '/home': { path: './modules/app/HomeController.js', className: 'HomeController' },
     // ---- MÓDULOS DE AUTENTICACIÓN ----
     '/login': { path: './modules/auth/AuthController.js', className: 'AuthController' },
     '/register': { path: './modules/auth/AuthController.js', className: 'AuthController' },
