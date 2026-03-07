@@ -170,6 +170,9 @@ export class StudioController {
         const title = video.title || video.original_filename || 'Sin título';
         const date = video.created_at ? new Date(video.created_at).toLocaleDateString() : '-';
 
+        // Estilos para los datos usando badges transparentes
+        const badgeStyle = 'display: inline-flex; align-items: center; gap: 4px;';
+
         tr.innerHTML = `
             <td>
                 <div class="table-video-info">
@@ -181,11 +184,11 @@ export class StudioController {
                 </div>
             </td>
             <td>${statusBadge}</td>
-            <td>Ninguna</td>
-            <td>${date}</td>
-            <td>0</td>
-            <td>0</td>
-            <td>0</td>
+            <td><span class="component-badge component-badge--sm" style="${badgeStyle}">Ninguna</span></td>
+            <td><span class="component-badge component-badge--sm" style="${badgeStyle}">${date}</span></td>
+            <td><span class="component-badge component-badge--sm" style="${badgeStyle}">0</span></td>
+            <td><span class="component-badge component-badge--sm" style="${badgeStyle}">0</span></td>
+            <td><span class="component-badge component-badge--sm" style="${badgeStyle}">0</span></td>
         `;
         return tr;
     }
@@ -500,6 +503,16 @@ export class StudioController {
     addTag(id, name, type, isNew = false) {
         const arr = type === 'modelo' ? this.selectedModels : this.selectedCategories;
         
+        // Validación de límites máximos por tipo
+        if (type === 'modelo' && arr.length >= 25) {
+            alert("Has alcanzado el límite máximo de 25 modelos por video.");
+            return;
+        }
+        if (type === 'category' && arr.length >= 50) {
+            alert("Has alcanzado el límite máximo de 50 categorías por video.");
+            return;
+        }
+        
         if (!arr.find(t => t.name.toLowerCase() === name.toLowerCase())) {
             arr.push({ id, name, type, isNew });
             this.renderSelectedTags(type);
@@ -560,11 +573,11 @@ export class StudioController {
         if (!wrapper) {
             wrapper = document.createElement('div');
             wrapper.id = wrapperId;
-            wrapper.style.cssText = "padding: 0 16px 16px 16px; width: 100%;";
+            wrapper.setAttribute('data-component', 'tags-wrapper'); // Se utiliza atributo data en lugar de style en línea
             
             const innerContainer = document.createElement('div');
             innerContainer.id = containerId;
-            innerContainer.style.cssText = "display: flex; flex-wrap: wrap; gap: 8px;";
+            innerContainer.setAttribute('data-component', 'tags-container'); // Se utiliza atributo data en lugar de style en línea
             
             wrapper.appendChild(innerContainer);
             

@@ -463,12 +463,12 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background-color: var(--background-secondary, #2a2a2a);
+    background-color: var(--text-primary); /* Forzamos color de fondo sólido dependiendo del tema para contraste */
     border: 1px solid var(--border-color);
     border-radius: 16px;
     padding: 6px 12px;
     font-size: 13px;
-    color: var(--text-primary);
+    color: #ffffff; /* Forzado a blanco para tags oficiales */
     transition: background-color 0.2s;
     user-select: none;
 }
@@ -484,7 +484,7 @@
 .tag-pill-remove {
     font-size: 16px;
     cursor: pointer;
-    color: var(--text-secondary);
+    color: #ffffff; /* Ajustado para tag oficial */
     border-radius: 50%;
     transition: color 0.2s, background-color 0.2s;
     padding: 2px;
@@ -492,19 +492,39 @@
 }
 
 .tag-pill-remove:hover {
+    color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Sobreescritura para tags locales (mantenerlos dinámicos y legibles si el fondo es transparente por JS) */
+.tag-pill[style*="transparent"] {
     color: var(--text-primary);
-    background-color: rgba(255, 255, 255, 0.1);
+}
+.tag-pill[style*="transparent"] .tag-pill-remove {
+    color: var(--text-secondary);
+}
+.tag-pill[style*="transparent"] .tag-pill-remove:hover {
+    color: var(--text-primary);
+    background-color: var(--border-color);
 }
 
 @media (prefers-color-scheme: dark) {
     .tag-pill {
-        background-color: #1a1a1a;
         border-color: #333;
     }
     .tag-pill:hover {
         background-color: #333;
     }
-    .tag-pill-remove:hover {
-        background-color: rgba(255, 255, 255, 0.2);
-    }
+}
+
+/* Estilos de los wrappers de etiquetas (Reemplazando estilos en línea) */
+[data-component="tags-wrapper"] {
+    width: 100%;
+    padding: 0; /* Padding eliminado como lo solicitaste */
+}
+
+[data-component="tags-container"] {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
 }

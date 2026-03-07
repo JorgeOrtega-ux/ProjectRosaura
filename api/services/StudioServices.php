@@ -345,8 +345,16 @@ class StudioServices {
         return $result;
     }
 
-    // --- HELPER PRIVADO MODIFICADO PARA PROCESAR TAGS MIXTOS ---
+    // --- HELPER PRIVADO MODIFICADO PARA PROCESAR TAGS MIXTOS Y VALIDAR LÍMITES ---
     private function processTags(array $tagsData, string $type): array {
+        // Validaciones de seguridad de backend para evitar saturación de la BD
+        if ($type === 'modelo' && count($tagsData) > 25) {
+            throw new Exception("No puedes seleccionar más de 25 modelos por video.");
+        }
+        if ($type === 'category' && count($tagsData) > 50) {
+            throw new Exception("No puedes seleccionar más de 50 categorías por video.");
+        }
+
         $processedTags = [];
         foreach ($tagsData as $tagItem) {
             if (is_numeric($tagItem)) {
