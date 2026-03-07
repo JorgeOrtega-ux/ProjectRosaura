@@ -345,9 +345,7 @@ class StudioServices {
         return $result;
     }
 
-    // --- HELPER PRIVADO MODIFICADO PARA PROCESAR TAGS MIXTOS Y VALIDAR LÍMITES ---
     private function processTags(array $tagsData, string $type): array {
-        // Validaciones de seguridad de backend para evitar saturación de la BD
         if ($type === 'modelo' && count($tagsData) > 25) {
             throw new Exception("No puedes seleccionar más de 25 modelos por video.");
         }
@@ -372,7 +370,7 @@ class StudioServices {
         return $processedTags;
     }
 
-    public function updateVideoDetails(int $userId, int $videoId, string $title, ?string $description = null, array $models = [], array $categories = []): array {
+    public function updateVideoDetails(int $userId, int $videoId, string $title, ?string $description = null, array $models = [], array $categories = [], string $visibility = 'public'): array {
         $video = $this->videoRepo->findById($videoId);
         if (!$video || $video['user_id'] != $userId) {
             throw new Exception("Video no encontrado o no autorizado.");
@@ -382,7 +380,11 @@ class StudioServices {
             throw new Exception("El título no puede estar vacío.");
         }
 
-        $metadata = ['title' => trim($title)];
+        $metadata = [
+            'title' => trim($title),
+            'visibility' => $visibility
+        ];
+        
         if ($description !== null) {
             $metadata['description'] = trim($description);
         }
@@ -429,7 +431,7 @@ class StudioServices {
         throw new Exception("Video no encontrado.");
     }
 
-    public function publishVideo(int $userId, int $videoId, string $title, string $description, array $models = [], array $categories = [], ?array $thumbnailFile = null, ?string $generatedPath = null): array {
+    public function publishVideo(int $userId, int $videoId, string $title, string $description, array $models = [], array $categories = [], ?array $thumbnailFile = null, ?string $generatedPath = null, string $visibility = 'public'): array {
         $video = $this->videoRepo->findById($videoId);
         if (!$video || $video['user_id'] != $userId) {
             throw new Exception("Video no encontrado o no autorizado.");
@@ -452,7 +454,8 @@ class StudioServices {
 
         $metadata = [
             'title' => trim($title),
-            'description' => trim($description)
+            'description' => trim($description),
+            'visibility' => $visibility
         ];
         
         $this->videoRepo->updateMetadata($videoId, $metadata);

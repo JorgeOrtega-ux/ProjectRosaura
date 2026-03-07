@@ -55,6 +55,24 @@ $userUuid = $_GET['uuid'] ?? '';
                         </div>
 
                         <div class="component-card--grouped" style="margin-top: 24px;">
+                            <div class="component-group-item component-group-item--stacked">
+                                <div class="component-card__content component-card__content--full">
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title">Visibilidad</h2>
+                                        <p class="component-card__description" style="margin-bottom: 8px;">Elige quién puede ver tu video.</p>
+                                        <div class="component-input-group component-input-group--h34">
+                                            <select id="videoVisibilitySelect" class="component-input-field component-input-field--simple" style="padding: 0 12px; height: 34px;">
+                                                <option value="public">Público (Cualquier persona puede mirar tu video)</option>
+                                                <option value="unlisted">No listado (Cualquier persona con el vínculo puede mirarlo)</option>
+                                                <option value="private">Privado (Solo tú y las personas que elijas pueden mirar tu video)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="component-card--grouped" style="margin-top: 24px;">
                             <div class="component-group-item component-group-item--stacked" style="border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.05));">
                                 <div class="component-card__content component-card__content--full">
                                     <div class="component-card__text">

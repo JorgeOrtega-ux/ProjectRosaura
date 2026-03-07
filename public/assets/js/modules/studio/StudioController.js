@@ -236,8 +236,9 @@ export class StudioController {
         const uploadProgressBar = document.getElementById('uploadProgressBar');
         if(uploadProgressContainer) uploadProgressContainer.style.display = 'block';
 
-        const uploadTagsSection = document.getElementById('uploadTagsSection');
-        if(uploadTagsSection) uploadTagsSection.style.display = 'block';
+        // BUG FIX: Eliminado la línea que forzaba la aparición del contenedor de tags en /upload 
+        // const uploadTagsSection = document.getElementById('uploadTagsSection');
+        // if(uploadTagsSection) uploadTagsSection.style.display = 'block';
 
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
@@ -283,9 +284,11 @@ export class StudioController {
             
             const titleInput = document.getElementById('videoTitleInput');
             const descInput = document.getElementById('videoDescriptionInput');
+            const visibilitySelect = document.getElementById('videoVisibilitySelect');
             
             if (titleInput) titleInput.value = video.title || video.original_filename || '';
             if (descInput) descInput.value = video.description || '';
+            if (visibilitySelect) visibilitySelect.value = video.visibility || 'public';
             
             this.updateThumbnailPreview(video.thumbnail_path);
 
@@ -309,6 +312,7 @@ export class StudioController {
                     
                     const newTitle = titleInput ? titleInput.value.trim() : '';
                     const newDesc = descInput ? descInput.value.trim() : '';
+                    const newVisibility = visibilitySelect ? visibilitySelect.value : 'public';
                     
                     if (newTitle.length === 0) {
                         alert("El título no puede estar vacío.");
@@ -326,6 +330,7 @@ export class StudioController {
                         video_id: this.selectedVideoId,
                         title: newTitle,
                         description: newDesc,
+                        visibility: newVisibility,
                         models: modelsIds,
                         categories: categoriesIds
                     });
@@ -333,6 +338,7 @@ export class StudioController {
                     if (updateRes.status === 'success') {
                         video.title = newTitle;
                         video.description = newDesc;
+                        video.visibility = newVisibility;
                     } else {
                         alert("Error guardando datos: " + updateRes.message);
                         hasError = true;
@@ -395,15 +401,18 @@ export class StudioController {
 
         if (video.draftTitle === undefined) video.draftTitle = video.title || video.original_filename || '';
         if (video.draftDescription === undefined) video.draftDescription = video.description || '';
+        if (video.draftVisibility === undefined) video.draftVisibility = video.visibility || 'public';
         if (video.draftThumbnailPreview === undefined) video.draftThumbnailPreview = video.thumbnail_path;
 
         const displayTitle = document.querySelector('[data-ref="display-title"]');
         const titleInput = document.getElementById('videoTitleInput');
         const descInput = document.getElementById('videoDescriptionInput');
+        const visibilitySelect = document.getElementById('videoVisibilitySelect');
         
         if(displayTitle) displayTitle.textContent = video.draftTitle;
         if(titleInput) titleInput.value = video.draftTitle;
         if(descInput) descInput.value = video.draftDescription;
+        if(visibilitySelect) visibilitySelect.value = video.draftVisibility;
 
         this.setEditState('title', false);
 
@@ -937,6 +946,14 @@ export class StudioController {
             const controller = window.currentStudioController;
             if (!controller) return;
 
+            // Escuchador para cambios en visibilidad
+            if (e.target && e.target.id === 'videoVisibilitySelect') {
+                if (controller.selectedVideoId) {
+                    const video = controller.currentVideos.get(controller.selectedVideoId);
+                    if (video) video.draftVisibility = e.target.value;
+                }
+            }
+
             if (e.target && e.target.id === 'thumbnailInput') {
                 if (!e.target.files.length || !controller.selectedVideoId) return;
                 const file = e.target.files[0];
@@ -1014,6 +1031,7 @@ export class StudioController {
         formData.append('video_id', this.selectedVideoId);
         formData.append('title', video.draftTitle);
         formData.append('description', video.draftDescription || '');
+        formData.append('visibility', video.draftVisibility || 'public');
         
         const modelsArr = document.getElementById('hiddenModelsArray') ? document.getElementById('hiddenModelsArray').value : '[]';
         const categoriesArr = document.getElementById('hiddenCategoriesArray') ? document.getElementById('hiddenCategoriesArray').value : '[]';

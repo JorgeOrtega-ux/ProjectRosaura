@@ -145,6 +145,7 @@ CREATE TABLE IF NOT EXISTS videos (
     hls_path VARCHAR(255) DEFAULT NULL,
     generated_thumbnails JSON DEFAULT NULL,
     status ENUM('uploading', 'queued', 'processing', 'processed', 'failed', 'published') DEFAULT 'uploading',
+    visibility ENUM('public', 'private', 'unlisted') DEFAULT 'public',
     processing_progress INT DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

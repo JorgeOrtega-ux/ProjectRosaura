@@ -136,6 +136,7 @@ class StudioController {
         $videoId = $input['video_id'] ?? $_POST['video_id'] ?? null;
         $title = $input['title'] ?? $_POST['title'] ?? null;
         $description = $input['description'] ?? $_POST['description'] ?? null;
+        $visibility = $input['visibility'] ?? $_POST['visibility'] ?? 'public';
         
         // RECIBIR TAGS COMO ARRAYS Y DECIFRAR EL JSON
         $models = isset($_POST['models']) ? json_decode($_POST['models'], true) : ($input['models'] ?? []);
@@ -147,7 +148,7 @@ class StudioController {
         }
 
         try {
-            $this->studioServices->updateVideoDetails($userId, (int)$videoId, $title, $description, $models, $categories);
+            $this->studioServices->updateVideoDetails($userId, (int)$videoId, $title, $description, $models, $categories, $visibility);
             return ['success' => true, 'status' => 'success'];
         } catch (\Exception $e) {
             http_response_code(400);
@@ -219,6 +220,7 @@ class StudioController {
         $videoId = $input['video_id'] ?? $_POST['video_id'] ?? null;
         $title = $input['title'] ?? $_POST['title'] ?? null;
         $description = $input['description'] ?? $_POST['description'] ?? '';
+        $visibility = $input['visibility'] ?? $_POST['visibility'] ?? 'public';
 
         // RECIBIR TAGS
         $models = isset($_POST['models']) ? json_decode($_POST['models'], true) : ($input['models'] ?? []);
@@ -239,7 +241,7 @@ class StudioController {
         }
 
         try {
-            $result = $this->studioServices->publishVideo($userId, (int)$videoId, $title, $description, $models, $categories, $thumbnailFile, $generatedPath);
+            $result = $this->studioServices->publishVideo($userId, (int)$videoId, $title, $description, $models, $categories, $thumbnailFile, $generatedPath, $visibility);
             return ['success' => true, 'status' => 'success', 'data' => $result];
         } catch (\Exception $e) {
             http_response_code(400);

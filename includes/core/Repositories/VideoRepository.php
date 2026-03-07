@@ -16,8 +16,8 @@ class VideoRepository implements VideoRepositoryInterface {
 
     public function create(int $userId, string $uuid, string $originalFilename, string $tempFilePath): int {
         $stmt = $this->db->prepare("
-            INSERT INTO videos (user_id, uuid, original_filename, temp_file_path, status) 
-            VALUES (:user_id, :uuid, :original_filename, :temp_file_path, 'queued')
+            INSERT INTO videos (user_id, uuid, original_filename, temp_file_path, status, visibility) 
+            VALUES (:user_id, :uuid, :original_filename, :temp_file_path, 'queued', 'public')
         ");
         $stmt->execute([
             ':user_id' => $userId,
@@ -62,6 +62,10 @@ class VideoRepository implements VideoRepositoryInterface {
         if (isset($data['description'])) {
             $fields[] = "description = :description";
             $params[':description'] = $data['description'];
+        }
+        if (isset($data['visibility'])) {
+            $fields[] = "visibility = :visibility";
+            $params[':visibility'] = $data['visibility'];
         }
         if (array_key_exists('generated_thumbnails', $data)) {
             $fields[] = "generated_thumbnails = :generated_thumbnails";
@@ -134,16 +138,15 @@ class VideoRepository implements VideoRepositoryInterface {
     }
 
     // --- MÉTODOS PARA OBTENER FEED PÚBLICO EN EL HOME ---
-   // --- MÉTODOS PARA OBTENER FEED PÚBLICO EN EL HOME ---
     public function getPublicFeed(int $limit = 20, int $offset = 0): array {
         $stmt = $this->db->prepare("
             SELECT v.id, v.uuid, v.title, v.thumbnail_path, v.thumbnail_dominant_color, 
-                   v.duration, v.created_at, v.status, v.hls_path, v.temp_file_path,
+                   v.duration, v.created_at, v.status, v.visibility, v.hls_path, v.temp_file_path,
                    u.username, u.profile_picture AS avatar_path, 
                    0 AS views 
             FROM videos v
             JOIN users u ON v.user_id = u.id
-            WHERE v.status IN ('published', 'processed') 
+            WHERE v.status = 'published' AND v.visibility = 'public'
             ORDER BY v.created_at DESC
             LIMIT :limit OFFSET :offset
         ");
@@ -152,6 +155,7 @@ class VideoRepository implements VideoRepositoryInterface {
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
+    
     // --- MÉTODOS PARA SISTEMA DE TAGS ---
     public function syncTags(int $videoId, array $tags): bool {
         try {
