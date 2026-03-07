@@ -134,9 +134,11 @@ class VideoRepository implements VideoRepositoryInterface {
     }
 
     // --- MÉTODOS PARA OBTENER FEED PÚBLICO EN EL HOME ---
+   // --- MÉTODOS PARA OBTENER FEED PÚBLICO EN EL HOME ---
     public function getPublicFeed(int $limit = 20, int $offset = 0): array {
         $stmt = $this->db->prepare("
-            SELECT v.id, v.uuid, v.title, v.thumbnail_path, v.thumbnail_dominant_color, v.duration, v.created_at, v.status,
+            SELECT v.id, v.uuid, v.title, v.thumbnail_path, v.thumbnail_dominant_color, 
+                   v.duration, v.created_at, v.status, v.hls_path, v.temp_file_path,
                    u.username, u.profile_picture AS avatar_path, 
                    0 AS views 
             FROM videos v
@@ -150,7 +152,6 @@ class VideoRepository implements VideoRepositoryInterface {
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
-
     // --- MÉTODOS PARA SISTEMA DE TAGS ---
     public function syncTags(int $videoId, array $tags): bool {
         try {
