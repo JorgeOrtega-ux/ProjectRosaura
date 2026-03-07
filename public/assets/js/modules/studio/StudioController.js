@@ -233,6 +233,9 @@ export class StudioController {
         const uploadProgressBar = document.getElementById('uploadProgressBar');
         if(uploadProgressContainer) uploadProgressContainer.style.display = 'block';
 
+        const uploadTagsSection = document.getElementById('uploadTagsSection');
+        if(uploadTagsSection) uploadTagsSection.style.display = 'block';
+
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
             try {
@@ -283,7 +286,6 @@ export class StudioController {
             
             this.updateThumbnailPreview(video.thumbnail_path);
 
-            // --- CARGAR TAGS EXISTENTES Y DETERMINAR SI SON LOCALES/OFICIALES ---
             this.selectedModels = [];
             this.selectedCategories = [];
             if (video.tags && Array.isArray(video.tags)) {
@@ -295,7 +297,6 @@ export class StudioController {
             }
             this.renderSelectedTags('modelo');
             this.renderSelectedTags('category');
-            // ------------------------------
             
             const btnSave = document.getElementById('btnSaveChanges');
             if (btnSave) {
@@ -313,7 +314,6 @@ export class StudioController {
                         return;
                     }
 
-                    // Arrays de Tags Listos (Mixtos: ints para ID, strings para Nuevos)
                     const modelsIds = this.selectedModels.map(t => t.isNew ? t.name : parseInt(t.id));
                     const categoriesIds = this.selectedCategories.map(t => t.isNew ? t.name : parseInt(t.id));
 
@@ -418,7 +418,6 @@ export class StudioController {
         const thumbGrid = document.getElementById('generatedThumbnailsContainer');
         if(thumbGrid) { thumbGrid.innerHTML = ''; thumbGrid.style.display = 'none'; }
 
-        // --- RESET TAGS ---
         this.selectedModels = [];
         this.selectedCategories = [];
         if (video.tags && Array.isArray(video.tags)) {
@@ -436,17 +435,27 @@ export class StudioController {
 
     // --- LÓGICA DE ETIQUETAS Y BÚSQUEDA ---
     async toggleTagsMenu(menu, type) {
-        if (menu.style.display === 'flex') {
-            menu.style.display = 'none';
+        const isClosing = menu.classList.contains('active');
+        
+        document.querySelectorAll('.component-module[id$="SelectorMenu"]').forEach(m => {
+            if (m !== menu) {
+                m.classList.remove('active');
+                m.classList.add('disabled');
+            }
+        });
+
+        if (isClosing) {
+            menu.classList.remove('active');
+            menu.classList.add('disabled');
             return;
         }
 
-        document.querySelectorAll('.component-menu[id$="SelectorMenu"]').forEach(m => m.style.display = 'none');
+        menu.classList.remove('disabled');
+        menu.classList.add('active');
         
-        menu.style.display = 'flex';
         const list = menu.querySelector('.tag-results-list');
         const input = menu.querySelector('.tag-search-input');
-        if (input) input.value = ''; // Reset input
+        if (input) input.value = ''; 
         
         list.innerHTML = '<div style="padding: 16px; text-align: center; color: var(--text-secondary);"><span class="material-symbols-rounded">sync</span> Cargando...</div>';
 
@@ -464,10 +473,10 @@ export class StudioController {
                 }
 
                 res.data.forEach(tag => {
-                    if (currentIds.includes(parseInt(tag.id))) return; 
+                    const isActive = currentIds.includes(parseInt(tag.id));
 
                     const item = document.createElement('div');
-                    item.className = 'component-menu-link tag-option-link';
+                    item.className = `component-menu-link tag-option-link ${isActive ? 'active' : ''}`;
                     item.setAttribute('data-id', tag.id);
                     item.setAttribute('data-name', tag.name);
                     item.setAttribute('data-type', tag.type);
@@ -506,10 +515,8 @@ export class StudioController {
                 }
             }
             
-            if (!isNew) {
-                const option = document.querySelector(`#${menuId} .tag-option-link[data-id="${id}"]`);
-                if (option) option.remove();
-            }
+            const option = document.querySelector(`#${menuId} .tag-option-link[data-id="${id}"]`);
+            if (option) option.classList.add('active');
             
             this.validatePublishButton();
         }
@@ -517,30 +524,66 @@ export class StudioController {
 
     removeTag(id, type) {
         if (type === 'modelo') {
-            this.selectedModels = this.selectedModels.filter(t => t.id !== id);
+            this.selectedModels = this.selectedModels.filter(t => String(t.id) !== String(id));
         } else {
-            this.selectedCategories = this.selectedCategories.filter(t => t.id !== id);
+            this.selectedCategories = this.selectedCategories.filter(t => String(t.id) !== String(id));
         }
+        
         this.renderSelectedTags(type);
         this.validatePublishButton();
+
+        const menuId = type === 'modelo' ? 'modelsSelectorMenu' : 'categoriesSelectorMenu';
+        const option = document.querySelector(`#${menuId} .tag-option-link[data-id="${id}"]`);
+        if (option) option.classList.remove('active');
     }
 
     renderSelectedTags(type) {
         const arr = type === 'modelo' ? this.selectedModels : this.selectedCategories;
-        const containerId = type === 'modelo' ? 'selectedModelsContainer' : 'selectedCategoriesContainer';
         const hiddenId = type === 'modelo' ? 'hiddenModelsArray' : 'hiddenCategoriesArray';
+        const wrapperId = type === 'modelo' ? 'modelsTagsWrapper' : 'categoriesTagsWrapper';
+        const containerId = type === 'modelo' ? 'selectedModelsContainer' : 'selectedCategoriesContainer';
+        const triggerAttr = type === 'modelo' ? 'modelsSelectorMenu' : 'categoriesSelectorMenu';
+
+        const hiddenInput = document.getElementById(hiddenId);
+        if (!hiddenInput) return;
+
+        let wrapper = document.getElementById(wrapperId);
+
+        // Si el arreglo está vacío, removemos el contenedor del DOM
+        if (arr.length === 0) {
+            if (wrapper) wrapper.remove();
+            hiddenInput.value = '[]';
+            return;
+        }
+
+        // Si hay elementos pero el contenedor no existe, lo creamos
+        if (!wrapper) {
+            wrapper = document.createElement('div');
+            wrapper.id = wrapperId;
+            wrapper.style.cssText = "padding: 0 16px 16px 16px; width: 100%;";
+            
+            const innerContainer = document.createElement('div');
+            innerContainer.id = containerId;
+            innerContainer.style.cssText = "display: flex; flex-wrap: wrap; gap: 8px;";
+            
+            wrapper.appendChild(innerContainer);
+            
+            // Buscar en dónde montarlo (al final del padre del trigger)
+            const triggerEl = document.querySelector(`[data-target="${triggerAttr}"]`);
+            if (triggerEl) {
+                const parentGroup = triggerEl.closest('.component-group-item');
+                if (parentGroup) parentGroup.appendChild(wrapper);
+            }
+        }
 
         const container = document.getElementById(containerId);
-        const hiddenInput = document.getElementById(hiddenId);
-
-        if (!container || !hiddenInput) return;
+        if (!container) return; 
 
         container.innerHTML = '';
         arr.forEach(tag => {
             const pill = document.createElement('div');
             pill.className = 'tag-pill';
             
-            // Indicador visual de si es local (isNew) o global
             const iconHtml = tag.isNew 
                 ? '<span class="material-symbols-rounded" style="font-size: 14px; margin-right: 4px; color: var(--accent-color);" title="Etiqueta local (Sólo para este video)">push_pin</span>' 
                 : '';
@@ -765,7 +808,6 @@ export class StudioController {
         if (window.AppStudioEventsBound) return;
         window.AppStudioEventsBound = true;
 
-        // Búsqueda interactiva e inyección del botón "Crear Local"
         document.addEventListener('input', (e) => {
             if (e.target.classList.contains('tag-search-input')) {
                 const term = e.target.value.toLowerCase().trim();
@@ -775,7 +817,6 @@ export class StudioController {
                 if(list) {
                     let exactMatch = false;
                     
-                    // Filtrar opciones existentes
                     list.querySelectorAll('.tag-option-link:not(.tag-create-link)').forEach(item => {
                         const name = item.getAttribute('data-name').toLowerCase();
                         const isMatch = name.includes(term);
@@ -783,13 +824,12 @@ export class StudioController {
                         if (name === term) exactMatch = true;
                     });
 
-                    // Remover botón de crear previo si existe
                     const existingCreateBtn = list.querySelector('.tag-create-link');
                     if (existingCreateBtn) existingCreateBtn.remove();
 
-                    // Si hay texto y no es una coincidencia exacta, mostrar opción de Crear
                     if (term.length > 0 && !exactMatch) {
-                        const type = menu.id.includes('models') ? 'modelo' : 'category';
+                        const isModels = e.target.closest('#modelsSelectorMenu') !== null;
+                        const type = isModels ? 'modelo' : 'category';
                         const originalTerm = e.target.value.trim();
                         
                         const createBtn = document.createElement('div');
@@ -799,7 +839,6 @@ export class StudioController {
                         createBtn.setAttribute('data-type', type);
                         createBtn.setAttribute('data-is-new', 'true');
                         
-                        // Diseño explícito de que es una etiqueta local
                         createBtn.innerHTML = `
                             <div class="component-menu-link-icon" style="color: var(--accent-color);"><span class="material-symbols-rounded">add_box</span></div>
                             <div class="component-menu-link-text">
@@ -817,21 +856,16 @@ export class StudioController {
             const controller = window.currentStudioController;
             if (!controller) return;
 
-            // Mostrar/Ocultar menú de Modelos
-            if (e.target.closest('#btnSelectModels')) {
-                const menu = document.getElementById('modelsSelectorMenu');
-                if(menu) controller.toggleTagsMenu(menu, 'modelo');
-                return;
+            const toggleTagsBtn = e.target.closest('[data-action="toggleStudioTags"]');
+            if (toggleTagsBtn) {
+                const targetId = toggleTagsBtn.getAttribute('data-target');
+                const type = toggleTagsBtn.getAttribute('data-type');
+                const menu = document.getElementById(targetId);
+                if (menu) controller.toggleTagsMenu(menu, type);
+                return; 
             }
 
-            // Mostrar/Ocultar menú de Categorías
-            if (e.target.closest('#btnSelectCategories')) {
-                const menu = document.getElementById('categoriesSelectorMenu');
-                if(menu) controller.toggleTagsMenu(menu, 'category');
-                return;
-            }
-
-            // Clic en una opción del menú de tags (Existente o Nuevo)
+            // Click en tag desde el menú
             const tagOption = e.target.closest('.tag-option-link');
             if (tagOption) {
                 const id = tagOption.getAttribute('data-id');
@@ -839,11 +873,16 @@ export class StudioController {
                 const type = tagOption.getAttribute('data-type');
                 const isNew = tagOption.getAttribute('data-is-new') === 'true';
                 
-                controller.addTag(id, name, type, isNew);
+                // Si ya estaba activo, lo eliminamos; si no, lo agregamos.
+                if (tagOption.classList.contains('active')) {
+                    controller.removeTag(id, type);
+                } else {
+                    controller.addTag(id, name, type, isNew);
+                }
                 return;
             }
 
-            // Clic en la "X" para remover un tag seleccionado
+            // Clic en la "X" del pill para remover un tag seleccionado
             const removePill = e.target.closest('.tag-pill-remove');
             if (removePill) {
                 const id = removePill.getAttribute('data-id');
@@ -852,12 +891,6 @@ export class StudioController {
                 return;
             }
 
-            // Cerrar menús al hacer clic fuera
-            if (!e.target.closest('.component-menu') && !e.target.closest('#btnSelectModels') && !e.target.closest('#btnSelectCategories')) {
-                document.querySelectorAll('.component-menu[id$="SelectorMenu"]').forEach(m => m.style.display = 'none');
-            }
-
-            // Resto de eventos (botones de estudio)
             const btnGen = e.target.closest('#btnGenerateThumbnails');
             if (btnGen) { controller.generateThumbnails(); return; }
 
@@ -969,7 +1002,6 @@ export class StudioController {
         formData.append('title', video.draftTitle);
         formData.append('description', video.draftDescription || '');
         
-        // --- ADJUNTAMOS LOS TAGS A LA SUBIDA ---
         const modelsArr = document.getElementById('hiddenModelsArray') ? document.getElementById('hiddenModelsArray').value : '[]';
         const categoriesArr = document.getElementById('hiddenCategoriesArray') ? document.getElementById('hiddenCategoriesArray').value : '[]';
         formData.append('models', modelsArr);

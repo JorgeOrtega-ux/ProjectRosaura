@@ -38,37 +38,67 @@
                     </div>
                 </div>
 
-                <div id="uploadTagsSection" style="display: none; margin-top: 24px; padding: 16px; background: var(--background-secondary); border-radius: 8px;">
-                    <h3 style="margin-bottom: 12px; font-size: 14px;">Etiquetas (Modelos y Categorías)</h3>
-                    
-                    <div style="display: flex; gap: 16px; flex-wrap: wrap;">
-                        <div style="flex: 1; min-width: 200px; position: relative;">
-                            <button type="button" class="component-button component-button--full" id="btnSelectModels">
-                                <span class="material-symbols-rounded">person_add</span> Añadir Modelos
-                            </button>
-                            <div id="selectedModelsContainer" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;"></div>
-                            <?php 
-                                $selectorId = 'modelsSelectorMenu';
-                                $placeholder = 'Buscar modelos...';
-                                include __DIR__ . '/../../modules/moduleTagsSelector.php'; 
-                            ?>
+                <div id="uploadTagsSection" style="display: none; margin-top: 24px;">
+                    <div class="component-card--grouped">
+                        
+                        <div class="component-group-item component-group-item--stacked" style="border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.05));">
+                            <div class="component-card__content component-card__content--full">
+                                <div class="component-card__text">
+                                    <h2 class="component-card__title">Etiquetas (Modelos y Categorías)</h2>
+                                    <p class="component-card__description" style="margin-bottom: 0;">Configura las etiquetas base para los videos que vas a subir.</p>
+                                </div>
+                            </div>
                         </div>
 
-                        <div style="flex: 1; min-width: 200px; position: relative;">
-                            <button type="button" class="component-button component-button--full" id="btnSelectCategories">
-                                <span class="material-symbols-rounded">category</span> Añadir Categorías
-                            </button>
-                            <div id="selectedCategoriesContainer" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;"></div>
-                            <?php 
-                                $selectorId = 'categoriesSelectorMenu';
-                                $placeholder = 'Buscar categorías...';
-                                include __DIR__ . '/../../modules/moduleTagsSelector.php'; 
-                            ?>
+                        <div class="component-group-item component-group-item--stacked" style="border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.05));">
+                            <div class="component-card__content">
+                                <div class="component-card__text">
+                                    <h2 class="component-card__title">Modelos</h2>
+                                </div>
+                            </div>
+                            <div class="component-card__actions component-card__actions--start">
+                                <div class="component-dropdown-wrapper">
+                                    <div class="component-dropdown-trigger" data-action="toggleStudioTags" data-target="modelsSelectorMenu" data-type="modelo">
+                                        <span class="material-symbols-rounded">person_add</span>
+                                        <span class="component-dropdown-text">Seleccionar Modelos</span>
+                                        <span class="material-symbols-rounded">expand_more</span>
+                                    </div>
+                                    <?php 
+                                        $selectorId = 'modelsSelectorMenu';
+                                        $placeholder = 'Buscar modelos...';
+                                        $moduleName = 'moduleTagsModels';
+                                        include __DIR__ . '/../../modules/moduleTagsSelector.php'; 
+                                    ?>
+                                </div>
+                            </div>
                         </div>
+
+                        <div class="component-group-item component-group-item--stacked">
+                            <div class="component-card__content">
+                                <div class="component-card__text">
+                                    <h2 class="component-card__title">Categorías</h2>
+                                </div>
+                            </div>
+                            <div class="component-card__actions component-card__actions--start">
+                                <div class="component-dropdown-wrapper">
+                                    <div class="component-dropdown-trigger" data-action="toggleStudioTags" data-target="categoriesSelectorMenu" data-type="category">
+                                        <span class="material-symbols-rounded">category</span>
+                                        <span class="component-dropdown-text">Seleccionar Categorías</span>
+                                        <span class="material-symbols-rounded">expand_more</span>
+                                    </div>
+                                    <?php 
+                                        $selectorId = 'categoriesSelectorMenu';
+                                        $placeholder = 'Buscar categorías...';
+                                        $moduleName = 'moduleTagsCategories';
+                                        include __DIR__ . '/../../modules/moduleTagsSelector.php'; 
+                                    ?>
+                                </div>
+                            </div>
+                        </div>
+
+                        <input type="hidden" id="hiddenModelsArray" name="models" value="[]">
+                        <input type="hidden" id="hiddenCategoriesArray" name="categories" value="[]">
                     </div>
-                    
-                    <input type="hidden" id="hiddenModelsArray" name="models" value="[]">
-                    <input type="hidden" id="hiddenCategoriesArray" name="categories" value="[]">
                 </div>
 
             </div>
