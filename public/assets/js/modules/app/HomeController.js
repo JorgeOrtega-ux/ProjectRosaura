@@ -4,17 +4,17 @@ import { ApiService } from '../../core/api/ApiServices.js';
 import { ApiRoutes } from '../../core/api/ApiRoutes.js';
 
 export class HomeController {
-    constructor() {
+constructor() {
         this.api = new ApiService();
-        this.horizontalContainer = document.getElementById('video-feed-container');
-        this.verticalContainer = document.getElementById('vertical-feed-container');
-        
-        // Elementos del carrusel de Shorts
-        this.btnLeft = document.getElementById('btn-scroll-left');
-        this.btnRight = document.getElementById('btn-scroll-right');
     }
 
     async init() {
+        // ✅ RE-ASIGNAR LOS ELEMENTOS DEL DOM CADA VEZ QUE SE INICIA LA VISTA
+        this.horizontalContainer = document.getElementById('video-feed-container');
+        this.verticalContainer = document.getElementById('vertical-feed-container');
+        this.btnLeft = document.getElementById('btn-scroll-left');
+        this.btnRight = document.getElementById('btn-scroll-right');
+
         if (this.horizontalContainer || this.verticalContainer) {
             await this.loadFeed();
         }
