@@ -18,7 +18,6 @@ class TagRepository implements TagRepositoryInterface {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // NUEVO MÉTODO IMPLEMENTADO
     public function getByType($type) {
         $stmt = $this->db->prepare("SELECT * FROM tags WHERE type = :type ORDER BY name ASC");
         $stmt->execute(['type' => $type]);
@@ -40,6 +39,23 @@ class TagRepository implements TagRepositoryInterface {
     public function create($name, $type, $gender = null) {
         $stmt = $this->db->prepare("INSERT INTO tags (name, type, gender) VALUES (:name, :type, :gender)");
         return $stmt->execute(['name' => $name, 'type' => $type, 'gender' => $gender]);
+    }
+
+    // --- NUEVO MÉTODO MÁGICO: FIND OR CREATE ---
+    public function findOrCreate($name, $type, $gender = null) {
+        $name = trim($name);
+        
+        // 1. Buscamos si ya existe exactamente con ese nombre
+        $existing = $this->findByName($name);
+        if ($existing) {
+            return (int) $existing['id'];
+        }
+        
+        // 2. Si no existe, lo creamos
+        $this->create($name, $type, $gender);
+        
+        // 3. Retornamos el ID recién insertado
+        return (int) $this->db->lastInsertId();
     }
 
     public function update($id, $name, $type, $gender = null) {

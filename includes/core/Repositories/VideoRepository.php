@@ -59,7 +59,6 @@ class VideoRepository implements VideoRepositoryInterface {
             $fields[] = "description = :description";
             $params[':description'] = $data['description'];
         }
-        // SOPORTE PARA EL JSON DE MINIATURAS
         if (array_key_exists('generated_thumbnails', $data)) {
             $fields[] = "generated_thumbnails = :generated_thumbnails";
             $params[':generated_thumbnails'] = $data['generated_thumbnails'];
@@ -73,7 +72,6 @@ class VideoRepository implements VideoRepositoryInterface {
     }
 
     public function getActiveUploadsByUserId(int $userId): array {
-        // Obtenemos los videos que aún no han sido publicados o borrados
         $stmt = $this->db->prepare("
             SELECT * FROM videos 
             WHERE user_id = :user_id 
@@ -84,7 +82,6 @@ class VideoRepository implements VideoRepositoryInterface {
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
-    // NUEVO MÉTODO: Obtiene todos los videos sin importar el estado (para la tabla principal)
     public function getAllByUserId(int $userId): array {
         $stmt = $this->db->prepare("
             SELECT * FROM videos 
@@ -112,7 +109,6 @@ class VideoRepository implements VideoRepositoryInterface {
         return $stmt->execute([':id' => $id]);
     }
 
-    // Cuenta cuántos videos tiene el usuario en estado de cola o procesando
     public function countProcessingUploads(int $userId): int {
         $stmt = $this->db->prepare("
             SELECT COUNT(*) FROM videos 
@@ -123,7 +119,6 @@ class VideoRepository implements VideoRepositoryInterface {
         return (int) $stmt->fetchColumn();
     }
 
-    // Cuenta cuántos videos ha subido el usuario en el día actual
     public function countDailyUploads(int $userId): int {
         $stmt = $this->db->prepare("
             SELECT COUNT(*) FROM videos 
@@ -134,23 +129,20 @@ class VideoRepository implements VideoRepositoryInterface {
         return (int) $stmt->fetchColumn();
     }
 
-    // --- NUEVOS MÉTODOS PARA SISTEMA DE TAGS ---
+    // --- MÉTODOS PARA SISTEMA DE TAGS ---
 
     public function syncTags(int $videoId, array $tagIds): bool {
         try {
             $this->db->beginTransaction();
 
-            // 1. Eliminar tags actuales vinculados a este video
             $stmtDelete = $this->db->prepare("DELETE FROM video_tags WHERE video_id = :video_id");
             $stmtDelete->execute([':video_id' => $videoId]);
 
-            // 2. Insertar las nuevas relaciones si el arreglo no está vacío
             if (!empty($tagIds)) {
                 $sql = "INSERT IGNORE INTO video_tags (video_id, tag_id) VALUES ";
                 $insertValues = [];
                 $params = [];
                 
-                // Construimos la consulta dinámicamente según la cantidad de tags
                 foreach ($tagIds as $index => $tagId) {
                     $insertValues[] = "(:video_id_{$index}, :tag_id_{$index})";
                     $params[":video_id_{$index}"] = $videoId;
@@ -172,7 +164,6 @@ class VideoRepository implements VideoRepositoryInterface {
     }
 
     public function getVideoTags(int $videoId): array {
-        // Hacemos un JOIN para traer toda la información de la tabla tags que esté vinculada
         $stmt = $this->db->prepare("
             SELECT t.* FROM tags t
             INNER JOIN video_tags vt ON t.id = vt.tag_id

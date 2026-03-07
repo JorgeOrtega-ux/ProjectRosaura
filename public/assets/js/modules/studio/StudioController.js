@@ -288,8 +288,8 @@ export class StudioController {
             this.selectedCategories = [];
             if (video.tags && Array.isArray(video.tags)) {
                 video.tags.forEach(tag => {
-                    if (tag.type === 'modelo') this.selectedModels.push(tag);
-                    else if (tag.type === 'category') this.selectedCategories.push(tag);
+                    if (tag.type === 'modelo') this.selectedModels.push({...tag, isNew: false});
+                    else if (tag.type === 'category') this.selectedCategories.push({...tag, isNew: false});
                 });
             }
             this.renderSelectedTags('modelo');
@@ -312,9 +312,9 @@ export class StudioController {
                         return;
                     }
 
-                    // Arrays de Tags Listos
-                    const modelsIds = this.selectedModels.map(t => parseInt(t.id));
-                    const categoriesIds = this.selectedCategories.map(t => parseInt(t.id));
+                    // Arrays de Tags Listos (Mixtos: ints para ID, strings para Nuevos)
+                    const modelsIds = this.selectedModels.map(t => t.isNew ? t.name : parseInt(t.id));
+                    const categoriesIds = this.selectedCategories.map(t => t.isNew ? t.name : parseInt(t.id));
 
                     let hasError = false;
                     const updateRoute = ApiRoutes.Studio?.UpdateTitle || 'studio.update_title';
@@ -422,8 +422,8 @@ export class StudioController {
         this.selectedCategories = [];
         if (video.tags && Array.isArray(video.tags)) {
             video.tags.forEach(tag => {
-                if (tag.type === 'modelo') this.selectedModels.push(tag);
-                else if (tag.type === 'category') this.selectedCategories.push(tag);
+                if (tag.type === 'modelo') this.selectedModels.push({...tag, isNew: false});
+                else if (tag.type === 'category') this.selectedCategories.push({...tag, isNew: false});
             });
         }
         this.renderSelectedTags('modelo');
@@ -443,6 +443,9 @@ export class StudioController {
         
         menu.style.display = 'flex';
         const list = menu.querySelector('.tag-results-list');
+        const input = menu.querySelector('.tag-search-input');
+        if (input) input.value = ''; // Reset input
+        
         list.innerHTML = '<div style="padding: 16px; text-align: center; color: var(--text-secondary);"><span class="material-symbols-rounded">sync</span> Cargando...</div>';
 
         try {
@@ -451,7 +454,7 @@ export class StudioController {
             if (res.status === 'success') {
                 list.innerHTML = '';
                 const currentSelection = type === 'modelo' ? this.selectedModels : this.selectedCategories;
-                const currentIds = currentSelection.map(t => parseInt(t.id));
+                const currentIds = currentSelection.map(t => t.isNew ? t.name : parseInt(t.id));
 
                 if (res.data.length === 0) {
                     list.innerHTML = '<div style="padding: 16px; text-align: center; color: var(--text-secondary); font-size: 13px;">No hay opciones registradas en el sistema.</div>';
@@ -459,13 +462,15 @@ export class StudioController {
                 }
 
                 res.data.forEach(tag => {
-                    if (currentIds.includes(parseInt(tag.id))) return; // Ocultar si ya está seleccionado
+                    // Si ya está en la lista de seleccionados, no mostrar
+                    if (currentIds.includes(parseInt(tag.id))) return; 
 
                     const item = document.createElement('div');
                     item.className = 'component-menu-link tag-option-link';
                     item.setAttribute('data-id', tag.id);
                     item.setAttribute('data-name', tag.name);
                     item.setAttribute('data-type', tag.type);
+                    item.setAttribute('data-is-new', 'false');
 
                     let icon = tag.type === 'modelo' ? 'person' : 'category';
                     item.innerHTML = `
@@ -482,16 +487,31 @@ export class StudioController {
         }
     }
 
-    addTag(id, name, type) {
+    addTag(id, name, type, isNew = false) {
         const arr = type === 'modelo' ? this.selectedModels : this.selectedCategories;
-        if (!arr.find(t => parseInt(t.id) === parseInt(id))) {
-            arr.push({ id, name, type });
+        
+        // Evitar duplicados (comparando por nombre para el caso de nuevas vs existentes)
+        if (!arr.find(t => t.name.toLowerCase() === name.toLowerCase())) {
+            arr.push({ id, name, type, isNew });
             this.renderSelectedTags(type);
             
-            // Eliminar de la lista visible para no volver a seleccionar
             const menuId = type === 'modelo' ? 'modelsSelectorMenu' : 'categoriesSelectorMenu';
-            const option = document.querySelector(`#${menuId} .tag-option-link[data-id="${id}"]`);
-            if (option) option.remove();
+            const menu = document.getElementById(menuId);
+            
+            // Limpiar buscador si existe y reiniciar filtro
+            if (menu) {
+                const input = menu.querySelector('.tag-search-input');
+                if (input) {
+                    input.value = '';
+                    input.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+            }
+            
+            // Eliminar de la lista visible para no volver a seleccionar
+            if (!isNew) {
+                const option = document.querySelector(`#${menuId} .tag-option-link[data-id="${id}"]`);
+                if (option) option.remove();
+            }
             
             this.validatePublishButton();
         }
@@ -499,9 +519,9 @@ export class StudioController {
 
     removeTag(id, type) {
         if (type === 'modelo') {
-            this.selectedModels = this.selectedModels.filter(t => parseInt(t.id) !== parseInt(id));
+            this.selectedModels = this.selectedModels.filter(t => t.id !== id);
         } else {
-            this.selectedCategories = this.selectedCategories.filter(t => parseInt(t.id) !== parseInt(id));
+            this.selectedCategories = this.selectedCategories.filter(t => t.id !== id);
         }
         this.renderSelectedTags(type);
         this.validatePublishButton();
@@ -528,8 +548,8 @@ export class StudioController {
             container.appendChild(pill);
         });
 
-        // Actualizamos los inputs ocultos para que sean fácilmente serializables
-        hiddenInput.value = JSON.stringify(arr.map(t => parseInt(t.id)));
+        // Actualizamos inputs ocultos: IDs(int) para existentes, Nombres(string) para nuevos
+        hiddenInput.value = JSON.stringify(arr.map(t => t.isNew ? t.name : parseInt(t.id)));
     }
     // ----------------------------------------
 
@@ -735,16 +755,46 @@ export class StudioController {
         if (window.AppStudioEventsBound) return;
         window.AppStudioEventsBound = true;
 
-        // Búsqueda en los inputs de los menús
+        // Búsqueda interactiva e inyección del botón "Crear"
         document.addEventListener('input', (e) => {
             if (e.target.classList.contains('tag-search-input')) {
-                const term = e.target.value.toLowerCase();
-                const list = e.target.closest('.component-menu').querySelector('.tag-results-list');
+                const term = e.target.value.toLowerCase().trim();
+                const menu = e.target.closest('.component-menu');
+                const list = menu.querySelector('.tag-results-list');
+                
                 if(list) {
-                    list.querySelectorAll('.tag-option-link').forEach(item => {
+                    let exactMatch = false;
+                    
+                    // Filtrar opciones existentes
+                    list.querySelectorAll('.tag-option-link:not(.tag-create-link)').forEach(item => {
                         const name = item.getAttribute('data-name').toLowerCase();
-                        item.style.display = name.includes(term) ? 'flex' : 'none';
+                        const isMatch = name.includes(term);
+                        item.style.display = isMatch ? 'flex' : 'none';
+                        if (name === term) exactMatch = true;
                     });
+
+                    // Remover botón de crear previo si existe
+                    const existingCreateBtn = list.querySelector('.tag-create-link');
+                    if (existingCreateBtn) existingCreateBtn.remove();
+
+                    // Si hay texto y no es una coincidencia exacta, mostrar "Crear"
+                    if (term.length > 0 && !exactMatch) {
+                        const type = menu.id.includes('models') ? 'modelo' : 'category';
+                        const originalTerm = e.target.value.trim();
+                        
+                        const createBtn = document.createElement('div');
+                        createBtn.className = 'component-menu-link tag-option-link tag-create-link';
+                        createBtn.setAttribute('data-id', 'new_' + Date.now()); // ID Temporal negativo
+                        createBtn.setAttribute('data-name', originalTerm);
+                        createBtn.setAttribute('data-type', type);
+                        createBtn.setAttribute('data-is-new', 'true');
+                        
+                        createBtn.innerHTML = `
+                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">add_circle</span></div>
+                            <div class="component-menu-link-text"><span>Añadir "<b>${originalTerm}</b>"</span></div>
+                        `;
+                        list.appendChild(createBtn);
+                    }
                 }
             }
         });
@@ -767,13 +817,15 @@ export class StudioController {
                 return;
             }
 
-            // Clic en una opción del menú de tags
+            // Clic en una opción del menú de tags (Existente o Nuevo)
             const tagOption = e.target.closest('.tag-option-link');
             if (tagOption) {
                 const id = tagOption.getAttribute('data-id');
                 const name = tagOption.getAttribute('data-name');
                 const type = tagOption.getAttribute('data-type');
-                controller.addTag(id, name, type);
+                const isNew = tagOption.getAttribute('data-is-new') === 'true';
+                
+                controller.addTag(id, name, type, isNew);
                 return;
             }
 

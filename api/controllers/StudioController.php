@@ -23,7 +23,6 @@ class StudioController {
         return $this->sessionManager->get('user_id');
     }
 
-    // --- NUEVOS MÉTODOS PARA OBTENER TAGS ---
     public function get_models($input) {
         $userId = $this->requireAuth();
         if (!$userId) {
@@ -138,7 +137,7 @@ class StudioController {
         $title = $input['title'] ?? $_POST['title'] ?? null;
         $description = $input['description'] ?? $_POST['description'] ?? null;
         
-        // RECIBIR TAGS (Suelen venir como array o JSON string desde FormData)
+        // RECIBIR TAGS COMO ARRAYS Y DECIFRAR EL JSON
         $models = isset($_POST['models']) ? json_decode($_POST['models'], true) : ($input['models'] ?? []);
         $categories = isset($_POST['categories']) ? json_decode($_POST['categories'], true) : ($input['categories'] ?? []);
 

@@ -413,7 +413,9 @@
     .component-thumbnail-grid {
         grid-template-columns: repeat(3, 1fr); 
     }
-}/* ==========================================================================
+}
+
+/* ==========================================================================
    Estilos del Sistema de Etiquetas (Tags) y Buscador
    ========================================================================== */
 
@@ -433,6 +435,27 @@
 
 .tag-option-link:hover {
     background-color: var(--border-color);
+}
+
+/* Estilo especial para el botón dinámico de "Añadir Nuevo" */
+.tag-create-link {
+    color: #065fd4;
+    background-color: rgba(6, 95, 212, 0.05);
+    border-top: 1px dashed var(--border-color);
+}
+
+.tag-create-link .component-menu-link-icon {
+    color: #065fd4;
+}
+
+@media (prefers-color-scheme: dark) {
+    .tag-create-link {
+        color: #3ea6ff;
+        background-color: rgba(62, 166, 255, 0.1);
+    }
+    .tag-create-link .component-menu-link-icon {
+        color: #3ea6ff;
+    }
 }
 
 /* Píldoras (Pills) de los tags seleccionados */
@@ -465,7 +488,7 @@
     border-radius: 50%;
     transition: color 0.2s, background-color 0.2s;
     padding: 2px;
-    margin-right: -4px; /* Ajuste visual para alinear con el borde redondeado */
+    margin-right: -4px; 
 }
 
 .tag-pill-remove:hover {
@@ -473,7 +496,6 @@
     background-color: rgba(255, 255, 255, 0.1);
 }
 
-/* Modo oscuro para los botones (si usas variables) */
 @media (prefers-color-scheme: dark) {
     .tag-pill {
         background-color: #1a1a1a;

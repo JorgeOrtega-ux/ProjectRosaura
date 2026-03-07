@@ -30,7 +30,6 @@ class StudioServices {
         'mp4', 'webm', 'mkv', 'mov', 'avi', 'mpeg', 'mpg'
     ];
 
-    // INYECTAMOS EL TAG REPOSITORY AQUÍ
     public function __construct(VideoRepositoryInterface $videoRepo, TagRepositoryInterface $tagRepo, RedisClient $redis) {
         $this->videoRepo = $videoRepo;
         $this->tagRepo = $tagRepo;
@@ -40,7 +39,6 @@ class StudioServices {
         if (!is_dir($this->thumbnailDir)) mkdir($this->thumbnailDir, 0755, true);
     }
 
-    // --- NUEVO MÉTODO PARA OBTENER TAGS POR TIPO ---
     public function getTagsByType(string $type): array {
         return $this->tagRepo->getByType($type);
     }
@@ -347,7 +345,22 @@ class StudioServices {
         return $result;
     }
 
-    // --- MÉTODO MODIFICADO PARA RECIBIR TAGS ---
+    // --- HELPER PRIVADO PARA PROCESAR TAGS MÚLTIPLES ---
+    private function processTags(array $tagsData, string $type): array {
+        $finalIds = [];
+        foreach ($tagsData as $tagItem) {
+            // Si el valor es numérico, significa que es el ID de un tag que ya existe
+            if (is_numeric($tagItem)) {
+                $finalIds[] = (int) $tagItem;
+            } 
+            // Si es un string (texto), el usuario escribió uno nuevo, así que lo buscamos o creamos
+            else if (is_string($tagItem) && trim($tagItem) !== '') {
+                $finalIds[] = $this->tagRepo->findOrCreate($tagItem, $type);
+            }
+        }
+        return $finalIds;
+    }
+
     public function updateVideoDetails(int $userId, int $videoId, string $title, ?string $description = null, array $models = [], array $categories = []): array {
         $video = $this->videoRepo->findById($videoId);
         if (!$video || $video['user_id'] != $userId) {
@@ -365,9 +378,15 @@ class StudioServices {
 
         $this->videoRepo->updateMetadata($videoId, $metadata);
 
-        // SINCRONIZAR TAGS
-        $tagIds = array_merge($models, $categories);
-        $this->videoRepo->syncTags($videoId, $tagIds);
+        // PROCESAMIENTO MÁGICO DE TAGS (Modelos y Categorías)
+        $modelIds = $this->processTags($models, 'modelo');
+        $categoryIds = $this->processTags($categories, 'category');
+        
+        // Juntamos ambos arreglos y eliminamos IDs duplicados por seguridad
+        $allTagIds = array_unique(array_merge($modelIds, $categoryIds));
+        
+        // Sincronizamos con la base de datos
+        $this->videoRepo->syncTags($videoId, $allTagIds);
 
         return ['success' => true];
     }
@@ -383,12 +402,10 @@ class StudioServices {
         return $this->videoRepo->getActiveUploadsByUserId($userId);
     }
 
-    // --- MÉTODO MODIFICADO PARA DEVOLVER TAGS AL FRONTEND ---
     public function getVideoByUuid(int $userId, string $uuid): array {
         $videos = $this->getAllVideos($userId);
         foreach ($videos as $v) {
             if ($v['uuid'] === $uuid) {
-                // Agregar tags al video devuelto
                 $v['tags'] = $this->videoRepo->getVideoTags($v['id']);
                 return $v;
             }
@@ -396,7 +413,6 @@ class StudioServices {
         throw new Exception("Video no encontrado.");
     }
 
-    // --- MÉTODO MODIFICADO PARA RECIBIR TAGS ---
     public function publishVideo(int $userId, int $videoId, string $title, string $description, array $models = [], array $categories = [], ?array $thumbnailFile = null, ?string $generatedPath = null): array {
         $video = $this->videoRepo->findById($videoId);
         if (!$video || $video['user_id'] != $userId) {
@@ -426,9 +442,11 @@ class StudioServices {
         $this->videoRepo->updateMetadata($videoId, $metadata);
         $this->videoRepo->updateStatus($videoId, 'published', 100);
 
-        // SINCRONIZAR TAGS
-        $tagIds = array_merge($models, $categories);
-        $this->videoRepo->syncTags($videoId, $tagIds);
+        // PROCESAMIENTO MÁGICO DE TAGS AL PUBLICAR
+        $modelIds = $this->processTags($models, 'modelo');
+        $categoryIds = $this->processTags($categories, 'category');
+        $allTagIds = array_unique(array_merge($modelIds, $categoryIds));
+        $this->videoRepo->syncTags($videoId, $allTagIds);
         
         return ['success' => true, 'status' => 'published'];
     }
