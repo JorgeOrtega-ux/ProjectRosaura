@@ -2314,7 +2314,6 @@ input:checked + .component-toggle-slider:before {
     display: flex;
     flex-direction: column;
     width: 100%;
-    margin-bottom: 40px;
 }
 
 .feed-section-top {
@@ -2322,7 +2321,6 @@ input:checked + .component-toggle-slider:before {
     background-color: var(--bg-surface);
     border: 1px solid var(--border-color);
     border-radius: 12px 12px 0 0;
-    border-bottom: none;
 }
 
 .feed-section-title {
@@ -2350,18 +2348,16 @@ input:checked + .component-toggle-slider:before {
 .video-feed-horizontal-scroll {
     display: grid;
     grid-auto-flow: column;
-    grid-auto-columns: calc((100% - (16px * 4)) / 5);
+    /* Ajustado para mostrar 6 videos en pantallas grandes y hacerlos más pequeños */
+    grid-auto-columns: calc((100% - (16px * 5)) / 6);
     gap: 16px;
     
-    /* 1. EL TRUCO PARA EL RESPLANDOR: 
-       Expandimos la "caja de recorte" 20px hacia afuera de tu diseño... */
-    margin-left: -20px;
-    margin-right: -20px;
+    /* 1. EL TRUCO PARA EL RESPLANDOR PERFECTAMENTE ALINEADO CON EL GAP: */
+    margin-left: -16px;
+    margin-right: -16px;
     
-    /* ...y empujamos los videos 20px hacia adentro para que queden 
-       exactamente en la misma línea visual que tu título. */
-    padding-left: 20px;
-    padding-right: 20px;
+    padding-left: 16px;
+    padding-right: 16px;
     
     /* Padding vertical extra por si el efecto hover también hace saltar la tarjeta hacia arriba */
     padding-top: 20px; 
@@ -2372,10 +2368,8 @@ input:checked + .component-toggle-slider:before {
     
     scroll-snap-type: x mandatory;
     
-    /* 2. LA MAGIA DE LA PAGINACIÓN: 
-       Esto le dice al "imán" del scroll que cuando uses las flechas, 
-       calcule el inicio de los 5 videos ignorando los 20px de padding. */
-    scroll-padding-inline: 20px; 
+    /* 2. LA MAGIA DE LA PAGINACIÓN EXACTA AL GAP: */
+    scroll-padding-inline: 16px; 
 }
 
 .video-feed-horizontal-scroll::-webkit-scrollbar {
@@ -2417,14 +2411,13 @@ input:checked + .component-toggle-slider:before {
     pointer-events: none;
 }
 
-/* Los posicionamos por fuera o sobre el borde para no tapar los videos, 
-   puedes ajustar el left/right a tu gusto visual */
+/* Posicionados a -16px para estar en sincronía con el padding/margin */
 .carousel-nav-btn--left {
-    left: -20px; 
+    left: -16px; 
 }
 
 .carousel-nav-btn--right {
-    right: -20px;
+    right: -16px;
 }
 
 
@@ -2587,6 +2580,13 @@ input:checked + .component-toggle-slider:before {
 /* ========================================= */
 /* --- RESPONSIVIDAD DEL GRID PRINCIPAL Y CARRUSEL --- */
 /* ========================================= */
+
+@media (max-width: 1400px) {
+    .video-feed-horizontal-scroll {
+        /* En pantallas medianas o laptops volvemos a mostrar 5 (4 gaps de 16px) */
+        grid-auto-columns: calc((100% - (16px * 4)) / 5);
+    }
+}
 
 @media (max-width: 1024px) {
     .video-feed-horizontal-scroll {

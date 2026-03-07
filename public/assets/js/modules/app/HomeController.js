@@ -100,14 +100,15 @@ export class HomeController {
         setTimeout(() => this.updateCarouselButtons(), 150);
     }
 
- getScrollAmount() {
+    getScrollAmount() {
         // Obtenemos el ancho total visible del contenedor
         const visibleWidth = this.verticalContainer.clientWidth;
         
-        // Retornamos el 100% del ancho visible. 
-        // Como tenemos 'scroll-snap-type' en el CSS, el navegador automáticamente 
-        // lo imantará para que el siguiente grupo de videos quede perfectamente alineado.
-        return visibleWidth; 
+        // El desplazamiento matemáticamente perfecto es el ancho visible menos un padding (16px).
+        // Esto equivale exactamente al ancho del grupo de videos para que no se desfase.
+        const padding = 16; 
+        
+        return visibleWidth - padding; 
     }
 
     updateCarouselButtons() {
