@@ -141,6 +141,8 @@ export class StudioController {
             this.initUploadingView();
         } else if (path.includes('/studio/upload')) {
             this.initUploadView();
+        } else if (path.includes('/studio/manage-content')) {
+            this.initManageContentView();
         }
 
         this.attachEvents();
@@ -149,10 +151,87 @@ export class StudioController {
     initUploadView() {
     }
 
+    async initManageContentView() {
+        const url = ApiRoutes.Studio.GetAllVideos || '/api/studio/get_all_videos';
+        const response = await this.api.post(url);
+        
+        const tbody = document.getElementById('manageContentTableBody');
+        const template = document.getElementById('emptyTableTemplate');
+        
+        if (!tbody) return;
+        
+        if (response.status === 'success') {
+            const videos = response.data;
+            if (videos.length === 0) {
+                if (template) tbody.innerHTML = template.innerHTML;
+                return;
+            }
+            
+            tbody.innerHTML = '';
+            videos.forEach(v => {
+                this.currentVideos.set(String(v.id), v);
+                const tr = this.createVideoRow(v);
+                tbody.appendChild(tr);
+            });
+        } else {
+            if (template) tbody.innerHTML = template.innerHTML;
+        }
+    }
+
+    createVideoRow(video) {
+        const tr = document.createElement('tr');
+        tr.id = `video-row-${video.id}`;
+        
+        let statusBadge = '';
+        switch(video.status) {
+            case 'queued': statusBadge = '<span class="status-badge status-queued">En cola</span>'; break;
+            case 'processing': statusBadge = `<span class="status-badge status-processing">Procesando ${video.processing_progress || 0}%</span>`; break;
+            case 'processed': statusBadge = '<span class="status-badge status-processed">Procesado / Borrador</span>'; break;
+            case 'published': statusBadge = '<span class="status-badge status-published">Publicado</span>'; break;
+            case 'failed': statusBadge = '<span class="status-badge status-failed">Error</span>'; break;
+            default: statusBadge = `<span class="status-badge">${video.status}</span>`;
+        }
+        
+        let thumbUrl = video.thumbnail_path ? video.thumbnail_path : '';
+        if (thumbUrl && !thumbUrl.startsWith('http')) {
+            let base = window.AppBasePath || window.location.origin;
+            if (base.endsWith('/')) base = base.slice(0, -1);
+            let cleanPath = thumbUrl.replace(/^\//, '');
+            if (!cleanPath.startsWith('public/')) cleanPath = 'public/' + cleanPath;
+            thumbUrl = base + '/' + cleanPath;
+        }
+        
+        const thumbHtml = thumbUrl 
+            ? `<img src="${thumbUrl}" class="table-video-thumb" alt="Miniatura">` 
+            : `<div class="table-video-thumb empty"><span class="material-symbols-rounded">video_file</span></div>`;
+            
+        const title = video.title || video.original_filename || 'Sin título';
+        const date = video.created_at ? new Date(video.created_at).toLocaleDateString() : '-';
+
+        tr.innerHTML = `
+            <td>
+                <div class="table-video-info">
+                    ${thumbHtml}
+                    <div class="table-video-details">
+                        <span class="table-video-title">${title}</span>
+                        <span class="table-video-desc">${video.description ? video.description.substring(0, 30) + '...' : 'Sin descripción'}</span>
+                    </div>
+                </div>
+            </td>
+            <td>${statusBadge}</td>
+            <td>Ninguna</td>
+            <td>${date}</td>
+            <td>0</td>
+            <td>0</td>
+            <td>0</td>
+        `;
+        
+        return tr;
+    }
+
     async handleFilesSelection(files) {
         if (!files || files.length === 0) return;
 
-        // FASE 1: Validación Previa "Pre-flight"
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
             
@@ -173,7 +252,6 @@ export class StudioController {
             }
         }
 
-        // FASE 2: Iniciar proceso visual y subida por chunks
         const uploadProgressContainer = document.getElementById('uploadProgressContainer');
         const uploadProgressBar = document.getElementById('uploadProgressBar');
         if(uploadProgressContainer) uploadProgressContainer.style.display = 'block';
@@ -288,9 +366,6 @@ export class StudioController {
         this.validatePublishButton();
     }
 
-    // ==========================================
-    // CARGADOR INTELIGENTE DE MINIATURAS DEL WORKER
-    // ==========================================
     async generateThumbnails() {
         if (!this.selectedVideoId) return;
         const videoData = this.currentVideos.get(this.selectedVideoId);
@@ -310,21 +385,18 @@ export class StudioController {
         grid.innerHTML = '';
 
         try {
-            // Breve delay UX para que el usuario perciba que el sistema procesa su solicitud
             await new Promise(r => setTimeout(r, 600));
 
             const uuid = videoData.uuid;
             let baseUrl = window.AppBasePath || window.location.origin;
             if (baseUrl.endsWith('/')) baseUrl = baseUrl.slice(0, -1);
 
-            // Cargamos dinámicamente las 6 opciones que el worker de python procesó previamente
             for (let i = 1; i <= 6; i++) {
                 const thumbUrl = `${baseUrl}/public/storage/thumbnails/generated/${uuid}/thumb_${i}.jpg`;
                 const relativePath = `/storage/thumbnails/generated/${uuid}/thumb_${i}.jpg`;
                 
                 const item = document.createElement('div');
                 item.className = 'component-thumbnail-item';
-                // Si la imagen falla por alguna razón del worker, la ocultamos con onerror
                 item.innerHTML = `<img src="${thumbUrl}" alt="Opción ${i}" onerror="this.parentElement.style.display='none'">`;
                 
                 item.onclick = () => this.selectGeneratedThumbnail(item, thumbUrl, relativePath);
@@ -342,7 +414,6 @@ export class StudioController {
     }
 
     async selectGeneratedThumbnail(itemElement, fullUrl, relativePath) {
-        // UI: Marcar seleccionada
         document.querySelectorAll('.component-thumbnail-item').forEach(el => el.classList.remove('component-thumbnail-selected'));
         itemElement.classList.add('component-thumbnail-selected');
         
@@ -374,7 +445,6 @@ export class StudioController {
             alert("Error de red al guardar la miniatura.");
         }
     }
-    // ==========================================
 
     updateThumbnailPreview(thumbnailPath) {
         const container = document.querySelector('.studio-video-card__player');
@@ -447,6 +517,15 @@ export class StudioController {
 
             if (this.selectedVideoId === matchedKey) {
                 this.validatePublishButton();
+            }
+
+            const row = document.getElementById(`video-row-${matchedKey}`);
+            if (row && row.children[1]) {
+                const statusCell = row.children[1];
+                if (data.status === 'processing') statusCell.innerHTML = `<span class="status-badge status-processing">Procesando ${data.progress || 0}%</span>`;
+                else if (data.status === 'processed') statusCell.innerHTML = '<span class="status-badge status-processed">Procesado / Borrador</span>';
+                else if (data.status === 'failed') statusCell.innerHTML = '<span class="status-badge status-failed">Error</span>';
+                else if (data.status === 'published') statusCell.innerHTML = '<span class="status-badge status-published">Publicado</span>';
             }
         }
     }
@@ -670,7 +749,6 @@ export class StudioController {
             if(btn) { btn.setAttribute('disabled', 'true'); btn.classList.add('disabled'); }
         }
 
-        // El generador de miniaturas se habilita estrictamente solo cuando el video ha sido 100% procesado
         if (isProcessed) {
             if(btnGen) { btnGen.removeAttribute('disabled'); btnGen.classList.remove('disabled'); }
         } else {

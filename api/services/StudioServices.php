@@ -215,7 +215,6 @@ class StudioServices {
         $isTempFile = false;
         $isGeneratedCopy = false;
 
-        // 1. Manejar ruta generada dinámicamente por el worker en Python
         if ($generatedPath) {
             if (!preg_match('/^\/storage\/thumbnails\/generated\/[a-f0-9\-]+\/thumb_\d+\.jpg$/', $generatedPath)) {
                 throw new Exception("Ruta generada inválida o formato incorrecto.");
@@ -228,7 +227,6 @@ class StudioServices {
             $extension = 'jpg';
             $isGeneratedCopy = true;
         }
-        // 2. Manejar decodificación si se envió por Base64
         else if ($base64) {
             if (preg_match('/^data:image\/(\w+);base64,/', $base64, $type)) {
                 $base64Data = substr($base64, strpos($base64, ',') + 1);
@@ -252,7 +250,6 @@ class StudioServices {
                 throw new Exception('Formato base64 inválido.');
             }
         } 
-        // 3. Manejar archivo tradicional subido manualmente
         else if ($file && isset($file['tmp_name'])) {
             $targetPathToValidate = $file['tmp_name'];
             $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
@@ -260,7 +257,6 @@ class StudioServices {
             throw new Exception("No se proporcionó ninguna imagen.");
         }
 
-        // 4. Validación de Magic Bytes
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
         $mime = finfo_file($finfo, $targetPathToValidate);
         finfo_close($finfo);
@@ -277,12 +273,10 @@ class StudioServices {
             throw new Exception("Extensión de imagen inválida (.$extension).");
         }
 
-        // 5. Ubicación Final
         $filename = $video['uuid'] . '_thumb.' . $extension;
         $destination = $this->thumbnailDir . $filename;
         $publicPath = 'storage/thumbnails/' . $filename;
 
-        // Copiamos en vez de mover en caso de que sea del worker, para mantener los temporales hasta que se publique
         if ($isGeneratedCopy) {
             if (!copy($targetPathToValidate, $destination)) {
                 throw new Exception("No se pudo copiar la miniatura generada por el worker.");
@@ -322,6 +316,13 @@ class StudioServices {
         return $this->videoRepo->getActiveUploadsByUserId($userId);
     }
     
+    public function getAllVideos(int $userId): array {
+        if (method_exists($this->videoRepo, 'getAllByUserId')) {
+            return $this->videoRepo->getAllByUserId($userId);
+        }
+        return $this->videoRepo->getActiveUploadsByUserId($userId);
+    }
+
     public function publishVideo(int $userId, int $videoId): array {
         $video = $this->videoRepo->findById($videoId);
         if (!$video || $video['user_id'] != $userId) {
@@ -340,7 +341,6 @@ class StudioServices {
             throw new Exception("Faltan los siguientes datos en la DB para publicar: " . implode(' y ', $missing));
         }
         
-        // Limpiamos la basura generada de miniaturas una vez publicado para ahorrar espacio
         $generatedThumbsDir = __DIR__ . '/../../public/storage/thumbnails/generated/' . $video['uuid'];
         if (is_dir($generatedThumbsDir)) {
             $this->deleteDirectory($generatedThumbsDir);
@@ -375,7 +375,6 @@ class StudioServices {
             $this->deleteDirectory($hlsDir);
         }
 
-        // Limpiamos las miniaturas pre-generadas por el worker
         $generatedThumbsDir = __DIR__ . '/../../public/storage/thumbnails/generated/' . $video['uuid'];
         if (is_dir($generatedThumbsDir)) {
             $this->deleteDirectory($generatedThumbsDir);

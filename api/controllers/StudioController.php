@@ -82,14 +82,12 @@ class StudioController {
         $thumbnailBase64 = $input['thumbnail_base64'] ?? $_POST['thumbnail_base64'] ?? null;
         $generatedPath = $input['generated_path'] ?? $_POST['generated_path'] ?? null;
         
-        // Exigimos que haya ID de video y que venga File tradicional O string Base64 O una ruta generada por el worker
         if ($_SERVER['REQUEST_METHOD'] !== 'POST' || (!$thumbnailBase64 && !$generatedPath && !isset($files['thumbnail'])) || !$videoId) {
             http_response_code(400);
             return ['success' => false, 'status' => 'error', 'message' => 'Faltan datos obligatorios para procesar la miniatura.'];
         }
 
         try {
-            // Pasamos todas las posibilidades al servicio
             $data = $this->studioServices->uploadThumbnail($userId, (int)$videoId, $files['thumbnail'] ?? null, $thumbnailBase64, $generatedPath);
             return ['success' => true, 'status' => 'success', 'data' => $data];
         } catch (\Exception $e) {
@@ -132,6 +130,22 @@ class StudioController {
         
         try {
             $videos = $this->studioServices->getActiveUploads($userId);
+            return ['success' => true, 'status' => 'success', 'data' => $videos];
+        } catch (\Exception $e) {
+            http_response_code(500);
+            return ['success' => false, 'status' => 'error', 'message' => $e->getMessage()];
+        }
+    }
+
+    public function get_all_videos($input) {
+        $userId = $this->requireAuth();
+        if (!$userId) {
+            http_response_code(401);
+            return ['success' => false, 'status' => 'error', 'message' => 'No autorizado'];
+        }
+        
+        try {
+            $videos = $this->studioServices->getAllVideos($userId);
             return ['success' => true, 'status' => 'success', 'data' => $videos];
         } catch (\Exception $e) {
             http_response_code(500);

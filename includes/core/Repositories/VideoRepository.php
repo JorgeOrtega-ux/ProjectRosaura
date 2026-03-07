@@ -74,6 +74,17 @@ class VideoRepository implements VideoRepositoryInterface {
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
+    // NUEVO MÉTODO: Obtiene todos los videos sin importar el estado (para la tabla principal)
+    public function getAllByUserId(int $userId): array {
+        $stmt = $this->db->prepare("
+            SELECT * FROM videos 
+            WHERE user_id = :user_id 
+            ORDER BY created_at DESC
+        ");
+        $stmt->execute([':user_id' => $userId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
     public function findById(int $id) {
         $stmt = $this->db->prepare("SELECT * FROM videos WHERE id = :id");
         $stmt->execute([':id' => $id]);

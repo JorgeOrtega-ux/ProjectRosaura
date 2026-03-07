@@ -36,7 +36,6 @@
     flex-direction: column;
 }
 
-/* Modificador para la tabla de contenido multimedia */
 .component-table--media th {
     white-space: nowrap;
 }
@@ -45,9 +44,6 @@
     width: 35%;
 }
 
-/* ==========================================================================
-   Componente: Área de Subida de Video
-   ========================================================================== */
 .component-upload-area {
     display: flex;
     flex-direction: column;
@@ -111,7 +107,7 @@
     background-color: #0f0f0f;
     color: #ffffff;
     border: none;
-    border-radius: 50px; /* Borde de píldora */
+    border-radius: 50px; 
     padding: 10px 24px;
     font-size: 14px;
     font-weight: 500;
@@ -145,11 +141,6 @@
     text-decoration: underline;
 }
 
-/* ==========================================================================
-   Componente: Subiendo / Detalles de Video (Uploading)
-   ========================================================================== */
-
-/* Badges en la parte superior */
 .studio-badge-container {
     display: flex;
     gap: 12px;
@@ -193,7 +184,6 @@
     opacity: 0.8;
 }
 
-/* Layout de la vista inferior */
 .studio-uploading-wrapper {
     display: flex;
     gap: 32px;
@@ -204,16 +194,15 @@
 }
 
 .studio-uploading-details {
-    flex: 1; /* Ocupa el espacio restante para los formularios */
+    flex: 1; 
 }
 
 .studio-uploading-preview {
-    flex: 0 0 320px; /* Ancho fijo para la previsualización del video */
+    flex: 0 0 320px; 
     position: sticky;
     top: 24px;
 }
 
-/* Card del video en miniatura (Fondo negro) */
 .studio-video-card {
     background-color: var(--bg-surface);
     border: 1px solid var(--border-color);
@@ -226,7 +215,7 @@
 .studio-video-card__player {
     width: 100%;
     aspect-ratio: 16 / 9;
-    background-color: #000000; /* Simula el video negro */
+    background-color: #000000; 
     position: relative;
 }
 
@@ -266,10 +255,6 @@
     word-break: break-all;
 }
 
-/* ==========================================================================
-   Componente: Grid de Miniaturas Generadas (NUEVO)
-   ========================================================================== */
-
 .component-thumbnail-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -295,7 +280,7 @@
     height: 100%;
     object-fit: cover;
     display: block;
-    pointer-events: none; /* Evita que el click se registre en la imagen y no en el contenedor */
+    pointer-events: none; 
 }
 
 .component-thumbnail-item:hover {
@@ -303,14 +288,12 @@
     transform: scale(1.02);
 }
 
-/* Estado de miniatura seleccionada */
 .component-thumbnail-item.component-thumbnail-selected {
-    border-color: #065fd4; /* Azul de selección habitual */
+    border-color: #065fd4; 
 }
 
-/* Indicador visual adicional (opcional, como un pequeño check) */
 .component-thumbnail-item.component-thumbnail-selected::after {
-    content: '\e876'; /* Código del ícono de check en Material Symbols */
+    content: '\e876'; 
     font-family: 'Material Symbols Rounded';
     position: absolute;
     top: 4px;
@@ -327,10 +310,75 @@
     font-weight: bold;
 }
 
-/* Responsividad para móviles */
+/* ==========================================================================
+   Nuevos estilos para la Tabla de Manage Content
+   ========================================================================== */
+
+.table-video-info {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.table-video-thumb {
+    width: 120px;
+    height: 68px;
+    background-color: var(--bg-surface);
+    border-radius: 4px;
+    object-fit: cover;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+}
+
+.table-video-thumb.empty {
+    background-color: var(--border-color);
+}
+
+.table-video-details {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.table-video-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.table-video-desc {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.status-queued { background-color: #f1f1f1; color: #606060; }
+.status-processing { background-color: #e5f6fd; color: #065fd4; }
+.status-processed { background-color: #e6f4ea; color: #137333; }
+.status-published { background-color: #e6f4ea; color: #137333; }
+.status-failed { background-color: #fce8e6; color: #c5221f; }
+
+@media (prefers-color-scheme: dark) {
+    .status-queued { background-color: #3f3f3f; color: #aaaaaa; }
+    .status-processing { background-color: #121e2b; color: #3ea6ff; }
+    .status-processed { background-color: #0d2216; color: #5bb974; }
+    .status-published { background-color: #0d2216; color: #5bb974; }
+    .status-failed { background-color: #2b1110; color: #e2615c; }
+}
+
 @media (max-width: 900px) {
     .studio-uploading-wrapper {
-        flex-direction: column-reverse; /* Pone el video arriba en móvil */
+        flex-direction: column-reverse; 
         gap: 24px;
     }
 
@@ -363,6 +411,6 @@
     }
     
     .component-thumbnail-grid {
-        grid-template-columns: repeat(3, 1fr); /* En móvil, al ser 100% el ancho, caben 3 cómodamente */
+        grid-template-columns: repeat(3, 1fr); 
     }
 }

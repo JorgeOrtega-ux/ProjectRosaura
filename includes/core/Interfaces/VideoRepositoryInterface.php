@@ -7,12 +7,16 @@ interface VideoRepositoryInterface {
     public function create(int $userId, string $uuid, string $originalFilename, string $tempFilePath): int;
     public function updateStatus(int $videoId, string $status, int $progress = 0): bool;
     public function updateMetadata(int $videoId, array $data): bool;
+    
     public function getActiveUploadsByUserId(int $userId): array;
+    // Nuevo método agregado
+    public function getAllByUserId(int $userId): array;
+    
     public function findById(int $id);
     public function findByUuid(string $uuid);
     public function delete(int $id): bool;
     
-    // Nuevos métodos para validación de límites
+    // Métodos para validación de límites
     public function countProcessingUploads(int $userId): int;
     public function countDailyUploads(int $userId): int;
 }

@@ -22,7 +22,7 @@
                         <thead>
                             <tr>
                                 <th>Video</th>
-                                <th>Visibilidad</th>
+                                <th>Estado / Visibilidad</th>
                                 <th>Restricciones</th>
                                 <th>Fecha</th>
                                 <th>Vistas</th>
@@ -30,17 +30,20 @@
                                 <th>"Me gusta"</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <tr>
-                                <td colspan="7" class="component-empty-table-cell">
-                                    <div class="component-empty-state component-empty-state--table">
-                                        <span class="material-symbols-rounded component-empty-state-icon">video_library</span>
-                                        <p class="component-empty-state-text">No hay videos disponibles por el momento.</p>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
+                        <tbody id="manageContentTableBody">
+                            </tbody>
                     </table>
+
+                    <template id="emptyTableTemplate">
+                        <tr>
+                            <td colspan="7" class="component-empty-table-cell">
+                                <div class="component-empty-state component-empty-state--table">
+                                    <span class="material-symbols-rounded component-empty-state-icon">video_library</span>
+                                    <p class="component-empty-state-text">No hay videos disponibles por el momento.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    </template>
                 </div>
             </div>
 
