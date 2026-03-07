@@ -10,13 +10,16 @@
     # 1. Enrutar archivos estáticos (JS, CSS) directamente hacia la carpeta public
     RewriteRule ^assets/(.*)$ public/assets/$1 [L]
 
+    # ---> NUEVA REGLA: Enrutar uploads (storage) directamente hacia la carpeta public
+    RewriteRule ^storage/(.*)$ public/storage/$1 [L]
+
     # 2. Si la petición ya está apuntando a public/ internamente, la dejamos pasar
     RewriteRule ^public/ - [L]
 
-    # 3. Si piden un archivo físico que SÍ existe (ej. un .png subido fuera de assets), dejarlo pasar
+    # 3. Si piden un archivo físico que SÍ existe, dejarlo pasar
     RewriteCond %{REQUEST_FILENAME} -f
     RewriteRule ^ - [L]
 
-    # 4. Cualquier otra petición (incluyendo la raíz y las rutas SPA como /explore) va al index.php
+    # 4. Cualquier otra petición va al index.php
     RewriteRule ^(.*)$ public/index.php [QSA,L]
 </IfModule>
