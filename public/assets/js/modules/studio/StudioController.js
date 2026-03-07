@@ -127,8 +127,6 @@ export class StudioController {
         this.api = new ApiService();
         this.currentVideos = new Map();
         
-        // Memoria volátil para mantener el File object local y poder extraer frames sin gastar servidor
-        this.localVideoFiles = new Map(); 
         this.selectedVideoId = null;
         
         this.init();
@@ -157,9 +155,6 @@ export class StudioController {
         // FASE 1: Validación Previa "Pre-flight"
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
-            
-            // Guardamos el archivo temporalmente en memoria para extraer miniaturas luego
-            this.localVideoFiles.set(file.name, file);
             
             try {
                 const preCheckRes = await this.api.post(ApiRoutes.Studio.UploadVideo, {
@@ -284,7 +279,6 @@ export class StudioController {
             cancelBtn.removeAttribute('disabled');
         }
 
-        // Reseteamos las miniaturas generadas al cambiar de video
         const thumbGrid = document.getElementById('generatedThumbnailsContainer');
         if(thumbGrid) {
             thumbGrid.innerHTML = '';
@@ -295,82 +289,51 @@ export class StudioController {
     }
 
     // ==========================================
-    // NUEVO: GENERADOR DE MINIATURAS VIA CANVAS
+    // CARGADOR INTELIGENTE DE MINIATURAS DEL WORKER
     // ==========================================
     async generateThumbnails() {
         if (!this.selectedVideoId) return;
         const videoData = this.currentVideos.get(this.selectedVideoId);
-        if (!videoData) return;
         
-        // Buscamos si tenemos el archivo original cargado en la memoria de la sesión
-        const localFile = this.localVideoFiles.get(videoData.original_filename);
-        if (!localFile) {
-            alert("El archivo local ya no está disponible en la memoria del navegador (la página se recargó). Sube una miniatura manualmente.");
+        if (!videoData || videoData.status !== 'processed') {
+            alert("El video debe terminar de procesarse al 100% para poder generar sus miniaturas.");
             return;
         }
 
         const btn = document.getElementById('btnGenerateThumbnails');
         const originalBtnText = btn.innerHTML;
-        btn.innerHTML = '<span class="material-symbols-rounded">sync</span><span>Generando...</span>';
+        btn.innerHTML = '<span class="material-symbols-rounded">sync</span><span>Cargando opciones...</span>';
         btn.disabled = true;
 
         const grid = document.getElementById('generatedThumbnailsContainer');
         grid.style.display = 'grid';
-        grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; font-size: 13px; color: var(--text-secondary);">Procesando archivo local...</p>';
+        grid.innerHTML = '';
 
         try {
-            const videoEl = document.createElement('video');
-            videoEl.src = URL.createObjectURL(localFile);
-            videoEl.muted = true;
-            videoEl.playsInline = true;
+            // Breve delay UX para que el usuario perciba que el sistema procesa su solicitud
+            await new Promise(r => setTimeout(r, 600));
 
-            // Esperar a que los metadatos carguen para saber la duración
-            await new Promise((resolve, reject) => {
-                videoEl.onloadedmetadata = resolve;
-                videoEl.onerror = () => reject("El navegador no soporta la lectura en tiempo real de este formato de video.");
-            });
+            const uuid = videoData.uuid;
+            let baseUrl = window.AppBasePath || window.location.origin;
+            if (baseUrl.endsWith('/')) baseUrl = baseUrl.slice(0, -1);
 
-            const duration = videoEl.duration;
-            const thumbnails = [];
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const numThumbnails = 10;
-            const interval = duration / (numThumbnails + 1); // Distribuir equidistantemente
-
-            canvas.width = 1280; // Resolución base para HD
-            canvas.height = 720;
-
-            for (let i = 1; i <= numThumbnails; i++) {
-                const targetTime = i * interval;
-                await new Promise((resolve) => {
-                    videoEl.currentTime = targetTime;
-                    videoEl.onseeked = () => {
-                        ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
-                        // Convertir a Base64
-                        thumbnails.push(canvas.toDataURL('image/jpeg', 0.8));
-                        resolve();
-                    };
-                    videoEl.onerror = resolve; // Saltar frame si hay error
-                });
-            }
-
-            // Liberar la memoria RAM del video
-            URL.revokeObjectURL(videoEl.src);
-
-            // Inyectar en el DOM
-            grid.innerHTML = '';
-            thumbnails.forEach((dataUrl, index) => {
+            // Cargamos dinámicamente las 6 opciones que el worker de python procesó previamente
+            for (let i = 1; i <= 6; i++) {
+                const thumbUrl = `${baseUrl}/public/storage/thumbnails/generated/${uuid}/thumb_${i}.jpg`;
+                const relativePath = `/storage/thumbnails/generated/${uuid}/thumb_${i}.jpg`;
+                
                 const item = document.createElement('div');
                 item.className = 'component-thumbnail-item';
-                item.innerHTML = `<img src="${dataUrl}" alt="Opción ${index + 1}">`;
+                // Si la imagen falla por alguna razón del worker, la ocultamos con onerror
+                item.innerHTML = `<img src="${thumbUrl}" alt="Opción ${i}" onerror="this.parentElement.style.display='none'">`;
                 
-                item.onclick = () => this.selectGeneratedThumbnail(item, dataUrl);
+                item.onclick = () => this.selectGeneratedThumbnail(item, thumbUrl, relativePath);
                 grid.appendChild(item);
-            });
+            }
 
         } catch (error) {
             console.error(error);
-            alert(error);
+            alert("Error al cargar las miniaturas.");
             grid.style.display = 'none';
         } finally {
             btn.innerHTML = originalBtnText;
@@ -378,22 +341,20 @@ export class StudioController {
         }
     }
 
-    async selectGeneratedThumbnail(itemElement, dataUrl) {
+    async selectGeneratedThumbnail(itemElement, fullUrl, relativePath) {
         // UI: Marcar seleccionada
         document.querySelectorAll('.component-thumbnail-item').forEach(el => el.classList.remove('component-thumbnail-selected'));
         itemElement.classList.add('component-thumbnail-selected');
         
         const hiddenInput = document.getElementById('selectedGeneratedThumbnail');
-        if (hiddenInput) hiddenInput.value = dataUrl;
+        if (hiddenInput) hiddenInput.value = relativePath;
 
-        // Actualizamos visualmente el reproductor simulado
-        this.updateThumbnailPreview(dataUrl);
+        this.updateThumbnailPreview(fullUrl);
 
         try {
-            // Enviamos el string en Base64 al backend
             const formData = new FormData();
             formData.append('video_id', this.selectedVideoId);
-            formData.append('thumbnail_base64', dataUrl); // Nuevo parámetro para Base64
+            formData.append('generated_path', relativePath); 
 
             const res = await this.api.postForm(ApiRoutes.Studio.UploadThumbnail, formData);
             
@@ -403,7 +364,6 @@ export class StudioController {
                     video.thumbnailSubida = true;
                     video.thumbnail_path = res.data.thumbnail_path;
                     this.validatePublishButton();
-                    // Volver a recargar desde URL remota para confirmar
                     this.updateThumbnailPreview(video.thumbnail_path); 
                 }
             } else {
@@ -583,7 +543,6 @@ export class StudioController {
             const controller = window.currentStudioController;
             if (!controller) return;
 
-            // Escuchador para generar opciones
             const btnGen = e.target.closest('#btnGenerateThumbnails');
             if (btnGen) {
                 controller.generateThumbnails();
@@ -627,7 +586,6 @@ export class StudioController {
             const controller = window.currentStudioController;
             if (!controller) return;
 
-            // Para la subida tradicional de un archivo local de imagen
             if (e.target && e.target.id === 'thumbnailInput') {
                 if (!e.target.files.length || !controller.selectedVideoId) return;
                 
@@ -691,7 +649,13 @@ export class StudioController {
 
     validatePublishButton() {
         const btn = document.getElementById('btnPublishVideo');
-        if (!btn || !this.selectedVideoId) return;
+        const btnGen = document.getElementById('btnGenerateThumbnails');
+
+        if (!this.selectedVideoId) {
+            if(btn) { btn.setAttribute('disabled', 'true'); btn.classList.add('disabled'); }
+            if(btnGen) { btnGen.setAttribute('disabled', 'true'); btnGen.classList.add('disabled'); }
+            return;
+        }
 
         const video = this.currentVideos.get(this.selectedVideoId);
         if (!video) return;
@@ -701,11 +665,16 @@ export class StudioController {
         const hasThumb = video.thumbnailSubida === true;
 
         if (isProcessed && hasTitle && hasThumb) {
-            btn.removeAttribute('disabled');
-            btn.classList.remove('disabled');
+            if(btn) { btn.removeAttribute('disabled'); btn.classList.remove('disabled'); }
         } else {
-            btn.setAttribute('disabled', 'true');
-            btn.classList.add('disabled');
+            if(btn) { btn.setAttribute('disabled', 'true'); btn.classList.add('disabled'); }
+        }
+
+        // El generador de miniaturas se habilita estrictamente solo cuando el video ha sido 100% procesado
+        if (isProcessed) {
+            if(btnGen) { btnGen.removeAttribute('disabled'); btnGen.classList.remove('disabled'); }
+        } else {
+            if(btnGen) { btnGen.setAttribute('disabled', 'true'); btnGen.classList.add('disabled'); }
         }
     }
 

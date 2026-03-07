@@ -68,6 +68,32 @@ def get_video_duration(file_path):
         logging.error(f"Error obteniendo duración: {e}")
         return 0.0
 
+def generate_thumbnails(input_file, uuid, duration):
+    """Genera 6 miniaturas distribuidas a lo largo del video de forma silenciosa."""
+    try:
+        output_dir = os.path.join(HLS_OUTPUT_DIR, '..', 'thumbnails', 'generated', uuid)
+        os.makedirs(output_dir, exist_ok=True)
+        
+        interval = duration / 7
+        if interval <= 0:
+            interval = 1
+            
+        for i in range(1, 7):
+            target_time = i * interval
+            out_path = os.path.join(output_dir, f"thumb_{i}.jpg")
+            cmd = [
+                'ffmpeg', '-y', '-ss', str(target_time), 
+                '-i', input_file, 
+                '-vframes', '1', 
+                '-q:v', '2', 
+                '-s', '1280x720', 
+                out_path
+            ]
+            subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        logging.info(f"📸 6 Miniaturas generadas de forma inteligente para {uuid}")
+    except Exception as e:
+        logging.error(f"Error generando miniaturas: {e}")
+
 def process_video(redis_client, job):
     video_id = job.get('video_id')
     user_id = job.get('user_id')
@@ -185,6 +211,9 @@ def process_video(redis_client, job):
 
     if process.returncode == 0:
         hls_public_path = f"/storage/videos/{uuid}/master.m3u8"
+        
+        # Generamos las miniaturas AHORA, ya que sabemos que el video es válido y estamos a punto de borrar el original
+        generate_thumbnails(input_file, uuid, duration)
         
         conn = get_db_connection()
         if conn:

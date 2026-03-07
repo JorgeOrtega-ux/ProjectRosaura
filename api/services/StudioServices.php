@@ -204,8 +204,7 @@ class StudioServices {
         ];
     }
 
-    // Adaptado para soportar Archivos Normales (Files) y Strings Base64 Dinámicos
-    public function uploadThumbnail(int $userId, int $videoId, ?array $file = null, ?string $base64 = null): array {
+    public function uploadThumbnail(int $userId, int $videoId, ?array $file = null, ?string $base64 = null, ?string $generatedPath = null): array {
         $video = $this->videoRepo->findById($videoId);
         if (!$video || $video['user_id'] != $userId) {
             throw new Exception("Video no encontrado o no autorizado.");
@@ -214,9 +213,23 @@ class StudioServices {
         $extension = '';
         $targetPathToValidate = '';
         $isTempFile = false;
+        $isGeneratedCopy = false;
 
-        // 1. Manejar decodificación si se envió por Base64 (Opciones autogeneradas)
-        if ($base64) {
+        // 1. Manejar ruta generada dinámicamente por el worker en Python
+        if ($generatedPath) {
+            if (!preg_match('/^\/storage\/thumbnails\/generated\/[a-f0-9\-]+\/thumb_\d+\.jpg$/', $generatedPath)) {
+                throw new Exception("Ruta generada inválida o formato incorrecto.");
+            }
+            $realPath = __DIR__ . '/../../public' . $generatedPath;
+            if (!file_exists($realPath)) {
+                throw new Exception("La miniatura generada ya no existe en el servidor.");
+            }
+            $targetPathToValidate = $realPath;
+            $extension = 'jpg';
+            $isGeneratedCopy = true;
+        }
+        // 2. Manejar decodificación si se envió por Base64
+        else if ($base64) {
             if (preg_match('/^data:image\/(\w+);base64,/', $base64, $type)) {
                 $base64Data = substr($base64, strpos($base64, ',') + 1);
                 $typeStr = strtolower($type[1]);
@@ -232,7 +245,6 @@ class StudioServices {
                     throw new Exception('Fallo al decodificar la imagen base64.');
                 }
                 
-                // Lo guardamos físicamente de forma temporal para someterlo a Magic Bytes
                 $targetPathToValidate = tempnam(sys_get_temp_dir(), 'rosaura_thumb_');
                 file_put_contents($targetPathToValidate, $decodedData);
                 $isTempFile = true;
@@ -240,7 +252,7 @@ class StudioServices {
                 throw new Exception('Formato base64 inválido.');
             }
         } 
-        // 2. Manejar archivo tradicional subido manualmente por el cliente
+        // 3. Manejar archivo tradicional subido manualmente
         else if ($file && isset($file['tmp_name'])) {
             $targetPathToValidate = $file['tmp_name'];
             $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
@@ -248,30 +260,34 @@ class StudioServices {
             throw new Exception("No se proporcionó ninguna imagen.");
         }
 
-        // 3. Validación de Magic Bytes en la ruta temporal para mayor seguridad contra inyección de exploits
+        // 4. Validación de Magic Bytes
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
         $mime = finfo_file($finfo, $targetPathToValidate);
         finfo_close($finfo);
 
         $validImageMimes = ['image/jpeg', 'image/png', 'image/webp'];
         if (!in_array($mime, $validImageMimes)) {
-            if ($isTempFile) @unlink($targetPathToValidate); // Limpiar basura
+            if ($isTempFile) @unlink($targetPathToValidate);
             throw new Exception("El archivo procesado no es una imagen válida o está corrompido.");
         }
 
         $validExtensions = ['jpg', 'jpeg', 'png', 'webp'];
         if (!in_array($extension, $validExtensions)) {
-            if ($isTempFile) @unlink($targetPathToValidate); // Limpiar basura
+            if ($isTempFile) @unlink($targetPathToValidate);
             throw new Exception("Extensión de imagen inválida (.$extension).");
         }
 
-        // 4. Ubicación Final
+        // 5. Ubicación Final
         $filename = $video['uuid'] . '_thumb.' . $extension;
         $destination = $this->thumbnailDir . $filename;
         $publicPath = 'storage/thumbnails/' . $filename;
 
-        // Mover o renombrar el archivo a la carpeta publica según su origen
-        if ($isTempFile) {
+        // Copiamos en vez de mover en caso de que sea del worker, para mantener los temporales hasta que se publique
+        if ($isGeneratedCopy) {
+            if (!copy($targetPathToValidate, $destination)) {
+                throw new Exception("No se pudo copiar la miniatura generada por el worker.");
+            }
+        } else if ($isTempFile) {
             rename($targetPathToValidate, $destination);
         } else {
             if (!move_uploaded_file($targetPathToValidate, $destination)) {
@@ -279,7 +295,6 @@ class StudioServices {
             }
         }
 
-        // 5. Vincular a la Base de Datos
         $this->videoRepo->updateMetadata($videoId, ['thumbnail_path' => $publicPath]);
         return ['thumbnail_path' => $publicPath];
     }
@@ -325,6 +340,12 @@ class StudioServices {
             throw new Exception("Faltan los siguientes datos en la DB para publicar: " . implode(' y ', $missing));
         }
         
+        // Limpiamos la basura generada de miniaturas una vez publicado para ahorrar espacio
+        $generatedThumbsDir = __DIR__ . '/../../public/storage/thumbnails/generated/' . $video['uuid'];
+        if (is_dir($generatedThumbsDir)) {
+            $this->deleteDirectory($generatedThumbsDir);
+        }
+
         $this->videoRepo->updateStatus($videoId, 'published', 100);
         return ['success' => true, 'status' => 'published'];
     }
@@ -352,6 +373,12 @@ class StudioServices {
         $hlsDir = __DIR__ . '/../../public/storage/videos/' . $video['uuid'];
         if (is_dir($hlsDir)) {
             $this->deleteDirectory($hlsDir);
+        }
+
+        // Limpiamos las miniaturas pre-generadas por el worker
+        $generatedThumbsDir = __DIR__ . '/../../public/storage/thumbnails/generated/' . $video['uuid'];
+        if (is_dir($generatedThumbsDir)) {
+            $this->deleteDirectory($generatedThumbsDir);
         }
 
         $this->videoRepo->delete($videoId);
