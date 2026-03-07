@@ -21,6 +21,7 @@ $topBarClass = ($isAuthRoute || $isMaintenanceRestricted) ? 'disabled' : '';
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded" />
     <link rel="stylesheet" type="text/css" href="assets/css/styles.css">
     <link rel="stylesheet" type="text/css" href="assets/css/components/components.css">
+    <script src="https://unpkg.com/hls.js@latest/dist/hls.min.js"></script>
     <link rel="stylesheet" type="text/css" href="assets/css/components/components-studio.css">
     <link rel="stylesheet" type="text/css" href="assets/css/root.css">
     <title>Project Rosaura</title>

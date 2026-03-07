@@ -463,12 +463,12 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background-color: var(--text-primary); /* Forzamos color de fondo sólido dependiendo del tema para contraste */
+    background-color: var(--text-primary); 
     border: 1px solid var(--border-color);
     border-radius: 16px;
     padding: 6px 12px;
     font-size: 13px;
-    color: #ffffff; /* Forzado a blanco para tags oficiales */
+    color: #ffffff; 
     transition: background-color 0.2s;
     user-select: none;
 }
@@ -484,7 +484,7 @@
 .tag-pill-remove {
     font-size: 16px;
     cursor: pointer;
-    color: #ffffff; /* Ajustado para tag oficial */
+    color: #ffffff; 
     border-radius: 50%;
     transition: color 0.2s, background-color 0.2s;
     padding: 2px;
@@ -496,7 +496,7 @@
     background-color: rgba(255, 255, 255, 0.2);
 }
 
-/* Sobreescritura para tags locales (mantenerlos dinámicos y legibles si el fondo es transparente por JS) */
+/* Sobreescritura para tags locales */
 .tag-pill[style*="transparent"] {
     color: var(--text-primary);
 }
@@ -517,7 +517,6 @@
     }
 }
 
-/* Estilos de los wrappers de etiquetas (Reemplazando estilos en línea) */
 [data-component="tags-wrapper"] {
     width: 100%;
     padding: 0; 
@@ -530,7 +529,7 @@
 }
 
 /* =========================================================
-   VIDEO FEED CARDS (Home)
+   VIDEO FEED CARDS (Home) - [ACTUALIZADO]
    ========================================================= */
 .video-feed-grid {
     display: grid;
@@ -546,17 +545,17 @@
     gap: 12px;
     cursor: pointer;
     background-color: transparent;
-    border-radius: 12px; /* Añadido para que la sombra y fondo de hover no se corten cuadrados */
+    border-radius: 12px; 
     transition: transform 0.2s ease, background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-/* Efecto Hover dinámico con opacidad del 15% para que parezca un resplandor elegante */
 .video-card:hover {
     background-color: color-mix(in srgb, var(--local-dominant-color, transparent) 15%, transparent);
     box-shadow: 0 0 0 8px color-mix(in srgb, var(--local-dominant-color, transparent) 15%, transparent);
 }
 
-.video-card:hover .video-card__thumbnail {
+/* Quitar la escala cuando el video se está reproduciendo para mantener limpieza visual */
+.video-card:hover:not(.component-video-card--playing) .video-card__thumbnail {
     transform: scale(1.03);
 }
 
@@ -570,7 +569,37 @@
     position: relative;
 }
 
-/* El nuevo badge de duración de video */
+/* ESTADO REPRODUCIENDO: Oculta la miniatura revelando el video debajo */
+.video-card.component-video-card--playing .video-card__thumbnail {
+    opacity: 0;
+}
+
+/* EL REPRODUCTOR DE VIDEO INVISIBLE */
+.component-video-card__player {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 1; /* Detrás de la miniatura y del badge */
+    pointer-events: none; /* Crucial para no bloquear el clic al enlace (SPA router) */
+    background-color: #000; /* Fondo oscuro por si tarda en cargar el video */
+}
+
+/* LA MINIATURA (Elevada con z-index) */
+.video-card__thumbnail {
+    position: absolute; /* Añadido para superponer al video */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 2; /* Sobre el video */
+    transition: transform 0.3s ease, opacity 0.3s ease; /* Transición de opacidad agregada */
+}
+
+/* BADGE DE DURACIÓN/CUENTA REGRESIVA */
 .component-video-card__duration {
     position: absolute;
     bottom: 8px;
@@ -583,15 +612,8 @@
     border-radius: 6px;
     font-family: var(--sl-font-mono, monospace);
     line-height: 1;
-    z-index: 2;
+    z-index: 3; /* Sobre la miniatura y el video */
     pointer-events: none;
-}
-
-.video-card__thumbnail {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.3s ease;
 }
 
 .video-card__bottom {

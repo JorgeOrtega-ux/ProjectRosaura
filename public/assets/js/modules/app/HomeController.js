@@ -55,14 +55,32 @@ export class HomeController {
         const views = video.views || 0;
         const timeAgo = this.timeSince(new Date(video.created_at));
         const formattedDuration = this.formatDuration(video.duration);
-        const dominantColor = video.thumbnail_dominant_color !== 'transparent' ? video.thumbnail_dominant_color : '#333'; // Color base por si falla
+        const dominantColor = video.thumbnail_dominant_color !== 'transparent' ? video.thumbnail_dominant_color : '#333'; 
+        
+        // ASUNCIÓN: Asegúrate de que tu API (GetFeed) esté devolviendo la ruta del video, 
+        // por ejemplo en "video.video_url" o "video.file_url".
+        const videoSrc = video.video_url || ''; 
 
         return `
             <div class="video-card component-video-card" style="--local-dominant-color: ${dominantColor};" onclick="window.location.href='${window.AppBasePath || ''}/watch/${video.uuid}'">
-                <div class="video-card__top">
-                    <img src="${video.thumbnail_url}" alt="Miniatura de ${title}" class="video-card__thumbnail" loading="lazy">
-                    <span class="component-video-card__duration">${formattedDuration}</span>
+                
+                <div class="video-card__top" style="position: relative; overflow: hidden; aspect-ratio: 16/9;">
+                    
+                    <img src="${video.thumbnail_url}" alt="Miniatura de ${title}" class="component-video-card__thumbnail video-card__thumbnail" loading="lazy">
+                    
+                  <video 
+                        data-src="${videoSrc}" 
+                        class="component-video-card__player" 
+                        muted 
+                        loop 
+                        playsinline>
+                    </video>
+
+                    <div class="component-video-card__duration-badge">
+                        <span class="component-video-card__duration">${formattedDuration}</span>
+                    </div>
                 </div>
+
                 <div class="video-card__bottom">
                     <div class="video-card__avatar">
                         <img src="${video.avatar_url}" alt="Perfil de ${video.username}" loading="lazy">

@@ -4,6 +4,7 @@ import { SpaRouter } from './core/router/SpaRouter.js';
 import { DialogSystem } from './core/components/DialogSystem.js';
 import { TooltipSystem } from './core/components/TooltipSystem.js';
 import { CalendarSystem } from './core/components/CalendarSystem.js';
+import { VideoCardSystem } from './core/components/VideoCardSystem.js'; // <-- IMPORTACIÓN AÑADIDA
 
 // Importamos nuestro nuevo Mapa de Rutas
 import { RouteModulesMap } from './core/router/RouteModulesMap.js';
@@ -25,7 +26,11 @@ document.addEventListener('DOMContentLoaded', () => {
     window.tooltipSystem = new TooltipSystem();
     window.tooltipSystem.init();
 
-    // 5. Instanciamos el Router SPA
+    // 5. Instanciamos e inicializamos el Sistema de Video Cards (Global) <-- INICIALIZACIÓN AÑADIDA
+    window.videoCardSystem = new VideoCardSystem();
+    window.videoCardSystem.init();
+
+    // 6. Instanciamos el Router SPA
     window.spaRouter = new SpaRouter({
         outlet: '[data-ref="app-router-outlet"]'
     });
