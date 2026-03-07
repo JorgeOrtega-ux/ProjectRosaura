@@ -175,6 +175,8 @@ export class StudioController {
             }
             
             tbody.innerHTML = '';
+            this.currentVideos.clear();
+            
             videos.forEach(v => {
                 this.currentVideos.set(String(v.id), v);
                 const tr = this.createVideoRow(v);
@@ -331,6 +333,8 @@ export class StudioController {
                 window.dispatchEvent(new CustomEvent('routeChange', { detail: { url: '/studio/upload' }}));
                 return;
             }
+
+            this.currentVideos.clear();
 
             videos.forEach(v => {
                 this.currentVideos.set(String(v.id), {
