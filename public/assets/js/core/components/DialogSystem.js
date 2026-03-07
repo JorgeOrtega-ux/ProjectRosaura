@@ -36,6 +36,12 @@ export class DialogSystem {
             
             const box = document.createElement('div');
             box.className = 'component-dialog-box';
+            
+            // Aplicar clase personalizada al contenedor del diálogo si existe
+            if (data.dialogClass) {
+                box.classList.add(data.dialogClass);
+            }
+
             box.innerHTML = this.templates[templateName].build(data);
             
             // Botón 'X' externo (Se ocultará en móvil mediante CSS)
@@ -49,7 +55,14 @@ export class DialogSystem {
             overlay.appendChild(wrapper);
             container.appendChild(overlay);
 
-            requestAnimationFrame(() => overlay.classList.add('active'));
+            requestAnimationFrame(() => {
+                overlay.classList.add('active');
+                
+                // Disparar evento onRender si existe (útil para inyectar JS en la plantilla)
+                if (data.onRender && typeof data.onRender === 'function') {
+                    data.onRender(box);
+                }
+            });
 
             const closeDialog = (result) => {
                 let formData = {};

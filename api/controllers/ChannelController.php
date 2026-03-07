@@ -94,23 +94,82 @@ class ChannelController {
 
         $destination = $uploadDir . $fileName;
 
-        // 4. Mover al almacenamiento y actualizar base de datos
-        if (move_uploaded_file($file['tmp_name'], $destination)) {
+        // 4. Leer coordenadas de recorte enviadas por JS (en porcentajes de 0 a 1)
+        $cropX_pct = isset($_POST['crop_x']) ? (float)$_POST['crop_x'] : 0;
+        $cropY_pct = isset($_POST['crop_y']) ? (float)$_POST['crop_y'] : 0;
+        $cropW_pct = isset($_POST['crop_w']) ? (float)$_POST['crop_w'] : 1;
+        $cropH_pct = isset($_POST['crop_h']) ? (float)$_POST['crop_h'] : 1;
+
+        // 5. Crear recurso de imagen según el tipo
+        switch ($mimeType) {
+            case 'image/jpeg': $sourceImage = imagecreatefromjpeg($file['tmp_name']); break;
+            case 'image/png':  $sourceImage = imagecreatefrompng($file['tmp_name']); break;
+            case 'image/webp': $sourceImage = imagecreatefromwebp($file['tmp_name']); break;
+            default: return ['success' => false, 'message' => 'Error al procesar el formato de la imagen.'];
+        }
+
+        if (!$sourceImage) {
+            return ['success' => false, 'message' => 'La imagen subida está corrupta o no es válida.'];
+        }
+
+        // Obtener dimensiones reales de la imagen subida
+        $origW = imagesx($sourceImage);
+        $origH = imagesy($sourceImage);
+
+        // Calcular los píxeles absolutos basados en los porcentajes
+        $srcX = round($origW * $cropX_pct);
+        $srcY = round($origH * $cropY_pct);
+        $srcW = round($origW * $cropW_pct);
+        $srcH = round($origH * $cropH_pct);
+
+        // Evitar recortes fuera de los límites (seguridad matemática)
+        $srcW = min($srcW, $origW - $srcX);
+        $srcH = min($srcH, $origH - $srcY);
+
+        // 6. Crear una nueva imagen en blanco para el recorte
+        $croppedImage = imagecreatetruecolor($srcW, $srcH);
+
+        // Mantener transparencia si es PNG o WEBP
+        if ($mimeType === 'image/png' || $mimeType === 'image/webp') {
+            imagealphablending($croppedImage, false);
+            imagesavealpha($croppedImage, true);
+            $transparent = imagecolorallocatealpha($croppedImage, 255, 255, 255, 127);
+            imagefilledrectangle($croppedImage, 0, 0, $srcW, $srcH, $transparent);
+        }
+
+        // 7. Aplicar el recorte copiando la porción deseada
+        imagecopyresampled($croppedImage, $sourceImage, 0, 0, $srcX, $srcY, $srcW, $srcH, $srcW, $srcH);
+
+        // 8. Guardar la imagen procesada en el servidor
+        $saveSuccess = false;
+        switch ($mimeType) {
+            case 'image/jpeg': $saveSuccess = imagejpeg($croppedImage, $destination, 90); break; // Calidad 90
+            case 'image/png':  $saveSuccess = imagepng($croppedImage, $destination, 8); break;  // Compresión 8
+            case 'image/webp': $saveSuccess = imagewebp($croppedImage, $destination, 90); break; // Calidad 90
+        }
+
+        // Liberar memoria del servidor
+        imagedestroy($sourceImage);
+        imagedestroy($croppedImage);
+
+        // 9. Actualizar Base de Datos si la creación fue exitosa
+        if ($saveSuccess) {
             $dbPath = 'public/storage/banners/uploaded/' . $fileName;
             
-            // Suponemos que implementaremos updateBanner() en UserRepository
             if ($this->userRepo->updateBanner($_SESSION['user_id'], $dbPath)) {
                 return [
                     'success' => true,
                     'message' => 'Banner actualizado correctamente.',
-                    'banner_url' => (defined('APP_URL') ? APP_URL : '') . '/' . $dbPath
+                    'banner_url' => (defined('APP_URL') ? APP_URL : '') . '/' . ltrim($dbPath, '/')
                 ];
             } else {
+                // Si falla la BD, opcionalmente borraríamos el archivo para no dejar basura
+                @unlink($destination);
                 return ['success' => false, 'message' => 'Error al guardar en la base de datos.'];
             }
         }
 
-        return ['success' => false, 'message' => 'Error al guardar el archivo en el servidor.'];
+        return ['success' => false, 'message' => 'Error interno al procesar y guardar la imagen recortada.'];
     }
 }
 ?>
