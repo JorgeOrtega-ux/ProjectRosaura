@@ -184,4 +184,4 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     UNIQUE KEY unique_subscription (subscriber_id, channel_id),
     CONSTRAINT fk_sub_subscriber FOREIGN KEY (subscriber_id) REFERENCES users(id) ON DELETE CASCADE,
     CONSTRAINT fk_sub_channel FOREIGN KEY (channel_id) REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;ALTER TABLE users ADD COLUMN banner_path VARCHAR(255) DEFAULT NULL AFTER profile_picture;

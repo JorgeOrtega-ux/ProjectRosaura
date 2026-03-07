@@ -96,6 +96,12 @@ class UserRepository implements UserRepositoryInterface {
         return $stmt->execute([$path, $id]);
     }
 
+    // --- NUEVO MÉTODO PARA EL BANNER ---
+    public function updateBanner(int $id, string $path): bool {
+        $stmt = $this->pdo->prepare("UPDATE users SET banner_path = ? WHERE id = ?");
+        return $stmt->execute([$path, $id]);
+    }
+
     public function updateUsername(int $id, string $username): bool {
         $stmt = $this->pdo->prepare("UPDATE users SET username = ? WHERE id = ?");
         return $stmt->execute([$username, $id]);

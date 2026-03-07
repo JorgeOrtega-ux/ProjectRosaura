@@ -5,7 +5,8 @@ export const ApiRoutes = {
         GetFeed: 'app.get_feed'
     },
     Channel: {
-        ToggleSubscription: 'channel.toggle_subscription'
+        ToggleSubscription: 'channel.toggle_subscription',
+        UploadBanner: 'channel.upload_banner'
     },
     Auth: {
         Login: 'auth.login',

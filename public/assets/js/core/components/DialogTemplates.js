@@ -49,7 +49,6 @@ export const DialogTemplates = {
         `
     },
 
-    // --- NUEVA PLANTILLA DE CONFIRMACIÓN GENÉRICA ---
     confirm: {
         build: (data) => `
             <div class="pill-container"><div class="drag-handle"></div></div>
@@ -60,6 +59,41 @@ export const DialogTemplates = {
             <div class="component-dialog-actions" style="display: flex; gap: 12px; margin-top: 24px;">
                 <button class="component-button component-button--h45 component-button--light component-button--full" data-dialog-action="cancel">${data.cancelText || 'Cancelar'}</button>
                 <button class="component-button component-button--h45 component-button--dark component-button--full" data-dialog-action="confirm">${data.confirmText || 'Confirmar'}</button>
+            </div>
+        `
+    },
+
+    // --- NUEVA PLANTILLA DE VISTA PREVIA DE BANNER ---
+    bannerPreviewTemplate: {
+        build: (data) => `
+            <div class="pill-container"><div class="drag-handle"></div></div>
+            <div class="component-dialog-header">
+                <h2 class="component-dialog-title">Personaliza tu banner</h2>
+                <p class="component-dialog-desc" style="font-size: 13px; color: #aaa; margin-top: 8px;">Para obtener los mejores resultados en todos los dispositivos, usa una imagen de 2048 × 1152 píxeles como mínimo y 6 MB como máximo.</p>
+            </div>
+            <div class="component-dialog-body" style="margin-top: 16px;">
+                <div class="banner-preview-container" style="position: relative; width: 100%; max-width: 600px; margin: 0 auto; aspect-ratio: 16/9; background-image: url('${data.imageUrl}'); background-size: cover; background-position: center; border-radius: 8px; overflow: hidden; border: 1px solid #333;">
+                    
+                    <div style="position: absolute; inset: 0; background-color: rgba(0, 0, 0, 0.5);"></div>
+                    
+                    <span style="position: absolute; bottom: 8px; left: 8px; background: rgba(0,0,0,0.7); color: #fff; padding: 4px 8px; font-size: 11px; border-radius: 4px; z-index: 10;">Visible en televisores</span>
+
+                    <div class="safe-zone-desktop" style="position: absolute; inset: 0; background-image: url('${data.imageUrl}'); background-size: cover; background-position: center; clip-path: polygon(0 41%, 100% 41%, 100% 59%, 0 59%);">
+                        <div style="position: absolute; inset: 0; background-color: rgba(0, 0, 0, 0.3);"></div>
+                        <span style="position: absolute; top: calc(41% + 8px); left: 8px; background: rgba(0,0,0,0.7); color: #fff; padding: 4px 8px; font-size: 11px; border-radius: 4px; z-index: 10;">Visible en computadoras</span>
+                    </div>
+
+                    <div class="safe-zone-mobile" style="position: absolute; inset: 0; background-image: url('${data.imageUrl}'); background-size: cover; background-position: center; clip-path: polygon(25% 41%, 75% 41%, 75% 59%, 25% 59%);">
+                        <div style="position: absolute; top: 41%; bottom: 41%; left: 25%; right: 25%; border: 1px dashed rgba(255,255,255,0.8); pointer-events: none;"></div>
+                        
+                        <span style="position: absolute; top: calc(41% + 8px); right: calc(25% + 8px); background: rgba(0,0,0,0.7); color: #fff; padding: 4px 8px; font-size: 11px; border-radius: 4px; z-index: 10;">Visible en todos los dispositivos</span>
+                    </div>
+
+                </div>
+            </div>
+            <div class="component-dialog-actions" style="margin-top: 24px;">
+                <button class="component-button component-button--h45 hide-on-desktop" data-dialog-action="cancel">Cancelar</button>
+                <button class="component-button component-button--h45 component-button--dark component-button--full" data-dialog-action="confirm">Aplicar y guardar</button>
             </div>
         `
     },

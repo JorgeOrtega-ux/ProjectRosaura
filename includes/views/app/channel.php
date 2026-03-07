@@ -153,6 +153,8 @@ $displayName = $channelExists ? ($channelUser['display_name'] ?? $channelUser['u
         border-radius: 12px;
         overflow: hidden;
         margin-bottom: 24px;
+        background-size: cover;
+        background-position: center;
     }
 
     .component-channel-banner-action {
@@ -278,10 +280,11 @@ $displayName = $channelExists ? ($channelUser['display_name'] ?? $channelUser['u
 <?php else: ?>
     <div class="component-channel-layout">
         
-        <div class="component-channel-banner-container">
+        <div class="component-channel-banner-container" id="channel-banner-container" style="<?php echo !empty($channelUser['banner_path']) ? 'background-image: url(' . htmlspecialchars($appUrl . '/' . ltrim($channelUser['banner_path'], '/')) . ');' : ''; ?>">
             <?php if ($isOwner): ?>
                 <div class="component-channel-banner-action">
-                    <button class="component-btn-secondary">Editar banner</button>
+                    <button class="component-btn-secondary" id="btn-edit-banner">Editar banner</button>
+                    <input type="file" id="bannerUploadInput" hidden accept="image/jpeg, image/png, image/webp">
                 </div>
             <?php endif; ?>
         </div>

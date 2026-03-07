@@ -13,6 +13,10 @@ interface UserRepositoryInterface {
     public function liftSuspension(int $id): bool;
 
     public function updateAvatar(int $id, string $path): bool;
+    
+    // --- NUEVO MÉTODO AGREGADO ---
+    public function updateBanner(int $id, string $path): bool;
+    
     public function updateUsername(int $id, string $username): bool;
     public function updateEmail(int $id, string $email): bool;
     public function updatePassword(int $id, string $hashedPassword): bool;

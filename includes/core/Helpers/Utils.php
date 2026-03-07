@@ -121,5 +121,13 @@ class Utils {
         if ($passLen < $minLen || $passLen > $maxLen) return ['valid' => false, 'message' => "La contraseña debe tener entre {$minLen} y {$maxLen} caracteres."];
         return ['valid' => true];
     }
+
+    // --- NUEVO MÉTODO PARA VALIDAR DIMENSIONES DE IMAGEN ---
+    public static function validateImageDimensions($filePath, $minWidth, $minHeight) {
+        $dimensions = @getimagesize($filePath);
+        if (!$dimensions) return false;
+        
+        return ($dimensions[0] >= $minWidth && $dimensions[1] >= $minHeight);
+    }
 }
 ?>

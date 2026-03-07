@@ -5,8 +5,9 @@ return [
     // --- RUTAS APP FRONTEND ---
     'app.get_feed'         => ['controller' => 'App\Api\Controllers\FeedController', 'action' => 'get_feed'],
 
-    // --- RUTA CANALES (Suscripciones) ---
+    // --- RUTA CANALES (Suscripciones y Banner) ---
     'channel.toggle_subscription' => ['controller' => 'App\Api\Controllers\ChannelController', 'action' => 'toggle_subscription'],
+    'channel.upload_banner'       => ['controller' => 'App\Api\Controllers\ChannelController', 'action' => 'upload_banner'],
 
     // --- RUTAS DE AUTENTICACIÓN ---
     'auth.register.step1'  => ['controller' => 'App\Api\Controllers\AuthController', 'action' => 'register_step1'],
