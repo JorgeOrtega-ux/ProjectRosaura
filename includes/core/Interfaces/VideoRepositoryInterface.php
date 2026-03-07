@@ -21,6 +21,9 @@ interface VideoRepositoryInterface {
     // --- METODO AÑADIDO PARA OBTENER EL FEED POR ORIENTACIÓN ---
     public function getPublicFeed(int $limit = 20, int $offset = 0, string $orientation = 'horizontal'): array;
 
+    // --- METODO AÑADIDO PARA OBTENER LOS VIDEOS PÚBLICOS DEL CANAL ---
+    public function getChannelVideos(int $userId, string $orientation = 'horizontal'): array;
+
     // --- MÉTODOS PARA SISTEMA DE TAGS ---
     public function syncTags(int $videoId, array $tags): bool;
     public function getVideoTags(int $videoId): array;

@@ -137,7 +137,6 @@ class VideoRepository implements VideoRepositoryInterface {
         return (int) $stmt->fetchColumn();
     }
 
-    // --- MÉTODOS PARA OBTENER FEED PÚBLICO EN EL HOME (MODIFICADO) ---
     public function getPublicFeed(int $limit = 20, int $offset = 0, string $orientation = 'horizontal'): array {
         $stmt = $this->db->prepare("
             SELECT v.id, v.uuid, v.title, v.thumbnail_path, v.thumbnail_dominant_color, 
@@ -153,6 +152,22 @@ class VideoRepository implements VideoRepositoryInterface {
         $stmt->bindValue(':orientation', $orientation, PDO::PARAM_STR);
         $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
         $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+    
+    // --- METODO AÑADIDO PARA OBTENER LOS VIDEOS PÚBLICOS DEL CANAL ---
+    public function getChannelVideos(int $userId, string $orientation = 'horizontal'): array {
+        $stmt = $this->db->prepare("
+            SELECT id, uuid, title, thumbnail_path, thumbnail_dominant_color, 
+                   duration, created_at, status, visibility, hls_path, temp_file_path, orientation,
+                   0 AS views 
+            FROM videos 
+            WHERE user_id = :user_id AND status = 'published' AND visibility = 'public' AND orientation = :orientation
+            ORDER BY created_at DESC
+        ");
+        $stmt->bindValue(':user_id', $userId, PDO::PARAM_INT);
+        $stmt->bindValue(':orientation', $orientation, PDO::PARAM_STR);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
