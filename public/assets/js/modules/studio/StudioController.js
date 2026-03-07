@@ -204,9 +204,18 @@ export class StudioController {
         
         let thumbUrl = video.thumbnail_path ? video.thumbnail_path : '';
         if (thumbUrl && !thumbUrl.startsWith('http')) {
-            let base = window.AppBasePath || window.location.origin;
+            let base = window.AppBasePath || '';
+            if (!base.startsWith('http')) {
+                base = window.location.origin + (base.startsWith('/') ? '' : '/') + base;
+            }
             if (base.endsWith('/')) base = base.slice(0, -1);
+            
             let cleanPath = thumbUrl.replace(/^\//, '');
+            let baseNoSlash = (window.AppBasePath || '').replace(/^\//, '');
+            if (baseNoSlash && cleanPath.startsWith(baseNoSlash + '/')) {
+                cleanPath = cleanPath.substring(baseNoSlash.length + 1);
+            }
+
             if (!cleanPath.startsWith('public/')) cleanPath = 'public/' + cleanPath;
             thumbUrl = base + '/' + cleanPath;
         }
@@ -494,7 +503,12 @@ export class StudioController {
             await new Promise(r => setTimeout(r, 600));
 
             const uuid = videoData.uuid;
-            let baseUrl = window.AppBasePath || window.location.origin;
+            
+            // Fix para garantizar base url absoluta
+            let baseUrl = window.AppBasePath || '';
+            if (!baseUrl.startsWith('http')) {
+                baseUrl = window.location.origin + (baseUrl.startsWith('/') ? '' : '/') + baseUrl;
+            }
             if (baseUrl.endsWith('/')) baseUrl = baseUrl.slice(0, -1);
 
             for (let i = 1; i <= 6; i++) {
@@ -546,12 +560,23 @@ export class StudioController {
             let isBlob = finalUrl.startsWith('blob:') || finalUrl.startsWith('data:');
             
             if (!isBlob && !finalUrl.startsWith('http')) {
+                // Fix evitar duplicidad asegurando rutas absolutas y limpiando base de la ruta
+                let base = window.AppBasePath || '';
+                if (!base.startsWith('http')) {
+                    base = window.location.origin + (base.startsWith('/') ? '' : '/') + base;
+                }
+                if (base.endsWith('/')) base = base.slice(0, -1);
+
                 let cleanPath = thumbnailPath.replace(/^\//, '');
+                
+                let baseNoSlash = (window.AppBasePath || '').replace(/^\//, '');
+                if (baseNoSlash && cleanPath.startsWith(baseNoSlash + '/')) {
+                    cleanPath = cleanPath.substring(baseNoSlash.length + 1);
+                }
+
                 if (!cleanPath.startsWith('public/')) {
                     cleanPath = 'public/' + cleanPath;
                 }
-                let base = window.AppBasePath || window.location.origin;
-                if (base.endsWith('/')) base = base.slice(0, -1);
                 finalUrl = base + '/' + cleanPath;
             }
 
