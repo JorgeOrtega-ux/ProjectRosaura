@@ -69,7 +69,8 @@ def get_video_duration(file_path):
         return 0.0
 
 def generate_thumbnails(input_file, uuid, duration):
-    """Genera 6 miniaturas distribuidas a lo largo del video de forma silenciosa."""
+    """Genera 6 miniaturas distribuidas a lo largo del video y retorna sus rutas relativas."""
+    generated_paths = []
     try:
         output_dir = os.path.join(HLS_OUTPUT_DIR, '..', 'thumbnails', 'generated', uuid)
         os.makedirs(output_dir, exist_ok=True)
@@ -90,9 +91,16 @@ def generate_thumbnails(input_file, uuid, duration):
                 out_path
             ]
             subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            
+            # Verificar si se creó correctamente antes de añadirla a la BD
+            if os.path.exists(out_path):
+                generated_paths.append(f"/storage/thumbnails/generated/{uuid}/thumb_{i}.jpg")
+                
         logging.info(f"📸 6 Miniaturas generadas de forma inteligente para {uuid}")
     except Exception as e:
         logging.error(f"Error generando miniaturas: {e}")
+        
+    return generated_paths
 
 def process_video(redis_client, job):
     video_id = job.get('video_id')
@@ -212,13 +220,19 @@ def process_video(redis_client, job):
     if process.returncode == 0:
         hls_public_path = f"/storage/videos/{uuid}/master.m3u8"
         
-        # Generamos las miniaturas AHORA, ya que sabemos que el video es válido y estamos a punto de borrar el original
-        generate_thumbnails(input_file, uuid, duration)
+        # Generamos las miniaturas, obtenemos el arreglo y lo convertimos a JSON
+        generated_paths = generate_thumbnails(input_file, uuid, duration)
+        thumbs_json = json.dumps(generated_paths) if generated_paths else None
         
         conn = get_db_connection()
         if conn:
             cursor = conn.cursor()
-            cursor.execute("UPDATE videos SET status = 'processed', processing_progress = 100, hls_path = %s WHERE id = %s", (hls_public_path, video_id))
+            # SE ACTUALIZA LA BASE DE DATOS INSERTANDO EL ARREGLO JSON EN 'generated_thumbnails'
+            cursor.execute("""
+                UPDATE videos 
+                SET status = 'processed', processing_progress = 100, hls_path = %s, generated_thumbnails = %s 
+                WHERE id = %s
+            """, (hls_public_path, thumbs_json, video_id))
             conn.commit()
             cursor.close()
             conn.close()

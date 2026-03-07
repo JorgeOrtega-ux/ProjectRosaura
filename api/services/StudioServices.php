@@ -351,10 +351,10 @@ class StudioServices {
             throw new Exception("Faltan los siguientes datos en la DB para publicar: " . implode(' y ', $missing));
         }
         
-        $generatedThumbsDir = __DIR__ . '/../../public/storage/thumbnails/generated/' . $video['uuid'];
-        if (is_dir($generatedThumbsDir)) {
-            $this->deleteDirectory($generatedThumbsDir);
-        }
+        /* * SE ELIMINÓ EL BORRADO DE $generatedThumbsDir
+         * Para que cuando edites el video más adelante,
+         * las miniaturas generadas sigan estando disponibles.
+         */
 
         $this->videoRepo->updateStatus($videoId, 'published', 100);
         return ['success' => true, 'status' => 'published'];
@@ -385,6 +385,7 @@ class StudioServices {
             $this->deleteDirectory($hlsDir);
         }
 
+        // Aquí sí está bien borrar porque es una CANCELACIÓN total del video.
         $generatedThumbsDir = __DIR__ . '/../../public/storage/thumbnails/generated/' . $video['uuid'];
         if (is_dir($generatedThumbsDir)) {
             $this->deleteDirectory($generatedThumbsDir);

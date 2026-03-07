@@ -54,6 +54,11 @@ class VideoRepository implements VideoRepositoryInterface {
             $fields[] = "description = :description";
             $params[':description'] = $data['description'];
         }
+        // SOPORTE PARA EL JSON DE MINIATURAS
+        if (array_key_exists('generated_thumbnails', $data)) {
+            $fields[] = "generated_thumbnails = :generated_thumbnails";
+            $params[':generated_thumbnails'] = $data['generated_thumbnails'];
+        }
 
         if (empty($fields)) return true;
 

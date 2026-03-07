@@ -142,14 +142,13 @@ CREATE TABLE IF NOT EXISTS videos (
     thumbnail_path VARCHAR(255) DEFAULT NULL,
     temp_file_path VARCHAR(255) DEFAULT NULL,
     hls_path VARCHAR(255) DEFAULT NULL,
+    generated_thumbnails JSON DEFAULT NULL,
     status ENUM('uploading', 'queued', 'processing', 'processed', 'failed', 'published') DEFAULT 'uploading',
     processing_progress INT DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_video_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- bd.sql (AÑADIR AL FINAL DEL ARCHIVO)
 
 -- === NUEVA TABLA PARA TAGS (ACTORES Y CATEGORÍAS) ===
 CREATE TABLE IF NOT EXISTS tags (
