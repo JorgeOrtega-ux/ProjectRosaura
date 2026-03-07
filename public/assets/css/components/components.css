@@ -2301,27 +2301,81 @@ input:checked + .component-toggle-slider:before {
     .component-dialog-actions .component-button {
         width: 100%; 
     }
-}.no-padding {
+}
+.no-padding {
     padding: 0 !important;
-}/* ========================================= */
-/* --- VIDEO FEED GRID (NORMAL & VERTICAL) --- */
+}
+
+/* ========================================= */
+/* --- FEED SECTIONS (TOP & BOTTOM) ---      */
 /* ========================================= */
 
-/* Grid para videos normales (Horizontales) - Si no lo tenías definido aún */
+.feed-section-wrapper {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    margin-bottom: 40px;
+}
+
+.feed-section-top {
+    padding: 16px 20px;
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 12px 12px 0 0;
+    border-bottom: none;
+}
+
+.feed-section-title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.feed-section-bottom {
+    width: 100%;
+    background-color: transparent;
+}
+
+/* ========================================= */
+/* --- VIDEO FEED GRID (HORIZONTALES) ---    */
+/* ========================================= */
+
 .video-feed-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 20px;
     width: 100%;
+    padding-top: 16px;
 }
 
-/* Nuevo Grid exclusivo para videos Verticales (Shorts) */
-.vertical-feed-grid {
-    display: grid;
-    /* Ajustamos el minmax a 210px para forzar el ancho que solicitaste */
-    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+/* ========================================= */
+/* --- SHORTS FEED (SCROLL HORIZONTAL) ---   */
+/* ========================================= */
+
+.video-feed-horizontal-scroll {
+    display: flex;
+    flex-direction: row;
     gap: 16px;
     width: 100%;
+    overflow-x: auto;
+    padding: 16px 0 16px 0; 
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+.video-feed-horizontal-scroll::-webkit-scrollbar {
+    height: 8px;
+}
+
+.video-feed-horizontal-scroll::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+    border-radius: 4px;
+}
+
+.video-feed-horizontal-scroll::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 4px;
 }
 
 /* ========================================= */
@@ -2337,19 +2391,16 @@ input:checked + .component-toggle-slider:before {
     transition: transform 0.2s ease;
 }
 
-/* Efecto hover general opcional para las tarjetas */
 .component-video-card:hover {
     transform: translateY(-2px);
 }
 
-/* --- Top: Contenedor de Miniatura y Video --- */
 .video-card__top {
     width: 100%;
     position: relative;
     background-color: var(--bg-surface-alt, #1a1a1a);
     border-radius: 12px;
     overflow: hidden;
-    /* La sombra interior o borde sutil ayuda a que resalte */
     border: 1px solid var(--border-color);
 }
 
@@ -2360,11 +2411,10 @@ input:checked + .component-toggle-slider:before {
     left: 0;
     width: 100%;
     height: 100%;
-    object-fit: cover; /* Garantiza que el 9:16 o 16:9 se llene sin estirar */
+    object-fit: cover; 
     border-radius: 12px;
 }
 
-/* El reproductor está oculto por defecto hasta que hay hover */
 .component-video-card__player {
     opacity: 0;
     transition: opacity 0.3s ease;
@@ -2375,7 +2425,6 @@ input:checked + .component-toggle-slider:before {
     opacity: 1;
 }
 
-/* Badge de Duración */
 .component-video-card__duration-badge {
     position: absolute;
     bottom: 8px;
@@ -2390,7 +2439,6 @@ input:checked + .component-toggle-slider:before {
     pointer-events: none;
 }
 
-/* --- Bottom: Info, Título, Avatar --- */
 .video-card__bottom {
     display: flex;
     align-items: flex-start;
@@ -2425,7 +2473,6 @@ input:checked + .component-toggle-slider:before {
     color: var(--text-primary);
     margin: 0;
     line-height: 1.4;
-    /* Truncar a 2 líneas si el título es muy largo */
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
@@ -2456,12 +2503,14 @@ input:checked + .component-toggle-slider:before {
 /* ========================================= */
 
 .video-card--vertical {
-    gap: 8px; /* Menos espacio entre video y texto en verticales */
+    width: 210px;
+    flex-shrink: 0; /* Crucial para que no se apriete con el flex y siga el scroll */
+    gap: 8px; 
 }
 
-/* Ajuste de esquinas para que se vea más como móvil (tipo TikTok/Shorts) */
 .video-card--vertical .video-card__top {
     border-radius: 16px;
+    height: 315px; /* Altura estricta para formar el 210x315 */
 }
 
 .video-card--vertical .component-video-card__thumbnail,
@@ -2469,29 +2518,14 @@ input:checked + .component-toggle-slider:before {
     border-radius: 16px;
 }
 
-/* El título en los verticales suele ser un poco más pequeño para encajar bien */
 .video-card--vertical .video-card__title {
     font-size: 14px;
+    white-space: normal;
 }
 
-/* Responsividad para móviles */
 @media (max-width: 768px) {
     .video-feed-grid {
         grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
         gap: 16px;
-    }
-    
-    .vertical-feed-grid {
-        /* En móviles permitimos que las tarjetas sean de 140px para que quepan 2 o 3 */
-        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-        gap: 12px;
-    }
-
-    .video-card--vertical .video-card__title {
-        font-size: 13px;
-    }
-
-    .video-card--vertical .video-card__meta {
-        font-size: 12px;
     }
 }

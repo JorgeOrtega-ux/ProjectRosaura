@@ -37,10 +37,14 @@ export class HomeController {
         if (!container) return;
 
         if (!videos || videos.length === 0) {
-            // Si no hay videos verticales, ocultamos toda la sección para no dejar un espacio vacío
             if (orientation === 'vertical') {
-                container.previousElementSibling.style.display = 'none'; // Oculta el título "Shorts"
-                container.style.display = 'none';
+                // Buscamos el contenedor padre completo para ocultar toda la sección y que no queden bordes vacíos
+                const sectionWrapper = container.closest('.feed-section-wrapper');
+                if (sectionWrapper) {
+                    sectionWrapper.style.display = 'none';
+                } else {
+                    container.style.display = 'none';
+                }
             } else {
                 container.innerHTML = `
                     <div class="component-empty-state">
@@ -72,12 +76,13 @@ export class HomeController {
         // Evaluamos si es vertical para inyectar clases y estilos específicos
         const isVertical = orientation === 'vertical';
         const cardModifierClass = isVertical ? 'video-card--vertical' : '';
-        const aspectRatio = isVertical ? '9/16' : '16/9';
+        // Para los verticales, la altura y ancho se controlan estrictamente en CSS, no inyectamos aspect-ratio
+        const aspectStyle = isVertical ? '' : 'aspect-ratio: 16/9;';
 
         return `
             <div class="video-card component-video-card ${cardModifierClass}" style="--local-dominant-color: ${dominantColor};" onclick="window.location.href='${window.AppBasePath || ''}/watch/${video.uuid}'">
                 
-                <div class="video-card__top" style="position: relative; overflow: hidden; aspect-ratio: ${aspectRatio};">
+                <div class="video-card__top" style="${aspectStyle} position: relative; overflow: hidden;">
                     
                     <img src="${video.thumbnail_url}" alt="Miniatura de ${title}" class="component-video-card__thumbnail video-card__thumbnail" loading="lazy">
                     
