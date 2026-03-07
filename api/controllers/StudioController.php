@@ -183,14 +183,25 @@ class StudioController {
         }
 
         $videoId = $input['video_id'] ?? $_POST['video_id'] ?? null;
+        $title = $input['title'] ?? $_POST['title'] ?? null;
+        $description = $input['description'] ?? $_POST['description'] ?? '';
+
+        $files = $input['_files'] ?? $_FILES;
+        $thumbnailFile = $files['thumbnail'] ?? null;
+        $generatedPath = $input['generated_path'] ?? $_POST['generated_path'] ?? null;
 
         if (!$videoId) {
             http_response_code(400);
             return ['success' => false, 'status' => 'error', 'message' => 'ID de video faltante en la petición de publicación.'];
         }
 
+        if (empty(trim($title))) {
+            http_response_code(400);
+            return ['success' => false, 'status' => 'error', 'message' => 'El título es obligatorio para publicar.'];
+        }
+
         try {
-            $result = $this->studioServices->publishVideo($userId, (int)$videoId);
+            $result = $this->studioServices->publishVideo($userId, (int)$videoId, $title, $description, $thumbnailFile, $generatedPath);
             return ['success' => true, 'status' => 'success', 'data' => $result];
         } catch (\Exception $e) {
             http_response_code(400);

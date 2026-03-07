@@ -333,7 +333,7 @@ class StudioServices {
         throw new Exception("Video no encontrado.");
     }
 
-    public function publishVideo(int $userId, int $videoId): array {
+    public function publishVideo(int $userId, int $videoId, string $title, string $description, ?array $thumbnailFile = null, ?string $generatedPath = null): array {
         $video = $this->videoRepo->findById($videoId);
         if (!$video || $video['user_id'] != $userId) {
             throw new Exception("Video no encontrado o no autorizado.");
@@ -343,20 +343,28 @@ class StudioServices {
             throw new Exception("El video debe estar completamente procesado para publicarse. Estado actual: " . $video['status']);
         }
         
-        $missing = [];
-        if (empty($video['title'])) $missing[] = 'título';
-        if (empty($video['thumbnail_path'])) $missing[] = 'miniatura';
-        
-        if (!empty($missing)) {
-            throw new Exception("Faltan los siguientes datos en la DB para publicar: " . implode(' y ', $missing));
+        // 1. Guardar o reemplazar la miniatura (si fue suministrada en el borrador)
+        $newThumbnailPath = null;
+        if ($thumbnailFile || $generatedPath) {
+            $thumbResult = $this->uploadThumbnail($userId, $videoId, $thumbnailFile, null, $generatedPath);
+            $newThumbnailPath = $thumbResult['thumbnail_path'];
         }
         
-        /* * SE ELIMINÓ EL BORRADO DE $generatedThumbsDir
-         * Para que cuando edites el video más adelante,
-         * las miniaturas generadas sigan estando disponibles.
-         */
+        // Validar que exista una miniatura al final (la nueva o la que ya tuviera)
+        $finalThumbnail = $newThumbnailPath ?? $video['thumbnail_path'];
+        if (empty($finalThumbnail)) {
+            throw new Exception("Falta la miniatura del video.");
+        }
 
+        // 2. Actualizar Metadatos (título y descripción) y Estado
+        $metadata = [
+            'title' => trim($title),
+            'description' => trim($description)
+        ];
+        
+        $this->videoRepo->updateMetadata($videoId, $metadata);
         $this->videoRepo->updateStatus($videoId, 'published', 100);
+        
         return ['success' => true, 'status' => 'published'];
     }
 
@@ -385,7 +393,6 @@ class StudioServices {
             $this->deleteDirectory($hlsDir);
         }
 
-        // Aquí sí está bien borrar porque es una CANCELACIÓN total del video.
         $generatedThumbsDir = __DIR__ . '/../../public/storage/thumbnails/generated/' . $video['uuid'];
         if (is_dir($generatedThumbsDir)) {
             $this->deleteDirectory($generatedThumbsDir);
