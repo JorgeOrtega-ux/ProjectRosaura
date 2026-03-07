@@ -9,18 +9,19 @@ interface VideoRepositoryInterface {
     public function updateMetadata(int $videoId, array $data): bool;
     
     public function getActiveUploadsByUserId(int $userId): array;
-    // Nuevo método agregado
     public function getAllByUserId(int $userId): array;
     
     public function findById(int $id);
     public function findByUuid(string $uuid);
     public function delete(int $id): bool;
     
-    // Métodos para validación de límites
     public function countProcessingUploads(int $userId): int;
     public function countDailyUploads(int $userId): int;
 
-    // --- NUEVOS MÉTODOS PARA SISTEMA DE TAGS ---
+    // --- METODO AÑADIDO PARA OBTENER EL FEED POR ORIENTACIÓN ---
+    public function getPublicFeed(int $limit = 20, int $offset = 0, string $orientation = 'horizontal'): array;
+
+    // --- MÉTODOS PARA SISTEMA DE TAGS ---
     public function syncTags(int $videoId, array $tags): bool;
     public function getVideoTags(int $videoId): array;
 }

@@ -98,7 +98,7 @@ def get_video_info(file_path):
         logging.error(f"Error obteniendo info de video: {e}")
         return 0, 0, 0.0, False
 
-def generate_thumbnails(input_file, uuid, duration):
+def generate_thumbnails(input_file, uuid, duration, is_vertical=False):
     """Genera 6 miniaturas distribuidas a lo largo del video y retorna sus rutas relativas."""
     generated_paths = []
     try:
@@ -109,6 +109,9 @@ def generate_thumbnails(input_file, uuid, duration):
         if interval <= 0:
             interval = 1
             
+        # Determinar resolución de la miniatura según orientación
+        resolution = '720x1280' if is_vertical else '1280x720'
+            
         for i in range(1, 7):
             target_time = i * interval
             out_path = os.path.join(output_dir, f"thumb_{i}.jpg")
@@ -117,7 +120,7 @@ def generate_thumbnails(input_file, uuid, duration):
                 '-i', input_file, 
                 '-vframes', '1', 
                 '-q:v', '2', 
-                '-s', '1280x720', 
+                '-s', resolution, 
                 out_path
             ]
             subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -125,7 +128,7 @@ def generate_thumbnails(input_file, uuid, duration):
             if os.path.exists(out_path):
                 generated_paths.append(f"/storage/thumbnails/generated/{uuid}/thumb_{i}.jpg")
                 
-        logging.info(f"📸 6 Miniaturas generadas de forma inteligente para {uuid}")
+        logging.info(f"📸 6 Miniaturas generadas de forma inteligente ({resolution}) para {uuid}")
     except Exception as e:
         logging.error(f"Error generando miniaturas: {e}")
         
@@ -164,6 +167,10 @@ def process_video(redis_client, job):
         update_db_status(video_id, 'failed')
         return
 
+    # Determinar si el video es vertical u horizontal
+    is_vertical = height > width
+    orientation = 'vertical' if is_vertical else 'horizontal'
+
     output_dir = os.path.join(HLS_OUTPUT_DIR, uuid)
     os.makedirs(output_dir, exist_ok=True)
     
@@ -186,7 +193,7 @@ def process_video(redis_client, job):
     if not target_qualities:
         target_qualities = [ALL_QUALITIES[-1]]
         
-    logging.info(f"🎞️ Resolución original detectada: {width}x{height} | Duración: {duration}s")
+    logging.info(f"🎞️ Resolución original detectada: {width}x{height} | Orientación: {orientation} | Duración: {duration}s")
     logging.info(f"⚙️ Construyendo multi-HLS para: {[q['name'] for q in target_qualities]}")
 
     # Comando Base
@@ -297,18 +304,19 @@ def process_video(redis_client, job):
 
     if process.returncode == 0:
         hls_public_path = f"/storage/videos/{uuid}/master.m3u8"
-        generated_paths = generate_thumbnails(input_file, uuid, duration)
+        # Pasamos el flag is_vertical
+        generated_paths = generate_thumbnails(input_file, uuid, duration, is_vertical)
         thumbs_json = json.dumps(generated_paths) if generated_paths else None
         
         conn = get_db_connection()
         if conn:
             cursor = conn.cursor()
-            # AQUÍ ES LA MAGIA: Guardamos la duración (int) en la base de datos
+            # Guardamos la duración (int) y la orientación en la base de datos
             cursor.execute("""
                 UPDATE videos 
-                SET status = 'processed', processing_progress = 100, hls_path = %s, generated_thumbnails = %s, duration = %s 
+                SET status = 'processed', processing_progress = 100, hls_path = %s, generated_thumbnails = %s, duration = %s, orientation = %s 
                 WHERE id = %s
-            """, (hls_public_path, thumbs_json, int(duration), video_id))
+            """, (hls_public_path, thumbs_json, int(duration), orientation, video_id))
             conn.commit()
             cursor.close()
             conn.close()

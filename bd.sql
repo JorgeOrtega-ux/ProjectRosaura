@@ -146,6 +146,7 @@ CREATE TABLE IF NOT EXISTS videos (
     generated_thumbnails JSON DEFAULT NULL,
     status ENUM('uploading', 'queued', 'processing', 'processed', 'failed', 'published') DEFAULT 'uploading',
     visibility ENUM('public', 'private', 'unlisted') DEFAULT 'public',
+    orientation ENUM('horizontal', 'vertical') DEFAULT 'horizontal',
     processing_progress INT DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
