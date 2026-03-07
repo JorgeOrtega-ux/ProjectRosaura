@@ -26,10 +26,14 @@ class StudioWebSocketManager {
             const panelRoute = routes.find(r => r.startsWith('/studio/management-panel/'));
             
             if (panelRoute) {
-                const extractedId = panelRoute.replace('/studio/management-panel/', '');
-                return extractedId;
+                return panelRoute.replace('/studio/management-panel/', '');
             }
         }
+        
+        // Expresión regular robusta para rescatar el UUID de la URL activa en caso de falla
+        const match = window.location.pathname.match(/\/studio\/(?:manage-content|management-panel|edit)\/([a-f0-9\-]{36})/);
+        if (match) return match[1];
+        
         return '0';
     }
 
@@ -128,6 +132,7 @@ export class StudioController {
         this.currentVideos = new Map();
         
         this.selectedVideoId = null;
+        this.selectedManageVideoId = null; 
         
         this.init();
     }
@@ -143,6 +148,8 @@ export class StudioController {
             this.initUploadView();
         } else if (path.includes('/studio/manage-content')) {
             this.initManageContentView();
+        } else if (path.includes('/studio/edit/')) {
+            this.initEditView(); 
         }
 
         this.attachEvents();
@@ -152,8 +159,8 @@ export class StudioController {
     }
 
     async initManageContentView() {
-        const url = ApiRoutes.Studio.GetAllVideos || '/api/studio/get_all_videos';
-        const response = await this.api.post(url);
+        const routeName = ApiRoutes.Studio?.GetAllVideos || 'studio.get_all_videos';
+        const response = await this.api.post(routeName);
         
         const tbody = document.getElementById('manageContentTableBody');
         const template = document.getElementById('emptyTableTemplate');
@@ -182,6 +189,8 @@ export class StudioController {
         const tr = document.createElement('tr');
         tr.id = `video-row-${video.id}`;
         
+        tr.onclick = () => this.selectManageContentVideo(video.id);
+
         let statusBadge = '';
         switch(video.status) {
             case 'queued': statusBadge = '<span class="status-badge status-queued">En cola</span>'; break;
@@ -229,14 +238,46 @@ export class StudioController {
         return tr;
     }
 
+    selectManageContentVideo(id) {
+        this.selectedManageVideoId = id;
+        
+        document.querySelectorAll('#manageContentTableBody tr').forEach(row => {
+            row.classList.remove('component-table-row--selected');
+        });
+        
+        const row = document.getElementById(`video-row-${id}`);
+        if (row) row.classList.add('component-table-row--selected');
+
+        const editBtn = document.getElementById('btnEditSelectedVideo');
+        if (editBtn) {
+            editBtn.removeAttribute('disabled');
+            editBtn.classList.remove('disabled');
+            
+            editBtn.onclick = () => {
+                const video = this.currentVideos.get(String(id));
+                if (video) {
+                    if (video.status === 'processing' || video.status === 'queued') {
+                        window.dispatchEvent(new CustomEvent('routeChange', { detail: { url: '/studio/uploading' }}));
+                    } else {
+                        let base = window.AppBasePath || '';
+                        let userUuid = this.manager.getUserId();
+                        // Redirigimos mandando ambos UUIDS
+                        window.dispatchEvent(new CustomEvent('routeChange', { detail: { url: `${base}/studio/edit/${userUuid}/${video.uuid}` }}));
+                    }
+                }
+            };
+        }
+    }
+
     async handleFilesSelection(files) {
         if (!files || files.length === 0) return;
 
+        const routeName = ApiRoutes.Studio?.UploadVideo || 'studio.upload_video';
+
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
-            
             try {
-                const preCheckRes = await this.api.post(ApiRoutes.Studio.UploadVideo, {
+                const preCheckRes = await this.api.post(routeName, {
                     pre_check: true,
                     total_size: file.size
                 });
@@ -260,7 +301,7 @@ export class StudioController {
             const file = files[i];
             try {
                 const result = await this.api.uploadFileInChunks(
-                    ApiRoutes.Studio.UploadVideo, 
+                    routeName, 
                     file, 
                     'video', 
                     { total_size: file.size },
@@ -281,7 +322,9 @@ export class StudioController {
     }
 
     async initUploadingView() {
-        const response = await this.api.post(ApiRoutes.Studio.GetActiveUploads);
+        const routeName = ApiRoutes.Studio?.GetActiveUploads || 'studio.get_active_uploads';
+        const response = await this.api.post(routeName);
+        
         if (response.status === 'success') {
             const videos = response.data;
             if (videos.length === 0) {
@@ -300,6 +343,68 @@ export class StudioController {
 
             this.renderBadges();
             this.selectVideo(String(videos[0].id));
+        }
+    }
+
+    async initEditView() {
+        const pathParts = window.location.pathname.split('/');
+        // Sabiendo que la ruta es /studio/edit/USER_UUID/VIDEO_UUID, la ultima parte es el video
+        const uuid = pathParts[pathParts.length - 1]; 
+        if (!uuid) return;
+
+        const routeName = ApiRoutes.Studio?.GetVideo || 'studio.get_video';
+        const res = await this.api.post(routeName, { uuid: uuid });
+        
+        if (res.status === 'success') {
+            const video = res.data;
+            this.selectedVideoId = String(video.id);
+            this.currentVideos.set(this.selectedVideoId, video);
+            
+            const titleInput = document.getElementById('videoTitleInput');
+            const descInput = document.getElementById('videoDescriptionInput');
+            
+            if (titleInput) titleInput.value = video.title || video.original_filename || '';
+            if (descInput) descInput.value = video.description || '';
+            
+            this.updateThumbnailPreview(video.thumbnail_path);
+            
+            const btnSave = document.getElementById('btnSaveChanges');
+            if (btnSave) {
+                btnSave.onclick = async () => {
+                    btnSave.disabled = true;
+                    btnSave.innerHTML = '<span class="material-symbols-rounded">sync</span> <span>Guardando...</span>';
+                    
+                    const newTitle = titleInput ? titleInput.value.trim() : '';
+                    const newDesc = descInput ? descInput.value.trim() : '';
+                    
+                    if (newTitle.length === 0) {
+                        alert("El título no puede estar vacío.");
+                        btnSave.disabled = false;
+                        btnSave.innerHTML = '<span class="material-symbols-rounded">save</span> <span>Guardar cambios</span>';
+                        return;
+                    }
+
+                    const updateRoute = ApiRoutes.Studio?.UpdateTitle || 'studio.update_title';
+                    const updateRes = await this.api.post(updateRoute, {
+                        video_id: this.selectedVideoId,
+                        title: newTitle,
+                        description: newDesc
+                    });
+
+                    if (updateRes.status === 'success') {
+                        video.title = newTitle;
+                        video.description = newDesc;
+                        alert('Los cambios se han guardado con éxito.');
+                    } else {
+                        alert("Error guardando datos: " + updateRes.message);
+                    }
+                    
+                    btnSave.disabled = false;
+                    btnSave.innerHTML = '<span class="material-symbols-rounded">save</span> <span>Guardar cambios</span>';
+                };
+            }
+        } else {
+            alert('No se pudo encontrar la información del video.');
         }
     }
 
@@ -370,7 +475,7 @@ export class StudioController {
         if (!this.selectedVideoId) return;
         const videoData = this.currentVideos.get(this.selectedVideoId);
         
-        if (!videoData || videoData.status !== 'processed') {
+        if (!videoData || (videoData.status !== 'processed' && videoData.status !== 'published')) {
             alert("El video debe terminar de procesarse al 100% para poder generar sus miniaturas.");
             return;
         }
@@ -427,7 +532,8 @@ export class StudioController {
             formData.append('video_id', this.selectedVideoId);
             formData.append('generated_path', relativePath); 
 
-            const res = await this.api.postForm(ApiRoutes.Studio.UploadThumbnail, formData);
+            const uploadRoute = ApiRoutes.Studio?.UploadThumbnail || 'studio.upload_thumbnail';
+            const res = await this.api.postForm(uploadRoute, formData);
             
             if (res.status === 'success') {
                 const video = this.currentVideos.get(this.selectedVideoId);
@@ -567,7 +673,8 @@ export class StudioController {
         const newDesc = descInput ? descInput.value.trim() : '';
         
         if (newTitle.length > 0) {
-            const res = await this.api.post(ApiRoutes.Studio.UpdateTitle, {
+            const routeName = ApiRoutes.Studio?.UpdateTitle || 'studio.update_title';
+            const res = await this.api.post(routeName, {
                 video_id: this.selectedVideoId,
                 title: newTitle,
                 description: newDesc
@@ -603,7 +710,8 @@ export class StudioController {
 
         if (!currentTitle) return;
 
-        const res = await this.api.post(ApiRoutes.Studio.UpdateTitle, {
+        const routeName = ApiRoutes.Studio?.UpdateTitle || 'studio.update_title';
+        const res = await this.api.post(routeName, {
             video_id: this.selectedVideoId,
             title: currentTitle,
             description: newDesc
@@ -657,7 +765,10 @@ export class StudioController {
         document.addEventListener('focusout', (e) => {
             if (e.target && e.target.id === 'videoDescriptionInput') {
                 const controller = window.currentStudioController;
-                if (controller) controller.saveDescriptionField();
+                // Excluimos la vista de edición manual para evitar dobles llamadas a la base de datos
+                if (controller && !window.location.pathname.includes('/studio/edit/')) {
+                    controller.saveDescriptionField();
+                }
             }
         });
 
@@ -677,7 +788,8 @@ export class StudioController {
                 formData.append('thumbnail', file);
                 formData.append('video_id', controller.selectedVideoId);
 
-                const res = await controller.api.postForm(ApiRoutes.Studio.UploadThumbnail, formData);
+                const uploadRoute = ApiRoutes.Studio?.UploadThumbnail || 'studio.upload_thumbnail';
+                const res = await controller.api.postForm(uploadRoute, formData);
                 if(res.status === 'success') {
                     const video = controller.currentVideos.get(controller.selectedVideoId);
                     if (video) {
@@ -740,8 +852,9 @@ export class StudioController {
         if (!video) return;
         
         const isProcessed = video.status === 'processed';
+        const isPublished = video.status === 'published';
         const hasTitle = (video.title && video.title.trim().length > 0); 
-        const hasThumb = video.thumbnailSubida === true;
+        const hasThumb = video.thumbnailSubida === true || video.thumbnail_path;
 
         if (isProcessed && hasTitle && hasThumb) {
             if(btn) { btn.removeAttribute('disabled'); btn.classList.remove('disabled'); }
@@ -749,7 +862,7 @@ export class StudioController {
             if(btn) { btn.setAttribute('disabled', 'true'); btn.classList.add('disabled'); }
         }
 
-        if (isProcessed) {
+        if (isProcessed || isPublished) {
             if(btnGen) { btnGen.removeAttribute('disabled'); btnGen.classList.remove('disabled'); }
         } else {
             if(btnGen) { btnGen.setAttribute('disabled', 'true'); btnGen.classList.add('disabled'); }
@@ -759,7 +872,8 @@ export class StudioController {
     async publishVideo() {
         if (!this.selectedVideoId) return;
         
-        const res = await this.api.post(ApiRoutes.Studio.PublishVideo, {
+        const routeName = ApiRoutes.Studio?.PublishVideo || 'studio.publish_video';
+        const res = await this.api.post(routeName, {
             video_id: this.selectedVideoId
         });
 
@@ -787,7 +901,8 @@ export class StudioController {
             btn.setAttribute('disabled', 'true');
         }
 
-        const res = await this.api.post(ApiRoutes.Studio.CancelUpload, {
+        const routeName = ApiRoutes.Studio?.CancelUpload || 'studio.cancel_upload';
+        const res = await this.api.post(routeName, {
             video_id: this.selectedVideoId
         });
 

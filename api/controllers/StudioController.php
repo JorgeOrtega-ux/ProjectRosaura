@@ -153,6 +153,28 @@ class StudioController {
         }
     }
     
+    public function get_video($input) {
+        $userId = $this->requireAuth();
+        if (!$userId) {
+            http_response_code(401);
+            return ['success' => false, 'status' => 'error', 'message' => 'No autorizado'];
+        }
+        
+        $uuid = $input['uuid'] ?? $_POST['uuid'] ?? null;
+        if (!$uuid) {
+            http_response_code(400);
+            return ['success' => false, 'status' => 'error', 'message' => 'UUID no proporcionado'];
+        }
+
+        try {
+            $video = $this->studioServices->getVideoByUuid($userId, $uuid);
+            return ['success' => true, 'status' => 'success', 'data' => $video];
+        } catch (\Exception $e) {
+            http_response_code(404);
+            return ['success' => false, 'status' => 'error', 'message' => $e->getMessage()];
+        }
+    }
+    
     public function publish_video($input) {
         $userId = $this->requireAuth();
         if (!$userId) {

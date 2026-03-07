@@ -323,6 +323,16 @@ class StudioServices {
         return $this->videoRepo->getActiveUploadsByUserId($userId);
     }
 
+    public function getVideoByUuid(int $userId, string $uuid): array {
+        $videos = $this->getAllVideos($userId);
+        foreach ($videos as $v) {
+            if ($v['uuid'] === $uuid) {
+                return $v;
+            }
+        }
+        throw new Exception("Video no encontrado.");
+    }
+
     public function publishVideo(int $userId, int $videoId): array {
         $video = $this->videoRepo->findById($videoId);
         if (!$video || $video['user_id'] != $userId) {

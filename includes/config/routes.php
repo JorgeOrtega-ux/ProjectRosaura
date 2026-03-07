@@ -39,6 +39,7 @@ return [
     '/studio/uploading' => ['view' => 'studio/uploading.php', 'auth' => true],
     '/studio/management-panel/{uuid}' => ['view' => 'studio/management-panel.php', 'auth' => true],
     '/studio/manage-content/{uuid}' => ['view' => 'studio/manage-content.php', 'auth' => true],
+    '/studio/edit/{uuid}/{video_uuid}' => ['view' => 'studio/edit-video.php', 'auth' => true], // <--- CORRECCIÓN AQUÍ
 
     // --- RUTAS DE ADMINISTRADOR (Requieren autenticación + Roles específicos + 2FA) ---
     '/admin' => ['view' => 'admin/dashboard.php', 'auth' => true, 'roles' => ['founder', 'administrator'], 'requires_2fa' => true],
@@ -52,6 +53,6 @@ return [
     '/admin/server-config' => ['view' => 'admin/server-config.php', 'auth' => true, 'roles' => ['founder', 'administrator'], 'requires_2fa' => true],
     '/admin/logs' => ['view' => 'admin/logs.php', 'auth' => true, 'roles' => ['founder', 'administrator'], 'requires_2fa' => true],
     '/admin/logs/viewer' => ['view' => 'admin/logs-viewer.php', 'auth' => true, 'roles' => ['founder', 'administrator'], 'requires_2fa' => true],
-    '/admin/tags' => ['view' => 'admin/tags.php', 'auth' => true, 'roles' => ['founder', 'administrator'], 'requires_2fa' => true] /* NUEVA RUTA DE TAGS */
+    '/admin/tags' => ['view' => 'admin/tags.php', 'auth' => true, 'roles' => ['founder', 'administrator'], 'requires_2fa' => true]
 ];
 ?>

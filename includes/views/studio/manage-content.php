@@ -1,6 +1,21 @@
 <?php
 // includes/views/studio/manage-content.php
 ?>
+<style>
+    /* Estilos inyectados directamente para no requerir tocar el CSS de la app principal por ahora */
+    .component-table-row--selected {
+        background-color: rgba(255, 255, 255, 0.08) !important;
+        border-left: 3px solid var(--primary-color, #007bff);
+    }
+    .component-table tbody tr {
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+    .component-table tbody tr:hover {
+        background-color: rgba(255, 255, 255, 0.04);
+    }
+</style>
+
 <div class="view-content">
     <div class="component-wrapper component-wrapper--full no-padding">
         <div class="component-view-layout">
@@ -9,7 +24,10 @@
                 <div class="component-view-top-left">
                 </div>
                 
-                <div class="component-view-top-right">
+                <div class="component-view-top-right" style="display: flex; gap: 8px;">
+                    <button class="component-button component-button--icon component-button--h36 disabled" id="btnEditSelectedVideo" data-tooltip="Editar video seleccionado" disabled>
+                        <span class="material-symbols-rounded">edit</span>
+                    </button>
                     <button class="component-button component-button--icon component-button--h36" data-nav="<?php echo APP_URL; ?>/studio/upload" data-tooltip="Subir video">
                         <span class="material-symbols-rounded">upload</span>
                     </button>

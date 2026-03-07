@@ -63,6 +63,7 @@ export const ApiRoutes = {
         UpdateTitle: 'studio.update_title',
         GetActiveUploads: 'studio.get_active_uploads',
         GetAllVideos: 'studio.get_all_videos',
+        GetVideo: 'studio.get_video', // <--- CORRECCIÓN AQUÍ
         PublishVideo: 'studio.publish_video',
         CancelUpload: 'studio.cancel_upload'
     }
