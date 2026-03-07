@@ -2338,45 +2338,95 @@ input:checked + .component-toggle-slider:before {
 }
 
 /* ========================================= */
-/* --- VIDEO FEED GRID (HORIZONTALES) ---    */
+/* --- SHORTS FEED (CARRUSEL PERFECTO CON GRID ALINEADO) --- */
 /* ========================================= */
-
-.video-feed-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 20px;
+.relative-carousel-wrapper {
+    position: relative;
     width: 100%;
-    padding-top: 16px;
+    /* Cambiamos flex por block para permitir que el margen negativo del hijo estire la caja correctamente */
+    display: block; 
 }
 
-/* ========================================= */
-/* --- SHORTS FEED (SCROLL HORIZONTAL) ---   */
-/* ========================================= */
-
 .video-feed-horizontal-scroll {
-    display: flex;
-    flex-direction: row;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: calc((100% - (16px * 4)) / 5);
     gap: 16px;
-    width: 100%;
+    
+    /* 1. EL TRUCO PARA EL RESPLANDOR: 
+       Expandimos la "caja de recorte" 20px hacia afuera de tu diseño... */
+    margin-left: -20px;
+    margin-right: -20px;
+    
+    /* ...y empujamos los videos 20px hacia adentro para que queden 
+       exactamente en la misma línea visual que tu título. */
+    padding-left: 20px;
+    padding-right: 20px;
+    
+    /* Padding vertical extra por si el efecto hover también hace saltar la tarjeta hacia arriba */
+    padding-top: 20px; 
+    padding-bottom: 20px; 
+    
     overflow-x: auto;
-    padding: 16px 0 16px 0; 
-    scrollbar-width: thin;
-    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+    scrollbar-width: none; 
+    
+    scroll-snap-type: x mandatory;
+    
+    /* 2. LA MAGIA DE LA PAGINACIÓN: 
+       Esto le dice al "imán" del scroll que cuando uses las flechas, 
+       calcule el inicio de los 5 videos ignorando los 20px de padding. */
+    scroll-padding-inline: 20px; 
 }
 
 .video-feed-horizontal-scroll::-webkit-scrollbar {
-    height: 8px;
+    display: none; 
 }
 
-.video-feed-horizontal-scroll::-webkit-scrollbar-track {
-    background: var(--scrollbar-track);
-    border-radius: 4px;
+/* Botones de navegación del carrusel */
+.carousel-nav-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transition: all 0.2s ease;
 }
 
-.video-feed-horizontal-scroll::-webkit-scrollbar-thumb {
-    background: var(--scrollbar-thumb);
-    border-radius: 4px;
+.carousel-nav-btn:hover {
+    background-color: var(--bg-hover-light);
+    transform: translateY(-50%) scale(1.05);
 }
+
+.carousel-nav-btn:active {
+    transform: translateY(-50%) scale(0.95);
+}
+
+.carousel-nav-btn.disabled {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+/* Los posicionamos por fuera o sobre el borde para no tapar los videos, 
+   puedes ajustar el left/right a tu gusto visual */
+.carousel-nav-btn--left {
+    left: -20px; 
+}
+
+.carousel-nav-btn--right {
+    right: -20px;
+}
+
 
 /* ========================================= */
 /* --- COMPONENT: VIDEO CARD ---             */
@@ -2388,11 +2438,18 @@ input:checked + .component-toggle-slider:before {
     gap: 12px;
     cursor: pointer;
     width: 100%;
+    border-radius: 12px;
     transition: transform 0.2s ease;
 }
 
+/* Hover effect para el resplandor */
 .component-video-card:hover {
-    transform: translateY(-2px);
+    transform: translateY(-4px);
+}
+
+.component-video-card:hover .video-card__top {
+    box-shadow: 0 0 20px var(--local-dominant-color, rgba(0,0,0,0.5));
+    border-color: var(--local-dominant-color, var(--border-color));
 }
 
 .video-card__top {
@@ -2402,6 +2459,7 @@ input:checked + .component-toggle-slider:before {
     border-radius: 12px;
     overflow: hidden;
     border: 1px solid var(--border-color);
+    transition: box-shadow 0.3s ease, border-color 0.3s ease;
 }
 
 .component-video-card__thumbnail,
@@ -2498,19 +2556,21 @@ input:checked + .component-toggle-slider:before {
     color: var(--text-primary);
 }
 
+
 /* ========================================= */
 /* --- MODIFICADORES PARA TARJETA VERTICAL --- */
 /* ========================================= */
 
 .video-card--vertical {
-    width: 210px;
-    flex-shrink: 0; /* Crucial para que no se apriete con el flex y siga el scroll */
+    width: 100%; 
     gap: 8px; 
+    scroll-snap-align: start; 
 }
 
 .video-card--vertical .video-card__top {
     border-radius: 16px;
-    height: 315px; /* Altura estricta para formar el 210x315 */
+    height: auto;
+    aspect-ratio: 9 / 16;
 }
 
 .video-card--vertical .component-video-card__thumbnail,
@@ -2523,9 +2583,33 @@ input:checked + .component-toggle-slider:before {
     white-space: normal;
 }
 
+
+/* ========================================= */
+/* --- RESPONSIVIDAD DEL GRID PRINCIPAL Y CARRUSEL --- */
+/* ========================================= */
+
+@media (max-width: 1024px) {
+    .video-feed-horizontal-scroll {
+        /* En tablets mostramos 4 exactos (3 gaps de 16px = 48px) */
+        grid-auto-columns: calc((100% - (16px * 3)) / 4);
+    }
+}
+
 @media (max-width: 768px) {
+    .video-feed-horizontal-scroll {
+        /* En tablets pequeñas mostramos 3 exactos (2 gaps de 16px = 32px) */
+        grid-auto-columns: calc((100% - (16px * 2)) / 3);
+    }
+    
     .video-feed-grid {
         grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
         gap: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .video-feed-horizontal-scroll {
+        /* En celulares mostramos 2 exactos (1 gap de 16px = 16px) */
+        grid-auto-columns: calc((100% - 16px) / 2);
     }
 }

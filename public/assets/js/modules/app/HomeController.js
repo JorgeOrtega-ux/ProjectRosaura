@@ -8,6 +8,10 @@ export class HomeController {
         this.api = new ApiService();
         this.horizontalContainer = document.getElementById('video-feed-container');
         this.verticalContainer = document.getElementById('vertical-feed-container');
+        
+        // Elementos del carrusel de Shorts
+        this.btnLeft = document.getElementById('btn-scroll-left');
+        this.btnRight = document.getElementById('btn-scroll-right');
     }
 
     async init() {
@@ -24,6 +28,11 @@ export class HomeController {
                 // Renderizamos ambos feeds pasándole su contenedor y orientación
                 this.renderFeed(response.data.vertical, this.verticalContainer, 'vertical');
                 this.renderFeed(response.data.horizontal, this.horizontalContainer, 'horizontal');
+                
+                // Inicializamos la lógica del carrusel solo si hay contenido vertical
+                if (this.verticalContainer && response.data.vertical && response.data.vertical.length > 0) {
+                    this.initCarousel();
+                }
             } else {
                 this.showError('No se pudieron cargar los videos en este momento.');
             }
@@ -63,6 +72,62 @@ export class HomeController {
 
         container.innerHTML = html;
         this.attachHoverEvents(container);
+    }
+
+    initCarousel() {
+        if (!this.verticalContainer || !this.btnLeft || !this.btnRight) return;
+
+        // Actualizar estado de los botones si el usuario hace scroll manual (touchpad o teléfono)
+        this.verticalContainer.addEventListener('scroll', () => this.updateCarouselButtons());
+        
+        // Actualizar si cambia el tamaño de la ventana
+        window.addEventListener('resize', () => this.updateCarouselButtons());
+
+        // Evento para desplazar a la izquierda
+        this.btnLeft.addEventListener('click', () => {
+            const scrollAmount = this.getScrollAmount();
+            this.verticalContainer.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+        });
+
+        // Evento para desplazar a la derecha
+        this.btnRight.addEventListener('click', () => {
+            const scrollAmount = this.getScrollAmount();
+            this.verticalContainer.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+        });
+
+        // Verificamos el estado inicial de las flechas
+        // (Pequeño timeout para permitir que el DOM calcule los anchos tras pintar el HTML)
+        setTimeout(() => this.updateCarouselButtons(), 150);
+    }
+
+ getScrollAmount() {
+        // Obtenemos el ancho total visible del contenedor
+        const visibleWidth = this.verticalContainer.clientWidth;
+        
+        // Retornamos el 100% del ancho visible. 
+        // Como tenemos 'scroll-snap-type' en el CSS, el navegador automáticamente 
+        // lo imantará para que el siguiente grupo de videos quede perfectamente alineado.
+        return visibleWidth; 
+    }
+
+    updateCarouselButtons() {
+        const scrollLeft = this.verticalContainer.scrollLeft;
+        // Calculamos el máximo scroll posible (ancho total menos ancho visible)
+        const maxScrollLeft = this.verticalContainer.scrollWidth - this.verticalContainer.clientWidth;
+
+        // Si estamos al inicio, ocultamos el botón izquierdo
+        if (scrollLeft <= 0) {
+            this.btnLeft.classList.add('disabled');
+        } else {
+            this.btnLeft.classList.remove('disabled');
+        }
+
+        // Si llegamos al final (con un pixel de margen por redondeo de navegadores), ocultamos el derecho
+        if (Math.ceil(scrollLeft) >= maxScrollLeft - 1) {
+            this.btnRight.classList.add('disabled');
+        } else {
+            this.btnRight.classList.remove('disabled');
+        }
     }
 
     createCardHTML(video, orientation) {
