@@ -51,7 +51,7 @@
                                     </div>
                                 </div>
 
-                                <div class="disabled component-state-box" data-state="title-edit" style="display: none;">
+                                <div class="disabled component-state-box" data-state="title-edit">
                                     <div class="component-card__content">
                                         <div class="component-card__text">
                                             <h2 class="component-card__title" data-i18n="studio_title_req">Título del video (obligatorio)</h2>

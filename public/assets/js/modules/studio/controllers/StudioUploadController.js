@@ -1,5 +1,6 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { StudioTagsManager } from '../managers/StudioTagsManager.js';
+import { StudioThumbnailManager } from '../managers/StudioThumbnailManager.js';
 
 export class StudioUploadController {
     constructor(api, state) {
@@ -21,6 +22,10 @@ export class StudioUploadController {
             this.tagsManager = new StudioTagsManager(this.api, this.state, () => {
                 this.handleTagsChanged();
             });
+            // Instanciar el manejador de miniaturas
+            this.thumbnailManager = new StudioThumbnailManager(this.api, this.state, () => {
+                console.log("Miniatura actualizada en el estado.");
+            });
         }
         
         this.attachEvents();
@@ -38,6 +43,9 @@ export class StudioUploadController {
         
         if (this.tagsManager && typeof this.tagsManager.destroy === 'function') {
             this.tagsManager.destroy();
+        }
+        if (this.thumbnailManager && typeof this.thumbnailManager.destroy === 'function') {
+            this.thumbnailManager.destroy();
         }
     }
 
@@ -129,9 +137,32 @@ export class StudioUploadController {
             cancelBtn.classList.remove('disabled');
             cancelBtn.removeAttribute('disabled');
         }
+
+        // Habilitar botón de publicar si el video ya se procesó
+        const publishBtn = document.getElementById('btnPublishVideo');
+        if (publishBtn) {
+            if (video.status === 'processed') {
+                publishBtn.classList.remove('disabled');
+                publishBtn.removeAttribute('disabled');
+            } else {
+                publishBtn.classList.add('disabled');
+                publishBtn.setAttribute('disabled', 'true');
+            }
+        }
         
         if (this.tagsManager) {
             this.tagsManager.setInitialTags(video.tags || []);
+        }
+
+        // Restaurar preview de la miniatura si se cambia entre pestañas de videos
+        if (this.thumbnailManager) {
+            if (video.draftThumbnailPreview) {
+                this.thumbnailManager.updateThumbnailPreview(video.draftThumbnailPreview);
+            } else if (video.thumbnail_path) {
+                this.thumbnailManager.updateThumbnailPreview(video.thumbnail_path);
+            } else {
+                this.thumbnailManager.updateThumbnailPreview(null);
+            }
         }
     }
     
@@ -148,9 +179,23 @@ export class StudioUploadController {
         const matchedKey = data.matchedKey;
         const statusSpan = document.getElementById(`badge-status-${matchedKey}`);
         if (statusSpan) {
-            if (data.status === 'processing') statusSpan.textContent = `${data.progress}%`;
-            else if (data.status === 'processed') statusSpan.textContent = '100% OK';
-            else if (data.status === 'failed') statusSpan.textContent = 'Error';
+            if (data.status === 'processing') {
+                statusSpan.textContent = `${data.progress}%`;
+            } else if (data.status === 'processed') {
+                statusSpan.textContent = '100% OK';
+                // Si el video actual se acaba de procesar, habilitar botón de publicar en vivo
+                if (this.state.selectedVideoId === String(matchedKey)) {
+                    const publishBtn = document.getElementById('btnPublishVideo');
+                    if (publishBtn) {
+                        publishBtn.classList.remove('disabled');
+                        publishBtn.removeAttribute('disabled');
+                    }
+                    const video = this.state.getVideo(matchedKey);
+                    if(video) video.status = 'processed';
+                }
+            } else if (data.status === 'failed') {
+                statusSpan.textContent = 'Error';
+            }
         }
     }
 
@@ -184,14 +229,24 @@ export class StudioUploadController {
 
         if (action === 'cancelVideo') {
             e.preventDefault();
-            // [FIX] El escudo antibalas: si hubiera otro listener suelto por ahí, este lo neutraliza.
             e.stopImmediatePropagation(); 
             this.handleCancelVideo();
         } else if (action === 'selectVisibility') {
             e.preventDefault();
             e.stopImmediatePropagation();
             this.handleSelectVisibility(btn);
+        } else if (action === 'saveTitle') {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this.handleSaveTitle(btn);
+        } else if (action === 'publishVideo') {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this.handlePublishVideo(btn);
         }
+        
+        // NOTA: No interceptamos 'toggleEditState' aquí. Dejamos que tu script global 
+        // lo atrape y aplique los cambios de CSS a los paneles.
     }
 
     handleCancelVideo() {
@@ -201,16 +256,24 @@ export class StudioUploadController {
             return;
         }
 
-        // TODO: Lógica backend (this.api.post...) para cancelar/eliminar la subida.
-        
-        this.state.deleteVideo(this.state.selectedVideoId);
-        
-        if (this.state.currentVideos.size === 0) {
-            window.dispatchEvent(new CustomEvent('routeChange', { detail: { url: '/studio/upload' }}));
-        } else {
-            const firstId = this.state.currentVideos.keys().next().value;
-            this.selectVideo(firstId);
-        }
+        const routeName = ApiRoutes.Studio?.CancelUpload || 'studio.cancel_upload';
+        this.api.post(routeName, { video_id: this.state.selectedVideoId }).then(res => {
+            if (res.status === 'success') {
+                this.state.deleteVideo(this.state.selectedVideoId);
+                
+                if (this.state.currentVideos.size === 0) {
+                    window.dispatchEvent(new CustomEvent('routeChange', { detail: { url: '/studio/upload' }}));
+                } else {
+                    const firstId = this.state.currentVideos.keys().next().value;
+                    this.selectVideo(firstId);
+                }
+            } else {
+                alert("Error al cancelar el video: " + res.message);
+            }
+        }).catch(err => {
+            console.error(err);
+            alert("Error al comunicarse con el servidor.");
+        });
     }
 
     handleSelectVisibility(btn) {
@@ -238,6 +301,100 @@ export class StudioUploadController {
         if (window.appInstance) {
             const module = btn.closest('.component-module');
             if (module) window.appInstance.closeModule(module);
+        }
+    }
+
+    handleSaveTitle(btn) {
+        const inputTitle = document.getElementById('videoTitleInput');
+        if (!inputTitle) return;
+        
+        const newTitle = inputTitle.value.trim();
+
+        if (newTitle === '') {
+            alert("El título no puede estar vacío.");
+            return;
+        }
+
+        const video = this.state.getVideo(this.state.selectedVideoId);
+        if (video) {
+            video.title = newTitle;
+        }
+
+        const displayTitle = document.querySelector('[data-ref="display-title"]');
+        if (displayTitle) {
+            displayTitle.textContent = newTitle;
+        }
+
+        // Clic simulado al botón cancelar para que tu script global lo intercepte y cierre el menú de edición
+        const cancelBtn = btn.previousElementSibling;
+        if (cancelBtn && cancelBtn.getAttribute('data-action') === 'toggleEditState') {
+            cancelBtn.click();
+        }
+    }
+
+    async handlePublishVideo(btn) {
+        if (!this.state.selectedVideoId) return;
+        const video = this.state.getVideo(this.state.selectedVideoId);
+        if (!video) return;
+
+        // Recopilar datos de publicación
+        const title = document.querySelector('[data-ref="input-title"]')?.value.trim() || video.title;
+        const description = document.getElementById('videoDescriptionInput')?.value.trim() || '';
+        const visibility = document.getElementById('videoVisibilitySelect')?.value || video.visibility || 'public';
+        
+        if (!title) {
+            alert("El título es obligatorio para publicar.");
+            return;
+        }
+
+        if (!video.draftThumbnailType && !video.thumbnail_path) {
+            alert("Debes seleccionar o subir una miniatura antes de publicar.");
+            return;
+        }
+
+        const models = video.modelsIds || [];
+        const categories = video.categoriesIds || [];
+
+        // Construir FormData
+        const formData = new FormData();
+        formData.append('video_id', video.id);
+        formData.append('title', title);
+        formData.append('description', description);
+        formData.append('visibility', visibility);
+        formData.append('models', JSON.stringify(models));
+        formData.append('categories', JSON.stringify(categories));
+
+        if (video.draftThumbnailType === 'file' && video.draftThumbnailData) {
+            formData.append('thumbnail', video.draftThumbnailData);
+        } else if (video.draftThumbnailType === 'generated' && video.draftThumbnailData) {
+            formData.append('generated_path', video.draftThumbnailData);
+        }
+
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<span class="material-symbols-rounded">sync</span><span>Publicando...</span>';
+        btn.disabled = true;
+
+        try {
+            const routeName = ApiRoutes.Studio?.PublishVideo || 'studio.publish_video';
+            const response = await this.api.post(routeName, formData);
+            
+            if (response.status === 'success') {
+                this.state.deleteVideo(this.state.selectedVideoId);
+                if (this.state.currentVideos.size === 0) {
+                    window.dispatchEvent(new CustomEvent('routeChange', { detail: { url: '/studio/content' }}));
+                } else {
+                    const firstId = this.state.currentVideos.keys().next().value;
+                    this.selectVideo(firstId);
+                }
+            } else {
+                alert("Error al publicar: " + response.message);
+            }
+        } catch (error) {
+            console.error("Error al publicar el video:", error);
+            alert("Ocurrió un error al intentar publicar el video.");
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
         }
     }
 
