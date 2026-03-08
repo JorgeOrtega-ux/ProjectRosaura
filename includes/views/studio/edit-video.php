@@ -191,7 +191,7 @@ $userUuid = $_GET['uuid'] ?? '';
                     <div class="studio-uploading-preview">
                         <div class="studio-video-card">
                             <div class="studio-video-card__player studio-video-card__player-preview">
-                                <img id="dynamicThumbPreview" src="" alt="Miniatura" class="studio-video-card__player-img" onerror="if(!this.dataset.retried) { this.dataset.retried = 'true'; this.src = this.src.replace('/public/storage/', '/storage/'); } else { this.style.display='none'; this.nextElementSibling.style.display='block'; }">
+                                <img id="dynamicThumbPreview" src="" alt="Miniatura" class="studio-video-card__player-img" onerror="if(!this.dataset.retried) { this.dataset.retried = 'true'; this.src = this.src.replace('/public/storage/', '/storage/'); } else { this.style.display='none'; if(this.nextElementSibling) { this.nextElementSibling.style.display='block'; } }">
                                 <span class="material-symbols-rounded studio-video-card__player-icon">play_circle</span>
                             </div>
                         </div>

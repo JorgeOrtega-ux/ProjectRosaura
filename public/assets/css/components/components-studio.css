@@ -740,10 +740,4 @@
         grid-template-columns: 1fr; 
         gap: 20px;
     }
-    
-    .video-card__top {
-        border-radius: 0; 
-        border-left: none;
-        border-right: none;
-    }
 }
