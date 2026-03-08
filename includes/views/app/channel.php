@@ -148,19 +148,24 @@ $displayName = $channelExists ? ($channelUser['display_name'] ?? $channelUser['u
     .component-channel-banner-container {
         position: relative;
         width: 100%;
-        height: 200px;
+        /* Usamos aspect-ratio dinámico basado en el ancho (vw) */
+        height: 16vw; 
+        min-height: 150px;
+        max-height: 220px;
         background-color: #333;
         border-radius: 12px;
         overflow: hidden;
         margin-bottom: 24px;
         background-size: cover;
         background-position: center;
+        transition: all 0.3s ease;
     }
 
     .component-channel-banner-action {
         position: absolute;
         top: 16px;
         right: 16px;
+        transition: top 0.3s ease, right 0.3s ease;
     }
 
     /* Header y Perfil */
@@ -169,6 +174,7 @@ $displayName = $channelExists ? ($channelUser['display_name'] ?? $channelUser['u
         align-items: center;
         gap: 24px;
         margin-bottom: 32px;
+        transition: all 0.3s ease;
     }
 
     .component-channel-avatar {
@@ -177,6 +183,9 @@ $displayName = $channelExists ? ($channelUser['display_name'] ?? $channelUser['u
         border-radius: 12px;
         background-color: #555;
         object-fit: cover;
+        position: relative;
+        z-index: 2;
+        transition: all 0.3s ease;
     }
 
     .component-channel-info-wrapper {
@@ -198,6 +207,7 @@ $displayName = $channelExists ? ($channelUser['display_name'] ?? $channelUser['u
     .component-channel-actions {
         display: flex;
         gap: 12px;
+        justify-content: flex-start;
     }
 
     /* Botones */
@@ -233,6 +243,11 @@ $displayName = $channelExists ? ($channelUser['display_name'] ?? $channelUser['u
         gap: 32px;
         border-bottom: 1px solid #3f3f3f;
         margin-bottom: 24px;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+    .component-channel-tabs::-webkit-scrollbar {
+        display: none;
     }
 
     .component-channel-tab {
@@ -243,6 +258,7 @@ $displayName = $channelExists ? ($channelUser['display_name'] ?? $channelUser['u
         font-weight: 600;
         font-size: 16px;
         transition: color 0.2s;
+        white-space: nowrap;
     }
 
     .component-channel-tab:hover { color: #fff; }
@@ -261,7 +277,59 @@ $displayName = $channelExists ? ($channelUser['display_name'] ?? $channelUser['u
         gap: 16px;
     }
 
+    /* ========================================= */
+    /* --- RESPONSIVE LAYOUT (MÓVILES) ---       */
+    /* ========================================= */
     @media (max-width: 768px) {
+        .component-channel-layout {
+            padding: 0; /* Borde a borde nativo */
+        }
+
+        .component-channel-banner-container {
+            border-radius: 0;
+            margin-bottom: 16px;
+            height: 25vw; /* Escala idónea para móviles */
+            min-height: 100px;
+            max-height: 140px;
+        }
+
+        .component-channel-banner-action {
+            top: 8px;
+            right: 8px;
+        }
+        
+        .component-channel-header {
+            padding: 0 16px; /* Devolvemos el margen al contenido interior */
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            margin-top: -50px; /* Sube el avatar sobre el banner */
+            gap: 12px;
+        }
+        
+        .component-channel-avatar {
+            width: 90px;
+            height: 90px;
+            border: 4px solid var(--bg-surface, #0f0f0f); /* Separador visual tipo YouTube/Twitter */
+        }
+
+        .component-channel-title {
+            font-size: 24px;
+        }
+
+        .component-channel-actions {
+            justify-content: center;
+            width: 100%;
+        }
+
+        .component-channel-tabs {
+            padding: 0 16px;
+        }
+
+        .component-channel-content {
+            padding: 0 16px 24px 16px;
+        }
+
         .shorts-feed-grid {
             grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
             gap: 12px;
