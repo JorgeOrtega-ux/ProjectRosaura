@@ -60,15 +60,32 @@ export class ChannelController {
             const allTabs = newContainer.querySelectorAll('.component-channel-tab');
             const sections = document.querySelectorAll('.component-channel-content-section');
 
+            // Limpiamos los estados activos
             allTabs.forEach(t => t.classList.remove('is-active'));
             sections.forEach(s => s.classList.remove('is-active'));
 
+            // Activamos la pestaña seleccionada
             tab.classList.add('is-active');
 
             const targetId = tab.getAttribute('data-target');
             const targetSection = document.getElementById(targetId);
             
             if (targetSection) targetSection.classList.add('is-active');
+
+            // --- ACTUALIZACIÓN DINÁMICA DE LA URL ---
+            const tabName = tab.getAttribute('data-tab');
+            if (this.channelIdentifier && window.history) {
+                let basePath = window.AppBasePath || '';
+                let newUrl = `${basePath}/@${this.channelIdentifier}`;
+                
+                // Si no es la pestaña principal, le agregamos el nombre a la URL
+                if (tabName && tabName !== 'main') {
+                    newUrl += `/${tabName}`;
+                }
+                
+                // Usamos pushState para cambiar la URL visible sin recargar la página
+                window.history.pushState({ path: newUrl }, '', newUrl);
+            }
         });
     }
 

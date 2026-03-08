@@ -2320,7 +2320,7 @@ input:checked + .component-toggle-slider:before {
     padding: 16px 20px;
     background-color: var(--bg-surface);
     border: 1px solid var(--border-color);
-    border-radius: 12px 12px 0 0;
+    border-radius: 12px;
 }
 
 .component-feed-title {
@@ -2538,6 +2538,7 @@ input:checked + .component-toggle-slider:before {
     display: flex;
     gap: 32px;
     border-bottom: 1px solid var(--border-color);
+    border-top: 1px solid #00000020;
     margin-bottom: 24px;
     overflow-x: auto;
     scrollbar-width: none;
@@ -2570,6 +2571,8 @@ input:checked + .component-toggle-slider:before {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
     gap: 16px;
+    width: 100%;
+    margin-top: 16px; /* Añadir esta línea */
 }
 
 /* RESPONSIVE MÓVILES CHANNEL */

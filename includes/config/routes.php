@@ -4,12 +4,14 @@
 return [
     '/' => ['view' => 'app/home.php'],
     '/explore' => ['view' => 'app/explore.php'],
-      // --- RUTA DEL REPRODUCTOR DE VIDEO ---
+    // --- RUTA DEL REPRODUCTOR DE VIDEO ---
     '/watch/{video_uuid}' => ['view' => 'app/watch.php'], 
+    
     // --- RUTA DINÁMICA DE CANALES ---
-    '/@{identifier}' => ['view' => 'app/channel.php'], // <--- MODIFICADO: Solo acepta identifier
+    '/@{identifier}' => ['view' => 'app/channel.php'], 
+    '/@{identifier}/{tab}' => ['view' => 'app/channel.php'], // <--- NUEVA: Captura la sub-ruta de la pestaña
 
-        // --- NUEVA RUTA PARA EDITAR PERFIL DE CANAL ---
+    // --- NUEVA RUTA PARA EDITAR PERFIL DE CANAL ---
     '/channel/{uuid}/editing/profile' => ['view' => 'app/channel-edit-profile.php', 'auth' => true],
     
     // --- RUTAS DE AUTENTICACIÓN (Solo invitados) ---
