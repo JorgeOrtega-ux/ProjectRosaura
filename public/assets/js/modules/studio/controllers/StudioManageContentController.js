@@ -2,20 +2,43 @@ import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 
 export class StudioManageContentController {
     constructor(api, state, wsManager) {
+        // [FIX] Prevenir acumulación de instancias y listeners fantasma
+        if (window._studioManageContentInstance) {
+            window._studioManageContentInstance.destroy();
+        }
+        window._studioManageContentInstance = this;
+
         this.api = api;
         this.state = state;
         this.wsManager = wsManager;
+        
+        // [FIX] Guardar la referencia exacta de las funciones para poder removerlas después
+        this.updateRowStatusBound = this.updateRowStatus.bind(this);
+        this.handleDocumentClickBound = this.handleDocumentClick.bind(this);
+        this.handleRouteChangeBound = this.destroy.bind(this);
+
         this.initManageContentView();
-        
-        // Escucha el evento global de progreso de WS
-        window.addEventListener('studioVideoProgress', this.updateRowStatus.bind(this));
-        
-        // Adjuntar eventos para los menús
         this.attachEvents();
     }
 
     attachEvents() {
-        document.addEventListener('click', this.handleDocumentClick.bind(this));
+        // Usamos las funciones bindadas guardadas en memoria
+        window.addEventListener('studioVideoProgress', this.updateRowStatusBound);
+        document.addEventListener('click', this.handleDocumentClickBound);
+        
+        // Escuchamos el evento de cambio de ruta de la SPA para destruir los listeners
+        window.addEventListener('routeChange', this.handleRouteChangeBound);
+    }
+
+    destroy() {
+        // [FIX] Limpiar los listeners cuando cambiamos de vista en la SPA
+        window.removeEventListener('studioVideoProgress', this.updateRowStatusBound);
+        document.removeEventListener('click', this.handleDocumentClickBound);
+        window.removeEventListener('routeChange', this.handleRouteChangeBound);
+        
+        if (window._studioManageContentInstance === this) {
+            window._studioManageContentInstance = null;
+        }
     }
 
     handleDocumentClick(e) {
@@ -37,7 +60,7 @@ export class StudioManageContentController {
                     menu.classList.add('active');
                 }
             }
-            return;
+            return; // Terminar la ejecución para no propagar
         }
 
         const selectOption = e.target.closest('[data-action="selectQuickVisibility"]');
@@ -51,6 +74,15 @@ export class StudioManageContentController {
                 menu.classList.remove('active');
                 menu.classList.add('disabled');
             }
+            return;
+        }
+
+        // [MEJORA UX] Si se hace click fuera del menú y fuera del botón, cerrarlo
+        if (!e.target.closest('.component-module--dropdown') && !e.target.closest('[data-action="toggleQuickVisibility"]')) {
+            document.querySelectorAll('.component-module--dropdown').forEach(m => {
+                m.classList.remove('active');
+                m.classList.add('disabled');
+            });
         }
     }
 

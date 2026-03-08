@@ -138,9 +138,16 @@ class StudioController {
         $description = $input['description'] ?? $_POST['description'] ?? null;
         $visibility = $input['visibility'] ?? $_POST['visibility'] ?? 'public';
         
-        // RECIBIR TAGS COMO ARRAYS Y DECIFRAR EL JSON
-        $models = isset($_POST['models']) ? json_decode($_POST['models'], true) : ($input['models'] ?? []);
-        $categories = isset($_POST['categories']) ? json_decode($_POST['categories'], true) : ($input['categories'] ?? []);
+        // [FIX] RECIBIR TAGS Y ASEGURAR QUE SEAN DECODIFICADOS A ARRAY
+        $modelsRaw = $input['models'] ?? $_POST['models'] ?? [];
+        $categoriesRaw = $input['categories'] ?? $_POST['categories'] ?? [];
+
+        $models = is_string($modelsRaw) ? json_decode($modelsRaw, true) : $modelsRaw;
+        $categories = is_string($categoriesRaw) ? json_decode($categoriesRaw, true) : $categoriesRaw;
+
+        // Si falló el json_decode o enviaron algo raro, forzamos a array
+        if (!is_array($models)) $models = [];
+        if (!is_array($categories)) $categories = [];
 
         if (!$videoId || $title === null) {
             http_response_code(400);
@@ -222,9 +229,15 @@ class StudioController {
         $description = $input['description'] ?? $_POST['description'] ?? '';
         $visibility = $input['visibility'] ?? $_POST['visibility'] ?? 'public';
 
-        // RECIBIR TAGS
-        $models = isset($_POST['models']) ? json_decode($_POST['models'], true) : ($input['models'] ?? []);
-        $categories = isset($_POST['categories']) ? json_decode($_POST['categories'], true) : ($input['categories'] ?? []);
+        // [FIX] RECIBIR TAGS Y ASEGURAR QUE SEAN DECODIFICADOS A ARRAY
+        $modelsRaw = $input['models'] ?? $_POST['models'] ?? [];
+        $categoriesRaw = $input['categories'] ?? $_POST['categories'] ?? [];
+
+        $models = is_string($modelsRaw) ? json_decode($modelsRaw, true) : $modelsRaw;
+        $categories = is_string($categoriesRaw) ? json_decode($categoriesRaw, true) : $categoriesRaw;
+
+        if (!is_array($models)) $models = [];
+        if (!is_array($categories)) $categories = [];
 
         $files = $input['_files'] ?? $_FILES;
         $thumbnailFile = $files['thumbnail'] ?? null;

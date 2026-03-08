@@ -7,6 +7,12 @@ import { StudioEditController } from './controllers/StudioEditController.js';
 
 export class StudioController {
     constructor() {
+        // [FIX] Prevenir múltiples instancias principales que inyecten WS múltiples veces
+        if (window._studioMainControllerInstance) {
+            window._studioMainControllerInstance.destroy();
+        }
+        window._studioMainControllerInstance = this;
+
         if (window.AppStudioWSManager) {
             this.manager = window.AppStudioWSManager;
         } else {
@@ -17,12 +23,31 @@ export class StudioController {
         this.api = new ApiService();
         this.state = studioState;
         
+        // Delegado global seguro para el WS
+        if (!window._studioWsProgressHandlerInitialized) {
+            this.manager.onMessage('progressUpdate', (data) => {
+                if (window._studioMainControllerInstance) {
+                    window._studioMainControllerInstance.handleWsProgress(data);
+                }
+            });
+            window._studioWsProgressHandlerInitialized = true;
+        }
+
+        this.handleRouteChangeBound = this.destroy.bind(this);
+        window.addEventListener('routeChange', this.handleRouteChangeBound);
+        
         this.init();
+    }
+
+    destroy() {
+        window.removeEventListener('routeChange', this.handleRouteChangeBound);
+        if (window._studioMainControllerInstance === this) {
+            window._studioMainControllerInstance = null;
+        }
     }
 
     init() {
         this.manager.connect();
-        this.manager.onMessage('progressUpdate', this.handleWsProgress.bind(this));
         
         const path = window.location.pathname;
         
