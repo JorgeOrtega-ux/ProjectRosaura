@@ -71,8 +71,7 @@ export class StudioEditController {
                     
                     const newTitle = titleInput ? titleInput.value.trim() : '';
                     const newDesc = descInput ? descInput.value.trim() : '';
-                    const visibilitySelect = document.getElementById('videoVisibilitySelect');
-                    const newVisibility = visibilitySelect ? visibilitySelect.value : 'public';
+                    const newVisibility = video.draftVisibility || 'public';
                     
                     if (newTitle.length === 0) {
                         alert("El título no puede estar vacío.");
@@ -141,9 +140,6 @@ export class StudioEditController {
     }
 
     syncVisibilityUI(value) {
-        const select = document.getElementById('videoVisibilitySelect');
-        if (select) select.value = value;
-        
         const menu = document.getElementById('visibilitySelectorMenu');
         if (!menu) return;
 
@@ -324,8 +320,12 @@ export class StudioEditController {
             if (selectVisOption) {
                 const value = selectVisOption.getAttribute('data-value');
                 this.syncVisibilityUI(value);
-                const select = document.getElementById('videoVisibilitySelect');
-                if (select) select.dispatchEvent(new Event('change', { bubbles: true }));
+                
+                if (this.state.selectedVideoId) {
+                    const video = this.state.getVideo(this.state.selectedVideoId);
+                    if (video) video.draftVisibility = value;
+                }
+                
                 const menu = selectVisOption.closest('.component-module');
                 if (menu) { menu.classList.remove('active'); menu.classList.add('disabled'); }
                 return;
@@ -346,15 +346,6 @@ export class StudioEditController {
 
         document.addEventListener('focusout', (e) => {
             if (e.target && e.target.id === 'videoDescriptionInput') this.saveDescriptionField();
-        });
-
-        document.addEventListener('change', (e) => {
-            if (e.target && e.target.id === 'videoVisibilitySelect') {
-                if (this.state.selectedVideoId) {
-                    const video = this.state.getVideo(this.state.selectedVideoId);
-                    if (video) video.draftVisibility = e.target.value;
-                }
-            }
         });
     }
 }

@@ -193,7 +193,17 @@
 }
 
 .studio-uploading-details {
-    flex: 1; 
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    gap: 8px;
+}
+
+.component-divider {
+    border: none;
+    border-top: 1px solid var(--border-color);
+    margin: 0;
+    width: 100%;
 }
 
 .studio-uploading-preview {
@@ -216,6 +226,34 @@
     aspect-ratio: 16 / 9;
     background-color: #000000; 
     position: relative;
+}
+
+/* Nuevos estilos integrados para quitar código inline */
+.studio-video-card__player-preview {
+    background-image: none;
+    background-color: transparent;
+    position: relative;
+}
+
+.studio-video-card__player-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: inherit;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.studio-video-card__player-icon {
+    color: #ffffff;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 48px;
+    z-index: 2;
+    text-shadow: 0 2px 5px rgba(0,0,0,0.7);
 }
 
 .studio-video-card__info {
@@ -252,6 +290,27 @@
     font-size: 14px;
     color: var(--text-primary);
     word-break: break-all;
+}
+
+.component-thumbnail-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+/* Estructura para tener los botones de thumb juntos */
+.component-thumbnail-actions {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    width: 100%;
+}
+
+.component-thumbnail-actions .component-button {
+    flex: 1;
+    padding: 0 8px;
+    font-size: 13px;
 }
 
 .component-thumbnail-grid {
@@ -387,12 +446,14 @@
         position: relative;
         top: 0;
     }
+    
+    .studio-uploading-details {
+        width: 100%;
+    }
 }
 
 @media (max-width: 768px) {
-    .component-view-bottom {
-        padding: 0; 
-    }
+    /* Eliminado el padding: 0 forzado en este selector para permitir el padding de component-view-bottom */
 
     .component-view-bottom .component-table-wrapper {
         border: none;

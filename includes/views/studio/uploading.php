@@ -129,12 +129,6 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        
-                                        <select id="videoVisibilitySelect">
-                                            <option value="public" selected>public</option>
-                                            <option value="unlisted">unlisted</option>
-                                            <option value="private">private</option>
-                                        </select>
                                     </div>
                                 </div>
                             </div>
@@ -149,6 +143,8 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <hr class="component-divider">
 
                             <div class="component-group-item component-group-item--stacked">
                                 <div class="component-card__content">
@@ -173,6 +169,8 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <hr class="component-divider">
 
                             <div class="component-group-item component-group-item--stacked">
                                 <div class="component-card__content">
@@ -206,8 +204,9 @@
 
                     <div class="studio-uploading-preview">
                         <div class="studio-video-card">
-                            <div class="studio-video-card__player">
-                                <span class="material-symbols-rounded">play_circle</span>
+                            <div class="studio-video-card__player studio-video-card__player-preview">
+                                <img id="dynamicThumbPreview" src="" alt="Miniatura" class="studio-video-card__player-img" onerror="if(!this.dataset.retried) { this.dataset.retried = 'true'; this.src = this.src.replace('/public/storage/', '/storage/'); } else { this.style.display='none'; this.nextElementSibling.style.display='block'; }">
+                                <span class="material-symbols-rounded studio-video-card__player-icon">play_circle</span>
                             </div>
                             <div class="studio-video-card__info">
                                 <div class="studio-video-card__meta-group">
@@ -225,14 +224,14 @@
                             <h3 class="meta-label">Miniatura</h3>
                             <p class="meta-label">Selecciona o sube una imagen que muestre el contenido de tu video.</p>
                             
-                            <div>
+                            <div class="component-thumbnail-actions">
                                 <input type="file" id="thumbnailInput" class="disabled" accept="image/png, image/jpeg, image/webp">
-                                <button type="button" class="component-button component-button--full component-button--h40" onclick="document.getElementById('thumbnailInput').click();">
+                                <button type="button" class="component-button component-button--h40" onclick="document.getElementById('thumbnailInput').click();">
                                     <span class="material-symbols-rounded">add_photo_alternate</span>
                                     <span data-i18n="studio_upload_thumb">Subir</span>
                                 </button>
                                 
-                                <button type="button" id="btnGenerateThumbnails" class="component-button component-button--full component-button--h40">
+                                <button type="button" id="btnGenerateThumbnails" class="component-button component-button--h40">
                                     <span class="material-symbols-rounded">auto_awesome</span>
                                     <span>Generar opciones</span>
                                 </button>
@@ -241,7 +240,7 @@
                             <input type="hidden" id="selectedGeneratedThumbnail" name="selected_generated_thumbnail" value="">
 
                             <div class="component-thumbnail-grid" id="generatedThumbnailsContainer">
-                                </div>
+                            </div>
                         </div>
 
                     </div>

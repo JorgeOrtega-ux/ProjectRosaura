@@ -157,9 +157,6 @@ export class StudioUploadController {
     syncVisibilityUI(value) {
         const visibilityIcon = document.getElementById('visibilityIcon');
         const visibilityText = document.getElementById('visibilityText');
-        const visibilitySelect = document.getElementById('videoVisibilitySelect');
-
-        if (visibilitySelect) visibilitySelect.value = value;
 
         const menuLinks = document.querySelectorAll('.component-menu-list .component-menu-link[data-action="selectVisibility"]');
         let matched = false;
@@ -432,7 +429,7 @@ export class StudioUploadController {
 
         const title = document.querySelector('[data-ref="input-title"]')?.value.trim() || video.title;
         const description = document.getElementById('videoDescriptionInput')?.value.trim() || '';
-        const visibility = document.getElementById('videoVisibilitySelect')?.value || video.visibility || 'public';
+        const visibility = video.visibility || 'public';
         
         if (!title) {
             alert("El título es obligatorio para publicar.");
