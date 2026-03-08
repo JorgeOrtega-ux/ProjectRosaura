@@ -73,7 +73,7 @@ $userUuid = $_GET['uuid'] ?? '';
                                         <div class="component-module component-module--dropdown component-module--dropdown-left disabled bs-initialized" data-module="moduleVisibility" id="visibilitySelectorMenu">
                                             <div class="component-menu component-menu--w-auto component-menu--h-auto component-menu--no-padding">
                                                 <div class="pill-container"><div class="drag-handle"></div></div>
-                                                <div class="component-menu-list">
+                                                <div class="component-menu-list component-menu-list--scrollable">
                                                     
                                                     <div class="component-menu-link active" data-action="selectVisibility" data-value="public" data-icon="public" data-text="Público">
                                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">public</span></div>
