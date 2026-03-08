@@ -30,29 +30,15 @@ export class StudioTagsManager {
         return this.selectedCategories.map(t => t.isNew ? t.name : parseInt(t.id));
     }
 
-    async toggleTagsMenu(menu, type) {
-        const isClosing = menu.classList.contains('active');
-        
-        document.querySelectorAll('.component-module[id$="SelectorMenu"]').forEach(m => {
-            if (m !== menu) {
-                m.classList.remove('active');
-                m.classList.add('disabled');
-            }
-        });
+    // Ya no maneja las clases CSS. Solo se encarga de ir a la API por los datos
+    // y cachearlos usando data-loaded
+    async loadTagsData(moduleName, type) {
+        const menu = document.querySelector(`[data-module="${moduleName}"]`);
+        if (!menu) return;
 
-        if (isClosing) {
-            menu.classList.remove('active');
-            menu.classList.add('disabled');
-            return;
-        }
-
-        menu.classList.remove('disabled');
-        menu.classList.add('active');
-        
         const list = menu.querySelector('.tag-results-list');
-        const input = menu.querySelector('.tag-search-input');
-        if (input) input.value = ''; 
-        
+        if (!list || list.hasAttribute('data-loaded')) return; // Evitar llamadas múltiples
+
         list.innerHTML = '<div style="padding: 16px; text-align: center; color: var(--text-secondary);"><span class="material-symbols-rounded">sync</span> Cargando...</div>';
 
         try {
@@ -65,25 +51,25 @@ export class StudioTagsManager {
 
                 if (res.data.length === 0) {
                     list.innerHTML = '<div style="padding: 16px; text-align: center; color: var(--text-secondary); font-size: 13px;">No hay opciones oficiales. Escribe para crear una local.</div>';
-                    return;
+                } else {
+                    res.data.forEach(tag => {
+                        const isActive = currentIds.includes(parseInt(tag.id));
+                        const item = document.createElement('div');
+                        item.className = `component-menu-link tag-option-link ${isActive ? 'active' : ''}`;
+                        item.setAttribute('data-id', tag.id);
+                        item.setAttribute('data-name', tag.name);
+                        item.setAttribute('data-type', tag.type);
+                        item.setAttribute('data-is-new', 'false');
+
+                        let icon = tag.type === 'modelo' ? 'person' : 'category';
+                        item.innerHTML = `
+                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">${icon}</span></div>
+                            <div class="component-menu-link-text"><span>${tag.name}</span></div>
+                        `;
+                        list.appendChild(item);
+                    });
                 }
-
-                res.data.forEach(tag => {
-                    const isActive = currentIds.includes(parseInt(tag.id));
-                    const item = document.createElement('div');
-                    item.className = `component-menu-link tag-option-link ${isActive ? 'active' : ''}`;
-                    item.setAttribute('data-id', tag.id);
-                    item.setAttribute('data-name', tag.name);
-                    item.setAttribute('data-type', tag.type);
-                    item.setAttribute('data-is-new', 'false');
-
-                    let icon = tag.type === 'modelo' ? 'person' : 'category';
-                    item.innerHTML = `
-                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">${icon}</span></div>
-                        <div class="component-menu-link-text"><span>${tag.name}</span></div>
-                    `;
-                    list.appendChild(item);
-                });
+                list.setAttribute('data-loaded', 'true');
             } else {
                 list.innerHTML = `<div style="padding: 16px; color: red;">Error: ${res.message}</div>`;
             }
@@ -102,8 +88,8 @@ export class StudioTagsManager {
             arr.push({ id, name, type, isNew });
             this.renderSelectedTags(type);
             
-            const menuId = type === 'modelo' ? 'modelsSelectorMenu' : 'categoriesSelectorMenu';
-            const menu = document.getElementById(menuId);
+            const menuId = type === 'modelo' ? 'moduleTagsModels' : 'moduleTagsCategories';
+            const menu = document.querySelector(`[data-module="${menuId}"]`);
             
             if (menu) {
                 const input = menu.querySelector('.tag-search-input');
@@ -113,7 +99,7 @@ export class StudioTagsManager {
                 }
             }
             
-            const option = document.querySelector(`#${menuId} .tag-option-link[data-id="${id}"]`);
+            const option = document.querySelector(`[data-module="${menuId}"] .tag-option-link[data-id="${id}"]`);
             if (option) option.classList.add('active');
             
             if(this.onTagsChanged) this.onTagsChanged();
@@ -127,8 +113,8 @@ export class StudioTagsManager {
         this.renderSelectedTags(type);
         if(this.onTagsChanged) this.onTagsChanged();
 
-        const menuId = type === 'modelo' ? 'modelsSelectorMenu' : 'categoriesSelectorMenu';
-        const option = document.querySelector(`#${menuId} .tag-option-link[data-id="${id}"]`);
+        const menuId = type === 'modelo' ? 'moduleTagsModels' : 'moduleTagsCategories';
+        const option = document.querySelector(`[data-module="${menuId}"] .tag-option-link[data-id="${id}"]`);
         if (option) option.classList.remove('active');
     }
 
@@ -137,7 +123,7 @@ export class StudioTagsManager {
         const hiddenId = type === 'modelo' ? 'hiddenModelsArray' : 'hiddenCategoriesArray';
         const wrapperId = type === 'modelo' ? 'modelsTagsWrapper' : 'categoriesTagsWrapper';
         const containerId = type === 'modelo' ? 'selectedModelsContainer' : 'selectedCategoriesContainer';
-        const triggerAttr = type === 'modelo' ? 'modelsSelectorMenu' : 'categoriesSelectorMenu';
+        const triggerAttr = type === 'modelo' ? 'moduleTagsModels' : 'moduleTagsCategories';
 
         const hiddenInput = document.getElementById(hiddenId);
         if (!hiddenInput) return;
@@ -217,7 +203,7 @@ export class StudioTagsManager {
                     if (existingCreateBtn) existingCreateBtn.remove();
 
                     if (term.length > 0 && !exactMatch) {
-                        const isModels = e.target.closest('#modelsSelectorMenu') !== null;
+                        const isModels = menu.closest('[data-module="moduleTagsModels"]') !== null;
                         const type = isModels ? 'modelo' : 'category';
                         const originalTerm = e.target.value.trim();
                         
@@ -242,16 +228,28 @@ export class StudioTagsManager {
         });
 
         document.addEventListener('click', (e) => {
-            const toggleTagsBtn = e.target.closest('[data-action="toggleStudioTags"]');
+            // Escuchar el disparo del módulo para cargar los datos si es necesario
+            const toggleTagsBtn = e.target.closest('[data-action="toggleModule"]');
             if (toggleTagsBtn) {
-                const visMenu = document.getElementById('visibilitySelectorMenu');
-                if(visMenu) { visMenu.classList.remove('active'); visMenu.classList.add('disabled'); }
-
-                const targetId = toggleTagsBtn.getAttribute('data-target');
+                const target = toggleTagsBtn.getAttribute('data-target');
                 const type = toggleTagsBtn.getAttribute('data-type');
-                const menu = document.getElementById(targetId);
-                if (menu) this.toggleTagsMenu(menu, type);
-                return; 
+                
+                if (target === 'moduleTagsModels' || target === 'moduleTagsCategories') {
+                    // Cargar lista desde BD
+                    this.loadTagsData(target, type);
+                    
+                    // Limpiar input de búsqueda si se está abriendo
+                    const menu = document.querySelector(`[data-module="${target}"]`);
+                    if (menu && menu.classList.contains('disabled')) {
+                        const input = menu.querySelector('.tag-search-input');
+                        if (input) {
+                            input.value = '';
+                            input.dispatchEvent(new Event('input', { bubbles: true }));
+                        }
+                    }
+                }
+                // IMPORTANTE: NO hacemos return; dejamos que el evento llegue a MainController
+                // para que haga el trabajo visual de abrir/cerrar.
             }
 
             const tagOption = e.target.closest('.tag-option-link');

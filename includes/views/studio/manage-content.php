@@ -27,11 +27,11 @@
                 <div class="component-view-top-right" style="display: flex; gap: 8px;">
                     
                     <div class="component-dropdown-wrapper">
-                        <button class="component-button component-button--icon component-button--h36 disabled" id="btnQuickVisibility" data-tooltip="Cambiar visibilidad" disabled data-action="toggleQuickVisibility" data-target="quickVisibilityMenu">
+                        <button class="component-button component-button--icon component-button--h36 disabled" id="btnQuickVisibility" data-tooltip="Cambiar visibilidad" disabled data-action="toggleModule" data-target="quickVisibilityMenu">
                             <span class="material-symbols-rounded" id="quickVisibilityBtnIcon">public</span>
                         </button>
                         
-                        <div class="component-module component-module--dropdown component-module--dropdown-left disabled bs-initialized" id="quickVisibilityMenu">
+                        <div class="component-module component-module--dropdown component-module--dropdown-left disabled bs-initialized" id="quickVisibilityMenu" data-module="quickVisibilityMenu">
                             <div class="component-menu component-menu--w-auto component-menu--h-auto component-menu--no-padding">
                                 <div class="pill-container"><div class="drag-handle"></div></div>
                                 <div class="component-menu-list component-menu-list--scrollable">

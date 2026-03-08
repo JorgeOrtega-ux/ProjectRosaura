@@ -94,7 +94,7 @@
                                 </div>
                                 <div class="component-card__actions component-card__actions--start">
                                     <div class="component-dropdown-wrapper">
-                                        <div class="component-dropdown-trigger" data-action="toggleVisibilityMenu" data-target="visibilitySelectorMenu">
+                                        <div class="component-dropdown-trigger" data-action="toggleModule" data-target="moduleVisibility">
                                             <span class="material-symbols-rounded" id="visibilityIcon">public</span>
                                             <span class="component-dropdown-text" id="visibilityText">Público</span>
                                             <span class="material-symbols-rounded">expand_more</span>

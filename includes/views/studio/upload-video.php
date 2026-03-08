@@ -58,7 +58,7 @@
                             </div>
                             <div class="component-card__actions component-card__actions--start">
                                 <div class="component-dropdown-wrapper">
-                                    <div class="component-dropdown-trigger" data-action="toggleStudioTags" data-target="modelsSelectorMenu" data-type="modelo">
+                                    <div class="component-dropdown-trigger" data-action="toggleModule" data-target="moduleTagsModels" data-type="modelo">
                                         <span class="material-symbols-rounded">person_add</span>
                                         <span class="component-dropdown-text">Seleccionar Modelos</span>
                                         <span class="material-symbols-rounded">expand_more</span>
@@ -81,7 +81,7 @@
                             </div>
                             <div class="component-card__actions component-card__actions--start">
                                 <div class="component-dropdown-wrapper">
-                                    <div class="component-dropdown-trigger" data-action="toggleStudioTags" data-target="categoriesSelectorMenu" data-type="category">
+                                    <div class="component-dropdown-trigger" data-action="toggleModule" data-target="moduleTagsCategories" data-type="category">
                                         <span class="material-symbols-rounded">category</span>
                                         <span class="component-dropdown-text">Seleccionar Categorías</span>
                                         <span class="material-symbols-rounded">expand_more</span>

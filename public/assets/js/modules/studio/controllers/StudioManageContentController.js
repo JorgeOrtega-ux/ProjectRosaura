@@ -36,45 +36,23 @@ export class StudioManageContentController {
     }
 
     handleDocumentClick(e) {
-        const toggleBtn = e.target.closest('[data-action="toggleQuickVisibility"]');
-        if (toggleBtn) {
-            if (toggleBtn.hasAttribute('disabled') || toggleBtn.classList.contains('disabled')) return;
-            const menuId = toggleBtn.getAttribute('data-target');
-            const menu = document.getElementById(menuId);
-            if (menu) {
-                const isClosing = menu.classList.contains('active');
-                document.querySelectorAll('.component-module--dropdown').forEach(m => {
-                    m.classList.remove('active');
-                    m.classList.add('disabled');
-                });
-                
-                if (!isClosing) {
-                    menu.classList.remove('disabled');
-                    menu.classList.add('active');
-                }
-            }
-            return;
-        }
-
+        // MainController ya se encarga de abrir/cerrar el menú (toggleModule y click-outside).
+        // Aquí SÓLO escuchamos cuando el usuario hace clic en una OPCIÓN del menú para ejecutar la acción.
         const selectOption = e.target.closest('[data-action="selectQuickVisibility"]');
+        
         if (selectOption) {
             const value = selectOption.getAttribute('data-value');
             const icon = selectOption.getAttribute('data-icon');
+            
+            // 1. Actualizar visibilidad en BD
             this.updateVideoVisibility(value, icon);
             
+            // 2. Cerrar el menú manualmente después de elegir (buena UX)
             const menu = selectOption.closest('.component-module');
             if (menu) {
                 menu.classList.remove('active');
                 menu.classList.add('disabled');
             }
-            return;
-        }
-
-        if (!e.target.closest('.component-module--dropdown') && !e.target.closest('[data-action="toggleQuickVisibility"]')) {
-            document.querySelectorAll('.component-module--dropdown').forEach(m => {
-                m.classList.remove('active');
-                m.classList.add('disabled');
-            });
         }
     }
 
@@ -85,9 +63,11 @@ export class StudioManageContentController {
         const video = this.state.getVideo(id);
         if (!video) return;
 
+        // Actualizar el icono del botón trigger
         const btnIcon = document.getElementById('quickVisibilityBtnIcon');
         if (btnIcon) btnIcon.textContent = iconText;
 
+        // Actualizar la clase active visualmente dentro de las opciones del menú
         const menu = document.getElementById('quickVisibilityMenu');
         if (menu) {
             menu.querySelectorAll('.component-menu-link').forEach(link => {
@@ -123,7 +103,7 @@ export class StudioManageContentController {
             this.updateRowVisibilityIcon(video);
         } else {
             alert('Error al actualizar visibilidad: ' + (response.message || 'Desconocido'));
-            this.syncQuickVisibilityUI(video.visibility || 'public');
+            this.syncQuickVisibilityUI(video.visibility || 'public'); // Revertir UI en caso de error
         }
     }
 
@@ -252,12 +232,14 @@ export class StudioManageContentController {
         const editBtn = document.getElementById('btnEditSelectedVideo');
         const visBtn = document.getElementById('btnQuickVisibility');
 
+        // Si se vuelve a hacer clic en la fila seleccionada, la deseleccionamos y bloqueamos botones
         if (isAlreadySelected) {
             if (editBtn) { editBtn.setAttribute('disabled', 'true'); editBtn.classList.add('disabled'); }
             if (visBtn) { visBtn.setAttribute('disabled', 'true'); visBtn.classList.add('disabled'); }
             return;
         }
 
+        // Seleccionar nueva fila
         this.state.selectedManageVideoId = id;
         if (row) row.classList.add('component-table-row--selected');
 
@@ -282,6 +264,7 @@ export class StudioManageContentController {
             if (video) {
                 visBtn.removeAttribute('disabled');
                 visBtn.classList.remove('disabled');
+                // Sincronizar el ícono visual del botón y la opción seleccionada internamente
                 this.syncQuickVisibilityUI(video.visibility || 'public');
             }
         }

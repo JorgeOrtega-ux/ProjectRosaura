@@ -28,7 +28,7 @@ export class MainController {
         
         window.addEventListener('viewLoaded', () => {
             this.syncUIPreferences();
-            this.initBottomSheets(); // Re-inicia listeners para módulos nuevos que cargue el router
+            this.initBottomSheets();
         });
     }
 
@@ -163,6 +163,8 @@ export class MainController {
             
             if (btn) {
                 const action = btn.getAttribute('data-action');
+                let isMainControllerAction = true;
+
                 if (action === 'toggleModuleSurface') this.toggleModule('moduleSurface');
                 else if (action === 'toggleModuleMainOptions') this.toggleModule('moduleMainOptions');
                 else if (action === 'toggleModuleLanguage') this.toggleModule('moduleLanguage');
@@ -179,17 +181,39 @@ export class MainController {
                     const value = btn.getAttribute('data-value');
                     this.savePreference(key, value);
                     this.closeAllModules();
+                } 
+                // NUEVO ESTÁNDAR UNIVERSAL: Abre cualquier módulo basado en su data-target
+                else if (action === 'toggleModule' && btn.hasAttribute('data-target')) {
+                    this.toggleModule(btn.getAttribute('data-target'));
+                } 
+                else {
+                    isMainControllerAction = false; 
                 }
-                return;
+                
+                // Si MainController abrió un módulo, detenemos para no disparar el auto-cierre
+                if (isMainControllerAction) return; 
             }
 
+            // Click-outside perfeccionado
             const activeModules = document.querySelectorAll('.component-module:not(.disabled)');
             activeModules.forEach(module => {
                 if (this.dragState.isDragging) return;
+                
                 let clickedInside = false;
+                
+                // 1. Clic dentro del panel
                 module.querySelectorAll('.component-menu').forEach(panel => {
                     if (panel.contains(e.target)) clickedInside = true;
                 });
+
+                // 2. Clic en el trigger que invoca este panel exacto
+                const targetId = module.id;
+                const targetData = module.dataset.module;
+                if ((targetId && e.target.closest(`[data-target="${targetId}"]`)) || 
+                    (targetData && e.target.closest(`[data-target="${targetData}"]`))) {
+                    clickedInside = true;
+                }
+
                 if (!clickedInside) this.closeModule(module);
             });
         });
@@ -214,7 +238,7 @@ export class MainController {
 
         if (viewBox.classList.contains('active')) {
             viewBox.classList.replace('active', 'disabled');
-            viewBox.style.display = 'none'; // Soporte para toggle explícito de display
+            viewBox.style.display = 'none'; 
             editBox.classList.replace('disabled', 'active');
             editBox.style.display = 'flex';
             setTimeout(() => {
@@ -321,8 +345,10 @@ export class MainController {
     }
 
     toggleModule(moduleName) {
-        const moduleEl = document.querySelector(`[data-module="${moduleName}"]`);
+        let moduleEl = document.querySelector(`[data-module="${moduleName}"]`);
+        if (!moduleEl) moduleEl = document.getElementById(moduleName);
         if (!moduleEl) return;
+        
         const isCurrentlyActive = !moduleEl.classList.contains('disabled');
         if (!this.config.allowMultipleModules && !isCurrentlyActive) this.closeAllModules();
         isCurrentlyActive ? this.closeModule(moduleEl) : this.openModule(moduleEl);

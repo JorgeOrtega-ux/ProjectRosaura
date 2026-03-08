@@ -303,19 +303,6 @@ export class StudioEditController {
 
     attachEvents() {
         document.addEventListener('click', (e) => {
-            const toggleVisibilityBtn = e.target.closest('[data-action="toggleVisibilityMenu"]');
-            if (toggleVisibilityBtn) {
-                const targetId = toggleVisibilityBtn.getAttribute('data-target');
-                const menu = document.getElementById(targetId);
-                if (menu) {
-                    const isClosing = menu.classList.contains('active');
-                    document.querySelectorAll('.component-module[id$="SelectorMenu"]').forEach(m => { m.classList.remove('active'); m.classList.add('disabled'); });
-                    if (isClosing) { menu.classList.remove('active'); menu.classList.add('disabled'); } 
-                    else { menu.classList.remove('disabled'); menu.classList.add('active'); }
-                }
-                return;
-            }
-
             const selectVisOption = e.target.closest('[data-action="selectVisibility"]');
             if (selectVisOption) {
                 const value = selectVisOption.getAttribute('data-value');
