@@ -4,14 +4,17 @@ $isLoggedIn = isset($_SESSION['user_id']);
 $userRole = $_SESSION['user_role'] ?? 'user';
 $isAdmin = ($userRole === 'founder' || $userRole === 'administrator');
 
-// CORRECCIÓN: Usamos 'user_name' que es la clave exacta que utiliza AuthServices
+// CORRECCIÓN: Extraemos el identificador único que AuthServices guarda en la sesión
+$currentIdentifier = $_SESSION['user_identifier'] ?? ''; 
+
+// Mantenemos el nombre de usuario por si lo necesitas como fallback o para otras partes visuales
 $currentUsername = $_SESSION['user_name'] ?? ''; 
 
 // 1. Asignamos la ruta final directamente para que coincida con el backend
 $settingsLink = $isLoggedIn ? APP_URL . '/settings/your-profile' : APP_URL . '/settings/guest';
 
-// 2. Ruta para el canal dinámico
-$channelLink = $isLoggedIn && $currentUsername ? APP_URL . '/@' . $currentUsername : '#';
+// 2. Ruta para el canal dinámico: AHORA USA EL IDENTIFICADOR (@identificador)
+$channelLink = $isLoggedIn && $currentIdentifier ? APP_URL . '/@' . $currentIdentifier : '#';
 ?>
 <div class="component-module component-module--dropdown disabled" data-module="moduleMainOptions">
     <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding">

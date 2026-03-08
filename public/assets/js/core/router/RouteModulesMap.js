@@ -7,10 +7,8 @@ export const RouteModulesMap = {
     '/watch': { path: './modules/app/WatchController.js', className: 'WatchController' },
     
     // ---- MÓDULO DE CANAL (PERFILES) ----
-    // MODIFICADO: Expresión regular para capturar la ruta /@identificador
-    // La clave ahora es una regex (o el SpaRouter debe interpretar '@' como prefijo dinámico)
-    '/@:identifier': { path: './modules/app/ChannelController.js', className: 'ChannelController' },
-    '/channel': { path: './modules/app/ChannelController.js', className: 'ChannelController' }, 
+    // MODIFICACIÓN CLAVE: Usamos un string estático para el mapeo
+    '/@channel': { path: './modules/app/ChannelController.js', className: 'ChannelController' },
     
     // ---- MÓDULOS DE AUTENTICACIÓN ----
     '/login': { path: './modules/auth/AuthController.js', className: 'AuthController' },

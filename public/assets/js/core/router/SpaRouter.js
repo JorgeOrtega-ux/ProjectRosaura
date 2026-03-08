@@ -132,20 +132,27 @@ export class SpaRouter {
 
                 let cleanUrl = url.split('?')[0].split('#')[0];
                 
-                if (cleanUrl.endsWith('/') && cleanUrl.length > 1) {
-                    cleanUrl = cleanUrl.slice(0, -1);
+                // Remover el base path si existe para facilitar la coincidencia
+                let routePath = cleanUrl;
+                if (this.basePath && routePath.startsWith(this.basePath)) {
+                    routePath = routePath.substring(this.basePath.length);
                 }
 
-                // CORRECCIÓN: Normalizar rutas dinámicas para que el RouteModulesMap las entienda
-                let moduleKey = cleanUrl;
-                if (moduleKey.startsWith(this.basePath + '/@') || moduleKey.startsWith('/@')) {
-                    moduleKey = '/@';
+                if (routePath.endsWith('/') && routePath.length > 1) {
+                    routePath = routePath.slice(0, -1);
+                }
+
+                let moduleKey = routePath;
+
+                // CORRECCIÓN: Si la ruta empieza con '/@' sin importar qué identificador siga, mapearla a '/@channel'
+                if (moduleKey.startsWith('/@')) {
+                    moduleKey = '/@channel';
                 }
 
                 window.dispatchEvent(new CustomEvent('viewLoaded', { 
                     detail: { 
                         url: url,
-                        cleanUrl: moduleKey // Usamos la llave normalizada
+                        cleanUrl: moduleKey // Usamos la llave normalizada ('/@channel' para canales)
                     } 
                 }));
             } else {
