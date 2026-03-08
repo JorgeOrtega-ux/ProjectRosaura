@@ -35,6 +35,10 @@ public/storage/thumbnails/*
 !public/storage/thumbnails/.gitkeep
 !public/storage/thumbnails/default/
 
+# === IGNORAR BANNERS DE CANALES ===
+public/storage/banners/uploaded/*
+!public/storage/banners/uploaded/.gitkeep
+
 # Ignorar archivos generados por editores / IDEs
 .idea/
 .vscode/
