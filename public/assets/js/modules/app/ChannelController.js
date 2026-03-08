@@ -33,7 +33,7 @@ export class ChannelController {
         this.setupSubscriptionButton();
         this.setupBannerUpload();
         this.setupLocalEditToggles(); 
-        this.setupCustomFormControls(); // Inicializador de los nuevos componentes
+        this.setupCustomFormControls();
         this.setupProfilePublishing(); 
     }
     
@@ -185,14 +185,12 @@ export class ChannelController {
     }
 
     setupCustomFormControls() {
-        // Dropdowns (estado, género, etc)
         document.querySelectorAll('[data-action="toggleDropdown"]').forEach(trigger => {
             trigger.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const targetId = trigger.getAttribute('data-target');
                 const targetMenu = document.getElementById(targetId);
                 
-                // Cerrar todos los demas
                 document.querySelectorAll('.component-module--dropdown').forEach(m => {
                     if (m.id !== targetId) m.classList.add('disabled');
                 });
@@ -203,7 +201,6 @@ export class ChannelController {
             });
         });
 
-        // Selección de opciones en Dropdowns
         document.querySelectorAll('[data-action="selectOption"]').forEach(option => {
             option.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -212,29 +209,23 @@ export class ChannelController {
                 const value = option.getAttribute('data-value');
                 const label = option.getAttribute('data-label');
 
-                // Actualizar input escondido
                 if (inputTarget) document.getElementById(inputTarget).value = value;
-                // Actualizar texto del trigger
                 if (textTarget) document.getElementById(textTarget).innerText = label;
 
-                // Actualizar estado 'active' en la lista
                 const siblings = option.closest('.component-menu-list').querySelectorAll('.component-menu-link');
                 siblings.forEach(sib => sib.classList.remove('active'));
                 option.classList.add('active');
 
-                // Cerrar menú
                 option.closest('.component-module--dropdown').classList.add('disabled');
             });
         });
 
-        // Cerrar dropdowns al hacer clic fuera
         document.addEventListener('click', (e) => {
             if (!e.target.closest('.component-dropdown-wrapper')) {
                 document.querySelectorAll('.component-module--dropdown').forEach(m => m.classList.add('disabled'));
             }
         });
 
-        // Controles Inline Numéricos (Estatura y Peso)
         document.querySelectorAll('[data-action="adjustNumber"]').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -253,7 +244,6 @@ export class ChannelController {
                     if (min !== null && newVal < min) newVal = min;
                     if (max !== null && newVal > max) newVal = max;
                     
-                    // Manejo de decimales dependiendo del step
                     if (step % 1 !== 0) {
                         let decimals = step.toString().split('.')[1].length;
                         if (decimals === 1) newVal = newVal.toFixed(1);
@@ -264,6 +254,23 @@ export class ChannelController {
 
                     hiddenInput.value = newVal;
                     displayEl.innerText = newVal;
+                }
+            });
+        });
+
+        // NUEVO: Lógica para mostrar/ocultar inputs de redes sociales
+        document.querySelectorAll('[data-action="toggleSocial"]').forEach(toggle => {
+            toggle.addEventListener('change', (e) => {
+                const targetId = toggle.getAttribute('data-target');
+                const area = document.getElementById('area-' + targetId);
+                const input = document.getElementById(targetId);
+                
+                if (toggle.checked) {
+                    if (area) area.style.display = 'block';
+                    if (input) input.focus();
+                } else {
+                    if (area) area.style.display = 'none';
+                    if (input) input.value = ''; // Se limpia el input si se desactiva
                 }
             });
         });
@@ -283,7 +290,6 @@ export class ChannelController {
             
             identifier = identifier.replace(/@/g, '').toLowerCase().trim();
 
-            // NUEVOS CAMPOS ADAPTADOS A LOS NUEVOS COMPONENTES
             const relStatus = document.getElementById('channelRelStatusInput')?.value || '';
             const interestedIn = document.getElementById('channelInterestedInInput')?.value || '';
             const gender = document.getElementById('channelGenderInput')?.value || '';
@@ -293,6 +299,14 @@ export class ChannelController {
             const tattoos = document.getElementById('channelTattoosInput')?.checked ? 1 : 0;
             const piercings = document.getElementById('channelPiercingsInput')?.checked ? 1 : 0;
             const interests = document.getElementById('channelInterestsInput')?.value || '';
+
+            // NUEVO: Recuperar datos de Redes Sociales, si el toggle no está activo, se manda vacío
+            const socialFb = document.getElementById('toggleFbInput')?.checked ? (document.getElementById('channelFbInput')?.value || '') : '';
+            const socialYt = document.getElementById('toggleYtInput')?.checked ? (document.getElementById('channelYtInput')?.value || '') : '';
+            const socialIg = document.getElementById('toggleIgInput')?.checked ? (document.getElementById('channelIgInput')?.value || '') : '';
+            const socialX = document.getElementById('toggleXInput')?.checked ? (document.getElementById('channelXInput')?.value || '') : '';
+            const socialOf = document.getElementById('toggleOfInput')?.checked ? (document.getElementById('channelOfInput')?.value || '') : '';
+            const socialSc = document.getElementById('toggleScInput')?.checked ? (document.getElementById('channelScInput')?.value || '') : '';
 
             const originalText = newBtn.innerText;
             newBtn.innerText = 'Publicando...';
@@ -311,7 +325,13 @@ export class ChannelController {
                     weight: weight,
                     tattoos: tattoos,
                     piercings: piercings,
-                    interests: interests
+                    interests: interests,
+                    social_facebook: socialFb,
+                    social_youtube: socialYt,
+                    social_instagram: socialIg,
+                    social_x: socialX,
+                    social_onlyfans: socialOf,
+                    social_snapchat: socialSc
                 });
 
                 if (response.success) {

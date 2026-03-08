@@ -25,6 +25,14 @@ $tattoos = $currentUser['tattoos'] ?? 0;
 $piercings = $currentUser['piercings'] ?? 0;
 $interests = $currentUser['interests'] ?? '';
 
+// Variables de Redes Sociales
+$socialFb = $currentUser['social_facebook'] ?? '';
+$socialYt = $currentUser['social_youtube'] ?? '';
+$socialIg = $currentUser['social_instagram'] ?? '';
+$socialX = $currentUser['social_x'] ?? '';
+$socialOf = $currentUser['social_onlyfans'] ?? '';
+$socialSc = $currentUser['social_snapchat'] ?? '';
+
 // Arrays para mapear valores a texto
 $relStatusMap = ['single' => 'Soltero/a', 'married' => 'Casado/a', 'in_a_relationship' => 'En una relación', 'complicated' => 'Es complicado', 'open_relationship' => 'Relación abierta', '' => 'No especificado'];
 $interestedInMap = ['men' => 'Hombres', 'women' => 'Mujeres', 'both' => 'Hombres y Mujeres', 'other' => 'Otro', '' => 'No especificado'];
@@ -367,6 +375,153 @@ $hairColorMap = ['black' => 'Negro', 'brown' => 'Castaño', 'blonde' => 'Rubio',
                         <div class="component-card__form-area" style="margin-top: 10px;">
                             <textarea id="channelInterestsInput" class="component-input-field" placeholder="Escribe aquí sobre tus aficiones..." maxlength="1000" rows="5"><?php echo htmlspecialchars($interests); ?></textarea>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <br>
+
+        <div class="component-card--grouped">
+            
+            <div class="component-group-item component-group-item--stacked">
+                <div class="component-card__content component-card__content--full">
+                    <div class="component-card__text">
+                        <h2 class="component-card__title">Redes Sociales</h2>
+                        <p class="component-card__description">Añade enlaces a tus otras plataformas para que tus seguidores puedan encontrarte.</p>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="component-divider">
+
+            <div class="component-group-item component-group-item--stacked">
+                <div class="component-card__content component-card__content--full">
+                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                        <div class="component-card__text">
+                            <h2 class="component-card__title">Facebook</h2>
+                            <p class="component-card__description">Activa para vincular tu perfil o página de Facebook.</p>
+                        </div>
+                        <div class="component-card__actions">
+                            <label class="component-toggle-switch">
+                                <input type="checkbox" id="toggleFbInput" data-action="toggleSocial" data-target="channelFbInput" <?php echo !empty($socialFb) ? 'checked' : ''; ?>>
+                                <span class="component-toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="component-card__form-area" id="area-channelFbInput" style="margin-top: 15px; display: <?php echo !empty($socialFb) ? 'block' : 'none'; ?>;">
+                        <input type="url" id="channelFbInput" class="component-input-field" placeholder="https://facebook.com/tu-usuario" value="<?php echo htmlspecialchars($socialFb); ?>">
+                    </div>
+                </div>
+            </div>
+
+            <hr class="component-divider">
+
+            <div class="component-group-item component-group-item--stacked">
+                <div class="component-card__content component-card__content--full">
+                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                        <div class="component-card__text">
+                            <h2 class="component-card__title">YouTube</h2>
+                            <p class="component-card__description">Activa para vincular tu canal de YouTube.</p>
+                        </div>
+                        <div class="component-card__actions">
+                            <label class="component-toggle-switch">
+                                <input type="checkbox" id="toggleYtInput" data-action="toggleSocial" data-target="channelYtInput" <?php echo !empty($socialYt) ? 'checked' : ''; ?>>
+                                <span class="component-toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="component-card__form-area" id="area-channelYtInput" style="margin-top: 15px; display: <?php echo !empty($socialYt) ? 'block' : 'none'; ?>;">
+                        <input type="url" id="channelYtInput" class="component-input-field" placeholder="https://youtube.com/@tu-canal" value="<?php echo htmlspecialchars($socialYt); ?>">
+                    </div>
+                </div>
+            </div>
+
+            <hr class="component-divider">
+
+            <div class="component-group-item component-group-item--stacked">
+                <div class="component-card__content component-card__content--full">
+                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                        <div class="component-card__text">
+                            <h2 class="component-card__title">Instagram</h2>
+                            <p class="component-card__description">Activa para vincular tu cuenta de Instagram.</p>
+                        </div>
+                        <div class="component-card__actions">
+                            <label class="component-toggle-switch">
+                                <input type="checkbox" id="toggleIgInput" data-action="toggleSocial" data-target="channelIgInput" <?php echo !empty($socialIg) ? 'checked' : ''; ?>>
+                                <span class="component-toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="component-card__form-area" id="area-channelIgInput" style="margin-top: 15px; display: <?php echo !empty($socialIg) ? 'block' : 'none'; ?>;">
+                        <input type="url" id="channelIgInput" class="component-input-field" placeholder="https://instagram.com/tu_usuario" value="<?php echo htmlspecialchars($socialIg); ?>">
+                    </div>
+                </div>
+            </div>
+
+            <hr class="component-divider">
+
+            <div class="component-group-item component-group-item--stacked">
+                <div class="component-card__content component-card__content--full">
+                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                        <div class="component-card__text">
+                            <h2 class="component-card__title">X (Twitter)</h2>
+                            <p class="component-card__description">Activa para vincular tu perfil de X.</p>
+                        </div>
+                        <div class="component-card__actions">
+                            <label class="component-toggle-switch">
+                                <input type="checkbox" id="toggleXInput" data-action="toggleSocial" data-target="channelXInput" <?php echo !empty($socialX) ? 'checked' : ''; ?>>
+                                <span class="component-toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="component-card__form-area" id="area-channelXInput" style="margin-top: 15px; display: <?php echo !empty($socialX) ? 'block' : 'none'; ?>;">
+                        <input type="url" id="channelXInput" class="component-input-field" placeholder="https://x.com/tu_usuario" value="<?php echo htmlspecialchars($socialX); ?>">
+                    </div>
+                </div>
+            </div>
+
+            <hr class="component-divider">
+
+            <div class="component-group-item component-group-item--stacked">
+                <div class="component-card__content component-card__content--full">
+                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                        <div class="component-card__text">
+                            <h2 class="component-card__title">OnlyFans</h2>
+                            <p class="component-card__description">Activa para vincular tu cuenta de OnlyFans.</p>
+                        </div>
+                        <div class="component-card__actions">
+                            <label class="component-toggle-switch">
+                                <input type="checkbox" id="toggleOfInput" data-action="toggleSocial" data-target="channelOfInput" <?php echo !empty($socialOf) ? 'checked' : ''; ?>>
+                                <span class="component-toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="component-card__form-area" id="area-channelOfInput" style="margin-top: 15px; display: <?php echo !empty($socialOf) ? 'block' : 'none'; ?>;">
+                        <input type="url" id="channelOfInput" class="component-input-field" placeholder="https://onlyfans.com/tu_usuario" value="<?php echo htmlspecialchars($socialOf); ?>">
+                    </div>
+                </div>
+            </div>
+
+            <hr class="component-divider">
+
+            <div class="component-group-item component-group-item--stacked">
+                <div class="component-card__content component-card__content--full">
+                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                        <div class="component-card__text">
+                            <h2 class="component-card__title">Snapchat</h2>
+                            <p class="component-card__description">Activa para vincular tu perfil de Snapchat.</p>
+                        </div>
+                        <div class="component-card__actions">
+                            <label class="component-toggle-switch">
+                                <input type="checkbox" id="toggleScInput" data-action="toggleSocial" data-target="channelScInput" <?php echo !empty($socialSc) ? 'checked' : ''; ?>>
+                                <span class="component-toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="component-card__form-area" id="area-channelScInput" style="margin-top: 15px; display: <?php echo !empty($socialSc) ? 'block' : 'none'; ?>;">
+                        <input type="url" id="channelScInput" class="component-input-field" placeholder="https://snapchat.com/add/tu_usuario" value="<?php echo htmlspecialchars($socialSc); ?>">
                     </div>
                 </div>
             </div>

@@ -14,6 +14,10 @@ CREATE TABLE `users` (
   `role` enum('user','moderator','administrator','founder') DEFAULT 'user',
   `user_status` enum('active','deleted') DEFAULT 'active',
   `profile_picture` varchar(255) NOT NULL,
+  `banner_path` varchar(255) DEFAULT NULL,
+  `channel_description` text DEFAULT NULL,
+  `channel_identifier` varchar(255) UNIQUE DEFAULT NULL,
+  `channel_contact_email` varchar(255) DEFAULT NULL,
   `channel_verified` tinyint(1) DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
@@ -21,6 +25,28 @@ CREATE TABLE `users` (
   UNIQUE KEY `email` (`email`),
   UNIQUE KEY `username` (`username`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE INDEX idx_channel_identifier ON users(channel_identifier);
+
+CREATE TABLE IF NOT EXISTS user_profiles (
+    user_id INT(11) NOT NULL PRIMARY KEY,
+    relationship_status VARCHAR(50) DEFAULT NULL,
+    interested_in VARCHAR(50) DEFAULT NULL,
+    gender VARCHAR(50) DEFAULT NULL,
+    height DECIMAL(4,2) DEFAULT NULL,
+    weight DECIMAL(5,2) DEFAULT NULL,
+    hair_color VARCHAR(50) DEFAULT NULL,
+    tattoos TINYINT(1) DEFAULT 0,
+    piercings TINYINT(1) DEFAULT 0,
+    interests TEXT DEFAULT NULL,
+    social_facebook VARCHAR(255) DEFAULT NULL,
+    social_youtube VARCHAR(255) DEFAULT NULL,
+    social_instagram VARCHAR(255) DEFAULT NULL,
+    social_x VARCHAR(255) DEFAULT NULL,
+    social_onlyfans VARCHAR(255) DEFAULT NULL,
+    social_snapchat VARCHAR(255) DEFAULT NULL,
+    CONSTRAINT fk_user_profiles_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS user_restrictions (
     user_id INT(11) NOT NULL PRIMARY KEY,
@@ -183,12 +209,3 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     CONSTRAINT fk_sub_subscriber FOREIGN KEY (subscriber_id) REFERENCES users(id) ON DELETE CASCADE,
     CONSTRAINT fk_sub_channel FOREIGN KEY (channel_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-ALTER TABLE users ADD COLUMN banner_path VARCHAR(255) DEFAULT NULL AFTER profile_picture;
-ALTER TABLE users ADD COLUMN channel_description TEXT DEFAULT NULL AFTER banner_path;
-ALTER TABLE users ADD COLUMN channel_identifier VARCHAR(255) UNIQUE DEFAULT NULL AFTER channel_description;
-ALTER TABLE users ADD COLUMN channel_contact_email VARCHAR(255) DEFAULT NULL AFTER channel_identifier;
-ALTER TABLE users ADD COLUMN channel_verified TINYINT(1) DEFAULT 0 AFTER channel_contact_email;
-
--- Índice para búsquedas rápidas por URL
-CREATE INDEX idx_channel_identifier ON users(channel_identifier);

@@ -102,7 +102,7 @@ class ChannelController {
 
         $updated = $this->userRepo->updateChannelProfile($_SESSION['user_id'], $description, $identifier, $contactEmail);
 
-        // --- ACTUALIZAR PERFIL EXTENDIDO ---
+        // --- ACTUALIZAR PERFIL EXTENDIDO CON REDES SOCIALES ---
         $profileData = [
             'relationship_status' => isset($data['relationship_status']) && $data['relationship_status'] !== '' ? $data['relationship_status'] : null,
             'interested_in' => isset($data['interested_in']) && $data['interested_in'] !== '' ? $data['interested_in'] : null,
@@ -113,6 +113,12 @@ class ChannelController {
             'tattoos' => isset($data['tattoos']) ? (int)$data['tattoos'] : 0,
             'piercings' => isset($data['piercings']) ? (int)$data['piercings'] : 0,
             'interests' => isset($data['interests']) ? trim($data['interests']) : null,
+            'social_facebook' => isset($data['social_facebook']) ? trim($data['social_facebook']) : null,
+            'social_youtube' => isset($data['social_youtube']) ? trim($data['social_youtube']) : null,
+            'social_instagram' => isset($data['social_instagram']) ? trim($data['social_instagram']) : null,
+            'social_x' => isset($data['social_x']) ? trim($data['social_x']) : null,
+            'social_onlyfans' => isset($data['social_onlyfans']) ? trim($data['social_onlyfans']) : null,
+            'social_snapchat' => isset($data['social_snapchat']) ? trim($data['social_snapchat']) : null,
         ];
         
         $extendedUpdated = $this->userRepo->updateExtendedProfile($_SESSION['user_id'], $profileData);
@@ -128,7 +134,6 @@ class ChannelController {
     }
 
     public function upload_banner($data) {
-        // ... (Este método se mantiene igual, no lo copio por brevedad, pero déjalo tal cual lo tienes) ...
         if (!isset($_SESSION['user_id'])) {
             return ['success' => false, 'message' => 'Debes iniciar sesión para realizar esta acción.'];
         }
