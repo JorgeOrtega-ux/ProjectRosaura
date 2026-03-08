@@ -2422,15 +2422,6 @@ input:checked + .component-toggle-slider:before {
     transition: transform 0.2s ease;
 }
 
-.component-video-card:hover {
-    transform: translateY(-4px);
-}
-
-.component-video-card:hover .video-card__top {
-    box-shadow: 0 0 20px var(--local-dominant-color, rgba(0,0,0,0.5));
-    border-color: var(--local-dominant-color, var(--border-color));
-}
-
 .video-card__top {
     width: 100%;
     position: relative;
