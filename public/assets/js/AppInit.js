@@ -57,16 +57,21 @@ document.addEventListener('DOMContentLoaded', () => {
         if (relativePath === '') relativePath = '/';
 
         // --- SOLUCIÓN PARA RUTAS DINÁMICAS TIPO PERFIL (Ej: /@jorge) ---
+        // CORRECCIÓN: El mapa de rutas utiliza '/@channel', no '/@'
         if (relativePath.startsWith('/@')) {
-            console.log(`[Router] Ruta de perfil detectada, normalizando a "/@"`);
-            relativePath = '/@';
+            console.log(`[Router] Ruta de perfil detectada, normalizando a "/@channel"`);
+            relativePath = '/@channel';
         }
 
         let moduleConfig = RouteModulesMap[relativePath];
 
-        // Soporte para otras rutas dinámicas (Ej: /studio/management-panel/ID)
+        // Soporte para otras rutas dinámicas (Ej: /studio/management-panel/ID o /channel/UUID/editing)
         if (!moduleConfig) {
-            const baseRoute = Object.keys(RouteModulesMap).find(route => relativePath.startsWith(route + '/'));
+            // Ordenamos por longitud descendente para que siempre haga match con la ruta base más específica
+            const baseRoute = Object.keys(RouteModulesMap)
+                .sort((a, b) => b.length - a.length)
+                .find(route => relativePath.startsWith(route + '/'));
+                
             if (baseRoute) {
                 moduleConfig = RouteModulesMap[baseRoute];
                 console.log(`[Router] Se usó ruta dinámica base: "${baseRoute}"`);

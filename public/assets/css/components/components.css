@@ -2468,7 +2468,7 @@ input:checked + .component-toggle-slider:before {
 /* Header y Perfil */
 .component-channel-header {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 24px;
     margin-bottom: 32px;
     transition: all 0.3s ease;

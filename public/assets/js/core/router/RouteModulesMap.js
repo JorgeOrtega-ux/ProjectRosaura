@@ -7,8 +7,10 @@ export const RouteModulesMap = {
     '/watch': { path: './modules/app/WatchController.js', className: 'WatchController' },
     
     // ---- MÓDULO DE CANAL (PERFILES) ----
-    // MODIFICACIÓN CLAVE: Usamos un string estático para el mapeo
+    // Permite rutas como /@jorge
     '/@channel': { path: './modules/app/ChannelController.js', className: 'ChannelController' },
+    // Permite rutas como /channel/3494f2fb-46da-4804-9519-11f40a512c49/...
+    '/channel': { path: './modules/app/ChannelController.js', className: 'ChannelController' }, 
     
     // ---- MÓDULOS DE AUTENTICACIÓN ----
     '/login': { path: './modules/auth/AuthController.js', className: 'AuthController' },
