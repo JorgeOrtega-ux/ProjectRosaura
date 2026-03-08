@@ -5,35 +5,30 @@
     <div class="component-wrapper component-wrapper--full no-padding">
         <div class="component-view-layout">
             
-            <div class="component-view-top">
-                <div class="component-view-top-left">
-                </div>
-            </div>
-
             <div class="component-view-bottom">
                 <div class="component-upload-area" id="videoDropZone">
                     <div class="component-upload-content">
                         <div class="component-upload-icon-wrapper">
                             <span class="material-symbols-rounded component-upload-icon">upload</span>
                         </div>
-                        <h2 class="component-upload-title" data-i18n="studio_drag_drop">Arrastra y suelta archivos de video para subirlos</h2>
-                        <p class="component-upload-subtitle" data-i18n="studio_private_until_publish">Tus videos serán privados hasta que los publiques.</p>
+                        <h2 class="component-upload-title"><?php echo __('studio_upload_drag_drop'); ?></h2>
+                        <p class="component-upload-subtitle"><?php echo __('studio_upload_private_warning'); ?></p>
                         
                         <input type="file" id="videoFileInput" class="disabled" multiple accept="video/*">
-                        <button class="component-upload-button" type="button" onclick="document.getElementById('videoFileInput').click();" data-i18n="studio_select_files">Seleccionar archivos</button>
+                        <button class="component-upload-button" type="button" onclick="document.getElementById('videoFileInput').click();"><?php echo __('studio_upload_select_files'); ?></button>
                         
                         <div id="uploadProgressContainer" class="disabled">
                             <div>
                                 <div id="uploadProgressBar"></div>
                             </div>
-                            <p data-i18n="studio_uploading_network">Subiendo archivos...</p>
+                            <p><?php echo __('studio_upload_uploading'); ?></p>
                         </div>
                     </div>
                     
                     <div class="component-upload-footer">
                         <p class="component-upload-terms">
-                            Si envías tus videos a YouTube, aceptas las <a href="#" class="component-upload-terms-link">Condiciones del Servicio</a> y los <a href="#" class="component-upload-terms-link">Lineamientos de la Comunidad</a> de YouTube.<br>
-                            Asegúrate de no infringir los derechos de autor o de privacidad de otras personas. <a href="#" class="component-upload-terms-link">Más información</a>
+                            <?php echo __('studio_upload_terms_prefix_1'); ?><a href="#" class="component-upload-terms-link"><?php echo __('studio_upload_terms_link_1'); ?></a><?php echo __('studio_upload_terms_mid'); ?><a href="#" class="component-upload-terms-link"><?php echo __('studio_upload_terms_link_2'); ?></a><?php echo __('studio_upload_terms_suffix_1'); ?><br>
+                            <?php echo __('studio_upload_terms_prefix_2'); ?><a href="#" class="component-upload-terms-link"><?php echo __('studio_upload_terms_link_3'); ?></a>
                         </p>
                     </div>
                 </div>

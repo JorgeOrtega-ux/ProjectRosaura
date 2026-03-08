@@ -16,9 +16,6 @@
                     <input type="text" class="tag-search-input" placeholder="<?php echo htmlspecialchars($placeholder); ?>" autocomplete="off">
                 </div>
             </div>
-            <div style="font-size: 11px; color: var(--text-secondary); padding: 4px 16px 0; text-align: center;">
-                Selecciona una oficial o escribe para crear una local.
-            </div>
         </div>
 
         <div class="component-menu-list component-menu-list--scrollable tag-results-list" style="overflow-y: auto; max-height: 250px;">

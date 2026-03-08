@@ -13,7 +13,7 @@ $userUuid = $_GET['uuid'] ?? '';
                 <div class="component-view-top-right">
                     <button type="button" class="component-button component-button--dark component-button--h36" id="btnSaveChanges">
                         <span class="material-symbols-rounded">save</span>
-                        <span>Guardar cambios</span>
+                        <span><?php echo __('studio_btn_save_changes'); ?></span>
                     </button>
                 </div>
             </div>
@@ -28,26 +28,26 @@ $userUuid = $_GET['uuid'] ?? '';
                                 <div class="active component-state-box" data-state="title-view">
                                     <div class="component-card__content">
                                         <div class="component-card__text">
-                                            <h2 class="component-card__title">Título del video (obligatorio)</h2>
-                                            <span class="component-display-value" data-ref="display-title">Cargando...</span>
+                                            <h2 class="component-card__title"><?php echo __('studio_video_title_req'); ?></h2>
+                                            <span class="component-display-value" data-ref="display-title"><?php echo __('studio_loading'); ?></span>
                                         </div>
                                     </div>
                                     <div class="component-card__actions component-card__actions--stretch">
-                                        <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="title">Editar</button>
+                                        <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="title"><?php echo __('studio_btn_edit'); ?></button>
                                     </div>
                                 </div>
 
                                 <div class="disabled component-state-box" data-state="title-edit">
                                     <div class="component-card__content">
                                         <div class="component-card__text">
-                                            <h2 class="component-card__title">Título del video (obligatorio)</h2>
+                                            <h2 class="component-card__title"><?php echo __('studio_video_title_req'); ?></h2>
                                             <div class="component-edit-row">
                                                 <div class="component-input-group component-input-group--h34">
-                                                    <input type="text" id="videoTitleInput" data-ref="input-title" class="component-input-field component-input-field--simple" placeholder="Ingresa un título que destaque">
+                                                    <input type="text" id="videoTitleInput" data-ref="input-title" class="component-input-field component-input-field--simple" placeholder="<?php echo __('studio_video_title_placeholder'); ?>">
                                                 </div>
                                                 <div class="component-card__actions component-card__actions--stretch">
-                                                    <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="title">Cancelar</button>
-                                                    <button type="button" class="component-button component-button--h34 component-button--dark" data-action="saveTitle">Guardar</button>
+                                                    <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="title"><?php echo __('studio_btn_cancel'); ?></button>
+                                                    <button type="button" class="component-button component-button--h34 component-button--dark" data-action="saveTitle"><?php echo __('studio_btn_save'); ?></button>
                                                 </div>
                                             </div>
                                         </div>
@@ -60,10 +60,10 @@ $userUuid = $_GET['uuid'] ?? '';
                             <div class="component-group-item component-group-item--stacked">
                                 <div class="component-card__content component-card__content--full">
                                     <div class="component-card__text">
-                                        <h2 class="component-card__title">Descripción</h2>
-                                        <p class="component-card__description">Cuenta a los espectadores de qué trata tu video.</p>
+                                        <h2 class="component-card__title"><?php echo __('studio_video_desc'); ?></h2>
+                                        <p class="component-card__description"><?php echo __('studio_video_desc_hint'); ?></p>
                                         <div class="component-card__form-area">
-                                            <textarea id="videoDescriptionInput" class="component-input-field" placeholder="Añade tu descripción aquí..." maxlength="1000" rows="5"></textarea>
+                                            <textarea id="videoDescriptionInput" class="component-input-field" placeholder="<?php echo __('studio_video_desc_placeholder'); ?>" maxlength="1000" rows="5"></textarea>
                                         </div>
                                     </div>
                                 </div>
@@ -74,15 +74,15 @@ $userUuid = $_GET['uuid'] ?? '';
                             <div class="component-group-item component-group-item--stacked">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
-                                        <h2 class="component-card__title">Visibilidad</h2>
-                                        <p class="component-card__description">Elige quién puede ver tu video.</p>
+                                        <h2 class="component-card__title"><?php echo __('studio_video_visibility'); ?></h2>
+                                        <p class="component-card__description"><?php echo __('studio_video_visibility_hint'); ?></p>
                                     </div>
                                 </div>
                                 <div class="component-card__actions component-card__actions--start">
                                     <div class="component-dropdown-wrapper">
                                         <div class="component-dropdown-trigger" data-action="toggleModule" data-target="moduleVisibility">
                                             <span class="material-symbols-rounded" id="visibilityIcon">public</span>
-                                            <span class="component-dropdown-text" id="visibilityText">Público</span>
+                                            <span class="component-dropdown-text" id="visibilityText"><?php echo __('studio_visibility_public'); ?></span>
                                             <span class="material-symbols-rounded">expand_more</span>
                                         </div>
                                         
@@ -91,24 +91,24 @@ $userUuid = $_GET['uuid'] ?? '';
                                                 <div class="pill-container"><div class="drag-handle"></div></div>
                                                 <div class="component-menu-list component-menu-list--scrollable">
                                                     
-                                                    <div class="component-menu-link active" data-action="selectVisibility" data-value="public" data-icon="public" data-text="Público">
+                                                    <div class="component-menu-link active" data-action="selectVisibility" data-value="public" data-icon="public" data-text="<?php echo __('studio_visibility_public'); ?>">
                                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">public</span></div>
                                                         <div class="component-menu-link-text">
-                                                            <span>Público</span>
+                                                            <span><?php echo __('studio_visibility_public'); ?></span>
                                                         </div>
                                                     </div>
                                                     
-                                                    <div class="component-menu-link" data-action="selectVisibility" data-value="unlisted" data-icon="link" data-text="No listado">
+                                                    <div class="component-menu-link" data-action="selectVisibility" data-value="unlisted" data-icon="link" data-text="<?php echo __('studio_visibility_unlisted'); ?>">
                                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">link</span></div>
                                                         <div class="component-menu-link-text">
-                                                            <span>No listado</span>
+                                                            <span><?php echo __('studio_visibility_unlisted'); ?></span>
                                                         </div>
                                                     </div>
 
-                                                    <div class="component-menu-link" data-action="selectVisibility" data-value="private" data-icon="lock" data-text="Privado">
+                                                    <div class="component-menu-link" data-action="selectVisibility" data-value="private" data-icon="lock" data-text="<?php echo __('studio_visibility_private'); ?>">
                                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">lock</span></div>
                                                         <div class="component-menu-link-text">
-                                                            <span>Privado</span>
+                                                            <span><?php echo __('studio_visibility_private'); ?></span>
                                                         </div>
                                                     </div>
 
@@ -124,8 +124,8 @@ $userUuid = $_GET['uuid'] ?? '';
                             <div class="component-group-item component-group-item--stacked">
                                 <div class="component-card__content component-card__content--full">
                                     <div class="component-card__text">
-                                        <h2 class="component-card__title">Etiquetas / Tags</h2>
-                                        <p class="component-card__description">Agrega modelos y categorías a tu video para facilitar la búsqueda.</p>
+                                        <h2 class="component-card__title"><?php echo __('studio_tags_title'); ?></h2>
+                                        <p class="component-card__description"><?php echo __('studio_tags_hint'); ?></p>
                                     </div>
                                 </div>
                             </div>
@@ -135,20 +135,20 @@ $userUuid = $_GET['uuid'] ?? '';
                             <div class="component-group-item component-group-item--stacked">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
-                                        <h2 class="component-card__title">Modelos</h2>
-                                        <p class="component-card__description">Asigna actores o modelos a tu video.</p>
+                                        <h2 class="component-card__title"><?php echo __('studio_models_title'); ?></h2>
+                                        <p class="component-card__description"><?php echo __('studio_models_hint'); ?></p>
                                     </div>
                                 </div>
                                 <div class="component-card__actions component-card__actions--start">
                                     <div class="component-dropdown-wrapper">
                                         <div class="component-dropdown-trigger" data-action="toggleModule" data-target="moduleTagsModels" data-type="modelo">
                                             <span class="material-symbols-rounded">person_add</span>
-                                            <span class="component-dropdown-text">Seleccionar Modelos</span>
+                                            <span class="component-dropdown-text"><?php echo __('studio_select_models'); ?></span>
                                             <span class="material-symbols-rounded">expand_more</span>
                                         </div>
                                         <?php 
                                             $selectorId = 'modelsSelectorMenu';
-                                            $placeholder = 'Buscar modelos...';
+                                            $placeholder = __('studio_search_models');
                                             $moduleName = 'moduleTagsModels';
                                             include __DIR__ . '/../../modules/moduleTagsSelector.php'; 
                                         ?>
@@ -161,20 +161,20 @@ $userUuid = $_GET['uuid'] ?? '';
                             <div class="component-group-item component-group-item--stacked">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
-                                        <h2 class="component-card__title">Categorías</h2>
-                                        <p class="component-card__description">Asigna categorías a tu video.</p>
+                                        <h2 class="component-card__title"><?php echo __('studio_categories_title'); ?></h2>
+                                        <p class="component-card__description"><?php echo __('studio_categories_hint'); ?></p>
                                     </div>
                                 </div>
                                 <div class="component-card__actions component-card__actions--start">
                                     <div class="component-dropdown-wrapper">
                                         <div class="component-dropdown-trigger" data-action="toggleModule" data-target="moduleTagsCategories" data-type="category">
                                             <span class="material-symbols-rounded">category</span>
-                                            <span class="component-dropdown-text">Seleccionar Categorías</span>
+                                            <span class="component-dropdown-text"><?php echo __('studio_select_categories'); ?></span>
                                             <span class="material-symbols-rounded">expand_more</span>
                                         </div>
                                         <?php 
                                             $selectorId = 'categoriesSelectorMenu';
-                                            $placeholder = 'Buscar categorías...';
+                                            $placeholder = __('studio_search_categories');
                                             $moduleName = 'moduleTagsCategories';
                                             include __DIR__ . '/../../modules/moduleTagsSelector.php'; 
                                         ?>
@@ -191,25 +191,25 @@ $userUuid = $_GET['uuid'] ?? '';
                     <div class="studio-uploading-preview">
                         <div class="studio-video-card">
                             <div class="studio-video-card__player studio-video-card__player-preview">
-                                <img id="dynamicThumbPreview" src="" alt="Miniatura" class="studio-video-card__player-img" onerror="if(!this.dataset.retried) { this.dataset.retried = 'true'; this.src = this.src.replace('/public/storage/', '/storage/'); } else { this.style.display='none'; if(this.nextElementSibling) { this.nextElementSibling.style.display='block'; } }">
+                                <img id="dynamicThumbPreview" src="" alt="<?php echo __('studio_thumb_alt'); ?>" class="studio-video-card__player-img" onerror="if(!this.dataset.retried) { this.dataset.retried = 'true'; this.src = this.src.replace('/public/storage/', '/storage/'); } else { this.style.display='none'; if(this.nextElementSibling) { this.nextElementSibling.style.display='block'; } }">
                                 <span class="material-symbols-rounded studio-video-card__player-icon">play_circle</span>
                             </div>
                         </div>
 
                         <div class="component-thumbnail-section">
-                            <h3 class="meta-label">Miniatura</h3>
-                            <p class="meta-label">Selecciona o sube una imagen que muestre el contenido de tu video.</p>
+                            <h3 class="meta-label"><?php echo __('studio_thumb_title'); ?></h3>
+                            <p class="meta-label"><?php echo __('studio_thumb_hint'); ?></p>
                             
                             <div class="component-thumbnail-actions">
                                 <input type="file" id="thumbnailInput" class="disabled" accept="image/png, image/jpeg, image/webp">
                                 <button type="button" class="component-button component-button--h40" onclick="document.getElementById('thumbnailInput').click();">
                                     <span class="material-symbols-rounded">add_photo_alternate</span>
-                                    <span>Subir / Cambiar</span>
+                                    <span><?php echo __('studio_thumb_upload_change'); ?></span>
                                 </button>
                                 
                                 <button type="button" id="btnGenerateThumbnails" class="component-button component-button--h40">
                                     <span class="material-symbols-rounded">auto_awesome</span>
-                                    <span>Generar opciones</span>
+                                    <span><?php echo __('studio_thumb_generate'); ?></span>
                                 </button>
                             </div>
 
