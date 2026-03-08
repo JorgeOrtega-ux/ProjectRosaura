@@ -226,9 +226,13 @@ $countriesMap = [
                         </div>
                         <div class="component-module component-module--dropdown component-module--dropdown-left disabled" id="menuRelStatus">
                             <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding">
+                                <div class="pill-container"><div class="drag-handle"></div></div>
                                 <div class="component-menu-list component-menu-list--scrollable">
                                     <?php foreach($relStatusMap as $val => $label): ?>
                                         <div class="component-menu-link <?php echo $relStatus === $val ? 'active' : ''; ?>" data-action="selectOption" data-target="channelRelStatusInput" data-text="textRelStatus" data-value="<?php echo $val; ?>" data-label="<?php echo $label; ?>">
+                                            <div class="component-menu-link-icon">
+                                                <span class="material-symbols-rounded">favorite</span>
+                                            </div>
                                             <div class="component-menu-link-text"><span><?php echo $label; ?></span></div>
                                         </div>
                                     <?php endforeach; ?>
@@ -258,9 +262,13 @@ $countriesMap = [
                         </div>
                         <div class="component-module component-module--dropdown component-module--dropdown-left disabled" id="menuInterestedIn">
                             <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding">
+                                <div class="pill-container"><div class="drag-handle"></div></div>
                                 <div class="component-menu-list component-menu-list--scrollable">
                                     <?php foreach($interestedInMap as $val => $label): ?>
                                         <div class="component-menu-link <?php echo $interestedIn === $val ? 'active' : ''; ?>" data-action="selectOption" data-target="channelInterestedInInput" data-text="textInterestedIn" data-value="<?php echo $val; ?>" data-label="<?php echo $label; ?>">
+                                            <div class="component-menu-link-icon">
+                                                <span class="material-symbols-rounded">group</span>
+                                            </div>
                                             <div class="component-menu-link-text"><span><?php echo $label; ?></span></div>
                                         </div>
                                     <?php endforeach; ?>
@@ -290,9 +298,13 @@ $countriesMap = [
                         </div>
                         <div class="component-module component-module--dropdown component-module--dropdown-left disabled" id="menuGender">
                             <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding">
+                                <div class="pill-container"><div class="drag-handle"></div></div>
                                 <div class="component-menu-list component-menu-list--scrollable">
                                     <?php foreach($genderMap as $val => $label): ?>
                                         <div class="component-menu-link <?php echo $gender === $val ? 'active' : ''; ?>" data-action="selectOption" data-target="channelGenderInput" data-text="textGender" data-value="<?php echo $val; ?>" data-label="<?php echo $label; ?>">
+                                            <div class="component-menu-link-icon">
+                                                <span class="material-symbols-rounded">person</span>
+                                            </div>
                                             <div class="component-menu-link-text"><span><?php echo $label; ?></span></div>
                                         </div>
                                     <?php endforeach; ?>
@@ -322,9 +334,26 @@ $countriesMap = [
                         </div>
                         <div class="component-module component-module--dropdown component-module--dropdown-left disabled" id="menuCountry">
                             <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding">
+                                
+                                <div class="pill-container"><div class="drag-handle"></div></div>
+                                
+                                <div class="component-menu-header">
+                                    <div class="component-search component-search--full component-search--h36">
+                                        <div class="component-search-icon">
+                                            <span class="material-symbols-rounded">search</span>
+                                        </div>
+                                        <div class="component-search-input">
+                                            <input type="text" id="searchCountryInput" placeholder="Buscar país...">
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <div class="component-menu-list component-menu-list--scrollable">
                                     <?php foreach($countriesMap as $val => $label): ?>
                                         <div class="component-menu-link <?php echo $country === $val ? 'active' : ''; ?>" data-action="selectOption" data-target="channelCountryInput" data-text="textCountry" data-value="<?php echo $val; ?>" data-label="<?php echo $label; ?>">
+                                            <div class="component-menu-link-icon">
+                                                <span class="material-symbols-rounded">public</span>
+                                            </div>
                                             <div class="component-menu-link-text"><span><?php echo $label; ?></span></div>
                                         </div>
                                     <?php endforeach; ?>
@@ -354,9 +383,13 @@ $countriesMap = [
                         </div>
                         <div class="component-module component-module--dropdown component-module--dropdown-left disabled" id="menuEthnicity">
                             <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding">
+                                <div class="pill-container"><div class="drag-handle"></div></div>
                                 <div class="component-menu-list component-menu-list--scrollable">
                                     <?php foreach($ethnicityMap as $val => $label): ?>
                                         <div class="component-menu-link <?php echo $ethnicity === $val ? 'active' : ''; ?>" data-action="selectOption" data-target="channelEthnicityInput" data-text="textEthnicity" data-value="<?php echo $val; ?>" data-label="<?php echo $label; ?>">
+                                            <div class="component-menu-link-icon">
+                                                <span class="material-symbols-rounded">fingerprint</span>
+                                            </div>
                                             <div class="component-menu-link-text"><span><?php echo $label; ?></span></div>
                                         </div>
                                     <?php endforeach; ?>
@@ -386,9 +419,13 @@ $countriesMap = [
                         </div>
                         <div class="component-module component-module--dropdown component-module--dropdown-left disabled" id="menuEyeColor">
                             <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding">
+                                <div class="pill-container"><div class="drag-handle"></div></div>
                                 <div class="component-menu-list component-menu-list--scrollable">
                                     <?php foreach($eyeColorMap as $val => $label): ?>
                                         <div class="component-menu-link <?php echo $eyeColor === $val ? 'active' : ''; ?>" data-action="selectOption" data-target="channelEyeColorInput" data-text="textEyeColor" data-value="<?php echo $val; ?>" data-label="<?php echo $label; ?>">
+                                            <div class="component-menu-link-icon">
+                                                <span class="material-symbols-rounded">visibility</span>
+                                            </div>
                                             <div class="component-menu-link-text"><span><?php echo $label; ?></span></div>
                                         </div>
                                     <?php endforeach; ?>
@@ -418,9 +455,13 @@ $countriesMap = [
                         </div>
                         <div class="component-module component-module--dropdown component-module--dropdown-left disabled" id="menuHairColor">
                             <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding">
+                                <div class="pill-container"><div class="drag-handle"></div></div>
                                 <div class="component-menu-list component-menu-list--scrollable">
                                     <?php foreach($hairColorMap as $val => $label): ?>
                                         <div class="component-menu-link <?php echo $hairColor === $val ? 'active' : ''; ?>" data-action="selectOption" data-target="channelHairColorInput" data-text="textHairColor" data-value="<?php echo $val; ?>" data-label="<?php echo $label; ?>">
+                                            <div class="component-menu-link-icon">
+                                                <span class="material-symbols-rounded">face</span>
+                                            </div>
                                             <div class="component-menu-link-text"><span><?php echo $label; ?></span></div>
                                         </div>
                                     <?php endforeach; ?>
@@ -450,9 +491,13 @@ $countriesMap = [
                         </div>
                         <div class="component-module component-module--dropdown component-module--dropdown-left disabled" id="menuBoobs">
                             <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding">
+                                <div class="pill-container"><div class="drag-handle"></div></div>
                                 <div class="component-menu-list component-menu-list--scrollable">
                                     <?php foreach($boobsMap as $val => $label): ?>
                                         <div class="component-menu-link <?php echo $boobs === $val ? 'active' : ''; ?>" data-action="selectOption" data-target="channelBoobsInput" data-text="textBoobs" data-value="<?php echo $val; ?>" data-label="<?php echo $label; ?>">
+                                            <div class="component-menu-link-icon">
+                                                <span class="material-symbols-rounded">female</span>
+                                            </div>
                                             <div class="component-menu-link-text"><span><?php echo $label; ?></span></div>
                                         </div>
                                     <?php endforeach; ?>
