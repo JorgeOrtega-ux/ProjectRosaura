@@ -1,5 +1,4 @@
-// api/controllers/AuthController.php
-
+<?php
 namespace App\Api\Controllers;
 
 use App\Api\Services\AuthServices;

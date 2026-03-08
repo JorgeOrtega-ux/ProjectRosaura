@@ -282,8 +282,8 @@ class AuthServices {
         if (!$profilePic) return ['success' => false, 'message' => 'Error al generar la foto de perfil.'];
 
         // --- LÓGICA DE GENERACIÓN DE IDENTIFICADOR ---
-        // 1. Sanitizar nombre de usuario
-        $baseHandle = strtolower(preg_replace('/[^a-z0-9]/', '', $payload['username']));
+        // 1. Sanitizar nombre de usuario (CORREGIDO)
+        $baseHandle = preg_replace('/[^a-z0-9]/', '', strtolower($payload['username']));
         if (empty($baseHandle)) $baseHandle = 'user'; // Fallback por si usan solo caracteres especiales
         
         $channelIdentifier = $baseHandle;

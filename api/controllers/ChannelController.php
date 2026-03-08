@@ -1,4 +1,5 @@
-// api/controllers/ChannelController.php
+<?php
+
 namespace App\Api\Controllers;
 
 use App\Core\Interfaces\SubscriptionRepositoryInterface;
