@@ -8,14 +8,9 @@ $userUuid = $_GET['uuid'] ?? '';
             
             <div class="component-view-top">
                 <div class="component-view-top-left">
-                    <h1 style="font-size: 20px; font-weight: 500;">Editar Detalles del Video</h1>
                 </div>
                 
                 <div class="component-view-top-right" style="display: flex; gap: 8px;">
-                    <button type="button" class="component-button component-button--h36" onclick="window.dispatchEvent(new CustomEvent('routeChange', { detail: { url: '/studio/manage-content/<?php echo htmlspecialchars($userUuid); ?>' }}));">
-                        <span class="material-symbols-rounded">arrow_back</span>
-                        <span>Volver</span>
-                    </button>
                     <button type="button" class="component-button component-button--dark component-button--h36" id="btnSaveChanges">
                         <span class="material-symbols-rounded">save</span>
                         <span>Guardar cambios</span>
@@ -92,7 +87,7 @@ $userUuid = $_GET['uuid'] ?? '';
                                         </div>
                                         
                                         <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="moduleVisibility" id="visibilitySelectorMenu">
-                                            <div class="component-menu component-menu--w-auto component-menu--h-auto component-menu--no-padding">
+                                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding">
                                                 <div class="pill-container"><div class="drag-handle"></div></div>
                                                 <div class="component-menu-list component-menu-list--scrollable">
                                                     

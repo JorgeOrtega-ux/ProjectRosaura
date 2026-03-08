@@ -9,6 +9,7 @@
 
 .component-wrapper {
     width: 100%;
+    height: 100%;
     max-width: 625px;
     margin: 0 auto;
     padding: 24px;

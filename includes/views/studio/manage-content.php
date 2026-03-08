@@ -35,7 +35,7 @@
                             </div>
                             
                             <div class="component-module component-module--dropdown component-module--dropdown-left disabled" id="quickVisibilityMenu" data-module="quickVisibilityMenu">
-                                <div class="component-menu component-menu--w-auto component-menu--h-auto component-menu--no-padding">
+                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding">
                                     <div class="pill-container"><div class="drag-handle"></div></div>
                                     <div class="component-menu-list component-menu-list--scrollable">
                                         
