@@ -6,6 +6,14 @@ export class StudioUploadController {
         this.api = api;
         this.state = state;
         
+        // Bindear eventos a "this" para poder eliminarlos en destroy() y prevenir memoria duplicada
+        this.handleDocumentChangeBound = this.handleDocumentChange.bind(this);
+        this.handleDocumentDragOverBound = this.handleDocumentDragOver.bind(this);
+        this.handleDocumentDragLeaveBound = this.handleDocumentDragLeave.bind(this);
+        this.handleDocumentDropBound = this.handleDocumentDrop.bind(this);
+        this.handleDocumentClickBound = this.handleDocumentClick.bind(this);
+        this.updateUploadBadgesBound = this.updateUploadBadges.bind(this);
+
         const path = window.location.pathname;
         if (path.includes('/studio/uploading')) {
             this.initUploadingView();
@@ -16,7 +24,21 @@ export class StudioUploadController {
         }
         
         this.attachEvents();
-        window.addEventListener('studioVideoProgress', this.updateUploadBadges.bind(this));
+        window.addEventListener('studioVideoProgress', this.updateUploadBadgesBound);
+    }
+
+    // Limpieza al cambiar de vista
+    destroy() {
+        document.removeEventListener('change', this.handleDocumentChangeBound);
+        document.removeEventListener('dragover', this.handleDocumentDragOverBound);
+        document.removeEventListener('dragleave', this.handleDocumentDragLeaveBound);
+        document.removeEventListener('drop', this.handleDocumentDropBound);
+        document.removeEventListener('click', this.handleDocumentClickBound);
+        window.removeEventListener('studioVideoProgress', this.updateUploadBadgesBound);
+        
+        if (this.tagsManager && typeof this.tagsManager.destroy === 'function') {
+            this.tagsManager.destroy();
+        }
     }
 
     async handleFilesSelection(files) {
@@ -96,6 +118,9 @@ export class StudioUploadController {
         const displayTitle = document.querySelector('[data-ref="display-title"]');
         if(displayTitle) displayTitle.textContent = video.title || video.original_filename || '';
 
+        const inputTitle = document.querySelector('[data-ref="input-title"]');
+        if(inputTitle) inputTitle.value = video.title || video.original_filename || '';
+
         const previewOriginalFilename = document.getElementById('previewOriginalFilename');
         if(previewOriginalFilename) previewOriginalFilename.textContent = video.original_filename;
 
@@ -105,16 +130,12 @@ export class StudioUploadController {
             cancelBtn.removeAttribute('disabled');
         }
         
-        // Cargar tags iniciales para el video si los tiene (usualmente vacío en una subida nueva, pero previene bugs si se cambia entre videos subiéndose)
         if (this.tagsManager) {
             this.tagsManager.setInitialTags(video.tags || []);
         }
     }
     
     handleTagsChanged() {
-        // Callback que se ejecuta cuando el usuario añade o quita una etiqueta
-        // Aquí podrías habilitar el botón de publicar si hay cambios sin guardar, 
-        // o sincronizar con this.state si estás guardando auto-borradores.
         const video = this.state.getVideo(this.state.selectedVideoId);
         if (video) {
             video.modelsIds = this.tagsManager.getModelsIds();
@@ -133,19 +154,98 @@ export class StudioUploadController {
         }
     }
 
-    attachEvents() {
-        document.addEventListener('change', (e) => {
-            if (e.target && e.target.id === 'videoFileInput') this.handleFilesSelection(e.target.files);
-        });
+    handleDocumentChange(e) {
+        if (e.target && e.target.id === 'videoFileInput') this.handleFilesSelection(e.target.files);
+    }
 
-        document.addEventListener('dragover', (e) => { const dropZone = e.target.closest('#videoDropZone'); if (dropZone) { e.preventDefault(); dropZone.classList.add('dragover'); }});
-        document.addEventListener('dragleave', (e) => { const dropZone = e.target.closest('#videoDropZone'); if (dropZone) dropZone.classList.remove('dragover');});
-        document.addEventListener('drop', (e) => {
-            const dropZone = e.target.closest('#videoDropZone');
-            if (dropZone) {
-                e.preventDefault(); dropZone.classList.remove('dragover');
-                this.handleFilesSelection(e.dataTransfer.files);
-            }
-        });
+    handleDocumentDragOver(e) {
+        const dropZone = e.target.closest('#videoDropZone'); 
+        if (dropZone) { e.preventDefault(); dropZone.classList.add('dragover'); }
+    }
+
+    handleDocumentDragLeave(e) {
+        const dropZone = e.target.closest('#videoDropZone'); 
+        if (dropZone) dropZone.classList.remove('dragover');
+    }
+
+    handleDocumentDrop(e) {
+        const dropZone = e.target.closest('#videoDropZone');
+        if (dropZone) {
+            e.preventDefault(); dropZone.classList.remove('dragover');
+            this.handleFilesSelection(e.dataTransfer.files);
+        }
+    }
+
+    handleDocumentClick(e) {
+        const btn = e.target.closest('[data-action]');
+        if (!btn) return;
+
+        const action = btn.getAttribute('data-action');
+
+        if (action === 'cancelVideo') {
+            e.preventDefault();
+            // [FIX] El escudo antibalas: si hubiera otro listener suelto por ahí, este lo neutraliza.
+            e.stopImmediatePropagation(); 
+            this.handleCancelVideo();
+        } else if (action === 'selectVisibility') {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this.handleSelectVisibility(btn);
+        }
+    }
+
+    handleCancelVideo() {
+        if (!this.state.selectedVideoId) return;
+        
+        if (!confirm('¿Estás seguro de que deseas cancelar la subida de este video?')) {
+            return;
+        }
+
+        // TODO: Lógica backend (this.api.post...) para cancelar/eliminar la subida.
+        
+        this.state.deleteVideo(this.state.selectedVideoId);
+        
+        if (this.state.currentVideos.size === 0) {
+            window.dispatchEvent(new CustomEvent('routeChange', { detail: { url: '/studio/upload' }}));
+        } else {
+            const firstId = this.state.currentVideos.keys().next().value;
+            this.selectVideo(firstId);
+        }
+    }
+
+    handleSelectVisibility(btn) {
+        const value = btn.getAttribute('data-value');
+        const icon = btn.getAttribute('data-icon');
+        const text = btn.getAttribute('data-text');
+
+        const visibilityIcon = document.getElementById('visibilityIcon');
+        const visibilityText = document.getElementById('visibilityText');
+        const visibilitySelect = document.getElementById('videoVisibilitySelect');
+
+        if (visibilityIcon) visibilityIcon.textContent = icon;
+        if (visibilityText) visibilityText.textContent = text;
+        if (visibilitySelect) visibilitySelect.value = value;
+
+        const menuLinks = btn.closest('.component-menu-list').querySelectorAll('.component-menu-link');
+        menuLinks.forEach(link => link.classList.remove('active'));
+        btn.classList.add('active');
+
+        const video = this.state.getVideo(this.state.selectedVideoId);
+        if (video) {
+            video.visibility = value;
+        }
+
+        if (window.appInstance) {
+            const module = btn.closest('.component-module');
+            if (module) window.appInstance.closeModule(module);
+        }
+    }
+
+    attachEvents() {
+        document.addEventListener('change', this.handleDocumentChangeBound);
+        document.addEventListener('dragover', this.handleDocumentDragOverBound);
+        document.addEventListener('dragleave', this.handleDocumentDragLeaveBound);
+        document.addEventListener('drop', this.handleDocumentDropBound);
+        document.addEventListener('click', this.handleDocumentClickBound);
     }
 }

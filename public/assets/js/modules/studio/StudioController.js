@@ -22,6 +22,7 @@ export class StudioController {
 
         this.api = new ApiService();
         this.state = studioState;
+        this.activeSubController = null; // Guardar referencia del sub-controlador activo
         
         // Delegado global seguro para el WS
         if (!window._studioWsProgressHandlerInitialized) {
@@ -36,11 +37,19 @@ export class StudioController {
         this.handleRouteChangeBound = this.destroy.bind(this);
         window.addEventListener('routeChange', this.handleRouteChangeBound);
         
-        this.init();
+        // [FIX ARCHITECTURE] Se ha eliminado this.init() del constructor. 
+        // Tu AppInit.js ya se encarga de ejecutar instance.init() de forma segura tras instanciarlo.
     }
 
     destroy() {
         window.removeEventListener('routeChange', this.handleRouteChangeBound);
+        
+        // Limpiar sub-controladores para evitar fugas de memoria y listeners duplicados
+        if (this.activeSubController && typeof this.activeSubController.destroy === 'function') {
+            this.activeSubController.destroy();
+            this.activeSubController = null;
+        }
+
         if (window._studioMainControllerInstance === this) {
             window._studioMainControllerInstance = null;
         }
@@ -49,15 +58,21 @@ export class StudioController {
     init() {
         this.manager.connect();
         
+        // Si se re-inicializa, destruir controlador previo primero
+        if (this.activeSubController && typeof this.activeSubController.destroy === 'function') {
+            this.activeSubController.destroy();
+            this.activeSubController = null;
+        }
+
         const path = window.location.pathname;
         
         // Enrutamiento interno
         if (path.includes('/studio/uploading') || path.includes('/studio/upload')) {
-            new StudioUploadController(this.api, this.state);
+            this.activeSubController = new StudioUploadController(this.api, this.state);
         } else if (path.includes('/studio/manage-content')) {
-            new StudioManageContentController(this.api, this.state, this.manager);
+            this.activeSubController = new StudioManageContentController(this.api, this.state, this.manager);
         } else if (path.includes('/studio/edit/')) {
-            new StudioEditController(this.api, this.state);
+            this.activeSubController = new StudioEditController(this.api, this.state);
         } 
     }
 
