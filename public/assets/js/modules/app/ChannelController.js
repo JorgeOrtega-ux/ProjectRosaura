@@ -258,7 +258,6 @@ export class ChannelController {
             });
         });
 
-        // NUEVO: Lógica para mostrar/ocultar inputs de redes sociales
         document.querySelectorAll('[data-action="toggleSocial"]').forEach(toggle => {
             toggle.addEventListener('change', (e) => {
                 const targetId = toggle.getAttribute('data-target');
@@ -266,11 +265,12 @@ export class ChannelController {
                 const input = document.getElementById(targetId);
                 
                 if (toggle.checked) {
-                    if (area) area.style.display = 'block';
+                    if (area) area.style.display = 'flex'; 
                     if (input) input.focus();
                 } else {
                     if (area) area.style.display = 'none';
-                    if (input) input.value = ''; // Se limpia el input si se desactiva
+                    // Ya no borramos el valor (input.value = '';) 
+                    // para no perderlo si el usuario apaga por error.
                 }
             });
         });
@@ -300,7 +300,6 @@ export class ChannelController {
             const piercings = document.getElementById('channelPiercingsInput')?.checked ? 1 : 0;
             const interests = document.getElementById('channelInterestsInput')?.value || '';
 
-            // NUEVO: Recuperar datos de Redes Sociales, si el toggle no está activo, se manda vacío
             const socialFb = document.getElementById('toggleFbInput')?.checked ? (document.getElementById('channelFbInput')?.value || '') : '';
             const socialYt = document.getElementById('toggleYtInput')?.checked ? (document.getElementById('channelYtInput')?.value || '') : '';
             const socialIg = document.getElementById('toggleIgInput')?.checked ? (document.getElementById('channelIgInput')?.value || '') : '';
