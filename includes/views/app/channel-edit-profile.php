@@ -47,20 +47,6 @@ $hairColorMap = ['black' => 'Negro', 'brown' => 'Castaño', 'blonde' => 'Rubio',
 
         <div class="component-card--grouped">
             
-            <div class="component-group-item component-group-item--stacked">
-                <div class="component-card__content component-card__content--full">
-                    <div class="component-card__text">
-                        <h2 class="component-card__title">Descripción</h2>
-                        <p class="component-card__description">Cuéntales a los usuarios de qué se trata tu canal.</p>
-                        <div class="component-card__form-area" style="margin-top: 10px;">
-                            <textarea id="channelDescriptionInput" class="component-input-field" placeholder="Escribe aquí la descripción de tu canal..." maxlength="1000" rows="5"><?php echo htmlspecialchars($currentDescription); ?></textarea>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <hr class="component-divider">
-
             <div class="component-group-item component-group-item--stateful">
                 
                 <div class="active component-state-box" data-state="identifier-view">
@@ -136,81 +122,253 @@ $hairColorMap = ['black' => 'Negro', 'brown' => 'Castaño', 'blonde' => 'Rubio',
 
             <hr class="component-divider">
 
-            <h2 class="component-page-title mt-4 mb-2" style="font-size: 1.2rem;">Detalles Personales</h2>
+            <div class="component-group-item component-group-item--stacked">
+                <div class="component-card__content component-card__content--full">
+                    <div class="component-card__text">
+                        <h2 class="component-card__title">Descripción</h2>
+                        <p class="component-card__description">Cuéntales a los usuarios de qué se trata tu canal.</p>
+                        <div class="component-card__form-area" style="margin-top: 10px;">
+                            <textarea id="channelDescriptionInput" class="component-input-field" placeholder="Escribe aquí la descripción de tu canal..." maxlength="1000" rows="5"><?php echo htmlspecialchars($currentDescription); ?></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <br>
+        
+        <div class="component-card--grouped">
             
             <div class="component-group-item component-group-item--stacked">
-                 <div class="component-card__content">
-                     <div class="component-card__text" style="width: 100%;">
-                         
-                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;">
-                             
-                             <div>
-                                 <label class="component-label">Estado de Relación</label>
-                                 <select id="channelRelStatusInput" class="component-input-field">
-                                     <?php foreach($relStatusMap as $val => $label): ?>
-                                         <option value="<?php echo $val; ?>" <?php echo $relStatus === $val ? 'selected' : ''; ?>><?php echo $label; ?></option>
-                                     <?php endforeach; ?>
-                                 </select>
-                             </div>
+                <div class="component-card__content component-card__content--full">
+                    <div class="component-card__text">
+                        <h2 class="component-card__title">Detalles Personales</h2>
+                        <p class="component-card__description">Comparte información adicional sobre ti para que otros usuarios puedan conocerte mejor.</p>
+                    </div>
+                </div>
+            </div>
 
-                             <div>
-                                 <label class="component-label">Interesado en</label>
-                                 <select id="channelInterestedInInput" class="component-input-field">
-                                     <?php foreach($interestedInMap as $val => $label): ?>
-                                         <option value="<?php echo $val; ?>" <?php echo $interestedIn === $val ? 'selected' : ''; ?>><?php echo $label; ?></option>
-                                     <?php endforeach; ?>
-                                 </select>
-                             </div>
+            <hr class="component-divider">
 
-                             <div>
-                                 <label class="component-label">Género</label>
-                                 <select id="channelGenderInput" class="component-input-field">
-                                     <?php foreach($genderMap as $val => $label): ?>
-                                         <option value="<?php echo $val; ?>" <?php echo $gender === $val ? 'selected' : ''; ?>><?php echo $label; ?></option>
-                                     <?php endforeach; ?>
-                                 </select>
-                             </div>
+            <div class="component-group-item component-group-item--stacked">
+                <div class="component-card__content">
+                    <div class="component-card__text">
+                        <h2 class="component-card__title">Estado de Relación</h2>
+                        <p class="component-card__description">Comparte tu estado sentimental actual.</p>
+                    </div>
+                </div>
+                <div class="component-card__actions component-card__actions--start">
+                    <div class="component-dropdown-wrapper">
+                        <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="menuRelStatus">
+                            <span class="material-symbols-rounded">favorite</span>
+                            <span class="component-dropdown-text" id="textRelStatus"><?php echo $relStatusMap[$relStatus] ?? 'No especificado'; ?></span>
+                            <span class="material-symbols-rounded">expand_more</span>
+                        </div>
+                        <div class="component-module component-module--dropdown component-module--dropdown-left disabled" id="menuRelStatus">
+                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding">
+                                <div class="component-menu-list component-menu-list--scrollable">
+                                    <?php foreach($relStatusMap as $val => $label): ?>
+                                        <div class="component-menu-link <?php echo $relStatus === $val ? 'active' : ''; ?>" data-action="selectOption" data-target="channelRelStatusInput" data-text="textRelStatus" data-value="<?php echo $val; ?>" data-label="<?php echo $label; ?>">
+                                            <div class="component-menu-link-text"><span><?php echo $label; ?></span></div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="channelRelStatusInput" value="<?php echo htmlspecialchars($relStatus); ?>">
+                </div>
+            </div>
 
-                             <div>
-                                 <label class="component-label">Color de cabello</label>
-                                 <select id="channelHairColorInput" class="component-input-field">
-                                     <?php foreach($hairColorMap as $val => $label): ?>
-                                         <option value="<?php echo $val; ?>" <?php echo $hairColor === $val ? 'selected' : ''; ?>><?php echo $label; ?></option>
-                                     <?php endforeach; ?>
-                                 </select>
-                             </div>
+            <hr class="component-divider">
 
-                         </div>
+            <div class="component-group-item component-group-item--stacked">
+                <div class="component-card__content">
+                    <div class="component-card__text">
+                        <h2 class="component-card__title">Interesado en</h2>
+                        <p class="component-card__description">Especifica en quién estás interesado.</p>
+                    </div>
+                </div>
+                <div class="component-card__actions component-card__actions--start">
+                    <div class="component-dropdown-wrapper">
+                        <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="menuInterestedIn">
+                            <span class="material-symbols-rounded">group</span>
+                            <span class="component-dropdown-text" id="textInterestedIn"><?php echo $interestedInMap[$interestedIn] ?? 'No especificado'; ?></span>
+                            <span class="material-symbols-rounded">expand_more</span>
+                        </div>
+                        <div class="component-module component-module--dropdown component-module--dropdown-left disabled" id="menuInterestedIn">
+                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding">
+                                <div class="component-menu-list component-menu-list--scrollable">
+                                    <?php foreach($interestedInMap as $val => $label): ?>
+                                        <div class="component-menu-link <?php echo $interestedIn === $val ? 'active' : ''; ?>" data-action="selectOption" data-target="channelInterestedInInput" data-text="textInterestedIn" data-value="<?php echo $val; ?>" data-label="<?php echo $label; ?>">
+                                            <div class="component-menu-link-text"><span><?php echo $label; ?></span></div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="channelInterestedInInput" value="<?php echo htmlspecialchars($interestedIn); ?>">
+                </div>
+            </div>
 
-                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 15px;">
-                             <div>
-                                 <label class="component-label">Estatura (metros)</label>
-                                 <input type="number" id="channelHeightInput" class="component-input-field" step="0.01" min="1.00" max="2.50" value="<?php echo htmlspecialchars($height); ?>" placeholder="Ej: 1.75">
-                             </div>
-                             <div>
-                                 <label class="component-label">Peso (kg)</label>
-                                 <input type="number" id="channelWeightInput" class="component-input-field" step="0.1" min="30" max="250" value="<?php echo htmlspecialchars($weight); ?>" placeholder="Ej: 70.5">
-                             </div>
-                         </div>
+            <hr class="component-divider">
 
-                         <div style="display: flex; gap: 20px; margin-bottom: 20px;">
-                             <label style="display: flex; align-items: center; gap: 5px;">
-                                 <input type="checkbox" id="channelTattoosInput" <?php echo $tattoos ? 'checked' : ''; ?>>
-                                 <span>Tengo tatuajes</span>
-                             </label>
-                             <label style="display: flex; align-items: center; gap: 5px;">
-                                 <input type="checkbox" id="channelPiercingsInput" <?php echo $piercings ? 'checked' : ''; ?>>
-                                 <span>Tengo perforaciones</span>
-                             </label>
-                         </div>
+            <div class="component-group-item component-group-item--stacked">
+                <div class="component-card__content">
+                    <div class="component-card__text">
+                        <h2 class="component-card__title">Género</h2>
+                        <p class="component-card__description">Selecciona con qué género te identificas.</p>
+                    </div>
+                </div>
+                <div class="component-card__actions component-card__actions--start">
+                    <div class="component-dropdown-wrapper">
+                        <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="menuGender">
+                            <span class="material-symbols-rounded">person</span>
+                            <span class="component-dropdown-text" id="textGender"><?php echo $genderMap[$gender] ?? 'No especificado'; ?></span>
+                            <span class="material-symbols-rounded">expand_more</span>
+                        </div>
+                        <div class="component-module component-module--dropdown component-module--dropdown-left disabled" id="menuGender">
+                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding">
+                                <div class="component-menu-list component-menu-list--scrollable">
+                                    <?php foreach($genderMap as $val => $label): ?>
+                                        <div class="component-menu-link <?php echo $gender === $val ? 'active' : ''; ?>" data-action="selectOption" data-target="channelGenderInput" data-text="textGender" data-value="<?php echo $val; ?>" data-label="<?php echo $label; ?>">
+                                            <div class="component-menu-link-text"><span><?php echo $label; ?></span></div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="channelGenderInput" value="<?php echo htmlspecialchars($gender); ?>">
+                </div>
+            </div>
 
-                         <div>
-                             <label class="component-label">Intereses y Pasatiempos</label>
-                             <textarea id="channelInterestsInput" class="component-input-field" placeholder="¿Qué te gusta hacer en tu tiempo libre? Cine, música, deportes..." maxlength="1000" rows="4"><?php echo htmlspecialchars($interests); ?></textarea>
-                         </div>
+            <hr class="component-divider">
 
-                     </div>
-                 </div>
+            <div class="component-group-item component-group-item--stacked">
+                <div class="component-card__content">
+                    <div class="component-card__text">
+                        <h2 class="component-card__title">Color de cabello</h2>
+                        <p class="component-card__description">Elige tu color de cabello actual.</p>
+                    </div>
+                </div>
+                <div class="component-card__actions component-card__actions--start">
+                    <div class="component-dropdown-wrapper">
+                        <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="menuHairColor">
+                            <span class="material-symbols-rounded">face</span>
+                            <span class="component-dropdown-text" id="textHairColor"><?php echo $hairColorMap[$hairColor] ?? 'No especificado'; ?></span>
+                            <span class="material-symbols-rounded">expand_more</span>
+                        </div>
+                        <div class="component-module component-module--dropdown component-module--dropdown-left disabled" id="menuHairColor">
+                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding">
+                                <div class="component-menu-list component-menu-list--scrollable">
+                                    <?php foreach($hairColorMap as $val => $label): ?>
+                                        <div class="component-menu-link <?php echo $hairColor === $val ? 'active' : ''; ?>" data-action="selectOption" data-target="channelHairColorInput" data-text="textHairColor" data-value="<?php echo $val; ?>" data-label="<?php echo $label; ?>">
+                                            <div class="component-menu-link-text"><span><?php echo $label; ?></span></div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="channelHairColorInput" value="<?php echo htmlspecialchars($hairColor); ?>">
+                </div>
+            </div>
+
+            <hr class="component-divider">
+
+            <div class="component-group-item component-group-item--stacked">
+                <div class="component-card__content">
+                    <div class="component-card__text">
+                        <h2 class="component-card__title">Medidas corporales</h2>
+                        <p class="component-card__description">Ajusta tu estatura y peso utilizando los controles.</p>
+                    </div>
+                </div>
+                <div class="component-card__actions component-card__actions--start" style="gap: 20px; flex-wrap: wrap;">
+                    
+                    <div style="display: flex; flex-direction: column; gap: 5px;">
+                        <span class="component-label" style="font-size: 0.85rem; color: var(--text-secondary);">Estatura (metros)</span>
+                        <div class="component-inline-control component-inline-control--fixed">
+                            <div class="component-inline-control__group">
+                                <button type="button" class="component-inline-control__btn" data-action="adjustNumber" data-target="channelHeightInput" data-step="-0.10" data-min="1.00"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
+                                <button type="button" class="component-inline-control__btn" data-action="adjustNumber" data-target="channelHeightInput" data-step="-0.01" data-min="1.00"><span class="material-symbols-rounded">chevron_left</span></button>
+                            </div>
+                            <div class="component-inline-control__center" id="display-channelHeightInput"><?php echo htmlspecialchars($height ?: '1.70'); ?></div>
+                            <div class="component-inline-control__group">
+                                <button type="button" class="component-inline-control__btn" data-action="adjustNumber" data-target="channelHeightInput" data-step="0.01" data-max="2.50"><span class="material-symbols-rounded">chevron_right</span></button>
+                                <button type="button" class="component-inline-control__btn" data-action="adjustNumber" data-target="channelHeightInput" data-step="0.10" data-max="2.50"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
+                            </div>
+                        </div>
+                        <input type="hidden" id="channelHeightInput" value="<?php echo htmlspecialchars($height ?: '1.70'); ?>">
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 5px;">
+                        <span class="component-label" style="font-size: 0.85rem; color: var(--text-secondary);">Peso (kg)</span>
+                        <div class="component-inline-control component-inline-control--fixed">
+                            <div class="component-inline-control__group">
+                                <button type="button" class="component-inline-control__btn" data-action="adjustNumber" data-target="channelWeightInput" data-step="-5" data-min="30"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
+                                <button type="button" class="component-inline-control__btn" data-action="adjustNumber" data-target="channelWeightInput" data-step="-1" data-min="30"><span class="material-symbols-rounded">chevron_left</span></button>
+                            </div>
+                            <div class="component-inline-control__center" id="display-channelWeightInput"><?php echo htmlspecialchars($weight ?: '70.0'); ?></div>
+                            <div class="component-inline-control__group">
+                                <button type="button" class="component-inline-control__btn" data-action="adjustNumber" data-target="channelWeightInput" data-step="1" data-max="250"><span class="material-symbols-rounded">chevron_right</span></button>
+                                <button type="button" class="component-inline-control__btn" data-action="adjustNumber" data-target="channelWeightInput" data-step="5" data-max="250"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
+                            </div>
+                        </div>
+                        <input type="hidden" id="channelWeightInput" value="<?php echo htmlspecialchars($weight ?: '70.0'); ?>">
+                    </div>
+
+                </div>
+            </div>
+
+            <hr class="component-divider">
+
+            <div class="component-group-item component-group-item--wrap">
+                <div class="component-card__content">
+                    <div class="component-card__text">
+                        <h2 class="component-card__title">Tatuajes</h2>
+                        <p class="component-card__description">Indica si tienes tatuajes visibles.</p>
+                    </div>
+                </div>
+                <div class="component-card__actions component-card__actions--end">
+                    <label class="component-toggle-switch">
+                        <input type="checkbox" id="channelTattoosInput" <?php echo $tattoos ? 'checked' : ''; ?>>
+                        <span class="component-toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <hr class="component-divider">
+
+            <div class="component-group-item component-group-item--wrap">
+                <div class="component-card__content">
+                    <div class="component-card__text">
+                        <h2 class="component-card__title">Perforaciones</h2>
+                        <p class="component-card__description">Indica si tienes perforaciones visibles.</p>
+                    </div>
+                </div>
+                <div class="component-card__actions component-card__actions--end">
+                    <label class="component-toggle-switch">
+                        <input type="checkbox" id="channelPiercingsInput" <?php echo $piercings ? 'checked' : ''; ?>>
+                        <span class="component-toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <hr class="component-divider">
+
+            <div class="component-group-item component-group-item--stacked">
+                <div class="component-card__content component-card__content--full">
+                    <div class="component-card__text">
+                        <h2 class="component-card__title">Intereses y Pasatiempos</h2>
+                        <p class="component-card__description">¿Qué te gusta hacer en tu tiempo libre? Cine, música, deportes, etc.</p>
+                        <div class="component-card__form-area" style="margin-top: 10px;">
+                            <textarea id="channelInterestsInput" class="component-input-field" placeholder="Escribe aquí sobre tus aficiones..." maxlength="1000" rows="5"><?php echo htmlspecialchars($interests); ?></textarea>
+                        </div>
+                    </div>
+                </div>
             </div>
 
         </div>

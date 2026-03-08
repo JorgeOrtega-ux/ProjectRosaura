@@ -33,6 +33,7 @@ export class ChannelController {
         this.setupSubscriptionButton();
         this.setupBannerUpload();
         this.setupLocalEditToggles(); 
+        this.setupCustomFormControls(); // Inicializador de los nuevos componentes
         this.setupProfilePublishing(); 
     }
     
@@ -183,6 +184,91 @@ export class ChannelController {
         }
     }
 
+    setupCustomFormControls() {
+        // Dropdowns (estado, género, etc)
+        document.querySelectorAll('[data-action="toggleDropdown"]').forEach(trigger => {
+            trigger.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const targetId = trigger.getAttribute('data-target');
+                const targetMenu = document.getElementById(targetId);
+                
+                // Cerrar todos los demas
+                document.querySelectorAll('.component-module--dropdown').forEach(m => {
+                    if (m.id !== targetId) m.classList.add('disabled');
+                });
+                
+                if (targetMenu) {
+                    targetMenu.classList.toggle('disabled');
+                }
+            });
+        });
+
+        // Selección de opciones en Dropdowns
+        document.querySelectorAll('[data-action="selectOption"]').forEach(option => {
+            option.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const inputTarget = option.getAttribute('data-target');
+                const textTarget = option.getAttribute('data-text');
+                const value = option.getAttribute('data-value');
+                const label = option.getAttribute('data-label');
+
+                // Actualizar input escondido
+                if (inputTarget) document.getElementById(inputTarget).value = value;
+                // Actualizar texto del trigger
+                if (textTarget) document.getElementById(textTarget).innerText = label;
+
+                // Actualizar estado 'active' en la lista
+                const siblings = option.closest('.component-menu-list').querySelectorAll('.component-menu-link');
+                siblings.forEach(sib => sib.classList.remove('active'));
+                option.classList.add('active');
+
+                // Cerrar menú
+                option.closest('.component-module--dropdown').classList.add('disabled');
+            });
+        });
+
+        // Cerrar dropdowns al hacer clic fuera
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.component-dropdown-wrapper')) {
+                document.querySelectorAll('.component-module--dropdown').forEach(m => m.classList.add('disabled'));
+            }
+        });
+
+        // Controles Inline Numéricos (Estatura y Peso)
+        document.querySelectorAll('[data-action="adjustNumber"]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const targetId = btn.getAttribute('data-target');
+                const step = parseFloat(btn.getAttribute('data-step'));
+                const min = btn.getAttribute('data-min') !== null ? parseFloat(btn.getAttribute('data-min')) : null;
+                const max = btn.getAttribute('data-max') !== null ? parseFloat(btn.getAttribute('data-max')) : null;
+                
+                const hiddenInput = document.getElementById(targetId);
+                const displayEl = document.getElementById('display-' + targetId);
+                
+                if (hiddenInput && displayEl) {
+                    let currentVal = parseFloat(hiddenInput.value) || 0;
+                    let newVal = currentVal + step;
+                    
+                    if (min !== null && newVal < min) newVal = min;
+                    if (max !== null && newVal > max) newVal = max;
+                    
+                    // Manejo de decimales dependiendo del step
+                    if (step % 1 !== 0) {
+                        let decimals = step.toString().split('.')[1].length;
+                        if (decimals === 1) newVal = newVal.toFixed(1);
+                        else newVal = newVal.toFixed(2);
+                    } else {
+                        newVal = Math.round(newVal);
+                    }
+
+                    hiddenInput.value = newVal;
+                    displayEl.innerText = newVal;
+                }
+            });
+        });
+    }
+
     setupProfilePublishing() {
         const publishBtn = document.getElementById('btn-publish-profile-changes');
         if (!publishBtn) return;
@@ -197,7 +283,7 @@ export class ChannelController {
             
             identifier = identifier.replace(/@/g, '').toLowerCase().trim();
 
-            // NUEVOS CAMPOS
+            // NUEVOS CAMPOS ADAPTADOS A LOS NUEVOS COMPONENTES
             const relStatus = document.getElementById('channelRelStatusInput')?.value || '';
             const interestedIn = document.getElementById('channelInterestedInInput')?.value || '';
             const gender = document.getElementById('channelGenderInput')?.value || '';
