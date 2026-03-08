@@ -156,7 +156,12 @@ $channelContact = $channelExists ? ($channelUser['channel_contact_email'] ?? '')
             <img src="<?php echo htmlspecialchars($avatarPath); ?>" alt="Avatar" class="component-channel-avatar">
             
             <div class="component-channel-info-wrapper">
-                <h1 class="component-channel-title"><?php echo htmlspecialchars($displayName); ?></h1>
+                <h1 class="component-channel-title" style="display: flex; align-items: center; gap: 6px;">
+                    <?php echo htmlspecialchars($displayName); ?>
+                    <?php if ($channelExists && isset($channelUser['channel_verified']) && $channelUser['channel_verified'] == 1): ?>
+                        <span class="material-symbols-rounded" style="font-size: 22px; color: var(--text-secondary, #aaaaaa);" title="Canal Verificado">check_circle</span>
+                    <?php endif; ?>
+                </h1>
                 
                 <p class="component-channel-meta">
                     @<?php echo htmlspecialchars($displayIdentifier); ?> • 
@@ -225,7 +230,12 @@ $channelContact = $channelExists ? ($channelUser['channel_contact_email'] ?? '')
                                             </div>
                                             <div class="component-video-card__info">
                                                 <h3 class="component-video-card__title" title="<?php echo htmlspecialchars($video['title']); ?>"><?php echo htmlspecialchars($video['title']); ?></h3>
-                                                <p class="component-video-card__user"><?php echo htmlspecialchars($displayName); ?></p>
+                                                <p class="component-video-card__user" style="display: flex; align-items: center; gap: 4px;">
+                                                    <?php echo htmlspecialchars($displayName); ?>
+                                                    <?php if (isset($channelUser['channel_verified']) && $channelUser['channel_verified'] == 1): ?>
+                                                        <span class="material-symbols-rounded" style="font-size: 14px; color: var(--text-secondary, #aaaaaa);" title="Verificado">check_circle</span>
+                                                    <?php endif; ?>
+                                                </p>
                                                 <p class="component-video-card__meta"><?php echo $video['views'] ?? 0; ?> vistas • <?php echo time_elapsed_string($video['created_at']); ?></p>
                                             </div>
                                         </div>
@@ -263,7 +273,12 @@ $channelContact = $channelExists ? ($channelUser['channel_contact_email'] ?? '')
                                             </div>
                                             <div class="component-video-card__info">
                                                 <h3 class="component-video-card__title" title="<?php echo htmlspecialchars($video['title']); ?>"><?php echo htmlspecialchars($video['title']); ?></h3>
-                                                <p class="component-video-card__user"><?php echo htmlspecialchars($displayName); ?></p>
+                                                <p class="component-video-card__user" style="display: flex; align-items: center; gap: 4px;">
+                                                    <?php echo htmlspecialchars($displayName); ?>
+                                                    <?php if (isset($channelUser['channel_verified']) && $channelUser['channel_verified'] == 1): ?>
+                                                        <span class="material-symbols-rounded" style="font-size: 14px; color: var(--text-secondary, #aaaaaa);" title="Verificado">check_circle</span>
+                                                    <?php endif; ?>
+                                                </p>
                                                 <p class="component-video-card__meta"><?php echo $video['views'] ?? 0; ?> vistas • <?php echo time_elapsed_string($video['created_at']); ?></p>
                                             </div>
                                         </div>

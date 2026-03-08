@@ -15,29 +15,22 @@ class ChannelController {
         $this->userRepo = $userRepo;
     }
 
-    // --- NUEVO MÉTODO PARA OBTENER LOS DATOS DEL CANAL MEDIANTE IDENTIFICADOR ---
     public function get_channel_by_identifier($identifier) {
         if (empty($identifier)) {
             return ['success' => false, 'message' => 'Identificador no especificado.'];
         }
         
-        // Removemos el '@' si viene incluido en el string
         $cleanIdentifier = ltrim($identifier, '@');
-
-        // Modificamos para buscar por 'identifier' en lugar de username
         $channelUser = $this->userRepo->findByIdentifier($cleanIdentifier);
 
         if (!$channelUser) {
             return ['success' => false, 'message' => 'El canal no existe.'];
         }
 
-        // Se oculta la información privada antes de devolver el perfil
         unset($channelUser['password'], $channelUser['two_factor_secret'], $channelUser['two_factor_recovery_codes'], $channelUser['email']);
         
-        // Agregamos el número de suscriptores
         $channelUser['subscriber_count'] = $this->subscriptionRepo->getSubscriberCount($channelUser['id']);
         
-        // Verificamos si el usuario actual está suscrito (si está logueado)
         $isSubscribed = false;
         if (isset($_SESSION['user_id'])) {
             $isSubscribed = $this->subscriptionRepo->isSubscribed($_SESSION['user_id'], $channelUser['id']);
@@ -53,8 +46,6 @@ class ChannelController {
         }
 
         $subscriberId = $_SESSION['user_id'];
-        
-        // MODIFICADO: Ahora esperamos el identifier en lugar del username para suscribirse
         $channelIdentifier = $data['identifier'] ?? '';
 
         if (empty($channelIdentifier)) {
@@ -97,15 +88,12 @@ class ChannelController {
             return ['success' => false, 'message' => 'El correo de contacto no es un formato válido.'];
         }
 
-        // Validar el formato del identificador
         if ($identifier) {
-             // Removemos el '@' por si el usuario lo envió
              $identifier = ltrim($identifier, '@');
              if (!preg_match('/^[a-z0-9_]{3,20}$/', $identifier)) {
                  return ['success' => false, 'message' => 'El identificador debe tener entre 3 y 20 caracteres y contener solo letras minúsculas, números o guiones bajos.'];
              }
 
-             // Verificar si el identificador ya existe en otro usuario
              $existingUser = $this->userRepo->findByIdentifier($identifier);
              if ($existingUser && $existingUser['id'] != $_SESSION['user_id']) {
                  return ['success' => false, 'message' => 'El identificador ingresado ya está en uso.'];
@@ -114,8 +102,22 @@ class ChannelController {
 
         $updated = $this->userRepo->updateChannelProfile($_SESSION['user_id'], $description, $identifier, $contactEmail);
 
-        if ($updated) {
-            // Actualizar la variable de sesión si el identificador cambió
+        // --- ACTUALIZAR PERFIL EXTENDIDO ---
+        $profileData = [
+            'relationship_status' => isset($data['relationship_status']) && $data['relationship_status'] !== '' ? $data['relationship_status'] : null,
+            'interested_in' => isset($data['interested_in']) && $data['interested_in'] !== '' ? $data['interested_in'] : null,
+            'gender' => isset($data['gender']) && $data['gender'] !== '' ? $data['gender'] : null,
+            'height' => isset($data['height']) && is_numeric($data['height']) ? (float)$data['height'] : null,
+            'weight' => isset($data['weight']) && is_numeric($data['weight']) ? (float)$data['weight'] : null,
+            'hair_color' => isset($data['hair_color']) && $data['hair_color'] !== '' ? $data['hair_color'] : null,
+            'tattoos' => isset($data['tattoos']) ? (int)$data['tattoos'] : 0,
+            'piercings' => isset($data['piercings']) ? (int)$data['piercings'] : 0,
+            'interests' => isset($data['interests']) ? trim($data['interests']) : null,
+        ];
+        
+        $extendedUpdated = $this->userRepo->updateExtendedProfile($_SESSION['user_id'], $profileData);
+
+        if ($updated || $extendedUpdated) {
             if ($identifier) {
                 $_SESSION['user_identifier'] = $identifier;
             }
@@ -126,6 +128,7 @@ class ChannelController {
     }
 
     public function upload_banner($data) {
+        // ... (Este método se mantiene igual, no lo copio por brevedad, pero déjalo tal cual lo tienes) ...
         if (!isset($_SESSION['user_id'])) {
             return ['success' => false, 'message' => 'Debes iniciar sesión para realizar esta acción.'];
         }

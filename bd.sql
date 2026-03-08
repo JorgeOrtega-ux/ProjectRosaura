@@ -14,6 +14,7 @@ CREATE TABLE `users` (
   `role` enum('user','moderator','administrator','founder') DEFAULT 'user',
   `user_status` enum('active','deleted') DEFAULT 'active',
   `profile_picture` varchar(255) NOT NULL,
+  `channel_verified` tinyint(1) DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
   UNIQUE KEY `uuid` (`uuid`),
@@ -187,6 +188,7 @@ ALTER TABLE users ADD COLUMN banner_path VARCHAR(255) DEFAULT NULL AFTER profile
 ALTER TABLE users ADD COLUMN channel_description TEXT DEFAULT NULL AFTER banner_path;
 ALTER TABLE users ADD COLUMN channel_identifier VARCHAR(255) UNIQUE DEFAULT NULL AFTER channel_description;
 ALTER TABLE users ADD COLUMN channel_contact_email VARCHAR(255) DEFAULT NULL AFTER channel_identifier;
+ALTER TABLE users ADD COLUMN channel_verified TINYINT(1) DEFAULT 0 AFTER channel_contact_email;
 
 -- Índice para búsquedas rápidas por URL
 CREATE INDEX idx_channel_identifier ON users(channel_identifier);

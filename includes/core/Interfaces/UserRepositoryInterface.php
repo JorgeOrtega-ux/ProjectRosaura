@@ -7,7 +7,7 @@ interface UserRepositoryInterface {
     public function findById(int $id): ?array;
     public function findByEmail(string $email): ?array;
     public function findByUsername(string $username): ?array;
-    public function findByIdentifier(string $identifier): ?array; // <-- Nuevo Método
+    public function findByIdentifier(string $identifier): ?array; 
     public function createUser(array $data): int;
     
     public function liftSuspension(int $id): bool;
@@ -16,7 +16,11 @@ interface UserRepositoryInterface {
     public function updateBanner(int $id, string $path): bool;
     
     public function updateChannelProfile(int $id, ?string $description, ?string $identifier, ?string $contactEmail): bool;
-    public function updateIdentifier(int $id, string $identifier): bool; // <-- Nuevo Método
+    
+    // --- NUEVO MÉTODO PARA ACTUALIZAR PERFIL EXTENDIDO ---
+    public function updateExtendedProfile(int $id, array $profileData): bool;
+
+    public function updateIdentifier(int $id, string $identifier): bool; 
     
     public function updateUsername(int $id, string $username): bool;
     public function updateEmail(int $id, string $email): bool;

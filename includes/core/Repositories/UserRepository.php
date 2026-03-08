@@ -17,9 +17,12 @@ class UserRepository implements UserRepositoryInterface {
         $stmt = $this->pdo->prepare("
             SELECT u.*, 
                    ur.is_suspended, ur.suspension_type, ur.suspension_reason, ur.suspension_end_date, 
-                   ur.deleted_by, ur.deleted_reason, ur.admin_notes 
+                   ur.deleted_by, ur.deleted_reason, ur.admin_notes,
+                   up.relationship_status, up.interested_in, up.gender, up.height, up.weight, 
+                   up.hair_color, up.tattoos, up.piercings, up.interests
             FROM users u 
             LEFT JOIN user_restrictions ur ON u.id = ur.user_id 
+            LEFT JOIN user_profiles up ON u.id = up.user_id
             WHERE u.id = ?
         ");
         $stmt->execute([$id]);
@@ -31,9 +34,12 @@ class UserRepository implements UserRepositoryInterface {
         $stmt = $this->pdo->prepare("
             SELECT u.*, 
                    ur.is_suspended, ur.suspension_type, ur.suspension_reason, ur.suspension_end_date, 
-                   ur.deleted_by, ur.deleted_reason, ur.admin_notes 
+                   ur.deleted_by, ur.deleted_reason, ur.admin_notes,
+                   up.relationship_status, up.interested_in, up.gender, up.height, up.weight, 
+                   up.hair_color, up.tattoos, up.piercings, up.interests
             FROM users u 
             LEFT JOIN user_restrictions ur ON u.id = ur.user_id 
+            LEFT JOIN user_profiles up ON u.id = up.user_id
             WHERE u.email = ?
         ");
         $stmt->execute([$email]);
@@ -45,9 +51,12 @@ class UserRepository implements UserRepositoryInterface {
         $stmt = $this->pdo->prepare("
             SELECT u.*, 
                    ur.is_suspended, ur.suspension_type, ur.suspension_reason, ur.suspension_end_date, 
-                   ur.deleted_by, ur.deleted_reason, ur.admin_notes 
+                   ur.deleted_by, ur.deleted_reason, ur.admin_notes,
+                   up.relationship_status, up.interested_in, up.gender, up.height, up.weight, 
+                   up.hair_color, up.tattoos, up.piercings, up.interests
             FROM users u 
             LEFT JOIN user_restrictions ur ON u.id = ur.user_id 
+            LEFT JOIN user_profiles up ON u.id = up.user_id
             WHERE u.username = ?
         ");
         $stmt->execute([$username]);
@@ -55,14 +64,16 @@ class UserRepository implements UserRepositoryInterface {
         return $user ?: null;
     }
 
-    // --- NUEVO MÉTODO IMPLEMENTADO ---
     public function findByIdentifier(string $identifier): ?array {
         $stmt = $this->pdo->prepare("
             SELECT u.*, 
                    ur.is_suspended, ur.suspension_type, ur.suspension_reason, ur.suspension_end_date, 
-                   ur.deleted_by, ur.deleted_reason, ur.admin_notes 
+                   ur.deleted_by, ur.deleted_reason, ur.admin_notes,
+                   up.relationship_status, up.interested_in, up.gender, up.height, up.weight, 
+                   up.hair_color, up.tattoos, up.piercings, up.interests
             FROM users u 
             LEFT JOIN user_restrictions ur ON u.id = ur.user_id 
+            LEFT JOIN user_profiles up ON u.id = up.user_id
             WHERE u.channel_identifier = ?
         ");
         $stmt->execute([$identifier]);
@@ -74,7 +85,6 @@ class UserRepository implements UserRepositoryInterface {
         try {
             $this->pdo->beginTransaction();
             
-            // MODIFICADO: Incluye channel_identifier
             $stmtUser = $this->pdo->prepare("INSERT INTO users (uuid, username, email, password, role, user_status, profile_picture, channel_identifier) VALUES (?, ?, ?, ?, 'user', 'active', ?, ?)");
             $stmtUser->execute([
                 $data['uuid'], 
@@ -88,6 +98,10 @@ class UserRepository implements UserRepositoryInterface {
 
             $stmtRest = $this->pdo->prepare("INSERT INTO user_restrictions (user_id) VALUES (?)");
             $stmtRest->execute([$userId]);
+
+            // Crear registro en user_profiles
+            $stmtProfile = $this->pdo->prepare("INSERT INTO user_profiles (user_id) VALUES (?)");
+            $stmtProfile->execute([$userId]);
 
             $this->pdo->commit();
             return $userId;
@@ -121,7 +135,55 @@ class UserRepository implements UserRepositoryInterface {
         return $stmt->execute([$description, $identifier, $contactEmail, $id]);
     }
 
-    // --- NUEVO MÉTODO PARA ACTUALIZAR SÓLO IDENTIFICADOR ---
+    // --- NUEVO MÉTODO IMPLEMENTADO ---
+    public function updateExtendedProfile(int $id, array $profileData): bool {
+        // Verificar si el registro existe
+        $checkStmt = $this->pdo->prepare("SELECT user_id FROM user_profiles WHERE user_id = ?");
+        $checkStmt->execute([$id]);
+        
+        if ($checkStmt->fetch()) {
+            // Actualizar si existe
+            $stmt = $this->pdo->prepare("
+                UPDATE user_profiles 
+                SET relationship_status = ?, interested_in = ?, gender = ?, 
+                    height = ?, weight = ?, hair_color = ?, tattoos = ?, 
+                    piercings = ?, interests = ?
+                WHERE user_id = ?
+            ");
+            return $stmt->execute([
+                $profileData['relationship_status'],
+                $profileData['interested_in'],
+                $profileData['gender'],
+                $profileData['height'],
+                $profileData['weight'],
+                $profileData['hair_color'],
+                $profileData['tattoos'],
+                $profileData['piercings'],
+                $profileData['interests'],
+                $id
+            ]);
+        } else {
+            // Insertar si no existe
+            $stmt = $this->pdo->prepare("
+                INSERT INTO user_profiles 
+                (user_id, relationship_status, interested_in, gender, height, weight, hair_color, tattoos, piercings, interests)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ");
+            return $stmt->execute([
+                $id,
+                $profileData['relationship_status'],
+                $profileData['interested_in'],
+                $profileData['gender'],
+                $profileData['height'],
+                $profileData['weight'],
+                $profileData['hair_color'],
+                $profileData['tattoos'],
+                $profileData['piercings'],
+                $profileData['interests']
+            ]);
+        }
+    }
+
     public function updateIdentifier(int $id, string $identifier): bool {
         $stmt = $this->pdo->prepare("UPDATE users SET channel_identifier = ? WHERE id = ?");
         return $stmt->execute([$identifier, $id]);

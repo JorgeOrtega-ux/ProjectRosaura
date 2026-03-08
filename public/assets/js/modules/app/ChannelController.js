@@ -9,27 +9,22 @@ export class ChannelController {
         this.api = new ApiService();
         this.dialog = new DialogSystem(); 
         this.currentCropData = null; 
-        this.channelIdentifier = null; // Almacena el identificador del canal actual
+        this.channelIdentifier = null;
     }
 
-    // El método init ahora debe aceptar el identificador capturado de la URL
     async init(params = {}) {
         console.log("Channel view loaded successfully.");
         
-        // Asumiendo que el SpaRouter pasa los parámetros de la URL
-        // Si el identificador viene en los parámetros, lo guardamos
         if (params.identifier) {
             this.channelIdentifier = params.identifier;
         } else {
-            // Intento de fallback: extraerlo directamente de la URL actual
             const pathParts = window.location.pathname.split('/');
             const atPart = pathParts.find(part => part.startsWith('@'));
             if(atPart) {
-                this.channelIdentifier = atPart.substring(1); // Quitar el '@'
+                this.channelIdentifier = atPart.substring(1);
             }
         }
 
-        // Si hay un identificador, podríamos querer cargar datos adicionales vía API
         if (this.channelIdentifier) {
            await this.loadChannelData(this.channelIdentifier);
         }
@@ -41,17 +36,10 @@ export class ChannelController {
         this.setupProfilePublishing(); 
     }
     
-    // NUEVO: Método para cargar datos del canal asíncronamente (opcional, dependiendo de cómo manejes el SSR vs CSR)
     async loadChannelData(identifier) {
-        // En este ejemplo, el controlador PHP ChannelController tiene un método get_channel_by_identifier
-        // Construimos la URL de la API (Asegúrate de que ApiRoutes tenga esta ruta definida o constrúyela)
         const apiUrl = `/api/channel/get_by_identifier?identifier=${identifier}`;
-        
         try {
-             // Si implementas la ruta GET en la API
-             // const response = await this.api.get(apiUrl);
              console.log(`Cargando datos del canal para el identificador: ${identifier}`);
-             // Aquí actualizarías el DOM con los datos recibidos (videos, descripciones, etc.) si no lo hace ya PHP
         } catch (e) {
              console.error("Error al cargar datos del canal:", e);
         }
@@ -91,7 +79,6 @@ export class ChannelController {
         subBtn.parentNode.replaceChild(newBtn, subBtn);
 
         newBtn.addEventListener('click', async () => {
-            // Cambiado para usar identifier en lugar de username
             const identifier = newBtn.getAttribute('data-identifier');
             if (!identifier) return;
 
@@ -99,7 +86,6 @@ export class ChannelController {
             newBtn.innerText = 'Cargando...';
             newBtn.disabled = true;
 
-            // Suponiendo que toggleSubscription se actualizó para enviar el identifier
             const response = await this.api.post(ApiRoutes.Channel.ToggleSubscription, { identifier: identifier });
             
             newBtn.disabled = false;
@@ -165,7 +151,6 @@ export class ChannelController {
                 const inputEl = document.querySelector(`[data-ref="input-${target}"]`);
                 if (displayEl && inputEl) {
                     let val = inputEl.value.trim();
-                    // Validación simple en cliente antes de mostrar
                     if (target === 'identifier') {
                          val = val.replace(/[^a-z0-9_]/gi, '').toLowerCase();
                          inputEl.value = val;
@@ -210,24 +195,41 @@ export class ChannelController {
             let identifier = document.getElementById('channelIdentifierInput')?.value || '';
             const contactEmail = document.getElementById('channelContactInput')?.value || '';
             
-            // Limpieza básica
             identifier = identifier.replace(/@/g, '').toLowerCase().trim();
+
+            // NUEVOS CAMPOS
+            const relStatus = document.getElementById('channelRelStatusInput')?.value || '';
+            const interestedIn = document.getElementById('channelInterestedInInput')?.value || '';
+            const gender = document.getElementById('channelGenderInput')?.value || '';
+            const hairColor = document.getElementById('channelHairColorInput')?.value || '';
+            const height = document.getElementById('channelHeightInput')?.value || '';
+            const weight = document.getElementById('channelWeightInput')?.value || '';
+            const tattoos = document.getElementById('channelTattoosInput')?.checked ? 1 : 0;
+            const piercings = document.getElementById('channelPiercingsInput')?.checked ? 1 : 0;
+            const interests = document.getElementById('channelInterestsInput')?.value || '';
 
             const originalText = newBtn.innerText;
             newBtn.innerText = 'Publicando...';
             newBtn.disabled = true;
 
             try {
-                // Se asume que la ruta UpdateProfile en ApiRoutes es la correcta
                 const response = await this.api.post(ApiRoutes.Channel.UpdateProfile, {
                     description: description,
                     identifier: identifier,
-                    contact_email: contactEmail
+                    contact_email: contactEmail,
+                    relationship_status: relStatus,
+                    interested_in: interestedIn,
+                    gender: gender,
+                    hair_color: hairColor,
+                    height: height,
+                    weight: weight,
+                    tattoos: tattoos,
+                    piercings: piercings,
+                    interests: interests
                 });
 
                 if (response.success) {
                     this.dialog.show('success', { title: '¡Publicado!', message: response.message });
-                    // Opcional: actualizar la URL si el identificador cambió
                     if (identifier && window.history && this.channelIdentifier && identifier !== this.channelIdentifier) {
                         const currentUrl = window.location.href;
                         const newUrl = currentUrl.replace(`/@${this.channelIdentifier}`, `/@${identifier}`);
