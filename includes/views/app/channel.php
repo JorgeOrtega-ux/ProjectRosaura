@@ -1,7 +1,10 @@
 <?php
 // includes/views/app/channel.php
 
-$targetUsername = $_GET['username'] ?? '';
+// Capturamos el identificador, ya sea que el router lo pase como 'identifier' o como 'username' (por compatibilidad con el .htaccess actual)
+$targetIdentifier = $_GET['identifier'] ?? $_GET['username'] ?? '';
+$targetIdentifier = ltrim($targetIdentifier, '@'); // Limpiamos la arroba si viene en la URL
+
 $isLoggedIn = isset($_SESSION['user_id']);
 
 global $container;
@@ -81,13 +84,19 @@ if (isset($container)) {
     $videoRepo = $container->get(\App\Core\Interfaces\VideoRepositoryInterface::class);
     $subscriptionRepo = $container->get(\App\Core\Interfaces\SubscriptionRepositoryInterface::class);
     
-    $channelUser = $userRepo->findByUsername($targetUsername);
+    // Buscar primero por el nuevo identificador
+    $channelUser = $userRepo->findByIdentifier($targetIdentifier);
+    
+    // Fallback: Si no se encuentra por identificador, buscar por username (para usuarios antiguos)
+    if (!$channelUser) {
+        $channelUser = $userRepo->findByUsername($targetIdentifier);
+    }
+    
     $channelExists = $channelUser ? true : false;
     
-    $currentUsername = null;
+    $currentUserData = null;
     if ($isLoggedIn) {
         $currentUserData = $userRepo->findById($_SESSION['user_id']);
-        $currentUsername = $currentUserData['username'] ?? null;
     }
 
     if ($channelExists) {
@@ -104,12 +113,13 @@ if (isset($container)) {
 
 } else {
     $channelExists = false;
-    $currentUsername = null;
+    $currentUserData = null;
 }
 
 $isOwner = false;
-if ($isLoggedIn && $channelExists && $currentUsername) {
-    $isOwner = (strtolower($currentUsername) === strtolower($targetUsername));
+if ($isLoggedIn && $channelExists && $currentUserData) {
+    // Es más seguro comparar por ID que por username
+    $isOwner = ($currentUserData['id'] === $channelUser['id']);
 }
 
 $avatarPath = $appUrl . '/public/storage/profilePictures/default/3b9475a1-65c1-40d2-95f4-1dcbc5cb2ef2.png';
@@ -117,7 +127,10 @@ if ($channelExists && !empty($channelUser['profile_picture'])) {
     $avatarPath = $appUrl . '/' . ltrim($channelUser['profile_picture'], '/');
 }
 
-$displayName = $channelExists ? ($channelUser['display_name'] ?? $channelUser['username']) : $targetUsername;
+$displayName = $channelExists ? ($channelUser['display_name'] ?? $channelUser['username']) : $targetIdentifier;
+
+// Priorizar el identificador para la UI
+$displayIdentifier = $channelExists ? (!empty($channelUser['channel_identifier']) ? $channelUser['channel_identifier'] : $channelUser['username']) : $targetIdentifier;
 
 // Extraer descripción y contacto de la base de datos
 $channelDesc = $channelExists ? ($channelUser['channel_description'] ?? '') : '';
@@ -130,7 +143,7 @@ $channelContact = $channelExists ? ($channelUser['channel_contact_email'] ?? '')
             <span class="material-symbols-rounded component-message-icon">error</span>
         </div>
         <h1 class="component-message-title">Este canal no existe</h1>
-        <p class="component-message-desc">El usuario @<?php echo htmlspecialchars($targetUsername); ?> no se encuentra en nuestra base de datos.</p>
+        <p class="component-message-desc">El usuario @<?php echo htmlspecialchars($targetIdentifier); ?> no se encuentra en nuestra base de datos.</p>
     </div>
 <?php else: ?>
     <div class="component-channel-layout">
@@ -151,7 +164,7 @@ $channelContact = $channelExists ? ($channelUser['channel_contact_email'] ?? '')
                 <h1 class="component-channel-title"><?php echo htmlspecialchars($displayName); ?></h1>
                 
                 <p class="component-channel-meta">
-                    @<?php echo htmlspecialchars($channelUser['username'] ?? ''); ?> • 
+                    @<?php echo htmlspecialchars($displayIdentifier); ?> • 
                     <span id="channel-subscriber-count"><?php echo format_subscribers_count($subscriberCount); ?> suscriptores</span> • 
                     <?php echo $totalVideos; ?> videos
                 </p>
@@ -175,7 +188,7 @@ $channelContact = $channelExists ? ($channelUser['channel_contact_email'] ?? '')
                     <?php if ($isOwner): ?>
                         <button class="component-btn-secondary" data-nav="<?php echo $appUrl; ?>/channel/<?php echo htmlspecialchars($channelUser['uuid'] ?? ''); ?>/editing/profile">Personalizar canal</button>
                     <?php else: ?>
-                        <button id="btn-channel-subscribe" data-username="<?php echo htmlspecialchars($targetUsername); ?>" class="<?php echo $isSubscribed ? 'component-btn-secondary' : 'component-btn-primary'; ?>">
+                        <button id="btn-channel-subscribe" data-identifier="<?php echo htmlspecialchars($displayIdentifier); ?>" class="<?php echo $isSubscribed ? 'component-btn-secondary' : 'component-btn-primary'; ?>">
                             <?php echo $isSubscribed ? 'Suscrito' : 'Suscribirse'; ?>
                         </button>
                     <?php endif; ?>

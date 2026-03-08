@@ -1,4 +1,3 @@
-<?php
 // api/controllers/AuthController.php
 
 namespace App\Api\Controllers;
@@ -9,7 +8,6 @@ class AuthController {
     
     private $authServices;
 
-    // Inyección de Dependencias Limpia (SOLID)
     public function __construct(AuthServices $authServices) {
         $this->authServices = $authServices;
     }
@@ -24,4 +22,3 @@ class AuthController {
     public function forgot_password($input) { return $this->authServices->forgotPassword($input); }
     public function reset_password($input) { return $this->authServices->resetPassword($input); }
 }
-?>

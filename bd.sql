@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS moderation_logs (
 CREATE TABLE IF NOT EXISTS profile_changes_log (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT(11) NOT NULL,
-    change_type ENUM('avatar', 'username', 'email', 'password', '2fa') NOT NULL,
+    change_type ENUM('avatar', 'username', 'email', 'password', '2fa', 'identifier') NOT NULL,
     old_value VARCHAR(255) DEFAULT NULL,
     new_value VARCHAR(255) DEFAULT NULL,
     ip_address VARCHAR(45) NOT NULL,
@@ -153,7 +153,6 @@ CREATE TABLE IF NOT EXISTS videos (
     CONSTRAINT fk_video_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- === TABLA MODIFICADA PARA TAGS (MODELOS Y CATEGORÍAS) ===
 CREATE TABLE IF NOT EXISTS tags (
     id INT(11) AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE,
@@ -163,7 +162,6 @@ CREATE TABLE IF NOT EXISTS tags (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- === NUEVA TABLA PIVOTE PARA VINCULAR VIDEOS Y TAGS MIXTOS ===
 CREATE TABLE IF NOT EXISTS video_tags (
     id INT(11) AUTO_INCREMENT PRIMARY KEY,
     video_id INT(11) NOT NULL,
@@ -175,7 +173,6 @@ CREATE TABLE IF NOT EXISTS video_tags (
     CONSTRAINT fk_vt_tag FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- === NUEVA TABLA PARA SUSCRIPCIONES ===
 CREATE TABLE IF NOT EXISTS subscriptions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     subscriber_id INT(11) NOT NULL,
@@ -184,9 +181,12 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     UNIQUE KEY unique_subscription (subscriber_id, channel_id),
     CONSTRAINT fk_sub_subscriber FOREIGN KEY (subscriber_id) REFERENCES users(id) ON DELETE CASCADE,
     CONSTRAINT fk_sub_channel FOREIGN KEY (channel_id) REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;ALTER TABLE users ADD COLUMN banner_path VARCHAR(255) DEFAULT NULL AFTER profile_picture;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Agrega esto al final de tu archivo bd.sql
+ALTER TABLE users ADD COLUMN banner_path VARCHAR(255) DEFAULT NULL AFTER profile_picture;
 ALTER TABLE users ADD COLUMN channel_description TEXT DEFAULT NULL AFTER banner_path;
-ALTER TABLE users ADD COLUMN channel_identifier VARCHAR(255) DEFAULT NULL AFTER channel_description;
+ALTER TABLE users ADD COLUMN channel_identifier VARCHAR(255) UNIQUE DEFAULT NULL AFTER channel_description;
 ALTER TABLE users ADD COLUMN channel_contact_email VARCHAR(255) DEFAULT NULL AFTER channel_identifier;
+
+-- Índice para búsquedas rápidas por URL
+CREATE INDEX idx_channel_identifier ON users(channel_identifier);

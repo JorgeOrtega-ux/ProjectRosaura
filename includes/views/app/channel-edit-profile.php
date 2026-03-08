@@ -13,7 +13,8 @@ $userRepo = $container->get(\App\Core\Interfaces\UserRepositoryInterface::class)
 $currentUser = $userRepo->findById($_SESSION['user_id']);
 
 $currentDescription = $currentUser['channel_description'] ?? '';
-$currentIdentifier = $currentUser['channel_identifier'] ?? $currentUser['username'];
+// Priorizamos el identificador, si está vacío mostramos el username
+$currentIdentifier = !empty($currentUser['channel_identifier']) ? $currentUser['channel_identifier'] : $currentUser['username'];
 $currentContact = $currentUser['channel_contact_email'] ?? '';
 ?>
 
@@ -68,13 +69,14 @@ $currentContact = $currentUser['channel_contact_email'] ?? '';
                             <p class="component-card__description">Crea un identificador único agregando letras y números.</p>
                             <div class="component-edit-row">
                                 <div class="component-input-group component-input-group--h34">
-                                    <input type="text" id="channelIdentifierInput" data-ref="input-identifier" class="component-input-field component-input-field--simple" value="<?php echo htmlspecialchars($currentIdentifier); ?>" placeholder="Ingresa tu identificador">
+                                    <input type="text" id="channelIdentifierInput" data-ref="input-identifier" class="component-input-field component-input-field--simple" value="<?php echo htmlspecialchars($currentIdentifier); ?>" placeholder="Ingresa tu identificador" maxlength="20">
                                 </div>
                                 <div class="component-card__actions component-card__actions--stretch">
                                     <button type="button" class="component-button component-button--h34" data-action="cancelLocalEdit" data-target="identifier">Cancelar</button>
                                     <button type="button" class="component-button component-button--h34 component-button--dark" data-action="saveLocalEdit" data-target="identifier">Guardar</button>
                                 </div>
                             </div>
+                            <div class="identifier-status-msg component-text-small mt-1"></div>
                         </div>
                     </div>
                 </div>

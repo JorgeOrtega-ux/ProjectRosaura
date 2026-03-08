@@ -159,6 +159,49 @@ class SettingsServices
         return ['success' => false, 'message' => 'Error al actualizar.'];
     }
 
+    // --- NUEVA LÓGICA PARA ACTUALIZAR EL IDENTIFICADOR (@handle) ---
+    public function updateIdentifier($data)
+    {
+        if (!$this->sessionManager->has('user_id')) return ['success' => false, 'message' => 'Sesión no válida.'];
+
+        $userId = $this->sessionManager->get('user_id');
+        
+        // Puedes reutilizar la configuración de límites de usuario o crear una nueva para identificadores.
+        $maxAttempts = $this->config['username_change_max_attempts'] ?? 1;
+        $cooldownDays = $this->config['username_change_cooldown_days'] ?? 7;
+        
+        if (!$this->canChangeProfileData($userId, 'identifier', $maxAttempts, $cooldownDays)) {
+            return ['success' => false, 'message' => "Solo puedes cambiar tu identificador {$maxAttempts} vez cada {$cooldownDays} días."];
+        }
+
+        $identifier = strtolower(trim($data['identifier'] ?? ''));
+        
+        // Validación estricta del identificador (min 3, max 20, solo letras y números sin espacios)
+        if (!preg_match('/^[a-z0-9_]{3,20}$/', $identifier)) {
+            return ['success' => false, 'message' => 'El identificador debe tener entre 3 y 20 caracteres y contener solo letras minúsculas, números o guiones bajos.'];
+        }
+        
+        // Palabras reservadas (rutas del SPA)
+        $reserved = ['admin', 'settings', 'studio', 'login', 'register', 'api', 'explore', 'feed'];
+        if (in_array($identifier, $reserved)) {
+            return ['success' => false, 'message' => 'Este identificador no está permitido.'];
+        }
+
+        $existingUser = $this->userRepository->findByIdentifier($identifier);
+        if ($existingUser && $existingUser['id'] != $userId) {
+            return ['success' => false, 'message' => 'Este identificador ya está en uso.'];
+        }
+
+        $oldIdentifier = $this->sessionManager->get('user_identifier', '');
+        if ($this->userRepository->updateIdentifier($userId, $identifier)) {
+            $this->logProfileChange($userId, 'identifier', $oldIdentifier, $identifier);
+            $this->sessionManager->set('user_identifier', $identifier);
+            Logger::security("Identificador de canal actualizado: @{$oldIdentifier} -> @{$identifier}", 'info', ['user_id' => $userId]);
+            return ['success' => true, 'message' => 'Identificador actualizado exitosamente.', 'new_identifier' => $identifier];
+        }
+        return ['success' => false, 'message' => 'Error al actualizar el identificador.'];
+    }
+
     public function requestEmailCode()
     {
         if (!$this->sessionManager->has('user_id')) return ['success' => false, 'message' => 'Sesión no válida.'];

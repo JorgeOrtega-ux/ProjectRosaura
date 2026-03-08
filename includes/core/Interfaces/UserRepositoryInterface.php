@@ -7,18 +7,16 @@ interface UserRepositoryInterface {
     public function findById(int $id): ?array;
     public function findByEmail(string $email): ?array;
     public function findByUsername(string $username): ?array;
+    public function findByIdentifier(string $identifier): ?array; // <-- Nuevo Método
     public function createUser(array $data): int;
     
-    // Este método se mantiene aquí para levantamientos automáticos rápidos (AutoLogin)
     public function liftSuspension(int $id): bool;
 
     public function updateAvatar(int $id, string $path): bool;
-    
-    // --- NUEVO MÉTODO AGREGADO PARA EL BANNER ---
     public function updateBanner(int $id, string $path): bool;
-
-    // --- NUEVO MÉTODO AGREGADO PARA EL PERFIL DEL CANAL ---
+    
     public function updateChannelProfile(int $id, ?string $description, ?string $identifier, ?string $contactEmail): bool;
+    public function updateIdentifier(int $id, string $identifier): bool; // <-- Nuevo Método
     
     public function updateUsername(int $id, string $username): bool;
     public function updateEmail(int $id, string $email): bool;

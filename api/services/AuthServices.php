@@ -117,7 +117,6 @@ class AuthServices {
 
                     if (isset($user['is_suspended']) && $user['is_suspended'] == 1) {
                         if ($user['suspension_type'] === 'temporary' && $user['suspension_end_date'] && strtotime($user['suspension_end_date']) <= time()) {
-                            // Expira la suspensión automáticamente SIN alterar el user_status (active/deleted)
                             $this->userRepository->liftSuspension($user['id']);
                             $user['is_suspended'] = 0;
                         } else {
@@ -137,6 +136,7 @@ class AuthServices {
                     $this->sessionManager->set('user_email', $user['email']);
                     $this->sessionManager->set('user_role', $user['role']);
                     $this->sessionManager->set('user_pic', $user['profile_picture']);
+                    $this->sessionManager->set('user_identifier', $user['channel_identifier']); // Guardamos en sesión
                     $this->sessionManager->set('user_prefs', $userPrefs);
                     $this->sessionManager->set('user_2fa', $user['two_factor_enabled'] ?? 0);
 
@@ -281,12 +281,27 @@ class AuthServices {
         $profilePic = Utils::generateProfilePicture($payload['username'], $uuid);
         if (!$profilePic) return ['success' => false, 'message' => 'Error al generar la foto de perfil.'];
 
+        // --- LÓGICA DE GENERACIÓN DE IDENTIFICADOR ---
+        // 1. Sanitizar nombre de usuario
+        $baseHandle = strtolower(preg_replace('/[^a-z0-9]/', '', $payload['username']));
+        if (empty($baseHandle)) $baseHandle = 'user'; // Fallback por si usan solo caracteres especiales
+        
+        $channelIdentifier = $baseHandle;
+        $counter = 1;
+
+        // 2. Verificar colisiones y agregar sufijo si es necesario
+        while ($this->userRepository->findByIdentifier($channelIdentifier)) {
+            $channelIdentifier = $baseHandle . $counter;
+            $counter++;
+        }
+
         $newUserId = $this->userRepository->createUser([
             'uuid' => $uuid,
             'username' => $payload['username'],
             'email' => $payload['email'],
             'password' => password_hash($payload['password'], PASSWORD_BCRYPT),
-            'profile_picture' => $profilePic
+            'profile_picture' => $profilePic,
+            'channel_identifier' => $channelIdentifier // Se guarda el identificador único
         ]);
 
         if ($newUserId > 0) {
@@ -299,6 +314,7 @@ class AuthServices {
             $this->sessionManager->set('user_email', $payload['email']);
             $this->sessionManager->set('user_role', 'user');
             $this->sessionManager->set('user_pic', $profilePic);
+            $this->sessionManager->set('user_identifier', $channelIdentifier);
             $this->sessionManager->set('user_prefs', $userPrefs);
             $this->sessionManager->set('user_2fa', 0);
 
@@ -310,7 +326,7 @@ class AuthServices {
             
             $this->verificationCodeRepository->deleteById($verification['id']);
 
-            Logger::security("Nueva cuenta registrada", 'info', ['user_id' => $newUserId, 'email' => $payload['email'], 'ip' => Utils::getIpAddress()]);
+            Logger::security("Nueva cuenta registrada con identificador @{$channelIdentifier}", 'info', ['user_id' => $newUserId, 'email' => $payload['email'], 'ip' => Utils::getIpAddress()]);
             return ['success' => true, 'message' => 'Cuenta creada con éxito.'];
         }
         Logger::security("Fallo en base de datos al registrar: {$payload['email']}", 'error', ['ip' => Utils::getIpAddress()]);
@@ -361,6 +377,7 @@ class AuthServices {
             $this->sessionManager->set('user_email', $user['email']);
             $this->sessionManager->set('user_role', $user['role']);
             $this->sessionManager->set('user_pic', $user['profile_picture']);
+            $this->sessionManager->set('user_identifier', $user['channel_identifier']);
             $this->sessionManager->set('user_prefs', $userPrefs);
             $this->sessionManager->set('user_2fa', $user['two_factor_enabled'] ?? 0);
 
@@ -422,6 +439,7 @@ class AuthServices {
             $this->sessionManager->set('user_email', $user['email']);
             $this->sessionManager->set('user_role', $user['role']);
             $this->sessionManager->set('user_pic', $user['profile_picture']);
+            $this->sessionManager->set('user_identifier', $user['channel_identifier']);
             $this->sessionManager->set('user_prefs', $this->prefsManager->ensureDefaultPreferences($user['id']));
             $this->sessionManager->set('user_2fa', 1);
 

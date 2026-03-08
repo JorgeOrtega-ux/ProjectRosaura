@@ -13,9 +13,11 @@ export class ProfileController {
         this.handleClickBound = this.handleClick.bind(this);
         this.handleChangeBound = this.handleChange.bind(this);
         this.handleInputBound = this.handleInput.bind(this);
+
+        // Agregamos un debounce timeout para validaciones en tiempo real
+        this.identifierValidationTimeout = null;
     }
 
-    // Limpiar memoria y detener intervalos
     destroy() {
         document.removeEventListener('click', this.handleClickBound);
         document.removeEventListener('change', this.handleChangeBound);
@@ -23,6 +25,9 @@ export class ProfileController {
         
         if (this.dialogResendInterval) {
             clearInterval(this.dialogResendInterval);
+        }
+        if (this.identifierValidationTimeout) {
+            clearTimeout(this.identifierValidationTimeout);
         }
     }
 
@@ -34,12 +39,96 @@ export class ProfileController {
         if (imgEl && imgEl.src.includes('/default/')) {
             this.isDefaultAvatar = true;
         }
+
+        // Configurar la validación del input del identificador si existe
+        this.setupIdentifierValidation();
     }
 
     bindEvents() {
         document.addEventListener('click', this.handleClickBound);
         document.addEventListener('change', this.handleChangeBound);
         document.addEventListener('input', this.handleInputBound);
+    }
+
+    // --- NUEVO: Configuración para la validación asíncrona del identificador ---
+    setupIdentifierValidation() {
+        const identifierInput = document.querySelector('[data-ref="input-identifier"]');
+        if (!identifierInput) return;
+
+        identifierInput.addEventListener('input', (e) => {
+            // Limpieza básica inmediata en el cliente
+            let val = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '');
+            if(e.target.value !== val) {
+                e.target.value = val;
+            }
+
+            const currentOriginal = identifierInput.getAttribute('data-original-value');
+            if (val === currentOriginal) {
+                this.clearIdentifierStatus();
+                return;
+            }
+
+            if (this.identifierValidationTimeout) {
+                clearTimeout(this.identifierValidationTimeout);
+            }
+
+            if (val.length < 3) {
+                 this.setIdentifierStatus('El identificador debe tener al menos 3 caracteres.', 'error');
+                 return;
+            }
+
+            this.setIdentifierStatus('Comprobando disponibilidad...', 'loading');
+
+            this.identifierValidationTimeout = setTimeout(() => {
+                this.validateIdentifier(val);
+            }, 500); // 500ms de debounce
+        });
+    }
+
+    // Función para mostrar el estado de la validación
+    setIdentifierStatus(message, type) {
+        let statusEl = document.querySelector('.identifier-status-msg');
+        if(!statusEl) {
+             const inputWrapper = document.querySelector('[data-ref="input-identifier"]').closest('.component-form-group') || document.querySelector('[data-ref="input-identifier"]').parentNode;
+             statusEl = document.createElement('div');
+             statusEl.className = 'identifier-status-msg component-text-small mt-1';
+             inputWrapper.appendChild(statusEl);
+        }
+
+        statusEl.textContent = message;
+        statusEl.className = 'identifier-status-msg component-text-small mt-1'; // Reset
+        
+        const btnSave = document.querySelector('[data-action="saveIdentifier"]');
+
+        if (type === 'error') {
+            statusEl.classList.add('component-text-danger');
+            if(btnSave) btnSave.disabled = true;
+        } else if (type === 'success') {
+            statusEl.classList.add('component-text-success');
+            if(btnSave) btnSave.disabled = false;
+        } else if (type === 'loading') {
+            statusEl.classList.add('component-text-muted');
+            if(btnSave) btnSave.disabled = true;
+        }
+    }
+
+    clearIdentifierStatus() {
+        const statusEl = document.querySelector('.identifier-status-msg');
+        if(statusEl) statusEl.textContent = '';
+        const btnSave = document.querySelector('[data-action="saveIdentifier"]');
+        if(btnSave) btnSave.disabled = false;
+    }
+
+    // Validar con la API (Nota: Asegúrate de tener esta ruta en tu API si decides implementar validación en tiempo real separada)
+    async validateIdentifier(identifier) {
+        // En este ejemplo, asumo que tienes un endpoint para validar, o podrías usar un try simulado
+        // const response = await this.api.post(ApiRoutes.Settings.ValidateIdentifier, { identifier: identifier });
+        // Simulación temporal para el frontend, idealmente llamar a la API
+        if(['admin', 'settings', 'login'].includes(identifier)) {
+             this.setIdentifierStatus('Identificador no disponible.', 'error');
+        } else {
+             this.setIdentifierStatus('Identificador disponible.', 'success');
+        }
     }
 
     handleClick(e) {
@@ -58,6 +147,10 @@ export class ProfileController {
 
         const btnSaveUsername = e.target.closest('[data-action="saveUsername"]');
         if (btnSaveUsername) this.saveUsername(btnSaveUsername);
+
+        // NUEVO: Botón para guardar el identificador en los ajustes
+        const btnSaveIdentifier = e.target.closest('[data-action="saveIdentifier"]');
+        if (btnSaveIdentifier) this.saveIdentifier(btnSaveIdentifier);
 
         const btnRequestEmail = e.target.closest('[data-action="requestEmailUpdate"]');
         if (btnRequestEmail) this.handleEmailUpdateRequest();
@@ -231,6 +324,38 @@ export class ProfileController {
             input.setAttribute('data-original-value', result.new_username);
             window.appInstance.toggleEditState('username');
         } else this.showMessage(result.message, 'error');
+    }
+
+    // --- NUEVO: Función para guardar el identificador editado ---
+    async saveIdentifier(btn) {
+        const input = document.querySelector('[data-ref="input-identifier"]');
+        if (!input) return;
+        const val = input.value.trim().toLowerCase();
+        const originalVal = input.getAttribute('data-original-value');
+        
+        if (val === originalVal) { 
+            window.appInstance.toggleEditState('identifier'); 
+            return; 
+        }
+
+        if (btn.disabled) return; // Por si hay un error de validación asíncrona previo
+
+        this.setButtonLoading(btn);
+        // Supone que creaste un endpoint UpdateIdentifier en el backend (SettingsController/SettingsServices)
+        const result = await this.api.post(ApiRoutes.Settings.UpdateIdentifier, { identifier: val });
+        this.restoreButton(btn);
+
+        if (result.success) {
+            this.showMessage(result.message, 'success');
+            const displayEl = document.querySelector('[data-ref="display-identifier"]');
+            if(displayEl) displayEl.textContent = `@${result.new_identifier}`;
+            input.setAttribute('data-original-value', result.new_identifier);
+            this.clearIdentifierStatus();
+            window.appInstance.toggleEditState('identifier');
+        } else {
+            this.showMessage(result.message, 'error');
+            this.setIdentifierStatus(result.message, 'error');
+        }
     }
 
     async handleEmailUpdateRequest() {

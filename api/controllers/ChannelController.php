@@ -1,4 +1,3 @@
-<?php
 // api/controllers/ChannelController.php
 namespace App\Api\Controllers;
 
@@ -15,19 +14,55 @@ class ChannelController {
         $this->userRepo = $userRepo;
     }
 
+    // --- NUEVO MÉTODO PARA OBTENER LOS DATOS DEL CANAL MEDIANTE IDENTIFICADOR ---
+    public function get_channel_by_identifier($identifier) {
+        if (empty($identifier)) {
+            return ['success' => false, 'message' => 'Identificador no especificado.'];
+        }
+        
+        // Removemos el '@' si viene incluido en el string
+        $cleanIdentifier = ltrim($identifier, '@');
+
+        // Modificamos para buscar por 'identifier' en lugar de username
+        $channelUser = $this->userRepo->findByIdentifier($cleanIdentifier);
+
+        if (!$channelUser) {
+            return ['success' => false, 'message' => 'El canal no existe.'];
+        }
+
+        // Se oculta la información privada antes de devolver el perfil
+        unset($channelUser['password'], $channelUser['two_factor_secret'], $channelUser['two_factor_recovery_codes'], $channelUser['email']);
+        
+        // Agregamos el número de suscriptores
+        $channelUser['subscriber_count'] = $this->subscriptionRepo->getSubscriberCount($channelUser['id']);
+        
+        // Verificamos si el usuario actual está suscrito (si está logueado)
+        $isSubscribed = false;
+        if (isset($_SESSION['user_id'])) {
+            $isSubscribed = $this->subscriptionRepo->isSubscribed($_SESSION['user_id'], $channelUser['id']);
+        }
+        $channelUser['is_subscribed'] = $isSubscribed;
+
+        return ['success' => true, 'channel' => $channelUser];
+    }
+
     public function toggle_subscription($data) {
         if (!isset($_SESSION['user_id'])) {
             return ['success' => false, 'message' => 'Debes iniciar sesión para suscribirte.'];
         }
 
         $subscriberId = $_SESSION['user_id'];
-        $channelUsername = $data['username'] ?? '';
+        
+        // MODIFICADO: Ahora esperamos el identifier en lugar del username para suscribirse
+        $channelIdentifier = $data['identifier'] ?? '';
 
-        if (empty($channelUsername)) {
+        if (empty($channelIdentifier)) {
             return ['success' => false, 'message' => 'Canal no especificado.'];
         }
-
-        $channelUser = $this->userRepo->findByUsername($channelUsername);
+        
+        $cleanIdentifier = ltrim($channelIdentifier, '@');
+        $channelUser = $this->userRepo->findByIdentifier($cleanIdentifier);
+        
         if (!$channelUser) {
             return ['success' => false, 'message' => 'El canal no existe.'];
         }
@@ -48,7 +83,6 @@ class ChannelController {
         ];
     }
     
-    // --- NUEVO MÉTODO PARA GUARDAR CAMBIOS DE PERFIL EN LOTE ---
     public function update_profile($data) {
         if (!isset($_SESSION['user_id'])) {
             return ['success' => false, 'message' => 'Debes iniciar sesión para realizar esta acción.'];
@@ -58,15 +92,32 @@ class ChannelController {
         $identifier = isset($data['identifier']) ? trim($data['identifier']) : null;
         $contactEmail = isset($data['contact_email']) ? trim($data['contact_email']) : null;
 
-        // Validar correo si se envió uno
         if (!empty($contactEmail) && !filter_var($contactEmail, FILTER_VALIDATE_EMAIL)) {
             return ['success' => false, 'message' => 'El correo de contacto no es un formato válido.'];
         }
 
-        // Llamar al repositorio
+        // Validar el formato del identificador
+        if ($identifier) {
+             // Removemos el '@' por si el usuario lo envió
+             $identifier = ltrim($identifier, '@');
+             if (!preg_match('/^[a-z0-9_]{3,20}$/', $identifier)) {
+                 return ['success' => false, 'message' => 'El identificador debe tener entre 3 y 20 caracteres y contener solo letras minúsculas, números o guiones bajos.'];
+             }
+
+             // Verificar si el identificador ya existe en otro usuario
+             $existingUser = $this->userRepo->findByIdentifier($identifier);
+             if ($existingUser && $existingUser['id'] != $_SESSION['user_id']) {
+                 return ['success' => false, 'message' => 'El identificador ingresado ya está en uso.'];
+             }
+        }
+
         $updated = $this->userRepo->updateChannelProfile($_SESSION['user_id'], $description, $identifier, $contactEmail);
 
         if ($updated) {
+            // Actualizar la variable de sesión si el identificador cambió
+            if ($identifier) {
+                $_SESSION['user_identifier'] = $identifier;
+            }
             return ['success' => true, 'message' => 'Los cambios de tu canal se han publicado correctamente.'];
         } else {
             return ['success' => false, 'message' => 'No se pudieron guardar los cambios. Intenta nuevamente.'];
@@ -182,4 +233,3 @@ class ChannelController {
         return ['success' => false, 'message' => 'Error interno al procesar y guardar la imagen recortada.'];
     }
 }
-?>
