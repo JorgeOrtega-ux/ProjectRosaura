@@ -2,6 +2,8 @@ export class VideoCardSystem {
     constructor() {
         this.hlsInstances = new WeakMap();
         this.playPromises = new WeakMap();
+        this.hoverTimers = new WeakMap(); // Almacena los temporizadores para evitar el autoplay instantáneo
+        this.hoverDelay = 550; // Milisegundos de espera antes de iniciar la carga/reproducción
     }
 
     init() {
@@ -18,6 +20,21 @@ export class VideoCardSystem {
         
         if (!video) return;
 
+        // Si por alguna razón ya había un temporizador corriendo para esta tarjeta, lo limpiamos
+        if (this.hoverTimers.has(card)) {
+            clearTimeout(this.hoverTimers.get(card));
+        }
+
+        // Iniciamos el temporizador. La reproducción solo arrancará si el mouse se mantiene el tiempo definido.
+        const timerId = setTimeout(() => {
+            this.startPlayback(card, video, durationSpan);
+        }, this.hoverDelay);
+
+        this.hoverTimers.set(card, timerId);
+    }
+
+    // Nueva función que encapsula la lógica pesada
+    startPlayback(card, video, durationSpan) {
         if (!card.dataset.originalDuration && durationSpan) {
             card.dataset.originalDuration = durationSpan.textContent;
         }
@@ -87,12 +104,21 @@ export class VideoCardSystem {
             this.playVideo(video);
         }
 
-        video.addEventListener('timeupdate', () => this.updateCountdown(video, durationSpan));
+        // CORRECCIÓN: Usar ontimeupdate en lugar de addEventListener evita 
+        // asignar un nuevo event listener cada vez que se hace hover en la misma tarjeta
+        video.ontimeupdate = () => this.updateCountdown(video, durationSpan);
     }
 
     handleMouseLeave(e) {
         const card = e.target.closest('.component-video-card');
         if (!card) return;
+
+        // Cancelamos inmediatamente el temporizador si existe. 
+        // Si el usuario sacó el mouse antes de los 550ms, la función startPlayback NUNCA se ejecuta.
+        if (this.hoverTimers.has(card)) {
+            clearTimeout(this.hoverTimers.get(card));
+            this.hoverTimers.delete(card);
+        }
 
         const video = card.querySelector('.component-video-card__player');
         const durationSpan = card.querySelector('.component-video-card__duration');
