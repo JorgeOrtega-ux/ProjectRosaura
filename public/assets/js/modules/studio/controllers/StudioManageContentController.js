@@ -262,11 +262,18 @@ export class StudioManageContentController {
             editBtn.onclick = () => {
                 const video = this.state.getVideo(id);
                 if (video) {
-                    if (video.status === 'processing' || video.status === 'queued') window.dispatchEvent(new CustomEvent('routeChange', { detail: { url: '/studio/uploading' }}));
-                    else {
-                        let base = window.AppBasePath || '';
+                    let base = window.AppBasePath || '';
+                    
+                    // CORRECCIÓN: Si el estado es 'processed' (Borrador) o fallido, debemos enviarlo a uploading 
+                    // para que pueda ser publicado correctamente en el flujo.
+                    if (video.status === 'processing' || video.status === 'queued' || video.status === 'processed' || video.status === 'failed') {
+                        let url = `${base}/studio/uploading`.replace(/\/+/g, '/');
+                        window.dispatchEvent(new CustomEvent('routeChange', { detail: { url: url }}));
+                    } else {
+                        // Solo cuando el video es explícitamente 'published' vamos a la vista de edición estándar
                         let userUuid = this.wsManager.getUserId();
-                        window.dispatchEvent(new CustomEvent('routeChange', { detail: { url: `${base}/studio/edit/${userUuid}/${video.uuid}` }}));
+                        let url = `${base}/studio/edit/${userUuid}/${video.uuid}`.replace(/\/+/g, '/');
+                        window.dispatchEvent(new CustomEvent('routeChange', { detail: { url: url }}));
                     }
                 }
             };

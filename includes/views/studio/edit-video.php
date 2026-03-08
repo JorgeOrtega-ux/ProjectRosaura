@@ -10,7 +10,7 @@ $userUuid = $_GET['uuid'] ?? '';
                 <div class="component-view-top-left">
                 </div>
                 
-                <div class="component-view-top-right" style="display: flex; gap: 8px;">
+                <div class="component-view-top-right">
                     <button type="button" class="component-button component-button--dark component-button--h36" id="btnSaveChanges">
                         <span class="material-symbols-rounded">save</span>
                         <span>Guardar cambios</span>
@@ -37,7 +37,7 @@ $userUuid = $_GET['uuid'] ?? '';
                                     </div>
                                 </div>
 
-                                <div class="disabled component-state-box" data-state="title-edit" style="display: none;">
+                                <div class="disabled component-state-box" data-state="title-edit">
                                     <div class="component-card__content">
                                         <div class="component-card__text">
                                             <h2 class="component-card__title">Título del video (obligatorio)</h2>
@@ -56,7 +56,7 @@ $userUuid = $_GET['uuid'] ?? '';
                             </div>
                         </div>
 
-                        <div class="component-card--grouped" style="margin-top: 24px;">
+                        <div class="component-card--grouped">
                             <div class="component-group-item component-group-item--stacked">
                                 <div class="component-card__content component-card__content--full">
                                     <div class="component-card__text">
@@ -70,7 +70,7 @@ $userUuid = $_GET['uuid'] ?? '';
                             </div>
                         </div>
 
-                        <div class="component-card--grouped" style="margin-top: 24px;">
+                        <div class="component-card--grouped">
                             <div class="component-group-item component-group-item--stacked">
                                 <div class="component-card__content">
                                     <div class="component-card__text">

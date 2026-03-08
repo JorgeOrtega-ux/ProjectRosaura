@@ -13,7 +13,7 @@ export class StudioUploadController {
         this.handleDocumentDragLeaveBound = this.handleDocumentDragLeave.bind(this);
         this.handleDocumentDropBound = this.handleDocumentDrop.bind(this);
         this.handleDocumentClickBound = this.handleDocumentClick.bind(this);
-        this.handleDocumentInputBound = this.handleDocumentInput.bind(this); // NUEVO
+        this.handleDocumentInputBound = this.handleDocumentInput.bind(this); 
         this.updateUploadBadgesBound = this.updateUploadBadges.bind(this);
 
         const path = window.location.pathname;
@@ -40,7 +40,7 @@ export class StudioUploadController {
         document.removeEventListener('dragleave', this.handleDocumentDragLeaveBound);
         document.removeEventListener('drop', this.handleDocumentDropBound);
         document.removeEventListener('click', this.handleDocumentClickBound);
-        document.removeEventListener('input', this.handleDocumentInputBound); // NUEVO
+        document.removeEventListener('input', this.handleDocumentInputBound); 
         window.removeEventListener('studioVideoProgress', this.updateUploadBadgesBound);
         
         if (this.tagsManager && typeof this.tagsManager.destroy === 'function') {
@@ -49,6 +49,10 @@ export class StudioUploadController {
         if (this.thumbnailManager && typeof this.thumbnailManager.destroy === 'function') {
             this.thumbnailManager.destroy();
         }
+    }
+
+    getRoute(path) {
+        return ((window.AppBasePath || '') + path).replace(/\/+/g, '/');
     }
 
     async handleFilesSelection(files) {
@@ -80,7 +84,7 @@ export class StudioUploadController {
                 if (result.status !== 'success') alert(`Error subiendo ${file.name}: ${result.message}`);
             } catch (error) { console.error(error); }
         }
-        window.dispatchEvent(new CustomEvent('routeChange', { detail: { url: '/studio/uploading' }}));
+        window.dispatchEvent(new CustomEvent('routeChange', { detail: { url: this.getRoute('/studio/uploading') }}));
     }
 
     async initUploadingView() {
@@ -89,7 +93,7 @@ export class StudioUploadController {
         if (response.status === 'success') {
             const videos = response.data;
             if (videos.length === 0) {
-                window.dispatchEvent(new CustomEvent('routeChange', { detail: { url: '/studio/upload' }}));
+                window.dispatchEvent(new CustomEvent('routeChange', { detail: { url: this.getRoute('/studio/upload') }}));
                 return;
             }
             this.state.clear();
@@ -150,7 +154,6 @@ export class StudioUploadController {
         }
     }
 
-    // NUEVO: Función para sincronizar de manera reactiva el DOM de visibilidad
     syncVisibilityUI(value) {
         const visibilityIcon = document.getElementById('visibilityIcon');
         const visibilityText = document.getElementById('visibilityText');
@@ -170,7 +173,6 @@ export class StudioUploadController {
             }
         });
 
-        // Fallback visual por defecto si no hay coincidencias previas
         if (!matched && value === 'public') {
             if (visibilityIcon) visibilityIcon.textContent = 'public';
             if (visibilityText) visibilityText.textContent = 'Público';
@@ -195,11 +197,11 @@ export class StudioUploadController {
         const previewOriginalFilename = document.getElementById('previewOriginalFilename');
         if(previewOriginalFilename) previewOriginalFilename.textContent = video.original_filename;
 
-        // 3. Sincronizar Descripción (NUEVO)
+        // 3. Sincronizar Descripción
         const descInput = document.getElementById('videoDescriptionInput');
         if (descInput) descInput.value = video.description || '';
 
-        // 4. Sincronizar Visibilidad (NUEVO)
+        // 4. Sincronizar Visibilidad
         this.syncVisibilityUI(video.visibility || 'public');
 
         const cancelBtn = document.getElementById('btnCancelVideo');
@@ -218,6 +220,9 @@ export class StudioUploadController {
         // 5. Sincronizar Etiquetas
         if (this.tagsManager) {
             this.tagsManager.setInitialTags(video.tags || []);
+            // Garantizar que queden en el state local inmediatamente 
+            video.modelsIds = this.tagsManager.getModelsIds();
+            video.categoriesIds = this.tagsManager.getCategoriesIds();
         }
 
         // 6. Sincronizar Vista Previa
@@ -267,7 +272,6 @@ export class StudioUploadController {
         }
     }
 
-    // NUEVO: Método para interceptar en tiempo real la escritura y guardar en el estado
     handleDocumentInput(e) {
         if (!this.state.selectedVideoId) return;
 
@@ -349,18 +353,25 @@ export class StudioUploadController {
 
         const routeName = ApiRoutes.Studio?.CancelUpload || 'studio.cancel_upload';
         this.api.post(routeName, { video_id: this.state.selectedVideoId }).then(res => {
+            
+            // Restaurar el botón SIEMPRE antes de evaluar el cambio de vista,
+            // ya que el botón perdura para la siguiente pestaña.
+            if (btn) { 
+                btn.classList.remove('disabled-interactive'); 
+                btn.removeAttribute('disabled'); 
+            }
+
             if (res.status === 'success') {
                 this.state.deleteVideo(this.state.selectedVideoId);
                 
                 if (this.state.currentVideos.size === 0) {
-                    window.dispatchEvent(new CustomEvent('routeChange', { detail: { url: '/studio/upload' }}));
+                    window.dispatchEvent(new CustomEvent('routeChange', { detail: { url: this.getRoute('/studio/upload') }}));
                 } else {
                     const firstId = this.state.currentVideos.keys().next().value;
                     this.selectVideo(firstId);
                 }
             } else {
                 alert("Error al cancelar el video: " + res.message);
-                if (btn) { btn.classList.remove('disabled-interactive'); btn.removeAttribute('disabled'); }
             }
         }).catch(err => {
             console.error(err);
@@ -372,7 +383,6 @@ export class StudioUploadController {
     handleSelectVisibility(btn) {
         const value = btn.getAttribute('data-value');
         
-        // Delegamos todo el control visual a nuestro método de sincronización bidireccional
         this.syncVisibilityUI(value);
 
         const video = this.state.getVideo(this.state.selectedVideoId);
@@ -434,8 +444,17 @@ export class StudioUploadController {
             return;
         }
 
-        const models = video.modelsIds || [];
-        const categories = video.categoriesIds || [];
+        // Recuperar Ids de array de etiquetas con fallback para prevenir fallos al publicar directo
+        let models = video.modelsIds;
+        let categories = video.categoriesIds;
+        if (models === undefined && Array.isArray(video.tags)) {
+            models = video.tags.filter(t => t.type === 'modelo').map(t => t.id);
+        }
+        if (categories === undefined && Array.isArray(video.tags)) {
+            categories = video.tags.filter(t => t.type === 'category').map(t => t.id);
+        }
+        models = models || [];
+        categories = categories || [];
 
         const formData = new FormData();
         formData.append('video_id', video.id);
@@ -461,19 +480,23 @@ export class StudioUploadController {
             const routeName = ApiRoutes.Studio?.PublishVideo || 'studio.publish_video';
             const response = await this.api.postForm(routeName, formData);
             
+            // CORRECCIÓN: Siempre restaurar el estado del botón ANTES de cambiar de video
+            // para que el próximo elemento seleccionado no herede las clases de "disabled".
+            btn.removeAttribute('disabled');
+            btn.classList.remove('disabled', 'disabled-interactive');
+            btn.innerHTML = originalText;
+
             if (response.status === 'success') {
                 this.state.deleteVideo(this.state.selectedVideoId);
+                
                 if (this.state.currentVideos.size === 0) {
-                    window.dispatchEvent(new CustomEvent('routeChange', { detail: { url: '/studio/manage-content' }}));
+                    window.dispatchEvent(new CustomEvent('routeChange', { detail: { url: this.getRoute('/studio/manage-content') }}));
                 } else {
                     const firstId = this.state.currentVideos.keys().next().value;
                     this.selectVideo(firstId);
                 }
             } else {
                 alert("Error al publicar: " + response.message);
-                btn.removeAttribute('disabled');
-                btn.classList.remove('disabled', 'disabled-interactive');
-                btn.innerHTML = originalText;
             }
         } catch (error) {
             console.error("Error al publicar el video:", error);
@@ -490,6 +513,6 @@ export class StudioUploadController {
         document.addEventListener('dragleave', this.handleDocumentDragLeaveBound);
         document.addEventListener('drop', this.handleDocumentDropBound);
         document.addEventListener('click', this.handleDocumentClickBound);
-        document.addEventListener('input', this.handleDocumentInputBound); // NUEVO
+        document.addEventListener('input', this.handleDocumentInputBound); 
     }
 }
