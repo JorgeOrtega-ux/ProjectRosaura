@@ -8,7 +8,7 @@ export class ChannelController {
     constructor() {
         this.api = new ApiService();
         this.dialog = new DialogSystem(); 
-        this.currentCropData = null; // Variable para almacenar recortes en memoria
+        this.currentCropData = null; 
     }
 
     init() {
@@ -16,6 +16,8 @@ export class ChannelController {
         this.setupTabsNavigation();
         this.setupSubscriptionButton();
         this.setupBannerUpload();
+        this.setupLocalEditToggles(); // Activa la lógica local de los inputs
+        this.setupProfilePublishing(); 
     }
 
     setupTabsNavigation() {
@@ -94,6 +96,108 @@ export class ChannelController {
         });
     }
 
+    // --- NUEVO: Manejo local de los inputs visuales ---
+    setupLocalEditToggles() {
+        const wrapper = document.querySelector('.component-wrapper');
+        if (!wrapper) return;
+
+        wrapper.addEventListener('click', (e) => {
+            const action = e.target.getAttribute('data-action');
+            if (!action) return;
+
+            const target = e.target.getAttribute('data-target');
+
+            if (action === 'toggleLocalEdit') {
+                this.switchState(target, 'edit');
+            } 
+            else if (action === 'cancelLocalEdit') {
+                const displayEl = document.querySelector(`[data-ref="display-${target}"]`);
+                const inputEl = document.querySelector(`[data-ref="input-${target}"]`);
+                if (displayEl && inputEl) {
+                    // Restaurar el valor del input al original visible
+                    let text = displayEl.innerText.trim();
+                    if (target === 'identifier' && text.startsWith('@')) {
+                        text = text.substring(1);
+                    }
+                    inputEl.value = text;
+                }
+                this.switchState(target, 'view');
+            }
+            else if (action === 'saveLocalEdit') {
+                const displayEl = document.querySelector(`[data-ref="display-${target}"]`);
+                const inputEl = document.querySelector(`[data-ref="input-${target}"]`);
+                if (displayEl && inputEl) {
+                    // Solo actualiza la UI temporalmente
+                    let val = inputEl.value.trim();
+                    if (target === 'identifier') {
+                        displayEl.innerText = val ? '@' + val : '';
+                    } else {
+                        displayEl.innerText = val;
+                    }
+                }
+                this.switchState(target, 'view');
+            }
+        });
+    }
+
+    switchState(target, state) {
+        const viewBox = document.querySelector(`[data-state="${target}-view"]`);
+        const editBox = document.querySelector(`[data-state="${target}-edit"]`);
+
+        if (!viewBox || !editBox) return;
+
+        if (state === 'edit') {
+            viewBox.classList.remove('active');
+            viewBox.classList.add('disabled');
+            editBox.classList.remove('disabled');
+            editBox.classList.add('active');
+        } else {
+            editBox.classList.remove('active');
+            editBox.classList.add('disabled');
+            viewBox.classList.remove('disabled');
+            viewBox.classList.add('active');
+        }
+    }
+
+    setupProfilePublishing() {
+        const publishBtn = document.getElementById('btn-publish-profile-changes');
+        if (!publishBtn) return;
+
+        const newBtn = publishBtn.cloneNode(true);
+        publishBtn.parentNode.replaceChild(newBtn, publishBtn);
+
+        newBtn.addEventListener('click', async () => {
+            // Recopilamos los datos directamente de los inputs
+            const description = document.getElementById('channelDescriptionInput')?.value || '';
+            const identifier = document.getElementById('channelIdentifierInput')?.value || '';
+            const contactEmail = document.getElementById('channelContactInput')?.value || '';
+
+            const originalText = newBtn.innerText;
+            newBtn.innerText = 'Publicando...';
+            newBtn.disabled = true;
+
+            try {
+                const response = await this.api.post(ApiRoutes.Channel.UpdateProfile, {
+                    description: description,
+                    identifier: identifier,
+                    contact_email: contactEmail
+                });
+
+                if (response.success) {
+                    this.dialog.show('success', { title: '¡Publicado!', message: response.message });
+                } else {
+                    this.dialog.show('error', { title: 'Error', message: response.message });
+                }
+            } catch (error) {
+                console.error("Error al publicar perfil:", error);
+                this.dialog.show('error', { title: 'Error', message: 'Ha ocurrido un error de conexión.' });
+            } finally {
+                newBtn.innerText = originalText;
+                newBtn.disabled = false;
+            }
+        });
+    }
+
     setupBannerUpload() {
         const btnEditBanner = document.getElementById('btn-edit-banner');
         const fileInput = document.getElementById('bannerUploadInput');
@@ -154,7 +258,6 @@ export class ChannelController {
         });
     }
 
-    // Inicializa el sistema de redimensionado manual
     initCropTool(dialogBox) {
         const wrapper = dialogBox.querySelector('.banner-crop-wrapper');
         const cropBox = dialogBox.querySelector('#bannerCropBox');
@@ -167,7 +270,6 @@ export class ChannelController {
 
         if (!wrapper || !cropBox || !img) return;
 
-        // Inicializamos los datos de recorte en memoria
         this.currentCropData = { x: 0, y: 0, w: 1, h: 1 };
 
         let isDragging = false;
@@ -185,7 +287,6 @@ export class ChannelController {
             cropBox.style.width = `${width}px`;
             cropBox.style.height = `${height}px`;
 
-            // Actualizar máscaras
             maskTop.style.height = `${top}px`;
             maskTop.style.width = '100%';
             maskTop.style.left = '0';
@@ -206,15 +307,12 @@ export class ChannelController {
             maskRight.style.left = `${left + width}px`;
             maskRight.style.width = `calc(100% - ${left + width}px)`;
 
-            // Guardar porcentajes en la MEMORIA para leerlos luego en el guardado
             if (containerRect && containerRect.width > 0 && containerRect.height > 0) {
-                // Mantenemos el DOM actualizado por si acaso
                 cropBox.dataset.cropX = left / containerRect.width;
                 cropBox.dataset.cropY = top / containerRect.height;
                 cropBox.dataset.cropW = width / containerRect.width;
                 cropBox.dataset.cropH = height / containerRect.height;
 
-                // Actualizamos nuestra variable de memoria
                 this.currentCropData.x = left / containerRect.width;
                 this.currentCropData.y = top / containerRect.height;
                 this.currentCropData.w = width / containerRect.width;
@@ -225,7 +323,7 @@ export class ChannelController {
         const initializeCropBox = () => {
             containerRect = wrapper.getBoundingClientRect();
             if (containerRect.width === 0) {
-                setTimeout(initializeCropBox, 50); // Reintentar si aún no carga el DOM
+                setTimeout(initializeCropBox, 50); 
                 return;
             }
 
@@ -246,7 +344,6 @@ export class ChannelController {
         if (img.complete) initializeCropBox();
         else img.onload = initializeCropBox;
 
-        // Eventos de puntero para arrastrar y soltar
         cropBox.addEventListener('pointerdown', (e) => {
             e.preventDefault();
             containerRect = wrapper.getBoundingClientRect();
@@ -285,22 +382,19 @@ export class ChannelController {
                 updateUI(newLeft, newTop, initialWidth, initialHeight);
 
             } else if (isResizing) {
-                // Lógica avanzada de redimensionamiento proporcional 16:9 con límites
                 let deltaW_fromX = currentHandle.includes('e') ? dx : -dx;
                 let deltaH_fromY = currentHandle.includes('s') ? dy : -dy;
                 let deltaW_fromY = deltaH_fromY * ASPECT_RATIO;
                 
-                // Usar el mayor movimiento como eje dominante
                 let deltaW = Math.abs(deltaW_fromX) > Math.abs(deltaW_fromY) ? deltaW_fromX : deltaW_fromY;
                 
                 let newWidth = initialWidth + deltaW;
-                if (newWidth < 150) newWidth = 150; // tamaño mínimo
+                if (newWidth < 150) newWidth = 150;
 
                 let newHeight = newWidth / ASPECT_RATIO;
                 let newLeft = currentHandle.includes('w') ? initialLeft + (initialWidth - newWidth) : initialLeft;
                 let newTop = currentHandle.includes('n') ? initialTop + (initialHeight - newHeight) : initialTop;
                 
-                // Restricciones con los bordes
                 if (newLeft < 0) {
                     newLeft = 0;
                     newWidth = initialLeft + initialWidth;
@@ -341,11 +435,8 @@ export class ChannelController {
     }
 
     async showBannerPreviewDialog(file, imageDataUrl) {
-        
-        // Limpiamos los datos de recorte anteriores por seguridad
         this.currentCropData = null;
 
-        // Pasamos el evento onRender y la clase custom de 960px
         const result = await this.dialog.show('bannerPreviewTemplate', {
             imageUrl: imageDataUrl,
             dialogClass: 'component-dialog-box--banner',
@@ -354,27 +445,23 @@ export class ChannelController {
 
         if (result.confirmed) {
             try {
-                // Mostramos un mensaje de feedback porque el modal ya se ha cerrado
                 this.dialog.show('success', { title: 'Procesando...', message: 'Subiendo y recortando tu banner, por favor espera.' });
 
                 const formData = new FormData();
                 formData.append('banner', file);
 
-                // Recolectar datos del crop en porcentajes (0 a 1) DESDE LA MEMORIA
                 if (this.currentCropData) {
                     formData.append('crop_x', this.currentCropData.x);
                     formData.append('crop_y', this.currentCropData.y);
                     formData.append('crop_w', this.currentCropData.w);
                     formData.append('crop_h', this.currentCropData.h);
                 } else {
-                    // Fallback de seguridad por si no se movió el cropBox
                     formData.append('crop_x', 0);
                     formData.append('crop_y', 0);
                     formData.append('crop_w', 1);
                     formData.append('crop_h', 1);
                 }
 
-                // Ejecutamos la subida
                 const apiResult = await this.api.postForm(ApiRoutes.Channel.UploadBanner, formData);
                 
                 if (apiResult.success) {

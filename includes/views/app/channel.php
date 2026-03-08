@@ -12,7 +12,6 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
 $subscriberCount = 0;
 $isSubscribed = false;
 
-// Función Helper para fechas relativas (ej. "Hace 2 días")
 if (!function_exists('time_elapsed_string')) {
     function time_elapsed_string($datetime, $full = false) {
         $now = new DateTime;
@@ -55,7 +54,6 @@ if (!function_exists('time_elapsed_string')) {
     }
 }
 
-// Función Helper para la duración del video (Segundos a MM:SS o HH:MM:SS)
 if (!function_exists('format_duration')) {
     function format_duration($seconds) {
         $seconds = (int)$seconds;
@@ -70,7 +68,6 @@ if (!function_exists('format_duration')) {
     }
 }
 
-// Función Helper para formatear números de suscriptores
 if (!function_exists('format_subscribers_count')) {
     function format_subscribers_count($num) {
         if ($num >= 1000000) return round($num / 1000000, 1) . 'M';
@@ -84,27 +81,22 @@ if (isset($container)) {
     $videoRepo = $container->get(\App\Core\Interfaces\VideoRepositoryInterface::class);
     $subscriptionRepo = $container->get(\App\Core\Interfaces\SubscriptionRepositoryInterface::class);
     
-    // 1. Obtener los datos del canal visitado
     $channelUser = $userRepo->findByUsername($targetUsername);
     $channelExists = $channelUser ? true : false;
     
-    // 2. Obtener el nombre de usuario del visitante actual
     $currentUsername = null;
     if ($isLoggedIn) {
         $currentUserData = $userRepo->findById($_SESSION['user_id']);
         $currentUsername = $currentUserData['username'] ?? null;
     }
 
-    // 3. Si existe, obtenemos sus videos y datos de suscripción reales
     if ($channelExists) {
         $channelVideos = $videoRepo->getChannelVideos($channelUser['id'], 'horizontal');
         $channelShorts = $videoRepo->getChannelVideos($channelUser['id'], 'vertical');
         $totalVideos = count($channelVideos) + count($channelShorts);
         
-        // Obtener la cantidad real de suscriptores
         $subscriberCount = $subscriptionRepo->getSubscriberCount($channelUser['id']);
         
-        // Revisar si el usuario actual está suscrito (Si está logueado)
         if ($isLoggedIn) {
             $isSubscribed = $subscriptionRepo->isSubscribed($_SESSION['user_id'], $channelUser['id']);
         }
@@ -115,19 +107,21 @@ if (isset($container)) {
     $currentUsername = null;
 }
 
-// Validar de forma estricta si es el dueño
 $isOwner = false;
 if ($isLoggedIn && $channelExists && $currentUsername) {
     $isOwner = (strtolower($currentUsername) === strtolower($targetUsername));
 }
 
-// Determinar la foto de perfil (o la por defecto)
 $avatarPath = $appUrl . '/public/storage/profilePictures/default/3b9475a1-65c1-40d2-95f4-1dcbc5cb2ef2.png';
 if ($channelExists && !empty($channelUser['profile_picture'])) {
     $avatarPath = $appUrl . '/' . ltrim($channelUser['profile_picture'], '/');
 }
 
 $displayName = $channelExists ? ($channelUser['display_name'] ?? $channelUser['username']) : $targetUsername;
+
+// Extraer descripción y contacto de la base de datos
+$channelDesc = $channelExists ? ($channelUser['channel_description'] ?? '') : '';
+$channelContact = $channelExists ? ($channelUser['channel_contact_email'] ?? '') : '';
 ?>
 
 <?php if (!$channelExists): ?>
@@ -161,10 +155,25 @@ $displayName = $channelExists ? ($channelUser['display_name'] ?? $channelUser['u
                     <span id="channel-subscriber-count"><?php echo format_subscribers_count($subscriberCount); ?> suscriptores</span> • 
                     <?php echo $totalVideos; ?> videos
                 </p>
+
+                <?php if (!empty($channelDesc) || !empty($channelContact)): ?>
+                    <div class="component-channel-about-preview" style="margin-top: 10px; margin-bottom: 10px; font-size: 14px; color: var(--text-secondary); max-width: 600px;">
+                        <?php if (!empty($channelDesc)): ?>
+                            <p style="margin-bottom: <?php echo !empty($channelContact) ? '5px' : '0'; ?>; line-height: 1.4;">
+                                <?php echo nl2br(htmlspecialchars($channelDesc)); ?>
+                            </p>
+                        <?php endif; ?>
+                        <?php if (!empty($channelContact)): ?>
+                            <p style="font-weight: 500;">
+                                Contacto: <a href="mailto:<?php echo htmlspecialchars($channelContact); ?>" style="color: var(--accent-color); text-decoration: none;"><?php echo htmlspecialchars($channelContact); ?></a>
+                            </p>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
                 
-                <div class="component-channel-actions">
+                <div class="component-channel-actions" style="margin-top: 15px;">
                     <?php if ($isOwner): ?>
-                        <button class="component-btn-secondary" data-nav="<?php echo $appUrl; ?>/channel/<?php echo htmlspecialchars($channelUser['uuid'] ?? ''); ?>/editing/profile">Editar descripción</button>
+                        <button class="component-btn-secondary" data-nav="<?php echo $appUrl; ?>/channel/<?php echo htmlspecialchars($channelUser['uuid'] ?? ''); ?>/editing/profile">Personalizar canal</button>
                     <?php else: ?>
                         <button id="btn-channel-subscribe" data-username="<?php echo htmlspecialchars($targetUsername); ?>" class="<?php echo $isSubscribed ? 'component-btn-secondary' : 'component-btn-primary'; ?>">
                             <?php echo $isSubscribed ? 'Suscrito' : 'Suscribirse'; ?>

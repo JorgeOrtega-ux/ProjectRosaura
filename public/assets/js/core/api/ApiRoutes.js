@@ -6,7 +6,8 @@ export const ApiRoutes = {
     },
     Channel: {
         ToggleSubscription: 'channel.toggle_subscription',
-        UploadBanner: 'channel.upload_banner'
+        UploadBanner: 'channel.upload_banner',
+        UpdateProfile: 'channel.update_profile' // NUEVA RUTA
     },
     Auth: {
         Login: 'auth.login',

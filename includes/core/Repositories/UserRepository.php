@@ -59,7 +59,6 @@ class UserRepository implements UserRepositoryInterface {
         try {
             $this->pdo->beginTransaction();
             
-            // 1. Insertamos en users
             $stmtUser = $this->pdo->prepare("INSERT INTO users (uuid, username, email, password, role, user_status, profile_picture) VALUES (?, ?, ?, ?, 'user', 'active', ?)");
             $stmtUser->execute([
                 $data['uuid'], 
@@ -70,7 +69,6 @@ class UserRepository implements UserRepositoryInterface {
             ]);
             $userId = (int) $this->pdo->lastInsertId();
 
-            // 2. Insertamos el perfil base en user_restrictions
             $stmtRest = $this->pdo->prepare("INSERT INTO user_restrictions (user_id) VALUES (?)");
             $stmtRest->execute([$userId]);
 
@@ -96,10 +94,15 @@ class UserRepository implements UserRepositoryInterface {
         return $stmt->execute([$path, $id]);
     }
 
-    // --- NUEVO MÉTODO PARA EL BANNER ---
     public function updateBanner(int $id, string $path): bool {
         $stmt = $this->pdo->prepare("UPDATE users SET banner_path = ? WHERE id = ?");
         return $stmt->execute([$path, $id]);
+    }
+
+    // --- NUEVO MÉTODO PARA ACTUALIZAR EL PERFIL DEL CANAL ---
+    public function updateChannelProfile(int $id, ?string $description, ?string $identifier, ?string $contactEmail): bool {
+        $stmt = $this->pdo->prepare("UPDATE users SET channel_description = ?, channel_identifier = ?, channel_contact_email = ? WHERE id = ?");
+        return $stmt->execute([$description, $identifier, $contactEmail, $id]);
     }
 
     public function updateUsername(int $id, string $username): bool {

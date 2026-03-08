@@ -14,8 +14,11 @@ interface UserRepositoryInterface {
 
     public function updateAvatar(int $id, string $path): bool;
     
-    // --- NUEVO MÉTODO AGREGADO ---
+    // --- NUEVO MÉTODO AGREGADO PARA EL BANNER ---
     public function updateBanner(int $id, string $path): bool;
+
+    // --- NUEVO MÉTODO AGREGADO PARA EL PERFIL DEL CANAL ---
+    public function updateChannelProfile(int $id, ?string $description, ?string $identifier, ?string $contactEmail): bool;
     
     public function updateUsername(int $id, string $username): bool;
     public function updateEmail(int $id, string $email): bool;

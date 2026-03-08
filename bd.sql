@@ -185,3 +185,8 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     CONSTRAINT fk_sub_subscriber FOREIGN KEY (subscriber_id) REFERENCES users(id) ON DELETE CASCADE,
     CONSTRAINT fk_sub_channel FOREIGN KEY (channel_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;ALTER TABLE users ADD COLUMN banner_path VARCHAR(255) DEFAULT NULL AFTER profile_picture;
+
+-- Agrega esto al final de tu archivo bd.sql
+ALTER TABLE users ADD COLUMN channel_description TEXT DEFAULT NULL AFTER banner_path;
+ALTER TABLE users ADD COLUMN channel_identifier VARCHAR(255) DEFAULT NULL AFTER channel_description;
+ALTER TABLE users ADD COLUMN channel_contact_email VARCHAR(255) DEFAULT NULL AFTER channel_identifier;
