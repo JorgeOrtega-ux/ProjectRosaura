@@ -36,18 +36,18 @@ export class StudioManageContentController {
     }
 
     handleDocumentClick(e) {
-        // MainController ya se encarga de abrir/cerrar el menú (toggleModule y click-outside).
-        // Aquí SÓLO escuchamos cuando el usuario hace clic en una OPCIÓN del menú para ejecutar la acción.
+        // Escuchamos clics en las opciones de visibilidad
         const selectOption = e.target.closest('[data-action="selectQuickVisibility"]');
         
         if (selectOption) {
             const value = selectOption.getAttribute('data-value');
             const icon = selectOption.getAttribute('data-icon');
+            const text = selectOption.getAttribute('data-text'); // Obtenemos el texto para actualizar el trigger
             
             // 1. Actualizar visibilidad en BD
-            this.updateVideoVisibility(value, icon);
+            this.updateVideoVisibility(value, icon, text);
             
-            // 2. Cerrar el menú manualmente después de elegir (buena UX)
+            // 2. Cerrar el menú
             const menu = selectOption.closest('.component-module');
             if (menu) {
                 menu.classList.remove('active');
@@ -56,16 +56,19 @@ export class StudioManageContentController {
         }
     }
 
-    async updateVideoVisibility(newVisibility, iconText) {
+    async updateVideoVisibility(newVisibility, iconText, visibleText) {
         const id = this.state.selectedManageVideoId;
         if (!id) return;
         
         const video = this.state.getVideo(id);
         if (!video) return;
 
-        // Actualizar el icono del botón trigger
+        // Actualizar el icono y el texto del trigger visualmente
         const btnIcon = document.getElementById('quickVisibilityBtnIcon');
-        if (btnIcon) btnIcon.textContent = iconText;
+        if (btnIcon && iconText) btnIcon.textContent = iconText;
+
+        const btnText = document.getElementById('quickVisibilityBtnText');
+        if (btnText && visibleText) btnText.textContent = visibleText;
 
         // Actualizar la clase active visualmente dentro de las opciones del menú
         const menu = document.getElementById('quickVisibilityMenu');
@@ -103,24 +106,31 @@ export class StudioManageContentController {
             this.updateRowVisibilityIcon(video);
         } else {
             alert('Error al actualizar visibilidad: ' + (response.message || 'Desconocido'));
-            this.syncQuickVisibilityUI(video.visibility || 'public'); // Revertir UI en caso de error
+            this.syncQuickVisibilityUI(video.visibility || 'public'); // Revertir UI
         }
     }
 
     syncQuickVisibilityUI(visibility) {
         const menu = document.getElementById('quickVisibilityMenu');
         let matchedIcon = 'public';
+        let matchedText = 'Público';
+
         if (menu) {
             menu.querySelectorAll('.component-menu-link').forEach(link => {
                 link.classList.remove('active');
                 if (link.getAttribute('data-value') === visibility) {
                     link.classList.add('active');
-                    matchedIcon = link.getAttribute('data-icon');
+                    matchedIcon = link.getAttribute('data-icon') || matchedIcon;
+                    matchedText = link.getAttribute('data-text') || matchedText;
                 }
             });
         }
+
         const btnIcon = document.getElementById('quickVisibilityBtnIcon');
         if (btnIcon) btnIcon.textContent = matchedIcon;
+
+        const btnText = document.getElementById('quickVisibilityBtnText');
+        if (btnText) btnText.textContent = matchedText;
     }
 
     updateRowVisibilityIcon(video) {

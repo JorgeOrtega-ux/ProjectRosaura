@@ -109,7 +109,6 @@
                                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">public</span></div>
                                                         <div class="component-menu-link-text">
                                                             <span style="display:block; line-height:1.2;">Público</span>
-                                                            <span style="font-size: 11px; color: var(--text-secondary);">Cualquier persona puede mirar tu video</span>
                                                         </div>
                                                     </div>
                                                     
@@ -117,7 +116,6 @@
                                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">link</span></div>
                                                         <div class="component-menu-link-text">
                                                             <span style="display:block; line-height:1.2;">No listado</span>
-                                                            <span style="font-size: 11px; color: var(--text-secondary);">Cualquier persona con el vínculo puede mirarlo</span>
                                                         </div>
                                                     </div>
 
@@ -125,7 +123,6 @@
                                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">lock</span></div>
                                                         <div class="component-menu-link-text">
                                                             <span style="display:block; line-height:1.2;">Privado</span>
-                                                            <span style="font-size: 11px; color: var(--text-secondary);">Solo tú y los elegidos pueden mirar tu video</span>
                                                         </div>
                                                     </div>
 
