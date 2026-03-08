@@ -1,27 +1,6 @@
 <?php
 // includes/views/studio/manage-content.php
 ?>
-<style>
-    /* Estilos inyectados directamente para no requerir tocar el CSS de la app principal por ahora */
-    .component-table-row--selected {
-        background-color: rgba(255, 255, 255, 0.08) !important;
-        border-left: 3px solid var(--text-primary, #0f0f0f) !important;
-    }
-    .component-table tbody tr {
-        cursor: pointer;
-        transition: background-color 0.2s ease;
-    }
-    .component-table tbody tr:hover {
-        background-color: rgba(255, 255, 255, 0.04);
-    }
-    
-    /* Estilo para el botón de eliminar */
-    .btn-delete-video:hover {
-        color: #ef4444 !important; /* Rojo al pasar el mouse */
-        background-color: rgba(239, 68, 68, 0.1) !important;
-    }
-</style>
-
 <div class="view-content">
     <div class="component-wrapper component-wrapper--full no-padding">
         <div class="component-view-layout">
@@ -33,7 +12,7 @@
                 <div class="component-view-top-right">
                     <div class="component-actions">
                         
-                        <div class="component-dropdown-wrapper component-dropdown-wrapper--fit" style="width: max-content;">
+                        <div class="component-dropdown-wrapper component-dropdown-wrapper--fit">
                             <div class="component-dropdown-trigger disabled" id="btnQuickVisibility" data-action="toggleModule" data-target="quickVisibilityMenu" disabled>
                                 <span class="material-symbols-rounded" id="quickVisibilityBtnIcon">public</span>
                                 <span class="component-dropdown-text" id="quickVisibilityBtnText">Público</span>
@@ -48,21 +27,21 @@
                                         <div class="component-menu-link active" data-action="selectQuickVisibility" data-value="public" data-icon="public" data-text="Público">
                                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">public</span></div>
                                             <div class="component-menu-link-text">
-                                                <span style="display:block; line-height:1.2;">Público</span>
+                                                <span>Público</span>
                                             </div>
                                         </div>
                                         
                                         <div class="component-menu-link" data-action="selectQuickVisibility" data-value="unlisted" data-icon="link" data-text="No listado">
                                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">link</span></div>
                                             <div class="component-menu-link-text">
-                                                <span style="display:block; line-height:1.2;">No listado</span>
+                                                <span>No listado</span>
                                             </div>
                                         </div>
 
                                         <div class="component-menu-link" data-action="selectQuickVisibility" data-value="private" data-icon="lock" data-text="Privado">
                                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">lock</span></div>
                                             <div class="component-menu-link-text">
-                                                <span style="display:block; line-height:1.2;">Privado</span>
+                                                <span>Privado</span>
                                             </div>
                                         </div>
 
@@ -71,15 +50,15 @@
                             </div>
                         </div>
 
-                        <button class="component-button component-button--icon component-button--h40 btn-delete-video disabled" id="btnDeleteSelectedVideo" data-tooltip="Eliminar video" style="flex-shrink: 0;" disabled>
+                        <button class="component-button component-button--icon component-button--h40 btn-delete-video disabled" id="btnDeleteSelectedVideo" data-tooltip="Eliminar video" disabled>
                             <span class="material-symbols-rounded">delete</span>
                         </button>
 
-                        <button class="component-button component-button--icon component-button--h40 disabled" id="btnEditSelectedVideo" data-tooltip="Editar video seleccionado" style="flex-shrink: 0;" disabled>
+                        <button class="component-button component-button--icon component-button--h40 disabled" id="btnEditSelectedVideo" data-tooltip="Editar video seleccionado" disabled>
                             <span class="material-symbols-rounded">edit</span>
                         </button>
                         
-                        <button class="component-button component-button--icon component-button--h40" data-nav="<?php echo APP_URL; ?>/studio/upload" data-tooltip="Subir video" style="flex-shrink: 0;">
+                        <button class="component-button component-button--icon component-button--h40" data-nav="<?php echo APP_URL; ?>/studio/upload" data-tooltip="Subir video">
                             <span class="material-symbols-rounded">upload</span>
                         </button>
 

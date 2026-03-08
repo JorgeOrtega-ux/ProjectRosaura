@@ -19,14 +19,14 @@
                         <h2 class="component-upload-title" data-i18n="studio_drag_drop">Arrastra y suelta archivos de video para subirlos</h2>
                         <p class="component-upload-subtitle" data-i18n="studio_private_until_publish">Tus videos serán privados hasta que los publiques.</p>
                         
-                        <input type="file" id="videoFileInput" multiple accept="video/*" style="display: none;">
+                        <input type="file" id="videoFileInput" multiple accept="video/*">
                         <button class="component-upload-button" type="button" onclick="document.getElementById('videoFileInput').click();" data-i18n="studio_select_files">Seleccionar archivos</button>
                         
-                        <div id="uploadProgressContainer" style="display: none; width: 100%; max-width: 400px; margin-top: 24px;">
-                            <div style="width: 100%; background-color: var(--border-color); border-radius: 8px; height: 8px; overflow: hidden;">
-                                <div id="uploadProgressBar" style="width: 0%; height: 100%; background-color: #065fd4; transition: width 0.2s ease;"></div>
+                        <div id="uploadProgressContainer">
+                            <div>
+                                <div id="uploadProgressBar"></div>
                             </div>
-                            <p style="margin-top: 8px; font-size: 12px; color: var(--text-secondary);" data-i18n="studio_uploading_network">Subiendo archivos...</p>
+                            <p data-i18n="studio_uploading_network">Subiendo archivos...</p>
                         </div>
                     </div>
                     
@@ -38,19 +38,19 @@
                     </div>
                 </div>
 
-                <div id="uploadTagsSection" style="display: none; margin-top: 24px;">
+                <div id="uploadTagsSection">
                     <div class="component-card--grouped">
                         
-                        <div class="component-group-item component-group-item--stacked" style="border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.05));">
+                        <div class="component-group-item component-group-item--stacked">
                             <div class="component-card__content component-card__content--full">
                                 <div class="component-card__text">
                                     <h2 class="component-card__title">Etiquetas (Modelos y Categorías)</h2>
-                                    <p class="component-card__description" style="margin-bottom: 0;">Configura las etiquetas base para los videos que vas a subir.</p>
+                                    <p class="component-card__description">Configura las etiquetas base para los videos que vas a subir.</p>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="component-group-item component-group-item--stacked" style="border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.05));">
+                        <div class="component-group-item component-group-item--stacked">
                             <div class="component-card__content">
                                 <div class="component-card__text">
                                     <h2 class="component-card__title">Modelos</h2>

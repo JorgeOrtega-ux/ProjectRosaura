@@ -94,21 +94,21 @@ $userUuid = $_GET['uuid'] ?? '';
                                                     <div class="component-menu-link active" data-action="selectVisibility" data-value="public" data-icon="public" data-text="Público">
                                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">public</span></div>
                                                         <div class="component-menu-link-text">
-                                                            <span style="display:block; line-height:1.2;">Público</span>
+                                                            <span>Público</span>
                                                         </div>
                                                     </div>
                                                     
                                                     <div class="component-menu-link" data-action="selectVisibility" data-value="unlisted" data-icon="link" data-text="No listado">
                                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">link</span></div>
                                                         <div class="component-menu-link-text">
-                                                            <span style="display:block; line-height:1.2;">No listado</span>
+                                                            <span>No listado</span>
                                                         </div>
                                                     </div>
 
                                                     <div class="component-menu-link" data-action="selectVisibility" data-value="private" data-icon="lock" data-text="Privado">
                                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">lock</span></div>
                                                         <div class="component-menu-link-text">
-                                                            <span style="display:block; line-height:1.2;">Privado</span>
+                                                            <span>Privado</span>
                                                         </div>
                                                     </div>
 
@@ -116,7 +116,7 @@ $userUuid = $_GET['uuid'] ?? '';
                                             </div>
                                         </div>
                                         
-                                        <select id="videoVisibilitySelect" style="display: none;">
+                                        <select id="videoVisibilitySelect">
                                             <option value="public" selected>public</option>
                                             <option value="unlisted">unlisted</option>
                                             <option value="private">private</option>
@@ -126,17 +126,17 @@ $userUuid = $_GET['uuid'] ?? '';
                             </div>
                         </div>
 
-                        <div class="component-card--grouped" style="margin-top: 24px;">
-                            <div class="component-group-item component-group-item--stacked" style="border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.05));">
+                        <div class="component-card--grouped">
+                            <div class="component-group-item component-group-item--stacked">
                                 <div class="component-card__content component-card__content--full">
                                     <div class="component-card__text">
                                         <h2 class="component-card__title">Etiquetas / Tags</h2>
-                                        <p class="component-card__description" style="margin-bottom: 0;">Agrega modelos y categorías a tu video para facilitar la búsqueda.</p>
+                                        <p class="component-card__description">Agrega modelos y categorías a tu video para facilitar la búsqueda.</p>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="component-group-item component-group-item--stacked" style="border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.05));">
+                            <div class="component-group-item component-group-item--stacked">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
                                         <h2 class="component-card__title">Modelos</h2>
@@ -192,17 +192,17 @@ $userUuid = $_GET['uuid'] ?? '';
 
                     <div class="studio-uploading-preview">
                         <div class="studio-video-card">
-                            <div class="studio-video-card__player" style="background-color: var(--background-secondary, #2a2a2a); border-radius: 8px; overflow: hidden; position: relative;">
-                                <span class="material-symbols-rounded" style="color: white; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 48px;">play_circle</span>
+                            <div class="studio-video-card__player">
+                                <span class="material-symbols-rounded">play_circle</span>
                             </div>
                         </div>
 
-                        <div class="component-thumbnail-section" style="margin-top: 16px;">
-                            <h3 class="meta-label" style="margin-bottom: 8px; font-weight: 500;">Miniatura</h3>
-                            <p class="meta-label" style="margin-bottom: 12px; font-size: 11px;">Selecciona o sube una imagen que muestre el contenido de tu video.</p>
+                        <div class="component-thumbnail-section">
+                            <h3 class="meta-label">Miniatura</h3>
+                            <p class="meta-label">Selecciona o sube una imagen que muestre el contenido de tu video.</p>
                             
-                            <div style="display: flex; gap: 8px; margin-bottom: 12px;">
-                                <input type="file" id="thumbnailInput" accept="image/png, image/jpeg, image/webp" style="display: none;">
+                            <div>
+                                <input type="file" id="thumbnailInput" accept="image/png, image/jpeg, image/webp">
                                 <button type="button" class="component-button component-button--full component-button--h40" onclick="document.getElementById('thumbnailInput').click();">
                                     <span class="material-symbols-rounded">add_photo_alternate</span>
                                     <span>Subir / Cambiar</span>
@@ -216,7 +216,7 @@ $userUuid = $_GET['uuid'] ?? '';
 
                             <input type="hidden" id="selectedGeneratedThumbnail" name="selected_generated_thumbnail" value="">
 
-                            <div class="component-thumbnail-grid" id="generatedThumbnailsContainer" style="display: none;">
+                            <div class="component-thumbnail-grid" id="generatedThumbnailsContainer">
                             </div>
                         </div>
 
