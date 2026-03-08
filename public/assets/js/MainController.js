@@ -214,7 +214,9 @@ export class MainController {
 
         if (viewBox.classList.contains('active')) {
             viewBox.classList.replace('active', 'disabled');
+            viewBox.style.display = 'none'; // Soporte para toggle explícito de display
             editBox.classList.replace('disabled', 'active');
+            editBox.style.display = 'flex';
             setTimeout(() => {
                 const input = document.querySelector('[data-ref="input-' + field + '"]');
                 if (input) {
@@ -225,7 +227,9 @@ export class MainController {
             }, 50);
         } else {
             editBox.classList.replace('active', 'disabled');
+            editBox.style.display = 'none';
             viewBox.classList.replace('disabled', 'active');
+            viewBox.style.display = 'flex';
         }
     }
 
@@ -262,7 +266,6 @@ export class MainController {
     }
 
     initBottomSheets() {
-        // Ignora los que ya fueron procesados previamente para evitar duplicar escuchadores
         document.querySelectorAll('.component-module--dropdown:not(.bs-initialized)').forEach(module => {
             module.classList.add('bs-initialized');
             module.querySelectorAll('.component-menu').forEach(panel => {

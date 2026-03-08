@@ -1,18 +1,34 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
+import { ApiService } from '../../../core/api/ApiServices.js';
+import { StudioState } from '../StudioState.js';
 import { StudioTagsManager } from '../managers/StudioTagsManager.js';
 import { StudioThumbnailManager } from '../managers/StudioThumbnailManager.js';
 
 export class StudioEditController {
-    constructor(api, state) {
-        this.api = api;
-        this.state = state;
+    constructor(api = null, state = null) {
+        // En caso de inicializarse de manera aislada (F5 reload) aseguramos dependencias para evitar crash:
+        this.api = api || new ApiService();
+        this.state = state || new StudioState();
         
-        this.tagsManager = new StudioTagsManager(api, state, this.validatePublishButton.bind(this));
-        this.thumbnailManager = new StudioThumbnailManager(api, state, this.validatePublishButton.bind(this));
+        this.tagsManager = new StudioTagsManager(this.api, this.state, this.validatePublishButton.bind(this));
+        this.thumbnailManager = new StudioThumbnailManager(this.api, this.state, this.validatePublishButton.bind(this));
 
+        this.eventsAttached = false;
+        
+        // Si nos pasan argumentos (instanciado por controlador padre) iniciamos de inmediato.
+        // Si no (instanciado por AppInit), esperamos al dispatch init() de AppInit.
+        if (api && state) {
+            this.init();
+        }
+    }
+
+    init() {
         this.initEditView();
-        this.attachEvents();
-        window.addEventListener('studioVideoProgress', this.validatePublishButton.bind(this));
+        if (!this.eventsAttached) {
+            this.attachEvents();
+            window.addEventListener('studioVideoProgress', this.validatePublishButton.bind(this));
+            this.eventsAttached = true;
+        }
     }
 
     async initEditView() {
@@ -41,6 +57,8 @@ export class StudioEditController {
             this.syncVisibilityUI(video.draftVisibility);
             this.thumbnailManager.updateThumbnailPreview(video.draftThumbnailPreview);
             this.tagsManager.setInitialTags(video.tags);
+            
+            // Fuerza estado de vista luego de popular
             this.setEditState('title', false);
             this.validatePublishButton();
             
@@ -145,6 +163,8 @@ export class StudioEditController {
         });
     }
 
+    // Se mantiene solo como función para forzar los cambios internamente,
+    // ya que MainController maneja el toggle en base a clics de UI.
     setEditState(target, isEditing) {
         const viewState = document.querySelector(`[data-state="${target}-view"]`);
         const editState = document.querySelector(`[data-state="${target}-edit"]`);
@@ -310,12 +330,10 @@ export class StudioEditController {
             const btn = e.target.closest('[data-action]');
             if (!btn) return;
             const action = btn.getAttribute('data-action');
-            const target = btn.getAttribute('data-target');
 
-            if (action === 'toggleEditState') {
-                const currentState = document.querySelector(`[data-state="${target}-edit"]`).style.display !== 'none';
-                this.setEditState(target, !currentState);
-            }
+            // El toggleEditState ya no se evalúa aquí porque choca con el listener
+            // de MainController (quien se encarga de la visual ahora a nivel global).
+            
             if (action === 'saveTitle') this.saveTitleField();
             if (action === 'publishVideo') this.publishVideo();
             if (action === 'cancelVideo') {
