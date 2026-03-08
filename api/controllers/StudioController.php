@@ -138,14 +138,12 @@ class StudioController {
         $description = $input['description'] ?? $_POST['description'] ?? null;
         $visibility = $input['visibility'] ?? $_POST['visibility'] ?? 'public';
         
-        // [FIX] RECIBIR TAGS Y ASEGURAR QUE SEAN DECODIFICADOS A ARRAY
         $modelsRaw = $input['models'] ?? $_POST['models'] ?? [];
         $categoriesRaw = $input['categories'] ?? $_POST['categories'] ?? [];
 
         $models = is_string($modelsRaw) ? json_decode($modelsRaw, true) : $modelsRaw;
         $categories = is_string($categoriesRaw) ? json_decode($categoriesRaw, true) : $categoriesRaw;
 
-        // Si falló el json_decode o enviaron algo raro, forzamos a array
         if (!is_array($models)) $models = [];
         if (!is_array($categories)) $categories = [];
 
@@ -229,7 +227,6 @@ class StudioController {
         $description = $input['description'] ?? $_POST['description'] ?? '';
         $visibility = $input['visibility'] ?? $_POST['visibility'] ?? 'public';
 
-        // [FIX] RECIBIR TAGS Y ASEGURAR QUE SEAN DECODIFICADOS A ARRAY
         $modelsRaw = $input['models'] ?? $_POST['models'] ?? [];
         $categoriesRaw = $input['categories'] ?? $_POST['categories'] ?? [];
 
@@ -279,6 +276,30 @@ class StudioController {
         try {
             $this->studioServices->cancelUpload($userId, (int)$videoId);
             return ['success' => true, 'status' => 'success'];
+        } catch (\Exception $e) {
+            http_response_code(400);
+            return ['success' => false, 'status' => 'error', 'message' => $e->getMessage()];
+        }
+    }
+
+    // NUEVA FUNCIÓN PARA ELIMINAR CUALQUIER VIDEO DESDE LA TABLA
+    public function delete_video($input) {
+        $userId = $this->requireAuth();
+        if (!$userId) {
+            http_response_code(401);
+            return ['success' => false, 'status' => 'error', 'message' => 'No autorizado'];
+        }
+
+        $videoId = $input['video_id'] ?? $_POST['video_id'] ?? null;
+
+        if (!$videoId) {
+            http_response_code(400);
+            return ['success' => false, 'status' => 'error', 'message' => 'ID de video faltante en la petición de eliminación.'];
+        }
+
+        try {
+            $this->studioServices->deleteVideo($userId, (int)$videoId);
+            return ['success' => true, 'status' => 'success', 'message' => 'Video eliminado correctamente.'];
         } catch (\Exception $e) {
             http_response_code(400);
             return ['success' => false, 'status' => 'error', 'message' => $e->getMessage()];

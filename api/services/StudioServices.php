@@ -391,14 +391,12 @@ class StudioServices {
 
         $this->videoRepo->updateMetadata($videoId, $metadata);
 
-        // PROCESAMIENTO MÁGICO DE TAGS MIXTOS
         $modelsData = $this->processTags($models, 'modelo');
         $categoriesData = $this->processTags($categories, 'category');
         
         $allTags = array_merge($modelsData, $categoriesData);
         $uniqueTags = [];
         
-        // Evitar duplicados
         foreach ($allTags as $t) {
             $key = isset($t['id']) ? 'id_'.$t['id'] : 'name_'.strtolower($t['name']);
             $uniqueTags[$key] = $t;
@@ -461,7 +459,6 @@ class StudioServices {
         $this->videoRepo->updateMetadata($videoId, $metadata);
         $this->videoRepo->updateStatus($videoId, 'published', 100);
 
-        // PROCESAMIENTO MÁGICO DE TAGS MIXTOS AL PUBLICAR
         $modelsData = $this->processTags($models, 'modelo');
         $categoriesData = $this->processTags($categories, 'category');
         
@@ -511,6 +508,12 @@ class StudioServices {
         $this->videoRepo->delete($videoId);
 
         return ['success' => true];
+    }
+
+    // NUEVO: Método explícito para eliminar videos de la tabla, 
+    // reutilizando la lógica destructiva a fondo que ya posee cancelUpload
+    public function deleteVideo(int $userId, int $videoId): array {
+        return $this->cancelUpload($userId, $videoId);
     }
 
     private function deleteDirectory(string $dir): bool {

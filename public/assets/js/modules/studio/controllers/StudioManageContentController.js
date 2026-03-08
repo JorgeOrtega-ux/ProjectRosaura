@@ -1,3 +1,4 @@
+// public/assets/js/modules/studio/controllers/StudioManageContentController.js
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 
 export class StudioManageContentController {
@@ -241,11 +242,13 @@ export class StudioManageContentController {
 
         const editBtn = document.getElementById('btnEditSelectedVideo');
         const visBtn = document.getElementById('btnQuickVisibility');
+        const deleteBtn = document.getElementById('btnDeleteSelectedVideo');
 
         // Si se vuelve a hacer clic en la fila seleccionada, la deseleccionamos y bloqueamos botones
         if (isAlreadySelected) {
             if (editBtn) { editBtn.setAttribute('disabled', 'true'); editBtn.classList.add('disabled'); }
             if (visBtn) { visBtn.setAttribute('disabled', 'true'); visBtn.classList.add('disabled'); }
+            if (deleteBtn) { deleteBtn.setAttribute('disabled', 'true'); deleteBtn.classList.add('disabled'); }
             return;
         }
 
@@ -274,9 +277,39 @@ export class StudioManageContentController {
             if (video) {
                 visBtn.removeAttribute('disabled');
                 visBtn.classList.remove('disabled');
-                // Sincronizar el ícono visual del botón y la opción seleccionada internamente
                 this.syncQuickVisibilityUI(video.visibility || 'public');
             }
+        }
+
+        // Lógica del botón Eliminar
+        if (deleteBtn) {
+            deleteBtn.removeAttribute('disabled');
+            deleteBtn.classList.remove('disabled');
+            deleteBtn.onclick = async () => {
+                if (confirm('¿Estás seguro de que deseas eliminar este video permanentemente? Esta acción borrará todos sus archivos y no se puede deshacer.')) {
+                    // Prevenir múltiples clics
+                    deleteBtn.setAttribute('disabled', 'true');
+                    deleteBtn.classList.add('disabled');
+                    
+                    const deleteRoute = ApiRoutes.Studio?.DeleteVideo || 'studio.delete_video';
+                    const response = await this.api.post(deleteRoute, { video_id: id });
+                    
+                    if (response.status === 'success') {
+                        // Recargar la tabla para remover el registro
+                        this.initManageContentView();
+                        
+                        // Bloquear los botones de acciones al eliminar
+                        if (editBtn) { editBtn.setAttribute('disabled', 'true'); editBtn.classList.add('disabled'); }
+                        if (visBtn) { visBtn.setAttribute('disabled', 'true'); visBtn.classList.add('disabled'); }
+                        deleteBtn.setAttribute('disabled', 'true');
+                        deleteBtn.classList.add('disabled');
+                    } else {
+                        alert('Error al eliminar el video: ' + (response.message || 'Error desconocido'));
+                        deleteBtn.removeAttribute('disabled');
+                        deleteBtn.classList.remove('disabled');
+                    }
+                }
+            };
         }
     }
 

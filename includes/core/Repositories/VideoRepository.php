@@ -112,9 +112,25 @@ class VideoRepository implements VideoRepositoryInterface {
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
     
+    // MEJORADO: Agregada limpieza en cascada para proteger DBs que no tienen ON DELETE CASCADE activo
     public function delete(int $id): bool {
-        $stmt = $this->db->prepare("DELETE FROM videos WHERE id = :id");
-        return $stmt->execute([':id' => $id]);
+        try {
+            $this->db->beginTransaction();
+            // Borrar relaciones (etiquetas)
+            $stmtTags = $this->db->prepare("DELETE FROM video_tags WHERE video_id = :id");
+            $stmtTags->execute([':id' => $id]);
+            
+            // Borrar registro del video
+            $stmt = $this->db->prepare("DELETE FROM videos WHERE id = :id");
+            $stmt->execute([':id' => $id]);
+            
+            $this->db->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->db->rollBack();
+            error_log("Error eliminando registro de video de DB: " . $e->getMessage());
+            return false;
+        }
     }
 
     public function countProcessingUploads(int $userId): int {
@@ -156,7 +172,6 @@ class VideoRepository implements VideoRepositoryInterface {
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
     
-    // --- METODO AÑADIDO PARA OBTENER LOS VIDEOS PÚBLICOS DEL CANAL ---
     public function getChannelVideos(int $userId, string $orientation = 'horizontal'): array {
         $stmt = $this->db->prepare("
             SELECT id, uuid, title, thumbnail_path, thumbnail_dominant_color, 
@@ -172,7 +187,6 @@ class VideoRepository implements VideoRepositoryInterface {
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
     
-    // --- MÉTODOS PARA SISTEMA DE TAGS ---
     public function syncTags(int $videoId, array $tags): bool {
         try {
             $this->db->beginTransaction();

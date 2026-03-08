@@ -14,6 +14,12 @@
     .component-table tbody tr:hover {
         background-color: rgba(255, 255, 255, 0.04);
     }
+    
+    /* Estilo para el botón de eliminar */
+    .btn-delete-video:hover {
+        color: #ef4444 !important; /* Rojo al pasar el mouse */
+        background-color: rgba(239, 68, 68, 0.1) !important;
+    }
 </style>
 
 <div class="view-content">
@@ -64,6 +70,10 @@
                                 </div>
                             </div>
                         </div>
+
+                        <button class="component-button component-button--icon component-button--h40 btn-delete-video disabled" id="btnDeleteSelectedVideo" data-tooltip="Eliminar video" style="flex-shrink: 0;" disabled>
+                            <span class="material-symbols-rounded">delete</span>
+                        </button>
 
                         <button class="component-button component-button--icon component-button--h40 disabled" id="btnEditSelectedVideo" data-tooltip="Editar video seleccionado" style="flex-shrink: 0;" disabled>
                             <span class="material-symbols-rounded">edit</span>

@@ -484,5 +484,6 @@
     "home_shorts_title": "Videos Cortos",
     "home_recommended_title": "Videos Recomendados",
     "studio_orientation_vertical": "Vertical",
-    "studio_orientation_horizontal": "Horizontal"
+    "studio_orientation_horizontal": "Horizontal",
+    "studio_delete_video_tooltip": "Eliminar video"
 }
