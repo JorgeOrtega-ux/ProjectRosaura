@@ -140,6 +140,68 @@
                             </div>
                         </div>
 
+                        <div class="component-card--grouped" style="margin-top: 24px;">
+                            <div class="component-group-item component-group-item--stacked" style="border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.05));">
+                                <div class="component-card__content component-card__content--full">
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title">Etiquetas / Tags</h2>
+                                        <p class="component-card__description" style="margin-bottom: 0;">Agrega modelos y categorías a tu video para facilitar la búsqueda.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="component-group-item component-group-item--stacked" style="border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.05));">
+                                <div class="component-card__content">
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title">Modelos</h2>
+                                        <p class="component-card__description">Asigna actores o modelos a tu video.</p>
+                                    </div>
+                                </div>
+                                <div class="component-card__actions component-card__actions--start">
+                                    <div class="component-dropdown-wrapper">
+                                        <div class="component-dropdown-trigger" data-action="toggleModule" data-target="moduleTagsModels" data-type="modelo">
+                                            <span class="material-symbols-rounded">person_add</span>
+                                            <span class="component-dropdown-text">Seleccionar Modelos</span>
+                                            <span class="material-symbols-rounded">expand_more</span>
+                                        </div>
+                                        <?php 
+                                            $selectorId = 'modelsSelectorMenu';
+                                            $placeholder = 'Buscar modelos...';
+                                            $moduleName = 'moduleTagsModels';
+                                            include __DIR__ . '/../../modules/moduleTagsSelector.php'; 
+                                        ?>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="component-group-item component-group-item--stacked">
+                                <div class="component-card__content">
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title">Categorías</h2>
+                                        <p class="component-card__description">Asigna categorías a tu video.</p>
+                                    </div>
+                                </div>
+                                <div class="component-card__actions component-card__actions--start">
+                                    <div class="component-dropdown-wrapper">
+                                        <div class="component-dropdown-trigger" data-action="toggleModule" data-target="moduleTagsCategories" data-type="category">
+                                            <span class="material-symbols-rounded">category</span>
+                                            <span class="component-dropdown-text">Seleccionar Categorías</span>
+                                            <span class="material-symbols-rounded">expand_more</span>
+                                        </div>
+                                        <?php 
+                                            $selectorId = 'categoriesSelectorMenu';
+                                            $placeholder = 'Buscar categorías...';
+                                            $moduleName = 'moduleTagsCategories';
+                                            include __DIR__ . '/../../modules/moduleTagsSelector.php'; 
+                                        ?>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <input type="hidden" id="hiddenModelsArray" name="models" value="[]">
+                            <input type="hidden" id="hiddenCategoriesArray" name="categories" value="[]">
+                        </div>
+
                     </div>
 
                     <div class="studio-uploading-preview">

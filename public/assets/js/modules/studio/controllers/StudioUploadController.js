@@ -1,4 +1,5 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
+import { StudioTagsManager } from '../managers/StudioTagsManager.js';
 
 export class StudioUploadController {
     constructor(api, state) {
@@ -6,7 +7,13 @@ export class StudioUploadController {
         this.state = state;
         
         const path = window.location.pathname;
-        if (path.includes('/studio/uploading')) this.initUploadingView();
+        if (path.includes('/studio/uploading')) {
+            this.initUploadingView();
+            // Instanciar el manejador de etiquetas para la vista de subida
+            this.tagsManager = new StudioTagsManager(this.api, this.state, () => {
+                this.handleTagsChanged();
+            });
+        }
         
         this.attachEvents();
         window.addEventListener('studioVideoProgress', this.updateUploadBadges.bind(this));
@@ -96,6 +103,22 @@ export class StudioUploadController {
         if (cancelBtn) {
             cancelBtn.classList.remove('disabled');
             cancelBtn.removeAttribute('disabled');
+        }
+        
+        // Cargar tags iniciales para el video si los tiene (usualmente vacío en una subida nueva, pero previene bugs si se cambia entre videos subiéndose)
+        if (this.tagsManager) {
+            this.tagsManager.setInitialTags(video.tags || []);
+        }
+    }
+    
+    handleTagsChanged() {
+        // Callback que se ejecuta cuando el usuario añade o quita una etiqueta
+        // Aquí podrías habilitar el botón de publicar si hay cambios sin guardar, 
+        // o sincronizar con this.state si estás guardando auto-borradores.
+        const video = this.state.getVideo(this.state.selectedVideoId);
+        if (video) {
+            video.modelsIds = this.tagsManager.getModelsIds();
+            video.categoriesIds = this.tagsManager.getCategoriesIds();
         }
     }
 
