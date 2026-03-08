@@ -4,7 +4,8 @@
 return [
     '/' => ['view' => 'app/home.php'],
     '/explore' => ['view' => 'app/explore.php'],
-    
+      // --- RUTA DEL REPRODUCTOR DE VIDEO ---
+    '/watch/{video_uuid}' => ['view' => 'app/watch.php'], 
     // --- RUTA DINÁMICA DE CANALES ---
     '/@{username}' => ['view' => 'app/channel.php'], // <--- NUEVA RUTA AQUÍ
     

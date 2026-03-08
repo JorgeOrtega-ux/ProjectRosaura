@@ -2347,7 +2347,8 @@ input:checked + .component-toggle-slider:before {
 .video-feed-horizontal-scroll {
     display: grid;
     grid-auto-flow: column;
-    grid-auto-columns: calc((100% - (16px * 5)) / 6);
+    /* Cambia a 8 elementos (7 espacios de gap) para hacer las tarjetas más pequeñas en PC */
+    grid-auto-columns: calc((100% - (16px * 7)) / 8);
     gap: 16px;
     margin-left: -16px;
     margin-right: -16px;
@@ -2558,18 +2559,28 @@ input:checked + .component-toggle-slider:before {
 /* --- RESPONSIVIDAD DEL GRID PRINCIPAL Y CARRUSEL --- */
 /* ========================================= */
 
+/* Monitores estándar: reduce a 7 elementos */
+@media (max-width: 1600px) {
+    .video-feed-horizontal-scroll {
+        grid-auto-columns: calc((100% - (16px * 6)) / 7);
+    }
+}
+
+/* Laptops: reduce a 6 elementos */
 @media (max-width: 1400px) {
+    .video-feed-horizontal-scroll {
+        grid-auto-columns: calc((100% - (16px * 5)) / 6);
+    }
+}
+
+/* Tablets horizontales: reduce a 4 o 5 elementos */
+@media (max-width: 1024px) {
     .video-feed-horizontal-scroll {
         grid-auto-columns: calc((100% - (16px * 4)) / 5);
     }
 }
 
-@media (max-width: 1024px) {
-    .video-feed-horizontal-scroll {
-        grid-auto-columns: calc((100% - (16px * 3)) / 4);
-    }
-}
-
+/* Tablets / Móviles grandes: reduce a 3 elementos */
 @media (max-width: 768px) {
     .video-feed-horizontal-scroll {
         grid-auto-columns: calc((100% - (16px * 2)) / 3);
@@ -2581,6 +2592,7 @@ input:checked + .component-toggle-slider:before {
     }
 }
 
+/* Teléfonos pequeños: 2 elementos */
 @media (max-width: 480px) {
     .video-feed-horizontal-scroll {
         grid-auto-columns: calc((100% - 16px) / 2);

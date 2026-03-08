@@ -4,7 +4,7 @@ export const RouteModulesMap = {
     // ---- MÓDULO APP PRINCIPAL ----
     '/': { path: './modules/app/HomeController.js', className: 'HomeController' },
     '/home': { path: './modules/app/HomeController.js', className: 'HomeController' },
-    
+    '/watch': { path: './modules/app/WatchController.js', className: 'WatchController' },
     // ---- MÓDULO DE CANAL (PERFILES) ----
     '/@': { path: './modules/app/ChannelController.js', className: 'ChannelController' }, // <--- NUEVO MAPEO
     
