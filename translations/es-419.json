@@ -546,5 +546,14 @@
     "studio_video_link": "Enlace del video",
     "studio_video_link_pending": "Se generará al publicar",
     "studio_video_filename": "Nombre del archivo",
-    "studio_btn_upload": "Subir"
+    "studio_btn_upload": "Subir",
+    "studio_tab_videos": "Videos",
+    "studio_tab_playlists": "Listas de reproducción",
+    "studio_btn_new_playlist": "Nueva lista",
+    "studio_tooltip_new_playlist": "Crear nueva lista de reproducción",
+    "studio_th_playlist": "Lista de reproducción",
+    "studio_th_type": "Tipo",
+    "studio_th_last_update": "Última actualización",
+    "studio_th_video_count": "Número de videos",
+    "studio_empty_playlists": "No se encontraron listas de reproducción por el momento."
 }

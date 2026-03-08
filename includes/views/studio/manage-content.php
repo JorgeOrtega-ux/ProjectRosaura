@@ -1,5 +1,7 @@
 <?php
 // includes/views/studio/manage-content.php
+// Extraemos el UUID de la URL actual para construir el enlace a la playlist
+$currentUuid = basename(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
 ?>
 <div class="view-content">
     <div class="component-wrapper component-wrapper--full no-padding">
@@ -11,6 +13,10 @@
                 
                 <div class="component-view-top-right">
                     <div class="component-actions">
+                        
+                        <button class="component-button component-button--icon component-button--h40" data-nav="<?php echo APP_URL; ?>/studio/manage-content/playlist/<?php echo $currentUuid; ?>" data-tooltip="<?php echo __('studio_tooltip_playlists'); ?>">
+                            <span class="material-symbols-rounded">featured_play_list</span>
+                        </button>
                         
                         <div class="component-dropdown-wrapper component-dropdown-wrapper--fit">
                             <div class="component-dropdown-trigger disabled" id="btnQuickVisibility" data-action="toggleModule" data-target="quickVisibilityMenu" disabled>

@@ -48,6 +48,7 @@ return [
     '/studio/uploading' => ['view' => 'studio/uploading.php', 'auth' => true],
     '/studio/management-panel/{uuid}' => ['view' => 'studio/management-panel.php', 'auth' => true],
     '/studio/manage-content/{uuid}' => ['view' => 'studio/manage-content.php', 'auth' => true],
+    '/studio/manage-content/playlist/{uuid}' => ['view' => 'studio/manage-content-playlist.php', 'auth' => true],
     '/studio/edit/{uuid}/{video_uuid}' => ['view' => 'studio/edit-video.php', 'auth' => true],
 
     // --- RUTAS DE ADMINISTRADOR (Requieren autenticación + Roles específicos + 2FA) ---
