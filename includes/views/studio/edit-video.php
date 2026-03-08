@@ -202,7 +202,7 @@ $userUuid = $_GET['uuid'] ?? '';
                             <p class="meta-label">Selecciona o sube una imagen que muestre el contenido de tu video.</p>
                             
                             <div>
-                                <input type="file" id="thumbnailInput" accept="image/png, image/jpeg, image/webp">
+                                <input type="file" id="thumbnailInput" class="disabled" accept="image/png, image/jpeg, image/webp">
                                 <button type="button" class="component-button component-button--full component-button--h40" onclick="document.getElementById('thumbnailInput').click();">
                                     <span class="material-symbols-rounded">add_photo_alternate</span>
                                     <span>Subir / Cambiar</span>
