@@ -8,65 +8,79 @@ export class AuthController {
         this.config = window.AppServerConfig || {};
         this.resendInterval = null; 
         this.basePath = window.AppBasePath || '';
-        this.eventsBound = false; // <-- BANDERA DE BLINDAJE
+        
+        // Bindear eventos
+        this.handleViewLoadedBound = this.handleViewLoaded.bind(this);
+        this.handleClickBound = this.handleClick.bind(this);
+        this.handleInputBound = this.handleInput.bind(this);
+    }
+
+    // Método destroy para prevenir fugas de eventos e intervalos en la SPA
+    destroy() {
+        document.removeEventListener('click', this.handleClickBound);
+        document.removeEventListener('input', this.handleInputBound);
+        window.removeEventListener('viewLoaded', this.handleViewLoadedBound);
+        
+        if (this.resendInterval) {
+            clearInterval(this.resendInterval);
+        }
     }
 
     init() {
         this.bindEvents();
         console.log("AuthController inicializado.");
         
-        // Esta validación debe ejecutarse cada vez que se llama a init()
         if (window.location.pathname.includes('/register/verification-account')) {
             const resendBtn = document.querySelector('[data-ref="btn-resend-register-code"]');
-            if (resendBtn) this.startResendTimer(resendBtn, __('btn_resend_code'), 60, true);
+            if (resendBtn) this.startResendTimer(resendBtn, typeof window.__ === 'function' ? __('btn_resend_code') : 'Reenviar código', 60, true);
         }
     }
 
     bindEvents() {
-        if (this.eventsBound) return; // <-- EVITA DUPLICAR EVENTOS
+        window.addEventListener('viewLoaded', this.handleViewLoadedBound);
+        document.addEventListener('click', this.handleClickBound);
+        document.addEventListener('input', this.handleInputBound);
+    }
 
-        window.addEventListener('viewLoaded', (e) => {
-            if (e.detail.url.includes('/register/verification-account')) {
-                const resendBtn = document.querySelector('[data-ref="btn-resend-register-code"]');
-                if (resendBtn) this.startResendTimer(resendBtn, __('btn_resend_code'), 60, true);
+    handleViewLoaded(e) {
+        if (e.detail.url.includes('/register/verification-account')) {
+            const resendBtn = document.querySelector('[data-ref="btn-resend-register-code"]');
+            if (resendBtn) this.startResendTimer(resendBtn, typeof window.__ === 'function' ? __('btn_resend_code') : 'Reenviar código', 60, true);
+        }
+    }
+
+    handleClick(e) {
+        const toggleBtn = e.target.closest('[data-action="togglePassword"]');
+        const loginBtn = e.target.closest('[data-action="submitLogin"]');
+        const login2FABtn = e.target.closest('[data-action="submitLogin2FA"]');
+        const registerStep1Btn = e.target.closest('[data-action="submitRegisterStep1"]');
+        const registerStep2Btn = e.target.closest('[data-action="submitRegisterStep2"]');
+        const registerVerifyBtn = e.target.closest('[data-action="submitRegisterVerify"]');
+        const resendRegisterCodeBtn = e.target.closest('[data-action="resendRegisterCode"]');
+        const forgotPasswordBtn = e.target.closest('[data-action="submitForgotPassword"]');
+        const resetPasswordBtn = e.target.closest('[data-action="submitResetPassword"]');
+        
+        if (toggleBtn) this.togglePasswordVisibility(toggleBtn);
+        if (loginBtn) { e.preventDefault(); this.handleLogin(loginBtn); }
+        if (login2FABtn) { e.preventDefault(); this.handleLogin2FA(login2FABtn); }
+        if (registerStep1Btn) { e.preventDefault(); this.handleRegisterStep1(registerStep1Btn); }
+        if (registerStep2Btn) { e.preventDefault(); this.handleRegisterStep2(registerStep2Btn); }
+        if (registerVerifyBtn) { e.preventDefault(); this.handleRegisterVerify(registerVerifyBtn); }
+        if (resendRegisterCodeBtn) { e.preventDefault(); this.handleResendRegisterCode(resendRegisterCodeBtn); }
+        if (forgotPasswordBtn) { e.preventDefault(); this.handleForgotPassword(forgotPasswordBtn); }
+        if (resetPasswordBtn) { e.preventDefault(); this.handleResetPassword(resetPasswordBtn); }
+    }
+
+    handleInput(e) {
+        if (e.target && e.target.getAttribute('data-ref') === 'verification_code') {
+            let val = e.target.value.replace(/\D/g, ''); 
+            let formatted = '';
+            for (let i = 0; i < val.length; i++) {
+                if (i > 0 && i % 4 === 0) formatted += '-';
+                formatted += val[i];
             }
-        });
-
-        document.addEventListener('click', (e) => {
-            const toggleBtn = e.target.closest('[data-action="togglePassword"]');
-            const loginBtn = e.target.closest('[data-action="submitLogin"]');
-            const login2FABtn = e.target.closest('[data-action="submitLogin2FA"]');
-            const registerStep1Btn = e.target.closest('[data-action="submitRegisterStep1"]');
-            const registerStep2Btn = e.target.closest('[data-action="submitRegisterStep2"]');
-            const registerVerifyBtn = e.target.closest('[data-action="submitRegisterVerify"]');
-            const resendRegisterCodeBtn = e.target.closest('[data-action="resendRegisterCode"]');
-            const forgotPasswordBtn = e.target.closest('[data-action="submitForgotPassword"]');
-            const resetPasswordBtn = e.target.closest('[data-action="submitResetPassword"]');
-            
-            if (toggleBtn) this.togglePasswordVisibility(toggleBtn);
-            if (loginBtn) { e.preventDefault(); this.handleLogin(loginBtn); }
-            if (login2FABtn) { e.preventDefault(); this.handleLogin2FA(login2FABtn); }
-            if (registerStep1Btn) { e.preventDefault(); this.handleRegisterStep1(registerStep1Btn); }
-            if (registerStep2Btn) { e.preventDefault(); this.handleRegisterStep2(registerStep2Btn); }
-            if (registerVerifyBtn) { e.preventDefault(); this.handleRegisterVerify(registerVerifyBtn); }
-            if (resendRegisterCodeBtn) { e.preventDefault(); this.handleResendRegisterCode(resendRegisterCodeBtn); }
-            if (forgotPasswordBtn) { e.preventDefault(); this.handleForgotPassword(forgotPasswordBtn); }
-            if (resetPasswordBtn) { e.preventDefault(); this.handleResetPassword(resetPasswordBtn); }
-        });
-
-        document.addEventListener('input', (e) => {
-            if (e.target && e.target.getAttribute('data-ref') === 'verification_code') {
-                let val = e.target.value.replace(/\D/g, ''); 
-                let formatted = '';
-                for (let i = 0; i < val.length; i++) {
-                    if (i > 0 && i % 4 === 0) formatted += '-';
-                    formatted += val[i];
-                }
-                e.target.value = formatted;
-            }
-        });
-
-        this.eventsBound = true; // <-- SELLA LOS EVENTOS
+            e.target.value = formatted;
+        }
     }
 
     startResendTimer(element, defaultText, seconds = 60, isLink = false) {
@@ -365,14 +379,14 @@ export class AuthController {
 
         if (result.success) {
             this.showSuccess(result.message);
-            this.startResendTimer(btn, __('btn_resend_code'), 60, true);
+            this.startResendTimer(btn, typeof window.__ === 'function' ? __('btn_resend_code') : 'Reenviar código', 60, true);
         } else {
             this.showError(result.message);
             if (result.cooldown) {
-                this.startResendTimer(btn, __('btn_resend_code'), result.cooldown, true);
+                this.startResendTimer(btn, typeof window.__ === 'function' ? __('btn_resend_code') : 'Reenviar código', result.cooldown, true);
             } else {
                 btn.classList.remove('disabled-interaction', 'component-text-notice--muted');
-                btn.textContent = __('btn_resend_code');
+                btn.textContent = typeof window.__ === 'function' ? __('btn_resend_code') : 'Reenviar código';
             }
         }
     }
@@ -395,12 +409,12 @@ export class AuthController {
 
         if (result.success) {
             this.showSuccess(result.message);
-            this.startResendTimer(btn, __('btn_resend_email'), 60, false);
+            this.startResendTimer(btn, typeof window.__ === 'function' ? __('btn_resend_email') : 'Reenviar correo', 60, false);
         } else {
             this.restoreButton(btn);
             this.showError(result.message);
             if (result.cooldown) {
-                this.startResendTimer(btn, __('btn_resend_email'), result.cooldown, false);
+                this.startResendTimer(btn, typeof window.__ === 'function' ? __('btn_resend_email') : 'Reenviar correo', result.cooldown, false);
             }
         }
     }

@@ -4,12 +4,32 @@ import { ApiService } from '../../core/api/ApiServices.js';
 import { ApiRoutes } from '../../core/api/ApiRoutes.js';
 
 export class HomeController {
-constructor() {
+    constructor() {
         this.api = new ApiService();
+        
+        // Bindear eventos globales para poder removerlos luego
+        this.handleResizeBound = this.updateCarouselButtons.bind(this);
+        this.handleScrollBound = this.updateCarouselButtons.bind(this);
+        this.handleLeftClickBound = this.scrollLeft.bind(this);
+        this.handleRightClickBound = this.scrollRight.bind(this);
+    }
+
+    // Método destroy para prevenir cálculos infinitos al cambiar de vista
+    destroy() {
+        window.removeEventListener('resize', this.handleResizeBound);
+        
+        if (this.verticalContainer) {
+            this.verticalContainer.removeEventListener('scroll', this.handleScrollBound);
+        }
+        if (this.btnLeft) {
+            this.btnLeft.removeEventListener('click', this.handleLeftClickBound);
+        }
+        if (this.btnRight) {
+            this.btnRight.removeEventListener('click', this.handleRightClickBound);
+        }
     }
 
     async init() {
-        // ✅ RE-ASIGNAR LOS ELEMENTOS DEL DOM CADA VEZ QUE SE INICIA LA VISTA
         this.horizontalContainer = document.getElementById('video-feed-container');
         this.verticalContainer = document.getElementById('vertical-feed-container');
         this.btnLeft = document.getElementById('btn-scroll-left');
@@ -25,11 +45,9 @@ constructor() {
             const response = await this.api.post(ApiRoutes.App.GetFeed, { limit: 20, offset: 0 });
             
             if (response && response.success) {
-                // Renderizamos ambos feeds pasándole su contenedor y orientación
                 this.renderFeed(response.data.vertical, this.verticalContainer, 'vertical');
                 this.renderFeed(response.data.horizontal, this.horizontalContainer, 'horizontal');
                 
-                // Inicializamos la lógica del carrusel solo si hay contenido vertical
                 if (this.verticalContainer && response.data.vertical && response.data.vertical.length > 0) {
                     this.initCarousel();
                 }
@@ -47,7 +65,6 @@ constructor() {
 
         if (!videos || videos.length === 0) {
             if (orientation === 'vertical') {
-                // Buscamos el contenedor padre completo para ocultar toda la sección y que no queden bordes vacíos
                 const sectionWrapper = container.closest('.feed-section-wrapper');
                 if (sectionWrapper) {
                     sectionWrapper.style.display = 'none';
@@ -77,53 +94,42 @@ constructor() {
     initCarousel() {
         if (!this.verticalContainer || !this.btnLeft || !this.btnRight) return;
 
-        // Actualizar estado de los botones si el usuario hace scroll manual (touchpad o teléfono)
-        this.verticalContainer.addEventListener('scroll', () => this.updateCarouselButtons());
-        
-        // Actualizar si cambia el tamaño de la ventana
-        window.addEventListener('resize', () => this.updateCarouselButtons());
+        this.verticalContainer.addEventListener('scroll', this.handleScrollBound);
+        window.addEventListener('resize', this.handleResizeBound);
+        this.btnLeft.addEventListener('click', this.handleLeftClickBound);
+        this.btnRight.addEventListener('click', this.handleRightClickBound);
 
-        // Evento para desplazar a la izquierda
-        this.btnLeft.addEventListener('click', () => {
-            const scrollAmount = this.getScrollAmount();
-            this.verticalContainer.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
-        });
-
-        // Evento para desplazar a la derecha
-        this.btnRight.addEventListener('click', () => {
-            const scrollAmount = this.getScrollAmount();
-            this.verticalContainer.scrollBy({ left: scrollAmount, behavior: 'smooth' });
-        });
-
-        // Verificamos el estado inicial de las flechas
-        // (Pequeño timeout para permitir que el DOM calcule los anchos tras pintar el HTML)
         setTimeout(() => this.updateCarouselButtons(), 150);
+    }
+    
+    scrollLeft() {
+        const scrollAmount = this.getScrollAmount();
+        this.verticalContainer.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+    }
+    
+    scrollRight() {
+        const scrollAmount = this.getScrollAmount();
+        this.verticalContainer.scrollBy({ left: scrollAmount, behavior: 'smooth' });
     }
 
     getScrollAmount() {
-        // Obtenemos el ancho total visible del contenedor
         const visibleWidth = this.verticalContainer.clientWidth;
-        
-        // El desplazamiento matemáticamente perfecto es el ancho visible menos un padding (16px).
-        // Esto equivale exactamente al ancho del grupo de videos para que no se desfase.
         const padding = 16; 
-        
         return visibleWidth - padding; 
     }
 
     updateCarouselButtons() {
+        if (!this.verticalContainer || !this.btnLeft || !this.btnRight) return;
+        
         const scrollLeft = this.verticalContainer.scrollLeft;
-        // Calculamos el máximo scroll posible (ancho total menos ancho visible)
         const maxScrollLeft = this.verticalContainer.scrollWidth - this.verticalContainer.clientWidth;
 
-        // Si estamos al inicio, ocultamos el botón izquierdo
         if (scrollLeft <= 0) {
             this.btnLeft.classList.add('disabled');
         } else {
             this.btnLeft.classList.remove('disabled');
         }
 
-        // Si llegamos al final (con un pixel de margen por redondeo de navegadores), ocultamos el derecho
         if (Math.ceil(scrollLeft) >= maxScrollLeft - 1) {
             this.btnRight.classList.add('disabled');
         } else {
@@ -139,10 +145,8 @@ constructor() {
         const dominantColor = video.thumbnail_dominant_color !== 'transparent' ? video.thumbnail_dominant_color : '#333'; 
         const videoSrc = video.video_url || ''; 
 
-        // Evaluamos si es vertical para inyectar clases y estilos específicos
         const isVertical = orientation === 'vertical';
         const cardModifierClass = isVertical ? 'video-card--vertical' : '';
-        // Para los verticales, la altura y ancho se controlan estrictamente en CSS, no inyectamos aspect-ratio
         const aspectStyle = isVertical ? '' : 'aspect-ratio: 16/9;';
 
         return `

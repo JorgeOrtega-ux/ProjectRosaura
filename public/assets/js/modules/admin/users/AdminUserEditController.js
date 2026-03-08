@@ -1,394 +1,342 @@
-// public/assets/js/modules/admin/users/AdminUserEditController.js
-import { ApiService } from '../../../core/api/ApiServices.js';
-import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
+// public/assets/js/modules/admin/users/AdminUsersController.js
 
-export class AdminUserEditController {
+export class AdminUsersController {
     constructor() {
-        this.api = new ApiService();
-        this.targetUserId = null;
-        this.selectedFile = null;
-        this.isDefaultAvatar = false;
+        this.selectedUserId = null; 
         this.basePath = window.AppBasePath || '';
-        this.config = window.AppServerConfig || {};
-        this.eventsBound = false; // <-- BANDERA DE BLINDAJE
         
-        this.langMap = {
-            'en-US': 'English (United States)',
-            'en-GB': 'English (United Kingdom)',
-            'fr-FR': 'Français (France)',
-            'de-DE': 'Deutsch (Deutschland)',
-            'it-IT': 'Italiano (Italia)',
-            'es-419': 'Español (Latinoamérica)',
-            'es-MX': 'Español (México)',
-            'es-ES': 'Español (España)',
-            'pt-BR': 'Português (Brasil)',
-            'pt-PT': 'Português (Portugal)'
-        };
+        // 1. Bindear los manejadores de eventos al contexto de la clase
+        this.handleClickBound = this.handleClick.bind(this);
+        this.handleInputBound = this.handleInput.bind(this);
+        this.handleChangeBound = this.handleChange.bind(this);
+        this.handleViewLoadedBound = this.handleViewLoaded.bind(this);
+    }
 
-        this.themeMap = {
-            'system': 'Sincronizar con el sistema',
-            'light': 'Tema claro',
-            'dark': 'Tema oscuro'
-        };
+    // 2. Método destroy para limpiar memoria
+    destroy() {
+        document.removeEventListener('click', this.handleClickBound);
+        document.removeEventListener('input', this.handleInputBound);
+        document.removeEventListener('change', this.handleChangeBound);
+        window.removeEventListener('viewLoaded', this.handleViewLoadedBound);
     }
 
     init() {
         this.bindEvents();
-        
-        // Esta lógica debe ejecutarse cada vez que init() es llamado tras renderizar la vista
-        if (window.location.pathname.includes('/admin/edit-user')) {
-            const urlParams = new URLSearchParams(window.location.search);
-            this.targetUserId = urlParams.get('id');
-            if (this.targetUserId) {
-                this.loadUserData();
-            } else {
-                if (window.spaRouter) window.spaRouter.navigate(this.basePath + '/admin/manage-users');
-                else window.location.href = this.basePath + '/admin/manage-users';
-            }
-        }
+        console.log("AdminUsersController inicializado.");
     }
 
     bindEvents() {
-        if (this.eventsBound) return; // <-- EVITA DUPLICAR EVENTOS
+        document.addEventListener('click', this.handleClickBound);
+        document.addEventListener('input', this.handleInputBound);
+        document.addEventListener('change', this.handleChangeBound);
+        window.addEventListener('viewLoaded', this.handleViewLoadedBound);
+    }
 
-        window.addEventListener('viewLoaded', (e) => {
-            if (e.detail.url.includes('/admin/edit-user')) {
-                const urlParams = new URLSearchParams(window.location.search);
-                this.targetUserId = urlParams.get('id');
-                if (this.targetUserId) {
-                    this.loadUserData();
-                } else {
-                    if (window.spaRouter) window.spaRouter.navigate(this.basePath + '/admin/manage-users');
+    // 3. Funciones manejadoras extraídas
+    handleClick(e) {
+        const searchBtn = e.target.closest('[data-action="searchUser"]');
+        const toggleFiltersBtn = e.target.closest('[data-action="toggleUserFilters"]');
+        const viewBtn = e.target.closest('[data-action="toggleViewMode"]');
+        const selectTarget = e.target.closest('[data-action="selectUser"]');
+        const deselectBtn = e.target.closest('[data-action="deselectUser"]');
+        const openSubMenuBtn = e.target.closest('[data-action="openFilterSubMenu"]');
+        const backToMainFiltersBtn = e.target.closest('[data-action="backToMainFilters"]');
+        
+        const editUserBtn = e.target.closest('[data-action="editSelectedUser"]');
+        const editRoleBtn = e.target.closest('[data-action="editSelectedUserRole"]');
+        const editStatusBtn = e.target.closest('[data-action="editSelectedUserStatus"]');
+        
+        if (searchBtn) this.toggleSearchToolbar();
+        if (toggleFiltersBtn) this.toggleFiltersModule();
+        if (viewBtn) this.toggleViewMode(viewBtn);
+
+        if (openSubMenuBtn) this.openFilterSubMenu(openSubMenuBtn);
+        if (backToMainFiltersBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            this.backToMainFilters();
+        }
+
+        if (selectTarget && !e.target.closest('button') && !e.target.closest('.component-dropdown-wrapper')) {
+            this.handleUserSelection(selectTarget);
+        }
+
+        if (deselectBtn) this.deselectUser();
+        if (editUserBtn) this.editSelectedUser();
+        if (editRoleBtn) this.editSelectedUserRole();
+        if (editStatusBtn) this.editSelectedUserStatus();
+    }
+
+    handleInput(e) {
+        if (e.target && e.target.getAttribute('data-ref') === 'user-search-input') {
+            this.applyAllFilters();
+        }
+    }
+
+    handleChange(e) {
+        if (e.target && e.target.classList.contains('filter-checkbox')) {
+            this.applyAllFilters();
+        }
+    }
+
+    handleViewLoaded(e) {
+        if (e.detail.url.includes('/admin/manage-users')) {
+            const searchInput = document.querySelector('[data-ref="user-search-input"]');
+            if (searchInput) searchInput.value = '';
+            
+            document.querySelectorAll('.filter-checkbox').forEach(cb => cb.checked = true);
+            
+            this.backToMainFilters();
+            this.applyAllFilters();
+            this.deselectUser(); 
+        }
+    }
+
+    editSelectedUser() {
+        if (!this.selectedUserId) return;
+        if (window.spaRouter) {
+            window.spaRouter.navigate(`${this.basePath}/admin/edit-user?id=${this.selectedUserId}`);
+        } else {
+            window.location.href = `${this.basePath}/admin/edit-user?id=${this.selectedUserId}`;
+        }
+    }
+
+    editSelectedUserRole() {
+        if (!this.selectedUserId) return;
+        if (window.spaRouter) {
+            window.spaRouter.navigate(`${this.basePath}/admin/edit-role?id=${this.selectedUserId}`);
+        } else {
+            window.location.href = `${this.basePath}/admin/edit-role?id=${this.selectedUserId}`;
+        }
+    }
+
+    editSelectedUserStatus() {
+        if (!this.selectedUserId) return;
+        if (window.spaRouter) {
+            window.spaRouter.navigate(`${this.basePath}/admin/edit-status?id=${this.selectedUserId}`);
+        } else {
+            window.location.href = `${this.basePath}/admin/edit-status?id=${this.selectedUserId}`;
+        }
+    }
+
+    openFilterSubMenu(btn) {
+        const targetId = btn.getAttribute('data-target');
+        const targetMenu = document.querySelector(`[data-ref="${targetId}"]`);
+        const mainFilters = document.querySelector('[data-ref="menuMainFilters"]');
+        
+        if (targetMenu && mainFilters) {
+            mainFilters.classList.add('disabled');
+            mainFilters.classList.remove('active');
+            
+            targetMenu.classList.remove('disabled');
+            targetMenu.classList.add('active');
+        }
+    }
+
+    backToMainFilters() {
+        const mainFilters = document.querySelector('[data-ref="menuMainFilters"]');
+        const subMenus = document.querySelectorAll('[data-module="moduleUserFilters"] .component-menu:not([data-ref="menuMainFilters"])');
+        
+        if (mainFilters) {
+            subMenus.forEach(menu => {
+                menu.classList.add('disabled');
+                menu.classList.remove('active');
+            });
+            
+            mainFilters.classList.remove('disabled');
+            mainFilters.classList.add('active');
+        }
+    }
+
+    toggleFiltersModule() {
+        if (window.appInstance) {
+            window.appInstance.toggleModule('moduleUserFilters');
+            const filtersModule = document.querySelector('[data-module="moduleUserFilters"]');
+            if (filtersModule && !filtersModule.classList.contains('disabled')) {
+                this.backToMainFilters(); 
+            }
+        }
+    }
+
+    handleUserSelection(target) {
+        const userId = target.getAttribute('data-user-id');
+        
+        if (this.selectedUserId === userId) {
+            this.deselectUser();
+            return;
+        }
+
+        this.selectedUserId = userId;
+
+        document.querySelectorAll('[data-action="selectUser"]').forEach(el => {
+            el.classList.remove('selected');
+        });
+
+        document.querySelectorAll(`[data-action="selectUser"][data-user-id="${userId}"]`).forEach(el => {
+            el.classList.add('selected');
+        });
+
+        const defaultMode = document.querySelector('[data-ref="toolbar-default-mode"]');
+        const selectionMode = document.querySelector('[data-ref="toolbar-selection-mode"]');
+        const secondaryToolbar = document.querySelector('[data-ref="secondary-toolbar"]');
+
+        if (defaultMode && selectionMode) {
+            defaultMode.classList.replace('active', 'disabled');
+            selectionMode.classList.replace('disabled', 'active');
+        }
+
+        if (secondaryToolbar && secondaryToolbar.classList.contains('active')) {
+            secondaryToolbar.classList.remove('active');
+        }
+        
+        const filtersModule = document.querySelector('[data-module="moduleUserFilters"]');
+        if (filtersModule && !filtersModule.classList.contains('disabled')) {
+            if (window.appInstance) window.appInstance.closeModule(filtersModule);
+        }
+    }
+
+    deselectUser() {
+        this.selectedUserId = null;
+
+        document.querySelectorAll('[data-action="selectUser"]').forEach(el => {
+            el.classList.remove('selected');
+        });
+
+        const defaultMode = document.querySelector('[data-ref="toolbar-default-mode"]');
+        const selectionMode = document.querySelector('[data-ref="toolbar-selection-mode"]');
+
+        if (defaultMode && selectionMode) {
+            selectionMode.classList.replace('active', 'disabled');
+            defaultMode.classList.replace('disabled', 'active');
+        }
+    }
+
+    toggleSearchToolbar() {
+        const secondaryToolbar = document.querySelector('[data-ref="secondary-toolbar"]');
+        const searchInput = document.querySelector('[data-ref="user-search-input"]');
+        const filtersModule = document.querySelector('[data-module="moduleUserFilters"]');
+        
+        if (filtersModule && !filtersModule.classList.contains('disabled')) {
+            if (window.appInstance) window.appInstance.closeModule(filtersModule);
+        }
+
+        if (secondaryToolbar) {
+            secondaryToolbar.classList.toggle('active');
+            
+            if (secondaryToolbar.classList.contains('active')) {
+                if (searchInput) setTimeout(() => searchInput.focus(), 50);
+            } else {
+                if (searchInput) {
+                    searchInput.value = '';
+                    this.applyAllFilters();
                 }
             }
-        });
-
-        document.addEventListener('click', (e) => {
-            if (!window.location.pathname.includes('/admin/edit-user')) return;
-
-            if (e.target.closest('[data-ref="admin-btn-change-avatar"]') || e.target.closest('[data-ref="admin-profile-avatar-overlay"]')) {
-                const input = document.querySelector('[data-ref="admin-input-avatar-file"]');
-                if (input) input.click();
-            }
-
-            if (e.target.closest('[data-ref="admin-btn-cancel-avatar"]')) this.cancelAvatarPreview();
-            
-            const btnSaveAvatar = e.target.closest('[data-ref="admin-btn-save-avatar"]');
-            if (btnSaveAvatar) this.saveAvatar(btnSaveAvatar);
-
-            const btnDelAvatar = e.target.closest('[data-ref="admin-btn-delete-avatar"]');
-            if (btnDelAvatar) this.deleteAvatar(btnDelAvatar);
-
-            const btnSaveUsername = e.target.closest('[data-action="adminSaveUsername"]');
-            if (btnSaveUsername) this.saveUsername(btnSaveUsername);
-
-            const btnSaveEmail = e.target.closest('[data-action="adminSaveEmail"]');
-            if (btnSaveEmail) this.saveEmail(btnSaveEmail);
-
-            // --- EVENTOS DE PREFERENCIAS ---
-            const btnLang = e.target.closest('[data-action="adminToggleModuleLanguage"]');
-            if (btnLang) {
-                if (window.appInstance) window.appInstance.toggleModule('adminModuleLanguage');
-            }
-
-            const btnTheme = e.target.closest('[data-action="adminToggleModuleTheme"]');
-            if (btnTheme) {
-                if (window.appInstance) window.appInstance.toggleModule('adminModuleTheme');
-            }
-
-            const btnSetPref = e.target.closest('[data-action="adminSetPref"]');
-            if (btnSetPref) this.savePrefFromDropdown(btnSetPref);
-        });
-
-        document.addEventListener('change', (e) => {
-            if (!window.location.pathname.includes('/admin/edit-user')) return;
-            if (e.target && e.target.getAttribute('data-ref') === 'admin-input-avatar-file') this.handleFileSelection(e);
-
-            if (e.target.matches('[data-action="adminTogglePreference"]')) {
-                const key = e.target.getAttribute('data-key');
-                const value = e.target.checked ? 1 : 0;
-                this.savePreference(key, value);
-            }
-        });
-
-        this.eventsBound = true; // <-- SELLA LOS EVENTOS
+        }
     }
 
-    showMessage(msg, type = 'error') {
-        if (window.appInstance && typeof window.appInstance.showToast === 'function') {
-            window.appInstance.showToast(msg, type);
-        } else alert(msg);
-    }
+    toggleViewMode(btn) {
+        const wrapper = document.querySelector('[data-ref="manage-users-wrapper"]');
+        const header = document.querySelector('[data-ref="manage-users-header"]');
+        const viewCards = document.querySelector('[data-ref="view-cards"]');
+        const viewTable = document.querySelector('[data-ref="view-table"]');
+        const dynamicTitle = document.querySelector('[data-ref="toolbar-dynamic-title"]');
+        const iconElement = btn.querySelector('.material-symbols-rounded');
 
-    setButtonLoading(btn) {
-        if (btn.disabled) return;
-        btn.dataset.originalText = btn.innerHTML;
-        btn.innerHTML = '<div class="component-spinner"></div>';
-        btn.disabled = true;
-    }
+        if (!wrapper || !header || !viewCards || !viewTable) return;
 
-    restoreButton(btn) {
-        if (btn.dataset.originalText) btn.innerHTML = btn.dataset.originalText;
-        btn.disabled = false;
-    }
-
-    async loadUserData() {
-        const loader = document.querySelector('[data-ref="admin-edit-loader"]');
-        
-        const res = await this.api.post(ApiRoutes.Admin.GetUser, { target_user_id: this.targetUserId });
-        
-        if (res.success) {
-            const user = res.user;
-            const prefs = res.preferences;
+        if (viewCards.classList.contains('active')) {
+            viewCards.classList.replace('active', 'disabled');
+            viewTable.classList.replace('disabled', 'active');
             
-            // Re-hidratar Avatar
-            const imgEl = document.querySelector('[data-ref="admin-profile-avatar-img"]');
-            const avatarContainer = document.querySelector('[data-ref="admin-profile-avatar-container"]');
-            const formattedAvatar = `${this.basePath}/${user.profile_picture.replace(/^\//, '')}`;
+            header.classList.add('disabled');
+            wrapper.classList.add('component-wrapper--full');
+            if (dynamicTitle) dynamicTitle.classList.remove('disabled');
             
-            if (imgEl) {
-                imgEl.src = formattedAvatar;
-                imgEl.setAttribute('data-original-src', formattedAvatar);
-            }
-            if (avatarContainer) {
-                avatarContainer.className = `component-avatar role-${user.role}`;
-            }
-            
-            this.isDefaultAvatar = formattedAvatar.includes('/default/');
-            this.toggleAvatarButtons(false);
-
-            // Re-hidratar Usuario
-            const dispUser = document.querySelector('[data-ref="admin-display-username"]');
-            const inpUser = document.querySelector('[data-ref="input-admin-username"]');
-            if (dispUser) dispUser.textContent = user.username;
-            if (inpUser) {
-                inpUser.value = user.username;
-                inpUser.setAttribute('data-original-value', user.username);
-            }
-
-            // Re-hidratar Correo
-            const dispEmail = document.querySelector('[data-ref="admin-display-email"]');
-            const inpEmail = document.querySelector('[data-ref="input-admin-email"]');
-            if (dispEmail) dispEmail.textContent = user.email;
-            if (inpEmail) {
-                inpEmail.value = user.email;
-                inpEmail.setAttribute('data-original-value', user.email);
-            }
-
-            // Re-hidratar Preferencias
-            if (prefs) {
-                const toggleLinks = document.querySelector('[data-ref="admin-toggle-links"]');
-                const toggleAlerts = document.querySelector('[data-ref="admin-toggle-alerts"]');
-                if (toggleLinks) toggleLinks.checked = (prefs.open_links_new_tab == 1);
-                if (toggleAlerts) toggleAlerts.checked = (prefs.extended_alerts == 1);
-
-                const langText = document.querySelector('[data-ref="admin-lang-text"]');
-                if (langText) langText.textContent = this.langMap[prefs.language] || prefs.language;
-
-                const themeText = document.querySelector('[data-ref="admin-theme-text"]');
-                if (themeText) themeText.textContent = this.themeMap[prefs.theme] || prefs.theme;
-
-                document.querySelectorAll('[data-action="adminSetPref"]').forEach(item => {
-                    if (item.getAttribute('data-key') === 'language') {
-                        item.classList.toggle('active', item.getAttribute('data-value') === prefs.language);
-                    }
-                    if (item.getAttribute('data-key') === 'theme') {
-                        item.classList.toggle('active', item.getAttribute('data-value') === prefs.theme);
-                    }
-                });
-            }
-
-            if (loader) loader.classList.add('disabled');
-            document.querySelectorAll('.admin-edit-group').forEach(el => el.classList.remove('disabled'));
-
+            if (iconElement) iconElement.textContent = 'grid_view';
         } else {
-            this.showMessage(res.message, 'error');
-            if (window.spaRouter) window.spaRouter.navigate(this.basePath + '/admin/manage-users');
+            viewTable.classList.replace('active', 'disabled');
+            viewCards.classList.replace('disabled', 'active');
+            
+            header.classList.remove('disabled');
+            wrapper.classList.remove('component-wrapper--full');
+            if (dynamicTitle) dynamicTitle.classList.add('disabled');
+            
+            if (iconElement) iconElement.textContent = 'table_rows';
         }
     }
 
-    handleFileSelection(e) {
-        const file = e.target.files[0];
-        if (!file) return;
+    applyAllFilters() {
+        const queryInput = document.querySelector('[data-ref="user-search-input"]');
+        const query = (queryInput ? queryInput.value : '').toLowerCase().trim();
         
-        const maxSizeMb = this.config.max_avatar_size_mb || 2;
-        if (file.size > maxSizeMb * 1024 * 1024) { 
-            this.showMessage(`La imagen no debe superar los ${maxSizeMb}MB.`, 'error'); 
-            e.target.value = ''; 
-            return; 
-        }
-
-        const validTypes = ['image/png', 'image/jpeg', 'image/jpg'];
-        if (!validTypes.includes(file.type)) { 
-            this.showMessage('Solo se permiten imágenes en formato PNG o JPG.', 'error'); 
-            e.target.value = ''; 
-            return; 
-        }
-
-        this.selectedFile = file;
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-            const imgEl = document.querySelector('[data-ref="admin-profile-avatar-img"]');
-            if (imgEl) imgEl.src = ev.target.result;
-            this.toggleAvatarButtons(true);
-        };
-        reader.readAsDataURL(file);
-    }
-
-    cancelAvatarPreview() {
-        const imgEl = document.querySelector('[data-ref="admin-profile-avatar-img"]');
-        const fileInput = document.querySelector('[data-ref="admin-input-avatar-file"]');
-        if (imgEl) imgEl.src = imgEl.getAttribute('data-original-src');
-        if (fileInput) fileInput.value = '';
-        this.selectedFile = null;
-        this.toggleAvatarButtons(false);
-    }
-
-    toggleAvatarButtons(isPreview) {
-        const btnChange = document.querySelector('[data-ref="admin-btn-change-avatar"]');
-        const btnDelete = document.querySelector('[data-ref="admin-btn-delete-avatar"]');
-        const btnCancel = document.querySelector('[data-ref="admin-btn-cancel-avatar"]');
-        const btnSave = document.querySelector('[data-ref="admin-btn-save-avatar"]');
-        if (!btnChange || !btnDelete || !btnCancel || !btnSave) return;
+        const roleCheckboxes = Array.from(document.querySelectorAll('.filter-checkbox[data-filter-type="role"]'));
+        const statusCheckboxes = Array.from(document.querySelectorAll('.filter-checkbox[data-filter-type="status"]'));
         
-        if (isPreview) {
-            btnChange.classList.add('disabled');
-            btnDelete.classList.add('disabled');
-            btnCancel.classList.remove('disabled');
-            btnSave.classList.remove('disabled');
-        } else {
-            btnChange.classList.remove('disabled');
-            if (this.isDefaultAvatar) {
-                btnDelete.classList.add('disabled');
-                btnChange.textContent = 'Subir foto';
+        const checkedRoles = roleCheckboxes.filter(cb => cb.checked).map(cb => cb.value);
+        const checkedStatuses = statusCheckboxes.filter(cb => cb.checked).map(cb => cb.value);
+
+        const searchBtn = document.querySelector('[data-ref="btn-toggle-search"]');
+        if (searchBtn) {
+            if (query.length > 0) searchBtn.classList.add('has-active-filter');
+            else searchBtn.classList.remove('has-active-filter');
+        }
+
+        const filtersBtn = document.querySelector('[data-ref="btn-toggle-filters"]');
+        if (filtersBtn) {
+            const hasRoleFilter = checkedRoles.length < roleCheckboxes.length;
+            const hasStatusFilter = checkedStatuses.length < statusCheckboxes.length;
+            if (hasRoleFilter || hasStatusFilter) {
+                filtersBtn.classList.add('has-active-filter');
             } else {
-                btnDelete.classList.remove('disabled');
-                btnChange.textContent = 'Cambiar foto';
+                filtersBtn.classList.remove('has-active-filter');
             }
-            btnCancel.classList.add('disabled');
-            btnSave.classList.add('disabled');
         }
-    }
 
-    async saveAvatar(btn) {
-        if (!this.selectedFile) return;
-        this.setButtonLoading(btn);
-        
-        const formData = new FormData();
-        formData.append('avatar', this.selectedFile);
-        formData.append('target_user_id', this.targetUserId);
+        const processContainer = (containerRef, emptyRef) => {
+            const container = document.querySelector(`[data-ref="${containerRef}"]`);
+            if (!container) return;
 
-        const result = await this.api.postForm(ApiRoutes.Admin.UpdateAvatar, formData);
-        this.restoreButton(btn);
-        
-        if (result.success) {
-            this.showMessage(result.message, 'success');
-            const imgEl = document.querySelector('[data-ref="admin-profile-avatar-img"]');
-            if (imgEl) { 
-                imgEl.src = result.new_avatar; 
-                imgEl.setAttribute('data-original-src', result.new_avatar); 
-            }
-            const fileInput = document.querySelector('[data-ref="admin-input-avatar-file"]');
-            if (fileInput) fileInput.value = '';
+            let visibleCount = 0;
+            let lastVisibleItem = null;
+            const items = container.querySelectorAll('.user-card-item');
             
-            this.selectedFile = null;
-            this.isDefaultAvatar = false; 
-            this.toggleAvatarButtons(false);
-        } else {
-            this.showMessage(result.message, 'error');
-        }
-    }
+            items.forEach(item => {
+                item.classList.remove('last-visible-row');
+                const itemRole = item.getAttribute('data-role');
+                const itemStatus = item.getAttribute('data-status');
+                
+                const textContent = Array.from(item.querySelectorAll('.search-target'))
+                    .map(el => el.textContent.toLowerCase())
+                    .join(' ');
+                
+                const matchesSearch = textContent.includes(query);
+                const matchesRole = checkedRoles.includes(itemRole);
+                const matchesStatus = checkedStatuses.includes(itemStatus);
 
-    async deleteAvatar(btn) {
-        if (!confirm('¿Estás seguro de que deseas eliminar la foto de perfil de este usuario?')) return;
-        
-        this.setButtonLoading(btn);
-        const result = await this.api.post(ApiRoutes.Admin.DeleteAvatar, { target_user_id: this.targetUserId });
-        this.restoreButton(btn);
-        
-        if (result.success) {
-            this.showMessage(result.message, 'success');
-            const imgEl = document.querySelector('[data-ref="admin-profile-avatar-img"]');
-            if (imgEl) { 
-                imgEl.src = result.new_avatar; 
-                imgEl.setAttribute('data-original-src', result.new_avatar); 
+                if (matchesSearch && matchesRole && matchesStatus) {
+                    item.classList.remove('disabled');
+                    visibleCount++;
+                    lastVisibleItem = item;
+                } else {
+                    item.classList.add('disabled');
+                }
+            });
+
+            if (lastVisibleItem) {
+                lastVisibleItem.classList.add('last-visible-row');
             }
-            
-            this.isDefaultAvatar = true; 
-            this.toggleAvatarButtons(false);
-        } else {
-            this.showMessage(result.message, 'error');
-        }
-    }
 
-    async saveUsername(btn) {
-        const input = document.querySelector('[data-ref="input-admin-username"]');
-        if (!input) return;
-        const val = input.value.trim();
-        const originalVal = input.getAttribute('data-original-value');
-        if (val === originalVal) { window.appInstance.toggleEditState('admin-username'); return; }
-        
-        this.setButtonLoading(btn);
-        const result = await this.api.post(ApiRoutes.Admin.UpdateUsername, { target_user_id: this.targetUserId, username: val });
-        this.restoreButton(btn);
-        
-        if (result.success) {
-            this.showMessage(result.message, 'success');
-            document.querySelector('[data-ref="admin-display-username"]').textContent = result.new_username;
-            input.setAttribute('data-original-value', result.new_username);
-            window.appInstance.toggleEditState('admin-username');
-        } else {
-            this.showMessage(result.message, 'error');
-        }
-    }
+            const emptyElement = document.querySelector(`[data-ref="${emptyRef}"]`);
+            if (emptyElement) {
+                if (visibleCount === 0 && items.length > 0) {
+                    emptyElement.classList.remove('disabled');
+                } else {
+                    emptyElement.classList.add('disabled');
+                }
+            }
+        };
 
-    async saveEmail(btn) {
-        const input = document.querySelector('[data-ref="input-admin-email"]');
-        if (!input) return;
-        const val = input.value.trim();
-        const originalVal = input.getAttribute('data-original-value');
-        if (val === originalVal) { window.appInstance.toggleEditState('admin-email'); return; }
-        
-        this.setButtonLoading(btn);
-        const result = await this.api.post(ApiRoutes.Admin.UpdateEmail, { target_user_id: this.targetUserId, email: val });
-        this.restoreButton(btn);
-        
-        if (result.success) {
-            this.showMessage(result.message, 'success');
-            document.querySelector('[data-ref="admin-display-email"]').textContent = result.new_email;
-            input.setAttribute('data-original-value', result.new_email);
-            window.appInstance.toggleEditState('admin-email');
-        } else {
-            this.showMessage(result.message, 'error');
-        }
-    }
-
-    async savePrefFromDropdown(btn) {
-        const key = btn.getAttribute('data-key');
-        const value = btn.getAttribute('data-value');
-
-        document.querySelectorAll(`[data-action="adminSetPref"][data-key="${key}"]`).forEach(el => el.classList.remove('active'));
-        btn.classList.add('active');
-
-        if (key === 'language') {
-            const langText = document.querySelector('[data-ref="admin-lang-text"]');
-            if (langText) langText.textContent = btn.querySelector('.component-menu-link-text span').textContent;
-            if (window.appInstance) window.appInstance.closeModule(document.querySelector('[data-module="adminModuleLanguage"]'));
-        } else if (key === 'theme') {
-            const themeText = document.querySelector('[data-ref="admin-theme-text"]');
-            if (themeText) themeText.textContent = btn.querySelector('.component-menu-link-text span').textContent;
-            if (window.appInstance) window.appInstance.closeModule(document.querySelector('[data-module="adminModuleTheme"]'));
-        }
-
-        await this.savePreference(key, value);
-    }
-
-    async savePreference(key, value) {
-        const result = await this.api.post(ApiRoutes.Admin.UpdatePreference, { target_user_id: this.targetUserId, key: key, value: value });
-        if (result.success) {
-            this.showMessage(result.message, 'success');
-        } else {
-            this.showMessage(result.message, 'error');
-        }
+        processContainer('view-cards', 'empty-search-cards');
+        processContainer('view-table', 'empty-search-table');
     }
 }

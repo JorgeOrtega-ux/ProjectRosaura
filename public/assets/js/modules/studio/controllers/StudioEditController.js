@@ -15,6 +15,11 @@ export class StudioEditController {
 
         this.eventsAttached = false;
         
+        // Bindear los eventos a "this" para poder removerlos después en destroy()
+        this.handleDocumentClickBound = this.handleDocumentClick.bind(this);
+        this.handleDocumentFocusOutBound = this.handleDocumentFocusOut.bind(this);
+        this.handleVideoProgressBound = this.handleVideoProgress.bind(this);
+        
         // Si nos pasan argumentos (instanciado por controlador padre) iniciamos de inmediato.
         // Si no (instanciado por AppInit), esperamos al dispatch init() de AppInit.
         if (api && state) {
@@ -22,11 +27,26 @@ export class StudioEditController {
         }
     }
 
+    destroy() {
+        document.removeEventListener('click', this.handleDocumentClickBound);
+        document.removeEventListener('focusout', this.handleDocumentFocusOutBound);
+        
+        if (this.eventsAttached) {
+            window.removeEventListener('studioVideoProgress', this.handleVideoProgressBound);
+        }
+
+        if (this.tagsManager && typeof this.tagsManager.destroy === 'function') {
+            this.tagsManager.destroy();
+        }
+        if (this.thumbnailManager && typeof this.thumbnailManager.destroy === 'function') {
+            this.thumbnailManager.destroy();
+        }
+    }
+
     init() {
         this.initEditView();
         if (!this.eventsAttached) {
             this.attachEvents();
-            this.handleVideoProgressBound = this.handleVideoProgress.bind(this);
             window.addEventListener('studioVideoProgress', this.handleVideoProgressBound);
             this.eventsAttached = true;
         }
@@ -315,37 +335,42 @@ export class StudioEditController {
     }
 
     attachEvents() {
-        document.addEventListener('click', (e) => {
-            const selectVisOption = e.target.closest('[data-action="selectVisibility"]');
-            if (selectVisOption) {
-                const value = selectVisOption.getAttribute('data-value');
-                this.syncVisibilityUI(value);
-                
-                if (this.state.selectedVideoId) {
-                    const video = this.state.getVideo(this.state.selectedVideoId);
-                    if (video) video.draftVisibility = value;
-                }
-                
-                const menu = selectVisOption.closest('.component-module');
-                if (menu) { menu.classList.remove('active'); menu.classList.add('disabled'); }
-                return;
+        document.addEventListener('click', this.handleDocumentClickBound);
+        document.addEventListener('focusout', this.handleDocumentFocusOutBound);
+    }
+
+    handleDocumentClick(e) {
+        const selectVisOption = e.target.closest('[data-action="selectVisibility"]');
+        if (selectVisOption) {
+            const value = selectVisOption.getAttribute('data-value');
+            this.syncVisibilityUI(value);
+            
+            if (this.state.selectedVideoId) {
+                const video = this.state.getVideo(this.state.selectedVideoId);
+                if (video) video.draftVisibility = value;
             }
+            
+            const menu = selectVisOption.closest('.component-module');
+            if (menu) { menu.classList.remove('active'); menu.classList.add('disabled'); }
+            return;
+        }
 
-            const btn = e.target.closest('[data-action]');
-            if (!btn) return;
-            const action = btn.getAttribute('data-action');
+        const btn = e.target.closest('[data-action]');
+        if (!btn) return;
+        const action = btn.getAttribute('data-action');
 
-            if (action === 'saveTitle') this.saveTitleField();
-            if (action === 'publishVideo') this.publishVideo();
-            if (action === 'cancelVideo') {
-                if (confirm("¿Estás seguro de que deseas cancelar la subida/procesamiento de este video? Se eliminará permanentemente.")) {
-                    this.cancelVideo();
-                }
+        if (action === 'saveTitle') this.saveTitleField();
+        if (action === 'publishVideo') this.publishVideo();
+        if (action === 'cancelVideo') {
+            if (confirm("¿Estás seguro de que deseas cancelar la subida/procesamiento de este video? Se eliminará permanentemente.")) {
+                this.cancelVideo();
             }
-        });
+        }
+    }
 
-        document.addEventListener('focusout', (e) => {
-            if (e.target && e.target.id === 'videoDescriptionInput') this.saveDescriptionField();
-        });
+    handleDocumentFocusOut(e) {
+        if (e.target && e.target.id === 'videoDescriptionInput') {
+            this.saveDescriptionField();
+        }
     }
 }
