@@ -269,8 +269,6 @@ export class ChannelController {
                     if (input) input.focus();
                 } else {
                     if (area) area.style.display = 'none';
-                    // Ya no borramos el valor (input.value = '';) 
-                    // para no perderlo si el usuario apaga por error.
                 }
             });
         });
@@ -294,6 +292,10 @@ export class ChannelController {
             const interestedIn = document.getElementById('channelInterestedInInput')?.value || '';
             const gender = document.getElementById('channelGenderInput')?.value || '';
             const hairColor = document.getElementById('channelHairColorInput')?.value || '';
+            const boobs = document.getElementById('channelBoobsInput')?.value || '';
+            const ethnicity = document.getElementById('channelEthnicityInput')?.value || '';
+            const eyeColor = document.getElementById('channelEyeColorInput')?.value || '';
+            const country = document.getElementById('channelCountryInput')?.value || '';
             const height = document.getElementById('channelHeightInput')?.value || '';
             const weight = document.getElementById('channelWeightInput')?.value || '';
             const tattoos = document.getElementById('channelTattoosInput')?.checked ? 1 : 0;
@@ -320,6 +322,10 @@ export class ChannelController {
                     interested_in: interestedIn,
                     gender: gender,
                     hair_color: hairColor,
+                    boobs: boobs,
+                    ethnicity: ethnicity,
+                    eye_color: eyeColor,
+                    country: country,
                     height: height,
                     weight: weight,
                     tattoos: tattoos,

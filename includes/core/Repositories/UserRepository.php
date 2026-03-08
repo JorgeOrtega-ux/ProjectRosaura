@@ -19,7 +19,8 @@ class UserRepository implements UserRepositoryInterface {
                    ur.is_suspended, ur.suspension_type, ur.suspension_reason, ur.suspension_end_date, 
                    ur.deleted_by, ur.deleted_reason, ur.admin_notes,
                    up.relationship_status, up.interested_in, up.gender, up.height, up.weight, 
-                   up.hair_color, up.tattoos, up.piercings, up.interests,
+                   up.hair_color, up.boobs, up.ethnicity, up.eye_color, up.country,
+                   up.tattoos, up.piercings, up.interests,
                    up.social_facebook, up.social_youtube, up.social_instagram, 
                    up.social_x, up.social_onlyfans, up.social_snapchat
             FROM users u 
@@ -38,7 +39,8 @@ class UserRepository implements UserRepositoryInterface {
                    ur.is_suspended, ur.suspension_type, ur.suspension_reason, ur.suspension_end_date, 
                    ur.deleted_by, ur.deleted_reason, ur.admin_notes,
                    up.relationship_status, up.interested_in, up.gender, up.height, up.weight, 
-                   up.hair_color, up.tattoos, up.piercings, up.interests,
+                   up.hair_color, up.boobs, up.ethnicity, up.eye_color, up.country,
+                   up.tattoos, up.piercings, up.interests,
                    up.social_facebook, up.social_youtube, up.social_instagram, 
                    up.social_x, up.social_onlyfans, up.social_snapchat
             FROM users u 
@@ -57,7 +59,8 @@ class UserRepository implements UserRepositoryInterface {
                    ur.is_suspended, ur.suspension_type, ur.suspension_reason, ur.suspension_end_date, 
                    ur.deleted_by, ur.deleted_reason, ur.admin_notes,
                    up.relationship_status, up.interested_in, up.gender, up.height, up.weight, 
-                   up.hair_color, up.tattoos, up.piercings, up.interests,
+                   up.hair_color, up.boobs, up.ethnicity, up.eye_color, up.country,
+                   up.tattoos, up.piercings, up.interests,
                    up.social_facebook, up.social_youtube, up.social_instagram, 
                    up.social_x, up.social_onlyfans, up.social_snapchat
             FROM users u 
@@ -76,7 +79,8 @@ class UserRepository implements UserRepositoryInterface {
                    ur.is_suspended, ur.suspension_type, ur.suspension_reason, ur.suspension_end_date, 
                    ur.deleted_by, ur.deleted_reason, ur.admin_notes,
                    up.relationship_status, up.interested_in, up.gender, up.height, up.weight, 
-                   up.hair_color, up.tattoos, up.piercings, up.interests,
+                   up.hair_color, up.boobs, up.ethnicity, up.eye_color, up.country,
+                   up.tattoos, up.piercings, up.interests,
                    up.social_facebook, up.social_youtube, up.social_instagram, 
                    up.social_x, up.social_onlyfans, up.social_snapchat
             FROM users u 
@@ -143,7 +147,7 @@ class UserRepository implements UserRepositoryInterface {
         return $stmt->execute([$description, $identifier, $contactEmail, $id]);
     }
 
-    // --- NUEVO MÉTODO IMPLEMENTADO EXTENDIDO CON REDES SOCIALES ---
+    // --- MÉTODO ACTUALIZADO CON REDES SOCIALES Y NUEVOS DETALLES ---
     public function updateExtendedProfile(int $id, array $profileData): bool {
         // Verificar si el registro existe
         $checkStmt = $this->pdo->prepare("SELECT user_id FROM user_profiles WHERE user_id = ?");
@@ -154,8 +158,8 @@ class UserRepository implements UserRepositoryInterface {
             $stmt = $this->pdo->prepare("
                 UPDATE user_profiles 
                 SET relationship_status = ?, interested_in = ?, gender = ?, 
-                    height = ?, weight = ?, hair_color = ?, tattoos = ?, 
-                    piercings = ?, interests = ?,
+                    height = ?, weight = ?, hair_color = ?, boobs = ?, ethnicity = ?, eye_color = ?, country = ?, 
+                    tattoos = ?, piercings = ?, interests = ?,
                     social_facebook = ?, social_youtube = ?, social_instagram = ?, 
                     social_x = ?, social_onlyfans = ?, social_snapchat = ?
                 WHERE user_id = ?
@@ -167,6 +171,10 @@ class UserRepository implements UserRepositoryInterface {
                 $profileData['height'],
                 $profileData['weight'],
                 $profileData['hair_color'],
+                $profileData['boobs'],
+                $profileData['ethnicity'],
+                $profileData['eye_color'],
+                $profileData['country'],
                 $profileData['tattoos'],
                 $profileData['piercings'],
                 $profileData['interests'],
@@ -182,8 +190,8 @@ class UserRepository implements UserRepositoryInterface {
             // Insertar si no existe
             $stmt = $this->pdo->prepare("
                 INSERT INTO user_profiles 
-                (user_id, relationship_status, interested_in, gender, height, weight, hair_color, tattoos, piercings, interests, social_facebook, social_youtube, social_instagram, social_x, social_onlyfans, social_snapchat)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (user_id, relationship_status, interested_in, gender, height, weight, hair_color, boobs, ethnicity, eye_color, country, tattoos, piercings, interests, social_facebook, social_youtube, social_instagram, social_x, social_onlyfans, social_snapchat)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ");
             return $stmt->execute([
                 $id,
@@ -193,6 +201,10 @@ class UserRepository implements UserRepositoryInterface {
                 $profileData['height'],
                 $profileData['weight'],
                 $profileData['hair_color'],
+                $profileData['boobs'],
+                $profileData['ethnicity'],
+                $profileData['eye_color'],
+                $profileData['country'],
                 $profileData['tattoos'],
                 $profileData['piercings'],
                 $profileData['interests'],

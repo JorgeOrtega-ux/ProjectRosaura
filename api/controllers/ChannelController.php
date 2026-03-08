@@ -102,7 +102,7 @@ class ChannelController {
 
         $updated = $this->userRepo->updateChannelProfile($_SESSION['user_id'], $description, $identifier, $contactEmail);
 
-        // --- ACTUALIZAR PERFIL EXTENDIDO CON REDES SOCIALES ---
+        // --- ACTUALIZAR PERFIL EXTENDIDO CON REDES SOCIALES Y NUEVOS DETALLES ---
         $profileData = [
             'relationship_status' => isset($data['relationship_status']) && $data['relationship_status'] !== '' ? $data['relationship_status'] : null,
             'interested_in' => isset($data['interested_in']) && $data['interested_in'] !== '' ? $data['interested_in'] : null,
@@ -110,6 +110,10 @@ class ChannelController {
             'height' => isset($data['height']) && is_numeric($data['height']) ? (float)$data['height'] : null,
             'weight' => isset($data['weight']) && is_numeric($data['weight']) ? (float)$data['weight'] : null,
             'hair_color' => isset($data['hair_color']) && $data['hair_color'] !== '' ? $data['hair_color'] : null,
+            'boobs' => isset($data['boobs']) && $data['boobs'] !== '' ? $data['boobs'] : null,
+            'ethnicity' => isset($data['ethnicity']) && $data['ethnicity'] !== '' ? $data['ethnicity'] : null,
+            'eye_color' => isset($data['eye_color']) && $data['eye_color'] !== '' ? $data['eye_color'] : null,
+            'country' => isset($data['country']) && $data['country'] !== '' ? $data['country'] : null,
             'tattoos' => isset($data['tattoos']) ? (int)$data['tattoos'] : 0,
             'piercings' => isset($data['piercings']) ? (int)$data['piercings'] : 0,
             'interests' => isset($data['interests']) ? trim($data['interests']) : null,

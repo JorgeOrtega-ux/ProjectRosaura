@@ -14,13 +14,17 @@ $currentDescription = $currentUser['channel_description'] ?? '';
 $currentIdentifier = !empty($currentUser['channel_identifier']) ? $currentUser['channel_identifier'] : $currentUser['username'];
 $currentContact = $currentUser['channel_contact_email'] ?? '';
 
-// Variables de los nuevos campos extendidos
+// Variables de los campos extendidos
 $relStatus = $currentUser['relationship_status'] ?? '';
 $interestedIn = $currentUser['interested_in'] ?? '';
 $gender = $currentUser['gender'] ?? '';
 $height = $currentUser['height'] ?? '';
 $weight = $currentUser['weight'] ?? '';
 $hairColor = $currentUser['hair_color'] ?? '';
+$boobs = $currentUser['boobs'] ?? '';
+$ethnicity = $currentUser['ethnicity'] ?? '';
+$eyeColor = $currentUser['eye_color'] ?? '';
+$country = $currentUser['country'] ?? '';
 $tattoos = $currentUser['tattoos'] ?? 0;
 $piercings = $currentUser['piercings'] ?? 0;
 $interests = $currentUser['interests'] ?? '';
@@ -38,6 +42,53 @@ $relStatusMap = ['single' => 'Soltero/a', 'married' => 'Casado/a', 'in_a_relatio
 $interestedInMap = ['men' => 'Hombres', 'women' => 'Mujeres', 'both' => 'Hombres y Mujeres', 'other' => 'Otro', '' => 'No especificado'];
 $genderMap = ['male' => 'Hombre', 'female' => 'Mujer', 'non-binary' => 'No binario', 'other' => 'Otro', '' => 'No especificado'];
 $hairColorMap = ['black' => 'Negro', 'brown' => 'Castaño', 'blonde' => 'Rubio', 'red' => 'Pelirrojo', 'other' => 'Otro', '' => 'No especificado'];
+$boobsMap = ['natural' => 'Naturales', 'augmented' => 'Operados/Aumentados', '' => 'No especificado'];
+$ethnicityMap = ['latina' => 'Latina', 'caucasian' => 'Caucásica/Blanca', 'asian' => 'Asiática', 'black' => 'Afrodescendiente/Negra', 'mixed' => 'Mixta', 'indigenous' => 'Indígena', '' => 'No especificado'];
+$eyeColorMap = ['brown' => 'Café', 'blue' => 'Azul', 'green' => 'Verde', 'hazel' => 'Miel/Avellana', 'black' => 'Negros', '' => 'No especificado'];
+
+// Lista completa de países
+$countriesMap = [
+    'AF' => 'Afganistán', 'AL' => 'Albania', 'DE' => 'Alemania', 'AD' => 'Andorra', 'AO' => 'Angola', 
+    'AG' => 'Antigua y Barbuda', 'SA' => 'Arabia Saudita', 'DZ' => 'Argelia', 'AR' => 'Argentina', 
+    'AM' => 'Armenia', 'AU' => 'Australia', 'AT' => 'Austria', 'AZ' => 'Azerbaiyán', 'BS' => 'Bahamas', 
+    'BD' => 'Bangladés', 'BB' => 'Barbados', 'BH' => 'Baréin', 'BE' => 'Bélgica', 'BZ' => 'Belice', 
+    'BJ' => 'Benín', 'BY' => 'Bielorrusia', 'MM' => 'Birmania', 'BO' => 'Bolivia', 'BA' => 'Bosnia y Herzegovina', 
+    'BW' => 'Botsuana', 'BR' => 'Brasil', 'BN' => 'Brunéi', 'BG' => 'Bulgaria', 'BF' => 'Burkina Faso', 
+    'BI' => 'Burundi', 'BT' => 'Bután', 'CV' => 'Cabo Verde', 'KH' => 'Camboya', 'CM' => 'Camerún', 
+    'CA' => 'Canadá', 'QA' => 'Catar', 'TD' => 'Chad', 'CL' => 'Chile', 'CN' => 'China', 'CY' => 'Chipre', 
+    'VA' => 'Ciudad del Vaticano', 'CO' => 'Colombia', 'KM' => 'Comoras', 'KP' => 'Corea del Norte', 
+    'KR' => 'Corea del Sur', 'CI' => 'Costa de Marfil', 'CR' => 'Costa Rica', 'HR' => 'Croacia', 'CU' => 'Cuba', 
+    'DK' => 'Dinamarca', 'DM' => 'Dominica', 'EC' => 'Ecuador', 'EG' => 'Egipto', 'SV' => 'El Salvador', 
+    'AE' => 'Emiratos Árabes Unidos', 'ER' => 'Eritrea', 'SK' => 'Eslovaquia', 'SI' => 'Eslovenia', 
+    'ES' => 'España', 'US' => 'Estados Unidos', 'EE' => 'Estonia', 'ET' => 'Etiopía', 'PH' => 'Filipinas', 
+    'FI' => 'Finlandia', 'FJ' => 'Fiyi', 'FR' => 'Francia', 'GA' => 'Gabón', 'GM' => 'Gambia', 'GE' => 'Georgia', 
+    'GH' => 'Ghana', 'GD' => 'Granada', 'GR' => 'Grecia', 'GT' => 'Guatemala', 'GY' => 'Guyana', 'GN' => 'Guinea', 
+    'GQ' => 'Guinea Ecuatorial', 'GW' => 'Guinea-Bisáu', 'HT' => 'Haití', 'HN' => 'Honduras', 'HU' => 'Hungría', 
+    'IN' => 'India', 'ID' => 'Indonesia', 'IQ' => 'Irak', 'IR' => 'Irán', 'IE' => 'Irlanda', 'IS' => 'Islandia', 
+    'MH' => 'Islas Marshall', 'SB' => 'Islas Salomón', 'IL' => 'Israel', 'IT' => 'Italia', 'JM' => 'Jamaica', 
+    'JP' => 'Japón', 'JO' => 'Jordania', 'KZ' => 'Kazajistán', 'KE' => 'Kenia', 'KG' => 'Kirguistán', 
+    'KI' => 'Kiribati', 'KW' => 'Kuwait', 'LA' => 'Laos', 'LS' => 'Lesoto', 'LV' => 'Letonia', 'LB' => 'Líbano', 
+    'LR' => 'Liberia', 'LY' => 'Libia', 'LI' => 'Liechtenstein', 'LT' => 'Lituania', 'LU' => 'Luxemburgo', 
+    'MG' => 'Madagascar', 'MY' => 'Malasia', 'MW' => 'Malaui', 'MV' => 'Maldivas', 'ML' => 'Malí', 
+    'MT' => 'Malta', 'MA' => 'Marruecos', 'MU' => 'Mauricio', 'MR' => 'Mauritania', 'MX' => 'México', 
+    'FM' => 'Micronesia', 'MD' => 'Moldavia', 'MC' => 'Mónaco', 'MN' => 'Mongolia', 'ME' => 'Montenegro', 
+    'MZ' => 'Mozambique', 'NA' => 'Namibia', 'NR' => 'Nauru', 'NP' => 'Nepal', 'NI' => 'Nicaragua', 
+    'NE' => 'Níger', 'NG' => 'Nigeria', 'NO' => 'Noruega', 'NZ' => 'Nueva Zelanda', 'OM' => 'Omán', 
+    'NL' => 'Países Bajos', 'PK' => 'Pakistán', 'PW' => 'Palaos', 'PA' => 'Panamá', 'PG' => 'Papúa Nueva Guinea', 
+    'PY' => 'Paraguay', 'PE' => 'Perú', 'PL' => 'Polonia', 'PT' => 'Portugal', 'GB' => 'Reino Unido', 
+    'CF' => 'República Centroafricana', 'CZ' => 'República Checa', 'MK' => 'Macedonia del Norte', 
+    'CG' => 'República del Congo', 'CD' => 'República Democrática del Congo', 'DO' => 'República Dominicana', 
+    'ZA' => 'Sudáfrica', 'RW' => 'Ruanda', 'RO' => 'Rumanía', 'RU' => 'Rusia', 'WS' => 'Samoa', 
+    'KN' => 'San Cristóbal y Nieves', 'SM' => 'San Marino', 'VC' => 'San Vicente y las Granadinas', 
+    'LC' => 'Santa Lucía', 'ST' => 'Santo Tomé y Príncipe', 'SN' => 'Senegal', 'RS' => 'Serbia', 'SC' => 'Seychelles', 
+    'SL' => 'Sierra Leona', 'SG' => 'Singapur', 'SY' => 'Siria', 'SO' => 'Somalia', 'LK' => 'Sri Lanka', 
+    'SZ' => 'Suazilandia', 'SD' => 'Sudán', 'SS' => 'Sudán del Sur', 'SE' => 'Suecia', 'CH' => 'Suiza', 
+    'SR' => 'Surinam', 'TH' => 'Tailandia', 'TZ' => 'Tanzania', 'TJ' => 'Tayikistán', 'TL' => 'Timor Oriental', 
+    'TG' => 'Togo', 'TO' => 'Tonga', 'TT' => 'Trinidad y Tobago', 'TN' => 'Túnez', 'TM' => 'Turkmenistán', 
+    'TR' => 'Turquía', 'TV' => 'Tuvalu', 'UA' => 'Ucrania', 'UG' => 'Uganda', 'UY' => 'Uruguay', 'UZ' => 'Uzbekistán', 
+    'VU' => 'Vanuatu', 'VE' => 'Venezuela', 'VN' => 'Vietnam', 'YE' => 'Yemen', 'DJ' => 'Yibuti', 'ZM' => 'Zambia', 
+    'ZW' => 'Zimbabue', '' => 'No especificado'
+];
 ?>
 
 <div class="view-content">
@@ -258,6 +309,102 @@ $hairColorMap = ['black' => 'Negro', 'brown' => 'Castaño', 'blonde' => 'Rubio',
             <div class="component-group-item component-group-item--stacked">
                 <div class="component-card__content">
                     <div class="component-card__text">
+                        <h2 class="component-card__title">País de nacimiento</h2>
+                        <p class="component-card__description">Indica el país donde naciste.</p>
+                    </div>
+                </div>
+                <div class="component-card__actions component-card__actions--start">
+                    <div class="component-dropdown-wrapper">
+                        <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="menuCountry">
+                            <span class="material-symbols-rounded">public</span>
+                            <span class="component-dropdown-text" id="textCountry"><?php echo $countriesMap[$country] ?? 'No especificado'; ?></span>
+                            <span class="material-symbols-rounded">expand_more</span>
+                        </div>
+                        <div class="component-module component-module--dropdown component-module--dropdown-left disabled" id="menuCountry">
+                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding">
+                                <div class="component-menu-list component-menu-list--scrollable">
+                                    <?php foreach($countriesMap as $val => $label): ?>
+                                        <div class="component-menu-link <?php echo $country === $val ? 'active' : ''; ?>" data-action="selectOption" data-target="channelCountryInput" data-text="textCountry" data-value="<?php echo $val; ?>" data-label="<?php echo $label; ?>">
+                                            <div class="component-menu-link-text"><span><?php echo $label; ?></span></div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="channelCountryInput" value="<?php echo htmlspecialchars($country); ?>">
+                </div>
+            </div>
+
+            <hr class="component-divider">
+
+            <div class="component-group-item component-group-item--stacked">
+                <div class="component-card__content">
+                    <div class="component-card__text">
+                        <h2 class="component-card__title">Etnia / Descendencia</h2>
+                        <p class="component-card__description">Selecciona tu etnia o descendencia.</p>
+                    </div>
+                </div>
+                <div class="component-card__actions component-card__actions--start">
+                    <div class="component-dropdown-wrapper">
+                        <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="menuEthnicity">
+                            <span class="material-symbols-rounded">fingerprint</span>
+                            <span class="component-dropdown-text" id="textEthnicity"><?php echo $ethnicityMap[$ethnicity] ?? 'No especificado'; ?></span>
+                            <span class="material-symbols-rounded">expand_more</span>
+                        </div>
+                        <div class="component-module component-module--dropdown component-module--dropdown-left disabled" id="menuEthnicity">
+                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding">
+                                <div class="component-menu-list component-menu-list--scrollable">
+                                    <?php foreach($ethnicityMap as $val => $label): ?>
+                                        <div class="component-menu-link <?php echo $ethnicity === $val ? 'active' : ''; ?>" data-action="selectOption" data-target="channelEthnicityInput" data-text="textEthnicity" data-value="<?php echo $val; ?>" data-label="<?php echo $label; ?>">
+                                            <div class="component-menu-link-text"><span><?php echo $label; ?></span></div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="channelEthnicityInput" value="<?php echo htmlspecialchars($ethnicity); ?>">
+                </div>
+            </div>
+
+            <hr class="component-divider">
+
+            <div class="component-group-item component-group-item--stacked">
+                <div class="component-card__content">
+                    <div class="component-card__text">
+                        <h2 class="component-card__title">Color de ojos</h2>
+                        <p class="component-card__description">Elige tu color natural de ojos.</p>
+                    </div>
+                </div>
+                <div class="component-card__actions component-card__actions--start">
+                    <div class="component-dropdown-wrapper">
+                        <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="menuEyeColor">
+                            <span class="material-symbols-rounded">visibility</span>
+                            <span class="component-dropdown-text" id="textEyeColor"><?php echo $eyeColorMap[$eyeColor] ?? 'No especificado'; ?></span>
+                            <span class="material-symbols-rounded">expand_more</span>
+                        </div>
+                        <div class="component-module component-module--dropdown component-module--dropdown-left disabled" id="menuEyeColor">
+                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding">
+                                <div class="component-menu-list component-menu-list--scrollable">
+                                    <?php foreach($eyeColorMap as $val => $label): ?>
+                                        <div class="component-menu-link <?php echo $eyeColor === $val ? 'active' : ''; ?>" data-action="selectOption" data-target="channelEyeColorInput" data-text="textEyeColor" data-value="<?php echo $val; ?>" data-label="<?php echo $label; ?>">
+                                            <div class="component-menu-link-text"><span><?php echo $label; ?></span></div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="channelEyeColorInput" value="<?php echo htmlspecialchars($eyeColor); ?>">
+                </div>
+            </div>
+
+            <hr class="component-divider">
+
+            <div class="component-group-item component-group-item--stacked">
+                <div class="component-card__content">
+                    <div class="component-card__text">
                         <h2 class="component-card__title">Color de cabello</h2>
                         <p class="component-card__description">Elige tu color de cabello actual.</p>
                     </div>
@@ -282,6 +429,38 @@ $hairColorMap = ['black' => 'Negro', 'brown' => 'Castaño', 'blonde' => 'Rubio',
                         </div>
                     </div>
                     <input type="hidden" id="channelHairColorInput" value="<?php echo htmlspecialchars($hairColor); ?>">
+                </div>
+            </div>
+
+            <hr class="component-divider">
+
+            <div class="component-group-item component-group-item--stacked">
+                <div class="component-card__content">
+                    <div class="component-card__text">
+                        <h2 class="component-card__title">Pechos / Busto</h2>
+                        <p class="component-card__description">Indica si son naturales o aumentados.</p>
+                    </div>
+                </div>
+                <div class="component-card__actions component-card__actions--start">
+                    <div class="component-dropdown-wrapper">
+                        <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="menuBoobs">
+                            <span class="material-symbols-rounded">female</span>
+                            <span class="component-dropdown-text" id="textBoobs"><?php echo $boobsMap[$boobs] ?? 'No especificado'; ?></span>
+                            <span class="material-symbols-rounded">expand_more</span>
+                        </div>
+                        <div class="component-module component-module--dropdown component-module--dropdown-left disabled" id="menuBoobs">
+                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding">
+                                <div class="component-menu-list component-menu-list--scrollable">
+                                    <?php foreach($boobsMap as $val => $label): ?>
+                                        <div class="component-menu-link <?php echo $boobs === $val ? 'active' : ''; ?>" data-action="selectOption" data-target="channelBoobsInput" data-text="textBoobs" data-value="<?php echo $val; ?>" data-label="<?php echo $label; ?>">
+                                            <div class="component-menu-link-text"><span><?php echo $label; ?></span></div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="channelBoobsInput" value="<?php echo htmlspecialchars($boobs); ?>">
                 </div>
             </div>
 
