@@ -746,3 +746,150 @@
         gap: 20px;
     }
 }
+
+/* =========================================
+   COMPONENTS ABOUT (PESTAÑA ACERCA DE)
+   ========================================= */
+
+.component-about-layout {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 40px;
+    margin-top: 10px;
+}
+
+.component-about-main {
+    flex: 2;
+    min-width: 320px;
+}
+
+.component-about-sidebar {
+    flex: 1;
+    min-width: 280px;
+    max-width: 400px;
+}
+
+.component-about-title {
+    margin-bottom: 15px;
+    font-size: 1.25rem;
+}
+
+/* Tarjetas blancas con borde y radio */
+.component-about-card {
+    background-color: #ffffff;
+    border: 1px solid #00000020;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 40px;
+}
+
+.component-about-text {
+    white-space: pre-wrap;
+    color: var(--text-primary);
+    line-height: 1.6;
+    font-size: 15px;
+    margin: 0;
+}
+
+/* Grid de detalles personales */
+.component-about-details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.component-about-detail-item {
+    background-color: #ffffff;
+    border: 1px solid #00000020;
+    border-radius: 12px;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.component-about-detail-label {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.component-about-detail-value {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+/* Listas de estadísticas */
+.component-about-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.component-about-list-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--text-primary);
+    font-size: 15px;
+}
+
+.component-about-list-icon {
+    font-size: 22px;
+    color: var(--text-secondary);
+}
+
+/* Enlaces sociales */
+.component-about-socials {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 40px;
+}
+
+.component-about-social-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    color: var(--text-primary);
+    font-size: 15px;
+    padding: 15px;
+    background-color: #ffffff;
+    border: 1px solid #00000020;
+    border-radius: 12px;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.component-about-social-link:hover {
+    background-color: #f9f9f9;
+    border-color: #00000030;
+}
+
+.component-about-social-icon {
+    font-size: 22px;
+    color: var(--accent-color, #3ea6ff);
+}
+
+.component-about-social-text {
+    font-weight: 500;
+}
+
+/* Contacto */
+.component-about-contact-text {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 15px;
+    margin-top: 0;
+}
+
+.component-about-contact-btn {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    text-decoration: none;
+}

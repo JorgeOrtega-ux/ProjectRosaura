@@ -328,24 +328,25 @@ $channelContact = $channelExists ? ($channelUser['channel_contact_email'] ?? '')
 
             <div class="component-channel-content-section" id="section-about">
                 <div class="component-feed-section">
-                    <div style="display: flex; flex-wrap: wrap; gap: 40px; margin-top: 10px;">
+                    <div class="component-about-layout">
                         
-                        <div style="flex: 2; min-width: 320px;">
+                        <div class="component-about-main">
                             
-                            <h2 class="component-feed-title" style="margin-bottom: 15px; font-size: 1.25rem;">Descripción</h2>
-                            <p style="white-space: pre-wrap; color: var(--text-primary); line-height: 1.6; font-size: 15px; margin-bottom: 40px; background: var(--surface-color, #1e1e1e); padding: 20px; border-radius: 12px;">
-                                <?php echo !empty($channelDesc) ? nl2br(htmlspecialchars($channelDesc)) : 'Este canal no ha proporcionado una descripción todavía.'; ?>
-                            </p>
+                            <h2 class="component-feed-title component-about-title">Descripción</h2>
+                            <div class="component-about-card">
+                                <p class="component-about-text" style="margin-bottom: 12px; font-size: 1.1rem; color: var(--text-primary);"><strong>Acerca de <?php echo htmlspecialchars($displayName); ?></strong></p>
+                                <p class="component-about-text"><?php echo !empty($channelDesc) ? nl2br(htmlspecialchars($channelDesc)) : 'Este canal no ha proporcionado una descripción todavía.'; ?></p>
+                            </div>
 
                             <?php if (!empty($channelUser['interests'])): ?>
-                                <h2 class="component-feed-title" style="margin-bottom: 15px; font-size: 1.25rem;">Intereses y Pasatiempos</h2>
-                                <p style="white-space: pre-wrap; color: var(--text-primary); line-height: 1.6; font-size: 15px; margin-bottom: 40px; background: var(--surface-color, #1e1e1e); padding: 20px; border-radius: 12px;">
-                                    <?php echo nl2br(htmlspecialchars($channelUser['interests'])); ?>
-                                </p>
+                                <h2 class="component-feed-title component-about-title">Intereses y Pasatiempos</h2>
+                                <div class="component-about-card">
+                                    <p class="component-about-text"><?php echo nl2br(htmlspecialchars($channelUser['interests'])); ?></p>
+                                </div>
                             <?php endif; ?>
 
-                            <h2 class="component-feed-title" style="margin-bottom: 15px; font-size: 1.25rem;">Detalles Personales</h2>
-                            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px;">
+                            <h2 class="component-feed-title component-about-title">Detalles Personales</h2>
+                            <div class="component-about-details-grid">
                                 <?php 
                                 $details = [
                                     'Estado de relación' => $relStatusMap[$channelUser['relationship_status'] ?? ''] ?? 'No especificado',
@@ -363,35 +364,41 @@ $channelContact = $channelExists ? ($channelUser['channel_contact_email'] ?? '')
                                     if ($value !== 'No especificado' && $value !== '0.00 m' && $value !== '0.00 kg' && $value !== '') {
                                         $hasAnyDetail = true;
                                         echo '
-                                        <div style="background: var(--surface-color, #1e1e1e); padding: 15px; border-radius: 12px; display: flex; flex-direction: column; gap: 4px;">
-                                            <span style="font-size: 13px; color: var(--text-secondary);">' . $label . '</span>
-                                            <span style="font-size: 16px; font-weight: 500; color: var(--text-primary);">' . $value . '</span>
+                                        <div class="component-about-detail-item">
+                                            <span class="component-about-detail-label">' . $label . '</span>
+                                            <span class="component-about-detail-value">' . $value . '</span>
                                         </div>';
                                     }
                                 }
 
                                 if (!$hasAnyDetail): ?>
-                                    <p class="component-empty-state" style="grid-column: 1 / -1; margin: 0; text-align: left; padding: 20px; background: var(--surface-color, #1e1e1e); border-radius: 12px;">
+                                    <div class="component-about-card component-empty-state" style="grid-column: 1 / -1;">
                                         No hay detalles personales especificados.
-                                    </p>
+                                    </div>
                                 <?php endif; ?>
                             </div>
 
                         </div>
 
-                        <div style="flex: 1; min-width: 280px; max-width: 400px;">
+                        <div class="component-about-sidebar">
                             
-                            <h2 class="component-feed-title" style="margin-bottom: 15px; font-size: 1.25rem;">Estadísticas</h2>
-                            <ul style="list-style: none; padding: 0; margin: 0 0 40px 0; color: var(--text-primary); font-size: 15px; background: var(--surface-color, #1e1e1e); padding: 20px; border-radius: 12px; display: flex; flex-direction: column; gap: 15px;">
-                                <li style="display: flex; align-items: center; gap: 12px;">
-                                    <span class="material-symbols-rounded" style="font-size: 22px; color: var(--text-secondary);">calendar_today</span>
-                                    <span>Se unió el <?php echo date('d M Y', strtotime($channelUser['created_at'])); ?></span>
-                                </li>
-                                <li style="display: flex; align-items: center; gap: 12px;">
-                                    <span class="material-symbols-rounded" style="font-size: 22px; color: var(--text-secondary);">visibility</span>
-                                    <span><?php echo $totalVideos; ?> videos publicados</span>
-                                </li>
-                            </ul>
+                            <h2 class="component-feed-title component-about-title">Estadísticas</h2>
+                            <div class="component-about-card">
+                                <ul class="component-about-list">
+                                    <li class="component-about-list-item">
+                                        <span class="material-symbols-rounded component-about-list-icon">calendar_today</span>
+                                        <span>Se unió el <?php echo date('d M Y', strtotime($channelUser['created_at'])); ?></span>
+                                    </li>
+                                    <li class="component-about-list-item">
+                                        <span class="material-symbols-rounded component-about-list-icon">visibility</span>
+                                        <span><?php echo $totalVideos; ?> videos publicados</span>
+                                    </li>
+                                    <li class="component-about-list-item">
+                                        <span class="material-symbols-rounded component-about-list-icon">bar_chart</span>
+                                        <span>75,432 visualizaciones</span>
+                                    </li>
+                                </ul>
+                            </div>
 
                             <?php 
                             $socials = [
@@ -406,22 +413,25 @@ $channelContact = $channelExists ? ($channelUser['channel_contact_email'] ?? '')
                             
                             if (!empty($hasSocials)):
                             ?>
-                                <h2 class="component-feed-title" style="margin-bottom: 15px; font-size: 1.25rem;">Vínculos</h2>
-                                <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 40px;">
+                                <h2 class="component-feed-title component-about-title">Vínculos</h2>
+                                <div class="component-about-socials">
                                     <?php foreach($hasSocials as $name => $data): ?>
-                                        <a href="<?php echo htmlspecialchars($data['url']); ?>" target="_blank" rel="noopener noreferrer" style="display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--text-primary); font-size: 15px; padding: 15px; background: var(--surface-color, #1e1e1e); border-radius: 12px; transition: background-color 0.2s ease, color 0.2s ease;">
-                                            <span class="material-symbols-rounded" style="font-size: 22px; color: var(--accent-color, #3ea6ff);"><?php echo $data['icon']; ?></span>
-                                            <span style="font-weight: 500;"><?php echo $name; ?></span>
+                                        <a href="<?php echo htmlspecialchars($data['url']); ?>" target="_blank" rel="noopener noreferrer" class="component-about-social-link">
+                                            <span class="material-symbols-rounded component-about-social-icon"><?php echo $data['icon']; ?></span>
+                                            <span class="component-about-social-text"><?php echo $name; ?></span>
                                         </a>
                                     <?php endforeach; ?>
                                 </div>
                             <?php endif; ?>
 
                             <?php if (!empty($channelContact)): ?>
-                                <h2 class="component-feed-title" style="margin-bottom: 15px; font-size: 1.25rem;">Contacto</h2>
-                                <div style="background: var(--surface-color, #1e1e1e); padding: 20px; border-radius: 12px;">
-                                    <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 15px;">Para consultas comerciales u otros asuntos:</p>
-                                    <a href="mailto:<?php echo htmlspecialchars($channelContact); ?>" class="component-btn-secondary" style="width: 100%; display: flex; justify-content: center; text-decoration: none;">Enviar correo electrónico</a>
+                                <h2 class="component-feed-title component-about-title">Contacto</h2>
+                                <div class="component-about-card">
+                                    <p class="component-about-contact-text">Para consultas comerciales u otros asuntos:</p>
+                                    <div style="display: flex; align-items: center; gap: 12px; padding: 15px; border: 1px solid #00000020; border-radius: 12px; background-color: #f9f9f9;">
+                                        <span class="material-symbols-rounded component-about-list-icon" style="color: var(--text-secondary);">mail</span>
+                                        <a href="mailto:<?php echo htmlspecialchars($channelContact); ?>" style="color: var(--text-primary); text-decoration: none; font-size: 15px; font-weight: 500; word-break: break-all;"><?php echo htmlspecialchars($channelContact); ?></a>
+                                    </div>
                                 </div>
                             <?php endif; ?>
 
