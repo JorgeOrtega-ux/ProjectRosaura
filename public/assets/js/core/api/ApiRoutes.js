@@ -72,7 +72,7 @@ export const ApiRoutes = {
         GetVideo: 'studio.get_video',
         PublishVideo: 'studio.publish_video',
         CancelUpload: 'studio.cancel_upload',
-
+        DeleteVideo: 'studio.delete_video',
         GetModels: 'studio.get_models',
         GetCategories: 'studio.get_categories'
     }

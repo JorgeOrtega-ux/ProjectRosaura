@@ -89,6 +89,7 @@ return [
     'studio.get_video'            => ['controller' => 'App\Api\Controllers\StudioController', 'action' => 'get_video'],
     'studio.publish_video'        => ['controller' => 'App\Api\Controllers\StudioController', 'action' => 'publish_video'],
     'studio.cancel_upload'        => ['controller' => 'App\Api\Controllers\StudioController', 'action' => 'cancel_upload'],
+    'studio.delete_video'         => ['controller' => 'App\Api\Controllers\StudioController', 'action' => 'delete_video'],
     
     // --- RUTAS DE TAGS PARA EL STUDIO ---
     'studio.get_models'           => ['controller' => 'App\Api\Controllers\StudioController', 'action' => 'get_models'],
