@@ -15,6 +15,12 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
 $subscriberCount = 0;
 $isSubscribed = false;
 
+// Arrays de mapeo para los detalles personales
+$relStatusMap = ['single' => 'Soltero/a', 'married' => 'Casado/a', 'in_a_relationship' => 'En una relación', 'complicated' => 'Es complicado', 'open_relationship' => 'Relación abierta', '' => 'No especificado'];
+$interestedInMap = ['men' => 'Hombres', 'women' => 'Mujeres', 'both' => 'Hombres y Mujeres', 'other' => 'Otro', '' => 'No especificado'];
+$genderMap = ['male' => 'Hombre', 'female' => 'Mujer', 'non-binary' => 'No binario', 'other' => 'Otro', '' => 'No especificado'];
+$hairColorMap = ['black' => 'Negro', 'brown' => 'Castaño', 'blonde' => 'Rubio', 'red' => 'Pelirrojo', 'other' => 'Otro', '' => 'No especificado'];
+
 if (!function_exists('time_elapsed_string')) {
     function time_elapsed_string($datetime, $full = false) {
         $now = new DateTime;
@@ -172,13 +178,8 @@ $channelContact = $channelExists ? ($channelUser['channel_contact_email'] ?? '')
                 <?php if (!empty($channelDesc) || !empty($channelContact)): ?>
                     <div class="component-channel-about-preview" style="margin-top: 10px; margin-bottom: 10px; font-size: 14px; color: var(--text-secondary); max-width: 600px;">
                         <?php if (!empty($channelDesc)): ?>
-                            <p style="margin-bottom: <?php echo !empty($channelContact) ? '5px' : '0'; ?>; line-height: 1.4;">
+                            <p style="margin-bottom: <?php echo !empty($channelContact) ? '5px' : '0'; ?>; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis;">
                                 <?php echo nl2br(htmlspecialchars($channelDesc)); ?>
-                            </p>
-                        <?php endif; ?>
-                        <?php if (!empty($channelContact)): ?>
-                            <p style="font-weight: 500;">
-                                Contacto: <a href="mailto:<?php echo htmlspecialchars($channelContact); ?>" style="color: var(--accent-color); text-decoration: none;"><?php echo htmlspecialchars($channelContact); ?></a>
                             </p>
                         <?php endif; ?>
                     </div>
@@ -200,6 +201,7 @@ $channelContact = $channelExists ? ($channelUser['channel_contact_email'] ?? '')
             <div class="component-channel-tab is-active" data-target="section-principal">Principal</div>
             <div class="component-channel-tab" data-target="section-videos">Videos</div>
             <div class="component-channel-tab" data-target="section-shorts">Shorts</div>
+            <div class="component-channel-tab" data-target="section-about">Acerca de</div>
         </div>
 
         <div class="component-channel-content">
@@ -324,6 +326,109 @@ $channelContact = $channelExists ? ($channelUser['channel_contact_email'] ?? '')
                 </div>
             </div>
 
-        </div>
+            <div class="component-channel-content-section" id="section-about">
+                <div class="component-feed-section">
+                    <div style="display: flex; flex-wrap: wrap; gap: 40px; margin-top: 10px;">
+                        
+                        <div style="flex: 2; min-width: 320px;">
+                            
+                            <h2 class="component-feed-title" style="margin-bottom: 15px; font-size: 1.25rem;">Descripción</h2>
+                            <p style="white-space: pre-wrap; color: var(--text-primary); line-height: 1.6; font-size: 15px; margin-bottom: 40px; background: var(--surface-color, #1e1e1e); padding: 20px; border-radius: 12px;">
+                                <?php echo !empty($channelDesc) ? nl2br(htmlspecialchars($channelDesc)) : 'Este canal no ha proporcionado una descripción todavía.'; ?>
+                            </p>
+
+                            <?php if (!empty($channelUser['interests'])): ?>
+                                <h2 class="component-feed-title" style="margin-bottom: 15px; font-size: 1.25rem;">Intereses y Pasatiempos</h2>
+                                <p style="white-space: pre-wrap; color: var(--text-primary); line-height: 1.6; font-size: 15px; margin-bottom: 40px; background: var(--surface-color, #1e1e1e); padding: 20px; border-radius: 12px;">
+                                    <?php echo nl2br(htmlspecialchars($channelUser['interests'])); ?>
+                                </p>
+                            <?php endif; ?>
+
+                            <h2 class="component-feed-title" style="margin-bottom: 15px; font-size: 1.25rem;">Detalles Personales</h2>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px;">
+                                <?php 
+                                $details = [
+                                    'Estado de relación' => $relStatusMap[$channelUser['relationship_status'] ?? ''] ?? 'No especificado',
+                                    'Interesado en' => $interestedInMap[$channelUser['interested_in'] ?? ''] ?? 'No especificado',
+                                    'Género' => $genderMap[$channelUser['gender'] ?? ''] ?? 'No especificado',
+                                    'Color de cabello' => $hairColorMap[$channelUser['hair_color'] ?? ''] ?? 'No especificado',
+                                    'Estatura' => !empty($channelUser['height']) ? htmlspecialchars($channelUser['height']) . ' m' : 'No especificado',
+                                    'Peso' => !empty($channelUser['weight']) ? htmlspecialchars($channelUser['weight']) . ' kg' : 'No especificado',
+                                    'Tatuajes' => !empty($channelUser['tattoos']) ? 'Sí' : 'No',
+                                    'Perforaciones' => !empty($channelUser['piercings']) ? 'Sí' : 'No',
+                                ];
+                                
+                                $hasAnyDetail = false;
+                                foreach($details as $label => $value) {
+                                    if ($value !== 'No especificado' && $value !== '0.00 m' && $value !== '0.00 kg' && $value !== '') {
+                                        $hasAnyDetail = true;
+                                        echo '
+                                        <div style="background: var(--surface-color, #1e1e1e); padding: 15px; border-radius: 12px; display: flex; flex-direction: column; gap: 4px;">
+                                            <span style="font-size: 13px; color: var(--text-secondary);">' . $label . '</span>
+                                            <span style="font-size: 16px; font-weight: 500; color: var(--text-primary);">' . $value . '</span>
+                                        </div>';
+                                    }
+                                }
+
+                                if (!$hasAnyDetail): ?>
+                                    <p class="component-empty-state" style="grid-column: 1 / -1; margin: 0; text-align: left; padding: 20px; background: var(--surface-color, #1e1e1e); border-radius: 12px;">
+                                        No hay detalles personales especificados.
+                                    </p>
+                                <?php endif; ?>
+                            </div>
+
+                        </div>
+
+                        <div style="flex: 1; min-width: 280px; max-width: 400px;">
+                            
+                            <h2 class="component-feed-title" style="margin-bottom: 15px; font-size: 1.25rem;">Estadísticas</h2>
+                            <ul style="list-style: none; padding: 0; margin: 0 0 40px 0; color: var(--text-primary); font-size: 15px; background: var(--surface-color, #1e1e1e); padding: 20px; border-radius: 12px; display: flex; flex-direction: column; gap: 15px;">
+                                <li style="display: flex; align-items: center; gap: 12px;">
+                                    <span class="material-symbols-rounded" style="font-size: 22px; color: var(--text-secondary);">calendar_today</span>
+                                    <span>Se unió el <?php echo date('d M Y', strtotime($channelUser['created_at'])); ?></span>
+                                </li>
+                                <li style="display: flex; align-items: center; gap: 12px;">
+                                    <span class="material-symbols-rounded" style="font-size: 22px; color: var(--text-secondary);">visibility</span>
+                                    <span><?php echo $totalVideos; ?> videos publicados</span>
+                                </li>
+                            </ul>
+
+                            <?php 
+                            $socials = [
+                                'Facebook' => ['url' => $channelUser['social_facebook'] ?? '', 'icon' => 'public'], // Uso public como fallback de icono
+                                'YouTube' => ['url' => $channelUser['social_youtube'] ?? '', 'icon' => 'smart_display'],
+                                'Instagram' => ['url' => $channelUser['social_instagram'] ?? '', 'icon' => 'photo_camera'],
+                                'X (Twitter)' => ['url' => $channelUser['social_x'] ?? '', 'icon' => 'alternate_email'],
+                                'OnlyFans' => ['url' => $channelUser['social_onlyfans'] ?? '', 'icon' => 'lock_person'],
+                                'Snapchat' => ['url' => $channelUser['social_snapchat'] ?? '', 'icon' => 'chat_bubble']
+                            ];
+                            $hasSocials = array_filter($socials, function($s) { return !empty($s['url']); });
+                            
+                            if (!empty($hasSocials)):
+                            ?>
+                                <h2 class="component-feed-title" style="margin-bottom: 15px; font-size: 1.25rem;">Vínculos</h2>
+                                <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 40px;">
+                                    <?php foreach($hasSocials as $name => $data): ?>
+                                        <a href="<?php echo htmlspecialchars($data['url']); ?>" target="_blank" rel="noopener noreferrer" style="display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--text-primary); font-size: 15px; padding: 15px; background: var(--surface-color, #1e1e1e); border-radius: 12px; transition: background-color 0.2s ease, color 0.2s ease;">
+                                            <span class="material-symbols-rounded" style="font-size: 22px; color: var(--accent-color, #3ea6ff);"><?php echo $data['icon']; ?></span>
+                                            <span style="font-weight: 500;"><?php echo $name; ?></span>
+                                        </a>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php endif; ?>
+
+                            <?php if (!empty($channelContact)): ?>
+                                <h2 class="component-feed-title" style="margin-bottom: 15px; font-size: 1.25rem;">Contacto</h2>
+                                <div style="background: var(--surface-color, #1e1e1e); padding: 20px; border-radius: 12px;">
+                                    <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 15px;">Para consultas comerciales u otros asuntos:</p>
+                                    <a href="mailto:<?php echo htmlspecialchars($channelContact); ?>" class="component-btn-secondary" style="width: 100%; display: flex; justify-content: center; text-decoration: none;">Enviar correo electrónico</a>
+                                </div>
+                            <?php endif; ?>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+            </div>
     </div>
 <?php endif; ?>
