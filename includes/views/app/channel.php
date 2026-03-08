@@ -1,8 +1,8 @@
 <?php
 // includes/views/app/channel.php
 
-// Capturamos el identificador, ya sea que el router lo pase como 'identifier' o como 'username' (por compatibilidad con el .htaccess actual)
-$targetIdentifier = $_GET['identifier'] ?? $_GET['username'] ?? '';
+// Capturamos exclusivamente el identificador del router
+$targetIdentifier = $_GET['identifier'] ?? '';
 $targetIdentifier = ltrim($targetIdentifier, '@'); // Limpiamos la arroba si viene en la URL
 
 $isLoggedIn = isset($_SESSION['user_id']);
@@ -84,13 +84,8 @@ if (isset($container)) {
     $videoRepo = $container->get(\App\Core\Interfaces\VideoRepositoryInterface::class);
     $subscriptionRepo = $container->get(\App\Core\Interfaces\SubscriptionRepositoryInterface::class);
     
-    // Buscar primero por el nuevo identificador
+    // Buscar ESTRICTAMENTE por el identificador
     $channelUser = $userRepo->findByIdentifier($targetIdentifier);
-    
-    // Fallback: Si no se encuentra por identificador, buscar por username (para usuarios antiguos)
-    if (!$channelUser) {
-        $channelUser = $userRepo->findByUsername($targetIdentifier);
-    }
     
     $channelExists = $channelUser ? true : false;
     

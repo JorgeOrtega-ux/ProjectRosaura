@@ -7,7 +7,7 @@ return [
       // --- RUTA DEL REPRODUCTOR DE VIDEO ---
     '/watch/{video_uuid}' => ['view' => 'app/watch.php'], 
     // --- RUTA DINÁMICA DE CANALES ---
-    '/@{username}' => ['view' => 'app/channel.php'], // <--- NUEVA RUTA AQUÍ
+    '/@{identifier}' => ['view' => 'app/channel.php'], // <--- MODIFICADO: Solo acepta identifier
 
         // --- NUEVA RUTA PARA EDITAR PERFIL DE CANAL ---
     '/channel/{uuid}/editing/profile' => ['view' => 'app/channel-edit-profile.php', 'auth' => true],
