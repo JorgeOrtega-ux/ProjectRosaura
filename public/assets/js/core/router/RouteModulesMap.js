@@ -5,8 +5,10 @@ export const RouteModulesMap = {
     '/': { path: './modules/app/HomeController.js', className: 'HomeController' },
     '/home': { path: './modules/app/HomeController.js', className: 'HomeController' },
     '/watch': { path: './modules/app/WatchController.js', className: 'WatchController' },
+    
     // ---- MÓDULO DE CANAL (PERFILES) ----
-    '/@': { path: './modules/app/ChannelController.js', className: 'ChannelController' }, // <--- NUEVO MAPEO
+    '/@': { path: './modules/app/ChannelController.js', className: 'ChannelController' },
+    '/channel': { path: './modules/app/ChannelController.js', className: 'ChannelController' }, // Añadido para procesar rutas relativas al canal
     
     // ---- MÓDULOS DE AUTENTICACIÓN ----
     '/login': { path: './modules/auth/AuthController.js', className: 'AuthController' },

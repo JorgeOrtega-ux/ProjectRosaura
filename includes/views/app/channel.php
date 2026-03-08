@@ -164,7 +164,7 @@ $displayName = $channelExists ? ($channelUser['display_name'] ?? $channelUser['u
                 
                 <div class="component-channel-actions">
                     <?php if ($isOwner): ?>
-                        <button class="component-btn-secondary">Editar descripción</button>
+                        <button class="component-btn-secondary" data-nav="<?php echo $appUrl; ?>/channel/<?php echo htmlspecialchars($channelUser['uuid'] ?? ''); ?>/editing/profile">Editar descripción</button>
                     <?php else: ?>
                         <button id="btn-channel-subscribe" data-username="<?php echo htmlspecialchars($targetUsername); ?>" class="<?php echo $isSubscribed ? 'component-btn-secondary' : 'component-btn-primary'; ?>">
                             <?php echo $isSubscribed ? 'Suscrito' : 'Suscribirse'; ?>
@@ -196,7 +196,7 @@ $displayName = $channelExists ? ($channelUser['display_name'] ?? $channelUser['u
                                     $thumbSrc = !empty($video['thumbnail_path']) ? $appUrl . '/' . ltrim($video['thumbnail_path'], '/') : '';
                                     $videoSrc = !empty($video['hls_path']) ? $appUrl . '/' . ltrim($video['hls_path'], '/') : $appUrl . '/public/storage/videos/' . $video['uuid'] . '/master.m3u8';
                                 ?>
-                                    <div class="component-video-card" style="--local-dominant-color: <?php echo htmlspecialchars($video['thumbnail_dominant_color'] ?? '#272727'); ?>;" onclick="window.router.navigate('/watch?v=<?php echo htmlspecialchars($video['uuid']); ?>')">
+                                    <div class="component-video-card" style="--local-dominant-color: <?php echo htmlspecialchars($video['thumbnail_dominant_color'] ?? '#272727'); ?>;" data-nav="<?php echo $appUrl; ?>/watch/<?php echo htmlspecialchars($video['uuid']); ?>">
                                         <div class="component-video-card__top">
                                             <img src="<?php echo htmlspecialchars($thumbSrc); ?>" alt="Miniatura de <?php echo htmlspecialchars($video['title']); ?>" class="component-video-card__thumbnail" loading="lazy">
                                             <video data-src="<?php echo htmlspecialchars($videoSrc); ?>" class="component-video-card__player" muted loop playsinline></video>
@@ -234,7 +234,7 @@ $displayName = $channelExists ? ($channelUser['display_name'] ?? $channelUser['u
                                     $thumbSrc = !empty($video['thumbnail_path']) ? $appUrl . '/' . ltrim($video['thumbnail_path'], '/') : '';
                                     $videoSrc = !empty($video['hls_path']) ? $appUrl . '/' . ltrim($video['hls_path'], '/') : $appUrl . '/public/storage/videos/' . $video['uuid'] . '/master.m3u8';
                                 ?>
-                                    <div class="component-video-card" style="--local-dominant-color: <?php echo htmlspecialchars($video['thumbnail_dominant_color'] ?? '#272727'); ?>;" onclick="window.router.navigate('/watch?v=<?php echo htmlspecialchars($video['uuid']); ?>')">
+                                    <div class="component-video-card" style="--local-dominant-color: <?php echo htmlspecialchars($video['thumbnail_dominant_color'] ?? '#272727'); ?>;" data-nav="<?php echo $appUrl; ?>/watch/<?php echo htmlspecialchars($video['uuid']); ?>">
                                         <div class="component-video-card__top">
                                             <img src="<?php echo htmlspecialchars($thumbSrc); ?>" alt="Miniatura de <?php echo htmlspecialchars($video['title']); ?>" class="component-video-card__thumbnail" loading="lazy">
                                             <video data-src="<?php echo htmlspecialchars($videoSrc); ?>" class="component-video-card__player" muted loop playsinline></video>
@@ -272,7 +272,7 @@ $displayName = $channelExists ? ($channelUser['display_name'] ?? $channelUser['u
                                     $thumbSrc = !empty($short['thumbnail_path']) ? $appUrl . '/' . ltrim($short['thumbnail_path'], '/') : '';
                                     $videoSrc = !empty($short['hls_path']) ? $appUrl . '/' . ltrim($short['hls_path'], '/') : $appUrl . '/public/storage/videos/' . $short['uuid'] . '/master.m3u8';
                                 ?>
-                                    <div class="component-video-card component-video-card--vertical" style="--local-dominant-color: <?php echo htmlspecialchars($short['thumbnail_dominant_color'] ?? '#272727'); ?>;" onclick="window.router.navigate('/shorts/<?php echo htmlspecialchars($short['uuid']); ?>')">
+                                    <div class="component-video-card component-video-card--vertical" style="--local-dominant-color: <?php echo htmlspecialchars($short['thumbnail_dominant_color'] ?? '#272727'); ?>;" data-nav="<?php echo $appUrl; ?>/shorts/<?php echo htmlspecialchars($short['uuid']); ?>">
                                         <div class="component-video-card__top">
                                             <img src="<?php echo htmlspecialchars($thumbSrc); ?>" alt="Miniatura de <?php echo htmlspecialchars($short['title']); ?>" class="component-video-card__thumbnail" loading="lazy">
                                             <video data-src="<?php echo htmlspecialchars($videoSrc); ?>" class="component-video-card__player" muted loop playsinline></video>
