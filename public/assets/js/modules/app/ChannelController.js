@@ -8,7 +8,7 @@ export class ChannelController {
     constructor() {
         this.api = new ApiService();
         this.dialog = new DialogSystem(); 
-        this.init();
+        this.currentCropData = null; // Variable para almacenar recortes en memoria
     }
 
     init() {
@@ -167,6 +167,9 @@ export class ChannelController {
 
         if (!wrapper || !cropBox || !img) return;
 
+        // Inicializamos los datos de recorte en memoria
+        this.currentCropData = { x: 0, y: 0, w: 1, h: 1 };
+
         let isDragging = false;
         let isResizing = false;
         let currentHandle = null;
@@ -203,12 +206,19 @@ export class ChannelController {
             maskRight.style.left = `${left + width}px`;
             maskRight.style.width = `calc(100% - ${left + width}px)`;
 
-            // Guardar porcentajes en la data del DOM para leerlos luego en el guardado
+            // Guardar porcentajes en la MEMORIA para leerlos luego en el guardado
             if (containerRect && containerRect.width > 0 && containerRect.height > 0) {
+                // Mantenemos el DOM actualizado por si acaso
                 cropBox.dataset.cropX = left / containerRect.width;
                 cropBox.dataset.cropY = top / containerRect.height;
                 cropBox.dataset.cropW = width / containerRect.width;
                 cropBox.dataset.cropH = height / containerRect.height;
+
+                // Actualizamos nuestra variable de memoria
+                this.currentCropData.x = left / containerRect.width;
+                this.currentCropData.y = top / containerRect.height;
+                this.currentCropData.w = width / containerRect.width;
+                this.currentCropData.h = height / containerRect.height;
             }
         };
 
@@ -332,6 +342,9 @@ export class ChannelController {
 
     async showBannerPreviewDialog(file, imageDataUrl) {
         
+        // Limpiamos los datos de recorte anteriores por seguridad
+        this.currentCropData = null;
+
         // Pasamos el evento onRender y la clase custom de 960px
         const result = await this.dialog.show('bannerPreviewTemplate', {
             imageUrl: imageDataUrl,
@@ -341,24 +354,27 @@ export class ChannelController {
 
         if (result.confirmed) {
             try {
+                // Mostramos un mensaje de feedback porque el modal ya se ha cerrado
+                this.dialog.show('success', { title: 'Procesando...', message: 'Subiendo y recortando tu banner, por favor espera.' });
+
                 const formData = new FormData();
                 formData.append('banner', file);
 
-                // Recolectar datos del crop en porcentajes (0 a 1)
-                const cropBox = document.getElementById('bannerCropBox');
-                if (cropBox) {
-                    formData.append('crop_x', cropBox.dataset.cropX || 0);
-                    formData.append('crop_y', cropBox.dataset.cropY || 0);
-                    formData.append('crop_w', cropBox.dataset.cropW || 1);
-                    formData.append('crop_h', cropBox.dataset.cropH || 1);
+                // Recolectar datos del crop en porcentajes (0 a 1) DESDE LA MEMORIA
+                if (this.currentCropData) {
+                    formData.append('crop_x', this.currentCropData.x);
+                    formData.append('crop_y', this.currentCropData.y);
+                    formData.append('crop_w', this.currentCropData.w);
+                    formData.append('crop_h', this.currentCropData.h);
+                } else {
+                    // Fallback de seguridad por si no se movió el cropBox
+                    formData.append('crop_x', 0);
+                    formData.append('crop_y', 0);
+                    formData.append('crop_w', 1);
+                    formData.append('crop_h', 1);
                 }
 
-                const confirmBtn = document.querySelector('.component-dialog-actions [data-dialog-action="confirm"]');
-                if (confirmBtn) {
-                    confirmBtn.innerText = 'Subiendo...';
-                    confirmBtn.disabled = true;
-                }
-
+                // Ejecutamos la subida
                 const apiResult = await this.api.postForm(ApiRoutes.Channel.UploadBanner, formData);
                 
                 if (apiResult.success) {
