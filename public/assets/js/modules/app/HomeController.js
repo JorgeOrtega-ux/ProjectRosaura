@@ -65,7 +65,8 @@ export class HomeController {
 
         if (!videos || videos.length === 0) {
             if (orientation === 'vertical') {
-                const sectionWrapper = container.closest('.feed-section-wrapper');
+                // Actualizado para buscar la nueva clase contenedora
+                const sectionWrapper = container.closest('.component-feed-section');
                 if (sectionWrapper) {
                     sectionWrapper.style.display = 'none';
                 } else {
@@ -146,15 +147,18 @@ export class HomeController {
         const videoSrc = video.video_url || ''; 
 
         const isVertical = orientation === 'vertical';
-        const cardModifierClass = isVertical ? 'video-card--vertical' : '';
-        const aspectStyle = isVertical ? '' : 'aspect-ratio: 16/9;';
+        const cardModifierClass = isVertical ? 'component-video-card--vertical' : '';
+        
+        // Uso de router nativo del SPA (Igual que en channel.php)
+        const clickAction = isVertical 
+            ? `window.router.navigate('/shorts/${video.uuid}')` 
+            : `window.router.navigate('/watch?v=${video.uuid}')`;
 
         return `
-            <div class="video-card component-video-card ${cardModifierClass}" style="--local-dominant-color: ${dominantColor};" onclick="window.location.href='${window.AppBasePath || ''}/watch/${video.uuid}'">
+            <div class="component-video-card ${cardModifierClass}" style="--local-dominant-color: ${dominantColor};" onclick="${clickAction}">
                 
-                <div class="video-card__top" style="${aspectStyle} position: relative; overflow: hidden;">
-                    
-                    <img src="${video.thumbnail_url}" alt="Miniatura de ${title}" class="component-video-card__thumbnail video-card__thumbnail" loading="lazy">
+                <div class="component-video-card__top">
+                    <img src="${video.thumbnail_url}" alt="Miniatura de ${title}" class="component-video-card__thumbnail" loading="lazy">
                     
                     <video 
                         data-src="${videoSrc}" 
@@ -164,21 +168,19 @@ export class HomeController {
                         playsinline>
                     </video>
 
-                    <div class="component-video-card__duration-badge">
-                        <span class="component-video-card__duration">${formattedDuration}</span>
-                    </div>
+                    <span class="component-video-card__duration">${formattedDuration}</span>
                 </div>
 
-                <div class="video-card__bottom">
+                <div class="component-video-card__bottom">
                     ${!isVertical ? `
-                    <div class="video-card__avatar">
+                    <div class="component-video-card__avatar">
                         <img src="${video.avatar_url}" alt="Perfil de ${video.username}" loading="lazy">
                     </div>
                     ` : ''}
-                    <div class="video-card__info">
-                        <h3 class="video-card__title" title="${title}">${title}</h3>
-                        <p class="video-card__user">${video.username}</p>
-                        <p class="video-card__meta">${views} vistas • ${timeAgo}</p>
+                    <div class="component-video-card__info">
+                        <h3 class="component-video-card__title" title="${title}">${title}</h3>
+                        ${!isVertical ? `<p class="component-video-card__user">${video.username}</p>` : ''}
+                        <p class="component-video-card__meta">${views} vistas${!isVertical ? ` • ${timeAgo}` : ''}</p>
                     </div>
                 </div>
             </div>

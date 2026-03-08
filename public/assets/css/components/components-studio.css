@@ -228,7 +228,6 @@
     position: relative;
 }
 
-/* Nuevos estilos integrados para quitar código inline */
 .studio-video-card__player-preview {
     background-image: none;
     background-color: transparent;
@@ -299,7 +298,6 @@
     margin-top: 16px;
 }
 
-/* Estructura para tener los botones de thumb juntos */
 .component-thumbnail-actions {
     display: flex;
     flex-direction: row;
@@ -453,8 +451,6 @@
 }
 
 @media (max-width: 768px) {
-    /* Eliminado el padding: 0 forzado en este selector para permitir el padding de component-view-bottom */
-
     .component-view-bottom .component-table-wrapper {
         border: none;
         border-radius: 0;
@@ -479,7 +475,6 @@
    Estilos del Sistema de Etiquetas (Tags) y Buscador
    ========================================================================== */
 
-/* Ajustes para el menú desplegable del buscador */
 .component-menu[id$="SelectorMenu"] {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
     border: 1px solid var(--border-color);
@@ -487,7 +482,6 @@
     border-radius: 8px;
 }
 
-/* Opciones dentro del buscador */
 .tag-option-link {
     cursor: pointer;
     transition: background-color 0.2s ease;
@@ -497,7 +491,6 @@
     background-color: var(--border-color);
 }
 
-/* Estilo especial para el botón dinámico de "Añadir Nuevo" */
 .tag-create-link {
     color: #065fd4;
     background-color: rgba(6, 95, 212, 0.05);
@@ -518,7 +511,6 @@
     }
 }
 
-/* Píldoras (Pills) de los tags seleccionados */
 .tag-pill {
     display: inline-flex;
     align-items: center;
@@ -556,7 +548,6 @@
     background-color: rgba(255, 255, 255, 0.2);
 }
 
-/* Sobreescritura para tags locales */
 .tag-pill[style*="transparent"] {
     color: var(--text-primary);
 }
@@ -589,9 +580,9 @@
 }
 
 /* =========================================================
-   VIDEO FEED CARDS (Home) - [ACTUALIZADO]
+   VIDEO FEED CARDS (Home, Channel, etc) - COMPONENTIZADO
    ========================================================= */
-.video-feed-grid {
+.component-video-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     gap: 24px 16px;
@@ -599,7 +590,7 @@
     margin-top: 16px;
 }
 
-.video-card {
+.component-video-card {
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -609,17 +600,16 @@
     transition: transform 0.2s ease, background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-.video-card:hover {
+.component-video-card:hover {
     background-color: color-mix(in srgb, var(--local-dominant-color, transparent) 15%, transparent);
     box-shadow: 0 0 0 8px color-mix(in srgb, var(--local-dominant-color, transparent) 15%, transparent);
 }
 
-/* Quitar la escala cuando el video se está reproduciendo para mantener limpieza visual */
-.video-card:hover:not(.component-video-card--playing) .video-card__thumbnail {
+.component-video-card:hover:not(.component-video-card--playing) .component-video-card__thumbnail {
     transform: scale(1.03);
 }
 
-.video-card__top {
+.component-video-card__top {
     width: 100%;
     aspect-ratio: 16 / 9;
     border-radius: 12px;
@@ -629,12 +619,10 @@
     position: relative;
 }
 
-/* ESTADO REPRODUCIENDO: Oculta la miniatura revelando el video debajo */
-.video-card.component-video-card--playing .video-card__thumbnail {
+.component-video-card.component-video-card--playing .component-video-card__thumbnail {
     opacity: 0;
 }
 
-/* EL REPRODUCTOR DE VIDEO INVISIBLE */
 .component-video-card__player {
     position: absolute;
     top: 0;
@@ -642,24 +630,22 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
-    z-index: 1; /* Detrás de la miniatura y del badge */
-    pointer-events: none; /* Crucial para no bloquear el clic al enlace (SPA router) */
-    background-color: #000; /* Fondo oscuro por si tarda en cargar el video */
+    z-index: 1; 
+    pointer-events: none; 
+    background-color: #000; 
 }
 
-/* LA MINIATURA (Elevada con z-index) */
-.video-card__thumbnail {
-    position: absolute; /* Añadido para superponer al video */
+.component-video-card__thumbnail {
+    position: absolute; 
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
-    z-index: 2; /* Sobre el video */
-    transition: transform 0.3s ease, opacity 0.3s ease; /* Transición de opacidad agregada */
+    z-index: 2; 
+    transition: transform 0.3s ease, opacity 0.3s ease; 
 }
 
-/* BADGE DE DURACIÓN/CUENTA REGRESIVA */
 .component-video-card__duration {
     position: absolute;
     bottom: 8px;
@@ -672,18 +658,18 @@
     border-radius: 6px;
     font-family: var(--sl-font-mono, monospace);
     line-height: 1;
-    z-index: 3; /* Sobre la miniatura y el video */
+    z-index: 3; 
     pointer-events: none;
 }
 
-.video-card__bottom {
+.component-video-card__bottom {
     display: flex;
     gap: 12px;
     align-items: flex-start;
     padding: 0 4px;
 }
 
-.video-card__avatar {
+.component-video-card__avatar {
     width: 36px;
     height: 36px;
     border-radius: 50%;
@@ -693,20 +679,20 @@
     border: 1px solid var(--border-color);
 }
 
-.video-card__avatar img {
+.component-video-card__avatar img {
     width: 100%;
     height: 100%;
     object-fit: cover;
 }
 
-.video-card__info {
+.component-video-card__info {
     display: flex;
     flex-direction: column;
     gap: 4px;
     min-width: 0; 
 }
 
-.video-card__title {
+.component-video-card__title {
     font-size: 15px;
     font-weight: 600;
     color: var(--text-primary);
@@ -718,25 +704,44 @@
     overflow: hidden;
 }
 
-.video-card__user {
+.component-video-card__user {
     font-size: 13px;
     color: var(--text-secondary);
     margin: 0;
     font-weight: 500;
 }
 
-.video-card__user:hover {
+.component-video-card__user:hover {
     color: var(--text-primary);
 }
 
-.video-card__meta {
+.component-video-card__meta {
     font-size: 13px;
     color: var(--text-tertiary);
     margin: 0;
 }
 
+/* =========================================================
+   MODIFICADOR PARA SHORTS Y FORMATO VERTICAL
+   ========================================================= */
+.component-video-card--vertical .component-video-card__top {
+    aspect-ratio: 9/16;
+}
+
+.component-video-card--vertical .component-video-card__bottom {
+    margin-top: -4px;
+}
+
+.component-video-card--vertical .component-video-card__info {
+    margin-left: 0;
+}
+
+.component-video-card--vertical .component-video-card__title {
+    font-size: 14px;
+}
+
 @media (max-width: 600px) {
-    .video-feed-grid {
+    .component-video-grid {
         grid-template-columns: 1fr; 
         gap: 20px;
     }

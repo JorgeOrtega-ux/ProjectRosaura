@@ -130,213 +130,6 @@ if ($channelExists && !empty($channelUser['profile_picture'])) {
 $displayName = $channelExists ? ($channelUser['display_name'] ?? $channelUser['username']) : $targetUsername;
 ?>
 
-<style>
-    /* CSS Modular del Componente Channel */
-    .component-channel-layout {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 20px;
-        font-family: inherit;
-    }
-
-    .component-channel-not-found {
-        text-align: center;
-        margin-top: 50px;
-    }
-
-    /* Banner */
-    .component-channel-banner-container {
-        position: relative;
-        width: 100%;
-        /* Usamos aspect-ratio dinámico basado en el ancho (vw) */
-        height: 16vw; 
-        min-height: 150px;
-        max-height: 220px;
-        background-color: #333;
-        border-radius: 12px;
-        overflow: hidden;
-        margin-bottom: 24px;
-        background-size: cover;
-        background-position: center;
-        transition: all 0.3s ease;
-    }
-
-    .component-channel-banner-action {
-        position: absolute;
-        top: 16px;
-        right: 16px;
-        transition: top 0.3s ease, right 0.3s ease;
-    }
-
-    /* Header y Perfil */
-    .component-channel-header {
-        display: flex;
-        align-items: center;
-        gap: 24px;
-        margin-bottom: 32px;
-        transition: all 0.3s ease;
-    }
-
-    .component-channel-avatar {
-        width: 120px;
-        height: 120px;
-        border-radius: 12px;
-        background-color: #555;
-        object-fit: cover;
-        position: relative;
-        z-index: 2;
-        transition: all 0.3s ease;
-    }
-
-    .component-channel-info-wrapper {
-        flex-grow: 1;
-    }
-
-    .component-channel-title {
-        margin: 0 0 8px 0;
-        font-size: 28px;
-        font-weight: 700;
-    }
-
-    .component-channel-meta {
-        margin: 0 0 16px 0;
-        color: #aaa;
-        font-size: 14px;
-    }
-
-    .component-channel-actions {
-        display: flex;
-        gap: 12px;
-        justify-content: flex-start;
-    }
-
-    /* Botones */
-    .component-btn-primary {
-        background-color: #fff;
-        color: #000;
-        border: none;
-        padding: 10px 20px;
-        border-radius: 24px;
-        cursor: pointer;
-        font-weight: 600;
-        font-size: 14px;
-        transition: background-color 0.2s;
-    }
-    .component-btn-primary:hover { background-color: #e6e6e6; }
-
-    .component-btn-secondary {
-        background-color: #272727;
-        color: #fff;
-        border: none;
-        padding: 10px 20px;
-        border-radius: 24px;
-        cursor: pointer;
-        font-weight: 600;
-        font-size: 14px;
-        transition: background-color 0.2s;
-    }
-    .component-btn-secondary:hover { background-color: #3f3f3f; }
-
-    /* Navegación (Tabs) */
-    .component-channel-tabs {
-        display: flex;
-        gap: 32px;
-        border-bottom: 1px solid #3f3f3f;
-        margin-bottom: 24px;
-        overflow-x: auto;
-        scrollbar-width: none;
-    }
-    .component-channel-tabs::-webkit-scrollbar {
-        display: none;
-    }
-
-    .component-channel-tab {
-        padding: 12px 0;
-        cursor: pointer;
-        color: #aaa;
-        border-bottom: 3px solid transparent;
-        font-weight: 600;
-        font-size: 16px;
-        transition: color 0.2s;
-        white-space: nowrap;
-    }
-
-    .component-channel-tab:hover { color: #fff; }
-    .component-channel-tab.is-active { color: #fff; border-bottom-color: #fff; }
-
-    /* Contenedores de Secciones */
-    .component-channel-content-section { display: none; }
-    .component-channel-content-section.is-active { display: block; }
-    .component-section-title { margin: 0 0 20px 0; font-size: 20px; font-weight: 600; }
-    .component-empty-state { color: #aaa; font-style: italic; }
-
-    /* Grid específico para Shorts (Tarjetas más pequeñas) */
-    .shorts-feed-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-        gap: 16px;
-    }
-
-    /* ========================================= */
-    /* --- RESPONSIVE LAYOUT (MÓVILES) ---       */
-    /* ========================================= */
-    @media (max-width: 768px) {
-        .component-channel-layout {
-            padding: 0; /* Borde a borde nativo */
-        }
-
-        .component-channel-banner-container {
-            border-radius: 0;
-            margin-bottom: 16px;
-            height: 25vw; /* Escala idónea para móviles */
-            min-height: 100px;
-            max-height: 140px;
-        }
-
-        .component-channel-banner-action {
-            top: 8px;
-            right: 8px;
-        }
-        
-        .component-channel-header {
-            padding: 0 16px; /* Devolvemos el margen al contenido interior */
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            margin-top: -50px; /* Sube el avatar sobre el banner */
-            gap: 12px;
-        }
-        
-        .component-channel-avatar {
-            width: 90px;
-            height: 90px;
-            border: 4px solid var(--bg-surface, #0f0f0f); /* Separador visual tipo YouTube/Twitter */
-        }
-
-        .component-channel-title {
-            font-size: 24px;
-        }
-
-        .component-channel-actions {
-            justify-content: center;
-            width: 100%;
-        }
-
-        .component-channel-tabs {
-            padding: 0 16px;
-        }
-
-        .component-channel-content {
-            padding: 0 16px 24px 16px;
-        }
-
-        .shorts-feed-grid {
-            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-            gap: 12px;
-        }
-    }
-</style>
-
 <?php if (!$channelExists): ?>
     <div class="component-channel-layout component-channel-not-found">
         <div class="component-message-icon-wrapper">
@@ -390,101 +183,113 @@ $displayName = $channelExists ? ($channelUser['display_name'] ?? $channelUser['u
         <div class="component-channel-content">
             
             <div class="component-channel-content-section is-active" id="section-principal">
-                <h2 class="component-section-title">Para ti (Subidas recientes)</h2>
-                <?php if (empty($channelVideos) && empty($channelShorts)): ?>
-                    <p class="component-empty-state">Este canal aún no tiene contenido publicado.</p>
-                <?php else: ?>
-                    <div class="video-feed-grid">
-                        <?php foreach(array_slice($channelVideos, 0, 8) as $video): 
-                            $thumbSrc = !empty($video['thumbnail_path']) ? $appUrl . '/' . ltrim($video['thumbnail_path'], '/') : '';
-                            $videoSrc = !empty($video['hls_path']) ? $appUrl . '/' . ltrim($video['hls_path'], '/') : $appUrl . '/public/storage/videos/' . $video['uuid'] . '/master.m3u8';
-                        ?>
-                            <div class="video-card component-video-card" style="--local-dominant-color: <?php echo htmlspecialchars($video['thumbnail_dominant_color'] ?? '#272727'); ?>;" onclick="window.router.navigate('/watch?v=<?php echo htmlspecialchars($video['uuid']); ?>')">
-                                <div class="video-card__top" style="aspect-ratio: 16/9; position: relative; overflow: hidden;">
-                                    <img src="<?php echo htmlspecialchars($thumbSrc); ?>" alt="Miniatura de <?php echo htmlspecialchars($video['title']); ?>" class="component-video-card__thumbnail video-card__thumbnail" loading="lazy">
-                                    <video data-src="<?php echo htmlspecialchars($videoSrc); ?>" class="component-video-card__player" muted loop playsinline></video>
-                                    <div class="component-video-card__duration-badge">
-                                        <span class="component-video-card__duration"><?php echo format_duration($video['duration']); ?></span>
-                                    </div>
-                                </div>
-                                <div class="video-card__bottom">
-                                    <div class="video-card__avatar">
-                                        <img src="<?php echo htmlspecialchars($avatarPath); ?>" alt="Perfil de <?php echo htmlspecialchars($displayName); ?>" loading="lazy">
-                                    </div>
-                                    <div class="video-card__info">
-                                        <h3 class="video-card__title" title="<?php echo htmlspecialchars($video['title']); ?>"><?php echo htmlspecialchars($video['title']); ?></h3>
-                                        <p class="video-card__user"><?php echo htmlspecialchars($displayName); ?></p>
-                                        <p class="video-card__meta"><?php echo $video['views'] ?? 0; ?> vistas • <?php echo time_elapsed_string($video['created_at']); ?></p>
-                                    </div>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
+                <div class="component-feed-section">
+                    <div class="component-feed-header">
+                        <h2 class="component-feed-title">Para ti (Subidas recientes)</h2>
                     </div>
-                <?php endif; ?>
+                    <div class="component-feed-body">
+                        <?php if (empty($channelVideos) && empty($channelShorts)): ?>
+                            <p class="component-empty-state">Este canal aún no tiene contenido publicado.</p>
+                        <?php else: ?>
+                            <div class="component-video-grid">
+                                <?php foreach(array_slice($channelVideos, 0, 8) as $video): 
+                                    $thumbSrc = !empty($video['thumbnail_path']) ? $appUrl . '/' . ltrim($video['thumbnail_path'], '/') : '';
+                                    $videoSrc = !empty($video['hls_path']) ? $appUrl . '/' . ltrim($video['hls_path'], '/') : $appUrl . '/public/storage/videos/' . $video['uuid'] . '/master.m3u8';
+                                ?>
+                                    <div class="component-video-card" style="--local-dominant-color: <?php echo htmlspecialchars($video['thumbnail_dominant_color'] ?? '#272727'); ?>;" onclick="window.router.navigate('/watch?v=<?php echo htmlspecialchars($video['uuid']); ?>')">
+                                        <div class="component-video-card__top">
+                                            <img src="<?php echo htmlspecialchars($thumbSrc); ?>" alt="Miniatura de <?php echo htmlspecialchars($video['title']); ?>" class="component-video-card__thumbnail" loading="lazy">
+                                            <video data-src="<?php echo htmlspecialchars($videoSrc); ?>" class="component-video-card__player" muted loop playsinline></video>
+                                            <span class="component-video-card__duration"><?php echo format_duration($video['duration']); ?></span>
+                                        </div>
+                                        <div class="component-video-card__bottom">
+                                            <div class="component-video-card__avatar">
+                                                <img src="<?php echo htmlspecialchars($avatarPath); ?>" alt="Perfil de <?php echo htmlspecialchars($displayName); ?>" loading="lazy">
+                                            </div>
+                                            <div class="component-video-card__info">
+                                                <h3 class="component-video-card__title" title="<?php echo htmlspecialchars($video['title']); ?>"><?php echo htmlspecialchars($video['title']); ?></h3>
+                                                <p class="component-video-card__user"><?php echo htmlspecialchars($displayName); ?></p>
+                                                <p class="component-video-card__meta"><?php echo $video['views'] ?? 0; ?> vistas • <?php echo time_elapsed_string($video['created_at']); ?></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
             </div>
 
             <div class="component-channel-content-section" id="section-videos">
-                <h2 class="component-section-title">Videos subidos</h2>
-                <?php if (empty($channelVideos)): ?>
-                    <p class="component-empty-state">No hay videos horizontales disponibles.</p>
-                <?php else: ?>
-                    <div class="video-feed-grid">
-                        <?php foreach($channelVideos as $video): 
-                            $thumbSrc = !empty($video['thumbnail_path']) ? $appUrl . '/' . ltrim($video['thumbnail_path'], '/') : '';
-                            $videoSrc = !empty($video['hls_path']) ? $appUrl . '/' . ltrim($video['hls_path'], '/') : $appUrl . '/public/storage/videos/' . $video['uuid'] . '/master.m3u8';
-                        ?>
-                            <div class="video-card component-video-card" style="--local-dominant-color: <?php echo htmlspecialchars($video['thumbnail_dominant_color'] ?? '#272727'); ?>;" onclick="window.router.navigate('/watch?v=<?php echo htmlspecialchars($video['uuid']); ?>')">
-                                <div class="video-card__top" style="aspect-ratio: 16/9; position: relative; overflow: hidden;">
-                                    <img src="<?php echo htmlspecialchars($thumbSrc); ?>" alt="Miniatura de <?php echo htmlspecialchars($video['title']); ?>" class="component-video-card__thumbnail video-card__thumbnail" loading="lazy">
-                                    <video data-src="<?php echo htmlspecialchars($videoSrc); ?>" class="component-video-card__player" muted loop playsinline></video>
-                                    <div class="component-video-card__duration-badge">
-                                        <span class="component-video-card__duration"><?php echo format_duration($video['duration']); ?></span>
-                                    </div>
-                                </div>
-                                <div class="video-card__bottom">
-                                    <div class="video-card__avatar">
-                                        <img src="<?php echo htmlspecialchars($avatarPath); ?>" alt="Perfil de <?php echo htmlspecialchars($displayName); ?>" loading="lazy">
-                                    </div>
-                                    <div class="video-card__info">
-                                        <h3 class="video-card__title" title="<?php echo htmlspecialchars($video['title']); ?>"><?php echo htmlspecialchars($video['title']); ?></h3>
-                                        <p class="video-card__user"><?php echo htmlspecialchars($displayName); ?></p>
-                                        <p class="video-card__meta"><?php echo $video['views'] ?? 0; ?> vistas • <?php echo time_elapsed_string($video['created_at']); ?></p>
-                                    </div>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
+                <div class="component-feed-section">
+                    <div class="component-feed-header">
+                        <h2 class="component-feed-title">Videos subidos</h2>
                     </div>
-                <?php endif; ?>
+                    <div class="component-feed-body">
+                        <?php if (empty($channelVideos)): ?>
+                            <p class="component-empty-state">No hay videos horizontales disponibles.</p>
+                        <?php else: ?>
+                            <div class="component-video-grid">
+                                <?php foreach($channelVideos as $video): 
+                                    $thumbSrc = !empty($video['thumbnail_path']) ? $appUrl . '/' . ltrim($video['thumbnail_path'], '/') : '';
+                                    $videoSrc = !empty($video['hls_path']) ? $appUrl . '/' . ltrim($video['hls_path'], '/') : $appUrl . '/public/storage/videos/' . $video['uuid'] . '/master.m3u8';
+                                ?>
+                                    <div class="component-video-card" style="--local-dominant-color: <?php echo htmlspecialchars($video['thumbnail_dominant_color'] ?? '#272727'); ?>;" onclick="window.router.navigate('/watch?v=<?php echo htmlspecialchars($video['uuid']); ?>')">
+                                        <div class="component-video-card__top">
+                                            <img src="<?php echo htmlspecialchars($thumbSrc); ?>" alt="Miniatura de <?php echo htmlspecialchars($video['title']); ?>" class="component-video-card__thumbnail" loading="lazy">
+                                            <video data-src="<?php echo htmlspecialchars($videoSrc); ?>" class="component-video-card__player" muted loop playsinline></video>
+                                            <span class="component-video-card__duration"><?php echo format_duration($video['duration']); ?></span>
+                                        </div>
+                                        <div class="component-video-card__bottom">
+                                            <div class="component-video-card__avatar">
+                                                <img src="<?php echo htmlspecialchars($avatarPath); ?>" alt="Perfil de <?php echo htmlspecialchars($displayName); ?>" loading="lazy">
+                                            </div>
+                                            <div class="component-video-card__info">
+                                                <h3 class="component-video-card__title" title="<?php echo htmlspecialchars($video['title']); ?>"><?php echo htmlspecialchars($video['title']); ?></h3>
+                                                <p class="component-video-card__user"><?php echo htmlspecialchars($displayName); ?></p>
+                                                <p class="component-video-card__meta"><?php echo $video['views'] ?? 0; ?> vistas • <?php echo time_elapsed_string($video['created_at']); ?></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
             </div>
 
             <div class="component-channel-content-section" id="section-shorts">
-                <h2 class="component-section-title">Shorts</h2>
-                <?php if (empty($channelShorts)): ?>
-                    <p class="component-empty-state">No hay shorts disponibles.</p>
-                <?php else: ?>
-                    <div class="shorts-feed-grid">
-                        <?php foreach($channelShorts as $short): 
-                            $thumbSrc = !empty($short['thumbnail_path']) ? $appUrl . '/' . ltrim($short['thumbnail_path'], '/') : '';
-                            $videoSrc = !empty($short['hls_path']) ? $appUrl . '/' . ltrim($short['hls_path'], '/') : $appUrl . '/public/storage/videos/' . $short['uuid'] . '/master.m3u8';
-                        ?>
-                            <div class="video-card component-video-card" style="--local-dominant-color: <?php echo htmlspecialchars($short['thumbnail_dominant_color'] ?? '#272727'); ?>;" onclick="window.router.navigate('/shorts/<?php echo htmlspecialchars($short['uuid']); ?>')">
-                                <div class="video-card__top" style="aspect-ratio: 9/16; position: relative; overflow: hidden; border-radius: 12px;">
-                                    <img src="<?php echo htmlspecialchars($thumbSrc); ?>" alt="Miniatura de <?php echo htmlspecialchars($short['title']); ?>" class="component-video-card__thumbnail video-card__thumbnail" loading="lazy">
-                                    <video data-src="<?php echo htmlspecialchars($videoSrc); ?>" class="component-video-card__player" muted loop playsinline></video>
-                                    <div class="component-video-card__duration-badge">
-                                        <span class="component-video-card__duration"><?php echo format_duration($short['duration']); ?></span>
-                                    </div>
-                                </div>
-                                <div class="video-card__bottom" style="margin-top: 8px;">
-                                    <div class="video-card__info" style="margin-left: 0;">
-                                        <h3 class="video-card__title" title="<?php echo htmlspecialchars($short['title']); ?>" style="font-size: 14px; margin-bottom: 4px;"><?php echo htmlspecialchars($short['title']); ?></h3>
-                                        <p class="video-card__meta"><?php echo $short['views'] ?? 0; ?> vistas</p>
-                                    </div>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
+                <div class="component-feed-section">
+                    <div class="component-feed-header">
+                        <h2 class="component-feed-title">Shorts</h2>
                     </div>
-                <?php endif; ?>
+                    <div class="component-feed-body">
+                        <?php if (empty($channelShorts)): ?>
+                            <p class="component-empty-state">No hay shorts disponibles.</p>
+                        <?php else: ?>
+                            <div class="component-shorts-grid">
+                                <?php foreach($channelShorts as $short): 
+                                    $thumbSrc = !empty($short['thumbnail_path']) ? $appUrl . '/' . ltrim($short['thumbnail_path'], '/') : '';
+                                    $videoSrc = !empty($short['hls_path']) ? $appUrl . '/' . ltrim($short['hls_path'], '/') : $appUrl . '/public/storage/videos/' . $short['uuid'] . '/master.m3u8';
+                                ?>
+                                    <div class="component-video-card component-video-card--vertical" style="--local-dominant-color: <?php echo htmlspecialchars($short['thumbnail_dominant_color'] ?? '#272727'); ?>;" onclick="window.router.navigate('/shorts/<?php echo htmlspecialchars($short['uuid']); ?>')">
+                                        <div class="component-video-card__top">
+                                            <img src="<?php echo htmlspecialchars($thumbSrc); ?>" alt="Miniatura de <?php echo htmlspecialchars($short['title']); ?>" class="component-video-card__thumbnail" loading="lazy">
+                                            <video data-src="<?php echo htmlspecialchars($videoSrc); ?>" class="component-video-card__player" muted loop playsinline></video>
+                                            <span class="component-video-card__duration"><?php echo format_duration($short['duration']); ?></span>
+                                        </div>
+                                        <div class="component-video-card__bottom">
+                                            <div class="component-video-card__info">
+                                                <h3 class="component-video-card__title" title="<?php echo htmlspecialchars($short['title']); ?>"><?php echo htmlspecialchars($short['title']); ?></h3>
+                                                <p class="component-video-card__meta"><?php echo $short['views'] ?? 0; ?> vistas</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
             </div>
 
         </div>
