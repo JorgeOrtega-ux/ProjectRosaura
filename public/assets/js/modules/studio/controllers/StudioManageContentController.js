@@ -2,7 +2,6 @@ import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 
 export class StudioManageContentController {
     constructor(api, state, wsManager) {
-        // [FIX] Prevenir acumulación de instancias y listeners fantasma
         if (window._studioManageContentInstance) {
             window._studioManageContentInstance.destroy();
         }
@@ -12,7 +11,6 @@ export class StudioManageContentController {
         this.state = state;
         this.wsManager = wsManager;
         
-        // [FIX] Guardar la referencia exacta de las funciones para poder removerlas después
         this.updateRowStatusBound = this.updateRowStatus.bind(this);
         this.handleDocumentClickBound = this.handleDocumentClick.bind(this);
         this.handleRouteChangeBound = this.destroy.bind(this);
@@ -22,16 +20,12 @@ export class StudioManageContentController {
     }
 
     attachEvents() {
-        // Usamos las funciones bindadas guardadas en memoria
         window.addEventListener('studioVideoProgress', this.updateRowStatusBound);
         document.addEventListener('click', this.handleDocumentClickBound);
-        
-        // Escuchamos el evento de cambio de ruta de la SPA para destruir los listeners
         window.addEventListener('routeChange', this.handleRouteChangeBound);
     }
 
     destroy() {
-        // [FIX] Limpiar los listeners cuando cambiamos de vista en la SPA
         window.removeEventListener('studioVideoProgress', this.updateRowStatusBound);
         document.removeEventListener('click', this.handleDocumentClickBound);
         window.removeEventListener('routeChange', this.handleRouteChangeBound);
@@ -49,7 +43,6 @@ export class StudioManageContentController {
             const menu = document.getElementById(menuId);
             if (menu) {
                 const isClosing = menu.classList.contains('active');
-                // Cerrar cualquier otro menú abierto
                 document.querySelectorAll('.component-module--dropdown').forEach(m => {
                     m.classList.remove('active');
                     m.classList.add('disabled');
@@ -60,7 +53,7 @@ export class StudioManageContentController {
                     menu.classList.add('active');
                 }
             }
-            return; // Terminar la ejecución para no propagar
+            return;
         }
 
         const selectOption = e.target.closest('[data-action="selectQuickVisibility"]');
@@ -77,7 +70,6 @@ export class StudioManageContentController {
             return;
         }
 
-        // [MEJORA UX] Si se hace click fuera del menú y fuera del botón, cerrarlo
         if (!e.target.closest('.component-module--dropdown') && !e.target.closest('[data-action="toggleQuickVisibility"]')) {
             document.querySelectorAll('.component-module--dropdown').forEach(m => {
                 m.classList.remove('active');
@@ -93,7 +85,6 @@ export class StudioManageContentController {
         const video = this.state.getVideo(id);
         if (!video) return;
 
-        // UI Optimista
         const btnIcon = document.getElementById('quickVisibilityBtnIcon');
         if (btnIcon) btnIcon.textContent = iconText;
 
@@ -107,7 +98,6 @@ export class StudioManageContentController {
             });
         }
 
-        // Preparar payload para llamar la API
         const updateRoute = ApiRoutes.Studio?.UpdateTitle || 'studio.update_title';
         
         let models = [];
@@ -133,7 +123,6 @@ export class StudioManageContentController {
             this.updateRowVisibilityIcon(video);
         } else {
             alert('Error al actualizar visibilidad: ' + (response.message || 'Desconocido'));
-            // Revertir UI en caso de error
             this.syncQuickVisibilityUI(video.visibility || 'public');
         }
     }
@@ -156,32 +145,24 @@ export class StudioManageContentController {
 
     updateRowVisibilityIcon(video) {
         const row = document.getElementById(`video-row-${video.id}`);
-        // Columna de "Estado / Visibilidad" es el índice 2
         if (row && row.children[2]) {
-            let statusBadge = this.getStatusBadge(video);
-            
-            let visIcon = 'public';
-            if(video.visibility === 'unlisted') visIcon = 'link';
-            if(video.visibility === 'private') visIcon = 'lock';
-            
-            row.children[2].innerHTML = `
-                <div style="display: flex; align-items: center; gap: 6px;">
-                    ${statusBadge}
-                    <span class="material-symbols-rounded" style="font-size: 16px; color: var(--text-secondary);" title="${video.visibility}">${visIcon}</span>
-                </div>
-            `;
+            row.children[2].innerHTML = this.getCombinedBadge(video);
         }
     }
 
-    getStatusBadge(video) {
-        switch(video.status) {
-            case 'queued': return '<span class="status-badge status-queued">En cola</span>';
-            case 'processing': return `<span class="status-badge status-processing">Procesando ${video.processing_progress || 0}%</span>`;
-            case 'processed': return '<span class="status-badge status-processed">Procesado / Borrador</span>';
-            case 'published': return '<span class="status-badge status-published">Publicado</span>';
-            case 'failed': return '<span class="status-badge status-failed">Error</span>';
-            default: return `<span class="status-badge">${video.status}</span>`;
-        }
+    getCombinedBadge(video) {
+        let statusText = video.status;
+        if(video.status === 'queued') statusText = 'En cola';
+        else if(video.status === 'processing') statusText = `Procesando ${video.processing_progress || 0}%`;
+        else if(video.status === 'processed') statusText = 'Borrador';
+        else if(video.status === 'published') statusText = 'Publicado';
+        else if(video.status === 'failed') statusText = 'Error';
+
+        let visText = 'Público';
+        if(video.visibility === 'unlisted') visText = 'No listado';
+        if(video.visibility === 'private') visText = 'Privado';
+
+        return `<span class="component-badge component-badge--sm" style="display: inline-flex; align-items: center; gap: 4px;">${statusText} / ${visText}</span>`;
     }
 
     async initManageContentView() {
@@ -217,18 +198,7 @@ export class StudioManageContentController {
         tr.id = `video-row-${video.id}`;
         tr.onclick = () => this.selectManageContentVideo(video.id);
 
-        let statusBadge = this.getStatusBadge(video);
-        
-        let visIcon = 'public';
-        if(video.visibility === 'unlisted') visIcon = 'link';
-        if(video.visibility === 'private') visIcon = 'lock';
-        
-        let statusWithVis = `
-            <div style="display: flex; align-items: center; gap: 6px;">
-                ${statusBadge}
-                <span class="material-symbols-rounded" style="font-size: 16px; color: var(--text-secondary);" title="${video.visibility || 'public'}">${visIcon}</span>
-            </div>
-        `;
+        let combinedBadge = this.getCombinedBadge(video);
         
         let thumbUrl = video.thumbnail_path ? video.thumbnail_path : '';
         if (thumbUrl && !thumbUrl.startsWith('http')) {
@@ -262,7 +232,7 @@ export class StudioManageContentController {
                 </div>
             </td>
             <td><span class="component-badge component-badge--sm" style="${badgeStyle}">${orientationBadge}</span></td>
-            <td>${statusWithVis}</td>
+            <td>${combinedBadge}</td>
             <td><span class="component-badge component-badge--sm" style="${badgeStyle}">Ninguna</span></td>
             <td><span class="component-badge component-badge--sm" style="${badgeStyle}">${date}</span></td>
             <td><span class="component-badge component-badge--sm" style="${badgeStyle}">0</span></td>
@@ -273,12 +243,24 @@ export class StudioManageContentController {
     }
 
     selectManageContentVideo(id) {
-        this.state.selectedManageVideoId = id;
-        document.querySelectorAll('#manageContentTableBody tr').forEach(row => row.classList.remove('component-table-row--selected'));
         const row = document.getElementById(`video-row-${id}`);
-        if (row) row.classList.add('component-table-row--selected');
+        const isAlreadySelected = row && row.classList.contains('component-table-row--selected');
+
+        this.state.selectedManageVideoId = null;
+        document.querySelectorAll('#manageContentTableBody tr').forEach(r => r.classList.remove('component-table-row--selected'));
 
         const editBtn = document.getElementById('btnEditSelectedVideo');
+        const visBtn = document.getElementById('btnQuickVisibility');
+
+        if (isAlreadySelected) {
+            if (editBtn) { editBtn.setAttribute('disabled', 'true'); editBtn.classList.add('disabled'); }
+            if (visBtn) { visBtn.setAttribute('disabled', 'true'); visBtn.classList.add('disabled'); }
+            return;
+        }
+
+        this.state.selectedManageVideoId = id;
+        if (row) row.classList.add('component-table-row--selected');
+
         if (editBtn) {
             editBtn.removeAttribute('disabled');
             editBtn.classList.remove('disabled');
@@ -295,15 +277,11 @@ export class StudioManageContentController {
             };
         }
 
-        const visBtn = document.getElementById('btnQuickVisibility');
         if (visBtn) {
             const video = this.state.getVideo(id);
             if (video) {
-                // Activar el botón de visibilidad cuando un video es seleccionado
                 visBtn.removeAttribute('disabled');
                 visBtn.classList.remove('disabled');
-                
-                // Actualizar el UI del botón para reflejar el estado del video seleccionado
                 this.syncQuickVisibilityUI(video.visibility || 'public');
             }
         }
@@ -315,22 +293,11 @@ export class StudioManageContentController {
         const row = document.getElementById(`video-row-${matchedKey}`);
         if (row && row.children[2]) {
             const video = this.state.getVideo(matchedKey);
-            let visIcon = 'public';
-            if(video && video.visibility === 'unlisted') visIcon = 'link';
-            if(video && video.visibility === 'private') visIcon = 'lock';
-
-            let statusHtml = '';
-            if (data.status === 'processing') statusHtml = `<span class="status-badge status-processing">Procesando ${data.progress || 0}%</span>`;
-            else if (data.status === 'processed') statusHtml = '<span class="status-badge status-processed">Procesado / Borrador</span>';
-            else if (data.status === 'failed') statusHtml = '<span class="status-badge status-failed">Error</span>';
-            else if (data.status === 'published') statusHtml = '<span class="status-badge status-published">Publicado</span>';
-            
-            row.children[2].innerHTML = `
-                <div style="display: flex; align-items: center; gap: 6px;">
-                    ${statusHtml}
-                    <span class="material-symbols-rounded" style="font-size: 16px; color: var(--text-secondary);" title="${video ? video.visibility : 'public'}">${visIcon}</span>
-                </div>
-            `;
+            if (video) {
+                video.status = data.status;
+                if (data.progress !== undefined) video.processing_progress = data.progress;
+                row.children[2].innerHTML = this.getCombinedBadge(video);
+            }
         }
     }
 }

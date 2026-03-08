@@ -27,13 +27,34 @@ $userUuid = $_GET['uuid'] ?? '';
                 <div class="studio-uploading-wrapper">
                     
                     <div class="studio-uploading-details">
+                        
                         <div class="component-card--grouped">
-                            <div class="component-group-item component-group-item--stacked">
-                                <div class="component-card__content component-card__content--full">
-                                    <div class="component-card__text">
-                                        <h2 class="component-card__title">Título del video (obligatorio)</h2>
-                                        <div class="component-input-group component-input-group--h34" style="margin-top: 8px;">
-                                            <input type="text" id="videoTitleInput" class="component-input-field component-input-field--simple" placeholder="Ingresa un título que destaque">
+                            <div class="component-group-item component-group-item--stateful">
+                                <div class="active component-state-box" data-state="title-view">
+                                    <div class="component-card__content">
+                                        <div class="component-card__text">
+                                            <h2 class="component-card__title">Título del video (obligatorio)</h2>
+                                            <span class="component-display-value" data-ref="display-title">Cargando...</span>
+                                        </div>
+                                    </div>
+                                    <div class="component-card__actions component-card__actions--stretch">
+                                        <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="title">Editar</button>
+                                    </div>
+                                </div>
+
+                                <div class="disabled component-state-box" data-state="title-edit" style="display: none;">
+                                    <div class="component-card__content">
+                                        <div class="component-card__text">
+                                            <h2 class="component-card__title">Título del video (obligatorio)</h2>
+                                            <div class="component-edit-row">
+                                                <div class="component-input-group component-input-group--h34">
+                                                    <input type="text" id="videoTitleInput" data-ref="input-title" class="component-input-field component-input-field--simple" placeholder="Ingresa un título que destaque">
+                                                </div>
+                                                <div class="component-card__actions component-card__actions--stretch">
+                                                    <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="title">Cancelar</button>
+                                                    <button type="button" class="component-button component-button--h34 component-button--dark" data-action="saveTitle">Guardar</button>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -112,6 +133,7 @@ $userUuid = $_GET['uuid'] ?? '';
                                 </div>
                             </div>
                         </div>
+
                         <div class="component-card--grouped" style="margin-top: 24px;">
                             <div class="component-group-item component-group-item--stacked" style="border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.05));">
                                 <div class="component-card__content component-card__content--full">

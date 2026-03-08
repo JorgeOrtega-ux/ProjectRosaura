@@ -5,7 +5,7 @@
     /* Estilos inyectados directamente para no requerir tocar el CSS de la app principal por ahora */
     .component-table-row--selected {
         background-color: rgba(255, 255, 255, 0.08) !important;
-        border-left: 3px solid var(--primary-color, #007bff);
+        border-left: 3px solid var(--text-primary, #0f0f0f) !important;
     }
     .component-table tbody tr {
         cursor: pointer;
@@ -31,7 +31,7 @@
                             <span class="material-symbols-rounded" id="quickVisibilityBtnIcon">public</span>
                         </button>
                         
-                        <div class="component-module component-module--dropdown component-module--dropdown-left disabled" id="quickVisibilityMenu">
+                        <div class="component-module component-module--dropdown component-module--dropdown-left disabled bs-initialized" id="quickVisibilityMenu">
                             <div class="component-menu component-menu--w-auto component-menu--h-auto component-menu--no-padding">
                                 <div class="pill-container"><div class="drag-handle"></div></div>
                                 <div class="component-menu-list component-menu-list--scrollable">
