@@ -49,6 +49,8 @@ export class StudioWebSocketManager {
                     }
                     if (data.type === 'progress' || data.type === 'completed' || data.type === 'failed') {
                         if (this.callbacks['progressUpdate']) this.callbacks['progressUpdate'](data);
+                        // AÑADIDO: Despachar el evento global para que la UI se actualice
+                        window.dispatchEvent(new CustomEvent('studioVideoProgress', { detail: data }));
                     }
                 } catch (error) { console.error('[WS] Error parseando mensaje', error); }
             };

@@ -3,28 +3,64 @@ export class StudioThumbnailManager {
         this.api = api;
         this.state = state;
         this.onThumbnailChanged = onThumbnailChangedCallback;
+        // Guardamos el estado original del botón por defecto
+        this.defaultBtnHtml = '<span class="material-symbols-rounded">auto_awesome</span><span>Generar opciones</span>';
         this.attachEvents();
+    }
+
+    // NUEVO: Método para limpiar la interfaz al cambiar de video
+    resetUI() {
+        const grid = document.getElementById('generatedThumbnailsContainer');
+        if (grid) {
+            grid.innerHTML = '';
+            grid.style.display = 'none';
+        }
+        const btn = document.getElementById('btnGenerateThumbnails');
+        if (btn) {
+            btn.innerHTML = this.defaultBtnHtml;
+        }
+        const hiddenInput = document.getElementById('selectedGeneratedThumbnail');
+        if (hiddenInput) hiddenInput.value = '';
     }
 
     async generateThumbnails() {
         if (!this.state.selectedVideoId) return;
-        const videoData = this.state.getVideo(this.state.selectedVideoId);
+        
+        // Guardar el ID actual para prevenir condiciones de carrera si el usuario cambia de pestaña
+        const currentVideoId = this.state.selectedVideoId; 
+        const videoData = this.state.getVideo(currentVideoId);
+        
         if (!videoData || (videoData.status !== 'processed' && videoData.status !== 'published')) {
             alert("El video debe terminar de procesarse al 100% para poder generar sus miniaturas.");
             return;
         }
 
         const btn = document.getElementById('btnGenerateThumbnails');
-        const originalBtnText = btn.innerHTML;
-        btn.innerHTML = '<span class="material-symbols-rounded">sync</span><span>Cargando opciones...</span>';
-        btn.disabled = true;
+        
+        // Prevención extra si el botón tiene la clase de deshabilitado
+        if (btn && btn.classList.contains('disabled-interactive')) return;
+
+        if (btn) {
+            // Respaldamos el texto si no es el de "Cargando..." para no perder traducciones si las hubiera
+            if (!btn.innerHTML.includes('sync')) {
+                this.defaultBtnHtml = btn.innerHTML;
+            }
+            btn.innerHTML = '<span class="material-symbols-rounded">sync</span><span>Cargando opciones...</span>';
+            btn.disabled = true;
+        }
 
         const grid = document.getElementById('generatedThumbnailsContainer');
-        grid.style.display = 'grid';
-        grid.innerHTML = '';
+        if (grid) {
+            grid.style.display = 'grid';
+            grid.innerHTML = '';
+        }
 
         try {
             await new Promise(r => setTimeout(r, 600));
+
+            // PREVENCIÓN: Si el usuario cambió de video mientras "cargaba", abortamos la renderización
+            if (this.state.selectedVideoId !== currentVideoId) return;
+
             const uuid = videoData.uuid;
             let baseUrl = window.AppBasePath || '';
             if (!baseUrl.startsWith('http')) baseUrl = window.location.origin + (baseUrl.startsWith('/') ? '' : '/') + baseUrl;
@@ -38,12 +74,18 @@ export class StudioThumbnailManager {
                 item.className = 'component-thumbnail-item';
                 item.innerHTML = `<img src="${thumbUrl}" alt="Opción ${i}" onerror="this.parentElement.style.display='none'">`;
                 item.onclick = () => this.selectGeneratedThumbnail(item, thumbUrl, relativePath);
-                grid.appendChild(item);
+                if (grid) grid.appendChild(item);
             }
         } catch (error) {
-            console.error(error); alert("Error al cargar las miniaturas."); grid.style.display = 'none';
+            console.error(error); 
+            alert("Error al cargar las miniaturas."); 
+            if (grid) grid.style.display = 'none';
         } finally {
-            btn.innerHTML = originalBtnText; btn.disabled = false;
+            // Solo restaurar el botón si seguimos en el mismo video; de lo contrario resetUI ya se encargó
+            if (this.state.selectedVideoId === currentVideoId && btn) {
+                btn.innerHTML = this.defaultBtnHtml; 
+                btn.disabled = false;
+            }
         }
     }
 

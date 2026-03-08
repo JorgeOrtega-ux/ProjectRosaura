@@ -26,7 +26,8 @@ export class StudioEditController {
         this.initEditView();
         if (!this.eventsAttached) {
             this.attachEvents();
-            window.addEventListener('studioVideoProgress', this.validatePublishButton.bind(this));
+            this.handleVideoProgressBound = this.handleVideoProgress.bind(this);
+            window.addEventListener('studioVideoProgress', this.handleVideoProgressBound);
             this.eventsAttached = true;
         }
     }
@@ -163,8 +164,6 @@ export class StudioEditController {
         });
     }
 
-    // Se mantiene solo como función para forzar los cambios internamente,
-    // ya que MainController maneja el toggle en base a clics de UI.
     setEditState(target, isEditing) {
         const viewState = document.querySelector(`[data-state="${target}-view"]`);
         const editState = document.querySelector(`[data-state="${target}-edit"]`);
@@ -210,34 +209,50 @@ export class StudioEditController {
         if (video) video.draftDescription = descInput.value.trim();
     }
 
+    handleVideoProgress(e) {
+        const data = e.detail;
+        const videoId = data.video_id || data.id || data.matchedKey;
+        
+        if (String(videoId) === String(this.state.selectedVideoId)) {
+            const video = this.state.getVideo(this.state.selectedVideoId);
+            if (video) {
+                if (data.status === 'processed' || data.type === 'completed') {
+                    video.status = 'processed';
+                } else if (data.status === 'failed' || data.type === 'failed') {
+                    video.status = 'failed';
+                }
+            }
+            this.validatePublishButton();
+        }
+    }
+
     validatePublishButton() {
         const btn = document.getElementById('btnPublishVideo');
         const btnGen = document.getElementById('btnGenerateThumbnails');
 
         if (!this.state.selectedVideoId) {
-            if(btn) { btn.setAttribute('disabled', 'true'); btn.classList.add('disabled'); }
-            if(btnGen) { btnGen.setAttribute('disabled', 'true'); btnGen.classList.add('disabled'); }
+            if(btn) { btn.setAttribute('disabled', 'true'); btn.classList.add('disabled', 'disabled-interactive'); }
+            if(btnGen) { btnGen.setAttribute('disabled', 'true'); btnGen.classList.add('disabled', 'disabled-interactive'); }
             return;
         }
 
         const video = this.state.getVideo(this.state.selectedVideoId);
         if (!video) return;
         
-        const isProcessed = video.status === 'processed';
-        const isPublished = video.status === 'published';
+        const isProcessed = video.status === 'processed' || video.status === 'published';
         const hasTitle = (video.draftTitle && video.draftTitle.trim().length > 0); 
         const hasThumb = (video.draftThumbnailType !== undefined && video.draftThumbnailData) || video.thumbnail_path;
 
         if (isProcessed && hasTitle && hasThumb) {
-            if(btn) { btn.removeAttribute('disabled'); btn.classList.remove('disabled'); }
+            if(btn) { btn.removeAttribute('disabled'); btn.classList.remove('disabled', 'disabled-interactive'); }
         } else {
-            if(btn) { btn.setAttribute('disabled', 'true'); btn.classList.add('disabled'); }
+            if(btn) { btn.setAttribute('disabled', 'true'); btn.classList.add('disabled', 'disabled-interactive'); }
         }
 
-        if (isProcessed || isPublished) {
-            if(btnGen) { btnGen.removeAttribute('disabled'); btnGen.classList.remove('disabled'); }
+        if (isProcessed) {
+            if(btnGen) { btnGen.removeAttribute('disabled'); btnGen.classList.remove('disabled', 'disabled-interactive'); }
         } else {
-            if(btnGen) { btnGen.setAttribute('disabled', 'true'); btnGen.classList.add('disabled'); }
+            if(btnGen) { btnGen.setAttribute('disabled', 'true'); btnGen.classList.add('disabled', 'disabled-interactive'); }
         }
     }
 
@@ -248,8 +263,10 @@ export class StudioEditController {
 
         const btn = document.getElementById('btnPublishVideo');
         if (btn) {
+            // Protección extra en caso de click forzado
+            if (btn.classList.contains('disabled-interactive')) return;
             btn.setAttribute('disabled', 'true');
-            btn.classList.add('disabled');
+            btn.classList.add('disabled', 'disabled-interactive');
             btn.innerHTML = '<span class="material-symbols-rounded">sync</span><span>Publicando...</span>';
         }
 
@@ -276,18 +293,18 @@ export class StudioEditController {
                 window.dispatchEvent(new CustomEvent('routeChange', { detail: { url: '/studio/manage-content' }}));
             } else {
                 alert("Error al publicar: " + res.message);
-                if (btn) { btn.removeAttribute('disabled'); btn.classList.remove('disabled'); btn.innerHTML = '<span class="material-symbols-rounded">publish</span><span data-i18n="studio_publish">Publicar</span>'; }
+                if (btn) { btn.removeAttribute('disabled'); btn.classList.remove('disabled', 'disabled-interactive'); btn.innerHTML = '<span class="material-symbols-rounded">publish</span><span data-i18n="studio_publish">Publicar</span>'; }
             }
         } catch (error) {
             console.error(error); alert("Error de conexión al publicar.");
-            if (btn) { btn.removeAttribute('disabled'); btn.classList.remove('disabled'); btn.innerHTML = '<span class="material-symbols-rounded">publish</span><span data-i18n="studio_publish">Publicar</span>'; }
+            if (btn) { btn.removeAttribute('disabled'); btn.classList.remove('disabled', 'disabled-interactive'); btn.innerHTML = '<span class="material-symbols-rounded">publish</span><span data-i18n="studio_publish">Publicar</span>'; }
         }
     }
 
     async cancelVideo() {
         if (!this.state.selectedVideoId) return;
         const btn = document.getElementById('btnCancelVideo');
-        if (btn) { btn.classList.add('disabled'); btn.setAttribute('disabled', 'true'); }
+        if (btn) { btn.classList.add('disabled', 'disabled-interactive'); btn.setAttribute('disabled', 'true'); }
 
         const routeName = ApiRoutes.Studio?.CancelUpload || 'studio.cancel_upload';
         const res = await this.api.post(routeName, { video_id: this.state.selectedVideoId });
@@ -297,7 +314,7 @@ export class StudioEditController {
             window.dispatchEvent(new CustomEvent('routeChange', { detail: { url: '/studio/upload' }}));
         } else {
             alert("Error al cancelar el video: " + res.message);
-            if (btn) { btn.classList.remove('disabled'); btn.removeAttribute('disabled'); }
+            if (btn) { btn.classList.remove('disabled', 'disabled-interactive'); btn.removeAttribute('disabled'); }
         }
     }
 
@@ -318,9 +335,6 @@ export class StudioEditController {
             if (!btn) return;
             const action = btn.getAttribute('data-action');
 
-            // El toggleEditState ya no se evalúa aquí porque choca con el listener
-            // de MainController (quien se encarga de la visual ahora a nivel global).
-            
             if (action === 'saveTitle') this.saveTitleField();
             if (action === 'publishVideo') this.publishVideo();
             if (action === 'cancelVideo') {
