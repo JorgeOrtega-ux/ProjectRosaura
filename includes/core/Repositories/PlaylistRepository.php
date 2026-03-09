@@ -30,10 +30,22 @@ class PlaylistRepository implements PlaylistRepositoryInterface {
     }
 
     public function getAllByUserId(int $userId): array {
+        // MODIFICADO: Ahora extrae el conteo de videos y la miniatura del primero
         $stmt = $this->db->prepare("
-            SELECT * FROM playlists 
-            WHERE user_id = :user_id 
-            ORDER BY created_at DESC
+            SELECT 
+                p.*,
+                (SELECT COUNT(*) FROM playlist_videos pv WHERE pv.playlist_id = p.id) as video_count,
+                (
+                    SELECT v.thumbnail_path 
+                    FROM playlist_videos pv2 
+                    JOIN videos v ON pv2.video_id = v.id 
+                    WHERE pv2.playlist_id = p.id 
+                    ORDER BY pv2.display_order ASC 
+                    LIMIT 1
+                ) as thumbnail_path
+            FROM playlists p 
+            WHERE p.user_id = :user_id 
+            ORDER BY p.created_at DESC
         ");
         $stmt->execute([':user_id' => $userId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
@@ -151,7 +163,6 @@ class PlaylistRepository implements PlaylistRepositoryInterface {
             return []; // Return empty array to prevent complete API failure
         }
     }
-    // <--- CÓDIGO A PEGAR DENTRO DE PlaylistRepository.php --->
     
     public function getPlaylistWithVideosByUuid(string $uuid): ?array {
         // 1. Obtener la información base de la lista de reproducción

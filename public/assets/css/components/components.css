@@ -2572,7 +2572,7 @@ input:checked + .component-toggle-slider:before {
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
     gap: 16px;
     width: 100%;
-    margin-top: 16px; /* Añadir esta línea */
+    margin-top: 16px;
 }
 
 /* RESPONSIVE MÓVILES CHANNEL */
@@ -2735,13 +2735,31 @@ input:checked + .component-toggle-slider:before {
 .handle-se { bottom: -8px; right: -8px; cursor: nwse-resize; }
 
 
-
-
 /* ==========================================================================
    VISTA DE PLAYLIST (Listas de reproducción divididas)
    ========================================================================== */
 
-/* Contenedor principal: Flexbox para dividir en dos columnas */
+.playlist-page-container {
+    align-items: flex-start;
+    padding-top: 24px;
+}
+
+.playlist-spinner {
+    margin-top: 40px;
+}
+
+.playlist-content-title {
+    margin-bottom: 0;
+    font-size: 20px;
+    color: var(--text-primary);
+}
+
+.playlist-videos-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
 .playlist-layout {
     display: flex;
     flex-wrap: wrap;
@@ -2750,35 +2768,68 @@ input:checked + .component-toggle-slider:before {
     width: 100%;
 }
 
-/* COLUMNA IZQUIERDA: Tarjeta principal (Card Grande) */
 .playlist-sidebar {
     flex: 1;
     min-width: 320px;
-    max-width: 400px; /* Evita que crezca demasiado en pantallas ultra anchas */
-    background: rgba(30, 30, 30, 0.6);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border-radius: 16px;
+    max-width: 400px; 
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
     padding: 24px;
     display: flex;
     flex-direction: column;
     gap: 16px;
-    /* Efecto para que se quede fija al hacer scroll en la página */
     position: sticky;
     top: 80px; 
-    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Título de la lista en la tarjeta grande */
-.playlist-sidebar h1 {
+.playlist-sidebar-thumb {
+    width: 100%;
+    border-radius: 12px;
+    aspect-ratio: 16/9;
+    object-fit: cover;
+    box-shadow: var(--shadow-card);
+}
+
+.playlist-sidebar-title {
     font-size: 26px;
     font-weight: 700;
-    margin: 8px 0 0 0;
-    color: #fff;
+    margin: 12px 0 0 0;
+    color: var(--text-primary);
     line-height: 1.2;
 }
 
-/* Botón de reproducir todo */
+.playlist-sidebar-author {
+    margin: 8px 0 0 0;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 15px;
+}
+
+.playlist-sidebar-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-secondary);
+    font-size: 13px;
+    margin-top: 4px;
+}
+
+.playlist-sidebar-actions {
+    margin-top: 16px;
+    display: flex;
+    gap: 12px;
+    width: 100%;
+}
+
+.playlist-sidebar-desc {
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin-top: 16px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+}
+
 .playlist-btn-play {
     flex: 1;
     padding: 10px;
@@ -2789,15 +2840,19 @@ input:checked + .component-toggle-slider:before {
     gap: 8px;
     font-weight: 600;
     cursor: pointer;
-    border: none;
-    background-color: #fff;
-    color: #0f0f0f;
-    transition: background 0.2s, transform 0.1s;
+    border: 1px solid var(--border-color);
+    background-color: var(--text-primary);
+    color: var(--bg-surface);
+    transition: background-color 0.2s, transform 0.1s, opacity 0.2s;
     font-size: 15px;
 }
 
+.playlist-btn-play .material-symbols-rounded {
+    font-size: 20px;
+}
+
 .playlist-btn-play:hover {
-    background-color: #e5e5e5;
+    opacity: 0.9;
 }
 
 .playlist-btn-play:active {
@@ -2805,12 +2860,10 @@ input:checked + .component-toggle-slider:before {
 }
 
 .playlist-btn-play:disabled {
-    background-color: rgba(255, 255, 255, 0.2);
-    color: rgba(255, 255, 255, 0.5);
+    opacity: 0.5;
     cursor: not-allowed;
 }
 
-/* COLUMNA DERECHA: Lista de videos */
 .playlist-content {
     flex: 2;
     min-width: 320px;
@@ -2819,37 +2872,47 @@ input:checked + .component-toggle-slider:before {
     gap: 16px;
 }
 
-/* Ítem de video en la lista de reproducción */
 .playlist-video-item {
     display: flex;
     gap: 16px;
     padding: 12px;
     border-radius: 12px;
     cursor: pointer;
-    background: transparent;
-    transition: background 0.2s ease, transform 0.1s ease;
+    background-color: transparent;
+    transition: background-color 0.2s ease, transform 0.1s ease;
 }
 
 .playlist-video-item:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background-color: var(--bg-hover-light);
 }
 
 .playlist-video-item:active {
     transform: scale(0.99);
 }
 
-/* Miniatura del video en la lista */
+.playlist-video-item-index {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    font-size: 14px;
+    min-width: 24px;
+    font-weight: 500;
+}
+
 .playlist-video-item-thumbnail {
     position: relative;
     flex-shrink: 0;
     width: 160px;
     aspect-ratio: 16/9;
+    background-color: var(--bg-surface-alt);
+    border-radius: 8px;
+    overflow: hidden;
 }
 
 .playlist-video-item-thumbnail img {
     width: 100%;
     height: 100%;
-    border-radius: 8px;
     object-fit: cover;
 }
 
@@ -2857,28 +2920,30 @@ input:checked + .component-toggle-slider:before {
     position: absolute;
     bottom: 4px;
     right: 4px;
-    background: rgba(0, 0, 0, 0.8);
-    color: white;
-    padding: 2px 4px;
-    border-radius: 4px;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: #ffffff;
+    padding: 2px 6px;
+    border-radius: 6px;
     font-size: 12px;
-    font-weight: 500;
+    font-weight: 600;
+    font-family: var(--sl-font-mono, monospace);
+    line-height: 1;
 }
 
-/* Información del video en la lista */
 .playlist-video-item-info {
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
     flex-grow: 1;
     padding-top: 2px;
+    min-width: 0; 
 }
 
 .playlist-video-item-title {
     margin: 0 0 4px 0;
     font-size: 16px;
-    font-weight: 500;
-    color: #fff;
+    font-weight: 600;
+    color: var(--text-primary);
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
@@ -2889,16 +2954,12 @@ input:checked + .component-toggle-slider:before {
 
 .playlist-video-item-meta {
     margin: 2px 0 0 0;
-    color: #aaa;
+    color: var(--text-secondary);
     font-size: 13px;
+    font-weight: 500;
 }
 
-/* ==========================================================================
-   RESPONSIVO (Móviles y Tablets)
-   ========================================================================== */
 @media screen and (max-width: 900px) {
-    /* En pantallas medianas y móviles, la tarjeta grande pasa arriba 
-       y ocupa todo el ancho, perdiendo el efecto "sticky" */
     .playlist-layout {
         flex-direction: column;
     }
@@ -2911,7 +2972,6 @@ input:checked + .component-toggle-slider:before {
         padding: 16px;
     }
 
-    /* Reducimos el tamaño de la miniatura en la lista para móviles */
     .playlist-video-item-thumbnail {
         width: 120px;
     }

@@ -134,10 +134,46 @@ export class StudioManagePlaylistController {
                     if(p.visibility === 'unlisted') visText = 'No listada';
                     if(p.visibility === 'private') visText = 'Privada';
 
+                    // Lógica para formatear la URL de la miniatura correctamente
+                    let thumbUrl = p.thumbnail_path ? p.thumbnail_path : '';
+                    if (thumbUrl && !thumbUrl.startsWith('http')) {
+                        let base = window.AppBasePath || '';
+                        if (!base.startsWith('http')) base = window.location.origin + (base.startsWith('/') ? '' : '/') + base;
+                        if (base.endsWith('/')) base = base.slice(0, -1);
+                        let cleanPath = thumbUrl.replace(/^\//, '');
+                        let baseNoSlash = (window.AppBasePath || '').replace(/^\//, '');
+                        if (baseNoSlash && cleanPath.startsWith(baseNoSlash + '/')) cleanPath = cleanPath.substring(baseNoSlash.length + 1);
+                        if (!cleanPath.startsWith('public/')) cleanPath = 'public/' + cleanPath;
+                        thumbUrl = base + '/' + cleanPath;
+                    }
+
+                    const videoCount = p.video_count || 0;
+                    
+                    // El badget estilo "Home"
+                    const countBadge = `
+                        <div style="position: absolute; bottom: 4px; right: 4px; background: rgba(0, 0, 0, 0.8); color: white; padding: 2px 4px; border-radius: 4px; font-size: 12px; font-weight: 500; display: flex; align-items: center; gap: 2px; line-height: 1; pointer-events: none;">
+                            <span class="material-symbols-rounded" style="font-size: 14px;">playlist_play</span>${videoCount}
+                        </div>`;
+
+                    let thumbHtml = '';
+                    if (thumbUrl) {
+                        thumbHtml = `
+                        <div style="position: relative; display: flex; align-items: center; justify-content: center; width: 120px; height: 68px; flex-shrink: 0; border-radius: 4px; overflow: hidden; background-color: var(--bg-surface);">
+                            <img src="${thumbUrl}" style="width: 100%; height: 100%; object-fit: cover;" alt="Miniatura">
+                            ${countBadge}
+                        </div>`;
+                    } else {
+                        thumbHtml = `
+                        <div class="table-video-thumb empty" style="position: relative; width: 120px; height: 68px; flex-shrink: 0;">
+                            <span class="material-symbols-rounded">playlist_play</span>
+                            ${countBadge}
+                        </div>`;
+                    }
+
                     tr.innerHTML = `
                         <td>
                             <div class="table-video-info">
-                                <div class="table-video-thumb empty"><span class="material-symbols-rounded">playlist_play</span></div>
+                                ${thumbHtml}
                                 <div class="table-video-details">
                                     <span class="table-video-title">${p.title}</span>
                                     <span class="table-video-desc">${p.description ? p.description.substring(0, 30) + '...' : 'Sin descripción'}</span>
@@ -147,7 +183,7 @@ export class StudioManagePlaylistController {
                         <td><span class="component-badge component-badge--sm">Playlist</span></td>
                         <td><span class="component-badge component-badge--sm">${visText}</span></td>
                         <td><span class="component-badge component-badge--sm">${date}</span></td>
-                        <td><span class="component-badge component-badge--sm">0 videos</span></td>
+                        <td><span class="component-badge component-badge--sm">${videoCount} videos</span></td>
                         <td><span class="component-badge component-badge--sm">0</span></td>
                     `;
                     tbody.appendChild(tr);
