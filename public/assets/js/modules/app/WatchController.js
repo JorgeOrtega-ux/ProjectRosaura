@@ -6,38 +6,35 @@ export class WatchController {
     constructor() {
         this.container = document.querySelector('.view-content');
         this.api = new ApiService();
+        this.layoutContainer = null;
+        this.cinemaBtn = null;
     }
 
     async init() {
-        // 1. Extraer el ID del video directamente de la URL
         const urlPath = window.location.pathname;
         const pathSegments = urlPath.split('/');
         
-        // Buscar dónde está "watch" y tomar el siguiente segmento como ID
         const watchIndex = pathSegments.indexOf('watch');
         const videoId = (watchIndex !== -1 && pathSegments.length > watchIndex + 1) 
                         ? pathSegments[watchIndex + 1] 
                         : null;
 
-        // 2. Revisar si viene de una playlist mediante parámetros URL (ej: ?list=abc-123)
         const urlParams = new URLSearchParams(window.location.search);
         const playlistId = urlParams.get('list');
 
-        // Validar que realmente se capturó un ID
         if (!videoId) {
             this.showError404('Identificador de video no proporcionado en la URL.');
             return;
         }
 
-        // 3. Hacer la petición real a la API pública
+        this.initLayoutLogic();
+
         try {
-            // Llamamos al nuevo endpoint público
             const response = await this.api.post('app.get_video_details', { video_uuid: videoId });
 
             if (response && response.success) {
                 this.renderRealData(response.data, playlistId);
             } else {
-                // Si la API dice success: false, forzamos el 404
                 this.showError404(response.message || 'El video que buscas no existe o es privado.');
             }
         } catch (error) {
@@ -46,65 +43,119 @@ export class WatchController {
         }
     }
 
+    initLayoutLogic() {
+        this.layoutContainer = document.getElementById('watch-layout-container');
+        this.cinemaBtn = document.getElementById('toggle-cinema-btn');
+
+        if (this.cinemaBtn && this.layoutContainer) {
+            this.handleCinemaToggle = () => {
+                this.layoutContainer.classList.toggle('watch-layout--cinema');
+            };
+            this.cinemaBtn.addEventListener('click', this.handleCinemaToggle);
+        }
+    }
+
     renderRealData(data, playlistId) {
-        // Título del video
+        // --- DIV 1: TÍTULO ---
         const titleEl = document.getElementById('watch-video-title');
         if (titleEl) titleEl.textContent = data.title || 'Sin Título';
 
-        // Fecha de publicación
+        // --- DIV 2: CANAL Y ACCIONES (IZQUIERDA) ---
+        const channelNameEl = document.getElementById('watch-channel-name');
+        if (channelNameEl) channelNameEl.textContent = (data.author && data.author.username) ? data.author.username : 'Canal Rosaura';
+        
+        const channelAvatarEl = document.getElementById('watch-channel-avatar');
+        if (channelAvatarEl) {
+            channelAvatarEl.src = '/ProjectRosaura/public/storage/profilePictures/default/3494f2fb-46da-4804-9519-11f40a512c49.png';
+        }
+
+        const channelSubsEl = document.getElementById('watch-channel-subs');
+        if (channelSubsEl) {
+            const randomSubs = Math.floor(Math.random() * 900) + 10;
+            channelSubsEl.textContent = `${randomSubs} mil suscriptores`;
+        }
+
+        // --- DIV 2: CANAL Y ACCIONES (DERECHA) ---
+        const randomViews = Math.floor(Math.random() * (900000 - 10000 + 1)) + 10000;
+        
+        const likesEl = document.getElementById('watch-like-count');
+        if (likesEl) {
+            const randomLikes = Math.floor(randomViews * 0.05);
+            likesEl.textContent = randomLikes.toLocaleString('es-MX');
+        }
+
+        // --- DIV 3: CAJA DE DETALLES ---
+        const viewsEl = document.getElementById('watch-video-views');
+        if (viewsEl) {
+            viewsEl.textContent = `${randomViews.toLocaleString('es-MX')} visualizaciones`;
+        }
+
         const dateEl = document.getElementById('watch-video-date');
         if (dateEl) {
             const pubDate = new Date(data.published_at || data.created_at);
-            dateEl.textContent = pubDate.toLocaleDateString();
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            dateEl.textContent = pubDate.toLocaleDateString('es-ES', options);
         }
 
-        // Estado de la playlist
-        const playlistEl = document.getElementById('watch-video-playlist-status');
-        if (playlistEl) {
-            if (playlistId) {
-                playlistEl.innerHTML = `SÍ (ID Playlist: <strong style="color:var(--text-brand)">${playlistId}</strong>)`;
-            } else {
-                playlistEl.textContent = 'NO (Video individual)';
-            }
-        }
-
-        // Etiquetas de modelos
-        const modelsEl = document.getElementById('watch-video-models');
-        if (modelsEl) {
-            if (data.models && data.models.length > 0) {
-                modelsEl.innerHTML = data.models.map(m => 
-                    `<span style="background: var(--bg-surface); padding: 4px 8px; border-radius: 4px; font-size: 14px;">${m.name}</span>`
-                ).join('');
-            } else {
-                modelsEl.innerHTML = '<span style="font-size: 14px; color: var(--text-secondary);">Ninguno</span>';
-            }
-        }
-
-        // Etiquetas de categorías
-        const categoriesEl = document.getElementById('watch-video-categories');
-        if (categoriesEl) {
-            if (data.categories && data.categories.length > 0) {
-                categoriesEl.innerHTML = data.categories.map(c => 
-                    `<span style="background: var(--bg-surface); padding: 4px 8px; border-radius: 4px; font-size: 14px;">${c.name}</span>`
-                ).join('');
-            } else {
-                categoriesEl.innerHTML = '<span style="font-size: 14px; color: var(--text-secondary);">Sin categorías</span>';
-            }
-        }
-
-        // Descripción
         const descEl = document.getElementById('watch-video-description');
         if (descEl) {
             descEl.textContent = data.description || 'Este video no tiene una descripción.';
         }
+
+        // --- DIV 4: CAJA DE ETIQUETAS (Modelos y Categorías) ---
+        const tagsContainer = document.getElementById('watch-video-tags-container');
+        if (tagsContainer) {
+            let tagsHTML = '';
+
+            // Renderizar Modelos
+            if (data.models && data.models.length > 0) {
+                tagsHTML += data.models.map(m => 
+                    `<span class="watch-tag-item">
+                        <span class="material-symbols-rounded">star</span> ${m.name}
+                    </span>`
+                ).join('');
+            }
+
+            // Renderizar Categorías
+            if (data.categories && data.categories.length > 0) {
+                tagsHTML += data.categories.map(c => 
+                    `<span class="watch-tag-item">
+                        <span class="material-symbols-rounded">label</span> ${c.name}
+                    </span>`
+                ).join('');
+            }
+
+            if (tagsHTML === '') {
+                tagsContainer.innerHTML = '<span class="watch-tag-item" style="opacity: 0.5;">Sin etiquetas</span>';
+            } else {
+                tagsContainer.innerHTML = tagsHTML;
+            }
+        }
+
+        // --- EXTRA: COLOR DE HOVER DINÁMICO ---
+        // Extraemos el color de la data (ajusta 'dominant_color' al nombre exacto de tu DB)
+        const primaryColor = data.dominant_color || data.color; 
+        
+        if (primaryColor) {
+            const detailBoxes = document.querySelectorAll('.watch-details-box');
+            
+            detailBoxes.forEach(box => {
+                // Si el color viene en HEX (ej: #FF0055), le añadimos "1A" al final 
+                // para que sea un color súper suave y sutil (aprox 10% de opacidad)
+                if (primaryColor.startsWith('#') && primaryColor.length === 7) {
+                    box.style.setProperty('--hover-bg-color', primaryColor + '1A');
+                } else {
+                    // Fallback si viene en rgba() o cualquier otro formato
+                    box.style.setProperty('--hover-bg-color', primaryColor);
+                }
+            });
+        }
     }
 
     showError404(message = 'El video solicitado no fue encontrado.') {
-        // Verificamos si el Enrutador SPA global tiene el nuevo método público de renderizado de errores
         if (window.AppRouter && typeof window.AppRouter.renderHttpError === 'function') {
             window.AppRouter.renderHttpError(404, 'Video No Encontrado', message);
         } else if (this.container) {
-            // Fallback: Inyectarlo directamente en la vista si el router no está accesible
             this.container.innerHTML = `
                 <div class="component-message-layout" style="display: flex; justify-content: center; align-items: center; min-height: 50vh;">
                     <div class="component-message-box" style="text-align: center;">
@@ -120,6 +171,8 @@ export class WatchController {
     }
 
     destroy() {
-        // Lógica de limpieza cuando el usuario cambia de vista en tu SPA
+        if (this.cinemaBtn && this.handleCinemaToggle) {
+            this.cinemaBtn.removeEventListener('click', this.handleCinemaToggle);
+        }
     }
 }
