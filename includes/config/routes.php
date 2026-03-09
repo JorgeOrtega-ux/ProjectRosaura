@@ -4,12 +4,16 @@
 return [
     '/' => ['view' => 'app/home.php'],
     '/explore' => ['view' => 'app/explore.php'],
+    
     // --- RUTA DEL REPRODUCTOR DE VIDEO ---
     '/watch/{video_uuid}' => ['view' => 'app/watch.php'], 
+
+    // --- NUEVA RUTA DE VISTA DE PLAYLIST ---
+    '/playlist' => ['view' => 'app/playlist.php'], 
     
     // --- RUTA DINÁMICA DE CANALES ---
     '/@{identifier}' => ['view' => 'app/channel.php'], 
-    '/@{identifier}/{tab}' => ['view' => 'app/channel.php'], // <--- NUEVA: Captura la sub-ruta de la pestaña
+    '/@{identifier}/{tab}' => ['view' => 'app/channel.php'],
 
     // --- NUEVA RUTA PARA EDITAR PERFIL DE CANAL ---
     '/channel/{uuid}/editing/profile' => ['view' => 'app/channel-edit-profile.php', 'auth' => true],
@@ -51,7 +55,7 @@ return [
     '/studio/manage-content/playlist/{uuid}' => ['view' => 'studio/manage-content-playlist.php', 'auth' => true],
     '/studio/edit/{uuid}/{video_uuid}' => ['view' => 'studio/edit-video.php', 'auth' => true],
 
-    // --- RUTAS DE ADMINISTRADOR (Requieren autenticación + Roles específicos + 2FA) ---
+    // --- RUTAS DE ADMINISTRADOR ---
     '/admin' => ['view' => 'admin/dashboard.php', 'auth' => true, 'roles' => ['founder', 'administrator'], 'requires_2fa' => true],
     '/admin/dashboard' => ['view' => 'admin/dashboard.php', 'auth' => true, 'roles' => ['founder', 'administrator'], 'requires_2fa' => true],
     '/admin/manage-users' => ['view' => 'admin/manage-users.php', 'auth' => true, 'roles' => ['founder', 'administrator'], 'requires_2fa' => true],

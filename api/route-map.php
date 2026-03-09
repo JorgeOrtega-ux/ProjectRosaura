@@ -4,7 +4,7 @@
 return [
     // --- RUTAS APP FRONTEND ---
     'app.get_feed'         => ['controller' => 'App\Api\Controllers\FeedController', 'action' => 'get_feed'],
-
+'app.get_playlist_details' => ['controller' => 'App\Api\Controllers\PlaylistController', 'action' => 'getDetails'],
     // --- RUTA CANALES (Suscripciones, Banner y Perfil) ---
     'channel.toggle_subscription' => ['controller' => 'App\Api\Controllers\ChannelController', 'action' => 'toggle_subscription'],
     'channel.upload_banner'       => ['controller' => 'App\Api\Controllers\ChannelController', 'action' => 'upload_banner'],

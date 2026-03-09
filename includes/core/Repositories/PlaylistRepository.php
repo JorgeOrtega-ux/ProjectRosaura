@@ -151,5 +151,59 @@ class PlaylistRepository implements PlaylistRepositoryInterface {
             return []; // Return empty array to prevent complete API failure
         }
     }
+    // <--- CÓDIGO A PEGAR DENTRO DE PlaylistRepository.php --->
+    
+    public function getPlaylistWithVideosByUuid(string $uuid): ?array {
+        // 1. Obtener la información base de la lista de reproducción
+        $stmt = $this->db->prepare("
+            SELECT p.id, p.uuid, p.title, p.description, p.visibility, p.created_at, p.user_id,
+                   u.username, u.profile_picture as avatar_path,
+                   (SELECT COUNT(*) FROM playlist_videos pv WHERE pv.playlist_id = p.id) as video_count,
+                   (
+                       SELECT v.thumbnail_path 
+                       FROM playlist_videos pv2 
+                       JOIN videos v ON pv2.video_id = v.id 
+                       WHERE pv2.playlist_id = p.id 
+                       ORDER BY pv2.display_order ASC 
+                       LIMIT 1
+                   ) as thumbnail_path,
+                   (
+                       SELECT v.uuid 
+                       FROM playlist_videos pv2 
+                       JOIN videos v ON pv2.video_id = v.id 
+                       WHERE pv2.playlist_id = p.id 
+                       ORDER BY pv2.display_order ASC 
+                       LIMIT 1
+                   ) as first_video_uuid
+            FROM playlists p
+            INNER JOIN users u ON p.user_id = u.id
+            WHERE p.uuid = :uuid AND p.visibility != 'private'
+        ");
+        $stmt->execute([':uuid' => $uuid]);
+        $playlist = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$playlist) {
+            return null; // No existe o es privada
+        }
+
+        // 2. Obtener los videos que le pertenecen, en el orden correcto
+        $stmtVideos = $this->db->prepare("
+            SELECT v.id, v.uuid, v.title, v.duration, v.thumbnail_path, v.created_at, v.original_filename,
+                   u.username,
+                   0 as views 
+            FROM videos v
+            INNER JOIN playlist_videos pv ON v.id = pv.video_id
+            INNER JOIN users u ON v.user_id = u.id
+            WHERE pv.playlist_id = :playlist_id AND v.visibility != 'private'
+            ORDER BY pv.display_order ASC, pv.created_at ASC
+        ");
+        $stmtVideos->execute([':playlist_id' => $playlist['id']]);
+        $videos = $stmtVideos->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        return [
+            'playlist' => $playlist,
+            'videos' => $videos
+        ];
+    }
 }
 ?>

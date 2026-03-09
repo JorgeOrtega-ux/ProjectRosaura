@@ -5,6 +5,7 @@ export const RouteModulesMap = {
     '/': { path: './modules/app/HomeController.js', className: 'HomeController' },
     '/home': { path: './modules/app/HomeController.js', className: 'HomeController' },
     '/watch': { path: './modules/app/WatchController.js', className: 'WatchController' },
+    '/playlist': { path: './modules/app/PlaylistController.js', className: 'PlaylistController' },
     
     // ---- MÓDULO DE CANAL (PERFILES) ----
     // Permite rutas como /@jorge

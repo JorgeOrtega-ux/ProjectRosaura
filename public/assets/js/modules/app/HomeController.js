@@ -213,8 +213,8 @@ export class HomeController {
         const timeAgo = this.timeSince(new Date(playlist.created_at));
         const dominantColor = playlist.thumbnail_dominant_color !== 'transparent' ? playlist.thumbnail_dominant_color : '#333'; 
         
-        // Redirige a la vista de playlist (ajusta según la ruta SPA que manejes)
-        const clickAction = `window.router.navigate('/playlist/${playlist.uuid}')`;
+        // MODIFICADO: Redirige a la vista de playlist pasando el ID como parámetro de consulta
+        const clickAction = `window.router.navigate('/playlist?list=${playlist.uuid}')`;
 
         return `
             <div class="component-video-card" style="--local-dominant-color: ${dominantColor};" onclick="${clickAction}">

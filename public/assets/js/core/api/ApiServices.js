@@ -220,4 +220,8 @@ export class ApiService {
             video_ids: videoIdsArray 
         });
     }
+    // <--- NUEVO MÉTODO AÑADIDO --->
+    async getPlaylistDetails(playlistId) {
+        return await this.post('app.get_playlist_details', { id: playlistId });
+    }
 }

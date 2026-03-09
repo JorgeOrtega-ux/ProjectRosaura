@@ -2,7 +2,8 @@
 
 export const ApiRoutes = {
     App: {
-        GetFeed: 'app.get_feed'
+        GetFeed: 'app.get_feed',
+        GetPlaylistDetails: 'app.get_playlist_details' // <--- NUEVA RUTA
     },
     Channel: {
         ToggleSubscription: 'channel.toggle_subscription',
@@ -77,7 +78,6 @@ export const ApiRoutes = {
         GetModels: 'studio.get_models',
         GetCategories: 'studio.get_categories',
         
-        // --- NUEVAS RUTAS DE PLAYLISTS ---
         GetPlaylists: 'studio.get_playlists',
         CreatePlaylist: 'studio.create_playlist',
         UpdatePlaylist: 'studio.update_playlist',
