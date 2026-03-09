@@ -98,7 +98,6 @@ if ($isMaintenanceActive && !$isPrivileged) {
             $currentView = 'studio/management-panel.php';
             $redirectUrl = APP_URL . '/studio/management-panel/' . $userIdentifier;
         
-        // CORRECCIÓN: Añadimos 'studio/uploading.php' a la lista de excepciones que no requieren UUID en la URL
         } elseif ($currentView !== 'studio/upload-video.php' && $currentView !== 'studio/uploading.php') {
             
             // Validar que el uuid en la URL existe y sea igual al de la sesión
@@ -115,6 +114,21 @@ if ($isMaintenanceActive && !$isPrivileged) {
                 $systemMessageType = 'unauthorized_studio';
                 $redirectUrl = null;
             }
+        }
+    }
+
+    // 4.8 NUEVO: VALIDACIÓN ESTRICTA DE UUID PARA RUTAS DEL REPRODUCTOR
+    if ($currentView === 'app/watch.php') {
+        // Extraer el UUID del URL Path (se descarta la query string por el parse_url inicial)
+        $pathParts = explode('/', trim($requestUriPath, '/'));
+        $watchIndex = array_search('watch', $pathParts);
+        $videoUuid = ($watchIndex !== false && isset($pathParts[$watchIndex + 1])) ? $pathParts[$watchIndex + 1] : '';
+
+        // Comprobamos con Expresión Regular si es un UUID válido (Formato 8-4-4-4-12)
+        if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $videoUuid)) {
+            $currentView = 'system/message.php';
+            $systemMessageType = '404';
+            $redirectUrl = null;
         }
     }
 

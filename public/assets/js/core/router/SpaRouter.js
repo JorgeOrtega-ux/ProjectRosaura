@@ -33,9 +33,6 @@ export class SpaRouter {
                 let url = navTarget.dataset.nav;
                 
                 // CORRECCIÓN CRÍTICA: Añadir el basePath si falta
-                // Si la URL es absoluta (empieza con /) pero no contiene el directorio
-                // del proyecto (ej. /ProjectRosaura), se lo agregamos automáticamente
-                // para evitar que mande al usuario fuera del servidor.
                 if (this.basePath && url.startsWith('/') && !url.startsWith(this.basePath)) {
                     url = this.basePath + url;
                 }
@@ -141,7 +138,6 @@ export class SpaRouter {
 
                 let cleanUrl = url.split('?')[0].split('#')[0];
                 
-                // Remover el base path si existe para facilitar la coincidencia
                 let routePath = cleanUrl;
                 if (this.basePath && routePath.startsWith(this.basePath)) {
                     routePath = routePath.substring(this.basePath.length);
@@ -153,7 +149,6 @@ export class SpaRouter {
 
                 let moduleKey = routePath;
 
-                // CORRECCIÓN: Si la ruta empieza con '/@' sin importar qué identificador siga, mapearla a '/@channel'
                 if (moduleKey.startsWith('/@')) {
                     moduleKey = '/@channel';
                 }
@@ -161,38 +156,18 @@ export class SpaRouter {
                 window.dispatchEvent(new CustomEvent('viewLoaded', { 
                     detail: { 
                         url: url,
-                        cleanUrl: moduleKey // Usamos la llave normalizada ('/@channel' para canales)
+                        cleanUrl: moduleKey 
                     } 
                 }));
             } else {
-                this.render(`
-                    <div class="component-message-layout">
-                        <div class="component-message-box">
-                            <div class="component-message-icon-wrapper">
-                                <span class="material-symbols-rounded component-message-icon">error</span>
-                            </div>
-                            <h1 class="component-message-title">Error HTTP</h1>
-                            <p class="component-message-desc">No se pudo cargar la vista solicitada. Código: ${response.status}</p>
-                        </div>
-                    </div>
-                `);
+                this.renderHttpError(response.status, 'Error HTTP', 'No se pudo cargar la vista solicitada.');
             }
         } catch (error) {
             if (error.name === 'AbortError') {
                 return;
             }
 
-            this.render(`
-                <div class="component-message-layout">
-                    <div class="component-message-box">
-                        <div class="component-message-icon-wrapper">
-                            <span class="material-symbols-rounded component-message-icon">wifi_off</span>
-                        </div>
-                        <h1 class="component-message-title">Error de Red</h1>
-                        <p class="component-message-desc">Revise su conexión a internet.</p>
-                    </div>
-                </div>
-            `);
+            this.renderHttpError('Network', 'Error de Red', 'Revise su conexión a internet y vuelva a intentarlo.', 'wifi_off');
         }
     }
 
@@ -203,12 +178,25 @@ export class SpaRouter {
         }
     }
 
+    // NUEVA FUNCIÓN PÚBLICA PARA DISPARAR ERRORES PROGRAMÁTICAMENTE (Ej: 404 desde el WatchController)
+    renderHttpError(statusCode, title = 'Error', description = 'Ha ocurrido un error inesperado.', iconName = 'error') {
+        this.render(`
+            <div class="component-message-layout" style="display: flex; justify-content: center; align-items: center; min-height: 50vh;">
+                <div class="component-message-box" style="text-align: center;">
+                    <div class="component-message-icon-wrapper" style="margin-bottom: 16px;">
+                        <span class="material-symbols-rounded component-message-icon" style="font-size: 48px; color: var(--text-secondary);">${iconName}</span>
+                    </div>
+                    <h1 class="component-message-title" style="font-size: 24px; margin-bottom: 8px;">${title} ${statusCode !== 'Network' ? `(${statusCode})` : ''}</h1>
+                    <p class="component-message-desc" style="color: var(--text-secondary);">${description}</p>
+                </div>
+            </div>
+        `);
+    }
+
     highlightCurrentRoute() {
         const path = window.location.pathname;
         let normalizedPath = path.endsWith('/') && path.length > 1 ? path.slice(0, -1) : path;
 
-        // CORRECCIÓN DE ESTILOS ACTIVOS: Se genera también la ruta omitiendo el basePath
-        // Así los menús se iluminan tanto si su data-nav tiene el basePath como si no.
         let pathWithoutBase = normalizedPath;
         if (this.basePath && normalizedPath.startsWith(this.basePath)) {
             pathWithoutBase = normalizedPath.substring(this.basePath.length);
@@ -217,7 +205,6 @@ export class SpaRouter {
 
         document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
 
-        // Se incluyen las versiones con y sin barra final, y con y sin basePath
         const targets = document.querySelectorAll(`[data-nav="${normalizedPath}"], [data-nav="${normalizedPath}/"], [data-nav="${pathWithoutBase}"], [data-nav="${pathWithoutBase}/"]`);
         targets.forEach(target => {
             target.classList.add('active');

@@ -111,6 +111,43 @@ class VideoRepository implements VideoRepositoryInterface {
         $stmt->execute([':uuid' => $uuid]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
+
+    // --- NUEVO MÉTODO IMPLEMENTADO PARA LA VISTA WATCH ---
+    public function getPublicVideoDetails(string $uuid): ?array {
+        // Obtenemos los datos del video y hacemos JOIN con el usuario/creador
+        // Permitimos "unlisted" (ocultos) porque si tienen el link (UUID), tienen derecho a verlo.
+        $stmt = $this->db->prepare("
+            SELECT v.id, v.uuid, v.title, v.description, v.created_at, v.published_at, v.visibility,
+                   u.username as channel_name, u.profile_picture as channel_avatar, u.channel_identifier
+            FROM videos v
+            JOIN users u ON v.user_id = u.id
+            WHERE v.uuid = :uuid 
+              AND v.status = 'published' 
+              AND v.visibility IN ('public', 'unlisted')
+        ");
+        $stmt->execute([':uuid' => $uuid]);
+        $video = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$video) {
+            return null;
+        }
+
+        // Usamos nuestro propio método para traer los tags y los separamos por tipo
+        $allTags = $this->getVideoTags($video['id']);
+        
+        $video['categories'] = [];
+        $video['models'] = [];
+
+        foreach ($allTags as $tag) {
+            if ($tag['type'] === 'category') {
+                $video['categories'][] = $tag;
+            } elseif ($tag['type'] === 'modelo') {
+                $video['models'][] = $tag;
+            }
+        }
+
+        return $video;
+    }
     
     // MEJORADO: Agregada limpieza en cascada para proteger DBs que no tienen ON DELETE CASCADE activo
     public function delete(int $id): bool {
