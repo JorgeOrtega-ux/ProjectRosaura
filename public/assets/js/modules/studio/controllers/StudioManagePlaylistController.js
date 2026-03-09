@@ -58,22 +58,41 @@ export class StudioManagePlaylistController {
     }
 
     updateActionButtons() {
-        const btnCreate = document.getElementById('btnCreatePlaylist');
         const btnEdit = document.getElementById('btnEditPlaylist');
         const btnDelete = document.getElementById('btnDeletePlaylist');
         const btnManageVideos = document.getElementById('btnManageVideos');
 
+        // Activamos o desactivamos botones en base a si hay selección
         if (this.selectedPlaylistId) {
-            if(btnCreate) btnCreate.style.display = 'none';
-            if(btnEdit) btnEdit.style.display = 'inline-flex';
-            if(btnDelete) btnDelete.style.display = 'inline-flex';
-            if(btnManageVideos) btnManageVideos.style.display = 'inline-flex';
+            if(btnEdit) { btnEdit.removeAttribute('disabled'); btnEdit.classList.remove('disabled'); }
+            if(btnDelete) { btnDelete.removeAttribute('disabled'); btnDelete.classList.remove('disabled'); }
+            if(btnManageVideos) { btnManageVideos.removeAttribute('disabled'); btnManageVideos.classList.remove('disabled'); }
         } else {
-            if(btnCreate) btnCreate.style.display = 'inline-flex';
-            if(btnEdit) btnEdit.style.display = 'none';
-            if(btnDelete) btnDelete.style.display = 'none';
-            if(btnManageVideos) btnManageVideos.style.display = 'none';
+            if(btnEdit) { btnEdit.setAttribute('disabled', 'true'); btnEdit.classList.add('disabled'); }
+            if(btnDelete) { btnDelete.setAttribute('disabled', 'true'); btnDelete.classList.add('disabled'); }
+            if(btnManageVideos) { btnManageVideos.setAttribute('disabled', 'true'); btnManageVideos.classList.add('disabled'); }
         }
+    }
+
+    selectPlaylist(id) {
+        const row = document.getElementById(`playlist-row-${id}`);
+        const isAlreadySelected = row && row.classList.contains('component-table-row--selected');
+
+        // Limpiar selección previa
+        this.selectedPlaylistId = null;
+        document.querySelectorAll('#managePlaylistTableBody tr').forEach(r => r.classList.remove('component-table-row--selected'));
+
+        // Si se vuelve a hacer clic en la fila seleccionada, la deseleccionamos
+        if (isAlreadySelected) {
+            this.updateActionButtons();
+            return;
+        }
+
+        // Seleccionar nueva fila
+        this.selectedPlaylistId = id;
+        if (row) row.classList.add('component-table-row--selected');
+
+        this.updateActionButtons();
     }
 
     async initManagePlaylistView() {
@@ -93,7 +112,7 @@ export class StudioManagePlaylistController {
                 if (!this.playlistsData || this.playlistsData.length === 0) {
                     tbody.innerHTML = `
                         <tr>
-                            <td colspan="7" class="component-empty-table-cell">
+                            <td colspan="6" class="component-empty-table-cell">
                                 <div class="component-empty-state component-empty-state--table">
                                     <span class="material-symbols-rounded component-empty-state-icon">playlist_play</span>
                                     <p class="component-empty-state-text">No has creado ninguna lista de reproducción aún.</p>
@@ -106,6 +125,9 @@ export class StudioManagePlaylistController {
                 tbody.innerHTML = '';
                 this.playlistsData.forEach(p => {
                     const tr = document.createElement('tr');
+                    tr.id = `playlist-row-${p.id}`;
+                    tr.onclick = () => this.selectPlaylist(p.id);
+
                     const date = new Date(p.created_at).toLocaleDateString();
                     
                     let visText = 'Pública';
@@ -113,9 +135,6 @@ export class StudioManagePlaylistController {
                     if(p.visibility === 'private') visText = 'Privada';
 
                     tr.innerHTML = `
-                        <td>
-                            <input type="checkbox" class="playlist-checkbox component-checkbox" data-id="${p.id}">
-                        </td>
                         <td>
                             <div class="table-video-info">
                                 <div class="table-video-thumb empty"><span class="material-symbols-rounded">playlist_play</span></div>
@@ -134,24 +153,6 @@ export class StudioManagePlaylistController {
                     tbody.appendChild(tr);
                 });
 
-                // Attach events for checkboxes
-                const checkboxes = tbody.querySelectorAll('.playlist-checkbox');
-                checkboxes.forEach(cb => {
-                    cb.addEventListener('change', (e) => {
-                        const id = e.target.getAttribute('data-id');
-                        if (e.target.checked) {
-                            // Uncheck others (only allow one selection)
-                            checkboxes.forEach(otherCb => {
-                                if (otherCb !== e.target) otherCb.checked = false;
-                            });
-                            this.selectedPlaylistId = id;
-                        } else {
-                            this.selectedPlaylistId = null;
-                        }
-                        this.updateActionButtons();
-                    });
-                });
-
             } else {
                 console.error("[StudioManagePlaylistController] Respuesta del servidor no fue exitosa:", response);
             }
@@ -165,7 +166,6 @@ export class StudioManagePlaylistController {
 
         window.dialogSystem.show('createPlaylistTemplate', {
             onRender: (box) => {
-                // Hacemos un fallback por clase en caso de que el ID no exista
                 const titleNode = box.querySelector('#playlistModalTitle') || box.querySelector('h3.dialog-title') || box.querySelector('h3');
                 const submitBtn = box.querySelector('#btnSubmitPlaylist');
                 const pTitle = box.querySelector('#playlistTitle');
@@ -173,7 +173,6 @@ export class StudioManagePlaylistController {
                 const pVis = box.querySelector('#playlistVisibility');
                 const pOrder = box.querySelector('#playlistOrder');
                 
-                // Si pIdInput no existe, lo creamos dinámicamente para que no tire error "null"
                 let pIdInput = box.querySelector('#playlistId');
                 if (!pIdInput) {
                     pIdInput = document.createElement('input');
@@ -267,7 +266,6 @@ export class StudioManagePlaylistController {
         }
     }
 
-    // --- NUEVO MÉTODO PARA ABRIR Y GESTIONAR EL DIÁLOGO DE VIDEOS ---
     async openManageVideosDialog() {
         if (!window.dialogSystem || !this.selectedPlaylistId) return;
 
@@ -340,7 +338,6 @@ export class StudioManagePlaylistController {
 
                                 if (syncRes.status === 'success') {
                                     window.dialogSystem.closeCurrent(true);
-                                    // Recargamos la tabla (opcional: el backend podría regresar el nuevo conteo de videos)
                                     this.initManagePlaylistView();
                                 } else {
                                     alert("Error al sincronizar videos: " + (syncRes.message || 'Desconocido'));

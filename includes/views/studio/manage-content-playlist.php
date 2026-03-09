@@ -11,24 +11,20 @@
                 
                 <div class="component-view-top-right">
                     <div class="component-actions">
-                        <button class="component-button component-button--outline" id="btnManageVideos" style="display: none;" data-tooltip="Administrar videos">
+                        <button class="component-button component-button--icon component-button--h40 disabled" id="btnManageVideos" data-tooltip="Administrar videos" disabled>
                             <span class="material-symbols-rounded">video_library</span>
-                            <span>Administrar videos</span>
                         </button>
 
-                        <button class="component-button component-button--outline" id="btnEditPlaylist" style="display: none;" data-tooltip="Editar lista de reproducción">
+                        <button class="component-button component-button--icon component-button--h40 disabled" id="btnEditPlaylist" data-tooltip="Editar lista de reproducción" disabled>
                             <span class="material-symbols-rounded">edit</span>
-                            <span>Editar</span>
                         </button>
                         
-                        <button class="component-button component-button--danger" id="btnDeletePlaylist" style="display: none;" data-tooltip="Eliminar lista de reproducción">
+                        <button class="component-button component-button--icon component-button--h40 btn-delete-video disabled" id="btnDeletePlaylist" data-tooltip="Eliminar lista de reproducción" disabled>
                             <span class="material-symbols-rounded">delete</span>
-                            <span>Eliminar</span>
                         </button>
 
-                        <button class="component-button component-button--primary" id="btnCreatePlaylist" data-tooltip="<?php echo __('studio_tooltip_new_playlist') ?? 'Nueva lista'; ?>">
+                        <button class="component-button component-button--icon component-button--h40" id="btnCreatePlaylist" data-tooltip="<?php echo __('studio_tooltip_new_playlist') ?? 'Nueva lista'; ?>">
                             <span class="material-symbols-rounded">playlist_add</span>
-                            <span><?php echo __('studio_btn_new_playlist') ?? 'Nueva lista'; ?></span>
                         </button>
                     </div>
                 </div>
@@ -39,7 +35,6 @@
                     <table class="component-table component-table--media">
                         <thead>
                             <tr>
-                                <th style="width: 40px;"></th>
                                 <th><?php echo __('studio_th_playlist') ?? 'Lista de reproducción'; ?></th>
                                 <th><?php echo __('studio_th_type') ?? 'Tipo'; ?></th>
                                 <th><?php echo __('studio_th_status_visibility') ?? 'Visibilidad'; ?></th>
@@ -50,7 +45,7 @@
                         </thead>
                         <tbody id="managePlaylistTableBody">
                             <tr>
-                                <td colspan="7" class="component-empty-table-cell">
+                                <td colspan="6" class="component-empty-table-cell">
                                     <div class="component-empty-state component-empty-state--table">
                                         <span class="material-symbols-rounded component-empty-state-icon">playlist_play</span>
                                         <p class="component-empty-state-text"><?php echo __('studio_empty_playlists') ?? 'No hay listas de reproducción'; ?></p>
