@@ -81,6 +81,12 @@ export class PlaylistController {
         const author = playlist.username || 'Usuario desconocido';
         const firstVideoUuid = playlist.first_video_uuid || null; 
 
+        // Rellenar la descripción dinámica en la cabecera derecha
+        const countDesc = document.getElementById('playlist-video-count-desc');
+        if (countDesc) {
+            countDesc.textContent = `${videoCount} videos guardados`;
+        }
+
         const basePath = window.AppBasePath || '';
 
         const playAllAction = firstVideoUuid 
@@ -117,9 +123,14 @@ export class PlaylistController {
 
         if (!videos || videos.length === 0) {
             this.videosContainer.innerHTML = `
-                <div class="component-empty-state">
-                    <span class="material-symbols-rounded component-empty-state-icon">videocam_off</span>
-                    <p class="component-empty-state-text">Esta lista de reproducción no tiene videos aún.</p>
+                <hr class="component-divider">
+                <div class="component-group-item component-group-item--stacked">
+                    <div class="component-card__content component-card__content--full">
+                        <div class="component-empty-state">
+                            <span class="material-symbols-rounded component-empty-state-icon">videocam_off</span>
+                            <p class="component-empty-state-text">Esta lista de reproducción no tiene videos aún.</p>
+                        </div>
+                    </div>
                 </div>
             `;
             return;
@@ -133,28 +144,36 @@ export class PlaylistController {
             const views = video.views || 0;
             const duration = this.formatDuration(video.duration);
             const author = video.username || 'Desconocido';
+            const description = video.description || '';
 
             const thumbSrc = this.resolveThumbUrl(video.thumbnail_url || video.thumbnail_path);
             const clickAction = `window.spaRouter.navigate('${basePath}/watch/${video.uuid}?list=${this.playlistId}')`;
 
             html += `
-                <div class="playlist-video-item" onclick="${clickAction}">
-                    
-                    <div class="playlist-video-item-index">
-                        ${index + 1}
-                    </div>
-                    
-                    <div class="playlist-video-item-thumbnail">
-                        <img src="${thumbSrc}" alt="${title}">
-                        <span class="playlist-video-item-duration">${duration}</span>
-                    </div>
-                    
-                    <div class="playlist-video-item-info">
-                        <h3 class="playlist-video-item-title">${title}</h3>
-                        <p class="playlist-video-item-meta">${author}</p>
-                        <p class="playlist-video-item-meta">${views} vistas</p>
-                    </div>
+                <hr class="component-divider">
+                <div class="component-group-item component-group-item--stacked playlist-video-group-item" onclick="${clickAction}">
+                    <div class="component-card__content component-card__content--full">
+                        
+                        <div class="playlist-video-item">
+                            
+                            <div class="playlist-video-item-index">
+                                ${index + 1}
+                            </div>
+                            
+                            <div class="playlist-video-item-thumbnail">
+                                <img src="${thumbSrc}" alt="${title}">
+                                <span class="playlist-video-item-duration">${duration}</span>
+                            </div>
+                            
+                            <div class="playlist-video-item-info">
+                                <h3 class="component-card__title playlist-video-item-title">${title}</h3>
+                                <p class="component-card__description playlist-video-item-meta">${author} • ${views} vistas</p>
+                                ${description ? `<p class="component-card__description playlist-video-item-desc">${description}</p>` : ''}
+                            </div>
 
+                        </div>
+
+                    </div>
                 </div>
             `;
         });

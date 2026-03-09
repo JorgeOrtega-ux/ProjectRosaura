@@ -2,7 +2,7 @@
 
 .playlist-page-container {
     align-items: flex-start;
-    padding-top: 24px;
+    /* Se elimina el padding-top: 24px para evitar el doble espaciado y desalineación */
 }
 
 .playlist-spinner {
@@ -41,7 +41,7 @@
     flex-direction: column;
     gap: 16px;
     position: sticky;
-    top: 80px; 
+    top: 24px; /* Ajustado de 80px a 24px para un sticky perfectamente alineado */
 }
 
 .playlist-sidebar-thumb {
@@ -125,7 +125,7 @@
     display: flex;
     gap: 16px;
     padding: 12px;
-    border-radius: 12px;
+    width: 100%;
     cursor: pointer;
     background-color: transparent;
     transition: background-color 0.2s ease, transform 0.1s ease;
@@ -215,4 +215,23 @@
     .playlist-video-item-thumbnail { width: 120px; }
     .playlist-video-item-title { font-size: 14px; }
     .playlist-video-item { padding: 8px; gap: 12px; }
+}.playlist-video-item-desc {
+    margin: 8px 0 0 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+    display: -webkit-box;
+    -webkit-line-clamp: 2; /* Limita el texto a 2 líneas */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+
+.component-group-item.component-group-item--stacked.playlist-video-group-item {
+    padding: 0;
+}
+.playlist-videos-wrapper {
+    gap: 0;
 }

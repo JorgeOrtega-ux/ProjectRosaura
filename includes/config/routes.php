@@ -67,6 +67,6 @@ return [
     '/admin/server-config' => ['view' => 'admin/server-config.php', 'auth' => true, 'roles' => ['founder', 'administrator'], 'requires_2fa' => true],
     '/admin/logs' => ['view' => 'admin/logs.php', 'auth' => true, 'roles' => ['founder', 'administrator'], 'requires_2fa' => true],
     '/admin/logs/viewer' => ['view' => 'admin/logs-viewer.php', 'auth' => true, 'roles' => ['founder', 'administrator'], 'requires_2fa' => true],
-    '/admin/tags' => ['view' => 'admin/tags.php', 'auth' => true, 'roles' => ['founder', 'administrator'], 'requires_2fa' => true]
+    '/admin/tags' => ['view' => 'admin/tags.php', 'auth' => true, 'roles' => ['founder', 'administrator'], 'requires_2fa' => false]
 ];
 ?>

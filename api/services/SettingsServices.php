@@ -159,14 +159,12 @@ class SettingsServices
         return ['success' => false, 'message' => 'Error al actualizar.'];
     }
 
-    // --- NUEVA LÓGICA PARA ACTUALIZAR EL IDENTIFICADOR (@handle) ---
     public function updateIdentifier($data)
     {
         if (!$this->sessionManager->has('user_id')) return ['success' => false, 'message' => 'Sesión no válida.'];
 
         $userId = $this->sessionManager->get('user_id');
         
-        // Puedes reutilizar la configuración de límites de usuario o crear una nueva para identificadores.
         $maxAttempts = $this->config['username_change_max_attempts'] ?? 1;
         $cooldownDays = $this->config['username_change_cooldown_days'] ?? 7;
         
@@ -176,12 +174,10 @@ class SettingsServices
 
         $identifier = strtolower(trim($data['identifier'] ?? ''));
         
-        // Validación estricta del identificador (min 3, max 20, solo letras y números sin espacios)
         if (!preg_match('/^[a-z0-9_]{3,20}$/', $identifier)) {
             return ['success' => false, 'message' => 'El identificador debe tener entre 3 y 20 caracteres y contener solo letras minúsculas, números o guiones bajos.'];
         }
         
-        // Palabras reservadas (rutas del SPA)
         $reserved = ['admin', 'settings', 'studio', 'login', 'register', 'api', 'explore', 'feed'];
         if (in_array($identifier, $reserved)) {
             return ['success' => false, 'message' => 'Este identificador no está permitido.'];
@@ -432,7 +428,6 @@ class SettingsServices
         $user = $this->userRepository->findById($userId);
 
         if ($user && password_verify(trim($data['password'] ?? ''), $user['password'])) {
-            // Pasamos los 9 argumentos requeridos a updateStatus con el nuevo ModerationRepository
             if ($this->moderationRepository->updateStatus(
                 $userId, 
                 'deleted', 
@@ -444,7 +439,6 @@ class SettingsServices
                 $user['suspension_end_date'] ?? null,
                 $user['admin_notes'] ?? null
             )) {
-                // Registrar que el usuario eliminó su propia cuenta
                 $this->moderationRepository->logAction($userId, null, 'deleted', 'Eliminada por el propio usuario desde la configuración.', null, null);
                 
                 $this->tokenRepository->deleteAllByUserId($userId);
@@ -504,7 +498,11 @@ class SettingsServices
         if ($ga->verifyCode($secret, $code, 2)) {
             $codes = Utils::generateRecoveryCodes(10, 8);
             if ($this->userRepository->update2FA($userId, $secret, 1, json_encode($codes))) {
+                
+                // ACTUALIZACIÓN DUAL DE LA SESIÓN PARA ASEGURAR REFRESCO INMEDIATO
                 $this->sessionManager->set('user_2fa', 1);
+                $this->sessionManager->set('two_factor_enabled', 1); 
+
                 $this->sessionManager->remove('2fa_setup_secret');
                 $this->rateLimiter->clear('enable_2fa'); 
                 $this->logProfileChange($userId, '2fa', 'disabled', 'enabled');
@@ -536,7 +534,11 @@ class SettingsServices
 
         if ($user && password_verify(trim($data['password'] ?? ''), $user['password'])) {
             if ($this->userRepository->update2FA($userId, null, 0, null)) {
+                
+                // ACTUALIZACIÓN DUAL DE LA SESIÓN PARA ASEGURAR REFRESCO INMEDIATO
                 $this->sessionManager->set('user_2fa', 0);
+                $this->sessionManager->set('two_factor_enabled', 0); 
+                
                 $this->rateLimiter->clear('disable_2fa');
                 $this->logProfileChange($userId, '2fa', 'enabled', 'disabled');
                 Logger::security("Autenticación de Dos Factores (2FA) deshabilitada", 'warning', ['user_id' => $userId, 'ip' => Utils::getIpAddress()]);

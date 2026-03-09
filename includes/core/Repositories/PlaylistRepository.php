@@ -198,8 +198,9 @@ class PlaylistRepository implements PlaylistRepositoryInterface {
         }
 
         // 2. Obtener los videos que le pertenecen, en el orden correcto
+        // SE AGREGÓ "v.description" EN LA CONSULTA
         $stmtVideos = $this->db->prepare("
-            SELECT v.id, v.uuid, v.title, v.duration, v.thumbnail_path, v.created_at, v.original_filename,
+            SELECT v.id, v.uuid, v.title, v.description, v.duration, v.thumbnail_path, v.created_at, v.original_filename,
                    u.username,
                    0 as views 
             FROM videos v
