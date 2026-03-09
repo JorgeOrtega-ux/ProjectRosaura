@@ -5,27 +5,38 @@ export class StudioTagsManager {
         this.onTagsChanged = onTagsChangedCallback;
         this.selectedModels = [];
         this.selectedCategories = [];
-        this.selectedFreeTags = []; // Nuevo arreglo para etiquetas libres
+        this.selectedFreeTags = []; 
         this.attachEvents();
+        console.log("🟢 [StudioTagsManager] Inicializado correctamente.");
     }
 
     setInitialTags(tags) {
+        console.log("🔵 [StudioTagsManager] setInitialTags() - Cargando etiquetas desde BD:", tags);
         this.selectedModels = [];
         this.selectedCategories = [];
         this.selectedFreeTags = [];
+        
         if (tags && Array.isArray(tags)) {
             tags.forEach(tag => {
                 if (tag.type === 'modelo') {
                     this.selectedModels.push(tag);
                 } else if (tag.type === 'category') {
                     this.selectedCategories.push(tag);
-                } else if (tag.type === 'free' || tag.type === 'general' || typeof tag === 'string') {
-                    // Soporte por si la API envía texto plano o un objeto para las libres
-                    const tagName = typeof tag === 'string' ? tag : tag.name;
-                    this.selectedFreeTags.push(tagName);
+                } else {
+                    // FILTRO ABSOLUTO: Si no es modelo ni categoría, es etiqueta libre.
+                    // Extraemos el string ya sea que venga como texto plano o como objeto {name: "..."}
+                    const tagName = typeof tag === 'string' ? tag : (tag.name || '');
+                    if (tagName.trim() !== '') {
+                        this.selectedFreeTags.push(tagName.trim());
+                    }
                 }
             });
         }
+        
+        console.log("✅ [StudioTagsManager] Modelos mapeados:", this.selectedModels);
+        console.log("✅ [StudioTagsManager] Categorías mapeadas:", this.selectedCategories);
+        console.log("✅ [StudioTagsManager] Etiquetas Libres mapeadas:", this.selectedFreeTags);
+
         this.renderSelectedTags('modelo');
         this.renderSelectedTags('category');
         this.renderFreeTags();
@@ -40,6 +51,15 @@ export class StudioTagsManager {
     }
 
     getFreeTags() {
+        // MEJORA: Auto-capturar texto que el usuario olvidó darle "Enter" antes de guardar
+        const inputEl = document.getElementById('freeTagsInput');
+        if (inputEl && inputEl.value.trim() !== '') {
+            console.log(`[StudioTagsManager] ⚠️ Se detectó texto pendiente al guardar: '${inputEl.value}'. Agregando automáticamente.`);
+            this.addFreeTag(inputEl.value);
+            inputEl.value = '';
+        }
+
+        console.log("🔵 [StudioTagsManager] getFreeTags() solicitado. Retornando:", this.selectedFreeTags);
         return this.selectedFreeTags;
     }
 
@@ -134,7 +154,10 @@ export class StudioTagsManager {
         if (!cleanName) return;
         
         if (!this.selectedFreeTags.includes(cleanName)) {
-            if (this.selectedFreeTags.length >= 50) { alert("Has alcanzado el límite máximo de 50 etiquetas."); return; }
+            if (this.selectedFreeTags.length >= 50) { 
+                alert("Has alcanzado el límite máximo de 50 etiquetas."); 
+                return; 
+            }
             this.selectedFreeTags.push(cleanName);
             this.renderFreeTags();
             if(this.onTagsChanged) this.onTagsChanged();
@@ -156,6 +179,11 @@ export class StudioTagsManager {
 
         const hiddenInput = document.getElementById(hiddenId);
         if (!hiddenInput) return;
+        
+        const inputName = type === 'modelo' ? 'models' : 'categories';
+        if (!hiddenInput.hasAttribute('name')) {
+            hiddenInput.setAttribute('name', inputName);
+        }
 
         let wrapper = document.getElementById(wrapperId);
 
@@ -179,7 +207,11 @@ export class StudioTagsManager {
             const triggerEl = document.querySelector(`[data-target="${triggerAttr}"]`);
             if (triggerEl) {
                 const parentGroup = triggerEl.closest('.component-group-item');
-                if (parentGroup) parentGroup.appendChild(wrapper);
+                if (parentGroup) {
+                    parentGroup.appendChild(wrapper);
+                } else {
+                    triggerEl.parentElement.appendChild(wrapper); // Plan B
+                }
             }
         }
 
@@ -204,7 +236,15 @@ export class StudioTagsManager {
 
     renderFreeTags() {
         const hiddenInput = document.getElementById('hiddenTagsArray');
-        if (!hiddenInput) return;
+        
+        if (!hiddenInput) {
+            console.error("❌ [StudioTagsManager] No se encontró el input 'hiddenTagsArray' en el DOM.");
+            return;
+        }
+
+        if (!hiddenInput.hasAttribute('name') || hiddenInput.getAttribute('name') !== 'tags') {
+            hiddenInput.setAttribute('name', 'tags');
+        }
 
         let wrapper = document.getElementById('freeTagsWrapper');
 
@@ -228,7 +268,12 @@ export class StudioTagsManager {
             const inputEl = document.getElementById('freeTagsInput');
             if (inputEl) {
                 const parentGroup = inputEl.closest('.component-group-item');
-                if (parentGroup) parentGroup.appendChild(wrapper);
+                if (parentGroup) {
+                    parentGroup.appendChild(wrapper); // Plan A: Inyectar en el grupo principal
+                } else {
+                    console.warn("⚠️ [StudioTagsManager] Plan B: Inyectando badges junto al input.");
+                    inputEl.parentElement.appendChild(wrapper); // Plan B: Inyectar junto al input
+                }
             }
         }
 
@@ -275,6 +320,16 @@ export class StudioTagsManager {
             if (e.target.id === 'freeTagsInput') {
                 if (e.key === 'Enter' || e.key === ',') {
                     e.preventDefault();
+                    this.addFreeTag(e.target.value);
+                    e.target.value = '';
+                }
+            }
+        });
+
+        // NUEVO: Auto-guardar la etiqueta si hace clic fuera del campo de texto
+        document.addEventListener('focusout', (e) => {
+            if (e.target.id === 'freeTagsInput') {
+                if (e.target.value.trim() !== '') {
                     this.addFreeTag(e.target.value);
                     e.target.value = '';
                 }

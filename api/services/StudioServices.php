@@ -349,6 +349,8 @@ class StudioServices {
     }
 
     private function processTags(array $tagsData, string $type): array {
+        error_log("[StudioServices] processTags - Iniciando proceso para tipo: $type. Datos: " . print_r($tagsData, true));
+        
         if ($type === 'modelo' && count($tagsData) > 25) {
             throw new Exception("No puedes seleccionar más de 25 modelos por video.");
         }
@@ -361,18 +363,60 @@ class StudioServices {
 
         $processedTags = [];
         foreach ($tagsData as $tagItem) {
+            // Si el tag es numérico (ID existente)
             if (is_numeric($tagItem)) {
                 $processedTags[] = [
                     'id' => (int) $tagItem,
                     'type' => $type
                 ];
-            } else if (is_string($tagItem) && trim($tagItem) !== '') {
-                $processedTags[] = [
-                    'name' => trim($tagItem),
-                    'type' => $type
-                ];
+            } 
+            // Si llega como un string de texto (ej. etiquetas libres creadas por el usuario)
+            else if (is_string($tagItem) && trim($tagItem) !== '') {
+                $tagName = trim($tagItem);
+                try {
+                    // MAGIC FIX: Obligamos a que TODAS las etiquetas libres se registren en la DB
+                    // para obtener un tag_id real. Si no hacemos esto, la base de datos rechaza
+                    // la inserción en 'video_tags' porque 'tag_id' no puede ser nulo.
+                    $tagId = $this->tagRepo->findOrCreate($tagName, $type);
+                    $processedTags[] = [
+                        'id' => $tagId,
+                        'type' => $type,
+                        'name' => $tagName
+                    ];
+                    error_log("[StudioServices] processTags - Etiqueta '$tagName' guardada/encontrada con ID: $tagId");
+                } catch (\Exception $e) {
+                    error_log("[StudioServices] processTags - ERROR al crear etiqueta '$tagName': " . $e->getMessage());
+                    // Fallback en caso de emergencia, pero este no debería ejecutarse
+                    $processedTags[] = [
+                        'name' => $tagName,
+                        'type' => $type
+                    ];
+                }
+            } 
+            // Si llega un arreglo/objeto desde el frontend {id: ..., name: ...}
+            else if (is_array($tagItem)) {
+                if (isset($tagItem['id'])) {
+                    $processedTags[] = [
+                        'id' => (int) $tagItem['id'],
+                        'type' => $type
+                    ];
+                } elseif (isset($tagItem['name'])) {
+                    $tagName = trim($tagItem['name']);
+                    try {
+                        $tagId = $this->tagRepo->findOrCreate($tagName, $type);
+                        $processedTags[] = [
+                            'id' => $tagId,
+                            'type' => $type,
+                            'name' => $tagName
+                        ];
+                    } catch (\Exception $e) {
+                        error_log("[StudioServices] processTags - ERROR al crear etiqueta obj '$tagName': " . $e->getMessage());
+                    }
+                }
             }
         }
+        
+        error_log("[StudioServices] processTags - Resultado final procesado para $type: " . print_r($processedTags, true));
         return $processedTags;
     }
 

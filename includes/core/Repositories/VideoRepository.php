@@ -222,6 +222,7 @@ class VideoRepository implements VideoRepositoryInterface {
     }
     
     public function syncTags(int $videoId, array $tags): bool {
+        error_log("[VideoRepository] syncTags - Iniciando sincronicación para video $videoId. Tags recibidos: " . print_r($tags, true));
         try {
             $this->db->beginTransaction();
             $stmtDelete = $this->db->prepare("DELETE FROM video_tags WHERE video_id = :video_id");
@@ -241,15 +242,17 @@ class VideoRepository implements VideoRepositoryInterface {
                 }
                 
                 $sql .= implode(", ", $insertValues);
+                error_log("[VideoRepository] syncTags - Ejecutando SQL de inserción: " . $sql);
                 $stmtInsert = $this->db->prepare($sql);
                 $stmtInsert->execute($params);
             }
 
             $this->db->commit();
+            error_log("[VideoRepository] syncTags - Sincronización finalizada con éxito.");
             return true;
         } catch (Exception $e) {
             $this->db->rollBack();
-            error_log("Error sincronizando etiquetas del video: " . $e->getMessage());
+            error_log("[VideoRepository] Error CRÍTICO sincronizando etiquetas del video $videoId: " . $e->getMessage());
             return false;
         }
     }

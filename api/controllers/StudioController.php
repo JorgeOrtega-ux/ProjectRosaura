@@ -143,9 +143,16 @@ class StudioController {
         $categoriesRaw = $input['categories'] ?? $_POST['categories'] ?? [];
         $tagsRaw = $input['tags'] ?? $_POST['tags'] ?? [];
 
+        // Agregamos LOGS para ver qué está recibiendo el backend exactamente
+        error_log("[StudioController] update_title - modelsRaw recibido: " . print_r($modelsRaw, true));
+        error_log("[StudioController] update_title - categoriesRaw recibido: " . print_r($categoriesRaw, true));
+        error_log("[StudioController] update_title - tagsRaw (etiquetas libres) recibido: " . print_r($tagsRaw, true));
+
         $models = is_string($modelsRaw) ? json_decode($modelsRaw, true) : $modelsRaw;
         $categories = is_string($categoriesRaw) ? json_decode($categoriesRaw, true) : $categoriesRaw;
         $tags = is_string($tagsRaw) ? json_decode($tagsRaw, true) : $tagsRaw;
+
+        error_log("[StudioController] update_title - tags libres decodificadas: " . print_r($tags, true));
 
         if (!is_array($models)) $models = [];
         if (!is_array($categories)) $categories = [];
@@ -235,9 +242,16 @@ class StudioController {
         $categoriesRaw = $input['categories'] ?? $_POST['categories'] ?? [];
         $tagsRaw = $input['tags'] ?? $_POST['tags'] ?? [];
 
+        // Agregamos LOGS para ver qué está recibiendo el backend exactamente al publicar
+        error_log("[StudioController] publish_video - modelsRaw recibido: " . print_r($modelsRaw, true));
+        error_log("[StudioController] publish_video - categoriesRaw recibido: " . print_r($categoriesRaw, true));
+        error_log("[StudioController] publish_video - tagsRaw (etiquetas libres) recibido: " . print_r($tagsRaw, true));
+
         $models = is_string($modelsRaw) ? json_decode($modelsRaw, true) : $modelsRaw;
         $categories = is_string($categoriesRaw) ? json_decode($categoriesRaw, true) : $categoriesRaw;
         $tags = is_string($tagsRaw) ? json_decode($tagsRaw, true) : $tagsRaw;
+
+        error_log("[StudioController] publish_video - tags libres decodificadas: " . print_r($tags, true));
 
         if (!is_array($models)) $models = [];
         if (!is_array($categories)) $categories = [];
