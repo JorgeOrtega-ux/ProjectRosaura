@@ -62,11 +62,20 @@
             </div>
 
             <div class="watch-details-box" style="margin-top: 12px;">
-                <div class="watch-details-meta" style="margin-bottom: 12px;">
+                <div class="watch-details-meta" style="margin-bottom: 12px;" id="watch-models-categories-header">
                     <span class="watch-meta-highlight">Modelos y Categorías</span>
                 </div>
                 <div class="watch-info-tags-list" id="watch-video-tags-container">
                     <span class="watch-tag-item" style="opacity: 0.5;">Cargando...</span>
+                </div>
+
+                <div id="watch-free-tags-section" style="display: none;">
+                    <div class="watch-tags-divider" id="watch-tags-divider" style="height: 1px; background-color: rgba(150, 150, 150, 0.2); margin: 16px 0;"></div>
+                    <div class="watch-details-meta" style="margin-bottom: 12px;">
+                        <span class="watch-meta-highlight">Etiquetas Libres</span>
+                    </div>
+                    <div class="watch-info-tags-list" id="watch-video-free-tags-container">
+                        </div>
                 </div>
             </div>
 

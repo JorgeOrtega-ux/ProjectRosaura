@@ -104,6 +104,8 @@ export class WatchController {
 
         // --- DIV 4: CAJA DE ETIQUETAS (Modelos y Categorías) ---
         const tagsContainer = document.getElementById('watch-video-tags-container');
+        let hasModelsOrCategories = false;
+
         if (tagsContainer) {
             let tagsHTML = '';
 
@@ -114,6 +116,7 @@ export class WatchController {
                         <span class="material-symbols-rounded">star</span> ${m.name}
                     </span>`
                 ).join('');
+                hasModelsOrCategories = true;
             }
 
             // Renderizar Categorías
@@ -123,29 +126,56 @@ export class WatchController {
                         <span class="material-symbols-rounded">label</span> ${c.name}
                     </span>`
                 ).join('');
+                hasModelsOrCategories = true;
             }
 
             if (tagsHTML === '') {
-                tagsContainer.innerHTML = '<span class="watch-tag-item" style="opacity: 0.5;">Sin etiquetas</span>';
+                tagsContainer.innerHTML = '<span class="watch-tag-item" style="opacity: 0.5;">Sin modelos ni categorías</span>';
             } else {
                 tagsContainer.innerHTML = tagsHTML;
             }
         }
 
+        // --- DIV 5: ETIQUETAS LIBRES ---
+        const freeTagsSection = document.getElementById('watch-free-tags-section');
+        const freeTagsContainer = document.getElementById('watch-video-free-tags-container');
+        const tagsDivider = document.getElementById('watch-tags-divider');
+        
+        // Asumimos que la API retorna "tags" o "free_tags"
+        const freeTags = data.tags || data.free_tags || []; 
+
+        if (freeTagsSection && freeTagsContainer) {
+            if (freeTags && freeTags.length > 0) {
+                let freeTagsHTML = freeTags.map(t => {
+                    // Extraer nombre por si viene como objeto {name: '...'} o string directo
+                    const tagName = (typeof t === 'object') ? t.name : t;
+                    return `<span class="watch-tag-item">
+                        <span class="material-symbols-rounded">tag</span> ${tagName}
+                    </span>`;
+                }).join('');
+
+                freeTagsContainer.innerHTML = freeTagsHTML;
+                freeTagsSection.style.display = 'block';
+
+                // Si no hubo modelos ni categorías, ocultamos la línea divisora superior para mantener estética
+                if (tagsDivider) {
+                    tagsDivider.style.display = hasModelsOrCategories ? 'block' : 'none';
+                }
+            } else {
+                freeTagsSection.style.display = 'none';
+            }
+        }
+
         // --- EXTRA: COLOR DE HOVER DINÁMICO ---
-        // Extraemos el color de la data (ajusta 'dominant_color' al nombre exacto de tu DB)
         const primaryColor = data.dominant_color || data.color; 
         
         if (primaryColor) {
             const detailBoxes = document.querySelectorAll('.watch-details-box');
             
             detailBoxes.forEach(box => {
-                // Si el color viene en HEX (ej: #FF0055), le añadimos "1A" al final 
-                // para que sea un color súper suave y sutil (aprox 10% de opacidad)
                 if (primaryColor.startsWith('#') && primaryColor.length === 7) {
                     box.style.setProperty('--hover-bg-color', primaryColor + '1A');
                 } else {
-                    // Fallback si viene en rgba() o cualquier otro formato
                     box.style.setProperty('--hover-bg-color', primaryColor);
                 }
             });
