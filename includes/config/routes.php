@@ -9,7 +9,7 @@ return [
     '/watch/{video_uuid}' => ['view' => 'app/watch.php'], 
 
     // --- NUEVA RUTA DE VISTA DE PLAYLIST ---
-    '/playlist' => ['view' => 'app/playlist.php'], 
+    '/playlist/{uuid}' => ['view' => 'app/playlist.php'],
     
     // --- RUTA DINÁMICA DE CANALES ---
     '/@{identifier}' => ['view' => 'app/channel.php'], 

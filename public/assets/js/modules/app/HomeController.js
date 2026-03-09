@@ -170,12 +170,13 @@ export class HomeController {
         const isVertical = orientation === 'vertical';
         const cardModifierClass = isVertical ? 'component-video-card--vertical' : '';
         
-        const clickAction = isVertical 
-            ? `window.router.navigate('/shorts/${video.uuid}')` 
-            : `window.router.navigate('/watch?v=${video.uuid}')`;
+        // CORRECCIÓN: Usando la estructura de URLs limpias definida en routes.php
+        const navUrl = isVertical 
+            ? `/shorts/${video.uuid}` 
+            : `/watch/${video.uuid}`; 
 
         return `
-            <div class="component-video-card ${cardModifierClass}" style="--local-dominant-color: ${dominantColor};" onclick="${clickAction}">
+            <div class="component-video-card ${cardModifierClass}" style="--local-dominant-color: ${dominantColor};" data-nav="${navUrl}" style="cursor: pointer;">
                 
                 <div class="component-video-card__top">
                     <img src="${video.thumbnail_url}" alt="Miniatura de ${title}" class="component-video-card__thumbnail" loading="lazy">
@@ -213,11 +214,11 @@ export class HomeController {
         const timeAgo = this.timeSince(new Date(playlist.created_at));
         const dominantColor = playlist.thumbnail_dominant_color !== 'transparent' ? playlist.thumbnail_dominant_color : '#333'; 
         
-        // MODIFICADO: Redirige a la vista de playlist pasando el ID como parámetro de consulta
-        const clickAction = `window.router.navigate('/playlist?list=${playlist.uuid}')`;
+        // CORRECCIÓN: Genera la URL limpia /playlist/{uuid}
+        const navUrl = `/playlist/${playlist.uuid}`;
 
         return `
-            <div class="component-video-card" style="--local-dominant-color: ${dominantColor};" onclick="${clickAction}">
+            <div class="component-video-card" style="--local-dominant-color: ${dominantColor};" data-nav="${navUrl}" style="cursor: pointer;">
                 
                 <div class="component-video-card__top">
                     <img src="${playlist.thumbnail_url}" alt="Miniatura de ${title}" class="component-video-card__thumbnail" loading="lazy">

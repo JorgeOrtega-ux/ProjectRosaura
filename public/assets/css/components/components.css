@@ -2733,3 +2733,195 @@ input:checked + .component-toggle-slider:before {
 .handle-ne { top: -8px; right: -8px; cursor: nesw-resize; }
 .handle-sw { bottom: -8px; left: -8px; cursor: nesw-resize; }
 .handle-se { bottom: -8px; right: -8px; cursor: nwse-resize; }
+
+
+
+
+/* ==========================================================================
+   VISTA DE PLAYLIST (Listas de reproducción divididas)
+   ========================================================================== */
+
+/* Contenedor principal: Flexbox para dividir en dos columnas */
+.playlist-layout {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    align-items: flex-start;
+    width: 100%;
+}
+
+/* COLUMNA IZQUIERDA: Tarjeta principal (Card Grande) */
+.playlist-sidebar {
+    flex: 1;
+    min-width: 320px;
+    max-width: 400px; /* Evita que crezca demasiado en pantallas ultra anchas */
+    background: rgba(30, 30, 30, 0.6);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 16px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    /* Efecto para que se quede fija al hacer scroll en la página */
+    position: sticky;
+    top: 80px; 
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Título de la lista en la tarjeta grande */
+.playlist-sidebar h1 {
+    font-size: 26px;
+    font-weight: 700;
+    margin: 8px 0 0 0;
+    color: #fff;
+    line-height: 1.2;
+}
+
+/* Botón de reproducir todo */
+.playlist-btn-play {
+    flex: 1;
+    padding: 10px;
+    border-radius: 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    background-color: #fff;
+    color: #0f0f0f;
+    transition: background 0.2s, transform 0.1s;
+    font-size: 15px;
+}
+
+.playlist-btn-play:hover {
+    background-color: #e5e5e5;
+}
+
+.playlist-btn-play:active {
+    transform: scale(0.98);
+}
+
+.playlist-btn-play:disabled {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.5);
+    cursor: not-allowed;
+}
+
+/* COLUMNA DERECHA: Lista de videos */
+.playlist-content {
+    flex: 2;
+    min-width: 320px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* Ítem de video en la lista de reproducción */
+.playlist-video-item {
+    display: flex;
+    gap: 16px;
+    padding: 12px;
+    border-radius: 12px;
+    cursor: pointer;
+    background: transparent;
+    transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.playlist-video-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.playlist-video-item:active {
+    transform: scale(0.99);
+}
+
+/* Miniatura del video en la lista */
+.playlist-video-item-thumbnail {
+    position: relative;
+    flex-shrink: 0;
+    width: 160px;
+    aspect-ratio: 16/9;
+}
+
+.playlist-video-item-thumbnail img {
+    width: 100%;
+    height: 100%;
+    border-radius: 8px;
+    object-fit: cover;
+}
+
+.playlist-video-item-duration {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* Información del video en la lista */
+.playlist-video-item-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    flex-grow: 1;
+    padding-top: 2px;
+}
+
+.playlist-video-item-title {
+    margin: 0 0 4px 0;
+    font-size: 16px;
+    font-weight: 500;
+    color: #fff;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.4;
+}
+
+.playlist-video-item-meta {
+    margin: 2px 0 0 0;
+    color: #aaa;
+    font-size: 13px;
+}
+
+/* ==========================================================================
+   RESPONSIVO (Móviles y Tablets)
+   ========================================================================== */
+@media screen and (max-width: 900px) {
+    /* En pantallas medianas y móviles, la tarjeta grande pasa arriba 
+       y ocupa todo el ancho, perdiendo el efecto "sticky" */
+    .playlist-layout {
+        flex-direction: column;
+    }
+    
+    .playlist-sidebar {
+        max-width: 100%;
+        width: 100%;
+        position: relative;
+        top: 0;
+        padding: 16px;
+    }
+
+    /* Reducimos el tamaño de la miniatura en la lista para móviles */
+    .playlist-video-item-thumbnail {
+        width: 120px;
+    }
+
+    .playlist-video-item-title {
+        font-size: 14px;
+    }
+
+    .playlist-video-item {
+        padding: 8px;
+        gap: 12px;
+    }
+}
