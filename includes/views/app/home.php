@@ -35,5 +35,16 @@
             </div>
         </div>
 
+        <div class="component-feed-section">
+            <div class="component-feed-header">
+                <h2 class="component-feed-title"><?php echo __('Listas de reproducción') ?? 'Listas de reproducción'; ?></h2>
+            </div>
+            <div class="component-feed-body">
+                <div id="playlist-feed-container" class="component-video-grid">
+                    <div class="component-spinner component-spinner--centered" style="margin-top: 40px;"></div>
+                </div>
+            </div>
+        </div>
+
     </div>
 </div>

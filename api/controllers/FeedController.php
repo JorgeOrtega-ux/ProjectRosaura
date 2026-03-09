@@ -4,26 +4,28 @@
 namespace App\Api\Controllers;
 
 use App\Core\Repositories\VideoRepository;
+use App\Core\Repositories\PlaylistRepository;
 
 class FeedController {
     private $videoRepo;
+    private $playlistRepo;
 
-    public function __construct(VideoRepository $videoRepo) {
+    public function __construct(VideoRepository $videoRepo, PlaylistRepository $playlistRepo) {
         $this->videoRepo = $videoRepo;
+        $this->playlistRepo = $playlistRepo;
     }
 
     public function get_feed($input) {
         $limit = isset($input['limit']) ? (int)$input['limit'] : 20;
         $offset = isset($input['offset']) ? (int)$input['offset'] : 0;
         
-        // Consultamos ambos feeds por separado
+        // Consultamos feeds por separado
         $horizontalVideos = $this->videoRepo->getPublicFeed($limit, $offset, 'horizontal');
         $verticalVideos = $this->videoRepo->getPublicFeed($limit, $offset, 'vertical');
+        $publicPlaylists = $this->playlistRepo->getPublicPlaylistsFeed($limit, $offset);
 
-        // Función anónima para mapear las URLs y limpiar la data
         $formatVideos = function($videos) {
             foreach ($videos as &$video) {
-                // Validamos si tiene avatar_path, sino ponemos uno por defecto
                 $video['avatar_url'] = !empty($video['avatar_path']) 
                     ? APP_URL . '/' . $video['avatar_path'] 
                     : APP_URL . '/public/storage/profilePictures/default/default.png'; 
@@ -36,18 +38,34 @@ class FeedController {
                     ? APP_URL . '/' . $video['hls_path']
                     : ''; 
 
-                // Asegurar valores por defecto para evitar nulos en el front
                 $video['duration'] = $video['duration'] ?? 0;
                 $video['thumbnail_dominant_color'] = $video['thumbnail_dominant_color'] ?? 'transparent';
             }
             return $videos;
         };
 
+        $formatPlaylists = function($playlists) {
+            foreach ($playlists as &$playlist) {
+                $playlist['avatar_url'] = !empty($playlist['avatar_path']) 
+                    ? APP_URL . '/' . $playlist['avatar_path'] 
+                    : APP_URL . '/public/storage/profilePictures/default/default.png'; 
+                    
+                $playlist['thumbnail_url'] = !empty($playlist['thumbnail_path'])
+                    ? APP_URL . '/' . $playlist['thumbnail_path']
+                    : APP_URL . '/public/assets/images/default-thumb.png'; 
+
+                $playlist['video_count'] = $playlist['video_count'] ?? 0;
+                $playlist['thumbnail_dominant_color'] = $playlist['thumbnail_dominant_color'] ?? 'transparent';
+            }
+            return $playlists;
+        };
+
         return [
             'success' => true, 
             'data' => [
                 'horizontal' => $formatVideos($horizontalVideos),
-                'vertical' => $formatVideos($verticalVideos)
+                'vertical' => $formatVideos($verticalVideos),
+                'playlists' => $formatPlaylists($publicPlaylists)
             ]
         ];
     }

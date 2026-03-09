@@ -108,5 +108,48 @@ class PlaylistRepository implements PlaylistRepositoryInterface {
             throw $e;
         }
     }
+
+    // CORREGIDO: Se cambia u.avatar_path por u.profile_picture según tu bd.sql
+    public function getPublicPlaylistsFeed(int $limit, int $offset): array {
+        try {
+            $stmt = $this->db->prepare("
+                SELECT 
+                    p.id, p.uuid, p.title, p.created_at, p.user_id,
+                    u.username, u.profile_picture as avatar_path,
+                    (SELECT COUNT(*) FROM playlist_videos pv WHERE pv.playlist_id = p.id) as video_count,
+                    (
+                        SELECT v.thumbnail_path 
+                        FROM playlist_videos pv2 
+                        JOIN videos v ON pv2.video_id = v.id 
+                        WHERE pv2.playlist_id = p.id 
+                        ORDER BY pv2.display_order ASC 
+                        LIMIT 1
+                    ) as thumbnail_path,
+                    (
+                        SELECT v.thumbnail_dominant_color
+                        FROM playlist_videos pv2 
+                        JOIN videos v ON pv2.video_id = v.id 
+                        WHERE pv2.playlist_id = p.id 
+                        ORDER BY pv2.display_order ASC 
+                        LIMIT 1
+                    ) as thumbnail_dominant_color
+                FROM playlists p
+                INNER JOIN users u ON p.user_id = u.id
+                WHERE p.visibility = 'public'
+                ORDER BY p.created_at DESC
+                LIMIT :limit OFFSET :offset
+            ");
+            
+            $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+            $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+            $stmt->execute();
+            
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (\PDOException $e) {
+            // Log the error if necessary for debugging
+            error_log("Error in getPublicPlaylistsFeed: " . $e->getMessage());
+            return []; // Return empty array to prevent complete API failure
+        }
+    }
 }
 ?>

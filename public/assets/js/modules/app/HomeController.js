@@ -7,14 +7,12 @@ export class HomeController {
     constructor() {
         this.api = new ApiService();
         
-        // Bindear eventos globales para poder removerlos luego
         this.handleResizeBound = this.updateCarouselButtons.bind(this);
         this.handleScrollBound = this.updateCarouselButtons.bind(this);
         this.handleLeftClickBound = this.scrollLeft.bind(this);
         this.handleRightClickBound = this.scrollRight.bind(this);
     }
 
-    // Método destroy para prevenir cálculos infinitos al cambiar de vista
     destroy() {
         window.removeEventListener('resize', this.handleResizeBound);
         
@@ -32,10 +30,11 @@ export class HomeController {
     async init() {
         this.horizontalContainer = document.getElementById('video-feed-container');
         this.verticalContainer = document.getElementById('vertical-feed-container');
+        this.playlistContainer = document.getElementById('playlist-feed-container');
         this.btnLeft = document.getElementById('btn-scroll-left');
         this.btnRight = document.getElementById('btn-scroll-right');
 
-        if (this.horizontalContainer || this.verticalContainer) {
+        if (this.horizontalContainer || this.verticalContainer || this.playlistContainer) {
             await this.loadFeed();
         }
     }
@@ -47,6 +46,7 @@ export class HomeController {
             if (response && response.success) {
                 this.renderFeed(response.data.vertical, this.verticalContainer, 'vertical');
                 this.renderFeed(response.data.horizontal, this.horizontalContainer, 'horizontal');
+                this.renderPlaylistFeed(response.data.playlists, this.playlistContainer);
                 
                 if (this.verticalContainer && response.data.vertical && response.data.vertical.length > 0) {
                     this.initCarousel();
@@ -65,7 +65,6 @@ export class HomeController {
 
         if (!videos || videos.length === 0) {
             if (orientation === 'vertical') {
-                // Actualizado para buscar la nueva clase contenedora
                 const sectionWrapper = container.closest('.component-feed-section');
                 if (sectionWrapper) {
                     sectionWrapper.style.display = 'none';
@@ -86,6 +85,28 @@ export class HomeController {
         let html = '';
         videos.forEach(video => {
             html += this.createCardHTML(video, orientation);
+        });
+
+        container.innerHTML = html;
+        this.attachHoverEvents(container);
+    }
+
+    renderPlaylistFeed(playlists, container) {
+        if (!container) return;
+
+        if (!playlists || playlists.length === 0) {
+            const sectionWrapper = container.closest('.component-feed-section');
+            if (sectionWrapper) {
+                sectionWrapper.style.display = 'none';
+            } else {
+                container.style.display = 'none';
+            }
+            return;
+        }
+
+        let html = '';
+        playlists.forEach(playlist => {
+            html += this.createPlaylistCardHTML(playlist);
         });
 
         container.innerHTML = html;
@@ -149,7 +170,6 @@ export class HomeController {
         const isVertical = orientation === 'vertical';
         const cardModifierClass = isVertical ? 'component-video-card--vertical' : '';
         
-        // Uso de router nativo del SPA (Igual que en channel.php)
         const clickAction = isVertical 
             ? `window.router.navigate('/shorts/${video.uuid}')` 
             : `window.router.navigate('/watch?v=${video.uuid}')`;
@@ -181,6 +201,41 @@ export class HomeController {
                         <h3 class="component-video-card__title" title="${title}">${title}</h3>
                         ${!isVertical ? `<p class="component-video-card__user">${video.username}</p>` : ''}
                         <p class="component-video-card__meta">${views} vistas${!isVertical ? ` • ${timeAgo}` : ''}</p>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    createPlaylistCardHTML(playlist) {
+        const title = playlist.title || 'Lista sin título';
+        const videoCount = playlist.video_count || 0;
+        const timeAgo = this.timeSince(new Date(playlist.created_at));
+        const dominantColor = playlist.thumbnail_dominant_color !== 'transparent' ? playlist.thumbnail_dominant_color : '#333'; 
+        
+        // Redirige a la vista de playlist (ajusta según la ruta SPA que manejes)
+        const clickAction = `window.router.navigate('/playlist/${playlist.uuid}')`;
+
+        return `
+            <div class="component-video-card" style="--local-dominant-color: ${dominantColor};" onclick="${clickAction}">
+                
+                <div class="component-video-card__top">
+                    <img src="${playlist.thumbnail_url}" alt="Miniatura de ${title}" class="component-video-card__thumbnail" loading="lazy">
+                    
+                    <span class="component-video-card__duration" style="display: flex; align-items: center; gap: 4px; padding: 4px 8px;">
+                        <span class="material-symbols-rounded" style="font-size: 14px;">playlist_play</span>
+                        ${videoCount} videos
+                    </span>
+                </div>
+
+                <div class="component-video-card__bottom">
+                    <div class="component-video-card__avatar">
+                        <img src="${playlist.avatar_url}" alt="Perfil de ${playlist.username}" loading="lazy">
+                    </div>
+                    <div class="component-video-card__info">
+                        <h3 class="component-video-card__title" title="${title}">${title}</h3>
+                        <p class="component-video-card__user">${playlist.username}</p>
+                        <p class="component-video-card__meta">Actualizada hace ${timeAgo}</p>
                     </div>
                 </div>
             </div>
@@ -235,6 +290,6 @@ export class HomeController {
         if (interval > 1) return Math.floor(interval) + " horas";
         interval = seconds / 60;
         if (interval > 1) return Math.floor(interval) + " minutos";
-        return "Hace unos instantes";
+        return "instantes";
     }
 }
