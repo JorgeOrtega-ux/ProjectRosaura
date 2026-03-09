@@ -6,7 +6,6 @@ import { StudioThumbnailManager } from '../managers/StudioThumbnailManager.js';
 
 export class StudioEditController {
     constructor(api = null, state = null) {
-        // En caso de inicializarse de manera aislada (F5 reload) aseguramos dependencias para evitar crash:
         this.api = api || new ApiService();
         this.state = state || new StudioState();
         
@@ -15,13 +14,10 @@ export class StudioEditController {
 
         this.eventsAttached = false;
         
-        // Bindear los eventos a "this" para poder removerlos después en destroy()
         this.handleDocumentClickBound = this.handleDocumentClick.bind(this);
         this.handleDocumentFocusOutBound = this.handleDocumentFocusOut.bind(this);
         this.handleVideoProgressBound = this.handleVideoProgress.bind(this);
         
-        // Si nos pasan argumentos (instanciado por controlador padre) iniciamos de inmediato.
-        // Si no (instanciado por AppInit), esperamos al dispatch init() de AppInit.
         if (api && state) {
             this.init();
         }
@@ -79,7 +75,6 @@ export class StudioEditController {
             this.thumbnailManager.updateThumbnailPreview(video.draftThumbnailPreview);
             this.tagsManager.setInitialTags(video.tags);
             
-            // Fuerza estado de vista luego de popular
             this.setEditState('title', false);
             this.validatePublishButton();
             
@@ -102,6 +97,7 @@ export class StudioEditController {
 
                     const modelsIds = this.tagsManager.getModelsIds();
                     const categoriesIds = this.tagsManager.getCategoriesIds();
+                    const freeTagsArr = this.tagsManager.getFreeTags();
 
                     let hasError = false;
                     const updateRoute = ApiRoutes.Studio?.UpdateTitle || 'studio.update_title';
@@ -111,7 +107,8 @@ export class StudioEditController {
                         description: newDesc,
                         visibility: newVisibility,
                         models: modelsIds,
-                        categories: categoriesIds
+                        categories: categoriesIds,
+                        tags: freeTagsArr
                     });
 
                     if (updateRes.status === 'success') {
@@ -279,7 +276,6 @@ export class StudioEditController {
 
         const btn = document.getElementById('btnPublishVideo');
         if (btn) {
-            // Protección extra en caso de click forzado
             if (btn.classList.contains('disabled-interactive')) return;
             btn.setAttribute('disabled', 'true');
             btn.classList.add('disabled', 'disabled-interactive');
@@ -294,8 +290,11 @@ export class StudioEditController {
         
         const modelsArr = document.getElementById('hiddenModelsArray') ? document.getElementById('hiddenModelsArray').value : '[]';
         const categoriesArr = document.getElementById('hiddenCategoriesArray') ? document.getElementById('hiddenCategoriesArray').value : '[]';
+        const freeTagsArr = document.getElementById('hiddenTagsArray') ? document.getElementById('hiddenTagsArray').value : '[]';
+        
         formData.append('models', modelsArr);
         formData.append('categories', categoriesArr);
+        formData.append('tags', freeTagsArr);
 
         if (video.draftThumbnailType === 'file') formData.append('thumbnail', video.draftThumbnailData);
         else if (video.draftThumbnailType === 'generated') formData.append('generated_path', video.draftThumbnailData);

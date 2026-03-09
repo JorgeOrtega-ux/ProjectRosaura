@@ -355,6 +355,9 @@ class StudioServices {
         if ($type === 'category' && count($tagsData) > 50) {
             throw new Exception("No puedes seleccionar más de 50 categorías por video.");
         }
+        if ($type === 'free' && count($tagsData) > 50) {
+            throw new Exception("No puedes seleccionar más de 50 etiquetas libres por video.");
+        }
 
         $processedTags = [];
         foreach ($tagsData as $tagItem) {
@@ -373,7 +376,7 @@ class StudioServices {
         return $processedTags;
     }
 
-    public function updateVideoDetails(int $userId, int $videoId, string $title, ?string $description = null, array $models = [], array $categories = [], string $visibility = 'public'): array {
+    public function updateVideoDetails(int $userId, int $videoId, string $title, ?string $description = null, array $models = [], array $categories = [], array $tags = [], string $visibility = 'public'): array {
         $video = $this->videoRepo->findById($videoId);
         if (!$video || $video['user_id'] != $userId) {
             throw new Exception("Video no encontrado o no autorizado.");
@@ -396,8 +399,9 @@ class StudioServices {
 
         $modelsData = $this->processTags($models, 'modelo');
         $categoriesData = $this->processTags($categories, 'category');
+        $freeTagsData = $this->processTags($tags, 'free');
         
-        $allTags = array_merge($modelsData, $categoriesData);
+        $allTags = array_merge($modelsData, $categoriesData, $freeTagsData);
         $uniqueTags = [];
         
         foreach ($allTags as $t) {
@@ -432,7 +436,7 @@ class StudioServices {
         throw new Exception("Video no encontrado.");
     }
 
-    public function publishVideo(int $userId, int $videoId, string $title, string $description, array $models = [], array $categories = [], ?array $thumbnailFile = null, ?string $generatedPath = null, string $visibility = 'public'): array {
+    public function publishVideo(int $userId, int $videoId, string $title, string $description, array $models = [], array $categories = [], array $tags = [], ?array $thumbnailFile = null, ?string $generatedPath = null, string $visibility = 'public'): array {
         $video = $this->videoRepo->findById($videoId);
         if (!$video || $video['user_id'] != $userId) {
             throw new Exception("Video no encontrado o no autorizado.");
@@ -464,8 +468,9 @@ class StudioServices {
 
         $modelsData = $this->processTags($models, 'modelo');
         $categoriesData = $this->processTags($categories, 'category');
+        $freeTagsData = $this->processTags($tags, 'free');
         
-        $allTags = array_merge($modelsData, $categoriesData);
+        $allTags = array_merge($modelsData, $categoriesData, $freeTagsData);
         $uniqueTags = [];
         
         foreach ($allTags as $t) {

@@ -41,7 +41,6 @@ class TagRepository implements TagRepositoryInterface {
         return $stmt->execute(['name' => $name, 'type' => $type, 'gender' => $gender]);
     }
 
-    // --- NUEVO MÉTODO MÁGICO: FIND OR CREATE ---
     public function findOrCreate($name, $type, $gender = null) {
         $name = trim($name);
         

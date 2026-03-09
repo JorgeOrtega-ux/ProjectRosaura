@@ -112,10 +112,7 @@ class VideoRepository implements VideoRepositoryInterface {
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    // --- MÉTODO CORREGIDO PARA LA VISTA WATCH ---
     public function getPublicVideoDetails(string $uuid): ?array {
-        // CORRECCIÓN: Se utiliza v.created_at como alias de published_at para cumplir con la vista
-        // ya que la columna published_at no existe físicamente en la tabla videos.
         $stmt = $this->db->prepare("
             SELECT v.id, v.uuid, v.title, v.description, v.created_at, 
                    v.created_at as published_at, v.visibility,
@@ -137,12 +134,15 @@ class VideoRepository implements VideoRepositoryInterface {
         
         $video['categories'] = [];
         $video['models'] = [];
+        $video['tags'] = [];
 
         foreach ($allTags as $tag) {
             if ($tag['type'] === 'category') {
                 $video['categories'][] = $tag;
             } elseif ($tag['type'] === 'modelo') {
                 $video['models'][] = $tag;
+            } elseif ($tag['type'] === 'free' || $tag['type'] === 'general') {
+                $video['tags'][] = $tag;
             }
         }
 

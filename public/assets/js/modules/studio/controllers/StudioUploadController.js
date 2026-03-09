@@ -7,7 +7,6 @@ export class StudioUploadController {
         this.api = api;
         this.state = state;
         
-        // Bindear eventos a "this" para poder eliminarlos en destroy() y prevenir fugas de memoria
         this.handleDocumentChangeBound = this.handleDocumentChange.bind(this);
         this.handleDocumentDragOverBound = this.handleDocumentDragOver.bind(this);
         this.handleDocumentDragLeaveBound = this.handleDocumentDragLeave.bind(this);
@@ -19,11 +18,9 @@ export class StudioUploadController {
         const path = window.location.pathname;
         if (path.includes('/studio/uploading')) {
             this.initUploadingView();
-            // Instanciar el manejador de etiquetas para la vista de subida
             this.tagsManager = new StudioTagsManager(this.api, this.state, () => {
                 this.handleTagsChanged();
             });
-            // Instanciar el manejador de miniaturas
             this.thumbnailManager = new StudioThumbnailManager(this.api, this.state, () => {
                 console.log("Miniatura actualizada en el estado.");
             });
@@ -33,7 +30,6 @@ export class StudioUploadController {
         window.addEventListener('studioVideoProgress', this.updateUploadBadgesBound);
     }
 
-    // Limpieza al cambiar de vista
     destroy() {
         document.removeEventListener('change', this.handleDocumentChangeBound);
         document.removeEventListener('dragover', this.handleDocumentDragOverBound);
@@ -183,22 +179,18 @@ export class StudioUploadController {
         const video = this.state.getVideo(this.state.selectedVideoId);
         if (!video) return;
 
-        // 1. Sincronizar Título
         const displayTitle = document.querySelector('[data-ref="display-title"]');
         if(displayTitle) displayTitle.textContent = video.title || video.original_filename || '';
 
         const inputTitle = document.querySelector('[data-ref="input-title"]');
         if(inputTitle) inputTitle.value = video.title || video.original_filename || '';
 
-        // 2. Sincronizar Filename
         const previewOriginalFilename = document.getElementById('previewOriginalFilename');
         if(previewOriginalFilename) previewOriginalFilename.textContent = video.original_filename;
 
-        // 3. Sincronizar Descripción
         const descInput = document.getElementById('videoDescriptionInput');
         if (descInput) descInput.value = video.description || '';
 
-        // 4. Sincronizar Visibilidad
         this.syncVisibilityUI(video.visibility || 'public');
 
         const cancelBtn = document.getElementById('btnCancelVideo');
@@ -207,22 +199,19 @@ export class StudioUploadController {
             cancelBtn.removeAttribute('disabled');
         }
 
-        // --- LIMPIEZA DE UI DE MINIATURAS ---
         if (this.thumbnailManager && typeof this.thumbnailManager.resetUI === 'function') {
             this.thumbnailManager.resetUI();
         }
 
         this.validateButtons();
         
-        // 5. Sincronizar Etiquetas
         if (this.tagsManager) {
             this.tagsManager.setInitialTags(video.tags || []);
-            // Garantizar que queden en el state local inmediatamente 
             video.modelsIds = this.tagsManager.getModelsIds();
             video.categoriesIds = this.tagsManager.getCategoriesIds();
+            video.freeTags = this.tagsManager.getFreeTags();
         }
 
-        // 6. Sincronizar Vista Previa
         if (this.thumbnailManager) {
             if (video.draftThumbnailPreview) {
                 this.thumbnailManager.updateThumbnailPreview(video.draftThumbnailPreview);
@@ -239,6 +228,7 @@ export class StudioUploadController {
         if (video) {
             video.modelsIds = this.tagsManager.getModelsIds();
             video.categoriesIds = this.tagsManager.getCategoriesIds();
+            video.freeTags = this.tagsManager.getFreeTags();
         }
     }
 
@@ -351,8 +341,6 @@ export class StudioUploadController {
         const routeName = ApiRoutes.Studio?.CancelUpload || 'studio.cancel_upload';
         this.api.post(routeName, { video_id: this.state.selectedVideoId }).then(res => {
             
-            // Restaurar el botón SIEMPRE antes de evaluar el cambio de vista,
-            // ya que el botón perdura para la siguiente pestaña.
             if (btn) { 
                 btn.classList.remove('disabled-interactive'); 
                 btn.removeAttribute('disabled'); 
@@ -441,17 +429,23 @@ export class StudioUploadController {
             return;
         }
 
-        // Recuperar Ids de array de etiquetas con fallback para prevenir fallos al publicar directo
         let models = video.modelsIds;
         let categories = video.categoriesIds;
+        let tags = video.freeTags;
+
         if (models === undefined && Array.isArray(video.tags)) {
             models = video.tags.filter(t => t.type === 'modelo').map(t => t.id);
         }
         if (categories === undefined && Array.isArray(video.tags)) {
             categories = video.tags.filter(t => t.type === 'category').map(t => t.id);
         }
+        if (tags === undefined && Array.isArray(video.tags)) {
+            tags = video.tags.filter(t => t.type === 'free' || t.type === 'general' || typeof t === 'string').map(t => typeof t === 'string' ? t : t.name);
+        }
+
         models = models || [];
         categories = categories || [];
+        tags = tags || [];
 
         const formData = new FormData();
         formData.append('video_id', video.id);
@@ -460,6 +454,7 @@ export class StudioUploadController {
         formData.append('visibility', visibility);
         formData.append('models', JSON.stringify(models));
         formData.append('categories', JSON.stringify(categories));
+        formData.append('tags', JSON.stringify(tags));
 
         if (video.draftThumbnailType === 'file' && video.draftThumbnailData) {
             formData.append('thumbnail', video.draftThumbnailData);
@@ -477,8 +472,6 @@ export class StudioUploadController {
             const routeName = ApiRoutes.Studio?.PublishVideo || 'studio.publish_video';
             const response = await this.api.postForm(routeName, formData);
             
-            // CORRECCIÓN: Siempre restaurar el estado del botón ANTES de cambiar de video
-            // para que el próximo elemento seleccionado no herede las clases de "disabled".
             btn.removeAttribute('disabled');
             btn.classList.remove('disabled', 'disabled-interactive');
             btn.innerHTML = originalText;

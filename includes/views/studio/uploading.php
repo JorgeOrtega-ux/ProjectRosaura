@@ -196,8 +196,23 @@
                                 </div>
                             </div>
 
+                            <hr class="component-divider">
+
+                            <div class="component-group-item component-group-item--stacked">
+                                <div class="component-card__content">
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title"><?php echo __('studio_free_tags_title'); ?></h2>
+                                        <p class="component-card__description"><?php echo __('studio_free_tags_hint'); ?></p>
+                                        <div class="component-input-group component-input-group--h34" style="margin-top: 12px; max-width: 400px;">
+                                            <input type="text" id="freeTagsInput" class="component-input-field component-input-field--simple" placeholder="<?php echo __('studio_free_tags_placeholder'); ?>">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <input type="hidden" id="hiddenModelsArray" name="models" value="[]">
                             <input type="hidden" id="hiddenCategoriesArray" name="categories" value="[]">
+                            <input type="hidden" id="hiddenTagsArray" name="free_tags" value="[]">
                         </div>
 
                     </div>

@@ -4,14 +4,15 @@
 namespace App\Api\Controllers;
 
 use App\Api\Services\StudioServices;
-use App\Core\System\SessionManager;
+use App\Core\Interfaces\SessionManagerInterface; // CORRECCIÓN AQUÍ
 use App\Core\Helpers\Utils;
 
 class StudioController {
     private $studioServices;
     private $sessionManager;
 
-    public function __construct(StudioServices $studioServices, SessionManager $sessionManager) {
+    // CORRECCIÓN EN EL PARÁMETRO DEL CONSTRUCTOR
+    public function __construct(StudioServices $studioServices, SessionManagerInterface $sessionManager) {
         $this->studioServices = $studioServices;
         $this->sessionManager = $sessionManager;
     }
@@ -140,12 +141,15 @@ class StudioController {
         
         $modelsRaw = $input['models'] ?? $_POST['models'] ?? [];
         $categoriesRaw = $input['categories'] ?? $_POST['categories'] ?? [];
+        $tagsRaw = $input['tags'] ?? $_POST['tags'] ?? [];
 
         $models = is_string($modelsRaw) ? json_decode($modelsRaw, true) : $modelsRaw;
         $categories = is_string($categoriesRaw) ? json_decode($categoriesRaw, true) : $categoriesRaw;
+        $tags = is_string($tagsRaw) ? json_decode($tagsRaw, true) : $tagsRaw;
 
         if (!is_array($models)) $models = [];
         if (!is_array($categories)) $categories = [];
+        if (!is_array($tags)) $tags = [];
 
         if (!$videoId || $title === null) {
             http_response_code(400);
@@ -153,7 +157,7 @@ class StudioController {
         }
 
         try {
-            $this->studioServices->updateVideoDetails($userId, (int)$videoId, $title, $description, $models, $categories, $visibility);
+            $this->studioServices->updateVideoDetails($userId, (int)$videoId, $title, $description, $models, $categories, $tags, $visibility);
             return ['success' => true, 'status' => 'success'];
         } catch (\Exception $e) {
             http_response_code(400);
@@ -229,12 +233,15 @@ class StudioController {
 
         $modelsRaw = $input['models'] ?? $_POST['models'] ?? [];
         $categoriesRaw = $input['categories'] ?? $_POST['categories'] ?? [];
+        $tagsRaw = $input['tags'] ?? $_POST['tags'] ?? [];
 
         $models = is_string($modelsRaw) ? json_decode($modelsRaw, true) : $modelsRaw;
         $categories = is_string($categoriesRaw) ? json_decode($categoriesRaw, true) : $categoriesRaw;
+        $tags = is_string($tagsRaw) ? json_decode($tagsRaw, true) : $tagsRaw;
 
         if (!is_array($models)) $models = [];
         if (!is_array($categories)) $categories = [];
+        if (!is_array($tags)) $tags = [];
 
         $files = $input['_files'] ?? $_FILES;
         $thumbnailFile = $files['thumbnail'] ?? null;
@@ -251,7 +258,7 @@ class StudioController {
         }
 
         try {
-            $result = $this->studioServices->publishVideo($userId, (int)$videoId, $title, $description, $models, $categories, $thumbnailFile, $generatedPath, $visibility);
+            $result = $this->studioServices->publishVideo($userId, (int)$videoId, $title, $description, $models, $categories, $tags, $thumbnailFile, $generatedPath, $visibility);
             return ['success' => true, 'status' => 'success', 'data' => $result];
         } catch (\Exception $e) {
             http_response_code(400);

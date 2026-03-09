@@ -198,7 +198,7 @@ CREATE TABLE IF NOT EXISTS video_tags (
     video_id INT(11) NOT NULL,
     tag_id INT(11) DEFAULT NULL,
     custom_tag_name VARCHAR(100) DEFAULT NULL,
-    custom_tag_type ENUM('modelo', 'category') DEFAULT NULL,
+    custom_tag_type ENUM('modelo', 'category', 'free') DEFAULT NULL, -- AQUÍ SE AÑADIÓ 'free'
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_vt_video FOREIGN KEY (video_id) REFERENCES videos(id) ON DELETE CASCADE,
     CONSTRAINT fk_vt_tag FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
