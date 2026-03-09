@@ -65,5 +65,48 @@ class PlaylistRepository implements PlaylistRepositoryInterface {
         $stmt = $this->db->prepare("DELETE FROM playlists WHERE id = :id");
         return $stmt->execute([':id' => $id]);
     }
+
+    public function getVideosByPlaylistId(int $playlistId): array {
+        $stmt = $this->db->prepare("
+            SELECT v.id, v.uuid, v.title, v.thumbnail_path, v.duration, v.visibility, pv.display_order 
+            FROM videos v
+            INNER JOIN playlist_videos pv ON v.id = pv.video_id
+            WHERE pv.playlist_id = :playlist_id
+            ORDER BY pv.display_order ASC, pv.created_at ASC
+        ");
+        $stmt->execute([':playlist_id' => $playlistId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    public function syncVideos(int $playlistId, array $videoIds): bool {
+        try {
+            $this->db->beginTransaction();
+
+            $stmtDelete = $this->db->prepare("DELETE FROM playlist_videos WHERE playlist_id = :playlist_id");
+            $stmtDelete->execute([':playlist_id' => $playlistId]);
+
+            if (!empty($videoIds)) {
+                $stmtInsert = $this->db->prepare("
+                    INSERT INTO playlist_videos (playlist_id, video_id, display_order) 
+                    VALUES (:playlist_id, :video_id, :display_order)
+                ");
+                $order = 1;
+                foreach ($videoIds as $videoId) {
+                    $stmtInsert->execute([
+                        ':playlist_id' => $playlistId,
+                        ':video_id' => (int)$videoId,
+                        ':display_order' => $order
+                    ]);
+                    $order++;
+                }
+            }
+
+            $this->db->commit();
+            return true;
+        } catch (\Exception $e) {
+            $this->db->rollBack();
+            throw $e;
+        }
+    }
 }
 ?>

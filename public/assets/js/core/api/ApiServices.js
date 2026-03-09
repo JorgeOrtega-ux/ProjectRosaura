@@ -128,7 +128,6 @@ export class ApiService {
         });
     }
 
-    // --- NUEVO MÉTODO PARA SUSCRIPCIONES ---
     async toggleSubscription(username) {
         return await this.post('channel.toggle_subscription', { username });
     }
@@ -204,5 +203,21 @@ export class ApiService {
             }
         }
         return finalResponse;
+    }
+
+    // --- NUEVAS FUNCIONES PARA ADMINISTRAR VIDEOS EN PLAYLISTS ---
+    async fetchAllVideos() {
+        return await this.post('studio.get_all_videos');
+    }
+
+    async fetchPlaylistVideos(playlistId) {
+        return await this.post('studio.get_playlist_videos', { playlist_id: playlistId });
+    }
+
+    async syncPlaylistVideos(playlistId, videoIdsArray) {
+        return await this.post('studio.sync_playlist_videos', { 
+            playlist_id: playlistId, 
+            video_ids: videoIdsArray 
+        });
     }
 }

@@ -33,6 +33,7 @@ export class StudioManagePlaylistController {
         const btnCreate = document.getElementById('btnCreatePlaylist');
         const btnEdit = document.getElementById('btnEditPlaylist');
         const btnDelete = document.getElementById('btnDeletePlaylist');
+        const btnManageVideos = document.getElementById('btnManageVideos');
 
         if (btnCreate) {
             btnCreate.addEventListener('click', () => {
@@ -49,21 +50,29 @@ export class StudioManagePlaylistController {
                 if(this.selectedPlaylistId) this.deletePlaylist(this.selectedPlaylistId);
             });
         }
+        if (btnManageVideos) {
+            btnManageVideos.addEventListener('click', () => {
+                if(this.selectedPlaylistId) this.openManageVideosDialog();
+            });
+        }
     }
 
     updateActionButtons() {
         const btnCreate = document.getElementById('btnCreatePlaylist');
         const btnEdit = document.getElementById('btnEditPlaylist');
         const btnDelete = document.getElementById('btnDeletePlaylist');
+        const btnManageVideos = document.getElementById('btnManageVideos');
 
         if (this.selectedPlaylistId) {
             if(btnCreate) btnCreate.style.display = 'none';
             if(btnEdit) btnEdit.style.display = 'inline-flex';
             if(btnDelete) btnDelete.style.display = 'inline-flex';
+            if(btnManageVideos) btnManageVideos.style.display = 'inline-flex';
         } else {
             if(btnCreate) btnCreate.style.display = 'inline-flex';
             if(btnEdit) btnEdit.style.display = 'none';
             if(btnDelete) btnDelete.style.display = 'none';
+            if(btnManageVideos) btnManageVideos.style.display = 'none';
         }
     }
 
@@ -256,5 +265,100 @@ export class StudioManagePlaylistController {
             console.error("[StudioManagePlaylistController] Error de red al intentar eliminar:", error);
             alert("Ocurrió un error al intentar eliminar la playlist.");
         }
+    }
+
+    // --- NUEVO MÉTODO PARA ABRIR Y GESTIONAR EL DIÁLOGO DE VIDEOS ---
+    async openManageVideosDialog() {
+        if (!window.dialogSystem || !this.selectedPlaylistId) return;
+
+        window.dialogSystem.show('managePlaylistVideosTemplate', {
+            onRender: async (box) => {
+                const container = box.querySelector('#playlistVideosContainer');
+                const btnSave = box.querySelector('#btnSavePlaylistVideos');
+
+                try {
+                    // Obtener todos los videos del usuario
+                    const allVideosRes = await this.api.fetchAllVideos();
+                    
+                    // Obtener los videos que ya están en esta playlist
+                    const playlistVideosRes = await this.api.fetchPlaylistVideos(this.selectedPlaylistId);
+
+                    if (allVideosRes.status === 'success' && playlistVideosRes.status === 'success') {
+                        const allVideos = allVideosRes.data || [];
+                        const playlistVideos = playlistVideosRes.data || [];
+                        
+                        // Extraemos un arreglo puro de IDs para facilitar la búsqueda
+                        const playlistVideoIds = playlistVideos.map(v => v.id);
+
+                        container.innerHTML = ''; // Limpiamos el spinner
+
+                        if (allVideos.length === 0) {
+                            container.innerHTML = '<p style="text-align:center; padding: 20px; color: var(--text-secondary);">No tienes videos subidos aún.</p>';
+                            return;
+                        }
+
+                        // Renderizamos cada video en la lista
+                        allVideos.forEach(v => {
+                            const isChecked = playlistVideoIds.includes(v.id) ? 'checked' : '';
+                            const basePath = window.AppBasePath || '';
+                            const thumbPath = v.thumbnail_path ? `${basePath}/${v.thumbnail_path}` : `${basePath}/public/assets/img/default_thumb.jpg`;
+                            
+                            const row = document.createElement('label');
+                            row.style.display = 'flex';
+                            row.style.alignItems = 'center';
+                            row.style.gap = '12px';
+                            row.style.padding = '8px';
+                            row.style.borderBottom = '1px solid var(--border-color, #f0f0f0)';
+                            row.style.cursor = 'pointer';
+                            row.style.borderRadius = '4px';
+
+                            row.innerHTML = `
+                                <input type="checkbox" class="component-checkbox video-select-cb" value="${v.id}" ${isChecked}>
+                                <img src="${thumbPath}" style="width: 60px; height: 40px; object-fit: cover; border-radius: 4px; background: #000;">
+                                <div style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; color: var(--text-primary);">
+                                    ${v.title || 'Sin título'}
+                                </div>
+                            `;
+
+                            // Efecto hover simple por JS (Opcional)
+                            row.addEventListener('mouseover', () => row.style.backgroundColor = 'var(--bg-hover, #f9f9f9)');
+                            row.addEventListener('mouseout', () => row.style.backgroundColor = 'transparent');
+
+                            container.appendChild(row);
+                        });
+
+                        // Evento para el botón de Aceptar/Guardar
+                        if (btnSave) {
+                            btnSave.addEventListener('click', async () => {
+                                btnSave.classList.add('loading');
+                                btnSave.disabled = true;
+
+                                const checkboxes = container.querySelectorAll('.video-select-cb:checked');
+                                const selectedIds = Array.from(checkboxes).map(cb => cb.value);
+
+                                const syncRes = await this.api.syncPlaylistVideos(this.selectedPlaylistId, selectedIds);
+
+                                if (syncRes.status === 'success') {
+                                    window.dialogSystem.closeCurrent(true);
+                                    // Recargamos la tabla (opcional: el backend podría regresar el nuevo conteo de videos)
+                                    this.initManagePlaylistView();
+                                } else {
+                                    alert("Error al sincronizar videos: " + (syncRes.message || 'Desconocido'));
+                                    btnSave.classList.remove('loading');
+                                    btnSave.disabled = false;
+                                }
+                            });
+                        }
+
+                    } else {
+                        container.innerHTML = '<p style="color:red; text-align:center; padding:20px;">Error al cargar los videos.</p>';
+                    }
+
+                } catch (error) {
+                    console.error("[StudioManagePlaylistController] Error obteniendo videos:", error);
+                    container.innerHTML = '<p style="color:red; text-align:center; padding:20px;">Error de red o conexión.</p>';
+                }
+            }
+        });
     }
 }

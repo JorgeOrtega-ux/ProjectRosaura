@@ -391,5 +391,54 @@ class StudioController {
             return ['success' => false, 'status' => 'error', 'message' => $e->getMessage()];
         }
     }
+
+    public function get_playlist_videos($input) {
+        $userId = $this->requireAuth();
+        if (!$userId) {
+            http_response_code(401);
+            return ['success' => false, 'status' => 'error', 'message' => 'No autorizado'];
+        }
+
+        $playlistId = $input['playlist_id'] ?? $_POST['playlist_id'] ?? null;
+        if (!$playlistId) {
+            http_response_code(400);
+            return ['success' => false, 'status' => 'error', 'message' => 'ID de playlist requerido.'];
+        }
+
+        try {
+            $videos = $this->studioServices->getPlaylistVideos($userId, (int)$playlistId);
+            return ['success' => true, 'status' => 'success', 'data' => $videos];
+        } catch (\Exception $e) {
+            http_response_code(400);
+            return ['success' => false, 'status' => 'error', 'message' => $e->getMessage()];
+        }
+    }
+
+    public function sync_playlist_videos($input) {
+        $userId = $this->requireAuth();
+        if (!$userId) {
+            http_response_code(401);
+            return ['success' => false, 'status' => 'error', 'message' => 'No autorizado'];
+        }
+
+        $playlistId = $input['playlist_id'] ?? $_POST['playlist_id'] ?? null;
+        $videoIdsRaw = $input['video_ids'] ?? $_POST['video_ids'] ?? [];
+        
+        $videoIds = is_string($videoIdsRaw) ? json_decode($videoIdsRaw, true) : $videoIdsRaw;
+        if (!is_array($videoIds)) $videoIds = [];
+
+        if (!$playlistId) {
+            http_response_code(400);
+            return ['success' => false, 'status' => 'error', 'message' => 'ID de playlist requerido.'];
+        }
+
+        try {
+            $this->studioServices->syncPlaylistVideos($userId, (int)$playlistId, $videoIds);
+            return ['success' => true, 'status' => 'success', 'message' => 'Videos de la playlist actualizados exitosamente.'];
+        } catch (\Exception $e) {
+            http_response_code(400);
+            return ['success' => false, 'status' => 'error', 'message' => $e->getMessage()];
+        }
+    }
 }
 ?>

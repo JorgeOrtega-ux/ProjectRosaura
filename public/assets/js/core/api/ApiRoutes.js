@@ -81,6 +81,8 @@ export const ApiRoutes = {
         GetPlaylists: 'studio.get_playlists',
         CreatePlaylist: 'studio.create_playlist',
         UpdatePlaylist: 'studio.update_playlist',
-        DeletePlaylist: 'studio.delete_playlist'
+        DeletePlaylist: 'studio.delete_playlist',
+        GetPlaylistVideos: 'studio.get_playlist_videos',
+        SyncPlaylistVideos: 'studio.sync_playlist_videos'
     }
 };

@@ -96,6 +96,10 @@ return [
     'studio.update_playlist'      => ['controller' => 'App\Api\Controllers\StudioController', 'action' => 'update_playlist'],
     'studio.delete_playlist'      => ['controller' => 'App\Api\Controllers\StudioController', 'action' => 'delete_playlist'],
     
+    // --- NUEVAS RUTAS DE PLAYLISTS / VIDEOS ---
+    'studio.get_playlist_videos'  => ['controller' => 'App\Api\Controllers\StudioController', 'action' => 'get_playlist_videos'],
+    'studio.sync_playlist_videos' => ['controller' => 'App\Api\Controllers\StudioController', 'action' => 'sync_playlist_videos'],
+    
     // --- RUTAS DE TAGS PARA EL STUDIO ---
     'studio.get_models'           => ['controller' => 'App\Api\Controllers\StudioController', 'action' => 'get_models'],
     'studio.get_categories'       => ['controller' => 'App\Api\Controllers\StudioController', 'action' => 'get_categories'],

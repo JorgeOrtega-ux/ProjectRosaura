@@ -532,7 +532,6 @@ class StudioServices {
             throw new Exception("El título de la playlist es obligatorio.");
         }
         
-        // Generar UUID único
         $uuid = sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x', mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0x0fff) | 0x4000, mt_rand(0, 0x3fff) | 0x8000, mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff));
         
         $id = $this->playlistRepo->create($userId, $uuid, trim($title), $description, $visibility, $videoOrder);
@@ -568,6 +567,34 @@ class StudioServices {
         }
 
         $this->playlistRepo->delete($playlistId);
+        return ['success' => true];
+    }
+
+    public function getPlaylistVideos(int $userId, int $playlistId): array {
+        $playlist = $this->playlistRepo->getByIdAndUserId($playlistId, $userId);
+        if (!$playlist) {
+            throw new Exception("Playlist no encontrada o no autorizada.");
+        }
+        
+        return $this->playlistRepo->getVideosByPlaylistId($playlistId);
+    }
+
+    public function syncPlaylistVideos(int $userId, int $playlistId, array $videoIds): array {
+        $playlist = $this->playlistRepo->getByIdAndUserId($playlistId, $userId);
+        if (!$playlist) {
+            throw new Exception("Playlist no encontrada o no autorizada.");
+        }
+
+        if (!empty($videoIds)) {
+            foreach ($videoIds as $vId) {
+                $video = $this->videoRepo->findById((int)$vId);
+                if (!$video || $video['user_id'] != $userId) {
+                    throw new Exception("Uno o más videos seleccionados no te pertenecen o no existen.");
+                }
+            }
+        }
+
+        $this->playlistRepo->syncVideos($playlistId, $videoIds);
         return ['success' => true];
     }
 }

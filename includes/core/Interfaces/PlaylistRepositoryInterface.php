@@ -9,5 +9,7 @@ interface PlaylistRepositoryInterface {
     public function getByIdAndUserId(int $id, int $userId): ?array;
     public function update(int $id, string $title, ?string $description, string $visibility, string $videoOrder): bool;
     public function delete(int $id): bool;
+    public function getVideosByPlaylistId(int $playlistId): array;
+    public function syncVideos(int $playlistId, array $videoIds): bool;
 }
 ?>

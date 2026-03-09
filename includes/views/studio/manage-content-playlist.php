@@ -11,6 +11,11 @@
                 
                 <div class="component-view-top-right">
                     <div class="component-actions">
+                        <button class="component-button component-button--outline" id="btnManageVideos" style="display: none;" data-tooltip="Administrar videos">
+                            <span class="material-symbols-rounded">video_library</span>
+                            <span>Administrar videos</span>
+                        </button>
+
                         <button class="component-button component-button--outline" id="btnEditPlaylist" style="display: none;" data-tooltip="Editar lista de reproducción">
                             <span class="material-symbols-rounded">edit</span>
                             <span>Editar</span>

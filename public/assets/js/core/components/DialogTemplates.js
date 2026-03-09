@@ -214,5 +214,24 @@ export const DialogTemplates = {
                 <button class="component-button component-button--h45 component-button--dark component-button--full" id="btnSubmitPlaylist">Crear playlist</button>
             </div>
         `
+    },
+    // --- NUEVA PLANTILLA PARA ADMINISTRAR VIDEOS EN UNA PLAYLIST ---
+    managePlaylistVideosTemplate: {
+        build: () => `
+            <div class="pill-container"><div class="drag-handle"></div></div>
+            <div class="component-dialog-header">
+                <h2 class="component-dialog-title">Administrar videos de la playlist</h2>
+                <p class="component-dialog-desc">Selecciona los videos que deseas incluir en esta lista de reproducción.</p>
+            </div>
+            <div class="component-dialog-body" style="max-height: 400px; overflow-y: auto; margin-top: 16px; border: 1px solid var(--border-color, #eaeaea); border-radius: 8px; padding: 5px;">
+                <div id="playlistVideosContainer" style="display: flex; flex-direction: column; gap: 5px;">
+                    <div class="component-spinner component-spinner--centered" style="margin: 20px auto;"></div>
+                </div>
+            </div>
+            <div class="component-dialog-actions" style="margin-top: 24px;">
+                <button class="component-button component-button--h45 component-button--light hide-on-desktop" data-dialog-action="cancel">Cancelar</button>
+                <button class="component-button component-button--h45 component-button--dark component-button--full" id="btnSavePlaylistVideos">Aceptar y guardar</button>
+            </div>
+        `
     }
 };
