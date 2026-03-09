@@ -4,8 +4,20 @@ export class AdminUsersController {
     constructor() {
         this.selectedUserId = null; 
         this.basePath = window.AppBasePath || '';
-        this.eventsBound = false; // <-- BANDERA DE BLINDAJE
-        // this.init(); <-- ELIMINADO PARA EVITAR DOBLE INICIALIZACIÓN
+        
+        // 1. Bindear los manejadores de eventos al contexto de la clase
+        this.handleClickBound = this.handleClick.bind(this);
+        this.handleInputBound = this.handleInput.bind(this);
+        this.handleChangeBound = this.handleChange.bind(this);
+        this.handleViewLoadedBound = this.handleViewLoaded.bind(this);
+    }
+
+    // 2. Método destroy para limpiar memoria cuando se cambia de ruta
+    destroy() {
+        document.removeEventListener('click', this.handleClickBound);
+        document.removeEventListener('input', this.handleInputBound);
+        document.removeEventListener('change', this.handleChangeBound);
+        window.removeEventListener('viewLoaded', this.handleViewLoadedBound);
     }
 
     init() {
@@ -14,71 +26,73 @@ export class AdminUsersController {
     }
 
     bindEvents() {
-        if (this.eventsBound) return; // <-- EVITA DUPLICAR EVENTOS
-
-        document.addEventListener('click', (e) => {
-            const searchBtn = e.target.closest('[data-action="searchUser"]');
-            const toggleFiltersBtn = e.target.closest('[data-action="toggleUserFilters"]');
-            const viewBtn = e.target.closest('[data-action="toggleViewMode"]');
-            const selectTarget = e.target.closest('[data-action="selectUser"]');
-            const deselectBtn = e.target.closest('[data-action="deselectUser"]');
-            const openSubMenuBtn = e.target.closest('[data-action="openFilterSubMenu"]');
-            const backToMainFiltersBtn = e.target.closest('[data-action="backToMainFilters"]');
-            
-            const editUserBtn = e.target.closest('[data-action="editSelectedUser"]');
-            const editRoleBtn = e.target.closest('[data-action="editSelectedUserRole"]');
-            const editStatusBtn = e.target.closest('[data-action="editSelectedUserStatus"]');
-            
-            if (searchBtn) this.toggleSearchToolbar();
-            if (toggleFiltersBtn) this.toggleFiltersModule();
-            if (viewBtn) this.toggleViewMode(viewBtn);
-
-            if (openSubMenuBtn) this.openFilterSubMenu(openSubMenuBtn);
-            if (backToMainFiltersBtn) {
-                e.preventDefault();
-                e.stopPropagation();
-                this.backToMainFilters();
-            }
-
-            if (selectTarget && !e.target.closest('button') && !e.target.closest('.component-dropdown-wrapper')) {
-                this.handleUserSelection(selectTarget);
-            }
-
-            if (deselectBtn) this.deselectUser();
-            if (editUserBtn) this.editSelectedUser();
-            if (editRoleBtn) this.editSelectedUserRole();
-            if (editStatusBtn) this.editSelectedUserStatus();
-        });
-
-        // Eventos para filtros (Buscar y Checkboxes)
-        document.addEventListener('input', (e) => {
-            if (e.target && e.target.getAttribute('data-ref') === 'user-search-input') {
-                this.applyAllFilters();
-            }
-        });
-
-        document.addEventListener('change', (e) => {
-            if (e.target && e.target.classList.contains('filter-checkbox')) {
-                this.applyAllFilters();
-            }
-        });
-
-        window.addEventListener('viewLoaded', (e) => {
-            if (e.detail.url.includes('/admin/manage-users')) {
-                const searchInput = document.querySelector('[data-ref="user-search-input"]');
-                if (searchInput) searchInput.value = '';
-                
-                document.querySelectorAll('.filter-checkbox').forEach(cb => cb.checked = true);
-                
-                this.backToMainFilters();
-                this.applyAllFilters();
-                this.deselectUser(); 
-            }
-        });
-
-        this.eventsBound = true; // <-- SELLA LOS EVENTOS
+        document.addEventListener('click', this.handleClickBound);
+        document.addEventListener('input', this.handleInputBound);
+        document.addEventListener('change', this.handleChangeBound);
+        window.addEventListener('viewLoaded', this.handleViewLoadedBound);
     }
 
+    // 3. Funciones manejadoras extraídas
+    handleClick(e) {
+        const searchBtn = e.target.closest('[data-action="searchUser"]');
+        const toggleFiltersBtn = e.target.closest('[data-action="toggleUserFilters"]');
+        const viewBtn = e.target.closest('[data-action="toggleViewMode"]');
+        const selectTarget = e.target.closest('[data-action="selectUser"]');
+        const deselectBtn = e.target.closest('[data-action="deselectUser"]');
+        const openSubMenuBtn = e.target.closest('[data-action="openFilterSubMenu"]');
+        const backToMainFiltersBtn = e.target.closest('[data-action="backToMainFilters"]');
+        
+        const editUserBtn = e.target.closest('[data-action="editSelectedUser"]');
+        const editRoleBtn = e.target.closest('[data-action="editSelectedUserRole"]');
+        const editStatusBtn = e.target.closest('[data-action="editSelectedUserStatus"]');
+        
+        if (searchBtn) this.toggleSearchToolbar();
+        if (toggleFiltersBtn) this.toggleFiltersModule();
+        if (viewBtn) this.toggleViewMode(viewBtn);
+
+        if (openSubMenuBtn) this.openFilterSubMenu(openSubMenuBtn);
+        if (backToMainFiltersBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            this.backToMainFilters();
+        }
+
+        if (selectTarget && !e.target.closest('button') && !e.target.closest('.component-dropdown-wrapper')) {
+            this.handleUserSelection(selectTarget);
+        }
+
+        if (deselectBtn) this.deselectUser();
+        if (editUserBtn) this.editSelectedUser();
+        if (editRoleBtn) this.editSelectedUserRole();
+        if (editStatusBtn) this.editSelectedUserStatus();
+    }
+
+    handleInput(e) {
+        if (e.target && e.target.getAttribute('data-ref') === 'user-search-input') {
+            this.applyAllFilters();
+        }
+    }
+
+    handleChange(e) {
+        if (e.target && e.target.classList.contains('filter-checkbox')) {
+            this.applyAllFilters();
+        }
+    }
+
+    handleViewLoaded(e) {
+        if (e.detail.url.includes('/admin/manage-users')) {
+            const searchInput = document.querySelector('[data-ref="user-search-input"]');
+            if (searchInput) searchInput.value = '';
+            
+            document.querySelectorAll('.filter-checkbox').forEach(cb => cb.checked = true);
+            
+            this.backToMainFilters();
+            this.applyAllFilters();
+            this.deselectUser(); 
+        }
+    }
+
+    // 4. Lógica de negocio y ruteo
     editSelectedUser() {
         if (!this.selectedUserId) return;
         if (window.spaRouter) {
