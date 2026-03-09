@@ -547,5 +547,28 @@ class StudioServices {
     public function getPlaylists(int $userId): array {
         return $this->playlistRepo->getAllByUserId($userId);
     }
+
+    public function updatePlaylist(int $userId, int $playlistId, string $title, ?string $description, string $visibility, string $videoOrder): array {
+        $playlist = $this->playlistRepo->getByIdAndUserId($playlistId, $userId);
+        if (!$playlist) {
+            throw new Exception("Playlist no encontrada o no autorizada.");
+        }
+        if (empty(trim($title))) {
+            throw new Exception("El título de la playlist es obligatorio.");
+        }
+
+        $this->playlistRepo->update($playlistId, trim($title), $description, $visibility, $videoOrder);
+        return ['success' => true];
+    }
+
+    public function deletePlaylist(int $userId, int $playlistId): array {
+        $playlist = $this->playlistRepo->getByIdAndUserId($playlistId, $userId);
+        if (!$playlist) {
+            throw new Exception("Playlist no encontrada o no autorizada.");
+        }
+
+        $this->playlistRepo->delete($playlistId);
+        return ['success' => true];
+    }
 }
 ?>

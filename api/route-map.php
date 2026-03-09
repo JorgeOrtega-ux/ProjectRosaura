@@ -8,7 +8,7 @@ return [
     // --- RUTA CANALES (Suscripciones, Banner y Perfil) ---
     'channel.toggle_subscription' => ['controller' => 'App\Api\Controllers\ChannelController', 'action' => 'toggle_subscription'],
     'channel.upload_banner'       => ['controller' => 'App\Api\Controllers\ChannelController', 'action' => 'upload_banner'],
-    'channel.update_profile'      => ['controller' => 'App\Api\Controllers\ChannelController', 'action' => 'update_profile'], // NUEVA RUTA
+    'channel.update_profile'      => ['controller' => 'App\Api\Controllers\ChannelController', 'action' => 'update_profile'],
 
     // --- RUTAS DE AUTENTICACIÓN ---
     'auth.register.step1'  => ['controller' => 'App\Api\Controllers\AuthController', 'action' => 'register_step1'],
@@ -93,6 +93,8 @@ return [
     'studio.delete_video'         => ['controller' => 'App\Api\Controllers\StudioController', 'action' => 'delete_video'],
     'studio.create_playlist'      => ['controller' => 'App\Api\Controllers\StudioController', 'action' => 'create_playlist'],
     'studio.get_playlists'        => ['controller' => 'App\Api\Controllers\StudioController', 'action' => 'get_playlists'],
+    'studio.update_playlist'      => ['controller' => 'App\Api\Controllers\StudioController', 'action' => 'update_playlist'],
+    'studio.delete_playlist'      => ['controller' => 'App\Api\Controllers\StudioController', 'action' => 'delete_playlist'],
     
     // --- RUTAS DE TAGS PARA EL STUDIO ---
     'studio.get_models'           => ['controller' => 'App\Api\Controllers\StudioController', 'action' => 'get_models'],

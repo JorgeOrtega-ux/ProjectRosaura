@@ -38,5 +38,32 @@ class PlaylistRepository implements PlaylistRepositoryInterface {
         $stmt->execute([':user_id' => $userId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
+
+    public function getByIdAndUserId(int $id, int $userId): ?array {
+        $stmt = $this->db->prepare("SELECT * FROM playlists WHERE id = :id AND user_id = :user_id");
+        $stmt->execute([':id' => $id, ':user_id' => $userId]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result ?: null;
+    }
+
+    public function update(int $id, string $title, ?string $description, string $visibility, string $videoOrder): bool {
+        $stmt = $this->db->prepare("
+            UPDATE playlists 
+            SET title = :title, description = :description, visibility = :visibility, video_order = :video_order, updated_at = NOW()
+            WHERE id = :id
+        ");
+        return $stmt->execute([
+            ':id' => $id,
+            ':title' => $title,
+            ':description' => $description,
+            ':visibility' => $visibility,
+            ':video_order' => $videoOrder
+        ]);
+    }
+
+    public function delete(int $id): bool {
+        $stmt = $this->db->prepare("DELETE FROM playlists WHERE id = :id");
+        return $stmt->execute([':id' => $id]);
+    }
 }
 ?>

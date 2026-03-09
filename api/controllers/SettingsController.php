@@ -34,5 +34,6 @@ class SettingsController {
     public function get_devices() { return $this->settingsServices->getDevices(); }
     public function revoke_device($input) { return $this->settingsServices->revokeDevice($input); }
     public function revoke_all_devices($input) { return $this->settingsServices->revokeAllDevices($input); }
+    
 }
 ?>

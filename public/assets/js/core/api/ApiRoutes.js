@@ -79,6 +79,8 @@ export const ApiRoutes = {
         
         // --- NUEVAS RUTAS DE PLAYLISTS ---
         GetPlaylists: 'studio.get_playlists',
-        CreatePlaylist: 'studio.create_playlist'
+        CreatePlaylist: 'studio.create_playlist',
+        UpdatePlaylist: 'studio.update_playlist',
+        DeletePlaylist: 'studio.delete_playlist'
     }
 };

@@ -341,5 +341,55 @@ class StudioController {
             return ['success' => false, 'status' => 'error', 'message' => $e->getMessage()];
         }
     }
+
+    public function update_playlist($input) {
+        $userId = $this->requireAuth();
+        if (!$userId) {
+            http_response_code(401);
+            return ['success' => false, 'status' => 'error', 'message' => 'No autorizado'];
+        }
+
+        $playlistId = $input['playlist_id'] ?? $_POST['playlist_id'] ?? null;
+        $title = $input['title'] ?? $_POST['title'] ?? '';
+        $description = $input['description'] ?? $_POST['description'] ?? null;
+        $visibility = $input['visibility'] ?? $_POST['visibility'] ?? 'public';
+        $videoOrder = $input['video_order'] ?? $_POST['video_order'] ?? 'published_newest';
+
+        if (!$playlistId) {
+            http_response_code(400);
+            return ['success' => false, 'status' => 'error', 'message' => 'ID de playlist requerido.'];
+        }
+
+        try {
+            $this->studioServices->updatePlaylist($userId, (int)$playlistId, $title, $description, $visibility, $videoOrder);
+            return ['success' => true, 'status' => 'success', 'message' => 'Playlist actualizada exitosamente'];
+        } catch (\Exception $e) {
+            http_response_code(400);
+            return ['success' => false, 'status' => 'error', 'message' => $e->getMessage()];
+        }
+    }
+
+    public function delete_playlist($input) {
+        $userId = $this->requireAuth();
+        if (!$userId) {
+            http_response_code(401);
+            return ['success' => false, 'status' => 'error', 'message' => 'No autorizado'];
+        }
+
+        $playlistId = $input['playlist_id'] ?? $_POST['playlist_id'] ?? null;
+
+        if (!$playlistId) {
+            http_response_code(400);
+            return ['success' => false, 'status' => 'error', 'message' => 'ID de playlist requerido.'];
+        }
+
+        try {
+            $this->studioServices->deletePlaylist($userId, (int)$playlistId);
+            return ['success' => true, 'status' => 'success', 'message' => 'Playlist eliminada exitosamente'];
+        } catch (\Exception $e) {
+            http_response_code(400);
+            return ['success' => false, 'status' => 'error', 'message' => $e->getMessage()];
+        }
+    }
 }
 ?>
