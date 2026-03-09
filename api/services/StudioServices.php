@@ -357,8 +357,8 @@ class StudioServices {
         if ($type === 'category' && count($tagsData) > 50) {
             throw new Exception("No puedes seleccionar más de 50 categorías por video.");
         }
-        if ($type === 'free' && count($tagsData) > 50) {
-            throw new Exception("No puedes seleccionar más de 50 etiquetas libres por video.");
+        if ($type === 'custom' && count($tagsData) > 50) {
+            throw new Exception("No puedes seleccionar más de 50 etiquetas personalizadas por video.");
         }
 
         $processedTags = [];
@@ -370,27 +370,30 @@ class StudioServices {
                     'type' => $type
                 ];
             } 
-            // Si llega como un string de texto (ej. etiquetas libres creadas por el usuario)
+            // Si llega como un string de texto
             else if (is_string($tagItem) && trim($tagItem) !== '') {
                 $tagName = trim($tagItem);
-                try {
-                    // MAGIC FIX: Obligamos a que TODAS las etiquetas libres se registren en la DB
-                    // para obtener un tag_id real. Si no hacemos esto, la base de datos rechaza
-                    // la inserción en 'video_tags' porque 'tag_id' no puede ser nulo.
-                    $tagId = $this->tagRepo->findOrCreate($tagName, $type);
-                    $processedTags[] = [
-                        'id' => $tagId,
-                        'type' => $type,
-                        'name' => $tagName
-                    ];
-                    error_log("[StudioServices] processTags - Etiqueta '$tagName' guardada/encontrada con ID: $tagId");
-                } catch (\Exception $e) {
-                    error_log("[StudioServices] processTags - ERROR al crear etiqueta '$tagName': " . $e->getMessage());
-                    // Fallback en caso de emergencia, pero este no debería ejecutarse
+                
+                if ($type === 'custom') {
+                    // Las etiquetas personalizadas ('custom') no pertenecen a la tabla rígida `tags`.
                     $processedTags[] = [
                         'name' => $tagName,
                         'type' => $type
                     ];
+                } else {
+                    // Para modelo y category, intentamos asociar/crear en la tabla 'tags'
+                    try {
+                        $tagId = $this->tagRepo->findOrCreate($tagName, $type);
+                        if ($tagId > 0) {
+                            $processedTags[] = [
+                                'id' => $tagId,
+                                'type' => $type,
+                                'name' => $tagName
+                            ];
+                        }
+                    } catch (\Exception $e) {
+                        error_log("[StudioServices] processTags - ERROR al crear etiqueta '$tagName': " . $e->getMessage());
+                    }
                 }
             } 
             // Si llega un arreglo/objeto desde el frontend {id: ..., name: ...}
@@ -402,15 +405,24 @@ class StudioServices {
                     ];
                 } elseif (isset($tagItem['name'])) {
                     $tagName = trim($tagItem['name']);
-                    try {
-                        $tagId = $this->tagRepo->findOrCreate($tagName, $type);
+                    if ($type === 'custom') {
                         $processedTags[] = [
-                            'id' => $tagId,
-                            'type' => $type,
-                            'name' => $tagName
+                            'name' => $tagName,
+                            'type' => $type
                         ];
-                    } catch (\Exception $e) {
-                        error_log("[StudioServices] processTags - ERROR al crear etiqueta obj '$tagName': " . $e->getMessage());
+                    } else {
+                        try {
+                            $tagId = $this->tagRepo->findOrCreate($tagName, $type);
+                            if ($tagId > 0) {
+                                $processedTags[] = [
+                                    'id' => $tagId,
+                                    'type' => $type,
+                                    'name' => $tagName
+                                ];
+                            }
+                        } catch (\Exception $e) {
+                            error_log("[StudioServices] processTags - ERROR al crear etiqueta obj '$tagName': " . $e->getMessage());
+                        }
                     }
                 }
             }
@@ -443,9 +455,9 @@ class StudioServices {
 
         $modelsData = $this->processTags($models, 'modelo');
         $categoriesData = $this->processTags($categories, 'category');
-        $freeTagsData = $this->processTags($tags, 'free');
+        $customTagsData = $this->processTags($tags, 'custom');
         
-        $allTags = array_merge($modelsData, $categoriesData, $freeTagsData);
+        $allTags = array_merge($modelsData, $categoriesData, $customTagsData);
         $uniqueTags = [];
         
         foreach ($allTags as $t) {
@@ -512,9 +524,9 @@ class StudioServices {
 
         $modelsData = $this->processTags($models, 'modelo');
         $categoriesData = $this->processTags($categories, 'category');
-        $freeTagsData = $this->processTags($tags, 'free');
+        $customTagsData = $this->processTags($tags, 'custom');
         
-        $allTags = array_merge($modelsData, $categoriesData, $freeTagsData);
+        $allTags = array_merge($modelsData, $categoriesData, $customTagsData);
         $uniqueTags = [];
         
         foreach ($allTags as $t) {

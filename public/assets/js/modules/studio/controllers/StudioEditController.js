@@ -97,7 +97,7 @@ export class StudioEditController {
 
                     const modelsIds = this.tagsManager.getModelsIds();
                     const categoriesIds = this.tagsManager.getCategoriesIds();
-                    const freeTagsArr = this.tagsManager.getFreeTags();
+                    const customTagsArr = this.tagsManager.getCustomTags();
 
                     let hasError = false;
                     const updateRoute = ApiRoutes.Studio?.UpdateTitle || 'studio.update_title';
@@ -108,7 +108,7 @@ export class StudioEditController {
                         visibility: newVisibility,
                         models: modelsIds,
                         categories: categoriesIds,
-                        tags: freeTagsArr
+                        tags: customTagsArr
                     });
 
                     if (updateRes.status === 'success') {
@@ -290,11 +290,11 @@ export class StudioEditController {
         
         const modelsArr = document.getElementById('hiddenModelsArray') ? document.getElementById('hiddenModelsArray').value : '[]';
         const categoriesArr = document.getElementById('hiddenCategoriesArray') ? document.getElementById('hiddenCategoriesArray').value : '[]';
-        const freeTagsArr = document.getElementById('hiddenTagsArray') ? document.getElementById('hiddenTagsArray').value : '[]';
+        const customTagsArr = document.getElementById('hiddenTagsArray') ? document.getElementById('hiddenTagsArray').value : '[]';
         
         formData.append('models', modelsArr);
         formData.append('categories', categoriesArr);
-        formData.append('tags', freeTagsArr);
+        formData.append('tags', customTagsArr);
 
         if (video.draftThumbnailType === 'file') formData.append('thumbnail', video.draftThumbnailData);
         else if (video.draftThumbnailType === 'generated') formData.append('generated_path', video.draftThumbnailData);

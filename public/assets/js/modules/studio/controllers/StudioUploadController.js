@@ -209,7 +209,7 @@ export class StudioUploadController {
             this.tagsManager.setInitialTags(video.tags || []);
             video.modelsIds = this.tagsManager.getModelsIds();
             video.categoriesIds = this.tagsManager.getCategoriesIds();
-            video.freeTags = this.tagsManager.getFreeTags();
+            video.customTags = this.tagsManager.getCustomTags();
         }
 
         if (this.thumbnailManager) {
@@ -228,7 +228,7 @@ export class StudioUploadController {
         if (video) {
             video.modelsIds = this.tagsManager.getModelsIds();
             video.categoriesIds = this.tagsManager.getCategoriesIds();
-            video.freeTags = this.tagsManager.getFreeTags();
+            video.customTags = this.tagsManager.getCustomTags();
         }
     }
 
@@ -431,7 +431,7 @@ export class StudioUploadController {
 
         let models = video.modelsIds;
         let categories = video.categoriesIds;
-        let tags = video.freeTags;
+        let tags = video.customTags;
 
         if (models === undefined && Array.isArray(video.tags)) {
             models = video.tags.filter(t => t.type === 'modelo').map(t => t.id);
@@ -440,7 +440,7 @@ export class StudioUploadController {
             categories = video.tags.filter(t => t.type === 'category').map(t => t.id);
         }
         if (tags === undefined && Array.isArray(video.tags)) {
-            tags = video.tags.filter(t => t.type === 'free' || t.type === 'general' || typeof t === 'string').map(t => typeof t === 'string' ? t : t.name);
+            tags = video.tags.filter(t => t.type === 'custom' || typeof t === 'string').map(t => typeof t === 'string' ? t : t.name);
         }
 
         models = models || [];

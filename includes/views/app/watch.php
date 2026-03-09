@@ -69,12 +69,12 @@
                     <span class="watch-tag-item" style="opacity: 0.5;">Cargando...</span>
                 </div>
 
-                <div id="watch-free-tags-section" style="display: none;">
+                <div id="watch-custom-tags-section" style="display: none;">
                     <div class="watch-tags-divider" id="watch-tags-divider" style="height: 1px; background-color: rgba(150, 150, 150, 0.2); margin: 16px 0;"></div>
                     <div class="watch-details-meta" style="margin-bottom: 12px;">
-                        <span class="watch-meta-highlight">Etiquetas Libres</span>
+                        <span class="watch-meta-highlight">Etiquetas Personalizadas</span>
                     </div>
-                    <div class="watch-info-tags-list" id="watch-video-free-tags-container">
+                    <div class="watch-info-tags-list" id="watch-video-custom-tags-container">
                         </div>
                 </div>
             </div>

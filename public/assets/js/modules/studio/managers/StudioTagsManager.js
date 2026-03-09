@@ -5,7 +5,7 @@ export class StudioTagsManager {
         this.onTagsChanged = onTagsChangedCallback;
         this.selectedModels = [];
         this.selectedCategories = [];
-        this.selectedFreeTags = []; 
+        this.selectedCustomTags = []; 
         this.attachEvents();
         console.log("🟢 [StudioTagsManager] Inicializado correctamente.");
     }
@@ -14,7 +14,7 @@ export class StudioTagsManager {
         console.log("🔵 [StudioTagsManager] setInitialTags() - Cargando etiquetas desde BD:", tags);
         this.selectedModels = [];
         this.selectedCategories = [];
-        this.selectedFreeTags = [];
+        this.selectedCustomTags = [];
         
         if (tags && Array.isArray(tags)) {
             tags.forEach(tag => {
@@ -23,11 +23,9 @@ export class StudioTagsManager {
                 } else if (tag.type === 'category') {
                     this.selectedCategories.push(tag);
                 } else {
-                    // FILTRO ABSOLUTO: Si no es modelo ni categoría, es etiqueta libre.
-                    // Extraemos el string ya sea que venga como texto plano o como objeto {name: "..."}
                     const tagName = typeof tag === 'string' ? tag : (tag.name || '');
                     if (tagName.trim() !== '') {
-                        this.selectedFreeTags.push(tagName.trim());
+                        this.selectedCustomTags.push(tagName.trim());
                     }
                 }
             });
@@ -35,11 +33,11 @@ export class StudioTagsManager {
         
         console.log("✅ [StudioTagsManager] Modelos mapeados:", this.selectedModels);
         console.log("✅ [StudioTagsManager] Categorías mapeadas:", this.selectedCategories);
-        console.log("✅ [StudioTagsManager] Etiquetas Libres mapeadas:", this.selectedFreeTags);
+        console.log("✅ [StudioTagsManager] Etiquetas Custom mapeadas:", this.selectedCustomTags);
 
         this.renderSelectedTags('modelo');
         this.renderSelectedTags('category');
-        this.renderFreeTags();
+        this.renderCustomTags();
     }
 
     getModelsIds() {
@@ -50,17 +48,16 @@ export class StudioTagsManager {
         return this.selectedCategories.map(t => parseInt(t.id));
     }
 
-    getFreeTags() {
-        // MEJORA: Auto-capturar texto que el usuario olvidó darle "Enter" antes de guardar
+    getCustomTags() {
         const inputEl = document.getElementById('freeTagsInput');
         if (inputEl && inputEl.value.trim() !== '') {
             console.log(`[StudioTagsManager] ⚠️ Se detectó texto pendiente al guardar: '${inputEl.value}'. Agregando automáticamente.`);
-            this.addFreeTag(inputEl.value);
+            this.addCustomTag(inputEl.value);
             inputEl.value = '';
         }
 
-        console.log("🔵 [StudioTagsManager] getFreeTags() solicitado. Retornando:", this.selectedFreeTags);
-        return this.selectedFreeTags;
+        console.log("🔵 [StudioTagsManager] getCustomTags() solicitado. Retornando:", this.selectedCustomTags);
+        return this.selectedCustomTags;
     }
 
     async loadTagsData(moduleName, type) {
@@ -149,24 +146,24 @@ export class StudioTagsManager {
         if (option) option.classList.remove('active');
     }
 
-    addFreeTag(name) {
+    addCustomTag(name) {
         const cleanName = name.trim();
         if (!cleanName) return;
         
-        if (!this.selectedFreeTags.includes(cleanName)) {
-            if (this.selectedFreeTags.length >= 50) { 
+        if (!this.selectedCustomTags.includes(cleanName)) {
+            if (this.selectedCustomTags.length >= 50) { 
                 alert("Has alcanzado el límite máximo de 50 etiquetas."); 
                 return; 
             }
-            this.selectedFreeTags.push(cleanName);
-            this.renderFreeTags();
+            this.selectedCustomTags.push(cleanName);
+            this.renderCustomTags();
             if(this.onTagsChanged) this.onTagsChanged();
         }
     }
 
-    removeFreeTag(name) {
-        this.selectedFreeTags = this.selectedFreeTags.filter(t => t !== name);
-        this.renderFreeTags();
+    removeCustomTag(name) {
+        this.selectedCustomTags = this.selectedCustomTags.filter(t => t !== name);
+        this.renderCustomTags();
         if(this.onTagsChanged) this.onTagsChanged();
     }
 
@@ -210,7 +207,7 @@ export class StudioTagsManager {
                 if (parentGroup) {
                     parentGroup.appendChild(wrapper);
                 } else {
-                    triggerEl.parentElement.appendChild(wrapper); // Plan B
+                    triggerEl.parentElement.appendChild(wrapper); 
                 }
             }
         }
@@ -234,7 +231,7 @@ export class StudioTagsManager {
         hiddenInput.value = JSON.stringify(arr.map(t => parseInt(t.id)));
     }
 
-    renderFreeTags() {
+    renderCustomTags() {
         const hiddenInput = document.getElementById('hiddenTagsArray');
         
         if (!hiddenInput) {
@@ -246,9 +243,9 @@ export class StudioTagsManager {
             hiddenInput.setAttribute('name', 'tags');
         }
 
-        let wrapper = document.getElementById('freeTagsWrapper');
+        let wrapper = document.getElementById('customTagsWrapper');
 
-        if (this.selectedFreeTags.length === 0) {
+        if (this.selectedCustomTags.length === 0) {
             if (wrapper) wrapper.remove();
             hiddenInput.value = '[]';
             return;
@@ -256,11 +253,11 @@ export class StudioTagsManager {
 
         if (!wrapper) {
             wrapper = document.createElement('div');
-            wrapper.id = 'freeTagsWrapper';
+            wrapper.id = 'customTagsWrapper';
             wrapper.setAttribute('data-component', 'tags-wrapper'); 
             
             const innerContainer = document.createElement('div');
-            innerContainer.id = 'selectedFreeTagsContainer';
+            innerContainer.id = 'selectedCustomTagsContainer';
             innerContainer.setAttribute('data-component', 'tags-container'); 
             
             wrapper.appendChild(innerContainer);
@@ -269,19 +266,19 @@ export class StudioTagsManager {
             if (inputEl) {
                 const parentGroup = inputEl.closest('.component-group-item');
                 if (parentGroup) {
-                    parentGroup.appendChild(wrapper); // Plan A: Inyectar en el grupo principal
+                    parentGroup.appendChild(wrapper); 
                 } else {
                     console.warn("⚠️ [StudioTagsManager] Plan B: Inyectando badges junto al input.");
-                    inputEl.parentElement.appendChild(wrapper); // Plan B: Inyectar junto al input
+                    inputEl.parentElement.appendChild(wrapper); 
                 }
             }
         }
 
-        const container = document.getElementById('selectedFreeTagsContainer');
+        const container = document.getElementById('selectedCustomTagsContainer');
         if (!container) return; 
 
         container.innerHTML = '';
-        this.selectedFreeTags.forEach(tagName => {
+        this.selectedCustomTags.forEach(tagName => {
             const pill = document.createElement('div');
             pill.className = 'tag-pill';
             pill.style.border = '1px dashed var(--border-color)';
@@ -290,13 +287,13 @@ export class StudioTagsManager {
             pill.innerHTML = `
                 <span class="material-symbols-rounded" style="font-size: 14px; margin-right: 4px; color: var(--text-secondary);">tag</span>
                 <span class="tag-pill-text">${tagName}</span>
-                <span class="material-symbols-rounded tag-pill-remove" data-name="${tagName}" data-type="free">close</span>
+                <span class="material-symbols-rounded tag-pill-remove" data-name="${tagName}" data-type="custom">close</span>
             `;
 
             container.appendChild(pill);
         });
 
-        hiddenInput.value = JSON.stringify(this.selectedFreeTags);
+        hiddenInput.value = JSON.stringify(this.selectedCustomTags);
     }
 
     attachEvents() {
@@ -320,17 +317,16 @@ export class StudioTagsManager {
             if (e.target.id === 'freeTagsInput') {
                 if (e.key === 'Enter' || e.key === ',') {
                     e.preventDefault();
-                    this.addFreeTag(e.target.value);
+                    this.addCustomTag(e.target.value);
                     e.target.value = '';
                 }
             }
         });
 
-        // NUEVO: Auto-guardar la etiqueta si hace clic fuera del campo de texto
         document.addEventListener('focusout', (e) => {
             if (e.target.id === 'freeTagsInput') {
                 if (e.target.value.trim() !== '') {
-                    this.addFreeTag(e.target.value);
+                    this.addCustomTag(e.target.value);
                     e.target.value = '';
                 }
             }
@@ -370,9 +366,9 @@ export class StudioTagsManager {
             const removePill = e.target.closest('.tag-pill-remove');
             if (removePill) {
                 const type = removePill.getAttribute('data-type');
-                if (type === 'free') {
+                if (type === 'custom') {
                     const name = removePill.getAttribute('data-name');
-                    this.removeFreeTag(name);
+                    this.removeCustomTag(name);
                 } else {
                     const id = removePill.getAttribute('data-id');
                     this.removeTag(id, type);

@@ -136,17 +136,16 @@ export class WatchController {
             }
         }
 
-        // --- DIV 5: ETIQUETAS LIBRES ---
-        const freeTagsSection = document.getElementById('watch-free-tags-section');
-        const freeTagsContainer = document.getElementById('watch-video-free-tags-container');
+        // --- DIV 5: ETIQUETAS LIBRES (Custom) ---
+        const customTagsSection = document.getElementById('watch-custom-tags-section');
+        const customTagsContainer = document.getElementById('watch-video-custom-tags-container');
         const tagsDivider = document.getElementById('watch-tags-divider');
         
-        // Asumimos que la API retorna "tags" o "free_tags"
-        const freeTags = data.tags || data.free_tags || []; 
+        const customTags = data.tags || []; 
 
-        if (freeTagsSection && freeTagsContainer) {
-            if (freeTags && freeTags.length > 0) {
-                let freeTagsHTML = freeTags.map(t => {
+        if (customTagsSection && customTagsContainer) {
+            if (customTags && customTags.length > 0) {
+                let customTagsHTML = customTags.map(t => {
                     // Extraer nombre por si viene como objeto {name: '...'} o string directo
                     const tagName = (typeof t === 'object') ? t.name : t;
                     return `<span class="watch-tag-item">
@@ -154,15 +153,15 @@ export class WatchController {
                     </span>`;
                 }).join('');
 
-                freeTagsContainer.innerHTML = freeTagsHTML;
-                freeTagsSection.style.display = 'block';
+                customTagsContainer.innerHTML = customTagsHTML;
+                customTagsSection.style.display = 'block';
 
                 // Si no hubo modelos ni categorías, ocultamos la línea divisora superior para mantener estética
                 if (tagsDivider) {
                     tagsDivider.style.display = hasModelsOrCategories ? 'block' : 'none';
                 }
             } else {
-                freeTagsSection.style.display = 'none';
+                customTagsSection.style.display = 'none';
             }
         }
 

@@ -141,7 +141,7 @@ class VideoRepository implements VideoRepositoryInterface {
                 $video['categories'][] = $tag;
             } elseif ($tag['type'] === 'modelo') {
                 $video['models'][] = $tag;
-            } elseif ($tag['type'] === 'free' || $tag['type'] === 'general') {
+            } elseif ($tag['type'] === 'custom') {
                 $video['tags'][] = $tag;
             }
         }
