@@ -5,6 +5,7 @@ namespace App\Api\Services;
 
 use App\Core\Interfaces\VideoRepositoryInterface;
 use App\Core\Interfaces\TagRepositoryInterface;
+use App\Core\Interfaces\PlaylistRepositoryInterface;
 use Predis\Client as RedisClient;
 use Exception;
 
@@ -12,6 +13,7 @@ class StudioServices {
     private $videoRepo;
     private $tagRepo;
     private $redis;
+    private $playlistRepo;
     
     private $tempVideoDir = __DIR__ . '/../../storage/temp_videos/';
     private $thumbnailDir = __DIR__ . '/../../public/storage/thumbnails/';
@@ -30,10 +32,11 @@ class StudioServices {
         'mp4', 'webm', 'mkv', 'mov', 'avi', 'mpeg', 'mpg'
     ];
 
-    public function __construct(VideoRepositoryInterface $videoRepo, TagRepositoryInterface $tagRepo, RedisClient $redis) {
+    public function __construct(VideoRepositoryInterface $videoRepo, TagRepositoryInterface $tagRepo, RedisClient $redis, PlaylistRepositoryInterface $playlistRepo) {
         $this->videoRepo = $videoRepo;
         $this->tagRepo = $tagRepo;
         $this->redis = $redis;
+        $this->playlistRepo = $playlistRepo;
         
         if (!is_dir($this->tempVideoDir)) mkdir($this->tempVideoDir, 0755, true);
         if (!is_dir($this->thumbnailDir)) mkdir($this->thumbnailDir, 0755, true);
@@ -510,8 +513,6 @@ class StudioServices {
         return ['success' => true];
     }
 
-    // NUEVO: Método explícito para eliminar videos de la tabla, 
-    // reutilizando la lógica destructiva a fondo que ya posee cancelUpload
     public function deleteVideo(int $userId, int $videoId): array {
         return $this->cancelUpload($userId, $videoId);
     }
@@ -524,6 +525,27 @@ class StudioServices {
             if (!$this->deleteDirectory($dir . DIRECTORY_SEPARATOR . $item)) return false;
         }
         return rmdir($dir);
+    }
+
+    public function createPlaylist(int $userId, string $title, ?string $description, string $visibility, string $videoOrder): array {
+        if (empty(trim($title))) {
+            throw new Exception("El título de la playlist es obligatorio.");
+        }
+        
+        // Generar UUID único
+        $uuid = sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x', mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0x0fff) | 0x4000, mt_rand(0, 0x3fff) | 0x8000, mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff));
+        
+        $id = $this->playlistRepo->create($userId, $uuid, trim($title), $description, $visibility, $videoOrder);
+        
+        return [
+            'id' => $id,
+            'uuid' => $uuid,
+            'title' => trim($title)
+        ];
+    }
+
+    public function getPlaylists(int $userId): array {
+        return $this->playlistRepo->getAllByUserId($userId);
     }
 }
 ?>

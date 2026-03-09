@@ -11,7 +11,7 @@
                 
                 <div class="component-view-top-right">
                     <div class="component-actions">
-                        <button class="component-button component-button--primary" data-tooltip="<?php echo __('studio_tooltip_new_playlist'); ?>">
+                        <button class="component-button component-button--primary" id="btnCreatePlaylist" data-tooltip="<?php echo __('studio_tooltip_new_playlist'); ?>">
                             <span class="material-symbols-rounded">playlist_add</span>
                             <span><?php echo __('studio_btn_new_playlist'); ?></span>
                         </button>

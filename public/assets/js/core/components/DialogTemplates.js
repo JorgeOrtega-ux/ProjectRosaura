@@ -170,5 +170,49 @@ export const DialogTemplates = {
                 <button class="component-button component-button--h45 component-button--full hide-on-desktop" data-dialog-action="cancel">Cancelar</button>
             </div>
         `
+    },
+    createPlaylistTemplate: {
+        build: () => `
+            <div class="pill-container"><div class="drag-handle"></div></div>
+            <div class="component-dialog-header">
+                <h2 class="component-dialog-title">Crear nueva playlist</h2>
+                <p class="component-dialog-desc">Completa los detalles de tu nueva lista de reproducción.</p>
+            </div>
+            <div class="component-form-body" style="margin-top: 16px;">
+                <div class="component-input-group">
+                    <input type="text" id="playlistTitle" class="component-input-field" placeholder=" ">
+                    <label for="playlistTitle" class="component-input-label">Título (obligatorio)</label>
+                </div>
+                
+                <div class="component-input-group" style="margin-top: 12px;">
+                    <textarea id="playlistDesc" class="component-input-field" placeholder=" " rows="3" style="resize: none;"></textarea>
+                    <label for="playlistDesc" class="component-input-label">Descripción</label>
+                </div>
+                
+                <div class="component-input-group" style="margin-top: 12px;">
+                    <select id="playlistVisibility" class="component-input-field">
+                        <option value="public">Pública</option>
+                        <option value="unlisted">No listada</option>
+                        <option value="private">Privada</option>
+                    </select>
+                    <label for="playlistVisibility" class="component-input-label">Visibilidad</label>
+                </div>
+                
+                <div class="component-input-group" style="margin-top: 12px;">
+                    <select id="playlistOrder" class="component-input-field">
+                        <option value="published_newest">Fecha de publicación (más recientes)</option>
+                        <option value="published_oldest">Fecha de publicación (más antiguos)</option>
+                        <option value="popular">Más populares</option>
+                        <option value="uploaded_newest">Fecha de carga (más recientes)</option>
+                        <option value="uploaded_oldest">Fecha de carga (más antiguos)</option>
+                    </select>
+                    <label for="playlistOrder" class="component-input-label">Orden de los videos</label>
+                </div>
+            </div>
+            <div class="component-dialog-actions" style="margin-top: 24px;">
+                <button class="component-button component-button--h45 component-button--light hide-on-desktop" data-dialog-action="cancel">Cancelar</button>
+                <button class="component-button component-button--h45 component-button--dark component-button--full" data-dialog-action="confirm">Crear playlist</button>
+            </div>
+        `
     }
 };

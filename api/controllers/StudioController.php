@@ -282,7 +282,6 @@ class StudioController {
         }
     }
 
-    // NUEVA FUNCIÓN PARA ELIMINAR CUALQUIER VIDEO DESDE LA TABLA
     public function delete_video($input) {
         $userId = $this->requireAuth();
         if (!$userId) {
@@ -302,6 +301,43 @@ class StudioController {
             return ['success' => true, 'status' => 'success', 'message' => 'Video eliminado correctamente.'];
         } catch (\Exception $e) {
             http_response_code(400);
+            return ['success' => false, 'status' => 'error', 'message' => $e->getMessage()];
+        }
+    }
+
+    public function create_playlist($input) {
+        $userId = $this->requireAuth();
+        if (!$userId) {
+            http_response_code(401);
+            return ['success' => false, 'status' => 'error', 'message' => 'No autorizado'];
+        }
+
+        $title = $input['title'] ?? $_POST['title'] ?? '';
+        $description = $input['description'] ?? $_POST['description'] ?? null;
+        $visibility = $input['visibility'] ?? $_POST['visibility'] ?? 'public';
+        $videoOrder = $input['video_order'] ?? $_POST['video_order'] ?? 'published_newest';
+
+        try {
+            $data = $this->studioServices->createPlaylist($userId, $title, $description, $visibility, $videoOrder);
+            return ['success' => true, 'status' => 'success', 'data' => $data, 'message' => 'Playlist creada exitosamente'];
+        } catch (\Exception $e) {
+            http_response_code(400);
+            return ['success' => false, 'status' => 'error', 'message' => $e->getMessage()];
+        }
+    }
+
+    public function get_playlists($input) {
+        $userId = $this->requireAuth();
+        if (!$userId) {
+            http_response_code(401);
+            return ['success' => false, 'status' => 'error', 'message' => 'No autorizado'];
+        }
+
+        try {
+            $data = $this->studioServices->getPlaylists($userId);
+            return ['success' => true, 'status' => 'success', 'data' => $data];
+        } catch (\Exception $e) {
+            http_response_code(500);
             return ['success' => false, 'status' => 'error', 'message' => $e->getMessage()];
         }
     }

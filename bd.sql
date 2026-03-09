@@ -213,3 +213,16 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     CONSTRAINT fk_sub_subscriber FOREIGN KEY (subscriber_id) REFERENCES users(id) ON DELETE CASCADE,
     CONSTRAINT fk_sub_channel FOREIGN KEY (channel_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS playlists (
+    id INT(11) AUTO_INCREMENT PRIMARY KEY,
+    uuid VARCHAR(36) NOT NULL UNIQUE,
+    user_id INT(11) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT DEFAULT NULL,
+    visibility ENUM('public', 'private', 'unlisted') DEFAULT 'public',
+    video_order ENUM('published_newest', 'published_oldest', 'popular', 'uploaded_newest', 'uploaded_oldest') DEFAULT 'published_newest',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_playlist_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -91,6 +91,8 @@ return [
     'studio.publish_video'        => ['controller' => 'App\Api\Controllers\StudioController', 'action' => 'publish_video'],
     'studio.cancel_upload'        => ['controller' => 'App\Api\Controllers\StudioController', 'action' => 'cancel_upload'],
     'studio.delete_video'         => ['controller' => 'App\Api\Controllers\StudioController', 'action' => 'delete_video'],
+    'studio.create_playlist'      => ['controller' => 'App\Api\Controllers\StudioController', 'action' => 'create_playlist'],
+    'studio.get_playlists'        => ['controller' => 'App\Api\Controllers\StudioController', 'action' => 'get_playlists'],
     
     // --- RUTAS DE TAGS PARA EL STUDIO ---
     'studio.get_models'           => ['controller' => 'App\Api\Controllers\StudioController', 'action' => 'get_models'],

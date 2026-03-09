@@ -33,8 +33,10 @@ use App\Core\Interfaces\VideoRepositoryInterface;
 use App\Core\Repositories\VideoRepository;
 use App\Core\Interfaces\TagRepositoryInterface;
 use App\Core\Repositories\TagRepository;
-use App\Core\Interfaces\SubscriptionRepositoryInterface; /* NUEVO */
-use App\Core\Repositories\SubscriptionRepository; /* NUEVO */
+use App\Core\Interfaces\SubscriptionRepositoryInterface;
+use App\Core\Repositories\SubscriptionRepository;
+use App\Core\Interfaces\PlaylistRepositoryInterface;
+use App\Core\Repositories\PlaylistRepository;
 
 class Container implements ContainerInterface {
     private $instances = [];
@@ -63,10 +65,11 @@ class Container implements ContainerInterface {
         $this->bindings[ServerConfigRepositoryInterface::class] = ServerConfigRepository::class;
         $this->bindings[ModerationRepositoryInterface::class] = ModerationRepository::class;
         $this->bindings[TagRepositoryInterface::class] = TagRepository::class;
-        $this->bindings[SubscriptionRepositoryInterface::class] = SubscriptionRepository::class; /* NUEVO BINDING */
+        $this->bindings[SubscriptionRepositoryInterface::class] = SubscriptionRepository::class; 
         
         // 4. Repositorios de Contenido (Studio)
         $this->bindings[VideoRepositoryInterface::class] = VideoRepository::class;
+        $this->bindings[PlaylistRepositoryInterface::class] = PlaylistRepository::class; 
     }
 
     public function get(string $id) {
