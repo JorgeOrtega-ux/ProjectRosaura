@@ -4,17 +4,20 @@
 namespace App\Api\Controllers;
 
 use App\Api\Services\StudioServices;
-use App\Core\Interfaces\SessionManagerInterface; // CORRECCIÓN AQUÍ
+use App\Core\Interfaces\SessionManagerInterface;
+use App\Core\Interfaces\RateLimiterInterface; // INYECTADO: Interfaz para el Rate Limit
 use App\Core\Helpers\Utils;
 
 class StudioController {
     private $studioServices;
     private $sessionManager;
+    private $rateLimiter;
 
-    // CORRECCIÓN EN EL PARÁMETRO DEL CONSTRUCTOR
-    public function __construct(StudioServices $studioServices, SessionManagerInterface $sessionManager) {
+    // ACTUALIZADO: Constructor con Inyección del Rate Limiter
+    public function __construct(StudioServices $studioServices, SessionManagerInterface $sessionManager, RateLimiterInterface $rateLimiter) {
         $this->studioServices = $studioServices;
         $this->sessionManager = $sessionManager;
+        $this->rateLimiter = $rateLimiter;
     }
 
     private function requireAuth() {
@@ -22,6 +25,19 @@ class StudioController {
             return false;
         }
         return $this->sessionManager->get('user_id');
+    }
+
+    /**
+     * Helper centralizado para validar Rate Limits y devolver la respuesta estándar
+     */
+    private function checkRateLimit(string $action, int $maxAttempts, int $lockoutMinutes, string $customMsg = null) {
+        $check = $this->rateLimiter->check($action, $maxAttempts, $lockoutMinutes, $customMsg);
+        if (!$check['allowed']) {
+            http_response_code(429); // 429 Too Many Requests
+            return $check; // ['allowed' => false, 'message' => '...']
+        }
+        $this->rateLimiter->record($action, $maxAttempts, $lockoutMinutes);
+        return ['allowed' => true];
     }
 
     public function get_models($input) {
@@ -64,6 +80,20 @@ class StudioController {
         $role = strtolower($this->sessionManager->get('user_role') ?? 'user');
 
         $isPreCheck = isset($input['pre_check']) ? (bool)$input['pre_check'] : (isset($_POST['pre_check']) ? (bool)$_POST['pre_check'] : false);
+        $chunkIndex = isset($input['chunk_index']) ? (int)$input['chunk_index'] : (isset($_POST['chunk_index']) ? (int)$_POST['chunk_index'] : null);
+        
+        // RATE LIMIT: Lógica separada para la inicialización vs. la subida de chunks
+        if ($isPreCheck || $chunkIndex === 0 || $chunkIndex === null) {
+            // Límite estricto para iniciar subidas (ej. 10 inicios cada 5 minutos)
+            $rate = $this->checkRateLimit('studio_upload_init', 10, 5, 'Demasiados intentos de subida de video. Espera {minutes} minutos.');
+        } else {
+            // Límite generoso para subida de chunks para no bloquear videos pesados (ej. 1000 chunks cada 5 min)
+            $rate = $this->checkRateLimit('studio_upload_chunks', 1000, 5);
+        }
+        if (!$rate['allowed']) {
+            return ['success' => false, 'status' => 'error', 'message' => $rate['message']];
+        }
+
         if ($isPreCheck) {
             $totalSize = isset($input['total_size']) ? (int)$input['total_size'] : (isset($_POST['total_size']) ? (int)$_POST['total_size'] : 0);
             try {
@@ -77,7 +107,6 @@ class StudioController {
 
         $files = $input['_files'] ?? $_FILES;
         $uploadId = $input['upload_id'] ?? $_POST['upload_id'] ?? null;
-        $chunkIndex = isset($input['chunk_index']) ? (int)$input['chunk_index'] : (isset($_POST['chunk_index']) ? (int)$_POST['chunk_index'] : null);
         $totalChunks = isset($input['total_chunks']) ? (int)$input['total_chunks'] : (isset($_POST['total_chunks']) ? (int)$_POST['total_chunks'] : null);
         $originalFilename = $input['original_filename'] ?? $_POST['original_filename'] ?? null;
         $totalSize = isset($input['total_size']) ? (int)$input['total_size'] : (isset($_POST['total_size']) ? (int)$_POST['total_size'] : null);
@@ -108,6 +137,10 @@ class StudioController {
             return ['success' => false, 'status' => 'error', 'message' => 'No autorizado'];
         }
 
+        // RATE LIMIT: 20 subidas de miniatura cada 5 minutos
+        $rate = $this->checkRateLimit('studio_upload_thumbnail', 20, 5, 'Demasiadas miniaturas subidas. Espera {minutes} minutos.');
+        if (!$rate['allowed']) return ['success' => false, 'status' => 'error', 'message' => $rate['message']];
+
         $files = $input['_files'] ?? $_FILES;
         $videoId = $input['video_id'] ?? $_POST['video_id'] ?? null;
         $thumbnailBase64 = $input['thumbnail_base64'] ?? $_POST['thumbnail_base64'] ?? null;
@@ -134,6 +167,10 @@ class StudioController {
             return ['success' => false, 'status' => 'error', 'message' => 'No autorizado'];
         }
 
+        // RATE LIMIT: 30 actualizaciones de metadatos cada 5 minutos
+        $rate = $this->checkRateLimit('studio_update_title', 30, 5, 'Demasiadas actualizaciones de metadatos. Espera {minutes} minutos.');
+        if (!$rate['allowed']) return ['success' => false, 'status' => 'error', 'message' => $rate['message']];
+
         $videoId = $input['video_id'] ?? $_POST['video_id'] ?? null;
         $title = $input['title'] ?? $_POST['title'] ?? null;
         $description = $input['description'] ?? $_POST['description'] ?? null;
@@ -143,7 +180,6 @@ class StudioController {
         $categoriesRaw = $input['categories'] ?? $_POST['categories'] ?? [];
         $tagsRaw = $input['tags'] ?? $_POST['tags'] ?? [];
 
-        // Agregamos LOGS para ver qué está recibiendo el backend exactamente
         error_log("[StudioController] update_title - modelsRaw recibido: " . print_r($modelsRaw, true));
         error_log("[StudioController] update_title - categoriesRaw recibido: " . print_r($categoriesRaw, true));
         error_log("[StudioController] update_title - tagsRaw (etiquetas libres) recibido: " . print_r($tagsRaw, true));
@@ -233,6 +269,10 @@ class StudioController {
             return ['success' => false, 'status' => 'error', 'message' => 'No autorizado'];
         }
 
+        // RATE LIMIT: 15 publicaciones cada 5 minutos
+        $rate = $this->checkRateLimit('studio_publish_video', 15, 5, 'Has publicado demasiados videos rápidamente. Espera {minutes} minutos.');
+        if (!$rate['allowed']) return ['success' => false, 'status' => 'error', 'message' => $rate['message']];
+
         $videoId = $input['video_id'] ?? $_POST['video_id'] ?? null;
         $title = $input['title'] ?? $_POST['title'] ?? null;
         $description = $input['description'] ?? $_POST['description'] ?? '';
@@ -242,7 +282,6 @@ class StudioController {
         $categoriesRaw = $input['categories'] ?? $_POST['categories'] ?? [];
         $tagsRaw = $input['tags'] ?? $_POST['tags'] ?? [];
 
-        // Agregamos LOGS para ver qué está recibiendo el backend exactamente al publicar
         error_log("[StudioController] publish_video - modelsRaw recibido: " . print_r($modelsRaw, true));
         error_log("[StudioController] publish_video - categoriesRaw recibido: " . print_r($categoriesRaw, true));
         error_log("[StudioController] publish_video - tagsRaw (etiquetas libres) recibido: " . print_r($tagsRaw, true));
@@ -333,6 +372,10 @@ class StudioController {
             return ['success' => false, 'status' => 'error', 'message' => 'No autorizado'];
         }
 
+        // RATE LIMIT: Evitar spam de creación. 10 playlists cada 10 minutos
+        $rate = $this->checkRateLimit('studio_create_playlist', 10, 10, 'Has creado demasiadas playlists. Espera {minutes} minutos.');
+        if (!$rate['allowed']) return ['success' => false, 'status' => 'error', 'message' => $rate['message']];
+
         $title = $input['title'] ?? $_POST['title'] ?? '';
         $description = $input['description'] ?? $_POST['description'] ?? null;
         $visibility = $input['visibility'] ?? $_POST['visibility'] ?? 'public';
@@ -369,6 +412,10 @@ class StudioController {
             http_response_code(401);
             return ['success' => false, 'status' => 'error', 'message' => 'No autorizado'];
         }
+
+        // RATE LIMIT: 30 actualizaciones cada 5 minutos
+        $rate = $this->checkRateLimit('studio_update_playlist', 30, 5, 'Has actualizado la playlist demasiadas veces. Espera {minutes} minutos.');
+        if (!$rate['allowed']) return ['success' => false, 'status' => 'error', 'message' => $rate['message']];
 
         $playlistId = $input['playlist_id'] ?? $_POST['playlist_id'] ?? null;
         $title = $input['title'] ?? $_POST['title'] ?? '';
@@ -441,6 +488,10 @@ class StudioController {
             http_response_code(401);
             return ['success' => false, 'status' => 'error', 'message' => 'No autorizado'];
         }
+
+        // RATE LIMIT: Sincronizar videos satura la BD (INSERT/DELETE masivos). Limitado a 20 cada 5 minutos
+        $rate = $this->checkRateLimit('studio_sync_playlist', 20, 5, 'Demasiados intentos de sincronizar la playlist. Espera {minutes} minutos.');
+        if (!$rate['allowed']) return ['success' => false, 'status' => 'error', 'message' => $rate['message']];
 
         $playlistId = $input['playlist_id'] ?? $_POST['playlist_id'] ?? null;
         $videoIdsRaw = $input['video_ids'] ?? $_POST['video_ids'] ?? [];

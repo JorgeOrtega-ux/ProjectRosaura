@@ -589,6 +589,12 @@ class StudioServices {
     }
 
     public function createPlaylist(int $userId, string $title, ?string $description, string $visibility, string $videoOrder): array {
+        // ACTUALIZADO: Limite duro de 100 Playlists por Usuario para evitar saturación de BD
+        $currentPlaylists = $this->getPlaylists($userId);
+        if (count($currentPlaylists) >= 100) {
+            throw new Exception("Has alcanzado el límite máximo permitido de 100 playlists por usuario.");
+        }
+
         if (empty(trim($title))) {
             throw new Exception("El título de la playlist es obligatorio.");
         }
