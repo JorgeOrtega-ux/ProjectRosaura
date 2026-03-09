@@ -106,7 +106,7 @@
     background-color: #0f0f0f;
     color: #ffffff;
     border: none;
-    border-radius: 50px; 
+    border-radius: 50px;
     padding: 10px 24px;
     font-size: 14px;
     font-weight: 500;
@@ -199,15 +199,8 @@
     gap: 8px;
 }
 
-.component-divider {
-    border: none;
-    border-top: 1px solid var(--border-color);
-    margin: 0;
-    width: 100%;
-}
-
 .studio-uploading-preview {
-    flex: 0 0 320px; 
+    flex: 0 0 320px;
     position: sticky;
     top: 24px;
 }
@@ -224,7 +217,7 @@
 .studio-video-card__player {
     width: 100%;
     aspect-ratio: 16 / 9;
-    background-color: #000000; 
+    background-color: #000000;
     position: relative;
 }
 
@@ -252,7 +245,7 @@
     transform: translate(-50%, -50%);
     font-size: 48px;
     z-index: 2;
-    text-shadow: 0 2px 5px rgba(0,0,0,0.7);
+    text-shadow: 0 2px 5px rgba(0, 0, 0, 0.7);
 }
 
 .studio-video-card__info {
@@ -336,7 +329,7 @@
     height: 100%;
     object-fit: cover;
     display: block;
-    pointer-events: none; 
+    pointer-events: none;
 }
 
 .component-thumbnail-item:hover {
@@ -345,11 +338,11 @@
 }
 
 .component-thumbnail-item.component-thumbnail-selected {
-    border-color: #065fd4; 
+    border-color: #065fd4;
 }
 
 .component-thumbnail-item.component-thumbnail-selected::after {
-    content: '\e876'; 
+    content: '\e876';
     font-family: 'Material Symbols Rounded';
     position: absolute;
     top: 4px;
@@ -365,10 +358,6 @@
     font-size: 14px;
     font-weight: bold;
 }
-
-/* ==========================================================================
-   Nuevos estilos para la Tabla de Manage Content
-   ========================================================================== */
 
 .table-video-info {
     display: flex;
@@ -418,62 +407,57 @@
     font-weight: 500;
 }
 
-.status-queued { background-color: #f1f1f1; color: #606060; }
-.status-processing { background-color: #e5f6fd; color: #065fd4; }
-.status-processed { background-color: #e6f4ea; color: #137333; }
-.status-published { background-color: #e6f4ea; color: #137333; }
-.status-failed { background-color: #fce8e6; color: #c5221f; }
+.status-queued {
+    background-color: #f1f1f1;
+    color: #606060;
+}
+
+.status-processing {
+    background-color: #e5f6fd;
+    color: #065fd4;
+}
+
+.status-processed {
+    background-color: #e6f4ea;
+    color: #137333;
+}
+
+.status-published {
+    background-color: #e6f4ea;
+    color: #137333;
+}
+
+.status-failed {
+    background-color: #fce8e6;
+    color: #c5221f;
+}
 
 @media (prefers-color-scheme: dark) {
-    .status-queued { background-color: #3f3f3f; color: #aaaaaa; }
-    .status-processing { background-color: #121e2b; color: #3ea6ff; }
-    .status-processed { background-color: #0d2216; color: #5bb974; }
-    .status-published { background-color: #0d2216; color: #5bb974; }
-    .status-failed { background-color: #2b1110; color: #e2615c; }
-}
-
-@media (max-width: 900px) {
-    .studio-uploading-wrapper {
-        flex-direction: column-reverse; 
-        gap: 24px;
+    .status-queued {
+        background-color: #3f3f3f;
+        color: #aaaaaa;
     }
 
-    .studio-uploading-preview {
-        width: 100%;
-        flex: none;
-        position: relative;
-        top: 0;
-    }
-    
-    .studio-uploading-details {
-        width: 100%;
-    }
-}
-
-@media (max-width: 768px) {
-    .component-view-bottom .component-table-wrapper {
-        border: none;
-        border-radius: 0;
+    .status-processing {
+        background-color: #121e2b;
+        color: #3ea6ff;
     }
 
-    .component-upload-area {
-        border: none;
-        border-radius: 0;
-        background-color: transparent;
+    .status-processed {
+        background-color: #0d2216;
+        color: #5bb974;
     }
 
-    .component-upload-content {
-        padding: 24px 16px;
+    .status-published {
+        background-color: #0d2216;
+        color: #5bb974;
     }
-    
-    .component-thumbnail-grid {
-        grid-template-columns: repeat(3, 1fr); 
+
+    .status-failed {
+        background-color: #2b1110;
+        color: #e2615c;
     }
 }
-
-/* ==========================================================================
-   Estilos del Sistema de Etiquetas (Tags) y Buscador
-   ========================================================================== */
 
 .component-menu[id$="SelectorMenu"] {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
@@ -506,6 +490,7 @@
         color: #3ea6ff;
         background-color: rgba(62, 166, 255, 0.1);
     }
+
     .tag-create-link .component-menu-link-icon {
         color: #3ea6ff;
     }
@@ -515,12 +500,12 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background-color: var(--text-primary); 
+    background-color: var(--text-primary);
     border: 1px solid var(--border-color);
     border-radius: 16px;
     padding: 6px 12px;
     font-size: 13px;
-    color: #ffffff; 
+    color: #ffffff;
     transition: background-color 0.2s;
     user-select: none;
 }
@@ -536,11 +521,11 @@
 .tag-pill-remove {
     font-size: 16px;
     cursor: pointer;
-    color: #ffffff; 
+    color: #ffffff;
     border-radius: 50%;
     transition: color 0.2s, background-color 0.2s;
     padding: 2px;
-    margin-right: -4px; 
+    margin-right: -4px;
 }
 
 .tag-pill-remove:hover {
@@ -551,9 +536,11 @@
 .tag-pill[style*="transparent"] {
     color: var(--text-primary);
 }
+
 .tag-pill[style*="transparent"] .tag-pill-remove {
     color: var(--text-secondary);
 }
+
 .tag-pill[style*="transparent"] .tag-pill-remove:hover {
     color: var(--text-primary);
     background-color: var(--border-color);
@@ -563,6 +550,7 @@
     .tag-pill {
         border-color: #333;
     }
+
     .tag-pill:hover {
         background-color: #333;
     }
@@ -570,7 +558,7 @@
 
 [data-component="tags-wrapper"] {
     width: 100%;
-    padding: 0; 
+    padding: 0;
 }
 
 [data-component="tags-container"] {
@@ -579,317 +567,41 @@
     gap: 8px;
 }
 
-/* =========================================================
-   VIDEO FEED CARDS (Home, Channel, etc) - COMPONENTIZADO
-   ========================================================= */
-.component-video-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 24px 16px;
-    width: 100%;
-    margin-top: 16px;
-}
+@media (max-width: 900px) {
+    .studio-uploading-wrapper {
+        flex-direction: column-reverse;
+        gap: 24px;
+    }
 
-.component-video-card {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    cursor: pointer;
-    background-color: transparent;
-    border-radius: 12px; 
-    transition: transform 0.2s ease, background-color 0.3s ease, box-shadow 0.3s ease;
-}
+    .studio-uploading-preview {
+        width: 100%;
+        flex: none;
+        position: relative;
+        top: 0;
+    }
 
-.component-video-card:hover {
-    background-color: color-mix(in srgb, var(--local-dominant-color, transparent) 15%, transparent);
-    box-shadow: 0 0 0 8px color-mix(in srgb, var(--local-dominant-color, transparent) 15%, transparent);
-}
-
-.component-video-card:hover:not(.component-video-card--playing) .component-video-card__thumbnail {
-    transform: scale(1.03);
-}
-
-.component-video-card__top {
-    width: 100%;
-    aspect-ratio: 16 / 9;
-    border-radius: 12px;
-    overflow: hidden;
-    background-color: var(--bg-surface-alt);
-    border: 1px solid var(--border-color);
-    position: relative;
-}
-
-.component-video-card.component-video-card--playing .component-video-card__thumbnail {
-    opacity: 0;
-}
-
-.component-video-card__player {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    z-index: 1; 
-    pointer-events: none; 
-    background-color: #000; 
-}
-
-.component-video-card__thumbnail {
-    position: absolute; 
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    z-index: 2; 
-    transition: transform 0.3s ease, opacity 0.3s ease; 
-}
-
-.component-video-card__duration {
-    position: absolute;
-    bottom: 8px;
-    right: 8px;
-    background-color: rgba(0, 0, 0, 0.8);
-    color: #ffffff;
-    font-size: 12px;
-    font-weight: 600;
-    padding: 3px 6px;
-    border-radius: 6px;
-    font-family: var(--sl-font-mono, monospace);
-    line-height: 1;
-    z-index: 3; 
-    pointer-events: none;
-}
-
-.component-video-card__bottom {
-    display: flex;
-    gap: 12px;
-    align-items: flex-start;
-    padding: 0 4px;
-}
-
-.component-video-card__avatar {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    overflow: hidden;
-    flex-shrink: 0;
-    background-color: var(--bg-surface-alt);
-    border: 1px solid var(--border-color);
-}
-
-.component-video-card__avatar img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.component-video-card__info {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    min-width: 0; 
-}
-
-.component-video-card__title {
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin: 0;
-    line-height: 1.4;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-
-.component-video-card__user {
-    font-size: 13px;
-    color: var(--text-secondary);
-    margin: 0;
-    font-weight: 500;
-}
-
-.component-video-card__user:hover {
-    color: var(--text-primary);
-}
-
-.component-video-card__meta {
-    font-size: 13px;
-    color: var(--text-tertiary);
-    margin: 0;
-}
-
-/* =========================================================
-   MODIFICADOR PARA SHORTS Y FORMATO VERTICAL
-   ========================================================= */
-.component-video-card--vertical .component-video-card__top {
-    aspect-ratio: 9/16;
-}
-
-.component-video-card--vertical .component-video-card__bottom {
-    margin-top: -4px;
-}
-
-.component-video-card--vertical .component-video-card__info {
-    margin-left: 0;
-}
-
-.component-video-card--vertical .component-video-card__title {
-    font-size: 14px;
-}
-
-@media (max-width: 600px) {
-    .component-video-grid {
-        grid-template-columns: 1fr; 
-        gap: 20px;
+    .studio-uploading-details {
+        width: 100%;
     }
 }
 
-/* =========================================
-   COMPONENTS ABOUT (PESTAÑA ACERCA DE)
-   ========================================= */
+@media (max-width: 768px) {
+    .component-view-bottom .component-table-wrapper {
+        border: none;
+        border-radius: 0;
+    }
 
-.component-about-layout {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 40px;
-    margin-top: 10px;
-}
+    .component-upload-area {
+        border: none;
+        border-radius: 0;
+        background-color: transparent;
+    }
 
-.component-about-main {
-    flex: 2;
-    min-width: 320px;
-}
+    .component-upload-content {
+        padding: 24px 16px;
+    }
 
-.component-about-sidebar {
-    flex: 1;
-    min-width: 280px;
-    max-width: 400px;
-}
-
-.component-about-title {
-    margin-bottom: 15px;
-    font-size: 1.25rem;
-}
-
-/* Tarjetas blancas con borde y radio */
-.component-about-card {
-    background-color: #ffffff;
-    border: 1px solid #00000020;
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 40px;
-}
-
-.component-about-text {
-    white-space: pre-wrap;
-    color: var(--text-primary);
-    line-height: 1.6;
-    font-size: 15px;
-    margin: 0;
-}
-
-/* Grid de detalles personales */
-.component-about-details-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 15px;
-    margin-bottom: 30px;
-}
-
-.component-about-detail-item {
-    background-color: #ffffff;
-    border: 1px solid #00000020;
-    border-radius: 12px;
-    padding: 15px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.component-about-detail-label {
-    font-size: 13px;
-    color: var(--text-secondary);
-}
-
-.component-about-detail-value {
-    font-size: 16px;
-    font-weight: 500;
-    color: var(--text-primary);
-}
-
-/* Listas de estadísticas */
-.component-about-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-
-.component-about-list-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    color: var(--text-primary);
-    font-size: 15px;
-}
-
-.component-about-list-icon {
-    font-size: 22px;
-    color: var(--text-secondary);
-}
-
-/* Enlaces sociales */
-.component-about-socials {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin-bottom: 40px;
-}
-
-.component-about-social-link {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    text-decoration: none;
-    color: var(--text-primary);
-    font-size: 15px;
-    padding: 15px;
-    background-color: #ffffff;
-    border: 1px solid #00000020;
-    border-radius: 12px;
-    transition: background-color 0.2s ease, border-color 0.2s ease;
-}
-
-.component-about-social-link:hover {
-    background-color: #f9f9f9;
-    border-color: #00000030;
-}
-
-.component-about-social-icon {
-    font-size: 22px;
-    color: var(--accent-color, #3ea6ff);
-}
-
-.component-about-social-text {
-    font-weight: 500;
-}
-
-/* Contacto */
-.component-about-contact-text {
-    font-size: 14px;
-    color: var(--text-secondary);
-    margin-bottom: 15px;
-    margin-top: 0;
-}
-
-.component-about-contact-btn {
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    text-decoration: none;
+    .component-thumbnail-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
 }

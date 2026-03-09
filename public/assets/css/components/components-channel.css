@@ -1,0 +1,334 @@
+/* public/assets/css/components/components-channel.css */
+
+.component-channel-layout {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    font-family: inherit;
+}
+
+.component-channel-not-found {
+    text-align: center;
+    margin-top: 50px;
+}
+
+.component-channel-banner-container {
+    position: relative;
+    width: 100%;
+    height: 16vw; 
+    min-height: 150px;
+    max-height: 220px;
+    background-color: #333;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 24px;
+    background-size: cover;
+    background-position: center;
+    transition: all 0.3s ease;
+}
+
+.component-channel-banner-action {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    transition: top 0.3s ease, right 0.3s ease;
+}
+
+.component-channel-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 24px;
+    margin-bottom: 32px;
+    transition: all 0.3s ease;
+}
+
+.component-channel-avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: 12px;
+    background-color: var(--bg-surface-alt);
+    object-fit: cover;
+    position: relative;
+    z-index: 2;
+    transition: all 0.3s ease;
+}
+
+.component-channel-info-wrapper {
+    flex-grow: 1;
+}
+
+.component-channel-title {
+    margin: 0 0 8px 0;
+    font-size: 28px;
+    font-weight: 700;
+}
+
+.component-channel-meta {
+    margin: 0 0 16px 0;
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.component-channel-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-start;
+}
+
+.component-channel-tabs {
+    display: flex;
+    gap: 32px;
+    border-bottom: 1px solid var(--border-color);
+    border-top: 1px solid #00000020;
+    margin-bottom: 24px;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.component-channel-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.component-channel-tab {
+    padding: 12px 0;
+    cursor: pointer;
+    color: var(--text-secondary);
+    border-bottom: 3px solid transparent;
+    font-weight: 600;
+    font-size: 16px;
+    transition: color 0.2s;
+    white-space: nowrap;
+}
+
+.component-channel-tab:hover { color: var(--text-primary); }
+.component-channel-tab.is-active { color: var(--text-primary); border-bottom-color: var(--text-primary); }
+
+.component-channel-content-section { display: none; }
+.component-channel-content-section.is-active { display: block; }
+
+.component-shorts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 16px;
+    width: 100%;
+    margin-top: 16px;
+}
+
+/* Modal del Banner */
+.component-dialog-box--banner {
+    max-width: 960px;
+    width: 100%;
+}
+.banner-crop-layout {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    background-color: var(--bg-surface-alt, #1a1a1a);
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+    padding: 16px;
+}
+.banner-crop-wrapper {
+    position: relative;
+    max-width: 100%;
+    user-select: none;
+    touch-action: none;
+}
+.banner-crop-image {
+    display: block;
+    max-width: 100%;
+    max-height: 55vh;
+    object-fit: contain;
+    pointer-events: none;
+    border-radius: 4px;
+}
+.crop-mask {
+    position: absolute;
+    background-color: rgba(0, 0, 0, 0.6);
+    z-index: 1;
+    pointer-events: none;
+}
+.banner-crop-box {
+    position: absolute;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(0,0,0,0.5);
+    z-index: 2;
+    cursor: move;
+    touch-action: none;
+}
+.crop-safe-desktop {
+    position: absolute;
+    top: 35.31%;
+    bottom: 35.31%;
+    left: 0;
+    right: 0;
+    border-top: 1px dashed rgba(255,255,255,0.7);
+    border-bottom: 1px dashed rgba(255,255,255,0.7);
+    pointer-events: none;
+}
+.crop-safe-mobile {
+    position: absolute;
+    top: 35.31%;
+    bottom: 35.31%;
+    left: 19.8%;
+    right: 19.8%;
+    border: 1px dashed rgba(255,255,255,0.9);
+    background-color: rgba(255,255,255,0.1);
+    pointer-events: none;
+}
+.crop-label {
+    position: absolute;
+    background: rgba(0,0,0,0.7);
+    color: #fff;
+    padding: 4px 8px;
+    font-size: 11px;
+    border-radius: 4px;
+    white-space: nowrap;
+    pointer-events: none;
+    backdrop-filter: blur(4px);
+}
+.crop-safe-mobile .crop-label { top: 8px; left: 8px; }
+.crop-safe-desktop .crop-label { bottom: 8px; left: 8px; }
+.crop-label-tv { bottom: 8px; right: 8px; }
+
+.crop-handle {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    background-color: var(--action-primary, #3ea6ff);
+    border: 2px solid #fff;
+    border-radius: 50%;
+    z-index: 3;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+.handle-nw { top: -8px; left: -8px; cursor: nwse-resize; }
+.handle-ne { top: -8px; right: -8px; cursor: nesw-resize; }
+.handle-sw { bottom: -8px; left: -8px; cursor: nesw-resize; }
+.handle-se { bottom: -8px; right: -8px; cursor: nwse-resize; }
+
+/* About (Acerca de) */
+.component-about-layout {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 40px;
+    margin-top: 10px;
+}
+.component-about-main { flex: 2; min-width: 320px; }
+.component-about-sidebar { flex: 1; min-width: 280px; max-width: 400px; }
+.component-about-title { margin-bottom: 15px; font-size: 1.25rem; }
+.component-about-card {
+    background-color: #ffffff;
+    border: 1px solid #00000020;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 40px;
+}
+.component-about-text {
+    white-space: pre-wrap;
+    color: var(--text-primary);
+    line-height: 1.6;
+    font-size: 15px;
+    margin: 0;
+}
+.component-about-details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 30px;
+}
+.component-about-detail-item {
+    background-color: #ffffff;
+    border: 1px solid #00000020;
+    border-radius: 12px;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.component-about-detail-label { font-size: 13px; color: var(--text-secondary); }
+.component-about-detail-value { font-size: 16px; font-weight: 500; color: var(--text-primary); }
+.component-about-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+.component-about-list-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--text-primary);
+    font-size: 15px;
+}
+.component-about-list-icon { font-size: 22px; color: var(--text-secondary); }
+.component-about-socials {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 40px;
+}
+.component-about-social-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    color: var(--text-primary);
+    font-size: 15px;
+    padding: 15px;
+    background-color: #ffffff;
+    border: 1px solid #00000020;
+    border-radius: 12px;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+.component-about-social-link:hover {
+    background-color: #f9f9f9;
+    border-color: #00000030;
+}
+.component-about-social-icon { font-size: 22px; color: var(--accent-color, #3ea6ff); }
+.component-about-social-text { font-weight: 500; }
+.component-about-contact-text {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 15px;
+    margin-top: 0;
+}
+.component-about-contact-btn {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    text-decoration: none;
+}
+
+@media (max-width: 768px) {
+    .component-channel-layout { padding: 0; }
+    .component-channel-banner-container {
+        border-radius: 0;
+        margin-bottom: 16px;
+        height: 25vw; 
+        min-height: 100px;
+        max-height: 140px;
+    }
+    .component-channel-banner-action { top: 8px; right: 8px; }
+    .component-channel-header {
+        padding: 0 16px; 
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        margin-top: -50px; 
+        gap: 12px;
+    }
+    .component-channel-avatar {
+        width: 90px;
+        height: 90px;
+        border: 4px solid var(--bg-surface, #0f0f0f); 
+    }
+    .component-channel-title { font-size: 24px; }
+    .component-channel-actions { justify-content: center; width: 100%; }
+    .component-channel-tabs { padding: 0 16px; }
+    .component-channel-content { padding: 0 16px 24px 16px; }
+    .component-shorts-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; }
+}

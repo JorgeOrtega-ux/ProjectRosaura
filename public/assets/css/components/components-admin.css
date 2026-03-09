@@ -1,0 +1,32 @@
+/* public/assets/css/components/components-admin.css */
+
+.component-table tr.user-card-item,
+.component-table tr.log-card-item,
+.component-table tr.backup-card-item {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.component-table tr.user-card-item:hover,
+.component-table tr.log-card-item:hover,
+.component-table tr.backup-card-item:hover {
+    background-color: var(--bg-surface-alt);
+}
+
+.component-table tr.user-card-item.selected,
+.component-table tr.log-card-item.selected,
+.component-table tr.backup-card-item.selected {
+    background-color: var(--bg-surface);
+}
+
+.component-table tr.user-card-item.selected td:first-child,
+.component-table tr.log-card-item.selected td:first-child,
+.component-table tr.backup-card-item.selected td:first-child {
+    box-shadow: inset 4px 0 0 0 var(--border-color-hover);
+}
+
+.td-user-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}

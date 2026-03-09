@@ -1,0 +1,109 @@
+/* public/assets/css/components/components-settings.css */
+
+.component-2fa-setup {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    align-items: stretch;
+}
+
+.component-2fa-qr-col {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 12px;
+}
+
+.component-2fa-qr-col img {
+    width: 130px;
+    height: 130px;
+    display: block;
+}
+
+.component-2fa-secret-col {
+    flex: 1;
+    min-width: 200px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.component-2fa-secret-col h3, 
+.component-2fa-instructions-col h3 {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0 0 12px 0;
+    color: var(--text-primary);
+}
+
+.component-2fa-secret-col p {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin: 0 0 8px 0;
+}
+
+.component-2fa-secret-box {
+    background: var(--bg-app);
+    border: 1px solid var(--border-lighter);
+    padding: 12px;
+    border-radius: 6px;
+    font-family: monospace;
+    font-weight: bold;
+    text-align: center;
+    letter-spacing: 1px;
+    color: var(--text-primary);
+    word-break: break-all;
+}
+
+.component-2fa-instructions-col {
+    flex: 2;
+    min-width: 250px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.component-2fa-instructions-col ol {
+    margin: 0;
+    padding-left: 20px;
+    color: var(--text-secondary);
+    font-size: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.component-recovery-code {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background-color: var(--bg-surface);
+}
+
+.component-recovery-code-icon {
+    font-size: 18px !important;
+    color: var(--text-secondary);
+}
+
+.component-recovery-code-text {
+    font-family: monospace;
+    font-size: 14px;
+    letter-spacing: 1.5px;
+    color: var(--text-primary);
+    font-weight: 700;
+}
