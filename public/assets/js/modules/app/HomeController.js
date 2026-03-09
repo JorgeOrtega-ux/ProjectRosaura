@@ -170,10 +170,11 @@ export class HomeController {
         const isVertical = orientation === 'vertical';
         const cardModifierClass = isVertical ? 'component-video-card--vertical' : '';
         
-        // CORRECCIÓN: Usando la estructura de URLs limpias definida en routes.php
+        // CORRECCIÓN: Agregar basePath para respetar la ruta /ProjectRosaura si existe
+        const basePath = window.AppBasePath || '';
         const navUrl = isVertical 
-            ? `/shorts/${video.uuid}` 
-            : `/watch/${video.uuid}`; 
+            ? `${basePath}/shorts/${video.uuid}` 
+            : `${basePath}/watch/${video.uuid}`; 
 
         return `
             <div class="component-video-card ${cardModifierClass}" style="--local-dominant-color: ${dominantColor};" data-nav="${navUrl}" style="cursor: pointer;">
@@ -214,8 +215,9 @@ export class HomeController {
         const timeAgo = this.timeSince(new Date(playlist.created_at));
         const dominantColor = playlist.thumbnail_dominant_color !== 'transparent' ? playlist.thumbnail_dominant_color : '#333'; 
         
-        // CORRECCIÓN: Genera la URL limpia /playlist/{uuid}
-        const navUrl = `/playlist/${playlist.uuid}`;
+        // CORRECCIÓN: Agregar basePath para respetar la ruta /ProjectRosaura si existe
+        const basePath = window.AppBasePath || '';
+        const navUrl = `${basePath}/playlist/${playlist.uuid}`;
 
         return `
             <div class="component-video-card" style="--local-dominant-color: ${dominantColor};" data-nav="${navUrl}" style="cursor: pointer;">

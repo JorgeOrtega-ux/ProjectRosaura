@@ -30,7 +30,16 @@ export class SpaRouter {
                     });
                 }
 
-                const url = navTarget.dataset.nav;
+                let url = navTarget.dataset.nav;
+                
+                // CORRECCIÓN CRÍTICA: Añadir el basePath si falta
+                // Si la URL es absoluta (empieza con /) pero no contiene el directorio
+                // del proyecto (ej. /ProjectRosaura), se lo agregamos automáticamente
+                // para evitar que mande al usuario fuera del servidor.
+                if (this.basePath && url.startsWith('/') && !url.startsWith(this.basePath)) {
+                    url = this.basePath + url;
+                }
+
                 this.navigate(url);
                 return;
             }
@@ -198,9 +207,18 @@ export class SpaRouter {
         const path = window.location.pathname;
         let normalizedPath = path.endsWith('/') && path.length > 1 ? path.slice(0, -1) : path;
 
+        // CORRECCIÓN DE ESTILOS ACTIVOS: Se genera también la ruta omitiendo el basePath
+        // Así los menús se iluminan tanto si su data-nav tiene el basePath como si no.
+        let pathWithoutBase = normalizedPath;
+        if (this.basePath && normalizedPath.startsWith(this.basePath)) {
+            pathWithoutBase = normalizedPath.substring(this.basePath.length);
+        }
+        if (pathWithoutBase === '') pathWithoutBase = '/';
+
         document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
 
-        const targets = document.querySelectorAll(`[data-nav="${normalizedPath}"], [data-nav="${normalizedPath}/"]`);
+        // Se incluyen las versiones con y sin barra final, y con y sin basePath
+        const targets = document.querySelectorAll(`[data-nav="${normalizedPath}"], [data-nav="${normalizedPath}/"], [data-nav="${pathWithoutBase}"], [data-nav="${pathWithoutBase}/"]`);
         targets.forEach(target => {
             target.classList.add('active');
         });

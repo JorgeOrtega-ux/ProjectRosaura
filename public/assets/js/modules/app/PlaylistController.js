@@ -1,7 +1,6 @@
 // public/assets/js/modules/app/PlaylistController.js
 
 import { ApiService } from '../../core/api/ApiServices.js';
-// Asegúrate de agregar GetPlaylistDetails en tu ApiRoutes.js más adelante.
 import { ApiRoutes } from '../../core/api/ApiRoutes.js';
 
 export class PlaylistController {
@@ -18,9 +17,17 @@ export class PlaylistController {
         this.detailsContainer = document.getElementById('playlist-details-container');
         this.videosContainer = document.getElementById('playlist-videos-container');
         
-        // Extraer el ID de la URL (ej: /playlist?list=UUID)
-        const urlParams = new URLSearchParams(window.location.search);
-        this.playlistId = urlParams.get('list');
+        // 1. Extraer el ID de la URL amigable (ej: /ProjectRosaura/playlist/UUID)
+        const path = window.location.pathname;
+        const match = path.match(/\/playlist\/([a-zA-Z0-9\-]+)/);
+        
+        if (match && match[1]) {
+            this.playlistId = match[1];
+        } else {
+            // 2. Fallback de seguridad por si en algún momento usas query params (?list=UUID)
+            const urlParams = new URLSearchParams(window.location.search);
+            this.playlistId = urlParams.get('list');
+        }
 
         if (!this.playlistId) {
             this.showError('No se especificó ninguna lista de reproducción.');
@@ -32,8 +39,11 @@ export class PlaylistController {
 
     async loadPlaylist() {
         try {
-            // Nota para el siguiente paso: Crearemos el endpoint /api/v1/playlists/details
-            const route = ApiRoutes.App?.GetPlaylistDetails || `/api/v1/playlists/details`; 
+            // Aseguramos que la ruta fallback contenga el basePath si la constante no existe aún
+            const basePath = window.AppBasePath || '';
+            const route = (ApiRoutes.App && ApiRoutes.App.GetPlaylistDetails) 
+                ? ApiRoutes.App.GetPlaylistDetails 
+                : `${basePath}/api/playlist/details`; // Asegúrate de que este string coincida con la ruta en tu route-map.php
             
             const response = await this.api.post(route, { id: this.playlistId });
             
@@ -58,9 +68,11 @@ export class PlaylistController {
         const author = playlist.username || 'Usuario desconocido';
         const firstVideoUuid = playlist.first_video_uuid || null; // Útil para "Reproducir todo"
 
-        // Botón de reproducir todo: si hay un primer video, navegamos a watch pasando el video y la lista
+        const basePath = window.AppBasePath || '';
+
+        // CORRECCIÓN: Usar window.spaRouter y respetar la ruta amigable /watch/UUID
         const playAllAction = firstVideoUuid 
-            ? `onclick="window.router.navigate('/watch?v=${firstVideoUuid}&list=${this.playlistId}')"` 
+            ? `onclick="window.spaRouter.navigate('${basePath}/watch/${firstVideoUuid}?list=${this.playlistId}')"` 
             : 'disabled';
 
         this.detailsContainer.innerHTML = `
@@ -99,15 +111,17 @@ export class PlaylistController {
             return;
         }
 
+        const basePath = window.AppBasePath || '';
         let html = '';
+        
         videos.forEach((video, index) => {
             const title = video.title || 'Video sin título';
             const views = video.views || 0;
             const duration = this.formatDuration(video.duration);
             const author = video.username || 'Desconocido';
 
-            // Al hacer clic, enviamos al reproductor indicando de qué lista viene para la reproducción continua
-            const clickAction = `window.router.navigate('/watch?v=${video.uuid}&list=${this.playlistId}')`;
+            // CORRECCIÓN: Usar window.spaRouter y la ruta amigable /watch/UUID
+            const clickAction = `window.spaRouter.navigate('${basePath}/watch/${video.uuid}?list=${this.playlistId}')`;
 
             html += `
                 <div class="playlist-video-item" onclick="${clickAction}" style="display: flex; gap: 16px; padding: 8px; border-radius: 12px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='transparent'">
