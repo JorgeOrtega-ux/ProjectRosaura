@@ -112,12 +112,13 @@ class VideoRepository implements VideoRepositoryInterface {
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    // --- NUEVO MÉTODO IMPLEMENTADO PARA LA VISTA WATCH ---
+    // --- MÉTODO CORREGIDO PARA LA VISTA WATCH ---
     public function getPublicVideoDetails(string $uuid): ?array {
-        // Obtenemos los datos del video y hacemos JOIN con el usuario/creador
-        // Permitimos "unlisted" (ocultos) porque si tienen el link (UUID), tienen derecho a verlo.
+        // CORRECCIÓN: Se utiliza v.created_at como alias de published_at para cumplir con la vista
+        // ya que la columna published_at no existe físicamente en la tabla videos.
         $stmt = $this->db->prepare("
-            SELECT v.id, v.uuid, v.title, v.description, v.created_at, v.published_at, v.visibility,
+            SELECT v.id, v.uuid, v.title, v.description, v.created_at, 
+                   v.created_at as published_at, v.visibility,
                    u.username as channel_name, u.profile_picture as channel_avatar, u.channel_identifier
             FROM videos v
             JOIN users u ON v.user_id = u.id
@@ -132,8 +133,7 @@ class VideoRepository implements VideoRepositoryInterface {
             return null;
         }
 
-        // Usamos nuestro propio método para traer los tags y los separamos por tipo
-        $allTags = $this->getVideoTags($video['id']);
+        $allTags = $this->getVideoTags((int)$video['id']);
         
         $video['categories'] = [];
         $video['models'] = [];
@@ -149,15 +149,12 @@ class VideoRepository implements VideoRepositoryInterface {
         return $video;
     }
     
-    // MEJORADO: Agregada limpieza en cascada para proteger DBs que no tienen ON DELETE CASCADE activo
     public function delete(int $id): bool {
         try {
             $this->db->beginTransaction();
-            // Borrar relaciones (etiquetas)
             $stmtTags = $this->db->prepare("DELETE FROM video_tags WHERE video_id = :id");
             $stmtTags->execute([':id' => $id]);
             
-            // Borrar registro del video
             $stmt = $this->db->prepare("DELETE FROM videos WHERE id = :id");
             $stmt->execute([':id' => $id]);
             
@@ -257,7 +254,7 @@ class VideoRepository implements VideoRepositoryInterface {
         }
     }
 
-   public function getVideoTags(int $videoId): array {
+    public function getVideoTags(int $videoId): array {
         $stmt = $this->db->prepare("
             SELECT 
                 COALESCE(t.id, CONCAT('custom_', vt.id)) as id,
@@ -274,4 +271,3 @@ class VideoRepository implements VideoRepositoryInterface {
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 }
-?>
