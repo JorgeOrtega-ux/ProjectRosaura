@@ -7,7 +7,7 @@ export const ApiRoutes = {
     Channel: {
         ToggleSubscription: 'channel.toggle_subscription',
         UploadBanner: 'channel.upload_banner',
-        UpdateProfile: 'channel.update_profile' // NUEVA RUTA
+        UpdateProfile: 'channel.update_profile'
     },
     Auth: {
         Login: 'auth.login',
@@ -75,6 +75,10 @@ export const ApiRoutes = {
         CancelUpload: 'studio.cancel_upload',
         DeleteVideo: 'studio.delete_video',
         GetModels: 'studio.get_models',
-        GetCategories: 'studio.get_categories'
+        GetCategories: 'studio.get_categories',
+        
+        // --- NUEVAS RUTAS DE PLAYLISTS ---
+        GetPlaylists: 'studio.get_playlists',
+        CreatePlaylist: 'studio.create_playlist'
     }
 };

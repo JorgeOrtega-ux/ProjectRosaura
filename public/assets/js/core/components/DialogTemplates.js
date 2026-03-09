@@ -211,7 +211,7 @@ export const DialogTemplates = {
             </div>
             <div class="component-dialog-actions" style="margin-top: 24px;">
                 <button class="component-button component-button--h45 component-button--light hide-on-desktop" data-dialog-action="cancel">Cancelar</button>
-                <button class="component-button component-button--h45 component-button--dark component-button--full" data-dialog-action="confirm">Crear playlist</button>
+                <button class="component-button component-button--h45 component-button--dark component-button--full" id="btnSubmitPlaylist">Crear playlist</button>
             </div>
         `
     }

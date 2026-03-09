@@ -1,8 +1,11 @@
+// public/assets/js/modules/studio/StudioController.js
+
 import { ApiService } from '../../core/api/ApiServices.js';
 import { StudioWebSocketManager } from './StudioWebSocketManager.js';
 import { studioState } from './StudioState.js';
 import { StudioUploadController } from './controllers/StudioUploadController.js';
 import { StudioManageContentController } from './controllers/StudioManageContentController.js';
+import { StudioManagePlaylistController } from './controllers/StudioManagePlaylistController.js';
 import { StudioEditController } from './controllers/StudioEditController.js';
 
 export class StudioController {
@@ -36,9 +39,6 @@ export class StudioController {
 
         this.handleRouteChangeBound = this.destroy.bind(this);
         window.addEventListener('routeChange', this.handleRouteChangeBound);
-        
-        // [FIX ARCHITECTURE] Se ha eliminado this.init() del constructor. 
-        // Tu AppInit.js ya se encarga de ejecutar instance.init() de forma segura tras instanciarlo.
     }
 
     destroy() {
@@ -66,9 +66,12 @@ export class StudioController {
 
         const path = window.location.pathname;
         
-        // Enrutamiento interno
+        // Enrutamiento interno - IMPORTANTE: El orden de validación importa.
         if (path.includes('/studio/uploading') || path.includes('/studio/upload')) {
             this.activeSubController = new StudioUploadController(this.api, this.state);
+        } else if (path.includes('/studio/manage-content/playlist')) {
+            // Evaluamos la ruta de playlist ANTES de la de manage-content general
+            this.activeSubController = new StudioManagePlaylistController(this.api, this.state);
         } else if (path.includes('/studio/manage-content')) {
             this.activeSubController = new StudioManageContentController(this.api, this.state, this.manager);
         } else if (path.includes('/studio/edit/')) {
