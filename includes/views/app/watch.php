@@ -138,6 +138,7 @@
         </div>
 
         <div class="watch-layout__recommended">
+            
             <div id="watch-playlist-panel" class="watch-playlist-panel hidden" style="display: none;">
                 <div class="watch-playlist-header">
                     <div class="watch-playlist-header-info">
@@ -149,13 +150,16 @@
                     </button>
                 </div>
                 <div id="watch-playlist-items" class="watch-playlist-items">
-                    </div>
+                </div>
             </div>
 
-            <h2 class="watch-placeholder-title" style="margin-bottom: 16px; font-size: 16px; font-weight: 600;">Videos Recomendados</h2>
-            <div id="watch-recommended-videos" class="watch-recommended-list" style="display: flex; flex-direction: column; gap: 12px;">
-                <p class="watch-placeholder-text">Cargando sugerencias...</p>
+            <div class="watch-recommended-section">
+                <h2 class="watch-placeholder-title" style="margin-bottom: 16px; font-size: 16px; font-weight: 600;">Videos Recomendados</h2>
+                <div id="watch-recommended-videos" class="watch-recommended-list" style="display: flex; flex-direction: column; gap: 12px;">
+                    <p class="watch-placeholder-text">Cargando sugerencias...</p>
+                </div>
             </div>
+
         </div>
 
     </div>

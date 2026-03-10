@@ -113,7 +113,23 @@
 
 .watch-layout__info { grid-area: info; min-height: 150px; }
 .watch-layout__comments { grid-area: comments; background-color: var(--bg-surface, #1e1e1e); border: 1px solid var(--border-color, #333); border-radius: 12px; padding: 24px; min-height: 600px; }
-.watch-layout__recommended { grid-area: recommended; background-color: var(--bg-surface, #1e1e1e); border: 1px solid var(--border-color, #333); border-radius: 12px; padding: 24px; min-height: 800px; }
+
+/* REESTRUCTURADO PARA FUNCIONAR COMO CONTENEDOR PADRE TRANSPARENTE */
+.watch-layout__recommended { 
+    grid-area: recommended; 
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    min-height: 800px; 
+}
+
+/* NUEVA SECCIÓN DE RECOMENDADOS QUE TIENE EL FONDO Y BORDES PROPIOS */
+.watch-recommended-section {
+    background-color: var(--bg-surface, #1e1e1e); 
+    border: 1px solid var(--border-color, #333); 
+    border-radius: 12px; 
+    padding: 24px; 
+}
 
 
 /* ==========================================================================
@@ -180,7 +196,6 @@
     background-color: var(--bg-surface-alt, #f9f9f9);
     border: 1px solid var(--border-color, #e5e5e5);
     border-radius: 12px;
-    margin-bottom: 24px;
     overflow: hidden;
     display: flex;
     flex-direction: column;

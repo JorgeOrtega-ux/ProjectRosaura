@@ -230,8 +230,9 @@ export class WatchController {
             const watchUrl = `/ProjectRosaura/watch/${video.uuid}`;
             const streamUrl = `/ProjectRosaura/api/media/stream?uuid=${video.uuid}`;
 
+            // ! IMPORTANTE: Aquí forzamos display flex y flex-direction row con !important
             html += `
-                <a href="${watchUrl}" class="component-video-card component-video-card--horizontal" style="display: flex; gap: 10px; text-decoration: none; color: inherit; width: 100%; border-radius: 8px; cursor: pointer;">
+                <a href="${watchUrl}" class="component-video-card component-video-card--horizontal" style="display: flex !important; flex-direction: row !important; align-items: flex-start; gap: 10px; text-decoration: none; color: inherit; width: 100%; border-radius: 8px; cursor: pointer;">
                     <div class="component-video-card__thumbnail-container" style="position: relative; width: 168px; min-width: 168px; aspect-ratio: 16/9; border-radius: 8px; overflow: hidden; background-color: #222; flex-shrink: 0;">
                         <img src="${thumbnailUrl}" style="width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; z-index: 1;" alt="${title}">
                         
@@ -242,7 +243,7 @@ export class WatchController {
                         </span>
                     </div>
                     
-                    <div class="component-video-card__info" style="display: flex; flex-direction: column; overflow: hidden; padding-top: 2px;">
+                    <div class="component-video-card__info" style="display: flex; flex-direction: column; overflow: hidden; padding-top: 2px; width: 100%;">
                         <h3 class="component-video-card__title" title="${title}" style="font-size: 14px; margin: 0 0 4px 0; font-weight: 600; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis;">
                             ${title}
                         </h3>
