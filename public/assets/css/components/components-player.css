@@ -1,0 +1,287 @@
+/* public/assets/css/components/components-player.css */
+
+.component-video-player {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background-color: #000;
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none; 
+}
+
+.watch-layout--cinema .component-video-player {
+    border-radius: 0;
+}
+
+.component-video-player__video {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    cursor: pointer;
+}
+
+/* -----------------------------------------------------------
+   Contenedor Inferior Transparente
+----------------------------------------------------------- */
+.component-video-player__controls {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0) 100%);
+    padding: 0 16px 16px 16px; 
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    z-index: 10;
+}
+
+.component-video-player:hover .component-video-player__controls,
+.component-video-player.is-paused .component-video-player__controls {
+    opacity: 1;
+}
+
+/* -----------------------------------------------------------
+   Zona de la Barra de Progreso
+----------------------------------------------------------- */
+.component-video-player__progress-area {
+    width: 100%;
+    height: 16px; 
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    margin-bottom: 8px;
+}
+
+.component-video-player__progress-bar {
+    position: relative;
+    width: 100%;
+    height: 4px; 
+    background-color: rgba(255, 255, 255, 0.3);
+    border-radius: 2px;
+    transition: height 0.1s ease;
+}
+
+.component-video-player__progress-area:hover .component-video-player__progress-bar {
+    height: 6px;
+}
+
+.component-video-player__progress-fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background-color: #ff0000; 
+    width: 0%;
+    border-radius: 2px;
+    z-index: 1;
+}
+
+.component-video-player__progress-thumb {
+    position: absolute;
+    top: 50%;
+    left: 0%;
+    transform: translate(-50%, -50%) scale(0); 
+    width: 14px;
+    height: 14px;
+    background-color: #ff0000;
+    border-radius: 50%;
+    transition: transform 0.1s ease;
+    z-index: 2;
+}
+
+.component-video-player__progress-area:hover .component-video-player__progress-thumb {
+    transform: translate(-50%, -50%) scale(1); 
+}
+
+/* -----------------------------------------------------------
+   Fila de Grupos (Flexbox)
+----------------------------------------------------------- */
+.component-video-player__controls-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.component-video-player__controls-group {
+    display: flex;
+    align-items: center;
+    gap: 8px; /* Separación entre las diferentes píldoras */
+}
+
+/* -----------------------------------------------------------
+   EL PADRE: Píldora Negra Semitransparente con Padding
+----------------------------------------------------------- */
+.component-video-player__control-box {
+    background-color: rgba(0, 0, 0, 0.6); 
+    padding: 4px; /* Padding que limita el hover blanco interno */
+    border-radius: 40px; /* <--- PÍLDORA CON RADIUS COMPLETO */
+    display: flex;
+    align-items: center;
+    backdrop-filter: blur(4px); 
+    -webkit-backdrop-filter: blur(4px);
+    gap: 2px; /* Separación de botones dentro del mismo padre */
+}
+
+/* -----------------------------------------------------------
+   LOS BOTONES INTERNOS (Círculos perfectos con Hover blanco)
+----------------------------------------------------------- */
+.component-video-player__btn {
+    background: transparent; 
+    border: none;
+    color: #f1f1f1;
+    width: 30px; 
+    height: 30px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%; /* <--- CÍRCULO PERFECTO PARA RADIUS COMPLETO */
+    transition: background-color 0.15s ease, color 0.15s ease;
+    padding: 0;
+    line-height: 0; 
+}
+
+/* Hover Blanco semitransparente respetando el padding del padre */
+.component-video-player__btn:hover {
+    background-color: rgba(255, 255, 255, 0.2); 
+    color: #fff;
+}
+
+.component-video-player__btn .material-symbols-rounded {
+    font-size: 22px; 
+    pointer-events: none; 
+}
+
+/* -----------------------------------------------------------
+   EXPANSIÓN DEL VOLUMEN
+----------------------------------------------------------- */
+.component-video-player__volume-container {
+    overflow: hidden;
+    transition: background-color 0.15s ease;
+}
+
+/* Efecto hover al padre contenedor del volumen (Opcional, hace que toda la píldora reaccione) */
+.component-video-player__volume-container:hover {
+    background-color: rgba(0, 0, 0, 0.8);
+}
+
+.component-video-player__volume-slider-wrapper {
+    width: 0; 
+    opacity: 0;
+    transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
+    display: flex;
+    align-items: center;
+    height: 30px; /* Centrado respecto al botón */
+}
+
+.component-video-player__volume-container:hover .component-video-player__volume-slider-wrapper {
+    width: 70px; 
+    opacity: 1;
+    padding-left: 6px;
+    padding-right: 8px; 
+}
+
+/* Input Range del Volumen */
+.component-video-player__volume-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    background: transparent;
+    cursor: pointer;
+    height: 100%;
+}
+
+.component-video-player__volume-slider:focus {
+    outline: none;
+}
+
+.component-video-player__volume-slider::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 4px;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 2px;
+}
+
+.component-video-player__volume-slider::-webkit-slider-thumb {
+    height: 12px;
+    width: 12px;
+    border-radius: 50%;
+    background: #fff; 
+    cursor: pointer;
+    -webkit-appearance: none;
+    margin-top: -4px; 
+    transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.component-video-player__volume-slider::-webkit-slider-thumb:hover {
+    background: #ff0000; 
+    transform: scale(1.2);
+}
+
+.component-video-player__volume-slider::-moz-range-track {
+    width: 100%;
+    height: 4px;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 2px;
+}
+
+.component-video-player__volume-slider::-moz-range-thumb {
+    height: 12px;
+    width: 12px;
+    border: none;
+    border-radius: 50%;
+    background: #fff;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.component-video-player__volume-slider::-moz-range-thumb:hover {
+    background: #ff0000;
+    transform: scale(1.2);
+}
+
+/* -----------------------------------------------------------
+   CAJA DE TIEMPO DEL VIDEO (Píldora interactiva con hover)
+----------------------------------------------------------- */
+.component-video-player__time {
+    color: #e1e1e1;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap; 
+    display: flex;
+    align-items: center;
+    font-family: var(--sl-font-mono, monospace);
+    
+    /* Le damos las mismas dimensiones y comportamiento que un botón */
+    height: 30px; 
+    padding: 0 12px; /* Espaciado lateral mayor por ser texto */
+    border-radius: 40px; /* Píldora completa interna */
+    transition: background-color 0.15s ease, color 0.15s ease;
+    cursor: default; /* Puedes cambiar a pointer si a futuro al dar click hará algo */
+}
+
+/* HOVER BLANCO SEMITRANSPARENTE PARA EL TIEMPO */
+.component-video-player__time:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: #fff;
+}
+
+.component-video-player__time-separator {
+    margin: 0 6px;
+    opacity: 0.6;
+    font-weight: 400;
+}
+
+#time-current {
+    color: #fff;
+    font-weight: 600;
+}

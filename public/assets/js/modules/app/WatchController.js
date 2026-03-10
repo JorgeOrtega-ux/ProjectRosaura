@@ -1,13 +1,13 @@
 // public/assets/js/modules/app/WatchController.js
 
 import { ApiService } from '../../core/api/ApiServices.js';
+import { VideoPlayerSystem } from '../../core/components/VideoPlayerSystem.js';
 
 export class WatchController {
     constructor() {
         this.container = document.querySelector('.view-content');
         this.api = new ApiService();
-        this.layoutContainer = null;
-        this.cinemaBtn = null;
+        this.playerSystem = null;
     }
 
     async init() {
@@ -27,31 +27,41 @@ export class WatchController {
             return;
         }
 
-        this.initLayoutLogic();
+        // Inicializar el sistema del reproductor
+        this.playerSystem = new VideoPlayerSystem();
 
         try {
             const response = await this.api.post('app.get_video_details', { video_uuid: videoId });
 
             if (response && response.success) {
                 this.renderRealData(response.data, playlistId);
+                
+                // Obtener las rutas desde la base de datos
+                const hlsPath = response.data.hls_path;
+                const fallbackPath = response.data.temp_file_path;
+                let videoSourceUrl = '';
+                
+                // Armar la URL absoluta concatenando tu AppBasePath (ej. http://192.168.8.13/ProjectRosaura)
+                if (hlsPath) {
+                    const cleanPath = hlsPath.startsWith('/') ? hlsPath : '/' + hlsPath;
+                    videoSourceUrl = window.AppBasePath + cleanPath;
+                } else if (fallbackPath) {
+                    const cleanPath = fallbackPath.startsWith('/') ? fallbackPath : '/' + fallbackPath;
+                    videoSourceUrl = window.AppBasePath + cleanPath;
+                }
+
+                if (videoSourceUrl !== '') {
+                    this.playerSystem.loadVideo(videoSourceUrl);
+                } else {
+                    console.error('[WatchController] El video no tiene una ruta HLS o MP4 válida generada.');
+                }
+
             } else {
                 this.showError404(response.message || 'El video que buscas no existe o es privado.');
             }
         } catch (error) {
             console.error('[WatchController] Error fetching video:', error);
             this.showError404('Ocurrió un error de red al intentar cargar el video.');
-        }
-    }
-
-    initLayoutLogic() {
-        this.layoutContainer = document.getElementById('watch-layout-container');
-        this.cinemaBtn = document.getElementById('toggle-cinema-btn');
-
-        if (this.cinemaBtn && this.layoutContainer) {
-            this.handleCinemaToggle = () => {
-                this.layoutContainer.classList.toggle('watch-layout--cinema');
-            };
-            this.cinemaBtn.addEventListener('click', this.handleCinemaToggle);
         }
     }
 
@@ -200,8 +210,9 @@ export class WatchController {
     }
 
     destroy() {
-        if (this.cinemaBtn && this.handleCinemaToggle) {
-            this.cinemaBtn.removeEventListener('click', this.handleCinemaToggle);
+        if (this.playerSystem) {
+            this.playerSystem.destroy();
+            this.playerSystem = null;
         }
     }
 }

@@ -116,6 +116,7 @@ class VideoRepository implements VideoRepositoryInterface {
         $stmt = $this->db->prepare("
             SELECT v.id, v.uuid, v.title, v.description, v.created_at, 
                    v.created_at as published_at, v.visibility,
+                   v.hls_path, v.temp_file_path,
                    u.username as channel_name, u.profile_picture as channel_avatar, u.channel_identifier
             FROM videos v
             JOIN users u ON v.user_id = u.id

@@ -29,6 +29,7 @@ $topBarClass = ($isAuthRoute || $isMaintenanceRestricted) ? 'disabled' : '';
     <link rel="stylesheet" type="text/css" href="assets/css/components/components-channel.css">
     <link rel="stylesheet" type="text/css" href="assets/css/components/components-watch.css">
     <link rel="stylesheet" type="text/css" href="assets/css/components/components-studio.css">
+        <link rel="stylesheet" type="text/css" href="assets/css/components/components-player.css">
     
     <script src="https://unpkg.com/hls.js@latest/dist/hls.min.js"></script>
     <link rel="stylesheet" type="text/css" href="assets/css/root.css">

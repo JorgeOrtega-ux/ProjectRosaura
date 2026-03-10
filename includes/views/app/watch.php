@@ -1,10 +1,61 @@
 <div class="view-content" style="padding: 0;"> 
     <div class="watch-layout" id="watch-layout-container">
         
-        <div class="watch-layout__player">
-            <h2 class="watch-placeholder-title">Zona del Reproductor</h2>
-            <p class="watch-placeholder-text">El reproductor de video y sus controles irán aquí.</p>
-            <button id="toggle-cinema-btn" class="watch-btn-cinema">Alternar Modo Cine</button>
+        <div class="watch-layout__player" id="watch-layout-player">
+            <div class="component-video-player is-paused" id="video-player-container">
+                <video id="main-video-player" class="component-video-player__video" playsinline></video>
+                
+                <div class="component-video-player__controls" id="player-controls">
+                    <div class="component-video-player__progress-area" id="progress-area">
+                        <div class="component-video-player__progress-bar">
+                            <div class="component-video-player__progress-fill" id="progress-fill"></div>
+                            <div class="component-video-player__progress-thumb" id="progress-thumb"></div>
+                        </div>
+                    </div>
+
+                    <div class="component-video-player__controls-row">
+                        <div class="component-video-player__controls-group component-video-player__controls-left">
+                            
+                            <div class="component-video-player__control-box">
+                                <button class="component-video-player__btn" id="btn-play-pause" title="Reproducir (k)">
+                                    <span class="material-symbols-rounded" id="icon-play-pause">play_arrow</span>
+                                </button>
+                            </div>
+                            
+                            <div class="component-video-player__control-box component-video-player__volume-container" id="volume-container">
+                                <button class="component-video-player__btn" id="btn-mute" title="Silenciar (m)">
+                                    <span class="material-symbols-rounded" id="icon-mute">volume_up</span>
+                                </button>
+                                <div class="component-video-player__volume-slider-wrapper">
+                                    <input type="range" id="volume-slider" class="component-video-player__volume-slider" min="0" max="1" step="0.05" value="1">
+                                </div>
+                            </div>
+
+                            <div class="component-video-player__control-box component-video-player__time-box">
+                                <div class="component-video-player__time">
+                                    <span id="time-current">0:00</span>
+                                    <span class="component-video-player__time-separator">/</span>
+                                    <span id="time-duration">0:00</span>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <div class="component-video-player__controls-group component-video-player__controls-right">
+                            
+                            <div class="component-video-player__control-box">
+                                <button class="component-video-player__btn" id="btn-settings" title="Configuración">
+                                    <span class="material-symbols-rounded">settings</span>
+                                </button>
+                                <button class="component-video-player__btn" id="btn-cinema" title="Modo cine (t)">
+                                    <span class="material-symbols-rounded" id="icon-cinema">crop_16_9</span>
+                                </button>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="watch-layout__info">
