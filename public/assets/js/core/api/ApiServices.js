@@ -29,10 +29,8 @@ export class ApiService {
                     window.location.href = (window.AppBasePath || '') + '/login';
                     return { success: false, message: 'Sesión revocada.' };
                 }
-
                 try {
-                    const errorData = await response.json();
-                    return errorData;
+                    return await response.json();
                 } catch (jsonError) {
                     throw new Error(`Error HTTP: ${response.status}`);
                 }
@@ -47,16 +45,13 @@ export class ApiService {
 
     async postForm(route, formData) {
         formData.append('route', route);
-        
         const csrfMeta = document.querySelector('meta[name="csrf-token"]');
         const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
 
         try {
             const response = await fetch(this.baseUrl, {
                 method: 'POST',
-                headers: {
-                    'X-CSRF-Token': csrfToken
-                },
+                headers: { 'X-CSRF-Token': csrfToken },
                 body: formData
             });
 
@@ -65,20 +60,22 @@ export class ApiService {
                     window.location.href = (window.AppBasePath || '') + '/login';
                     return { success: false, message: 'Sesión revocada.' };
                 }
-
                 try {
-                    const errorData = await response.json();
-                    return errorData;
+                    return await response.json();
                 } catch (jsonError) {
                     throw new Error(`Error HTTP: ${response.status}`);
                 }
             }
-
             return await response.json();
         } catch (error) {
             console.error(`[ApiService] Fallo en FormData hacia '${route}':`, error);
-            return { success: false, message: 'Error de conexión con el servidor. Verifica la consola.' };
+            return { success: false, message: 'Error de conexión con el servidor.' };
         }
+    }
+
+    // --- NUEVO MÉTODO PARA OBTENER TOKEN DE VIDEO ---
+    async getMediaToken(videoUuid) {
+        return await this.post('media.get_token', { video_uuid: videoUuid });
     }
 
     uploadFileWithProgress(route, file, inputName, extraData = {}, onProgress) {
@@ -86,10 +83,7 @@ export class ApiService {
             const formData = new FormData();
             formData.append('route', route);
             formData.append(inputName, file);
-            
-            for (const key in extraData) {
-                formData.append(key, extraData[key]);
-            }
+            for (const key in extraData) formData.append(key, extraData[key]);
 
             const xhr = new XMLHttpRequest();
             const csrfMeta = document.querySelector('meta[name="csrf-token"]');
@@ -100,48 +94,30 @@ export class ApiService {
 
             xhr.upload.onprogress = (event) => {
                 if (event.lengthComputable) {
-                    const percentComplete = Math.round((event.loaded / event.total) * 100);
-                    if (onProgress) onProgress(percentComplete);
+                    if (onProgress) onProgress(Math.round((event.loaded / event.total) * 100));
                 }
             };
 
             xhr.onload = () => {
                 if (xhr.status >= 200 && xhr.status < 300) {
-                    try {
-                        const response = JSON.parse(xhr.responseText);
-                        resolve(response);
-                    } catch (e) {
-                        reject('Error parseando JSON');
-                    }
+                    try { resolve(JSON.parse(xhr.responseText)); } 
+                    catch (e) { reject('Error parseando JSON'); }
                 } else {
-                    try {
-                        const response = JSON.parse(xhr.responseText);
-                        resolve(response); 
-                    } catch (e) {
-                        reject(`Error HTTP: ${xhr.status}`);
-                    }
+                    try { resolve(JSON.parse(xhr.responseText)); } 
+                    catch (e) { reject(`Error HTTP: ${xhr.status}`); }
                 }
             };
-
             xhr.onerror = () => reject('Error de red durante la subida');
             xhr.send(formData);
         });
     }
 
-    async toggleSubscription(username) {
-        return await this.post('channel.toggle_subscription', { username });
-    }
-
-    async fetchModels() {
-        return await this.post('studio.get_models');
-    }
-
-    async fetchCategories() {
-        return await this.post('studio.get_categories');
-    }
+    async toggleSubscription(username) { return await this.post('channel.toggle_subscription', { username }); }
+    async fetchModels() { return await this.post('studio.get_models'); }
+    async fetchCategories() { return await this.post('studio.get_categories'); }
 
     async uploadFileInChunks(route, file, inputName, extraData = {}, onProgress) {
-        const chunkSize = 10 * 1024 * 1024; // 10MB por fragmento
+        const chunkSize = 10 * 1024 * 1024; 
         const totalChunks = Math.ceil(file.size / chunkSize);
         const uploadId = Date.now().toString(36) + '-' + Math.random().toString(36).substr(2, 9);
         let finalResponse = null;
@@ -159,14 +135,11 @@ export class ApiService {
             formData.append('total_chunks', totalChunks);
             formData.append('original_filename', file.name);
 
-            for (const key in extraData) {
-                formData.append(key, extraData[key]);
-            }
+            for (const key in extraData) formData.append(key, extraData[key]);
 
             finalResponse = await new Promise((resolve, reject) => {
                 const xhr = new XMLHttpRequest();
-                const csrfMeta = document.querySelector('meta[name="csrf-token"]');
-                const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
                 xhr.open('POST', this.baseUrl, true);
                 if (csrfToken) xhr.setRequestHeader('X-CSRF-Token', csrfToken);
@@ -174,54 +147,30 @@ export class ApiService {
                 xhr.upload.onprogress = (event) => {
                     if (event.lengthComputable && onProgress) {
                         const chunkPercent = event.loaded / event.total;
-                        const overallPercent = Math.round(((chunkIndex + chunkPercent) / totalChunks) * 100);
-                        onProgress(overallPercent);
+                        onProgress(Math.round(((chunkIndex + chunkPercent) / totalChunks) * 100));
                     }
                 };
 
                 xhr.onload = () => {
                     if (xhr.status >= 200 && xhr.status < 300) {
-                        try {
-                            resolve(JSON.parse(xhr.responseText));
-                        } catch (e) {
-                            reject('Error parseando JSON');
-                        }
+                        try { resolve(JSON.parse(xhr.responseText)); } 
+                        catch (e) { reject('Error parseando JSON'); }
                     } else {
-                        try {
-                            resolve(JSON.parse(xhr.responseText));
-                        } catch (e) {
-                            reject(`Error HTTP: ${xhr.status}`);
-                        }
+                        try { resolve(JSON.parse(xhr.responseText)); } 
+                        catch (e) { reject(`Error HTTP: ${xhr.status}`); }
                     }
                 };
                 xhr.onerror = () => reject('Error de red durante la subida');
                 xhr.send(formData);
             });
 
-            if (finalResponse && finalResponse.status === 'error') {
-                return finalResponse; 
-            }
+            if (finalResponse && finalResponse.status === 'error') return finalResponse; 
         }
         return finalResponse;
     }
 
-    // --- NUEVAS FUNCIONES PARA ADMINISTRAR VIDEOS EN PLAYLISTS ---
-    async fetchAllVideos() {
-        return await this.post('studio.get_all_videos');
-    }
-
-    async fetchPlaylistVideos(playlistId) {
-        return await this.post('studio.get_playlist_videos', { playlist_id: playlistId });
-    }
-
-    async syncPlaylistVideos(playlistId, videoIdsArray) {
-        return await this.post('studio.sync_playlist_videos', { 
-            playlist_id: playlistId, 
-            video_ids: videoIdsArray 
-        });
-    }
-    // <--- NUEVO MÉTODO AÑADIDO --->
-    async getPlaylistDetails(playlistId) {
-        return await this.post('app.get_playlist_details', { id: playlistId });
-    }
+    async fetchAllVideos() { return await this.post('studio.get_all_videos'); }
+    async fetchPlaylistVideos(playlistId) { return await this.post('studio.get_playlist_videos', { playlist_id: playlistId }); }
+    async syncPlaylistVideos(playlistId, videoIdsArray) { return await this.post('studio.sync_playlist_videos', { playlist_id: playlistId, video_ids: videoIdsArray }); }
+    async getPlaylistDetails(playlistId) { return await this.post('app.get_playlist_details', { id: playlistId }); }
 }

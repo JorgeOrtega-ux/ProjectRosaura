@@ -38,6 +38,10 @@ use App\Core\Repositories\SubscriptionRepository;
 use App\Core\Interfaces\PlaylistRepositoryInterface;
 use App\Core\Repositories\PlaylistRepository;
 
+// Nuevas importaciones para firmado de medios
+use App\Core\Interfaces\MediaSignerInterface;
+use App\Core\Security\MediaSigner;
+
 class Container implements ContainerInterface {
     private $instances = [];
     private $bindings = [];
@@ -70,6 +74,9 @@ class Container implements ContainerInterface {
         // 4. Repositorios de Contenido (Studio)
         $this->bindings[VideoRepositoryInterface::class] = VideoRepository::class;
         $this->bindings[PlaylistRepositoryInterface::class] = PlaylistRepository::class; 
+        
+        // 5. Servicios de Seguridad de Medios
+        $this->bindings[MediaSignerInterface::class] = MediaSigner::class;
     }
 
     public function get(string $id) {

@@ -1,7 +1,11 @@
 // public/assets/js/core/components/VideoPlayerSystem.js
 
+import { ApiService } from '../api/ApiServices.js';
+
 export class VideoPlayerSystem {
     constructor() {
+        this.api = new ApiService();
+        
         // Contenedores principales
         this.container = document.getElementById('video-player-container');
         this.video = document.getElementById('main-video-player');
@@ -12,7 +16,7 @@ export class VideoPlayerSystem {
         this.playPauseBtn = document.getElementById('btn-play-pause');
         this.playPauseIcon = document.getElementById('icon-play-pause');
         
-        // Controles - Volumen (Nuevas referencias)
+        // Controles - Volumen
         this.volumeContainer = document.getElementById('volume-container');
         this.muteBtn = document.getElementById('btn-mute');
         this.muteIcon = document.getElementById('icon-mute');
@@ -32,8 +36,8 @@ export class VideoPlayerSystem {
         // Estado interno
         this.isTheaterMode = false;
         this.hls = null;
-        // Guardar último volumen antes de silenciar
         this.lastVolume = 1; 
+        this.currentVideoUuid = null; // Para poder recargar el token si falla
         
         this.bindEvents();
     }
@@ -57,44 +61,60 @@ export class VideoPlayerSystem {
             this.container.classList.add('is-paused');
         });
 
-        // --- Eventos de Sonido y Volumen (Lógica Actualizada) ---
+        // --- Eventos de Sonido y Volumen ---
         this.muteBtn.addEventListener('click', () => this.toggleMute());
-        
-        // Manejar cambio en el slider de volumen
         this.volumeSlider.addEventListener('input', (e) => {
             const value = e.target.value;
             this.video.volume = value;
             this.video.muted = (value === "0");
         });
-
-        // Sincronizar UI cuando cambia el volumen del video (por slider o teclado)
         this.video.addEventListener('volumechange', () => this.updateVolumeUI());
 
         // --- Eventos de Tiempo y Progreso ---
         this.video.addEventListener('loadedmetadata', () => {
             this.timeDuration.textContent = this.formatTime(this.video.duration);
-            // Asegurar que el slider refleje el volumen inicial del video
             this.updateVolumeUI(); 
         });
 
         this.video.addEventListener('timeupdate', () => this.updateProgress());
-        
-        // Click en la barra para buscar (Seeking)
         this.progressArea.addEventListener('click', (e) => this.seekTo(e));
 
         // --- Evento Modo Cine ---
         this.cinemaBtn.addEventListener('click', () => this.toggleCinemaMode());
     }
 
-    // --- Métodos de Carga y Destrucción ---
-    loadVideo(url) {
+    // --- NUEVO: Proceso de carga seguro ---
+    async loadVideo(sourceIdentifier, requiresSignedToken = false) {
         if (!this.video) return;
 
-        this.destroyHls(); // Limpiar si había una instancia previa
+        this.destroyHls(); 
+        
+        if (requiresSignedToken) {
+            this.currentVideoUuid = sourceIdentifier;
+            try {
+                // Solicitar token firmado al backend
+                const response = await this.api.getMediaToken(this.currentVideoUuid);
+                if (response.success && response.data.stream_url) {
+                    const finalUrl = (window.AppBasePath || '') + response.data.stream_url;
+                    this._initStream(finalUrl);
+                } else {
+                    console.error("No se pudo firmar el video:", response.message);
+                }
+            } catch (error) {
+                console.error("Error en petición de token:", error);
+            }
+        } else {
+            // Carga directa estática (por si tienes videos públicos o trailers no protegidos)
+            this._initStream(sourceIdentifier);
+        }
+    }
 
-        // Si es un archivo HLS (.m3u8) y el navegador soporta Hls.js
+    _initStream(url) {
         if (url.includes('.m3u8') && typeof Hls !== 'undefined' && Hls.isSupported()) {
-            this.hls = new Hls();
+            this.hls = new Hls({
+                // Reducimos el tiempo de reintento para actuar rápido si el token expiró
+                manifestLoadingMaxRetry: 2
+            });
             this.hls.loadSource(url);
             this.hls.attachMedia(this.video);
             
@@ -104,14 +124,38 @@ export class VideoPlayerSystem {
             
             this.hls.on(Hls.Events.ERROR, (event, data) => {
                 if (data.fatal) {
-                    console.error('[Hls.js Fatal Error]', data);
+                    switch (data.type) {
+                        case Hls.ErrorTypes.NETWORK_ERROR:
+                            console.warn('[VideoPlayer] Error de red. Posible token expirado. Recargando...');
+                            // Si falla la red (Ej. 403 Forbidden por token expirado), pedimos otro token
+                            if(data.response && data.response.code === 403 && this.currentVideoUuid) {
+                                this.loadVideo(this.currentVideoUuid, true);
+                            } else {
+                                this.hls.startLoad();
+                            }
+                            break;
+                        case Hls.ErrorTypes.MEDIA_ERROR:
+                            this.hls.recoverMediaError();
+                            break;
+                        default:
+                            this.destroyHls();
+                            break;
+                    }
                 }
             });
         } 
-        // Soporte nativo para HLS (ej. Safari) o video MP4 tradicional
         else if (this.video.canPlayType('application/vnd.apple.mpegurl') || !url.includes('.m3u8')) {
             this.video.src = url;
-            // loadedmetadata event handles 'is-paused' class
+            // Native player doesn't have an easy intercept for 403 during playback,
+            // so we rely on generic error event.
+            this.video.onerror = () => {
+                const err = this.video.error;
+                if (err && err.code === 4 && this.currentVideoUuid) { 
+                    // MEDIA_ERR_SRC_NOT_SUPPORTED (a veces lanzado por 403 en Safari)
+                    console.warn('[VideoPlayer] Error nativo. Recargando token...');
+                    this.loadVideo(this.currentVideoUuid, true);
+                }
+            };
         }
     }
 
@@ -131,7 +175,6 @@ export class VideoPlayerSystem {
         }
     }
 
-    // --- Lógica de Reproducción ---
     togglePlay() {
         if (this.video.paused) {
             this.video.play().catch(error => console.error("Error al reproducir:", error));
@@ -140,22 +183,18 @@ export class VideoPlayerSystem {
         }
     }
 
-    // --- Lógica de Volumen (Actualizada) ---
     toggleMute() {
         if (this.video.muted || this.video.volume === 0) {
-            // Unmute: volver al último volumen guardado (o 1 si era 0)
             this.video.volume = this.lastVolume > 0 ? this.lastVolume : 1;
             this.video.muted = false;
         } else {
-            // Mute: guardar volumen actual y silenciar
             this.lastVolume = this.video.volume;
             this.video.muted = true;
-            this.video.volume = 0; // Opcional, pero asegura consistencia en CSS thumb
+            this.video.volume = 0;
         }
     }
 
     updateVolumeUI() {
-        // 1. Actualizar Icono
         if (this.video.muted || this.video.volume === 0) {
             this.muteIcon.textContent = 'volume_off';
             this.muteBtn.title = "Activar sonido (m)";
@@ -167,13 +206,11 @@ export class VideoPlayerSystem {
             this.muteBtn.title = "Silenciar (m)";
         }
 
-        // 2. Sincronizar Slider (si no es el slider el que disparó el evento)
         if (document.activeElement !== this.volumeSlider) {
             this.volumeSlider.value = this.video.muted ? 0 : this.video.volume;
         }
     }
 
-    // --- Lógica de Progreso ---
     updateProgress() {
         if (!this.video.duration) return;
         const percent = (this.video.currentTime / this.video.duration) * 100;
@@ -185,36 +222,27 @@ export class VideoPlayerSystem {
     seekTo(e) {
         const rect = this.progressArea.getBoundingClientRect();
         const pos = (e.clientX - rect.left) / rect.width;
-        // Asegurar rango entre 0 y 1
         const cleanPos = Math.max(0, Math.min(1, pos)); 
         this.video.currentTime = cleanPos * this.video.duration;
     }
 
-    // --- Lógica Modo Cine ---
     toggleCinemaMode() {
         this.isTheaterMode = !this.isTheaterMode;
         if (this.layoutContainer) {
             this.layoutContainer.classList.toggle('watch-layout--cinema', this.isTheaterMode);
-            // Cambiar icono y tooltip
             this.cinemaIcon.textContent = this.isTheaterMode ? 'crop_5_4' : 'crop_16_9';
             this.cinemaBtn.title = this.isTheaterMode ? "Modo predeterminado (t)" : "Modo cine (t)";
         }
-        // Disparar resize para ajustar otros componentes SPA si es necesario
         window.dispatchEvent(new Event('resize'));
     }
 
-    // --- Utilidades ---
     formatTime(seconds) {
         if (isNaN(seconds)) return "0:00";
         const h = Math.floor(seconds / 3600);
         const m = Math.floor((seconds % 3600) / 60);
         const s = Math.floor(seconds % 60);
         
-        if (h > 0) {
-            // Formato H:MM:SS
-            return `${h}:${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`; 
-        }
-        // Formato M:SS
+        if (h > 0) return `${h}:${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`; 
         return `${m}:${s < 10 ? '0' : ''}${s}`;
     }
 }

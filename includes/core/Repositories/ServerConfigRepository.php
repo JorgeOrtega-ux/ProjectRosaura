@@ -18,7 +18,7 @@ class ServerConfigRepository implements ServerConfigRepositoryInterface {
         $config = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$config) {
-            // Fallback a valores por defecto en caso extremo de que la tabla esté vacía o en despliegue
+            // Fallback a valores por defecto en caso extremo
             return [
                 'min_password_length' => 8,
                 'max_password_length' => 64,
@@ -36,27 +36,24 @@ class ServerConfigRepository implements ServerConfigRepositoryInterface {
                 'forgot_password_rate_limit_attempts' => 3,
                 'forgot_password_rate_limit_minutes' => 30,
                 
-                // Configuración predeterminada Anti-Hackeo (Masivo) para Administradores
+                // Configuración predeterminada Anti-Hackeo (Masivo)
                 'admin_edit_avatar_attempts' => 20,
                 'admin_edit_avatar_minutes' => 30,
-                
                 'admin_edit_username_attempts' => 20,
                 'admin_edit_username_minutes' => 30,
-                
                 'admin_edit_email_attempts' => 20,
                 'admin_edit_email_minutes' => 30,
-                
                 'admin_edit_prefs_attempts' => 50,
                 'admin_edit_prefs_minutes' => 30,
-                
                 'admin_edit_role_attempts' => 10,
                 'admin_edit_role_minutes' => 30,
-                
                 'admin_edit_status_attempts' => 20,
                 'admin_edit_status_minutes' => 30,
-                
                 'admin_add_note_attempts' => 30,
                 'admin_add_note_minutes' => 30,
+                
+                // Configuración de Medios y Seguridad de Stream
+                'media_signature_secret' => 'rosaura_secret_key_override_in_db',
                 
                 // Configuración por defecto Automatización de Backups
                 'auto_backup_enabled' => 0,
@@ -77,7 +74,8 @@ class ServerConfigRepository implements ServerConfigRepositoryInterface {
         
         foreach ($data as $key => $val) {
             $fields[] = "$key = ?";
-            $values[] = (int)$val;
+            // Si es la clave de medios, mantenemos el string. Lo demás son enteros en tu modelo actual.
+            $values[] = ($key === 'media_signature_secret') ? (string)$val : (int)$val;
         }
 
         if (empty($fields)) return true;

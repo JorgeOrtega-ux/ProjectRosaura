@@ -3,7 +3,10 @@
 export const ApiRoutes = {
     App: {
         GetFeed: 'app.get_feed',
-        GetPlaylistDetails: 'app.get_playlist_details' // <--- NUEVA RUTA
+        GetPlaylistDetails: 'app.get_playlist_details'
+    },
+    Media: {
+        GetMediaToken: 'media.get_token' // <--- NUEVA RUTA PARA FIRMADO
     },
     Channel: {
         ToggleSubscription: 'channel.toggle_subscription',
@@ -59,7 +62,6 @@ export const ApiRoutes = {
         DeleteBackup: 'admin.delete_backup',
         ReadLogs: 'admin.read_logs',
         DeleteLogs: 'admin.delete_logs',
-
         GetTags: 'admin.get_tags',
         CreateTag: 'admin.create_tag',
         UpdateTag: 'admin.update_tag',
@@ -77,7 +79,6 @@ export const ApiRoutes = {
         DeleteVideo: 'studio.delete_video',
         GetModels: 'studio.get_models',
         GetCategories: 'studio.get_categories',
-        
         GetPlaylists: 'studio.get_playlists',
         CreatePlaylist: 'studio.create_playlist',
         UpdatePlaylist: 'studio.update_playlist',

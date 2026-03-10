@@ -5,7 +5,11 @@ return [
     // --- RUTAS APP FRONTEND ---
     'app.get_feed'             => ['controller' => 'App\Api\Controllers\FeedController', 'action' => 'get_feed'],
     'app.get_playlist_details' => ['controller' => 'App\Api\Controllers\PlaylistController', 'action' => 'getDetails'],
-    'app.get_video_details'    => ['controller' => 'App\Api\Controllers\VideoController', 'action' => 'getVideoDetails'], // NUEVA RUTA PÚBLICA PARA EL REPRODUCTOR
+    'app.get_video_details'    => ['controller' => 'App\Api\Controllers\VideoController', 'action' => 'getVideoDetails'],
+    
+    // --- RUTAS DE MEDIOS PROTEGIDOS (FIRMADO) ---
+    'media.get_token'          => ['controller' => 'App\Api\Controllers\MediaController', 'action' => 'getStreamUrl'],
+    'media.stream'             => ['controller' => 'App\Api\Controllers\MediaController', 'action' => 'stream'],
 
     // --- RUTA CANALES (Suscripciones, Banner y Perfil) ---
     'channel.toggle_subscription' => ['controller' => 'App\Api\Controllers\ChannelController', 'action' => 'toggle_subscription'],

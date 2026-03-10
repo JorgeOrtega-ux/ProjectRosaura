@@ -1,3 +1,5 @@
+# jorgeortega-ux/projectrosaura/ProjectRosaura-d-t/.htaccess
+
 <IfModule mod_rewrite.c>
     RewriteEngine On
     
@@ -10,7 +12,7 @@
     # 1. Enrutar archivos estáticos (JS, CSS) directamente hacia la carpeta public
     RewriteRule ^assets/(.*)$ public/assets/$1 [L]
 
-    # ---> NUEVA REGLA: Enrutar uploads (storage) directamente hacia la carpeta public
+    # ---> Enrutar uploads (storage) directamente hacia la carpeta public
     RewriteRule ^storage/(.*)$ public/storage/$1 [L]
 
     # 2. Si la petición ya está apuntando a public/ internamente, la dejamos pasar
@@ -22,4 +24,10 @@
 
     # 4. Cualquier otra petición va al index.php
     RewriteRule ^(.*)$ public/index.php [QSA,L]
+</IfModule>
+
+# Habilitar X-Sendfile para el despacho masivo de videos sin consumir RAM de PHP
+# Nota: Requires mod_xsendfile enabled in Apache config.
+<IfModule mod_xsendfile.c>
+    XSendFile On
 </IfModule>

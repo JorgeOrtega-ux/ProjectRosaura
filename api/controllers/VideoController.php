@@ -8,7 +8,6 @@ use App\Core\Interfaces\VideoRepositoryInterface;
 class VideoController {
     private $videoRepo;
 
-    // El Container inyectará automáticamente el VideoRepository gracias al binding
     public function __construct(VideoRepositoryInterface $videoRepo) {
         $this->videoRepo = $videoRepo;
     }
@@ -30,7 +29,6 @@ class VideoController {
             ];
         }
 
-        // Llamamos directamente al repositorio usando el método que creamos en el paso anterior
         $videoData = $this->videoRepo->getPublicVideoDetails($videoUuid);
 
         if (!$videoData) {
@@ -41,6 +39,11 @@ class VideoController {
                 'message' => 'El video no existe, está en revisión o es privado.'
             ];
         }
+
+        // Ocultamos la ruta estática para forzar el uso de tokens firmados
+        unset($videoData['file_path']);
+        // Agregamos bandera para que el frontend sepa que debe invocar al motor de firmado
+        $videoData['requires_signed_token'] = true;
 
         return ['success' => true, 'data' => $videoData];
     }
