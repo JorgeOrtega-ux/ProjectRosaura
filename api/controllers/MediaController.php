@@ -103,17 +103,25 @@ class MediaController {
         // 2. Construimos la ruta absoluta de tu servidor apuntando a la carpeta public
         $absoluteBaseDir = __DIR__ . '/../../public/' . $dbPath;
         
-        // 3. Sanitizamos el archivo que pide HLS.js para evitar ataques de salto de directorio (Directory Traversal)
+        // 3. Obtener la ruta base real y absoluta (DEFENSA PRINCIPAL CONTRA PATH TRAVERSAL)
+        $realBaseDir = realpath($absoluteBaseDir);
+        
+        if ($realBaseDir === false) {
+            http_response_code(500);
+            die("Error interno de almacenamiento: El directorio base de videos no existe.");
+        }
+
+        // 4. Limpieza básica preventiva
         $fileRequested = str_replace(['../', '..\\'], '', $fileRequested);
         
-        // 4. Juntamos la ruta base absoluta con el archivo pedido para obtener el path final
+        // 5. Construir la ruta solicitada y obtener su ruta real resuelta
         $rawPath = $absoluteBaseDir . '/' . $fileRequested;
         $filePath = realpath($rawPath);
 
-        // Validación de seguridad estricta: El archivo debe existir
-        if ($filePath === false || !file_exists($filePath)) {
+        // 6. Validación estricta: El archivo debe existir Y estar dentro del directorio base
+        if ($filePath === false || !file_exists($filePath) || strpos($filePath, $realBaseDir) !== 0) {
             http_response_code(404);
-            die("Archivo o fragmento no encontrado en el servidor físico.");
+            die("Archivo o fragmento no encontrado o acceso denegado.");
         }
 
         // Determinar el Content-Type correcto para despachar el HLS sin errores en el navegador
@@ -134,11 +142,13 @@ class MediaController {
             ob_clean(); 
         }
         
-        // --- MÉTODO DE DESPACHO ---
-        // 1. En producción con un servidor configurado (Nginx o Apache con mod_xsendfile):
+        // --- MÉTODO DE DESPACHO DE BINARIOS ---
+        
+        // OPCIÓN 1: Comentada temporalmente para desarrollo local (XAMPP/Red Local)
         // header("X-Sendfile: {$filePath}");
         
-        // 2. Método nativo de PHP (Seguro y funciona en XAMPP/Localhost sin configurar nada extra):
+        // OPCIÓN 2: Entorno Local / Desarrollo sin configurar.
+        // Método nativo de PHP para enviar los bytes reales al reproductor.
         header("Content-Length: " . filesize($filePath));
         readfile($filePath);
         
