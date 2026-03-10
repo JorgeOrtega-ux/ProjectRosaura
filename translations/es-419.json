@@ -558,5 +558,7 @@
     "studio_th_type": "Tipo",
     "studio_th_last_update": "Última actualización",
     "studio_th_video_count": "Número de videos",
-    "studio_empty_playlists": "No se encontraron listas de reproducción por el momento."
+    "studio_empty_playlists": "No se encontraron listas de reproducción por el momento.",
+    "watch_playlist_title": "Lista de reproducción",
+    "watch_playlist_videos_count": "{current} de {total}"
 }

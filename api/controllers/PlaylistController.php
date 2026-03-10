@@ -26,5 +26,20 @@ class PlaylistController {
 
         return ['success' => true, 'data' => $result];
     }
+    
+    // NUEVO: Método para obtener la lista estructurada para la vista de Watch
+    public function getQueue($input) {
+        if (empty($input['playlist_uuid'])) {
+            return ['success' => false, 'message' => 'El identificador de la playlist es requerido.'];
+        }
+
+        $result = $this->playlistService->getPlaylistQueueData($input['playlist_uuid']);
+        
+        if (!$result) {
+            return ['success' => false, 'message' => 'No se encontró la lista de reproducción.'];
+        }
+
+        return ['success' => true, 'data' => $result];
+    }
 }
 ?>

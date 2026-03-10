@@ -173,4 +173,7 @@ export class ApiService {
     async fetchPlaylistVideos(playlistId) { return await this.post('studio.get_playlist_videos', { playlist_id: playlistId }); }
     async syncPlaylistVideos(playlistId, videoIdsArray) { return await this.post('studio.sync_playlist_videos', { playlist_id: playlistId, video_ids: videoIdsArray }); }
     async getPlaylistDetails(playlistId) { return await this.post('app.get_playlist_details', { id: playlistId }); }
+    
+    // --- NUEVO MÉTODO PARA CARGAR LA COLA DE LA LISTA DE REPRODUCCIÓN EN EL REPRODUCTOR ---
+    async getPlaylistQueue(playlistUuid) { return await this.post('app.get_playlist_queue', { playlist_uuid: playlistUuid }); }
 }

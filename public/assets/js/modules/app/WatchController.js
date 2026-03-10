@@ -43,6 +43,11 @@ export class WatchController {
                     console.error('[WatchController] El video no tiene un ID válido generado.');
                 }
 
+                // Si detectamos que hay un listId, cargamos la playlist para la barra lateral
+                if (playlistId) {
+                    this.loadPlaylistData(playlistId, videoId);
+                }
+
                 // Cargar videos recomendados de la sidebar
                 this.loadRecommendedVideos(videoId);
 
@@ -53,6 +58,105 @@ export class WatchController {
             console.error('[WatchController] Error fetching video:', error);
             this.showError404('Ocurrió un error de red al intentar cargar el video.');
         }
+    }
+
+    async loadPlaylistData(playlistId, currentVideoId) {
+        try {
+            // Suponemos que registrarás este endpoint en ApiRoutes.js y tu backend
+            const response = await this.api.post('app.get_playlist_queue', { playlist_uuid: playlistId });
+            
+            if (response && response.success && response.data) {
+                this.renderPlaylistPanel(response.data, currentVideoId, playlistId);
+            }
+        } catch (error) {
+            console.error('[WatchController] Error fetching playlist queue:', error);
+            // El panel simplemente se mantendrá oculto si ocurre un error o no se encuentra
+        }
+    }
+
+    renderPlaylistPanel(playlistData, currentVideoId, playlistId) {
+        const panel = document.getElementById('watch-playlist-panel');
+        const titleEl = document.getElementById('watch-playlist-title');
+        const countEl = document.getElementById('watch-playlist-count');
+        const itemsContainer = document.getElementById('watch-playlist-items');
+        const header = document.querySelector('.watch-playlist-header');
+        
+        if (!panel || !itemsContainer) return;
+
+        // Mostrar panel quitando la clase hidden
+        panel.style.display = 'flex';
+        panel.classList.remove('hidden');
+
+        // Llenar Textos
+        titleEl.textContent = playlistData.title || window.AppSystem?.Translator?.get('watch_playlist_title') || 'Lista de reproducción';
+        
+        const videos = playlistData.videos || [];
+        const total = videos.length;
+        let currentIndex = videos.findIndex(v => v.uuid === currentVideoId);
+        let displayIndex = currentIndex !== -1 ? currentIndex + 1 : 1;
+
+        // Utilizamos la clave del traductor si la armaste así, o manual:
+        let countTextTemplate = window.AppSystem?.Translator?.get('watch_playlist_videos_count') || '{current} de {total}';
+        countEl.textContent = countTextTemplate.replace('{current}', displayIndex).replace('{total}', total);
+
+        // Renderizar items de la lista
+        let html = '';
+        videos.forEach((video, index) => {
+            const isActive = video.uuid === currentVideoId;
+            const itemNumber = index + 1;
+            const thumbnailUrl = video.thumbnail_url || video.thumbnail || '/ProjectRosaura/public/assets/images/default-thumb.png';
+            const title = video.title || 'Video sin título';
+            const author = video.username || (video.author && video.author.username) || 'Canal Rosaura';
+            
+            let duration = '00:00';
+            if (video.duration_formatted) {
+                duration = video.duration_formatted;
+            } else if (video.duration) {
+                const totalSeconds = parseInt(video.duration, 10);
+                const m = Math.floor(totalSeconds / 60);
+                const s = totalSeconds % 60;
+                duration = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+            }
+
+            // Url para ir al video pero manteniendo el contexto de la playlist
+            const watchUrl = `/ProjectRosaura/watch/${video.uuid}?list=${playlistId}`;
+
+            html += `
+                <a href="${watchUrl}" class="watch-playlist-item ${isActive ? 'active' : ''}" data-uuid="${video.uuid}">
+                    <div class="watch-playlist-item-index">${itemNumber}</div>
+                    <div class="watch-playlist-item-playing-icon">
+                        <span class="material-symbols-rounded" style="font-size: 16px;">play_arrow</span>
+                    </div>
+                    <div class="watch-playlist-item-thumb">
+                        <img src="${thumbnailUrl}" alt="${title}">
+                        <span class="watch-playlist-item-duration">${duration}</span>
+                    </div>
+                    <div class="watch-playlist-item-info">
+                        <h4 class="watch-playlist-item-title" title="${title}">${title}</h4>
+                        <span class="watch-playlist-item-author">${author}</span>
+                    </div>
+                </a>
+            `;
+        });
+
+        itemsContainer.innerHTML = html;
+
+        // Activar Toggle Expand/Collapse (solo una vez)
+        if (header && !header.hasAttribute('data-listener-attached')) {
+            header.addEventListener('click', () => {
+                panel.classList.toggle('collapsed');
+            });
+            header.setAttribute('data-listener-attached', 'true');
+        }
+
+        // Auto-scroll al item activo una vez renderizado
+        setTimeout(() => {
+            const activeItem = itemsContainer.querySelector('.watch-playlist-item.active');
+            if (activeItem) {
+                // Restamos un poco (e.g. 10px) para que no quede totalmente pegado arriba
+                itemsContainer.scrollTop = activeItem.offsetTop - itemsContainer.offsetTop - 10;
+            }
+        }, 300);
     }
 
     // FUNCIÓN ACTUALIZADA: Extrae específicamente de response.data.horizontal

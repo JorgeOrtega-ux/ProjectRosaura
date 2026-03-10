@@ -217,5 +217,32 @@ class PlaylistRepository implements PlaylistRepositoryInterface {
             'videos' => $videos
         ];
     }
+    
+    // NUEVO: Método optimizado únicamente para retornar la estructura de visualización en el reproductor (Watch UI)
+    public function getPlaylistVideosOrdered(string $uuid): array {
+        $stmt = $this->db->prepare("SELECT id, title, visibility FROM playlists WHERE uuid = :uuid");
+        $stmt->execute([':uuid' => $uuid]);
+        $playlist = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$playlist || $playlist['visibility'] === 'private') {
+            return []; // Retorna vacío si no existe o es privada
+        }
+
+        $stmtVideos = $this->db->prepare("
+            SELECT v.uuid, v.title, v.duration, v.thumbnail_path, u.username
+            FROM videos v
+            INNER JOIN playlist_videos pv ON v.id = pv.video_id
+            INNER JOIN users u ON v.user_id = u.id
+            WHERE pv.playlist_id = :playlist_id AND v.visibility != 'private'
+            ORDER BY pv.display_order ASC
+        ");
+        $stmtVideos->execute([':playlist_id' => $playlist['id']]);
+        $videos = $stmtVideos->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        return [
+            'title' => $playlist['title'],
+            'videos' => $videos
+        ];
+    }
 }
 ?>

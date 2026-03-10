@@ -3,7 +3,8 @@
 export const ApiRoutes = {
     App: {
         GetFeed: 'app.get_feed',
-        GetPlaylistDetails: 'app.get_playlist_details'
+        GetPlaylistDetails: 'app.get_playlist_details',
+        GetPlaylistQueue: 'app.get_playlist_queue' // <--- NUEVA RUTA PARA LA COLA
     },
     Media: {
         GetMediaToken: 'media.get_token' // <--- NUEVA RUTA PARA FIRMADO

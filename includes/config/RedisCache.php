@@ -47,6 +47,56 @@ class RedisCache {
     }
 
     /**
+     * Obtiene un valor de la caché
+     * @param string $key
+     * @return string|null
+     */
+    public function get(string $key): ?string {
+        if (!$this->client) return null;
+        try {
+            return $this->client->get($key);
+        } catch (Exception $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Guarda un valor en la caché con tiempo de expiración opcional
+     * @param string $key
+     * @param string $value
+     * @param int|null $ttl Segundos (Opcional)
+     * @return bool
+     */
+    public function set(string $key, string $value, ?int $ttl = null): bool {
+        if (!$this->client) return false;
+        try {
+            if ($ttl) {
+                $this->client->setex($key, $ttl, $value);
+            } else {
+                $this->client->set($key, $value);
+            }
+            return true;
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Elimina una clave de la caché
+     * @param string $key
+     * @return bool
+     */
+    public function delete(string $key): bool {
+        if (!$this->client) return false;
+        try {
+            $this->client->del($key);
+            return true;
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+
+    /**
      * Función interna y ligera para parsear el archivo .env
      */
     private function loadEnv($path) {

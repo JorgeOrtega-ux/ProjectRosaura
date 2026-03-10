@@ -11,8 +11,9 @@ interface PlaylistRepositoryInterface {
     public function delete(int $id): bool;
     public function getVideosByPlaylistId(int $playlistId): array;
     public function syncVideos(int $playlistId, array $videoIds): bool;
+    public function getPlaylistWithVideosByUuid(string $uuid): ?array;
     
     // <--- NUEVA FIRMA ---
-    public function getPlaylistWithVideosByUuid(string $uuid): ?array;
+    public function getPlaylistVideosOrdered(string $uuid): array;
 }
 ?>

@@ -138,6 +138,20 @@
         </div>
 
         <div class="watch-layout__recommended">
+            <div id="watch-playlist-panel" class="watch-playlist-panel hidden" style="display: none;">
+                <div class="watch-playlist-header">
+                    <div class="watch-playlist-header-info">
+                        <h2 id="watch-playlist-title" class="watch-playlist-title">Lista de reproducción</h2>
+                        <span id="watch-playlist-count" class="watch-playlist-count">- / -</span>
+                    </div>
+                    <button id="watch-playlist-toggle" class="watch-playlist-toggle-btn" title="Expandir/Contraer">
+                        <span class="material-symbols-rounded">expand_more</span>
+                    </button>
+                </div>
+                <div id="watch-playlist-items" class="watch-playlist-items">
+                    </div>
+            </div>
+
             <h2 class="watch-placeholder-title" style="margin-bottom: 16px; font-size: 16px; font-weight: 600;">Videos Recomendados</h2>
             <div id="watch-recommended-videos" class="watch-recommended-list" style="display: flex; flex-direction: column; gap: 12px;">
                 <p class="watch-placeholder-text">Cargando sugerencias...</p>
