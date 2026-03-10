@@ -60,39 +60,61 @@
     max-width: 1600px;
     margin: 0 auto;
     padding: 24px;
-    transition: max-width 0.3s ease;
 }
 
-.watch-layout--cinema {
-    max-width: 100%;
-    grid-template-areas:
-        "player player"
-        "info recommended"
-        "comments recommended";
-    padding-top: 0;
-    padding-left: 0;
-    padding-right: 0;
-}
-
-.watch-layout--cinema .watch-layout__info,
-.watch-layout--cinema .watch-layout__comments { margin-left: 24px; }
-.watch-layout--cinema .watch-layout__recommended { margin-right: 24px; }
-
+/* CONTENEDOR DEL REPRODUCTOR MODO NORMAL */
 .watch-layout__player {
     grid-area: player;
-    background-color: var(--bg-surface-alt, #111); border: 1px solid var(--border-color, #333);
-    border-radius: 12px; min-height: 55vh; 
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    transition: all 0.3s ease;
+    background-color: #000;
+    border: 1px solid var(--border-color, #333);
+    border-radius: 12px;
+    width: 100%; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center;
+    overflow: hidden;
+}
+
+/* ==========================================================================
+   MODO CINE (DISEÑO DE 4 COLUMNAS PARA EVITAR APLASTAMIENTO)
+   ========================================================================== */
+.watch-layout--cinema {
+    max-width: 100%;
+    
+    /* ¡LA SOLUCIÓN AQUÍ!: 0 arriba, 0 derecha, 24px abajo, 0 izquierda */
+    padding: 0 0 24px 0; 
+    
+    /* El secreto: 2 columnas laterales que actúan como "márgenes elásticos" */
+    grid-template-columns: 
+        max(24px, calc((100vw - 1600px) / 2)) 
+        minmax(0, 1fr) 
+        420px 
+        max(24px, calc((100vw - 1600px) / 2));
+        
+    grid-template-areas:
+        "player player player player"
+        ". info recommended ."
+        ". comments recommended .";
 }
 
 .watch-layout--cinema .watch-layout__player {
-    min-height: 75vh; background-color: #000; border: none; border-radius: 0;
+    background-color: #000; 
+    border: none; 
+    border-radius: 0; 
+}
+
+/* Eliminamos los márgenes manuales porque el Grid elástico ya centra todo */
+.watch-layout--cinema .watch-layout__info,
+.watch-layout--cinema .watch-layout__comments,
+.watch-layout--cinema .watch-layout__recommended {
+    margin: 0;
 }
 
 .watch-layout__info { grid-area: info; min-height: 150px; }
 .watch-layout__comments { grid-area: comments; background-color: var(--bg-surface, #1e1e1e); border: 1px solid var(--border-color, #333); border-radius: 12px; padding: 24px; min-height: 600px; }
 .watch-layout__recommended { grid-area: recommended; background-color: var(--bg-surface, #1e1e1e); border: 1px solid var(--border-color, #333); border-radius: 12px; padding: 24px; min-height: 800px; }
+
 
 /* ==========================================================================
    ESTILOS DE LA INFORMACIÓN DEL VIDEO (NUEVO LAYOUT BLANCO)
@@ -108,112 +130,89 @@
     flex-wrap: wrap; gap: 16px; margin-bottom: 16px;
 }
 
-/* Zona Izquierda (Foto y Nombre) */
+/* Zona Izquierda */
 .watch-info-left { display: flex; align-items: center; gap: 12px; }
-.watch-avatar {
-    width: 44px; height: 44px; border-radius: 50%; object-fit: cover;
-    background-color: var(--bg-surface-alt, #333);
-}
+.watch-avatar { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; background-color: var(--bg-surface-alt, #333); }
 .watch-channel-details { display: flex; flex-direction: column; justify-content: center; }
 .watch-channel-name { font-size: 16px; font-weight: 600; color: var(--text-primary); line-height: 1.2; }
 .watch-channel-subs { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
 
-/* Zona Derecha (Suscribirse y Acciones) */
+/* Zona Derecha */
 .watch-info-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-
-/* Botones Base */
-.watch-btn {
-    display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px;
-    border-radius: 20px; font-size: 14px; font-weight: 600; cursor: pointer;
-    border: none; transition: background-color 0.2s, opacity 0.2s; font-family: inherit;
-}
+.watch-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; transition: background-color 0.2s, opacity 0.2s; font-family: inherit; }
 .watch-btn .material-symbols-rounded { font-size: 20px; }
-
-/* Botón de Suscribirse */
 .watch-btn-subscribe { background-color: var(--text-primary, #fff); color: var(--bg-surface, #000); }
 .watch-btn-subscribe:hover { opacity: 0.9; }
 
-/* Botones de Acción Individuales */
-.watch-btn-action { 
-    background-color: #ffffff; 
-    color: #0f0f0f; 
-    border: 1px solid #00000020;
-}
+.watch-btn-action { background-color: #ffffff; color: #0f0f0f; border: 1px solid #00000020; }
 .watch-btn-action:hover { background-color: #f2f2f2; }
-
-/* Grupo de botones pegados */
-.watch-action-group {
-    display: flex; align-items: center; 
-    background-color: #ffffff;
-    border-radius: 20px; 
-    border: 1px solid #00000020;
-    overflow: hidden;
-}
-.watch-action-group .watch-btn-action { 
-    background-color: transparent; 
-    border: none; 
-    border-radius: 0; 
-}
+.watch-action-group { display: flex; align-items: center; background-color: #ffffff; border-radius: 20px; border: 1px solid #00000020; overflow: hidden; }
+.watch-action-group .watch-btn-action { background-color: transparent; border: none; border-radius: 0; }
 .watch-action-group .watch-btn-action:hover { background-color: #f2f2f2; }
 .watch-action-divider { width: 1px; height: 24px; background-color: #00000020; }
 
-/* Caja de Detalles (Fondo Blanco con Borde y Color Variable al Hover) */
+/* Caja de Detalles */
 .watch-details-box {
     background-color: #ffffff; 
     border: 1px solid #00000020;
     border-radius: 12px;
     padding: 16px; 
     transition: background-color 0.3s ease, border-color 0.3s ease;
-    
-    /* Variable para controlar el color al pasar el mouse (gris por defecto) */
     --hover-bg-color: #f9f9f9;
 }
-.watch-details-box:hover { 
-    background-color: var(--hover-bg-color); 
-}
-
-/* Textos dentro de la caja blanca */
+.watch-details-box:hover { background-color: var(--hover-bg-color); }
 .watch-details-meta { font-size: 14px; margin-bottom: 12px; }
 .watch-meta-highlight { font-weight: 600; color: #0f0f0f; } 
 .watch-info-desc-text { font-size: 14px; color: #606060; line-height: 1.5; white-space: pre-wrap; margin: 0; } 
 .watch-info-tags-list { display: flex; gap: 8px; flex-wrap: wrap; }
-
-/* Estilo de los tags sobre fondo blanco */
-.watch-tag-item {
-    background-color: #00000010; 
-    color: #0f0f0f; 
-    padding: 6px 12px; 
-    border-radius: 16px; 
-    font-size: 13px; 
-    font-weight: 500;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px; 
-}
+.watch-tag-item { background-color: #00000010; color: #0f0f0f; padding: 6px 12px; border-radius: 16px; font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; gap: 4px; }
 .watch-tag-item .material-symbols-rounded { font-size: 16px; }
 
 /* Elementos Placeholder */
 .watch-placeholder-title { color: var(--text-primary, #fff); font-size: 20px; font-weight: 700; margin: 0 0 12px 0; }
 .watch-placeholder-text { color: var(--text-secondary, #aaa); font-size: 14px; }
-.watch-btn-cinema {
-    margin-top: 24px; padding: 10px 24px; background-color: var(--text-primary, #fff);
-    color: var(--bg-surface, #000); border: none; border-radius: 24px; font-weight: 600; cursor: pointer;
-}
+.watch-btn-cinema { margin-top: 24px; padding: 10px 24px; background-color: var(--text-primary, #fff); color: var(--bg-surface, #000); border: none; border-radius: 24px; font-weight: 600; cursor: pointer; }
 
 /* Responsive */
 @media screen and (max-width: 1024px) {
     .playlist-layout { flex-direction: column; }
-    .playlist-sidebar { max-width: 100%; width: 100%; position: relative; top: 0; padding: 16px; }
+    .playlist-sidebar { max-width: 100%; width: 100%; position: relative; top: 0; padding: 16px; box-sizing: border-box; }
     
     .watch-layout, .watch-layout--cinema {
-        grid-template-columns: 1fr;
-        grid-template-areas: "player" "info" "recommended" "comments"; padding: 16px; 
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-areas: "player" "info" "recommended" "comments"; 
+        padding: 16px; 
+        width: 100%;
+        max-width: 100vw;
+        box-sizing: border-box;
     }
+    
     .watch-layout--cinema .watch-layout__info,
     .watch-layout--cinema .watch-layout__comments,
-    .watch-layout--cinema .watch-layout__recommended { margin-left: 0; margin-right: 0; }
-    .watch-layout--cinema .watch-layout__player { border-radius: 12px; min-height: 40vh; }
+    .watch-layout--cinema .watch-layout__recommended { margin-left: 0; margin-right: 0; max-width: 100%; }
     
-    .watch-info-row { flex-direction: column; align-items: flex-start; }
-    .watch-info-right { overflow-x: auto; width: 100%; padding-bottom: 4px; flex-wrap: nowrap; }
+    .watch-layout__player, .watch-layout--cinema .watch-layout__player { 
+        width: 100% !important; 
+        max-width: 100% !important; 
+        height: auto !important; 
+        aspect-ratio: 16 / 9; 
+        border-radius: 12px; 
+        margin: 0 !important;
+        box-sizing: border-box;
+    }
+    
+    .watch-info-row { flex-direction: column; align-items: flex-start; width: 100%; max-width: 100%; }
+    
+    .watch-info-right { 
+        overflow-x: auto; 
+        width: 100%; 
+        max-width: 100%; 
+        padding-bottom: 8px; 
+        flex-wrap: nowrap; 
+        display: flex;
+        box-sizing: border-box;
+        -webkit-overflow-scrolling: touch; 
+    }
+    
+    .watch-btn { flex-shrink: 0; }
 }

@@ -4,7 +4,7 @@ import { ApiService } from '../api/ApiServices.js';
 
 export class VideoPlayerSystem {
     constructor() {
-        console.log('[VideoPlayer:Init] Construyendo sistema de reproductor...');
+        console.log('[VideoPlayer:Init] Construyendo sistema de reproductor avanzado (Resize JS)...');
         this.api = new ApiService();
         
         // Contenedores y Controles
@@ -31,7 +31,55 @@ export class VideoPlayerSystem {
         this.lastVolume = 1; 
         this.currentVideoUuid = null;
         
+        // --- EVENTO DE RESIZE MODO YOUTUBE ---
+        this.resizeHandler = this.calculatePlayerSize.bind(this);
+        window.addEventListener('resize', this.resizeHandler);
+        
         this.bindEvents();
+
+        // Calcular el tamaño inicial apenas cargue (con leve retraso para que CSS dibuje la cuadrícula primero)
+        setTimeout(() => this.calculatePlayerSize(), 50);
+    }
+
+    // Método matemático para calcular 16:9 dinámico
+    calculatePlayerSize() {
+        const playerWrapper = document.getElementById('watch-layout-player');
+        if (!playerWrapper) return;
+
+        // En móviles y tablets, desactivamos la matemática de JS y dejamos que el CSS actúe (es más fluido)
+        if (window.innerWidth <= 1024) {
+            playerWrapper.style.width = '';
+            playerWrapper.style.height = '';
+            playerWrapper.style.margin = '';
+            return;
+        }
+
+        // 1. Reset temporal al 100% para poder medir el espacio ancho REAL que nos da el grid
+        playerWrapper.style.width = '100%';
+        playerWrapper.style.height = 'auto';
+
+        // 2. Medir el espacio disponible
+        let availableWidth = playerWrapper.offsetWidth; 
+        
+        // La altura máxima para que no tengas que hacer scroll hacia abajo para ver los controles
+        let maxHeight = this.isTheaterMode ? (window.innerHeight - 80) : (window.innerHeight - 120);
+
+        // 3. Suponer que el tamaño será 16:9 completo
+        let targetWidth = availableWidth;
+        let targetHeight = (targetWidth * 9) / 16;
+
+        // 4. Si esa altura ideal se sale de nuestra pantalla, ACHICAMOS el contenedor desde los lados
+        if (targetHeight > maxHeight) {
+            targetHeight = maxHeight;
+            targetWidth = (targetHeight * 16) / 9;
+        }
+
+        // 5. Aplicar los tamaños matemáticos exactos en píxeles al contenedor negro
+        playerWrapper.style.width = `${targetWidth}px`;
+        playerWrapper.style.height = `${targetHeight}px`;
+
+        // 6. Centramos el reproductor por si se hizo más angosto que su columna original
+        playerWrapper.style.margin = '0 auto';
     }
 
     bindEvents() {
@@ -95,11 +143,9 @@ export class VideoPlayerSystem {
     _initStream(url) {
         console.log('[VideoPlayer:Stream] Iniciando flujo con URL:', url);
         
-        // Extraemos los tokens de la URL principal para guardarlos
         let tokenStr = null;
         let expiresStr = null;
         try {
-            // Maneja URLs relativas o absolutas
             const fakeBase = url.startsWith('http') ? '' : window.location.origin;
             const urlObj = new URL(url, fakeBase);
             tokenStr = urlObj.searchParams.get('t');
@@ -114,22 +160,15 @@ export class VideoPlayerSystem {
             
             this.hls = new Hls({
                 manifestLoadingMaxRetry: 2,
-                debug: false, // <-- Ponlo en true si quieres ver logs ULTRA detallados del núcleo de Hls.js
-                
-                // --- EL CORAZÓN DE LA SOLUCIÓN ---
-                // Interceptamos cada petición de HLS (.m3u8 y .ts) para inyectarle el token
+                debug: false,
                 xhrSetup: function(xhr, url_to_load) {
-                    console.log(`[VideoPlayer:XHR] Petición saliente: ${url_to_load}`);
-                    
                     if (tokenStr && expiresStr && url_to_load.includes('/api/media/stream/')) {
                         try {
                             const reqUrl = new URL(url_to_load, window.location.origin);
-                            // Solo agregamos si no lo tiene ya
                             if (!reqUrl.searchParams.has('t')) {
                                 reqUrl.searchParams.set('t', tokenStr);
                                 reqUrl.searchParams.set('e', expiresStr);
                                 const newUrl = reqUrl.toString();
-                                console.log(`[VideoPlayer:XHR] -> Inyectando token. Nueva URL: ${newUrl}`);
                                 xhr.open('GET', newUrl, true);
                             }
                         } catch (err) {
@@ -153,24 +192,17 @@ export class VideoPlayerSystem {
                 if (data.fatal) {
                     switch (data.type) {
                         case Hls.ErrorTypes.NETWORK_ERROR:
-                            console.warn(`[VideoPlayer:NetworkError] Código de servidor:`, data.response ? data.response.code : 'Desconocido');
-                            
                             if (data.response && data.response.code === 403 && this.currentVideoUuid) {
-                                console.warn('[VideoPlayer:NetworkError] 403 Forbidden detectado. Recargando todo el token por seguridad...');
+                                console.warn('[VideoPlayer:NetworkError] 403 Forbidden detectado. Recargando token...');
                                 this.loadVideo(this.currentVideoUuid, true);
-                            } else if (data.response && data.response.code === 404) {
-                                console.error('[VideoPlayer:NetworkError] 404 Not Found. El backend no encontró el fragmento físico.');
                             } else {
-                                console.log('[VideoPlayer:NetworkError] Intentando recuperar conexión...');
                                 this.hls.startLoad();
                             }
                             break;
                         case Hls.ErrorTypes.MEDIA_ERROR:
-                            console.warn('[VideoPlayer:MediaError] Intentando recuperar decodificación multimedia...');
                             this.hls.recoverMediaError();
                             break;
                         default:
-                            console.error('[VideoPlayer:FatalError] Error irrecuperable. Destruyendo instancia.');
                             this.destroyHls();
                             break;
                     }
@@ -178,13 +210,11 @@ export class VideoPlayerSystem {
             });
         } 
         else if (this.video.canPlayType('application/vnd.apple.mpegurl') || !url.includes('.m3u8')) {
-            console.log('[VideoPlayer:Stream] Reproducción nativa (Safari o MP4 directo).');
+            console.log('[VideoPlayer:Stream] Reproducción nativa.');
             this.video.src = url;
             this.video.onerror = () => {
                 const err = this.video.error;
-                console.error('[VideoPlayer:NativeError] Código de error nativo:', err ? err.code : 'Desconocido');
                 if (err && err.code === 4 && this.currentVideoUuid) { 
-                    console.warn('[VideoPlayer:NativeError] 403 sospechado. Recargando token...');
                     this.loadVideo(this.currentVideoUuid, true);
                 }
             };
@@ -193,7 +223,6 @@ export class VideoPlayerSystem {
 
     destroyHls() {
         if (this.hls) {
-            console.log('[VideoPlayer:Cleanup] Destruyendo instancia previa de HLS.');
             this.hls.destroy();
             this.hls = null;
         }
@@ -206,6 +235,7 @@ export class VideoPlayerSystem {
             this.video.removeAttribute('src');
             this.video.load();
         }
+        window.removeEventListener('resize', this.resizeHandler);
     }
 
     togglePlay() {
@@ -260,7 +290,11 @@ export class VideoPlayerSystem {
             this.layoutContainer.classList.toggle('watch-layout--cinema', this.isTheaterMode);
             this.cinemaIcon.textContent = this.isTheaterMode ? 'crop_5_4' : 'crop_16_9';
         }
-        window.dispatchEvent(new Event('resize'));
+        
+        // Recalculamos inmediatamente al cambiar el layout
+        this.calculatePlayerSize();
+        // Disparamos otro cálculo unos milisegundos después por si el CSS tardó en reacomodar el layout
+        setTimeout(() => this.calculatePlayerSize(), 150);
     }
 
     formatTime(seconds) {
