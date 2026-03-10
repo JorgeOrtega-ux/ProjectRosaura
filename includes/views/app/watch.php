@@ -138,8 +138,10 @@
         </div>
 
         <div class="watch-layout__recommended">
-            <h2 class="watch-placeholder-title">Videos Recomendados</h2>
-            <p class="watch-placeholder-text">Lista infinita de videos sugeridos...</p>
+            <h2 class="watch-placeholder-title" style="margin-bottom: 16px; font-size: 16px; font-weight: 600;">Videos Recomendados</h2>
+            <div id="watch-recommended-videos" class="watch-recommended-list" style="display: flex; flex-direction: column; gap: 12px;">
+                <p class="watch-placeholder-text">Cargando sugerencias...</p>
+            </div>
         </div>
 
     </div>

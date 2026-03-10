@@ -36,13 +36,15 @@ export class WatchController {
             if (response && response.success) {
                 this.renderRealData(response.data, playlistId);
                 
-                // CAMBIO APLICADO: Ya no armamos la ruta física aquí.
                 // Le pasamos el UUID del video y forzamos (true) la solicitud del token firmado al backend.
                 if (videoId) {
                     this.playerSystem.loadVideo(videoId, true);
                 } else {
                     console.error('[WatchController] El video no tiene un ID válido generado.');
                 }
+
+                // Cargar videos recomendados de la sidebar
+                this.loadRecommendedVideos(videoId);
 
             } else {
                 this.showError404(response.message || 'El video que buscas no existe o es privado.');
@@ -51,6 +53,105 @@ export class WatchController {
             console.error('[WatchController] Error fetching video:', error);
             this.showError404('Ocurrió un error de red al intentar cargar el video.');
         }
+    }
+
+    // FUNCIÓN ACTUALIZADA: Extrae específicamente de response.data.horizontal
+    async loadRecommendedVideos(currentVideoId) {
+        try {
+            const response = await this.api.post('app.get_feed', { limit: 12 });
+            
+            if (response && response.success) {
+                let videoList = [];
+                
+                // Extraemos exactamente el arreglo "horizontal" que manda el FeedController
+                if (response.data && Array.isArray(response.data.horizontal)) {
+                    videoList = response.data.horizontal;
+                } else if (Array.isArray(response.data)) {
+                    videoList = response.data;
+                }
+
+                // Filtrar para que el video que estamos viendo no salga en sugeridos
+                if (currentVideoId) {
+                    videoList = videoList.filter(v => v.uuid !== currentVideoId);
+                }
+
+                this.renderRecommendedVideos(videoList);
+            } else {
+                this.renderRecommendedVideos([]);
+            }
+        } catch (error) {
+            console.error('[WatchController] Error fetching recommended videos:', error);
+            this.renderRecommendedVideos([]);
+        }
+    }
+
+    // FUNCIÓN ACTUALIZADA: Lee las variables thumbnail_url y formatea duration
+    renderRecommendedVideos(videos) {
+        const container = document.getElementById('watch-recommended-videos');
+        if (!container) return;
+
+        if (!Array.isArray(videos)) {
+            videos = []; 
+        }
+
+        if (videos.length === 0) {
+            container.innerHTML = '<p class="watch-placeholder-text">No hay videos sugeridos disponibles por el momento.</p>';
+            return;
+        }
+
+        let html = '';
+        videos.forEach(video => {
+            const title = video.title || 'Sin Título';
+            
+            // Adaptado por si el FeedController manda username directo
+            const channelName = video.username || (video.author && video.author.username) || 'Canal Rosaura';
+            
+            const views = video.views ? parseInt(video.views).toLocaleString('es-MX') : Math.floor(Math.random() * 50000).toLocaleString('es-MX');
+            
+            // Lógica para formatear la duración que viene del FeedController (generalmente en segundos)
+            let duration = '00:00';
+            if (video.duration_formatted) {
+                duration = video.duration_formatted;
+            } else if (video.duration) {
+                const totalSeconds = parseInt(video.duration, 10);
+                const m = Math.floor(totalSeconds / 60);
+                const s = totalSeconds % 60;
+                duration = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+            }
+            
+            // Usamos thumbnail_url (la variable que arma el FeedController)
+            const thumbnailUrl = video.thumbnail_url || video.thumbnail || '/ProjectRosaura/public/assets/images/default-thumb.png'; 
+            
+            // Enlaces
+            const watchUrl = `/ProjectRosaura/watch/${video.uuid}`;
+            const streamUrl = `/ProjectRosaura/api/media/stream?uuid=${video.uuid}`;
+
+            html += `
+                <a href="${watchUrl}" class="component-video-card component-video-card--horizontal" style="display: flex; gap: 10px; text-decoration: none; color: inherit; width: 100%; border-radius: 8px; cursor: pointer;">
+                    <div class="component-video-card__thumbnail-container" style="position: relative; width: 168px; min-width: 168px; aspect-ratio: 16/9; border-radius: 8px; overflow: hidden; background-color: #222; flex-shrink: 0;">
+                        <img src="${thumbnailUrl}" style="width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; z-index: 1;" alt="${title}">
+                        
+                        <video class="component-video-card__player" data-src="${streamUrl}" preload="none" style="width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; z-index: 2; opacity: 0; transition: opacity 0.3s;" onplay="this.style.opacity=1;" onpause="this.style.opacity=0;"></video>
+                        
+                        <span class="component-video-card__duration" style="position: absolute; bottom: 4px; right: 4px; background-color: rgba(0,0,0,0.8); color: white; font-size: 12px; padding: 2px 4px; border-radius: 4px; z-index: 3; font-weight: 500;">
+                            ${duration}
+                        </span>
+                    </div>
+                    
+                    <div class="component-video-card__info" style="display: flex; flex-direction: column; overflow: hidden; padding-top: 2px;">
+                        <h3 class="component-video-card__title" title="${title}" style="font-size: 14px; margin: 0 0 4px 0; font-weight: 600; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis;">
+                            ${title}
+                        </h3>
+                        <div class="component-video-card__meta" style="font-size: 12px; color: var(--text-secondary, #AAAAAA); line-height: 1.4;">
+                            <div class="component-video-card__channel" style="margin-bottom: 2px;">${channelName}</div>
+                            <div class="component-video-card__views-date">${views} visualizaciones</div>
+                        </div>
+                    </div>
+                </a>
+            `;
+        });
+
+        container.innerHTML = html;
     }
 
     renderRealData(data, playlistId) {
@@ -144,7 +245,6 @@ export class WatchController {
         if (customTagsSection && customTagsContainer) {
             if (customTags && customTags.length > 0) {
                 let customTagsHTML = customTags.map(t => {
-                    // Extraer nombre por si viene como objeto {name: '...'} o string directo
                     const tagName = (typeof t === 'object') ? t.name : t;
                     return `<span class="watch-tag-item">
                         <span class="material-symbols-rounded">tag</span> ${tagName}
@@ -154,7 +254,6 @@ export class WatchController {
                 customTagsContainer.innerHTML = customTagsHTML;
                 customTagsSection.style.display = 'block';
 
-                // Si no hubo modelos ni categorías, ocultamos la línea divisora superior para mantener estética
                 if (tagsDivider) {
                     tagsDivider.style.display = hasModelsOrCategories ? 'block' : 'none';
                 }
