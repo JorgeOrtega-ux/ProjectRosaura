@@ -52,8 +52,8 @@ class MediaController {
         
         $token = $this->signer->generateToken($videoUuid, $expires, $ipAddress);
 
-        // Construir la URL segura
-        $streamUrl = "/api/media/stream?v={$videoUuid}&e={$expires}&t={$token}";
+        // Construir la URL segura con estructura de directorio virtual para que funcione HLS
+        $streamUrl = "/api/media/stream/{$videoUuid}/master.m3u8?e={$expires}&t={$token}";
 
         return [
             'success' => true,
@@ -64,9 +64,12 @@ class MediaController {
         ];
     }
 
-    // Endpoint que el reproductor de video atacará (retorna el archivo multimedia)
+    // Endpoint que el reproductor de video atacará (retorna el archivo multimedia o segmento)
     public function stream() {
+        // Obtenemos las variables de la ruta interceptada por el .htaccess
         $videoUuid = $_GET['v'] ?? null;
+        $fileRequested = $_GET['f'] ?? 'master.m3u8';
+        
         $expires = (int)($_GET['e'] ?? 0);
         $token = $_GET['t'] ?? null;
         $ipAddress = Utils::getIpAddress();
@@ -82,31 +85,62 @@ class MediaController {
             die("Acceso denegado: Firma inválida o expirada.");
         }
 
-        // Obtener ruta física del video (esta ruta nunca se expone al usuario)
+        // Obtener los detalles del video de la base de datos
         $videoData = $this->videoRepo->getPublicVideoDetails($videoUuid);
-        if (!$videoData || empty($videoData['file_path'])) {
+        
+        // Extraemos la ruta real (priorizamos HLS, si no existe usamos el MP4 temporal)
+        $videoPath = $videoData['hls_path'] ?? $videoData['temp_file_path'] ?? null;
+
+        if (!$videoData || empty($videoPath)) {
             http_response_code(404);
-            die("Video no encontrado en el almacenamiento.");
+            die("Error BD: El video no existe o las rutas HLS/MP4 están vacías.");
         }
 
-        // Ajustar esta ruta según tu estructura real (ej. /var/www/html/public/storage/...)
-        $filePath = realpath(__DIR__ . '/../../public/' . $videoData['file_path']);
+        // 1. Armamos la ruta de la carpeta base (le quitamos el archivo final a la ruta de la BD)
+        // Ejemplo: Si es 'storage/videos/UUID/master.m3u8', nos quedamos con 'storage/videos/UUID'
+        $dbPath = dirname($videoPath); 
+        
+        // 2. Construimos la ruta absoluta de tu servidor apuntando a la carpeta public
+        $absoluteBaseDir = __DIR__ . '/../../public/' . $dbPath;
+        
+        // 3. Sanitizamos el archivo que pide HLS.js para evitar ataques de salto de directorio (Directory Traversal)
+        $fileRequested = str_replace(['../', '..\\'], '', $fileRequested);
+        
+        // 4. Juntamos la ruta base absoluta con el archivo pedido para obtener el path final
+        $rawPath = $absoluteBaseDir . '/' . $fileRequested;
+        $filePath = realpath($rawPath);
 
-        if (!$filePath || !file_exists($filePath)) {
+        // Validación de seguridad estricta: El archivo debe existir
+        if ($filePath === false || !file_exists($filePath)) {
             http_response_code(404);
-            die("Archivo no encontrado en el servidor.");
+            die("Archivo o fragmento no encontrado en el servidor físico.");
         }
 
-        // Despacho optimizado usando X-Sendfile (Apache) o X-Accel-Redirect (Nginx)
-        // Esto permite que el servidor web maneje el streaming pesado, liberando a PHP.
-        header("Content-Type: video/mp4");
+        // Determinar el Content-Type correcto para despachar el HLS sin errores en el navegador
+        $ext = pathinfo($filePath, PATHINFO_EXTENSION);
+        $contentType = match($ext) {
+            'm3u8' => 'application/vnd.apple.mpegurl',
+            'ts'   => 'video/MP2T',
+            'mp4'  => 'video/mp4',
+            default => 'application/octet-stream'
+        };
+
+        // Preparamos las cabeceras de despacho
+        header("Content-Type: " . $contentType);
         header("Accept-Ranges: bytes");
         
-        // Si usas Apache con mod_xsendfile habilitado:
-        header("X-Sendfile: {$filePath}");
+        // Limpiamos cualquier buffer previo para evitar corromper los binarios del video
+        if (ob_get_length()) {
+            ob_clean(); 
+        }
         
-        // Si usas Nginx, la cabecera sería:
-        // header("X-Accel-Redirect: /protected_media/" . basename($filePath));
+        // --- MÉTODO DE DESPACHO ---
+        // 1. En producción con un servidor configurado (Nginx o Apache con mod_xsendfile):
+        // header("X-Sendfile: {$filePath}");
+        
+        // 2. Método nativo de PHP (Seguro y funciona en XAMPP/Localhost sin configurar nada extra):
+        header("Content-Length: " . filesize($filePath));
+        readfile($filePath);
         
         exit;
     }

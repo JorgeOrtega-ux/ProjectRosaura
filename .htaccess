@@ -1,33 +1,25 @@
-# jorgeortega-ux/projectrosaura/ProjectRosaura-d-t/.htaccess
-
 <IfModule mod_rewrite.c>
     RewriteEngine On
-    
-    # IMPORTANTE: +FollowSymLinks es obligatorio en servidores Windows para mod_rewrite
     Options +FollowSymLinks -Indexes -MultiViews
 
-    # Base de tu proyecto local (Apunta a la subcarpeta)
     RewriteBase /ProjectRosaura/
 
-    # 1. Enrutar archivos estáticos (JS, CSS) directamente hacia la carpeta public
+    # Archivos estáticos y de almacenamiento público
     RewriteRule ^assets/(.*)$ public/assets/$1 [L]
-
-    # ---> Enrutar uploads (storage) directamente hacia la carpeta public
     RewriteRule ^storage/(.*)$ public/storage/$1 [L]
-
-    # 2. Si la petición ya está apuntando a public/ internamente, la dejamos pasar
     RewriteRule ^public/ - [L]
 
-    # 3. Si piden un archivo físico que SÍ existe, dejarlo pasar
     RewriteCond %{REQUEST_FILENAME} -f
     RewriteRule ^ - [L]
 
-    # 4. Cualquier otra petición va al index.php
+    # ---> REGLA HLS CORREGIDA: Debe inyectar route=media.stream
+    # Y estar ANTES de la regla del Frontend
+    RewriteRule ^api/media/stream/([a-zA-Z0-9-]+)/(.*)$ api/index.php?route=media.stream&v=$1&f=$2 [QSA,L]
+
+    # Cualquier otra petición va al Frontend (SPA)
     RewriteRule ^(.*)$ public/index.php [QSA,L]
 </IfModule>
 
-# Habilitar X-Sendfile para el despacho masivo de videos sin consumir RAM de PHP
-# Nota: Requires mod_xsendfile enabled in Apache config.
 <IfModule mod_xsendfile.c>
     XSendFile On
 </IfModule>

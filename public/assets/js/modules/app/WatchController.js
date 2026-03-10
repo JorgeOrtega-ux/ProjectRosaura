@@ -36,24 +36,12 @@ export class WatchController {
             if (response && response.success) {
                 this.renderRealData(response.data, playlistId);
                 
-                // Obtener las rutas desde la base de datos
-                const hlsPath = response.data.hls_path;
-                const fallbackPath = response.data.temp_file_path;
-                let videoSourceUrl = '';
-                
-                // Armar la URL absoluta concatenando tu AppBasePath (ej. http://192.168.8.13/ProjectRosaura)
-                if (hlsPath) {
-                    const cleanPath = hlsPath.startsWith('/') ? hlsPath : '/' + hlsPath;
-                    videoSourceUrl = window.AppBasePath + cleanPath;
-                } else if (fallbackPath) {
-                    const cleanPath = fallbackPath.startsWith('/') ? fallbackPath : '/' + fallbackPath;
-                    videoSourceUrl = window.AppBasePath + cleanPath;
-                }
-
-                if (videoSourceUrl !== '') {
-                    this.playerSystem.loadVideo(videoSourceUrl);
+                // CAMBIO APLICADO: Ya no armamos la ruta física aquí.
+                // Le pasamos el UUID del video y forzamos (true) la solicitud del token firmado al backend.
+                if (videoId) {
+                    this.playerSystem.loadVideo(videoId, true);
                 } else {
-                    console.error('[WatchController] El video no tiene una ruta HLS o MP4 válida generada.');
+                    console.error('[WatchController] El video no tiene un ID válido generado.');
                 }
 
             } else {
