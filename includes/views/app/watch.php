@@ -41,14 +41,141 @@
 
                         </div>
 
-                        <div class="component-video-player__controls-group component-video-player__controls-right">
+                        <div class="component-video-player__controls-group component-video-player__controls-right" style="position: relative;">
                             
+                            <div class="component-video-player__settings-module module" id="player-settings-menu">
+                                
+                                <div class="component-menu is-active" id="setting-menu-main">
+                                    <div class="component-menu__item" data-target="setting-menu-quality">
+                                        <div class="component-menu__item-left">
+                                            <span class="material-symbols-rounded">tune</span>
+                                            <span>Calidad</span>
+                                        </div>
+                                        <div class="component-menu__item-right">
+                                            <span>Automática</span>
+                                            <span class="material-symbols-rounded">chevron_right</span>
+                                        </div>
+                                    </div>
+                                    <div class="component-menu__item" data-target="setting-menu-lighting">
+                                        <div class="component-menu__item-left">
+                                            <span class="material-symbols-rounded">lightbulb</span>
+                                            <span>Iluminación cinematográfica</span>
+                                        </div>
+                                        <div class="component-menu__item-right">
+                                            <span id="lighting-status">Activado</span>
+                                            <span class="material-symbols-rounded">chevron_right</span>
+                                        </div>
+                                    </div>
+                                    <div class="component-menu__item" data-target="setting-menu-speed">
+                                        <div class="component-menu__item-left">
+                                            <span class="material-symbols-rounded">speed</span>
+                                            <span>Velocidad</span>
+                                        </div>
+                                        <div class="component-menu__item-right">
+                                            <span id="speed-status">Normal</span>
+                                            <span class="material-symbols-rounded">chevron_right</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="component-menu" id="setting-menu-quality">
+                                    <div class="component-menu__header" data-target="setting-menu-main">
+                                        <span class="material-symbols-rounded">arrow_back</span>
+                                        <span>Calidad</span>
+                                    </div>
+                                    <div class="component-menu__content">
+                                        <div class="component-menu__item is-selected">
+                                            <span class="material-symbols-rounded component-menu__check">check</span>
+                                            <span>Automática</span>
+                                        </div>
+                                        <div class="component-menu__item">
+                                            <span class="material-symbols-rounded component-menu__check"></span>
+                                            <span>1080p HD</span>
+                                        </div>
+                                        <div class="component-menu__item">
+                                            <span class="material-symbols-rounded component-menu__check"></span>
+                                            <span>720p</span>
+                                        </div>
+                                        <div class="component-menu__item">
+                                            <span class="material-symbols-rounded component-menu__check"></span>
+                                            <span>480p</span>
+                                        </div>
+                                        <div class="component-menu__item">
+                                            <span class="material-symbols-rounded component-menu__check"></span>
+                                            <span>360p</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="component-menu" id="setting-menu-lighting">
+                                    <div class="component-menu__header" data-target="setting-menu-main">
+                                        <span class="material-symbols-rounded">arrow_back</span>
+                                        <span>Iluminación cinematográfica</span>
+                                    </div>
+                                    <div class="component-menu__content">
+                                        <div class="component-menu__item is-selected">
+                                            <span class="material-symbols-rounded component-menu__check">check</span>
+                                            <span>Activado</span>
+                                        </div>
+                                        <div class="component-menu__item">
+                                            <span class="material-symbols-rounded component-menu__check"></span>
+                                            <span>Desactivado</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="component-menu" id="setting-menu-speed">
+                                    <div class="component-menu__header" data-target="setting-menu-main">
+                                        <span class="material-symbols-rounded">arrow_back</span>
+                                        <span>Velocidad de reproducción</span>
+                                    </div>
+                                    <div class="component-menu__content">
+                                        <div class="component-menu__item">
+                                            <span class="material-symbols-rounded component-menu__check"></span>
+                                            <span>0.25</span>
+                                        </div>
+                                        <div class="component-menu__item">
+                                            <span class="material-symbols-rounded component-menu__check"></span>
+                                            <span>0.5</span>
+                                        </div>
+                                        <div class="component-menu__item">
+                                            <span class="material-symbols-rounded component-menu__check"></span>
+                                            <span>0.75</span>
+                                        </div>
+                                        <div class="component-menu__item is-selected">
+                                            <span class="material-symbols-rounded component-menu__check">check</span>
+                                            <span>Normal</span>
+                                        </div>
+                                        <div class="component-menu__item">
+                                            <span class="material-symbols-rounded component-menu__check"></span>
+                                            <span>1.25</span>
+                                        </div>
+                                        <div class="component-menu__item">
+                                            <span class="material-symbols-rounded component-menu__check"></span>
+                                            <span>1.50</span>
+                                        </div>
+                                        <div class="component-menu__item">
+                                            <span class="material-symbols-rounded component-menu__check"></span>
+                                            <span>1.75</span>
+                                        </div>
+                                        <div class="component-menu__item">
+                                            <span class="material-symbols-rounded component-menu__check"></span>
+                                            <span>2</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+
                             <div class="component-video-player__control-box">
                                 <button class="component-video-player__btn" id="btn-settings" title="Configuración">
                                     <span class="material-symbols-rounded">settings</span>
                                 </button>
                                 <button class="component-video-player__btn" id="btn-cinema" title="Modo cine (t)">
                                     <span class="material-symbols-rounded" id="icon-cinema">crop_16_9</span>
+                                </button>
+                                <button class="component-video-player__btn" id="btn-fullscreen" title="Pantalla completa (f)">
+                                    <span class="material-symbols-rounded" id="icon-fullscreen">fullscreen</span>
                                 </button>
                             </div>
 

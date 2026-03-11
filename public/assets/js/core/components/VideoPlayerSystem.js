@@ -20,6 +20,15 @@ export class VideoPlayerSystem {
         this.volumeSlider = document.getElementById('volume-slider');
         this.cinemaBtn = document.getElementById('btn-cinema');
         this.cinemaIcon = document.getElementById('icon-cinema');
+        
+        // Pantalla Completa
+        this.fullscreenBtn = document.getElementById('btn-fullscreen');
+        this.fullscreenIcon = document.getElementById('icon-fullscreen');
+
+        // Módulo de Configuraciones Escalable
+        this.settingsBtn = document.getElementById('btn-settings');
+        this.settingsMenu = document.getElementById('player-settings-menu');
+
         this.progressArea = document.getElementById('progress-area');
         this.progressFill = document.getElementById('progress-fill');
         this.progressThumb = document.getElementById('progress-thumb');
@@ -37,49 +46,61 @@ export class VideoPlayerSystem {
         
         this.bindEvents();
 
-        // Calcular el tamaño inicial apenas cargue (con leve retraso para que CSS dibuje la cuadrícula primero)
+        // Calcular el tamaño inicial apenas cargue
         setTimeout(() => this.calculatePlayerSize(), 50);
     }
 
-    // Método matemático para calcular 16:9 dinámico
+    // Método matemático para calcular 16:9 dinámico arreglado
     calculatePlayerSize() {
-        const playerWrapper = document.getElementById('watch-layout-player');
-        if (!playerWrapper) return;
+        const outerContainer = document.getElementById('watch-layout-player'); // Contenedor Negro
+        const innerContainer = this.container; // Contenedor de Video y Controles
+        
+        if (!outerContainer || !innerContainer) return;
 
-        // En móviles y tablets, desactivamos la matemática de JS y dejamos que el CSS actúe (es más fluido)
-        if (window.innerWidth <= 1024) {
-            playerWrapper.style.width = '';
-            playerWrapper.style.height = '';
-            playerWrapper.style.margin = '';
+        // Si es pantalla completa nativa, dejamos que CSS controle el 100%
+        if (document.fullscreenElement) {
+            outerContainer.style.width = '';
+            outerContainer.style.height = '';
+            innerContainer.style.width = '';
+            innerContainer.style.height = '';
             return;
         }
 
-        // 1. Reset temporal al 100% para poder medir el espacio ancho REAL que nos da el grid
-        playerWrapper.style.width = '100%';
-        playerWrapper.style.height = 'auto';
+        // En móviles y tablets, desactivamos la matemática de JS
+        if (window.innerWidth <= 1024) {
+            outerContainer.style.width = '';
+            outerContainer.style.height = '';
+            innerContainer.style.width = '';
+            innerContainer.style.height = '';
+            return;
+        }
 
-        // 2. Medir el espacio disponible
-        let availableWidth = playerWrapper.offsetWidth; 
+        // 1. Forzar al contenedor padre a ocupar el ancho máximo disponible del grid
+        outerContainer.style.width = '100%';
+        outerContainer.style.height = 'auto';
+
+        // 2. Medir el espacio de ancho REAL que nos da el grid
+        let availableWidth = outerContainer.offsetWidth; 
         
-        // La altura máxima para que no tengas que hacer scroll hacia abajo para ver los controles
+        // La altura máxima para evitar scroll vertical excesivo
         let maxHeight = this.isTheaterMode ? (window.innerHeight - 80) : (window.innerHeight - 120);
 
-        // 3. Suponer que el tamaño será 16:9 completo
+        // 3. Suponer que el tamaño interno será 16:9 completo basándose en el ancho
         let targetWidth = availableWidth;
         let targetHeight = (targetWidth * 9) / 16;
 
-        // 4. Si esa altura ideal se sale de nuestra pantalla, ACHICAMOS el contenedor desde los lados
+        // 4. Si la altura supera el límite, ACHICAMOS el contenedor interno
         if (targetHeight > maxHeight) {
             targetHeight = maxHeight;
             targetWidth = (targetHeight * 16) / 9;
         }
 
-        // 5. Aplicar los tamaños matemáticos exactos en píxeles al contenedor negro
-        playerWrapper.style.width = `${targetWidth}px`;
-        playerWrapper.style.height = `${targetHeight}px`;
+        // 5. El contenedor negro padre define su altura igual a la del video, pero conserva el width 100%
+        outerContainer.style.height = `${targetHeight}px`;
 
-        // 6. Centramos el reproductor por si se hizo más angosto que su columna original
-        playerWrapper.style.margin = '0 auto';
+        // 6. El contenedor del reproductor se ajusta al tamaño perfecto 16:9
+        innerContainer.style.width = `${targetWidth}px`;
+        innerContainer.style.height = `${targetHeight}px`;
     }
 
     bindEvents() {
@@ -110,6 +131,66 @@ export class VideoPlayerSystem {
         this.video.addEventListener('timeupdate', () => this.updateProgress());
         this.progressArea.addEventListener('click', (e) => this.seekTo(e));
         this.cinemaBtn.addEventListener('click', () => this.toggleCinemaMode());
+        
+        // --- LÓGICA DEL MENÚ DE CONFIGURACIONES ESCALABLE ---
+        if (this.settingsBtn) {
+            this.settingsBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.toggleSettingsMenu();
+            });
+        }
+
+        if (this.settingsMenu) {
+            // Manejar clics en los enlaces que llevan a otros submenús o encabezados de retroceso
+            const menuTriggers = this.settingsMenu.querySelectorAll('[data-target]');
+            menuTriggers.forEach(trigger => {
+                trigger.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const targetId = trigger.getAttribute('data-target');
+                    this.navigateToMenu(targetId);
+                });
+            });
+
+            // Manejo de selecciones visuales dentro de los submenús
+            const selectableItems = this.settingsMenu.querySelectorAll('.component-menu__content .component-menu__item');
+            selectableItems.forEach(item => {
+                item.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    
+                    const parentContent = item.closest('.component-menu__content');
+                    if (parentContent) {
+                        parentContent.querySelectorAll('.component-menu__item').forEach(i => i.classList.remove('is-selected'));
+                    }
+                    item.classList.add('is-selected');
+                });
+            });
+        }
+
+        // Cerrar menú de configuración al hacer clic en otro lugar
+        document.addEventListener('click', (e) => {
+            if (this.settingsMenu && this.settingsMenu.classList.contains('is-active')) {
+                if (!this.settingsMenu.contains(e.target) && !this.settingsBtn.contains(e.target)) {
+                    this.settingsMenu.classList.remove('is-active');
+                    // Reiniciar el menú para que la próxima vez inicie desde el principal
+                    setTimeout(() => this.navigateToMenu('setting-menu-main'), 250);
+                }
+            }
+        });
+
+        // Evento Fullscreen
+        if(this.fullscreenBtn) {
+            this.fullscreenBtn.addEventListener('click', () => this.toggleFullscreen());
+        }
+
+        // Detectar cambios de fullscreen con escape
+        document.addEventListener('fullscreenchange', () => {
+            if (document.fullscreenElement) {
+                this.fullscreenIcon.textContent = 'fullscreen_exit';
+            } else {
+                this.fullscreenIcon.textContent = 'fullscreen';
+                this.calculatePlayerSize(); // Recalcular al salir
+            }
+        });
     }
 
     async loadVideo(sourceIdentifier, requiresSignedToken = false) {
@@ -150,7 +231,6 @@ export class VideoPlayerSystem {
             const urlObj = new URL(url, fakeBase);
             tokenStr = urlObj.searchParams.get('t');
             expiresStr = urlObj.searchParams.get('e');
-            console.log(`[VideoPlayer:Stream] Parámetros extraídos - Token: ${tokenStr ? 'SÍ' : 'NO'}, Expira: ${expiresStr}`);
         } catch (e) {
             console.warn('[VideoPlayer:Stream] No se pudieron parsear los parámetros de la URL.', e);
         }
@@ -171,9 +251,7 @@ export class VideoPlayerSystem {
                                 const newUrl = reqUrl.toString();
                                 xhr.open('GET', newUrl, true);
                             }
-                        } catch (err) {
-                            console.error('[VideoPlayer:XHR] Error inyectando token:', err);
-                        }
+                        } catch (err) {}
                     }
                 }
             });
@@ -182,18 +260,14 @@ export class VideoPlayerSystem {
             this.hls.attachMedia(this.video);
             
             this.hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
-                console.log(`[VideoPlayer:Event] Manifiesto parseado. Calidades disponibles: ${data.levels.length}`);
                 this.container.classList.add('is-paused');
             });
             
             this.hls.on(Hls.Events.ERROR, (event, data) => {
-                console.error(`[VideoPlayer:Error] HLS lanzó error tipo: ${data.type} | Detalles: ${data.details}`);
-                
                 if (data.fatal) {
                     switch (data.type) {
                         case Hls.ErrorTypes.NETWORK_ERROR:
                             if (data.response && data.response.code === 403 && this.currentVideoUuid) {
-                                console.warn('[VideoPlayer:NetworkError] 403 Forbidden detectado. Recargando token...');
                                 this.loadVideo(this.currentVideoUuid, true);
                             } else {
                                 this.hls.startLoad();
@@ -285,16 +359,62 @@ export class VideoPlayerSystem {
     }
 
     toggleCinemaMode() {
+        if (document.fullscreenElement) return;
+
         this.isTheaterMode = !this.isTheaterMode;
         if (this.layoutContainer) {
             this.layoutContainer.classList.toggle('watch-layout--cinema', this.isTheaterMode);
             this.cinemaIcon.textContent = this.isTheaterMode ? 'crop_5_4' : 'crop_16_9';
         }
         
-        // Recalculamos inmediatamente al cambiar el layout
         this.calculatePlayerSize();
-        // Disparamos otro cálculo unos milisegundos después por si el CSS tardó en reacomodar el layout
         setTimeout(() => this.calculatePlayerSize(), 150);
+    }
+
+    toggleFullscreen() {
+        if (!document.fullscreenElement) {
+            if (this.container.requestFullscreen) {
+                this.container.requestFullscreen().catch(err => console.error(err));
+            } else if (this.container.webkitRequestFullscreen) {
+                this.container.webkitRequestFullscreen();
+            } else if (this.container.msRequestFullscreen) {
+                this.container.msRequestFullscreen();
+            }
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            } else if (document.msExitFullscreen) {
+                document.msExitFullscreen();
+            }
+        }
+    }
+
+    // Abre o cierra el módulo flotante
+    toggleSettingsMenu() {
+        if (this.settingsMenu) {
+            const isActive = this.settingsMenu.classList.contains('is-active');
+            if (isActive) {
+                this.settingsMenu.classList.remove('is-active');
+                // Al cerrar, reiniciamos el módulo al menú principal en segundo plano
+                setTimeout(() => this.navigateToMenu('setting-menu-main'), 250);
+            } else {
+                this.settingsMenu.classList.add('is-active');
+            }
+        }
+    }
+
+    // Gestiona la transición limpia entre submódulos internos
+    navigateToMenu(menuId) {
+        if (!this.settingsMenu) return;
+        const allMenus = this.settingsMenu.querySelectorAll('.component-menu');
+        allMenus.forEach(m => m.classList.remove('is-active'));
+        
+        const targetMenu = document.getElementById(menuId);
+        if (targetMenu) {
+            targetMenu.classList.add('is-active');
+        }
     }
 
     formatTime(seconds) {
