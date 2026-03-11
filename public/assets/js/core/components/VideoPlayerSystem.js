@@ -128,6 +128,14 @@ export class VideoPlayerSystem {
         outerContainer.style.height = `${targetHeight}px`;
         innerContainer.style.width = `${targetWidth}px`;
         innerContainer.style.height = `${targetHeight}px`;
+
+        // CLAVE: Sincronizar el envoltorio de la luz para que SIEMPRE coincida con el video
+        // Esto permite que el blur "manche" las barras negras pero sin perder la estructura central
+        const ambientWrapper = document.getElementById('ambient-wrapper');
+        if (ambientWrapper) {
+            ambientWrapper.style.width = `${targetWidth}px`;
+            ambientWrapper.style.height = `${targetHeight}px`;
+        }
     }
 
     bindEvents() {
@@ -205,10 +213,13 @@ export class VideoPlayerSystem {
         }
 
         document.addEventListener('fullscreenchange', () => {
+            const ambientWrapper = document.getElementById('ambient-wrapper');
             if (document.fullscreenElement) {
                 this.fullscreenIcon.textContent = 'fullscreen_exit';
+                if (ambientWrapper) ambientWrapper.style.visibility = 'hidden';
             } else {
                 this.fullscreenIcon.textContent = 'fullscreen';
+                if (ambientWrapper) ambientWrapper.style.visibility = 'visible';
                 this.calculatePlayerSize(); 
             }
         });
@@ -269,7 +280,7 @@ export class VideoPlayerSystem {
 
                 // Controlar opacidad de forma animada por CSS
                 if (this.ambientCanvas) {
-                    this.ambientCanvas.style.opacity = isEnabled ? '0.6' : '0';
+                    this.ambientCanvas.style.opacity = isEnabled ? '0.8' : '0';
                     if (isEnabled) {
                         this.drawAmbientFrame();
                         if (!this.video.paused) this.startAmbientLoop();

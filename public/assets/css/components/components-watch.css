@@ -65,15 +65,14 @@
 /* CONTENEDOR DEL REPRODUCTOR MODO NORMAL */
 .watch-layout__player {
     grid-area: player;
-    background-color: #000;
-    border: 1px solid var(--border-color, #333);
-    border-radius: 12px;
+    background-color: #000; /* REGRESAMOS EL NEGRO COMO RESPALDO PARA LAS BARRAS */
     width: 100%; 
     display: flex; 
     flex-direction: column; 
     align-items: center; 
     justify-content: center;
-    overflow: hidden;
+    position: relative;
+    z-index: 1; 
 }
 
 /* ==========================================================================
@@ -94,9 +93,15 @@
 }
 
 .watch-layout--cinema .watch-layout__player {
-    background-color: #000; 
+    background-color: #000; /* Mantiene su respaldo oscuro en Modo Cine */
     border: none; 
     border-radius: 0; 
+}
+
+.watch-layout--cinema .component-video-player {
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
 }
 
 .watch-layout--cinema .watch-layout__info,

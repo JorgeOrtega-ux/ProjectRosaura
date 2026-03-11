@@ -1,9 +1,9 @@
 <div class="view-content" style="padding: 0;"> 
     <div class="watch-layout" id="watch-layout-container">
         
-        <div class="watch-layout__player" id="watch-layout-player" style="position: relative;">
+        <div class="watch-layout__player" id="watch-layout-player">
             
-            <div class="component-video-ambient-wrapper">
+            <div class="component-video-ambient-wrapper" id="ambient-wrapper">
                 <canvas id="ambient-lighting-canvas" class="component-video-ambient-canvas"></canvas>
             </div>
 

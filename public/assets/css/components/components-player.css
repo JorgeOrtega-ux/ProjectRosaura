@@ -2,15 +2,18 @@
 
 .component-video-player {
     position: relative;
+    z-index: 1; 
     width: 100%;
     height: 100%;
-    background-color: transparent;
-    border-radius: inherit; 
-    overflow: hidden;
+    background-color: #000; 
+    border-radius: 12px; 
+    border: 1px solid var(--border-color, #333);
+    overflow: hidden; 
     display: flex;
     align-items: center;
     justify-content: center;
     user-select: none; 
+    box-shadow: 0 4px 30px rgba(0,0,0,0.6); 
 }
 
 /* Permitir que en pantalla completa el componente ocupe TODO el monitor sin interferencia del JS */
@@ -58,32 +61,27 @@
    ========================================================================== */
 .component-video-ambient-wrapper {
     position: absolute;
-    top: 0; 
-    left: 0; 
+    top: 50%; 
+    left: 50%; 
+    transform: translate(-50%, -50%);
     width: 100%; 
     height: 100%;
-    z-index: -1;
+    z-index: 0; /* CLAVE: Por debajo del reproductor de video */
     pointer-events: none;
-    overflow: visible; /* Asegura que el blur se expanda por fuera de la caja */
+    overflow: visible; /* Permite que el difuminado desborde la caja hacia las barras negras */
 }
 
 .component-video-ambient-canvas {
     width: 100%;
     height: 100%;
-    filter: blur(60px) saturate(150%); /* Gran desenfoque y saturación para un brillo vibrante */
-    opacity: 0.6; /* Transparencia equilibrada */
-    transform: scale(1.03); /* Se expande un poquitito fuera del contenedor */
+    filter: blur(80px) saturate(200%) brightness(1.2); 
+    opacity: 0.8; 
+    transform: scale(1.05); 
     transition: opacity 0.5s ease;
     border-radius: inherit; 
-    will-change: opacity;
+    will-change: opacity, filter;
 }
 
-/* Ocultar el Ambient Glow cuando está en pantalla completa pura */
-:fullscreen .component-video-ambient-wrapper,
-:-webkit-full-screen .component-video-ambient-wrapper,
-:-moz-full-screen .component-video-ambient-wrapper {
-    display: none !important;
-}
 /* ========================================================================== */
 
 .component-video-player__controls {
