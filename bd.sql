@@ -175,6 +175,8 @@ CREATE TABLE IF NOT EXISTS videos (
     temp_file_path VARCHAR(255) DEFAULT NULL,
     hls_path VARCHAR(255) DEFAULT NULL,
     generated_thumbnails JSON DEFAULT NULL,
+    sprite_sheet_path VARCHAR(255) DEFAULT NULL,
+    vtt_path VARCHAR(255) DEFAULT NULL,
     status ENUM('uploading', 'queued', 'processing', 'processed', 'failed', 'published') DEFAULT 'uploading',
     visibility ENUM('public', 'private', 'unlisted') DEFAULT 'public',
     orientation ENUM('horizontal', 'vertical') DEFAULT 'horizontal',

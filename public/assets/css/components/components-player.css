@@ -50,19 +50,81 @@
 }
 
 .component-video-player__progress-area {
-    width: 100%; height: 16px; display: flex; align-items: center; cursor: pointer; margin-bottom: 8px;
+    width: 100%; 
+    height: 16px; 
+    display: flex; 
+    align-items: center; 
+    cursor: pointer; 
+    margin-bottom: 8px;
+    position: relative;
 }
 .component-video-player__progress-bar {
     position: relative; width: 100%; height: 4px; background-color: rgba(255, 255, 255, 0.3); border-radius: 2px; transition: height 0.1s ease;
 }
-.component-video-player__progress-area:hover .component-video-player__progress-bar { height: 6px; }
+.component-video-player__progress-area:hover .component-video-player__progress-bar,
+.component-video-player__progress-area.is-dragging .component-video-player__progress-bar { 
+    height: 6px; 
+}
+
 .component-video-player__progress-fill {
     position: absolute; top: 0; left: 0; height: 100%; background-color: #ff0000; width: 0%; border-radius: 2px; z-index: 1;
 }
 .component-video-player__progress-thumb {
     position: absolute; top: 50%; left: 0%; transform: translate(-50%, -50%) scale(0); width: 14px; height: 14px; background-color: #ff0000; border-radius: 50%; transition: transform 0.1s ease; z-index: 2;
 }
-.component-video-player__progress-area:hover .component-video-player__progress-thumb { transform: translate(-50%, -50%) scale(1); }
+.component-video-player__progress-area:hover .component-video-player__progress-thumb,
+.component-video-player__progress-area.is-dragging .component-video-player__progress-thumb { 
+    transform: translate(-50%, -50%) scale(1); 
+}
+
+/* ==========================================================================
+   ESTILOS NUEVOS: PREVIEW CARD Y SPRITE SHEET (SCRUBBING)
+   ========================================================================== */
+.component-player-preview-card {
+    position: absolute;
+    bottom: 24px;
+    left: 0;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.15s ease, visibility 0.15s;
+    pointer-events: none; /* Que el mouse ignore esta caja para no cortar el evento del slider */
+    z-index: 100;
+    background-color: rgba(0, 0, 0, 0.85);
+    border-radius: 8px;
+    padding: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.component-video-player__progress-area:hover .component-player-preview-card,
+.component-video-player__progress-area.is-dragging .component-player-preview-card {
+    opacity: 1;
+    visibility: visible;
+}
+
+.component-player-sprite-container {
+    width: 160px; /* Tamaño por defecto igual que el FFmpeg Worker */
+    height: 90px;
+    background-repeat: no-repeat;
+    border-radius: 4px;
+    background-color: #111;
+    overflow: hidden;
+}
+
+.component-player-preview-time {
+    color: #fff;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: var(--sl-font-mono, monospace);
+    margin-top: 6px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+    letter-spacing: 0.5px;
+}
+/* ========================================================================== */
 
 .component-video-player__controls-row { display: flex; justify-content: space-between; align-items: center; width: 100%; }
 .component-video-player__controls-group { display: flex; align-items: center; gap: 8px; }
@@ -120,7 +182,6 @@
     transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
     pointer-events: none;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    /* Salvavidas: evita que sobrepase la ventana si el reproductor es enorme */
     max-height: calc(100vh - 120px);
 }
 
@@ -131,19 +192,16 @@
     pointer-events: auto;
 }
 
-/* =========================================================
-   SÚPER OVERRIDES: ADAPTAR COMPONENT-MENU GLOBAL AL PLAYER
-   ========================================================= */
 .component-video-player__settings-module .component-menu {
-    background-color: transparent !important; /* Quita el blanco global */
-    padding: 0 !important; /* Evita doble padding */
+    background-color: transparent !important;
+    padding: 0 !important;
     margin: 0 !important;
     border: none !important;
     box-shadow: none !important;
     display: none;
     flex-direction: column;
     animation: fadeMenuIn 0.2s ease;
-    color: inherit !important; /* Hereda el texto blanco */
+    color: inherit !important;
 }
 
 .component-video-player__settings-module .component-menu.is-active {
@@ -176,16 +234,14 @@
     font-size: 20px;
 }
 
-/* AQUÍ SE CONTROLA EL DESBORDAMIENTO (MÁXIMO 220px DE ALTURA INTERNA) */
 .component-video-player__settings-module .component-menu__content {
     display: flex;
     flex-direction: column;
-    max-height: 220px; /* EVITA QUE SE SALGA POR ARRIBA DEL REPRODUCTOR */
+    max-height: 220px;
     overflow-y: auto;
-    overscroll-behavior: contain; /* Evita que la página haga scroll al llegar al tope */
+    overscroll-behavior: contain;
 }
 
-/* Scrollbar personalizado delgado para listas largas */
 .component-video-player__settings-module .component-menu__content::-webkit-scrollbar {
     width: 6px;
 }
@@ -213,7 +269,7 @@
 }
 
 .component-video-player__settings-module .component-menu__item:hover {
-    background-color: rgba(255, 255, 255, 0.15); /* Efecto hover adaptado oscuro */
+    background-color: rgba(255, 255, 255, 0.15);
 }
 
 .component-video-player__settings-module .component-menu__item-left {

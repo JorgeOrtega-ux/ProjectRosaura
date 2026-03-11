@@ -54,11 +54,17 @@ class MediaController {
 
         // Construir la URL segura con estructura de directorio virtual para que funcione HLS
         $streamUrl = "/api/media/stream/{$videoUuid}/master.m3u8?e={$expires}&t={$token}";
+        
+        // También construimos las URLs firmadas para el VTT y el Sprite Sheet si existen
+        $spriteSheetUrl = $videoData['sprite_sheet_path'] ? "/api/media/stream/{$videoUuid}/sprite.jpg?e={$expires}&t={$token}" : null;
+        $vttUrl = $videoData['vtt_path'] ? "/api/media/stream/{$videoUuid}/thumbnails.vtt?e={$expires}&t={$token}" : null;
 
         return [
             'success' => true,
             'data' => [
                 'stream_url' => $streamUrl,
+                'sprite_sheet_url' => $spriteSheetUrl,
+                'vtt_url' => $vttUrl,
                 'expires_at' => $expires
             ]
         ];
@@ -124,12 +130,14 @@ class MediaController {
             die("Archivo o fragmento no encontrado o acceso denegado.");
         }
 
-        // Determinar el Content-Type correcto para despachar el HLS sin errores en el navegador
+        // Determinar el Content-Type correcto para despachar el HLS, VTT o Sprite sin errores en el navegador
         $ext = pathinfo($filePath, PATHINFO_EXTENSION);
-        $contentType = match($ext) {
+        $contentType = match(strtolower($ext)) {
             'm3u8' => 'application/vnd.apple.mpegurl',
             'ts'   => 'video/MP2T',
             'mp4'  => 'video/mp4',
+            'jpg', 'jpeg' => 'image/jpeg',
+            'vtt'  => 'text/vtt',
             default => 'application/octet-stream'
         };
 
@@ -137,7 +145,7 @@ class MediaController {
         header("Content-Type: " . $contentType);
         header("Accept-Ranges: bytes");
         
-        // Limpiamos cualquier buffer previo para evitar corromper los binarios del video
+        // Limpiamos cualquier buffer previo para evitar corromper los binarios
         if (ob_get_length()) {
             ob_clean(); 
         }

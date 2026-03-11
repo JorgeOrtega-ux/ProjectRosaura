@@ -37,6 +37,7 @@ export class WatchController {
                 this.renderRealData(response.data, playlistId);
                 
                 // Le pasamos el UUID del video y forzamos (true) la solicitud del token firmado al backend.
+                // El reproductor (VideoPlayerSystem) ahora gestiona la extracción del VTT y el Sprite Sheet en ese momento
                 if (videoId) {
                     this.playerSystem.loadVideo(videoId, true);
                 } else {
@@ -62,7 +63,6 @@ export class WatchController {
 
     async loadPlaylistData(playlistId, currentVideoId) {
         try {
-            // Suponemos que registrarás este endpoint en ApiRoutes.js y tu backend
             const response = await this.api.post('app.get_playlist_queue', { playlist_uuid: playlistId });
             
             if (response && response.success && response.data) {
@@ -70,7 +70,6 @@ export class WatchController {
             }
         } catch (error) {
             console.error('[WatchController] Error fetching playlist queue:', error);
-            // El panel simplemente se mantendrá oculto si ocurre un error o no se encuentra
         }
     }
 
@@ -83,11 +82,9 @@ export class WatchController {
         
         if (!panel || !itemsContainer) return;
 
-        // Mostrar panel quitando la clase hidden
         panel.style.display = 'flex';
         panel.classList.remove('hidden');
 
-        // Llenar Textos
         titleEl.textContent = playlistData.title || window.AppSystem?.Translator?.get('watch_playlist_title') || 'Lista de reproducción';
         
         const videos = playlistData.videos || [];
@@ -95,11 +92,9 @@ export class WatchController {
         let currentIndex = videos.findIndex(v => v.uuid === currentVideoId);
         let displayIndex = currentIndex !== -1 ? currentIndex + 1 : 1;
 
-        // Utilizamos la clave del traductor si la armaste así, o manual:
         let countTextTemplate = window.AppSystem?.Translator?.get('watch_playlist_videos_count') || '{current} de {total}';
         countEl.textContent = countTextTemplate.replace('{current}', displayIndex).replace('{total}', total);
 
-        // Renderizar items de la lista
         let html = '';
         videos.forEach((video, index) => {
             const isActive = video.uuid === currentVideoId;
@@ -118,7 +113,6 @@ export class WatchController {
                 duration = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
             }
 
-            // Url para ir al video pero manteniendo el contexto de la playlist
             const watchUrl = `/ProjectRosaura/watch/${video.uuid}?list=${playlistId}`;
 
             html += `
@@ -141,7 +135,6 @@ export class WatchController {
 
         itemsContainer.innerHTML = html;
 
-        // Activar Toggle Expand/Collapse (solo una vez)
         if (header && !header.hasAttribute('data-listener-attached')) {
             header.addEventListener('click', () => {
                 panel.classList.toggle('collapsed');
@@ -149,17 +142,14 @@ export class WatchController {
             header.setAttribute('data-listener-attached', 'true');
         }
 
-        // Auto-scroll al item activo una vez renderizado
         setTimeout(() => {
             const activeItem = itemsContainer.querySelector('.watch-playlist-item.active');
             if (activeItem) {
-                // Restamos un poco (e.g. 10px) para que no quede totalmente pegado arriba
                 itemsContainer.scrollTop = activeItem.offsetTop - itemsContainer.offsetTop - 10;
             }
         }, 300);
     }
 
-    // FUNCIÓN ACTUALIZADA: Extrae específicamente de response.data.horizontal
     async loadRecommendedVideos(currentVideoId) {
         try {
             const response = await this.api.post('app.get_feed', { limit: 12 });
@@ -167,14 +157,12 @@ export class WatchController {
             if (response && response.success) {
                 let videoList = [];
                 
-                // Extraemos exactamente el arreglo "horizontal" que manda el FeedController
                 if (response.data && Array.isArray(response.data.horizontal)) {
                     videoList = response.data.horizontal;
                 } else if (Array.isArray(response.data)) {
                     videoList = response.data;
                 }
 
-                // Filtrar para que el video que estamos viendo no salga en sugeridos
                 if (currentVideoId) {
                     videoList = videoList.filter(v => v.uuid !== currentVideoId);
                 }
@@ -189,7 +177,6 @@ export class WatchController {
         }
     }
 
-    // FUNCIÓN ACTUALIZADA: Lee las variables thumbnail_url y formatea duration
     renderRecommendedVideos(videos) {
         const container = document.getElementById('watch-recommended-videos');
         if (!container) return;
@@ -206,13 +193,9 @@ export class WatchController {
         let html = '';
         videos.forEach(video => {
             const title = video.title || 'Sin Título';
-            
-            // Adaptado por si el FeedController manda username directo
             const channelName = video.username || (video.author && video.author.username) || 'Canal Rosaura';
-            
             const views = video.views ? parseInt(video.views).toLocaleString('es-MX') : Math.floor(Math.random() * 50000).toLocaleString('es-MX');
             
-            // Lógica para formatear la duración que viene del FeedController (generalmente en segundos)
             let duration = '00:00';
             if (video.duration_formatted) {
                 duration = video.duration_formatted;
@@ -223,14 +206,10 @@ export class WatchController {
                 duration = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
             }
             
-            // Usamos thumbnail_url (la variable que arma el FeedController)
             const thumbnailUrl = video.thumbnail_url || video.thumbnail || '/ProjectRosaura/public/assets/images/default-thumb.png'; 
-            
-            // Enlaces
             const watchUrl = `/ProjectRosaura/watch/${video.uuid}`;
             const streamUrl = `/ProjectRosaura/api/media/stream?uuid=${video.uuid}`;
 
-            // ! IMPORTANTE: Aquí forzamos display flex y flex-direction row con !important
             html += `
                 <a href="${watchUrl}" class="component-video-card component-video-card--horizontal" style="display: flex !important; flex-direction: row !important; align-items: flex-start; gap: 10px; text-decoration: none; color: inherit; width: 100%; border-radius: 8px; cursor: pointer;">
                     <div class="component-video-card__thumbnail-container" style="position: relative; width: 168px; min-width: 168px; aspect-ratio: 16/9; border-radius: 8px; overflow: hidden; background-color: #222; flex-shrink: 0;">
@@ -260,11 +239,9 @@ export class WatchController {
     }
 
     renderRealData(data, playlistId) {
-        // --- DIV 1: TÍTULO ---
         const titleEl = document.getElementById('watch-video-title');
         if (titleEl) titleEl.textContent = data.title || 'Sin Título';
 
-        // --- DIV 2: CANAL Y ACCIONES (IZQUIERDA) ---
         const channelNameEl = document.getElementById('watch-channel-name');
         if (channelNameEl) channelNameEl.textContent = (data.author && data.author.username) ? data.author.username : 'Canal Rosaura';
         
@@ -279,7 +256,6 @@ export class WatchController {
             channelSubsEl.textContent = `${randomSubs} mil suscriptores`;
         }
 
-        // --- DIV 2: CANAL Y ACCIONES (DERECHA) ---
         const randomViews = Math.floor(Math.random() * (900000 - 10000 + 1)) + 10000;
         
         const likesEl = document.getElementById('watch-like-count');
@@ -288,7 +264,6 @@ export class WatchController {
             likesEl.textContent = randomLikes.toLocaleString('es-MX');
         }
 
-        // --- DIV 3: CAJA DE DETALLES ---
         const viewsEl = document.getElementById('watch-video-views');
         if (viewsEl) {
             viewsEl.textContent = `${randomViews.toLocaleString('es-MX')} visualizaciones`;
@@ -306,14 +281,12 @@ export class WatchController {
             descEl.textContent = data.description || 'Este video no tiene una descripción.';
         }
 
-        // --- DIV 4: CAJA DE ETIQUETAS (Modelos y Categorías) ---
         const tagsContainer = document.getElementById('watch-video-tags-container');
         let hasModelsOrCategories = false;
 
         if (tagsContainer) {
             let tagsHTML = '';
 
-            // Renderizar Modelos
             if (data.models && data.models.length > 0) {
                 tagsHTML += data.models.map(m => 
                     `<span class="watch-tag-item">
@@ -323,7 +296,6 @@ export class WatchController {
                 hasModelsOrCategories = true;
             }
 
-            // Renderizar Categorías
             if (data.categories && data.categories.length > 0) {
                 tagsHTML += data.categories.map(c => 
                     `<span class="watch-tag-item">
@@ -340,7 +312,6 @@ export class WatchController {
             }
         }
 
-        // --- DIV 5: ETIQUETAS LIBRES (Custom) ---
         const customTagsSection = document.getElementById('watch-custom-tags-section');
         const customTagsContainer = document.getElementById('watch-video-custom-tags-container');
         const tagsDivider = document.getElementById('watch-tags-divider');
@@ -367,7 +338,6 @@ export class WatchController {
             }
         }
 
-        // --- EXTRA: COLOR DE HOVER DINÁMICO ---
         const primaryColor = data.dominant_color || data.color; 
         
         if (primaryColor) {

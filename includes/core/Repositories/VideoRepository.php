@@ -71,6 +71,14 @@ class VideoRepository implements VideoRepositoryInterface {
             $fields[] = "generated_thumbnails = :generated_thumbnails";
             $params[':generated_thumbnails'] = $data['generated_thumbnails'];
         }
+        if (array_key_exists('sprite_sheet_path', $data)) {
+            $fields[] = "sprite_sheet_path = :sprite_sheet_path";
+            $params[':sprite_sheet_path'] = $data['sprite_sheet_path'];
+        }
+        if (array_key_exists('vtt_path', $data)) {
+            $fields[] = "vtt_path = :vtt_path";
+            $params[':vtt_path'] = $data['vtt_path'];
+        }
 
         if (empty($fields)) return true;
 
@@ -116,7 +124,7 @@ class VideoRepository implements VideoRepositoryInterface {
         $stmt = $this->db->prepare("
             SELECT v.id, v.uuid, v.title, v.description, v.created_at, 
                    v.created_at as published_at, v.visibility,
-                   v.hls_path, v.temp_file_path,
+                   v.hls_path, v.temp_file_path, v.sprite_sheet_path, v.vtt_path,
                    u.username as channel_name, u.profile_picture as channel_avatar, u.channel_identifier
             FROM videos v
             JOIN users u ON v.user_id = u.id
@@ -192,6 +200,7 @@ class VideoRepository implements VideoRepositoryInterface {
         $stmt = $this->db->prepare("
             SELECT v.id, v.uuid, v.title, v.thumbnail_path, v.thumbnail_dominant_color, 
                    v.duration, v.created_at, v.status, v.visibility, v.hls_path, v.temp_file_path, v.orientation,
+                   v.sprite_sheet_path, v.vtt_path,
                    u.username, u.profile_picture AS avatar_path, 
                    0 AS views 
             FROM videos v
@@ -211,6 +220,7 @@ class VideoRepository implements VideoRepositoryInterface {
         $stmt = $this->db->prepare("
             SELECT id, uuid, title, thumbnail_path, thumbnail_dominant_color, 
                    duration, created_at, status, visibility, hls_path, temp_file_path, orientation,
+                   sprite_sheet_path, vtt_path,
                    0 AS views 
             FROM videos 
             WHERE user_id = :user_id AND status = 'published' AND visibility = 'public' AND orientation = :orientation

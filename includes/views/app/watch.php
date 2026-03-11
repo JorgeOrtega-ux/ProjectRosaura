@@ -7,6 +7,11 @@
                 
                 <div class="component-video-player__controls" id="player-controls">
                     <div class="component-video-player__progress-area" id="progress-area">
+                        <div class="component-player-preview-card" id="preview-card">
+                            <div class="component-player-sprite-container" id="preview-sprite"></div>
+                            <div class="component-player-preview-time" id="preview-time">0:00</div>
+                        </div>
+
                         <div class="component-video-player__progress-bar">
                             <div class="component-video-player__progress-fill" id="progress-fill"></div>
                             <div class="component-video-player__progress-thumb" id="progress-thumb"></div>

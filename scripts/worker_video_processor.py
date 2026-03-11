@@ -7,6 +7,7 @@ import subprocess
 import re
 import logging
 import shutil
+import math
 from dotenv import load_dotenv
 import redis
 import mysql.connector
@@ -83,7 +84,6 @@ def get_video_info(file_path):
             elif stream.get('codec_type') == 'audio':
                 has_audio = True
         
-        # Fallback si no detecta duración en el flujo de video
         if duration == 0.0:
             cmd_fmt = ['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'json', file_path]
             res_fmt = subprocess.run(cmd_fmt, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
@@ -98,6 +98,66 @@ def get_video_info(file_path):
         logging.error(f"Error obteniendo info de video: {e}")
         return 0, 0, 0.0, False
 
+def generate_sprite_sheet(input_file, uuid, duration, orig_width, orig_height):
+    """Genera un sprite sheet y su archivo WebVTT con las coordenadas para la preview de scrubbing."""
+    try:
+        output_dir = os.path.join(HLS_OUTPUT_DIR, uuid)
+        os.makedirs(output_dir, exist_ok=True)
+        
+        sprite_filename = "sprite.jpg"
+        vtt_filename = "thumbnails.vtt"
+        sprite_path = os.path.join(output_dir, sprite_filename)
+        vtt_path_full = os.path.join(output_dir, vtt_filename)
+        
+        interval = 10 # 1 thumbnail cada 10 segundos
+        w = 160
+        
+        if orig_width == 0: orig_width = 1280
+        if orig_height == 0: orig_height = 720
+        h = int((orig_height / orig_width) * w)
+        
+        total_thumbs = int(duration / interval) + 1
+        columns = 10
+        rows = math.ceil(total_thumbs / columns)
+        if rows == 0: rows = 1
+        
+        cmd = [
+            'ffmpeg', '-y', '-i', input_file,
+            '-filter_complex', f"fps=1/{interval},scale={w}:{h},tile={columns}x{rows}",
+            '-frames:v', '1',
+            '-q:v', '2',
+            sprite_path
+        ]
+        subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        
+        if os.path.exists(sprite_path):
+            with open(vtt_path_full, 'w') as vtt:
+                vtt.write("WEBVTT\n\n")
+                for i in range(total_thumbs):
+                    start_time = i * interval
+                    end_time = min((i + 1) * interval, duration)
+                    
+                    def format_time(seconds):
+                        hrs = int(seconds // 3600)
+                        mins = int((seconds % 3600) // 60)
+                        secs = seconds % 60
+                        return f"{hrs:02d}:{mins:02d}:{secs:06.3f}"
+                    
+                    col = i % columns
+                    row = i // columns
+                    x = col * w
+                    y = row * h
+                    
+                    vtt.write(f"{format_time(start_time)} --> {format_time(end_time)}\n")
+                    vtt.write(f"sprite.jpg#xywh={x},{y},{w},{h}\n\n")
+                    
+            logging.info(f"🎞️ Sprite sheet y VTT generados para {uuid}")
+            return f"/storage/videos/{uuid}/{sprite_filename}", f"/storage/videos/{uuid}/{vtt_filename}"
+    except Exception as e:
+        logging.error(f"Error generando sprite sheet: {e}")
+        
+    return None, None
+
 def generate_thumbnails(input_file, uuid, duration, is_vertical=False):
     """Genera 6 miniaturas distribuidas a lo largo del video y retorna sus rutas relativas."""
     generated_paths = []
@@ -109,7 +169,6 @@ def generate_thumbnails(input_file, uuid, duration, is_vertical=False):
         if interval <= 0:
             interval = 1
             
-        # Determinar resolución de la miniatura según orientación
         resolution = '720x1280' if is_vertical else '1280x720'
             
         for i in range(1, 7):
@@ -160,21 +219,18 @@ def process_video(redis_client, job):
         "type": "progress", "video_id": video_id, "uuid": uuid, "status": "processing", "progress": 0
     }))
 
-    # Obtener características del video
     width, height, duration, has_audio = get_video_info(input_file)
     if duration <= 0:
         logging.error(f"No se pudo leer el archivo de video {uuid}")
         update_db_status(video_id, 'failed')
         return
 
-    # Determinar si el video es vertical u horizontal
     is_vertical = height > width
     orientation = 'vertical' if is_vertical else 'horizontal'
 
     output_dir = os.path.join(HLS_OUTPUT_DIR, uuid)
     os.makedirs(output_dir, exist_ok=True)
     
-    # 🌟 CALIDADES MÁXIMAS (Top a Bottom)
     ALL_QUALITIES = [
         {"name": "2160p", "height": 2160, "vrate": "15000k", "arate": "192k"},
         {"name": "1440p", "height": 1440, "vrate": "8000k", "arate": "192k"},
@@ -186,17 +242,14 @@ def process_video(redis_client, job):
         {"name": "144p", "height": 144, "vrate": "200k", "arate": "64k"},
     ]
     
-    # Filtrar solo resoluciones iguales o inferiores al video original (tolerancia de 50px)
     target_qualities = [q for q in ALL_QUALITIES if q['height'] <= height + 50]
     
-    # Si el video es minúsculo, forzamos la peor calidad como única salida
     if not target_qualities:
         target_qualities = [ALL_QUALITIES[-1]]
         
     logging.info(f"🎞️ Resolución original detectada: {width}x{height} | Orientación: {orientation} | Duración: {duration}s")
     logging.info(f"⚙️ Construyendo multi-HLS para: {[q['name'] for q in target_qualities]}")
 
-    # Comando Base
     cmd = ['ffmpeg', '-y', '-i', input_file]
     
     filter_complex = []
@@ -204,13 +257,10 @@ def process_video(redis_client, job):
     var_stream_map = []
 
     for i, q in enumerate(target_qualities):
-        # Crear subcarpeta para que FFmpeg no falle al escribir los segmentos
         os.makedirs(os.path.join(output_dir, q['name']), exist_ok=True)
         
-        # Filtro de video para escalar (Obligando a que el ancho sea divisible por 2 para H264)
         filter_complex.append(f"[0:v]scale=-2:{q['height']}[vout{i}]")
         
-        # Mapeos de Video
         map_args.extend([
             '-map', f"[vout{i}]",
             f"-c:v:{i}", "libx264",
@@ -221,7 +271,6 @@ def process_video(redis_client, job):
             "-preset", "fast"
         ])
         
-        # Mapeos de Audio (Si tiene audio original)
         if has_audio:
             map_args.extend([
                 '-map', "0:a:0",
@@ -233,7 +282,6 @@ def process_video(redis_client, job):
         else:
             var_stream_map.append(f"v:{i},name:{q['name']}")
 
-    # Ensamblaje final de comandos HLS
     cmd.extend(['-filter_complex', ";".join(filter_complex)])
     cmd.extend(map_args)
     cmd.extend([
@@ -304,19 +352,23 @@ def process_video(redis_client, job):
 
     if process.returncode == 0:
         hls_public_path = f"/storage/videos/{uuid}/master.m3u8"
-        # Pasamos el flag is_vertical
+        
+        # Generar miniaturas estándar
         generated_paths = generate_thumbnails(input_file, uuid, duration, is_vertical)
         thumbs_json = json.dumps(generated_paths) if generated_paths else None
+        
+        # Generar Sprite Sheet y VTT
+        sprite_sheet_path, vtt_path = generate_sprite_sheet(input_file, uuid, duration, width, height)
         
         conn = get_db_connection()
         if conn:
             cursor = conn.cursor()
-            # Guardamos la duración (int) y la orientación en la base de datos
             cursor.execute("""
                 UPDATE videos 
-                SET status = 'processed', processing_progress = 100, hls_path = %s, generated_thumbnails = %s, duration = %s, orientation = %s 
+                SET status = 'processed', processing_progress = 100, hls_path = %s, generated_thumbnails = %s, duration = %s, orientation = %s,
+                sprite_sheet_path = %s, vtt_path = %s
                 WHERE id = %s
-            """, (hls_public_path, thumbs_json, int(duration), orientation, video_id))
+            """, (hls_public_path, thumbs_json, int(duration), orientation, sprite_sheet_path, vtt_path, video_id))
             conn.commit()
             cursor.close()
             conn.close()
