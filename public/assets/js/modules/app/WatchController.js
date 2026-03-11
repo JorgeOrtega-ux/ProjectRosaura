@@ -65,19 +65,16 @@ export class WatchController {
     setupViewTracker(videoUuid) {
         this.viewRegistered = false;
         
-        // Buscamos el elemento video inyectado por el reproductor
         this.checkPlayerInterval = setInterval(() => {
             const videoEl = document.querySelector('video');
             if (videoEl) {
                 clearInterval(this.checkPlayerInterval);
                 
                 videoEl.addEventListener('timeupdate', () => {
-                    // Si el video lleva 5 segundos reproduciéndose, cuenta como visita
                     if (!this.viewRegistered && !videoEl.paused && videoEl.currentTime >= 5) {
                         this.viewRegistered = true;
                         this.api.postView(videoUuid).then(res => {
                             if (res.success && res.message !== 'Visita ignorada (Rate Limit)') {
-                                // Sumar 1 a la UI de forma silenciosa para el usuario
                                 const viewsEl = document.getElementById('watch-video-views');
                                 if (viewsEl) {
                                     const currentText = viewsEl.innerText;
@@ -104,7 +101,7 @@ export class WatchController {
         if (!btnLike || !btnDislike) return;
 
         // Estado inicial
-        const initialInteraction = data.user_interaction; // 'like', 'dislike' o null
+        const initialInteraction = data.user_interaction;
         if (initialInteraction === 'like') btnLike.classList.add('active');
         if (initialInteraction === 'dislike') btnDislike.classList.add('active');
 
@@ -118,14 +115,12 @@ export class WatchController {
 
             // --- UI OPTIMISTA ---
             if (wasActive) {
-                // Quitar interacción
                 primaryBtn.classList.remove('active');
                 if (isLike && likeCountEl) {
                     let current = parseInt(likeCountEl.innerText.replace(/,/g, '') || '0');
                     likeCountEl.innerText = Math.max(0, current - 1).toLocaleString('es-MX');
                 }
             } else {
-                // Poner interacción
                 primaryBtn.classList.add('active');
                 secondaryBtn.classList.remove('active');
                 
@@ -133,7 +128,6 @@ export class WatchController {
                     let current = parseInt(likeCountEl.innerText.replace(/,/g, '') || '0');
                     likeCountEl.innerText = (current + 1).toLocaleString('es-MX');
                 } else if (!isLike && secondaryWasActive && likeCountEl) {
-                    // Si dio dislike y tenía like, restamos el like
                     let current = parseInt(likeCountEl.innerText.replace(/,/g, '') || '0');
                     likeCountEl.innerText = Math.max(0, current - 1).toLocaleString('es-MX');
                 }
@@ -143,7 +137,6 @@ export class WatchController {
             const response = await this.api.postLike(videoUuid, type);
             
             if (!response.success) {
-                // Revertir UI si falla (ej. Rate Limit o sin sesión)
                 if (response.message.includes('iniciar sesión')) {
                     if (window.router) window.router.navigate('/login');
                     else window.location.href = (window.AppBasePath || '') + '/login';
@@ -158,10 +151,8 @@ export class WatchController {
                 if (secondaryWasActive) secondaryBtn.classList.add('active');
                 else secondaryBtn.classList.remove('active');
                 
-                // Forzar sincronización manual de los números si falló
                 if (likeCountEl && data.likes !== undefined) likeCountEl.innerText = parseInt(data.likes).toLocaleString('es-MX');
             } else {
-                // Sincronizar datos exactos del servidor
                 if (likeCountEl) likeCountEl.innerText = response.likes.toLocaleString('es-MX');
                 primaryBtn.classList.toggle('active', response.interaction === type);
                 secondaryBtn.classList.toggle('active', response.interaction === (isLike ? 'dislike' : 'like'));
@@ -177,7 +168,6 @@ export class WatchController {
         const subBtn = document.getElementById('watch-btn-subscribe');
         if (!subBtn) return;
 
-        // Limpiar eventos previos si la vista fue re-renderizada
         const newBtn = subBtn.cloneNode(true);
         subBtn.parentNode.replaceChild(newBtn, subBtn);
 
@@ -203,7 +193,6 @@ export class WatchController {
             const response = await this.api.postSubscribe(channelIdentifier);
 
             if (!response.success) {
-                // Revertir UI si falla
                 newBtn.innerText = originalText;
                 if (isCurrentlySubscribed) {
                     newBtn.classList.remove('component-btn-primary');
@@ -220,7 +209,6 @@ export class WatchController {
                     this.dialog.show('error', { title: 'Aviso', message: response.message });
                 }
             } else {
-                // Sincronizar UI final con la respuesta del servidor (por seguridad)
                 newBtn.innerText = response.is_subscribed ? 'Suscrito' : 'Suscribirse';
                 if (response.is_subscribed) {
                     newBtn.classList.remove('component-btn-primary');
@@ -419,7 +407,6 @@ export class WatchController {
             channelAvatarEl.src = (window.AppBasePath || '') + '/' + data.channel_avatar;
         }
 
-        // Dejar listos los IDs si vienen reales, de lo contrario defaults de BD
         const viewsEl = document.getElementById('watch-video-views');
         if (viewsEl) {
             viewsEl.textContent = `${(data.views || 0).toLocaleString('es-MX')} visualizaciones`;
@@ -440,6 +427,29 @@ export class WatchController {
         const descEl = document.getElementById('watch-video-description');
         if (descEl) {
             descEl.textContent = data.description || 'Este video no tiene una descripción.';
+        }
+
+        // --- Renderizar número de suscriptores real ---
+        const subsCountEl = document.getElementById('watch-channel-subs');
+        if (subsCountEl) {
+            let formatted = data.subscriber_count || 0;
+            if (formatted >= 1000000) formatted = (formatted / 1000000).toFixed(1) + 'M';
+            else if (formatted >= 1000) formatted = (formatted / 1000).toFixed(1) + 'K';
+            subsCountEl.textContent = `${formatted} suscriptores`;
+        }
+
+        // --- Renderizar estado de botón Suscribirse real ---
+        const subBtn = document.getElementById('watch-btn-subscribe');
+        if (subBtn) {
+            if (data.is_subscribed) {
+                subBtn.innerText = 'Suscrito';
+                subBtn.classList.remove('component-btn-primary');
+                subBtn.classList.add('component-btn-secondary');
+            } else {
+                subBtn.innerText = 'Suscribirse';
+                subBtn.classList.remove('component-btn-secondary');
+                subBtn.classList.add('component-btn-primary');
+            }
         }
 
         const tagsContainer = document.getElementById('watch-video-tags-container');

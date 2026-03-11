@@ -122,7 +122,7 @@ class VideoRepository implements VideoRepositoryInterface {
 
     public function getPublicVideoDetails(string $uuid): ?array {
         $stmt = $this->db->prepare("
-            SELECT v.id, v.uuid, v.title, v.description, v.created_at, 
+            SELECT v.id, v.uuid, v.title, v.description, v.created_at, v.user_id,
                    v.created_at as published_at, v.visibility,
                    v.hls_path, v.temp_file_path, v.sprite_sheet_path, v.vtt_path,
                    v.views, v.likes, v.dislikes, 

@@ -6,18 +6,21 @@ namespace App\Api\Controllers;
 use App\Core\Interfaces\VideoRepositoryInterface;
 use App\Core\Interfaces\RateLimiterInterface;
 use App\Core\Security\RedisRateLimiter;
+use App\Core\Interfaces\SubscriptionRepositoryInterface;
 use Predis\Client;
 
 class VideoController {
     private $videoRepo;
     private $redis;
     private $rateLimiter;
+    private $subscriptionRepo;
 
-    // Inyectamos Redis y el RateLimiter para las interacciones
-    public function __construct(VideoRepositoryInterface $videoRepo, Client $redis, RateLimiterInterface $rateLimiter) {
+    // Inyectamos Redis, el RateLimiter y el SubscriptionRepository
+    public function __construct(VideoRepositoryInterface $videoRepo, Client $redis, RateLimiterInterface $rateLimiter, SubscriptionRepositoryInterface $subscriptionRepo) {
         $this->videoRepo = $videoRepo;
         $this->redis = $redis;
         $this->rateLimiter = $rateLimiter;
+        $this->subscriptionRepo = $subscriptionRepo;
     }
 
     public function getVideoDetails($input) {
@@ -51,10 +54,15 @@ class VideoController {
         $pendingViews = (int) $this->redis->get("video:views:{$videoData['id']}");
         $videoData['views'] = (int) $videoData['views'] + $pendingViews;
         
-        // Determinar si el usuario actual ha dado like/dislike
+        // --- Consultar datos de suscripción del canal ---
+        $videoData['subscriber_count'] = $this->subscriptionRepo->getSubscriberCount($videoData['user_id']);
+        $videoData['is_subscribed'] = false;
+
+        // Determinar si el usuario actual ha dado like/dislike y si está suscrito
         $videoData['user_interaction'] = null;
         if (isset($_SESSION['user_id'])) {
             $videoData['user_interaction'] = $this->videoRepo->getUserInteraction($_SESSION['user_id'], $videoData['id']);
+            $videoData['is_subscribed'] = $this->subscriptionRepo->isSubscribed($_SESSION['user_id'], $videoData['user_id']);
         }
 
         unset($videoData['file_path']);

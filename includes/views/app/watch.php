@@ -196,12 +196,12 @@
                     <button id="watch-btn-subscribe" class="watch-btn watch-btn-subscribe">Suscribirse</button>
                     
                     <div class="watch-action-group">
-                        <button class="watch-btn watch-btn-action" title="Me gusta">
+                        <button id="watch-btn-like" class="watch-btn watch-btn-action" title="Me gusta">
                             <span class="material-symbols-rounded">thumb_up</span>
                             <span id="watch-like-count">--</span>
                         </button>
                         <div class="watch-action-divider"></div>
-                        <button class="watch-btn watch-btn-action" title="No me gusta">
+                        <button id="watch-btn-dislike" class="watch-btn watch-btn-action" title="No me gusta">
                             <span class="material-symbols-rounded">thumb_down</span>
                         </button>
                     </div>
