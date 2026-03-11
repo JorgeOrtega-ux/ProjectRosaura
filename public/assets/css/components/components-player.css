@@ -52,6 +52,38 @@
     left: 0;
     will-change: transform; /* Optimización de hardware para JS */
 }
+
+/* ==========================================================================
+   ESTILOS NUEVOS: ILUMINACIÓN CINEMATOGRÁFICA (AMBIENT MODE)
+   ========================================================================== */
+.component-video-ambient-wrapper {
+    position: absolute;
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%;
+    z-index: -1;
+    pointer-events: none;
+    overflow: visible; /* Asegura que el blur se expanda por fuera de la caja */
+}
+
+.component-video-ambient-canvas {
+    width: 100%;
+    height: 100%;
+    filter: blur(60px) saturate(150%); /* Gran desenfoque y saturación para un brillo vibrante */
+    opacity: 0.6; /* Transparencia equilibrada */
+    transform: scale(1.03); /* Se expande un poquitito fuera del contenedor */
+    transition: opacity 0.5s ease;
+    border-radius: inherit; 
+    will-change: opacity;
+}
+
+/* Ocultar el Ambient Glow cuando está en pantalla completa pura */
+:fullscreen .component-video-ambient-wrapper,
+:-webkit-full-screen .component-video-ambient-wrapper,
+:-moz-full-screen .component-video-ambient-wrapper {
+    display: none !important;
+}
 /* ========================================================================== */
 
 .component-video-player__controls {

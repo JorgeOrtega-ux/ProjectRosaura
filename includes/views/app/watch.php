@@ -1,7 +1,12 @@
 <div class="view-content" style="padding: 0;"> 
     <div class="watch-layout" id="watch-layout-container">
         
-        <div class="watch-layout__player" id="watch-layout-player">
+        <div class="watch-layout__player" id="watch-layout-player" style="position: relative;">
+            
+            <div class="component-video-ambient-wrapper">
+                <canvas id="ambient-lighting-canvas" class="component-video-ambient-canvas"></canvas>
+            </div>
+
             <div class="component-video-player is-paused" id="video-player-container">
                 <video id="main-video-player" class="component-video-player__video" playsinline></video>
                 
@@ -57,7 +62,7 @@
                                             <span>Calidad</span>
                                         </div>
                                         <div class="component-menu__item-right">
-                                            <span>Automática</span>
+                                            <span id="quality-status">Automática</span>
                                             <span class="material-symbols-rounded">chevron_right</span>
                                         </div>
                                     </div>
@@ -88,26 +93,10 @@
                                         <span class="material-symbols-rounded">arrow_back</span>
                                         <span>Calidad</span>
                                     </div>
-                                    <div class="component-menu__content">
-                                        <div class="component-menu__item is-selected">
+                                    <div class="component-menu__content" id="quality-menu-content">
+                                        <div class="component-menu__item is-selected" data-level="-1">
                                             <span class="material-symbols-rounded component-menu__check">check</span>
                                             <span>Automática</span>
-                                        </div>
-                                        <div class="component-menu__item">
-                                            <span class="material-symbols-rounded component-menu__check"></span>
-                                            <span>1080p HD</span>
-                                        </div>
-                                        <div class="component-menu__item">
-                                            <span class="material-symbols-rounded component-menu__check"></span>
-                                            <span>720p</span>
-                                        </div>
-                                        <div class="component-menu__item">
-                                            <span class="material-symbols-rounded component-menu__check"></span>
-                                            <span>480p</span>
-                                        </div>
-                                        <div class="component-menu__item">
-                                            <span class="material-symbols-rounded component-menu__check"></span>
-                                            <span>360p</span>
                                         </div>
                                     </div>
                                 </div>
@@ -118,11 +107,11 @@
                                         <span>Iluminación cinematográfica</span>
                                     </div>
                                     <div class="component-menu__content">
-                                        <div class="component-menu__item is-selected">
+                                        <div class="component-menu__item is-selected" data-ambient="1">
                                             <span class="material-symbols-rounded component-menu__check">check</span>
                                             <span>Activado</span>
                                         </div>
-                                        <div class="component-menu__item">
+                                        <div class="component-menu__item" data-ambient="0">
                                             <span class="material-symbols-rounded component-menu__check"></span>
                                             <span>Desactivado</span>
                                         </div>
@@ -134,36 +123,36 @@
                                         <span class="material-symbols-rounded">arrow_back</span>
                                         <span>Velocidad de reproducción</span>
                                     </div>
-                                    <div class="component-menu__content">
-                                        <div class="component-menu__item">
+                                    <div class="component-menu__content" id="speed-menu-content">
+                                        <div class="component-menu__item" data-speed="0.25">
                                             <span class="material-symbols-rounded component-menu__check"></span>
                                             <span>0.25</span>
                                         </div>
-                                        <div class="component-menu__item">
+                                        <div class="component-menu__item" data-speed="0.5">
                                             <span class="material-symbols-rounded component-menu__check"></span>
                                             <span>0.5</span>
                                         </div>
-                                        <div class="component-menu__item">
+                                        <div class="component-menu__item" data-speed="0.75">
                                             <span class="material-symbols-rounded component-menu__check"></span>
                                             <span>0.75</span>
                                         </div>
-                                        <div class="component-menu__item is-selected">
+                                        <div class="component-menu__item is-selected" data-speed="1">
                                             <span class="material-symbols-rounded component-menu__check">check</span>
                                             <span>Normal</span>
                                         </div>
-                                        <div class="component-menu__item">
+                                        <div class="component-menu__item" data-speed="1.25">
                                             <span class="material-symbols-rounded component-menu__check"></span>
                                             <span>1.25</span>
                                         </div>
-                                        <div class="component-menu__item">
+                                        <div class="component-menu__item" data-speed="1.50">
                                             <span class="material-symbols-rounded component-menu__check"></span>
                                             <span>1.50</span>
                                         </div>
-                                        <div class="component-menu__item">
+                                        <div class="component-menu__item" data-speed="1.75">
                                             <span class="material-symbols-rounded component-menu__check"></span>
                                             <span>1.75</span>
                                         </div>
-                                        <div class="component-menu__item">
+                                        <div class="component-menu__item" data-speed="2">
                                             <span class="material-symbols-rounded component-menu__check"></span>
                                             <span>2</span>
                                         </div>
@@ -275,7 +264,7 @@
                 <div class="watch-playlist-header">
                     <div class="watch-playlist-header-info">
                         <h2 id="watch-playlist-title" class="watch-playlist-title">Lista de reproducción</h2>
-                        <span id="watch-playlist-count" class="watch-playlist-count">- / -</span>
+                        <span id="watch-playlist-count">- / -</span>
                     </div>
                     <button id="watch-playlist-toggle" class="watch-playlist-toggle-btn" title="Expandir/Contraer">
                         <span class="material-symbols-rounded">expand_more</span>

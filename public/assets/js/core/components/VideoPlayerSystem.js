@@ -4,7 +4,7 @@ import { ApiService } from '../api/ApiServices.js';
 
 export class VideoPlayerSystem {
     constructor() {
-        console.log('[VideoPlayer:Init] Construyendo sistema de reproductor avanzado con Scrubbing Fluido...');
+        console.log('[VideoPlayer:Init] Construyendo sistema de reproductor avanzado con Scrubbing Fluido e Iluminación Cinematográfica...');
         this.api = new ApiService();
         
         // Contenedores y Controles
@@ -25,9 +25,15 @@ export class VideoPlayerSystem {
         this.fullscreenBtn = document.getElementById('btn-fullscreen');
         this.fullscreenIcon = document.getElementById('icon-fullscreen');
 
-        // Módulo de Configuraciones
+        // Módulo de Configuraciones y Nodos para Calidad/Velocidad
         this.settingsBtn = document.getElementById('btn-settings');
         this.settingsMenu = document.getElementById('player-settings-menu');
+        
+        this.qualityStatus = document.getElementById('quality-status');
+        this.qualityMenuContent = document.getElementById('quality-menu-content');
+        
+        this.speedStatus = document.getElementById('speed-status');
+        this.speedMenuContent = document.getElementById('speed-menu-content');
 
         // Barra de progreso y tiempos
         this.progressArea = document.getElementById('progress-area');
@@ -41,6 +47,7 @@ export class VideoPlayerSystem {
         this.previewSprite = document.getElementById('preview-sprite');
         this.previewTime = document.getElementById('preview-time');
 
+        // Estado del Reproductor
         this.isTheaterMode = false;
         this.hls = null;
         this.lastVolume = 1; 
@@ -51,6 +58,12 @@ export class VideoPlayerSystem {
         this.wasPlayingBeforeDrag = false;
         this.vttData = [];
         this.spriteSheetUrl = null;
+
+        // Variables de Ambient Mode (Iluminación Cinematográfica)
+        this.ambientModeEnabled = true;
+        this.ambientCanvas = null;
+        this.ambientCtx = null;
+        this.ambientLoopId = null;
         
         // Inicializar Overlay Principal para Scrubbing Fluido
         this.setupOverlay();
@@ -59,6 +72,8 @@ export class VideoPlayerSystem {
         window.addEventListener('resize', this.resizeHandler);
         
         this.bindEvents();
+        this.initSpeedControl();
+        this.initLightingControl();
 
         setTimeout(() => this.calculatePlayerSize(), 50);
     }
@@ -164,6 +179,7 @@ export class VideoPlayerSystem {
             });
         }
 
+        // Navegación principal del menú (flechas)
         if (this.settingsMenu) {
             const menuTriggers = this.settingsMenu.querySelectorAll('[data-target]');
             menuTriggers.forEach(trigger => {
@@ -171,18 +187,6 @@ export class VideoPlayerSystem {
                     e.stopPropagation();
                     const targetId = trigger.getAttribute('data-target');
                     this.navigateToMenu(targetId);
-                });
-            });
-
-            const selectableItems = this.settingsMenu.querySelectorAll('.component-menu__content .component-menu__item');
-            selectableItems.forEach(item => {
-                item.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const parentContent = item.closest('.component-menu__content');
-                    if (parentContent) {
-                        parentContent.querySelectorAll('.component-menu__item').forEach(i => i.classList.remove('is-selected'));
-                    }
-                    item.classList.add('is-selected');
                 });
             });
         }
@@ -208,6 +212,184 @@ export class VideoPlayerSystem {
                 this.calculatePlayerSize(); 
             }
         });
+    }
+
+    // --- CONTROLES DE VELOCIDAD ---
+    initSpeedControl() {
+        if (!this.speedMenuContent) return;
+        const items = this.speedMenuContent.querySelectorAll('.component-menu__item');
+        items.forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.stopPropagation();
+                items.forEach(i => i.classList.remove('is-selected'));
+                item.classList.add('is-selected');
+                
+                const speedVal = parseFloat(item.getAttribute('data-speed'));
+                const speedText = item.querySelector('span:not(.component-menu__check)').textContent.trim();
+                
+                if (this.video) {
+                    this.video.playbackRate = speedVal;
+                }
+                
+                if (this.speedStatus) {
+                    this.speedStatus.textContent = speedText;
+                }
+            });
+        });
+    }
+
+    // --- ILUMINACIÓN CINEMATOGRÁFICA (AMBIENT MODE) ---
+    initLightingControl() {
+        const lightingMenu = document.getElementById('setting-menu-lighting');
+        if (!lightingMenu) return;
+        const items = lightingMenu.querySelectorAll('.component-menu__item');
+        const status = document.getElementById('lighting-status');
+
+        // Inicializar el Canvas y Contexto 2D para máxima eficiencia
+        this.ambientCanvas = document.getElementById('ambient-lighting-canvas');
+        if (this.ambientCanvas) {
+            this.ambientCtx = this.ambientCanvas.getContext('2d', { alpha: false }); // alpha false mejora rendimiento
+            // Reducir fuertemente la resolución interna para costo casi cero de CPU/GPU
+            this.ambientCanvas.width = 128;
+            this.ambientCanvas.height = 72;
+        }
+
+        items.forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.stopPropagation();
+                items.forEach(i => i.classList.remove('is-selected'));
+                item.classList.add('is-selected');
+                
+                const isEnabled = item.getAttribute('data-ambient') === "1";
+                this.ambientModeEnabled = isEnabled;
+
+                if (status) {
+                    status.textContent = item.querySelector('span:not(.component-menu__check)').textContent.trim();
+                }
+
+                // Controlar opacidad de forma animada por CSS
+                if (this.ambientCanvas) {
+                    this.ambientCanvas.style.opacity = isEnabled ? '0.6' : '0';
+                    if (isEnabled) {
+                        this.drawAmbientFrame();
+                        if (!this.video.paused) this.startAmbientLoop();
+                    } else {
+                        this.stopAmbientLoop();
+                    }
+                }
+            });
+        });
+
+        // Enlazar al ciclo de vida del video
+        if (this.video) {
+            this.video.addEventListener('play', () => this.startAmbientLoop());
+            this.video.addEventListener('pause', () => this.stopAmbientLoop());
+            // Si el usuario adelanta el video estando en pausa, pintamos un cuadro para reflejar la zona
+            this.video.addEventListener('seeked', () => {
+                if (this.ambientModeEnabled) this.drawAmbientFrame();
+            });
+            this.video.addEventListener('loadeddata', () => {
+                if (this.ambientModeEnabled) this.drawAmbientFrame();
+            });
+        }
+    }
+
+    drawAmbientFrame() {
+        if (!this.ambientCanvas || !this.ambientCtx || !this.video) return;
+        if (this.video.readyState < 2) return; // Esperar a que exista data (HAVE_CURRENT_DATA)
+        
+        try {
+            this.ambientCtx.drawImage(this.video, 0, 0, this.ambientCanvas.width, this.ambientCanvas.height);
+        } catch(e) {
+            // Ignorar errores por política CORS en lienzos (rara vez ocurre en blob/streams)
+        }
+    }
+
+    startAmbientLoop() {
+        if (!this.ambientModeEnabled) return;
+        this.stopAmbientLoop(); // Evitar superposición
+        
+        const loop = () => {
+            if (this.video.paused || this.video.ended) return;
+            this.drawAmbientFrame();
+            this.ambientLoopId = requestAnimationFrame(loop);
+        };
+        this.ambientLoopId = requestAnimationFrame(loop);
+    }
+
+    stopAmbientLoop() {
+        if (this.ambientLoopId) {
+            cancelAnimationFrame(this.ambientLoopId);
+            this.ambientLoopId = null;
+        }
+    }
+
+    // --- LÓGICA DE SELECCIÓN DE CALIDAD HLS ---
+    populateQualityMenu(levels) {
+        if (!this.qualityMenuContent) return;
+        this.qualityMenuContent.innerHTML = '';
+        
+        // Opción Automática
+        const autoItem = document.createElement('div');
+        autoItem.className = 'component-menu__item is-selected';
+        autoItem.dataset.level = -1; // -1 en HLS.js activa Auto
+        autoItem.innerHTML = `<span class="material-symbols-rounded component-menu__check">check</span><span>Automática</span>`;
+        autoItem.addEventListener('click', (e) => this.setQuality(e, -1));
+        this.qualityMenuContent.appendChild(autoItem);
+
+        // Opciones por resolución ordenadas de mayor a menor
+        const sortedLevels = levels.map((l, index) => ({...l, originalIndex: index}))
+                                   .sort((a, b) => b.height - a.height);
+
+        // Evitar duplicados si hay resoluciones iguales con distintos bitrates
+        const seenHeights = new Set();
+
+        sortedLevels.forEach(level => {
+            if (!seenHeights.has(level.height)) {
+                seenHeights.add(level.height);
+                const item = document.createElement('div');
+                item.className = 'component-menu__item';
+                item.dataset.level = level.originalIndex;
+                item.innerHTML = `<span class="material-symbols-rounded component-menu__check"></span><span>${level.height}p</span>`;
+                item.addEventListener('click', (e) => this.setQuality(e, level.originalIndex));
+                this.qualityMenuContent.appendChild(item);
+            }
+        });
+    }
+
+    setQuality(e, levelIndex) {
+        e.stopPropagation();
+        if (this.hls) {
+            this.hls.currentLevel = levelIndex; 
+            
+            // Actualizar interfaz del submenú
+            const items = this.qualityMenuContent.querySelectorAll('.component-menu__item');
+            items.forEach(i => i.classList.remove('is-selected'));
+            e.currentTarget.classList.add('is-selected');
+
+            // Actualizar etiqueta del menú principal
+            if (levelIndex === -1) {
+                // Volver a Automático
+                this.updateAutoQualityDisplay(this.hls.currentLevel === -1 ? this.hls.loadLevel : this.hls.currentLevel);
+            } else {
+                // Manual
+                const level = this.hls.levels[levelIndex];
+                if (level && this.qualityStatus) {
+                    this.qualityStatus.textContent = `${level.height}p`;
+                }
+            }
+        }
+    }
+
+    updateAutoQualityDisplay(currentLevelIndex) {
+        if (this.hls && this.hls.autoLevelEnabled) {
+            const level = this.hls.levels[currentLevelIndex];
+            if (level && this.qualityStatus) {
+                this.qualityStatus.textContent = `Automática (${level.height}p)`;
+            } else if (this.qualityStatus) {
+                this.qualityStatus.textContent = 'Automática';
+            }
+        }
     }
 
     async loadVideo(sourceIdentifier, requiresSignedToken = false) {
@@ -316,8 +498,15 @@ export class VideoPlayerSystem {
             this.hls.loadSource(url);
             this.hls.attachMedia(this.video);
             
-            this.hls.on(Hls.Events.MANIFEST_PARSED, () => {
+            this.hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
                 this.container.classList.add('is-paused');
+                // Generar opciones de calidad dinámicamente basadas en el stream
+                this.populateQualityMenu(data.levels);
+            });
+
+            // Detectar el cambio de nivel automático y notificar en el label 
+            this.hls.on(Hls.Events.LEVEL_SWITCHED, (event, data) => {
+                this.updateAutoQualityDisplay(data.level);
             });
             
             this.hls.on(Hls.Events.ERROR, (event, data) => {
@@ -360,6 +549,7 @@ export class VideoPlayerSystem {
 
     destroy() {
         this.destroyHls();
+        this.stopAmbientLoop(); // Importante apagar el loop
         if (this.video) {
             this.video.pause();
             this.video.removeAttribute('src');
@@ -408,7 +598,6 @@ export class VideoPlayerSystem {
         this.timeCurrent.textContent = this.formatTime(this.video.currentTime);
     }
 
-    // --- LÓGICA DE SCRUBBING FLUIDO DESVINCULADO ---
     startScrubbing(e) {
         if (!this.video.duration) return;
         this.isDragging = true;
@@ -416,10 +605,8 @@ export class VideoPlayerSystem {
         this.wasPlayingBeforeDrag = !this.video.paused;
         this.video.pause();
         
-        // 1. PRIMERO calculamos la posición y actualizamos la imagen del overlay...
         this.scrubTo(e, false); 
         
-        // 2. LUEGO lo mostramos. Así evitamos el flash del frame donde nos quedamos la última vez.
         if (this.previewOverlay) this.previewOverlay.style.display = 'block';
     }
 
@@ -444,31 +631,23 @@ export class VideoPlayerSystem {
             this.isDragging = false;
             this.progressArea.classList.remove('is-dragging');
             
-            // Hacemos el salto (seek) en el video real
             this.scrubTo(e, true); 
             
-            // TRUCO YOUTUBE: No ocultamos el Overlay de inmediato. 
-            // Esperamos a que el video termine de renderizar el nuevo frame internamente.
             const onSeeked = () => {
-                // Ocultamos el overlay solo cuando el frame real ya está pintado
                 if (this.previewOverlay && !this.isDragging) {
                     this.previewOverlay.style.display = 'none';
                 }
                 
-                // Reanudamos la reproducción si estaba en Play
                 if (this.wasPlayingBeforeDrag && !this.isDragging) {
                     this.video.play().catch(err => console.error(err));
                 }
                 
-                // Limpiamos el evento para que no se acumule
                 this.video.removeEventListener('seeked', onSeeked);
             };
 
-            // Verificamos si el video está procesando el salto
             if (this.video.seeking) {
                 this.video.addEventListener('seeked', onSeeked);
             } else {
-                // Si por alguna razón instantánea ya estaba ahí, lo ejecutamos directo
                 onSeeked();
             }
         }
@@ -507,7 +686,6 @@ export class VideoPlayerSystem {
         if (this.vttData.length > 0 && this.spriteSheetUrl) {
             const cue = this.vttData.find(c => timeAtCursor >= c.start && timeAtCursor <= c.end) || this.vttData[0];
             
-            // 1. Actualizar Card
             if (this.previewSprite) {
                 this.previewSprite.style.backgroundImage = `url(${this.spriteSheetUrl})`;
                 this.previewSprite.style.backgroundPosition = `-${cue.x}px -${cue.y}px`;
@@ -515,7 +693,6 @@ export class VideoPlayerSystem {
                 this.previewSprite.style.height = `${cue.h}px`;
             }
 
-            // 2. Actualizar Overlay del Reproductor Principal usando transformaciones matemáticas extremas
             if (!isHoverOnly && this.previewOverlayImg && this.isDragging) {
                 if (this.previewOverlayImg.src !== this.spriteSheetUrl) {
                     this.previewOverlayImg.src = this.spriteSheetUrl;
@@ -523,7 +700,7 @@ export class VideoPlayerSystem {
                 
                 const S_x = this.container.offsetWidth / cue.w;
                 const S_y = this.container.offsetHeight / cue.h;
-                const scale = Math.min(S_x, S_y); // scale para mantener aspect ratio original
+                const scale = Math.min(S_x, S_y); 
                 
                 const scaledW = cue.w * scale;
                 const scaledH = cue.h * scale;
