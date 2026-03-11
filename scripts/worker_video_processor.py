@@ -109,7 +109,7 @@ def generate_sprite_sheet(input_file, uuid, duration, orig_width, orig_height):
         sprite_path = os.path.join(output_dir, sprite_filename)
         vtt_path_full = os.path.join(output_dir, vtt_filename)
         
-        interval = 10 # 1 thumbnail cada 10 segundos
+        interval = 2 # CAMBIO: 1 thumbnail cada 2 segundos para sincronización exacta y extrema fluidez
         w = 160
         
         if orig_width == 0: orig_width = 1280

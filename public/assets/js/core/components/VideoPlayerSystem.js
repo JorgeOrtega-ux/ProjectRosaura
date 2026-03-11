@@ -4,7 +4,7 @@ import { ApiService } from '../api/ApiServices.js';
 
 export class VideoPlayerSystem {
     constructor() {
-        console.log('[VideoPlayer:Init] Construyendo sistema de reproductor avanzado con Scrubbing...');
+        console.log('[VideoPlayer:Init] Construyendo sistema de reproductor avanzado con Scrubbing Fluido...');
         this.api = new ApiService();
         
         // Contenedores y Controles
@@ -25,7 +25,7 @@ export class VideoPlayerSystem {
         this.fullscreenBtn = document.getElementById('btn-fullscreen');
         this.fullscreenIcon = document.getElementById('icon-fullscreen');
 
-        // Módulo de Configuraciones Escalable
+        // Módulo de Configuraciones
         this.settingsBtn = document.getElementById('btn-settings');
         this.settingsMenu = document.getElementById('player-settings-menu');
 
@@ -52,12 +52,26 @@ export class VideoPlayerSystem {
         this.vttData = [];
         this.spriteSheetUrl = null;
         
+        // Inicializar Overlay Principal para Scrubbing Fluido
+        this.setupOverlay();
+
         this.resizeHandler = this.calculatePlayerSize.bind(this);
         window.addEventListener('resize', this.resizeHandler);
         
         this.bindEvents();
 
         setTimeout(() => this.calculatePlayerSize(), 50);
+    }
+
+    setupOverlay() {
+        if (!this.container) return;
+        this.previewOverlay = document.createElement('div');
+        this.previewOverlay.className = 'component-player-preview-overlay';
+        
+        this.previewOverlayImg = document.createElement('img');
+        this.previewOverlay.appendChild(this.previewOverlayImg);
+        
+        this.container.insertBefore(this.previewOverlay, this.controlsContainer);
     }
 
     calculatePlayerSize() {
@@ -132,16 +146,13 @@ export class VideoPlayerSystem {
             if (!this.isDragging) this.updateProgress();
         });
 
-        // --- EVENTOS DE SCRUBBING (ARRASTRE PROGRESIVO) ---
+        // --- EVENTOS DE SCRUBBING EXACTO ---
         this.progressArea.addEventListener('pointerdown', (e) => this.startScrubbing(e));
         document.addEventListener('pointermove', (e) => this.handlePointerMove(e));
         document.addEventListener('pointerup', (e) => this.stopScrubbing(e));
 
-        this.progressArea.addEventListener('pointermove', (e) => this.updatePreview(e));
-        this.progressArea.addEventListener('pointerleave', () => {
-            if (this.previewCard && !this.isDragging) {
-                // Al salir del hover y no arrastrar, el CSS oculta, pero limpiamos estado
-            }
+        this.progressArea.addEventListener('pointermove', (e) => {
+            if (!this.isDragging) this.updateHoverPreview(e);
         });
         
         this.cinemaBtn.addEventListener('click', () => this.toggleCinemaMode());
@@ -201,10 +212,9 @@ export class VideoPlayerSystem {
 
     async loadVideo(sourceIdentifier, requiresSignedToken = false) {
         if (!this.video) return;
-        console.log(`[VideoPlayer:Auth] Solicitando carga de video. ID: ${sourceIdentifier}, RequiereToken: ${requiresSignedToken}`);
-
         this.destroyHls(); 
         this.vttData = [];
+        this.spriteSheetUrl = null;
         
         if (requiresSignedToken) {
             this.currentVideoUuid = sourceIdentifier;
@@ -215,13 +225,10 @@ export class VideoPlayerSystem {
                     const finalUrl = (window.AppBasePath || '') + response.data.stream_url;
                     this._initStream(finalUrl);
 
-                    // Descargar el VTT si existe
                     if (response.data.vtt_url && response.data.sprite_sheet_url) {
                         this.spriteSheetUrl = (window.AppBasePath || '') + response.data.sprite_sheet_url;
                         this.fetchVtt((window.AppBasePath || '') + response.data.vtt_url);
                     }
-                } else {
-                    console.error("[VideoPlayer:Auth] No se pudo firmar el video:", response.message);
                 }
             } catch (error) {
                 console.error("[VideoPlayer:Auth] Error en petición de token:", error);
@@ -233,7 +240,6 @@ export class VideoPlayerSystem {
 
     async fetchVtt(vttUrl) {
         try {
-            console.log("[VideoPlayer:VTT] Descargando y parseando coordenadas...");
             const res = await fetch(vttUrl);
             const text = await res.text();
             
@@ -257,7 +263,6 @@ export class VideoPlayerSystem {
                     }
                 }
             }
-            console.log(`[VideoPlayer:VTT] ${this.vttData.length} coordenadas procesadas exitosamente.`);
         } catch (error) {
             console.error("[VideoPlayer:VTT] Error al obtener el archivo de previsualizaciones:", error);
         }
@@ -403,59 +408,95 @@ export class VideoPlayerSystem {
         this.timeCurrent.textContent = this.formatTime(this.video.currentTime);
     }
 
-    // --- MÉTODOS DE SCRUBBING ---
+    // --- LÓGICA DE SCRUBBING FLUIDO DESVINCULADO ---
     startScrubbing(e) {
         if (!this.video.duration) return;
         this.isDragging = true;
         this.progressArea.classList.add('is-dragging');
         this.wasPlayingBeforeDrag = !this.video.paused;
         this.video.pause();
-        this.updateScrubPosition(e);
+        
+        // 1. PRIMERO calculamos la posición y actualizamos la imagen del overlay...
+        this.scrubTo(e, false); 
+        
+        // 2. LUEGO lo mostramos. Así evitamos el flash del frame donde nos quedamos la última vez.
+        if (this.previewOverlay) this.previewOverlay.style.display = 'block';
     }
 
     handlePointerMove(e) {
         if (this.isDragging) {
-            this.updateScrubPosition(e);
-            this.updatePreview(e);
+            this.scrubTo(e, false);
         }
+    }
+
+    updateHoverPreview(e) {
+        if (!this.video.duration || !this.previewCard) return;
+        const rect = this.progressArea.getBoundingClientRect();
+        let pos = (e.clientX - rect.left) / rect.width;
+        pos = Math.max(0, Math.min(1, pos));
+        const timeAtCursor = pos * this.video.duration;
+        
+        this.renderPreviewVisuals(pos, timeAtCursor, true);
     }
 
     stopScrubbing(e) {
         if (this.isDragging) {
             this.isDragging = false;
             this.progressArea.classList.remove('is-dragging');
-            this.updateScrubPosition(e);
-            if (this.wasPlayingBeforeDrag) {
-                this.video.play().catch(e => console.error(e));
+            
+            // Hacemos el salto (seek) en el video real
+            this.scrubTo(e, true); 
+            
+            // TRUCO YOUTUBE: No ocultamos el Overlay de inmediato. 
+            // Esperamos a que el video termine de renderizar el nuevo frame internamente.
+            const onSeeked = () => {
+                // Ocultamos el overlay solo cuando el frame real ya está pintado
+                if (this.previewOverlay && !this.isDragging) {
+                    this.previewOverlay.style.display = 'none';
+                }
+                
+                // Reanudamos la reproducción si estaba en Play
+                if (this.wasPlayingBeforeDrag && !this.isDragging) {
+                    this.video.play().catch(err => console.error(err));
+                }
+                
+                // Limpiamos el evento para que no se acumule
+                this.video.removeEventListener('seeked', onSeeked);
+            };
+
+            // Verificamos si el video está procesando el salto
+            if (this.video.seeking) {
+                this.video.addEventListener('seeked', onSeeked);
+            } else {
+                // Si por alguna razón instantánea ya estaba ahí, lo ejecutamos directo
+                onSeeked();
             }
         }
     }
 
-    updateScrubPosition(e) {
-        const rect = this.progressArea.getBoundingClientRect();
-        let pos = (e.clientX - rect.left) / rect.width;
-        pos = Math.max(0, Math.min(1, pos));
-        
-        this.video.currentTime = pos * this.video.duration;
-        this.progressFill.style.width = `${pos * 100}%`;
-        this.progressThumb.style.left = `${pos * 100}%`;
-        this.timeCurrent.textContent = this.formatTime(this.video.currentTime);
-    }
-
-    updatePreview(e) {
-        if (!this.video.duration || !this.previewCard) return;
-
+    scrubTo(e, updateVideo) {
         const rect = this.progressArea.getBoundingClientRect();
         let pos = (e.clientX - rect.left) / rect.width;
         pos = Math.max(0, Math.min(1, pos));
         
         const timeAtCursor = pos * this.video.duration;
         
-        // Mover la tarjeta físicamente
-        const cardWidth = this.previewCard.offsetWidth || 172; // width + padding aproximado
+        this.progressFill.style.width = `${pos * 100}%`;
+        this.progressThumb.style.left = `${pos * 100}%`;
+        this.timeCurrent.textContent = this.formatTime(timeAtCursor);
+        
+        this.renderPreviewVisuals(pos, timeAtCursor, false);
+        
+        if (updateVideo) {
+            this.video.currentTime = timeAtCursor;
+        }
+    }
+
+    renderPreviewVisuals(pos, timeAtCursor, isHoverOnly = false) {
+        const rect = this.progressArea.getBoundingClientRect();
+        const cardWidth = this.previewCard.offsetWidth || 172; 
         let cardX = (pos * rect.width);
         
-        // Prevenir que la tarjeta se salga del reproductor por los lados
         const minX = cardWidth / 2;
         const maxX = rect.width - (cardWidth / 2);
         cardX = Math.max(minX, Math.min(maxX, cardX));
@@ -463,15 +504,35 @@ export class VideoPlayerSystem {
         this.previewCard.style.left = `${cardX}px`;
         this.previewTime.textContent = this.formatTime(timeAtCursor);
 
-        // Buscar las coordenadas en la matriz del VTT
-        if (this.vttData.length > 0 && this.previewSprite && this.spriteSheetUrl) {
+        if (this.vttData.length > 0 && this.spriteSheetUrl) {
             const cue = this.vttData.find(c => timeAtCursor >= c.start && timeAtCursor <= c.end) || this.vttData[0];
             
-            this.previewSprite.style.backgroundImage = `url(${this.spriteSheetUrl})`;
-            this.previewSprite.style.backgroundPosition = `-${cue.x}px -${cue.y}px`;
-            // Aplicar tamaño exacto del corte por si varía (FFmpeg default w: 160)
-            this.previewSprite.style.width = `${cue.w}px`;
-            this.previewSprite.style.height = `${cue.h}px`;
+            // 1. Actualizar Card
+            if (this.previewSprite) {
+                this.previewSprite.style.backgroundImage = `url(${this.spriteSheetUrl})`;
+                this.previewSprite.style.backgroundPosition = `-${cue.x}px -${cue.y}px`;
+                this.previewSprite.style.width = `${cue.w}px`;
+                this.previewSprite.style.height = `${cue.h}px`;
+            }
+
+            // 2. Actualizar Overlay del Reproductor Principal usando transformaciones matemáticas extremas
+            if (!isHoverOnly && this.previewOverlayImg && this.isDragging) {
+                if (this.previewOverlayImg.src !== this.spriteSheetUrl) {
+                    this.previewOverlayImg.src = this.spriteSheetUrl;
+                }
+                
+                const S_x = this.container.offsetWidth / cue.w;
+                const S_y = this.container.offsetHeight / cue.h;
+                const scale = Math.min(S_x, S_y); // scale para mantener aspect ratio original
+                
+                const scaledW = cue.w * scale;
+                const scaledH = cue.h * scale;
+                const offsetX = (this.container.offsetWidth - scaledW) / 2;
+                const offsetY = (this.container.offsetHeight - scaledH) / 2;
+
+                this.previewOverlayImg.style.transformOrigin = '0 0';
+                this.previewOverlayImg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale}) translate(-${cue.x}px, -${cue.y}px)`;
+            }
         }
     }
 

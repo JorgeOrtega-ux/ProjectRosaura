@@ -42,8 +42,18 @@ class VideoController {
 
         // Ocultamos la ruta estática para forzar el uso de tokens firmados
         unset($videoData['file_path']);
+        
         // Agregamos bandera para que el frontend sepa que debe invocar al motor de firmado
         $videoData['requires_signed_token'] = true;
+
+        // Aseguramos de que si las rutas al sprite existen, viajen en el output público inicial
+        // (Aunque el stream de media principal viaja cifrado en el MediaController)
+        if (isset($videoData['sprite_sheet_path'])) {
+            $videoData['sprite_sheet_url'] = $videoData['sprite_sheet_path'];
+        }
+        if (isset($videoData['vtt_path'])) {
+            $videoData['vtt_url'] = $videoData['vtt_path'];
+        }
 
         return ['success' => true, 'data' => $videoData];
     }

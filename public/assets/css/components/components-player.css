@@ -30,6 +30,30 @@
     outline: none;
 }
 
+/* ==========================================================================
+   ESTILOS NUEVOS: OVERLAY DE REPRODUCTOR (FLUÍDEZ EXTREMA)
+   ========================================================================== */
+.component-player-preview-overlay {
+    position: absolute;
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%;
+    background-color: #000;
+    z-index: 5; /* Entre el video (0) y los controles (10) */
+    display: none;
+    overflow: hidden;
+    pointer-events: none; /* Crucial para no bloquear clics ni barras */
+}
+
+.component-player-preview-overlay img {
+    position: absolute;
+    top: 0; 
+    left: 0;
+    will-change: transform; /* Optimización de hardware para JS */
+}
+/* ========================================================================== */
+
 .component-video-player__controls {
     position: absolute;
     bottom: 0;
