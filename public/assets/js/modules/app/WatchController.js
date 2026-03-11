@@ -2,12 +2,16 @@
 
 import { ApiService } from '../../core/api/ApiServices.js';
 import { VideoPlayerSystem } from '../../core/components/VideoPlayerSystem.js';
+import { DialogSystem } from '../../core/components/DialogSystem.js';
 
 export class WatchController {
     constructor() {
         this.container = document.querySelector('.view-content');
         this.api = new ApiService();
+        this.dialog = new DialogSystem();
         this.playerSystem = null;
+        this.viewRegistered = false;
+        this.checkPlayerInterval = null;
     }
 
     async init() {
@@ -27,7 +31,6 @@ export class WatchController {
             return;
         }
 
-        // Inicializar el sistema del reproductor
         this.playerSystem = new VideoPlayerSystem();
 
         try {
@@ -36,20 +39,17 @@ export class WatchController {
             if (response && response.success) {
                 this.renderRealData(response.data, playlistId);
                 
-                // Le pasamos el UUID del video y forzamos (true) la solicitud del token firmado al backend.
-                // El reproductor (VideoPlayerSystem) ahora gestiona la extracción del VTT y el Sprite Sheet en ese momento
                 if (videoId) {
                     this.playerSystem.loadVideo(videoId, true);
-                } else {
-                    console.error('[WatchController] El video no tiene un ID válido generado.');
+                    this.setupViewTracker(videoId);
+                    this.setupInteractions(videoId, response.data);
+                    this.setupSubscription(response.data);
                 }
 
-                // Si detectamos que hay un listId, cargamos la playlist para la barra lateral
                 if (playlistId) {
                     this.loadPlaylistData(playlistId, videoId);
                 }
 
-                // Cargar videos recomendados de la sidebar
                 this.loadRecommendedVideos(videoId);
 
             } else {
@@ -61,10 +61,189 @@ export class WatchController {
         }
     }
 
+    // --- 1. RASTREADOR DE VISITAS ---
+    setupViewTracker(videoUuid) {
+        this.viewRegistered = false;
+        
+        // Buscamos el elemento video inyectado por el reproductor
+        this.checkPlayerInterval = setInterval(() => {
+            const videoEl = document.querySelector('video');
+            if (videoEl) {
+                clearInterval(this.checkPlayerInterval);
+                
+                videoEl.addEventListener('timeupdate', () => {
+                    // Si el video lleva 5 segundos reproduciéndose, cuenta como visita
+                    if (!this.viewRegistered && !videoEl.paused && videoEl.currentTime >= 5) {
+                        this.viewRegistered = true;
+                        this.api.postView(videoUuid).then(res => {
+                            if (res.success && res.message !== 'Visita ignorada (Rate Limit)') {
+                                // Sumar 1 a la UI de forma silenciosa para el usuario
+                                const viewsEl = document.getElementById('watch-video-views');
+                                if (viewsEl) {
+                                    const currentText = viewsEl.innerText;
+                                    const numberStr = currentText.replace(/[^\d]/g, '');
+                                    if(numberStr) {
+                                        const newViews = parseInt(numberStr) + 1;
+                                        viewsEl.innerText = `${newViews.toLocaleString('es-MX')} visualizaciones`;
+                                    }
+                                }
+                            }
+                        }).catch(err => console.error("Error registrando visita:", err));
+                    }
+                });
+            }
+        }, 1000);
+    }
+
+    // --- 2. INTERACCIONES (LIKE/DISLIKE) OPTIMISTAS ---
+    setupInteractions(videoUuid, data) {
+        const btnLike = document.getElementById('watch-btn-like');
+        const btnDislike = document.getElementById('watch-btn-dislike');
+        const likeCountEl = document.getElementById('watch-like-count');
+        
+        if (!btnLike || !btnDislike) return;
+
+        // Estado inicial
+        const initialInteraction = data.user_interaction; // 'like', 'dislike' o null
+        if (initialInteraction === 'like') btnLike.classList.add('active');
+        if (initialInteraction === 'dislike') btnDislike.classList.add('active');
+
+        const handleInteraction = async (type) => {
+            const isLike = type === 'like';
+            const primaryBtn = isLike ? btnLike : btnDislike;
+            const secondaryBtn = isLike ? btnDislike : btnLike;
+            
+            const wasActive = primaryBtn.classList.contains('active');
+            const secondaryWasActive = secondaryBtn.classList.contains('active');
+
+            // --- UI OPTIMISTA ---
+            if (wasActive) {
+                // Quitar interacción
+                primaryBtn.classList.remove('active');
+                if (isLike && likeCountEl) {
+                    let current = parseInt(likeCountEl.innerText.replace(/,/g, '') || '0');
+                    likeCountEl.innerText = Math.max(0, current - 1).toLocaleString('es-MX');
+                }
+            } else {
+                // Poner interacción
+                primaryBtn.classList.add('active');
+                secondaryBtn.classList.remove('active');
+                
+                if (isLike && likeCountEl) {
+                    let current = parseInt(likeCountEl.innerText.replace(/,/g, '') || '0');
+                    likeCountEl.innerText = (current + 1).toLocaleString('es-MX');
+                } else if (!isLike && secondaryWasActive && likeCountEl) {
+                    // Si dio dislike y tenía like, restamos el like
+                    let current = parseInt(likeCountEl.innerText.replace(/,/g, '') || '0');
+                    likeCountEl.innerText = Math.max(0, current - 1).toLocaleString('es-MX');
+                }
+            }
+
+            // --- LLAMADA API ---
+            const response = await this.api.postLike(videoUuid, type);
+            
+            if (!response.success) {
+                // Revertir UI si falla (ej. Rate Limit o sin sesión)
+                if (response.message.includes('iniciar sesión')) {
+                    if (window.router) window.router.navigate('/login');
+                    else window.location.href = (window.AppBasePath || '') + '/login';
+                    return;
+                }
+                
+                this.dialog.show('error', { title: 'Aviso', message: response.message });
+                
+                if (wasActive) primaryBtn.classList.add('active');
+                else primaryBtn.classList.remove('active');
+                
+                if (secondaryWasActive) secondaryBtn.classList.add('active');
+                else secondaryBtn.classList.remove('active');
+                
+                // Forzar sincronización manual de los números si falló
+                if (likeCountEl && data.likes !== undefined) likeCountEl.innerText = parseInt(data.likes).toLocaleString('es-MX');
+            } else {
+                // Sincronizar datos exactos del servidor
+                if (likeCountEl) likeCountEl.innerText = response.likes.toLocaleString('es-MX');
+                primaryBtn.classList.toggle('active', response.interaction === type);
+                secondaryBtn.classList.toggle('active', response.interaction === (isLike ? 'dislike' : 'like'));
+            }
+        };
+
+        btnLike.addEventListener('click', () => handleInteraction('like'));
+        btnDislike.addEventListener('click', () => handleInteraction('dislike'));
+    }
+
+    // --- 3. SUSCRIPCIÓN OPTIMISTA DESDE WATCH ---
+    setupSubscription(data) {
+        const subBtn = document.getElementById('watch-btn-subscribe');
+        if (!subBtn) return;
+
+        // Limpiar eventos previos si la vista fue re-renderizada
+        const newBtn = subBtn.cloneNode(true);
+        subBtn.parentNode.replaceChild(newBtn, subBtn);
+
+        const channelIdentifier = data.channel_identifier || (data.author && data.author.channel_identifier);
+        
+        newBtn.addEventListener('click', async () => {
+            if (!channelIdentifier) return;
+
+            const isCurrentlySubscribed = newBtn.innerText.trim().toLowerCase() === 'suscrito';
+            const originalText = newBtn.innerText;
+            
+            // --- UI OPTIMISTA ---
+            if (isCurrentlySubscribed) {
+                newBtn.innerText = 'Suscribirse';
+                newBtn.classList.remove('component-btn-secondary');
+                newBtn.classList.add('component-btn-primary');
+            } else {
+                newBtn.innerText = 'Suscrito';
+                newBtn.classList.remove('component-btn-primary');
+                newBtn.classList.add('component-btn-secondary');
+            }
+
+            const response = await this.api.postSubscribe(channelIdentifier);
+
+            if (!response.success) {
+                // Revertir UI si falla
+                newBtn.innerText = originalText;
+                if (isCurrentlySubscribed) {
+                    newBtn.classList.remove('component-btn-primary');
+                    newBtn.classList.add('component-btn-secondary');
+                } else {
+                    newBtn.classList.remove('component-btn-secondary');
+                    newBtn.classList.add('component-btn-primary');
+                }
+
+                if (response.message.includes('iniciar sesión')) {
+                    if (window.router) window.router.navigate('/login');
+                    else window.location.href = (window.AppBasePath || '') + '/login';
+                } else {
+                    this.dialog.show('error', { title: 'Aviso', message: response.message });
+                }
+            } else {
+                // Sincronizar UI final con la respuesta del servidor (por seguridad)
+                newBtn.innerText = response.is_subscribed ? 'Suscrito' : 'Suscribirse';
+                if (response.is_subscribed) {
+                    newBtn.classList.remove('component-btn-primary');
+                    newBtn.classList.add('component-btn-secondary');
+                } else {
+                    newBtn.classList.remove('component-btn-secondary');
+                    newBtn.classList.add('component-btn-primary');
+                }
+
+                const subsCountEl = document.getElementById('watch-channel-subs');
+                if (subsCountEl) {
+                    let formatted = response.subscriber_count;
+                    if (formatted >= 1000000) formatted = (formatted / 1000000).toFixed(1) + 'M';
+                    else if (formatted >= 1000) formatted = (formatted / 1000).toFixed(1) + 'K';
+                    subsCountEl.innerText = `${formatted} suscriptores`;
+                }
+            }
+        });
+    }
+
     async loadPlaylistData(playlistId, currentVideoId) {
         try {
             const response = await this.api.post('app.get_playlist_queue', { playlist_uuid: playlistId });
-            
             if (response && response.success && response.data) {
                 this.renderPlaylistPanel(response.data, currentVideoId, playlistId);
             }
@@ -156,17 +335,10 @@ export class WatchController {
             
             if (response && response.success) {
                 let videoList = [];
-                
-                if (response.data && Array.isArray(response.data.horizontal)) {
-                    videoList = response.data.horizontal;
-                } else if (Array.isArray(response.data)) {
-                    videoList = response.data;
-                }
+                if (response.data && Array.isArray(response.data.horizontal)) videoList = response.data.horizontal;
+                else if (Array.isArray(response.data)) videoList = response.data;
 
-                if (currentVideoId) {
-                    videoList = videoList.filter(v => v.uuid !== currentVideoId);
-                }
-
+                if (currentVideoId) videoList = videoList.filter(v => v.uuid !== currentVideoId);
                 this.renderRecommendedVideos(videoList);
             } else {
                 this.renderRecommendedVideos([]);
@@ -180,10 +352,7 @@ export class WatchController {
     renderRecommendedVideos(videos) {
         const container = document.getElementById('watch-recommended-videos');
         if (!container) return;
-
-        if (!Array.isArray(videos)) {
-            videos = []; 
-        }
+        if (!Array.isArray(videos)) videos = []; 
 
         if (videos.length === 0) {
             container.innerHTML = '<p class="watch-placeholder-text">No hay videos sugeridos disponibles por el momento.</p>';
@@ -194,7 +363,7 @@ export class WatchController {
         videos.forEach(video => {
             const title = video.title || 'Sin Título';
             const channelName = video.username || (video.author && video.author.username) || 'Canal Rosaura';
-            const views = video.views ? parseInt(video.views).toLocaleString('es-MX') : Math.floor(Math.random() * 50000).toLocaleString('es-MX');
+            const views = video.views ? parseInt(video.views).toLocaleString('es-MX') : '0';
             
             let duration = '00:00';
             if (video.duration_formatted) {
@@ -243,30 +412,22 @@ export class WatchController {
         if (titleEl) titleEl.textContent = data.title || 'Sin Título';
 
         const channelNameEl = document.getElementById('watch-channel-name');
-        if (channelNameEl) channelNameEl.textContent = (data.author && data.author.username) ? data.author.username : 'Canal Rosaura';
+        if (channelNameEl) channelNameEl.textContent = data.channel_name || (data.author && data.author.username) || 'Canal Rosaura';
         
         const channelAvatarEl = document.getElementById('watch-channel-avatar');
-        if (channelAvatarEl) {
-            channelAvatarEl.src = '/ProjectRosaura/public/storage/profilePictures/default/3494f2fb-46da-4804-9519-11f40a512c49.png';
+        if (channelAvatarEl && data.channel_avatar) {
+            channelAvatarEl.src = (window.AppBasePath || '') + '/' + data.channel_avatar;
         }
 
-        const channelSubsEl = document.getElementById('watch-channel-subs');
-        if (channelSubsEl) {
-            const randomSubs = Math.floor(Math.random() * 900) + 10;
-            channelSubsEl.textContent = `${randomSubs} mil suscriptores`;
-        }
-
-        const randomViews = Math.floor(Math.random() * (900000 - 10000 + 1)) + 10000;
-        
-        const likesEl = document.getElementById('watch-like-count');
-        if (likesEl) {
-            const randomLikes = Math.floor(randomViews * 0.05);
-            likesEl.textContent = randomLikes.toLocaleString('es-MX');
-        }
-
+        // Dejar listos los IDs si vienen reales, de lo contrario defaults de BD
         const viewsEl = document.getElementById('watch-video-views');
         if (viewsEl) {
-            viewsEl.textContent = `${randomViews.toLocaleString('es-MX')} visualizaciones`;
+            viewsEl.textContent = `${(data.views || 0).toLocaleString('es-MX')} visualizaciones`;
+        }
+
+        const likesEl = document.getElementById('watch-like-count');
+        if (likesEl) {
+            likesEl.textContent = (data.likes || 0).toLocaleString('es-MX');
         }
 
         const dateEl = document.getElementById('watch-video-date');
@@ -286,21 +447,15 @@ export class WatchController {
 
         if (tagsContainer) {
             let tagsHTML = '';
-
             if (data.models && data.models.length > 0) {
                 tagsHTML += data.models.map(m => 
-                    `<span class="watch-tag-item">
-                        <span class="material-symbols-rounded">star</span> ${m.name}
-                    </span>`
+                    `<span class="watch-tag-item"><span class="material-symbols-rounded">star</span> ${m.name}</span>`
                 ).join('');
                 hasModelsOrCategories = true;
             }
-
             if (data.categories && data.categories.length > 0) {
                 tagsHTML += data.categories.map(c => 
-                    `<span class="watch-tag-item">
-                        <span class="material-symbols-rounded">label</span> ${c.name}
-                    </span>`
+                    `<span class="watch-tag-item"><span class="material-symbols-rounded">label</span> ${c.name}</span>`
                 ).join('');
                 hasModelsOrCategories = true;
             }
@@ -315,34 +470,27 @@ export class WatchController {
         const customTagsSection = document.getElementById('watch-custom-tags-section');
         const customTagsContainer = document.getElementById('watch-video-custom-tags-container');
         const tagsDivider = document.getElementById('watch-tags-divider');
-        
         const customTags = data.tags || []; 
 
         if (customTagsSection && customTagsContainer) {
             if (customTags && customTags.length > 0) {
                 let customTagsHTML = customTags.map(t => {
                     const tagName = (typeof t === 'object') ? t.name : t;
-                    return `<span class="watch-tag-item">
-                        <span class="material-symbols-rounded">tag</span> ${tagName}
-                    </span>`;
+                    return `<span class="watch-tag-item"><span class="material-symbols-rounded">tag</span> ${tagName}</span>`;
                 }).join('');
 
                 customTagsContainer.innerHTML = customTagsHTML;
                 customTagsSection.style.display = 'block';
 
-                if (tagsDivider) {
-                    tagsDivider.style.display = hasModelsOrCategories ? 'block' : 'none';
-                }
+                if (tagsDivider) tagsDivider.style.display = hasModelsOrCategories ? 'block' : 'none';
             } else {
                 customTagsSection.style.display = 'none';
             }
         }
 
         const primaryColor = data.dominant_color || data.color; 
-        
         if (primaryColor) {
             const detailBoxes = document.querySelectorAll('.watch-details-box');
-            
             detailBoxes.forEach(box => {
                 if (primaryColor.startsWith('#') && primaryColor.length === 7) {
                     box.style.setProperty('--hover-bg-color', primaryColor + '1A');
@@ -372,6 +520,7 @@ export class WatchController {
     }
 
     destroy() {
+        if (this.checkPlayerInterval) clearInterval(this.checkPlayerInterval);
         if (this.playerSystem) {
             this.playerSystem.destroy();
             this.playerSystem = null;

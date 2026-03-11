@@ -4,10 +4,14 @@ export const ApiRoutes = {
     App: {
         GetFeed: 'app.get_feed',
         GetPlaylistDetails: 'app.get_playlist_details',
-        GetPlaylistQueue: 'app.get_playlist_queue' // <--- NUEVA RUTA PARA LA COLA
+        GetPlaylistQueue: 'app.get_playlist_queue' 
+    },
+    Video: {
+        RegisterView: 'video.register_view',
+        ToggleLike: 'video.toggle_like'
     },
     Media: {
-        GetMediaToken: 'media.get_token' // <--- NUEVA RUTA PARA FIRMADO
+        GetMediaToken: 'media.get_token' 
     },
     Channel: {
         ToggleSubscription: 'channel.toggle_subscription',

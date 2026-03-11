@@ -4,15 +4,19 @@ namespace App\Api\Controllers;
 
 use App\Core\Interfaces\SubscriptionRepositoryInterface;
 use App\Core\Interfaces\UserRepositoryInterface;
+use App\Core\Interfaces\RateLimiterInterface;
+use App\Core\Security\RedisRateLimiter;
 use App\Core\Helpers\Utils;
 
 class ChannelController {
     private SubscriptionRepositoryInterface $subscriptionRepo;
     private UserRepositoryInterface $userRepo;
+    private RateLimiterInterface $rateLimiter;
 
-    public function __construct(SubscriptionRepositoryInterface $subscriptionRepo, UserRepositoryInterface $userRepo) {
+    public function __construct(SubscriptionRepositoryInterface $subscriptionRepo, UserRepositoryInterface $userRepo, RateLimiterInterface $rateLimiter) {
         $this->subscriptionRepo = $subscriptionRepo;
         $this->userRepo = $userRepo;
+        $this->rateLimiter = $rateLimiter;
     }
 
     public function get_channel_by_identifier($identifier) {
@@ -44,6 +48,16 @@ class ChannelController {
         if (!isset($_SESSION['user_id'])) {
             return ['success' => false, 'message' => 'Debes iniciar sesión para suscribirte.'];
         }
+
+        // --- RATE LIMIT PARA SUSCRIPCIONES ---
+        $action = "subscribe_" . $_SESSION['user_id'];
+        $check = $this->rateLimiter->check($action, RedisRateLimiter::LIMIT_SUBSCRIPTIONS_ATTEMPTS, RedisRateLimiter::LIMIT_SUBSCRIPTIONS_MINUTES, 'Has realizado demasiadas acciones recientemente.');
+        
+        if (!$check['allowed']) {
+            return ['success' => false, 'message' => $check['message']];
+        }
+        $this->rateLimiter->record($action, RedisRateLimiter::LIMIT_SUBSCRIPTIONS_ATTEMPTS, RedisRateLimiter::LIMIT_SUBSCRIPTIONS_MINUTES);
+        // --------------------------------------
 
         $subscriberId = $_SESSION['user_id'];
         $channelIdentifier = $data['identifier'] ?? '';
@@ -102,7 +116,7 @@ class ChannelController {
 
         $updated = $this->userRepo->updateChannelProfile($_SESSION['user_id'], $description, $identifier, $contactEmail);
 
-        // --- ACTUALIZAR PERFIL EXTENDIDO CON REDES SOCIALES Y NUEVOS DETALLES ---
+        // --- ACTUALIZAR PERFIL EXTENDIDO ---
         $profileData = [
             'relationship_status' => isset($data['relationship_status']) && $data['relationship_status'] !== '' ? $data['relationship_status'] : null,
             'interested_in' => isset($data['interested_in']) && $data['interested_in'] !== '' ? $data['interested_in'] : null,
@@ -147,7 +161,7 @@ class ChannelController {
         }
 
         $file = $_FILES['banner'];
-        $maxSize = 6 * 1024 * 1024; // 6 MB
+        $maxSize = 6 * 1024 * 1024;
 
         if ($file['size'] > $maxSize) {
             return ['success' => false, 'message' => 'La imagen no puede pesar más de 6 MB.'];

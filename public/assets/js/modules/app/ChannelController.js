@@ -38,6 +38,7 @@ export class ChannelController {
     }
     
     async loadChannelData(identifier) {
+        // En una implementación real este endpoint traerá los datos y actualizará la UI
         const apiUrl = `/api/channel/get_by_identifier?identifier=${identifier}`;
         try {
              console.log(`Cargando datos del canal para el identificador: ${identifier}`);
@@ -60,11 +61,9 @@ export class ChannelController {
             const allTabs = newContainer.querySelectorAll('.component-channel-tab');
             const sections = document.querySelectorAll('.component-channel-content-section');
 
-            // Limpiamos los estados activos
             allTabs.forEach(t => t.classList.remove('is-active'));
             sections.forEach(s => s.classList.remove('is-active'));
 
-            // Activamos la pestaña seleccionada
             tab.classList.add('is-active');
 
             const targetId = tab.getAttribute('data-target');
@@ -72,23 +71,19 @@ export class ChannelController {
             
             if (targetSection) targetSection.classList.add('is-active');
 
-            // --- ACTUALIZACIÓN DINÁMICA DE LA URL ---
             const tabName = tab.getAttribute('data-tab');
             if (this.channelIdentifier && window.history) {
                 let basePath = window.AppBasePath || '';
                 let newUrl = `${basePath}/@${this.channelIdentifier}`;
-                
-                // Si no es la pestaña principal, le agregamos el nombre a la URL
                 if (tabName && tabName !== 'main') {
                     newUrl += `/${tabName}`;
                 }
-                
-                // Usamos pushState para cambiar la URL visible sin recargar la página
                 window.history.pushState({ path: newUrl }, '', newUrl);
             }
         });
     }
 
+    // --- SUSCRIPCIÓN OPTIMISTA EN EL CANAL ---
     setupSubscriptionButton() {
         const subBtn = document.getElementById('btn-channel-subscribe');
         if (!subBtn) return;
@@ -101,20 +96,45 @@ export class ChannelController {
             if (!identifier) return;
 
             const originalText = newBtn.innerText;
-            newBtn.innerText = 'Cargando...';
-            newBtn.disabled = true;
+            const isSubscribed = originalText.trim().toLowerCase() === 'suscrito';
 
-            const response = await this.api.post(ApiRoutes.Channel.ToggleSubscription, { identifier: identifier });
-            
-            newBtn.disabled = false;
+            // UI Optimista Inmediata
+            if (isSubscribed) {
+                newBtn.innerText = 'Suscribirse';
+                newBtn.classList.remove('component-btn-secondary');
+                newBtn.classList.add('component-btn-primary');
+            } else {
+                newBtn.innerText = 'Suscrito';
+                newBtn.classList.remove('component-btn-primary');
+                newBtn.classList.add('component-btn-secondary');
+            }
 
-            if (response.success) {
-                if (response.is_subscribed) {
-                    newBtn.innerText = 'Suscrito';
+            const response = await this.api.postSubscribe(identifier);
+
+            if (!response.success) {
+                // Revertir UI
+                newBtn.innerText = originalText;
+                if (isSubscribed) {
                     newBtn.classList.remove('component-btn-primary');
                     newBtn.classList.add('component-btn-secondary');
                 } else {
-                    newBtn.innerText = 'Suscribirse';
+                    newBtn.classList.remove('component-btn-secondary');
+                    newBtn.classList.add('component-btn-primary');
+                }
+
+                if (response.message === 'Debes iniciar sesión para suscribirte.') {
+                    if (window.router) window.router.navigate('/login');
+                    else window.location.href = (window.AppBasePath || '') + '/login';
+                } else {
+                    this.dialog.show('error', { title: 'Aviso', message: response.message || 'Error al procesar la solicitud.' });
+                }
+            } else {
+                // Confirmar UI y actualizar conteo de suscriptores real del servidor
+                newBtn.innerText = response.is_subscribed ? 'Suscrito' : 'Suscribirse';
+                if (response.is_subscribed) {
+                    newBtn.classList.remove('component-btn-primary');
+                    newBtn.classList.add('component-btn-secondary');
+                } else {
                     newBtn.classList.remove('component-btn-secondary');
                     newBtn.classList.add('component-btn-primary');
                 }
@@ -126,14 +146,6 @@ export class ChannelController {
                     else if (formatted >= 1000) formatted = (formatted / 1000).toFixed(1) + 'K';
                     
                     countDisplay.innerText = `${formatted} suscriptores`;
-                }
-            } else {
-                newBtn.innerText = originalText;
-                if (response.message === 'Debes iniciar sesión para suscribirte.') {
-                    if (window.router) window.router.navigate('/login');
-                    else window.location.href = (window.AppBasePath || '') + '/login';
-                } else {
-                    alert(response.message || 'Error al procesar la solicitud.');
                 }
             }
         });

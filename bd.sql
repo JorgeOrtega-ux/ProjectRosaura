@@ -172,6 +172,9 @@ CREATE TABLE IF NOT EXISTS videos (
     thumbnail_path VARCHAR(255) DEFAULT NULL,
     thumbnail_dominant_color VARCHAR(7) DEFAULT NULL,
     duration INT DEFAULT 0,
+    views INT DEFAULT 0,
+    likes INT DEFAULT 0,
+    dislikes INT DEFAULT 0,
     temp_file_path VARCHAR(255) DEFAULT NULL,
     hls_path VARCHAR(255) DEFAULT NULL,
     generated_thumbnails JSON DEFAULT NULL,
@@ -204,6 +207,18 @@ CREATE TABLE IF NOT EXISTS video_tags (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_vt_video FOREIGN KEY (video_id) REFERENCES videos(id) ON DELETE CASCADE,
     CONSTRAINT fk_vt_tag FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- TABLA DE INTERACCIONES (Likes / Dislikes)
+CREATE TABLE IF NOT EXISTS video_interactions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT(11) NOT NULL,
+    video_id INT(11) NOT NULL,
+    interaction_type ENUM('like', 'dislike') NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_interaction (user_id, video_id),
+    CONSTRAINT fk_vi_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_vi_video FOREIGN KEY (video_id) REFERENCES videos(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS subscriptions (

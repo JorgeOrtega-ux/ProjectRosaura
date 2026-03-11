@@ -5,9 +5,13 @@ return [
     // --- RUTAS APP FRONTEND ---
     'app.get_feed'             => ['controller' => 'App\Api\Controllers\FeedController', 'action' => 'get_feed'],
     'app.get_playlist_details' => ['controller' => 'App\Api\Controllers\PlaylistController', 'action' => 'getDetails'],
-    'app.get_playlist_queue'   => ['controller' => 'App\Api\Controllers\PlaylistController', 'action' => 'getQueue'], // <--- NUEVA RUTA
+    'app.get_playlist_queue'   => ['controller' => 'App\Api\Controllers\PlaylistController', 'action' => 'getQueue'],
     'app.get_video_details'    => ['controller' => 'App\Api\Controllers\VideoController', 'action' => 'getVideoDetails'],
     
+    // --- RUTAS DE INTERACCIÓN DE VIDEOS ---
+    'video.register_view'      => ['controller' => 'App\Api\Controllers\VideoController', 'action' => 'registerView'],
+    'video.toggle_like'        => ['controller' => 'App\Api\Controllers\VideoController', 'action' => 'toggleLike'],
+
     // --- RUTAS DE MEDIOS PROTEGIDOS (FIRMADO) ---
     'media.get_token'          => ['controller' => 'App\Api\Controllers\MediaController', 'action' => 'getStreamUrl'],
     'media.stream'             => ['controller' => 'App\Api\Controllers\MediaController', 'action' => 'stream'],

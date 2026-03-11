@@ -125,6 +125,7 @@ class VideoRepository implements VideoRepositoryInterface {
             SELECT v.id, v.uuid, v.title, v.description, v.created_at, 
                    v.created_at as published_at, v.visibility,
                    v.hls_path, v.temp_file_path, v.sprite_sheet_path, v.vtt_path,
+                   v.views, v.likes, v.dislikes, 
                    u.username as channel_name, u.profile_picture as channel_avatar, u.channel_identifier
             FROM videos v
             JOIN users u ON v.user_id = u.id
@@ -200,9 +201,8 @@ class VideoRepository implements VideoRepositoryInterface {
         $stmt = $this->db->prepare("
             SELECT v.id, v.uuid, v.title, v.thumbnail_path, v.thumbnail_dominant_color, 
                    v.duration, v.created_at, v.status, v.visibility, v.hls_path, v.temp_file_path, v.orientation,
-                   v.sprite_sheet_path, v.vtt_path,
-                   u.username, u.profile_picture AS avatar_path, 
-                   0 AS views 
+                   v.sprite_sheet_path, v.vtt_path, v.views,
+                   u.username, u.profile_picture AS avatar_path 
             FROM videos v
             JOIN users u ON v.user_id = u.id
             WHERE v.status = 'published' AND v.visibility = 'public' AND v.orientation = :orientation
@@ -220,8 +220,7 @@ class VideoRepository implements VideoRepositoryInterface {
         $stmt = $this->db->prepare("
             SELECT id, uuid, title, thumbnail_path, thumbnail_dominant_color, 
                    duration, created_at, status, visibility, hls_path, temp_file_path, orientation,
-                   sprite_sheet_path, vtt_path,
-                   0 AS views 
+                   sprite_sheet_path, vtt_path, views 
             FROM videos 
             WHERE user_id = :user_id AND status = 'published' AND visibility = 'public' AND orientation = :orientation
             ORDER BY created_at DESC
@@ -233,7 +232,6 @@ class VideoRepository implements VideoRepositoryInterface {
     }
     
     public function syncTags(int $videoId, array $tags): bool {
-        error_log("[VideoRepository] syncTags - Iniciando sincronicación para video $videoId. Tags recibidos: " . print_r($tags, true));
         try {
             $this->db->beginTransaction();
             $stmtDelete = $this->db->prepare("DELETE FROM video_tags WHERE video_id = :video_id");
@@ -253,17 +251,14 @@ class VideoRepository implements VideoRepositoryInterface {
                 }
                 
                 $sql .= implode(", ", $insertValues);
-                error_log("[VideoRepository] syncTags - Ejecutando SQL de inserción: " . $sql);
                 $stmtInsert = $this->db->prepare($sql);
                 $stmtInsert->execute($params);
             }
 
             $this->db->commit();
-            error_log("[VideoRepository] syncTags - Sincronización finalizada con éxito.");
             return true;
         } catch (Exception $e) {
             $this->db->rollBack();
-            error_log("[VideoRepository] Error CRÍTICO sincronizando etiquetas del video $videoId: " . $e->getMessage());
             return false;
         }
     }
@@ -284,4 +279,69 @@ class VideoRepository implements VideoRepositoryInterface {
         $stmt->execute([':video_id' => $videoId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
+
+    // --- NUEVO: SISTEMA DE LIKES (CON TRANSACCIONES) ---
+    public function getUserInteraction(int $userId, int $videoId): ?string {
+        $stmt = $this->db->prepare("SELECT interaction_type FROM video_interactions WHERE user_id = ? AND video_id = ?");
+        $stmt->execute([$userId, $videoId]);
+        $result = $stmt->fetchColumn();
+        return $result ? $result : null;
+    }
+
+    public function toggleInteraction(int $userId, int $videoId, string $type): array {
+        try {
+            $this->db->beginTransaction();
+
+            $currentInteraction = $this->getUserInteraction($userId, $videoId);
+            $newState = null;
+
+            if ($currentInteraction === $type) {
+                // Si presiona el mismo botón, lo quitamos
+                $stmt = $this->db->prepare("DELETE FROM video_interactions WHERE user_id = ? AND video_id = ?");
+                $stmt->execute([$userId, $videoId]);
+                
+                $col = ($type === 'like') ? 'likes' : 'dislikes';
+                $this->db->prepare("UPDATE videos SET $col = GREATEST($col - 1, 0) WHERE id = ?")->execute([$videoId]);
+                
+            } elseif ($currentInteraction !== null) {
+                // Si cambia de like a dislike o viceversa
+                $stmt = $this->db->prepare("UPDATE video_interactions SET interaction_type = ? WHERE user_id = ? AND video_id = ?");
+                $stmt->execute([$type, $userId, $videoId]);
+
+                if ($type === 'like') {
+                    $this->db->prepare("UPDATE videos SET likes = likes + 1, dislikes = GREATEST(dislikes - 1, 0) WHERE id = ?")->execute([$videoId]);
+                } else {
+                    $this->db->prepare("UPDATE videos SET dislikes = dislikes + 1, likes = GREATEST(likes - 1, 0) WHERE id = ?")->execute([$videoId]);
+                }
+                $newState = $type;
+
+            } else {
+                // Si no tenía interacción previa
+                $stmt = $this->db->prepare("INSERT INTO video_interactions (user_id, video_id, interaction_type) VALUES (?, ?, ?)");
+                $stmt->execute([$userId, $videoId, $type]);
+
+                $col = ($type === 'like') ? 'likes' : 'dislikes';
+                $this->db->prepare("UPDATE videos SET $col = $col + 1 WHERE id = ?")->execute([$videoId]);
+                $newState = $type;
+            }
+
+            // Obtener los conteos actualizados para retornarlos
+            $stmtCounts = $this->db->prepare("SELECT likes, dislikes FROM videos WHERE id = ?");
+            $stmtCounts->execute([$videoId]);
+            $counts = $stmtCounts->fetch(PDO::FETCH_ASSOC);
+
+            $this->db->commit();
+
+            return [
+                'current_state' => $newState,
+                'likes_count' => (int) $counts['likes'],
+                'dislikes_count' => (int) $counts['dislikes']
+            ];
+
+        } catch (Exception $e) {
+            $this->db->rollBack();
+            throw $e;
+        }
+    }
 }
+?>

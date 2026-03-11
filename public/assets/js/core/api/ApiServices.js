@@ -1,5 +1,7 @@
 // public/assets/js/core/api/ApiServices.js
 
+import { ApiRoutes } from './ApiRoutes.js';
+
 export class ApiService {
     constructor() {
         this.baseUrl = (window.AppBasePath || '') + '/api/index.php'; 
@@ -73,9 +75,21 @@ export class ApiService {
         }
     }
 
-    // --- NUEVO MÉTODO PARA OBTENER TOKEN DE VIDEO ---
+    // --- MÉTODOS DE INTERACCIÓN Y VISITAS ---
+    async postView(videoUuid) {
+        return await this.post(ApiRoutes.Video.RegisterView, { video_uuid: videoUuid });
+    }
+
+    async postLike(videoUuid, type) {
+        return await this.post(ApiRoutes.Video.ToggleLike, { video_uuid: videoUuid, type: type });
+    }
+
+    async postSubscribe(identifier) {
+        return await this.post(ApiRoutes.Channel.ToggleSubscription, { identifier: identifier });
+    }
+
     async getMediaToken(videoUuid) {
-        return await this.post('media.get_token', { video_uuid: videoUuid });
+        return await this.post(ApiRoutes.Media.GetMediaToken, { video_uuid: videoUuid });
     }
 
     uploadFileWithProgress(route, file, inputName, extraData = {}, onProgress) {
@@ -112,9 +126,12 @@ export class ApiService {
         });
     }
 
-    async toggleSubscription(username) { return await this.post('channel.toggle_subscription', { username }); }
-    async fetchModels() { return await this.post('studio.get_models'); }
-    async fetchCategories() { return await this.post('studio.get_categories'); }
+    // Nota: Mantenemos este por retrocompatibilidad si algún archivo viejo lo usa, 
+    // pero el nuevo estándar es postSubscribe(identifier)
+    async toggleSubscription(username) { return await this.post(ApiRoutes.Channel.ToggleSubscription, { identifier: username }); }
+    
+    async fetchModels() { return await this.post(ApiRoutes.Studio.GetModels); }
+    async fetchCategories() { return await this.post(ApiRoutes.Studio.GetCategories); }
 
     async uploadFileInChunks(route, file, inputName, extraData = {}, onProgress) {
         const chunkSize = 10 * 1024 * 1024; 
@@ -169,11 +186,9 @@ export class ApiService {
         return finalResponse;
     }
 
-    async fetchAllVideos() { return await this.post('studio.get_all_videos'); }
-    async fetchPlaylistVideos(playlistId) { return await this.post('studio.get_playlist_videos', { playlist_id: playlistId }); }
-    async syncPlaylistVideos(playlistId, videoIdsArray) { return await this.post('studio.sync_playlist_videos', { playlist_id: playlistId, video_ids: videoIdsArray }); }
-    async getPlaylistDetails(playlistId) { return await this.post('app.get_playlist_details', { id: playlistId }); }
-    
-    // --- NUEVO MÉTODO PARA CARGAR LA COLA DE LA LISTA DE REPRODUCCIÓN EN EL REPRODUCTOR ---
-    async getPlaylistQueue(playlistUuid) { return await this.post('app.get_playlist_queue', { playlist_uuid: playlistUuid }); }
+    async fetchAllVideos() { return await this.post(ApiRoutes.Studio.GetAllVideos); }
+    async fetchPlaylistVideos(playlistId) { return await this.post(ApiRoutes.Studio.GetPlaylistVideos, { playlist_id: playlistId }); }
+    async syncPlaylistVideos(playlistId, videoIdsArray) { return await this.post(ApiRoutes.Studio.SyncPlaylistVideos, { playlist_id: playlistId, video_ids: videoIdsArray }); }
+    async getPlaylistDetails(playlistId) { return await this.post(ApiRoutes.App.GetPlaylistDetails, { id: playlistId }); }
+    async getPlaylistQueue(playlistUuid) { return await this.post(ApiRoutes.App.GetPlaylistQueue, { playlist_uuid: playlistUuid }); }
 }

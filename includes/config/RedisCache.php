@@ -11,10 +11,8 @@ class RedisCache {
     private $client;
 
     public function __construct() {
-        // Cargar variables de entorno desde el archivo .env usando la raíz absoluta
         $this->loadEnv(ROOT_PATH . '/.env');
 
-        // Leer credenciales del entorno o usar valores por defecto
         $host = $_ENV['REDIS_HOST'] ?? '127.0.0.1';
         $port = $_ENV['REDIS_PORT'] ?? 6379;
         $pass = $_ENV['REDIS_PASS'] ?? null;
@@ -31,26 +29,17 @@ class RedisCache {
 
         try {
             $this->client = new Client($parameters);
-            $this->client->ping(); // Probar conexión
+            $this->client->ping();
         } catch (Exception $e) {
             Logger::database("Error de conexión a Redis: " . $e->getMessage(), 'error');
             die(json_encode(['success' => false, 'message' => 'Ocurrió un error de conexión con la caché del servidor.']));
         }
     }
 
-    /**
-     * Retorna la instancia de conexión Predis
-     * @return Client
-     */
     public function getClient() {
         return $this->client;
     }
 
-    /**
-     * Obtiene un valor de la caché
-     * @param string $key
-     * @return string|null
-     */
     public function get(string $key): ?string {
         if (!$this->client) return null;
         try {
@@ -60,13 +49,6 @@ class RedisCache {
         }
     }
 
-    /**
-     * Guarda un valor en la caché con tiempo de expiración opcional
-     * @param string $key
-     * @param string $value
-     * @param int|null $ttl Segundos (Opcional)
-     * @return bool
-     */
     public function set(string $key, string $value, ?int $ttl = null): bool {
         if (!$this->client) return false;
         try {
@@ -81,11 +63,6 @@ class RedisCache {
         }
     }
 
-    /**
-     * Elimina una clave de la caché
-     * @param string $key
-     * @return bool
-     */
     public function delete(string $key): bool {
         if (!$this->client) return false;
         try {
@@ -96,20 +73,31 @@ class RedisCache {
         }
     }
 
-    /**
-     * Función interna y ligera para parsear el archivo .env
-     */
-    private function loadEnv($path) {
-        if (!file_exists($path)) {
-            return;
+    // --- NUEVOS MÉTODOS PARA VISITAS EN TIEMPO REAL ---
+    public function incrementVideoView(int $videoId): int {
+        if (!$this->client) return 0;
+        try {
+            return $this->client->incr("video:views:{$videoId}");
+        } catch (Exception $e) {
+            return 0;
         }
+    }
+
+    public function getPendingViews(int $videoId): int {
+        if (!$this->client) return 0;
+        try {
+            return (int) $this->client->get("video:views:{$videoId}");
+        } catch (Exception $e) {
+            return 0;
+        }
+    }
+
+    private function loadEnv($path) {
+        if (!file_exists($path)) return;
 
         $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
         foreach ($lines as $line) {
-            if (strpos(trim($line), '#') === 0) {
-                continue;
-            }
-
+            if (strpos(trim($line), '#') === 0) continue;
             list($name, $value) = explode('=', $line, 2);
             $name = trim($name);
             $value = trim($value);

@@ -24,11 +24,15 @@ interface VideoRepositoryInterface {
     // --- METODO AÑADIDO PARA OBTENER LOS VIDEOS PÚBLICOS DEL CANAL ---
     public function getChannelVideos(int $userId, string $orientation = 'horizontal'): array;
 
-    // --- NUEVO: OBTENER DETALLES COMPLETOS DE UN VIDEO PÚBLICO ---
+    // --- OBTENER DETALLES COMPLETOS DE UN VIDEO PÚBLICO ---
     public function getPublicVideoDetails(string $uuid): ?array;
 
     // --- MÉTODOS PARA SISTEMA DE TAGS ---
     public function syncTags(int $videoId, array $tags): bool;
     public function getVideoTags(int $videoId): array;
+
+    // --- NUEVO: INTERACCIONES (LIKES / DISLIKES) ---
+    public function toggleInteraction(int $userId, int $videoId, string $type): array;
+    public function getUserInteraction(int $userId, int $videoId): ?string;
 }
 ?>
