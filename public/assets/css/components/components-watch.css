@@ -111,7 +111,7 @@
 }
 
 .watch-layout__info { grid-area: info; min-height: 150px; }
-.watch-layout__comments { grid-area: comments; background-color: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 12px; padding: 24px; min-height: 600px; }
+.watch-layout__comments { grid-area: comments; background-color: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 12px; padding: 0; overflow: hidden; min-height: 600px; }
 
 /* REESTRUCTURADO PARA FUNCIONAR COMO CONTENEDOR PADRE TRANSPARENTE */
 .watch-layout__recommended { 

@@ -33,23 +33,32 @@ export class CommentSystem {
     renderLayout() {
         console.log('[CommentSystem] 🎨 Renderizando layout base...');
         this.container.innerHTML = `
-            <div class="component-comments">
-                <div class="component-comments-header">
-                    <h3 class="component-comments-title">Comentarios</h3>
-                </div>
-                <div class="component-comments-input-area">
-                    <img class="component-comment-avatar" src="${window.AppBasePath || ''}/public/assets/images/default-avatar.png" alt="Usuario" id="comments-current-user-avatar">
-                    <div class="component-comments-input-wrapper">
-                        <textarea id="main-comment-input" class="component-comments-textarea" placeholder="Añade un comentario..." rows="1"></textarea>
-                        <div class="component-comments-actions" id="main-comment-actions" style="display: none;">
-                            <button id="main-comment-cancel" class="component-btn-secondary">Cancelar</button>
-                            <button id="main-comment-submit" class="component-btn-primary" disabled>Comentar</button>
+            <div class="component-comments" style="margin-top: 0;">
+                
+                <div class="component-comments-top" style="padding: 24px;">
+                    <div class="component-comments-header">
+                        <h3 class="component-comments-title">Comentarios</h3>
+                    </div>
+                    <div class="component-comments-input-area" style="margin-bottom: 0;">
+                        <img class="component-comment-avatar" src="${window.AppBasePath || ''}/public/assets/images/default-avatar.png" alt="Usuario" id="comments-current-user-avatar">
+                        <div class="component-comments-input-wrapper">
+                            <textarea id="main-comment-input" class="component-comments-textarea" placeholder="Añade un comentario..." rows="1"></textarea>
+                            <div class="component-comments-actions" id="main-comment-actions" style="display: none;">
+                                <button id="main-comment-cancel" class="component-btn-secondary">Cancelar</button>
+                                <button id="main-comment-submit" class="component-btn-primary" disabled>Comentar</button>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div id="comments-list" class="component-comments-list"></div>
-                <div id="comments-loading" style="display: none; text-align: center; padding: 20px; color: var(--text-secondary);">Cargando comentarios...</div>
-                <button id="comments-load-more" class="component-btn-secondary" style="display: none; width: 100%; margin-top: 16px;">Cargar más comentarios</button>
+
+                <hr style="margin: 0; border: none; border-top: 1px solid var(--border-color);">
+
+                <div class="component-comments-bottom" style="padding: 24px;">
+                    <div id="comments-list" class="component-comments-list"></div>
+                    <div id="comments-loading" style="display: none; text-align: center; padding: 20px; color: var(--text-secondary);">Cargando comentarios...</div>
+                    <button id="comments-load-more" class="component-btn-secondary" style="display: none; width: 100%; margin-top: 16px;">Cargar más comentarios</button>
+                </div>
+                
             </div>
         `;
 

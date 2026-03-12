@@ -9,7 +9,7 @@
 }
 
 .component-comments-header {
-    margin-bottom: 24px;
+    margin-bottom: 16px;
 }
 
 .component-comments-title {
@@ -22,8 +22,9 @@
 .component-comments-input-area {
     display: flex;
     gap: 16px;
-    margin-bottom: 32px;
+    margin-bottom: 0; /* Ajustado a 0 porque la tarjeta y el hr manejan el espaciado ahora */
     align-items: flex-start;
+    width: 100%;
 }
 
 .component-comments-input-area.is-reply {
@@ -82,6 +83,7 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
+    width: 100%;
 }
 
 .component-comment-thread {
