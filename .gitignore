@@ -46,3 +46,7 @@ public/storage/banners/uploaded/*
 *.ntvs*
 *.njsproj
 *.sln
+
+# === MEILISEARCH (Motor de búsqueda local) ===
+meilisearch/meilisearch-windows-amd64.exe
+meilisearch/data.ms/
