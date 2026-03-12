@@ -61,7 +61,6 @@ export class WatchController {
         }
     }
 
-    // --- 1. RASTREADOR DE VISITAS ---
     setupViewTracker(videoUuid) {
         this.viewRegistered = false;
         
@@ -92,7 +91,6 @@ export class WatchController {
         }, 1000);
     }
 
-    // --- 2. INTERACCIONES (LIKE/DISLIKE) OPTIMISTAS ---
     setupInteractions(videoUuid, data) {
         const btnLike = document.getElementById('watch-btn-like');
         const btnDislike = document.getElementById('watch-btn-dislike');
@@ -100,7 +98,6 @@ export class WatchController {
         
         if (!btnLike || !btnDislike) return;
 
-        // Estado inicial
         const initialInteraction = data.user_interaction;
         if (initialInteraction === 'like') btnLike.classList.add('active');
         if (initialInteraction === 'dislike') btnDislike.classList.add('active');
@@ -113,7 +110,6 @@ export class WatchController {
             const wasActive = primaryBtn.classList.contains('active');
             const secondaryWasActive = secondaryBtn.classList.contains('active');
 
-            // --- UI OPTIMISTA ---
             if (wasActive) {
                 primaryBtn.classList.remove('active');
                 if (isLike && likeCountEl) {
@@ -133,7 +129,6 @@ export class WatchController {
                 }
             }
 
-            // --- LLAMADA API ---
             const response = await this.api.postLike(videoUuid, type);
             
             if (!response.success) {
@@ -163,7 +158,6 @@ export class WatchController {
         btnDislike.addEventListener('click', () => handleInteraction('dislike'));
     }
 
-    // --- 3. SUSCRIPCIÓN OPTIMISTA DESDE WATCH ---
     setupSubscription(data) {
         const subBtn = document.getElementById('watch-btn-subscribe');
         if (!subBtn) return;
@@ -179,7 +173,6 @@ export class WatchController {
             const isCurrentlySubscribed = newBtn.innerText.trim().toLowerCase() === 'suscrito';
             const originalText = newBtn.innerText;
             
-            // --- UI OPTIMISTA ---
             if (isCurrentlySubscribed) {
                 newBtn.innerText = 'Suscribirse';
                 newBtn.classList.remove('component-btn-secondary');
@@ -429,7 +422,6 @@ export class WatchController {
             descEl.textContent = data.description || 'Este video no tiene una descripción.';
         }
 
-        // --- Renderizar número de suscriptores real ---
         const subsCountEl = document.getElementById('watch-channel-subs');
         if (subsCountEl) {
             let formatted = data.subscriber_count || 0;
@@ -438,7 +430,6 @@ export class WatchController {
             subsCountEl.textContent = `${formatted} suscriptores`;
         }
 
-        // --- Renderizar estado de botón Suscribirse real ---
         const subBtn = document.getElementById('watch-btn-subscribe');
         if (subBtn) {
             if (data.is_subscribed) {
@@ -498,15 +489,36 @@ export class WatchController {
             }
         }
 
-        const primaryColor = data.dominant_color || data.color; 
-        if (primaryColor) {
-            const detailBoxes = document.querySelectorAll('.watch-details-box');
+        // --- Aplicar Color Dominante a las Cajas (Soporte Dark Mode Fallback) ---
+        const rawColor = data.dominant_color || data.color; 
+        
+        if (rawColor) {
+            const primaryColor = rawColor.trim(); 
+            const detailBoxes = (this.container || document).querySelectorAll('.watch-details-box');
+            
             detailBoxes.forEach(box => {
-                if (primaryColor.startsWith('#') && primaryColor.length === 7) {
-                    box.style.setProperty('--hover-bg-color', primaryColor + '1A');
+                let hoverColor = 'var(--bg-hover-light)'; // Fallback nativo para modo oscuro/claro
+                
+                if (primaryColor.startsWith('#')) {
+                    if (primaryColor.length === 7) {
+                        hoverColor = primaryColor + '1A';
+                    } else if (primaryColor.length === 4) {
+                        const r = primaryColor[1], g = primaryColor[2], b = primaryColor[3];
+                        hoverColor = `#${r}${r}${g}${g}${b}${b}1A`;
+                    } else if (primaryColor.length === 9) {
+                        hoverColor = primaryColor.substring(0, 7) + '1A';
+                    } else {
+                        hoverColor = primaryColor;
+                    }
+                } else if (primaryColor.startsWith('rgb') && !primaryColor.startsWith('rgba')) {
+                    hoverColor = primaryColor.replace('rgb', 'rgba').replace(')', ', 0.1)');
+                } else if (primaryColor.startsWith('rgba')) {
+                    hoverColor = primaryColor.replace(/[\d.]+\)$/, '0.1)');
                 } else {
-                    box.style.setProperty('--hover-bg-color', primaryColor);
+                    hoverColor = primaryColor;
                 }
+
+                box.style.setProperty('--hover-bg-color', hoverColor);
             });
         }
     }

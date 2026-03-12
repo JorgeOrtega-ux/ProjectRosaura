@@ -120,12 +120,13 @@ class VideoRepository implements VideoRepositoryInterface {
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    public function getPublicVideoDetails(string $uuid): ?array {
+public function getPublicVideoDetails(string $uuid): ?array {
         $stmt = $this->db->prepare("
             SELECT v.id, v.uuid, v.title, v.description, v.created_at, v.user_id,
                    v.created_at as published_at, v.visibility,
                    v.hls_path, v.temp_file_path, v.sprite_sheet_path, v.vtt_path,
                    v.views, v.likes, v.dislikes, 
+                   v.thumbnail_dominant_color as dominant_color, -- ¡CAMPO AÑADIDO!
                    u.username as channel_name, u.profile_picture as channel_avatar, u.channel_identifier
             FROM videos v
             JOIN users u ON v.user_id = u.id

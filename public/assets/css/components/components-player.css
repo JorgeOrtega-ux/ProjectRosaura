@@ -147,11 +147,8 @@
     transition: opacity 0.15s ease, visibility 0.15s;
     pointer-events: none; /* Que el mouse ignore esta caja para no cortar el evento del slider */
     z-index: 100;
-    background-color: rgba(0, 0, 0, 0.85);
-    border-radius: 8px;
-    padding: 6px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    /* Ya no tiene background, borders ni padding. Funciona solo como un wrapper (contenedor) transparente */
+    gap: 8px; /* Separación entre la imagen y el badge de tiempo */
 }
 
 .component-video-player__progress-area:hover .component-player-preview-card,
@@ -164,19 +161,25 @@
     width: 160px; /* Tamaño por defecto igual que el FFmpeg Worker */
     height: 90px;
     background-repeat: no-repeat;
-    border-radius: 4px;
     background-color: #111;
     overflow: hidden;
+    /* Estilos añadidos a la pura imagen */
+    border-radius: 8px; 
+    border: 2px solid #fff; 
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5); 
 }
 
 .component-player-preview-time {
     color: #fff;
     font-size: 13px;
-    font-weight: 500;
+    font-weight: 600;
     font-family: var(--sl-font-mono, monospace);
-    margin-top: 6px;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
     letter-spacing: 0.5px;
+    /* Convertido a un Badge/Píldora independiente */
+    background-color: rgba(0, 0, 0, 0.85);
+    padding: 4px 12px;
+    border-radius: 12px; 
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 /* ========================================================================== */
 

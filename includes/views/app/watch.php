@@ -242,7 +242,7 @@
                 </div>
 
                 <div id="watch-custom-tags-section" style="display: none;">
-                    <div class="watch-tags-divider" id="watch-tags-divider" style="height: 1px; background-color: rgba(150, 150, 150, 0.2); margin: 16px 0;"></div>
+                    <div class="watch-tags-divider" id="watch-tags-divider" style="height: 1px; background-color: var(--border-color); margin: 16px 0;"></div>
                     <div class="watch-details-meta" style="margin-bottom: 12px;">
                         <span class="watch-meta-highlight">Etiquetas Personalizadas</span>
                     </div>

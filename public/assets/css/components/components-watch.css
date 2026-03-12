@@ -65,7 +65,7 @@
 /* CONTENEDOR DEL REPRODUCTOR MODO NORMAL */
 .watch-layout__player {
     grid-area: player;
-    background-color: #000; /* REGRESAMOS EL NEGRO COMO RESPALDO PARA LAS BARRAS */
+    background-color: #000; 
     width: 100%; 
     display: flex; 
     flex-direction: column; 
@@ -93,7 +93,7 @@
 }
 
 .watch-layout--cinema .watch-layout__player {
-    background-color: #000; /* Mantiene su respaldo oscuro en Modo Cine */
+    background-color: #000; 
     border: none; 
     border-radius: 0; 
 }
@@ -111,7 +111,7 @@
 }
 
 .watch-layout__info { grid-area: info; min-height: 150px; }
-.watch-layout__comments { grid-area: comments; background-color: var(--bg-surface, #1e1e1e); border: 1px solid var(--border-color, #333); border-radius: 12px; padding: 24px; min-height: 600px; }
+.watch-layout__comments { grid-area: comments; background-color: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 12px; padding: 24px; min-height: 600px; }
 
 /* REESTRUCTURADO PARA FUNCIONAR COMO CONTENEDOR PADRE TRANSPARENTE */
 .watch-layout__recommended { 
@@ -123,8 +123,8 @@
 }
 
 .watch-recommended-section {
-    background-color: var(--bg-surface, #1e1e1e); 
-    border: 1px solid var(--border-color, #333); 
+    background-color: var(--bg-surface); 
+    border: 1px solid var(--border-color); 
     border-radius: 12px; 
     padding: 24px; 
 }
@@ -146,7 +146,7 @@
     padding: 4px;
 }
 .watch-recommended-card:hover {
-    background-color: var(--bg-hover-light, rgba(0,0,0,0.05));
+    background-color: var(--bg-hover-light);
 }
 .watch-recommended-thumb-container {
     position: relative;
@@ -171,10 +171,10 @@
     display: flex; flex-direction: column; overflow: hidden; padding-top: 2px; width: 100%;
 }
 .watch-recommended-title {
-    font-size: 14px; margin: 0 0 4px 0; font-weight: 600; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis;
+    font-size: 14px; margin: 0 0 4px 0; font-weight: 600; color: var(--text-primary); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis;
 }
 .watch-recommended-meta {
-    font-size: 12px; color: var(--text-secondary, #AAAAAA); line-height: 1.4;
+    font-size: 12px; color: var(--text-secondary); line-height: 1.4;
 }
 .watch-recommended-channel {
     margin-bottom: 2px;
@@ -182,7 +182,7 @@
 
 
 /* ==========================================================================
-   ESTILOS DE LA INFORMACIÓN DEL VIDEO (NUEVO LAYOUT BLANCO)
+   ESTILOS DE LA INFORMACIÓN DEL VIDEO (BOTONES Y ETIQUETAS ADAPTADOS)
    ========================================================================== */
 .watch-info-title {
     font-size: 22px; font-weight: 700; color: var(--text-primary);
@@ -195,7 +195,7 @@
 }
 
 .watch-info-left { display: flex; align-items: center; gap: 12px; }
-.watch-avatar { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; background-color: var(--bg-surface-alt, #333); }
+.watch-avatar { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; background-color: var(--bg-surface-alt); }
 .watch-channel-details { display: flex; flex-direction: column; justify-content: center; }
 .watch-channel-name { font-size: 16px; font-weight: 600; color: var(--text-primary); line-height: 1.2; }
 .watch-channel-subs { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
@@ -203,42 +203,49 @@
 .watch-info-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .watch-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; transition: background-color 0.2s, opacity 0.2s; font-family: inherit; }
 .watch-btn .material-symbols-rounded { font-size: 20px; }
-.watch-btn-subscribe { background-color: var(--text-primary, #fff); color: var(--bg-surface, #000); }
+
+/* Botón de suscripción (Se invierte dinámicamente según el tema) */
+.watch-btn-subscribe { background-color: var(--text-primary); color: var(--bg-surface); }
 .watch-btn-subscribe:hover { opacity: 0.9; }
 
-.watch-btn-action { background-color: #ffffff; color: #0f0f0f; border: 1px solid #00000020; }
-.watch-btn-action:hover { background-color: #f2f2f2; }
-.watch-action-group { display: flex; align-items: center; background-color: #ffffff; border-radius: 20px; border: 1px solid #00000020; overflow: hidden; }
-.watch-action-group .watch-btn-action { background-color: transparent; border: none; border-radius: 0; }
-.watch-action-group .watch-btn-action:hover { background-color: #f2f2f2; }
-.watch-action-divider { width: 1px; height: 24px; background-color: #00000020; }
+/* Botones de acción (Likes, Compartir, etc.) adaptados a Theme Variables */
+.watch-btn-action { background-color: var(--bg-surface-alt); color: var(--text-primary); border: 1px solid var(--border-color); }
+.watch-btn-action:hover { background-color: var(--bg-hover-light); }
 
+.watch-action-group { display: flex; align-items: center; background-color: var(--bg-surface-alt); border-radius: 20px; border: 1px solid var(--border-color); overflow: hidden; }
+.watch-action-group .watch-btn-action { background-color: transparent; border: none; border-radius: 0; }
+.watch-action-group .watch-btn-action:hover { background-color: var(--bg-hover-light); }
+.watch-action-divider { width: 1px; height: 24px; background-color: var(--border-color); }
+
+/* Caja de Detalles (Descripción) adaptada */
 .watch-details-box {
-    background-color: #ffffff; 
-    border: 1px solid #00000020;
+    background-color: var(--bg-surface-alt); 
+    border: 1px solid var(--border-color);
     border-radius: 12px;
     padding: 16px; 
     transition: background-color 0.3s ease, border-color 0.3s ease;
-    --hover-bg-color: #f9f9f9;
+    --hover-bg-color: var(--bg-hover-light);
 }
 .watch-details-box:hover { background-color: var(--hover-bg-color); }
-.watch-details-meta { font-size: 14px; margin-bottom: 12px; }
-.watch-meta-highlight { font-weight: 600; color: #0f0f0f; } 
-.watch-info-desc-text { font-size: 14px; color: #606060; line-height: 1.5; white-space: pre-wrap; margin: 0; } 
+.watch-details-meta { font-size: 14px; margin-bottom: 12px; color: var(--text-secondary); }
+.watch-meta-highlight { font-weight: 600; color: var(--text-primary); } 
+.watch-info-desc-text { font-size: 14px; color: var(--text-secondary); line-height: 1.5; white-space: pre-wrap; margin: 0; } 
 .watch-info-tags-list { display: flex; gap: 8px; flex-wrap: wrap; }
-.watch-tag-item { background-color: #00000010; color: #0f0f0f; padding: 6px 12px; border-radius: 16px; font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; gap: 4px; }
+
+/* Etiquetas adaptadas */
+.watch-tag-item { background-color: var(--bg-hover-light); color: var(--text-primary); padding: 6px 12px; border-radius: 16px; font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; gap: 4px; }
 .watch-tag-item .material-symbols-rounded { font-size: 16px; }
 
-.watch-placeholder-title { color: var(--text-primary, #fff); font-size: 20px; font-weight: 700; margin: 0 0 12px 0; }
-.watch-placeholder-text { color: var(--text-secondary, #aaa); font-size: 14px; }
-.watch-btn-cinema { margin-top: 24px; padding: 10px 24px; background-color: var(--text-primary, #fff); color: var(--bg-surface, #000); border: none; border-radius: 24px; font-weight: 600; cursor: pointer; }
+.watch-placeholder-title { color: var(--text-primary); font-size: 20px; font-weight: 700; margin: 0 0 12px 0; }
+.watch-placeholder-text { color: var(--text-secondary); font-size: 14px; }
+.watch-btn-cinema { margin-top: 24px; padding: 10px 24px; background-color: var(--text-primary); color: var(--bg-surface); border: none; border-radius: 24px; font-weight: 600; cursor: pointer; }
 
 /* ==========================================================================
    ESTILOS DEL PANEL DE PLAYLIST (EN PÁGINA WATCH)
    ========================================================================== */
 .watch-playlist-panel {
-    background-color: var(--bg-surface-alt, #f9f9f9);
-    border: 1px solid var(--border-color, #e5e5e5);
+    background-color: var(--bg-surface-alt);
+    border: 1px solid var(--border-color);
     border-radius: 12px;
     overflow: hidden;
     display: flex;
@@ -249,8 +256,8 @@
     justify-content: space-between;
     align-items: center;
     padding: 16px;
-    background-color: var(--bg-surface, #ffffff);
-    border-bottom: 1px solid var(--border-color, #e5e5e5);
+    background-color: var(--bg-surface);
+    border-bottom: 1px solid var(--border-color);
     cursor: pointer;
 }
 .watch-playlist-header-info {
@@ -261,17 +268,17 @@
 .watch-playlist-title {
     font-size: 16px;
     font-weight: 600;
-    color: var(--text-primary, #0f0f0f);
+    color: var(--text-primary);
     margin: 0;
 }
 .watch-playlist-count {
     font-size: 13px;
-    color: var(--text-secondary, #606060);
+    color: var(--text-secondary);
 }
 .watch-playlist-toggle-btn {
     background: transparent;
     border: none;
-    color: var(--text-primary, #0f0f0f);
+    color: var(--text-primary);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -281,7 +288,7 @@
     transition: background-color 0.2s;
 }
 .watch-playlist-toggle-btn:hover {
-    background-color: rgba(0, 0, 0, 0.05);
+    background-color: var(--bg-hover-light);
 }
 .watch-playlist-toggle-btn .material-symbols-rounded {
     transition: transform 0.3s ease;
@@ -300,7 +307,7 @@
     width: 6px;
 }
 .watch-playlist-items::-webkit-scrollbar-thumb {
-    background-color: #ccc;
+    background-color: var(--border-color);
     border-radius: 4px;
 }
 .watch-playlist-panel.collapsed .watch-playlist-items {
@@ -317,16 +324,17 @@
     align-items: center;
 }
 .watch-playlist-item:hover {
-    background-color: rgba(0, 0, 0, 0.05);
+    background-color: var(--bg-hover-light);
 }
 .watch-playlist-item.active {
-    background-color: rgba(0, 0, 0, 0.08);
+    background-color: var(--bg-hover-light);
+    border-left: 3px solid var(--text-primary);
 }
 .watch-playlist-item-index {
     width: 20px;
     text-align: center;
     font-size: 12px;
-    color: var(--text-secondary, #606060);
+    color: var(--text-secondary);
 }
 .watch-playlist-item.active .watch-playlist-item-index {
     display: none;
@@ -335,7 +343,7 @@
     display: none;
     width: 20px;
     text-align: center;
-    color: var(--text-primary, #0f0f0f);
+    color: var(--text-primary);
 }
 .watch-playlist-item.active .watch-playlist-item-playing-icon {
     display: block;
@@ -381,11 +389,11 @@
     overflow: hidden;
     text-overflow: ellipsis;
     line-height: 1.3;
-    color: var(--text-primary, #0f0f0f);
+    color: var(--text-primary);
 }
 .watch-playlist-item-author {
     font-size: 12px;
-    color: var(--text-secondary, #606060);
+    color: var(--text-secondary);
 }
 
 /* Responsive */
