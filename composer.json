@@ -6,7 +6,8 @@
         "psr/container": "^1.1 || ^2.0",
         "psr/log": "^1.1 || ^2.0 || ^3.0",
         "predis/predis": "^3.4",
-        "meilisearch/meilisearch-php": "^1.0"
+        "meilisearch/meilisearch-php": "^1.0",
+        "guzzlehttp/guzzle": "^7.10"
     },
     "autoload": {
         "psr-4": {
@@ -16,6 +17,11 @@
             "App\\Api\\Controllers\\": "api/controllers/",
             "ProjectRosaura\\Controllers\\": "api/controllers/",
             "ProjectRosaura\\Services\\": "api/services/"
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "php-http/discovery": true
         }
     }
 }

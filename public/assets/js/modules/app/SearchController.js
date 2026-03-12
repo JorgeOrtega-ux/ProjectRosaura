@@ -33,9 +33,22 @@ export default class SearchController {
         await this.fetchResults();
     }
 
-    async fetchResults() {
+ async fetchResults() {
         try {
-            const response = await fetch(`/api/search?q=${encodeURIComponent(this.query)}`);
+            // 1. Obtenemos el token de seguridad global (asumiendo que lo tienes en un meta tag en tu header.php o app.php)
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+            // 2. Apuntamos al index.php de la API usando la ruta mapeada 'search.get'
+            const apiUrl = `/ProjectRosaura/api/index.php?route=search.get&q=${encodeURIComponent(this.query)}`;
+
+            const response = await fetch(apiUrl, {
+                method: 'GET',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            });
             
             if (!response.ok) throw new Error('Network response was not ok');
             

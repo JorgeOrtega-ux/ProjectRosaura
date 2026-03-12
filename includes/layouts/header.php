@@ -69,8 +69,7 @@ $isPrivileged = in_array($userRole, ['administrator', 'founder']);
                 <span class="material-symbols-rounded">search</span>
             </div>
             <div class="component-search-input">
-                <input type="text" placeholder="<?php echo __('search_placeholder'); ?>" onkeydown="if(event.key === 'Enter' && this.value.trim() !== '') window.SpaRouter.navigate('/results?search_query=' + encodeURIComponent(this.value.trim()));">
-            </div>
+<input type="text" placeholder="<?php echo __('search_placeholder'); ?>" onkeydown="if(event.key === 'Enter' && this.value.trim() !== '') window.spaRouter.navigate('<?php echo APP_URL; ?>/results?search_query=' + encodeURIComponent(this.value.trim()));">            </div>
         </div>
     </div>
     <div class="header-right">
