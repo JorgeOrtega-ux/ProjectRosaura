@@ -9,6 +9,7 @@ use ReflectionClass;
 use ReflectionNamedType;
 use PDO;
 use Predis\Client;
+use MeiliSearch\Client as MeiliClient;
 use App\Config\Database;
 use App\Config\RedisCache;
 use App\Core\Security\RedisRateLimiter;
@@ -59,6 +60,11 @@ class Container implements ContainerInterface {
         // 1.1 Registrar Singleton base (Redis)
         $redis = new RedisCache();
         $this->instances[Client::class] = $redis->getClient();
+        
+        // 1.2 Registrar Singleton base (Meilisearch)
+        $meiliHost = $_ENV['MEILISEARCH_HOST'] ?? 'http://127.0.0.1:7700';
+        $meiliKey = $_ENV['MEILISEARCH_MASTER_KEY'] ?? 'TU_MASTER_KEY_AQUI';
+        $this->instances[MeiliClient::class] = new MeiliClient($meiliHost, $meiliKey);
         
         // 2. Registrar Bindings (Interfaces conectadas a Implementaciones)
         $this->bindings[RateLimiterInterface::class] = RedisRateLimiter::class; 

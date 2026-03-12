@@ -8,6 +8,9 @@ return [
     'app.get_playlist_queue'   => ['controller' => 'App\Api\Controllers\PlaylistController', 'action' => 'getQueue'],
     'app.get_video_details'    => ['controller' => 'App\Api\Controllers\VideoController', 'action' => 'getVideoDetails'],
     
+    // --- RUTA DE BÚSQUEDA (MEILISEARCH) ---
+    'search.get'               => ['controller' => 'ProjectRosaura\Controllers\SearchController', 'action' => 'search'],
+    
     // --- RUTAS DE INTERACCIÓN DE VIDEOS ---
     'video.register_view'      => ['controller' => 'App\Api\Controllers\VideoController', 'action' => 'registerView'],
     'video.toggle_like'        => ['controller' => 'App\Api\Controllers\VideoController', 'action' => 'toggleLike'],

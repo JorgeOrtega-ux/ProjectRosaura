@@ -1,0 +1,231 @@
+/* =========================================
+   Component: Search System
+   Prefix: component-search-
+   ========================================= */
+
+.component-search-wrapper {
+    display: flex;
+    flex-direction: column;
+    padding: 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+    color: var(--text-primary, #ffffff);
+}
+
+/* --- Top Section --- */
+.component-search-top {
+    border-bottom: 1px solid var(--border-color, #333333);
+    padding-bottom: 16px;
+    margin-bottom: 24px;
+}
+
+.component-search-header {
+    font-size: 1.5rem;
+    font-weight: 500;
+    margin: 0 0 16px 0;
+}
+
+.component-search-term {
+    font-weight: 700;
+    color: var(--accent-color, #3ea6ff);
+}
+
+.component-search-filters {
+    display: flex;
+    gap: 12px;
+}
+
+.component-search-filter-btn {
+    background-color: var(--bg-secondary, #272727);
+    color: var(--text-primary, #ffffff);
+    border: none;
+    padding: 8px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background-color 0.2s ease;
+}
+
+.component-search-filter-btn:hover {
+    background-color: var(--bg-hover, #3f3f3f);
+}
+
+.component-search-filter-active {
+    background-color: var(--text-primary, #ffffff);
+    color: var(--bg-primary, #0f0f0f);
+}
+
+/* --- Bottom Section & Status --- */
+.component-search-bottom {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+}
+
+.component-search-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 0;
+    gap: 16px;
+}
+
+.component-search-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--bg-secondary, #272727);
+    border-top: 3px solid var(--accent-color, #3ea6ff);
+    border-radius: 50%;
+    animation: component-search-spin 1s linear infinite;
+}
+
+@keyframes component-search-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.component-search-loading-text {
+    color: var(--text-secondary, #aaaaaa);
+    font-size: 0.95rem;
+}
+
+/* --- Empty State --- */
+.component-search-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 64px 24px;
+}
+
+.component-search-empty-icon {
+    font-size: 3rem;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.component-search-empty-title {
+    font-size: 1.25rem;
+    margin: 0 0 8px 0;
+}
+
+.component-search-empty-desc {
+    color: var(--text-secondary, #aaaaaa);
+    font-size: 0.95rem;
+}
+
+/* --- Sections & Grids --- */
+.component-search-section-title {
+    font-size: 1.25rem;
+    margin: 0 0 16px 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-color, #333333);
+}
+
+.component-search-channels-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+}
+
+.component-search-videos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 24px;
+}
+
+/* --- Channel Card --- */
+.component-search-channel-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    background-color: var(--bg-secondary, #272727);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.component-search-channel-card:hover {
+    background-color: var(--bg-hover, #3f3f3f);
+    transform: translateY(-2px);
+}
+
+.component-search-channel-avatar img {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.component-search-channel-info {
+    flex-grow: 1;
+}
+
+.component-search-channel-name {
+    margin: 0 0 4px 0;
+    font-size: 1.1rem;
+}
+
+.component-search-channel-handle {
+    color: var(--text-secondary, #aaaaaa);
+    font-size: 0.9rem;
+}
+
+.component-search-channel-btn {
+    background-color: transparent;
+    border: 1px solid var(--border-color, #333333);
+    color: var(--text-primary, #ffffff);
+    padding: 6px 12px;
+    border-radius: 16px;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+/* --- Video Card --- */
+.component-search-video-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    cursor: pointer;
+}
+
+.component-search-video-thumbnail {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: var(--bg-secondary, #272727);
+}
+
+.component-search-video-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.component-search-video-card:hover .component-search-video-thumbnail img {
+    transform: scale(1.05);
+}
+
+.component-search-video-title {
+    margin: 0 0 4px 0;
+    font-size: 1.05rem;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.component-search-video-desc {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--text-secondary, #aaaaaa);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}

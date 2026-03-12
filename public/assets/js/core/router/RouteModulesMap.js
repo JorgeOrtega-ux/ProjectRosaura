@@ -5,6 +5,9 @@ export const RouteModulesMap = {
     '/': { path: './modules/app/HomeController.js', className: 'HomeController' },
     '/home': { path: './modules/app/HomeController.js', className: 'HomeController' },
     
+    // ---- MÓDULO DE BÚSQUEDA ----
+    '/results': { path: './modules/app/SearchController.js', className: 'SearchController' },
+    
     // Permite rutas como /watch/56b29a83-94c2-48f6-b425-3a6e7ec5fbd3
     '/watch': { path: './modules/app/WatchController.js', className: 'WatchController' },
     '/playlist': { path: './modules/app/PlaylistController.js', className: 'PlaylistController' },

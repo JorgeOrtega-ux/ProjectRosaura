@@ -5,6 +5,9 @@ return [
     '/' => ['view' => 'app/home.php'],
     '/explore' => ['view' => 'app/explore.php'],
     
+    // --- RUTA DEL SISTEMA DE BÚSQUEDA ---
+    '/results' => ['view' => 'app/search.php'],
+
     // --- RUTA DEL REPRODUCTOR DE VIDEO ---
     '/watch/{video_uuid}' => ['view' => 'app/watch.php'], 
 

@@ -6,12 +6,52 @@ namespace App\Core\Repositories;
 use App\Core\Interfaces\VideoRepositoryInterface;
 use PDO;
 use Exception;
+use MeiliSearch\Client as MeiliClient;
 
 class VideoRepository implements VideoRepositoryInterface {
     private $db;
+    private $meiliClient;
 
-    public function __construct(PDO $db) {
+    public function __construct(PDO $db, MeiliClient $meiliClient = null) {
         $this->db = $db;
+        $this->meiliClient = $meiliClient;
+    }
+
+    /**
+     * Sincroniza el documento del video con Meilisearch.
+     */
+    private function syncVideoToMeili(int $videoId): void {
+        if (!$this->meiliClient) return;
+        
+        $video = $this->findById($videoId);
+        
+        if ($video && $video['status'] === 'published' && $video['visibility'] === 'public') {
+            $tags = $this->getVideoTags($videoId);
+            $tagNames = array_map(function($t) { return $t['name']; }, $tags);
+            
+            $doc = [
+                'id_video' => $video['id'],
+                'id_user' => $video['user_id'],
+                'title' => $video['title'],
+                'description' => $video['description'],
+                'tags' => implode(', ', $tagNames),
+                'created_at' => $video['created_at'],
+                'visibility' => $video['visibility']
+            ];
+            
+            try {
+                $this->meiliClient->index('videos')->addDocuments([$doc], 'id_video');
+            } catch (Exception $e) {
+                error_log("Meilisearch sync error (Video Add): " . $e->getMessage());
+            }
+        } else {
+            // Si el video ya no es público o fue eliminado/suspendido
+            try {
+                $this->meiliClient->index('videos')->deleteDocument($videoId);
+            } catch (Exception $e) {
+                error_log("Meilisearch sync error (Video Delete): " . $e->getMessage());
+            }
+        }
     }
 
     public function create(int $userId, string $uuid, string $originalFilename, string $tempFilePath): int {
@@ -32,11 +72,17 @@ class VideoRepository implements VideoRepositoryInterface {
         $stmt = $this->db->prepare("
             UPDATE videos SET status = :status, processing_progress = :progress WHERE id = :id
         ");
-        return $stmt->execute([
+        $success = $stmt->execute([
             ':status' => $status,
             ':progress' => $progress,
             ':id' => $videoId
         ]);
+        
+        if ($success) {
+            $this->syncVideoToMeili($videoId);
+        }
+        
+        return $success;
     }
 
     public function updateMetadata(int $videoId, array $data): bool {
@@ -84,7 +130,13 @@ class VideoRepository implements VideoRepositoryInterface {
 
         $sql = "UPDATE videos SET " . implode(", ", $fields) . " WHERE id = :id";
         $stmt = $this->db->prepare($sql);
-        return $stmt->execute($params);
+        $success = $stmt->execute($params);
+        
+        if ($success) {
+            $this->syncVideoToMeili($videoId);
+        }
+        
+        return $success;
     }
 
     public function getActiveUploadsByUserId(int $userId): array {
@@ -170,6 +222,9 @@ class VideoRepository implements VideoRepositoryInterface {
             $stmt->execute([':id' => $id]);
             
             $this->db->commit();
+            
+            $this->syncVideoToMeili($id); // Borrará el registro del índice
+            
             return true;
         } catch (Exception $e) {
             $this->db->rollBack();
@@ -257,6 +312,9 @@ class VideoRepository implements VideoRepositoryInterface {
             }
 
             $this->db->commit();
+            
+            $this->syncVideoToMeili($videoId);
+            
             return true;
         } catch (Exception $e) {
             $this->db->rollBack();
