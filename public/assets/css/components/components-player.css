@@ -120,12 +120,12 @@
     height: 6px; 
 }
 
-/* CORRECCIÓN: La barra ahora es negra */
+/* LA BARRA Y BOLITA AHORA SON COLOR #8B5CF6 */
 .component-video-player__progress-fill {
-    position: absolute; top: 0; left: 0; height: 100%; background-color: #000000; width: 0%; border-radius: 2px; z-index: 2;
+    position: absolute; top: 0; left: 0; height: 100%; background-color: #8B5CF6; width: 0%; border-radius: 2px; z-index: 2;
 }
 .component-video-player__progress-thumb {
-    position: absolute; top: 50%; left: 0%; transform: translate(-50%, -50%) scale(0); width: 14px; height: 14px; background-color: #000000; border-radius: 50%; transition: transform 0.1s ease; z-index: 3;
+    position: absolute; top: 50%; left: 0%; transform: translate(-50%, -50%) scale(0); width: 14px; height: 14px; background-color: #8B5CF6; border-radius: 50%; transition: transform 0.1s ease; z-index: 3;
 }
 .component-video-player__progress-area:hover .component-video-player__progress-thumb,
 .component-video-player__progress-area.is-dragging .component-video-player__progress-thumb { 
@@ -172,7 +172,6 @@
     transition: opacity 0.15s ease, visibility 0.15s;
     pointer-events: none; /* Que el mouse ignore esta caja para no cortar el evento del slider */
     z-index: 100;
-    /* Ya no tiene background, borders ni padding. Funciona solo como un wrapper (contenedor) transparente */
     gap: 8px; /* Separación entre la imagen y el badge de tiempo */
 }
 
@@ -194,18 +193,36 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5); 
 }
 
+/* BADGE DE TIEMPO / MOMENTO MÁS REPRODUCIDO */
 .component-player-preview-time {
     color: #fff;
     font-size: 13px;
     font-weight: 600;
     font-family: var(--sl-font-mono, monospace);
     letter-spacing: 0.5px;
-    /* Convertido a un Badge/Píldora independiente */
-    background-color: rgba(0, 0, 0, 0.85);
+    background-color: rgba(0, 0, 0, 0.75); /* Negro semitransparente elegante */
     padding: 4px 12px;
     border-radius: 12px; 
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    
+    /* LÍMITES DE ANCHO Y TEXT ELIPSIS */
+    max-width: 160px; /* Mismo ancho estricto que la imagen del sprite */
+    box-sizing: border-box; /* Asegura que el padding no rompa el ancho */
+    white-space: nowrap; /* Evita que baje a una segunda línea */
+    overflow: hidden; /* Oculta lo que sobrepasa el ancho */
+    text-overflow: ellipsis; /* Agrega los "..." al final */
+    
+    display: block; /* Debe ser block para que funcione el text-overflow */
+    text-align: center;
+    transition: all 0.2s ease;
 }
+
+/* Estilo destacado cuando detecta que es el pico más reproducido */
+.component-player-preview-time.is-peak-moment {
+    font-weight: 700;
+    box-shadow: 0 2px 12px rgba(255, 255, 255, 0.2);
+}
+
 /* ========================================================================== */
 
 .component-video-player__controls-row { display: flex; justify-content: space-between; align-items: center; width: 100%; }
@@ -221,26 +238,88 @@
 .component-video-player__btn:hover { background-color: rgba(255, 255, 255, 0.2); color: #fff; }
 .component-video-player__btn .material-symbols-rounded { font-size: 22px; pointer-events: none; }
 
-.component-video-player__volume-container { overflow: hidden; transition: background-color 0.15s ease; }
 
-/* CORRECCIÓN: Hover global para el contenedor y se anula el del boton interior */
-.component-video-player__volume-container:hover { background-color: rgba(255, 255, 255, 0.2); }
-.component-video-player__volume-container:hover .component-video-player__btn { background-color: transparent; color: #fff; }
+/* ==========================================================================
+   ESTILOS DE VOLUMEN (CORRECCIÓN ABSOLUTA PARA EL PADDING/SEPARACIÓN)
+   ========================================================================== */
+
+/* 1. Transformamos el contenedor para que actúe IGUAL que un control-box (fondo negro y padding) */
+.component-video-player__volume-container { 
+    position: relative;
+    display: flex;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.6); 
+    padding: 4px; 
+    border-radius: 40px; 
+    backdrop-filter: blur(4px); 
+    -webkit-backdrop-filter: blur(4px);
+    overflow: hidden; 
+}
+
+/* 2. Capa interior que pintará el blanco EXACTAMENTE respetando el padding de 4px */
+.component-video-player__volume-container::before {
+    content: '';
+    position: absolute;
+    top: 4px;
+    bottom: 4px;
+    left: 4px;
+    right: 4px;
+    border-radius: 40px;
+    background-color: transparent;
+    transition: background-color 0.15s ease;
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* 3. Al hacer hover, se enciende SOLO la capa blanca interior */
+.component-video-player__volume-container:hover::before {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Aseguramos que los controles reales estén siempre por encima del fondo blanco */
+.component-video-player__volume-container > * {
+    position: relative;
+    z-index: 1;
+}
+
+/* Quitamos el hover individual del botón de mute para evitar "doble capa" de blanco */
+.component-video-player__volume-container:hover .component-video-player__btn { 
+    background-color: transparent; 
+    color: #fff; 
+}
 
 .component-video-player__volume-slider-wrapper { width: 0; opacity: 0; transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease; display: flex; align-items: center; height: 30px; }
 .component-video-player__volume-container:hover .component-video-player__volume-slider-wrapper { width: 70px; opacity: 1; padding-left: 6px; padding-right: 8px; }
 .component-video-player__volume-slider { -webkit-appearance: none; appearance: none; width: 100%; background: transparent; cursor: pointer; height: 100%; }
 .component-video-player__volume-slider:focus { outline: none; }
-.component-video-player__volume-slider::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: rgba(255, 255, 255, 0.3); border-radius: 2px; }
-.component-video-player__volume-slider::-webkit-slider-thumb { height: 12px; width: 12px; border-radius: 50%; background: #fff; cursor: pointer; -webkit-appearance: none; margin-top: -4px; transition: background 0.15s ease, transform 0.1s ease; }
-/* CORRECCIÓN: Negra en hover */
-.component-video-player__volume-slider::-webkit-slider-thumb:hover { background: #000000; transform: scale(1.2); }
 
-/* Firefox */
-.component-video-player__volume-slider::-moz-range-track { width: 100%; height: 4px; cursor: pointer; background: rgba(255, 255, 255, 0.3); border-radius: 2px; }
+/* CORRECCIÓN: Track de Relleno para Chrome/Safari/Edge usando Gradiente */
+.component-video-player__volume-slider::-webkit-slider-runnable-track { 
+    width: 100%; 
+    height: 4px; 
+    cursor: pointer; 
+    background: linear-gradient(to right, #fff var(--volume-fill, 100%), rgba(255, 255, 255, 0.3) var(--volume-fill, 100%)); 
+    border-radius: 2px; 
+}
+.component-video-player__volume-slider::-webkit-slider-thumb { height: 12px; width: 12px; border-radius: 50%; background: #fff; cursor: pointer; -webkit-appearance: none; margin-top: -4px; transition: background 0.15s ease, transform 0.1s ease; }
+/* Se mantiene blanca al hacer hover */
+.component-video-player__volume-slider::-webkit-slider-thumb:hover { background: #fff; transform: scale(1.2); }
+
+/* CORRECCIÓN: Track de Relleno para Firefox */
+.component-video-player__volume-slider::-moz-range-track { 
+    width: 100%; 
+    height: 4px; 
+    cursor: pointer; 
+    background: linear-gradient(to right, #fff var(--volume-fill, 100%), rgba(255, 255, 255, 0.3) var(--volume-fill, 100%)); 
+    border-radius: 2px; 
+}
 .component-video-player__volume-slider::-moz-range-thumb { height: 12px; width: 12px; border: none; border-radius: 50%; background: #fff; cursor: pointer; transition: background 0.15s ease, transform 0.1s ease; }
-/* CORRECCIÓN: Negra en hover */
-.component-video-player__volume-slider::-moz-range-thumb:hover { background: #000000; transform: scale(1.2); }
+/* Se mantiene blanca al hacer hover */
+.component-video-player__volume-slider::-moz-range-thumb:hover { background: #fff; transform: scale(1.2); }
+
+
+/* ========================================================================== */
+
 
 .component-video-player__time {
     color: #e1e1e1; font-size: 13px; font-weight: 500; white-space: nowrap; display: flex; align-items: center; font-family: var(--sl-font-mono, monospace); height: 30px; padding: 0 12px; border-radius: 40px; transition: background-color 0.15s ease, color 0.15s ease; cursor: default; 

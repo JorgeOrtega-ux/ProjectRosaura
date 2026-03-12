@@ -75,6 +75,8 @@ export class VideoPlayerSystem {
         this.chunkViews = {}; // Objeto temporal para batcheo
         this.lastChunkIndex = -1;
         this.retentionBatchInterval = null;
+        this.heatmapData = []; // Para uso en Scrubbing Preview
+        this.heatmapMax = 0;   // Para uso en Scrubbing Preview
         
         // Inicializar Overlay Principal para Scrubbing Fluido
         this.setupOverlay();
@@ -165,11 +167,16 @@ export class VideoPlayerSystem {
             }
         });
         this.muteBtn.addEventListener('click', () => this.toggleMute());
+        
         this.volumeSlider.addEventListener('input', (e) => {
             const value = e.target.value;
             this.video.volume = value;
             this.video.muted = (value === "0");
+            
+            // NUEVO: Sincronizar el relleno del color al arrastrar la barra
+            e.target.style.setProperty('--volume-fill', `${value * 100}%`);
         });
+        
         this.video.addEventListener('volumechange', () => this.updateVolumeUI());
         this.video.addEventListener('loadedmetadata', () => {
             this.timeDuration.textContent = this.formatTime(this.video.duration);
@@ -284,6 +291,10 @@ export class VideoPlayerSystem {
 
     // --- RENDERIZADO VISUAL DEL HEATMAP ---
     renderHeatmap(data) {
+        // Guardamos los datos localmente para poder cruzarlos en el Hover (Scrubbing)
+        this.heatmapData = data;
+        this.heatmapMax = Math.max(...(data || []), 1);
+
         if (!this.progressArea || !Array.isArray(data) || data.length === 0) return;
         
         let canvas = this.progressArea.querySelector('.heatmap-canvas');
@@ -327,7 +338,7 @@ export class VideoPlayerSystem {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
             // Calculamos el valor máximo para escalar la gráfica
-            const maxVal = Math.max(...data, 1);
+            const maxVal = this.heatmapMax;
             
             ctx.beginPath();
             ctx.moveTo(0, canvas.height);
@@ -623,6 +634,8 @@ export class VideoPlayerSystem {
         this.dbVideoId = dbVideoId;
         this.chunkViews = {};
         this.lastChunkIndex = -1;
+        this.heatmapData = [];
+        this.heatmapMax = 0;
         this.startRetentionBatcher();
         
         if (requiresSignedToken) {
@@ -823,8 +836,15 @@ export class VideoPlayerSystem {
         } else {
             this.muteIcon.textContent = 'volume_down';
         }
+        
+        // Sincronizar UI del slider si el cambio vino de afuera (ej: botón mute)
         if (document.activeElement !== this.volumeSlider) {
-            this.volumeSlider.value = this.video.muted ? 0 : this.video.volume;
+            const val = this.video.muted ? 0 : this.video.volume;
+            this.volumeSlider.value = val;
+            this.volumeSlider.style.setProperty('--volume-fill', `${val * 100}%`);
+        } else {
+            // Asegurar que visualmente el color siempre coincida con el value
+            this.volumeSlider.style.setProperty('--volume-fill', `${this.volumeSlider.value * 100}%`);
         }
     }
 
@@ -919,7 +939,33 @@ export class VideoPlayerSystem {
         cardX = Math.max(minX, Math.min(maxX, cardX));
         
         this.previewCard.style.left = `${cardX}px`;
-        this.previewTime.textContent = this.formatTime(timeAtCursor);
+
+        // -------------------------------------------------------------
+        // LÓGICA DE DETECCIÓN: "Momento con más reproducciones"
+        // -------------------------------------------------------------
+        let isPeakMoment = false;
+        
+        // Verificamos si hay datos suficientes y si el máximo tiene cierta relevancia (ej: > 1)
+        if (this.heatmapData && this.heatmapData.length > 0 && this.heatmapMax > 1) {
+            // Mapeamos la posición `pos` (0 a 1) al índice del arreglo de datos
+            const index = Math.min(this.heatmapData.length - 1, Math.floor(pos * this.heatmapData.length));
+            const currentReten = this.heatmapData[index];
+            
+            // Si el momento alcanza o supera el 85% del pico máximo, lo consideramos un hito
+            if (currentReten >= (this.heatmapMax * 0.85)) {
+                isPeakMoment = true;
+            }
+        }
+
+        // Aplicamos el texto y la clase CSS según el caso
+        if (isPeakMoment) {
+            this.previewTime.textContent = `${this.formatTime(timeAtCursor)} • Momento con más reproducciones`;
+            this.previewTime.classList.add('is-peak-moment');
+        } else {
+            this.previewTime.textContent = this.formatTime(timeAtCursor);
+            this.previewTime.classList.remove('is-peak-moment');
+        }
+        // -------------------------------------------------------------
 
         if (this.vttData.length > 0 && this.spriteSheetUrl) {
             const cue = this.vttData.find(c => timeAtCursor >= c.start && timeAtCursor <= c.end) || this.vttData[0];
