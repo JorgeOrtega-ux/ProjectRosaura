@@ -65,7 +65,7 @@
 /* CONTENEDOR DEL REPRODUCTOR MODO NORMAL */
 .watch-layout__player {
     grid-area: player;
-    background-color: transparent; /* CORRECCIÓN: Evita el pixel/fondo negro en esquinas */
+    background-color: transparent; 
     width: 100%; 
     display: flex; 
     flex-direction: column; 
@@ -93,7 +93,7 @@
 }
 
 .watch-layout--cinema .watch-layout__player {
-    background-color: #000; /* Se mantiene en negro SOLO para abarcar el ancho del modo cine */
+    background-color: #000; 
     border: none; 
     border-radius: 0; 
 }
@@ -204,7 +204,7 @@
 .watch-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; transition: background-color 0.2s, opacity 0.2s; font-family: inherit; }
 .watch-btn .material-symbols-rounded { font-size: 20px; }
 
-/* Botón de suscripción (Se invierte dinámicamente según el tema) */
+/* Botón de suscripción */
 .watch-btn-subscribe { background-color: var(--text-primary); color: var(--bg-surface); }
 .watch-btn-subscribe:hover { opacity: 0.9; }
 
@@ -438,4 +438,34 @@
     }
     
     .watch-btn { flex-shrink: 0; }
+}
+
+/* ==========================================================================
+   AMBIENT MODE - FALLBACK Y LIMPIEZA VISUAL PARA MODO CLARO
+   ========================================================================== */
+
+/* Bloqueo si el tema es claro por atributo o clase explícita */
+html[data-theme="light"] .component-video-ambient-wrapper,
+html.light-theme .component-video-ambient-wrapper {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+}
+
+html[data-theme="light"] .component-video-player,
+html.light-theme .component-video-player {
+    box-shadow: none !important;
+}
+
+/* Bloqueo si el tema es claro por sistema (y no se ha forzado un modo oscuro) */
+@media (prefers-color-scheme: light) {
+    html:not([data-theme="dark"]):not(.dark-theme) .component-video-ambient-wrapper {
+        display: none !important;
+        opacity: 0 !important;
+        visibility: hidden !important;
+    }
+    
+    html:not([data-theme="dark"]):not(.dark-theme) .component-video-player {
+        box-shadow: none !important;
+    }
 }

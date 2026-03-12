@@ -65,6 +65,11 @@ export class VideoPlayerSystem {
         this.ambientCtx = null;
         this.ambientLoopId = null;
         
+        // Variables para Observer de Tema
+        this.themeObserver = null;
+        this.systemThemeQuery = null;
+        this.systemThemeListener = null;
+        
         // Inicializar Overlay Principal para Scrubbing Fluido
         this.setupOverlay();
 
@@ -130,7 +135,6 @@ export class VideoPlayerSystem {
         innerContainer.style.height = `${targetHeight}px`;
 
         // CLAVE: Sincronizar el envoltorio de la luz para que SIEMPRE coincida con el video
-        // Esto permite que el blur "manche" las barras negras pero sin perder la estructura central
         const ambientWrapper = document.getElementById('ambient-wrapper');
         if (ambientWrapper) {
             ambientWrapper.style.width = `${targetWidth}px`;
@@ -249,6 +253,70 @@ export class VideoPlayerSystem {
         });
     }
 
+    // --- DETECCIÓN DE TEMA (CLARO/OSCURO) ---
+    isLightModeActive() {
+        const html = document.documentElement;
+        const themeAttr = html.getAttribute('data-theme');
+        const isDarkClass = html.classList.contains('dark-theme');
+        const isLightClass = html.classList.contains('light-theme');
+        
+        if (themeAttr === 'light' || isLightClass) return true;
+        if (themeAttr === 'dark' || isDarkClass) return false;
+        
+        // Fallback a la preferencia del sistema
+        return window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+    }
+
+    handleThemeChange() {
+        const isLight = this.isLightModeActive();
+        const lightingMenu = document.getElementById('setting-menu-lighting');
+        const status = document.getElementById('lighting-status');
+        
+        if (isLight) {
+            // Forzar apagado interno
+            this.ambientModeEnabled = false;
+            this.stopAmbientLoop();
+            if (this.ambientCanvas) {
+                this.ambientCanvas.style.opacity = '0';
+            }
+            
+            // Actualizar la Interfaz de Usuario para reflejar el bloqueo
+            if (lightingMenu) {
+                const items = lightingMenu.querySelectorAll('.component-menu__item');
+                items.forEach(i => {
+                    i.classList.remove('is-selected');
+                    const isAmbientOnBtn = i.getAttribute('data-ambient') === "1";
+                    const isAmbientOffBtn = i.getAttribute('data-ambient') === "0";
+                    
+                    if (isAmbientOffBtn) {
+                        i.classList.add('is-selected');
+                    }
+                    if (isAmbientOnBtn) {
+                        i.style.opacity = '0.4';
+                        i.style.cursor = 'not-allowed';
+                    }
+                });
+            }
+            if (status) {
+                status.textContent = "No disponible (Tema Claro)";
+            }
+        } else {
+            // Restaurar visualmente si regresa a modo oscuro
+            if (lightingMenu) {
+                const items = lightingMenu.querySelectorAll('.component-menu__item');
+                items.forEach(i => {
+                    if (i.getAttribute('data-ambient') === "1") {
+                        i.style.opacity = '1';
+                        i.style.cursor = 'pointer';
+                    }
+                });
+            }
+            if (status && status.textContent.includes("Tema Claro")) {
+                 status.textContent = "Desactivado"; 
+            }
+        }
+    }
+
     // --- ILUMINACIÓN CINEMATOGRÁFICA (AMBIENT MODE) ---
     initLightingControl() {
         const lightingMenu = document.getElementById('setting-menu-lighting');
@@ -256,29 +324,57 @@ export class VideoPlayerSystem {
         const items = lightingMenu.querySelectorAll('.component-menu__item');
         const status = document.getElementById('lighting-status');
 
-        // Inicializar el Canvas y Contexto 2D para máxima eficiencia
         this.ambientCanvas = document.getElementById('ambient-lighting-canvas');
         if (this.ambientCanvas) {
-            this.ambientCtx = this.ambientCanvas.getContext('2d', { alpha: false }); // alpha false mejora rendimiento
-            // Reducir fuertemente la resolución interna para costo casi cero de CPU/GPU
+            this.ambientCtx = this.ambientCanvas.getContext('2d', { alpha: false }); 
             this.ambientCanvas.width = 128;
             this.ambientCanvas.height = 72;
+        }
+
+        // Evaluar estado actual al iniciar
+        this.handleThemeChange();
+
+        // 1. Observer para atributos del DOM (cuando cambia el toggle de la web)
+        this.themeObserver = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.attributeName === 'data-theme' || mutation.attributeName === 'class') {
+                    this.handleThemeChange();
+                }
+            });
+        });
+        this.themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'class'] });
+
+        // 2. Listener para cambios de tema en el Sistema Operativo (si está en automático)
+        if (window.matchMedia) {
+            this.systemThemeQuery = window.matchMedia('(prefers-color-scheme: light)');
+            this.systemThemeListener = (e) => {
+                if (!document.documentElement.getAttribute('data-theme')) { 
+                    this.handleThemeChange();
+                }
+            };
+            this.systemThemeQuery.addEventListener('change', this.systemThemeListener);
         }
 
         items.forEach(item => {
             item.addEventListener('click', (e) => {
                 e.stopPropagation();
+                
+                const isEnabled = item.getAttribute('data-ambient') === "1";
+                
+                // BLOQUEO TOTAL: Si está en modo claro y trata de encenderlo, abortar.
+                if (this.isLightModeActive() && isEnabled) {
+                    return; 
+                }
+
                 items.forEach(i => i.classList.remove('is-selected'));
                 item.classList.add('is-selected');
                 
-                const isEnabled = item.getAttribute('data-ambient') === "1";
                 this.ambientModeEnabled = isEnabled;
 
                 if (status) {
                     status.textContent = item.querySelector('span:not(.component-menu__check)').textContent.trim();
                 }
 
-                // Controlar opacidad de forma animada por CSS
                 if (this.ambientCanvas) {
                     this.ambientCanvas.style.opacity = isEnabled ? '0.8' : '0';
                     if (isEnabled) {
@@ -295,33 +391,30 @@ export class VideoPlayerSystem {
         if (this.video) {
             this.video.addEventListener('play', () => this.startAmbientLoop());
             this.video.addEventListener('pause', () => this.stopAmbientLoop());
-            // Si el usuario adelanta el video estando en pausa, pintamos un cuadro para reflejar la zona
             this.video.addEventListener('seeked', () => {
-                if (this.ambientModeEnabled) this.drawAmbientFrame();
+                if (this.ambientModeEnabled && !this.isLightModeActive()) this.drawAmbientFrame();
             });
             this.video.addEventListener('loadeddata', () => {
-                if (this.ambientModeEnabled) this.drawAmbientFrame();
+                if (this.ambientModeEnabled && !this.isLightModeActive()) this.drawAmbientFrame();
             });
         }
     }
 
     drawAmbientFrame() {
-        if (!this.ambientCanvas || !this.ambientCtx || !this.video) return;
-        if (this.video.readyState < 2) return; // Esperar a que exista data (HAVE_CURRENT_DATA)
+        if (!this.ambientCanvas || !this.ambientCtx || !this.video || this.isLightModeActive()) return;
+        if (this.video.readyState < 2) return; 
         
         try {
             this.ambientCtx.drawImage(this.video, 0, 0, this.ambientCanvas.width, this.ambientCanvas.height);
-        } catch(e) {
-            // Ignorar errores por política CORS en lienzos (rara vez ocurre en blob/streams)
-        }
+        } catch(e) {}
     }
 
     startAmbientLoop() {
-        if (!this.ambientModeEnabled) return;
-        this.stopAmbientLoop(); // Evitar superposición
+        if (!this.ambientModeEnabled || this.isLightModeActive()) return;
+        this.stopAmbientLoop(); 
         
         const loop = () => {
-            if (this.video.paused || this.video.ended) return;
+            if (this.video.paused || this.video.ended || this.isLightModeActive()) return;
             this.drawAmbientFrame();
             this.ambientLoopId = requestAnimationFrame(loop);
         };
@@ -340,19 +433,16 @@ export class VideoPlayerSystem {
         if (!this.qualityMenuContent) return;
         this.qualityMenuContent.innerHTML = '';
         
-        // Opción Automática
         const autoItem = document.createElement('div');
         autoItem.className = 'component-menu__item is-selected';
-        autoItem.dataset.level = -1; // -1 en HLS.js activa Auto
+        autoItem.dataset.level = -1; 
         autoItem.innerHTML = `<span class="material-symbols-rounded component-menu__check">check</span><span>Automática</span>`;
         autoItem.addEventListener('click', (e) => this.setQuality(e, -1));
         this.qualityMenuContent.appendChild(autoItem);
 
-        // Opciones por resolución ordenadas de mayor a menor
         const sortedLevels = levels.map((l, index) => ({...l, originalIndex: index}))
                                    .sort((a, b) => b.height - a.height);
 
-        // Evitar duplicados si hay resoluciones iguales con distintos bitrates
         const seenHeights = new Set();
 
         sortedLevels.forEach(level => {
@@ -373,17 +463,13 @@ export class VideoPlayerSystem {
         if (this.hls) {
             this.hls.currentLevel = levelIndex; 
             
-            // Actualizar interfaz del submenú
             const items = this.qualityMenuContent.querySelectorAll('.component-menu__item');
             items.forEach(i => i.classList.remove('is-selected'));
             e.currentTarget.classList.add('is-selected');
 
-            // Actualizar etiqueta del menú principal
             if (levelIndex === -1) {
-                // Volver a Automático
                 this.updateAutoQualityDisplay(this.hls.currentLevel === -1 ? this.hls.loadLevel : this.hls.currentLevel);
             } else {
-                // Manual
                 const level = this.hls.levels[levelIndex];
                 if (level && this.qualityStatus) {
                     this.qualityStatus.textContent = `${level.height}p`;
@@ -511,11 +597,9 @@ export class VideoPlayerSystem {
             
             this.hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
                 this.container.classList.add('is-paused');
-                // Generar opciones de calidad dinámicamente basadas en el stream
                 this.populateQualityMenu(data.levels);
             });
 
-            // Detectar el cambio de nivel automático y notificar en el label 
             this.hls.on(Hls.Events.LEVEL_SWITCHED, (event, data) => {
                 this.updateAutoQualityDisplay(data.level);
             });
@@ -560,7 +644,16 @@ export class VideoPlayerSystem {
 
     destroy() {
         this.destroyHls();
-        this.stopAmbientLoop(); // Importante apagar el loop
+        this.stopAmbientLoop(); 
+        
+        // Limpiar observers de tema
+        if (this.themeObserver) {
+            this.themeObserver.disconnect();
+        }
+        if (this.systemThemeQuery && this.systemThemeListener) {
+            this.systemThemeQuery.removeEventListener('change', this.systemThemeListener);
+        }
+
         if (this.video) {
             this.video.pause();
             this.video.removeAttribute('src');
