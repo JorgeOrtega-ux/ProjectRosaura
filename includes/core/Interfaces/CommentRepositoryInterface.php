@@ -1,5 +1,5 @@
 <?php
-namespace Core\Interfaces;
+namespace App\Core\Interfaces;
 
 interface CommentRepositoryInterface {
     public function getCommentsByVideo(int $videoId, int $limit, int $offset): array;

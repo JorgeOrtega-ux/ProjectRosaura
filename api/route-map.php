@@ -114,5 +114,10 @@ return [
     // --- RUTAS DE TAGS PARA EL STUDIO ---
     'studio.get_models'           => ['controller' => 'App\Api\Controllers\StudioController', 'action' => 'get_models'],
     'studio.get_categories'       => ['controller' => 'App\Api\Controllers\StudioController', 'action' => 'get_categories'],
+
+    // --- RUTAS DE COMENTARIOS ---
+    'comments.get'    => ['controller' => 'App\Api\Controllers\CommentController', 'action' => 'index'],
+    'comments.create' => ['controller' => 'App\Api\Controllers\CommentController', 'action' => 'store'],
+    'comments.react'  => ['controller' => 'App\Api\Controllers\CommentController', 'action' => 'react'],
 ];
 ?>

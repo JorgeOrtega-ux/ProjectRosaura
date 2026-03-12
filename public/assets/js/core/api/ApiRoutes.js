@@ -92,8 +92,8 @@ export const ApiRoutes = {
         SyncPlaylistVideos: 'studio.sync_playlist_videos'
     },
     Comments: {
-        Get: '/api/comments',
-        Create: '/api/comments/create',
-        React: '/api/comments/react'
+        Get: 'comments.get',
+        Create: 'comments.create',
+        React: 'comments.react'
     }
 };

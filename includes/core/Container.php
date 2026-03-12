@@ -38,7 +38,10 @@ use App\Core\Repositories\SubscriptionRepository;
 use App\Core\Interfaces\PlaylistRepositoryInterface;
 use App\Core\Repositories\PlaylistRepository;
 
-// Nuevas importaciones para firmado de medios
+// Agregamos el Repositorio de Comentarios
+use App\Core\Interfaces\CommentRepositoryInterface;
+use App\Core\Repositories\CommentRepository;
+
 use App\Core\Interfaces\MediaSignerInterface;
 use App\Core\Security\MediaSigner;
 
@@ -74,6 +77,7 @@ class Container implements ContainerInterface {
         // 4. Repositorios de Contenido (Studio)
         $this->bindings[VideoRepositoryInterface::class] = VideoRepository::class;
         $this->bindings[PlaylistRepositoryInterface::class] = PlaylistRepository::class; 
+        $this->bindings[CommentRepositoryInterface::class] = CommentRepository::class; // <-- AÑADIDO
         
         // 5. Servicios de Seguridad de Medios
         $this->bindings[MediaSignerInterface::class] = MediaSigner::class;

@@ -4,6 +4,9 @@ import { ApiRoutes } from '../api/ApiRoutes.js';
 
 export class CommentSystem {
     constructor(videoId, container, api) {
+        console.log('[CommentSystem] 🛠️ Inicializando constructor...');
+        console.log('[CommentSystem] Video ID:', videoId);
+        
         this.videoId = videoId;
         this.container = container;
         this.api = api;
@@ -17,13 +20,18 @@ export class CommentSystem {
     }
 
     async init() {
+        console.log('[CommentSystem] 🚀 Ejecutando init()...');
         this.renderLayout();
         this.setupMainInput();
         this.container.addEventListener('click', this.boundClickHandler);
+        
+        console.log('[CommentSystem] ⏳ Llamando a loadComments() desde init()...');
         await this.loadComments();
+        console.log('[CommentSystem] ✅ init() completado.');
     }
 
     renderLayout() {
+        console.log('[CommentSystem] 🎨 Renderizando layout base...');
         this.container.innerHTML = `
             <div class="component-comments">
                 <div class="component-comments-header">
@@ -49,6 +57,7 @@ export class CommentSystem {
         this.loadMoreBtn = this.container.querySelector('#comments-load-more');
         
         this.loadMoreBtn.addEventListener('click', () => {
+            console.log('[CommentSystem] 👆 Clic en cargar más comentarios. Offset actual:', this.offset);
             this.offset += this.limit;
             this.loadComments();
         });
@@ -81,19 +90,19 @@ export class CommentSystem {
             const content = input.value.trim();
             if (!content) return;
             
+            console.log('[CommentSystem] 📝 Intentando enviar nuevo comentario:', content);
             btnSubmit.disabled = true;
             btnSubmit.innerText = 'Enviando...';
 
             try {
-                const response = await fetch((window.AppBasePath || '') + ApiRoutes.Comments.Create, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ video_id: this.videoId, content: content })
-                });
+                const payload = { video_id: this.videoId, content: content };
+                console.log(`[CommentSystem] 📡 POST a ${ApiRoutes.Comments.Create} con payload:`, payload);
                 
-                const result = await response.json();
+                const result = await this.api.post(ApiRoutes.Comments.Create, payload);
+                console.log('[CommentSystem] 📥 Respuesta de crear comentario:', result);
                 
-                if (result.success && result.data) {
+                if (result && result.success && result.data) {
+                    console.log('[CommentSystem] ✅ Comentario creado con éxito.');
                     input.value = '';
                     input.style.height = 'auto';
                     actions.style.display = 'none';
@@ -101,10 +110,11 @@ export class CommentSystem {
                     const newCommentHtml = this.createCommentHtml(result.data, false);
                     this.commentsListEl.insertAdjacentHTML('afterbegin', newCommentHtml);
                 } else {
-                    alert(result.error || 'Debes iniciar sesión para comentar.');
+                    console.warn('[CommentSystem] ⚠️ Error lógico al crear comentario:', result);
+                    alert(result?.error || result?.message || 'Error al enviar el comentario.');
                 }
             } catch (e) {
-                console.error('Error enviando comentario:', e);
+                console.error('[CommentSystem] ❌ Excepción capturada en btnSubmit:', e);
             } finally {
                 btnSubmit.disabled = false;
                 btnSubmit.innerText = 'Comentar';
@@ -113,7 +123,12 @@ export class CommentSystem {
     }
 
     async loadComments() {
-        if (this.isLoading || !this.hasMore) return;
+        if (this.isLoading || !this.hasMore) {
+            console.log('[CommentSystem] 🛑 Ignorando loadComments. isLoading:', this.isLoading, 'hasMore:', this.hasMore);
+            return;
+        }
+        
+        console.log('[CommentSystem] 🔄 Cargando comentarios...');
         this.isLoading = true;
         
         const loader = this.container.querySelector('#comments-loading');
@@ -121,24 +136,37 @@ export class CommentSystem {
         this.loadMoreBtn.style.display = 'none';
 
         try {
-            const response = await fetch(`${window.AppBasePath || ''}${ApiRoutes.Comments.Get}?video_id=${this.videoId}&offset=${this.offset}&limit=${this.limit}`);
-            const result = await response.json();
+            const payload = {
+                video_id: this.videoId,
+                offset: this.offset,
+                limit: this.limit
+            };
+            console.log(`[CommentSystem] 📡 POST a ${ApiRoutes.Comments.Get} con payload:`, payload);
+            
+            const result = await this.api.post(ApiRoutes.Comments.Get, payload);
+            console.log('[CommentSystem] 📥 Respuesta de loadComments:', result);
 
-            if (result.success) {
+            if (result && result.success) {
                 const comments = result.data;
+                console.log(`[CommentSystem] ✅ Se recibieron ${comments.length} comentarios.`);
+                
                 if (comments.length < this.limit) {
+                    console.log('[CommentSystem] ℹ️ No hay más comentarios por cargar.');
                     this.hasMore = false;
                 }
                 this.renderCommentsList(comments);
+            } else {
+                console.error('[CommentSystem] ❌ Error desde el servidor al cargar:', result);
             }
         } catch (error) {
-            console.error('Error cargando comentarios:', error);
+            console.error('[CommentSystem] ❌ Excepción crítica en loadComments:', error);
         } finally {
             this.isLoading = false;
             loader.style.display = 'none';
             if (this.hasMore) {
                 this.loadMoreBtn.style.display = 'block';
             }
+            console.log('[CommentSystem] 🏁 Finalizado loadComments.');
         }
     }
 
@@ -233,6 +261,8 @@ export class CommentSystem {
 
     async handleReactionOptimistic(btnElement, type) {
         const commentId = btnElement.dataset.id;
+        console.log(`[CommentSystem] 👍 Reacción disparada. ID: ${commentId}, Tipo: ${type}`);
+        
         const thread = btnElement.closest('.component-comment-thread');
         const btnLike = thread.querySelector('.btn-like');
         const btnDislike = thread.querySelector('.btn-dislike');
@@ -267,17 +297,18 @@ export class CommentSystem {
         countSpan.innerText = currentLikes;
 
         try {
-            const response = await fetch((window.AppBasePath || '') + ApiRoutes.Comments.React, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ comment_id: commentId, type: type })
-            });
-            const result = await response.json();
+            const payload = { comment_id: commentId, type: type };
+            console.log(`[CommentSystem] 📡 POST a ${ApiRoutes.Comments.React} con payload:`, payload);
             
-            if (!result.success) {
-                throw new Error(result.error);
+            const result = await this.api.post(ApiRoutes.Comments.React, payload);
+            console.log('[CommentSystem] 📥 Respuesta de reacción:', result);
+
+            if (!result || !result.success) {
+                throw new Error(result?.error || result?.message || 'Error reaccionando');
             }
         } catch (error) {
+            console.error('[CommentSystem] ❌ Falló la reacción en backend. Revirtiendo UI...', error);
+            // Revertir en caso de error
             if (isLikeAction) {
                 if (wasLiked) btnLike.classList.add('active'); else btnLike.classList.remove('active');
                 if (wasDisliked) btnDislike.classList.add('active'); else btnDislike.classList.remove('active');
@@ -286,11 +317,12 @@ export class CommentSystem {
                 if (wasLiked) btnLike.classList.add('active'); else btnLike.classList.remove('active');
             }
             countSpan.innerText = wasLiked ? (isLikeAction ? currentLikes + 1 : currentLikes) : (isLikeAction ? currentLikes - 1 : currentLikes);
-            alert('Debes iniciar sesión para reaccionar.');
+            alert(error.message || 'Debes iniciar sesión para reaccionar.');
         }
     }
 
     showReplyForm(commentId) {
+        console.log(`[CommentSystem] 💬 Abriendo formulario de respuesta para comentario: ${commentId}`);
         const container = document.getElementById(`reply-form-${commentId}`);
         if (!container) return;
 
@@ -319,20 +351,21 @@ export class CommentSystem {
         const content = input.value.trim();
         if (!content) return;
 
+        console.log(`[CommentSystem] 📨 Intentando enviar respuesta al comentario ${parentId}:`, content);
+
         const btn = document.querySelector(`.btn-submit-reply[data-id="${parentId}"]`);
         btn.disabled = true;
         btn.innerText = '...';
 
         try {
-            const response = await fetch((window.AppBasePath || '') + ApiRoutes.Comments.Create, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ video_id: this.videoId, content: content, parent_id: parentId })
-            });
+            const payload = { video_id: this.videoId, content: content, parent_id: parentId };
+            console.log(`[CommentSystem] 📡 POST a ${ApiRoutes.Comments.Create} (Respuesta) con payload:`, payload);
             
-            const result = await response.json();
+            const result = await this.api.post(ApiRoutes.Comments.Create, payload);
+            console.log('[CommentSystem] 📥 Respuesta de crear (reply):', result);
             
-            if (result.success && result.data) {
+            if (result && result.success && result.data) {
+                console.log('[CommentSystem] ✅ Respuesta creada con éxito.');
                 const formContainer = document.getElementById(`reply-form-${parentId}`);
                 formContainer.innerHTML = ''; 
 
@@ -348,18 +381,20 @@ export class CommentSystem {
                 const newReplyHtml = this.createCommentHtml(result.data, true);
                 repliesContainer.insertAdjacentHTML('beforeend', newReplyHtml);
             } else {
-                alert(result.error || 'Debes iniciar sesión para responder.');
+                console.warn('[CommentSystem] ⚠️ Error lógico al responder:', result);
+                alert(result?.error || result?.message || 'Error al enviar la respuesta.');
                 btn.disabled = false;
                 btn.innerText = 'Responder';
             }
         } catch (e) {
-            console.error('Error enviando respuesta:', e);
+            console.error('[CommentSystem] ❌ Excepción enviando respuesta:', e);
             btn.disabled = false;
             btn.innerText = 'Responder';
         }
     }
 
     destroy() {
+        console.log('[CommentSystem] 🗑️ Destruyendo instancia...');
         if (this.container && this.boundClickHandler) {
             this.container.removeEventListener('click', this.boundClickHandler);
         }

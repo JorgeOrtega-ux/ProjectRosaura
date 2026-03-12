@@ -1,14 +1,15 @@
 <?php
-namespace Api\Services;
+namespace App\Api\Services;
 
-use Core\Interfaces\CommentRepositoryInterface;
-use Predis\Client as RedisClient;
+use App\Core\Interfaces\CommentRepositoryInterface;
+use Predis\Client;
 
 class CommentServices {
     private CommentRepositoryInterface $commentRepo;
-    private $redis;
+    private Client $redis;
 
-    public function __construct(CommentRepositoryInterface $commentRepo, $redis) {
+    // AÑADIDO TIPO 'Client' PARA $redis. Vital para que el Container no explote.
+    public function __construct(CommentRepositoryInterface $commentRepo, Client $redis) {
         $this->commentRepo = $commentRepo;
         $this->redis = $redis;
     }
