@@ -39,14 +39,13 @@ export class CommentSystem {
                     <div class="component-comments-header">
                         <h3 class="component-comments-title">Comentarios</h3>
                     </div>
-                    <div class="component-comments-input-area" style="margin-bottom: 0;">
+                    <div class="component-comments-input-area">
                         <img class="component-comment-avatar" src="${window.AppBasePath || ''}/public/assets/images/default-avatar.png" alt="Usuario" id="comments-current-user-avatar">
                         <div class="component-comments-input-wrapper">
                             <textarea id="main-comment-input" class="component-comments-textarea" placeholder="Añade un comentario..." rows="1"></textarea>
-                            <div class="component-comments-actions" id="main-comment-actions" style="display: none;">
-                                <button id="main-comment-cancel" class="component-btn-secondary">Cancelar</button>
-                                <button id="main-comment-submit" class="component-btn-primary" disabled>Comentar</button>
-                            </div>
+                            <button id="main-comment-submit" class="component-btn-send" disabled title="Enviar">
+                                <span class="material-symbols-rounded">send</span>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -74,25 +73,12 @@ export class CommentSystem {
 
     setupMainInput() {
         const input = this.container.querySelector('#main-comment-input');
-        const actions = this.container.querySelector('#main-comment-actions');
-        const btnCancel = this.container.querySelector('#main-comment-cancel');
         const btnSubmit = this.container.querySelector('#main-comment-submit');
-
-        input.addEventListener('focus', () => {
-            actions.style.display = 'flex';
-        });
 
         input.addEventListener('input', () => {
             input.style.height = 'auto';
             input.style.height = (input.scrollHeight) + 'px';
             btnSubmit.disabled = input.value.trim().length === 0;
-        });
-
-        btnCancel.addEventListener('click', () => {
-            input.value = '';
-            input.style.height = 'auto';
-            actions.style.display = 'none';
-            btnSubmit.disabled = true;
         });
 
         btnSubmit.addEventListener('click', async () => {
@@ -101,7 +87,6 @@ export class CommentSystem {
             
             console.log('[CommentSystem] 📝 Intentando enviar nuevo comentario:', content);
             btnSubmit.disabled = true;
-            btnSubmit.innerText = 'Enviando...';
 
             try {
                 const payload = { video_id: this.videoId, content: content };
@@ -114,7 +99,6 @@ export class CommentSystem {
                     console.log('[CommentSystem] ✅ Comentario creado con éxito.');
                     input.value = '';
                     input.style.height = 'auto';
-                    actions.style.display = 'none';
                     
                     const newCommentHtml = this.createCommentHtml(result.data, false);
                     this.commentsListEl.insertAdjacentHTML('afterbegin', newCommentHtml);
@@ -125,8 +109,7 @@ export class CommentSystem {
             } catch (e) {
                 console.error('[CommentSystem] ❌ Excepción capturada en btnSubmit:', e);
             } finally {
-                btnSubmit.disabled = false;
-                btnSubmit.innerText = 'Comentar';
+                btnSubmit.disabled = input.value.trim().length === 0;
             }
         });
     }
@@ -254,13 +237,6 @@ export class CommentSystem {
             return;
         }
 
-        const btnCancelReply = e.target.closest('.btn-cancel-reply');
-        if (btnCancelReply) {
-            const container = document.getElementById(`reply-form-${btnCancelReply.dataset.id}`);
-            if (container) container.innerHTML = '';
-            return;
-        }
-
         const btnSubmitReply = e.target.closest('.btn-submit-reply');
         if (btnSubmitReply) {
             this.submitReply(btnSubmitReply.dataset.id);
@@ -335,23 +311,28 @@ export class CommentSystem {
         const container = document.getElementById(`reply-form-${commentId}`);
         if (!container) return;
 
+        const currentUserAvatarSrc = document.getElementById('comments-current-user-avatar')?.src || `${window.AppBasePath || ''}/public/assets/images/default-avatar.png`;
+
         container.innerHTML = `
             <div class="component-comments-input-area is-reply">
+                <img class="component-comment-avatar" src="${currentUserAvatarSrc}" alt="Usuario">
                 <div class="component-comments-input-wrapper">
                     <textarea id="input-reply-${commentId}" class="component-comments-textarea" placeholder="Añade una respuesta..." rows="1"></textarea>
-                    <div class="component-comments-actions">
-                        <button class="component-btn-secondary btn-cancel-reply" data-id="${commentId}">Cancelar</button>
-                        <button class="component-btn-primary btn-submit-reply" data-id="${commentId}">Responder</button>
-                    </div>
+                    <button class="component-btn-send btn-submit-reply" data-id="${commentId}" disabled title="Enviar respuesta">
+                        <span class="material-symbols-rounded">send</span>
+                    </button>
                 </div>
             </div>
         `;
         
         const input = document.getElementById(`input-reply-${commentId}`);
+        const submitBtn = container.querySelector('.btn-submit-reply');
+        
         input.focus();
         input.addEventListener('input', () => {
             input.style.height = 'auto';
             input.style.height = (input.scrollHeight) + 'px';
+            submitBtn.disabled = input.value.trim().length === 0;
         });
     }
 
@@ -364,7 +345,6 @@ export class CommentSystem {
 
         const btn = document.querySelector(`.btn-submit-reply[data-id="${parentId}"]`);
         btn.disabled = true;
-        btn.innerText = '...';
 
         try {
             const payload = { video_id: this.videoId, content: content, parent_id: parentId };
@@ -393,12 +373,10 @@ export class CommentSystem {
                 console.warn('[CommentSystem] ⚠️ Error lógico al responder:', result);
                 alert(result?.error || result?.message || 'Error al enviar la respuesta.');
                 btn.disabled = false;
-                btn.innerText = 'Responder';
             }
         } catch (e) {
             console.error('[CommentSystem] ❌ Excepción enviando respuesta:', e);
             btn.disabled = false;
-            btn.innerText = 'Responder';
         }
     }
 

@@ -19,11 +19,12 @@
     margin: 0;
 }
 
+/* El contenedor principal de la zona del input */
 .component-comments-input-area {
     display: flex;
     gap: 16px;
-    margin-bottom: 0; /* Ajustado a 0 porque la tarjeta y el hr manejan el espaciado ahora */
-    align-items: flex-start;
+    margin-bottom: 0; 
+    align-items: center; /* Alineación vertical central */
     width: 100%;
 }
 
@@ -41,22 +42,34 @@
     background-color: var(--bg-hover-light, #272727);
 }
 
-.is-reply > .component-comment-main > .component-comment-avatar {
+.is-reply > .component-comment-avatar {
     width: 24px;
     height: 24px;
 }
 
+/* El nuevo wrapper redondeado que contiene input + btn */
 .component-comments-input-wrapper {
     flex-grow: 1;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    align-items: center;
+    border: 1px solid var(--border-color, #3F3F3F);
+    border-radius: 50px; /* Borde redondeado completo */
+    padding: 8px 16px;
+    background: transparent;
+    transition: border-color 0.2s ease;
+    box-sizing: border-box;
 }
 
+.component-comments-input-wrapper:focus-within {
+    border-color: var(--text-primary, #FFFFFF);
+}
+
+/* El input interno */
 .component-comments-textarea {
-    width: 100%;
+    flex-grow: 1;
     background: transparent;
     border: none;
-    border-bottom: 1px solid var(--border-color, #3F3F3F);
     color: var(--text-primary, #FFFFFF);
     font-size: 14px;
     line-height: 20px;
@@ -64,19 +77,41 @@
     resize: none;
     overflow: hidden;
     outline: none;
-    transition: border-color 0.2s ease;
+    margin: 0;
 }
 
 .component-comments-textarea:focus {
-    border-bottom: 2px solid var(--text-primary, #FFFFFF);
-    padding-bottom: 3px;
+    border: none;
 }
 
-.component-comments-actions {
+/* Botón interior de enviar */
+.component-btn-send {
+    background: transparent;
+    border: none;
+    color: var(--text-primary, #FFFFFF);
     display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-    margin-top: 12px;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    margin-left: 8px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+    flex-shrink: 0;
+}
+
+.component-btn-send .material-symbols-rounded {
+    font-size: 20px;
+}
+
+.component-btn-send:hover:not(:disabled) {
+    background-color: var(--bg-hover-light, #272727);
+}
+
+.component-btn-send:disabled {
+    color: var(--text-secondary, #AAAAAA);
+    cursor: not-allowed;
+    opacity: 0.5;
 }
 
 .component-comments-list {
