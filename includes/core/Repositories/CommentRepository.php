@@ -1,7 +1,7 @@
 <?php
-namespace Core\Repositories;
+namespace App\Core\Repositories;
 
-use Core\Interfaces\CommentRepositoryInterface;
+use App\Core\Interfaces\CommentRepositoryInterface;
 use PDO;
 
 class CommentRepository implements CommentRepositoryInterface {

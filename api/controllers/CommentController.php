@@ -6,8 +6,6 @@ use App\Api\Services\CommentServices;
 class CommentController {
     private CommentServices $commentServices;
 
-    // Se eliminó el " = null" y el fallback. Tu framework se encargará 
-    // automáticamente de inyectar el servicio con Redis y el Repositorio.
     public function __construct(CommentServices $commentServices) {
         $this->commentServices = $commentServices;
     }
@@ -25,17 +23,19 @@ class CommentController {
             if (!$videoId) {
                 http_response_code(400);
                 echo json_encode(['error' => 'video_id es requerido']);
-                return;
+                exit; 
             }
 
             $comments = $this->commentServices->getCommentsForVideo((int)$videoId, $currentUserId, (int)$limit, (int)$offset);
             
             header('Content-Type: application/json');
             echo json_encode(['success' => true, 'data' => $comments]);
+            exit; 
 
         } catch (\Exception $e) {
             http_response_code(500);
             echo json_encode(['success' => false, 'error' => 'Error 500 en Backend: ' . $e->getMessage()]);
+            exit; 
         }
     }
 
@@ -45,7 +45,7 @@ class CommentController {
             if (!$currentUserId) {
                 http_response_code(401);
                 echo json_encode(['error' => 'No autorizado']);
-                return;
+                exit; 
             }
 
             $data = json_decode(file_get_contents('php://input'), true);
@@ -56,7 +56,7 @@ class CommentController {
             if (!$videoId || empty($content)) {
                 http_response_code(400);
                 echo json_encode(['error' => 'Datos inválidos']);
-                return;
+                exit; 
             }
 
             $content = htmlspecialchars($content, ENT_QUOTES, 'UTF-8');
@@ -65,10 +65,12 @@ class CommentController {
 
             header('Content-Type: application/json');
             echo json_encode(['success' => true, 'data' => $newComment]);
+            exit; 
 
         } catch (\Exception $e) {
             http_response_code(500);
             echo json_encode(['success' => false, 'error' => 'Error 500 en Backend: ' . $e->getMessage()]);
+            exit; 
         }
     }
 
@@ -78,7 +80,7 @@ class CommentController {
             if (!$currentUserId) {
                 http_response_code(401);
                 echo json_encode(['error' => 'No autorizado']);
-                return;
+                exit; 
             }
 
             $data = json_decode(file_get_contents('php://input'), true);
@@ -88,17 +90,19 @@ class CommentController {
             if (!$commentId || !in_array($type, ['like', 'dislike', 'none'])) {
                 http_response_code(400);
                 echo json_encode(['error' => 'Datos inválidos']);
-                return;
+                exit; 
             }
 
             $result = $this->commentServices->reactToComment((int)$commentId, $currentUserId, $type);
 
             header('Content-Type: application/json');
             echo json_encode(['success' => true, 'data' => $result]);
+            exit; 
 
         } catch (\Exception $e) {
             http_response_code(500);
             echo json_encode(['success' => false, 'error' => 'Error 500 en Backend: ' . $e->getMessage()]);
+            exit; 
         }
     }
 }

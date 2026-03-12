@@ -7,7 +7,7 @@ export class ApiService {
         this.baseUrl = (window.AppBasePath || '') + '/api/index.php'; 
     }
 
-    async post(route, data = {}) {
+async post(route, data = {}) {
         const payload = {
             route: route,
             ...data
@@ -31,16 +31,36 @@ export class ApiService {
                     window.location.href = (window.AppBasePath || '') + '/login';
                     return { success: false, message: 'Sesión revocada.' };
                 }
+                
+                // Leemos como texto primero para poder debugear errores HTTP
+                const rawErrorText = await response.text();
                 try {
-                    return await response.json();
+                    return JSON.parse(rawErrorText);
                 } catch (jsonError) {
+                    console.error(`🚨 [ApiService] HTTP ${response.status} en '${route}'. Respuesta cruda:`, rawErrorText);
                     throw new Error(`Error HTTP: ${response.status}`);
                 }
             }
 
-            return await response.json();
+            // -------------------------------------------------------------
+            // 🔥 AQUÍ ESTÁ EL LOG DIAGNÓSTICO 🔥
+            // 1. Leemos la respuesta como texto plano primero
+            const rawText = await response.text();
+            
+            try {
+                // 2. Intentamos convertir ese texto a JSON
+                return JSON.parse(rawText);
+            } catch (jsonError) {
+                // 3. Si falla, imprimimos EXACTAMENTE qué devolvió PHP
+                console.error(`🚨 [ApiService] ERROR DE SINTAXIS JSON en la ruta: '${route}'`);
+                console.error(`👉 EL SERVIDOR DEVOLVIÓ ESTO (mira lo que hay antes o después de las llaves {}): \n`, rawText);
+                
+                return { success: false, message: 'El servidor devolvió un formato inválido. Revisa la consola.' };
+            }
+            // -------------------------------------------------------------
+
         } catch (error) {
-            console.error(`[ApiService] Fallo en JSON hacia '${route}':`, error);
+            console.error(`[ApiService] Fallo general hacia '${route}':`, error);
             return { success: false, message: 'Error de conexión con el servidor. Verifica la consola.' };
         }
     }
