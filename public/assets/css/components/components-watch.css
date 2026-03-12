@@ -96,6 +96,7 @@
     background-color: #000; 
     border: none; 
     border-radius: 0; 
+    overflow: hidden; /* FIX: Evita que el scale() de la iluminación desborde y cree scroll horizontal */
 }
 
 .watch-layout--cinema .component-video-player {

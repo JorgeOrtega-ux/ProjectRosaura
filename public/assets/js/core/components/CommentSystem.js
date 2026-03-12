@@ -32,6 +32,11 @@ export class CommentSystem {
 
     renderLayout() {
         console.log('[CommentSystem] 🎨 Renderizando layout base...');
+        
+        // FIX: Obtener el avatar del usuario logueado dinámicamente desde el header
+        const headerProfileImg = document.querySelector('.component-button--profile img');
+        const currentUserAvatarSrc = headerProfileImg ? headerProfileImg.src : `${window.AppBasePath || ''}/public/assets/images/default-avatar.png`;
+
         this.container.innerHTML = `
             <div class="component-comments" style="margin-top: 0;">
                 
@@ -40,7 +45,7 @@ export class CommentSystem {
                         <h3 class="component-comments-title">Comentarios</h3>
                     </div>
                     <div class="component-comments-input-area">
-                        <img class="component-comment-avatar" src="${window.AppBasePath || ''}/public/assets/images/default-avatar.png" alt="Usuario" id="comments-current-user-avatar">
+                        <img class="component-comment-avatar" src="${currentUserAvatarSrc}" alt="Usuario" id="comments-current-user-avatar">
                         <div class="component-comments-input-wrapper">
                             <textarea id="main-comment-input" class="component-comments-textarea" placeholder="Añade un comentario..." rows="1"></textarea>
                             <button id="main-comment-submit" class="component-btn-send" disabled title="Enviar">
@@ -311,6 +316,7 @@ export class CommentSystem {
         const container = document.getElementById(`reply-form-${commentId}`);
         if (!container) return;
 
+        // Esto ahora heredará la imagen correcta que seteamos en renderLayout
         const currentUserAvatarSrc = document.getElementById('comments-current-user-avatar')?.src || `${window.AppBasePath || ''}/public/assets/images/default-avatar.png`;
 
         container.innerHTML = `
