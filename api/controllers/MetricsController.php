@@ -31,8 +31,8 @@ class MetricsController {
 
         if (!isset($input['videoId']) || !isset($input['data']) || !is_array($input['data'])) {
             http_response_code(400);
-            echo json_encode(['success' => false, 'message' => 'Invalid payload.']);
-            return;
+            // CORRECCIÓN: Usar return en lugar de echo json_encode
+            return ['success' => false, 'message' => 'Invalid payload.'];
         }
 
         $videoId = (int) $input['videoId'];
@@ -42,8 +42,8 @@ class MetricsController {
         $video = $this->videoRepo->findById($videoId);
         if (!$video) {
             http_response_code(404);
-            echo json_encode(['success' => false, 'message' => 'Video not found.']);
-            return;
+            // CORRECCIÓN: Usar return en lugar de echo json_encode
+            return ['success' => false, 'message' => 'Video not found.'];
         }
 
         $redisKey = "video_heatmap:{$videoId}";
@@ -61,7 +61,8 @@ class MetricsController {
             }
         }
 
-        echo json_encode(['success' => true]);
+        // CORRECCIÓN: Usar return
+        return ['success' => true];
     }
 
     /**
@@ -71,8 +72,8 @@ class MetricsController {
     public function getHeatmap() {
         if (!isset($_GET['videoId'])) {
             http_response_code(400);
-            echo json_encode(['success' => false, 'message' => 'Missing videoId.']);
-            return;
+            // CORRECCIÓN: Usar return
+            return ['success' => false, 'message' => 'Missing videoId.'];
         }
 
         $videoId = (int) $_GET['videoId'];
@@ -91,10 +92,11 @@ class MetricsController {
             $heatmapData = $normalizedData;
         }
 
-        echo json_encode([
+        // CORRECCIÓN: Usar return en lugar de echo json_encode
+        return [
             'success' => true,
             'data' => $heatmapData
-        ]);
+        ];
     }
 }
 ?>

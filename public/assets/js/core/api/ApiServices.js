@@ -116,8 +116,20 @@ async post(route, data = {}) {
     async getVideoHeatmap(videoId) {
         // En este caso forzamos la petición por GET mediante query params ya que el PHP lo lee por $_GET
         const url = `${this.baseUrl}?route=${ApiRoutes.Metrics.GetRetention}&videoId=${videoId}`;
+        
+        // EXTRAEMOS EL TOKEN CSRF (Esta es la corrección al Error 403)
+        const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+        const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+
         try {
-            const response = await fetch(url);
+            // AÑADIMOS LOS HEADERS A LA PETICIÓN FETCH
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'X-CSRF-Token': csrfToken
+                }
+            });
+            
             if (!response.ok) return { success: false, data: [] };
             return await response.json();
         } catch (error) {
