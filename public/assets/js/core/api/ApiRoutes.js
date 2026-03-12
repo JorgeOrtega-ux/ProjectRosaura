@@ -95,5 +95,9 @@ export const ApiRoutes = {
         Get: 'comments.get',
         Create: 'comments.create',
         React: 'comments.react'
+    },
+    Metrics: {
+        IngestRetention: 'metrics.retention.ingest',
+        GetRetention: 'metrics.retention.get'
     }
 };

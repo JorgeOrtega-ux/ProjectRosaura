@@ -73,7 +73,7 @@ class RedisCache {
         }
     }
 
-    // --- NUEVOS MÉTODOS PARA VISITAS EN TIEMPO REAL ---
+    // --- MÉTODOS PARA VISITAS EN TIEMPO REAL ---
     public function incrementVideoView(int $videoId): int {
         if (!$this->client) return 0;
         try {
@@ -87,6 +87,16 @@ class RedisCache {
         if (!$this->client) return 0;
         try {
             return (int) $this->client->get("video:views:{$videoId}");
+        } catch (Exception $e) {
+            return 0;
+        }
+    }
+
+    // --- NUEVO MÉTODO PARA HEATMAP (HINCRBY) ---
+    public function hashIncrement(string $key, string $field, int $increment = 1): int {
+        if (!$this->client) return 0;
+        try {
+            return $this->client->hincrby($key, $field, $increment);
         } catch (Exception $e) {
             return 0;
         }

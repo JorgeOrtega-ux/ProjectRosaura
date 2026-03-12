@@ -42,13 +42,23 @@ export class WatchController {
                 this.renderRealData(response.data, playlistId);
                 
                 if (videoId) {
-                    this.playerSystem.loadVideo(videoId, true);
+                    const dbVideoId = response.data.id; 
+                    
+                    // Inicializamos el video, pasándole el ID de la base de datos para las métricas de Heatmap
+                    this.playerSystem.loadVideo(videoId, true, dbVideoId);
                     this.setupViewTracker(videoId);
                     this.setupInteractions(videoId, response.data);
                     this.setupSubscription(response.data);
 
+                    // --- INICIO: DESCARGAR Y RENDERIZAR HEATMAP ---
+                    this.api.getVideoHeatmap(dbVideoId).then(res => {
+                        if (res && res.success && res.data) {
+                            this.playerSystem.renderHeatmap(res.data);
+                        }
+                    });
+                    // --- FIN: DESCARGAR Y RENDERIZAR HEATMAP ---
+
                     // --- INICIO: INSTANCIAR SISTEMA DE COMENTARIOS ---
-                    const dbVideoId = response.data.id; 
                     if (dbVideoId) {
                         let commentsSection = document.getElementById('video-comments-section');
                         if (!commentsSection) {

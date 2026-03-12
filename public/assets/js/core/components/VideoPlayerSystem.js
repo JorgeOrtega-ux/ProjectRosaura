@@ -69,6 +69,12 @@ export class VideoPlayerSystem {
         this.themeObserver = null;
         this.systemThemeQuery = null;
         this.systemThemeListener = null;
+
+        // --- VARIABLES DE RETENCIÓN (HEATMAP) ---
+        this.dbVideoId = null;
+        this.chunkViews = {}; // Objeto temporal para batcheo
+        this.lastChunkIndex = -1;
+        this.retentionBatchInterval = null;
         
         // Inicializar Overlay Principal para Scrubbing Fluido
         this.setupOverlay();
@@ -169,8 +175,13 @@ export class VideoPlayerSystem {
             this.timeDuration.textContent = this.formatTime(this.video.duration);
             this.updateVolumeUI(); 
         });
+        
+        // EVENTO PRINCIPAL: Registro de tiempo y recolección para el Heatmap
         this.video.addEventListener('timeupdate', () => {
-            if (!this.isDragging) this.updateProgress();
+            if (!this.isDragging) {
+                this.updateProgress();
+                this.trackRetention(); // <-- Captura inteligente de retención
+            }
         });
 
         // --- EVENTOS DE SCRUBBING EXACTO ---
@@ -227,6 +238,118 @@ export class VideoPlayerSystem {
                 this.calculatePlayerSize(); 
             }
         });
+    }
+
+    // --- TRACKING DE RETENCIÓN DE VIDEO (RECOLECTOR) ---
+    trackRetention() {
+        if (!this.video.duration || this.video.paused) return;
+
+        // Calculamos en qué segmento del 1% del video se encuentra (0-99)
+        const chunkIndex = Math.floor((this.video.currentTime / this.video.duration) * 100);
+
+        if (chunkIndex >= 0 && chunkIndex < 100 && chunkIndex !== this.lastChunkIndex) {
+            this.lastChunkIndex = chunkIndex;
+            
+            if (!this.chunkViews[chunkIndex]) {
+                this.chunkViews[chunkIndex] = 0;
+            }
+            
+            // Límite Anti-Spam (Máximo 5 conteos por "chunk" en cada envío)
+            if (this.chunkViews[chunkIndex] < 5) {
+                this.chunkViews[chunkIndex]++;
+            }
+        }
+    }
+
+    startRetentionBatcher() {
+        if (this.retentionBatchInterval) clearInterval(this.retentionBatchInterval);
+        
+        // Enviar lote cada 15 segundos
+        this.retentionBatchInterval = setInterval(() => {
+            this.sendRetentionData();
+        }, 15000);
+    }
+
+    sendRetentionData() {
+        if (!this.dbVideoId || Object.keys(this.chunkViews).length === 0) return;
+        
+        // Hacemos una copia profunda y vaciamos el caché local
+        const dataToSend = { ...this.chunkViews };
+        this.chunkViews = {};
+        
+        this.api.sendRetentionBatch(this.dbVideoId, dataToSend).catch(e => {
+            console.error("[VideoPlayer:Heatmap] Error al enviar lote de retención:", e);
+        });
+    }
+
+    // --- RENDERIZADO VISUAL DEL HEATMAP ---
+    renderHeatmap(data) {
+        if (!this.progressArea || !Array.isArray(data) || data.length === 0) return;
+        
+        let canvas = this.progressArea.querySelector('.heatmap-canvas');
+        if (!canvas) {
+            canvas = document.createElement('canvas');
+            canvas.className = 'heatmap-canvas';
+            
+            // Estilos incrustados para posicionamiento preciso sobre la barra
+            canvas.style.position = 'absolute';
+            canvas.style.bottom = '100%';
+            canvas.style.left = '0';
+            canvas.style.width = '100%';
+            canvas.style.height = '40px'; 
+            canvas.style.pointerEvents = 'none'; 
+            canvas.style.opacity = '0';
+            canvas.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+            canvas.style.transformOrigin = 'bottom';
+            canvas.style.transform = 'scaleY(0.5)';
+            
+            this.progressArea.style.position = 'relative';
+            this.progressArea.appendChild(canvas);
+            
+            // Interacciones Hover como en YouTube
+            if (this.controlsContainer) {
+                this.controlsContainer.addEventListener('mouseenter', () => {
+                    canvas.style.opacity = '0.8';
+                    canvas.style.transform = 'scaleY(1)';
+                });
+                this.controlsContainer.addEventListener('mouseleave', () => {
+                    canvas.style.opacity = '0';
+                    canvas.style.transform = 'scaleY(0.5)';
+                });
+            }
+        }
+        
+        // Esperamos un instante para asegurarnos de que el DOM tiene dimensiones
+        setTimeout(() => {
+            canvas.width = canvas.offsetWidth || 1000;
+            canvas.height = canvas.offsetHeight || 40;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Calculamos el valor máximo para escalar la gráfica
+            const maxVal = Math.max(...data, 1);
+            
+            ctx.beginPath();
+            ctx.moveTo(0, canvas.height);
+            
+            const step = canvas.width / (data.length - 1);
+            
+            // Dibujamos la curva de montañas
+            for (let i = 0; i < data.length; i++) {
+                const x = i * step;
+                // Ajustamos la altura (0.9 para dejar un pequeño margen superior)
+                const h = (data[i] / maxVal) * (canvas.height * 0.9);
+                const y = canvas.height - h;
+                ctx.lineTo(x, y);
+            }
+            
+            ctx.lineTo(canvas.width, canvas.height);
+            ctx.closePath();
+            
+            // Color semi-transparente para la gráfica
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.35)'; 
+            ctx.fill();
+        }, 100);
     }
 
     // --- CONTROLES DE VELOCIDAD ---
@@ -489,11 +612,18 @@ export class VideoPlayerSystem {
         }
     }
 
-    async loadVideo(sourceIdentifier, requiresSignedToken = false) {
+    // RECIBE TAMBIÉN EL dbVideoId PARA ENVIAR LAS MÉTRICAS
+    async loadVideo(sourceIdentifier, requiresSignedToken = false, dbVideoId = null) {
         if (!this.video) return;
         this.destroyHls(); 
         this.vttData = [];
         this.spriteSheetUrl = null;
+        
+        // --- PREPARAMOS EL HEATMAP TRACKER ---
+        this.dbVideoId = dbVideoId;
+        this.chunkViews = {};
+        this.lastChunkIndex = -1;
+        this.startRetentionBatcher();
         
         if (requiresSignedToken) {
             this.currentVideoUuid = sourceIdentifier;
@@ -643,6 +773,10 @@ export class VideoPlayerSystem {
     }
 
     destroy() {
+        // Enviar el último lote pendiente antes de destruir
+        this.sendRetentionData();
+        if (this.retentionBatchInterval) clearInterval(this.retentionBatchInterval);
+        
         this.destroyHls();
         this.stopAmbientLoop(); 
         

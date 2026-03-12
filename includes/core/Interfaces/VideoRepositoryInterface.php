@@ -31,8 +31,12 @@ interface VideoRepositoryInterface {
     public function syncTags(int $videoId, array $tags): bool;
     public function getVideoTags(int $videoId): array;
 
-    // --- NUEVO: INTERACCIONES (LIKES / DISLIKES) ---
+    // --- INTERACCIONES (LIKES / DISLIKES) ---
     public function toggleInteraction(int $userId, int $videoId, string $type): array;
     public function getUserInteraction(int $userId, int $videoId): ?string;
+
+    // --- NUEVO: SISTEMA DE RETENCIÓN (HEATMAP) ---
+    public function getRetentionData(int $videoId): ?array;
+    public function updateRetentionData(int $videoId, array $jsonData): bool;
 }
 ?>

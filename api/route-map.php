@@ -119,5 +119,9 @@ return [
     'comments.get'    => ['controller' => 'App\Api\Controllers\CommentController', 'action' => 'index'],
     'comments.create' => ['controller' => 'App\Api\Controllers\CommentController', 'action' => 'store'],
     'comments.react'  => ['controller' => 'App\Api\Controllers\CommentController', 'action' => 'react'],
+
+    // --- NUEVAS RUTAS DE MÉTRICAS / HEATMAP ---
+    'metrics.retention.ingest' => ['controller' => 'App\Api\Controllers\MetricsController', 'action' => 'ingestRetention'],
+    'metrics.retention.get'    => ['controller' => 'App\Api\Controllers\MetricsController', 'action' => 'getHeatmap'],
 ];
 ?>

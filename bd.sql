@@ -254,7 +254,7 @@ CREATE TABLE IF NOT EXISTS playlist_videos (
     CONSTRAINT fk_pv_video FOREIGN KEY (video_id) REFERENCES videos(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- NUEVAS TABLAS PARA EL SISTEMA DE COMENTARIOS
+-- SISTEMA DE COMENTARIOS
 
 CREATE TABLE IF NOT EXISTS video_comments (
     id INT(11) AUTO_INCREMENT PRIMARY KEY,
@@ -281,4 +281,12 @@ CREATE TABLE IF NOT EXISTS comment_reactions (
     UNIQUE KEY unique_comment_reaction (comment_id, user_id),
     CONSTRAINT fk_cr_comment FOREIGN KEY (comment_id) REFERENCES video_comments(id) ON DELETE CASCADE,
     CONSTRAINT fk_cr_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- NUEVA TABLA: SISTEMA DE RETENCIÓN DE VIDEO (HEATMAP)
+CREATE TABLE IF NOT EXISTS video_retention_metrics (
+    video_id INT(11) NOT NULL PRIMARY KEY,
+    retention_data JSON NOT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_retention_video FOREIGN KEY (video_id) REFERENCES videos(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

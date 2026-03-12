@@ -1,6 +1,7 @@
 # scripts/worker_metrics.py
 import os
 import time
+import json
 import redis
 import mysql.connector
 from mysql.connector import Error
@@ -152,12 +153,93 @@ def process_pending_comment_reactions():
             cursor.close()
             db.close()
 
+# --- NUEVA FUNCIÓN PARA PROCESAR EL HEATMAP DE RETENCIÓN ---
+def process_pending_retention():
+    r = get_redis_connection()
+    if not r:
+        return
+
+    keys_to_process = []
+    for key in r.scan_iter(match='video_heatmap:*'):
+        keys_to_process.append(key)
+
+    if not keys_to_process:
+        return
+
+    pipe = r.pipeline()
+    for key in keys_to_process:
+        # Traemos todos los incrementos del dict de redis
+        pipe.hgetall(key)
+        # Eliminamos la key en el mismo pipeline para vaciar el buffer
+        pipe.delete(key)
+    
+    results = pipe.execute()
+    
+    db = get_db_connection()
+    if not db:
+        print("[!] No se pudo procesar retention por error de BD.")
+        return
+    
+    cursor = db.cursor()
+
+    try:
+        for idx, key in enumerate(keys_to_process):
+            video_id = int(key.split(':')[-1])
+            redis_data = results[idx * 2] # El resultado de hgetall está en los índices pares
+            
+            if not redis_data:
+                continue
+            
+            # Consultamos los datos históricos
+            cursor.execute("SELECT retention_data FROM video_retention_metrics WHERE video_id = %s", (video_id,))
+            row = cursor.fetchone()
+            
+            if row and row[0]:
+                if isinstance(row[0], str):
+                    current_data = json.loads(row[0])
+                else:
+                    # En algunos conectores MySQL el JSON puede venir como bytearray
+                    current_data = json.loads(row[0].decode('utf-8')) if isinstance(row[0], bytearray) else row[0]
+            else:
+                # Si no existe, inicializamos 100 chunks a 0
+                current_data = {str(i): 0 for i in range(100)}
+            
+            # Sumamos los incrementos de Redis al JSON histórico
+            for chunk_idx, increment_str in redis_data.items():
+                chunk_str = str(chunk_idx)
+                increment = int(increment_str)
+                if chunk_str in current_data:
+                    current_data[chunk_str] += increment
+                else:
+                    current_data[chunk_str] = increment
+            
+            # Guardamos de vuelta usando ON DUPLICATE KEY UPDATE
+            new_json = json.dumps(current_data)
+            upsert_query = """
+                INSERT INTO video_retention_metrics (video_id, retention_data) 
+                VALUES (%s, %s) 
+                ON DUPLICATE KEY UPDATE retention_data = VALUES(retention_data)
+            """
+            cursor.execute(upsert_query, (video_id, new_json))
+            
+        db.commit()
+        print(f"[+] Sincronizados heatmaps de {len(keys_to_process)} videos a la BD.")
+
+    except Error as e:
+        print(f"[!] Error actualizando MySQL retention metrics: {e}")
+        db.rollback()
+    finally:
+        if db.is_connected():
+            cursor.close()
+            db.close()
+
 if __name__ == "__main__":
     print(f"[*] Worker de Métricas Iniciado. Sincronizando cada {SYNC_INTERVAL_SECONDS} segundos.")
     while True:
         try:
             process_pending_views()
             process_pending_comment_reactions()
+            process_pending_retention() # ¡LLAMADA A LA NUEVA FUNCIÓN!
         except Exception as e:
             print(f"[!] Error crítico en el Worker: {e}")
         

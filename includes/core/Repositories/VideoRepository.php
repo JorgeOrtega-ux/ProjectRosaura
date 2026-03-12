@@ -120,13 +120,13 @@ class VideoRepository implements VideoRepositoryInterface {
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-public function getPublicVideoDetails(string $uuid): ?array {
+    public function getPublicVideoDetails(string $uuid): ?array {
         $stmt = $this->db->prepare("
             SELECT v.id, v.uuid, v.title, v.description, v.created_at, v.user_id,
                    v.created_at as published_at, v.visibility,
                    v.hls_path, v.temp_file_path, v.sprite_sheet_path, v.vtt_path,
                    v.views, v.likes, v.dislikes, 
-                   v.thumbnail_dominant_color as dominant_color, -- ¡CAMPO AÑADIDO!
+                   v.thumbnail_dominant_color as dominant_color, 
                    u.username as channel_name, u.profile_picture as channel_avatar, u.channel_identifier
             FROM videos v
             JOIN users u ON v.user_id = u.id
@@ -281,7 +281,6 @@ public function getPublicVideoDetails(string $uuid): ?array {
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
-    // --- NUEVO: SISTEMA DE LIKES (CON TRANSACCIONES) ---
     public function getUserInteraction(int $userId, int $videoId): ?string {
         $stmt = $this->db->prepare("SELECT interaction_type FROM video_interactions WHERE user_id = ? AND video_id = ?");
         $stmt->execute([$userId, $videoId]);
@@ -343,6 +342,27 @@ public function getPublicVideoDetails(string $uuid): ?array {
             $this->db->rollBack();
             throw $e;
         }
+    }
+
+    // --- NUEVO: IMPLEMENTACIÓN HEATMAP ---
+    public function getRetentionData(int $videoId): ?array {
+        $stmt = $this->db->prepare("SELECT retention_data FROM video_retention_metrics WHERE video_id = :video_id");
+        $stmt->execute([':video_id' => $videoId]);
+        $data = $stmt->fetchColumn();
+        return $data ? json_decode($data, true) : null;
+    }
+
+    public function updateRetentionData(int $videoId, array $jsonData): bool {
+        $jsonString = json_encode($jsonData);
+        $stmt = $this->db->prepare("
+            INSERT INTO video_retention_metrics (video_id, retention_data) 
+            VALUES (:video_id, :data) 
+            ON DUPLICATE KEY UPDATE retention_data = VALUES(retention_data)
+        ");
+        return $stmt->execute([
+            ':video_id' => $videoId,
+            ':data' => $jsonString
+        ]);
     }
 }
 ?>

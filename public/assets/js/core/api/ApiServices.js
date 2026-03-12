@@ -108,6 +108,24 @@ async post(route, data = {}) {
         return await this.post(ApiRoutes.Channel.ToggleSubscription, { identifier: identifier });
     }
 
+    // --- MÉTODOS DE RETENCIÓN DE VIDEO (HEATMAP) ---
+    async sendRetentionBatch(videoId, data) {
+        return await this.post(ApiRoutes.Metrics.IngestRetention, { videoId: videoId, data: data });
+    }
+
+    async getVideoHeatmap(videoId) {
+        // En este caso forzamos la petición por GET mediante query params ya que el PHP lo lee por $_GET
+        const url = `${this.baseUrl}?route=${ApiRoutes.Metrics.GetRetention}&videoId=${videoId}`;
+        try {
+            const response = await fetch(url);
+            if (!response.ok) return { success: false, data: [] };
+            return await response.json();
+        } catch (error) {
+            console.error("[ApiService] Error fetching heatmap:", error);
+            return { success: false, data: [] };
+        }
+    }
+
     async getMediaToken(videoUuid) {
         return await this.post(ApiRoutes.Media.GetMediaToken, { video_uuid: videoUuid });
     }
