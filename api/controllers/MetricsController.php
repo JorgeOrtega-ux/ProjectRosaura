@@ -5,17 +5,20 @@ namespace App\Api\Controllers;
 
 use App\Core\Container;
 use App\Core\Interfaces\VideoRepositoryInterface;
-use App\Config\RedisCache;
+use Predis\Client;
 
 class MetricsController {
     private $videoRepo;
     private $redis;
 
     public function __construct() {
+        // Ahora Container::getInstance() funcionará correctamente
         $container = Container::getInstance();
+        
         $this->videoRepo = $container->get(VideoRepositoryInterface::class);
-        // Instanciamos directamente RedisCache o usamos el container si lo tienes registrado
-        $this->redis = new RedisCache();
+        
+        // Obtenemos el cliente Redis directamente del contenedor (conexión compartida)
+        $this->redis = $container->get(Client::class);
     }
 
     /**
@@ -53,8 +56,8 @@ class MetricsController {
             // Aseguramos que el chunk esté entre 0 y 99 (100 segmentos del 1%)
             // Y que un usuario no envíe más de 10 vistas del mismo chunk en un solo envío
             if ($chunkIndex >= 0 && $chunkIndex <= 99 && $viewsCount > 0 && $viewsCount <= 10) {
-                // Incrementamos usando HINCRBY
-                $this->redis->hashIncrement($redisKey, (string)$chunkIndex, $viewsCount);
+                // Incrementamos usando HINCRBY (comando estándar de Redis/Predis)
+                $this->redis->hincrby($redisKey, (string)$chunkIndex, $viewsCount);
             }
         }
 

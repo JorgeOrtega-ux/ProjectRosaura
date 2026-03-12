@@ -37,15 +37,16 @@ use App\Core\Interfaces\SubscriptionRepositoryInterface;
 use App\Core\Repositories\SubscriptionRepository;
 use App\Core\Interfaces\PlaylistRepositoryInterface;
 use App\Core\Repositories\PlaylistRepository;
-
-// Agregamos el Repositorio de Comentarios
 use App\Core\Interfaces\CommentRepositoryInterface;
 use App\Core\Repositories\CommentRepository;
-
 use App\Core\Interfaces\MediaSignerInterface;
 use App\Core\Security\MediaSigner;
 
 class Container implements ContainerInterface {
+    
+    // --- PATRÓN SINGLETON AÑADIDO ---
+    private static $instance = null;
+
     private $instances = [];
     private $bindings = [];
     private $resolving = [];
@@ -77,10 +78,18 @@ class Container implements ContainerInterface {
         // 4. Repositorios de Contenido (Studio)
         $this->bindings[VideoRepositoryInterface::class] = VideoRepository::class;
         $this->bindings[PlaylistRepositoryInterface::class] = PlaylistRepository::class; 
-        $this->bindings[CommentRepositoryInterface::class] = CommentRepository::class; // <-- AÑADIDO
+        $this->bindings[CommentRepositoryInterface::class] = CommentRepository::class; 
         
         // 5. Servicios de Seguridad de Medios
         $this->bindings[MediaSignerInterface::class] = MediaSigner::class;
+    }
+
+    // --- MÉTODO SINGLETON AÑADIDO ---
+    public static function getInstance(): self {
+        if (self::$instance === null) {
+            self::$instance = new self();
+        }
+        return self::$instance;
     }
 
     public function get(string $id) {
