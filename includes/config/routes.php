@@ -67,6 +67,11 @@ return [
     '/admin/server-config' => ['view' => 'admin/server-config.php', 'auth' => true, 'roles' => ['founder', 'administrator'], 'requires_2fa' => true],
     '/admin/logs' => ['view' => 'admin/logs.php', 'auth' => true, 'roles' => ['founder', 'administrator'], 'requires_2fa' => true],
     '/admin/logs/viewer' => ['view' => 'admin/logs-viewer.php', 'auth' => true, 'roles' => ['founder', 'administrator'], 'requires_2fa' => true],
-    '/admin/tags' => ['view' => 'admin/tags.php', 'auth' => true, 'roles' => ['founder', 'administrator'], 'requires_2fa' => false]
+    '/admin/tags' => ['view' => 'admin/tags.php', 'auth' => true, 'roles' => ['founder', 'administrator'], 'requires_2fa' => false],
+
+    // --- RUTAS DE API (Comentarios) ---
+    '/api/comments' => ['controller' => 'CommentController', 'action' => 'index', 'api' => true],
+    '/api/comments/create' => ['controller' => 'CommentController', 'action' => 'store', 'api' => true, 'auth' => true],
+    '/api/comments/react' => ['controller' => 'CommentController', 'action' => 'react', 'api' => true, 'auth' => true]
 ];
 ?>

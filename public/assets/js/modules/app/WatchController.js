@@ -3,6 +3,7 @@
 import { ApiService } from '../../core/api/ApiServices.js';
 import { VideoPlayerSystem } from '../../core/components/VideoPlayerSystem.js';
 import { DialogSystem } from '../../core/components/DialogSystem.js';
+import { CommentSystem } from '../../core/components/CommentSystem.js';
 
 export class WatchController {
     constructor() {
@@ -10,6 +11,7 @@ export class WatchController {
         this.api = new ApiService();
         this.dialog = new DialogSystem();
         this.playerSystem = null;
+        this.commentSystem = null;
         this.viewRegistered = false;
         this.checkPlayerInterval = null;
     }
@@ -44,6 +46,26 @@ export class WatchController {
                     this.setupViewTracker(videoId);
                     this.setupInteractions(videoId, response.data);
                     this.setupSubscription(response.data);
+
+                    // --- INICIO: INSTANCIAR SISTEMA DE COMENTARIOS ---
+                    const dbVideoId = response.data.id; 
+                    if (dbVideoId) {
+                        let commentsSection = document.getElementById('video-comments-section');
+                        if (!commentsSection) {
+                            const detailsBox = document.querySelector('.watch-details-box');
+                            if (detailsBox) {
+                                commentsSection = document.createElement('section');
+                                commentsSection.id = 'video-comments-section';
+                                commentsSection.style.marginTop = '24px';
+                                detailsBox.parentNode.insertBefore(commentsSection, detailsBox.nextSibling);
+                            }
+                        }
+                        if (commentsSection) {
+                            this.commentSystem = new CommentSystem(dbVideoId, commentsSection, this.api);
+                            this.commentSystem.init();
+                        }
+                    }
+                    // --- FIN: INSTANCIAR SISTEMA DE COMENTARIOS ---
                 }
 
                 if (playlistId) {
@@ -489,7 +511,6 @@ export class WatchController {
             }
         }
 
-        // --- Aplicar Color Dominante a las Cajas (Soporte Dark Mode Fallback) ---
         const rawColor = data.dominant_color || data.color; 
         
         if (rawColor) {
@@ -497,7 +518,7 @@ export class WatchController {
             const detailBoxes = (this.container || document).querySelectorAll('.watch-details-box');
             
             detailBoxes.forEach(box => {
-                let hoverColor = 'var(--bg-hover-light)'; // Fallback nativo para modo oscuro/claro
+                let hoverColor = 'var(--bg-hover-light)'; 
                 
                 if (primaryColor.startsWith('#')) {
                     if (primaryColor.length === 7) {
@@ -546,6 +567,10 @@ export class WatchController {
         if (this.playerSystem) {
             this.playerSystem.destroy();
             this.playerSystem = null;
+        }
+        if (this.commentSystem) {
+            this.commentSystem.destroy();
+            this.commentSystem = null;
         }
     }
 }

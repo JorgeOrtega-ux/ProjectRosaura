@@ -12,45 +12,47 @@ $topBarClass = ($isAuthRoute || $isMaintenanceRestricted) ? 'disabled' : '';
 ?>
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <base href="<?php echo APP_URL; ?>/">
     <meta name="csrf-token" content="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
-    
+
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded" />
     <link rel="stylesheet" type="text/css" href="assets/css/styles.css">
-    
+
     <link rel="stylesheet" type="text/css" href="assets/css/components/components.css">
-    
+
     <link rel="stylesheet" type="text/css" href="assets/css/components/components-admin.css">
     <link rel="stylesheet" type="text/css" href="assets/css/components/components-auth.css">
     <link rel="stylesheet" type="text/css" href="assets/css/components/components-settings.css">
     <link rel="stylesheet" type="text/css" href="assets/css/components/components-channel.css">
     <link rel="stylesheet" type="text/css" href="assets/css/components/components-watch.css">
     <link rel="stylesheet" type="text/css" href="assets/css/components/components-studio.css">
-        <link rel="stylesheet" type="text/css" href="assets/css/components/components-player.css">
-    
+    <link rel="stylesheet" type="text/css" href="assets/css/components/components-player.css">
+    <link rel="stylesheet" type="text/css" href="assets/css/components/components-comments.css">
+
     <script src="https://unpkg.com/hls.js@latest/dist/hls.min.js"></script>
     <link rel="stylesheet" type="text/css" href="assets/css/root.css">
     <title>Project Rosaura</title>
-    
+
     <script>
         // Inyectar URL Base para JS (Para que SpaRouter.js y ApiServices.js la consuman)
         window.AppBasePath = "<?php echo APP_URL; ?>";
 
         // Inyectar Preferencias de Usuario
         window.AppUserPrefs = <?php echo ($isLoggedIn && isset($_SESSION['user_prefs'])) ? json_encode($_SESSION['user_prefs']) : 'null'; ?>;
-        
+
         // Inyectar Configuración Global del Servidor para validaciones en JS
         window.AppServerConfig = <?php echo isset($serverConfig) ? json_encode($serverConfig) : '{}'; ?>;
-        
+
         // Inyectar Traducciones
         window.AppTranslations = <?php echo json_encode(\App\Core\System\Translator::getAll()); ?>;
-        
+
         // Motor de traducción en JS (Si los params existen, los reemplaza)
-        function __(key, params = {}) { 
-            let text = (window.AppTranslations && window.AppTranslations[key] !== undefined) ? window.AppTranslations[key] : key; 
+        function __(key, params = {}) {
+            let text = (window.AppTranslations && window.AppTranslations[key] !== undefined) ? window.AppTranslations[key] : key;
             for (const [pKey, pValue] of Object.entries(params)) {
                 text = text.replace(new RegExp(`{${pKey}}`, 'g'), pValue);
             }
@@ -61,7 +63,10 @@ $topBarClass = ($isAuthRoute || $isMaintenanceRestricted) ? 'disabled' : '';
         (function() {
             var theme = 'system';
             if (window.AppUserPrefs && window.AppUserPrefs.theme) theme = window.AppUserPrefs.theme;
-            else { var guestTheme = localStorage.getItem('pr_theme'); if (guestTheme) theme = guestTheme; }
+            else {
+                var guestTheme = localStorage.getItem('pr_theme');
+                if (guestTheme) theme = guestTheme;
+            }
             var isDark = false;
             if (theme === 'system') isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
             else if (theme === 'dark') isDark = true;
@@ -70,6 +75,7 @@ $topBarClass = ($isAuthRoute || $isMaintenanceRestricted) ? 'disabled' : '';
         })();
     </script>
 </head>
+
 <body>
     <div class="page-wrapper">
         <div class="main-content">
@@ -86,8 +92,9 @@ $topBarClass = ($isAuthRoute || $isMaintenanceRestricted) ? 'disabled' : '';
             </div>
         </div>
     </div>
-    
+
     <script src="https://unpkg.com/@popperjs/core@2"></script>
     <script type="module" src="assets/js/AppInit.js"></script>
 </body>
+
 </html>

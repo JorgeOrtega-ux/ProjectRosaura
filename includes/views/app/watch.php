@@ -254,8 +254,7 @@
         </div>
 
         <div class="watch-layout__comments">
-            <h2 class="watch-placeholder-title">Comentarios</h2>
-            <p class="watch-placeholder-text">Caja para comentar y la lista infinita de comentarios...</p>
+            <section id="video-comments-section"></section>
         </div>
 
         <div class="watch-layout__recommended">

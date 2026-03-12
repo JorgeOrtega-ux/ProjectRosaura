@@ -209,7 +209,6 @@ CREATE TABLE IF NOT EXISTS video_tags (
     CONSTRAINT fk_vt_tag FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- TABLA DE INTERACCIONES (Likes / Dislikes)
 CREATE TABLE IF NOT EXISTS video_interactions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT(11) NOT NULL,
@@ -253,4 +252,33 @@ CREATE TABLE IF NOT EXISTS playlist_videos (
     UNIQUE KEY unique_playlist_video (playlist_id, video_id),
     CONSTRAINT fk_pv_playlist FOREIGN KEY (playlist_id) REFERENCES playlists(id) ON DELETE CASCADE,
     CONSTRAINT fk_pv_video FOREIGN KEY (video_id) REFERENCES videos(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- NUEVAS TABLAS PARA EL SISTEMA DE COMENTARIOS
+
+CREATE TABLE IF NOT EXISTS video_comments (
+    id INT(11) AUTO_INCREMENT PRIMARY KEY,
+    video_id INT(11) NOT NULL,
+    user_id INT(11) NOT NULL,
+    parent_id INT(11) DEFAULT NULL,
+    content TEXT NOT NULL,
+    likes INT DEFAULT 0,
+    dislikes INT DEFAULT 0,
+    is_pinned TINYINT(1) DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_vc_video FOREIGN KEY (video_id) REFERENCES videos(id) ON DELETE CASCADE,
+    CONSTRAINT fk_vc_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_vc_parent FOREIGN KEY (parent_id) REFERENCES video_comments(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS comment_reactions (
+    id INT(11) AUTO_INCREMENT PRIMARY KEY,
+    comment_id INT(11) NOT NULL,
+    user_id INT(11) NOT NULL,
+    reaction_type ENUM('like', 'dislike') NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_comment_reaction (comment_id, user_id),
+    CONSTRAINT fk_cr_comment FOREIGN KEY (comment_id) REFERENCES video_comments(id) ON DELETE CASCADE,
+    CONSTRAINT fk_cr_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

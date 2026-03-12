@@ -45,25 +45,18 @@ def process_pending_views():
     if not r:
         return
 
-    # Buscar todas las llaves que empiecen con video:views:
-    # Usamos scan_iter para no bloquear Redis si hay millones de llaves
     keys_to_process = []
     for key in r.scan_iter(match='video:views:*'):
         keys_to_process.append(key)
 
     if not keys_to_process:
-        return # Nada que hacer
+        return 
 
-    # Diccionario para almacenar {video_id: numero_de_vistas_nuevas}
     views_data = {}
     
-    # Usamos un pipeline (transacción en Redis) para sacar el valor y borrar la llave atómicamente
-    # Esto evita que si entra una visita justo en medio, la perdamos. GETSET o MULTI/EXEC son ideales.
     pipe = r.pipeline()
     for key in keys_to_process:
-        # Extraer ID del video del formato 'video:views:15'
         video_id = int(key.split(':')[-1])
-        # GETDEL es perfecto para esto, lo saca y lo borra (requiere Redis >= 6.2)
         pipe.execute_command('GETDEL', key)
 
     results = pipe.execute()
@@ -77,7 +70,6 @@ def process_pending_views():
     if not views_data:
         return
 
-    # Ahora hacemos el volcado masivo a MySQL
     db = get_db_connection()
     if not db:
         print("[!] No se pudo procesar las visitas por error de BD.")
@@ -85,8 +77,6 @@ def process_pending_views():
 
     try:
         cursor = db.cursor()
-        
-        # Opcion mas rápida: Hacer multiples UPDATES en un solo ciclo
         for vid, new_views in views_data.items():
             if new_views > 0:
                 query = "UPDATE videos SET views = views + %s WHERE id = %s"
@@ -103,13 +93,72 @@ def process_pending_views():
             cursor.close()
             db.close()
 
+def process_pending_comment_reactions():
+    r = get_redis_connection()
+    if not r:
+        return
+
+    pending_comments = r.smembers('pending_comment_reactions')
+    if not pending_comments:
+        return
+
+    db = get_db_connection()
+    if not db:
+        print("[!] No se pudo procesar reacciones por error de BD.")
+        return
+
+    try:
+        cursor = db.cursor()
+        
+        for comment_id in pending_comments:
+            counters_key = f"comment:{comment_id}:counters"
+            counters = r.hgetall(counters_key)
+            if counters:
+                likes = int(counters.get('like', 0))
+                dislikes = int(counters.get('dislike', 0))
+                
+                update_query = "UPDATE video_comments SET likes = %s, dislikes = %s WHERE id = %s"
+                cursor.execute(update_query, (likes, dislikes, comment_id))
+            
+            sync_users_key = f"comment:{comment_id}:sync_users"
+            users_to_sync = r.smembers(sync_users_key)
+            reaction_key = f"comment:{comment_id}:user_reaction"
+            
+            for user_id in users_to_sync:
+                user_reaction = r.hget(reaction_key, user_id)
+                
+                if user_reaction:
+                    upsert_query = """
+                        INSERT INTO comment_reactions (comment_id, user_id, reaction_type)
+                        VALUES (%s, %s, %s)
+                        ON DUPLICATE KEY UPDATE reaction_type = VALUES(reaction_type)
+                    """
+                    cursor.execute(upsert_query, (comment_id, user_id, user_reaction))
+                else:
+                    del_query = "DELETE FROM comment_reactions WHERE comment_id = %s AND user_id = %s"
+                    cursor.execute(del_query, (comment_id, user_id))
+            
+            r.delete(sync_users_key)
+            
+        r.delete('pending_comment_reactions')
+        db.commit()
+        print(f"[+] Sincronizadas reacciones de {len(pending_comments)} comentarios a la BD.")
+
+    except Error as e:
+        print(f"[!] Error actualizando MySQL comment reactions: {e}")
+        db.rollback()
+    finally:
+        if db.is_connected():
+            cursor.close()
+            db.close()
+
 if __name__ == "__main__":
     print(f"[*] Worker de Métricas Iniciado. Sincronizando cada {SYNC_INTERVAL_SECONDS} segundos.")
     while True:
         try:
             process_pending_views()
+            process_pending_comment_reactions()
         except Exception as e:
             print(f"[!] Error crítico en el Worker: {e}")
         
-        # Dormir hasta el siguiente ciclo
         time.sleep(SYNC_INTERVAL_SECONDS)

@@ -90,5 +90,10 @@ export const ApiRoutes = {
         DeletePlaylist: 'studio.delete_playlist',
         GetPlaylistVideos: 'studio.get_playlist_videos',
         SyncPlaylistVideos: 'studio.sync_playlist_videos'
+    },
+    Comments: {
+        Get: '/api/comments',
+        Create: '/api/comments/create',
+        React: '/api/comments/react'
     }
 };
