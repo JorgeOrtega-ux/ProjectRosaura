@@ -65,7 +65,7 @@
 /* CONTENEDOR DEL REPRODUCTOR MODO NORMAL */
 .watch-layout__player {
     grid-area: player;
-    background-color: #000; 
+    background-color: transparent; /* CORRECCIÓN: Evita el pixel/fondo negro en esquinas */
     width: 100%; 
     display: flex; 
     flex-direction: column; 
@@ -93,7 +93,7 @@
 }
 
 .watch-layout--cinema .watch-layout__player {
-    background-color: #000; 
+    background-color: #000; /* Se mantiene en negro SOLO para abarcar el ancho del modo cine */
     border: none; 
     border-radius: 0; 
 }
