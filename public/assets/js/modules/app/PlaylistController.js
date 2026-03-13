@@ -24,7 +24,7 @@ export class PlaylistController {
         if (match && match[1]) {
             this.playlistId = match[1];
         } else {
-            // 2. Fallback por si usamos query params (?list=UUID o ?list=WL)
+            // 2. Fallback por si usamos query params (?list=UUID o ?list=WL o ?list=LL)
             const urlParams = new URLSearchParams(window.location.search);
             this.playlistId = urlParams.get('list');
         }
@@ -45,7 +45,7 @@ export class PlaylistController {
                 ? ApiRoutes.App.GetPlaylistDetails 
                 : `${basePath}/api/playlist/details`; 
             
-            // Enviamos el ID tal cual (sea un UUID o el alias 'WL')
+            // Enviamos el ID tal cual (sea un UUID o un alias como 'WL' o 'LL')
             const response = await this.api.post(route, { id: this.playlistId });
             
             if (response && response.success) {
@@ -89,8 +89,12 @@ export class PlaylistController {
         const isSystem = playlist.isSystem || playlist.type !== 'custom';
 
         // Traducción dinámica si es de sistema
-        if (isSystem && playlist.type === 'watch_later') {
-            title = window.AppSystem?.Translator?.get('system_playlist_watch_later') || 'Ver más tarde';
+        if (isSystem) {
+            if (playlist.type === 'watch_later') {
+                title = window.AppSystem?.Translator?.get('system_playlist_watch_later') || 'Ver más tarde';
+            } else if (playlist.type === 'liked_videos') {
+                title = window.AppSystem?.Translator?.get('system_playlist_liked_videos') || 'Videos que me gustan';
+            }
         }
 
         // Rellenar la descripción dinámica en la cabecera derecha
@@ -101,8 +105,8 @@ export class PlaylistController {
 
         const basePath = window.AppBasePath || '';
 
-        // Si es WL, el parámetro de la ruta de reproducción debe mantener el alias
-        const routeParam = (isSystem && playlist.type === 'watch_later') ? 'WL' : this.playlistId;
+        // Mantenemos el mismo alias ('LL', 'WL' o el UUID) en la URL de reproducción para la queue
+        const routeParam = this.playlistId;
 
         const playAllAction = firstVideoUuid 
             ? `onclick="window.spaRouter.navigate('${basePath}/watch/${firstVideoUuid}?list=${routeParam}')"` 
@@ -156,9 +160,8 @@ export class PlaylistController {
         const basePath = window.AppBasePath || '';
         let html = '';
         
-        // Mantener el parámetro correcto
-        const isSystem = this.videosContainer.getAttribute('data-is-system') === 'true';
-        const routeParam = (isSystem && this.playlistId === 'WL') ? 'WL' : this.playlistId;
+        // Mantenemos intacto el this.playlistId en lugar de forzar lógica condicional
+        const routeParam = this.playlistId;
         
         videos.forEach((video, index) => {
             const title = video.title || 'Video sin título';

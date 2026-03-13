@@ -336,8 +336,8 @@ class PlaylistRepository implements PlaylistRepositoryInterface {
             return $res ?: null;
         }
         
-        // AGREGADO: Soporte para la nueva playlist del sistema "Videos que me gustan"
-        if ($alias === 'LV') {
+        // AGREGADO: Soporte para 'Videos que me gustan' con alias LV o LL
+        if ($alias === 'LV' || $alias === 'LL') {
             $stmt = $this->db->prepare("SELECT * FROM playlists WHERE user_id = :uid AND type = 'liked_videos' LIMIT 1");
             $stmt->execute([':uid' => $userId]);
             $res = $stmt->fetch(PDO::FETCH_ASSOC);

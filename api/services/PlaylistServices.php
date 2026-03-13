@@ -24,11 +24,12 @@ class PlaylistServices {
     }
 
     public function getPlaylistDetails(string $uuid): ?array {
-        // Intercepción del alias WL
-        if ($uuid === 'WL') {
+        // Intercepción del alias WL (Watch Later), LV y LL (Liked Videos)
+        if ($uuid === 'WL' || $uuid === 'LV' || $uuid === 'LL') {
             $userId = $this->sessionManager->get('user_id');
             if (!$userId) return null; // Requiere estar logueado para ver sus listas de sistema
-            $systemList = $this->playlistRepo->getPlaylistByAliasAndUser('WL', $userId);
+            
+            $systemList = $this->playlistRepo->getPlaylistByAliasAndUser($uuid, $userId);
             if ($systemList) {
                 $uuid = $systemList['uuid'];
                 // Forzamos temporalmente la visibilidad para que pase los checks de privacidad
@@ -68,10 +69,12 @@ class PlaylistServices {
     }
     
     public function getPlaylistQueueData(string $uuid): ?array {
-        if ($uuid === 'WL') {
+        // Intercepción del alias WL (Watch Later), LV y LL (Liked Videos)
+        if ($uuid === 'WL' || $uuid === 'LV' || $uuid === 'LL') {
             $userId = $this->sessionManager->get('user_id');
             if (!$userId) return null;
-            $systemList = $this->playlistRepo->getPlaylistByAliasAndUser('WL', $userId);
+            
+            $systemList = $this->playlistRepo->getPlaylistByAliasAndUser($uuid, $userId);
             if ($systemList) {
                 $uuid = $systemList['uuid'];
             } else {
@@ -166,7 +169,6 @@ class PlaylistServices {
         return ['success' => false, 'message' => 'Error al crear la lista de reproducción.'];
     }
 
-    // --- NUEVO MÉTODO PARA SOLUCIONAR EL ERROR P1013 ---
     public function getAllUserPlaylists(int $userId): array {
         return $this->playlistRepo->getAllIncludingSystemByUserId($userId);
     }
