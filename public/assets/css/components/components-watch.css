@@ -329,9 +329,10 @@
     border-bottom: 1px solid var(--border-color);
     cursor: pointer;
     transition: background-color 0.3s ease;
+    --hover-bg-color: var(--bg-hover-light); /* Fallback añadido para la función JS */
 }
 .watch-playlist-header:hover {
-    background-color: var(--dominant-color, var(--bg-hover-light));
+    background-color: var(--hover-bg-color); /* Cambiado de --dominant-color a la variable que inyecta JS */
 }
 
 /* FIX: ELIMINAR EL BORDE SOLAPADO AL ESTAR COLAPSADO */

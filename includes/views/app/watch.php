@@ -237,9 +237,10 @@
 
                 <div class="watch-details-container">
                     <div class="watch-details-box">
-                        <div class="watch-details-meta">
+                        <div class="watch-details-meta" style="display: flex; align-items: center;">
                             <span id="watch-video-views" class="watch-meta-highlight">--- visualizaciones</span> 
-                            <span id="watch-video-date" class="watch-meta-highlight" style="margin-left: 8px;">---</span>
+                            <span class="watch-meta-separator" style="margin: 0 8px; font-weight: bold; font-size: 16px;">&bull;</span>
+                            <span id="watch-video-date" class="watch-meta-highlight">---</span>
                         </div>
 
                         <div class="watch-info-description">

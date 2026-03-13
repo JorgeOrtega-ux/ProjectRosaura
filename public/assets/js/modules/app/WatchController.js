@@ -717,23 +717,30 @@ export class WatchController {
             const primaryColor = rawColor.trim(); 
             const detailBoxes = (this.container || document).querySelectorAll('.watch-details-box');
             
-            detailBoxes.forEach(box => {
-                let hoverColor = 'var(--bg-hover-light)'; 
-                
-                if (primaryColor.startsWith('#')) {
-                    if (primaryColor.length === 7) hoverColor = primaryColor + '1A';
-                    else if (primaryColor.length === 4) {
-                        const r = primaryColor[1], g = primaryColor[2], b = primaryColor[3];
-                        hoverColor = `#${r}${r}${g}${g}${b}${b}1A`;
-                    } else if (primaryColor.length === 9) hoverColor = primaryColor.substring(0, 7) + '1A';
-                    else hoverColor = primaryColor;
-                } else if (primaryColor.startsWith('rgb') && !primaryColor.startsWith('rgba')) {
-                    hoverColor = primaryColor.replace('rgb', 'rgba').replace(')', ', 0.1)');
-                } else if (primaryColor.startsWith('rgba')) {
-                    hoverColor = primaryColor.replace(/[\d.]+\)$/, '0.1)');
-                } else hoverColor = primaryColor;
+            let hoverColor = 'var(--bg-hover-light)'; 
+            
+            if (primaryColor.startsWith('#')) {
+                if (primaryColor.length === 7) hoverColor = primaryColor + '1A';
+                else if (primaryColor.length === 4) {
+                    const r = primaryColor[1], g = primaryColor[2], b = primaryColor[3];
+                    hoverColor = `#${r}${r}${g}${g}${b}${b}1A`;
+                } else if (primaryColor.length === 9) hoverColor = primaryColor.substring(0, 7) + '1A';
+                else hoverColor = primaryColor;
+            } else if (primaryColor.startsWith('rgb') && !primaryColor.startsWith('rgba')) {
+                hoverColor = primaryColor.replace('rgb', 'rgba').replace(')', ', 0.1)');
+            } else if (primaryColor.startsWith('rgba')) {
+                hoverColor = primaryColor.replace(/[\d.]+\)$/, '0.1)');
+            } else hoverColor = primaryColor;
 
+            // Se lo aplicamos a las cajas de descripción y detalles
+            detailBoxes.forEach(box => {
                 box.style.setProperty('--hover-bg-color', hoverColor);
+            });
+            
+            // AÑADIDO: Se lo aplicamos también al header de la playlist
+            const playlistHeaders = (this.container || document).querySelectorAll('.watch-playlist-header');
+            playlistHeaders.forEach(header => {
+                header.style.setProperty('--hover-bg-color', hoverColor);
             });
         }
     }
