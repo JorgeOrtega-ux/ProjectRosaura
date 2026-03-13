@@ -4,7 +4,7 @@
 namespace App\Core\Interfaces;
 
 interface VideoRepositoryInterface {
-    public function create(int $userId, string $uuid, string $originalFilename, string $tempFilePath): int;
+    public function create(int $userId, string $uuid, string $originalFilename, string $tempFilePath, string $originalLanguage = 'es-419'): int;
     public function updateStatus(int $videoId, string $status, int $progress = 0): bool;
     public function updateMetadata(int $videoId, array $data): bool;
     

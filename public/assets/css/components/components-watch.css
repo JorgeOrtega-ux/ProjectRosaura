@@ -185,9 +185,44 @@
 /* ==========================================================================
    ESTILOS DE LA INFORMACIÓN DEL VIDEO (BOTONES Y ETIQUETAS ADAPTADOS)
    ========================================================================== */
+
+/* Contenedor del título para la placa de traducción */
+.watch-title-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    margin: 0 0 16px 0;
+}
+.watch-title-container .watch-info-title {
+    margin: 0; /* Removemos el margin bottom original ya que el container usa gap */
+}
+.watch-translation-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background-color: var(--bg-surface-alt);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    border-radius: 16px;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+}
+.watch-translation-badge:hover {
+    background-color: var(--bg-hover-light);
+    color: var(--text-primary);
+}
+.watch-translation-badge .material-symbols-rounded {
+    font-size: 14px;
+}
+
 .watch-info-title {
     font-size: 22px; font-weight: 700; color: var(--text-primary);
-    margin: 0 0 16px 0; line-height: 1.3;
+    line-height: 1.3;
 }
 
 .watch-info-row {

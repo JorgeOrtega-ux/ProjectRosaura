@@ -457,7 +457,41 @@ export class WatchController {
 
     renderRealData(data, playlistId) {
         const titleEl = document.getElementById('watch-video-title');
-        if (titleEl) titleEl.textContent = data.title || 'Sin Título';
+        const transBadgeContainer = document.getElementById('watch-translation-badge-container');
+        const transToggleBtn = document.getElementById('watch-translation-toggle');
+        
+        if (titleEl) {
+            titleEl.textContent = data.title || 'Sin Título';
+
+            // Lógica de Traducción
+            if (data.is_translated && data.original_title_hidden) {
+                if (transBadgeContainer) transBadgeContainer.style.display = 'block';
+                
+                titleEl.dataset.translatedTitle = data.title;
+                titleEl.dataset.originalTitle = data.original_title_hidden;
+                titleEl.dataset.showingTranslated = 'true';
+
+                if (transToggleBtn) {
+                    const newBtn = transToggleBtn.cloneNode(true);
+                    transToggleBtn.parentNode.replaceChild(newBtn, transToggleBtn);
+                    
+                    newBtn.addEventListener('click', () => {
+                        const isTranslated = titleEl.dataset.showingTranslated === 'true';
+                        if (isTranslated) {
+                            titleEl.textContent = titleEl.dataset.originalTitle;
+                            titleEl.dataset.showingTranslated = 'false';
+                            newBtn.querySelector('#watch-translation-text').textContent = 'Ver traducción';
+                        } else {
+                            titleEl.textContent = titleEl.dataset.translatedTitle;
+                            titleEl.dataset.showingTranslated = 'true';
+                            newBtn.querySelector('#watch-translation-text').textContent = 'Traducido';
+                        }
+                    });
+                }
+            } else {
+                if (transBadgeContainer) transBadgeContainer.style.display = 'none';
+            }
+        }
 
         const channelNameEl = document.getElementById('watch-channel-name');
         if (channelNameEl) channelNameEl.textContent = data.channel_name || (data.author && data.author.username) || 'Canal Rosaura';

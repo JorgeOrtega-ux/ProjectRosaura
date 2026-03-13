@@ -53,7 +53,11 @@ export class StudioUploadController {
 
     async handleFilesSelection(files) {
         if (!files || files.length === 0) return;
+        
         const routeName = ApiRoutes.Studio?.UploadVideo || 'studio.upload_video';
+        const languageSelect = document.getElementById('videoOriginalLanguageInput');
+        const originalLanguage = languageSelect ? languageSelect.value : 'es-419';
+
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
             try {
@@ -74,7 +78,7 @@ export class StudioUploadController {
             const file = files[i];
             try {
                 const result = await this.api.uploadFileInChunks(
-                    routeName, file, 'video', { total_size: file.size },
+                    routeName, file, 'video', { total_size: file.size, original_language: originalLanguage },
                     (percent) => { if(uploadProgressBar) uploadProgressBar.style.width = `${percent}%`; }
                 );
                 if (result.status !== 'success') alert(`Error subiendo ${file.name}: ${result.message}`);
@@ -179,7 +183,6 @@ export class StudioUploadController {
         const video = this.state.getVideo(this.state.selectedVideoId);
         if (!video) return;
 
-        // Reset UI de títulos localizados
         let localizedTitles = {};
         if (video.localized_titles) {
             try {
@@ -212,6 +215,11 @@ export class StudioUploadController {
 
         const descInput = document.getElementById('videoDescriptionInput');
         if (descInput) descInput.value = video.description || '';
+
+        const langSelect = document.getElementById('videoOriginalLanguageSelect');
+        if (langSelect && video.original_language) {
+            langSelect.value = video.original_language;
+        }
 
         this.syncVisibilityUI(video.visibility || 'public');
 
@@ -296,6 +304,11 @@ export class StudioUploadController {
                 const displayTitle = document.querySelector('[data-ref="display-title-original"]');
                 if (displayTitle) displayTitle.textContent = e.target.value || video.original_filename || '';
             }
+        }
+
+        if (e.target && e.target.id === 'videoOriginalLanguageSelect') {
+            const video = this.state.getVideo(this.state.selectedVideoId);
+            if (video) video.original_language = e.target.value;
         }
     }
 
@@ -502,6 +515,8 @@ export class StudioUploadController {
         const title = titleOriginalInput ? titleOriginalInput.value.trim() : video.title;
         const description = document.getElementById('videoDescriptionInput')?.value.trim() || '';
         const visibility = video.visibility || 'public';
+        const langSelect = document.getElementById('videoOriginalLanguageSelect');
+        const originalLanguage = langSelect ? langSelect.value : (video.original_language || 'es-419');
         
         if (!title) {
             alert("El título original es obligatorio para publicar.");
@@ -513,7 +528,6 @@ export class StudioUploadController {
             return;
         }
 
-        // Recolectar títulos localizados
         const updatedLocalizedTitles = {};
         document.querySelectorAll('.localized-title-input').forEach(input => {
             const lang = input.id.replace('videoTitleInput_', '');
@@ -547,6 +561,7 @@ export class StudioUploadController {
         formData.append('localized_titles', JSON.stringify(updatedLocalizedTitles));
         formData.append('description', description);
         formData.append('visibility', visibility);
+        formData.append('original_language', originalLanguage);
         formData.append('models', JSON.stringify(models));
         formData.append('categories', JSON.stringify(categories));
         formData.append('tags', JSON.stringify(tags));

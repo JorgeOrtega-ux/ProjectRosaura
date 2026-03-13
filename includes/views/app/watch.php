@@ -181,7 +181,15 @@
 
         <div class="watch-layout__info">
             
-            <h1 class="watch-info-title" id="watch-video-title">[Cargando Título...]</h1>
+            <div class="watch-title-container">
+                <h1 class="watch-info-title" id="watch-video-title">[Cargando Título...]</h1>
+                <div id="watch-translation-badge-container" style="display: none;">
+                    <button id="watch-translation-toggle" class="watch-translation-badge" title="Cambiar idioma del título">
+                        <span class="material-symbols-rounded">g_translate</span>
+                        <span id="watch-translation-text">Traducido</span>
+                    </button>
+                </div>
+            </div>
             
             <div class="watch-info-row">
                 <div class="watch-info-left">

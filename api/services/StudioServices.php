@@ -98,7 +98,7 @@ class StudioServices {
         $this->checkFileSize($role, $totalSize, null);
     }
 
-    public function queueVideoUpload(int $userId, string $role, array $file): array {
+    public function queueVideoUpload(int $userId, string $role, array $file, string $originalLanguage = 'es-419'): array {
         if ($file['error'] !== UPLOAD_ERR_OK) {
             throw new Exception("Error al subir el archivo.");
         }
@@ -119,7 +119,7 @@ class StudioServices {
             throw new Exception("No se pudo guardar el archivo de video temporal.");
         }
 
-        $videoId = $this->videoRepo->create($userId, $uuid, $originalFilename, $tempFilePath);
+        $videoId = $this->videoRepo->create($userId, $uuid, $originalFilename, $tempFilePath, $originalLanguage);
         $titleWithoutExt = pathinfo($originalFilename, PATHINFO_FILENAME);
         $this->videoRepo->updateMetadata($videoId, ['title' => $titleWithoutExt]);
 
@@ -143,7 +143,7 @@ class StudioServices {
         ];
     }
 
-    public function handleChunkUpload(int $userId, string $role, array $file, string $uploadId, int $chunkIndex, int $totalChunks, string $originalFilename, ?int $totalSize = null): array {
+    public function handleChunkUpload(int $userId, string $role, array $file, string $uploadId, int $chunkIndex, int $totalChunks, string $originalFilename, ?int $totalSize = null, string $originalLanguage = 'es-419'): array {
         if ($file['error'] !== UPLOAD_ERR_OK) {
             throw new Exception("Error al subir el fragmento.");
         }
@@ -184,7 +184,7 @@ class StudioServices {
 
             rename($tempFilePath, $finalTempPath);
 
-            $videoId = $this->videoRepo->create($userId, $uuid, $originalFilename, $finalTempPath);
+            $videoId = $this->videoRepo->create($userId, $uuid, $originalFilename, $finalTempPath, $originalLanguage);
             $titleWithoutExt = pathinfo($originalFilename, PATHINFO_FILENAME);
             $this->videoRepo->updateMetadata($videoId, ['title' => $titleWithoutExt]);
 
@@ -427,7 +427,7 @@ class StudioServices {
         return $processedTags;
     }
 
-    public function updateVideoDetails(int $userId, int $videoId, string $title, ?string $description = null, array $models = [], array $categories = [], array $tags = [], string $visibility = 'public', array $localizedTitles = []): array {
+    public function updateVideoDetails(int $userId, int $videoId, string $title, ?string $description = null, array $models = [], array $categories = [], array $tags = [], string $visibility = 'public', array $localizedTitles = [], string $originalLanguage = 'es-419'): array {
         $video = $this->videoRepo->findById($videoId);
         if (!$video || $video['user_id'] != $userId) {
             throw new Exception("Video no encontrado o no autorizado.");
@@ -439,7 +439,8 @@ class StudioServices {
 
         $metadata = [
             'title' => trim($title),
-            'visibility' => $visibility
+            'visibility' => $visibility,
+            'original_language' => $originalLanguage
         ];
         
         if (!empty($localizedTitles)) {
@@ -493,7 +494,7 @@ class StudioServices {
         throw new Exception("Video no encontrado.");
     }
 
-    public function publishVideo(int $userId, int $videoId, string $title, string $description, array $models = [], array $categories = [], array $tags = [], ?array $thumbnailFile = null, ?string $generatedPath = null, string $visibility = 'public', array $localizedTitles = []): array {
+    public function publishVideo(int $userId, int $videoId, string $title, string $description, array $models = [], array $categories = [], array $tags = [], ?array $thumbnailFile = null, ?string $generatedPath = null, string $visibility = 'public', array $localizedTitles = [], string $originalLanguage = 'es-419'): array {
         $video = $this->videoRepo->findById($videoId);
         if (!$video || $video['user_id'] != $userId) {
             throw new Exception("Video no encontrado o no autorizado.");
@@ -517,7 +518,8 @@ class StudioServices {
         $metadata = [
             'title' => trim($title),
             'description' => trim($description),
-            'visibility' => $visibility
+            'visibility' => $visibility,
+            'original_language' => $originalLanguage
         ];
         
         if (!empty($localizedTitles)) {

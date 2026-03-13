@@ -21,51 +21,53 @@ class VideoRepository implements VideoRepositoryInterface {
      * Helper que reemplaza dinámicamente el título del video según el idioma
      */
     private function applyLocalizedTitle(array $video): array {
+        // Inicializar variables para el frontend de watch.php
+        $video['is_translated'] = false;
+        $video['original_title_hidden'] = $video['title']; // Guardamos el original
+        
         if (!empty($video['localized_titles'])) {
             $titles = json_decode($video['localized_titles'], true);
             
-            // Si el JSON es inválido, devolvemos el video tal cual
             if (json_last_error() !== JSON_ERROR_NONE) {
                 return $video;
             }
 
-            // --- LÓGICA OFICIAL DE IDIOMA DE PROJECT ROSAURA ---
-            // 1. Priorizamos la sesión del usuario si está logueado
             if (session_status() === PHP_SESSION_NONE) {
                 session_start();
             }
             $userPrefs = $_SESSION['user_prefs'] ?? [];
             
-            // 2. Buscamos en este orden: Sesión -> Cookie 'pr_language' -> Header JS -> Fallback
             $currentLang = $userPrefs['language'] 
                         ?? ($_COOKIE['pr_language'] ?? null) 
                         ?? ($_SERVER['HTTP_X_APP_LANGUAGE'] ?? 'es-419'); 
-            // Ponemos es-419 como fallback predeterminado para Latinoamérica
-
-            // Limpiamos espacios
             $currentLang = trim($currentLang);
 
-            // --- APLICACIÓN DE TRADUCCIÓN ---
+            $originalLang = $video['original_language'] ?? 'es-419';
+
+            // CASO A: Si el idioma de usuario coincide con el idioma original del video, no se traduce.
+            if (strtolower($currentLang) === strtolower($originalLang)) {
+                return $video; 
+            }
+
+            // CASOS B y C: Distinto idioma (buscamos si existe traducción)
             if (is_array($titles)) {
-                // BÚSQUEDA 1: Intento de coincidencia exacta (Ej: es-MX == es-MX)
                 $exactMatchFound = false;
                 foreach ($titles as $langKey => $titleValue) {
                     if (strtolower($langKey) === strtolower($currentLang) && !empty(trim($titleValue))) {
-                        $video['original_title'] = $video['title'];
                         $video['title'] = $titleValue;
+                        $video['is_translated'] = true;
                         $exactMatchFound = true;
                         break;
                     }
                 }
 
-                // BÚSQUEDA 2: Si no hubo coincidencia exacta, buscamos la base (Ej: Si es 'es-MX', buscamos 'es')
                 if (!$exactMatchFound) {
                     $baseLang = explode('-', strtolower($currentLang))[0]; 
                     
                     foreach ($titles as $langKey => $titleValue) {
                         if (strpos(strtolower($langKey), $baseLang) === 0 && !empty(trim($titleValue))) {
-                            $video['original_title'] = $video['title'];
                             $video['title'] = $titleValue;
+                            $video['is_translated'] = true;
                             break; 
                         }
                     }
@@ -92,6 +94,7 @@ class VideoRepository implements VideoRepositoryInterface {
                 'id_user' => $video['user_id'],
                 'title' => $video['title'],
                 'localized_titles' => $video['localized_titles'],
+                'original_language' => $video['original_language'],
                 'description' => $video['description'],
                 'tags' => implode(', ', $tagNames),
                 'created_at' => $video['created_at'],
@@ -112,16 +115,17 @@ class VideoRepository implements VideoRepositoryInterface {
         }
     }
 
-    public function create(int $userId, string $uuid, string $originalFilename, string $tempFilePath): int {
+    public function create(int $userId, string $uuid, string $originalFilename, string $tempFilePath, string $originalLanguage = 'es-419'): int {
         $stmt = $this->db->prepare("
-            INSERT INTO videos (user_id, uuid, original_filename, temp_file_path, status, visibility) 
-            VALUES (:user_id, :uuid, :original_filename, :temp_file_path, 'queued', 'public')
+            INSERT INTO videos (user_id, uuid, original_filename, temp_file_path, status, visibility, original_language) 
+            VALUES (:user_id, :uuid, :original_filename, :temp_file_path, 'queued', 'public', :original_language)
         ");
         $stmt->execute([
             ':user_id' => $userId,
             ':uuid' => $uuid,
             ':original_filename' => $originalFilename,
-            ':temp_file_path' => $tempFilePath
+            ':temp_file_path' => $tempFilePath,
+            ':original_language' => $originalLanguage
         ]);
         return (int) $this->db->lastInsertId();
     }
@@ -154,6 +158,10 @@ class VideoRepository implements VideoRepositoryInterface {
         if (array_key_exists('localized_titles', $data)) {
             $fields[] = "localized_titles = :localized_titles";
             $params[':localized_titles'] = $data['localized_titles'];
+        }
+        if (isset($data['original_language'])) {
+            $fields[] = "original_language = :original_language";
+            $params[':original_language'] = $data['original_language'];
         }
         if (isset($data['thumbnail_path'])) {
             $fields[] = "thumbnail_path = :thumbnail_path";
@@ -267,7 +275,7 @@ class VideoRepository implements VideoRepositoryInterface {
 
     public function getPublicVideoDetails(string $uuid): ?array {
         $stmt = $this->db->prepare("
-            SELECT v.id, v.uuid, v.title, v.localized_titles, v.description, v.created_at, v.user_id,
+            SELECT v.id, v.uuid, v.title, v.localized_titles, v.original_language, v.description, v.created_at, v.user_id,
                    v.created_at as published_at, v.visibility,
                    v.hls_path, v.temp_file_path, v.sprite_sheet_path, v.vtt_path,
                    v.views, v.likes, v.dislikes, 
@@ -350,7 +358,7 @@ class VideoRepository implements VideoRepositoryInterface {
 
     public function getPublicFeed(int $limit = 20, int $offset = 0, string $orientation = 'horizontal'): array {
         $stmt = $this->db->prepare("
-            SELECT v.id, v.uuid, v.title, v.localized_titles, v.thumbnail_path, v.thumbnail_dominant_color, 
+            SELECT v.id, v.uuid, v.title, v.localized_titles, v.original_language, v.thumbnail_path, v.thumbnail_dominant_color, 
                    v.duration, v.created_at, v.status, v.visibility, v.hls_path, v.temp_file_path, v.orientation,
                    v.sprite_sheet_path, v.vtt_path, v.views,
                    u.username, u.profile_picture AS avatar_path 
@@ -370,7 +378,7 @@ class VideoRepository implements VideoRepositoryInterface {
     
     public function getChannelVideos(int $userId, string $orientation = 'horizontal'): array {
         $stmt = $this->db->prepare("
-            SELECT id, uuid, title, localized_titles, thumbnail_path, thumbnail_dominant_color, 
+            SELECT id, uuid, title, localized_titles, original_language, thumbnail_path, thumbnail_dominant_color, 
                    duration, created_at, status, visibility, hls_path, temp_file_path, orientation,
                    sprite_sheet_path, vtt_path, views 
             FROM videos 

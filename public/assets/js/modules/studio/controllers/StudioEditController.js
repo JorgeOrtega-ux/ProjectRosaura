@@ -63,13 +63,16 @@ export class StudioEditController {
             
             this.initDraftState(video);
 
-            // Rellenar Título Original
             const titleInputOriginal = document.getElementById('videoTitleInput_original');
             const displayTitleOriginal = document.querySelector('[data-ref="display-title-original"]');
             if (titleInputOriginal) titleInputOriginal.value = video.draftTitle;
             if (displayTitleOriginal) displayTitleOriginal.textContent = video.draftTitle;
 
-            // Rellenar Títulos Localizados
+            const langSelect = document.getElementById('videoOriginalLanguageSelect');
+            if (langSelect && video.original_language) {
+                langSelect.value = video.original_language;
+            }
+
             let localizedTitles = {};
             if (video.localized_titles) {
                 try {
@@ -80,7 +83,6 @@ export class StudioEditController {
             }
             video.draftLocalizedTitles = localizedTitles;
 
-            // Iterar sobre los inputs de idiomas localizados para llenarlos si existen
             const localizedInputs = document.querySelectorAll('.localized-title-input');
             localizedInputs.forEach(input => {
                 const lang = input.id.replace('videoTitleInput_', '');
@@ -113,6 +115,7 @@ export class StudioEditController {
                     const newTitleOriginal = titleInputOriginal ? titleInputOriginal.value.trim() : '';
                     const newDesc = descInput ? descInput.value.trim() : '';
                     const newVisibility = video.draftVisibility || 'public';
+                    const newOriginalLanguage = langSelect ? langSelect.value : (video.original_language || 'es-419');
                     
                     if (newTitleOriginal.length === 0) {
                         alert("El título original no puede estar vacío.");
@@ -121,7 +124,6 @@ export class StudioEditController {
                         return;
                     }
 
-                    // Recolectar todos los títulos localizados
                     const updatedLocalizedTitles = {};
                     document.querySelectorAll('.localized-title-input').forEach(input => {
                         const lang = input.id.replace('videoTitleInput_', '');
@@ -143,6 +145,7 @@ export class StudioEditController {
                         localized_titles: JSON.stringify(updatedLocalizedTitles),
                         description: newDesc,
                         visibility: newVisibility,
+                        original_language: newOriginalLanguage,
                         models: modelsIds,
                         categories: categoriesIds,
                         tags: customTagsArr
@@ -153,6 +156,7 @@ export class StudioEditController {
                         video.localized_titles = JSON.stringify(updatedLocalizedTitles);
                         video.description = newDesc;
                         video.visibility = newVisibility;
+                        video.original_language = newOriginalLanguage;
                     } else {
                         alert("Error guardando datos: " + updateRes.message);
                         hasError = true;
@@ -220,7 +224,6 @@ export class StudioEditController {
         const lang = btn.getAttribute('data-value');
         const text = btn.getAttribute('data-text');
 
-        // Actualizar UI del Dropdown
         const triggerText = document.getElementById('selectedTitleLangText');
         if (triggerText) triggerText.textContent = text;
 
@@ -228,7 +231,6 @@ export class StudioEditController {
         menuLinks.forEach(link => link.classList.remove('active'));
         btn.classList.add('active');
 
-        // Mostrar el bloque correcto y ocultar los demás
         const allTitleBoxes = document.querySelectorAll('.title-card-box');
         allTitleBoxes.forEach(box => {
             if (box.getAttribute('data-lang') === lang) {
@@ -238,7 +240,6 @@ export class StudioEditController {
             }
         });
 
-        // Cerrar menú si existe instancia global
         const module = btn.closest('.component-module');
         if (module && window.appInstance) {
             window.appInstance.closeModule(module);
@@ -361,7 +362,6 @@ export class StudioEditController {
             btn.innerHTML = '<span class="material-symbols-rounded">sync</span><span>Publicando...</span>';
         }
 
-        // Recolectar títulos localizados
         const updatedLocalizedTitles = {};
         document.querySelectorAll('.localized-title-input').forEach(input => {
             const lang = input.id.replace('videoTitleInput_', '');
@@ -371,12 +371,16 @@ export class StudioEditController {
             }
         });
 
+        const langSelect = document.getElementById('videoOriginalLanguageSelect');
+        const originalLanguage = langSelect ? langSelect.value : (video.original_language || 'es-419');
+
         const formData = new FormData();
         formData.append('video_id', this.state.selectedVideoId);
         formData.append('title', video.draftTitle);
         formData.append('localized_titles', JSON.stringify(updatedLocalizedTitles));
         formData.append('description', video.draftDescription || '');
         formData.append('visibility', video.draftVisibility || 'public');
+        formData.append('original_language', originalLanguage);
         
         const modelsArr = document.getElementById('hiddenModelsArray') ? document.getElementById('hiddenModelsArray').value : '[]';
         const categoriesArr = document.getElementById('hiddenCategoriesArray') ? document.getElementById('hiddenCategoriesArray').value : '[]';
@@ -456,7 +460,6 @@ export class StudioEditController {
         if (action === 'toggleEditState') {
             const target = btn.getAttribute('data-target');
             if (target && target.startsWith('title-')) {
-                // Identificamos dinámicamente si el click vino de la vista de lectura para pasar a modo edición (true) o si vino del botón cancelar (false).
                 const isViewBox = btn.closest(`[data-state="${target}-view"]`) !== null;
                 this.setEditState(target, isViewBox);
             }

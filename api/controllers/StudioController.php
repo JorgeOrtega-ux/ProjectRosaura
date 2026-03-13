@@ -103,6 +103,7 @@ class StudioController {
         $totalChunks = isset($input['total_chunks']) ? (int)$input['total_chunks'] : (isset($_POST['total_chunks']) ? (int)$_POST['total_chunks'] : null);
         $originalFilename = $input['original_filename'] ?? $_POST['original_filename'] ?? null;
         $totalSize = isset($input['total_size']) ? (int)$input['total_size'] : (isset($_POST['total_size']) ? (int)$_POST['total_size'] : null);
+        $originalLanguage = $input['original_language'] ?? $_POST['original_language'] ?? 'es-419';
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($files['video'])) {
             http_response_code(400);
@@ -111,10 +112,10 @@ class StudioController {
 
         try {
             if ($uploadId !== null && $chunkIndex !== null && $totalChunks !== null && $originalFilename) {
-                $videoData = $this->studioServices->handleChunkUpload($userId, $role, $files['video'], $uploadId, $chunkIndex, $totalChunks, $originalFilename, $totalSize);
+                $videoData = $this->studioServices->handleChunkUpload($userId, $role, $files['video'], $uploadId, $chunkIndex, $totalChunks, $originalFilename, $totalSize, $originalLanguage);
                 return ['success' => true, 'status' => 'success', 'data' => $videoData];
             } else {
-                $videoData = $this->studioServices->queueVideoUpload($userId, $role, $files['video']);
+                $videoData = $this->studioServices->queueVideoUpload($userId, $role, $files['video'], $originalLanguage);
                 return ['success' => true, 'status' => 'success', 'data' => $videoData];
             }
         } catch (\Exception $e) {
@@ -166,8 +167,8 @@ class StudioController {
         $title = $input['title'] ?? $_POST['title'] ?? null;
         $description = $input['description'] ?? $_POST['description'] ?? null;
         $visibility = $input['visibility'] ?? $_POST['visibility'] ?? 'public';
+        $originalLanguage = $input['original_language'] ?? $_POST['original_language'] ?? 'es-419';
         
-        // Títulos localizados
         $localizedTitlesRaw = $input['localized_titles'] ?? $_POST['localized_titles'] ?? '{}';
         $localizedTitles = is_string($localizedTitlesRaw) ? json_decode($localizedTitlesRaw, true) : $localizedTitlesRaw;
         if (!is_array($localizedTitles)) $localizedTitles = [];
@@ -190,7 +191,7 @@ class StudioController {
         }
 
         try {
-            $this->studioServices->updateVideoDetails($userId, (int)$videoId, $title, $description, $models, $categories, $tags, $visibility, $localizedTitles);
+            $this->studioServices->updateVideoDetails($userId, (int)$videoId, $title, $description, $models, $categories, $tags, $visibility, $localizedTitles, $originalLanguage);
             return ['success' => true, 'status' => 'success'];
         } catch (\Exception $e) {
             http_response_code(400);
@@ -266,8 +267,8 @@ class StudioController {
         $title = $input['title'] ?? $_POST['title'] ?? null;
         $description = $input['description'] ?? $_POST['description'] ?? '';
         $visibility = $input['visibility'] ?? $_POST['visibility'] ?? 'public';
+        $originalLanguage = $input['original_language'] ?? $_POST['original_language'] ?? 'es-419';
 
-        // Títulos localizados
         $localizedTitlesRaw = $input['localized_titles'] ?? $_POST['localized_titles'] ?? '{}';
         $localizedTitles = is_string($localizedTitlesRaw) ? json_decode($localizedTitlesRaw, true) : $localizedTitlesRaw;
         if (!is_array($localizedTitles)) $localizedTitles = [];
@@ -299,7 +300,7 @@ class StudioController {
         }
 
         try {
-            $result = $this->studioServices->publishVideo($userId, (int)$videoId, $title, $description, $models, $categories, $tags, $thumbnailFile, $generatedPath, $visibility, $localizedTitles);
+            $result = $this->studioServices->publishVideo($userId, (int)$videoId, $title, $description, $models, $categories, $tags, $thumbnailFile, $generatedPath, $visibility, $localizedTitles, $originalLanguage);
             return ['success' => true, 'status' => 'success', 'data' => $result];
         } catch (\Exception $e) {
             http_response_code(400);

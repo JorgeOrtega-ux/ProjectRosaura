@@ -41,6 +41,24 @@ $supportedLangs = [
                             <div class="component-group-item component-group-item--stacked">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
+                                        <h2 class="component-card__title">Idioma Original del Video</h2>
+                                        <p class="component-card__description">El idioma hablado en tu video o el principal de los textos.</p>
+                                    </div>
+                                </div>
+                                <div class="component-card__actions component-card__actions--start">
+                                    <select id="videoOriginalLanguageSelect" class="component-input-field component-input-field--simple">
+                                        <?php foreach($supportedLangs as $key => $label): ?>
+                                        <option value="<?php echo $key; ?>"><?php echo $label; ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="component-card--grouped">
+                            <div class="component-group-item component-group-item--stacked">
+                                <div class="component-card__content">
+                                    <div class="component-card__text">
                                         <h2 class="component-card__title">Seleccionar Idioma del Título</h2>
                                         <p class="component-card__description">Añade traducciones para el título de tu video.</p>
                                     </div>
