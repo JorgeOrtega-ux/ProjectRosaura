@@ -19,7 +19,7 @@ $topBarClass = ($isAuthRoute || $isMaintenanceRestricted) ? 'disabled' : '';
     <base href="<?php echo APP_URL; ?>/">
     <meta name="csrf-token" content="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
 
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <link rel="stylesheet" type="text/css" href="assets/css/styles.css">
 
     <link rel="stylesheet" type="text/css" href="assets/css/components/components.css">
@@ -33,7 +33,7 @@ $topBarClass = ($isAuthRoute || $isMaintenanceRestricted) ? 'disabled' : '';
     <link rel="stylesheet" type="text/css" href="assets/css/components/components-player.css">
     <link rel="stylesheet" type="text/css" href="assets/css/components/components-comments.css">
     <link rel="stylesheet" type="text/css" href="assets/css/components/components-search.css">
-        <link rel="stylesheet" type="text/css" href="assets/css/components/components-playlist.css">
+    <link rel="stylesheet" type="text/css" href="assets/css/components/components-playlist.css">
 
     <script src="https://unpkg.com/hls.js@latest/dist/hls.min.js"></script>
     <link rel="stylesheet" type="text/css" href="assets/css/root.css">
@@ -79,6 +79,31 @@ $topBarClass = ($isAuthRoute || $isMaintenanceRestricted) ? 'disabled' : '';
 </head>
 
 <body>
+    <div id="component-age-gate" class="component-age-gate component-age-gate--active">
+        <div class="component-age-gate-container">
+            <div class="component-age-gate-header">
+                <span class="material-symbols-rounded component-age-gate-icon">warning</span>
+                <h2 class="component-age-gate-title">Advertencia de Contenido Sensible</h2>
+            </div>
+            <div class="component-age-gate-body">
+                <p class="component-age-gate-desc">
+                    Este sitio web contiene material restringido a menores de edad, que incluye desnudez y representaciones explícitas de actividad sexual. Al entrar, afirma que tiene por lo menos 18 años de edad o la mayoría de edad en la jurisdicción desde que está accediendo el sitio web y que da consentimiento en ver contenido sexualmente explícito.
+                </p>
+            </div>
+            <div class="component-age-gate-actions">
+                <button id="btn-age-reject" class="component-btn component-btn--secondary">Rechazar</button>
+                <button id="btn-age-confirm" class="component-btn component-btn--primary">Confirmo que tengo 18 años</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        if (localStorage.getItem('age_verified') === 'true') {
+            document.getElementById('component-age-gate').classList.remove('component-age-gate--active');
+            document.getElementById('component-age-gate').classList.add('component-age-gate--hidden');
+        }
+    </script>
+
     <div class="page-wrapper">
         <div class="main-content">
             <div class="general-content">

@@ -52,6 +52,15 @@ switch ($type) {
             'desc' => __('unauthorized_studio_desc') ?? 'Esta sección de Rosaura Studio no existe o no tienes los permisos necesarios para acceder al estudio de otro usuario.'
         ];
         break;
+        
+    case 'age_restricted': // NUEVA VISTA PARA RECHAZO DE EDAD
+        http_response_code(403);
+        $config = [
+            'icon' => 'block',
+            'title' => __('age_restricted_title') ?? 'Acceso Denegado',
+            'desc' => __('age_restricted_desc') ?? 'No puedes acceder debido a limitaciones de edad. Debes ser mayor de 18 años para visualizar este contenido.'
+        ];
+        break;
 
     case '404':
     default:

@@ -51,6 +51,52 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ========================================================
+    // LOGICA DE VERIFICACIÓN DE EDAD (AGE GATE)
+    // ========================================================
+    const ageGateOverlay = document.getElementById('component-age-gate');
+    const btnAgeConfirm = document.getElementById('btn-age-confirm');
+    const btnAgeReject = document.getElementById('btn-age-reject');
+
+    if (ageGateOverlay && localStorage.getItem('age_verified') !== 'true') {
+        // Manejador para botón Confirmar
+        if (btnAgeConfirm) {
+            btnAgeConfirm.addEventListener('click', () => {
+                localStorage.setItem('age_verified', 'true');
+                ageGateOverlay.classList.remove('component-age-gate--active');
+                ageGateOverlay.classList.add('component-age-gate--hidden');
+                
+                // Si estaba en la vista de rechazo, lo devolvemos al inicio al confirmar
+                if (window.location.pathname.includes('age-restricted')) {
+                    window.spaRouter.navigate(window.AppBasePath || '/');
+                } else {
+                    // Forzamos la recarga de la ruta actual si estaba bloqueada por el router
+                    window.spaRouter.loadRoute(window.location.pathname);
+                }
+            });
+        }
+
+        // Manejador para botón Rechazar
+        if (btnAgeReject) {
+            btnAgeReject.addEventListener('click', () => {
+                ageGateOverlay.classList.remove('component-age-gate--active');
+                ageGateOverlay.classList.add('component-age-gate--hidden');
+                
+                // Renderizar directamente la vista de error vía el router sin recargar
+                const fallbackTitle = 'Acceso Denegado';
+                const fallbackDesc = 'No puedes acceder debido a limitaciones de edad.';
+                const title = (window.AppTranslations && window.AppTranslations['age_restricted_title']) ? window.AppTranslations['age_restricted_title'] : fallbackTitle;
+                const desc = (window.AppTranslations && window.AppTranslations['age_restricted_desc']) ? window.AppTranslations['age_restricted_desc'] : fallbackDesc;
+                
+                window.spaRouter.renderHttpError('403', title, desc, 'block');
+                
+                // Actualizar la URL en el navegador
+                window.history.pushState(null, '', (window.AppBasePath || '') + '/age-restricted');
+                window.spaRouter.highlightCurrentRoute();
+            });
+        }
+    }
+
+    // ========================================================
     // MOTOR DE CARGA DIFERIDA (LAZY LOADING) REFORZADO
     // ========================================================
     

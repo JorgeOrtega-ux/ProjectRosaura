@@ -37,6 +37,7 @@ return [
     // --- RUTAS DE SISTEMA PÚBLICAS (Manejo de estados) ---
     '/account-suspended' => ['view' => 'system/message.php'],
     '/account-deleted' => ['view' => 'system/message.php'],
+    '/age-restricted' => ['view' => 'system/message.php'], // NUEVA RUTA PARA RECHAZO DE EDAD
     
     // --- RUTAS DE CONFIGURACIÓN ---
     '/settings' => ['view' => 'settings/index.php'],

@@ -82,6 +82,14 @@ export class SpaRouter {
     }
 
     async loadRoute(url) {
+        // Guardia de Ruta (Middleware del Cliente): Validar Verificación de Edad
+        const isVerified = localStorage.getItem('age_verified') === 'true';
+        if (!isVerified && !url.includes('age-restricted')) {
+            console.warn("[SpaRouter] Navegación interceptada: El usuario no ha verificado su edad.");
+            // Detenemos el proceso de enrutamiento y carga hasta que el usuario confirme en el Overlay.
+            return;
+        }
+
         if (this.abortController) {
             this.abortController.abort();
         }
