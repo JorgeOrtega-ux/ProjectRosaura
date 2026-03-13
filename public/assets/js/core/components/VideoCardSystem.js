@@ -36,47 +36,47 @@ export class VideoCardSystem {
             card.dataset.originalDuration = durationSpan.textContent;
         }
 
-        card.classList.add('component-video-card--playing');
+        // SOLUCIÓN: Quitamos la adición inmediata de "component-video-card--playing" aquí.
+        // Se agregará más adelante, solo cuando el video realmente tenga imagen.
         video.muted = true;
 
         let videoSrc = video.getAttribute('data-src') || video.getAttribute('src');
         const uuid = video.getAttribute('data-uuid');
 
-        // Solución al 403: Si no tenemos un enlace firmado (con token 't='), lo solicitamos al backend
         if (uuid && (!videoSrc || !videoSrc.includes('t='))) {
             try {
                 const basePath = window.AppBasePath || '';
                 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                 
-                // CORRECCIÓN: La ruta correcta en route-map.php es media.get_token
-                const response = await fetch(`${basePath}/api/index.php?route=media.get_token`, {
+                const response = await fetch(`${basePath}/api/index.php`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': csrfToken
                     },
-                    body: JSON.stringify({ video_uuid: uuid })
+                    body: JSON.stringify({ 
+                        route: 'media.get_token', 
+                        video_uuid: uuid 
+                    })
                 });
                 
                 const result = await response.json();
                 
                 if (result.success && result.data && result.data.stream_url) {
                     videoSrc = basePath + result.data.stream_url;
-                    video.setAttribute('data-src', videoSrc); // Cachear el link firmado para el próximo hover
+                    video.setAttribute('data-src', videoSrc); 
                 } else {
                     console.warn('[VideoCardSystem] No se pudo obtener el stream seguro', result);
-                    card.classList.remove('component-video-card--playing');
                     return;
                 }
             } catch (error) {
                 console.error('[VideoCardSystem] Error en red al pedir URL de streaming:', error);
-                card.classList.remove('component-video-card--playing');
                 return;
             }
         }
 
-        // Verificamos si el usuario retiró el ratón mientras el fetch respondía
-        if (!card.classList.contains('component-video-card--playing')) {
+        // Validamos si el usuario retiró el ratón durante el tiempo que tardó el fetch
+        if (!this.hoverTimers.has(card)) {
             return;
         }
 
@@ -87,10 +87,31 @@ export class VideoCardSystem {
                 let hls = this.hlsInstances.get(video);
                 
                 if (!hls) {
+                    let tokenStr = null;
+                    let expiresStr = null;
+                    try {
+                        const fakeBase = videoSrc.startsWith('http') ? '' : window.location.origin;
+                        const urlObj = new URL(videoSrc, fakeBase);
+                        tokenStr = urlObj.searchParams.get('t');
+                        expiresStr = urlObj.searchParams.get('e');
+                    } catch (e) {}
+
                     hls = new Hls({
                         startLevel: -1,
                         capLevelToPlayerSize: true,
-                        autoStartLoad: false
+                        autoStartLoad: false,
+                        xhrSetup: function(xhr, url_to_load) {
+                            if (tokenStr && expiresStr && url_to_load.includes('/api/media/stream/')) {
+                                try {
+                                    const reqUrl = new URL(url_to_load, window.location.origin);
+                                    if (!reqUrl.searchParams.has('t')) {
+                                        reqUrl.searchParams.set('t', tokenStr);
+                                        reqUrl.searchParams.set('e', expiresStr);
+                                        xhr.open('GET', reqUrl.toString(), true);
+                                    }
+                                } catch (err) {}
+                            }
+                        }
                     });
                     
                     this.hlsInstances.set(video, hls);
@@ -100,9 +121,10 @@ export class VideoCardSystem {
                     });
 
                     hls.on(Hls.Events.MANIFEST_PARSED, () => {
-                        if (card.classList.contains('component-video-card--playing')) {
+                        // Verificamos de nuevo antes de reproducir que el usuario siga haciendo hover
+                        if (this.hoverTimers.has(card)) {
                             hls.startLoad(-1);
-                            this.playVideo(video);
+                            this.playVideo(video, card); // Pasamos 'card' al método
                         }
                     });
 
@@ -129,17 +151,17 @@ export class VideoCardSystem {
                         hls.loadSource(videoSrc);
                     } else {
                         hls.startLoad(-1);
-                        this.playVideo(video);
+                        this.playVideo(video, card); // Pasamos 'card'
                     }
                 }
 
             } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
                 if (video.src !== videoSrc) video.src = videoSrc;
-                this.playVideo(video);
+                this.playVideo(video, card); // Pasamos 'card'
             }
         } else {
             if (video.src !== videoSrc) video.src = videoSrc;
-            this.playVideo(video);
+            this.playVideo(video, card); // Pasamos 'card'
         }
 
         video.ontimeupdate = () => this.updateCountdown(video, durationSpan);
@@ -158,6 +180,7 @@ export class VideoCardSystem {
         const durationSpan = card.querySelector('.component-video-card__duration');
 
         if (video) {
+            // Esto oculta el video y vuelve a mostrar la miniatura inmediatamente
             card.classList.remove('component-video-card--playing');
             
             const playPromise = this.playPromises.get(video);
@@ -186,7 +209,8 @@ export class VideoCardSystem {
         }
     }
 
-    playVideo(video) {
+    // Actualizamos playVideo para que reciba la 'card' como argumento
+    playVideo(video, card) {
         video.muted = true; 
         const playPromise = video.play();
         
@@ -194,7 +218,13 @@ export class VideoCardSystem {
             this.playPromises.set(video, playPromise);
             playPromise.then(() => {
                 video.dataset.isPlaying = 'true';
-                if (!video.closest('.component-video-card--playing')) {
+                
+                // MAGIA: Solo mostramos el video visualmente (añadimos la clase) 
+                // cuando el video ya cargó su primer frame Y si el mouse sigue encima
+                if (this.hoverTimers.has(card)) {
+                    card.classList.add('component-video-card--playing');
+                } else {
+                    // Si el usuario ya quitó el ratón en la fracción de segundo que tomó cargar
                     video.pause();
                     video.currentTime = 0;
                 }
