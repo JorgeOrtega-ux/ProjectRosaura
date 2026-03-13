@@ -222,9 +222,15 @@
                         <span class="material-symbols-rounded">download</span> Descargar
                     </button>
 
-                    <button id="watch-btn-save" class="watch-btn watch-btn-action" title="Guardar">
-                        <span class="material-symbols-rounded">playlist_add</span> Guardar
-                    </button>
+                    <div style="position: relative; display: inline-flex; align-items: center;">
+                        <button id="watch-btn-save" class="watch-btn watch-btn-action" title="Guardar">
+                            <span class="material-symbols-rounded">playlist_add</span> Guardar
+                        </button>
+                        <?php 
+                        // SE INCLUYE EL MÓDULO DROPDOWN AQUI MISMO PARA EL POSICIONAMIENTO
+                        require_once __DIR__ . '/../../modules/moduleSaveToPlaylist.php'; 
+                        ?>
+                    </div>
                 </div>
             </div>
 
@@ -255,7 +261,7 @@
                         <span class="watch-meta-highlight">Etiquetas Personalizadas</span>
                     </div>
                     <div class="watch-info-tags-list" id="watch-video-custom-tags-container">
-                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -292,8 +298,3 @@
 
     </div>
 </div>
-
-<?php 
-// NUEVO: Se incluye el módulo de Guardar en Playlist
-require_once __DIR__ . '/../../modules/moduleSaveToPlaylist.php'; 
-?>

@@ -15,7 +15,7 @@ export class WatchController {
         this.viewRegistered = false;
         this.checkPlayerInterval = null;
         
-        // Modal State
+        // Modal/Dropdown State
         this.playlistModalSetupDone = false;
     }
 
@@ -29,7 +29,7 @@ export class WatchController {
                         : null;
 
         const urlParams = new URLSearchParams(window.location.search);
-        const playlistId = urlParams.get('list'); // Aquí entra "WL" o un UUID
+        const playlistId = urlParams.get('list'); 
 
         if (!videoId) {
             this.showError404('Identificador de video no proporcionado en la URL.');
@@ -192,77 +192,60 @@ export class WatchController {
 
     setupSaveInteraction(dbVideoId) {
         const btnSave = document.getElementById('watch-btn-save');
-        const modal = document.getElementById('surface-save-playlist');
+        const moduleDropdown = document.getElementById('module-save-playlist');
         
-        if (!btnSave || !modal) return;
+        if (!btnSave || !moduleDropdown) return;
 
-        btnSave.addEventListener('click', async () => {
-            modal.classList.remove('hidden');
-            setTimeout(() => modal.classList.add('active'), 10);
+        btnSave.addEventListener('click', async (e) => {
+            e.stopPropagation(); 
             
-            await this.renderPlaylistCheckboxes(dbVideoId);
+            const isVisible = moduleDropdown.style.display === 'flex';
             
-            if (!this.playlistModalSetupDone) {
-                this.bindPlaylistModalEvents(modal, dbVideoId);
-                this.playlistModalSetupDone = true;
+            if (isVisible) {
+                this.closeSaveModule(moduleDropdown);
+            } else {
+                moduleDropdown.style.display = 'flex';
+                await this.renderPlaylistCheckboxes(dbVideoId);
+                
+                if (!this.playlistModalSetupDone) {
+                    this.bindPlaylistModalEvents(moduleDropdown);
+                    this.playlistModalSetupDone = true;
+                }
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (moduleDropdown.style.display === 'flex' && !moduleDropdown.contains(e.target) && !btnSave.contains(e.target)) {
+                this.closeSaveModule(moduleDropdown);
             }
         });
     }
 
-    bindPlaylistModalEvents(modal, dbVideoId) {
-        const overlay = document.getElementById('surface-save-playlist-overlay');
+    closeSaveModule(moduleDropdown) {
+        if (!moduleDropdown) return;
+        moduleDropdown.style.display = 'none';
+    }
+
+    bindPlaylistModalEvents(moduleDropdown) {
         const closeBtn = document.getElementById('btn-close-save-playlist');
-        const toggleCreateBtn = document.getElementById('btn-toggle-create-playlist');
-        const createForm = document.getElementById('form-create-playlist');
-        const submitCreateBtn = document.getElementById('btn-submit-new-playlist');
+        const goToCreateBtn = document.getElementById('btn-go-to-create-playlist');
 
-        const closeModal = () => {
-            modal.classList.remove('active');
-            setTimeout(() => {
-                modal.classList.add('hidden');
-                if (createForm) createForm.classList.add('hidden'); 
-            }, 300);
-        };
-
-        if (closeBtn) closeBtn.addEventListener('click', closeModal);
-        if (overlay) overlay.addEventListener('click', closeModal);
-
-        this.setupModalDrag(modal, closeModal);
-
-        if (toggleCreateBtn && createForm) {
-            toggleCreateBtn.addEventListener('click', () => {
-                createForm.classList.toggle('hidden');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.closeSaveModule(moduleDropdown);
             });
         }
 
-        if (submitCreateBtn) {
-            submitCreateBtn.addEventListener('click', async () => {
-                const titleInput = document.getElementById('new-playlist-title');
-                const visInput = document.getElementById('new-playlist-visibility');
-                const title = titleInput.value.trim();
-                const visibility = visInput.value;
-
-                if (!title) {
-                    this.dialog.show('error', { title: 'Aviso', message: 'El nombre es obligatorio.' });
-                    return;
-                }
-
-                submitCreateBtn.disabled = true;
-                submitCreateBtn.textContent = 'Creando...';
-
-                const res = await this.api.createPlaylist(title, visibility);
-                
-                submitCreateBtn.disabled = false;
-                submitCreateBtn.textContent = 'Crear';
-
-                if (res.success) {
-                    titleInput.value = '';
-                    createForm.classList.add('hidden');
-                    
-                    await this.api.toggleVideoInPlaylist(res.playlist.uuid, dbVideoId);
-                    await this.renderPlaylistCheckboxes(dbVideoId);
+        if (goToCreateBtn) {
+            goToCreateBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.closeSaveModule(moduleDropdown);
+                // Redirige al Studio a la pestaña de Playlists
+                if (window.router) {
+                    window.router.navigate('/studio'); 
                 } else {
-                    this.dialog.show('error', { title: 'Aviso', message: res.message });
+                    window.location.href = (window.AppBasePath || '') + '/studio';
                 }
             });
         }
@@ -278,8 +261,8 @@ export class WatchController {
         
         if (!res.success) {
             if (res.code === 401 || (res.message && res.message.includes('No autorizado'))) {
-                const modal = document.getElementById('surface-save-playlist');
-                if (modal) { modal.classList.remove('active'); setTimeout(() => modal.classList.add('hidden'), 300); }
+                const moduleDropdown = document.getElementById('module-save-playlist');
+                this.closeSaveModule(moduleDropdown);
                 
                 if (window.router) window.router.navigate('/login');
                 else window.location.href = (window.AppBasePath || '') + '/login';
@@ -299,16 +282,12 @@ export class WatchController {
             const isChecked = pl.has_video == 1 ? 'checked' : '';
             const isSystem = pl.type !== 'custom';
             
-            // Traducción del título si es sistema
             let title = pl.title;
             if (isSystem && pl.type === 'watch_later') {
                 title = window.AppSystem?.Translator?.get('system_playlist_watch_later') || 'Ver más tarde';
             }
             
-            // Forzar icono de candado si es sistema
             const icon = (pl.visibility === 'private' || isSystem) ? 'lock' : (pl.visibility === 'unlisted' ? 'link' : 'public');
-            
-            // La ruta interna usa WL para sistema, uuid para custom
             const toggleUuid = (isSystem && pl.type === 'watch_later') ? 'WL' : pl.uuid;
             
             html += `
@@ -327,7 +306,8 @@ export class WatchController {
 
         const checkboxes = container.querySelectorAll('.playlist-toggle-cb');
         checkboxes.forEach(cb => {
-            cb.addEventListener('change', async () => {
+            cb.addEventListener('change', async (e) => {
+                e.stopPropagation();
                 const plUuid = cb.getAttribute('data-uuid');
                 const isChecked = cb.checked;
                 
@@ -339,53 +319,6 @@ export class WatchController {
                 }
             });
         });
-    }
-
-    setupModalDrag(modal, closeCallback) {
-        const pill = modal.querySelector('.drag-handle');
-        if (!pill) return;
-        
-        let startY = 0;
-        let currentDiff = 0;
-        let isDragging = false;
-        const content = modal.querySelector('.component-surface__content');
-
-        pill.addEventListener('pointerdown', (e) => {
-            if (window.innerWidth > 768) return; 
-            isDragging = true;
-            startY = e.clientY;
-            content.style.transition = 'none';
-            content.setPointerCapture(e.pointerId);
-        });
-
-        content.addEventListener('pointermove', (e) => {
-            if (!isDragging) return;
-            currentDiff = e.clientY - startY;
-            if (currentDiff > 0) {
-                content.style.transform = `translateY(${currentDiff}px)`;
-            }
-        });
-
-        const endDrag = (e) => {
-            if (!isDragging) return;
-            isDragging = false;
-            content.style.transition = '';
-            
-            if (content.hasPointerCapture(e.pointerId)) {
-                content.releasePointerCapture(e.pointerId);
-            }
-
-            if (currentDiff > content.offsetHeight * 0.35) {
-                closeCallback();
-                setTimeout(() => { content.style.transform = ''; }, 300);
-            } else {
-                content.style.transform = ''; 
-            }
-            currentDiff = 0;
-        };
-
-        content.addEventListener('pointerup', endDrag);
-        content.addEventListener('pointercancel', endDrag);
     }
 
     setupSubscription(data) {
@@ -454,7 +387,6 @@ export class WatchController {
 
     async loadPlaylistData(playlistId, currentVideoId) {
         try {
-            // El backend y PlaylistServices ahora aceptan "WL" u otro ID
             const response = await this.api.post('app.get_playlist_queue', { playlist_uuid: playlistId });
             if (response && response.success && response.data) {
                 this.renderPlaylistPanel(response.data, currentVideoId, playlistId);
@@ -491,7 +423,6 @@ export class WatchController {
         let countTextTemplate = window.AppSystem?.Translator?.get('watch_playlist_videos_count') || '{current} de {total}';
         countEl.textContent = countTextTemplate.replace('{current}', displayIndex).replace('{total}', total);
 
-        // CAPA 2 (Fallback UI config para elementos de la Playlist)
         const fallbackVideoImg = window.AppConfig?.Images?.Fallbacks?.videoThumbnail || 'https://placehold.co/1280x720/1a1a1a/e0e0e0?text=Video+No+Disponible';
         const onErrorHTML = `onerror="this.onerror=null; this.src='${fallbackVideoImg}';"`;
 
@@ -500,7 +431,6 @@ export class WatchController {
             const isActive = video.uuid === currentVideoId;
             const itemNumber = index + 1;
             
-            // CAPA 1: Aplicación de Fallback por data vacía
             const thumbnailUrl = video.thumbnail_url || video.thumbnail || fallbackVideoImg;
             const title = video.title || 'Video sin título';
             const author = video.username || (video.author && video.author.username) || 'Canal Rosaura';
@@ -582,7 +512,6 @@ export class WatchController {
             return;
         }
 
-        // CAPA 2 (Fallback UI config para Videos Recomendados)
         const fallbackVideoImg = window.AppConfig?.Images?.Fallbacks?.videoThumbnail || 'https://placehold.co/1280x720/1a1a1a/e0e0e0?text=Video+No+Disponible';
         const onErrorHTML = `onerror="this.onerror=null; this.src='${fallbackVideoImg}';"`;
 
@@ -602,7 +531,6 @@ export class WatchController {
                 duration = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
             }
             
-            // CAPA 1: Aplicación de Fallback por data vacía
             const thumbnailUrl = video.thumbnail_url || video.thumbnail || fallbackVideoImg; 
             const watchUrl = `/ProjectRosaura/watch/${video.uuid}`;
             const streamUrl = `/ProjectRosaura/api/media/stream?uuid=${video.uuid}`;
