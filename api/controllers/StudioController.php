@@ -169,6 +169,8 @@ class StudioController {
         $visibility = $input['visibility'] ?? $_POST['visibility'] ?? 'public';
         $originalLanguage = $input['original_language'] ?? $_POST['original_language'] ?? 'es-419';
         
+        $allowComments = isset($input['allow_comments']) ? filter_var($input['allow_comments'], FILTER_VALIDATE_BOOLEAN) : (isset($_POST['allow_comments']) ? filter_var($_POST['allow_comments'], FILTER_VALIDATE_BOOLEAN) : true);
+
         $localizedTitlesRaw = $input['localized_titles'] ?? $_POST['localized_titles'] ?? '{}';
         $localizedTitles = is_string($localizedTitlesRaw) ? json_decode($localizedTitlesRaw, true) : $localizedTitlesRaw;
         if (!is_array($localizedTitles)) $localizedTitles = [];
@@ -191,7 +193,7 @@ class StudioController {
         }
 
         try {
-            $this->studioServices->updateVideoDetails($userId, (int)$videoId, $title, $description, $models, $categories, $tags, $visibility, $localizedTitles, $originalLanguage);
+            $this->studioServices->updateVideoDetails($userId, (int)$videoId, $title, $description, $models, $categories, $tags, $visibility, $localizedTitles, $originalLanguage, $allowComments);
             return ['success' => true, 'status' => 'success'];
         } catch (\Exception $e) {
             http_response_code(400);
@@ -268,6 +270,8 @@ class StudioController {
         $description = $input['description'] ?? $_POST['description'] ?? '';
         $visibility = $input['visibility'] ?? $_POST['visibility'] ?? 'public';
         $originalLanguage = $input['original_language'] ?? $_POST['original_language'] ?? 'es-419';
+        
+        $allowComments = isset($input['allow_comments']) ? filter_var($input['allow_comments'], FILTER_VALIDATE_BOOLEAN) : (isset($_POST['allow_comments']) ? filter_var($_POST['allow_comments'], FILTER_VALIDATE_BOOLEAN) : true);
 
         $localizedTitlesRaw = $input['localized_titles'] ?? $_POST['localized_titles'] ?? '{}';
         $localizedTitles = is_string($localizedTitlesRaw) ? json_decode($localizedTitlesRaw, true) : $localizedTitlesRaw;
@@ -300,7 +304,7 @@ class StudioController {
         }
 
         try {
-            $result = $this->studioServices->publishVideo($userId, (int)$videoId, $title, $description, $models, $categories, $tags, $thumbnailFile, $generatedPath, $visibility, $localizedTitles, $originalLanguage);
+            $result = $this->studioServices->publishVideo($userId, (int)$videoId, $title, $description, $models, $categories, $tags, $thumbnailFile, $generatedPath, $visibility, $localizedTitles, $originalLanguage, $allowComments);
             return ['success' => true, 'status' => 'success', 'data' => $result];
         } catch (\Exception $e) {
             http_response_code(400);

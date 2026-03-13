@@ -68,6 +68,12 @@ class CommentController {
             exit; 
 
         } catch (\Exception $e) {
+            if ($e->getMessage() === 'COMMENTS_DISABLED') {
+                http_response_code(403);
+                echo json_encode(['success' => false, 'error' => 'Los comentarios están desactivados para este video.']);
+                exit;
+            }
+            
             http_response_code(500);
             echo json_encode(['success' => false, 'error' => 'Error 500 en Backend: ' . $e->getMessage()]);
             exit; 

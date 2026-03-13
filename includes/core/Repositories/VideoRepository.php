@@ -89,7 +89,8 @@ class VideoRepository implements VideoRepositoryInterface {
                 'description' => $video['description'],
                 'tags' => implode(', ', $tagNames),
                 'created_at' => $video['created_at'],
-                'visibility' => $video['visibility']
+                'visibility' => $video['visibility'],
+                'allow_comments' => $video['allow_comments']
             ];
             
             try {
@@ -186,6 +187,10 @@ class VideoRepository implements VideoRepositoryInterface {
             $fields[] = "vtt_path = :vtt_path";
             $params[':vtt_path'] = $data['vtt_path'];
         }
+        if (isset($data['allow_comments'])) {
+            $fields[] = "allow_comments = :allow_comments";
+            $params[':allow_comments'] = (int) $data['allow_comments'];
+        }
 
         if (empty($fields)) return true;
 
@@ -267,7 +272,7 @@ class VideoRepository implements VideoRepositoryInterface {
     public function getPublicVideoDetails(string $uuid): ?array {
         $stmt = $this->db->prepare("
             SELECT v.id, v.uuid, v.title, v.localized_titles, v.original_language, v.description, v.created_at, v.user_id,
-                   v.created_at as published_at, v.visibility,
+                   v.created_at as published_at, v.visibility, v.allow_comments,
                    v.hls_path, v.temp_file_path, v.sprite_sheet_path, v.vtt_path,
                    v.views, v.likes, v.dislikes, 
                    v.thumbnail_dominant_color as dominant_color, 
@@ -350,7 +355,7 @@ class VideoRepository implements VideoRepositoryInterface {
     public function getPublicFeed(int $limit = 20, int $offset = 0, string $orientation = 'horizontal'): array {
         $stmt = $this->db->prepare("
             SELECT v.id, v.uuid, v.title, v.localized_titles, v.original_language, v.thumbnail_path, v.thumbnail_dominant_color, 
-                   v.duration, v.created_at, v.status, v.visibility, v.hls_path, v.temp_file_path, v.orientation,
+                   v.duration, v.created_at, v.status, v.visibility, v.allow_comments, v.hls_path, v.temp_file_path, v.orientation,
                    v.sprite_sheet_path, v.vtt_path, v.views,
                    u.username, u.profile_picture AS avatar_path 
             FROM videos v
@@ -370,7 +375,7 @@ class VideoRepository implements VideoRepositoryInterface {
     public function getChannelVideos(int $userId, string $orientation = 'horizontal'): array {
         $stmt = $this->db->prepare("
             SELECT id, uuid, title, localized_titles, original_language, thumbnail_path, thumbnail_dominant_color, 
-                   duration, created_at, status, visibility, hls_path, temp_file_path, orientation,
+                   duration, created_at, status, visibility, allow_comments, hls_path, temp_file_path, orientation,
                    sprite_sheet_path, vtt_path, views 
             FROM videos 
             WHERE user_id = :user_id AND status = 'published' AND visibility = 'public' AND orientation = :orientation
@@ -564,6 +569,12 @@ class VideoRepository implements VideoRepositoryInterface {
         ");
         $stmt->execute([':user_id' => $userId, ':video_id' => $videoId]);
         return (int) $stmt->fetchColumn() > 0;
+    }
+
+    public function commentsAllowed(int $videoId): bool {
+        $stmt = $this->db->prepare("SELECT allow_comments FROM videos WHERE id = :id");
+        $stmt->execute([':id' => $videoId]);
+        return (bool) $stmt->fetchColumn();
     }
 }
 ?>

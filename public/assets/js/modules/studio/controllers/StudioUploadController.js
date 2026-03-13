@@ -157,7 +157,7 @@ export class StudioUploadController {
         const visibilityIcon = document.getElementById('visibilityIcon');
         const visibilityText = document.getElementById('visibilityText');
 
-        const menuLinks = document.querySelectorAll('.component-menu-list .component-menu-link[data-action="selectVisibility"]');
+        const menuLinks = document.querySelectorAll('#visibilitySelectorMenu .component-menu-link');
         let matched = false;
         menuLinks.forEach(link => {
             link.classList.remove('active');
@@ -172,6 +172,28 @@ export class StudioUploadController {
         if (!matched && value === 'public') {
             if (visibilityIcon) visibilityIcon.textContent = 'public';
             if (visibilityText) visibilityText.textContent = 'Público';
+        }
+    }
+
+    syncCommentsUI(value) {
+        const commentsIcon = document.getElementById('commentsIcon');
+        const commentsText = document.getElementById('commentsText');
+
+        const menuLinks = document.querySelectorAll('#commentsSelectorMenu .component-menu-link');
+        let matched = false;
+        menuLinks.forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('data-value') === value) {
+                link.classList.add('active');
+                if (commentsIcon) commentsIcon.textContent = link.getAttribute('data-icon');
+                if (commentsText) commentsText.textContent = link.getAttribute('data-text');
+                matched = true;
+            }
+        });
+
+        if (!matched && value === '1') {
+            if (commentsIcon) commentsIcon.textContent = 'chat';
+            if (commentsText) commentsText.textContent = 'Activados';
         }
     }
 
@@ -231,6 +253,12 @@ export class StudioUploadController {
         }
 
         this.syncVisibilityUI(video.visibility || 'public');
+        
+        // Sincronizar UI de Comentarios
+        const allowCommentsValue = (video.allow_comments !== undefined) ? String(video.allow_comments) : '1';
+        const commentsInput = document.getElementById('videoAllowCommentsInput');
+        if (commentsInput) commentsInput.value = allowCommentsValue;
+        this.syncCommentsUI(allowCommentsValue);
 
         const cancelBtn = document.getElementById('btnCancelVideo');
         if (cancelBtn) {
@@ -424,6 +452,10 @@ export class StudioUploadController {
             e.preventDefault();
             e.stopImmediatePropagation();
             this.handleSelectVisibility(btn);
+        } else if (action === 'selectComments') {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this.handleSelectComments(btn);
         } else if (action === 'selectTitleLanguage') {
             e.preventDefault();
             e.stopImmediatePropagation();
@@ -506,6 +538,25 @@ export class StudioUploadController {
             if (module) window.appInstance.closeModule(module);
         }
     }
+    
+    handleSelectComments(btn) {
+        const value = btn.getAttribute('data-value');
+        
+        this.syncCommentsUI(value);
+        
+        const hiddenInput = document.getElementById('videoAllowCommentsInput');
+        if (hiddenInput) hiddenInput.value = value;
+
+        const video = this.state.getVideo(this.state.selectedVideoId);
+        if (video) {
+            video.allow_comments = value;
+        }
+
+        if (window.appInstance) {
+            const module = btn.closest('.component-module');
+            if (module) window.appInstance.closeModule(module);
+        }
+    }
 
     handleSaveTitle(btn) {
         const lang = btn.getAttribute('data-lang');
@@ -553,6 +604,8 @@ export class StudioUploadController {
         const visibility = video.visibility || 'public';
         const langInput = document.getElementById('videoOriginalLanguageInput');
         const originalLanguage = langInput ? langInput.value : (video.original_language || 'es-419');
+        const commentsInput = document.getElementById('videoAllowCommentsInput');
+        const allowComments = commentsInput ? (commentsInput.value === '1') : true;
         
         if (!title) {
             alert("El título original es obligatorio para publicar.");
@@ -598,6 +651,7 @@ export class StudioUploadController {
         formData.append('description', description);
         formData.append('visibility', visibility);
         formData.append('original_language', originalLanguage);
+        formData.append('allow_comments', allowComments);
         formData.append('models', JSON.stringify(models));
         formData.append('categories', JSON.stringify(categories));
         formData.append('tags', JSON.stringify(tags));

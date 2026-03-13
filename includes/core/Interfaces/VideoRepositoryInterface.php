@@ -42,6 +42,7 @@ interface VideoRepositoryInterface {
     // --- NUEVO: SISTEMA DE VIDEOS GUARDADOS ---
     public function isVideoSaved(int $userId, int $videoId): bool;
     
-    // ELIMINADO: public function toggleSave(...)
+    // --- NUEVO: VERIFICACIÓN DE COMENTARIOS ---
+    public function commentsAllowed(int $videoId): bool;
 }
 ?>

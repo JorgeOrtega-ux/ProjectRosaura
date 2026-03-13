@@ -60,6 +60,7 @@ export class WatchController {
                         }
                     });
 
+                    // Carga de Comentarios
                     if (dbVideoId) {
                         let commentsSection = document.getElementById('video-comments-section');
                         if (!commentsSection) {
@@ -71,9 +72,22 @@ export class WatchController {
                                 detailsBox.parentNode.insertBefore(commentsSection, detailsBox.nextSibling);
                             }
                         }
+                        
                         if (commentsSection) {
-                            this.commentSystem = new CommentSystem(dbVideoId, commentsSection, this.api);
-                            this.commentSystem.init();
+                            // Verifica si los comentarios están activados (1) o desactivados (0)
+                            const allowComments = (response.data.allow_comments !== undefined) ? Number(response.data.allow_comments) : 1;
+                            
+                            if (allowComments === 1) {
+                                this.commentSystem = new CommentSystem(dbVideoId, commentsSection, this.api);
+                                this.commentSystem.init();
+                            } else {
+                                commentsSection.innerHTML = `
+                                    <div style="text-align: center; padding: 40px 20px; background-color: var(--bg-hover); border-radius: 8px;">
+                                        <span class="material-symbols-rounded" style="font-size: 32px; color: var(--text-secondary); margin-bottom: 8px; display: block;">comments_disabled</span>
+                                        <p style="color: var(--text-secondary); margin: 0; font-size: 14px;">Los comentarios están desactivados para este video.</p>
+                                    </div>
+                                `;
+                            }
                         }
                     }
                 }

@@ -271,6 +271,50 @@ $supportedLangs = [
 
                         <div class="component-card--grouped">
                             <div class="component-group-item component-group-item--stacked">
+                                <div class="component-card__content">
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title">Comentarios</h2>
+                                        <p class="component-card__description">Elige si quieres que los espectadores puedan comentar en este video.</p>
+                                    </div>
+                                </div>
+                                <div class="component-card__actions component-card__actions--start">
+                                    <div class="component-dropdown-wrapper">
+                                        <div class="component-dropdown-trigger" data-action="toggleModule" data-target="moduleComments">
+                                            <span class="material-symbols-rounded" id="commentsIcon">chat</span>
+                                            <span class="component-dropdown-text" id="commentsText">Activados</span>
+                                            <span class="material-symbols-rounded">expand_more</span>
+                                        </div>
+                                        
+                                        <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="moduleComments" id="commentsSelectorMenu">
+                                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding">
+                                                <div class="pill-container"><div class="drag-handle"></div></div>
+                                                <div class="component-menu-list component-menu-list--scrollable">
+                                                    
+                                                    <div class="component-menu-link active" data-action="selectComments" data-value="1" data-icon="chat" data-text="Activados">
+                                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">chat</span></div>
+                                                        <div class="component-menu-link-text">
+                                                            <span>Activados</span>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="component-menu-link" data-action="selectComments" data-value="0" data-icon="comments_disabled" data-text="Desactivados">
+                                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">comments_disabled</span></div>
+                                                        <div class="component-menu-link-text">
+                                                            <span>Desactivados</span>
+                                                        </div>
+                                                    </div>
+
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <input type="hidden" id="videoAllowCommentsInput" value="1">
+
+                        <div class="component-card--grouped">
+                            <div class="component-group-item component-group-item--stacked">
                                 <div class="component-card__content component-card__content--full">
                                     <div class="component-card__text">
                                         <h2 class="component-card__title"><?php echo __('studio_tags_title'); ?></h2>

@@ -271,7 +271,8 @@
             </div>
 
             <div class="watch-layout__comments">
-                <section id="video-comments-section"></section>
+                <section id="video-comments-section">
+                    </section>
             </div>
         </div>
 

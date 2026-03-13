@@ -109,6 +109,12 @@ export class StudioEditController {
             if (descInput) descInput.value = video.draftDescription;
             
             this.syncVisibilityUI(video.draftVisibility);
+            
+            const allowCommentsValue = (video.draftAllowComments !== undefined) ? String(video.draftAllowComments) : '1';
+            const commentsInput = document.getElementById('videoAllowCommentsInput');
+            if (commentsInput) commentsInput.value = allowCommentsValue;
+            this.syncCommentsUI(allowCommentsValue);
+            
             this.thumbnailManager.updateThumbnailPreview(video.draftThumbnailPreview);
             this.tagsManager.setInitialTags(video.tags);
             
@@ -125,6 +131,7 @@ export class StudioEditController {
                     const newDesc = descInput ? descInput.value.trim() : '';
                     const newVisibility = video.draftVisibility || 'public';
                     const newOriginalLanguage = langInput ? langInput.value : (video.original_language || 'es-419');
+                    const newAllowComments = commentsInput ? (commentsInput.value === '1') : true;
                     
                     if (newTitleOriginal.length === 0) {
                         alert("El título original no puede estar vacío.");
@@ -155,6 +162,7 @@ export class StudioEditController {
                         description: newDesc,
                         visibility: newVisibility,
                         original_language: newOriginalLanguage,
+                        allow_comments: newAllowComments,
                         models: modelsIds,
                         categories: categoriesIds,
                         tags: customTagsArr
@@ -166,6 +174,8 @@ export class StudioEditController {
                         video.description = newDesc;
                         video.visibility = newVisibility;
                         video.original_language = newOriginalLanguage;
+                        video.allow_comments = newAllowComments ? 1 : 0;
+                        video.draftAllowComments = video.allow_comments;
                     } else {
                         alert("Error guardando datos: " + updateRes.message);
                         hasError = true;
@@ -204,6 +214,7 @@ export class StudioEditController {
         if (video.draftTitle === undefined) video.draftTitle = video.title || video.original_filename || '';
         if (video.draftDescription === undefined) video.draftDescription = video.description || '';
         if (video.draftVisibility === undefined) video.draftVisibility = video.visibility || 'public';
+        if (video.draftAllowComments === undefined) video.draftAllowComments = (video.allow_comments !== undefined) ? video.allow_comments : 1;
         if (video.draftThumbnailPreview === undefined) video.draftThumbnailPreview = video.thumbnail_path;
         if (video.draftLocalizedTitles === undefined) video.draftLocalizedTitles = {};
     }
@@ -227,6 +238,28 @@ export class StudioEditController {
                 if (triggerText) triggerText.textContent = text;
             }
         });
+    }
+
+    syncCommentsUI(value) {
+        const commentsIcon = document.getElementById('commentsIcon');
+        const commentsText = document.getElementById('commentsText');
+
+        const menuLinks = document.querySelectorAll('#commentsSelectorMenu .component-menu-link');
+        let matched = false;
+        menuLinks.forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('data-value') === value) {
+                link.classList.add('active');
+                if (commentsIcon) commentsIcon.textContent = link.getAttribute('data-icon');
+                if (commentsText) commentsText.textContent = link.getAttribute('data-text');
+                matched = true;
+            }
+        });
+
+        if (!matched && value === '1') {
+            if (commentsIcon) commentsIcon.textContent = 'chat';
+            if (commentsText) commentsText.textContent = 'Activados';
+        }
     }
 
     handleSelectTitleLanguage(btn) {
@@ -418,6 +451,7 @@ export class StudioEditController {
         formData.append('description', video.draftDescription || '');
         formData.append('visibility', video.draftVisibility || 'public');
         formData.append('original_language', originalLanguage);
+        formData.append('allow_comments', video.draftAllowComments);
         
         const modelsArr = document.getElementById('hiddenModelsArray') ? document.getElementById('hiddenModelsArray').value : '[]';
         const categoriesArr = document.getElementById('hiddenCategoriesArray') ? document.getElementById('hiddenCategoriesArray').value : '[]';
@@ -481,6 +515,24 @@ export class StudioEditController {
             }
             
             const menu = selectVisOption.closest('.component-module');
+            if (menu) { menu.classList.remove('active'); menu.classList.add('disabled'); }
+            return;
+        }
+
+        const selectCommOption = e.target.closest('[data-action="selectComments"]');
+        if (selectCommOption) {
+            const value = selectCommOption.getAttribute('data-value');
+            this.syncCommentsUI(value);
+            
+            const hiddenInput = document.getElementById('videoAllowCommentsInput');
+            if (hiddenInput) hiddenInput.value = value;
+            
+            if (this.state.selectedVideoId) {
+                const video = this.state.getVideo(this.state.selectedVideoId);
+                if (video) video.draftAllowComments = value;
+            }
+            
+            const menu = selectCommOption.closest('.component-module');
             if (menu) { menu.classList.remove('active'); menu.classList.add('disabled'); }
             return;
         }

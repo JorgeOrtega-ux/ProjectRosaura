@@ -427,7 +427,7 @@ class StudioServices {
         return $processedTags;
     }
 
-    public function updateVideoDetails(int $userId, int $videoId, string $title, ?string $description = null, array $models = [], array $categories = [], array $tags = [], string $visibility = 'public', array $localizedTitles = [], string $originalLanguage = 'es-419'): array {
+    public function updateVideoDetails(int $userId, int $videoId, string $title, ?string $description = null, array $models = [], array $categories = [], array $tags = [], string $visibility = 'public', array $localizedTitles = [], string $originalLanguage = 'es-419', bool $allowComments = true): array {
         $video = $this->videoRepo->findById($videoId);
         if (!$video || $video['user_id'] != $userId) {
             throw new Exception("Video no encontrado o no autorizado.");
@@ -440,7 +440,8 @@ class StudioServices {
         $metadata = [
             'title' => trim($title),
             'visibility' => $visibility,
-            'original_language' => $originalLanguage
+            'original_language' => $originalLanguage,
+            'allow_comments' => $allowComments ? 1 : 0
         ];
         
         if (!empty($localizedTitles)) {
@@ -494,7 +495,7 @@ class StudioServices {
         throw new Exception("Video no encontrado.");
     }
 
-    public function publishVideo(int $userId, int $videoId, string $title, string $description, array $models = [], array $categories = [], array $tags = [], ?array $thumbnailFile = null, ?string $generatedPath = null, string $visibility = 'public', array $localizedTitles = [], string $originalLanguage = 'es-419'): array {
+    public function publishVideo(int $userId, int $videoId, string $title, string $description, array $models = [], array $categories = [], array $tags = [], ?array $thumbnailFile = null, ?string $generatedPath = null, string $visibility = 'public', array $localizedTitles = [], string $originalLanguage = 'es-419', bool $allowComments = true): array {
         $video = $this->videoRepo->findById($videoId);
         if (!$video || $video['user_id'] != $userId) {
             throw new Exception("Video no encontrado o no autorizado.");
@@ -519,7 +520,8 @@ class StudioServices {
             'title' => trim($title),
             'description' => trim($description),
             'visibility' => $visibility,
-            'original_language' => $originalLanguage
+            'original_language' => $originalLanguage,
+            'allow_comments' => $allowComments ? 1 : 0
         ];
         
         if (!empty($localizedTitles)) {

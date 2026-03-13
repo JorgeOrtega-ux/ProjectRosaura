@@ -184,6 +184,7 @@ CREATE TABLE IF NOT EXISTS videos (
     vtt_path VARCHAR(255) DEFAULT NULL,
     status ENUM('uploading', 'queued', 'processing', 'processed', 'failed', 'published') DEFAULT 'uploading',
     visibility ENUM('public', 'private', 'unlisted') DEFAULT 'public',
+    allow_comments TINYINT(1) DEFAULT 1, -- <-- AQUI ESTA LA COLUMNA AGREGADA
     orientation ENUM('horizontal', 'vertical') DEFAULT 'horizontal',
     processing_progress INT DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

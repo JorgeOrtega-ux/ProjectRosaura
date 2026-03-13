@@ -2,16 +2,19 @@
 namespace App\Api\Services;
 
 use App\Core\Interfaces\CommentRepositoryInterface;
+use App\Core\Interfaces\VideoRepositoryInterface;
 use Predis\Client;
 
 class CommentServices {
     private CommentRepositoryInterface $commentRepo;
     private Client $redis;
+    private VideoRepositoryInterface $videoRepo;
 
     // AÑADIDO TIPO 'Client' PARA $redis. Vital para que el Container no explote.
-    public function __construct(CommentRepositoryInterface $commentRepo, Client $redis) {
+    public function __construct(CommentRepositoryInterface $commentRepo, Client $redis, VideoRepositoryInterface $videoRepo) {
         $this->commentRepo = $commentRepo;
         $this->redis = $redis;
+        $this->videoRepo = $videoRepo;
     }
 
     public function getCommentsForVideo(int $videoId, ?int $currentUserId, int $limit = 20, int $offset = 0): array {
@@ -84,6 +87,12 @@ class CommentServices {
     }
 
     public function addComment(int $videoId, int $userId, string $content, ?int $parentId = null): array {
+        
+        // Verificamos si los comentarios están permitidos antes de insertarlo en DB
+        if (!$this->videoRepo->commentsAllowed($videoId)) {
+            throw new \Exception('COMMENTS_DISABLED');
+        }
+        
         if ($parentId) {
             $commentId = $this->commentRepo->insertReply($videoId, $userId, $parentId, $content);
         } else {
