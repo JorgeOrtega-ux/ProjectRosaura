@@ -456,7 +456,9 @@ export class StudioEditController {
         if (action === 'toggleEditState') {
             const target = btn.getAttribute('data-target');
             if (target && target.startsWith('title-')) {
-                this.setEditState(target, true);
+                // Identificamos dinámicamente si el click vino de la vista de lectura para pasar a modo edición (true) o si vino del botón cancelar (false).
+                const isViewBox = btn.closest(`[data-state="${target}-view"]`) !== null;
+                this.setEditState(target, isViewBox);
             }
         }
         if (action === 'publishVideo') this.publishVideo();

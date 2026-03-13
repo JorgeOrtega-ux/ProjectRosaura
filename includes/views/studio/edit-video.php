@@ -86,7 +86,7 @@ $supportedLangs = [
                         <div id="titlesContainer">
                             <div class="component-card--grouped title-card-box" data-lang="original" style="display: block;">
                                 <div class="component-group-item component-group-item--stateful">
-                                    <div class="active component-state-box" data-state="title-view">
+                                    <div class="active component-state-box" data-state="title-original-view">
                                         <div class="component-card__content">
                                             <div class="component-card__text">
                                                 <h2 class="component-card__title"><?php echo __('studio_video_title_req'); ?> (Original)</h2>
@@ -98,7 +98,7 @@ $supportedLangs = [
                                         </div>
                                     </div>
 
-                                    <div class="disabled component-state-box" data-state="title-edit">
+                                    <div class="disabled component-state-box" data-state="title-original-edit">
                                         <div class="component-card__content">
                                             <div class="component-card__text">
                                                 <h2 class="component-card__title"><?php echo __('studio_video_title_req'); ?> (Original)</h2>
@@ -120,7 +120,7 @@ $supportedLangs = [
                             <?php foreach($supportedLangs as $key => $label): ?>
                             <div class="component-card--grouped title-card-box" data-lang="<?php echo $key; ?>" style="display: none;">
                                 <div class="component-group-item component-group-item--stateful">
-                                    <div class="active component-state-box" data-state="title-view">
+                                    <div class="active component-state-box" data-state="title-<?php echo $key; ?>-view">
                                         <div class="component-card__content">
                                             <div class="component-card__text">
                                                 <h2 class="component-card__title">Título en <?php echo $label; ?></h2>
@@ -132,7 +132,7 @@ $supportedLangs = [
                                         </div>
                                     </div>
 
-                                    <div class="disabled component-state-box" data-state="title-edit">
+                                    <div class="disabled component-state-box" data-state="title-<?php echo $key; ?>-edit">
                                         <div class="component-card__content">
                                             <div class="component-card__text">
                                                 <h2 class="component-card__title">Título en <?php echo $label; ?></h2>

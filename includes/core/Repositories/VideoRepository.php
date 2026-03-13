@@ -25,9 +25,23 @@ class VideoRepository implements VideoRepositoryInterface {
             $titles = json_decode($video['localized_titles'], true);
             $currentLang = $_COOKIE['language'] ?? 'en-US'; // Determinar el idioma actual del usuario
             
-            if (is_array($titles) && isset($titles[$currentLang]) && !empty(trim($titles[$currentLang]))) {
-                $video['original_title'] = $video['title'];
-                $video['title'] = $titles[$currentLang];
+            if (is_array($titles)) {
+                // 1. Intento de coincidencia exacta (Ej: 'es-MX' coincidiendo con 'es-MX')
+                if (isset($titles[$currentLang]) && !empty(trim($titles[$currentLang]))) {
+                    $video['original_title'] = $video['title'];
+                    $video['title'] = $titles[$currentLang];
+                } 
+                // 2. Fallback regional (Ej: si busca 'es-MX' y no lo encuentra, utilizar 'es-419' o cualquier otra variante de 'es')
+                else {
+                    $baseLang = explode('-', $currentLang)[0];
+                    foreach ($titles as $langKey => $titleValue) {
+                        if (strpos($langKey, $baseLang . '-') === 0 && !empty(trim($titleValue))) {
+                            $video['original_title'] = $video['title'];
+                            $video['title'] = $titleValue;
+                            break; // Rompe el loop con el primer fallback exitoso
+                        }
+                    }
+                }
             }
         }
         return $video;
