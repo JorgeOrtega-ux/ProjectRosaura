@@ -12,7 +12,10 @@ export class HistoryController {
         this.searchPage = 1;
         this.hasMoreWatch = true;
         this.hasMoreSearch = true;
-        this.isLoading = false;
+        
+        // Variables de estado separadas para evitar la condición de carrera
+        this.isWatchLoading = false;
+        this.isSearchLoading = false;
 
         // Elementos del DOM
         this.tabs = document.querySelectorAll('.component-toolbar__tab');
@@ -82,17 +85,15 @@ export class HistoryController {
 
     setupInfiniteScroll() {
         this.scrollHandler = () => {
-            if (this.isLoading) return;
-            
             const scrollTop = window.scrollY || document.documentElement.scrollTop;
             const scrollHeight = document.documentElement.scrollHeight;
             const clientHeight = document.documentElement.clientHeight;
 
             if (scrollTop + clientHeight >= scrollHeight - 200) {
-                if (this.currentTab === 'watch-history' && this.hasMoreWatch) {
+                if (this.currentTab === 'watch-history' && this.hasMoreWatch && !this.isWatchLoading) {
                     this.watchPage++;
                     this.loadWatchHistory();
-                } else if (this.currentTab === 'search-history' && this.hasMoreSearch) {
+                } else if (this.currentTab === 'search-history' && this.hasMoreSearch && !this.isSearchLoading) {
                     this.searchPage++;
                     this.loadSearchHistory();
                 }
@@ -102,14 +103,14 @@ export class HistoryController {
     }
 
     async loadWatchHistory() {
-        if (this.isLoading || !this.hasMoreWatch) return;
-        this.isLoading = true;
+        if (this.isWatchLoading || !this.hasMoreWatch) return;
+        this.isWatchLoading = true;
         if (this.watchLoading) this.watchLoading.style.display = 'block';
 
         const response = await this.api.getWatchHistory(this.watchPage);
         
         if (this.watchLoading) this.watchLoading.style.display = 'none';
-        this.isLoading = false;
+        this.isWatchLoading = false;
 
         if (response.success && response.data) {
             if (response.data.length === 0) {
@@ -126,14 +127,14 @@ export class HistoryController {
     }
 
     async loadSearchHistory() {
-        if (this.isLoading || !this.hasMoreSearch) return;
-        this.isLoading = true;
+        if (this.isSearchLoading || !this.hasMoreSearch) return;
+        this.isSearchLoading = true;
         if (this.searchLoading) this.searchLoading.style.display = 'block';
 
         const response = await this.api.getSearchHistory(this.searchPage);
         
         if (this.searchLoading) this.searchLoading.style.display = 'none';
-        this.isLoading = false;
+        this.isSearchLoading = false;
 
         if (response.success && response.data) {
             if (response.data.length === 0) {

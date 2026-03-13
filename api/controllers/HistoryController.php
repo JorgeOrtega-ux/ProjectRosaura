@@ -18,11 +18,12 @@ class HistoryController {
         return $_SESSION['user_id'] ?? null;
     }
 
-    public function get_watch_history() {
+    public function get_watch_history($data = []) {
         $userId = $this->getUserId();
         if (!$userId) return ['success' => false, 'message' => 'No autorizado', 'code' => 401];
 
-        $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+        // Leer 'page' del arreglo $data inyectado por el framework
+        $page = isset($data['page']) ? (int)$data['page'] : 1;
         $limit = 20;
         $offset = ($page - 1) * $limit;
 
@@ -30,11 +31,12 @@ class HistoryController {
         return ['success' => true, 'data' => $history];
     }
 
-    public function get_search_history() {
+    public function get_search_history($data = []) {
         $userId = $this->getUserId();
         if (!$userId) return ['success' => false, 'message' => 'No autorizado', 'code' => 401];
 
-        $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+        // Leer 'page' del arreglo $data inyectado por el framework
+        $page = isset($data['page']) ? (int)$data['page'] : 1;
         $limit = 20;
         $offset = ($page - 1) * $limit;
 
@@ -58,7 +60,7 @@ class HistoryController {
         return ['success' => $success, 'message' => $success ? 'Historial borrado' : 'Error al borrar'];
     }
 
-    public function remove_watch_item($data) {
+    public function remove_watch_item($data = []) {
         $userId = $this->getUserId();
         if (!$userId) return ['success' => false, 'message' => 'No autorizado', 'code' => 401];
 
@@ -69,7 +71,7 @@ class HistoryController {
         return ['success' => $success];
     }
 
-    public function remove_search_item($data) {
+    public function remove_search_item($data = []) {
         $userId = $this->getUserId();
         if (!$userId) return ['success' => false, 'message' => 'No autorizado', 'code' => 401];
 
