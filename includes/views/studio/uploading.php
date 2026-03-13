@@ -49,6 +49,45 @@ $supportedLangs = [
                 <div class="studio-uploading-wrapper">
                     
                     <div class="studio-uploading-details">
+
+                        <div class="component-card--grouped">
+                            <div class="component-group-item component-group-item--stacked">
+                                <div class="component-card__content">
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title">Idioma Original del Video</h2>
+                                        <p class="component-card__description">El idioma hablado en tu video o el principal de los textos.</p>
+                                    </div>
+                                </div>
+                                <div class="component-card__actions component-card__actions--start">
+                                    <div class="component-dropdown-wrapper">
+                                        <div class="component-dropdown-trigger" data-action="toggleModule" data-target="moduleOriginalLanguage">
+                                            <span class="material-symbols-rounded">translate</span>
+                                            <span class="component-dropdown-text" id="selectedOriginalLangText">Español (Latinoamérica)</span>
+                                            <span class="material-symbols-rounded">expand_more</span>
+                                        </div>
+                                        
+                                        <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="moduleOriginalLanguage" id="originalLanguageSelectorMenu">
+                                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding">
+                                                <div class="pill-container"><div class="drag-handle"></div></div>
+                                                <div class="component-menu-list component-menu-list--scrollable">
+                                                    <?php foreach($supportedLangs as $key => $label): ?>
+                                                    <div class="component-menu-link <?php echo $key === 'es-419' ? 'active' : ''; ?>" data-action="selectOriginalLanguage" data-value="<?php echo $key; ?>" data-text="<?php echo $label; ?>">
+                                                        <div class="component-menu-link-icon">
+                                                            <span class="material-symbols-rounded">language</span>
+                                                        </div>
+                                                        <div class="component-menu-link-text">
+                                                            <span><?php echo $label; ?></span>
+                                                        </div>
+                                                    </div>
+                                                    <?php endforeach; ?>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <input type="hidden" id="videoOriginalLanguageInput" value="es-419">
                         
                         <div class="component-card--grouped">
                             <div class="component-group-item component-group-item--stacked">

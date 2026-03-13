@@ -26,15 +26,6 @@ $supportedLangs = [
                         <h2 class="component-upload-title"><?php echo __('studio_upload_drag_drop'); ?></h2>
                         <p class="component-upload-subtitle"><?php echo __('studio_upload_private_warning'); ?></p>
                         
-                        <div class="component-input-group" style="margin-bottom: 1.5rem; text-align: left; max-width: 300px; margin-left: auto; margin-right: auto;">
-                            <label class="component-label" style="display: block; margin-bottom: 6px; font-weight: 500;">Idioma Original del Video</label>
-                            <select id="videoOriginalLanguageInput" class="component-input-field">
-                                <?php foreach($supportedLangs as $key => $label): ?>
-                                <option value="<?php echo $key; ?>" <?php echo $key === 'es-419' ? 'selected' : ''; ?>><?php echo $label; ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        
                         <input type="file" id="videoFileInput" class="disabled" multiple accept="video/*">
                         <button class="component-upload-button" type="button" onclick="document.getElementById('videoFileInput').click();"><?php echo __('studio_upload_select_files'); ?></button>
                         

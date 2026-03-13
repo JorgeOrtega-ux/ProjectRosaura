@@ -55,8 +55,7 @@ export class StudioUploadController {
         if (!files || files.length === 0) return;
         
         const routeName = ApiRoutes.Studio?.UploadVideo || 'studio.upload_video';
-        const languageSelect = document.getElementById('videoOriginalLanguageInput');
-        const originalLanguage = languageSelect ? languageSelect.value : 'es-419';
+        const originalLanguage = 'es-419'; // Idioma por defecto. El usuario lo editará en uploading.php
 
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
@@ -216,9 +215,19 @@ export class StudioUploadController {
         const descInput = document.getElementById('videoDescriptionInput');
         if (descInput) descInput.value = video.description || '';
 
-        const langSelect = document.getElementById('videoOriginalLanguageSelect');
-        if (langSelect && video.original_language) {
-            langSelect.value = video.original_language;
+        // Actualizar UI del Idioma Original
+        const langInput = document.getElementById('videoOriginalLanguageInput');
+        const langTriggerText = document.getElementById('selectedOriginalLangText');
+        if (langInput && video.original_language) {
+            langInput.value = video.original_language;
+            const menuLinks = document.querySelectorAll('#originalLanguageSelectorMenu .component-menu-link');
+            menuLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('data-value') === video.original_language) {
+                    link.classList.add('active');
+                    if (langTriggerText) langTriggerText.textContent = link.getAttribute('data-text');
+                }
+            });
         }
 
         this.syncVisibilityUI(video.visibility || 'public');
@@ -305,11 +314,6 @@ export class StudioUploadController {
                 if (displayTitle) displayTitle.textContent = e.target.value || video.original_filename || '';
             }
         }
-
-        if (e.target && e.target.id === 'videoOriginalLanguageSelect') {
-            const video = this.state.getVideo(this.state.selectedVideoId);
-            if (video) video.original_language = e.target.value;
-        }
     }
 
     handleDocumentChange(e) {
@@ -363,6 +367,34 @@ export class StudioUploadController {
         }
     }
 
+    handleSelectOriginalLanguage(btn) {
+        const lang = btn.getAttribute('data-value');
+        const text = btn.getAttribute('data-text');
+
+        const triggerText = document.getElementById('selectedOriginalLangText');
+        if (triggerText) triggerText.textContent = text;
+
+        const hiddenInput = document.getElementById('videoOriginalLanguageInput');
+        if (hiddenInput) hiddenInput.value = lang;
+
+        const menuLinks = document.querySelectorAll('#originalLanguageSelectorMenu .component-menu-link');
+        menuLinks.forEach(link => link.classList.remove('active'));
+        btn.classList.add('active');
+
+        if (this.state.selectedVideoId) {
+            const video = this.state.getVideo(this.state.selectedVideoId);
+            if (video) video.original_language = lang;
+        }
+
+        const module = btn.closest('.component-module');
+        if (module && window.appInstance) {
+            window.appInstance.closeModule(module);
+        } else if (module) {
+            module.classList.remove('active');
+            module.classList.add('disabled');
+        }
+    }
+
     setEditState(target, isEditing) {
         const viewState = document.querySelector(`[data-state="${target}-view"]`);
         const editState = document.querySelector(`[data-state="${target}-edit"]`);
@@ -396,6 +428,10 @@ export class StudioUploadController {
             e.preventDefault();
             e.stopImmediatePropagation();
             this.handleSelectTitleLanguage(btn);
+        } else if (action === 'selectOriginalLanguage') {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this.handleSelectOriginalLanguage(btn);
         } else if (action === 'saveTitle') {
             e.preventDefault();
             e.stopImmediatePropagation();
@@ -515,8 +551,8 @@ export class StudioUploadController {
         const title = titleOriginalInput ? titleOriginalInput.value.trim() : video.title;
         const description = document.getElementById('videoDescriptionInput')?.value.trim() || '';
         const visibility = video.visibility || 'public';
-        const langSelect = document.getElementById('videoOriginalLanguageSelect');
-        const originalLanguage = langSelect ? langSelect.value : (video.original_language || 'es-419');
+        const langInput = document.getElementById('videoOriginalLanguageInput');
+        const originalLanguage = langInput ? langInput.value : (video.original_language || 'es-419');
         
         if (!title) {
             alert("El título original es obligatorio para publicar.");

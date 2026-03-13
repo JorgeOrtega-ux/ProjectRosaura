@@ -68,9 +68,18 @@ export class StudioEditController {
             if (titleInputOriginal) titleInputOriginal.value = video.draftTitle;
             if (displayTitleOriginal) displayTitleOriginal.textContent = video.draftTitle;
 
-            const langSelect = document.getElementById('videoOriginalLanguageSelect');
-            if (langSelect && video.original_language) {
-                langSelect.value = video.original_language;
+            const langInput = document.getElementById('videoOriginalLanguageInput');
+            const langTriggerText = document.getElementById('selectedOriginalLangText');
+            if (langInput && video.original_language) {
+                langInput.value = video.original_language;
+                const menuLinks = document.querySelectorAll('#originalLanguageSelectorMenu .component-menu-link');
+                menuLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('data-value') === video.original_language) {
+                        link.classList.add('active');
+                        if (langTriggerText) langTriggerText.textContent = link.getAttribute('data-text');
+                    }
+                });
             }
 
             let localizedTitles = {};
@@ -115,7 +124,7 @@ export class StudioEditController {
                     const newTitleOriginal = titleInputOriginal ? titleInputOriginal.value.trim() : '';
                     const newDesc = descInput ? descInput.value.trim() : '';
                     const newVisibility = video.draftVisibility || 'public';
-                    const newOriginalLanguage = langSelect ? langSelect.value : (video.original_language || 'es-419');
+                    const newOriginalLanguage = langInput ? langInput.value : (video.original_language || 'es-419');
                     
                     if (newTitleOriginal.length === 0) {
                         alert("El título original no puede estar vacío.");
@@ -249,6 +258,34 @@ export class StudioEditController {
         }
     }
 
+    handleSelectOriginalLanguage(btn) {
+        const lang = btn.getAttribute('data-value');
+        const text = btn.getAttribute('data-text');
+
+        const triggerText = document.getElementById('selectedOriginalLangText');
+        if (triggerText) triggerText.textContent = text;
+
+        const hiddenInput = document.getElementById('videoOriginalLanguageInput');
+        if (hiddenInput) hiddenInput.value = lang;
+
+        const menuLinks = document.querySelectorAll('#originalLanguageSelectorMenu .component-menu-link');
+        menuLinks.forEach(link => link.classList.remove('active'));
+        btn.classList.add('active');
+
+        if (this.state.selectedVideoId) {
+            const video = this.state.getVideo(this.state.selectedVideoId);
+            if (video) video.original_language = lang;
+        }
+
+        const module = btn.closest('.component-module');
+        if (module && window.appInstance) {
+            window.appInstance.closeModule(module);
+        } else if (module) {
+            module.classList.remove('active');
+            module.classList.add('disabled');
+        }
+    }
+
     setEditState(target, isEditing) {
         const viewState = document.querySelector(`[data-state="${target}-view"]`);
         const editState = document.querySelector(`[data-state="${target}-edit"]`);
@@ -371,8 +408,8 @@ export class StudioEditController {
             }
         });
 
-        const langSelect = document.getElementById('videoOriginalLanguageSelect');
-        const originalLanguage = langSelect ? langSelect.value : (video.original_language || 'es-419');
+        const langInput = document.getElementById('videoOriginalLanguageInput');
+        const originalLanguage = langInput ? langInput.value : (video.original_language || 'es-419');
 
         const formData = new FormData();
         formData.append('video_id', this.state.selectedVideoId);
@@ -453,6 +490,7 @@ export class StudioEditController {
         const action = btn.getAttribute('data-action');
 
         if (action === 'selectTitleLanguage') this.handleSelectTitleLanguage(btn);
+        if (action === 'selectOriginalLanguage') this.handleSelectOriginalLanguage(btn);
         if (action === 'saveTitle') {
             const lang = btn.getAttribute('data-lang');
             this.saveTitleField(lang);
