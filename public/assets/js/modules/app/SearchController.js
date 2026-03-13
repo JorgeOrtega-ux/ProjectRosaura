@@ -22,6 +22,7 @@ export default class SearchController {
 
     async init() {
         if (!this.query) {
+            console.warn('[SearchController] Consulta vacía. Mostrando estado vacío.');
             this.showEmptyState();
             return;
         }
@@ -33,13 +34,18 @@ export default class SearchController {
         await this.fetchResults();
     }
 
- async fetchResults() {
+    async fetchResults() {
         try {
-            // 1. Obtenemos el token de seguridad global (asumiendo que lo tienes en un meta tag en tu header.php o app.php)
+            console.group(`[SearchController] Ejecutando búsqueda: "${this.query}"`);
+            
+            // 1. Obtenemos el token de seguridad global
             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+            if (!csrfToken) console.warn('[SearchController] No se encontró el token CSRF en el DOM.');
 
-            // 2. Apuntamos al index.php de la API usando la ruta mapeada 'search.get'
+            // 2. Ruta restaurada a la subcarpeta del proyecto local en XAMPP/WAMP
             const apiUrl = `/ProjectRosaura/api/index.php?route=search.get&q=${encodeURIComponent(this.query)}`;
+            
+            console.log(`[SearchController] Endpoint objetivo: ${apiUrl}`);
 
             const response = await fetch(apiUrl, {
                 method: 'GET',
@@ -50,30 +56,41 @@ export default class SearchController {
                 }
             });
             
-            if (!response.ok) throw new Error('Network response was not ok');
+            console.log(`[SearchController] Estado de la respuesta HTTP: ${response.status} ${response.statusText}`);
             
+            if (!response.ok) {
+                // Leemos como texto en caso de que un 404 o 500 devuelva HTML de Apache/Nginx
+                const errorHtml = await response.text();
+                console.error('[SearchController] Fallo en la red. Respuesta del servidor:', errorHtml);
+                throw new Error(`HTTP Error ${response.status}: ${response.statusText}`);
+            }
+            
+            // Inspección del parseo JSON (clave para evitar errores de corrupción)
             const result = await response.json();
+            console.log('[SearchController] Payload recibido del servidor:', result);
 
             if (result.success) {
                 this.renderResults(result.data);
             } else {
-                console.error('Error del servidor:', result.message);
+                console.error('[SearchController] Error lógico del backend:', result.message);
                 this.showEmptyState();
             }
         } catch (error) {
-            console.error('Fallo al obtener resultados:', error);
+            console.error('[SearchController] Excepción capturada durante el flujo de la petición:', error);
             this.showEmptyState();
+        } finally {
+            console.groupEnd();
         }
     }
 
     renderResults(data) {
-        // Ocultar spinner
         this.loadingState.style.display = 'none';
 
         const hasChannels = data.channels && data.channels.length > 0;
         const hasVideos = data.videos && data.videos.length > 0;
 
         if (!hasChannels && !hasVideos) {
+            console.info('[SearchController] La búsqueda no arrojó resultados para canales ni videos.');
             this.showEmptyState();
             return;
         }
@@ -95,7 +112,6 @@ export default class SearchController {
             const channelCard = document.createElement('div');
             channelCard.classList.add('component-search-channel-card');
             
-            // Asumiendo que el avatar tiene una ruta default si es nulo
             const avatarSrc = channel.avatar_path ? `/public/storage/profilePictures/uploaded/${channel.avatar_path}` : `/public/storage/profilePictures/default/default.png`;
 
             channelCard.innerHTML = `
@@ -110,7 +126,7 @@ export default class SearchController {
             `;
 
             channelCard.addEventListener('click', () => {
-                window.SpaRouter.navigate(`/channel/${channel.handle}`);
+                window.SpaRouter.navigate(`/@${channel.handle}`);
             });
 
             this.channelsGrid.appendChild(channelCard);
@@ -120,7 +136,6 @@ export default class SearchController {
     renderVideos(videos) {
         this.videosGrid.innerHTML = '';
         videos.forEach(video => {
-            // Aquí puedes reemplazar la creación manual integrando tu 'VideoCardSystem' si tienes un método estático
             const videoCard = document.createElement('div');
             videoCard.classList.add('component-search-video-card');
             
@@ -135,7 +150,7 @@ export default class SearchController {
             `;
 
             videoCard.addEventListener('click', () => {
-                window.SpaRouter.navigate(`/watch?v=${video.id_video}`);
+                window.SpaRouter.navigate(`/watch/${video.id_video}`);
             });
 
             this.videosGrid.appendChild(videoCard);

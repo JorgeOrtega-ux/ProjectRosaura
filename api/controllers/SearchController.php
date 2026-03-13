@@ -5,49 +5,60 @@ namespace ProjectRosaura\Controllers;
 require_once __DIR__ . '/../services/SearchServices.php';
 
 use ProjectRosaura\Services\SearchServices;
+use App\Core\System\Logger;
+use App\Core\Container; // <--- Agregamos la importación de tu clase Container
 use Exception;
 
 class SearchController {
     private SearchServices $searchServices;
+    private Logger $logger;
 
-    public function __construct($container = null) {
-        // En tu arquitectura, el contenedor inyecta las dependencias. 
-        // Pasamos el contenedor al servicio para que pueda acceder a la configuración (host, keys).
+    // Le decimos a PHP estrictamente qué tipo de dato es $container
+    public function __construct(?Container $container = null) {
         $this->searchServices = new SearchServices($container);
+        
+        if ($container && method_exists($container, 'has') && $container->has(Logger::class)) {
+            $this->logger = $container->get(Logger::class);
+        } else {
+            $this->logger = new Logger();
+        }
     }
 
     /**
-     * Maneja la ruta GET /api/search
+     * Maneja la ruta GET /api/index.php?route=search.get
      */
-    public function search(): void {
-        header('Content-Type: application/json');
+    public function search(array $input): array {
+        $query = isset($input['q']) ? trim($input['q']) : '';
         
-        $query = isset($_GET['q']) ? trim($_GET['q']) : '';
-        
-        // Si la búsqueda está vacía, retornamos arrays vacíos para evitar llamadas inútiles a Meilisearch
         if (empty($query)) {
-            echo json_encode([
+            $this->logger->info("Petición de búsqueda vacía recibida.", ['module' => 'search']);
+            return [
                 'success' => true, 
                 'data' => [
                     'videos' => [], 
                     'channels' => []
                 ]
-            ]);
-            return;
+            ];
         }
 
         try {
+            $this->logger->info("Motor de búsqueda consultando", ['query' => $query]);
+            
             $results = $this->searchServices->performSearch($query);
-            echo json_encode([
+            
+            return [
                 'success' => true, 
                 'data' => $results
-            ]);
+            ];
+
         } catch (Exception $e) {
+            $this->logger->error("Excepción crítica en Meilisearch: " . $e->getMessage(), ['query' => $query]);
+            
             http_response_code(500);
-            echo json_encode([
+            return [
                 'success' => false, 
-                'message' => 'Error en el motor de búsqueda: ' . $e->getMessage()
-            ]);
+                'message' => 'Error interno en el motor de búsqueda.'
+            ];
         }
     }
 }
