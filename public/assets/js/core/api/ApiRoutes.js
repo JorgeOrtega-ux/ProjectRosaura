@@ -6,6 +6,9 @@ export const ApiRoutes = {
         GetPlaylistDetails: 'app.get_playlist_details',
         GetPlaylistQueue: 'app.get_playlist_queue' 
     },
+    Search: {
+        Get: 'search.get' // <-- RUTA DE BÚSQUEDA AÑADIDA
+    },
     Video: {
         RegisterView: 'video.register_view',
         ToggleLike: 'video.toggle_like'

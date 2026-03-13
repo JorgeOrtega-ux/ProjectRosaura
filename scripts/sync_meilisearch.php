@@ -2,31 +2,28 @@
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
-// Ajusta el path a tu archivo de configuración de base de datos
-require_once __DIR__ . '/../includes/config/database.php'; 
-
 use MeiliSearch\Client;
 
 echo "Iniciando sincronización con Meilisearch...\n";
 
 // Configuración de Meilisearch
 $host = 'http://127.0.0.1:7700';
-$key = 'TU_MASTER_KEY_AQUI'; // Reemplaza con tu clave real
+$key = 'TU_MASTER_KEY_AQUI'; // <-- ¡ASEGÚRATE DE PONER TU CLAVE REAL AQUÍ!
 $client = new Client($host, $key);
 
-// 1. Configurar índices y atributos buscables (opcional pero muy recomendado)
+// 1. Configurar índices y atributos buscables
 try {
-    $client->index('videos')->updateFilterableAttributes(['visibility', 'id_user']);
-    $client->index('videos')->updateSearchableAttributes(['title', 'description', 'tags']);
+    $client->index('videos')->updateFilterableAttributes(['visibility', 'status', 'user_id']);
+    $client->index('videos')->updateSearchableAttributes(['title', 'description']);
     
-    $client->index('channels')->updateSearchableAttributes(['username', 'handle']);
+    $client->index('channels')->updateSearchableAttributes(['username', 'handle', 'description']);
 } catch (Exception $e) {
     echo "Aviso: Error configurando índices (si están vacíos, es normal). Continuamos...\n";
 }
 
-// 2. Conexión a la base de datos (Usando un PDO genérico, adáptalo a la clase de tu proyecto)
+// 2. Conexión a la base de datos (Usando tu BD correcta: projectrosaura)
 try {
-    $db = new PDO('mysql:host=127.0.0.1;dbname=projectrosaura_db', 'root', '', [
+    $db = new PDO('mysql:host=127.0.0.1;dbname=projectrosaura', 'root', '', [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
     ]);
 } catch (PDOException $e) {
@@ -35,11 +32,23 @@ try {
 
 // 3. Sincronizar Videos Públicos
 echo "Extrayendo videos...\n";
-$stmt = $db->query("SELECT id_video, id_user, title, description, tags, created_at FROM videos WHERE visibility = 'public'");
+// Adaptamos los nombres de las columnas para que coincidan con bd.sql y el JS
+$stmt = $db->query("
+    SELECT 
+        id, 
+        uuid AS id_video, 
+        user_id, 
+        title, 
+        description, 
+        created_at 
+    FROM videos 
+    WHERE visibility = 'public' AND status = 'published'
+");
 $videos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 if (!empty($videos)) {
-    $client->index('videos')->addDocuments($videos, 'id_video');
+    // Usamos 'id' como primary key interna de Meilisearch
+    $client->index('videos')->addDocuments($videos, 'id');
     echo "✔️ Sincronizados " . count($videos) . " videos.\n";
 } else {
     echo "ℹ️ No se encontraron videos públicos para sincronizar.\n";
@@ -47,14 +56,24 @@ if (!empty($videos)) {
 
 // 4. Sincronizar Canales Activos
 echo "Extrayendo canales...\n";
-$stmt = $db->query("SELECT id_user, username, handle, avatar_path FROM users WHERE status = 'active'");
+// Adaptamos las columnas (profile_picture -> avatar_path, channel_identifier -> handle)
+$stmt = $db->query("
+    SELECT 
+        id, 
+        username, 
+        channel_identifier AS handle, 
+        profile_picture AS avatar_path, 
+        channel_description AS description 
+    FROM users 
+    WHERE user_status = 'active'
+");
 $channels = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 if (!empty($channels)) {
-    $client->index('channels')->addDocuments($channels, 'id_user');
+    $client->index('channels')->addDocuments($channels, 'id');
     echo "✔️ Sincronizados " . count($channels) . " canales.\n";
 } else {
-    echo "ℹ️ No se encontraron canales para sincronizar.\n";
+    echo "ℹ️ No se encontraron canales activos para sincronizar.\n";
 }
 
 echo "🎉 Sincronización completa.\n";

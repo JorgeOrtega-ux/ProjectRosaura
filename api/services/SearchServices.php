@@ -3,13 +3,12 @@
 namespace ProjectRosaura\Services;
 
 use MeiliSearch\Client;
-use App\Core\Container; // <--- Importamos el Container
+use App\Core\Container;
 use Exception;
 
 class SearchServices {
     private Client $client;
 
-    // Definimos el tipo aquí también
     public function __construct(?Container $container = null) {
         // Idealmente, estas credenciales vienen de tu $container->get('config') o variables de entorno
         $meiliHost = getenv('MEILISEARCH_HOST') ?: 'http://127.0.0.1:7700';
@@ -23,11 +22,9 @@ class SearchServices {
      */
     public function performSearch(string $query): array {
         try {
-            // Obtenemos las instancias de los índices
             $videoIndex = $this->client->index('videos');
             $channelIndex = $this->client->index('channels');
 
-            // Ejecutamos las búsquedas con límites específicos
             $videoResults = $videoIndex->search($query, [
                 'limit' => 24
             ]);
@@ -42,7 +39,8 @@ class SearchServices {
             ];
         } catch (Exception $e) {
             error_log("Meilisearch Error: " . $e->getMessage());
-            throw new Exception("No se pudo conectar con el servidor de búsqueda.");
+            // CORRECCIÓN: Devolvemos el mensaje EXACTO de Meilisearch para diagnosticar
+            throw new Exception("Error de Meilisearch: " . $e->getMessage());
         }
     }
 }

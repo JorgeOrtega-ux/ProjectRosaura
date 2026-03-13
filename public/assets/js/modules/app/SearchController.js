@@ -1,6 +1,7 @@
+import { ApiRoutes } from '../../core/api/ApiRoutes.js';
+
 export default class SearchController {
     constructor() {
-        // Extraemos la variable de la URL generada por el router o el header
         const urlParams = new URLSearchParams(window.location.search);
         this.query = urlParams.get('search_query') || '';
         
@@ -22,13 +23,14 @@ export default class SearchController {
 
     async init() {
         if (!this.query) {
-            console.warn('[SearchController] Consulta vacía. Mostrando estado vacío.');
+            console.warn('🟡 [SearchController] Consulta vacía. Mostrando estado vacío.');
             this.showEmptyState();
             return;
         }
 
-        // Actualizamos el DOM del header top
-        this.queryDisplay.textContent = `"${this.query}"`;
+        if (this.queryDisplay) {
+            this.queryDisplay.textContent = `"${this.query}"`;
+        }
         document.title = `${this.query} - Búsqueda`;
 
         await this.fetchResults();
@@ -36,16 +38,15 @@ export default class SearchController {
 
     async fetchResults() {
         try {
-            console.group(`[SearchController] Ejecutando búsqueda: "${this.query}"`);
+            console.groupCollapsed(`🚨 [DEEP LOG - SEARCH] Iniciando búsqueda de: "${this.query}"`);
             
-            // 1. Obtenemos el token de seguridad global
             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-            if (!csrfToken) console.warn('[SearchController] No se encontró el token CSRF en el DOM.');
-
-            // 2. Ruta restaurada a la subcarpeta del proyecto local en XAMPP/WAMP
-            const apiUrl = `/ProjectRosaura/api/index.php?route=search.get&q=${encodeURIComponent(this.query)}`;
+            const basePath = window.AppBasePath || '/ProjectRosaura';
             
-            console.log(`[SearchController] Endpoint objetivo: ${apiUrl}`);
+            // USANDO API ROUTES AQUÍ
+            const apiUrl = `${basePath}/api/index.php?route=${ApiRoutes.Search.Get}&q=${encodeURIComponent(this.query)}`;
+            
+            console.log(`[Paso 1] 🌐 Endpoint objetivo construido:`, apiUrl);
 
             const response = await fetch(apiUrl, {
                 method: 'GET',
@@ -56,27 +57,31 @@ export default class SearchController {
                 }
             });
             
-            console.log(`[SearchController] Estado de la respuesta HTTP: ${response.status} ${response.statusText}`);
+            console.log(`[Paso 2] 📡 Estado HTTP Recibido: ${response.status} ${response.statusText}`);
             
+            const rawText = await response.text();
+            console.log(`[Paso 3] 📄 RESPUESTA CRUDA DEL SERVIDOR:\n`, rawText);
+
             if (!response.ok) {
-                // Leemos como texto en caso de que un 404 o 500 devuelva HTML de Apache/Nginx
-                const errorHtml = await response.text();
-                console.error('[SearchController] Fallo en la red. Respuesta del servidor:', errorHtml);
-                throw new Error(`HTTP Error ${response.status}: ${response.statusText}`);
+                // Al imprimir rawText, si es un 500, ahora veremos el error exacto de PHP.
+                throw new Error(`HTTP Error ${response.status}. Revisa la respuesta cruda arriba.`);
             }
             
-            // Inspección del parseo JSON (clave para evitar errores de corrupción)
-            const result = await response.json();
-            console.log('[SearchController] Payload recibido del servidor:', result);
+            let result;
+            try {
+                result = JSON.parse(rawText);
+            } catch (jsonError) {
+                throw new Error("Respuesta inválida del servidor (No es JSON).");
+            }
 
             if (result.success) {
                 this.renderResults(result.data);
             } else {
-                console.error('[SearchController] Error lógico del backend:', result.message);
+                console.error('🔴 [Paso 4] Error devuelto por el backend:', result.message);
                 this.showEmptyState();
             }
         } catch (error) {
-            console.error('[SearchController] Excepción capturada durante el flujo de la petición:', error);
+            console.error('💥 [SearchController] Excepción capturada:', error);
             this.showEmptyState();
         } finally {
             console.groupEnd();
@@ -84,30 +89,31 @@ export default class SearchController {
     }
 
     renderResults(data) {
-        this.loadingState.style.display = 'none';
+        if (this.loadingState) this.loadingState.style.display = 'none';
 
         const hasChannels = data.channels && data.channels.length > 0;
         const hasVideos = data.videos && data.videos.length > 0;
 
         if (!hasChannels && !hasVideos) {
-            console.info('[SearchController] La búsqueda no arrojó resultados para canales ni videos.');
             this.showEmptyState();
             return;
         }
 
-        if (hasChannels) {
+        if (hasChannels && this.channelsSection) {
             this.channelsSection.style.display = 'block';
             this.renderChannels(data.channels);
         }
 
-        if (hasVideos) {
+        if (hasVideos && this.videosSection) {
             this.videosSection.style.display = 'block';
             this.renderVideos(data.videos);
         }
     }
 
     renderChannels(channels) {
+        if (!this.channelsGrid) return;
         this.channelsGrid.innerHTML = '';
+        
         channels.forEach(channel => {
             const channelCard = document.createElement('div');
             channelCard.classList.add('component-search-channel-card');
@@ -126,7 +132,7 @@ export default class SearchController {
             `;
 
             channelCard.addEventListener('click', () => {
-                window.SpaRouter.navigate(`/@${channel.handle}`);
+                if (window.SpaRouter) window.SpaRouter.navigate(`/@${channel.handle}`);
             });
 
             this.channelsGrid.appendChild(channelCard);
@@ -134,14 +140,18 @@ export default class SearchController {
     }
 
     renderVideos(videos) {
+        if (!this.videosGrid) return;
         this.videosGrid.innerHTML = '';
+        
         videos.forEach(video => {
             const videoCard = document.createElement('div');
             videoCard.classList.add('component-search-video-card');
             
+            const thumbPath = `/public/storage/thumbnails/${video.id_video}.jpg`;
+            
             videoCard.innerHTML = `
                 <div class="component-search-video-thumbnail">
-                    <img src="/public/storage/thumbnails/${video.id_video}.jpg" alt="${video.title}" onerror="this.src='/public/assets/images/default-thumbnail.jpg'">
+                    <img src="${thumbPath}" alt="${video.title}" onerror="this.src='/public/assets/images/default-thumbnail.jpg'">
                 </div>
                 <div class="component-search-video-details">
                     <h4 class="component-search-video-title">${video.title}</h4>
@@ -150,7 +160,7 @@ export default class SearchController {
             `;
 
             videoCard.addEventListener('click', () => {
-                window.SpaRouter.navigate(`/watch/${video.id_video}`);
+                if (window.SpaRouter) window.SpaRouter.navigate(`/watch/${video.id_video}`);
             });
 
             this.videosGrid.appendChild(videoCard);
@@ -158,7 +168,7 @@ export default class SearchController {
     }
 
     showEmptyState() {
-        this.loadingState.style.display = 'none';
-        this.emptyState.style.display = 'flex';
+        if (this.loadingState) this.loadingState.style.display = 'none';
+        if (this.emptyState) this.emptyState.style.display = 'flex';
     }
 }

@@ -6,14 +6,13 @@ require_once __DIR__ . '/../services/SearchServices.php';
 
 use ProjectRosaura\Services\SearchServices;
 use App\Core\System\Logger;
-use App\Core\Container; // <--- Agregamos la importación de tu clase Container
+use App\Core\Container;
 use Exception;
 
 class SearchController {
     private SearchServices $searchServices;
     private Logger $logger;
 
-    // Le decimos a PHP estrictamente qué tipo de dato es $container
     public function __construct(?Container $container = null) {
         $this->searchServices = new SearchServices($container);
         
@@ -57,7 +56,8 @@ class SearchController {
             http_response_code(500);
             return [
                 'success' => false, 
-                'message' => 'Error interno en el motor de búsqueda.'
+                // CORRECCIÓN: Ahora imprimirá exactamente qué falló (Connection Refused, Index not found, etc.)
+                'message' => $e->getMessage() 
             ];
         }
     }
