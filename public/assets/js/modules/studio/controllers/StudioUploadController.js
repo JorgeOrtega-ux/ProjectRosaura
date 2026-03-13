@@ -179,11 +179,33 @@ export class StudioUploadController {
         const video = this.state.getVideo(this.state.selectedVideoId);
         if (!video) return;
 
-        const displayTitle = document.querySelector('[data-ref="display-title"]');
-        if(displayTitle) displayTitle.textContent = video.title || video.original_filename || '';
+        // Reset UI de títulos localizados
+        let localizedTitles = {};
+        if (video.localized_titles) {
+            try {
+                localizedTitles = typeof video.localized_titles === 'string' ? JSON.parse(video.localized_titles) : video.localized_titles;
+            } catch (e) {
+                console.error("Error parseando localized_titles", e);
+            }
+        }
 
-        const inputTitle = document.querySelector('[data-ref="input-title"]');
-        if(inputTitle) inputTitle.value = video.title || video.original_filename || '';
+        const displayTitleOriginal = document.querySelector('[data-ref="display-title-original"]');
+        if(displayTitleOriginal) displayTitleOriginal.textContent = video.title || video.original_filename || '';
+
+        const inputTitleOriginal = document.getElementById('videoTitleInput_original');
+        if(inputTitleOriginal) inputTitleOriginal.value = video.title || video.original_filename || '';
+
+        document.querySelectorAll('.localized-title-input').forEach(input => {
+            const lang = input.id.replace('videoTitleInput_', '');
+            const displayEl = document.querySelector(`[data-ref="display-title-${lang}"]`);
+            if (localizedTitles[lang]) {
+                input.value = localizedTitles[lang];
+                if (displayEl) displayEl.textContent = localizedTitles[lang];
+            } else {
+                input.value = '';
+                if (displayEl) displayEl.textContent = 'Sin traducción';
+            }
+        });
 
         const previewOriginalFilename = document.getElementById('previewOriginalFilename');
         if(previewOriginalFilename) previewOriginalFilename.textContent = video.original_filename;
@@ -267,11 +289,11 @@ export class StudioUploadController {
             if (video) video.description = e.target.value;
         }
 
-        if (e.target && e.target.id === 'videoTitleInput') {
+        if (e.target && e.target.id === 'videoTitleInput_original') {
             const video = this.state.getVideo(this.state.selectedVideoId);
             if (video) {
                 video.title = e.target.value;
-                const displayTitle = document.querySelector('[data-ref="display-title"]');
+                const displayTitle = document.querySelector('[data-ref="display-title-original"]');
                 if (displayTitle) displayTitle.textContent = e.target.value || video.original_filename || '';
             }
         }
@@ -299,6 +321,50 @@ export class StudioUploadController {
         }
     }
 
+    handleSelectTitleLanguage(btn) {
+        const lang = btn.getAttribute('data-value');
+        const text = btn.getAttribute('data-text');
+
+        const triggerText = document.getElementById('selectedTitleLangText');
+        if (triggerText) triggerText.textContent = text;
+
+        const menuLinks = document.querySelectorAll('#titleLanguageSelectorMenu .component-menu-link');
+        menuLinks.forEach(link => link.classList.remove('active'));
+        btn.classList.add('active');
+
+        const allTitleBoxes = document.querySelectorAll('.title-card-box');
+        allTitleBoxes.forEach(box => {
+            if (box.getAttribute('data-lang') === lang) {
+                box.style.display = 'block';
+            } else {
+                box.style.display = 'none';
+            }
+        });
+
+        const module = btn.closest('.component-module');
+        if (module && window.appInstance) {
+            window.appInstance.closeModule(module);
+        } else if (module) {
+            module.classList.remove('active');
+            module.classList.add('disabled');
+        }
+    }
+
+    setEditState(target, isEditing) {
+        const viewState = document.querySelector(`[data-state="${target}-view"]`);
+        const editState = document.querySelector(`[data-state="${target}-edit"]`);
+
+        if (viewState && editState) {
+            if (isEditing) {
+                viewState.style.display = 'none'; viewState.classList.remove('active'); viewState.classList.add('disabled');
+                editState.style.display = 'flex'; editState.classList.remove('disabled'); editState.classList.add('active');
+            } else {
+                editState.style.display = 'none'; editState.classList.remove('active'); editState.classList.add('disabled');
+                viewState.style.display = 'flex'; viewState.classList.remove('disabled'); viewState.classList.add('active');
+            }
+        }
+    }
+
     handleDocumentClick(e) {
         const btn = e.target.closest('[data-action]');
         if (!btn) return;
@@ -313,10 +379,21 @@ export class StudioUploadController {
             e.preventDefault();
             e.stopImmediatePropagation();
             this.handleSelectVisibility(btn);
+        } else if (action === 'selectTitleLanguage') {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this.handleSelectTitleLanguage(btn);
         } else if (action === 'saveTitle') {
             e.preventDefault();
             e.stopImmediatePropagation();
             this.handleSaveTitle(btn);
+        } else if (action === 'toggleEditState') {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            const target = btn.getAttribute('data-target');
+            if (target && target.startsWith('title-')) {
+                this.setEditState(target, true);
+            }
         } else if (action === 'publishVideo') {
             e.preventDefault();
             e.stopImmediatePropagation();
@@ -382,30 +459,36 @@ export class StudioUploadController {
     }
 
     handleSaveTitle(btn) {
-        const inputTitle = document.getElementById('videoTitleInput');
+        const lang = btn.getAttribute('data-lang');
+        const inputTitle = document.getElementById(`videoTitleInput_${lang}`);
         if (!inputTitle) return;
         
         const newTitle = inputTitle.value.trim();
 
-        if (newTitle === '') {
-            alert("El título no puede estar vacío.");
+        if (lang === 'original' && newTitle === '') {
+            alert("El título original no puede estar vacío.");
             return;
         }
 
         const video = this.state.getVideo(this.state.selectedVideoId);
         if (video) {
-            video.title = newTitle;
+            if (lang === 'original') {
+                video.title = newTitle;
+            } else {
+                if (!video.localized_titles) video.localized_titles = {};
+                if (typeof video.localized_titles === 'string') {
+                    video.localized_titles = JSON.parse(video.localized_titles);
+                }
+                video.localized_titles[lang] = newTitle;
+            }
         }
 
-        const displayTitle = document.querySelector('[data-ref="display-title"]');
+        const displayTitle = document.querySelector(`[data-ref="display-title-${lang}"]`);
         if (displayTitle) {
-            displayTitle.textContent = newTitle;
+            displayTitle.textContent = newTitle.length > 0 ? newTitle : 'Sin traducción';
         }
 
-        const cancelBtn = btn.previousElementSibling;
-        if (cancelBtn && cancelBtn.getAttribute('data-action') === 'toggleEditState') {
-            cancelBtn.click();
-        }
+        this.setEditState(`title-${lang}`, false);
     }
 
     async handlePublishVideo(btn) {
@@ -415,12 +498,13 @@ export class StudioUploadController {
 
         if (btn.classList.contains('disabled-interactive')) return;
 
-        const title = document.querySelector('[data-ref="input-title"]')?.value.trim() || video.title;
+        const titleOriginalInput = document.getElementById('videoTitleInput_original');
+        const title = titleOriginalInput ? titleOriginalInput.value.trim() : video.title;
         const description = document.getElementById('videoDescriptionInput')?.value.trim() || '';
         const visibility = video.visibility || 'public';
         
         if (!title) {
-            alert("El título es obligatorio para publicar.");
+            alert("El título original es obligatorio para publicar.");
             return;
         }
 
@@ -428,6 +512,16 @@ export class StudioUploadController {
             alert("Debes seleccionar o subir una miniatura antes de publicar.");
             return;
         }
+
+        // Recolectar títulos localizados
+        const updatedLocalizedTitles = {};
+        document.querySelectorAll('.localized-title-input').forEach(input => {
+            const lang = input.id.replace('videoTitleInput_', '');
+            const val = input.value.trim();
+            if (val.length > 0) {
+                updatedLocalizedTitles[lang] = val;
+            }
+        });
 
         let models = video.modelsIds;
         let categories = video.categoriesIds;
@@ -450,6 +544,7 @@ export class StudioUploadController {
         const formData = new FormData();
         formData.append('video_id', video.id);
         formData.append('title', title);
+        formData.append('localized_titles', JSON.stringify(updatedLocalizedTitles));
         formData.append('description', description);
         formData.append('visibility', visibility);
         formData.append('models', JSON.stringify(models));

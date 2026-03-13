@@ -1,5 +1,18 @@
 <?php
 // includes/views/studio/uploading.php
+
+$supportedLangs = [
+    'en-US' => 'English (United States)',
+    'en-GB' => 'English (United Kingdom)',
+    'fr-FR' => 'Français (France)',
+    'de-DE' => 'Deutsch (Deutschland)',
+    'it-IT' => 'Italiano (Italia)',
+    'es-419' => 'Español (Latinoamérica)',
+    'es-MX' => 'Español (México)',
+    'es-ES' => 'Español (España)',
+    'pt-BR' => 'Português (Brasil)',
+    'pt-PT' => 'Português (Portugal)'
+];
 ?>
 <div class="view-content">
 
@@ -38,36 +51,119 @@
                     <div class="studio-uploading-details">
                         
                         <div class="component-card--grouped">
-                            <div class="component-group-item component-group-item--stateful">
-                                <div class="active component-state-box" data-state="title-view">
-                                    <div class="component-card__content">
-                                        <div class="component-card__text">
-                                            <h2 class="component-card__title"><?php echo __('studio_video_title_req'); ?></h2>
-                                            <span class="component-display-value" data-ref="display-title"><?php echo __('studio_loading'); ?></span>
-                                        </div>
-                                    </div>
-                                    <div class="component-card__actions component-card__actions--stretch">
-                                        <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="title"><?php echo __('studio_btn_edit'); ?></button>
+                            <div class="component-group-item component-group-item--stacked">
+                                <div class="component-card__content">
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title">Seleccionar Idioma del Título</h2>
+                                        <p class="component-card__description">Añade traducciones para el título de tu video.</p>
                                     </div>
                                 </div>
-
-                                <div class="disabled component-state-box" data-state="title-edit">
-                                    <div class="component-card__content">
-                                        <div class="component-card__text">
-                                            <h2 class="component-card__title"><?php echo __('studio_video_title_req'); ?></h2>
-                                            <div class="component-edit-row">
-                                                <div class="component-input-group component-input-group--h34">
-                                                    <input type="text" id="videoTitleInput" data-ref="input-title" class="component-input-field component-input-field--simple" placeholder="<?php echo __('studio_video_title_placeholder'); ?>">
-                                                </div>
-                                                <div class="component-card__actions component-card__actions--stretch">
-                                                    <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="title"><?php echo __('studio_btn_cancel'); ?></button>
-                                                    <button type="button" class="component-button component-button--h34 component-button--dark" data-action="saveTitle"><?php echo __('studio_btn_save'); ?></button>
+                                <div class="component-card__actions component-card__actions--start">
+                                    <div class="component-dropdown-wrapper">
+                                        <div class="component-dropdown-trigger" data-action="toggleModule" data-target="moduleTitleLanguage">
+                                            <span class="material-symbols-rounded">language</span>
+                                            <span class="component-dropdown-text" id="selectedTitleLangText">Título Original</span>
+                                            <span class="material-symbols-rounded">expand_more</span>
+                                        </div>
+                                        
+                                        <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="moduleTitleLanguage" id="titleLanguageSelectorMenu">
+                                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding">
+                                                <div class="pill-container"><div class="drag-handle"></div></div>
+                                                <div class="component-menu-list component-menu-list--scrollable">
+                                                    <div class="component-menu-link active" data-action="selectTitleLanguage" data-value="original" data-text="Título Original">
+                                                        <div class="component-menu-link-icon">
+                                                            <span class="material-symbols-rounded">star</span>
+                                                        </div>
+                                                        <div class="component-menu-link-text">
+                                                            <span>Título Original</span>
+                                                        </div>
+                                                    </div>
+                                                    <?php foreach($supportedLangs as $key => $label): ?>
+                                                    <div class="component-menu-link" data-action="selectTitleLanguage" data-value="<?php echo $key; ?>" data-text="<?php echo $label; ?>">
+                                                        <div class="component-menu-link-icon">
+                                                            <span class="material-symbols-rounded">language</span>
+                                                        </div>
+                                                        <div class="component-menu-link-text">
+                                                            <span><?php echo $label; ?></span>
+                                                        </div>
+                                                    </div>
+                                                    <?php endforeach; ?>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
+                        </div>
+
+                        <div id="titlesContainer">
+                            <div class="component-card--grouped title-card-box" data-lang="original" style="display: block;">
+                                <div class="component-group-item component-group-item--stateful">
+                                    <div class="active component-state-box" data-state="title-view">
+                                        <div class="component-card__content">
+                                            <div class="component-card__text">
+                                                <h2 class="component-card__title"><?php echo __('studio_video_title_req'); ?> (Original)</h2>
+                                                <span class="component-display-value" data-ref="display-title-original"><?php echo __('studio_loading'); ?></span>
+                                            </div>
+                                        </div>
+                                        <div class="component-card__actions component-card__actions--stretch">
+                                            <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="title-original"><?php echo __('studio_btn_edit'); ?></button>
+                                        </div>
+                                    </div>
+
+                                    <div class="disabled component-state-box" data-state="title-edit">
+                                        <div class="component-card__content">
+                                            <div class="component-card__text">
+                                                <h2 class="component-card__title"><?php echo __('studio_video_title_req'); ?> (Original)</h2>
+                                                <div class="component-edit-row">
+                                                    <div class="component-input-group component-input-group--h34">
+                                                        <input type="text" id="videoTitleInput_original" data-ref="input-title-original" class="component-input-field component-input-field--simple" placeholder="<?php echo __('studio_video_title_placeholder'); ?>">
+                                                    </div>
+                                                    <div class="component-card__actions component-card__actions--stretch">
+                                                        <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="title-original"><?php echo __('studio_btn_cancel'); ?></button>
+                                                        <button type="button" class="component-button component-button--h34 component-button--dark" data-action="saveTitle" data-lang="original"><?php echo __('studio_btn_save'); ?></button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <?php foreach($supportedLangs as $key => $label): ?>
+                            <div class="component-card--grouped title-card-box" data-lang="<?php echo $key; ?>" style="display: none;">
+                                <div class="component-group-item component-group-item--stateful">
+                                    <div class="active component-state-box" data-state="title-view">
+                                        <div class="component-card__content">
+                                            <div class="component-card__text">
+                                                <h2 class="component-card__title">Título en <?php echo $label; ?></h2>
+                                                <span class="component-display-value" data-ref="display-title-<?php echo $key; ?>">Sin traducción</span>
+                                            </div>
+                                        </div>
+                                        <div class="component-card__actions component-card__actions--stretch">
+                                            <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="title-<?php echo $key; ?>"><?php echo __('studio_btn_edit'); ?></button>
+                                        </div>
+                                    </div>
+
+                                    <div class="disabled component-state-box" data-state="title-edit">
+                                        <div class="component-card__content">
+                                            <div class="component-card__text">
+                                                <h2 class="component-card__title">Título en <?php echo $label; ?></h2>
+                                                <div class="component-edit-row">
+                                                    <div class="component-input-group component-input-group--h34">
+                                                        <input type="text" id="videoTitleInput_<?php echo $key; ?>" data-ref="input-title-<?php echo $key; ?>" class="component-input-field component-input-field--simple localized-title-input" placeholder="Añade la traducción aquí">
+                                                    </div>
+                                                    <div class="component-card__actions component-card__actions--stretch">
+                                                        <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="title-<?php echo $key; ?>"><?php echo __('studio_btn_cancel'); ?></button>
+                                                        <button type="button" class="component-button component-button--h34 component-button--dark" data-action="saveTitle" data-lang="<?php echo $key; ?>"><?php echo __('studio_btn_save'); ?></button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <?php endforeach; ?>
                         </div>
 
                         <div class="component-card--grouped">

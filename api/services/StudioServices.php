@@ -363,25 +363,21 @@ class StudioServices {
 
         $processedTags = [];
         foreach ($tagsData as $tagItem) {
-            // Si el tag es numérico (ID existente)
             if (is_numeric($tagItem)) {
                 $processedTags[] = [
                     'id' => (int) $tagItem,
                     'type' => $type
                 ];
             } 
-            // Si llega como un string de texto
             else if (is_string($tagItem) && trim($tagItem) !== '') {
                 $tagName = trim($tagItem);
                 
                 if ($type === 'custom') {
-                    // Las etiquetas personalizadas ('custom') no pertenecen a la tabla rígida `tags`.
                     $processedTags[] = [
                         'name' => $tagName,
                         'type' => $type
                     ];
                 } else {
-                    // Para modelo y category, intentamos asociar/crear en la tabla 'tags'
                     try {
                         $tagId = $this->tagRepo->findOrCreate($tagName, $type);
                         if ($tagId > 0) {
@@ -396,7 +392,6 @@ class StudioServices {
                     }
                 }
             } 
-            // Si llega un arreglo/objeto desde el frontend {id: ..., name: ...}
             else if (is_array($tagItem)) {
                 if (isset($tagItem['id'])) {
                     $processedTags[] = [
@@ -432,20 +427,26 @@ class StudioServices {
         return $processedTags;
     }
 
-    public function updateVideoDetails(int $userId, int $videoId, string $title, ?string $description = null, array $models = [], array $categories = [], array $tags = [], string $visibility = 'public'): array {
+    public function updateVideoDetails(int $userId, int $videoId, string $title, ?string $description = null, array $models = [], array $categories = [], array $tags = [], string $visibility = 'public', array $localizedTitles = []): array {
         $video = $this->videoRepo->findById($videoId);
         if (!$video || $video['user_id'] != $userId) {
             throw new Exception("Video no encontrado o no autorizado.");
         }
 
         if (trim($title) === '') {
-            throw new Exception("El título no puede estar vacío.");
+            throw new Exception("El título original no puede estar vacío.");
         }
 
         $metadata = [
             'title' => trim($title),
             'visibility' => $visibility
         ];
+        
+        if (!empty($localizedTitles)) {
+            $metadata['localized_titles'] = json_encode($localizedTitles, JSON_UNESCAPED_UNICODE);
+        } else {
+            $metadata['localized_titles'] = null;
+        }
         
         if ($description !== null) {
             $metadata['description'] = trim($description);
@@ -492,7 +493,7 @@ class StudioServices {
         throw new Exception("Video no encontrado.");
     }
 
-    public function publishVideo(int $userId, int $videoId, string $title, string $description, array $models = [], array $categories = [], array $tags = [], ?array $thumbnailFile = null, ?string $generatedPath = null, string $visibility = 'public'): array {
+    public function publishVideo(int $userId, int $videoId, string $title, string $description, array $models = [], array $categories = [], array $tags = [], ?array $thumbnailFile = null, ?string $generatedPath = null, string $visibility = 'public', array $localizedTitles = []): array {
         $video = $this->videoRepo->findById($videoId);
         if (!$video || $video['user_id'] != $userId) {
             throw new Exception("Video no encontrado o no autorizado.");
@@ -518,6 +519,12 @@ class StudioServices {
             'description' => trim($description),
             'visibility' => $visibility
         ];
+        
+        if (!empty($localizedTitles)) {
+            $metadata['localized_titles'] = json_encode($localizedTitles, JSON_UNESCAPED_UNICODE);
+        } else {
+            $metadata['localized_titles'] = null;
+        }
         
         $this->videoRepo->updateMetadata($videoId, $metadata);
         $this->videoRepo->updateStatus($videoId, 'published', 100);
@@ -589,7 +596,6 @@ class StudioServices {
     }
 
     public function createPlaylist(int $userId, string $title, ?string $description, string $visibility, string $videoOrder): array {
-        // ACTUALIZADO: Limite duro de 100 Playlists por Usuario para evitar saturación de BD
         $currentPlaylists = $this->getPlaylists($userId);
         if (count($currentPlaylists) >= 100) {
             throw new Exception("Has alcanzado el límite máximo permitido de 100 playlists por usuario.");

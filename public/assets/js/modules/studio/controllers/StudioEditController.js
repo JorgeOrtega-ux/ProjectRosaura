@@ -63,19 +63,45 @@ export class StudioEditController {
             
             this.initDraftState(video);
 
-            const titleInput = document.getElementById('videoTitleInput');
+            // Rellenar Título Original
+            const titleInputOriginal = document.getElementById('videoTitleInput_original');
+            const displayTitleOriginal = document.querySelector('[data-ref="display-title-original"]');
+            if (titleInputOriginal) titleInputOriginal.value = video.draftTitle;
+            if (displayTitleOriginal) displayTitleOriginal.textContent = video.draftTitle;
+
+            // Rellenar Títulos Localizados
+            let localizedTitles = {};
+            if (video.localized_titles) {
+                try {
+                    localizedTitles = typeof video.localized_titles === 'string' ? JSON.parse(video.localized_titles) : video.localized_titles;
+                } catch (e) {
+                    console.error("Error parseando localized_titles", e);
+                }
+            }
+            video.draftLocalizedTitles = localizedTitles;
+
+            // Iterar sobre los inputs de idiomas localizados para llenarlos si existen
+            const localizedInputs = document.querySelectorAll('.localized-title-input');
+            localizedInputs.forEach(input => {
+                const lang = input.id.replace('videoTitleInput_', '');
+                const displayEl = document.querySelector(`[data-ref="display-title-${lang}"]`);
+                if (localizedTitles[lang]) {
+                    input.value = localizedTitles[lang];
+                    if (displayEl) displayEl.textContent = localizedTitles[lang];
+                } else {
+                    input.value = '';
+                    if (displayEl) displayEl.textContent = 'Sin traducción';
+                }
+            });
+
             const descInput = document.getElementById('videoDescriptionInput');
-            const displayTitle = document.querySelector('[data-ref="display-title"]');
-            
-            if (titleInput) titleInput.value = video.draftTitle;
             if (descInput) descInput.value = video.draftDescription;
-            if (displayTitle) displayTitle.textContent = video.draftTitle;
             
             this.syncVisibilityUI(video.draftVisibility);
             this.thumbnailManager.updateThumbnailPreview(video.draftThumbnailPreview);
             this.tagsManager.setInitialTags(video.tags);
             
-            this.setEditState('title', false);
+            this.setEditState('title-original', false);
             this.validatePublishButton();
             
             const btnSave = document.getElementById('btnSaveChanges');
@@ -84,16 +110,26 @@ export class StudioEditController {
                     btnSave.disabled = true;
                     btnSave.innerHTML = '<span class="material-symbols-rounded">sync</span> <span>Guardando...</span>';
                     
-                    const newTitle = titleInput ? titleInput.value.trim() : '';
+                    const newTitleOriginal = titleInputOriginal ? titleInputOriginal.value.trim() : '';
                     const newDesc = descInput ? descInput.value.trim() : '';
                     const newVisibility = video.draftVisibility || 'public';
                     
-                    if (newTitle.length === 0) {
-                        alert("El título no puede estar vacío.");
+                    if (newTitleOriginal.length === 0) {
+                        alert("El título original no puede estar vacío.");
                         btnSave.disabled = false;
                         btnSave.innerHTML = '<span class="material-symbols-rounded">save</span> <span>Guardar cambios</span>';
                         return;
                     }
+
+                    // Recolectar todos los títulos localizados
+                    const updatedLocalizedTitles = {};
+                    document.querySelectorAll('.localized-title-input').forEach(input => {
+                        const lang = input.id.replace('videoTitleInput_', '');
+                        const val = input.value.trim();
+                        if (val.length > 0) {
+                            updatedLocalizedTitles[lang] = val;
+                        }
+                    });
 
                     const modelsIds = this.tagsManager.getModelsIds();
                     const categoriesIds = this.tagsManager.getCategoriesIds();
@@ -103,7 +139,8 @@ export class StudioEditController {
                     const updateRoute = ApiRoutes.Studio?.UpdateTitle || 'studio.update_title';
                     const updateRes = await this.api.post(updateRoute, {
                         video_id: this.state.selectedVideoId,
-                        title: newTitle,
+                        title: newTitleOriginal,
+                        localized_titles: JSON.stringify(updatedLocalizedTitles),
                         description: newDesc,
                         visibility: newVisibility,
                         models: modelsIds,
@@ -112,7 +149,8 @@ export class StudioEditController {
                     });
 
                     if (updateRes.status === 'success') {
-                        video.title = newTitle;
+                        video.title = newTitleOriginal;
+                        video.localized_titles = JSON.stringify(updatedLocalizedTitles);
                         video.description = newDesc;
                         video.visibility = newVisibility;
                     } else {
@@ -154,6 +192,7 @@ export class StudioEditController {
         if (video.draftDescription === undefined) video.draftDescription = video.description || '';
         if (video.draftVisibility === undefined) video.draftVisibility = video.visibility || 'public';
         if (video.draftThumbnailPreview === undefined) video.draftThumbnailPreview = video.thumbnail_path;
+        if (video.draftLocalizedTitles === undefined) video.draftLocalizedTitles = {};
     }
 
     syncVisibilityUI(value) {
@@ -177,6 +216,38 @@ export class StudioEditController {
         });
     }
 
+    handleSelectTitleLanguage(btn) {
+        const lang = btn.getAttribute('data-value');
+        const text = btn.getAttribute('data-text');
+
+        // Actualizar UI del Dropdown
+        const triggerText = document.getElementById('selectedTitleLangText');
+        if (triggerText) triggerText.textContent = text;
+
+        const menuLinks = document.querySelectorAll('#titleLanguageSelectorMenu .component-menu-link');
+        menuLinks.forEach(link => link.classList.remove('active'));
+        btn.classList.add('active');
+
+        // Mostrar el bloque correcto y ocultar los demás
+        const allTitleBoxes = document.querySelectorAll('.title-card-box');
+        allTitleBoxes.forEach(box => {
+            if (box.getAttribute('data-lang') === lang) {
+                box.style.display = 'block';
+            } else {
+                box.style.display = 'none';
+            }
+        });
+
+        // Cerrar menú si existe instancia global
+        const module = btn.closest('.component-module');
+        if (module && window.appInstance) {
+            window.appInstance.closeModule(module);
+        } else if (module) {
+            module.classList.remove('active');
+            module.classList.add('disabled');
+        }
+    }
+
     setEditState(target, isEditing) {
         const viewState = document.querySelector(`[data-state="${target}-view"]`);
         const editState = document.querySelector(`[data-state="${target}-edit"]`);
@@ -192,26 +263,34 @@ export class StudioEditController {
         }
     }
 
-    async saveTitleField() {
+    async saveTitleField(lang) {
         if (!this.state.selectedVideoId) return;
-        const inputEl = document.getElementById('videoTitleInput');
-        const descInput = document.getElementById('videoDescriptionInput');
-        const displayEl = document.querySelector('[data-ref="display-title"]');
+        const inputEl = document.getElementById(`videoTitleInput_${lang}`);
+        const displayEl = document.querySelector(`[data-ref="display-title-${lang}"]`);
         if (!inputEl) return;
 
         const newTitle = inputEl.value.trim();
-        const newDesc = descInput ? descInput.value.trim() : '';
         
-        if (newTitle.length > 0) {
-            const video = this.state.getVideo(this.state.selectedVideoId);
-            if (video) {
+        if (lang === 'original' && newTitle.length === 0) {
+            alert("El título original no puede estar vacío.");
+            return;
+        }
+
+        const video = this.state.getVideo(this.state.selectedVideoId);
+        if (video) {
+            if (lang === 'original') {
                 video.draftTitle = newTitle;
-                video.draftDescription = newDesc;
-                if (displayEl) displayEl.textContent = newTitle;
-                this.setEditState('title', false);
-                this.validatePublishButton();
+            } else {
+                if (!video.draftLocalizedTitles) video.draftLocalizedTitles = {};
+                video.draftLocalizedTitles[lang] = newTitle;
             }
-        } else alert("El título no puede estar vacío.");
+            
+            if (displayEl) {
+                displayEl.textContent = newTitle.length > 0 ? newTitle : 'Sin traducción';
+            }
+            this.setEditState(`title-${lang}`, false);
+            this.validatePublishButton();
+        }
     }
 
     async saveDescriptionField() {
@@ -282,9 +361,20 @@ export class StudioEditController {
             btn.innerHTML = '<span class="material-symbols-rounded">sync</span><span>Publicando...</span>';
         }
 
+        // Recolectar títulos localizados
+        const updatedLocalizedTitles = {};
+        document.querySelectorAll('.localized-title-input').forEach(input => {
+            const lang = input.id.replace('videoTitleInput_', '');
+            const val = input.value.trim();
+            if (val.length > 0) {
+                updatedLocalizedTitles[lang] = val;
+            }
+        });
+
         const formData = new FormData();
         formData.append('video_id', this.state.selectedVideoId);
         formData.append('title', video.draftTitle);
+        formData.append('localized_titles', JSON.stringify(updatedLocalizedTitles));
         formData.append('description', video.draftDescription || '');
         formData.append('visibility', video.draftVisibility || 'public');
         
@@ -358,7 +448,17 @@ export class StudioEditController {
         if (!btn) return;
         const action = btn.getAttribute('data-action');
 
-        if (action === 'saveTitle') this.saveTitleField();
+        if (action === 'selectTitleLanguage') this.handleSelectTitleLanguage(btn);
+        if (action === 'saveTitle') {
+            const lang = btn.getAttribute('data-lang');
+            this.saveTitleField(lang);
+        }
+        if (action === 'toggleEditState') {
+            const target = btn.getAttribute('data-target');
+            if (target && target.startsWith('title-')) {
+                this.setEditState(target, true);
+            }
+        }
         if (action === 'publishVideo') this.publishVideo();
         if (action === 'cancelVideo') {
             if (confirm("¿Estás seguro de que deseas cancelar la subida/procesamiento de este video? Se eliminará permanentemente.")) {

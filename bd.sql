@@ -168,6 +168,7 @@ CREATE TABLE IF NOT EXISTS videos (
     user_id INT(11) NOT NULL,
     original_filename VARCHAR(255) NOT NULL,
     title VARCHAR(255) DEFAULT NULL,
+    localized_titles JSON DEFAULT NULL,
     description TEXT DEFAULT NULL,
     thumbnail_path VARCHAR(255) DEFAULT NULL,
     thumbnail_dominant_color VARCHAR(7) DEFAULT NULL,

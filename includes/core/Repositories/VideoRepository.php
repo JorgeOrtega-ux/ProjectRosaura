@@ -18,6 +18,22 @@ class VideoRepository implements VideoRepositoryInterface {
     }
 
     /**
+     * Helper que reemplaza dinámicamente el título del video según el idioma
+     */
+    private function applyLocalizedTitle(array $video): array {
+        if (!empty($video['localized_titles'])) {
+            $titles = json_decode($video['localized_titles'], true);
+            $currentLang = $_COOKIE['language'] ?? 'en-US'; // Determinar el idioma actual del usuario
+            
+            if (is_array($titles) && isset($titles[$currentLang]) && !empty(trim($titles[$currentLang]))) {
+                $video['original_title'] = $video['title'];
+                $video['title'] = $titles[$currentLang];
+            }
+        }
+        return $video;
+    }
+
+    /**
      * Sincroniza el documento del video con Meilisearch.
      */
     private function syncVideoToMeili(int $videoId): void {
@@ -29,10 +45,12 @@ class VideoRepository implements VideoRepositoryInterface {
             $tags = $this->getVideoTags($videoId);
             $tagNames = array_map(function($t) { return $t['name']; }, $tags);
             
+            // Para la búsqueda podemos indexar también los títulos localizados para que se encuentre en todos los idiomas
             $doc = [
                 'id_video' => $video['id'],
                 'id_user' => $video['user_id'],
                 'title' => $video['title'],
+                'localized_titles' => $video['localized_titles'],
                 'description' => $video['description'],
                 'tags' => implode(', ', $tagNames),
                 'created_at' => $video['created_at'],
@@ -93,6 +111,10 @@ class VideoRepository implements VideoRepositoryInterface {
             $fields[] = "title = :title";
             $params[':title'] = $data['title'];
         }
+        if (array_key_exists('localized_titles', $data)) {
+            $fields[] = "localized_titles = :localized_titles";
+            $params[':localized_titles'] = $data['localized_titles'];
+        }
         if (isset($data['thumbnail_path'])) {
             $fields[] = "thumbnail_path = :thumbnail_path";
             $params[':thumbnail_path'] = $data['thumbnail_path'];
@@ -150,9 +172,9 @@ class VideoRepository implements VideoRepositoryInterface {
                 ORDER BY v.created_at ASC
             ");
             $stmt->execute([':user_id' => $userId]);
-            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $results = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            return array_map([$this, 'applyLocalizedTitle'], $results);
         } catch (\Exception $e) {
-            // Fallback en caso de que la tabla 'comments' no exista o falle la subconsulta
             $stmt = $this->db->prepare("
                 SELECT * FROM videos 
                 WHERE user_id = :user_id 
@@ -160,7 +182,8 @@ class VideoRepository implements VideoRepositoryInterface {
                 ORDER BY created_at ASC
             ");
             $stmt->execute([':user_id' => $userId]);
-            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $results = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            return array_map([$this, 'applyLocalizedTitle'], $results);
         }
     }
 
@@ -174,34 +197,37 @@ class VideoRepository implements VideoRepositoryInterface {
                 ORDER BY v.created_at DESC
             ");
             $stmt->execute([':user_id' => $userId]);
-            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $results = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            return array_map([$this, 'applyLocalizedTitle'], $results);
         } catch (\Exception $e) {
-            // Fallback en caso de que la tabla 'comments' no exista o falle la subconsulta
             $stmt = $this->db->prepare("
                 SELECT * FROM videos 
                 WHERE user_id = :user_id 
                 ORDER BY created_at DESC
             ");
             $stmt->execute([':user_id' => $userId]);
-            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $results = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            return array_map([$this, 'applyLocalizedTitle'], $results);
         }
     }
 
     public function findById(int $id) {
         $stmt = $this->db->prepare("SELECT * FROM videos WHERE id = :id");
         $stmt->execute([':id' => $id]);
-        return $stmt->fetch(PDO::FETCH_ASSOC);
+        $video = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $video ? $this->applyLocalizedTitle($video) : null;
     }
 
     public function findByUuid(string $uuid) {
         $stmt = $this->db->prepare("SELECT * FROM videos WHERE uuid = :uuid");
         $stmt->execute([':uuid' => $uuid]);
-        return $stmt->fetch(PDO::FETCH_ASSOC);
+        $video = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $video ? $this->applyLocalizedTitle($video) : null;
     }
 
     public function getPublicVideoDetails(string $uuid): ?array {
         $stmt = $this->db->prepare("
-            SELECT v.id, v.uuid, v.title, v.description, v.created_at, v.user_id,
+            SELECT v.id, v.uuid, v.title, v.localized_titles, v.description, v.created_at, v.user_id,
                    v.created_at as published_at, v.visibility,
                    v.hls_path, v.temp_file_path, v.sprite_sheet_path, v.vtt_path,
                    v.views, v.likes, v.dislikes, 
@@ -219,6 +245,8 @@ class VideoRepository implements VideoRepositoryInterface {
         if (!$video) {
             return null;
         }
+        
+        $video = $this->applyLocalizedTitle($video);
 
         $allTags = $this->getVideoTags((int)$video['id']);
         
@@ -250,7 +278,7 @@ class VideoRepository implements VideoRepositoryInterface {
             
             $this->db->commit();
             
-            $this->syncVideoToMeili($id); // Borrará el registro del índice
+            $this->syncVideoToMeili($id);
             
             return true;
         } catch (Exception $e) {
@@ -282,7 +310,7 @@ class VideoRepository implements VideoRepositoryInterface {
 
     public function getPublicFeed(int $limit = 20, int $offset = 0, string $orientation = 'horizontal'): array {
         $stmt = $this->db->prepare("
-            SELECT v.id, v.uuid, v.title, v.thumbnail_path, v.thumbnail_dominant_color, 
+            SELECT v.id, v.uuid, v.title, v.localized_titles, v.thumbnail_path, v.thumbnail_dominant_color, 
                    v.duration, v.created_at, v.status, v.visibility, v.hls_path, v.temp_file_path, v.orientation,
                    v.sprite_sheet_path, v.vtt_path, v.views,
                    u.username, u.profile_picture AS avatar_path 
@@ -296,12 +324,13 @@ class VideoRepository implements VideoRepositoryInterface {
         $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
         $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $results = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        return array_map([$this, 'applyLocalizedTitle'], $results);
     }
     
     public function getChannelVideos(int $userId, string $orientation = 'horizontal'): array {
         $stmt = $this->db->prepare("
-            SELECT id, uuid, title, thumbnail_path, thumbnail_dominant_color, 
+            SELECT id, uuid, title, localized_titles, thumbnail_path, thumbnail_dominant_color, 
                    duration, created_at, status, visibility, hls_path, temp_file_path, orientation,
                    sprite_sheet_path, vtt_path, views 
             FROM videos 
@@ -311,7 +340,8 @@ class VideoRepository implements VideoRepositoryInterface {
         $stmt->bindValue(':user_id', $userId, PDO::PARAM_INT);
         $stmt->bindValue(':orientation', $orientation, PDO::PARAM_STR);
         $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $results = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        return array_map([$this, 'applyLocalizedTitle'], $results);
     }
     
     public function syncTags(int $videoId, array $tags): bool {
