@@ -88,6 +88,7 @@ class PlaylistRepository implements PlaylistRepositoryInterface {
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
+    // ACTUALIZADO: Para que el fallback de PlaylistServices reciba la data completa de la UI
     public function getByIdAndUserId(int $id, int $userId): ?array {
         $stmt = $this->db->prepare("SELECT * FROM playlists WHERE id = :id AND user_id = :user_id");
         $stmt->execute([':id' => $id, ':user_id' => $userId]);
@@ -115,11 +116,15 @@ class PlaylistRepository implements PlaylistRepositoryInterface {
         return $stmt->execute([':id' => $id]);
     }
 
+    // ACTUALIZADO: Integra los usuarios y simula los views para las Playlists privadas del sistema
     public function getVideosByPlaylistId(int $playlistId): array {
         $stmt = $this->db->prepare("
-            SELECT v.id, v.uuid, v.title, v.thumbnail_path, v.duration, v.visibility, pv.display_order 
+            SELECT v.id, v.uuid, v.title, v.description, v.duration, v.thumbnail_path, v.created_at, v.original_filename, v.visibility, pv.display_order,
+                   u.username,
+                   0 as views 
             FROM videos v
             INNER JOIN playlist_videos pv ON v.id = pv.video_id
+            INNER JOIN users u ON v.user_id = u.id
             WHERE pv.playlist_id = :playlist_id
             ORDER BY pv.display_order ASC, pv.created_at ASC
         ");
@@ -319,14 +324,36 @@ class PlaylistRepository implements PlaylistRepositoryInterface {
         return (bool) $stmt->fetchColumn();
     }
 
+    // ACTUALIZADO: Integra todos los atributos necesarios para el renderizado del fallback de Playlists privadas
     public function getByUuidAndUserId(string $uuid, int $userId): ?array {
-        $stmt = $this->db->prepare("SELECT * FROM playlists WHERE uuid = :uuid AND user_id = :user_id");
+        $stmt = $this->db->prepare("
+            SELECT p.*,
+                   u.username, u.profile_picture as avatar_path,
+                   (SELECT COUNT(*) FROM playlist_videos pv WHERE pv.playlist_id = p.id) as video_count,
+                   (
+                       SELECT v.thumbnail_path 
+                       FROM playlist_videos pv2 
+                       JOIN videos v ON pv2.video_id = v.id 
+                       WHERE pv2.playlist_id = p.id 
+                       ORDER BY pv2.display_order ASC 
+                       LIMIT 1
+                   ) as thumbnail_path,
+                   (
+                       SELECT v.uuid 
+                       FROM playlist_videos pv2 
+                       JOIN videos v ON pv2.video_id = v.id 
+                       WHERE pv2.playlist_id = p.id 
+                       ORDER BY pv2.display_order ASC 
+                       LIMIT 1
+                   ) as first_video_uuid
+            FROM playlists p
+            INNER JOIN users u ON p.user_id = u.id
+            WHERE p.uuid = :uuid AND p.user_id = :user_id
+        ");
         $stmt->execute([':uuid' => $uuid, ':user_id' => $userId]);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
         return $result ?: null;
     }
-
-    // --- MÉTODOS DE SYSTEM PLAYLISTS ---
 
     public function getPlaylistByAliasAndUser(string $alias, int $userId): ?array {
         if ($alias === 'WL') {
@@ -336,7 +363,6 @@ class PlaylistRepository implements PlaylistRepositoryInterface {
             return $res ?: null;
         }
         
-        // AGREGADO: Soporte para 'Videos que me gustan' con alias LV o LL
         if ($alias === 'LV' || $alias === 'LL') {
             $stmt = $this->db->prepare("SELECT * FROM playlists WHERE user_id = :uid AND type = 'liked_videos' LIMIT 1");
             $stmt->execute([':uid' => $userId]);

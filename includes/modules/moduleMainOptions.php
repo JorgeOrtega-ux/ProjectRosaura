@@ -64,8 +64,8 @@ $channelLink = $isLoggedIn && $currentIdentifier ? APP_URL . '/@' . $currentIden
                 </div>
             </div>
             
-            <div class="component-menu-link nav-item" data-nav="<?php echo APP_URL; ?>/feed/liked-videos">
-                <div class="component-menu-link-icon">
+<div class="component-menu-link nav-item" data-nav="<?php echo APP_URL; ?>/playlist?list=LL">
+                    <div class="component-menu-link-icon">
                     <span class="material-symbols-rounded">thumb_up</span>
                 </div>
                 <div class="component-menu-link-text">
