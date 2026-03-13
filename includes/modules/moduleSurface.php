@@ -32,6 +32,28 @@ $isMainArea = !$isAdminArea && !$isSettingsArea && !$isStudioArea;
                         <span><?php echo __('menu_explore'); ?></span>
                     </div>
                 </div>
+
+                <?php if ($isLoggedIn): ?>
+                <div class="component-menu-divider"></div>
+                
+                <div class="component-menu-link nav-item" data-nav="<?php echo APP_URL; ?>/feed/playlists">
+                    <div class="component-menu-link-icon">
+                        <span class="material-symbols-rounded">video_library</span>
+                    </div>
+                    <div class="component-menu-link-text">
+                        <span><?php echo __('nav_my_playlists'); ?></span>
+                    </div>
+                </div>
+                <div class="component-menu-link nav-item" data-nav="<?php echo APP_URL; ?>/playlist?list=WL">
+                    <div class="component-menu-link-icon">
+                        <span class="material-symbols-rounded">watch_later</span>
+                    </div>
+                    <div class="component-menu-link-text">
+                        <span><?php echo __('system_playlist_wl'); ?></span>
+                    </div>
+                </div>
+                <?php endif; ?>
+
             </div>
         </div>
     </div>

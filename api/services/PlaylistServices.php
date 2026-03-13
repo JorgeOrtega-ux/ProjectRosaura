@@ -31,8 +31,7 @@ class PlaylistServices {
             $systemList = $this->playlistRepo->getPlaylistByAliasAndUser('WL', $userId);
             if ($systemList) {
                 $uuid = $systemList['uuid'];
-                // Forzamos temporalmente la visibilidad para que pase los checks de privacidad, 
-                // ya que las listas de sistema son privadas por defecto pero el dueño sí puede verlas.
+                // Forzamos temporalmente la visibilidad para que pase los checks de privacidad
                 $isSystemBypass = true;
             } else {
                 return null;
@@ -41,8 +40,6 @@ class PlaylistServices {
 
         $data = $this->playlistRepo->getPlaylistWithVideosByUuid($uuid);
         
-        // Si el bypass está activo, extraemos ignorando la regla de 'visibility != private' del repo general.
-        // Como el repo general lo bloquea, lo consultamos manualmente.
         if (!$data && isset($isSystemBypass)) {
             $playlist = $this->playlistRepo->getByUuidAndUserId($uuid, $userId);
             if ($playlist) {
@@ -91,7 +88,6 @@ class PlaylistServices {
 
         $data = $this->playlistRepo->getPlaylistVideosOrdered($uuid);
         
-        // Bypass para dueños de sus listas privadas de sistema si el repo la ocultó
         if (empty($data)) {
             $userId = $this->sessionManager->get('user_id');
             if ($userId) {
@@ -124,14 +120,11 @@ class PlaylistServices {
         return $data;
     }
 
-    // --- NUEVOS MÉTODOS AÑADIDOS ---
-
     public function getPlaylistsForVideo(int $userId, int $videoId): array {
         return $this->playlistRepo->getUserPlaylistsWithVideoStatus($userId, $videoId);
     }
 
     public function toggleVideoInPlaylist(int $userId, string $playlistUuid, int $videoId): array {
-        // Validar que la lista le pertenezca al usuario (evita manipulaciones)
         $playlist = $this->playlistRepo->getByUuidAndUserId($playlistUuid, $userId);
         if (!$playlist) {
             return ['success' => false, 'message' => 'Lista de reproducción no encontrada o no tienes permisos.'];
@@ -144,7 +137,6 @@ class PlaylistServices {
             $this->playlistRepo->removeVideoFromPlaylist($playlistId, $videoId);
             return ['success' => true, 'action' => 'removed', 'message' => 'Video eliminado de la lista.'];
         } else {
-            // Se añade a la playlist
             $this->playlistRepo->addVideoToPlaylist($playlistId, $videoId);
             return ['success' => true, 'action' => 'added', 'message' => 'Video guardado en la lista.'];
         }
@@ -157,7 +149,6 @@ class PlaylistServices {
         }
         
         $uuid = Utils::generateUUID();
-        // Por defecto: published_newest
         $playlistId = $this->playlistRepo->create($userId, $uuid, $title, null, $visibility, 'published_newest', 'custom');
 
         if ($playlistId) {
@@ -168,11 +159,16 @@ class PlaylistServices {
                     'uuid' => $uuid,
                     'title' => $title,
                     'visibility' => $visibility,
-                    'has_video' => 0 // Formato para el Frontend inmediatamente
+                    'has_video' => 0 
                 ]
             ];
         }
         return ['success' => false, 'message' => 'Error al crear la lista de reproducción.'];
+    }
+
+    // --- NUEVO MÉTODO PARA SOLUCIONAR EL ERROR P1013 ---
+    public function getAllUserPlaylists(int $userId): array {
+        return $this->playlistRepo->getAllIncludingSystemByUserId($userId);
     }
 }
 ?>
