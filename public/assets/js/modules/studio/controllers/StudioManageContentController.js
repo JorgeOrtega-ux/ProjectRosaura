@@ -212,6 +212,11 @@ export class StudioManageContentController {
             ? '<span class="material-symbols-rounded" style="font-size: 14px; margin-right: 4px;">smartphone</span> Vertical' 
             : '<span class="material-symbols-rounded" style="font-size: 14px; margin-right: 4px;">desktop_windows</span> Normal';
 
+        // EXTRACCIÓN DINÁMICA DE MÉTRICAS
+        const views = video.views ? parseInt(video.views).toLocaleString() : '0';
+        const comments = video.comments_count ? parseInt(video.comments_count).toLocaleString() : '0';
+        const likes = video.likes ? parseInt(video.likes).toLocaleString() : '0';
+
         tr.innerHTML = `
             <td>
                 <div class="table-video-info">
@@ -226,9 +231,9 @@ export class StudioManageContentController {
             <td>${combinedBadge}</td>
             <td><span class="component-badge component-badge--sm" style="${badgeStyle}">Ninguna</span></td>
             <td><span class="component-badge component-badge--sm" style="${badgeStyle}">${date}</span></td>
-            <td><span class="component-badge component-badge--sm" style="${badgeStyle}">0</span></td>
-            <td><span class="component-badge component-badge--sm" style="${badgeStyle}">0</span></td>
-            <td><span class="component-badge component-badge--sm" style="${badgeStyle}">0</span></td>
+            <td><span class="component-badge component-badge--sm" style="${badgeStyle}">${views}</span></td>
+            <td><span class="component-badge component-badge--sm" style="${badgeStyle}">${comments}</span></td>
+            <td><span class="component-badge component-badge--sm" style="${badgeStyle}">${likes}</span></td>
         `;
         return tr;
     }

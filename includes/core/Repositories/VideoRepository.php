@@ -140,24 +140,51 @@ class VideoRepository implements VideoRepositoryInterface {
     }
 
     public function getActiveUploadsByUserId(int $userId): array {
-        $stmt = $this->db->prepare("
-            SELECT * FROM videos 
-            WHERE user_id = :user_id 
-            AND status IN ('queued', 'processing', 'processed', 'failed')
-            ORDER BY created_at ASC
-        ");
-        $stmt->execute([':user_id' => $userId]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        try {
+            $stmt = $this->db->prepare("
+                SELECT v.*, 
+                       (SELECT COUNT(*) FROM comments c WHERE c.video_id = v.id) as comments_count 
+                FROM videos v 
+                WHERE v.user_id = :user_id 
+                AND v.status IN ('queued', 'processing', 'processed', 'failed')
+                ORDER BY v.created_at ASC
+            ");
+            $stmt->execute([':user_id' => $userId]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (\Exception $e) {
+            // Fallback en caso de que la tabla 'comments' no exista o falle la subconsulta
+            $stmt = $this->db->prepare("
+                SELECT * FROM videos 
+                WHERE user_id = :user_id 
+                AND status IN ('queued', 'processing', 'processed', 'failed')
+                ORDER BY created_at ASC
+            ");
+            $stmt->execute([':user_id' => $userId]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        }
     }
 
     public function getAllByUserId(int $userId): array {
-        $stmt = $this->db->prepare("
-            SELECT * FROM videos 
-            WHERE user_id = :user_id 
-            ORDER BY created_at DESC
-        ");
-        $stmt->execute([':user_id' => $userId]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        try {
+            $stmt = $this->db->prepare("
+                SELECT v.*, 
+                       (SELECT COUNT(*) FROM comments c WHERE c.video_id = v.id) as comments_count 
+                FROM videos v 
+                WHERE v.user_id = :user_id 
+                ORDER BY v.created_at DESC
+            ");
+            $stmt->execute([':user_id' => $userId]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (\Exception $e) {
+            // Fallback en caso de que la tabla 'comments' no exista o falle la subconsulta
+            $stmt = $this->db->prepare("
+                SELECT * FROM videos 
+                WHERE user_id = :user_id 
+                ORDER BY created_at DESC
+            ");
+            $stmt->execute([':user_id' => $userId]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        }
     }
 
     public function findById(int $id) {
