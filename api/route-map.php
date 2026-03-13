@@ -126,5 +126,13 @@ return [
     // --- NUEVAS RUTAS DE MÉTRICAS / HEATMAP ---
     'metrics.retention.ingest' => ['controller' => 'App\Api\Controllers\MetricsController', 'action' => 'ingestRetention'],
     'metrics.retention.get'    => ['controller' => 'App\Api\Controllers\MetricsController', 'action' => 'getHeatmap'],
+
+    // --- RUTAS DE HISTORIAL ---
+    'history.get_watch'   => ['controller' => 'App\Api\Controllers\HistoryController', 'action' => 'get_watch_history'],
+    'history.get_search'  => ['controller' => 'App\Api\Controllers\HistoryController', 'action' => 'get_search_history'],
+    'history.clear_watch' => ['controller' => 'App\Api\Controllers\HistoryController', 'action' => 'clear_watch_history'],
+    'history.clear_search'=> ['controller' => 'App\Api\Controllers\HistoryController', 'action' => 'clear_search_history'],
+    'history.remove_watch_item' => ['controller' => 'App\Api\Controllers\HistoryController', 'action' => 'remove_watch_item'],
+    'history.remove_search_item'=> ['controller' => 'App\Api\Controllers\HistoryController', 'action' => 'remove_search_item'],
 ];
 ?>

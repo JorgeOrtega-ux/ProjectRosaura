@@ -1,27 +1,33 @@
 <?php
+// api/services/SearchServices.php
 
 namespace ProjectRosaura\Services;
 
 use MeiliSearch\Client;
 use App\Core\Container;
 use Exception;
+use App\Api\Services\HistoryServices; // <- AÑADIDO
 
 class SearchServices {
     private Client $client;
+    private $historyService; // <- AÑADIDO
 
     public function __construct(?Container $container = null) {
-        // Leemos estrictamente de $_ENV y añadimos valor por defecto para evitar warnings fatales
         $meiliHost = $_ENV['MEILISEARCH_HOST'] ?? 'http://127.0.0.1:7700';
         $meiliKey = $_ENV['MEILISEARCH_MASTER_KEY'] ?? ''; 
         
         $this->client = new Client($meiliHost, $meiliKey);
+        $this->historyService = new HistoryServices(); // <- AÑADIDO
     }
 
-    /**
-     * Realiza una búsqueda federada en los índices de videos y canales
-     */
     public function performSearch(string $query): array {
         try {
+            // --- AÑADIDO: Registrar en el historial si el usuario está logueado ---
+            if (isset($_SESSION['user_id'])) {
+                $this->historyService->logSearchEvent($_SESSION['user_id'], $query);
+            }
+            // -------------------------------------------------------------------
+
             $videoIndex = $this->client->index('videos');
             $channelIndex = $this->client->index('channels');
 
@@ -39,8 +45,8 @@ class SearchServices {
             ];
         } catch (Exception $e) {
             error_log("Meilisearch Error: " . $e->getMessage());
-            // CORRECCIÓN: Devolvemos el mensaje EXACTO de Meilisearch para diagnosticar
             throw new Exception("Error de Meilisearch: " . $e->getMessage());
         }
     }
 }
+?>

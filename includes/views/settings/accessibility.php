@@ -59,5 +59,22 @@ $currentThemeText = $themeTexts[$prefTheme] ?? __('theme_system');
             </div>
         </div>
 
+        <div class="component-card--grouped">
+            <div class="component-group-item component-group-item--wrap">
+                <div class="component-card__content">
+                    <div class="component-card__icon-container component-card__icon-container--bordered">
+                        <span class="material-symbols-rounded">history</span>
+                    </div>
+                    <div class="component-card__text">
+                        <h2 class="component-card__title"><?php echo __('sec_history_title') ?? 'Historial de actividad'; ?></h2>
+                        <p class="component-card__description"><?php echo __('sec_history_desc') ?? 'Administra tu historial de búsqueda y reproducción de videos.'; ?></p>
+                    </div>
+                </div>
+                <div class="component-card__actions component-card__actions--end">
+                    <button type="button" class="component-button component-button--h36" data-nav="/settings/history"><?php echo __('btn_manage_history') ?? 'Administrar historial'; ?></button>
+                </div>
+            </div>
+        </div>
+
     </div>
 </div>

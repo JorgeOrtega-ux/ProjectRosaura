@@ -52,6 +52,7 @@ export class VideoPlayerSystem {
         this.hls = null;
         this.lastVolume = 1; 
         this.currentVideoUuid = null;
+        this.hasRegisteredView = false; // <-- AÑADIDO PARA EL HISTORIAL
         
         // Variables para Scrubbing y Sprite Sheet
         this.isDragging = false;
@@ -183,11 +184,12 @@ export class VideoPlayerSystem {
             this.updateVolumeUI(); 
         });
         
-        // EVENTO PRINCIPAL: Registro de tiempo y recolección para el Heatmap
+        // EVENTO PRINCIPAL: Registro de tiempo y recolección para el Heatmap y Registro de Historial
         this.video.addEventListener('timeupdate', () => {
             if (!this.isDragging) {
                 this.updateProgress();
-                this.trackRetention(); // <-- Captura inteligente de retención
+                this.trackRetention(); 
+                this.checkViewRegistration(); // <-- AÑADIDO PARA DISPARAR EL HISTORIAL
             }
         });
 
@@ -245,6 +247,19 @@ export class VideoPlayerSystem {
                 this.calculatePlayerSize(); 
             }
         });
+    }
+
+    // --- NUEVO: DISPARADOR DEL HISTORIAL (VISITA) ---
+    checkViewRegistration() {
+        // Registra la vista si el video ha superado los 3 segundos de reproducción
+        if (!this.hasRegisteredView && this.video.currentTime > 3) {
+            this.hasRegisteredView = true;
+            if (this.currentVideoUuid) {
+                this.api.postView(this.currentVideoUuid).catch(e => {
+                    console.error("[VideoPlayer:View] Error al registrar la visita para el historial:", e);
+                });
+            }
+        }
     }
 
     // --- TRACKING DE RETENCIÓN DE VIDEO (RECOLECTOR) ---
@@ -623,15 +638,16 @@ export class VideoPlayerSystem {
         }
     }
 
-    // RECIBE TAMBIÉN EL dbVideoId PARA ENVIAR LAS MÉTRICAS
     async loadVideo(sourceIdentifier, requiresSignedToken = false, dbVideoId = null) {
         if (!this.video) return;
         this.destroyHls(); 
         this.vttData = [];
         this.spriteSheetUrl = null;
         
-        // --- PREPARAMOS EL HEATMAP TRACKER ---
+        // --- PREPARAMOS EL HEATMAP TRACKER E HISTORIAL ---
         this.dbVideoId = dbVideoId;
+        this.currentVideoUuid = sourceIdentifier; // <-- ASEGURAMOS EL UUID
+        this.hasRegisteredView = false;           // <-- RESETEAMOS EL FLAG DE VISTA
         this.chunkViews = {};
         this.lastChunkIndex = -1;
         this.heatmapData = [];
@@ -639,7 +655,6 @@ export class VideoPlayerSystem {
         this.startRetentionBatcher();
         
         if (requiresSignedToken) {
-            this.currentVideoUuid = sourceIdentifier;
             try {
                 const response = await this.api.getMediaToken(this.currentVideoUuid);
                 

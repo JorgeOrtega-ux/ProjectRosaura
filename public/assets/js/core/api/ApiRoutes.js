@@ -7,7 +7,7 @@ export const ApiRoutes = {
         GetPlaylistQueue: 'app.get_playlist_queue' 
     },
     Search: {
-        Get: 'search.get' // <-- RUTA DE BÚSQUEDA AÑADIDA
+        Get: 'search.get' 
     },
     Video: {
         RegisterView: 'video.register_view',
@@ -51,6 +51,15 @@ export const ApiRoutes = {
         GetDevices: 'settings.get_devices',
         RevokeDevice: 'settings.revoke_device',
         RevokeAllDevices: 'settings.revoke_all_devices'
+    },
+    // ---> AÑADIDO: RUTAS DE HISTORIAL <---
+    History: {
+        GetWatch: 'history.get_watch',
+        GetSearch: 'history.get_search',
+        ClearWatch: 'history.clear_watch',
+        ClearSearch: 'history.clear_search',
+        RemoveWatchItem: 'history.remove_watch_item',
+        RemoveSearchItem: 'history.remove_search_item'
     },
     Admin: {
         GetUser: 'admin.get_user',

@@ -29,6 +29,9 @@ export const RouteModulesMap = {
     '/settings/security': { path: './modules/settings/SecurityController.js', className: 'SecurityController' },
     '/settings/2fa': { path: './modules/settings/TwoFactorController.js', className: 'TwoFactorController' },
     '/settings/devices': { path: './modules/settings/DevicesController.js', className: 'DevicesController' },
+    
+    // ---> AÑADIDO: MÓDULO DE HISTORIAL <---
+    '/settings/history': { path: './modules/settings/HistoryController.js', className: 'HistoryController' },
 
     // ---- MÓDULOS DE ADMINISTRACIÓN DE USUARIOS ----
     '/admin/manage-users': { path: './modules/admin/users/AdminUsersController.js', className: 'AdminUsersController' },

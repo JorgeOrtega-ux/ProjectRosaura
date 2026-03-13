@@ -75,6 +75,7 @@ return [
     // --- RUTAS DE API (Comentarios) ---
     '/api/comments' => ['controller' => 'CommentController', 'action' => 'index', 'api' => true],
     '/api/comments/create' => ['controller' => 'CommentController', 'action' => 'store', 'api' => true, 'auth' => true],
-    '/api/comments/react' => ['controller' => 'CommentController', 'action' => 'react', 'api' => true, 'auth' => true]
+    '/api/comments/react' => ['controller' => 'CommentController', 'action' => 'react', 'api' => true, 'auth' => true],
+    '/settings/history' => ['view' => 'settings/history.php', 'auth' => true]
 ];
 ?>

@@ -85,6 +85,7 @@ class Container implements ContainerInterface {
         $this->bindings[VideoRepositoryInterface::class] = VideoRepository::class;
         $this->bindings[PlaylistRepositoryInterface::class] = PlaylistRepository::class; 
         $this->bindings[CommentRepositoryInterface::class] = CommentRepository::class; 
+        $this->bindings[\App\Core\Interfaces\HistoryRepositoryInterface::class] = \App\Core\Repositories\HistoryRepository::class;
         
         // 5. Servicios de Seguridad de Medios
         $this->bindings[MediaSignerInterface::class] = MediaSigner::class;

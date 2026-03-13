@@ -241,4 +241,32 @@ async post(route, data = {}) {
     async syncPlaylistVideos(playlistId, videoIdsArray) { return await this.post(ApiRoutes.Studio.SyncPlaylistVideos, { playlist_id: playlistId, video_ids: videoIdsArray }); }
     async getPlaylistDetails(playlistId) { return await this.post(ApiRoutes.App.GetPlaylistDetails, { id: playlistId }); }
     async getPlaylistQueue(playlistUuid) { return await this.post(ApiRoutes.App.GetPlaylistQueue, { playlist_uuid: playlistUuid }); }
+
+    // ==========================================
+    // --- NUEVOS MÉTODOS DE HISTORIAL ---
+    // ==========================================
+    
+    async getWatchHistory(page = 1) {
+        return await this.post(ApiRoutes.History.GetWatch, { page: page });
+    }
+
+    async getSearchHistory(page = 1) {
+        return await this.post(ApiRoutes.History.GetSearch, { page: page });
+    }
+
+    async clearWatchHistory() {
+        return await this.post(ApiRoutes.History.ClearWatch);
+    }
+
+    async clearSearchHistory() {
+        return await this.post(ApiRoutes.History.ClearSearch);
+    }
+
+    async removeWatchItem(videoId) {
+        return await this.post(ApiRoutes.History.RemoveWatchItem, { video_id: videoId });
+    }
+
+    async removeSearchItem(searchId) {
+        return await this.post(ApiRoutes.History.RemoveSearchItem, { search_id: searchId });
+    }
 }
