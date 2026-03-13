@@ -186,11 +186,10 @@
    ESTILOS DE LA INFORMACIÓN DEL VIDEO (BOTONES Y ETIQUETAS ADAPTADOS)
    ========================================================================== */
 
-/* Contenedor del título para la placa de traducción */
 .watch-title-container {
     display: flex;
-    flex-direction: column;
-    align-items: flex-start;
+    flex-direction: row;
+    align-items: center;
     gap: 8px;
     margin: 0 0 16px 0;
 }
