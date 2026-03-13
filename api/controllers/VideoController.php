@@ -58,11 +58,14 @@ class VideoController {
         $videoData['subscriber_count'] = $this->subscriptionRepo->getSubscriberCount($videoData['user_id']);
         $videoData['is_subscribed'] = false;
 
-        // Determinar si el usuario actual ha dado like/dislike y si está suscrito
+        // Determinar si el usuario actual ha dado like/dislike, está suscrito y si tiene el video guardado
         $videoData['user_interaction'] = null;
+        $videoData['is_saved'] = false;
+
         if (isset($_SESSION['user_id'])) {
             $videoData['user_interaction'] = $this->videoRepo->getUserInteraction($_SESSION['user_id'], $videoData['id']);
             $videoData['is_subscribed'] = $this->subscriptionRepo->isSubscribed($_SESSION['user_id'], $videoData['user_id']);
+            $videoData['is_saved'] = $this->videoRepo->isVideoSaved($_SESSION['user_id'], $videoData['id']);
         }
 
         unset($videoData['file_path']);
@@ -145,6 +148,40 @@ class VideoController {
             'interaction' => $result['current_state'],
             'likes' => $result['likes_count'],
             'dislikes' => $result['dislikes_count']
+        ];
+    }
+
+    public function toggleSave($data) {
+        if (!isset($_SESSION['user_id'])) {
+            return ['success' => false, 'message' => 'Debes iniciar sesión para guardar el video.'];
+        }
+
+        $videoUuid = $data['video_uuid'] ?? null;
+
+        if (!$videoUuid) {
+            return ['success' => false, 'message' => 'ID de video faltante.'];
+        }
+
+        $action = "save_" . $_SESSION['user_id'];
+        // Reutilizamos los límites de likes para evitar spam de guardado
+        $check = $this->rateLimiter->check($action, RedisRateLimiter::LIMIT_LIKES_ATTEMPTS, RedisRateLimiter::LIMIT_LIKES_MINUTES, 'Estás interactuando demasiado rápido.');
+        
+        if (!$check['allowed']) {
+            return ['success' => false, 'message' => $check['message']];
+        }
+
+        $this->rateLimiter->record($action, RedisRateLimiter::LIMIT_LIKES_ATTEMPTS, RedisRateLimiter::LIMIT_LIKES_MINUTES);
+
+        $videoData = $this->videoRepo->findByUuid($videoUuid);
+        if (!$videoData) {
+            return ['success' => false, 'message' => 'Video no encontrado.'];
+        }
+
+        $isSaved = $this->videoRepo->toggleSave($_SESSION['user_id'], $videoData['id']);
+
+        return [
+            'success' => true,
+            'is_saved' => $isSaved
         ];
     }
 }

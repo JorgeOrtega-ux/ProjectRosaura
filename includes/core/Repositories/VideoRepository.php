@@ -449,5 +449,24 @@ class VideoRepository implements VideoRepositoryInterface {
             ':data' => $jsonString
         ]);
     }
+
+    // --- NUEVO: SISTEMA DE VIDEOS GUARDADOS ---
+    public function isVideoSaved(int $userId, int $videoId): bool {
+        $stmt = $this->db->prepare("SELECT COUNT(*) FROM user_saved_videos WHERE user_id = :user_id AND video_id = :video_id");
+        $stmt->execute([':user_id' => $userId, ':video_id' => $videoId]);
+        return (int) $stmt->fetchColumn() > 0;
+    }
+
+    public function toggleSave(int $userId, int $videoId): bool {
+        if ($this->isVideoSaved($userId, $videoId)) {
+            $stmt = $this->db->prepare("DELETE FROM user_saved_videos WHERE user_id = :user_id AND video_id = :video_id");
+            $stmt->execute([':user_id' => $userId, ':video_id' => $videoId]);
+            return false; // El estado actual ahora es "No guardado"
+        } else {
+            $stmt = $this->db->prepare("INSERT INTO user_saved_videos (user_id, video_id) VALUES (:user_id, :video_id)");
+            $stmt->execute([':user_id' => $userId, ':video_id' => $videoId]);
+            return true; // El estado actual ahora es "Guardado"
+        }
+    }
 }
 ?>

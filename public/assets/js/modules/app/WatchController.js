@@ -49,6 +49,7 @@ export class WatchController {
                     this.setupViewTracker(videoId);
                     this.setupInteractions(videoId, response.data);
                     this.setupSubscription(response.data);
+                    this.setupSaveInteraction(videoId, response.data);
 
                     // --- INICIO: DESCARGAR Y RENDERIZAR HEATMAP ---
                     this.api.getVideoHeatmap(dbVideoId).then(res => {
@@ -188,6 +189,40 @@ export class WatchController {
 
         btnLike.addEventListener('click', () => handleInteraction('like'));
         btnDislike.addEventListener('click', () => handleInteraction('dislike'));
+    }
+
+    setupSaveInteraction(videoUuid, data) {
+        const btnSave = document.getElementById('watch-btn-save');
+        if (!btnSave) return;
+
+        // Establecer el estado inicial si el video ya estaba guardado
+        if (data.is_saved) {
+            btnSave.classList.add('active');
+        }
+
+        btnSave.addEventListener('click', async () => {
+            // Optimistic UI: hacemos el toggle visual inmediato
+            btnSave.classList.toggle('active');
+
+            // Llamamos a la API (endpoint que crearemos en el backend)
+            // Utilizo this.api.post directamente en lugar de crear un nuevo método en ApiServices para no tocarlo aún.
+            const response = await this.api.post('video.toggle_save', { video_uuid: videoUuid });
+
+            if (!response.success) {
+                // Si hubo error, revertimos el estado visual
+                btnSave.classList.toggle('active');
+
+                if (response.message.includes('iniciar sesión')) {
+                    if (window.router) window.router.navigate('/login');
+                    else window.location.href = (window.AppBasePath || '') + '/login';
+                } else {
+                    this.dialog.show('error', { title: 'Aviso', message: response.message });
+                }
+            } else {
+                // Aseguramos que el estado del botón coincida con la realidad en la base de datos
+                btnSave.classList.toggle('active', response.is_saved);
+            }
+        });
     }
 
     setupSubscription(data) {

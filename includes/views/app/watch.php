@@ -214,7 +214,7 @@
                         <span class="material-symbols-rounded">download</span> Descargar
                     </button>
 
-                    <button class="watch-btn watch-btn-action" title="Guardar">
+                    <button id="watch-btn-save" class="watch-btn watch-btn-action" title="Guardar">
                         <span class="material-symbols-rounded">bookmark</span> Guardar
                     </button>
                 </div>

@@ -38,5 +38,9 @@ interface VideoRepositoryInterface {
     // --- NUEVO: SISTEMA DE RETENCIÓN (HEATMAP) ---
     public function getRetentionData(int $videoId): ?array;
     public function updateRetentionData(int $videoId, array $jsonData): bool;
+
+    // --- NUEVO: SISTEMA DE VIDEOS GUARDADOS ---
+    public function isVideoSaved(int $userId, int $videoId): bool;
+    public function toggleSave(int $userId, int $videoId): bool;
 }
 ?>

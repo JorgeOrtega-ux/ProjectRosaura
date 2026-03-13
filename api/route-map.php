@@ -14,6 +14,7 @@ return [
     // --- RUTAS DE INTERACCIÓN DE VIDEOS ---
     'video.register_view'      => ['controller' => 'App\Api\Controllers\VideoController', 'action' => 'registerView'],
     'video.toggle_like'        => ['controller' => 'App\Api\Controllers\VideoController', 'action' => 'toggleLike'],
+    'video.toggle_save'        => ['controller' => 'App\Api\Controllers\VideoController', 'action' => 'toggleSave'],
 
     // --- RUTAS DE MEDIOS PROTEGIDOS (FIRMADO) ---
     'media.get_token'          => ['controller' => 'App\Api\Controllers\MediaController', 'action' => 'getStreamUrl'],
