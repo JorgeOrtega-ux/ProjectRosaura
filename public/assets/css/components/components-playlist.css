@@ -195,3 +195,72 @@
 .dark-theme .playlist-sidebar-thumb {
     background-color: var(--bg-surface-secondary, #222);
 }
+
+
+/* ==========================================================================
+   EFECTO APILADO (Múltiples capas/pestañas para cards de feed)
+   ========================================================================== */
+
+.playlist-folder-style {
+    margin-top: 20px; 
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+.playlist-folder-style .component-video-card__top {
+    position: relative;
+    overflow: visible !important;
+    /* ¡CLAVE AQUÍ! Esto atrapa las pestañas para que no se escondan detrás del fondo general */
+    transform: translateZ(0); 
+}
+
+/* --- Pestaña trasera 2 (La más lejana, la de hasta atrás) --- */
+.playlist-folder-style .component-video-card__top::after {
+    content: '';
+    position: absolute;
+    top: -14px; /* Un poco más arriba que la pestaña 1 */
+    left: 8%;   /* Más metida a los lados para dar efecto de profundidad */
+    width: 84%;
+    height: 100%;
+    background-color: var(--local-dominant-color, var(--bg-surface-secondary, #e0e0e0));
+    border-radius: 12px;
+    z-index: -2;
+    opacity: 0.35; /* Más transparente para el efecto de lejanía */
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+/* --- Pestaña trasera 1 (La de en medio, cercana a la imagen) --- */
+.playlist-folder-style .component-video-card__top::before {
+    content: '';
+    position: absolute;
+    top: -7px; /* Solo un poquito arriba de la imagen principal */
+    left: 4%;
+    width: 92%;
+    height: 100%;
+    background-color: var(--local-dominant-color, var(--bg-surface-secondary, #e0e0e0));
+    border-radius: 12px;
+    z-index: -1;
+    opacity: 0.75;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+/* --- Imagen Principal (La del frente) --- */
+.playlist-folder-style .component-video-card__thumbnail {
+    position: relative;
+    z-index: 1; /* Garantizamos que la imagen quede por encima de las pestañas */
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9; 
+    object-fit: cover;    
+    border-radius: 12px;  
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15); 
+}
+
+/* --- Animación al hacer Hover: Simulamos que se abren como abanico --- */
+.playlist-folder-style:hover .component-video-card__top::before {
+    top: -12px;
+}
+
+.playlist-folder-style:hover .component-video-card__top::after {
+    top: -24px;
+}

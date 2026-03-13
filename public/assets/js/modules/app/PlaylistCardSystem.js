@@ -72,7 +72,7 @@ export class PlaylistCardSystem {
         const onErrorHTML = `onerror="this.onerror=null; this.src='${fallbackImg}';"`;
 
         return `
-            <div class="component-video-card nav-item" style="--local-dominant-color: ${dominantColor}; cursor: pointer;" data-nav="${playlistUrl}" onclick="if(window.spaRouter) { event.preventDefault(); window.spaRouter.navigate('${playlistUrl}'); } else { window.location.href='${playlistUrl}'; }">
+            <div class="component-video-card nav-item playlist-folder-style" style="--local-dominant-color: ${dominantColor}; cursor: pointer;" data-nav="${playlistUrl}" onclick="if(window.spaRouter) { event.preventDefault(); window.spaRouter.navigate('${playlistUrl}'); } else { window.location.href='${playlistUrl}'; }">
                 <div class="component-video-card__top">
                     <img src="${thumbSrc}" alt="Miniatura de ${title}" class="component-video-card__thumbnail" loading="lazy" ${onErrorHTML}>
                     <span class="component-video-card__duration" style="display: flex; align-items: center; gap: 4px; padding: 4px 8px;">

@@ -216,8 +216,9 @@ export class HomeController {
         const basePath = window.AppBasePath || '';
         const navUrl = `${basePath}/playlist/${playlist.uuid}`;
 
+        // SE AGREGÓ LA CLASE playlist-folder-style A ESTE CONTENEDOR
         return `
-            <div class="component-video-card" style="--local-dominant-color: ${dominantColor}; cursor: pointer;" data-nav="${navUrl}">
+            <div class="component-video-card playlist-folder-style" style="--local-dominant-color: ${dominantColor}; cursor: pointer;" data-nav="${navUrl}">
                 <div class="component-video-card__top">
                     <img src="${playlist.thumbnail_url}" alt="Miniatura de ${title}" class="component-video-card__thumbnail" loading="lazy">
                     <span class="component-video-card__duration" style="display: flex; align-items: center; gap: 4px; padding: 4px 8px;">
