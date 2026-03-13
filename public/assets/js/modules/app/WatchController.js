@@ -29,7 +29,7 @@ export class WatchController {
                         : null;
 
         const urlParams = new URLSearchParams(window.location.search);
-        const playlistId = urlParams.get('list');
+        const playlistId = urlParams.get('list'); // Aquí entra "WL" o un UUID
 
         if (!videoId) {
             this.showError404('Identificador de video no proporcionado en la URL.');
@@ -52,7 +52,6 @@ export class WatchController {
                     this.setupInteractions(videoId, response.data);
                     this.setupSubscription(response.data);
                     
-                    // NUEVO: Instancia del botón "Guardar" y el Modal (Se le pasa el ID interno para las BDs)
                     this.setupSaveInteraction(dbVideoId);
 
                     this.api.getVideoHeatmap(dbVideoId).then(res => {
@@ -191,7 +190,6 @@ export class WatchController {
         btnDislike.addEventListener('click', () => handleInteraction('dislike'));
     }
 
-    // ---> NUEVO SISTEMA DE BOTÓN GUARDAR Y MODAL <---
     setupSaveInteraction(dbVideoId) {
         const btnSave = document.getElementById('watch-btn-save');
         const modal = document.getElementById('surface-save-playlist');
@@ -202,10 +200,8 @@ export class WatchController {
             modal.classList.remove('hidden');
             setTimeout(() => modal.classList.add('active'), 10);
             
-            // Cargar checkboxes del usuario
             await this.renderPlaylistCheckboxes(dbVideoId);
             
-            // Ligar los eventos internos del modal si no se ha hecho
             if (!this.playlistModalSetupDone) {
                 this.bindPlaylistModalEvents(modal, dbVideoId);
                 this.playlistModalSetupDone = true;
@@ -263,10 +259,7 @@ export class WatchController {
                     titleInput.value = '';
                     createForm.classList.add('hidden');
                     
-                    // Inserción directa (Toggle) del video en la nueva lista creada
                     await this.api.toggleVideoInPlaylist(res.playlist.uuid, dbVideoId);
-                    
-                    // Recargar la lista de checkboxes
                     await this.renderPlaylistCheckboxes(dbVideoId);
                 } else {
                     this.dialog.show('error', { title: 'Aviso', message: res.message });
@@ -304,15 +297,27 @@ export class WatchController {
         let html = '';
         res.data.forEach(pl => {
             const isChecked = pl.has_video == 1 ? 'checked' : '';
-            const icon = pl.visibility === 'private' ? 'lock' : (pl.visibility === 'unlisted' ? 'link' : 'public');
+            const isSystem = pl.type !== 'custom';
+            
+            // Traducción del título si es sistema
+            let title = pl.title;
+            if (isSystem && pl.type === 'watch_later') {
+                title = window.AppSystem?.Translator?.get('system_playlist_watch_later') || 'Ver más tarde';
+            }
+            
+            // Forzar icono de candado si es sistema
+            const icon = (pl.visibility === 'private' || isSystem) ? 'lock' : (pl.visibility === 'unlisted' ? 'link' : 'public');
+            
+            // La ruta interna usa WL para sistema, uuid para custom
+            const toggleUuid = (isSystem && pl.type === 'watch_later') ? 'WL' : pl.uuid;
             
             html += `
                 <label class="component-playlist-item-checkbox">
-                    <input type="checkbox" class="playlist-toggle-cb" data-uuid="${pl.uuid}" ${isChecked}>
+                    <input type="checkbox" class="playlist-toggle-cb" data-uuid="${toggleUuid}" ${isChecked}>
                     <div class="checkbox-custom">
                         <span class="material-symbols-rounded">check</span>
                     </div>
-                    <span class="playlist-title" title="${pl.title}">${pl.title}</span>
+                    <span class="playlist-title" title="${title}">${title}</span>
                     <span class="material-symbols-rounded playlist-visibility-icon">${icon}</span>
                 </label>
             `;
@@ -320,18 +325,16 @@ export class WatchController {
 
         container.innerHTML = html;
 
-        // Asignar los triggers a cada checkbox renderizado
         const checkboxes = container.querySelectorAll('.playlist-toggle-cb');
         checkboxes.forEach(cb => {
             cb.addEventListener('change', async () => {
                 const plUuid = cb.getAttribute('data-uuid');
                 const isChecked = cb.checked;
                 
-                // Petición silenciosa para insertar o remover en la BD
                 const toggleRes = await this.api.toggleVideoInPlaylist(plUuid, dbVideoId);
                 
                 if (!toggleRes.success) {
-                    cb.checked = !isChecked; // Revertir visualmente si hay error
+                    cb.checked = !isChecked; 
                     this.dialog.show('error', { title: 'Error', message: toggleRes.message });
                 }
             });
@@ -384,7 +387,6 @@ export class WatchController {
         content.addEventListener('pointerup', endDrag);
         content.addEventListener('pointercancel', endDrag);
     }
-    // ---> FIN SISTEMA DE PLAYLIST MODAL <---
 
     setupSubscription(data) {
         const subBtn = document.getElementById('watch-btn-subscribe');
@@ -452,6 +454,7 @@ export class WatchController {
 
     async loadPlaylistData(playlistId, currentVideoId) {
         try {
+            // El backend y PlaylistServices ahora aceptan "WL" u otro ID
             const response = await this.api.post('app.get_playlist_queue', { playlist_uuid: playlistId });
             if (response && response.success && response.data) {
                 this.renderPlaylistPanel(response.data, currentVideoId, playlistId);
@@ -473,7 +476,12 @@ export class WatchController {
         panel.style.display = 'flex';
         panel.classList.remove('hidden');
 
-        titleEl.textContent = playlistData.title || window.AppSystem?.Translator?.get('watch_playlist_title') || 'Lista de reproducción';
+        let titleText = playlistData.title || 'Lista de reproducción';
+        if (playlistData.type === 'watch_later') {
+            titleText = window.AppSystem?.Translator?.get('system_playlist_watch_later') || 'Ver más tarde';
+        }
+
+        titleEl.textContent = titleText;
         
         const videos = playlistData.videos || [];
         const total = videos.length;

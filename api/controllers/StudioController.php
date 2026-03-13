@@ -386,6 +386,7 @@ class StudioController {
         }
 
         try {
+            // Este método en StudioServices ahora devuelve SOLO las 'custom' gracias a las modificaciones del repositorio.
             $data = $this->studioServices->getPlaylists($userId);
             return ['success' => true, 'status' => 'success', 'data' => $data];
         } catch (\Exception $e) {

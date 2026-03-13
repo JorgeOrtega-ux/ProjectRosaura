@@ -306,7 +306,7 @@ class AuthServices {
         ]);
 
         if ($newUserId > 0) {
-            // --- INYECCIÓN DE PLAYLIST POR DEFECTO ---
+            // --- INYECCIÓN DE PLAYLIST POR DEFECTO MODIFICADA PARA SYSTEM PLAYLIST ---
             $playlistUuid = Utils::generateUUID();
             $this->playlistRepository->create(
                 $newUserId, 
@@ -314,9 +314,10 @@ class AuthServices {
                 'Ver más tarde', 
                 'Videos guardados automáticamente para verlos en el futuro.', 
                 'private', 
-                'published_newest'
+                'published_newest',
+                'watch_later' // Parámetro añadido para system playlists
             );
-            // ------------------------------------------
+            // ------------------------------------------------------------------------
 
             $userPrefs = $this->prefsManager->ensureDefaultPreferences($newUserId);
 

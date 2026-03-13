@@ -4,15 +4,18 @@
 namespace App\Api\Services;
 
 use App\Core\Repositories\PlaylistRepository;
+use App\Core\Interfaces\SessionManagerInterface;
 use App\Config\RedisCache;
 use App\Core\Helpers\Utils;
 
 class PlaylistServices {
     private $playlistRepo;
+    private $sessionManager;
     private $redis;
 
-    public function __construct(PlaylistRepository $playlistRepo) {
+    public function __construct(PlaylistRepository $playlistRepo, SessionManagerInterface $sessionManager) {
         $this->playlistRepo = $playlistRepo;
+        $this->sessionManager = $sessionManager;
         try {
             $this->redis = new RedisCache();
         } catch (\Exception $e) {
@@ -21,8 +24,33 @@ class PlaylistServices {
     }
 
     public function getPlaylistDetails(string $uuid): ?array {
+        // Intercepción del alias WL
+        if ($uuid === 'WL') {
+            $userId = $this->sessionManager->get('user_id');
+            if (!$userId) return null; // Requiere estar logueado para ver sus listas de sistema
+            $systemList = $this->playlistRepo->getPlaylistByAliasAndUser('WL', $userId);
+            if ($systemList) {
+                $uuid = $systemList['uuid'];
+                // Forzamos temporalmente la visibilidad para que pase los checks de privacidad, 
+                // ya que las listas de sistema son privadas por defecto pero el dueño sí puede verlas.
+                $isSystemBypass = true;
+            } else {
+                return null;
+            }
+        }
+
         $data = $this->playlistRepo->getPlaylistWithVideosByUuid($uuid);
         
+        // Si el bypass está activo, extraemos ignorando la regla de 'visibility != private' del repo general.
+        // Como el repo general lo bloquea, lo consultamos manualmente.
+        if (!$data && isset($isSystemBypass)) {
+            $playlist = $this->playlistRepo->getByUuidAndUserId($uuid, $userId);
+            if ($playlist) {
+                $videos = $this->playlistRepo->getVideosByPlaylistId($playlist['id']);
+                $data = ['playlist' => $playlist, 'videos' => $videos];
+            }
+        }
+
         if (!$data) return null;
 
         $data['playlist']['avatar_url'] = !empty($data['playlist']['avatar_path']) 
@@ -43,6 +71,17 @@ class PlaylistServices {
     }
     
     public function getPlaylistQueueData(string $uuid): ?array {
+        if ($uuid === 'WL') {
+            $userId = $this->sessionManager->get('user_id');
+            if (!$userId) return null;
+            $systemList = $this->playlistRepo->getPlaylistByAliasAndUser('WL', $userId);
+            if ($systemList) {
+                $uuid = $systemList['uuid'];
+            } else {
+                return null;
+            }
+        }
+
         $cacheKey = "playlist_queue_data_{$uuid}";
 
         if ($this->redis && $this->redis->getClient()) {
@@ -52,6 +91,18 @@ class PlaylistServices {
 
         $data = $this->playlistRepo->getPlaylistVideosOrdered($uuid);
         
+        // Bypass para dueños de sus listas privadas de sistema si el repo la ocultó
+        if (empty($data)) {
+            $userId = $this->sessionManager->get('user_id');
+            if ($userId) {
+                $playlist = $this->playlistRepo->getByUuidAndUserId($uuid, $userId);
+                if ($playlist) {
+                    $videos = $this->playlistRepo->getVideosByPlaylistId($playlist['id']);
+                    $data = ['title' => $playlist['title'], 'type' => $playlist['type'], 'videos' => $videos];
+                }
+            }
+        }
+
         if (empty($data) || empty($data['videos'])) return null;
 
         foreach ($data['videos'] as &$video) {
@@ -107,7 +158,7 @@ class PlaylistServices {
         
         $uuid = Utils::generateUUID();
         // Por defecto: published_newest
-        $playlistId = $this->playlistRepo->create($userId, $uuid, $title, null, $visibility, 'published_newest');
+        $playlistId = $this->playlistRepo->create($userId, $uuid, $title, null, $visibility, 'published_newest', 'custom');
 
         if ($playlistId) {
             return [

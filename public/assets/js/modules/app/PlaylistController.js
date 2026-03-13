@@ -24,7 +24,7 @@ export class PlaylistController {
         if (match && match[1]) {
             this.playlistId = match[1];
         } else {
-            // 2. Fallback de seguridad por si en algún momento usas query params (?list=UUID)
+            // 2. Fallback por si usamos query params (?list=UUID o ?list=WL)
             const urlParams = new URLSearchParams(window.location.search);
             this.playlistId = urlParams.get('list');
         }
@@ -43,15 +43,21 @@ export class PlaylistController {
             const basePath = window.AppBasePath || '';
             const route = (ApiRoutes.App && ApiRoutes.App.GetPlaylistDetails) 
                 ? ApiRoutes.App.GetPlaylistDetails 
-                : `${basePath}/api/playlist/details`; // Asegúrate de que este string coincida con la ruta en tu route-map.php
+                : `${basePath}/api/playlist/details`; 
             
+            // Enviamos el ID tal cual (sea un UUID o el alias 'WL')
             const response = await this.api.post(route, { id: this.playlistId });
             
             if (response && response.success) {
+                // Notificar a la vista que es de sistema para que CSS bloquee UI si es necesario
+                if (response.data.playlist.isSystem && this.videosContainer) {
+                    this.videosContainer.setAttribute('data-is-system', 'true');
+                }
+                
                 this.renderDetails(response.data.playlist);
                 this.renderVideos(response.data.videos);
             } else {
-                this.showError('No se pudo cargar la lista de reproducción.');
+                this.showError(response.message || 'No se pudo cargar la lista de reproducción.');
             }
         } catch (error) {
             console.error('Error cargando la playlist:', error);
@@ -75,11 +81,17 @@ export class PlaylistController {
     renderDetails(playlist) {
         if (!this.detailsContainer || !playlist) return;
 
-        const title = playlist.title || 'Lista sin título';
-        const description = playlist.description || 'Sin descripción';
+        let title = playlist.title || 'Lista sin título';
+        const description = playlist.description || '';
         const videoCount = playlist.video_count || 0;
         const author = playlist.username || 'Usuario desconocido';
         const firstVideoUuid = playlist.first_video_uuid || null; 
+        const isSystem = playlist.isSystem || playlist.type !== 'custom';
+
+        // Traducción dinámica si es de sistema
+        if (isSystem && playlist.type === 'watch_later') {
+            title = window.AppSystem?.Translator?.get('system_playlist_watch_later') || 'Ver más tarde';
+        }
 
         // Rellenar la descripción dinámica en la cabecera derecha
         const countDesc = document.getElementById('playlist-video-count-desc');
@@ -89,11 +101,16 @@ export class PlaylistController {
 
         const basePath = window.AppBasePath || '';
 
+        // Si es WL, el parámetro de la ruta de reproducción debe mantener el alias
+        const routeParam = (isSystem && playlist.type === 'watch_later') ? 'WL' : this.playlistId;
+
         const playAllAction = firstVideoUuid 
-            ? `onclick="window.spaRouter.navigate('${basePath}/watch/${firstVideoUuid}?list=${this.playlistId}')"` 
+            ? `onclick="window.spaRouter.navigate('${basePath}/watch/${firstVideoUuid}?list=${routeParam}')"` 
             : 'disabled';
 
         const thumbSrc = this.resolveThumbUrl(playlist.thumbnail_url || playlist.thumbnail_path);
+        
+        const lockIcon = isSystem ? `<span class="material-symbols-rounded" style="font-size: 16px; vertical-align: middle; margin-right: 4px;" title="Lista privada del sistema">lock</span>` : '';
 
         this.detailsContainer.innerHTML = `
             <img src="${thumbSrc}" alt="Miniatura de ${title}" class="playlist-sidebar-thumb">
@@ -103,7 +120,7 @@ export class PlaylistController {
             <p class="playlist-sidebar-author">${author}</p>
             
             <div class="playlist-sidebar-meta">
-                <span>${videoCount} videos</span>
+                <span>${lockIcon}${videoCount} videos</span>
                 <span>•</span>
                 <span>Actualizada recientemente</span>
             </div>
@@ -114,7 +131,7 @@ export class PlaylistController {
                 </button>
             </div>
 
-            <p class="playlist-sidebar-desc">${description}</p>
+            ${description && !isSystem ? `<p class="playlist-sidebar-desc">${description}</p>` : ''}
         `;
     }
 
@@ -139,6 +156,10 @@ export class PlaylistController {
         const basePath = window.AppBasePath || '';
         let html = '';
         
+        // Mantener el parámetro correcto
+        const isSystem = this.videosContainer.getAttribute('data-is-system') === 'true';
+        const routeParam = (isSystem && this.playlistId === 'WL') ? 'WL' : this.playlistId;
+        
         videos.forEach((video, index) => {
             const title = video.title || 'Video sin título';
             const views = video.views || 0;
@@ -147,7 +168,7 @@ export class PlaylistController {
             const description = video.description || '';
 
             const thumbSrc = this.resolveThumbUrl(video.thumbnail_url || video.thumbnail_path);
-            const clickAction = `window.spaRouter.navigate('${basePath}/watch/${video.uuid}?list=${this.playlistId}')`;
+            const clickAction = `window.spaRouter.navigate('${basePath}/watch/${video.uuid}?list=${routeParam}')`;
 
             html += `
                 <hr class="component-divider">

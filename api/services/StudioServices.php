@@ -609,7 +609,7 @@ class StudioServices {
         
         $uuid = sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x', mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0x0fff) | 0x4000, mt_rand(0, 0x3fff) | 0x8000, mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff));
         
-        $id = $this->playlistRepo->create($userId, $uuid, trim($title), $description, $visibility, $videoOrder);
+        $id = $this->playlistRepo->create($userId, $uuid, trim($title), $description, $visibility, $videoOrder, 'custom');
         
         return [
             'id' => $id,
@@ -619,13 +619,14 @@ class StudioServices {
     }
 
     public function getPlaylists(int $userId): array {
+        // Al modificar el PlaylistRepository, esto ahora devuelve estrictamente solo listas tipo 'custom'
         return $this->playlistRepo->getAllByUserId($userId);
     }
 
     public function updatePlaylist(int $userId, int $playlistId, string $title, ?string $description, string $visibility, string $videoOrder): array {
         $playlist = $this->playlistRepo->getByIdAndUserId($playlistId, $userId);
-        if (!$playlist) {
-            throw new Exception("Playlist no encontrada o no autorizada.");
+        if (!$playlist || $playlist['type'] !== 'custom') {
+            throw new Exception("Playlist no encontrada, no autorizada o intentas modificar una lista bloqueada de sistema.");
         }
         if (empty(trim($title))) {
             throw new Exception("El título de la playlist es obligatorio.");
@@ -637,8 +638,8 @@ class StudioServices {
 
     public function deletePlaylist(int $userId, int $playlistId): array {
         $playlist = $this->playlistRepo->getByIdAndUserId($playlistId, $userId);
-        if (!$playlist) {
-            throw new Exception("Playlist no encontrada o no autorizada.");
+        if (!$playlist || $playlist['type'] !== 'custom') {
+            throw new Exception("Playlist no encontrada, no autorizada o intentas eliminar una lista bloqueada de sistema.");
         }
 
         $this->playlistRepo->delete($playlistId);
@@ -656,8 +657,8 @@ class StudioServices {
 
     public function syncPlaylistVideos(int $userId, int $playlistId, array $videoIds): array {
         $playlist = $this->playlistRepo->getByIdAndUserId($playlistId, $userId);
-        if (!$playlist) {
-            throw new Exception("Playlist no encontrada o no autorizada.");
+        if (!$playlist || $playlist['type'] !== 'custom') {
+            throw new Exception("Playlist no encontrada, no autorizada o intentas ordenar una lista bloqueada de sistema.");
         }
 
         if (!empty($videoIds)) {

@@ -32,7 +32,7 @@
 
             <div class="component-view-bottom">
                 <div class="component-table-wrapper">
-                    <table class="component-table component-table--media">
+                    <table class="component-table component-table--media" data-prevent-system="true">
                         <thead>
                             <tr>
                                 <th><?php echo __('studio_th_playlist') ?? 'Lista de reproducción'; ?></th>

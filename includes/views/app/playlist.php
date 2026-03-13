@@ -1,3 +1,6 @@
+<?php
+// includes/views/app/playlist.php
+?>
 <div class="view-content component-layout-centered playlist-page-container">
     <div class="component-wrapper component-wrapper--full">
         
@@ -21,7 +24,7 @@
                         </div>
                     </div>
 
-                    <div id="playlist-videos-container" class="playlist-videos-wrapper">
+                    <div id="playlist-videos-container" class="playlist-videos-wrapper" data-is-system="false">
                         <div class="component-spinner component-spinner--centered playlist-spinner"></div>
                     </div>
 

@@ -12,6 +12,9 @@ export const RouteModulesMap = {
     '/watch': { path: './modules/app/WatchController.js', className: 'WatchController' },
     '/playlist': { path: './modules/app/PlaylistController.js', className: 'PlaylistController' },
     
+    // ---> NUEVO: MÓDULO DE FEED DE PLAYLISTS <---
+    '/feed/playlists': { path: './modules/app/FeedPlaylistsController.js', className: 'FeedPlaylistsController' },
+    
     // ---- MÓDULO DE CANAL (PERFILES) ----
     // Permite rutas como /@jorge
     '/@channel': { path: './modules/app/ChannelController.js', className: 'ChannelController' },

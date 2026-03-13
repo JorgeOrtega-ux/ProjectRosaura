@@ -12,7 +12,11 @@ return [
     '/watch/{video_uuid}' => ['view' => 'app/watch.php'], 
 
     // --- NUEVA RUTA DE VISTA DE PLAYLIST ---
-    '/playlist/{uuid}' => ['view' => 'app/playlist.php'],
+    '/playlist' => ['view' => 'app/playlist.php'], // Modificado: Ahora acepta ?list=...
+    '/playlist/{uuid}' => ['view' => 'app/playlist.php'], // Mantenemos compatibilidad hacia atrás
+    
+    // --- NUEVA RUTA: FEED DE PLAYLISTS ---
+    '/feed/playlists' => ['view' => 'app/feed-playlists.php', 'auth' => true],
     
     // --- RUTA DINÁMICA DE CANALES ---
     '/@{identifier}' => ['view' => 'app/channel.php'], 

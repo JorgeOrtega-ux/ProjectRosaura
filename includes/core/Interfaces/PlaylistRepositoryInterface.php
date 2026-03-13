@@ -4,8 +4,9 @@
 namespace App\Core\Interfaces;
 
 interface PlaylistRepositoryInterface {
-    public function create(int $userId, string $uuid, string $title, ?string $description, string $visibility, string $videoOrder): int;
+    public function create(int $userId, string $uuid, string $title, ?string $description, string $visibility, string $videoOrder, string $type = 'custom'): int;
     public function getAllByUserId(int $userId): array;
+    public function getAllIncludingSystemByUserId(int $userId): array;
     public function getByIdAndUserId(int $id, int $userId): ?array;
     public function update(int $id, string $title, ?string $description, string $visibility, string $videoOrder): bool;
     public function delete(int $id): bool;
@@ -20,5 +21,9 @@ interface PlaylistRepositoryInterface {
     public function removeVideoFromPlaylist(int $playlistId, int $videoId): bool;
     public function isVideoInPlaylist(int $playlistId, int $videoId): bool;
     public function getByUuidAndUserId(string $uuid, int $userId): ?array;
+    
+    // --- FIRMAS PARA LISTAS DE SISTEMA (SYSTEM PLAYLISTS) ---
+    public function getPlaylistByAliasAndUser(string $alias, int $userId): ?array;
+    public function getUserPlaylistsByType(int $userId, string $type): array;
 }
 ?>

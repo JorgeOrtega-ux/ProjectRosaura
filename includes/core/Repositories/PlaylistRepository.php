@@ -13,10 +13,10 @@ class PlaylistRepository implements PlaylistRepositoryInterface {
         $this->db = $db;
     }
 
-    public function create(int $userId, string $uuid, string $title, ?string $description, string $visibility, string $videoOrder): int {
+    public function create(int $userId, string $uuid, string $title, ?string $description, string $visibility, string $videoOrder, string $type = 'custom'): int {
         $stmt = $this->db->prepare("
-            INSERT INTO playlists (user_id, uuid, title, description, visibility, video_order) 
-            VALUES (:user_id, :uuid, :title, :description, :visibility, :video_order)
+            INSERT INTO playlists (user_id, uuid, title, description, visibility, video_order, type) 
+            VALUES (:user_id, :uuid, :title, :description, :visibility, :video_order, :type)
         ");
         $stmt->execute([
             ':user_id' => $userId,
@@ -24,12 +24,35 @@ class PlaylistRepository implements PlaylistRepositoryInterface {
             ':title' => $title,
             ':description' => $description,
             ':visibility' => $visibility,
-            ':video_order' => $videoOrder
+            ':video_order' => $videoOrder,
+            ':type' => $type
         ]);
         return (int) $this->db->lastInsertId();
     }
 
     public function getAllByUserId(int $userId): array {
+        // Filtrado explícito para que el Studio solo vea las listas custom
+        $stmt = $this->db->prepare("
+            SELECT 
+                p.*,
+                (SELECT COUNT(*) FROM playlist_videos pv WHERE pv.playlist_id = p.id) as video_count,
+                (
+                    SELECT v.thumbnail_path 
+                    FROM playlist_videos pv2 
+                    JOIN videos v ON pv2.video_id = v.id 
+                    WHERE pv2.playlist_id = p.id 
+                    ORDER BY pv2.display_order ASC 
+                    LIMIT 1
+                ) as thumbnail_path
+            FROM playlists p 
+            WHERE p.user_id = :user_id AND p.type = 'custom'
+            ORDER BY p.created_at DESC
+        ");
+        $stmt->execute([':user_id' => $userId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    public function getAllIncludingSystemByUserId(int $userId): array {
         $stmt = $this->db->prepare("
             SELECT 
                 p.*,
@@ -163,7 +186,7 @@ class PlaylistRepository implements PlaylistRepositoryInterface {
     
     public function getPlaylistWithVideosByUuid(string $uuid): ?array {
         $stmt = $this->db->prepare("
-            SELECT p.id, p.uuid, p.title, p.description, p.visibility, p.created_at, p.user_id,
+            SELECT p.id, p.uuid, p.title, p.description, p.visibility, p.created_at, p.user_id, p.type,
                    u.username, u.profile_picture as avatar_path,
                    (SELECT COUNT(*) FROM playlist_videos pv WHERE pv.playlist_id = p.id) as video_count,
                    (
@@ -213,7 +236,7 @@ class PlaylistRepository implements PlaylistRepositoryInterface {
     }
     
     public function getPlaylistVideosOrdered(string $uuid): array {
-        $stmt = $this->db->prepare("SELECT id, title, visibility FROM playlists WHERE uuid = :uuid");
+        $stmt = $this->db->prepare("SELECT id, title, visibility, type FROM playlists WHERE uuid = :uuid");
         $stmt->execute([':uuid' => $uuid]);
         $playlist = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -234,27 +257,25 @@ class PlaylistRepository implements PlaylistRepositoryInterface {
 
         return [
             'title' => $playlist['title'],
+            'type' => $playlist['type'],
             'videos' => $videos
         ];
     }
 
-    // --- NUEVOS MÉTODOS AÑADIDOS ---
-
     public function getUserPlaylistsWithVideoStatus(int $userId, int $videoId): array {
         $stmt = $this->db->prepare("
-            SELECT p.id, p.uuid, p.title, p.visibility,
+            SELECT p.id, p.uuid, p.title, p.visibility, p.type,
                    (CASE WHEN pv.id IS NOT NULL THEN 1 ELSE 0 END) as has_video
             FROM playlists p
             LEFT JOIN playlist_videos pv ON p.id = pv.playlist_id AND pv.video_id = :video_id
             WHERE p.user_id = :user_id
-            ORDER BY p.created_at DESC
+            ORDER BY p.type DESC, p.created_at DESC
         ");
         $stmt->execute([':user_id' => $userId, ':video_id' => $videoId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
     public function addVideoToPlaylist(int $playlistId, int $videoId): bool {
-        // Obtener el último orden para poner el video al final
         $stmtMax = $this->db->prepare("SELECT MAX(display_order) FROM playlist_videos WHERE playlist_id = :pid");
         $stmtMax->execute([':pid' => $playlistId]);
         $max = (int) $stmtMax->fetchColumn();
@@ -280,6 +301,24 @@ class PlaylistRepository implements PlaylistRepositoryInterface {
         $stmt->execute([':uuid' => $uuid, ':user_id' => $userId]);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
         return $result ?: null;
+    }
+
+    // --- MÉTODOS DE SYSTEM PLAYLISTS ---
+
+    public function getPlaylistByAliasAndUser(string $alias, int $userId): ?array {
+        if ($alias === 'WL') {
+            $stmt = $this->db->prepare("SELECT * FROM playlists WHERE user_id = :uid AND type = 'watch_later' LIMIT 1");
+            $stmt->execute([':uid' => $userId]);
+            $res = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $res ?: null;
+        }
+        return null;
+    }
+
+    public function getUserPlaylistsByType(int $userId, string $type): array {
+        $stmt = $this->db->prepare("SELECT * FROM playlists WHERE user_id = :user_id AND type = :type ORDER BY created_at DESC");
+        $stmt->execute([':user_id' => $userId, ':type' => $type]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 }
 ?>
