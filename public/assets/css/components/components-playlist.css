@@ -180,3 +180,18 @@
 .dark-theme .playlist-page-container .component-group-item.playlist-video-group-item:hover {
     background-color: var(--bg-hover-dark, rgba(255,255,255,0.05));
 }
+
+/* Ajustes para la miniatura del sidebar de Playlist */
+.playlist-sidebar-thumb {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    border-radius: 12px;
+    background-color: var(--bg-surface-secondary, #e0e0e0);
+    display: block;
+    min-height: 160px; /* Previene colapso si la URL de imagen está rota */
+}
+
+.dark-theme .playlist-sidebar-thumb {
+    background-color: var(--bg-surface-secondary, #222);
+}

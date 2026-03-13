@@ -143,17 +143,9 @@ export class PlaylistController {
         if (!this.videosContainer) return;
 
         if (!videos || videos.length === 0) {
-            this.videosContainer.innerHTML = `
-                <hr class="component-divider">
-                <div class="component-group-item component-group-item--stacked">
-                    <div class="component-card__content component-card__content--full">
-                        <div class="component-empty-state">
-                            <span class="material-symbols-rounded component-empty-state-icon">videocam_off</span>
-                            <p class="component-empty-state-text">Esta lista de reproducción no tiene videos aún.</p>
-                        </div>
-                    </div>
-                </div>
-            `;
+            // Ya está oculto por defecto desde PHP, solo nos aseguramos de limpiarlo
+            this.videosContainer.innerHTML = '';
+            this.videosContainer.style.display = 'none';
             return;
         }
 
@@ -202,7 +194,9 @@ export class PlaylistController {
             `;
         });
 
+        // Inyectamos el contenido y AHORA SÍ lo mostramos
         this.videosContainer.innerHTML = html;
+        this.videosContainer.style.display = 'block';
     }
 
     formatDuration(seconds) {
@@ -226,6 +220,7 @@ export class PlaylistController {
         }
         if (this.videosContainer) {
             this.videosContainer.innerHTML = '';
+            this.videosContainer.style.display = 'none';
         }
     }
 }

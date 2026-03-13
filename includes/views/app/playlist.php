@@ -8,7 +8,11 @@
             
             <div class="playlist-sidebar">
                 <div id="playlist-details-container">
-                    <div class="component-spinner component-spinner--centered playlist-spinner"></div>
+                    
+                    <div style="min-height: 350px; display: flex; align-items: center; justify-content: center;">
+                        <div class="component-spinner playlist-spinner"></div>
+                    </div>
+                    
                 </div>
             </div>
 
@@ -24,8 +28,7 @@
                         </div>
                     </div>
 
-                    <div id="playlist-videos-container" class="playlist-videos-wrapper" data-is-system="false">
-                        <div class="component-spinner component-spinner--centered playlist-spinner"></div>
+                    <div id="playlist-videos-container" class="playlist-videos-wrapper" data-is-system="false" style="display: none;">
                     </div>
 
                 </div>
