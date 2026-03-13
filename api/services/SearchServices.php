@@ -9,10 +9,10 @@ use Exception;
 class SearchServices {
     private Client $client;
 
-  public function __construct(?Container $container = null) {
-        // Leemos estrictamente de $_ENV en lugar de getenv()
+    public function __construct(?Container $container = null) {
+        // Leemos estrictamente de $_ENV y añadimos valor por defecto para evitar warnings fatales
         $meiliHost = $_ENV['MEILISEARCH_HOST'] ?? 'http://127.0.0.1:7700';
-        $meiliKey = $_ENV['MEILISEARCH_MASTER_KEY']; 
+        $meiliKey = $_ENV['MEILISEARCH_MASTER_KEY'] ?? ''; 
         
         $this->client = new Client($meiliHost, $meiliKey);
     }

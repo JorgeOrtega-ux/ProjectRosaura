@@ -3,12 +3,17 @@
 require_once __DIR__ . '/../vendor/autoload.php';
 
 use MeiliSearch\Client;
+use Dotenv\Dotenv;
+
+// Cargar variables de entorno usando Composer para no depender de valores quemados
+$dotenv = Dotenv::createImmutable(dirname(__DIR__));
+$dotenv->load();
 
 echo "Iniciando sincronización con Meilisearch...\n";
 
-// Configuración de Meilisearch
-$host = 'http://127.0.0.1:7700';
-$key = 'rosaura_dev_key'; // <-- ¡ASEGÚRATE DE PONER TU CLAVE REAL AQUÍ!
+// Configuración de Meilisearch extraída del .env
+$host = $_ENV['MEILISEARCH_HOST'] ?? 'http://127.0.0.1:7700';
+$key = $_ENV['MEILISEARCH_MASTER_KEY'] ?? ''; 
 $client = new Client($host, $key);
 
 // 1. Configurar índices y atributos buscables
@@ -21,9 +26,14 @@ try {
     echo "Aviso: Error configurando índices (si están vacíos, es normal). Continuamos...\n";
 }
 
-// 2. Conexión a la base de datos (Usando tu BD correcta: projectrosaura)
+// 2. Conexión a la base de datos extrayendo credenciales del .env
+$dbHost = $_ENV['DB_HOST'] ?? '127.0.0.1';
+$dbName = $_ENV['DB_NAME'] ?? 'projectrosaura';
+$dbUser = $_ENV['DB_USER'] ?? 'root';
+$dbPass = $_ENV['DB_PASS'] ?? '';
+
 try {
-    $db = new PDO('mysql:host=127.0.0.1;dbname=projectrosaura', 'root', '', [
+    $db = new PDO("mysql:host={$dbHost};dbname={$dbName}", $dbUser, $dbPass, [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
     ]);
 } catch (PDOException $e) {

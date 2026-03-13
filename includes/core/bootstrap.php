@@ -18,28 +18,9 @@ require_once ROOT_PATH . '/vendor/autoload.php';
 // --- 0. CARGA DE ENTORNO ---
 // =========================================================================
 
-// Usamos vlucas/phpdotenv para cargar el archivo .env desde la raíz del proyecto
-if (class_exists(\Dotenv\Dotenv::class)) {
-    $dotenv = \Dotenv\Dotenv::createImmutable(ROOT_PATH);
-    $dotenv->load();
-} else {
-    // Fallback de emergencia (lee el .env manualmente si no está instalado phpdotenv)
-    $envPath = ROOT_PATH . '/.env';
-    if (file_exists($envPath)) {
-        $lines = file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-        foreach ($lines as $line) {
-            if (strpos(trim($line), '#') !== 0 && strpos($line, '=') !== false) {
-                list($name, $value) = explode('=', $line, 2);
-                $name = trim($name);
-                $value = trim($value);
-                if (!array_key_exists($name, $_SERVER) && !array_key_exists($name, $_ENV)) {
-                    $_ENV[$name] = $value;
-                    putenv("$name=$value"); // CRÍTICO: Necesario para que getenv() funcione
-                }
-            }
-        }
-    }
-}
+// Usamos vlucas/phpdotenv como única fuente de la verdad para el entorno
+$dotenv = \Dotenv\Dotenv::createImmutable(ROOT_PATH);
+$dotenv->load();
 
 // DEFINIMOS APP_URL globalmente. Quitamos la barra final para consistencia
 define('APP_URL', rtrim($_ENV['APP_URL'] ?? '', '/'));
