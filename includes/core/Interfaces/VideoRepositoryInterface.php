@@ -41,6 +41,7 @@ interface VideoRepositoryInterface {
 
     // --- NUEVO: SISTEMA DE VIDEOS GUARDADOS ---
     public function isVideoSaved(int $userId, int $videoId): bool;
-    public function toggleSave(int $userId, int $videoId): bool;
+    
+    // ELIMINADO: public function toggleSave(...)
 }
 ?>

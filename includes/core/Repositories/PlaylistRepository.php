@@ -30,7 +30,6 @@ class PlaylistRepository implements PlaylistRepositoryInterface {
     }
 
     public function getAllByUserId(int $userId): array {
-        // MODIFICADO: Ahora extrae el conteo de videos y la miniatura del primero
         $stmt = $this->db->prepare("
             SELECT 
                 p.*,
@@ -121,7 +120,6 @@ class PlaylistRepository implements PlaylistRepositoryInterface {
         }
     }
 
-    // CORREGIDO: Se cambia u.avatar_path por u.profile_picture según tu bd.sql
     public function getPublicPlaylistsFeed(int $limit, int $offset): array {
         try {
             $stmt = $this->db->prepare("
@@ -158,14 +156,12 @@ class PlaylistRepository implements PlaylistRepositoryInterface {
             
             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } catch (\PDOException $e) {
-            // Log the error if necessary for debugging
             error_log("Error in getPublicPlaylistsFeed: " . $e->getMessage());
-            return []; // Return empty array to prevent complete API failure
+            return [];
         }
     }
     
     public function getPlaylistWithVideosByUuid(string $uuid): ?array {
-        // 1. Obtener la información base de la lista de reproducción
         $stmt = $this->db->prepare("
             SELECT p.id, p.uuid, p.title, p.description, p.visibility, p.created_at, p.user_id,
                    u.username, u.profile_picture as avatar_path,
@@ -194,11 +190,9 @@ class PlaylistRepository implements PlaylistRepositoryInterface {
         $playlist = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$playlist) {
-            return null; // No existe o es privada
+            return null;
         }
 
-        // 2. Obtener los videos que le pertenecen, en el orden correcto
-        // SE AGREGÓ "v.description" EN LA CONSULTA
         $stmtVideos = $this->db->prepare("
             SELECT v.id, v.uuid, v.title, v.description, v.duration, v.thumbnail_path, v.created_at, v.original_filename,
                    u.username,
@@ -218,14 +212,13 @@ class PlaylistRepository implements PlaylistRepositoryInterface {
         ];
     }
     
-    // NUEVO: Método optimizado únicamente para retornar la estructura de visualización en el reproductor (Watch UI)
     public function getPlaylistVideosOrdered(string $uuid): array {
         $stmt = $this->db->prepare("SELECT id, title, visibility FROM playlists WHERE uuid = :uuid");
         $stmt->execute([':uuid' => $uuid]);
         $playlist = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$playlist || $playlist['visibility'] === 'private') {
-            return []; // Retorna vacío si no existe o es privada
+            return []; 
         }
 
         $stmtVideos = $this->db->prepare("
@@ -243,6 +236,50 @@ class PlaylistRepository implements PlaylistRepositoryInterface {
             'title' => $playlist['title'],
             'videos' => $videos
         ];
+    }
+
+    // --- NUEVOS MÉTODOS AÑADIDOS ---
+
+    public function getUserPlaylistsWithVideoStatus(int $userId, int $videoId): array {
+        $stmt = $this->db->prepare("
+            SELECT p.id, p.uuid, p.title, p.visibility,
+                   (CASE WHEN pv.id IS NOT NULL THEN 1 ELSE 0 END) as has_video
+            FROM playlists p
+            LEFT JOIN playlist_videos pv ON p.id = pv.playlist_id AND pv.video_id = :video_id
+            WHERE p.user_id = :user_id
+            ORDER BY p.created_at DESC
+        ");
+        $stmt->execute([':user_id' => $userId, ':video_id' => $videoId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    public function addVideoToPlaylist(int $playlistId, int $videoId): bool {
+        // Obtener el último orden para poner el video al final
+        $stmtMax = $this->db->prepare("SELECT MAX(display_order) FROM playlist_videos WHERE playlist_id = :pid");
+        $stmtMax->execute([':pid' => $playlistId]);
+        $max = (int) $stmtMax->fetchColumn();
+        $nextOrder = $max + 1;
+
+        $stmt = $this->db->prepare("INSERT IGNORE INTO playlist_videos (playlist_id, video_id, display_order) VALUES (:pid, :vid, :order)");
+        return $stmt->execute([':pid' => $playlistId, ':vid' => $videoId, ':order' => $nextOrder]);
+    }
+
+    public function removeVideoFromPlaylist(int $playlistId, int $videoId): bool {
+        $stmt = $this->db->prepare("DELETE FROM playlist_videos WHERE playlist_id = :pid AND video_id = :vid");
+        return $stmt->execute([':pid' => $playlistId, ':vid' => $videoId]);
+    }
+
+    public function isVideoInPlaylist(int $playlistId, int $videoId): bool {
+        $stmt = $this->db->prepare("SELECT 1 FROM playlist_videos WHERE playlist_id = :pid AND video_id = :vid LIMIT 1");
+        $stmt->execute([':pid' => $playlistId, ':vid' => $videoId]);
+        return (bool) $stmt->fetchColumn();
+    }
+
+    public function getByUuidAndUserId(string $uuid, int $userId): ?array {
+        $stmt = $this->db->prepare("SELECT * FROM playlists WHERE uuid = :uuid AND user_id = :user_id");
+        $stmt->execute([':uuid' => $uuid, ':user_id' => $userId]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result ?: null;
     }
 }
 ?>

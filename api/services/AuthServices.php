@@ -14,6 +14,7 @@ use App\Core\Interfaces\SessionManagerInterface;
 use App\Core\Interfaces\TokenRepositoryInterface;
 use App\Core\Interfaces\VerificationCodeRepositoryInterface;
 use App\Core\Interfaces\ServerConfigRepositoryInterface; 
+use App\Core\Interfaces\PlaylistRepositoryInterface; // AÑADIDO
 
 class AuthServices {
     private $rateLimiter;
@@ -23,6 +24,7 @@ class AuthServices {
     private $tokenRepository;
     private $verificationCodeRepository;
     private $config; 
+    private $playlistRepository; // AÑADIDO
 
     public function __construct(
         RateLimiterInterface $rateLimiter, 
@@ -31,7 +33,8 @@ class AuthServices {
         SessionManagerInterface $sessionManager,
         TokenRepositoryInterface $tokenRepository,
         VerificationCodeRepositoryInterface $verificationCodeRepository,
-        ServerConfigRepositoryInterface $configRepository
+        ServerConfigRepositoryInterface $configRepository,
+        PlaylistRepositoryInterface $playlistRepository // AÑADIDO
     ) {
         $this->rateLimiter = $rateLimiter;
         $this->prefsManager = $prefsManager;
@@ -40,6 +43,7 @@ class AuthServices {
         $this->tokenRepository = $tokenRepository;
         $this->verificationCodeRepository = $verificationCodeRepository;
         $this->config = $configRepository->getConfig(); 
+        $this->playlistRepository = $playlistRepository; // AÑADIDO
     }
 
     public function isCurrentDeviceValid() {
@@ -259,7 +263,7 @@ class AuthServices {
         return ['success' => false, 'message' => 'Error al procesar la solicitud.'];
     }
 
-    public function registerVerify($data) {
+     public function registerVerify($data) {
         $code = str_replace('-', '', trim($data['code'] ?? ''));
         if (empty($code)) return ['success' => false, 'message' => 'El código es obligatorio.'];
         
@@ -281,15 +285,12 @@ class AuthServices {
         $profilePic = Utils::generateProfilePicture($payload['username'], $uuid);
         if (!$profilePic) return ['success' => false, 'message' => 'Error al generar la foto de perfil.'];
 
-        // --- LÓGICA DE GENERACIÓN DE IDENTIFICADOR ---
-        // 1. Sanitizar nombre de usuario (CORREGIDO)
         $baseHandle = preg_replace('/[^a-z0-9]/', '', strtolower($payload['username']));
-        if (empty($baseHandle)) $baseHandle = 'user'; // Fallback por si usan solo caracteres especiales
+        if (empty($baseHandle)) $baseHandle = 'user'; 
         
         $channelIdentifier = $baseHandle;
         $counter = 1;
 
-        // 2. Verificar colisiones y agregar sufijo si es necesario
         while ($this->userRepository->findByIdentifier($channelIdentifier)) {
             $channelIdentifier = $baseHandle . $counter;
             $counter++;
@@ -301,10 +302,22 @@ class AuthServices {
             'email' => $payload['email'],
             'password' => password_hash($payload['password'], PASSWORD_BCRYPT),
             'profile_picture' => $profilePic,
-            'channel_identifier' => $channelIdentifier // Se guarda el identificador único
+            'channel_identifier' => $channelIdentifier 
         ]);
 
         if ($newUserId > 0) {
+            // --- INYECCIÓN DE PLAYLIST POR DEFECTO ---
+            $playlistUuid = Utils::generateUUID();
+            $this->playlistRepository->create(
+                $newUserId, 
+                $playlistUuid, 
+                'Ver más tarde', 
+                'Videos guardados automáticamente para verlos en el futuro.', 
+                'private', 
+                'published_newest'
+            );
+            // ------------------------------------------
+
             $userPrefs = $this->prefsManager->ensureDefaultPreferences($newUserId);
 
             $this->sessionManager->regenerate(true);

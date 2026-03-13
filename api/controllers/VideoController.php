@@ -8,7 +8,7 @@ use App\Core\Interfaces\RateLimiterInterface;
 use App\Core\Security\RedisRateLimiter;
 use App\Core\Interfaces\SubscriptionRepositoryInterface;
 use Predis\Client;
-use App\Api\Services\HistoryServices; // <-- IMPORTANTE: Importar el servicio
+use App\Api\Services\HistoryServices;
 
 class VideoController {
     private $videoRepo;
@@ -106,7 +106,7 @@ class VideoController {
         // Guardar la visita en Redis
         $this->redis->incr("video:views:{$videoId}");
 
-        // --- SOLUCIÓN: GUARDAR EN EL HISTORIAL DE REPRODUCCIÓN ---
+        // --- GUARDAR EN EL HISTORIAL DE REPRODUCCIÓN ---
         if (isset($_SESSION['user_id'])) {
             $historyServices = new HistoryServices();
             $historyServices->logWatchEvent($_SESSION['user_id'], $videoId);
@@ -148,40 +148,6 @@ class VideoController {
             'interaction' => $result['current_state'],
             'likes' => $result['likes_count'],
             'dislikes' => $result['dislikes_count']
-        ];
-    }
-
-    public function toggleSave($data) {
-        if (!isset($_SESSION['user_id'])) {
-            return ['success' => false, 'message' => 'Debes iniciar sesión para guardar el video.'];
-        }
-
-        $videoUuid = $data['video_uuid'] ?? null;
-
-        if (!$videoUuid) {
-            return ['success' => false, 'message' => 'ID de video faltante.'];
-        }
-
-        $action = "save_" . $_SESSION['user_id'];
-        // Reutilizamos los límites de likes para evitar spam de guardado
-        $check = $this->rateLimiter->check($action, RedisRateLimiter::LIMIT_LIKES_ATTEMPTS, RedisRateLimiter::LIMIT_LIKES_MINUTES, 'Estás interactuando demasiado rápido.');
-        
-        if (!$check['allowed']) {
-            return ['success' => false, 'message' => $check['message']];
-        }
-
-        $this->rateLimiter->record($action, RedisRateLimiter::LIMIT_LIKES_ATTEMPTS, RedisRateLimiter::LIMIT_LIKES_MINUTES);
-
-        $videoData = $this->videoRepo->findByUuid($videoUuid);
-        if (!$videoData) {
-            return ['success' => false, 'message' => 'Video no encontrado.'];
-        }
-
-        $isSaved = $this->videoRepo->toggleSave($_SESSION['user_id'], $videoData['id']);
-
-        return [
-            'success' => true,
-            'is_saved' => $isSaved
         ];
     }
 }

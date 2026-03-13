@@ -223,7 +223,7 @@
                     </button>
 
                     <button id="watch-btn-save" class="watch-btn watch-btn-action" title="Guardar">
-                        <span class="material-symbols-rounded">bookmark</span> Guardar
+                        <span class="material-symbols-rounded">playlist_add</span> Guardar
                     </button>
                 </div>
             </div>
@@ -292,3 +292,8 @@
 
     </div>
 </div>
+
+<?php 
+// NUEVO: Se incluye el módulo de Guardar en Playlist
+require_once __DIR__ . '/../../modules/moduleSaveToPlaylist.php'; 
+?>

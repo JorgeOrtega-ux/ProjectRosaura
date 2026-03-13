@@ -7,39 +7,29 @@ export class ApiService {
         this.baseUrl = (window.AppBasePath || '') + '/api/index.php'; 
     }
 
-    // 🛠️ NUEVO: Método para obtener el idioma de las preferencias del usuario o localStorage
     getAppLanguage() {
         if (window.AppUserPrefs && window.AppUserPrefs.language) {
             return window.AppUserPrefs.language;
         }
         const localLang = localStorage.getItem('pr_language');
-        if (localLang) {
-            return localLang;
-        }
-        return 'es-419'; // Fallback
+        if (localLang) return localLang;
+        return 'es-419';
     }
 
     async post(route, data = {}) {
-        const payload = {
-            route: route,
-            ...data
-        };
-
+        const payload = { route: route, ...data };
         const csrfMeta = document.querySelector('meta[name="csrf-token"]');
         const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
         const currentLang = this.getAppLanguage();
 
-        // Puedes descomentar este log si quieres seguir verificando qué idioma envía
-        // console.log(`📡 [ApiService] POST a '${route}' | 🌐 Idioma enviado: ${currentLang}`);
-
         try {
             const response = await fetch(this.baseUrl, {
                 method: 'POST',
-                credentials: 'same-origin', // 🛠️ CRUCIAL: Fuerza el envío de Cookies a PHP
+                credentials: 'same-origin',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-Token': csrfToken,
-                    'X-App-Language': currentLang // 🛠️ CRUCIAL: Respaldo para PHP
+                    'X-App-Language': currentLang
                 },
                 body: JSON.stringify(payload)
             });
@@ -49,28 +39,20 @@ export class ApiService {
                     window.location.href = (window.AppBasePath || '') + '/login';
                     return { success: false, message: 'Sesión revocada.' };
                 }
-                
                 const rawErrorText = await response.text();
                 try {
                     return JSON.parse(rawErrorText);
                 } catch (jsonError) {
-                    console.error(`🚨 [ApiService] HTTP ${response.status} en '${route}'. Respuesta cruda:`, rawErrorText);
                     throw new Error(`Error HTTP: ${response.status}`);
                 }
             }
-
             const rawText = await response.text();
-            
             try {
                 return JSON.parse(rawText);
             } catch (jsonError) {
-                console.error(`🚨 [ApiService] ERROR DE SINTAXIS JSON en la ruta: '${route}'`);
-                console.error(`👉 EL SERVIDOR DEVOLVIÓ ESTO: \n`, rawText);
-                return { success: false, message: 'El servidor devolvió un formato inválido. Revisa la consola.' };
+                return { success: false, message: 'El servidor devolvió un formato inválido.' };
             }
-
         } catch (error) {
-            console.error(`❌ [ApiService] Fallo general hacia '${route}':`, error);
             return { success: false, message: 'Error de conexión con el servidor.' };
         }
     }
@@ -97,15 +79,10 @@ export class ApiService {
                     window.location.href = (window.AppBasePath || '') + '/login';
                     return { success: false, message: 'Sesión revocada.' };
                 }
-                try {
-                    return await response.json();
-                } catch (jsonError) {
-                    throw new Error(`Error HTTP: ${response.status}`);
-                }
+                try { return await response.json(); } catch (jsonError) { throw new Error(`Error HTTP: ${response.status}`); }
             }
             return await response.json();
         } catch (error) {
-            console.error(`❌ [ApiService] Fallo en FormData hacia '${route}':`, error);
             return { success: false, message: 'Error de conexión con el servidor.' };
         }
     }
@@ -115,6 +92,11 @@ export class ApiService {
     async postLike(videoUuid, type) { return await this.post(ApiRoutes.Video.ToggleLike, { video_uuid: videoUuid, type: type }); }
     async postSubscribe(identifier) { return await this.post(ApiRoutes.Channel.ToggleSubscription, { identifier: identifier }); }
 
+    // ---> NUEVOS MÉTODOS AÑADIDOS DE PLAYLIST PARA WATCH <---
+    async getPlaylistsForVideo(videoId) { return await this.post(ApiRoutes.Playlist.GetForVideo, { video_id: videoId }); }
+    async toggleVideoInPlaylist(playlistUuid, videoId) { return await this.post(ApiRoutes.Playlist.ToggleVideo, { playlist_uuid: playlistUuid, video_id: videoId }); }
+    async createPlaylist(title, visibility) { return await this.post(ApiRoutes.Playlist.Create, { title: title, visibility: visibility }); }
+    
     // --- MÉTODOS DE RETENCIÓN DE VIDEO (HEATMAP) ---
     async sendRetentionBatch(videoId, data) { return await this.post(ApiRoutes.Metrics.IngestRetention, { videoId: videoId, data: data }); }
 
@@ -133,11 +115,9 @@ export class ApiService {
                     'X-App-Language': currentLang
                 }
             });
-            
             if (!response.ok) return { success: false, data: [] };
             return await response.json();
         } catch (error) {
-            console.error("❌ [ApiService] Error fetching heatmap:", error);
             return { success: false, data: [] };
         }
     }

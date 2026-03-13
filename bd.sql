@@ -293,7 +293,6 @@ CREATE TABLE IF NOT EXISTS video_retention_metrics (
     CONSTRAINT fk_retention_video FOREIGN KEY (video_id) REFERENCES videos(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-
 -- SISTEMA DE HISTORIAL DE BÚSQUEDA Y REPRODUCCIÓN
 
 CREATE TABLE IF NOT EXISTS user_search_history (
@@ -314,16 +313,4 @@ CREATE TABLE IF NOT EXISTS user_watch_history (
     CONSTRAINT fk_uwh_video FOREIGN KEY (video_id) REFERENCES videos(id) ON DELETE CASCADE,
     UNIQUE KEY unique_user_video (user_id, video_id),
     INDEX idx_user_watch_date (user_id, last_watched_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-
--- NUEVA TABLA: VIDEOS GUARDADOS POR EL USUARIO
-CREATE TABLE IF NOT EXISTS user_saved_videos (
-    id INT(11) AUTO_INCREMENT PRIMARY KEY,
-    user_id INT(11) NOT NULL,
-    video_id INT(11) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE KEY unique_saved_video (user_id, video_id),
-    CONSTRAINT fk_usv_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    CONSTRAINT fk_usv_video FOREIGN KEY (video_id) REFERENCES videos(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

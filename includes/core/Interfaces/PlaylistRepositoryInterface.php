@@ -12,8 +12,13 @@ interface PlaylistRepositoryInterface {
     public function getVideosByPlaylistId(int $playlistId): array;
     public function syncVideos(int $playlistId, array $videoIds): bool;
     public function getPlaylistWithVideosByUuid(string $uuid): ?array;
-    
-    // <--- NUEVA FIRMA ---
     public function getPlaylistVideosOrdered(string $uuid): array;
+    
+    // --- NUEVAS FIRMAS PARA EL SISTEMA "GUARDAR EN PLAYLIST" ---
+    public function getUserPlaylistsWithVideoStatus(int $userId, int $videoId): array;
+    public function addVideoToPlaylist(int $playlistId, int $videoId): bool;
+    public function removeVideoFromPlaylist(int $playlistId, int $videoId): bool;
+    public function isVideoInPlaylist(int $playlistId, int $videoId): bool;
+    public function getByUuidAndUserId(string $uuid, int $userId): ?array;
 }
 ?>

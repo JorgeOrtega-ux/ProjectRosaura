@@ -21,9 +21,8 @@ class VideoRepository implements VideoRepositoryInterface {
      * Helper que reemplaza dinámicamente el título del video según el idioma
      */
     private function applyLocalizedTitle(array $video): array {
-        // Inicializar variables para el frontend de watch.php
         $video['is_translated'] = false;
-        $video['original_title_hidden'] = $video['title']; // Guardamos el original
+        $video['original_title_hidden'] = $video['title'];
         
         if (!empty($video['localized_titles'])) {
             $titles = json_decode($video['localized_titles'], true);
@@ -44,12 +43,10 @@ class VideoRepository implements VideoRepositoryInterface {
 
             $originalLang = $video['original_language'] ?? 'es-419';
 
-            // CASO A: Si el idioma de usuario coincide con el idioma original del video, no se traduce.
             if (strtolower($currentLang) === strtolower($originalLang)) {
                 return $video; 
             }
 
-            // CASOS B y C: Distinto idioma (buscamos si existe traducción)
             if (is_array($titles)) {
                 $exactMatchFound = false;
                 foreach ($titles as $langKey => $titleValue) {
@@ -523,22 +520,16 @@ class VideoRepository implements VideoRepositoryInterface {
         ]);
     }
 
+    // NUEVO: Verificamos si el video está en cualquier playlist del usuario
     public function isVideoSaved(int $userId, int $videoId): bool {
-        $stmt = $this->db->prepare("SELECT COUNT(*) FROM user_saved_videos WHERE user_id = :user_id AND video_id = :video_id");
+        $stmt = $this->db->prepare("
+            SELECT COUNT(*) 
+            FROM playlist_videos pv
+            INNER JOIN playlists p ON pv.playlist_id = p.id
+            WHERE p.user_id = :user_id AND pv.video_id = :video_id
+        ");
         $stmt->execute([':user_id' => $userId, ':video_id' => $videoId]);
         return (int) $stmt->fetchColumn() > 0;
-    }
-
-    public function toggleSave(int $userId, int $videoId): bool {
-        if ($this->isVideoSaved($userId, $videoId)) {
-            $stmt = $this->db->prepare("DELETE FROM user_saved_videos WHERE user_id = :user_id AND video_id = :video_id");
-            $stmt->execute([':user_id' => $userId, ':video_id' => $videoId]);
-            return false; 
-        } else {
-            $stmt = $this->db->prepare("INSERT INTO user_saved_videos (user_id, video_id) VALUES (:user_id, :video_id)");
-            $stmt->execute([':user_id' => $userId, ':video_id' => $videoId]);
-            return true; 
-        }
     }
 }
 ?>

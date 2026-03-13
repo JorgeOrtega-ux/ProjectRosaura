@@ -6,6 +6,12 @@ export const ApiRoutes = {
         GetPlaylistDetails: 'app.get_playlist_details',
         GetPlaylistQueue: 'app.get_playlist_queue' 
     },
+    // ---> AÑADIDO: BLOQUE PLAYLIST <---
+    Playlist: {
+        GetForVideo: 'playlist.get_for_video',
+        ToggleVideo: 'playlist.toggle_video',
+        Create: 'playlist.create'
+    },
     Search: {
         Get: 'search.get' 
     },
@@ -52,7 +58,6 @@ export const ApiRoutes = {
         RevokeDevice: 'settings.revoke_device',
         RevokeAllDevices: 'settings.revoke_all_devices'
     },
-    // ---> AÑADIDO: RUTAS DE HISTORIAL <---
     History: {
         GetWatch: 'history.get_watch',
         GetSearch: 'history.get_search',

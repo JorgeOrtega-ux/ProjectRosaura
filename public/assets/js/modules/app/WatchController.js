@@ -14,6 +14,9 @@ export class WatchController {
         this.commentSystem = null;
         this.viewRegistered = false;
         this.checkPlayerInterval = null;
+        
+        // Modal State
+        this.playlistModalSetupDone = false;
     }
 
     async init() {
@@ -44,22 +47,20 @@ export class WatchController {
                 if (videoId) {
                     const dbVideoId = response.data.id; 
                     
-                    // Inicializamos el video, pasándole el ID de la base de datos para las métricas de Heatmap
                     this.playerSystem.loadVideo(videoId, true, dbVideoId);
                     this.setupViewTracker(videoId);
                     this.setupInteractions(videoId, response.data);
                     this.setupSubscription(response.data);
-                    this.setupSaveInteraction(videoId, response.data);
+                    
+                    // NUEVO: Instancia del botón "Guardar" y el Modal (Se le pasa el ID interno para las BDs)
+                    this.setupSaveInteraction(dbVideoId);
 
-                    // --- INICIO: DESCARGAR Y RENDERIZAR HEATMAP ---
                     this.api.getVideoHeatmap(dbVideoId).then(res => {
                         if (res && res.success && res.data) {
                             this.playerSystem.renderHeatmap(res.data);
                         }
                     });
-                    // --- FIN: DESCARGAR Y RENDERIZAR HEATMAP ---
 
-                    // --- INICIO: INSTANCIAR SISTEMA DE COMENTARIOS ---
                     if (dbVideoId) {
                         let commentsSection = document.getElementById('video-comments-section');
                         if (!commentsSection) {
@@ -76,7 +77,6 @@ export class WatchController {
                             this.commentSystem.init();
                         }
                     }
-                    // --- FIN: INSTANCIAR SISTEMA DE COMENTARIOS ---
                 }
 
                 if (playlistId) {
@@ -165,7 +165,7 @@ export class WatchController {
             const response = await this.api.postLike(videoUuid, type);
             
             if (!response.success) {
-                if (response.message.includes('iniciar sesión')) {
+                if (response.message.includes('iniciar sesión') || response.message.includes('No autorizado')) {
                     if (window.router) window.router.navigate('/login');
                     else window.location.href = (window.AppBasePath || '') + '/login';
                     return;
@@ -191,39 +191,200 @@ export class WatchController {
         btnDislike.addEventListener('click', () => handleInteraction('dislike'));
     }
 
-    setupSaveInteraction(videoUuid, data) {
+    // ---> NUEVO SISTEMA DE BOTÓN GUARDAR Y MODAL <---
+    setupSaveInteraction(dbVideoId) {
         const btnSave = document.getElementById('watch-btn-save');
-        if (!btnSave) return;
-
-        // Establecer el estado inicial si el video ya estaba guardado
-        if (data.is_saved) {
-            btnSave.classList.add('active');
-        }
+        const modal = document.getElementById('surface-save-playlist');
+        
+        if (!btnSave || !modal) return;
 
         btnSave.addEventListener('click', async () => {
-            // Optimistic UI: hacemos el toggle visual inmediato
-            btnSave.classList.toggle('active');
-
-            // Llamamos a la API (endpoint que crearemos en el backend)
-            // Utilizo this.api.post directamente en lugar de crear un nuevo método en ApiServices para no tocarlo aún.
-            const response = await this.api.post('video.toggle_save', { video_uuid: videoUuid });
-
-            if (!response.success) {
-                // Si hubo error, revertimos el estado visual
-                btnSave.classList.toggle('active');
-
-                if (response.message.includes('iniciar sesión')) {
-                    if (window.router) window.router.navigate('/login');
-                    else window.location.href = (window.AppBasePath || '') + '/login';
-                } else {
-                    this.dialog.show('error', { title: 'Aviso', message: response.message });
-                }
-            } else {
-                // Aseguramos que el estado del botón coincida con la realidad en la base de datos
-                btnSave.classList.toggle('active', response.is_saved);
+            modal.classList.remove('hidden');
+            setTimeout(() => modal.classList.add('active'), 10);
+            
+            // Cargar checkboxes del usuario
+            await this.renderPlaylistCheckboxes(dbVideoId);
+            
+            // Ligar los eventos internos del modal si no se ha hecho
+            if (!this.playlistModalSetupDone) {
+                this.bindPlaylistModalEvents(modal, dbVideoId);
+                this.playlistModalSetupDone = true;
             }
         });
     }
+
+    bindPlaylistModalEvents(modal, dbVideoId) {
+        const overlay = document.getElementById('surface-save-playlist-overlay');
+        const closeBtn = document.getElementById('btn-close-save-playlist');
+        const toggleCreateBtn = document.getElementById('btn-toggle-create-playlist');
+        const createForm = document.getElementById('form-create-playlist');
+        const submitCreateBtn = document.getElementById('btn-submit-new-playlist');
+
+        const closeModal = () => {
+            modal.classList.remove('active');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                if (createForm) createForm.classList.add('hidden'); 
+            }, 300);
+        };
+
+        if (closeBtn) closeBtn.addEventListener('click', closeModal);
+        if (overlay) overlay.addEventListener('click', closeModal);
+
+        this.setupModalDrag(modal, closeModal);
+
+        if (toggleCreateBtn && createForm) {
+            toggleCreateBtn.addEventListener('click', () => {
+                createForm.classList.toggle('hidden');
+            });
+        }
+
+        if (submitCreateBtn) {
+            submitCreateBtn.addEventListener('click', async () => {
+                const titleInput = document.getElementById('new-playlist-title');
+                const visInput = document.getElementById('new-playlist-visibility');
+                const title = titleInput.value.trim();
+                const visibility = visInput.value;
+
+                if (!title) {
+                    this.dialog.show('error', { title: 'Aviso', message: 'El nombre es obligatorio.' });
+                    return;
+                }
+
+                submitCreateBtn.disabled = true;
+                submitCreateBtn.textContent = 'Creando...';
+
+                const res = await this.api.createPlaylist(title, visibility);
+                
+                submitCreateBtn.disabled = false;
+                submitCreateBtn.textContent = 'Crear';
+
+                if (res.success) {
+                    titleInput.value = '';
+                    createForm.classList.add('hidden');
+                    
+                    // Inserción directa (Toggle) del video en la nueva lista creada
+                    await this.api.toggleVideoInPlaylist(res.playlist.uuid, dbVideoId);
+                    
+                    // Recargar la lista de checkboxes
+                    await this.renderPlaylistCheckboxes(dbVideoId);
+                } else {
+                    this.dialog.show('error', { title: 'Aviso', message: res.message });
+                }
+            });
+        }
+    }
+
+    async renderPlaylistCheckboxes(dbVideoId) {
+        const container = document.getElementById('playlist-checkbox-container');
+        if (!container) return;
+
+        container.innerHTML = '<div class="component-spinner component-spinner--centered" style="margin: 20px auto;"></div>';
+
+        const res = await this.api.getPlaylistsForVideo(dbVideoId);
+        
+        if (!res.success) {
+            if (res.code === 401 || (res.message && res.message.includes('No autorizado'))) {
+                const modal = document.getElementById('surface-save-playlist');
+                if (modal) { modal.classList.remove('active'); setTimeout(() => modal.classList.add('hidden'), 300); }
+                
+                if (window.router) window.router.navigate('/login');
+                else window.location.href = (window.AppBasePath || '') + '/login';
+            } else {
+                container.innerHTML = `<p style="color: var(--status-danger); padding: 15px;">${res.message}</p>`;
+            }
+            return;
+        }
+
+        if (!res.data || res.data.length === 0) {
+            container.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 15px;">Aún no tienes listas de reproducción.</p>';
+            return;
+        }
+
+        let html = '';
+        res.data.forEach(pl => {
+            const isChecked = pl.has_video == 1 ? 'checked' : '';
+            const icon = pl.visibility === 'private' ? 'lock' : (pl.visibility === 'unlisted' ? 'link' : 'public');
+            
+            html += `
+                <label class="component-playlist-item-checkbox">
+                    <input type="checkbox" class="playlist-toggle-cb" data-uuid="${pl.uuid}" ${isChecked}>
+                    <div class="checkbox-custom">
+                        <span class="material-symbols-rounded">check</span>
+                    </div>
+                    <span class="playlist-title" title="${pl.title}">${pl.title}</span>
+                    <span class="material-symbols-rounded playlist-visibility-icon">${icon}</span>
+                </label>
+            `;
+        });
+
+        container.innerHTML = html;
+
+        // Asignar los triggers a cada checkbox renderizado
+        const checkboxes = container.querySelectorAll('.playlist-toggle-cb');
+        checkboxes.forEach(cb => {
+            cb.addEventListener('change', async () => {
+                const plUuid = cb.getAttribute('data-uuid');
+                const isChecked = cb.checked;
+                
+                // Petición silenciosa para insertar o remover en la BD
+                const toggleRes = await this.api.toggleVideoInPlaylist(plUuid, dbVideoId);
+                
+                if (!toggleRes.success) {
+                    cb.checked = !isChecked; // Revertir visualmente si hay error
+                    this.dialog.show('error', { title: 'Error', message: toggleRes.message });
+                }
+            });
+        });
+    }
+
+    setupModalDrag(modal, closeCallback) {
+        const pill = modal.querySelector('.drag-handle');
+        if (!pill) return;
+        
+        let startY = 0;
+        let currentDiff = 0;
+        let isDragging = false;
+        const content = modal.querySelector('.component-surface__content');
+
+        pill.addEventListener('pointerdown', (e) => {
+            if (window.innerWidth > 768) return; 
+            isDragging = true;
+            startY = e.clientY;
+            content.style.transition = 'none';
+            content.setPointerCapture(e.pointerId);
+        });
+
+        content.addEventListener('pointermove', (e) => {
+            if (!isDragging) return;
+            currentDiff = e.clientY - startY;
+            if (currentDiff > 0) {
+                content.style.transform = `translateY(${currentDiff}px)`;
+            }
+        });
+
+        const endDrag = (e) => {
+            if (!isDragging) return;
+            isDragging = false;
+            content.style.transition = '';
+            
+            if (content.hasPointerCapture(e.pointerId)) {
+                content.releasePointerCapture(e.pointerId);
+            }
+
+            if (currentDiff > content.offsetHeight * 0.35) {
+                closeCallback();
+                setTimeout(() => { content.style.transform = ''; }, 300);
+            } else {
+                content.style.transform = ''; 
+            }
+            currentDiff = 0;
+        };
+
+        content.addEventListener('pointerup', endDrag);
+        content.addEventListener('pointercancel', endDrag);
+    }
+    // ---> FIN SISTEMA DE PLAYLIST MODAL <---
 
     setupSubscription(data) {
         const subBtn = document.getElementById('watch-btn-subscribe');
@@ -463,7 +624,6 @@ export class WatchController {
         if (titleEl) {
             titleEl.textContent = data.title || 'Sin Título';
 
-            // Lógica de Traducción
             if (data.is_translated && data.original_title_hidden) {
                 if (transBadgeContainer) transBadgeContainer.style.display = 'block';
                 
@@ -600,23 +760,17 @@ export class WatchController {
                 let hoverColor = 'var(--bg-hover-light)'; 
                 
                 if (primaryColor.startsWith('#')) {
-                    if (primaryColor.length === 7) {
-                        hoverColor = primaryColor + '1A';
-                    } else if (primaryColor.length === 4) {
+                    if (primaryColor.length === 7) hoverColor = primaryColor + '1A';
+                    else if (primaryColor.length === 4) {
                         const r = primaryColor[1], g = primaryColor[2], b = primaryColor[3];
                         hoverColor = `#${r}${r}${g}${g}${b}${b}1A`;
-                    } else if (primaryColor.length === 9) {
-                        hoverColor = primaryColor.substring(0, 7) + '1A';
-                    } else {
-                        hoverColor = primaryColor;
-                    }
+                    } else if (primaryColor.length === 9) hoverColor = primaryColor.substring(0, 7) + '1A';
+                    else hoverColor = primaryColor;
                 } else if (primaryColor.startsWith('rgb') && !primaryColor.startsWith('rgba')) {
                     hoverColor = primaryColor.replace('rgb', 'rgba').replace(')', ', 0.1)');
                 } else if (primaryColor.startsWith('rgba')) {
                     hoverColor = primaryColor.replace(/[\d.]+\)$/, '0.1)');
-                } else {
-                    hoverColor = primaryColor;
-                }
+                } else hoverColor = primaryColor;
 
                 box.style.setProperty('--hover-bg-color', hoverColor);
             });

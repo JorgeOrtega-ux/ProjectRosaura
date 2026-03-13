@@ -5,6 +5,7 @@ namespace App\Api\Services;
 
 use App\Core\Repositories\PlaylistRepository;
 use App\Config\RedisCache;
+use App\Core\Helpers\Utils;
 
 class PlaylistServices {
     private $playlistRepo;
@@ -13,7 +14,6 @@ class PlaylistServices {
     public function __construct(PlaylistRepository $playlistRepo) {
         $this->playlistRepo = $playlistRepo;
         try {
-            // Instanciar Redis opcionalmente para evitar cuellos de botella en la visualización
             $this->redis = new RedisCache();
         } catch (\Exception $e) {
             $this->redis = null;
@@ -23,11 +23,8 @@ class PlaylistServices {
     public function getPlaylistDetails(string $uuid): ?array {
         $data = $this->playlistRepo->getPlaylistWithVideosByUuid($uuid);
         
-        if (!$data) {
-            return null;
-        }
+        if (!$data) return null;
 
-        // Formatear rutas (APP_URL) como se hace en el FeedController
         $data['playlist']['avatar_url'] = !empty($data['playlist']['avatar_path']) 
             ? APP_URL . '/' . $data['playlist']['avatar_path'] 
             : APP_URL . '/public/storage/profilePictures/default/default.png';
@@ -45,24 +42,18 @@ class PlaylistServices {
         return $data;
     }
     
-    // NUEVO: Lógica que estructura y almacena en caché la "queue" de la playlist
     public function getPlaylistQueueData(string $uuid): ?array {
         $cacheKey = "playlist_queue_data_{$uuid}";
 
         if ($this->redis && $this->redis->getClient()) {
             $cached = $this->redis->get($cacheKey);
-            if ($cached) {
-                return json_decode($cached, true);
-            }
+            if ($cached) return json_decode($cached, true);
         }
 
         $data = $this->playlistRepo->getPlaylistVideosOrdered($uuid);
         
-        if (empty($data) || empty($data['videos'])) {
-            return null;
-        }
+        if (empty($data) || empty($data['videos'])) return null;
 
-        // Formateo de las rutas de las miniaturas y la duración
         foreach ($data['videos'] as &$video) {
             $video['thumbnail_url'] = !empty($video['thumbnail_path'])
                 ? APP_URL . '/' . $video['thumbnail_path']
@@ -76,11 +67,61 @@ class PlaylistServices {
         }
 
         if ($this->redis && $this->redis->getClient()) {
-            // Cachear la lista de reproducción por 1 hora
             $this->redis->set($cacheKey, json_encode($data), 3600);
         }
 
         return $data;
+    }
+
+    // --- NUEVOS MÉTODOS AÑADIDOS ---
+
+    public function getPlaylistsForVideo(int $userId, int $videoId): array {
+        return $this->playlistRepo->getUserPlaylistsWithVideoStatus($userId, $videoId);
+    }
+
+    public function toggleVideoInPlaylist(int $userId, string $playlistUuid, int $videoId): array {
+        // Validar que la lista le pertenezca al usuario (evita manipulaciones)
+        $playlist = $this->playlistRepo->getByUuidAndUserId($playlistUuid, $userId);
+        if (!$playlist) {
+            return ['success' => false, 'message' => 'Lista de reproducción no encontrada o no tienes permisos.'];
+        }
+
+        $playlistId = $playlist['id'];
+        $isInPlaylist = $this->playlistRepo->isVideoInPlaylist($playlistId, $videoId);
+
+        if ($isInPlaylist) {
+            $this->playlistRepo->removeVideoFromPlaylist($playlistId, $videoId);
+            return ['success' => true, 'action' => 'removed', 'message' => 'Video eliminado de la lista.'];
+        } else {
+            // Se añade a la playlist
+            $this->playlistRepo->addVideoToPlaylist($playlistId, $videoId);
+            return ['success' => true, 'action' => 'added', 'message' => 'Video guardado en la lista.'];
+        }
+    }
+
+    public function createPlaylist(int $userId, string $title, string $visibility = 'private'): array {
+        $title = trim($title);
+        if (empty($title)) {
+            return ['success' => false, 'message' => 'El título de la lista es obligatorio.'];
+        }
+        
+        $uuid = Utils::generateUUID();
+        // Por defecto: published_newest
+        $playlistId = $this->playlistRepo->create($userId, $uuid, $title, null, $visibility, 'published_newest');
+
+        if ($playlistId) {
+            return [
+                'success' => true, 
+                'message' => 'Lista creada exitosamente.', 
+                'playlist' => [
+                    'uuid' => $uuid,
+                    'title' => $title,
+                    'visibility' => $visibility,
+                    'has_video' => 0 // Formato para el Frontend inmediatamente
+                ]
+            ];
+        }
+        return ['success' => false, 'message' => 'Error al crear la lista de reproducción.'];
     }
 }
 ?>
