@@ -8,7 +8,10 @@ export default class SearchController {
         console.log(`🟡 [SearchController] Query extraída de URL: "${this.query}"`);
         
         this.cacheDOM();
-        this.init();
+        
+        // ❌ CORRECCIÓN: Se eliminó this.init() del constructor.
+        // AppInit.js ya se encarga de llamar a init() automáticamente después de instanciar.
+        // Esto previene que se disparen las peticiones 2 veces.
     }
 
     cacheDOM() {
@@ -194,12 +197,13 @@ export default class SearchController {
             const videoCard = document.createElement('div');
             videoCard.classList.add('component-search-video-card');
             
-            // CORRECCIÓN: Usar la ruta real de la base de datos o el fallback
+            // CORRECCIÓN 1: Fallback SVG embebido directo para prevenir errores 404
+            const fallbackPath = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' fill='%23111'/%3E%3Ctext x='50%25' y='50%25' fill='%23777' font-family='sans-serif' font-size='14' text-anchor='middle' dy='.3em'%3ESin miniatura%3C/text%3E%3C/svg%3E";
+            
+            // CORRECCIÓN 2: Agregar '/public/' a la ruta del thumbnail si existe
             const thumbPath = video.thumbnail_path 
-                ? `${this.basePath}/${video.thumbnail_path}` 
-                : `${this.basePath}/public/assets/images/default-thumbnail.jpg`;
-                
-            const fallbackPath = `${this.basePath}/public/assets/images/default-thumbnail.jpg`;
+                ? `${this.basePath}/public/${video.thumbnail_path}` 
+                : fallbackPath;
             
             videoCard.innerHTML = `
                 <div class="component-search-video-thumbnail">
