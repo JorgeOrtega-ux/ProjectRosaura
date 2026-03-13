@@ -36,6 +36,10 @@ export default class SearchController {
 
     async init() {
         console.log('🟡 [SearchController] Ejecutando init()...');
+        
+        // Guardar el basePath a nivel de clase para que los renders lo puedan usar
+        this.basePath = window.AppBasePath || '/ProjectRosaura';
+
         if (!this.query) {
             console.warn('🟡 [SearchController] Consulta vacía. Mostrando estado vacío y abortando búsqueda.');
             this.showEmptyState();
@@ -54,9 +58,8 @@ export default class SearchController {
         console.group(`🚨 [DEEP LOG - SEARCH] Iniciando flujo de búsqueda exhaustivo para: "${this.query}"`);
         try {
             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-            const basePath = window.AppBasePath || '/ProjectRosaura';
             
-            console.log(`[🔍 Configuración] AppBasePath: "${basePath}", CSRF Token: "${csrfToken ? 'Encontrado' : 'Faltante'}"`);
+            console.log(`[🔍 Configuración] AppBasePath: "${this.basePath}", CSRF Token: "${csrfToken ? 'Encontrado' : 'Faltante'}"`);
             
             // Verificar si ApiRoutes existe y tiene la propiedad
             if (!ApiRoutes || !ApiRoutes.Search || !ApiRoutes.Search.Get) {
@@ -64,7 +67,7 @@ export default class SearchController {
                 console.log('Contenido de ApiRoutes:', ApiRoutes);
             }
 
-            const apiUrl = `${basePath}/api/index.php?route=${ApiRoutes?.Search?.Get || 'search.get'}&q=${encodeURIComponent(this.query)}`;
+            const apiUrl = `${this.basePath}/api/index.php?route=${ApiRoutes?.Search?.Get || 'search.get'}&q=${encodeURIComponent(this.query)}`;
             
             console.log(`[Paso 1] 🌐 Endpoint objetivo construido EXACTO:`, apiUrl);
 
@@ -158,11 +161,11 @@ export default class SearchController {
             const channelCard = document.createElement('div');
             channelCard.classList.add('component-search-channel-card');
             
-            const avatarSrc = channel.avatar_path ? `/public/storage/profilePictures/uploaded/${channel.avatar_path}` : `/public/storage/profilePictures/default/default.png`;
+            const avatarSrc = channel.avatar_path ? `${this.basePath}/public/storage/profilePictures/uploaded/${channel.avatar_path}` : `${this.basePath}/public/storage/profilePictures/default/default.png`;
 
             channelCard.innerHTML = `
                 <div class="component-search-channel-avatar">
-                    <img src="${avatarSrc}" alt="${channel.username}">
+                    <img src="${avatarSrc}" alt="${channel.username}" onerror="this.onerror=null; this.src='${this.basePath}/public/storage/profilePictures/default/default.png'">
                 </div>
                 <div class="component-search-channel-info">
                     <h4 class="component-search-channel-name">${channel.username}</h4>
@@ -191,11 +194,16 @@ export default class SearchController {
             const videoCard = document.createElement('div');
             videoCard.classList.add('component-search-video-card');
             
-            const thumbPath = `/public/storage/thumbnails/${video.id_video}.jpg`;
+            // CORRECCIÓN: Usar la ruta real de la base de datos o el fallback
+            const thumbPath = video.thumbnail_path 
+                ? `${this.basePath}/${video.thumbnail_path}` 
+                : `${this.basePath}/public/assets/images/default-thumbnail.jpg`;
+                
+            const fallbackPath = `${this.basePath}/public/assets/images/default-thumbnail.jpg`;
             
             videoCard.innerHTML = `
                 <div class="component-search-video-thumbnail">
-                    <img src="${thumbPath}" alt="${video.title}" onerror="this.src='/public/assets/images/default-thumbnail.jpg'">
+                    <img src="${thumbPath}" alt="${video.title}" onerror="this.onerror=null; this.src='${fallbackPath}'">
                 </div>
                 <div class="component-search-video-details">
                     <h4 class="component-search-video-title">${video.title}</h4>

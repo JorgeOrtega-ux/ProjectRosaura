@@ -50,6 +50,9 @@ $stmt = $db->query("
         user_id, 
         title, 
         description, 
+        thumbnail_path, /* ¡Línea añadida para obtener la imagen! */
+        duration,       /* Opcional: útil para la interfaz */
+        views,          /* Opcional: útil para la interfaz */
         created_at 
     FROM videos 
     WHERE visibility = 'public' AND status = 'published'
