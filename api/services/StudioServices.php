@@ -32,6 +32,28 @@ class StudioServices {
         'mp4', 'webm', 'mkv', 'mov', 'avi', 'mpeg', 'mpg'
     ];
 
+    // PALETA OFICIAL DE LA PLATAFORMA (Puedes editar estos HEX según tu branding)
+    private $brandPalette = [
+        // Rojos
+        '#FF3B30', '#D32F2F', '#9A0007',
+        // Naranjas
+        '#FF9500', '#F57C00', '#E65100',
+        // Amarillos
+        '#FFCC00', '#FBC02D', '#F57F17',
+        // Verdes
+        '#34C759', '#388E3C', '#1B5E20',
+        // Cian / Teal
+        '#00C7BE', '#0097A7', '#006064',
+        // Azules
+        '#007AFF', '#1976D2', '#0D47A1',
+        // Índigo / Morado
+        '#5856D6', '#512DA8', '#311B92',
+        // Rosas
+        '#FF2D55', '#C2185B', '#880E4F',
+        // Neutros (Grises, Blanco, Negro)
+        '#8E8E93', '#48484A', '#1C1C1E', '#FFFFFF', '#000000'
+    ];
+
     public function __construct(VideoRepositoryInterface $videoRepo, TagRepositoryInterface $tagRepo, RedisClient $redis, PlaylistRepositoryInterface $playlistRepo) {
         $this->videoRepo = $videoRepo;
         $this->tagRepo = $tagRepo;
@@ -214,6 +236,39 @@ class StudioServices {
         ];
     }
 
+    /**
+     * Calcula la Distancia Euclidiana entre el color extraído de la imagen y nuestra paleta
+     * de colores predefinida. Retorna el color de la paleta que sea matemáticamente más cercano.
+     */
+    private function getNearestPaletteColor(int $r, int $g, int $b): string {
+        $minDistance = null;
+        $closestColor = '#000000';
+
+        foreach ($this->brandPalette as $hexColor) {
+            $hex = ltrim($hexColor, '#');
+            
+            if (strlen($hex) == 3) {
+                $pr = hexdec(str_repeat(substr($hex, 0, 1), 2));
+                $pg = hexdec(str_repeat(substr($hex, 1, 1), 2));
+                $pb = hexdec(str_repeat(substr($hex, 2, 1), 2));
+            } else {
+                $pr = hexdec(substr($hex, 0, 2));
+                $pg = hexdec(substr($hex, 2, 2));
+                $pb = hexdec(substr($hex, 4, 2));
+            }
+
+            // Distancia en el espacio tridimensional RGB
+            $distance = sqrt(pow($r - $pr, 2) + pow($g - $pg, 2) + pow($b - $pb, 2));
+
+            if ($minDistance === null || $distance < $minDistance) {
+                $minDistance = $distance;
+                $closestColor = $hexColor;
+            }
+        }
+
+        return $closestColor;
+    }
+
     private function getAverageColor(string $filepath): ?string {
         $mime = mime_content_type($filepath);
         $img = null;
@@ -243,7 +298,8 @@ class StudioServices {
         imagedestroy($img);
         imagedestroy($thumb);
         
-        return sprintf("#%02x%02x%02x", $r, $g, $b);
+        // Retorna el color ajustado a la paleta predefinida
+        return $this->getNearestPaletteColor($r, $g, $b);
     }
 
     public function uploadThumbnail(int $userId, int $videoId, ?array $file = null, ?string $base64 = null, ?string $generatedPath = null): array {
@@ -621,7 +677,6 @@ class StudioServices {
     }
 
     public function getPlaylists(int $userId): array {
-        // Al modificar el PlaylistRepository, esto ahora devuelve estrictamente solo listas tipo 'custom'
         return $this->playlistRepo->getAllByUserId($userId);
     }
 
