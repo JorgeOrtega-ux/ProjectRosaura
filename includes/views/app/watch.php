@@ -1,4 +1,4 @@
-<div class="view-content" style="padding: 0;"> 
+<div class="view-content watch-view-content"> 
     <div class="watch-layout" id="watch-layout-container">
         
         <div class="watch-layout__player" id="watch-layout-player">
@@ -51,7 +51,7 @@
 
                         </div>
 
-                        <div class="component-video-player__controls-group component-video-player__controls-right" style="position: relative;">
+                        <div class="component-video-player__controls-group component-video-player__controls-right">
                             
                             <div class="component-video-player__settings-module module" id="player-settings-menu">
                                 
@@ -179,101 +179,105 @@
             </div>
         </div>
 
-        <div class="watch-layout__info">
-            
-            <div class="watch-title-container">
-                <h1 class="watch-info-title" id="watch-video-title">[Cargando Título...]</h1>
-                <div id="watch-translation-badge-container" style="display: none;">
-                    <button id="watch-translation-toggle" class="watch-translation-badge" title="Cambiar idioma del título">
-                        <span class="material-symbols-rounded">g_translate</span>
-                        <span id="watch-translation-text">Traducido</span>
-                    </button>
-                </div>
-            </div>
-            
-            <div class="watch-info-row">
-                <div class="watch-info-left">
-                    <img id="watch-channel-avatar" class="watch-avatar" src="" alt="Avatar del Canal">
-                    <div class="watch-channel-details">
-                        <span id="watch-channel-name" class="watch-channel-name">Cargando Canal...</span>
-                        <span id="watch-channel-subs" class="watch-channel-subs">-- suscriptores</span>
-                    </div>
-                </div>
-
-                <div class="watch-info-right">
-                    <button id="watch-btn-subscribe" class="watch-btn watch-btn-subscribe">Suscribirse</button>
-                    
-                    <div class="watch-action-group">
-                        <button id="watch-btn-like" class="watch-btn watch-btn-action" title="Me gusta">
-                            <span class="material-symbols-rounded">thumb_up</span>
-                            <span id="watch-like-count">--</span>
-                        </button>
-                        <div class="watch-action-divider"></div>
-                        <button id="watch-btn-dislike" class="watch-btn watch-btn-action" title="No me gusta">
-                            <span class="material-symbols-rounded">thumb_down</span>
+        <div class="watch-layout__bottom-content">
+            <div class="watch-layout__info">
+                
+                <div class="watch-title-container">
+                    <h1 class="watch-info-title" id="watch-video-title">[Cargando Título...]</h1>
+                    <div id="watch-translation-badge-container" class="hidden">
+                        <button id="watch-translation-toggle" class="watch-translation-badge" title="Cambiar idioma del título">
+                            <span class="material-symbols-rounded">g_translate</span>
+                            <span id="watch-translation-text">Traducido</span>
                         </button>
                     </div>
+                </div>
+                
+                <div class="watch-info-row">
+                    <div class="watch-info-left">
+                        <img id="watch-channel-avatar" class="watch-avatar" src="" alt="Avatar del Canal">
+                        <div class="watch-channel-details">
+                            <span id="watch-channel-name" class="watch-channel-name">Cargando Canal...</span>
+                            <span id="watch-channel-subs" class="watch-channel-subs">-- suscriptores</span>
+                        </div>
+                    </div>
 
-                    <button class="watch-btn watch-btn-action" title="Compartir">
-                        <span class="material-symbols-rounded">share</span> Compartir
-                    </button>
-                    
-                    <button class="watch-btn watch-btn-action" title="Descargar">
-                        <span class="material-symbols-rounded">download</span> Descargar
-                    </button>
+                    <div class="watch-info-right">
+                        <button id="watch-btn-subscribe" class="watch-btn watch-btn-subscribe">Suscribirse</button>
+                        
+                        <div class="watch-action-group">
+                            <button id="watch-btn-like" class="watch-btn watch-btn-action" title="Me gusta">
+                                <span class="material-symbols-rounded">thumb_up</span>
+                                <span id="watch-like-count">--</span>
+                            </button>
+                            <div class="watch-action-divider"></div>
+                            <button id="watch-btn-dislike" class="watch-btn watch-btn-action" title="No me gusta">
+                                <span class="material-symbols-rounded">thumb_down</span>
+                            </button>
+                        </div>
 
-                    <div style="position: relative; display: inline-flex; align-items: center;">
-                        <button id="watch-btn-save" class="watch-btn watch-btn-action" title="Guardar">
-                            <span class="material-symbols-rounded">playlist_add</span> Guardar
+                        <button class="watch-btn watch-btn-action" title="Compartir">
+                            <span class="material-symbols-rounded">share</span> Compartir
                         </button>
-                        <?php 
-                        // SE INCLUYE EL MÓDULO DROPDOWN AQUI MISMO PARA EL POSICIONAMIENTO
-                        require_once __DIR__ . '/../../modules/moduleSaveToPlaylist.php'; 
-                        ?>
+                        
+                        <button class="watch-btn watch-btn-action" title="Descargar">
+                            <span class="material-symbols-rounded">download</span> Descargar
+                        </button>
+
+                        <div class="watch-save-wrapper">
+                            <button id="watch-btn-save" class="watch-btn watch-btn-action" title="Guardar">
+                                <span class="material-symbols-rounded">playlist_add</span> Guardar
+                            </button>
+                            <?php 
+                            // SE INCLUYE EL MÓDULO DROPDOWN AQUI MISMO PARA EL POSICIONAMIENTO
+                            require_once __DIR__ . '/../../modules/moduleSaveToPlaylist.php'; 
+                            ?>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="watch-details-box">
-                <div class="watch-details-meta">
-                    <span id="watch-video-views" class="watch-meta-highlight">--- visualizaciones</span> 
-                    <span id="watch-video-date" class="watch-meta-highlight" style="margin-left: 8px;">---</span>
-                </div>
+                <div class="watch-details-container">
+                    <div class="watch-details-box">
+                        <div class="watch-details-meta">
+                            <span id="watch-video-views" class="watch-meta-highlight">--- visualizaciones</span> 
+                            <span id="watch-video-date" class="watch-meta-highlight" style="margin-left: 8px;">---</span>
+                        </div>
 
-                <div class="watch-info-description">
-                    <p id="watch-video-description" class="watch-info-desc-text">
-                        [Cargando...]
-                    </p>
-                </div>
-            </div>
-
-            <div class="watch-details-box" style="margin-top: 12px;">
-                <div class="watch-details-meta" style="margin-bottom: 12px;" id="watch-models-categories-header">
-                    <span class="watch-meta-highlight">Modelos y Categorías</span>
-                </div>
-                <div class="watch-info-tags-list" id="watch-video-tags-container">
-                    <span class="watch-tag-item" style="opacity: 0.5;">Cargando...</span>
-                </div>
-
-                <div id="watch-custom-tags-section" style="display: none;">
-                    <div class="watch-tags-divider" id="watch-tags-divider" style="height: 1px; background-color: var(--border-color); margin: 16px 0;"></div>
-                    <div class="watch-details-meta" style="margin-bottom: 12px;">
-                        <span class="watch-meta-highlight">Etiquetas Personalizadas</span>
+                        <div class="watch-info-description">
+                            <p id="watch-video-description" class="watch-info-desc-text">
+                                [Cargando...]
+                            </p>
+                        </div>
                     </div>
-                    <div class="watch-info-tags-list" id="watch-video-custom-tags-container">
+
+                    <div class="watch-details-box">
+                        <div class="watch-details-meta" id="watch-models-categories-header">
+                            <span class="watch-meta-highlight">Modelos y Categorías</span>
+                        </div>
+                        <div class="watch-info-tags-list" id="watch-video-tags-container">
+                            <span class="watch-tag-item watch-tag-item--loading">Cargando...</span>
+                        </div>
+
+                        <div id="watch-custom-tags-section" class="hidden">
+                            <div class="watch-tags-divider" id="watch-tags-divider"></div>
+                            <div class="watch-details-meta">
+                                <span class="watch-meta-highlight">Etiquetas Personalizadas</span>
+                            </div>
+                            <div class="watch-info-tags-list" id="watch-video-custom-tags-container">
+                            </div>
+                        </div>
                     </div>
                 </div>
+
             </div>
 
-        </div>
-
-        <div class="watch-layout__comments">
-            <section id="video-comments-section"></section>
+            <div class="watch-layout__comments">
+                <section id="video-comments-section"></section>
+            </div>
         </div>
 
         <div class="watch-layout__recommended">
             
-            <div id="watch-playlist-panel" class="watch-playlist-panel hidden" style="display: none;">
+            <div id="watch-playlist-panel" class="watch-playlist-panel hidden">
                 <div class="watch-playlist-header">
                     <div class="watch-playlist-header-info">
                         <h2 id="watch-playlist-title" class="watch-playlist-title">Lista de reproducción</h2>
@@ -288,8 +292,8 @@
             </div>
 
             <div class="watch-recommended-section">
-                <h2 class="watch-placeholder-title" style="margin-bottom: 16px; font-size: 16px; font-weight: 600;">Videos Recomendados</h2>
-                <div id="watch-recommended-videos" class="watch-recommended-list" style="display: flex; flex-direction: column; gap: 12px;">
+                <h2 class="watch-placeholder-title">Videos Recomendados</h2>
+                <div id="watch-recommended-videos" class="watch-recommended-list">
                     <p class="watch-placeholder-text">Cargando sugerencias...</p>
                 </div>
             </div>
