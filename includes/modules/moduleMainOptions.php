@@ -54,24 +54,6 @@ $channelLink = $isLoggedIn && $currentIdentifier ? APP_URL . '/@' . $currentIden
                     <span>Historial</span>
                 </div>
             </div>
-            
-            <div class="component-menu-link nav-item" data-nav="<?php echo APP_URL; ?>/playlist?list=WL">
-                <div class="component-menu-link-icon">
-                    <span class="material-symbols-rounded">schedule</span>
-                </div>
-                <div class="component-menu-link-text">
-                    <span>Ver más tarde</span>
-                </div>
-            </div>
-            
-<div class="component-menu-link nav-item" data-nav="<?php echo APP_URL; ?>/playlist?list=LL">
-                    <div class="component-menu-link-icon">
-                    <span class="material-symbols-rounded">thumb_up</span>
-                </div>
-                <div class="component-menu-link-text">
-                    <span>Videos que me gustan</span>
-                </div>
-            </div>
             <div class="component-menu-divider"></div>
             <?php endif; ?>
 

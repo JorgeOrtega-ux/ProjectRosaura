@@ -32,16 +32,19 @@ $isMainArea = !$isAdminArea && !$isSettingsArea && !$isStudioArea;
                         <span><?php echo __('menu_explore'); ?></span>
                     </div>
                 </div>
+            </div>
+        </div>
 
-                <?php if ($isLoggedIn): ?>
+        <?php if ($isLoggedIn): ?>
+        <div class="component-menu-bottom">
+            <div class="component-menu-list">
                 <div class="component-menu-divider"></div>
-                
                 <div class="component-menu-link nav-item" data-nav="<?php echo APP_URL; ?>/feed/playlists">
                     <div class="component-menu-link-icon">
                         <span class="material-symbols-rounded">video_library</span>
                     </div>
                     <div class="component-menu-link-text">
-                        <span><?php echo __('nav_my_playlists'); ?></span>
+                        <span><?php echo __('menu_my_playlists'); ?></span>
                     </div>
                 </div>
                 <div class="component-menu-link nav-item" data-nav="<?php echo APP_URL; ?>/playlist?list=WL">
@@ -49,13 +52,20 @@ $isMainArea = !$isAdminArea && !$isSettingsArea && !$isStudioArea;
                         <span class="material-symbols-rounded">watch_later</span>
                     </div>
                     <div class="component-menu-link-text">
-                        <span><?php echo __('system_playlist_wl'); ?></span>
+                        <span><?php echo __('system_playlist_watch_later'); ?></span>
                     </div>
                 </div>
-                <?php endif; ?>
-
+                <div class="component-menu-link nav-item" data-nav="<?php echo APP_URL; ?>/playlist?list=LL">
+                    <div class="component-menu-link-icon">
+                        <span class="material-symbols-rounded">thumb_up</span>
+                    </div>
+                    <div class="component-menu-link-text">
+                        <span><?php echo __('menu_liked_videos'); ?></span>
+                    </div>
+                </div>
             </div>
         </div>
+        <?php endif; ?>
     </div>
 
     <?php if ($isLoggedIn): ?>

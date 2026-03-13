@@ -20,6 +20,9 @@ export class PlaylistCardSystem {
             if (playlist.type === 'watch_later') {
                 return window.AppSystem?.Translator?.get('system_playlist_watch_later') || 'Ver más tarde';
             }
+            if (playlist.type === 'liked_videos') {
+                return window.AppSystem?.Translator?.get('menu_liked_videos') || 'Videos que me gustan';
+            }
         }
         return playlist.title || 'Lista sin título';
     }
@@ -30,56 +33,49 @@ export class PlaylistCardSystem {
         const uuid = playlistData.uuid || '';
         const title = this.getTranslatedTitle(playlistData);
         const videoCount = playlistData.video_count || 0;
-        const visibility = playlistData.visibility || 'private';
         const isSystem = playlistData.isSystem || playlistData.type !== 'custom';
-        const firstVideoUuid = playlistData.first_video_uuid || null;
         
         const thumbSrc = this.resolveThumbUrl(playlistData.thumbnail_url || playlistData.thumbnail_path);
         
-        // Si es la de sistema (Watch Later), usamos el alias 'WL' para que el router sepa qué hacer.
-        const routingParam = (isSystem && playlistData.type === 'watch_later') ? 'WL' : uuid;
+        // Asignación de rutas correctas dependiendo de si es de sistema o creada.
+        let routingParam = uuid;
+        if (isSystem) {
+            if (playlistData.type === 'watch_later') routingParam = 'WL';
+            else if (playlistData.type === 'liked_videos') routingParam = 'LL';
+        }
         
-        // Si la playlist tiene videos, vamos a Watch. Si no, a la vista de playlist vacía.
-        const watchUrl = firstVideoUuid 
-            ? `${basePath}/watch/${firstVideoUuid}?list=${routingParam}`
-            : `${basePath}/playlist?list=${routingParam}`;
+        const playlistUrl = `${basePath}/playlist?list=${routingParam}`;
         
-        let visibilityIcon = 'public';
-        if (visibility === 'private' || isSystem) visibilityIcon = 'lock';
-        else if (visibility === 'unlisted') visibilityIcon = 'link';
+        // Manejo de traducciones y datos de fallback
+        const textUpdated = window.AppTranslations?.['playlist_updated_ago'] || 'Actualizada hace';
+        const metaText = playlistData.updated_at_human 
+            ? `${textUpdated} ${playlistData.updated_at_human}` 
+            : (window.AppTranslations?.['playlist_view_full'] || 'Ver lista completa');
 
-        const systemBadgeHTML = isSystem 
-            ? `<div class="component-playlist-card__badge-system"><span class="material-symbols-rounded">push_pin</span></div>` 
-            : '';
-
-        // MANEJO DE TEXTOS SEGURO: Verificamos directamente el objeto de traducciones para no romper el motor
-        const textPlayAll = (window.AppTranslations && window.AppTranslations['playlist_play_all']) ? window.AppTranslations['playlist_play_all'] : 'Reproducir todo';
-        const textViewFull = (window.AppTranslations && window.AppTranslations['playlist_view_full']) ? window.AppTranslations['playlist_view_full'] : 'Ver lista completa';
+        const userName = playlistData.user_name || playlistData.creator_name || 'ProjectRosaura';
+        const userAvatar = playlistData.user_avatar || `${basePath}/public/storage/profilePictures/default/b463a327-c705-4b03-960c-7c927c3649c4.png`;
+        const dominantColor = playlistData.dominant_color || '#530e17';
 
         return `
-            <a href="${watchUrl}" class="component-playlist-card" onclick="event.preventDefault(); window.spaRouter.navigate('${watchUrl}');">
-                <div class="component-playlist-card__thumbnail-container">
-                    <img src="${thumbSrc}" alt="Miniatura de ${title}" class="component-playlist-card__img" loading="lazy">
-                    <div class="component-playlist-card__overlay">
-                        <div class="component-playlist-card__overlay-content">
-                            <span class="material-symbols-rounded component-playlist-card__icon-play">play_arrow</span>
-                            <span class="component-playlist-card__play-text">${textPlayAll}</span>
-                        </div>
-                    </div>
-                    <div class="component-playlist-card__count-badge">
-                        <span class="material-symbols-rounded">playlist_play</span>
+            <div class="component-video-card nav-item" style="--local-dominant-color: ${dominantColor}; cursor: pointer;" data-nav="${playlistUrl}" onclick="if(window.spaRouter) { event.preventDefault(); window.spaRouter.navigate('${playlistUrl}'); } else { window.location.href='${playlistUrl}'; }">
+                <div class="component-video-card__top">
+                    <img src="${thumbSrc}" alt="Miniatura de ${title}" class="component-video-card__thumbnail" loading="lazy">
+                    <span class="component-video-card__duration" style="display: flex; align-items: center; gap: 4px; padding: 4px 8px;">
+                        <span class="material-symbols-rounded" style="font-size: 14px;">playlist_play</span>
                         ${videoCount} videos
-                    </div>
-                    ${systemBadgeHTML}
+                    </span>
                 </div>
-                <div class="component-playlist-card__info">
-                    <h3 class="component-playlist-card__title" title="${title}">${title}</h3>
-                    <div class="component-playlist-card__meta">
-                        <span class="material-symbols-rounded component-playlist-card__visibility" title="${visibility}">${visibilityIcon}</span>
-                        <span class="component-playlist-card__count">${textViewFull}</span>
+                <div class="component-video-card__bottom">
+                    <div class="component-video-card__avatar">
+                        <img src="${userAvatar}" alt="Perfil de ${userName}" loading="lazy">
+                    </div>
+                    <div class="component-video-card__info">
+                        <h3 class="component-video-card__title" title="${title}">${title}</h3>
+                        <p class="component-video-card__user">${userName}</p>
+                        <p class="component-video-card__meta">${metaText}</p>
                     </div>
                 </div>
-            </a>
+            </div>
         `;
     }
 }

@@ -563,9 +563,11 @@
     "watch_playlist_videos_count": "{current} de {total}",
     "system_playlist_watch_later": "Ver más tarde",
     "menu_my_playlists": "Mis listas",
+    "menu_liked_videos": "Videos que me gustan",
     "feed_playlists_title": "Mis listas de reproducción",
     "feed_playlists_desc": "Aquí encontrarás todas tus listas guardadas y creadas.",
     "feed_playlists_empty": "Aún no tienes listas de reproducción.",
     "playlist_play_all": "Reproducir todo",
-    "playlist_view_full": "Ver lista completa"
+    "playlist_view_full": "Ver lista completa",
+    "playlist_updated_ago": "Actualizada hace"
 }
