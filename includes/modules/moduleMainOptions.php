@@ -4,16 +4,16 @@ $isLoggedIn = isset($_SESSION['user_id']);
 $userRole = $_SESSION['user_role'] ?? 'user';
 $isAdmin = ($userRole === 'founder' || $userRole === 'administrator');
 
-// CORRECCIÓN: Extraemos el identificador único que AuthServices guarda en la sesión
+// Extraemos el identificador único que AuthServices guarda en la sesión
 $currentIdentifier = $_SESSION['user_identifier'] ?? ''; 
 
 // Mantenemos el nombre de usuario por si lo necesitas como fallback o para otras partes visuales
 $currentUsername = $_SESSION['user_name'] ?? ''; 
 
-// 1. Asignamos la ruta final directamente para que coincida con el backend
+// Asignamos la ruta final directamente para que coincida con el backend
 $settingsLink = $isLoggedIn ? APP_URL . '/settings/your-profile' : APP_URL . '/settings/guest';
 
-// 2. Ruta para el canal dinámico: AHORA USA EL IDENTIFICADOR (@identificador)
+// Ruta para el canal dinámico (con el @identificador)
 $channelLink = $isLoggedIn && $currentIdentifier ? APP_URL . '/@' . $currentIdentifier : '#';
 ?>
 <div class="component-module component-module--dropdown disabled" data-module="moduleMainOptions">
@@ -42,6 +42,34 @@ $channelLink = $isLoggedIn && $currentIdentifier ? APP_URL . '/@' . $currentIden
                 </div>
                 <div class="component-menu-link-text">
                     <span>Tu canal</span>
+                </div>
+            </div>
+            <div class="component-menu-divider"></div>
+            
+            <div class="component-menu-link nav-item" data-nav="<?php echo APP_URL; ?>/settings/history">
+                <div class="component-menu-link-icon">
+                    <span class="material-symbols-rounded">history</span>
+                </div>
+                <div class="component-menu-link-text">
+                    <span>Historial</span>
+                </div>
+            </div>
+            
+            <div class="component-menu-link nav-item" data-nav="<?php echo APP_URL; ?>/playlist?list=WL">
+                <div class="component-menu-link-icon">
+                    <span class="material-symbols-rounded">schedule</span>
+                </div>
+                <div class="component-menu-link-text">
+                    <span>Ver más tarde</span>
+                </div>
+            </div>
+            
+            <div class="component-menu-link nav-item" data-nav="<?php echo APP_URL; ?>/feed/liked-videos">
+                <div class="component-menu-link-icon">
+                    <span class="material-symbols-rounded">thumb_up</span>
+                </div>
+                <div class="component-menu-link-text">
+                    <span>Videos que me gustan</span>
                 </div>
             </div>
             <div class="component-menu-divider"></div>

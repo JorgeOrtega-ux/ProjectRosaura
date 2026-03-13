@@ -18,6 +18,9 @@ return [
     // --- NUEVA RUTA: FEED DE PLAYLISTS ---
     '/feed/playlists' => ['view' => 'app/feed-playlists.php', 'auth' => true],
     
+    // --- NUEVA RUTA: VIDEOS QUE ME GUSTAN ---
+    '/feed/liked-videos' => ['view' => 'app/feed-liked-videos.php', 'auth' => true],
+    
     // --- RUTA DINÁMICA DE CANALES ---
     '/@{identifier}' => ['view' => 'app/channel.php'], 
     '/@{identifier}/{tab}' => ['view' => 'app/channel.php'],

@@ -14,7 +14,7 @@ use App\Core\Interfaces\SessionManagerInterface;
 use App\Core\Interfaces\TokenRepositoryInterface;
 use App\Core\Interfaces\VerificationCodeRepositoryInterface;
 use App\Core\Interfaces\ServerConfigRepositoryInterface; 
-use App\Core\Interfaces\PlaylistRepositoryInterface; // AÑADIDO
+use App\Core\Interfaces\PlaylistRepositoryInterface;
 
 class AuthServices {
     private $rateLimiter;
@@ -24,7 +24,7 @@ class AuthServices {
     private $tokenRepository;
     private $verificationCodeRepository;
     private $config; 
-    private $playlistRepository; // AÑADIDO
+    private $playlistRepository;
 
     public function __construct(
         RateLimiterInterface $rateLimiter, 
@@ -34,7 +34,7 @@ class AuthServices {
         TokenRepositoryInterface $tokenRepository,
         VerificationCodeRepositoryInterface $verificationCodeRepository,
         ServerConfigRepositoryInterface $configRepository,
-        PlaylistRepositoryInterface $playlistRepository // AÑADIDO
+        PlaylistRepositoryInterface $playlistRepository 
     ) {
         $this->rateLimiter = $rateLimiter;
         $this->prefsManager = $prefsManager;
@@ -43,7 +43,7 @@ class AuthServices {
         $this->tokenRepository = $tokenRepository;
         $this->verificationCodeRepository = $verificationCodeRepository;
         $this->config = $configRepository->getConfig(); 
-        $this->playlistRepository = $playlistRepository; // AÑADIDO
+        $this->playlistRepository = $playlistRepository; 
     }
 
     public function isCurrentDeviceValid() {
@@ -140,7 +140,7 @@ class AuthServices {
                     $this->sessionManager->set('user_email', $user['email']);
                     $this->sessionManager->set('user_role', $user['role']);
                     $this->sessionManager->set('user_pic', $user['profile_picture']);
-                    $this->sessionManager->set('user_identifier', $user['channel_identifier']); // Guardamos en sesión
+                    $this->sessionManager->set('user_identifier', $user['channel_identifier']); 
                     $this->sessionManager->set('user_prefs', $userPrefs);
                     $this->sessionManager->set('user_2fa', $user['two_factor_enabled'] ?? 0);
 
@@ -306,16 +306,30 @@ class AuthServices {
         ]);
 
         if ($newUserId > 0) {
-            // --- INYECCIÓN DE PLAYLIST POR DEFECTO MODIFICADA PARA SYSTEM PLAYLIST ---
-            $playlistUuid = Utils::generateUUID();
+            // --- INYECCIÓN DE PLAYLISTS POR DEFECTO DEL SISTEMA ---
+            
+            // 1. Ver más tarde
+            $watchLaterUuid = Utils::generateUUID();
             $this->playlistRepository->create(
                 $newUserId, 
-                $playlistUuid, 
+                $watchLaterUuid, 
                 'Ver más tarde', 
                 'Videos guardados automáticamente para verlos en el futuro.', 
                 'private', 
                 'published_newest',
-                'watch_later' // Parámetro añadido para system playlists
+                'watch_later' 
+            );
+
+            // 2. Videos que me gustan (NUEVA PLAYLIST DE SISTEMA)
+            $likedVideosUuid = Utils::generateUUID();
+            $this->playlistRepository->create(
+                $newUserId, 
+                $likedVideosUuid, 
+                'Videos que me gustan', 
+                'Videos a los que les has dado me gusta.', 
+                'private', 
+                'published_newest',
+                'liked_videos' 
             );
             // ------------------------------------------------------------------------
 

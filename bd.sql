@@ -240,7 +240,7 @@ CREATE TABLE IF NOT EXISTS playlists (
     description TEXT DEFAULT NULL,
     visibility ENUM('public', 'private', 'unlisted') DEFAULT 'public',
     video_order ENUM('published_newest', 'published_oldest', 'popular', 'uploaded_newest', 'uploaded_oldest') DEFAULT 'published_newest',
-    type ENUM('custom', 'watch_later') DEFAULT 'custom',
+    type ENUM('custom', 'watch_later', 'liked_videos') DEFAULT 'custom',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_playlist_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE

@@ -17,9 +17,6 @@ class VideoRepository implements VideoRepositoryInterface {
         $this->meiliClient = $meiliClient;
     }
 
-    /**
-     * Helper que reemplaza dinámicamente el título del video según el idioma
-     */
     private function applyLocalizedTitle(array $video): array {
         $video['is_translated'] = false;
         $video['original_title_hidden'] = $video['title'];
@@ -74,9 +71,6 @@ class VideoRepository implements VideoRepositoryInterface {
         return $video;
     }
 
-    /**
-     * Sincroniza el documento del video con Meilisearch.
-     */
     private function syncVideoToMeili(int $videoId): void {
         if (!$this->meiliClient) return;
         
@@ -452,33 +446,74 @@ class VideoRepository implements VideoRepositoryInterface {
         try {
             $this->db->beginTransaction();
 
+            // Averiguar el ID de la lista "Videos que me gustan" del usuario
+            $stmtLv = $this->db->prepare("SELECT id FROM playlists WHERE user_id = ? AND type = 'liked_videos' LIMIT 1");
+            $stmtLv->execute([$userId]);
+            $lvPlaylistId = $stmtLv->fetchColumn();
+
             $currentInteraction = $this->getUserInteraction($userId, $videoId);
             $newState = null;
 
             if ($currentInteraction === $type) {
+                // QUITAR LA INTERACCIÓN (Ej: Dar click en Like cuando ya tenías Like)
                 $stmt = $this->db->prepare("DELETE FROM video_interactions WHERE user_id = ? AND video_id = ?");
                 $stmt->execute([$userId, $videoId]);
                 
                 $col = ($type === 'like') ? 'likes' : 'dislikes';
                 $this->db->prepare("UPDATE videos SET $col = GREATEST($col - 1, 0) WHERE id = ?")->execute([$videoId]);
                 
+                // Si quitamos el Like, lo eliminamos de la playlist de "Videos que me gustan"
+                if ($type === 'like' && $lvPlaylistId) {
+                    $stmtRm = $this->db->prepare("DELETE FROM playlist_videos WHERE playlist_id = ? AND video_id = ?");
+                    $stmtRm->execute([$lvPlaylistId, $videoId]);
+                }
+                
             } elseif ($currentInteraction !== null) {
+                // CAMBIAR LA INTERACCIÓN (Ej: Cambiar de Dislike a Like o viceversa)
                 $stmt = $this->db->prepare("UPDATE video_interactions SET interaction_type = ? WHERE user_id = ? AND video_id = ?");
                 $stmt->execute([$type, $userId, $videoId]);
 
                 if ($type === 'like') {
                     $this->db->prepare("UPDATE videos SET likes = likes + 1, dislikes = GREATEST(dislikes - 1, 0) WHERE id = ?")->execute([$videoId]);
+                    
+                    // Se dio Like (habiendo Dislike), insertamos en la playlist "Videos que me gustan"
+                    if ($lvPlaylistId) {
+                        $stmtMax = $this->db->prepare("SELECT MAX(display_order) FROM playlist_videos WHERE playlist_id = ?");
+                        $stmtMax->execute([$lvPlaylistId]);
+                        $nextOrder = ((int) $stmtMax->fetchColumn()) + 1;
+                        
+                        $stmtIn = $this->db->prepare("INSERT IGNORE INTO playlist_videos (playlist_id, video_id, display_order) VALUES (?, ?, ?)");
+                        $stmtIn->execute([$lvPlaylistId, $videoId, $nextOrder]);
+                    }
                 } else {
                     $this->db->prepare("UPDATE videos SET dislikes = dislikes + 1, likes = GREATEST(likes - 1, 0) WHERE id = ?")->execute([$videoId]);
+                    
+                    // Se dio Dislike (habiendo Like), eliminamos de "Videos que me gustan"
+                    if ($lvPlaylistId) {
+                        $stmtRm = $this->db->prepare("DELETE FROM playlist_videos WHERE playlist_id = ? AND video_id = ?");
+                        $stmtRm->execute([$lvPlaylistId, $videoId]);
+                    }
                 }
                 $newState = $type;
 
             } else {
+                // NUEVA INTERACCIÓN (No había ni Like ni Dislike)
                 $stmt = $this->db->prepare("INSERT INTO video_interactions (user_id, video_id, interaction_type) VALUES (?, ?, ?)");
                 $stmt->execute([$userId, $videoId, $type]);
 
                 $col = ($type === 'like') ? 'likes' : 'dislikes';
                 $this->db->prepare("UPDATE videos SET $col = $col + 1 WHERE id = ?")->execute([$videoId]);
+                
+                // Si fue un Like, agregarlo a la playlist de sistema "Videos que me gustan"
+                if ($type === 'like' && $lvPlaylistId) {
+                    $stmtMax = $this->db->prepare("SELECT MAX(display_order) FROM playlist_videos WHERE playlist_id = ?");
+                    $stmtMax->execute([$lvPlaylistId]);
+                    $nextOrder = ((int) $stmtMax->fetchColumn()) + 1;
+                    
+                    $stmtIn = $this->db->prepare("INSERT IGNORE INTO playlist_videos (playlist_id, video_id, display_order) VALUES (?, ?, ?)");
+                    $stmtIn->execute([$lvPlaylistId, $videoId, $nextOrder]);
+                }
+                
                 $newState = $type;
             }
 
@@ -520,7 +555,6 @@ class VideoRepository implements VideoRepositoryInterface {
         ]);
     }
 
-    // NUEVO: Verificamos si el video está en cualquier playlist del usuario
     public function isVideoSaved(int $userId, int $videoId): bool {
         $stmt = $this->db->prepare("
             SELECT COUNT(*) 

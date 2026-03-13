@@ -31,7 +31,6 @@ class PlaylistRepository implements PlaylistRepositoryInterface {
     }
 
     public function getAllByUserId(int $userId): array {
-        // Filtrado explícito para que el Studio solo vea las listas custom
         $stmt = $this->db->prepare("
             SELECT 
                 p.*,
@@ -43,7 +42,15 @@ class PlaylistRepository implements PlaylistRepositoryInterface {
                     WHERE pv2.playlist_id = p.id 
                     ORDER BY pv2.display_order ASC 
                     LIMIT 1
-                ) as thumbnail_path
+                ) as thumbnail_path,
+                (
+                    SELECT v.uuid 
+                    FROM playlist_videos pv2 
+                    JOIN videos v ON pv2.video_id = v.id 
+                    WHERE pv2.playlist_id = p.id 
+                    ORDER BY pv2.display_order ASC 
+                    LIMIT 1
+                ) as first_video_uuid
             FROM playlists p 
             WHERE p.user_id = :user_id AND p.type = 'custom'
             ORDER BY p.created_at DESC
@@ -64,7 +71,15 @@ class PlaylistRepository implements PlaylistRepositoryInterface {
                     WHERE pv2.playlist_id = p.id 
                     ORDER BY pv2.display_order ASC 
                     LIMIT 1
-                ) as thumbnail_path
+                ) as thumbnail_path,
+                (
+                    SELECT v.uuid 
+                    FROM playlist_videos pv2 
+                    JOIN videos v ON pv2.video_id = v.id 
+                    WHERE pv2.playlist_id = p.id 
+                    ORDER BY pv2.display_order ASC 
+                    LIMIT 1
+                ) as first_video_uuid
             FROM playlists p 
             WHERE p.user_id = :user_id 
             ORDER BY p.created_at DESC
@@ -158,6 +173,14 @@ class PlaylistRepository implements PlaylistRepositoryInterface {
                         ORDER BY pv2.display_order ASC 
                         LIMIT 1
                     ) as thumbnail_path,
+                    (
+                        SELECT v.uuid 
+                        FROM playlist_videos pv2 
+                        JOIN videos v ON pv2.video_id = v.id 
+                        WHERE pv2.playlist_id = p.id 
+                        ORDER BY pv2.display_order ASC 
+                        LIMIT 1
+                    ) as first_video_uuid,
                     (
                         SELECT v.thumbnail_dominant_color
                         FROM playlist_videos pv2 
@@ -312,6 +335,15 @@ class PlaylistRepository implements PlaylistRepositoryInterface {
             $res = $stmt->fetch(PDO::FETCH_ASSOC);
             return $res ?: null;
         }
+        
+        // AGREGADO: Soporte para la nueva playlist del sistema "Videos que me gustan"
+        if ($alias === 'LV') {
+            $stmt = $this->db->prepare("SELECT * FROM playlists WHERE user_id = :uid AND type = 'liked_videos' LIMIT 1");
+            $stmt->execute([':uid' => $userId]);
+            $res = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $res ?: null;
+        }
+
         return null;
     }
 

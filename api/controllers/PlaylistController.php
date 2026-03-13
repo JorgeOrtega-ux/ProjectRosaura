@@ -92,16 +92,7 @@ class PlaylistController {
         
         $userId = $this->sessionManager->get('user_id');
         
-        // Accedemos al repositorio desde el servicio (o idealmente creando un método específico en el servicio)
-        // Como no tengo la visibilidad del repositorio en el controller, asumiré que añadiste `getAllUserPlaylists` en el servicio
-        // Si no, puedes usar un método similar al que ya usamos en StudioController pero que traiga TODAS (incluyendo sistema)
         try {
-            // Nota: Aquí debes asegurarte de que tu PlaylistServices tenga un método getAllUserPlaylists que llame a getAllIncludingSystemByUserId
-            // Como no modifiqué PlaylistServices para esto en el paso anterior, puedes inyectar el Repo aquí o llamar a un nuevo método
-            // Para mantenerlo limpio, asumimos que crearás getFeedPlaylists en el Service, o usamos el repo directamente si está disponible.
-            // Aquí te dejo la estructura esperada:
-            
-            // Requerirá añadir: public function getAllUserPlaylists(int $userId) { return $this->playlistRepo->getAllIncludingSystemByUserId($userId); } a PlaylistServices.php
             $playlists = $this->playlistService->getAllUserPlaylists($userId); 
             
             // Inyectamos la bandera isSystem para el frontend

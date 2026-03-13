@@ -32,12 +32,17 @@ export class PlaylistCardSystem {
         const videoCount = playlistData.video_count || 0;
         const visibility = playlistData.visibility || 'private';
         const isSystem = playlistData.isSystem || playlistData.type !== 'custom';
+        const firstVideoUuid = playlistData.first_video_uuid || null;
         
         const thumbSrc = this.resolveThumbUrl(playlistData.thumbnail_url || playlistData.thumbnail_path);
         
         // Si es la de sistema (Watch Later), usamos el alias 'WL' para que el router sepa qué hacer.
         const routingParam = (isSystem && playlistData.type === 'watch_later') ? 'WL' : uuid;
-        const watchUrl = `${basePath}/playlist?list=${routingParam}`;
+        
+        // Si la playlist tiene videos, vamos a Watch. Si no, a la vista de playlist vacía.
+        const watchUrl = firstVideoUuid 
+            ? `${basePath}/watch/${firstVideoUuid}?list=${routingParam}`
+            : `${basePath}/playlist?list=${routingParam}`;
         
         let visibilityIcon = 'public';
         if (visibility === 'private' || isSystem) visibilityIcon = 'lock';
