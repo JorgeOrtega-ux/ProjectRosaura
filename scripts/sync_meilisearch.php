@@ -8,7 +8,7 @@ echo "Iniciando sincronización con Meilisearch...\n";
 
 // Configuración de Meilisearch
 $host = 'http://127.0.0.1:7700';
-$key = 'TU_MASTER_KEY_AQUI'; // <-- ¡ASEGÚRATE DE PONER TU CLAVE REAL AQUÍ!
+$key = 'rosaura_dev_key'; // <-- ¡ASEGÚRATE DE PONER TU CLAVE REAL AQUÍ!
 $client = new Client($host, $key);
 
 // 1. Configurar índices y atributos buscables
