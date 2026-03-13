@@ -38,9 +38,13 @@ export class VideoPlayerSystem {
         // Barra de progreso y tiempos
         this.progressArea = document.getElementById('progress-area');
         this.progressFill = document.getElementById('progress-fill');
+        this.progressBuffer = document.getElementById('progress-buffer');
         this.progressThumb = document.getElementById('progress-thumb');
         this.timeCurrent = document.getElementById('time-current');
         this.timeDuration = document.getElementById('time-duration');
+
+        // Spinner de Carga
+        this.playerSpinner = document.getElementById('player-spinner');
 
         // Preview Card Elements
         this.previewCard = document.getElementById('preview-card');
@@ -159,6 +163,7 @@ export class VideoPlayerSystem {
             this.playPauseIcon.textContent = 'pause';
             this.playPauseBtn.title = "Pausar (k)";
             this.container.classList.remove('is-paused');
+            this.hideSpinner();
         });
         this.video.addEventListener('pause', () => {
             if (!this.isDragging) {
@@ -167,6 +172,18 @@ export class VideoPlayerSystem {
                 this.container.classList.add('is-paused');
             }
         });
+        
+        // EVENTOS DE CARGA / SPINNER / BUFFER
+        this.video.addEventListener('waiting', () => this.showSpinner());
+        this.video.addEventListener('playing', () => this.hideSpinner());
+        this.video.addEventListener('canplay', () => this.hideSpinner());
+        this.video.addEventListener('loadstart', () => this.showSpinner());
+        this.video.addEventListener('loadeddata', () => {
+            this.hideSpinner();
+            this.updateBuffer();
+        });
+        this.video.addEventListener('progress', () => this.updateBuffer());
+
         this.muteBtn.addEventListener('click', () => this.toggleMute());
         
         this.volumeSlider.addEventListener('input', (e) => {
@@ -182,12 +199,14 @@ export class VideoPlayerSystem {
         this.video.addEventListener('loadedmetadata', () => {
             this.timeDuration.textContent = this.formatTime(this.video.duration);
             this.updateVolumeUI(); 
+            this.updateBuffer();
         });
         
         // EVENTO PRINCIPAL: Registro de tiempo y recolección para el Heatmap y Registro de Historial
         this.video.addEventListener('timeupdate', () => {
             if (!this.isDragging) {
                 this.updateProgress();
+                this.updateBuffer();
                 this.trackRetention(); 
                 this.checkViewRegistration(); // <-- AÑADIDO PARA DISPARAR EL HISTORIAL
             }
@@ -247,6 +266,19 @@ export class VideoPlayerSystem {
                 this.calculatePlayerSize(); 
             }
         });
+    }
+
+    // --- MANEJO DE SPINNER DE CARGA ---
+    showSpinner() {
+        if (this.playerSpinner && (!this.video || this.video.readyState < 3)) {
+            this.playerSpinner.style.display = 'flex';
+        }
+    }
+
+    hideSpinner() {
+        if (this.playerSpinner) {
+            this.playerSpinner.style.display = 'none';
+        }
     }
 
     // --- NUEVO: DISPARADOR DEL HISTORIAL (VISITA) ---
@@ -652,6 +684,10 @@ export class VideoPlayerSystem {
         this.lastChunkIndex = -1;
         this.heatmapData = [];
         this.heatmapMax = 0;
+        
+        if (this.progressBuffer) this.progressBuffer.style.width = '0%';
+        this.showSpinner();
+        
         this.startRetentionBatcher();
         
         if (requiresSignedToken) {
@@ -869,6 +905,30 @@ export class VideoPlayerSystem {
         this.progressFill.style.width = `${percent}%`;
         this.progressThumb.style.left = `${percent}%`;
         this.timeCurrent.textContent = this.formatTime(this.video.currentTime);
+    }
+
+    updateBuffer() {
+        if (!this.video.duration || !this.progressBuffer) return;
+        try {
+            if (this.video.buffered.length > 0) {
+                let bufferedEnd = 0;
+                for (let i = 0; i < this.video.buffered.length; i++) {
+                    if (this.video.buffered.start(i) <= this.video.currentTime && this.video.buffered.end(i) >= this.video.currentTime) {
+                        bufferedEnd = this.video.buffered.end(i);
+                        break;
+                    }
+                }
+                
+                if (bufferedEnd === 0) {
+                    bufferedEnd = this.video.buffered.end(this.video.buffered.length - 1);
+                }
+                
+                const percent = (bufferedEnd / this.video.duration) * 100;
+                this.progressBuffer.style.width = `${percent}%`;
+            }
+        } catch (e) {
+            // Ignorar el error si el buffer aún no está disponible
+        }
     }
 
     startScrubbing(e) {

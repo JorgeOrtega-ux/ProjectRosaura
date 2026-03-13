@@ -10,6 +10,10 @@
             <div class="component-video-player is-paused" id="video-player-container">
                 <video id="main-video-player" class="component-video-player__video" playsinline></video>
                 
+                <div class="component-video-player__spinner" id="player-spinner" style="display: none;">
+                    <span class="material-symbols-rounded component-video-player__spinner-icon">progress_activity</span>
+                </div>
+                
                 <div class="component-video-player__controls" id="player-controls">
                     <div class="component-video-player__progress-area" id="progress-area">
                         <div class="component-player-preview-card" id="preview-card">
@@ -18,6 +22,7 @@
                         </div>
 
                         <div class="component-video-player__progress-bar">
+                            <div class="component-video-player__progress-buffer" id="progress-buffer"></div>
                             <div class="component-video-player__progress-fill" id="progress-fill"></div>
                             <div class="component-video-player__progress-thumb" id="progress-thumb"></div>
                         </div>

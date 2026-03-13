@@ -34,6 +34,35 @@
 }
 
 /* ==========================================================================
+   ESTILOS NUEVOS: SPINNER DE CARGA
+   ========================================================================== */
+.component-video-player__spinner {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    background-color: rgba(0, 0, 0, 0.4);
+    border-radius: 50%;
+    padding: 12px;
+}
+
+.component-video-player__spinner-icon {
+    font-size: 48px;
+    color: rgba(255, 255, 255, 0.9);
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* ==========================================================================
    ESTILOS NUEVOS: OVERLAY DE REPRODUCTOR (FLUÍDEZ EXTREMA)
    ========================================================================== */
 .component-player-preview-overlay {
@@ -118,6 +147,11 @@
 .component-video-player__progress-area:hover .component-video-player__progress-bar,
 .component-video-player__progress-area.is-dragging .component-video-player__progress-bar { 
     height: 6px; 
+}
+
+/* BARRA DE BUFFER / DESCARGADO */
+.component-video-player__progress-buffer {
+    position: absolute; top: 0; left: 0; height: 100%; background-color: rgba(255, 255, 255, 0.4); width: 0%; border-radius: 2px; z-index: 1; transition: width 0.2s ease;
 }
 
 /* LA BARRA Y BOLITA AHORA SON COLOR #8B5CF6 */
