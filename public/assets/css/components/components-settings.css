@@ -107,3 +107,82 @@
     color: var(--text-primary);
     font-weight: 700;
 }
+
+/* ==========================================
+   --- ESTILOS DEL HISTORIAL DE ACTIVIDAD ---
+   ========================================== */
+.view-content--history {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.component-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 24px;
+    padding-bottom: 8px;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.component-toolbar__tabs {
+    display: flex;
+    gap: 24px;
+}
+
+.component-toolbar__tab {
+    background: none;
+    border: none;
+    padding: 8px 0;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.component-toolbar__tab:hover {
+    color: var(--text-primary);
+}
+
+.component-toolbar__tab.active {
+    color: var(--text-primary);
+    border-bottom-color: var(--primary-color, #065fd4);
+}
+
+.history-tab-content {
+    min-height: 400px;
+}
+
+.history-card {
+    border-radius: 8px;
+    padding: 8px;
+    transition: background-color 0.2s ease;
+}
+
+.history-card:hover {
+    background-color: var(--bg-surface-hover, rgba(0, 0, 0, 0.03));
+}
+
+.history-search-item:hover {
+    background-color: var(--bg-surface-hover, rgba(0, 0, 0, 0.03));
+}
+
+.btn-remove-watch:hover, 
+.btn-remove-search:hover {
+    color: var(--text-primary) !important;
+    background-color: var(--bg-app);
+}
+
+/* Ocultar el scrollbar en elementos internos si es necesario */
+.history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}

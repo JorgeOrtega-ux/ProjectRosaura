@@ -47,10 +47,14 @@ export class HistoryController {
                 
                 if (this.currentTab === 'watch-history') {
                     this.watchContainer.style.display = 'block';
+                    this.watchContainer.classList.add('active');
                     this.searchContainer.style.display = 'none';
+                    this.searchContainer.classList.remove('active');
                 } else {
                     this.watchContainer.style.display = 'none';
+                    this.watchContainer.classList.remove('active');
                     this.searchContainer.style.display = 'block';
+                    this.searchContainer.classList.add('active');
                 }
             });
         });

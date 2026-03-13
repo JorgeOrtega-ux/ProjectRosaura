@@ -8,6 +8,7 @@ use App\Core\Interfaces\RateLimiterInterface;
 use App\Core\Security\RedisRateLimiter;
 use App\Core\Interfaces\SubscriptionRepositoryInterface;
 use Predis\Client;
+use App\Api\Services\HistoryServices; // <-- IMPORTANTE: Importar el servicio
 
 class VideoController {
     private $videoRepo;
@@ -15,7 +16,6 @@ class VideoController {
     private $rateLimiter;
     private $subscriptionRepo;
 
-    // Inyectamos Redis, el RateLimiter y el SubscriptionRepository
     public function __construct(VideoRepositoryInterface $videoRepo, Client $redis, RateLimiterInterface $rateLimiter, SubscriptionRepositoryInterface $subscriptionRepo) {
         $this->videoRepo = $videoRepo;
         $this->redis = $redis;
@@ -95,14 +95,19 @@ class VideoController {
         $check = $this->rateLimiter->check($action, RedisRateLimiter::LIMIT_VIEWS_ATTEMPTS, RedisRateLimiter::LIMIT_VIEWS_MINUTES);
         
         if (!$check['allowed']) {
-            // Retornamos true silencioso para no generar errores en frontend, pero no sumamos la visita.
             return ['success' => true, 'message' => 'Visita ignorada (Rate Limit)'];
         }
 
         $this->rateLimiter->record($action, RedisRateLimiter::LIMIT_VIEWS_ATTEMPTS, RedisRateLimiter::LIMIT_VIEWS_MINUTES);
 
-        // Guardar la visita en Redis. El script en Python las pasará a la BD
+        // Guardar la visita en Redis
         $this->redis->incr("video:views:{$videoId}");
+
+        // --- SOLUCIÓN: GUARDAR EN EL HISTORIAL DE REPRODUCCIÓN ---
+        if (isset($_SESSION['user_id'])) {
+            $historyServices = new HistoryServices();
+            $historyServices->logWatchEvent($_SESSION['user_id'], $videoId);
+        }
 
         return ['success' => true, 'message' => 'Visita registrada'];
     }
@@ -113,13 +118,12 @@ class VideoController {
         }
 
         $videoUuid = $data['video_uuid'] ?? null;
-        $type = $data['type'] ?? null; // 'like' o 'dislike'
+        $type = $data['type'] ?? null;
 
         if (!$videoUuid || !in_array($type, ['like', 'dislike'])) {
             return ['success' => false, 'message' => 'Datos inválidos.'];
         }
 
-        // Rate Limit global de likes para este usuario/IP
         $action = "interaction_" . $_SESSION['user_id'];
         $check = $this->rateLimiter->check($action, RedisRateLimiter::LIMIT_LIKES_ATTEMPTS, RedisRateLimiter::LIMIT_LIKES_MINUTES, 'Estás interactuando demasiado rápido.');
         
@@ -134,12 +138,11 @@ class VideoController {
             return ['success' => false, 'message' => 'Video no encontrado.'];
         }
 
-        // Actualización directa en BD
         $result = $this->videoRepo->toggleInteraction($_SESSION['user_id'], $videoData['id'], $type);
 
         return [
             'success' => true,
-            'interaction' => $result['current_state'], // 'like', 'dislike' o null
+            'interaction' => $result['current_state'],
             'likes' => $result['likes_count'],
             'dislikes' => $result['dislikes_count']
         ];
