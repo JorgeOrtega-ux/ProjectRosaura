@@ -23,22 +23,50 @@ class VideoRepository implements VideoRepositoryInterface {
     private function applyLocalizedTitle(array $video): array {
         if (!empty($video['localized_titles'])) {
             $titles = json_decode($video['localized_titles'], true);
-            $currentLang = $_COOKIE['language'] ?? 'en-US'; // Determinar el idioma actual del usuario
             
+            // Si el JSON es inválido, devolvemos el video tal cual
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                return $video;
+            }
+
+            // --- LÓGICA OFICIAL DE IDIOMA DE PROJECT ROSAURA ---
+            // 1. Priorizamos la sesión del usuario si está logueado
+            if (session_status() === PHP_SESSION_NONE) {
+                session_start();
+            }
+            $userPrefs = $_SESSION['user_prefs'] ?? [];
+            
+            // 2. Buscamos en este orden: Sesión -> Cookie 'pr_language' -> Header JS -> Fallback
+            $currentLang = $userPrefs['language'] 
+                        ?? ($_COOKIE['pr_language'] ?? null) 
+                        ?? ($_SERVER['HTTP_X_APP_LANGUAGE'] ?? 'es-419'); 
+            // Ponemos es-419 como fallback predeterminado para Latinoamérica
+
+            // Limpiamos espacios
+            $currentLang = trim($currentLang);
+
+            // --- APLICACIÓN DE TRADUCCIÓN ---
             if (is_array($titles)) {
-                // 1. Intento de coincidencia exacta (Ej: 'es-MX' coincidiendo con 'es-MX')
-                if (isset($titles[$currentLang]) && !empty(trim($titles[$currentLang]))) {
-                    $video['original_title'] = $video['title'];
-                    $video['title'] = $titles[$currentLang];
-                } 
-                // 2. Fallback regional (Ej: si busca 'es-MX' y no lo encuentra, utilizar 'es-419' o cualquier otra variante de 'es')
-                else {
-                    $baseLang = explode('-', $currentLang)[0];
+                // BÚSQUEDA 1: Intento de coincidencia exacta (Ej: es-MX == es-MX)
+                $exactMatchFound = false;
+                foreach ($titles as $langKey => $titleValue) {
+                    if (strtolower($langKey) === strtolower($currentLang) && !empty(trim($titleValue))) {
+                        $video['original_title'] = $video['title'];
+                        $video['title'] = $titleValue;
+                        $exactMatchFound = true;
+                        break;
+                    }
+                }
+
+                // BÚSQUEDA 2: Si no hubo coincidencia exacta, buscamos la base (Ej: Si es 'es-MX', buscamos 'es')
+                if (!$exactMatchFound) {
+                    $baseLang = explode('-', strtolower($currentLang))[0]; 
+                    
                     foreach ($titles as $langKey => $titleValue) {
-                        if (strpos($langKey, $baseLang . '-') === 0 && !empty(trim($titleValue))) {
+                        if (strpos(strtolower($langKey), $baseLang) === 0 && !empty(trim($titleValue))) {
                             $video['original_title'] = $video['title'];
                             $video['title'] = $titleValue;
-                            break; // Rompe el loop con el primer fallback exitoso
+                            break; 
                         }
                     }
                 }
@@ -59,7 +87,6 @@ class VideoRepository implements VideoRepositoryInterface {
             $tags = $this->getVideoTags($videoId);
             $tagNames = array_map(function($t) { return $t['name']; }, $tags);
             
-            // Para la búsqueda podemos indexar también los títulos localizados para que se encuentre en todos los idiomas
             $doc = [
                 'id_video' => $video['id'],
                 'id_user' => $video['user_id'],
@@ -77,7 +104,6 @@ class VideoRepository implements VideoRepositoryInterface {
                 error_log("Meilisearch sync error (Video Add): " . $e->getMessage());
             }
         } else {
-            // Si el video ya no es público o fue eliminado/suspendido
             try {
                 $this->meiliClient->index('videos')->deleteDocument($videoId);
             } catch (Exception $e) {
@@ -425,7 +451,6 @@ class VideoRepository implements VideoRepositoryInterface {
             $newState = null;
 
             if ($currentInteraction === $type) {
-                // Si presiona el mismo botón, lo quitamos
                 $stmt = $this->db->prepare("DELETE FROM video_interactions WHERE user_id = ? AND video_id = ?");
                 $stmt->execute([$userId, $videoId]);
                 
@@ -433,7 +458,6 @@ class VideoRepository implements VideoRepositoryInterface {
                 $this->db->prepare("UPDATE videos SET $col = GREATEST($col - 1, 0) WHERE id = ?")->execute([$videoId]);
                 
             } elseif ($currentInteraction !== null) {
-                // Si cambia de like a dislike o viceversa
                 $stmt = $this->db->prepare("UPDATE video_interactions SET interaction_type = ? WHERE user_id = ? AND video_id = ?");
                 $stmt->execute([$type, $userId, $videoId]);
 
@@ -445,7 +469,6 @@ class VideoRepository implements VideoRepositoryInterface {
                 $newState = $type;
 
             } else {
-                // Si no tenía interacción previa
                 $stmt = $this->db->prepare("INSERT INTO video_interactions (user_id, video_id, interaction_type) VALUES (?, ?, ?)");
                 $stmt->execute([$userId, $videoId, $type]);
 
@@ -454,7 +477,6 @@ class VideoRepository implements VideoRepositoryInterface {
                 $newState = $type;
             }
 
-            // Obtener los conteos actualizados para retornarlos
             $stmtCounts = $this->db->prepare("SELECT likes, dislikes FROM videos WHERE id = ?");
             $stmtCounts->execute([$videoId]);
             $counts = $stmtCounts->fetch(PDO::FETCH_ASSOC);
@@ -473,7 +495,6 @@ class VideoRepository implements VideoRepositoryInterface {
         }
     }
 
-    // --- NUEVO: IMPLEMENTACIÓN HEATMAP ---
     public function getRetentionData(int $videoId): ?array {
         $stmt = $this->db->prepare("SELECT retention_data FROM video_retention_metrics WHERE video_id = :video_id");
         $stmt->execute([':video_id' => $videoId]);
@@ -494,7 +515,6 @@ class VideoRepository implements VideoRepositoryInterface {
         ]);
     }
 
-    // --- NUEVO: SISTEMA DE VIDEOS GUARDADOS ---
     public function isVideoSaved(int $userId, int $videoId): bool {
         $stmt = $this->db->prepare("SELECT COUNT(*) FROM user_saved_videos WHERE user_id = :user_id AND video_id = :video_id");
         $stmt->execute([':user_id' => $userId, ':video_id' => $videoId]);
@@ -505,11 +525,11 @@ class VideoRepository implements VideoRepositoryInterface {
         if ($this->isVideoSaved($userId, $videoId)) {
             $stmt = $this->db->prepare("DELETE FROM user_saved_videos WHERE user_id = :user_id AND video_id = :video_id");
             $stmt->execute([':user_id' => $userId, ':video_id' => $videoId]);
-            return false; // El estado actual ahora es "No guardado"
+            return false; 
         } else {
             $stmt = $this->db->prepare("INSERT INTO user_saved_videos (user_id, video_id) VALUES (:user_id, :video_id)");
             $stmt->execute([':user_id' => $userId, ':video_id' => $videoId]);
-            return true; // El estado actual ahora es "Guardado"
+            return true; 
         }
     }
 }

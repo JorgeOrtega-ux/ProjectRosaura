@@ -7,7 +7,19 @@ export class ApiService {
         this.baseUrl = (window.AppBasePath || '') + '/api/index.php'; 
     }
 
-async post(route, data = {}) {
+    // 🛠️ NUEVO: Método para obtener el idioma de las preferencias del usuario o localStorage
+    getAppLanguage() {
+        if (window.AppUserPrefs && window.AppUserPrefs.language) {
+            return window.AppUserPrefs.language;
+        }
+        const localLang = localStorage.getItem('pr_language');
+        if (localLang) {
+            return localLang;
+        }
+        return 'es-419'; // Fallback
+    }
+
+    async post(route, data = {}) {
         const payload = {
             route: route,
             ...data
@@ -15,13 +27,19 @@ async post(route, data = {}) {
 
         const csrfMeta = document.querySelector('meta[name="csrf-token"]');
         const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+        const currentLang = this.getAppLanguage();
+
+        // Puedes descomentar este log si quieres seguir verificando qué idioma envía
+        // console.log(`📡 [ApiService] POST a '${route}' | 🌐 Idioma enviado: ${currentLang}`);
 
         try {
             const response = await fetch(this.baseUrl, {
                 method: 'POST',
+                credentials: 'same-origin', // 🛠️ CRUCIAL: Fuerza el envío de Cookies a PHP
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-Token': csrfToken
+                    'X-CSRF-Token': csrfToken,
+                    'X-App-Language': currentLang // 🛠️ CRUCIAL: Respaldo para PHP
                 },
                 body: JSON.stringify(payload)
             });
@@ -32,7 +50,6 @@ async post(route, data = {}) {
                     return { success: false, message: 'Sesión revocada.' };
                 }
                 
-                // Leemos como texto primero para poder debugear errores HTTP
                 const rawErrorText = await response.text();
                 try {
                     return JSON.parse(rawErrorText);
@@ -42,26 +59,19 @@ async post(route, data = {}) {
                 }
             }
 
-            // -------------------------------------------------------------
-            // 🔥 AQUÍ ESTÁ EL LOG DIAGNÓSTICO 🔥
-            // 1. Leemos la respuesta como texto plano primero
             const rawText = await response.text();
             
             try {
-                // 2. Intentamos convertir ese texto a JSON
                 return JSON.parse(rawText);
             } catch (jsonError) {
-                // 3. Si falla, imprimimos EXACTAMENTE qué devolvió PHP
                 console.error(`🚨 [ApiService] ERROR DE SINTAXIS JSON en la ruta: '${route}'`);
-                console.error(`👉 EL SERVIDOR DEVOLVIÓ ESTO (mira lo que hay antes o después de las llaves {}): \n`, rawText);
-                
+                console.error(`👉 EL SERVIDOR DEVOLVIÓ ESTO: \n`, rawText);
                 return { success: false, message: 'El servidor devolvió un formato inválido. Revisa la consola.' };
             }
-            // -------------------------------------------------------------
 
         } catch (error) {
-            console.error(`[ApiService] Fallo general hacia '${route}':`, error);
-            return { success: false, message: 'Error de conexión con el servidor. Verifica la consola.' };
+            console.error(`❌ [ApiService] Fallo general hacia '${route}':`, error);
+            return { success: false, message: 'Error de conexión con el servidor.' };
         }
     }
 
@@ -69,11 +79,16 @@ async post(route, data = {}) {
         formData.append('route', route);
         const csrfMeta = document.querySelector('meta[name="csrf-token"]');
         const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+        const currentLang = this.getAppLanguage();
 
         try {
             const response = await fetch(this.baseUrl, {
                 method: 'POST',
-                headers: { 'X-CSRF-Token': csrfToken },
+                credentials: 'same-origin',
+                headers: { 
+                    'X-CSRF-Token': csrfToken,
+                    'X-App-Language': currentLang 
+                },
                 body: formData
             });
 
@@ -90,57 +105,44 @@ async post(route, data = {}) {
             }
             return await response.json();
         } catch (error) {
-            console.error(`[ApiService] Fallo en FormData hacia '${route}':`, error);
+            console.error(`❌ [ApiService] Fallo en FormData hacia '${route}':`, error);
             return { success: false, message: 'Error de conexión con el servidor.' };
         }
     }
 
     // --- MÉTODOS DE INTERACCIÓN Y VISITAS ---
-    async postView(videoUuid) {
-        return await this.post(ApiRoutes.Video.RegisterView, { video_uuid: videoUuid });
-    }
-
-    async postLike(videoUuid, type) {
-        return await this.post(ApiRoutes.Video.ToggleLike, { video_uuid: videoUuid, type: type });
-    }
-
-    async postSubscribe(identifier) {
-        return await this.post(ApiRoutes.Channel.ToggleSubscription, { identifier: identifier });
-    }
+    async postView(videoUuid) { return await this.post(ApiRoutes.Video.RegisterView, { video_uuid: videoUuid }); }
+    async postLike(videoUuid, type) { return await this.post(ApiRoutes.Video.ToggleLike, { video_uuid: videoUuid, type: type }); }
+    async postSubscribe(identifier) { return await this.post(ApiRoutes.Channel.ToggleSubscription, { identifier: identifier }); }
 
     // --- MÉTODOS DE RETENCIÓN DE VIDEO (HEATMAP) ---
-    async sendRetentionBatch(videoId, data) {
-        return await this.post(ApiRoutes.Metrics.IngestRetention, { videoId: videoId, data: data });
-    }
+    async sendRetentionBatch(videoId, data) { return await this.post(ApiRoutes.Metrics.IngestRetention, { videoId: videoId, data: data }); }
 
     async getVideoHeatmap(videoId) {
-        // En este caso forzamos la petición por GET mediante query params ya que el PHP lo lee por $_GET
         const url = `${this.baseUrl}?route=${ApiRoutes.Metrics.GetRetention}&videoId=${videoId}`;
-        
-        // EXTRAEMOS EL TOKEN CSRF (Esta es la corrección al Error 403)
         const csrfMeta = document.querySelector('meta[name="csrf-token"]');
         const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+        const currentLang = this.getAppLanguage();
 
         try {
-            // AÑADIMOS LOS HEADERS A LA PETICIÓN FETCH
             const response = await fetch(url, {
                 method: 'GET',
+                credentials: 'same-origin',
                 headers: {
-                    'X-CSRF-Token': csrfToken
+                    'X-CSRF-Token': csrfToken,
+                    'X-App-Language': currentLang
                 }
             });
             
             if (!response.ok) return { success: false, data: [] };
             return await response.json();
         } catch (error) {
-            console.error("[ApiService] Error fetching heatmap:", error);
+            console.error("❌ [ApiService] Error fetching heatmap:", error);
             return { success: false, data: [] };
         }
     }
 
-    async getMediaToken(videoUuid) {
-        return await this.post(ApiRoutes.Media.GetMediaToken, { video_uuid: videoUuid });
-    }
+    async getMediaToken(videoUuid) { return await this.post(ApiRoutes.Media.GetMediaToken, { video_uuid: videoUuid }); }
 
     uploadFileWithProgress(route, file, inputName, extraData = {}, onProgress) {
         return new Promise((resolve, reject) => {
@@ -152,23 +154,22 @@ async post(route, data = {}) {
             const xhr = new XMLHttpRequest();
             const csrfMeta = document.querySelector('meta[name="csrf-token"]');
             const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+            const currentLang = this.getAppLanguage();
 
             xhr.open('POST', this.baseUrl, true);
+            xhr.withCredentials = true; 
             if (csrfToken) xhr.setRequestHeader('X-CSRF-Token', csrfToken);
+            xhr.setRequestHeader('X-App-Language', currentLang);
 
             xhr.upload.onprogress = (event) => {
-                if (event.lengthComputable) {
-                    if (onProgress) onProgress(Math.round((event.loaded / event.total) * 100));
-                }
+                if (event.lengthComputable && onProgress) onProgress(Math.round((event.loaded / event.total) * 100));
             };
 
             xhr.onload = () => {
                 if (xhr.status >= 200 && xhr.status < 300) {
-                    try { resolve(JSON.parse(xhr.responseText)); } 
-                    catch (e) { reject('Error parseando JSON'); }
+                    try { resolve(JSON.parse(xhr.responseText)); } catch (e) { reject('Error parseando JSON'); }
                 } else {
-                    try { resolve(JSON.parse(xhr.responseText)); } 
-                    catch (e) { reject(`Error HTTP: ${xhr.status}`); }
+                    try { resolve(JSON.parse(xhr.responseText)); } catch (e) { reject(`Error HTTP: ${xhr.status}`); }
                 }
             };
             xhr.onerror = () => reject('Error de red durante la subida');
@@ -176,10 +177,7 @@ async post(route, data = {}) {
         });
     }
 
-    // Nota: Mantenemos este por retrocompatibilidad si algún archivo viejo lo usa, 
-    // pero el nuevo estándar es postSubscribe(identifier)
     async toggleSubscription(username) { return await this.post(ApiRoutes.Channel.ToggleSubscription, { identifier: username }); }
-    
     async fetchModels() { return await this.post(ApiRoutes.Studio.GetModels); }
     async fetchCategories() { return await this.post(ApiRoutes.Studio.GetCategories); }
 
@@ -207,9 +205,12 @@ async post(route, data = {}) {
             finalResponse = await new Promise((resolve, reject) => {
                 const xhr = new XMLHttpRequest();
                 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                const currentLang = this.getAppLanguage();
 
                 xhr.open('POST', this.baseUrl, true);
+                xhr.withCredentials = true;
                 if (csrfToken) xhr.setRequestHeader('X-CSRF-Token', csrfToken);
+                xhr.setRequestHeader('X-App-Language', currentLang);
 
                 xhr.upload.onprogress = (event) => {
                     if (event.lengthComputable && onProgress) {
@@ -220,11 +221,9 @@ async post(route, data = {}) {
 
                 xhr.onload = () => {
                     if (xhr.status >= 200 && xhr.status < 300) {
-                        try { resolve(JSON.parse(xhr.responseText)); } 
-                        catch (e) { reject('Error parseando JSON'); }
+                        try { resolve(JSON.parse(xhr.responseText)); } catch (e) { reject('Error parseando JSON'); }
                     } else {
-                        try { resolve(JSON.parse(xhr.responseText)); } 
-                        catch (e) { reject(`Error HTTP: ${xhr.status}`); }
+                        try { resolve(JSON.parse(xhr.responseText)); } catch (e) { reject(`Error HTTP: ${xhr.status}`); }
                     }
                 };
                 xhr.onerror = () => reject('Error de red durante la subida');
@@ -241,32 +240,11 @@ async post(route, data = {}) {
     async syncPlaylistVideos(playlistId, videoIdsArray) { return await this.post(ApiRoutes.Studio.SyncPlaylistVideos, { playlist_id: playlistId, video_ids: videoIdsArray }); }
     async getPlaylistDetails(playlistId) { return await this.post(ApiRoutes.App.GetPlaylistDetails, { id: playlistId }); }
     async getPlaylistQueue(playlistUuid) { return await this.post(ApiRoutes.App.GetPlaylistQueue, { playlist_uuid: playlistUuid }); }
-
-    // ==========================================
-    // --- NUEVOS MÉTODOS DE HISTORIAL ---
-    // ==========================================
     
-    async getWatchHistory(page = 1) {
-        return await this.post(ApiRoutes.History.GetWatch, { page: page });
-    }
-
-    async getSearchHistory(page = 1) {
-        return await this.post(ApiRoutes.History.GetSearch, { page: page });
-    }
-
-    async clearWatchHistory() {
-        return await this.post(ApiRoutes.History.ClearWatch);
-    }
-
-    async clearSearchHistory() {
-        return await this.post(ApiRoutes.History.ClearSearch);
-    }
-
-    async removeWatchItem(videoId) {
-        return await this.post(ApiRoutes.History.RemoveWatchItem, { video_id: videoId });
-    }
-
-    async removeSearchItem(searchId) {
-        return await this.post(ApiRoutes.History.RemoveSearchItem, { search_id: searchId });
-    }
+    async getWatchHistory(page = 1) { return await this.post(ApiRoutes.History.GetWatch, { page: page }); }
+    async getSearchHistory(page = 1) { return await this.post(ApiRoutes.History.GetSearch, { page: page }); }
+    async clearWatchHistory() { return await this.post(ApiRoutes.History.ClearWatch); }
+    async clearSearchHistory() { return await this.post(ApiRoutes.History.ClearSearch); }
+    async removeWatchItem(videoId) { return await this.post(ApiRoutes.History.RemoveWatchItem, { video_id: videoId }); }
+    async removeSearchItem(searchId) { return await this.post(ApiRoutes.History.RemoveSearchItem, { search_id: searchId }); }
 }

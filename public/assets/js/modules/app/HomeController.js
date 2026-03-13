@@ -15,16 +15,9 @@ export class HomeController {
 
     destroy() {
         window.removeEventListener('resize', this.handleResizeBound);
-        
-        if (this.verticalContainer) {
-            this.verticalContainer.removeEventListener('scroll', this.handleScrollBound);
-        }
-        if (this.btnLeft) {
-            this.btnLeft.removeEventListener('click', this.handleLeftClickBound);
-        }
-        if (this.btnRight) {
-            this.btnRight.removeEventListener('click', this.handleRightClickBound);
-        }
+        if (this.verticalContainer) this.verticalContainer.removeEventListener('scroll', this.handleScrollBound);
+        if (this.btnLeft) this.btnLeft.removeEventListener('click', this.handleLeftClickBound);
+        if (this.btnRight) this.btnRight.removeEventListener('click', this.handleRightClickBound);
     }
 
     async init() {
@@ -35,6 +28,7 @@ export class HomeController {
         this.btnRight = document.getElementById('btn-scroll-right');
 
         if (this.horizontalContainer || this.verticalContainer || this.playlistContainer) {
+            console.log("🚀 [HomeController] Iniciando carga de Feed...");
             await this.loadFeed();
         }
     }
@@ -43,7 +37,23 @@ export class HomeController {
         try {
             const response = await this.api.post(ApiRoutes.App.GetFeed, { limit: 20, offset: 0 });
             
+            console.log("🔍 [HomeController] Respuesta completa del servidor recibida:", response);
+
             if (response && response.success) {
+                // 🛠️ LOG DE DIAGNÓSTICO PROFUNDO PARA MULTI-IDIOMA
+                if (response.data.horizontal && response.data.horizontal.length > 0) {
+                    console.log("📺 [HomeController] Analizando títulos de videos horizontales:");
+                    response.data.horizontal.forEach((v, index) => {
+                        console.log(`  👉 Video ${index + 1}:`, {
+                            titulo_final: v.title,
+                            titulo_original: v.original_title || 'No modificado',
+                            traducciones_db: v.localized_titles
+                        });
+                    });
+                } else {
+                    console.warn("⚠️ [HomeController] No llegaron videos horizontales.");
+                }
+
                 this.renderFeed(response.data.vertical, this.verticalContainer, 'vertical');
                 this.renderFeed(response.data.horizontal, this.horizontalContainer, 'horizontal');
                 this.renderPlaylistFeed(response.data.playlists, this.playlistContainer);
@@ -52,10 +62,11 @@ export class HomeController {
                     this.initCarousel();
                 }
             } else {
+                console.error("❌ [HomeController] La API indicó éxito=false", response);
                 this.showError('No se pudieron cargar los videos en este momento.');
             }
         } catch (error) {
-            console.error('Error cargando el feed:', error);
+            console.error('❌ [HomeController] Error crítico cargando el feed:', error);
             this.showError('Ocurrió un error de red al intentar cargar el contenido.');
         }
     }
@@ -66,11 +77,8 @@ export class HomeController {
         if (!videos || videos.length === 0) {
             if (orientation === 'vertical') {
                 const sectionWrapper = container.closest('.component-feed-section');
-                if (sectionWrapper) {
-                    sectionWrapper.style.display = 'none';
-                } else {
-                    container.style.display = 'none';
-                }
+                if (sectionWrapper) sectionWrapper.style.display = 'none';
+                else container.style.display = 'none';
             } else {
                 container.innerHTML = `
                     <div class="component-empty-state">
@@ -96,11 +104,8 @@ export class HomeController {
 
         if (!playlists || playlists.length === 0) {
             const sectionWrapper = container.closest('.component-feed-section');
-            if (sectionWrapper) {
-                sectionWrapper.style.display = 'none';
-            } else {
-                container.style.display = 'none';
-            }
+            if (sectionWrapper) sectionWrapper.style.display = 'none';
+            else container.style.display = 'none';
             return;
         }
 
@@ -146,20 +151,15 @@ export class HomeController {
         const scrollLeft = this.verticalContainer.scrollLeft;
         const maxScrollLeft = this.verticalContainer.scrollWidth - this.verticalContainer.clientWidth;
 
-        if (scrollLeft <= 0) {
-            this.btnLeft.classList.add('disabled');
-        } else {
-            this.btnLeft.classList.remove('disabled');
-        }
+        if (scrollLeft <= 0) this.btnLeft.classList.add('disabled');
+        else this.btnLeft.classList.remove('disabled');
 
-        if (Math.ceil(scrollLeft) >= maxScrollLeft - 1) {
-            this.btnRight.classList.add('disabled');
-        } else {
-            this.btnRight.classList.remove('disabled');
-        }
+        if (Math.ceil(scrollLeft) >= maxScrollLeft - 1) this.btnRight.classList.add('disabled');
+        else this.btnRight.classList.remove('disabled');
     }
 
     createCardHTML(video, orientation) {
+        // AQUÍ ES DONDE SE INYECTA EL TÍTULO QUE PHP PROCESÓ
         const title = video.title || 'Video sin título';
         const views = video.views || 0;
         const timeAgo = this.timeSince(new Date(video.created_at));
@@ -171,9 +171,7 @@ export class HomeController {
         const cardModifierClass = isVertical ? 'component-video-card--vertical' : '';
         
         const basePath = window.AppBasePath || '';
-        const navUrl = isVertical 
-            ? `${basePath}/shorts/${video.uuid}` 
-            : `${basePath}/watch/${video.uuid}`; 
+        const navUrl = isVertical ? `${basePath}/shorts/${video.uuid}` : `${basePath}/watch/${video.uuid}`; 
 
         return `
             <div class="component-video-card ${cardModifierClass}" style="--local-dominant-color: ${dominantColor}; cursor: pointer;" data-nav="${navUrl}">
@@ -220,16 +218,13 @@ export class HomeController {
 
         return `
             <div class="component-video-card" style="--local-dominant-color: ${dominantColor}; cursor: pointer;" data-nav="${navUrl}">
-                
                 <div class="component-video-card__top">
                     <img src="${playlist.thumbnail_url}" alt="Miniatura de ${title}" class="component-video-card__thumbnail" loading="lazy">
-                    
                     <span class="component-video-card__duration" style="display: flex; align-items: center; gap: 4px; padding: 4px 8px;">
                         <span class="material-symbols-rounded" style="font-size: 14px;">playlist_play</span>
                         ${videoCount} videos
                     </span>
                 </div>
-
                 <div class="component-video-card__bottom">
                     <div class="component-video-card__avatar">
                         <img src="${playlist.avatar_url}" alt="Perfil de ${playlist.username}" loading="lazy">
@@ -246,7 +241,6 @@ export class HomeController {
 
     attachHoverEvents(container) {
         const cards = container.querySelectorAll('.component-video-card');
-        
         cards.forEach(card => {
             card.addEventListener('mouseenter', () => {
                 const dominantColor = card.style.getPropertyValue('--local-dominant-color');
@@ -268,9 +262,7 @@ export class HomeController {
         const mStr = m.toString().padStart(2, '0');
         const sStr = s.toString().padStart(2, '0');
 
-        if (h > 0) {
-            return `${h}:${mStr}:${sStr}`;
-        }
+        if (h > 0) return `${h}:${mStr}:${sStr}`;
         return `${mStr}:${sStr}`;
     }
 
