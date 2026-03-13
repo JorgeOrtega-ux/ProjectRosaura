@@ -1,4 +1,4 @@
-// public/assets/js/core/components/PlaylistCardSystem.js
+// public/assets/js/modules/app/PlaylistCardSystem.js
 
 export class PlaylistCardSystem {
     
@@ -36,9 +36,7 @@ export class PlaylistCardSystem {
         const thumbSrc = this.resolveThumbUrl(playlistData.thumbnail_url || playlistData.thumbnail_path);
         
         // Si es la de sistema (Watch Later), usamos el alias 'WL' para que el router sepa qué hacer.
-        // Si no, usamos su UUID normal.
         const routingParam = (isSystem && playlistData.type === 'watch_later') ? 'WL' : uuid;
-        
         const watchUrl = `${basePath}/playlist?list=${routingParam}`;
         
         let visibilityIcon = 'public';
@@ -49,6 +47,10 @@ export class PlaylistCardSystem {
             ? `<div class="component-playlist-card__badge-system"><span class="material-symbols-rounded">push_pin</span></div>` 
             : '';
 
+        // MANEJO DE TEXTOS SEGURO: Verificamos directamente el objeto de traducciones para no romper el motor
+        const textPlayAll = (window.AppTranslations && window.AppTranslations['playlist_play_all']) ? window.AppTranslations['playlist_play_all'] : 'Reproducir todo';
+        const textViewFull = (window.AppTranslations && window.AppTranslations['playlist_view_full']) ? window.AppTranslations['playlist_view_full'] : 'Ver lista completa';
+
         return `
             <a href="${watchUrl}" class="component-playlist-card" onclick="event.preventDefault(); window.spaRouter.navigate('${watchUrl}');">
                 <div class="component-playlist-card__thumbnail-container">
@@ -56,7 +58,7 @@ export class PlaylistCardSystem {
                     <div class="component-playlist-card__overlay">
                         <div class="component-playlist-card__overlay-content">
                             <span class="material-symbols-rounded component-playlist-card__icon-play">play_arrow</span>
-                            <span class="component-playlist-card__play-text">${__('playlist_play_all', 'Reproducir todo')}</span>
+                            <span class="component-playlist-card__play-text">${textPlayAll}</span>
                         </div>
                     </div>
                     <div class="component-playlist-card__count-badge">
@@ -69,7 +71,7 @@ export class PlaylistCardSystem {
                     <h3 class="component-playlist-card__title" title="${title}">${title}</h3>
                     <div class="component-playlist-card__meta">
                         <span class="material-symbols-rounded component-playlist-card__visibility" title="${visibility}">${visibilityIcon}</span>
-                        <span class="component-playlist-card__count">${__('playlist_view_full', 'Ver lista completa')}</span>
+                        <span class="component-playlist-card__count">${textViewFull}</span>
                     </div>
                 </div>
             </a>

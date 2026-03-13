@@ -6,11 +6,12 @@ export const ApiRoutes = {
         GetPlaylistDetails: 'app.get_playlist_details',
         GetPlaylistQueue: 'app.get_playlist_queue' 
     },
-    // ---> AÑADIDO: BLOQUE PLAYLIST <---
     Playlist: {
         GetForVideo: 'playlist.get_for_video',
         ToggleVideo: 'playlist.toggle_video',
-        Create: 'playlist.create'
+        Create: 'playlist.create',
+        // ---> AÑADIDO: CONSTANTE PARA OBTENER TODAS LAS PLAYLISTS <---
+        GetAllPlaylists: 'playlist.get_all'
     },
     Search: {
         Get: 'search.get' 

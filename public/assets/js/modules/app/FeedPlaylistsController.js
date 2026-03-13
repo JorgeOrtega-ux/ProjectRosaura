@@ -2,7 +2,7 @@
 
 import { ApiService } from '../../core/api/ApiServices.js';
 import { ApiRoutes } from '../../core/api/ApiRoutes.js';
-import { PlaylistCardSystem } from '../../core/components/PlaylistCardSystem.js';
+import { PlaylistCardSystem } from './PlaylistCardSystem.js';
 
 export class FeedPlaylistsController {
     constructor() {
@@ -23,18 +23,17 @@ export class FeedPlaylistsController {
 
     async loadPlaylists() {
         try {
-            // Buscamos la ruta en el mapa centralizado, si no existe usamos un fallback seguro
-            const basePath = window.AppBasePath || '';
-            const route = (ApiRoutes.App && ApiRoutes.App.GetAllPlaylists) 
-                ? ApiRoutes.App.GetAllPlaylists 
-                : `${basePath}/api/playlist/all`;
+            // CORRECCIÓN: Ahora utilizamos la ruta correctamente declarada en ApiRoutes
+            const route = ApiRoutes.Playlist.GetAllPlaylists;
             
+            // Hacemos el post mandando el objeto vacío (el backend no necesita parámetros extra aquí)
             const response = await this.api.post(route, {});
             
             if (response && response.success) {
                 this.renderPlaylists(response.data);
             } else {
                 if (response.code === 401) {
+                    const basePath = window.AppBasePath || '';
                     if (window.spaRouter) window.spaRouter.navigate(`${basePath}/login`);
                     else window.location.href = `${basePath}/login`;
                     return;

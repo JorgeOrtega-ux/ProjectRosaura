@@ -11,7 +11,7 @@ export class StudioManagePlaylistController {
 
         this.api = api;
         this.state = state;
-        this.playlistsData = []; // Guardamos los datos localmente para editarlos
+        this.playlistsData = []; 
         this.selectedPlaylistId = null;
 
         this.handleRouteChangeBound = this.destroy.bind(this);
@@ -62,7 +62,6 @@ export class StudioManagePlaylistController {
         const btnDelete = document.getElementById('btnDeletePlaylist');
         const btnManageVideos = document.getElementById('btnManageVideos');
 
-        // Activamos o desactivamos botones en base a si hay selección
         if (this.selectedPlaylistId) {
             if(btnEdit) { btnEdit.removeAttribute('disabled'); btnEdit.classList.remove('disabled'); }
             if(btnDelete) { btnDelete.removeAttribute('disabled'); btnDelete.classList.remove('disabled'); }
@@ -78,17 +77,14 @@ export class StudioManagePlaylistController {
         const row = document.getElementById(`playlist-row-${id}`);
         const isAlreadySelected = row && row.classList.contains('component-table-row--selected');
 
-        // Limpiar selección previa
         this.selectedPlaylistId = null;
         document.querySelectorAll('#managePlaylistTableBody tr').forEach(r => r.classList.remove('component-table-row--selected'));
 
-        // Si se vuelve a hacer clic en la fila seleccionada, la deseleccionamos
         if (isAlreadySelected) {
             this.updateActionButtons();
             return;
         }
 
-        // Seleccionar nueva fila
         this.selectedPlaylistId = id;
         if (row) row.classList.add('component-table-row--selected');
 
@@ -97,7 +93,11 @@ export class StudioManagePlaylistController {
 
     async initManagePlaylistView() {
         const tbody = document.getElementById('managePlaylistTableBody');
-        if (!tbody) return;
+        const table = document.querySelector('.component-table--media');
+        if (!tbody || !table) return;
+
+        // Capa de seguridad visual: Si la tabla tiene prevent-system, no renderizamos listas no custom.
+        const preventSystem = table.getAttribute('data-prevent-system') === 'true';
 
         this.selectedPlaylistId = null;
         this.updateActionButtons();
@@ -107,7 +107,14 @@ export class StudioManagePlaylistController {
             const response = await this.api.post(ApiRoutes.Studio.GetPlaylists);
             
             if (response && response.status === 'success') {
-                this.playlistsData = response.data;
+                
+                // Filtrado extra en frontend (aunque el backend ya las filtra, es seguridad en cascada)
+                let dataToRender = response.data || [];
+                if (preventSystem) {
+                    dataToRender = dataToRender.filter(p => p.type === 'custom' || !p.type);
+                }
+                
+                this.playlistsData = dataToRender;
                 
                 if (!this.playlistsData || this.playlistsData.length === 0) {
                     tbody.innerHTML = `
@@ -115,7 +122,7 @@ export class StudioManagePlaylistController {
                             <td colspan="6" class="component-empty-table-cell">
                                 <div class="component-empty-state component-empty-state--table">
                                     <span class="material-symbols-rounded component-empty-state-icon">playlist_play</span>
-                                    <p class="component-empty-state-text">No has creado ninguna lista de reproducción aún.</p>
+                                    <p class="component-empty-state-text">No has creado ninguna lista de reproducción (custom) aún.</p>
                                 </div>
                             </td>
                         </tr>`;
@@ -134,7 +141,6 @@ export class StudioManagePlaylistController {
                     if(p.visibility === 'unlisted') visText = 'No listada';
                     if(p.visibility === 'private') visText = 'Privada';
 
-                    // Lógica para formatear la URL de la miniatura correctamente
                     let thumbUrl = p.thumbnail_path ? p.thumbnail_path : '';
                     if (thumbUrl && !thumbUrl.startsWith('http')) {
                         let base = window.AppBasePath || '';
@@ -149,7 +155,6 @@ export class StudioManagePlaylistController {
 
                     const videoCount = p.video_count || 0;
                     
-                    // El badget estilo "Home"
                     const countBadge = `
                         <div style="position: absolute; bottom: 4px; right: 4px; background: rgba(0, 0, 0, 0.8); color: white; padding: 2px 4px; border-radius: 4px; font-size: 12px; font-weight: 500; display: flex; align-items: center; gap: 2px; line-height: 1; pointer-events: none;">
                             <span class="material-symbols-rounded" style="font-size: 14px;">playlist_play</span>${videoCount}
@@ -180,7 +185,7 @@ export class StudioManagePlaylistController {
                                 </div>
                             </div>
                         </td>
-                        <td><span class="component-badge component-badge--sm">Playlist</span></td>
+                        <td><span class="component-badge component-badge--sm">Personalizada</span></td>
                         <td><span class="component-badge component-badge--sm">${visText}</span></td>
                         <td><span class="component-badge component-badge--sm">${date}</span></td>
                         <td><span class="component-badge component-badge--sm">${videoCount} videos</span></td>
@@ -292,7 +297,7 @@ export class StudioManagePlaylistController {
             });
 
             if (response && response.status === 'success') {
-                this.initManagePlaylistView(); // Recarga la tabla
+                this.initManagePlaylistView(); 
             } else {
                 alert("Error al eliminar la lista: " + (response ? response.message : 'Error desconocido'));
             }
@@ -311,27 +316,22 @@ export class StudioManagePlaylistController {
                 const btnSave = box.querySelector('#btnSavePlaylistVideos');
 
                 try {
-                    // Obtener todos los videos del usuario
                     const allVideosRes = await this.api.fetchAllVideos();
-                    
-                    // Obtener los videos que ya están en esta playlist
                     const playlistVideosRes = await this.api.fetchPlaylistVideos(this.selectedPlaylistId);
 
                     if (allVideosRes.status === 'success' && playlistVideosRes.status === 'success') {
                         const allVideos = allVideosRes.data || [];
                         const playlistVideos = playlistVideosRes.data || [];
                         
-                        // Extraemos un arreglo puro de IDs para facilitar la búsqueda
                         const playlistVideoIds = playlistVideos.map(v => v.id);
 
-                        container.innerHTML = ''; // Limpiamos el spinner
+                        container.innerHTML = ''; 
 
                         if (allVideos.length === 0) {
                             container.innerHTML = '<p style="text-align:center; padding: 20px; color: var(--text-secondary);">No tienes videos subidos aún.</p>';
                             return;
                         }
 
-                        // Renderizamos cada video en la lista
                         allVideos.forEach(v => {
                             const isChecked = playlistVideoIds.includes(v.id) ? 'checked' : '';
                             const basePath = window.AppBasePath || '';
@@ -354,14 +354,12 @@ export class StudioManagePlaylistController {
                                 </div>
                             `;
 
-                            // Efecto hover simple por JS (Opcional)
                             row.addEventListener('mouseover', () => row.style.backgroundColor = 'var(--bg-hover, #f9f9f9)');
                             row.addEventListener('mouseout', () => row.style.backgroundColor = 'transparent');
 
                             container.appendChild(row);
                         });
 
-                        // Evento para el botón de Aceptar/Guardar
                         if (btnSave) {
                             btnSave.addEventListener('click', async () => {
                                 btnSave.classList.add('loading');

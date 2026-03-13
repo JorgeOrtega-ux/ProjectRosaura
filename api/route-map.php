@@ -14,12 +14,13 @@ return [
     // --- RUTAS DE INTERACCIÓN DE VIDEOS ---
     'video.register_view'      => ['controller' => 'App\Api\Controllers\VideoController', 'action' => 'registerView'],
     'video.toggle_like'        => ['controller' => 'App\Api\Controllers\VideoController', 'action' => 'toggleLike'],
-    // ELIMINADO: video.toggle_save
 
-    // --- NUEVO: SISTEMA DE "GUARDAR EN PLAYLIST" MODAL ---
+    // --- SISTEMA DE "GUARDAR EN PLAYLIST" Y FEED ---
     'playlist.get_for_video'   => ['controller' => 'App\Api\Controllers\PlaylistController', 'action' => 'getPlaylistsForVideo'],
     'playlist.toggle_video'    => ['controller' => 'App\Api\Controllers\PlaylistController', 'action' => 'toggleVideo'],
     'playlist.create'          => ['controller' => 'App\Api\Controllers\PlaylistController', 'action' => 'createPlaylist'],
+    // ---> AÑADIDO: RUTA PARA EL FEED DE PLAYLISTS <---
+    'playlist.get_all'         => ['controller' => 'App\Api\Controllers\PlaylistController', 'action' => 'getAllPlaylists'],
 
     // --- RUTAS DE MEDIOS PROTEGIDOS (FIRMADO) ---
     'media.get_token'          => ['controller' => 'App\Api\Controllers\MediaController', 'action' => 'getStreamUrl'],
