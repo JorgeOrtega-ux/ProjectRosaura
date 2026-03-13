@@ -170,20 +170,20 @@ export class HomeController {
         const isVertical = orientation === 'vertical';
         const cardModifierClass = isVertical ? 'component-video-card--vertical' : '';
         
-        // CORRECCIÓN: Agregar basePath para respetar la ruta /ProjectRosaura si existe
         const basePath = window.AppBasePath || '';
         const navUrl = isVertical 
             ? `${basePath}/shorts/${video.uuid}` 
             : `${basePath}/watch/${video.uuid}`; 
 
         return `
-            <div class="component-video-card ${cardModifierClass}" style="--local-dominant-color: ${dominantColor};" data-nav="${navUrl}" style="cursor: pointer;">
+            <div class="component-video-card ${cardModifierClass}" style="--local-dominant-color: ${dominantColor}; cursor: pointer;" data-nav="${navUrl}">
                 
                 <div class="component-video-card__top">
                     <img src="${video.thumbnail_url}" alt="Miniatura de ${title}" class="component-video-card__thumbnail" loading="lazy">
                     
                     <video 
                         data-src="${videoSrc}" 
+                        data-uuid="${video.uuid}"
                         class="component-video-card__player" 
                         muted 
                         loop 
@@ -215,12 +215,11 @@ export class HomeController {
         const timeAgo = this.timeSince(new Date(playlist.created_at));
         const dominantColor = playlist.thumbnail_dominant_color !== 'transparent' ? playlist.thumbnail_dominant_color : '#333'; 
         
-        // CORRECCIÓN: Agregar basePath para respetar la ruta /ProjectRosaura si existe
         const basePath = window.AppBasePath || '';
         const navUrl = `${basePath}/playlist/${playlist.uuid}`;
 
         return `
-            <div class="component-video-card" style="--local-dominant-color: ${dominantColor};" data-nav="${navUrl}" style="cursor: pointer;">
+            <div class="component-video-card" style="--local-dominant-color: ${dominantColor}; cursor: pointer;" data-nav="${navUrl}">
                 
                 <div class="component-video-card__top">
                     <img src="${playlist.thumbnail_url}" alt="Miniatura de ${title}" class="component-video-card__thumbnail" loading="lazy">

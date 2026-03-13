@@ -8,10 +8,6 @@ export default class SearchController {
         console.log(`🟡 [SearchController] Query extraída de URL: "${this.query}"`);
         
         this.cacheDOM();
-        
-        // ❌ CORRECCIÓN: Se eliminó this.init() del constructor.
-        // AppInit.js ya se encarga de llamar a init() automáticamente después de instanciar.
-        // Esto previene que se disparen las peticiones 2 veces.
     }
 
     cacheDOM() {
@@ -25,22 +21,11 @@ export default class SearchController {
         
         this.videosSection = document.getElementById('search-videos-section');
         this.videosGrid = document.getElementById('search-videos-grid');
-
-        console.log('🟡 [SearchController] Elementos DOM cacheados:', {
-            queryDisplay: !!this.queryDisplay,
-            loadingState: !!this.loadingState,
-            emptyState: !!this.emptyState,
-            channelsSection: !!this.channelsSection,
-            channelsGrid: !!this.channelsGrid,
-            videosSection: !!this.videosSection,
-            videosGrid: !!this.videosGrid
-        });
     }
 
     async init() {
         console.log('🟡 [SearchController] Ejecutando init()...');
         
-        // Guardar el basePath a nivel de clase para que los renders lo puedan usar
         this.basePath = window.AppBasePath || '/ProjectRosaura';
 
         if (!this.query) {
@@ -62,18 +47,12 @@ export default class SearchController {
         try {
             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
             
-            console.log(`[🔍 Configuración] AppBasePath: "${this.basePath}", CSRF Token: "${csrfToken ? 'Encontrado' : 'Faltante'}"`);
-            
-            // Verificar si ApiRoutes existe y tiene la propiedad
             if (!ApiRoutes || !ApiRoutes.Search || !ApiRoutes.Search.Get) {
                 console.error('❌ [Error Crítico] ApiRoutes.Search.Get NO está definido. Revisa ApiRoutes.js');
-                console.log('Contenido de ApiRoutes:', ApiRoutes);
             }
 
             const apiUrl = `${this.basePath}/api/index.php?route=${ApiRoutes?.Search?.Get || 'search.get'}&q=${encodeURIComponent(this.query)}`;
             
-            console.log(`[Paso 1] 🌐 Endpoint objetivo construido EXACTO:`, apiUrl);
-
             const fetchOptions = {
                 method: 'GET',
                 headers: {
@@ -82,42 +61,28 @@ export default class SearchController {
                     'Accept': 'application/json'
                 }
             };
-            console.log(`[Paso 1.5] 📦 Opciones de Fetch enviadas:`, fetchOptions);
 
             const response = await fetch(apiUrl, fetchOptions);
-            
-            console.log(`[Paso 2] 📡 Objeto Response Completo:`, response);
-            console.log(`[Paso 2.1] 📡 Estado HTTP Recibido: ${response.status} ${response.statusText}`);
-            console.log(`[Paso 2.2] 📡 Headers de la respuesta:`, Object.fromEntries(response.headers.entries()));
-            
             const rawText = await response.text();
-            console.log(`[Paso 3] 📄 RESPUESTA CRUDA DEL SERVIDOR (Longitud: ${rawText.length} caracteres):\n`, rawText);
 
             if (!response.ok) {
-                console.error(`❌ [Paso 3.1] La respuesta NO fue OK (Status: ${response.status}).`);
                 throw new Error(`HTTP Error ${response.status}. Revisa la respuesta cruda en la consola.`);
             }
             
             let result;
             try {
                 result = JSON.parse(rawText);
-                console.log(`[Paso 4] 🧩 JSON Parseado con éxito:`, result);
             } catch (jsonError) {
-                console.error("❌ [Paso 4] Error CRÍTICO al parsear JSON:", jsonError.message);
-                console.error("❌ [Paso 4] El texto que PHP devolvió y falló al parsear fue:", rawText);
-                throw new Error("Respuesta inválida del servidor (No es un JSON válido). Revisa el Paso 3 para ver qué imprimió PHP.");
+                throw new Error("Respuesta inválida del servidor (No es un JSON válido).");
             }
 
             if (result.success) {
-                console.log(`[Paso 5] ✅ Búsqueda procesada en backend con éxito. Datos:`, result.data);
                 this.renderResults(result.data);
             } else {
-                console.error('🔴 [Paso 5] Backend devolvió success: false. Mensaje del servidor:', result.message);
                 this.showEmptyState();
             }
         } catch (error) {
-            console.error('💥 [SearchController - fetchResults] Excepción capturada en el bloque catch:', error);
-            console.error('💥 [Stack Trace]:', error.stack);
+            console.error('💥 [SearchController - fetchResults] Excepción capturada:', error);
             this.showEmptyState();
         } finally {
             console.log('🏁 [DEEP LOG - SEARCH] Finalizando ejecución de fetchResults.');
@@ -126,45 +91,43 @@ export default class SearchController {
     }
 
     renderResults(data) {
-        console.log('🟡 [SearchController] Ejecutando renderResults() con data:', data);
         if (this.loadingState) this.loadingState.style.display = 'none';
 
         const hasChannels = data.channels && data.channels.length > 0;
         const hasVideos = data.videos && data.videos.length > 0;
 
-        console.log(`🟡 [SearchController] Resultados analizados para render: Canales(${hasChannels ? data.channels.length : 0}), Videos(${hasVideos ? data.videos.length : 0})`);
-
         if (!hasChannels && !hasVideos) {
-            console.log('🟡 [SearchController] No hay resultados de videos ni canales. Mostrando empty state.');
             this.showEmptyState();
             return;
         }
 
         if (hasChannels && this.channelsSection) {
-            console.log('🟡 [SearchController] Renderizando sección de canales...');
             this.channelsSection.style.display = 'block';
             this.renderChannels(data.channels);
         }
 
         if (hasVideos && this.videosSection) {
-            console.log('🟡 [SearchController] Renderizando sección de videos...');
             this.videosSection.style.display = 'block';
             this.renderVideos(data.videos);
         }
     }
 
     renderChannels(channels) {
-        if (!this.channelsGrid) {
-            console.error('❌ [SearchController] No se encontró this.channelsGrid en el DOM para renderizar canales.');
-            return;
-        }
+        if (!this.channelsGrid) return;
         this.channelsGrid.innerHTML = '';
         
         channels.forEach(channel => {
             const channelCard = document.createElement('div');
             channelCard.classList.add('component-search-channel-card');
             
-            const avatarSrc = channel.avatar_path ? `${this.basePath}/public/storage/profilePictures/uploaded/${channel.avatar_path}` : `${this.basePath}/public/storage/profilePictures/default/default.png`;
+            const buildUrl = (path, defaultUrl) => {
+                if (!path) return defaultUrl;
+                if (path.startsWith('http')) return path;
+                const clean = path.replace(/^\/?public\//, '');
+                return `${this.basePath}/public/${clean}`;
+            };
+
+            const avatarSrc = buildUrl(channel.avatar_path, `${this.basePath}/public/storage/profilePictures/default/default.png`);
 
             channelCard.innerHTML = `
                 <div class="component-search-channel-avatar">
@@ -183,50 +146,125 @@ export default class SearchController {
 
             this.channelsGrid.appendChild(channelCard);
         });
-        console.log(`✅ [SearchController] Renderizados ${channels.length} canales en el DOM exitosamente.`);
     }
 
     renderVideos(videos) {
-        if (!this.videosGrid) {
-            console.error('❌ [SearchController] No se encontró this.videosGrid en el DOM para renderizar videos.');
-            return;
-        }
+        if (!this.videosGrid) return;
+        
+        // CORRECCIÓN: Usar exactamente la misma grilla que en Home
+        this.videosGrid.className = 'component-video-grid';
         this.videosGrid.innerHTML = '';
         
         videos.forEach(video => {
-            const videoCard = document.createElement('div');
-            videoCard.classList.add('component-search-video-card');
+            const title = video.title || 'Video sin título';
+            const views = video.views || 0;
+            const uuid = video.uuid || video.id_video;
             
-            // CORRECCIÓN 1: Fallback SVG embebido directo para prevenir errores 404
-            const fallbackPath = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' fill='%23111'/%3E%3Ctext x='50%25' y='50%25' fill='%23777' font-family='sans-serif' font-size='14' text-anchor='middle' dy='.3em'%3ESin miniatura%3C/text%3E%3C/svg%3E";
+            // Re-utilizar rutinas idénticas a Home
+            const createdDate = video.created_at ? new Date(video.created_at) : new Date();
+            const timeAgo = this.timeSince(createdDate);
+            const formattedDuration = this.formatDuration(video.duration || 0);
+            const dominantColor = video.thumbnail_dominant_color && video.thumbnail_dominant_color !== 'transparent' ? video.thumbnail_dominant_color : '#333';
             
-            // CORRECCIÓN 2: Agregar '/public/' a la ruta del thumbnail si existe
-            const thumbPath = video.thumbnail_path 
-                ? `${this.basePath}/public/${video.thumbnail_path}` 
-                : fallbackPath;
+            const fallbackThumb = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' fill='%23111'/%3E%3Ctext x='50%25' y='50%25' fill='%23777' font-family='sans-serif' font-size='14' text-anchor='middle' dy='.3em'%3ESin miniatura%3C/text%3E%3C/svg%3E";
             
-            videoCard.innerHTML = `
-                <div class="component-search-video-thumbnail">
-                    <img src="${thumbPath}" alt="${video.title}" onerror="this.onerror=null; this.src='${fallbackPath}'">
-                </div>
-                <div class="component-search-video-details">
-                    <h4 class="component-search-video-title">${video.title}</h4>
-                    <p class="component-search-video-desc">${video.description ? video.description.substring(0, 120) + '...' : 'Sin descripción'}</p>
+            const buildUrl = (path, fallback) => {
+                if (!path) return fallback;
+                if (path.startsWith('http')) return path;
+                const clean = path.replace(/^\/?public\//, '');
+                return `${this.basePath}/public/${clean}`;
+            };
+
+            const thumbPath = buildUrl(video.thumbnail_path, fallbackThumb);
+            const avatarSrc = buildUrl(video.avatar_path, `${this.basePath}/public/storage/profilePictures/default/default.png`);
+            
+            // Si el motor de búsqueda envía el path del m3u8 directo, lo seteamos. VideoCardSystem sobre-escribirá con token.
+            const videoSrc = buildUrl(video.hls_path, '');
+            
+            const navUrl = `${this.basePath}/watch/${uuid}`;
+
+            // Plantilla HTML de Card IDENTICA a Home
+            const cardHTML = `
+                <div class="component-video-card" style="--local-dominant-color: ${dominantColor}; cursor: pointer;" data-nav="${navUrl}">
+                    <div class="component-video-card__top">
+                        <img src="${thumbPath}" alt="Miniatura de ${title}" class="component-video-card__thumbnail" loading="lazy" onerror="this.onerror=null; this.src='${fallbackThumb}'">
+                        
+                        <video 
+                            data-src="${videoSrc}" 
+                            data-uuid="${uuid}"
+                            class="component-video-card__player" 
+                            muted 
+                            loop 
+                            playsinline>
+                        </video>
+
+                        <span class="component-video-card__duration">${formattedDuration}</span>
+                    </div>
+
+                    <div class="component-video-card__bottom">
+                        <div class="component-video-card__avatar">
+                            <img src="${avatarSrc}" alt="Perfil de ${video.username || 'Usuario'}" loading="lazy" onerror="this.onerror=null; this.src='${this.basePath}/public/storage/profilePictures/default/default.png'">
+                        </div>
+                        <div class="component-video-card__info">
+                            <h3 class="component-video-card__title" title="${title}">${title}</h3>
+                            <p class="component-video-card__user">${video.username || 'Usuario Desconocido'}</p>
+                            <p class="component-video-card__meta">${views} vistas • ${timeAgo}</p>
+                        </div>
+                    </div>
                 </div>
             `;
 
-            videoCard.addEventListener('click', () => {
-                if (window.SpaRouter) window.SpaRouter.navigate(`/watch/${video.id_video}`);
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = cardHTML.trim();
+            const cardElement = tempDiv.firstChild;
+
+            cardElement.addEventListener('click', () => {
+                if (window.SpaRouter) window.SpaRouter.navigate(`/watch/${uuid}`);
             });
 
-            this.videosGrid.appendChild(videoCard);
+            cardElement.addEventListener('mouseenter', () => {
+                const domColor = cardElement.style.getPropertyValue('--local-dominant-color');
+                if (domColor && domColor.trim() !== '') {
+                    document.documentElement.style.setProperty('--global-dominant-color', domColor);
+                }
+            });
+
+            this.videosGrid.appendChild(cardElement);
         });
-        console.log(`✅ [SearchController] Renderizados ${videos.length} videos en el DOM exitosamente.`);
+    }
+
+    formatDuration(seconds) {
+        const totalSeconds = parseInt(seconds, 10);
+        if (isNaN(totalSeconds) || totalSeconds <= 0) return '00:00';
+
+        const h = Math.floor(totalSeconds / 3600);
+        const m = Math.floor((totalSeconds % 3600) / 60);
+        const s = totalSeconds % 60;
+
+        const mStr = m.toString().padStart(2, '0');
+        const sStr = s.toString().padStart(2, '0');
+
+        if (h > 0) return `${h}:${mStr}:${sStr}`;
+        return `${mStr}:${sStr}`;
+    }
+
+    timeSince(date) {
+        const seconds = Math.floor((new Date() - date) / 1000);
+        let interval = seconds / 31536000;
+        if (interval > 1) return Math.floor(interval) + " años";
+        interval = seconds / 2592000;
+        if (interval > 1) return Math.floor(interval) + " meses";
+        interval = seconds / 86400;
+        if (interval > 1) return Math.floor(interval) + " días";
+        interval = seconds / 3600;
+        if (interval > 1) return Math.floor(interval) + " horas";
+        interval = seconds / 60;
+        if (interval > 1) return Math.floor(interval) + " minutos";
+        return "instantes";
     }
 
     showEmptyState() {
         if (this.loadingState) this.loadingState.style.display = 'none';
         if (this.emptyState) this.emptyState.style.display = 'flex';
-        console.log('🟡 [SearchController] Estado vacío mostrado visualmente al usuario.');
     }
 }

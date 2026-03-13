@@ -2,8 +2,8 @@ export class VideoCardSystem {
     constructor() {
         this.hlsInstances = new WeakMap();
         this.playPromises = new WeakMap();
-        this.hoverTimers = new WeakMap(); // Almacena los temporizadores para evitar el autoplay instantáneo
-        this.hoverDelay = 550; // Milisegundos de espera antes de iniciar la carga/reproducción
+        this.hoverTimers = new WeakMap();
+        this.hoverDelay = 550;
     }
 
     init() {
@@ -20,12 +20,10 @@ export class VideoCardSystem {
         
         if (!video) return;
 
-        // Si por alguna razón ya había un temporizador corriendo para esta tarjeta, lo limpiamos
         if (this.hoverTimers.has(card)) {
             clearTimeout(this.hoverTimers.get(card));
         }
 
-        // Iniciamos el temporizador. La reproducción solo arrancará si el mouse se mantiene el tiempo definido.
         const timerId = setTimeout(() => {
             this.startPlayback(card, video, durationSpan);
         }, this.hoverDelay);
@@ -33,16 +31,55 @@ export class VideoCardSystem {
         this.hoverTimers.set(card, timerId);
     }
 
-    // Nueva función que encapsula la lógica pesada
-    startPlayback(card, video, durationSpan) {
+    async startPlayback(card, video, durationSpan) {
         if (!card.dataset.originalDuration && durationSpan) {
             card.dataset.originalDuration = durationSpan.textContent;
         }
 
         card.classList.add('component-video-card--playing');
-        video.muted = true; // El muted debe ser absoluto para autoplay
+        video.muted = true;
 
-        const videoSrc = video.getAttribute('data-src') || video.getAttribute('src');
+        let videoSrc = video.getAttribute('data-src') || video.getAttribute('src');
+        const uuid = video.getAttribute('data-uuid');
+
+        // Solución al 403: Si no tenemos un enlace firmado (con token 't='), lo solicitamos al backend
+        if (uuid && (!videoSrc || !videoSrc.includes('t='))) {
+            try {
+                const basePath = window.AppBasePath || '';
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                
+                // CORRECCIÓN: La ruta correcta en route-map.php es media.get_token
+                const response = await fetch(`${basePath}/api/index.php?route=media.get_token`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken
+                    },
+                    body: JSON.stringify({ video_uuid: uuid })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success && result.data && result.data.stream_url) {
+                    videoSrc = basePath + result.data.stream_url;
+                    video.setAttribute('data-src', videoSrc); // Cachear el link firmado para el próximo hover
+                } else {
+                    console.warn('[VideoCardSystem] No se pudo obtener el stream seguro', result);
+                    card.classList.remove('component-video-card--playing');
+                    return;
+                }
+            } catch (error) {
+                console.error('[VideoCardSystem] Error en red al pedir URL de streaming:', error);
+                card.classList.remove('component-video-card--playing');
+                return;
+            }
+        }
+
+        // Verificamos si el usuario retiró el ratón mientras el fetch respondía
+        if (!card.classList.contains('component-video-card--playing')) {
+            return;
+        }
+
         if (!videoSrc) return;
 
         if (videoSrc.includes('.m3u8')) {
@@ -53,7 +90,7 @@ export class VideoCardSystem {
                     hls = new Hls({
                         startLevel: -1,
                         capLevelToPlayerSize: true,
-                        autoStartLoad: false // Crítico: Evita cargar hasta que lo indiquemos
+                        autoStartLoad: false
                     });
                     
                     this.hlsInstances.set(video, hls);
@@ -63,14 +100,12 @@ export class VideoCardSystem {
                     });
 
                     hls.on(Hls.Events.MANIFEST_PARSED, () => {
-                        // Solo inicia la descarga y reproducción si el mouse SIGUE sobre la tarjeta
                         if (card.classList.contains('component-video-card--playing')) {
                             hls.startLoad(-1);
                             this.playVideo(video);
                         }
                     });
 
-                    // Auto-recuperación de errores para evitar frames congelados
                     hls.on(Hls.Events.ERROR, (event, data) => {
                         if (data.fatal) {
                             switch (data.type) {
@@ -90,22 +125,23 @@ export class VideoCardSystem {
 
                     hls.attachMedia(video);
                 } else {
-                    // Si ya existe la instancia, reanudamos la carga de red y reproducimos
-                    hls.startLoad(-1);
-                    this.playVideo(video);
+                    if (hls.url !== videoSrc) {
+                        hls.loadSource(videoSrc);
+                    } else {
+                        hls.startLoad(-1);
+                        this.playVideo(video);
+                    }
                 }
 
             } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-                if (!video.src) video.src = videoSrc;
+                if (video.src !== videoSrc) video.src = videoSrc;
                 this.playVideo(video);
             }
         } else {
-            if (!video.src) video.src = videoSrc;
+            if (video.src !== videoSrc) video.src = videoSrc;
             this.playVideo(video);
         }
 
-        // CORRECCIÓN: Usar ontimeupdate en lugar de addEventListener evita 
-        // asignar un nuevo event listener cada vez que se hace hover en la misma tarjeta
         video.ontimeupdate = () => this.updateCountdown(video, durationSpan);
     }
 
@@ -113,8 +149,6 @@ export class VideoCardSystem {
         const card = e.target.closest('.component-video-card');
         if (!card) return;
 
-        // Cancelamos inmediatamente el temporizador si existe. 
-        // Si el usuario sacó el mouse antes de los 550ms, la función startPlayback NUNCA se ejecuta.
         if (this.hoverTimers.has(card)) {
             clearTimeout(this.hoverTimers.get(card));
             this.hoverTimers.delete(card);
@@ -141,7 +175,6 @@ export class VideoCardSystem {
 
             delete video.dataset.isPlaying;
 
-            // Detenemos el consumo de red del Worker de HLS
             if (this.hlsInstances.has(video)) {
                 const hls = this.hlsInstances.get(video);
                 hls.stopLoad();
@@ -161,7 +194,6 @@ export class VideoCardSystem {
             this.playPromises.set(video, playPromise);
             playPromise.then(() => {
                 video.dataset.isPlaying = 'true';
-                // Medida de seguridad adicional
                 if (!video.closest('.component-video-card--playing')) {
                     video.pause();
                     video.currentTime = 0;
