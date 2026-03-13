@@ -191,6 +191,10 @@ export class StudioManageContentController {
 
         let combinedBadge = this.getCombinedBadge(video);
         
+        // CAPA 2: Configuración Fallback
+        const fallbackVideoImg = window.AppConfig?.Images?.Fallbacks?.videoThumbnail || 'https://placehold.co/1280x720/1a1a1a/e0e0e0?text=Video+No+Disponible';
+        const onErrorHTML = `onerror="this.onerror=null; this.src='${fallbackVideoImg}';"`;
+
         let thumbUrl = video.thumbnail_path ? video.thumbnail_path : '';
         if (thumbUrl && !thumbUrl.startsWith('http')) {
             let base = window.AppBasePath || '';
@@ -203,7 +207,13 @@ export class StudioManageContentController {
             thumbUrl = base + '/' + cleanPath;
         }
         
-        const thumbHtml = thumbUrl ? `<img src="${thumbUrl}" class="table-video-thumb" alt="Miniatura">` : `<div class="table-video-thumb empty"><span class="material-symbols-rounded">video_file</span></div>`;
+        // CAPA 1: Aplicación de Fallback por data vacía
+        if (!thumbUrl) {
+            thumbUrl = fallbackVideoImg;
+        }
+        
+        const thumbHtml = `<img src="${thumbUrl}" class="table-video-thumb" alt="Miniatura" ${onErrorHTML}>`;
+        
         const title = video.title || video.original_filename || 'Sin título';
         const date = video.created_at ? new Date(video.created_at).toLocaleDateString() : '-';
 

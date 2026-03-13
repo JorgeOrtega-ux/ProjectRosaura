@@ -130,12 +130,18 @@ export class StudioManagePlaylistController {
                 }
                 
                 tbody.innerHTML = '';
+                
+                // CAPA 2 (Fallback UI config para Playlists)
+                const fallbackPlaylistImg = window.AppConfig?.Images?.Fallbacks?.playlistEmpty || 'https://placehold.co/1280x720/2d2d2d/a0a0a0?text=Playlist+Vacia';
+                const onErrorHTML = `onerror="this.onerror=null; this.src='${fallbackPlaylistImg}';"`;
+
                 this.playlistsData.forEach(p => {
                     const tr = document.createElement('tr');
                     tr.id = `playlist-row-${p.id}`;
                     tr.onclick = () => this.selectPlaylist(p.id);
 
                     const date = new Date(p.created_at).toLocaleDateString();
+                    const videoCount = parseInt(p.video_count) || 0;
                     
                     let visText = 'Pública';
                     if(p.visibility === 'unlisted') visText = 'No listada';
@@ -153,27 +159,21 @@ export class StudioManagePlaylistController {
                         thumbUrl = base + '/' + cleanPath;
                     }
 
-                    const videoCount = p.video_count || 0;
+                    // CAPA 1: Aplicación de Fallback por data vacía o 0 videos
+                    if (!thumbUrl || videoCount === 0) {
+                        thumbUrl = fallbackPlaylistImg;
+                    }
                     
                     const countBadge = `
                         <div style="position: absolute; bottom: 4px; right: 4px; background: rgba(0, 0, 0, 0.8); color: white; padding: 2px 4px; border-radius: 4px; font-size: 12px; font-weight: 500; display: flex; align-items: center; gap: 2px; line-height: 1; pointer-events: none;">
                             <span class="material-symbols-rounded" style="font-size: 14px;">playlist_play</span>${videoCount}
                         </div>`;
 
-                    let thumbHtml = '';
-                    if (thumbUrl) {
-                        thumbHtml = `
+                    let thumbHtml = `
                         <div style="position: relative; display: flex; align-items: center; justify-content: center; width: 120px; height: 68px; flex-shrink: 0; border-radius: 4px; overflow: hidden; background-color: var(--bg-surface);">
-                            <img src="${thumbUrl}" style="width: 100%; height: 100%; object-fit: cover;" alt="Miniatura">
+                            <img src="${thumbUrl}" style="width: 100%; height: 100%; object-fit: cover;" alt="Miniatura" ${onErrorHTML}>
                             ${countBadge}
                         </div>`;
-                    } else {
-                        thumbHtml = `
-                        <div class="table-video-thumb empty" style="position: relative; width: 120px; height: 68px; flex-shrink: 0;">
-                            <span class="material-symbols-rounded">playlist_play</span>
-                            ${countBadge}
-                        </div>`;
-                    }
 
                     tr.innerHTML = `
                         <td>
@@ -332,10 +332,15 @@ export class StudioManagePlaylistController {
                             return;
                         }
 
+                        // CAPA 2 (Fallback UI config para modal de videos)
+                        const fallbackVideoImg = window.AppConfig?.Images?.Fallbacks?.videoThumbnail || 'https://placehold.co/1280x720/1a1a1a/e0e0e0?text=Video+No+Disponible';
+                        const onErrorHTML = `onerror="this.onerror=null; this.src='${fallbackVideoImg}';"`;
+
                         allVideos.forEach(v => {
                             const isChecked = playlistVideoIds.includes(v.id) ? 'checked' : '';
                             const basePath = window.AppBasePath || '';
-                            const thumbPath = v.thumbnail_path ? `${basePath}/${v.thumbnail_path}` : `${basePath}/public/assets/img/default_thumb.jpg`;
+                            // Capa 1: Fallback if path empty
+                            const thumbPath = v.thumbnail_path ? `${basePath}/${v.thumbnail_path}` : fallbackVideoImg;
                             
                             const row = document.createElement('label');
                             row.style.display = 'flex';
@@ -348,7 +353,7 @@ export class StudioManagePlaylistController {
 
                             row.innerHTML = `
                                 <input type="checkbox" class="component-checkbox video-select-cb" value="${v.id}" ${isChecked}>
-                                <img src="${thumbPath}" style="width: 60px; height: 40px; object-fit: cover; border-radius: 4px; background: #000;">
+                                <img src="${thumbPath}" style="width: 60px; height: 40px; object-fit: cover; border-radius: 4px; background: #000;" ${onErrorHTML}>
                                 <div style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; color: var(--text-primary);">
                                     ${v.title || 'Sin título'}
                                 </div>

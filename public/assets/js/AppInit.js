@@ -12,6 +12,19 @@ import { RouteModulesMap } from './core/router/RouteModulesMap.js';
 document.addEventListener('DOMContentLoaded', () => {
     console.log("[AppInit] Iniciando arranque de la aplicación...");
 
+    // ========================================================
+    // CONFIGURACIÓN GLOBAL DE LA APLICACIÓN (AppConfig)
+    // ========================================================
+    window.AppConfig = window.AppConfig || {};
+    window.AppConfig.Images = {
+        Fallbacks: {
+            // Imagen temporal para videos sin miniatura (Cámbiala luego por la tuya)
+            videoThumbnail: 'https://placehold.co/1280x720/1a1a1a/e0e0e0?text=Video+No+Disponible',
+            // Imagen temporal para playlists vacías o sin miniatura (Cámbiala luego por la tuya)
+            playlistEmpty: 'https://placehold.co/1280x720/2d2d2d/a0a0a0?text=Playlist+Vacia'
+        }
+    };
+
     // 1. Instanciamos lógica UI base (Global)
     const app = new MainController();
     app.init();

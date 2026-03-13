@@ -9,6 +9,22 @@ export class VideoCardSystem {
     init() {
         document.body.addEventListener('mouseenter', this.handleMouseEnter.bind(this), true);
         document.body.addEventListener('mouseleave', this.handleMouseLeave.bind(this), true);
+
+        // ========================================================
+        // CAPA 2 (FALLBACK): Escáner global de miniaturas rotas (Error 404)
+        // Usamos la fase de captura (true) porque los eventos 'error' no propagan (bubble)
+        // ========================================================
+        document.addEventListener('error', (e) => {
+            // Verificamos si el elemento que falló es una imagen de una video card
+            if (e.target && e.target.tagName === 'IMG' && e.target.classList.contains('component-video-card__thumbnail')) {
+                const fallbackUrl = window.AppConfig?.Images?.Fallbacks?.videoThumbnail || 'https://placehold.co/1280x720/1a1a1a/e0e0e0?text=Video+No+Disponible';
+                
+                // Evitamos un bucle infinito si por alguna razón la propia imagen de fallback falla
+                if (e.target.src !== fallbackUrl) {
+                    e.target.src = fallbackUrl;
+                }
+            }
+        }, true);
     }
 
     handleMouseEnter(e) {

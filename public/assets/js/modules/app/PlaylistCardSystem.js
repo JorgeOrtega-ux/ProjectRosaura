@@ -2,9 +2,19 @@
 
 export class PlaylistCardSystem {
     
-    static resolveThumbUrl(pathOrUrl) {
+    static resolveThumbUrl(pathOrUrl, videoCount = -1) {
+        // CAPA 1 Lógica: Si la lista existe pero tiene 0 videos, devolvemos fallback de playlist
+        if (videoCount === 0) {
+            return window.AppConfig?.Images?.Fallbacks?.playlistEmpty || 'https://placehold.co/1280x720/2d2d2d/a0a0a0?text=Playlist+Vacia';
+        }
+
         const basePath = window.AppBasePath || '';
-        if (!pathOrUrl) return `${basePath}/public/assets/images/default-thumb.png`;
+        
+        // CAPA 1 Datos: Si no hay ruta enviada, asumimos playlist vacía o sin imagen
+        if (!pathOrUrl) {
+            return window.AppConfig?.Images?.Fallbacks?.playlistEmpty || `${basePath}/public/assets/images/default-thumb.png`;
+        }
+        
         if (pathOrUrl.startsWith('http')) return pathOrUrl;
         
         let cleanPath = pathOrUrl.replace(/^\//, '');
@@ -32,10 +42,11 @@ export class PlaylistCardSystem {
         
         const uuid = playlistData.uuid || '';
         const title = this.getTranslatedTitle(playlistData);
-        const videoCount = playlistData.video_count || 0;
+        const videoCount = parseInt(playlistData.video_count) || 0; // Aseguramos que sea entero
         const isSystem = playlistData.isSystem || playlistData.type !== 'custom';
         
-        const thumbSrc = this.resolveThumbUrl(playlistData.thumbnail_url || playlistData.thumbnail_path);
+        // Pasamos el videoCount a la función de validación
+        const thumbSrc = this.resolveThumbUrl(playlistData.thumbnail_url || playlistData.thumbnail_path, videoCount);
         
         // Asignación de rutas correctas dependiendo de si es de sistema o creada.
         let routingParam = uuid;
@@ -56,10 +67,14 @@ export class PlaylistCardSystem {
         const userAvatar = playlistData.user_avatar || `${basePath}/public/storage/profilePictures/default/b463a327-c705-4b03-960c-7c927c3649c4.png`;
         const dominantColor = playlistData.dominant_color || '#530e17';
 
+        // CAPA 2 (Network): Fallback string para inyectar en onerror
+        const fallbackImg = window.AppConfig?.Images?.Fallbacks?.playlistEmpty || 'https://placehold.co/1280x720/2d2d2d/a0a0a0?text=Playlist+Vacia';
+        const onErrorHTML = `onerror="this.onerror=null; this.src='${fallbackImg}';"`;
+
         return `
             <div class="component-video-card nav-item" style="--local-dominant-color: ${dominantColor}; cursor: pointer;" data-nav="${playlistUrl}" onclick="if(window.spaRouter) { event.preventDefault(); window.spaRouter.navigate('${playlistUrl}'); } else { window.location.href='${playlistUrl}'; }">
                 <div class="component-video-card__top">
-                    <img src="${thumbSrc}" alt="Miniatura de ${title}" class="component-video-card__thumbnail" loading="lazy">
+                    <img src="${thumbSrc}" alt="Miniatura de ${title}" class="component-video-card__thumbnail" loading="lazy" ${onErrorHTML}>
                     <span class="component-video-card__duration" style="display: flex; align-items: center; gap: 4px; padding: 4px 8px;">
                         <span class="material-symbols-rounded" style="font-size: 14px;">playlist_play</span>
                         ${videoCount} videos

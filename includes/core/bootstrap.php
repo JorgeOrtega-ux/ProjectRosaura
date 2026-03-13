@@ -10,8 +10,7 @@ header("X-Content-Type-Options: nosniff");
 // ACTUALIZADO: Se añadió 'blob:' a img-src para permitir las previsualizaciones instantáneas en el Studio
 // ACTUALIZADO: Se añadió 'blob:' a img-src y se creó la directiva media-src con 'blob:' para procesar videos en memoria
 // ACTUALIZADO: Se añadió worker-src 'self' blob: para permitir que HLS.js cree Web Workers de procesamiento de video
-header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: blob: https://fonts.gstatic.com https://api.qrserver.com; img-src 'self' data: blob: https://api.qrserver.com; media-src 'self' blob:; worker-src 'self' blob:; connect-src 'self' https://unpkg.com ws: wss:; frame-ancestors 'self';");
-
+header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: blob: https://fonts.gstatic.com https://api.qrserver.com; img-src 'self' data: blob: https://api.qrserver.com https://placehold.co; media-src 'self' blob:; worker-src 'self' blob:; connect-src 'self' https://unpkg.com ws: wss:; frame-ancestors 'self';");
 require_once ROOT_PATH . '/vendor/autoload.php';
 
 // =========================================================================

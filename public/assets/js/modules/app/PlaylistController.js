@@ -65,9 +65,19 @@ export class PlaylistController {
         }
     }
 
-    resolveThumbUrl(pathOrUrl) {
+    resolveThumbUrl(pathOrUrl, videoCount = -1) {
+        // CAPA 1 Lógica: Si la lista existe pero tiene 0 videos, devolvemos fallback de playlist
+        if (videoCount === 0) {
+            return window.AppConfig?.Images?.Fallbacks?.playlistEmpty || 'https://placehold.co/1280x720/2d2d2d/a0a0a0?text=Playlist+Vacia';
+        }
+
         const basePath = window.AppBasePath || '';
-        if (!pathOrUrl) return `${basePath}/public/assets/img/default_thumb.jpg`;
+
+        // CAPA 1 Datos: Si no hay ruta enviada, asumimos playlist vacía
+        if (!pathOrUrl) {
+            return window.AppConfig?.Images?.Fallbacks?.playlistEmpty || 'https://placehold.co/1280x720/2d2d2d/a0a0a0?text=Playlist+Vacia';
+        }
+        
         if (pathOrUrl.startsWith('http')) return pathOrUrl;
         
         let cleanPath = pathOrUrl.replace(/^\//, '');
@@ -83,7 +93,7 @@ export class PlaylistController {
 
         let title = playlist.title || 'Lista sin título';
         const description = playlist.description || '';
-        const videoCount = playlist.video_count || 0;
+        const videoCount = parseInt(playlist.video_count) || 0; // Aseguramos que sea entero
         const author = playlist.username || 'Usuario desconocido';
         const firstVideoUuid = playlist.first_video_uuid || null; 
         const isSystem = playlist.isSystem || playlist.type !== 'custom';
@@ -112,12 +122,17 @@ export class PlaylistController {
             ? `onclick="window.spaRouter.navigate('${basePath}/watch/${firstVideoUuid}?list=${routeParam}')"` 
             : 'disabled';
 
-        const thumbSrc = this.resolveThumbUrl(playlist.thumbnail_url || playlist.thumbnail_path);
+        // Pasamos el videoCount para activar la Capa 1 si es 0
+        const thumbSrc = this.resolveThumbUrl(playlist.thumbnail_url || playlist.thumbnail_path, videoCount);
         
         const lockIcon = isSystem ? `<span class="material-symbols-rounded" style="font-size: 16px; vertical-align: middle; margin-right: 4px;" title="Lista privada del sistema">lock</span>` : '';
 
+        // CAPA 2: Lógica de red (Fallback string para inyectar en onerror)
+        const fallbackPlaylistImg = window.AppConfig?.Images?.Fallbacks?.playlistEmpty || 'https://placehold.co/1280x720/2d2d2d/a0a0a0?text=Playlist+Vacia';
+        const onErrorHTML = `onerror="this.onerror=null; this.src='${fallbackPlaylistImg}';"`;
+
         this.detailsContainer.innerHTML = `
-            <img src="${thumbSrc}" alt="Miniatura de ${title}" class="playlist-sidebar-thumb">
+            <img src="${thumbSrc}" alt="Miniatura de ${title}" class="playlist-sidebar-thumb" ${onErrorHTML}>
             
             <h1 class="playlist-sidebar-title">${title}</h1>
             
@@ -155,6 +170,10 @@ export class PlaylistController {
         // Mantenemos intacto el this.playlistId en lugar de forzar lógica condicional
         const routeParam = this.playlistId;
         
+        // Capa 2 de Red para los videos individuales en la lista
+        const fallbackVideoImg = window.AppConfig?.Images?.Fallbacks?.videoThumbnail || 'https://placehold.co/1280x720/1a1a1a/e0e0e0?text=Video+No+Disponible';
+        const onErrorVideoHTML = `onerror="this.onerror=null; this.src='${fallbackVideoImg}';"`;
+
         videos.forEach((video, index) => {
             const title = video.title || 'Video sin título';
             const views = video.views || 0;
@@ -162,7 +181,12 @@ export class PlaylistController {
             const author = video.username || 'Desconocido';
             const description = video.description || '';
 
-            const thumbSrc = this.resolveThumbUrl(video.thumbnail_url || video.thumbnail_path);
+            // Resolvemos thumb con capa 1 incluida
+            let thumbSrc = fallbackVideoImg;
+            if (video.thumbnail_url || video.thumbnail_path) {
+                thumbSrc = this.resolveThumbUrl(video.thumbnail_url || video.thumbnail_path);
+            }
+
             const clickAction = `window.spaRouter.navigate('${basePath}/watch/${video.uuid}?list=${routeParam}')`;
 
             html += `
@@ -177,7 +201,7 @@ export class PlaylistController {
                             </div>
                             
                             <div class="playlist-video-item-thumbnail">
-                                <img src="${thumbSrc}" alt="${title}">
+                                <img src="${thumbSrc}" alt="${title}" ${onErrorVideoHTML}>
                                 <span class="playlist-video-item-duration">${duration}</span>
                             </div>
                             

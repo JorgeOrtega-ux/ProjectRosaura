@@ -491,11 +491,17 @@ export class WatchController {
         let countTextTemplate = window.AppSystem?.Translator?.get('watch_playlist_videos_count') || '{current} de {total}';
         countEl.textContent = countTextTemplate.replace('{current}', displayIndex).replace('{total}', total);
 
+        // CAPA 2 (Fallback UI config para elementos de la Playlist)
+        const fallbackVideoImg = window.AppConfig?.Images?.Fallbacks?.videoThumbnail || 'https://placehold.co/1280x720/1a1a1a/e0e0e0?text=Video+No+Disponible';
+        const onErrorHTML = `onerror="this.onerror=null; this.src='${fallbackVideoImg}';"`;
+
         let html = '';
         videos.forEach((video, index) => {
             const isActive = video.uuid === currentVideoId;
             const itemNumber = index + 1;
-            const thumbnailUrl = video.thumbnail_url || video.thumbnail || '/ProjectRosaura/public/assets/images/default-thumb.png';
+            
+            // CAPA 1: Aplicación de Fallback por data vacía
+            const thumbnailUrl = video.thumbnail_url || video.thumbnail || fallbackVideoImg;
             const title = video.title || 'Video sin título';
             const author = video.username || (video.author && video.author.username) || 'Canal Rosaura';
             
@@ -518,7 +524,7 @@ export class WatchController {
                         <span class="material-symbols-rounded" style="font-size: 16px;">play_arrow</span>
                     </div>
                     <div class="watch-playlist-item-thumb">
-                        <img src="${thumbnailUrl}" alt="${title}">
+                        <img src="${thumbnailUrl}" alt="${title}" ${onErrorHTML}>
                         <span class="watch-playlist-item-duration">${duration}</span>
                     </div>
                     <div class="watch-playlist-item-info">
@@ -576,6 +582,10 @@ export class WatchController {
             return;
         }
 
+        // CAPA 2 (Fallback UI config para Videos Recomendados)
+        const fallbackVideoImg = window.AppConfig?.Images?.Fallbacks?.videoThumbnail || 'https://placehold.co/1280x720/1a1a1a/e0e0e0?text=Video+No+Disponible';
+        const onErrorHTML = `onerror="this.onerror=null; this.src='${fallbackVideoImg}';"`;
+
         let html = '';
         videos.forEach(video => {
             const title = video.title || 'Sin Título';
@@ -592,14 +602,15 @@ export class WatchController {
                 duration = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
             }
             
-            const thumbnailUrl = video.thumbnail_url || video.thumbnail || '/ProjectRosaura/public/assets/images/default-thumb.png'; 
+            // CAPA 1: Aplicación de Fallback por data vacía
+            const thumbnailUrl = video.thumbnail_url || video.thumbnail || fallbackVideoImg; 
             const watchUrl = `/ProjectRosaura/watch/${video.uuid}`;
             const streamUrl = `/ProjectRosaura/api/media/stream?uuid=${video.uuid}`;
 
             html += `
                 <a href="${watchUrl}" class="component-video-card component-video-card--horizontal" style="display: flex !important; flex-direction: row !important; align-items: flex-start; gap: 10px; text-decoration: none; color: inherit; width: 100%; border-radius: 8px; cursor: pointer;">
                     <div class="component-video-card__thumbnail-container" style="position: relative; width: 168px; min-width: 168px; aspect-ratio: 16/9; border-radius: 8px; overflow: hidden; background-color: #222; flex-shrink: 0;">
-                        <img src="${thumbnailUrl}" style="width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; z-index: 1;" alt="${title}">
+                        <img src="${thumbnailUrl}" style="width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; z-index: 1;" alt="${title}" ${onErrorHTML}>
                         
                         <video class="component-video-card__player" data-src="${streamUrl}" preload="none" style="width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; z-index: 2; opacity: 0; transition: opacity 0.3s;" onplay="this.style.opacity=1;" onpause="this.style.opacity=0;"></video>
                         
