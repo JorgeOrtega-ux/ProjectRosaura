@@ -473,7 +473,9 @@ export class StudioUploadController {
             e.stopImmediatePropagation();
             const target = btn.getAttribute('data-target');
             if (target && target.startsWith('title-')) {
-                this.setEditState(target, true);
+                // SOLUCIÓN JAVASCRIPT: Se evalúa correctamente si se está viendo o editando en vez de forzar a true.
+                const isViewBox = btn.closest(`[data-state="${target}-view"]`) !== null;
+                this.setEditState(target, isViewBox);
             }
         } else if (action === 'publishVideo') {
             e.preventDefault();
