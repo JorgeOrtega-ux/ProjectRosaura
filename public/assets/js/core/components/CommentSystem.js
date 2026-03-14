@@ -40,10 +40,16 @@ export class CommentSystem {
         this.container.innerHTML = `
             <div class="component-comments" style="margin-top: 0;">
                 
-                <div class="component-comments-top" style="padding: 24px;">
-                    <div class="component-comments-header">
+                <div class="component-comments-top">
+                    <div class="component-comments-title-wrapper">
                         <h3 class="component-comments-title">Comentarios</h3>
                     </div>
+                    <button class="component-button component-button--icon component-button--h40 mobile-search-btn" title="Filtrar">
+                        <span class="material-symbols-rounded">filter_list</span>
+                    </button>
+                </div>
+
+                <div class="component-comments-center">
                     <div class="component-comments-input-area">
                         <img class="component-comment-avatar" src="${currentUserAvatarSrc}" alt="Usuario" id="comments-current-user-avatar">
                         <div class="component-comments-input-wrapper">
@@ -55,9 +61,7 @@ export class CommentSystem {
                     </div>
                 </div>
 
-                <hr style="margin: 0; border: none; border-top: 1px solid var(--border-color);">
-
-                <div class="component-comments-bottom" style="padding: 24px;">
+                <div class="component-comments-bottom">
                     <div id="comments-list" class="component-comments-list"></div>
                     <div id="comments-loading" style="display: none; text-align: center; padding: 20px; color: var(--text-secondary);">Cargando comentarios...</div>
                     <button id="comments-load-more" class="component-btn-secondary" style="display: none; width: 100%; margin-top: 16px;">Cargar más comentarios</button>

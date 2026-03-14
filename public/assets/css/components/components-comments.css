@@ -8,18 +8,48 @@
     font-family: var(--font-primary, 'Inter', sans-serif);
 }
 
-.component-comments-header {
-    margin-bottom: 16px;
+/* ==========================================================================
+   ESTRUCTURA PRINCIPAL (TOP, CENTER, BOTTOM)
+   ========================================================================== */
+
+.component-comments-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border-color, #3F3F3F);
+}
+
+.component-comments-center {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border-color, #3F3F3F);
+}
+
+.component-comments-bottom {
+    padding: 24px;
+}
+
+/* ==========================================================================
+   TOP: TÍTULO Y BOTÓN DE FILTRO
+   ========================================================================== */
+
+.component-comments-title-wrapper {
+    border: 1px solid var(--border-color, #3F3F3F);
+    border-radius: 20px;
+    padding: 6px 16px;
 }
 
 .component-comments-title {
-    font-size: 20px;
-    font-weight: 700;
+    font-size: 16px;
+    font-weight: 600;
     color: var(--text-primary, #FFFFFF);
     margin: 0;
 }
 
-/* El contenedor principal de la zona del input */
+/* ==========================================================================
+   CENTER: ÁREA DE INPUT
+   ========================================================================== */
+
 .component-comments-input-area {
     display: flex;
     gap: 16px;
@@ -47,15 +77,14 @@
     height: 24px;
 }
 
-/* El nuevo wrapper redondeado que contiene input + btn */
 .component-comments-input-wrapper {
     flex-grow: 1;
     display: flex;
     flex-direction: row;
     align-items: center;
     border: 1px solid var(--border-color, #3F3F3F);
-    border-radius: 50px; /* Borde redondeado completo */
-    padding: 8px 16px;
+    border-radius: 50px;
+    padding: 4px 12px;
     background: transparent;
     transition: border-color 0.2s ease;
     box-sizing: border-box;
@@ -65,7 +94,6 @@
     border-color: var(--text-primary, #FFFFFF);
 }
 
-/* El input interno */
 .component-comments-textarea {
     flex-grow: 1;
     background: transparent;
@@ -84,7 +112,6 @@
     border: none;
 }
 
-/* Botón interior de enviar */
 .component-btn-send {
     background: transparent;
     border: none;
@@ -113,6 +140,10 @@
     cursor: not-allowed;
     opacity: 0.5;
 }
+
+/* ==========================================================================
+   BOTTOM: LISTA DE COMENTARIOS
+   ========================================================================== */
 
 .component-comments-list {
     display: flex;

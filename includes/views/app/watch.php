@@ -269,6 +269,7 @@
                             <span class="watch-meta-highlight">Etiquetas</span>
                         </div>
                         <div class="watch-info-tags-list" id="watch-video-custom-tags-container">
+                            <span class="watch-tag-item watch-tag-item--loading">Cargando...</span>
                         </div>
                     </div>
                 </div>

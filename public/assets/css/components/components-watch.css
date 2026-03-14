@@ -273,7 +273,15 @@
 .watch-btn-action.active { background-color: var(--bg-hover-light); }
 .watch-btn-action.active .material-symbols-rounded { font-variation-settings: 'FILL' 1; }
 
-.watch-action-group { display: flex; align-items: center; background-color: var(--bg-surface-alt); border-radius: 20px; border: 1px solid var(--border-color); overflow: hidden; }
+.watch-action-group { 
+    display: flex; 
+    align-items: center; 
+    background-color: var(--bg-surface-alt); 
+    border-radius: 20px; 
+    border: 1px solid var(--border-color); 
+    overflow: hidden; 
+    flex-shrink: 0; /* CORRECCIÓN AQUÍ PARA EVITAR APLASTAMIENTO */
+}
 .watch-action-group .watch-btn-action { background-color: transparent; border: none; border-radius: 0; }
 .watch-action-group .watch-btn-action:hover { background-color: var(--bg-hover-light); }
 .watch-action-group .watch-btn-action.active { background-color: var(--bg-hover-light); }
@@ -516,14 +524,20 @@
         box-sizing: border-box;
     }
     
-    .watch-info-row { flex-direction: column; align-items: flex-start; width: 100%; max-width: 100%; }
+    .watch-info-row { 
+        flex-direction: column; 
+        align-items: flex-start; 
+        width: 100%; 
+        max-width: 100%; 
+        margin-bottom: 4px; /* AÑADIDO MARGIN BOTTOM */
+    }
     
     .watch-info-right { 
         overflow-x: auto; 
         width: 100%; 
         max-width: 100%; 
         padding-bottom: 8px; 
-        flex-wrap: nowrap; 
+        flex-wrap: wrap; /* CAMBIADO DE nowrap A wrap */
         display: flex;
         box-sizing: border-box;
         -webkit-overflow-scrolling: touch; 

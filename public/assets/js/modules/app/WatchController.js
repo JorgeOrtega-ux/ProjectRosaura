@@ -440,6 +440,8 @@ export class WatchController {
         const fallbackVideoImg = window.AppConfig?.Images?.Fallbacks?.videoThumbnail || 'https://placehold.co/1280x720/1a1a1a/e0e0e0?text=Video+No+Disponible';
         const onErrorHTML = `onerror="this.onerror=null; this.src='${fallbackVideoImg}';"`;
 
+        const basePath = window.AppBasePath || '';
+
         let html = '';
         videos.forEach((video, index) => {
             const isActive = video.uuid === currentVideoId;
@@ -459,10 +461,10 @@ export class WatchController {
                 duration = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
             }
 
-            const watchUrl = `/ProjectRosaura/watch/${video.uuid}?list=${playlistId}`;
+            const watchUrl = `${basePath}/watch/${video.uuid}?list=${playlistId}`;
 
             html += `
-                <a href="${watchUrl}" class="watch-playlist-item ${isActive ? 'active' : ''}" data-uuid="${video.uuid}">
+                <a href="${watchUrl}" data-nav="${watchUrl}" class="watch-playlist-item ${isActive ? 'active' : ''}" data-uuid="${video.uuid}">
                     <div class="watch-playlist-item-index">${itemNumber}</div>
                     <div class="watch-playlist-item-playing-icon">
                         <span class="material-symbols-rounded" style="font-size: 16px;">play_arrow</span>
@@ -529,6 +531,8 @@ export class WatchController {
         const fallbackVideoImg = window.AppConfig?.Images?.Fallbacks?.videoThumbnail || 'https://placehold.co/1280x720/1a1a1a/e0e0e0?text=Video+No+Disponible';
         const onErrorHTML = `onerror="this.onerror=null; this.src='${fallbackVideoImg}';"`;
 
+        const basePath = window.AppBasePath || '';
+
         let html = '';
         videos.forEach(video => {
             const title = video.title || 'Sin Título';
@@ -546,11 +550,11 @@ export class WatchController {
             }
             
             const thumbnailUrl = video.thumbnail_url || video.thumbnail || fallbackVideoImg; 
-            const watchUrl = `/ProjectRosaura/watch/${video.uuid}`;
-            const streamUrl = `/ProjectRosaura/api/media/stream?uuid=${video.uuid}`;
+            const watchUrl = `${basePath}/watch/${video.uuid}`;
+            const streamUrl = `${basePath}/api/media/stream?uuid=${video.uuid}`;
 
             html += `
-                <a href="${watchUrl}" class="component-video-card component-video-card--horizontal" style="display: flex !important; flex-direction: row !important; align-items: flex-start; gap: 10px; text-decoration: none; color: inherit; width: 100%; border-radius: 8px; cursor: pointer;">
+                <a href="${watchUrl}" data-nav="${watchUrl}" class="component-video-card component-video-card--horizontal" style="display: flex !important; flex-direction: row !important; align-items: flex-start; gap: 10px; text-decoration: none; color: inherit; width: 100%; border-radius: 8px; cursor: pointer;">
                     <div class="component-video-card__thumbnail-container" style="position: relative; width: 168px; min-width: 168px; aspect-ratio: 16/9; border-radius: 8px; overflow: hidden; background-color: #222; flex-shrink: 0;">
                         <img src="${thumbnailUrl}" style="width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; z-index: 1;" alt="${title}" ${onErrorHTML}>
                         
