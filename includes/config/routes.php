@@ -13,6 +13,7 @@ return [
 
     // --- NUEVA RUTA DE VISTA DE PLAYLIST ---
     '/playlist' => ['view' => 'app/playlist.php'], // Modificado: Ahora acepta ?list=...
+      '/rankings' => ['view' => 'app/rankings.php'], // Modificado: Ahora acepta ?list=...
     '/playlist/{uuid}' => ['view' => 'app/playlist.php'], // Mantenemos compatibilidad hacia atrás
     
     // --- NUEVA RUTA: FEED DE PLAYLISTS ---

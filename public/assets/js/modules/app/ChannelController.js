@@ -43,18 +43,18 @@ export class ChannelController {
         try {
              console.log(`[DEBUG RANKING] Iniciando carga de datos para identificador: ${identifier}`);
              
-             // Extraer el ID de usuario desde la vista (tab-about) renderizada por PHP
-             const rankDisplayBox = document.getElementById('channel-ranking-display');
-             console.log(`[DEBUG RANKING] ¿Se encontró el div 'channel-ranking-display' en el DOM?:`, !!rankDisplayBox);
+             // Extraer el ID de usuario desde el nuevo elemento de la lista
+             const rankContainer = document.getElementById('channel-ranking-container');
+             console.log(`[DEBUG RANKING] ¿Se encontró el li 'channel-ranking-container'?:`, !!rankContainer);
              
-             const targetUserId = rankDisplayBox ? rankDisplayBox.getAttribute('data-user-id') : null;
+             const targetUserId = rankContainer ? rankContainer.getAttribute('data-user-id') : null;
              console.log(`[DEBUG RANKING] Valor extraído de data-user-id:`, targetUserId);
 
              if (targetUserId && targetUserId !== '') {
                  console.log(`[DEBUG RANKING] Llamando a loadChannelRanking con ID: ${targetUserId}`);
                  await this.loadChannelRanking(targetUserId);
              } else {
-                 console.warn("[DEBUG RANKING] No se encontró un data-user-id válido. Revisa si el PHP está imprimiendo el ID correctamente en tab-about.php");
+                 console.warn("[DEBUG RANKING] No se encontró un data-user-id válido.");
              }
 
         } catch (e) {
@@ -66,40 +66,34 @@ export class ChannelController {
         console.log(`[DEBUG RANKING] Ejecutando loadChannelRanking para el usuario: ${userId}`);
         try {
             const response = await this.api.getChannelRanking(userId);
-            console.log(`[DEBUG RANKING] Respuesta completa de la API getChannelRanking:`, response);
+            console.log(`[DEBUG RANKING] Respuesta completa de la API:`, response);
             
-            const rankDisplayBox = document.getElementById('channel-ranking-display');
-            const rankEmptyBox = document.getElementById('channel-ranking-empty');
+            const rankContainer = document.getElementById('channel-ranking-container');
+            const rankText = document.getElementById('channel-ranking-text');
             
             if (response.success && response.data && response.data.current && response.data.current.current_rank) {
-                console.log(`[DEBUG RANKING] El usuario SÍ tiene ranking válido. Rank actual:`, response.data.current.current_rank);
+                console.log(`[DEBUG RANKING] El usuario SÍ tiene ranking. Rank actual:`, response.data.current.current_rank);
                 const currentData = response.data.current;
                 
-                // Mostrar caja de rank
-                if (rankDisplayBox) rankDisplayBox.style.display = 'flex';
-                if (rankEmptyBox) rankEmptyBox.style.display = 'none';
+                // Mostrar el elemento en la lista
+                if (rankContainer) rankContainer.style.display = 'flex';
                 
-                const posEl = document.getElementById('channel-ranking-position');
-                const iconEl = document.getElementById('channel-ranking-trend-icon');
-                
-                if (posEl) posEl.innerText = `#${currentData.current_rank}`;
-                
-                if (iconEl) {
-                    if (currentData.trend === 'up') {
-                        iconEl.innerText = '🟩';
-                    } else if (currentData.trend === 'down') {
-                        iconEl.innerText = '🟥';
-                    } else {
-                        iconEl.innerText = '⬜';
-                    }
+                // Determinar el icono de tendencia
+                let trendIcon = '⬜';
+                if (currentData.trend === 'up') trendIcon = '🟩';
+                else if (currentData.trend === 'down') trendIcon = '🟥';
+
+                // Asignar el texto simple
+                if (rankText) {
+                    rankText.innerText = `Posición #${currentData.current_rank} en el ranking ${trendIcon}`;
                 }
             } else {
-                console.log(`[DEBUG RANKING] El usuario NO tiene ranking en la BD, o la API devolvió falso/vacío.`);
-                if (rankDisplayBox) rankDisplayBox.style.display = 'none';
-                if (rankEmptyBox) rankEmptyBox.style.display = 'block';
+                console.log(`[DEBUG RANKING] El usuario NO tiene ranking.`);
+                // Ocultar el elemento de la lista si no está clasificado
+                if (rankContainer) rankContainer.style.display = 'none';
             }
         } catch (error) {
-            console.error("[DEBUG RANKING] Excepción capturada al solicitar el ranking a la API:", error);
+            console.error("[DEBUG RANKING] Excepción capturada al solicitar el ranking:", error);
         }
     }
 
