@@ -1,12 +1,9 @@
 <div class="component-search-wrapper">
     <div class="component-search-top">
-        <h1 class="component-search-header">
-            Resultados para: <span id="search-query-display" class="component-search-term"></span>
-        </h1>
         <div class="component-search-filters">
-            <button class="component-search-filter-btn component-search-filter-active">Todo</button>
-            <button class="component-search-filter-btn">Canales</button>
-            <button class="component-search-filter-btn">Videos</button>
+            <button class="component-search-filter-btn component-search-filter-active" data-filter="all">Todo</button>
+            <button class="component-search-filter-btn" data-filter="channels">Canales</button>
+            <button class="component-search-filter-btn" data-filter="videos">Videos</button>
         </div>
     </div>
 

@@ -29,6 +29,14 @@ export class MainController {
         window.addEventListener('viewLoaded', () => {
             this.syncUIPreferences();
             this.initBottomSheets();
+            
+            // Lógica para sincronizar la caja de búsqueda con la URL (SPA Fix)
+            const urlParams = new URLSearchParams(window.location.search);
+            const searchQuery = urlParams.get('search_query') || '';
+            const headerSearchInput = document.querySelector('.header-center .component-search-input input');
+            if (headerSearchInput) {
+                headerSearchInput.value = searchQuery;
+            }
         });
     }
 
@@ -182,7 +190,6 @@ export class MainController {
                     this.savePreference(key, value);
                     this.closeAllModules();
                 } 
-                // NUEVO ESTÁNDAR UNIVERSAL: Abre cualquier módulo basado en su data-target
                 else if (action === 'toggleModule' && btn.hasAttribute('data-target')) {
                     this.toggleModule(btn.getAttribute('data-target'));
                 } 
@@ -190,23 +197,19 @@ export class MainController {
                     isMainControllerAction = false; 
                 }
                 
-                // Si MainController abrió un módulo, detenemos para no disparar el auto-cierre
                 if (isMainControllerAction) return; 
             }
 
-            // Click-outside perfeccionado
             const activeModules = document.querySelectorAll('.component-module:not(.disabled)');
             activeModules.forEach(module => {
                 if (this.dragState.isDragging) return;
                 
                 let clickedInside = false;
                 
-                // 1. Clic dentro del panel
                 module.querySelectorAll('.component-menu').forEach(panel => {
                     if (panel.contains(e.target)) clickedInside = true;
                 });
 
-                // 2. Clic en el trigger que invoca este panel exacto
                 const targetId = module.id;
                 const targetData = module.dataset.module;
                 if ((targetId && e.target.closest(`[data-target="${targetId}"]`)) || 

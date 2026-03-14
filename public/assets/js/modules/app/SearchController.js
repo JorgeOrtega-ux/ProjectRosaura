@@ -3,16 +3,12 @@ import { ApiRoutes } from '../../core/api/ApiRoutes.js';
 export default class SearchController {
     constructor() {
         console.log('🟡 [SearchController] Constructor iniciado.');
-        const urlParams = new URLSearchParams(window.location.search);
-        this.query = urlParams.get('search_query') || '';
-        console.log(`🟡 [SearchController] Query extraída de URL: "${this.query}"`);
-        
-        this.cacheDOM();
+        this.currentFilter = 'all';
+        this.lastData = null;
     }
 
     cacheDOM() {
         console.log('🟡 [SearchController] Ejecutando cacheDOM...');
-        this.queryDisplay = document.getElementById('search-query-display');
         this.loadingState = document.getElementById('search-loading-state');
         this.emptyState = document.getElementById('search-empty-state');
         
@@ -21,6 +17,8 @@ export default class SearchController {
         
         this.videosSection = document.getElementById('search-videos-section');
         this.videosGrid = document.getElementById('search-videos-grid');
+
+        this.filterBtns = document.querySelectorAll('.component-search-filter-btn');
     }
 
     async init() {
@@ -28,18 +26,40 @@ export default class SearchController {
         
         this.basePath = window.AppBasePath || '/ProjectRosaura';
 
+        const urlParams = new URLSearchParams(window.location.search);
+        this.query = urlParams.get('search_query') || '';
+        console.log(`🟡 [SearchController] Query extraída de URL: "${this.query}"`);
+        
+        this.cacheDOM();
+        this.bindEvents();
+
         if (!this.query) {
             console.warn('🟡 [SearchController] Consulta vacía. Mostrando estado vacío y abortando búsqueda.');
             this.showEmptyState();
             return;
         }
 
-        if (this.queryDisplay) {
-            this.queryDisplay.textContent = `"${this.query}"`;
-        }
         document.title = `${this.query} - Búsqueda`;
 
         await this.fetchResults();
+    }
+
+    bindEvents() {
+        if (!this.filterBtns) return;
+        
+        this.filterBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                // Quitar clase activa a todos
+                this.filterBtns.forEach(b => b.classList.remove('component-search-filter-active'));
+                
+                // Agregar clase activa al presionado
+                e.target.classList.add('component-search-filter-active');
+                
+                // Setear filtro y re-renderizar
+                this.currentFilter = e.target.getAttribute('data-filter') || 'all';
+                this.applyFilter();
+            });
+        });
     }
 
     async fetchResults() {
@@ -92,23 +112,43 @@ export default class SearchController {
 
     renderResults(data) {
         if (this.loadingState) this.loadingState.style.display = 'none';
+        
+        // Guardamos los datos para poder filtrarlos en caliente (sin consultar de nuevo la API)
+        this.lastData = data;
+        this.applyFilter();
+    }
+
+    applyFilter() {
+        if (!this.lastData) return;
+        const data = this.lastData;
 
         const hasChannels = data.channels && data.channels.length > 0;
         const hasVideos = data.videos && data.videos.length > 0;
 
-        if (!hasChannels && !hasVideos) {
-            this.showEmptyState();
-            return;
-        }
+        // Ocultar todo inicialmente
+        if (this.channelsSection) this.channelsSection.style.display = 'none';
+        if (this.videosSection) this.videosSection.style.display = 'none';
+        if (this.emptyState) this.emptyState.style.display = 'none';
 
-        if (hasChannels && this.channelsSection) {
-            this.channelsSection.style.display = 'block';
+        let showedAnything = false;
+
+        // Lógica: Mostrar canales si filtro es 'all' o 'channels' y hay data
+        if ((this.currentFilter === 'all' || this.currentFilter === 'channels') && hasChannels) {
+            if (this.channelsSection) this.channelsSection.style.display = 'block';
             this.renderChannels(data.channels);
+            showedAnything = true;
         }
 
-        if (hasVideos && this.videosSection) {
-            this.videosSection.style.display = 'block';
+        // Lógica: Mostrar videos si filtro es 'all' o 'videos' y hay data
+        if ((this.currentFilter === 'all' || this.currentFilter === 'videos') && hasVideos) {
+            if (this.videosSection) this.videosSection.style.display = 'block';
             this.renderVideos(data.videos);
+            showedAnything = true;
+        }
+
+        // Si después de aplicar el filtro no hay nada visible (Ej: Filtro "canales" pero solo hay "videos")
+        if (!showedAnything) {
+            this.showEmptyState();
         }
     }
 
@@ -151,7 +191,6 @@ export default class SearchController {
     renderVideos(videos) {
         if (!this.videosGrid) return;
         
-        // CORRECCIÓN: Usar exactamente la misma grilla que en Home
         this.videosGrid.className = 'component-video-grid';
         this.videosGrid.innerHTML = '';
         
@@ -160,7 +199,6 @@ export default class SearchController {
             const views = video.views || 0;
             const uuid = video.uuid || video.id_video;
             
-            // Re-utilizar rutinas idénticas a Home
             const createdDate = video.created_at ? new Date(video.created_at) : new Date();
             const timeAgo = this.timeSince(createdDate);
             const formattedDuration = this.formatDuration(video.duration || 0);
@@ -178,12 +216,9 @@ export default class SearchController {
             const thumbPath = buildUrl(video.thumbnail_path, fallbackThumb);
             const avatarSrc = buildUrl(video.avatar_path, `${this.basePath}/public/storage/profilePictures/default/default.png`);
             
-            // Si el motor de búsqueda envía el path del m3u8 directo, lo seteamos. VideoCardSystem sobre-escribirá con token.
             const videoSrc = buildUrl(video.hls_path, '');
-            
             const navUrl = `${this.basePath}/watch/${uuid}`;
 
-            // Plantilla HTML de Card IDENTICA a Home
             const cardHTML = `
                 <div class="component-video-card" style="--local-dominant-color: ${dominantColor}; cursor: pointer;" data-nav="${navUrl}">
                     <div class="component-video-card__top">

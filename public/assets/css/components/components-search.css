@@ -6,7 +6,6 @@
 .component-search-wrapper {
     display: flex;
     flex-direction: column;
-    padding: 24px;
     max-width: 1200px;
     margin: 0 auto;
     color: var(--text-primary, #ffffff);
@@ -15,19 +14,7 @@
 /* --- Top Section --- */
 .component-search-top {
     border-bottom: 1px solid var(--border-color, #333333);
-    padding-bottom: 16px;
-    margin-bottom: 24px;
-}
-
-.component-search-header {
-    font-size: 1.5rem;
-    font-weight: 500;
-    margin: 0 0 16px 0;
-}
-
-.component-search-term {
-    font-weight: 700;
-    color: var(--accent-color, #3ea6ff);
+    padding: 8px;
 }
 
 .component-search-filters {
@@ -36,23 +23,28 @@
 }
 
 .component-search-filter-btn {
-    background-color: var(--bg-secondary, #272727);
-    color: var(--text-primary, #ffffff);
-    border: none;
-    padding: 8px 16px;
+    background-color: transparent;
+    color: var(--text-primary, #333333);
+    border: 1px solid #00000020;
+    padding: 4px 12px;
     border-radius: 20px;
     cursor: pointer;
     font-size: 0.9rem;
-    transition: background-color 0.2s ease;
+    transition: all 0.2s ease;
 }
 
 .component-search-filter-btn:hover {
-    background-color: var(--bg-hover, #3f3f3f);
+    background-color: rgba(0, 0, 0, 0.05);
 }
 
 .component-search-filter-active {
-    background-color: var(--text-primary, #ffffff);
-    color: var(--bg-primary, #0f0f0f);
+    background-color: #000000;
+    color: #ffffff;
+    border-color: #000000;
+}
+
+.component-search-filter-active:hover {
+    background-color: #222222;
 }
 
 /* --- Bottom Section & Status --- */
@@ -60,6 +52,7 @@
     display: flex;
     flex-direction: column;
     gap: 32px;
+    padding: 24px;
 }
 
 .component-search-loading {
