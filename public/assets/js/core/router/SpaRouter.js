@@ -11,7 +11,7 @@ export class SpaRouter {
         this.updateDocumentTitle(window.location.pathname);
 
         window.addEventListener('popstate', (e) => {
-            const url = window.location.pathname;
+            const url = window.location.pathname + window.location.search;
             this.loadRoute(url);
         });
 
@@ -71,9 +71,9 @@ export class SpaRouter {
     }
 
     navigate(url) {
-        let currentPath = window.location.pathname;
-        let normalizedCurrent = currentPath.endsWith('/') && currentPath.length > 1 ? currentPath.slice(0, -1) : currentPath;
-        let normalizedUrl = url.endsWith('/') && url.length > 1 ? url.slice(0, -1) : url;
+        let currentPath = window.location.pathname + window.location.search;
+        let normalizedCurrent = currentPath.endsWith('/') && currentPath.length > 1 && !currentPath.includes('?') ? currentPath.slice(0, -1) : currentPath;
+        let normalizedUrl = url.endsWith('/') && url.length > 1 && !url.includes('?') ? url.slice(0, -1) : url;
 
         if (normalizedCurrent === normalizedUrl) return;
 
@@ -203,17 +203,27 @@ export class SpaRouter {
 
     highlightCurrentRoute() {
         const path = window.location.pathname;
+        const search = window.location.search;
         let normalizedPath = path.endsWith('/') && path.length > 1 ? path.slice(0, -1) : path;
-
+        
         let pathWithoutBase = normalizedPath;
         if (this.basePath && normalizedPath.startsWith(this.basePath)) {
             pathWithoutBase = normalizedPath.substring(this.basePath.length);
         }
         if (pathWithoutBase === '') pathWithoutBase = '/';
 
+        // Variables que incluyen el ?query (para playlists y búsquedas)
+        const fullNormalizedPath = normalizedPath + search;
+        const fullPathWithoutBase = pathWithoutBase + search;
+
         document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
 
-        const targets = document.querySelectorAll(`[data-nav="${normalizedPath}"], [data-nav="${normalizedPath}/"], [data-nav="${pathWithoutBase}"], [data-nav="${pathWithoutBase}/"]`);
+        // Se hace coincidir tanto la ruta limpia como la ruta con parámetros
+        const targets = document.querySelectorAll(`
+            [data-nav="${normalizedPath}"], [data-nav="${normalizedPath}/"], 
+            [data-nav="${pathWithoutBase}"], [data-nav="${pathWithoutBase}/"],
+            [data-nav="${fullNormalizedPath}"], [data-nav="${fullPathWithoutBase}"]
+        `);
         targets.forEach(target => {
             target.classList.add('active');
         });

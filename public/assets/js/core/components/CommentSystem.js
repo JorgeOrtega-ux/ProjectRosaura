@@ -105,6 +105,12 @@ export class CommentSystem {
                     input.value = '';
                     input.style.height = 'auto';
                     
+                    // Remover mensaje de vacío si existe
+                    const emptyState = this.commentsListEl.querySelector('.component-comments-empty');
+                    if (emptyState) {
+                        emptyState.remove();
+                    }
+
                     const newCommentHtml = this.createCommentHtml(result.data, false);
                     this.commentsListEl.insertAdjacentHTML('afterbegin', newCommentHtml);
                 } else {
@@ -151,7 +157,19 @@ export class CommentSystem {
                     console.log('[CommentSystem] ℹ️ No hay más comentarios por cargar.');
                     this.hasMore = false;
                 }
-                this.renderCommentsList(comments);
+                
+                // Si estamos en la primera carga y no hay comentarios, mostrar el estado vacío
+                if (this.offset === 0 && comments.length === 0) {
+                    this.commentsListEl.innerHTML = `
+                        <div class="component-comments-empty" style="text-align: center; padding: 40px 20px; color: var(--text-secondary);">
+                            <span class="material-symbols-rounded" style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;">forum</span>
+                            <h4 style="margin: 0 0 8px 0; font-size: 16px; color: var(--text-primary);">Aún no hay comentarios</h4>
+                            <p style="margin: 0; font-size: 14px;">Sé el primero en compartir tu opinión.</p>
+                        </div>
+                    `;
+                } else {
+                    this.renderCommentsList(comments);
+                }
             } else {
                 console.error('[CommentSystem] ❌ Error desde el servidor al cargar:', result);
             }
@@ -160,7 +178,7 @@ export class CommentSystem {
         } finally {
             this.isLoading = false;
             loader.style.display = 'none';
-            if (this.hasMore) {
+            if (this.hasMore && this.commentsListEl.querySelector('.component-comment-thread')) {
                 this.loadMoreBtn.style.display = 'block';
             }
             console.log('[CommentSystem] 🏁 Finalizado loadComments.');

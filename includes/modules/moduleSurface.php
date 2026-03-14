@@ -38,7 +38,6 @@ $isMainArea = !$isAdminArea && !$isSettingsArea && !$isStudioArea;
         <?php if ($isLoggedIn): ?>
         <div class="component-menu-bottom">
             <div class="component-menu-list">
-                <div class="component-menu-divider"></div>
                 <div class="component-menu-link nav-item" data-nav="<?php echo APP_URL; ?>/feed/playlists">
                     <div class="component-menu-link-icon">
                         <span class="material-symbols-rounded">video_library</span>
