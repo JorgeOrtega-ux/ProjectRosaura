@@ -2,13 +2,12 @@ import { ApiRoutes } from '../../core/api/ApiRoutes.js';
 
 export default class SearchController {
     constructor() {
-        console.log('🟡 [SearchController] Constructor iniciado.');
-        this.currentFilter = 'all';
+        console.log('🟡 [SearchController] Constructor iniciado. (Enterprise Mode)');
+        this.currentTab = 'all';
         this.lastData = null;
     }
 
     cacheDOM() {
-        console.log('🟡 [SearchController] Ejecutando cacheDOM...');
         this.loadingState = document.getElementById('search-loading-state');
         this.emptyState = document.getElementById('search-empty-state');
         
@@ -18,135 +17,191 @@ export default class SearchController {
         this.videosSection = document.getElementById('search-videos-section');
         this.videosGrid = document.getElementById('search-videos-grid');
 
-        this.filterBtns = document.querySelectorAll('.component-search-filter-btn');
+        this.tabBtns = document.querySelectorAll('.component-search-tab-btn');
+        
+        // Elementos de Filtros
+        this.btnToggleFilters = document.getElementById('search-toggle-filters');
+        this.filtersPanel = document.getElementById('search-filters-panel');
+        this.btnApplyFilters = document.getElementById('search-apply-filters');
+        this.btnClearFilters = document.getElementById('search-clear-filters');
+        
+        this.inputSort = document.getElementById('search-sort-select');
+        this.inputCategory = document.getElementById('search-category-input');
+        this.inputTags = document.getElementById('search-tags-input');
+        this.inputModels = document.getElementById('search-models-input');
     }
 
     async init() {
-        console.log('🟡 [SearchController] Ejecutando init()...');
-        
         this.basePath = window.AppBasePath || '/ProjectRosaura';
-
+        this.cacheDOM();
+        
+        // Extraer query y filtros de la URL actual
         const urlParams = new URLSearchParams(window.location.search);
         this.query = urlParams.get('search_query') || '';
-        console.log(`🟡 [SearchController] Query extraída de URL: "${this.query}"`);
         
-        this.cacheDOM();
+        // Autocompletar los inputs con lo que venga en la URL
+        if (this.inputCategory) this.inputCategory.value = urlParams.get('category') || '';
+        if (this.inputTags) this.inputTags.value = urlParams.get('tags') || '';
+        if (this.inputModels) this.inputModels.value = urlParams.get('models') || '';
+        if (this.inputSort) this.inputSort.value = urlParams.get('sort') || 'created_at:desc';
+
         this.bindEvents();
 
-        if (!this.query) {
-            console.warn('🟡 [SearchController] Consulta vacía. Mostrando estado vacío y abortando búsqueda.');
-            this.showEmptyState();
+        if (!this.query && !this.inputCategory.value && !this.inputTags.value && !this.inputModels.value) {
+            this.showEmptyState("Ingresa un término de búsqueda o selecciona un filtro.");
             return;
         }
 
-        document.title = `${this.query} - Búsqueda`;
+        document.title = `${this.query || 'Búsqueda'} - ProjectRosaura`;
 
         await this.fetchResults();
     }
 
     bindEvents() {
-        if (!this.filterBtns) return;
-        
-        this.filterBtns.forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                // Quitar clase activa a todos
-                this.filterBtns.forEach(b => b.classList.remove('component-search-filter-active'));
-                
-                // Agregar clase activa al presionado
-                e.target.classList.add('component-search-filter-active');
-                
-                // Setear filtro y re-renderizar
-                this.currentFilter = e.target.getAttribute('data-filter') || 'all';
-                this.applyFilter();
+        // Pestañas (Todo, Canales, Videos)
+        if (this.tabBtns) {
+            this.tabBtns.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    this.tabBtns.forEach(b => b.classList.remove('component-search-tab-active'));
+                    e.target.classList.add('component-search-tab-active');
+                    this.currentTab = e.target.getAttribute('data-type') || 'all';
+                    this.renderTabs();
+                });
             });
+        }
+
+        // Mostrar/Ocultar Panel de Filtros
+        if (this.btnToggleFilters) {
+            this.btnToggleFilters.addEventListener('click', () => {
+                const isHidden = this.filtersPanel.style.display === 'none';
+                this.filtersPanel.style.display = isHidden ? 'block' : 'none';
+                this.btnToggleFilters.classList.toggle('active', isHidden);
+            });
+        }
+
+        // Botón Limpiar Filtros
+        if (this.btnClearFilters) {
+            this.btnClearFilters.addEventListener('click', () => {
+                this.inputCategory.value = '';
+                this.inputTags.value = '';
+                this.inputModels.value = '';
+                this.inputSort.value = 'created_at:desc';
+                this.applyFiltersAndFetch();
+            });
+        }
+
+        // Botón Aplicar Filtros
+        if (this.btnApplyFilters) {
+            this.btnApplyFilters.addEventListener('click', () => {
+                this.applyFiltersAndFetch();
+            });
+        }
+        
+        // Presionar Enter en los inputs de filtro
+        [this.inputCategory, this.inputTags, this.inputModels].forEach(input => {
+            if(input) {
+                input.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.applyFiltersAndFetch();
+                });
+            }
         });
     }
 
+    applyFiltersAndFetch() {
+        // Actualizar la URL dinámicamente sin recargar la página (History API)
+        const currentUrl = new URL(window.location);
+        
+        const setOrDelete = (key, value) => {
+            if (value && value.trim() !== '') {
+                currentUrl.searchParams.set(key, value.trim());
+            } else {
+                currentUrl.searchParams.delete(key);
+            }
+        };
+
+        setOrDelete('category', this.inputCategory.value);
+        setOrDelete('tags', this.inputTags.value);
+        setOrDelete('models', this.inputModels.value);
+        
+        if (this.inputSort.value !== 'created_at:desc') {
+            currentUrl.searchParams.set('sort', this.inputSort.value);
+        } else {
+            currentUrl.searchParams.delete('sort');
+        }
+
+        window.history.pushState({}, '', currentUrl);
+        
+        // Volver a buscar con los nuevos parámetros
+        this.fetchResults();
+    }
+
     async fetchResults() {
-        console.group(`🚨 [DEEP LOG - SEARCH] Iniciando flujo de búsqueda exhaustivo para: "${this.query}"`);
+        this.showLoadingState();
+        
         try {
             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
             
-            if (!ApiRoutes || !ApiRoutes.Search || !ApiRoutes.Search.Get) {
-                console.error('❌ [Error Crítico] ApiRoutes.Search.Get NO está definido. Revisa ApiRoutes.js');
-            }
+            // Construir Query String para la API
+            const params = new URLSearchParams();
+            if (this.query) params.append('q', this.query);
+            if (this.inputCategory?.value) params.append('category', this.inputCategory.value.trim());
+            if (this.inputTags?.value) params.append('tags', this.inputTags.value.trim());
+            if (this.inputModels?.value) params.append('models', this.inputModels.value.trim());
+            if (this.inputSort?.value) params.append('sort', this.inputSort.value);
 
-            const apiUrl = `${this.basePath}/api/index.php?route=${ApiRoutes?.Search?.Get || 'search.get'}&q=${encodeURIComponent(this.query)}`;
+            const apiUrl = `${this.basePath}/api/index.php?route=${ApiRoutes?.Search?.Get || 'search.get'}&${params.toString()}`;
             
-            const fetchOptions = {
+            const response = await fetch(apiUrl, {
                 method: 'GET',
                 headers: {
                     'X-CSRF-TOKEN': csrfToken,
                     'Content-Type': 'application/json',
                     'Accept': 'application/json'
                 }
-            };
+            });
 
-            const response = await fetch(apiUrl, fetchOptions);
             const rawText = await response.text();
 
-            if (!response.ok) {
-                throw new Error(`HTTP Error ${response.status}. Revisa la respuesta cruda en la consola.`);
-            }
+            if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
             
             let result;
-            try {
-                result = JSON.parse(rawText);
-            } catch (jsonError) {
-                throw new Error("Respuesta inválida del servidor (No es un JSON válido).");
-            }
+            try { result = JSON.parse(rawText); } 
+            catch (jsonError) { throw new Error("Respuesta inválida del servidor."); }
 
             if (result.success) {
-                this.renderResults(result.data);
+                this.lastData = result.data;
+                this.renderTabs();
             } else {
                 this.showEmptyState();
             }
         } catch (error) {
-            console.error('💥 [SearchController - fetchResults] Excepción capturada:', error);
-            this.showEmptyState();
-        } finally {
-            console.log('🏁 [DEEP LOG - SEARCH] Finalizando ejecución de fetchResults.');
-            console.groupEnd();
+            console.error('💥 [SearchController] Error fetching:', error);
+            this.showEmptyState("Hubo un error al conectar con el motor de búsqueda.");
         }
     }
 
-    renderResults(data) {
-        if (this.loadingState) this.loadingState.style.display = 'none';
-        
-        // Guardamos los datos para poder filtrarlos en caliente (sin consultar de nuevo la API)
-        this.lastData = data;
-        this.applyFilter();
-    }
-
-    applyFilter() {
+    renderTabs() {
         if (!this.lastData) return;
+        
+        this.hideAll();
+        
         const data = this.lastData;
-
         const hasChannels = data.channels && data.channels.length > 0;
         const hasVideos = data.videos && data.videos.length > 0;
-
-        // Ocultar todo inicialmente
-        if (this.channelsSection) this.channelsSection.style.display = 'none';
-        if (this.videosSection) this.videosSection.style.display = 'none';
-        if (this.emptyState) this.emptyState.style.display = 'none';
-
         let showedAnything = false;
 
-        // Lógica: Mostrar canales si filtro es 'all' o 'channels' y hay data
-        if ((this.currentFilter === 'all' || this.currentFilter === 'channels') && hasChannels) {
+        if ((this.currentTab === 'all' || this.currentTab === 'channels') && hasChannels) {
             if (this.channelsSection) this.channelsSection.style.display = 'block';
             this.renderChannels(data.channels);
             showedAnything = true;
         }
 
-        // Lógica: Mostrar videos si filtro es 'all' o 'videos' y hay data
-        if ((this.currentFilter === 'all' || this.currentFilter === 'videos') && hasVideos) {
+        if ((this.currentTab === 'all' || this.currentTab === 'videos') && hasVideos) {
             if (this.videosSection) this.videosSection.style.display = 'block';
             this.renderVideos(data.videos);
             showedAnything = true;
         }
 
-        // Si después de aplicar el filtro no hay nada visible (Ej: Filtro "canales" pero solo hay "videos")
         if (!showedAnything) {
             this.showEmptyState();
         }
@@ -199,7 +254,7 @@ export default class SearchController {
             const views = video.views || 0;
             const uuid = video.uuid || video.id_video;
             
-            const createdDate = video.created_at ? new Date(video.created_at) : new Date();
+            const createdDate = video.created_at ? new Date(video.created_at * 1000) : new Date();
             const timeAgo = this.timeSince(createdDate);
             const formattedDuration = this.formatDuration(video.duration || 0);
             const dominantColor = video.thumbnail_dominant_color && video.thumbnail_dominant_color !== 'transparent' ? video.thumbnail_dominant_color : '#333';
@@ -215,34 +270,23 @@ export default class SearchController {
 
             const thumbPath = buildUrl(video.thumbnail_path, fallbackThumb);
             const avatarSrc = buildUrl(video.avatar_path, `${this.basePath}/public/storage/profilePictures/default/default.png`);
-            
             const videoSrc = buildUrl(video.hls_path, '');
             const navUrl = `${this.basePath}/watch/${uuid}`;
 
             const cardHTML = `
                 <div class="component-video-card" style="--local-dominant-color: ${dominantColor}; cursor: pointer;" data-nav="${navUrl}">
                     <div class="component-video-card__top">
-                        <img src="${thumbPath}" alt="Miniatura de ${title}" class="component-video-card__thumbnail" loading="lazy" onerror="this.onerror=null; this.src='${fallbackThumb}'">
-                        
-                        <video 
-                            data-src="${videoSrc}" 
-                            data-uuid="${uuid}"
-                            class="component-video-card__player" 
-                            muted 
-                            loop 
-                            playsinline>
-                        </video>
-
+                        <img src="${thumbPath}" alt="Miniatura" class="component-video-card__thumbnail" loading="lazy" onerror="this.onerror=null; this.src='${fallbackThumb}'">
+                        <video data-src="${videoSrc}" data-uuid="${uuid}" class="component-video-card__player" muted loop playsinline></video>
                         <span class="component-video-card__duration">${formattedDuration}</span>
                     </div>
-
                     <div class="component-video-card__bottom">
                         <div class="component-video-card__avatar">
-                            <img src="${avatarSrc}" alt="Perfil de ${video.username || 'Usuario'}" loading="lazy" onerror="this.onerror=null; this.src='${this.basePath}/public/storage/profilePictures/default/default.png'">
+                            <img src="${avatarSrc}" alt="Perfil" loading="lazy" onerror="this.onerror=null; this.src='${this.basePath}/public/storage/profilePictures/default/default.png'">
                         </div>
                         <div class="component-video-card__info">
                             <h3 class="component-video-card__title" title="${title}">${title}</h3>
-                            <p class="component-video-card__user">${video.username || 'Usuario Desconocido'}</p>
+                            <p class="component-video-card__user">${video.channel_name || video.username || 'Usuario Desconocido'}</p>
                             <p class="component-video-card__meta">${views} vistas • ${timeAgo}</p>
                         </div>
                     </div>
@@ -271,16 +315,12 @@ export default class SearchController {
     formatDuration(seconds) {
         const totalSeconds = parseInt(seconds, 10);
         if (isNaN(totalSeconds) || totalSeconds <= 0) return '00:00';
-
         const h = Math.floor(totalSeconds / 3600);
         const m = Math.floor((totalSeconds % 3600) / 60);
         const s = totalSeconds % 60;
-
         const mStr = m.toString().padStart(2, '0');
         const sStr = s.toString().padStart(2, '0');
-
-        if (h > 0) return `${h}:${mStr}:${sStr}`;
-        return `${mStr}:${sStr}`;
+        return h > 0 ? `${h}:${mStr}:${sStr}` : `${mStr}:${sStr}`;
     }
 
     timeSince(date) {
@@ -298,8 +338,26 @@ export default class SearchController {
         return "instantes";
     }
 
-    showEmptyState() {
+    hideAll() {
+        if (this.channelsSection) this.channelsSection.style.display = 'none';
+        if (this.videosSection) this.videosSection.style.display = 'none';
+        if (this.emptyState) this.emptyState.style.display = 'none';
         if (this.loadingState) this.loadingState.style.display = 'none';
-        if (this.emptyState) this.emptyState.style.display = 'flex';
+    }
+
+    showLoadingState() {
+        this.hideAll();
+        if (this.loadingState) this.loadingState.style.display = 'flex';
+    }
+
+    showEmptyState(customTitle = null) {
+        this.hideAll();
+        if (this.emptyState) {
+            this.emptyState.style.display = 'flex';
+            if(customTitle) {
+                const titleEl = document.getElementById('search-empty-title');
+                if(titleEl) titleEl.textContent = customTitle;
+            }
+        }
     }
 }

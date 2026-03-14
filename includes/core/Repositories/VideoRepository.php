@@ -6,15 +6,35 @@ namespace App\Core\Repositories;
 use App\Core\Interfaces\VideoRepositoryInterface;
 use PDO;
 use Exception;
-use MeiliSearch\Client as MeiliClient;
+use App\Config\RedisCache;
 
 class VideoRepository implements VideoRepositoryInterface {
     private $db;
-    private $meiliClient;
 
-    public function __construct(PDO $db, MeiliClient $meiliClient = null) {
+    public function __construct(PDO $db) {
         $this->db = $db;
-        $this->meiliClient = $meiliClient;
+    }
+
+    /**
+     * Encola un evento en Redis usando Predis para que el Worker de Python lo sincronice asíncronamente
+     */
+    private function pushToSearchQueue(int $id, string $action): void {
+        try {
+            $redisCache = new RedisCache();
+            $client = $redisCache->getClient();
+            
+            if ($client) {
+                $payload = json_encode([
+                    'type' => 'video',
+                    'action' => $action,
+                    'id' => $id
+                ]);
+                // En Predis, rpush recibe la key y un array de valores
+                $client->rpush('queue:search_sync', [$payload]);
+            }
+        } catch (Exception $e) {
+            error_log("Error encolando sincronización de video a Redis: " . $e->getMessage());
+        }
     }
 
     private function applyLocalizedTitle(array $video): array {
@@ -71,42 +91,6 @@ class VideoRepository implements VideoRepositoryInterface {
         return $video;
     }
 
-    private function syncVideoToMeili(int $videoId): void {
-        if (!$this->meiliClient) return;
-        
-        $video = $this->findById($videoId);
-        
-        if ($video && $video['status'] === 'published' && $video['visibility'] === 'public') {
-            $tags = $this->getVideoTags($videoId);
-            $tagNames = array_map(function($t) { return $t['name']; }, $tags);
-            
-            $doc = [
-                'id_video' => $video['id'],
-                'id_user' => $video['user_id'],
-                'title' => $video['title'],
-                'localized_titles' => $video['localized_titles'],
-                'original_language' => $video['original_language'],
-                'description' => $video['description'],
-                'tags' => implode(', ', $tagNames),
-                'created_at' => $video['created_at'],
-                'visibility' => $video['visibility'],
-                'allow_comments' => $video['allow_comments']
-            ];
-            
-            try {
-                $this->meiliClient->index('videos')->addDocuments([$doc], 'id_video');
-            } catch (Exception $e) {
-                error_log("Meilisearch sync error (Video Add): " . $e->getMessage());
-            }
-        } else {
-            try {
-                $this->meiliClient->index('videos')->deleteDocument($videoId);
-            } catch (Exception $e) {
-                error_log("Meilisearch sync error (Video Delete): " . $e->getMessage());
-            }
-        }
-    }
-
     public function create(int $userId, string $uuid, string $originalFilename, string $tempFilePath, string $originalLanguage = 'es-419'): int {
         $stmt = $this->db->prepare("
             INSERT INTO videos (user_id, uuid, original_filename, temp_file_path, status, visibility, original_language) 
@@ -133,7 +117,7 @@ class VideoRepository implements VideoRepositoryInterface {
         ]);
         
         if ($success) {
-            $this->syncVideoToMeili($videoId);
+            $this->pushToSearchQueue($videoId, 'upsert');
         }
         
         return $success;
@@ -199,7 +183,7 @@ class VideoRepository implements VideoRepositoryInterface {
         $success = $stmt->execute($params);
         
         if ($success) {
-            $this->syncVideoToMeili($videoId);
+            $this->pushToSearchQueue($videoId, 'upsert');
         }
         
         return $success;
@@ -322,7 +306,7 @@ class VideoRepository implements VideoRepositoryInterface {
             
             $this->db->commit();
             
-            $this->syncVideoToMeili($id);
+            $this->pushToSearchQueue($id, 'delete');
             
             return true;
         } catch (Exception $e) {
@@ -414,7 +398,7 @@ class VideoRepository implements VideoRepositoryInterface {
 
             $this->db->commit();
             
-            $this->syncVideoToMeili($videoId);
+            $this->pushToSearchQueue($videoId, 'upsert');
             
             return true;
         } catch (Exception $e) {
@@ -451,7 +435,6 @@ class VideoRepository implements VideoRepositoryInterface {
         try {
             $this->db->beginTransaction();
 
-            // Averiguar el ID de la lista "Videos que me gustan" del usuario
             $stmtLv = $this->db->prepare("SELECT id FROM playlists WHERE user_id = ? AND type = 'liked_videos' LIMIT 1");
             $stmtLv->execute([$userId]);
             $lvPlaylistId = $stmtLv->fetchColumn();
@@ -460,28 +443,24 @@ class VideoRepository implements VideoRepositoryInterface {
             $newState = null;
 
             if ($currentInteraction === $type) {
-                // QUITAR LA INTERACCIÓN (Ej: Dar click en Like cuando ya tenías Like)
                 $stmt = $this->db->prepare("DELETE FROM video_interactions WHERE user_id = ? AND video_id = ?");
                 $stmt->execute([$userId, $videoId]);
                 
                 $col = ($type === 'like') ? 'likes' : 'dislikes';
                 $this->db->prepare("UPDATE videos SET $col = GREATEST($col - 1, 0) WHERE id = ?")->execute([$videoId]);
                 
-                // Si quitamos el Like, lo eliminamos de la playlist de "Videos que me gustan"
                 if ($type === 'like' && $lvPlaylistId) {
                     $stmtRm = $this->db->prepare("DELETE FROM playlist_videos WHERE playlist_id = ? AND video_id = ?");
                     $stmtRm->execute([$lvPlaylistId, $videoId]);
                 }
                 
             } elseif ($currentInteraction !== null) {
-                // CAMBIAR LA INTERACCIÓN (Ej: Cambiar de Dislike a Like o viceversa)
                 $stmt = $this->db->prepare("UPDATE video_interactions SET interaction_type = ? WHERE user_id = ? AND video_id = ?");
                 $stmt->execute([$type, $userId, $videoId]);
 
                 if ($type === 'like') {
                     $this->db->prepare("UPDATE videos SET likes = likes + 1, dislikes = GREATEST(dislikes - 1, 0) WHERE id = ?")->execute([$videoId]);
                     
-                    // Se dio Like (habiendo Dislike), insertamos en la playlist "Videos que me gustan"
                     if ($lvPlaylistId) {
                         $stmtMax = $this->db->prepare("SELECT MAX(display_order) FROM playlist_videos WHERE playlist_id = ?");
                         $stmtMax->execute([$lvPlaylistId]);
@@ -493,7 +472,6 @@ class VideoRepository implements VideoRepositoryInterface {
                 } else {
                     $this->db->prepare("UPDATE videos SET dislikes = dislikes + 1, likes = GREATEST(likes - 1, 0) WHERE id = ?")->execute([$videoId]);
                     
-                    // Se dio Dislike (habiendo Like), eliminamos de "Videos que me gustan"
                     if ($lvPlaylistId) {
                         $stmtRm = $this->db->prepare("DELETE FROM playlist_videos WHERE playlist_id = ? AND video_id = ?");
                         $stmtRm->execute([$lvPlaylistId, $videoId]);
@@ -502,14 +480,12 @@ class VideoRepository implements VideoRepositoryInterface {
                 $newState = $type;
 
             } else {
-                // NUEVA INTERACCIÓN (No había ni Like ni Dislike)
                 $stmt = $this->db->prepare("INSERT INTO video_interactions (user_id, video_id, interaction_type) VALUES (?, ?, ?)");
                 $stmt->execute([$userId, $videoId, $type]);
 
                 $col = ($type === 'like') ? 'likes' : 'dislikes';
                 $this->db->prepare("UPDATE videos SET $col = $col + 1 WHERE id = ?")->execute([$videoId]);
                 
-                // Si fue un Like, agregarlo a la playlist de sistema "Videos que me gustan"
                 if ($type === 'like' && $lvPlaylistId) {
                     $stmtMax = $this->db->prepare("SELECT MAX(display_order) FROM playlist_videos WHERE playlist_id = ?");
                     $stmtMax->execute([$lvPlaylistId]);

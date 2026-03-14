@@ -5,12 +5,35 @@ namespace App\Core\Repositories;
 
 use App\Core\Interfaces\TagRepositoryInterface;
 use PDO;
+use Exception;
+use App\Config\RedisCache;
 
 class TagRepository implements TagRepositoryInterface {
     private $db;
 
     public function __construct(PDO $db) {
         $this->db = $db;
+    }
+
+    /**
+     * Encola evento a Redis usando Predis para sincronizar tags en Meilisearch
+     */
+    private function pushToSearchQueue(int $id, string $action): void {
+        try {
+            $redisCache = new RedisCache();
+            $client = $redisCache->getClient();
+            
+            if ($client) {
+                $payload = json_encode([
+                    'type' => 'tag',
+                    'action' => $action,
+                    'id' => $id
+                ]);
+                $client->rpush('queue:search_sync', [$payload]);
+            }
+        } catch (Exception $e) {
+            error_log("Error encolando sincronización de tag a Redis: " . $e->getMessage());
+        }
     }
 
     public function getAll() {
@@ -44,27 +67,35 @@ class TagRepository implements TagRepositoryInterface {
     public function findOrCreate($name, $type, $gender = null) {
         $name = trim($name);
         
-        // 1. Buscamos si ya existe exactamente con ese nombre
         $existing = $this->findByName($name);
         if ($existing) {
             return (int) $existing['id'];
         }
         
-        // 2. Si no existe, lo creamos
         $this->create($name, $type, $gender);
-        
-        // 3. Retornamos el ID recién insertado
         return (int) $this->db->lastInsertId();
     }
 
     public function update($id, $name, $type, $gender = null) {
         $stmt = $this->db->prepare("UPDATE tags SET name = :name, type = :type, gender = :gender WHERE id = :id");
-        return $stmt->execute(['id' => $id, 'name' => $name, 'type' => $type, 'gender' => $gender]);
+        $success = $stmt->execute(['id' => $id, 'name' => $name, 'type' => $type, 'gender' => $gender]);
+        
+        if ($success) {
+            $this->pushToSearchQueue($id, 'update');
+        }
+        
+        return $success;
     }
 
     public function delete($id) {
         $stmt = $this->db->prepare("DELETE FROM tags WHERE id = :id");
-        return $stmt->execute(['id' => $id]);
+        $success = $stmt->execute(['id' => $id]);
+        
+        if ($success) {
+            $this->pushToSearchQueue($id, 'update');
+        }
+        
+        return $success;
     }
 }
 ?>

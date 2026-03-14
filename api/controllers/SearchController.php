@@ -1,4 +1,5 @@
 <?php
+// api/controllers/SearchController.php
 
 namespace ProjectRosaura\Controllers;
 
@@ -29,7 +30,26 @@ class SearchController {
     public function search(array $input): array {
         $query = isset($input['q']) ? trim($input['q']) : '';
         
-        if (empty($query)) {
+        // Extraer los nuevos parámetros de filtro
+        $filters = [
+            'category' => isset($input['category']) ? trim($input['category']) : null,
+            'tags' => isset($input['tags']) ? trim($input['tags']) : null,
+            'models' => isset($input['models']) ? trim($input['models']) : null,
+        ];
+        
+        // Limpiar filtros vacíos
+        $filters = array_filter($filters);
+
+        // Soporte para ordenamiento (sort = "views:desc", "created_at:desc", etc)
+        $sort = isset($input['sort']) ? trim($input['sort']) : 'created_at:desc';
+        
+        // Validación de seguridad para sort
+        $allowedSorts = ['created_at:desc', 'created_at:asc', 'views:desc', 'views:asc'];
+        if (!in_array($sort, $allowedSorts)) {
+            $sort = 'created_at:desc';
+        }
+
+        if (empty($query) && empty($filters)) {
             $this->logger->info("Petición de búsqueda vacía recibida.", ['module' => 'search']);
             return [
                 'success' => true, 
@@ -41,9 +61,13 @@ class SearchController {
         }
 
         try {
-            $this->logger->info("Motor de búsqueda consultando", ['query' => $query]);
+            $this->logger->info("Motor de búsqueda consultando", [
+                'query' => $query,
+                'filters' => $filters,
+                'sort' => $sort
+            ]);
             
-            $results = $this->searchServices->performSearch($query);
+            $results = $this->searchServices->performSearch($query, $filters, $sort);
             
             return [
                 'success' => true, 
@@ -56,9 +80,9 @@ class SearchController {
             http_response_code(500);
             return [
                 'success' => false, 
-                // CORRECCIÓN: Ahora imprimirá exactamente qué falló (Connection Refused, Index not found, etc.)
                 'message' => $e->getMessage() 
             ];
         }
     }
 }
+?>

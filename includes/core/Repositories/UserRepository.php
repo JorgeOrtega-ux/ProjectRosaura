@@ -6,44 +6,33 @@ namespace App\Core\Repositories;
 use App\Core\Interfaces\UserRepositoryInterface;
 use PDO;
 use Exception;
-use MeiliSearch\Client as MeiliClient;
+use App\Config\RedisCache;
 
 class UserRepository implements UserRepositoryInterface {
     private $pdo;
-    private $meiliClient;
 
-    public function __construct(PDO $pdo, MeiliClient $meiliClient = null) {
+    public function __construct(PDO $pdo) {
         $this->pdo = $pdo;
-        $this->meiliClient = $meiliClient;
     }
 
     /**
-     * Sincroniza el documento del canal con Meilisearch.
+     * Encola evento a Redis usando Predis para sincronizar canal en Meilisearch
      */
-    private function syncChannelToMeili(int $id): void {
-        if (!$this->meiliClient) return;
-        
-        $user = $this->findById($id);
-        
-        if ($user && $user['user_status'] === 'active' && empty($user['is_suspended'])) {
-            $doc = [
-                'id_user' => $user['id'],
-                'username' => $user['username'],
-                'handle' => $user['channel_identifier'],
-                'avatar_path' => $user['profile_picture']
-            ];
-            try {
-                $this->meiliClient->index('channels')->addDocuments([$doc], 'id_user');
-            } catch (Exception $e) {
-                error_log("Meilisearch sync error (Channel Add): " . $e->getMessage());
+    private function pushToSearchQueue(int $id, string $action): void {
+        try {
+            $redisCache = new RedisCache();
+            $client = $redisCache->getClient();
+            
+            if ($client) {
+                $payload = json_encode([
+                    'type' => 'channel',
+                    'action' => $action,
+                    'id' => $id
+                ]);
+                $client->rpush('queue:search_sync', [$payload]);
             }
-        } else {
-            // Si el canal está suspendido, eliminado o inactivo
-            try {
-                $this->meiliClient->index('channels')->deleteDocument($id);
-            } catch (Exception $e) {
-                error_log("Meilisearch sync error (Channel Delete): " . $e->getMessage());
-            }
+        } catch (Exception $e) {
+            error_log("Error encolando sincronización de canal a Redis: " . $e->getMessage());
         }
     }
 
@@ -145,13 +134,12 @@ class UserRepository implements UserRepositoryInterface {
             $stmtRest = $this->pdo->prepare("INSERT INTO user_restrictions (user_id) VALUES (?)");
             $stmtRest->execute([$userId]);
 
-            // Crear registro en user_profiles
             $stmtProfile = $this->pdo->prepare("INSERT INTO user_profiles (user_id) VALUES (?)");
             $stmtProfile->execute([$userId]);
 
             $this->pdo->commit();
             
-            $this->syncChannelToMeili($userId);
+            $this->pushToSearchQueue($userId, 'upsert');
             
             return $userId;
         } catch (\Exception $e) {
@@ -167,14 +155,14 @@ class UserRepository implements UserRepositoryInterface {
             WHERE user_id = ?
         ");
         $success = $stmt->execute([$id]);
-        if ($success) $this->syncChannelToMeili($id);
+        if ($success) $this->pushToSearchQueue($id, 'upsert');
         return $success;
     }
 
     public function updateAvatar(int $id, string $path): bool {
         $stmt = $this->pdo->prepare("UPDATE users SET profile_picture = ? WHERE id = ?");
         $success = $stmt->execute([$path, $id]);
-        if ($success) $this->syncChannelToMeili($id);
+        if ($success) $this->pushToSearchQueue($id, 'upsert');
         return $success;
     }
 
@@ -186,18 +174,15 @@ class UserRepository implements UserRepositoryInterface {
     public function updateChannelProfile(int $id, ?string $description, ?string $identifier, ?string $contactEmail): bool {
         $stmt = $this->pdo->prepare("UPDATE users SET channel_description = ?, channel_identifier = ?, channel_contact_email = ? WHERE id = ?");
         $success = $stmt->execute([$description, $identifier, $contactEmail, $id]);
-        if ($success) $this->syncChannelToMeili($id);
+        if ($success) $this->pushToSearchQueue($id, 'upsert');
         return $success;
     }
 
-    // --- MÉTODO ACTUALIZADO CON REDES SOCIALES Y NUEVOS DETALLES ---
     public function updateExtendedProfile(int $id, array $profileData): bool {
-        // Verificar si el registro existe
         $checkStmt = $this->pdo->prepare("SELECT user_id FROM user_profiles WHERE user_id = ?");
         $checkStmt->execute([$id]);
         
         if ($checkStmt->fetch()) {
-            // Actualizar si existe
             $stmt = $this->pdo->prepare("
                 UPDATE user_profiles 
                 SET relationship_status = ?, interested_in = ?, gender = ?, 
@@ -230,7 +215,6 @@ class UserRepository implements UserRepositoryInterface {
                 $id
             ]);
         } else {
-            // Insertar si no existe
             $stmt = $this->pdo->prepare("
                 INSERT INTO user_profiles 
                 (user_id, relationship_status, interested_in, gender, height, weight, hair_color, boobs, ethnicity, eye_color, country, tattoos, piercings, interests, social_facebook, social_youtube, social_instagram, social_x, social_onlyfans, social_snapchat)
@@ -264,14 +248,14 @@ class UserRepository implements UserRepositoryInterface {
     public function updateIdentifier(int $id, string $identifier): bool {
         $stmt = $this->pdo->prepare("UPDATE users SET channel_identifier = ? WHERE id = ?");
         $success = $stmt->execute([$identifier, $id]);
-        if ($success) $this->syncChannelToMeili($id);
+        if ($success) $this->pushToSearchQueue($id, 'upsert');
         return $success;
     }
 
     public function updateUsername(int $id, string $username): bool {
         $stmt = $this->pdo->prepare("UPDATE users SET username = ? WHERE id = ?");
         $success = $stmt->execute([$username, $id]);
-        if ($success) $this->syncChannelToMeili($id);
+        if ($success) $this->pushToSearchQueue($id, 'upsert');
         return $success;
     }
 
