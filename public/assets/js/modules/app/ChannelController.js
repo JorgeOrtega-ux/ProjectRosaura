@@ -15,7 +15,6 @@ export class ChannelController {
     async init(params = {}) {
         console.log("Channel view loaded successfully.");
         
-        // Limpiamos la memoria del controlador reciclado por la SPA
         this.channelIdentifier = null;
 
         if (params.identifier) {
@@ -41,12 +40,10 @@ export class ChannelController {
     }
     
     async loadChannelData(identifier) {
-        // En una implementación real este endpoint traerá los datos y actualizará la UI
         const apiUrl = `/api/channel/get_by_identifier?identifier=${identifier}`;
         try {
              console.log(`[DEBUG RANKING] Iniciando carga de datos para identificador: ${identifier}`);
              
-             // Extraer el ID de usuario desde el nuevo elemento de la lista
              const rankContainer = document.getElementById('channel-ranking-container');
              console.log(`[DEBUG RANKING] ¿Se encontró el li 'channel-ranking-container'?:`, !!rankContainer);
              
@@ -78,21 +75,17 @@ export class ChannelController {
                 console.log(`[DEBUG RANKING] El usuario SÍ tiene ranking. Rank actual:`, response.data.current.current_rank);
                 const currentData = response.data.current;
                 
-                // Mostrar el elemento en la lista
                 if (rankContainer) rankContainer.style.display = 'flex';
                 
-                // Determinar el icono de tendencia
                 let trendIcon = '⬜';
                 if (currentData.trend === 'up') trendIcon = '🟩';
                 else if (currentData.trend === 'down') trendIcon = '🟥';
 
-                // Asignar el texto simple
                 if (rankText) {
                     rankText.innerText = `Posición #${currentData.current_rank} en el ranking ${trendIcon}`;
                 }
             } else {
                 console.log(`[DEBUG RANKING] El usuario NO tiene ranking.`);
-                // Ocultar el elemento de la lista si no está clasificado
                 if (rankContainer) rankContainer.style.display = 'none';
             }
         } catch (error) {
@@ -136,7 +129,6 @@ export class ChannelController {
         });
     }
 
-    // --- SUSCRIPCIÓN OPTIMISTA EN EL CANAL ---
     setupSubscriptionButton() {
         const subBtn = document.getElementById('btn-channel-subscribe');
         if (!subBtn) return;
@@ -151,7 +143,6 @@ export class ChannelController {
             const originalText = newBtn.innerText;
             const isSubscribed = originalText.trim().toLowerCase() === 'suscrito';
 
-            // UI Optimista Inmediata
             if (isSubscribed) {
                 newBtn.innerText = 'Suscribirse';
                 newBtn.classList.remove('component-btn-secondary');
@@ -165,7 +156,6 @@ export class ChannelController {
             const response = await this.api.postSubscribe(identifier);
 
             if (!response.success) {
-                // Revertir UI
                 newBtn.innerText = originalText;
                 if (isSubscribed) {
                     newBtn.classList.remove('component-btn-primary');
@@ -182,7 +172,6 @@ export class ChannelController {
                     this.dialog.show('error', { title: 'Aviso', message: response.message || 'Error al procesar la solicitud.' });
                 }
             } else {
-                // Confirmar UI y actualizar conteo de suscriptores real del servidor
                 newBtn.innerText = response.is_subscribed ? 'Suscrito' : 'Suscribirse';
                 if (response.is_subscribed) {
                     newBtn.classList.remove('component-btn-primary');
@@ -205,7 +194,6 @@ export class ChannelController {
     }
 
     setupLocalEditToggles() {
-        // Detecta el layout correcto dependiendo de en qué vista estemos
         const wrapper = document.querySelector('.component-channel-layout') || document.querySelector('.component-wrapper');
         if (!wrapper) return;
 
@@ -268,9 +256,28 @@ export class ChannelController {
     }
 
     setupCustomFormControls() {
-        // Soporte dual: Vista pública (.component-channel-layout) o vista de Edición de Perfil (.component-wrapper)
         const wrapper = document.querySelector('.component-channel-layout') || document.querySelector('.component-wrapper');
         if (!wrapper) return;
+
+        // Toggle para cambiar visualmente el sistema de medidas
+        wrapper.querySelectorAll('[data-action="switchMeasure"]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const sys = e.target.getAttribute('data-sys');
+                document.querySelectorAll('[data-action="switchMeasure"]').forEach(b => b.classList.remove('component-button--dark'));
+                e.target.classList.add('component-button--dark');
+                
+                const metricInputs = document.getElementById('metric-inputs');
+                const imperialInputs = document.getElementById('imperial-inputs');
+                
+                if (sys === 'metric') {
+                    if(metricInputs) metricInputs.style.display = 'flex';
+                    if(imperialInputs) imperialInputs.style.display = 'none';
+                } else {
+                    if(metricInputs) metricInputs.style.display = 'none';
+                    if(imperialInputs) imperialInputs.style.display = 'flex';
+                }
+            });
+        });
 
         wrapper.querySelectorAll('[data-action="selectOption"]').forEach(option => {
             option.addEventListener('click', (e) => {
@@ -287,7 +294,6 @@ export class ChannelController {
                 siblings.forEach(sib => sib.classList.remove('active'));
                 option.classList.add('active');
 
-                // Cerrar el módulo apoyándose en el controlador principal global
                 const currentModule = option.closest('.component-module');
                 if (window.appInstance && currentModule) {
                     window.appInstance.closeModule(currentModule);
@@ -368,8 +374,30 @@ export class ChannelController {
             const ethnicity = document.getElementById('channelEthnicityInput')?.value || '';
             const eyeColor = document.getElementById('channelEyeColorInput')?.value || '';
             const country = document.getElementById('channelCountryInput')?.value || '';
-            const height = document.getElementById('channelHeightInput')?.value || '';
-            const weight = document.getElementById('channelWeightInput')?.value || '';
+            
+            // Calculo de altura y peso (Forzando la conversión a Métrico antes de mandar)
+            let finalHeight = '';
+            let finalWeight = '';
+            
+            const activeSysBtn = document.querySelector('.measurement-toggle-wrap .component-button--dark');
+            const activeSys = activeSysBtn ? activeSysBtn.getAttribute('data-sys') : 'metric';
+            
+            if (activeSys === 'imperial') {
+                let ft = parseFloat(document.getElementById('channelHeightFtInput')?.value) || 0;
+                let inc = parseFloat(document.getElementById('channelHeightInInput')?.value) || 0;
+                let lbs = parseFloat(document.getElementById('channelWeightLbsInput')?.value) || 0;
+                
+                let totalInches = (ft * 12) + inc;
+                let heightMeters = (totalInches * 2.54) / 100; 
+                let weightKg = lbs / 2.20462; 
+                
+                if (totalInches > 0) finalHeight = heightMeters.toFixed(2);
+                if (lbs > 0) finalWeight = weightKg.toFixed(2);
+            } else {
+                finalHeight = document.getElementById('channelHeightInput')?.value || '';
+                finalWeight = document.getElementById('channelWeightInput')?.value || '';
+            }
+
             const tattoos = document.getElementById('channelTattoosInput')?.checked ? 1 : 0;
             const piercings = document.getElementById('channelPiercingsInput')?.checked ? 1 : 0;
             const interests = document.getElementById('channelInterestsInput')?.value || '';
@@ -398,8 +426,9 @@ export class ChannelController {
                     ethnicity: ethnicity,
                     eye_color: eyeColor,
                     country: country,
-                    height: height,
-                    weight: weight,
+                    height: finalHeight,
+                    weight: finalWeight,
+                    measurement_system: 'metric', // Enviamos flag 'metric' para que el backend no duplique la conversión
                     tattoos: tattoos,
                     piercings: piercings,
                     interests: interests,

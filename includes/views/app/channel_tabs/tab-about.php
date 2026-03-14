@@ -28,8 +28,8 @@
                     'Color de ojos' => $eyeColorMap[$channelUser['eye_color'] ?? ''] ?? 'No especificado',
                     'Color de cabello' => $hairColorMap[$channelUser['hair_color'] ?? ''] ?? 'No especificado',
                     'Pechos / Busto' => $boobsMap[$channelUser['boobs'] ?? ''] ?? 'No especificado',
-                    'Estatura' => !empty($channelUser['height']) ? htmlspecialchars($channelUser['height']) . ' m' : 'No especificado',
-                    'Peso' => !empty($channelUser['weight']) ? htmlspecialchars($channelUser['weight']) . ' kg' : 'No especificado',
+                    'Estatura' => !empty($channelUser['display_height']) ? htmlspecialchars($channelUser['display_height']) : (!empty($channelUser['height']) ? htmlspecialchars($channelUser['height']) . ' m' : 'No especificado'),
+                    'Peso' => !empty($channelUser['display_weight']) ? htmlspecialchars($channelUser['display_weight']) : (!empty($channelUser['weight']) ? htmlspecialchars($channelUser['weight']) . ' kg' : 'No especificado'),
                     'Tatuajes' => !empty($channelUser['tattoos']) ? 'Sí' : 'No',
                     'Perforaciones' => !empty($channelUser['piercings']) ? 'Sí' : 'No',
                 ];

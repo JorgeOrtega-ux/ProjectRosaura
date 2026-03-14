@@ -26,6 +26,7 @@ $isDefaultAvatar = strpos($userPic, '/default/') !== false;
 // Preferencias
 $userPrefs = $_SESSION['user_prefs'] ?? [];
 $prefLang = $userPrefs['language'] ?? ($_COOKIE['pr_language'] ?? 'es-419');
+$prefMeasurement = $userPrefs['measurement_system'] ?? 'metric';
 $prefOpenLinks = isset($userPrefs['open_links_new_tab']) ? (int)$userPrefs['open_links_new_tab'] : 1;
 
 $languages = [
@@ -167,6 +168,23 @@ $currentLangText = $languages[$prefLang] ?? 'Español (Latinoamérica)';
                         <?php include __DIR__ . '/../../modules/moduleLanguage.php'; ?>
                     </div>
 
+                </div>
+            </div>
+            
+            <hr class="component-divider">
+
+            <div class="component-group-item component-group-item--wrap">
+                <div class="component-card__content">
+                    <div class="component-card__text">
+                        <h2 class="component-card__title">Sistema de Medición</h2>
+                        <p class="component-card__description">Elige cómo prefieres ver y registrar medidas (peso, altura, etc).</p>
+                    </div>
+                </div>
+                <div class="component-card__actions component-card__actions--end">
+                    <select class="component-input-field" data-action="updateMeasurementSystem" style="width: 200px;">
+                        <option value="metric" <?php echo $prefMeasurement === 'metric' ? 'selected' : ''; ?>>Métrico (kg / cm)</option>
+                        <option value="imperial" <?php echo $prefMeasurement === 'imperial' ? 'selected' : ''; ?>>Imperial (lbs / ft-in)</option>
+                    </select>
                 </div>
             </div>
         </div>

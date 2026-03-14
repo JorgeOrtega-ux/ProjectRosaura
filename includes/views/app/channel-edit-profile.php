@@ -18,8 +18,6 @@ $currentContact = $currentUser['channel_contact_email'] ?? '';
 $relStatus = $currentUser['relationship_status'] ?? '';
 $interestedIn = $currentUser['interested_in'] ?? '';
 $gender = $currentUser['gender'] ?? '';
-$height = $currentUser['height'] ?? '';
-$weight = $currentUser['weight'] ?? '';
 $hairColor = $currentUser['hair_color'] ?? '';
 $boobs = $currentUser['boobs'] ?? '';
 $ethnicity = $currentUser['ethnicity'] ?? '';
@@ -36,6 +34,21 @@ $socialIg = $currentUser['social_instagram'] ?? '';
 $socialX = $currentUser['social_x'] ?? '';
 $socialOf = $currentUser['social_onlyfans'] ?? '';
 $socialSc = $currentUser['social_snapchat'] ?? '';
+
+// LÓGICA DE SISTEMA DE MEDIDAS
+$prefSystem = $_SESSION['user_prefs']['measurement_system'] ?? 'metric';
+
+$heightRaw = $currentUser['height'] ?? '';
+$weightRaw = $currentUser['weight'] ?? '';
+
+$h_m = !empty($heightRaw) ? (float)$heightRaw : 1.70;
+$w_kg = !empty($weightRaw) ? (float)$weightRaw : 70.0;
+
+// Convertir a imperial para poblar los inputs dinámicos
+$totalInches = round(($h_m * 100) / 2.54);
+$h_ft = floor($totalInches / 12);
+$h_in = $totalInches % 12;
+$w_lbs = round($w_kg * 2.20462);
 
 // Arrays para mapear valores a texto
 $relStatusMap = ['single' => 'Soltero/a', 'married' => 'Casado/a', 'in_a_relationship' => 'En una relación', 'complicated' => 'Es complicado', 'open_relationship' => 'Relación abierta', '' => 'No especificado'];
@@ -515,41 +528,88 @@ $countriesMap = [
                 <div class="component-card__content">
                     <div class="component-card__text">
                         <h2 class="component-card__title">Medidas corporales</h2>
-                        <p class="component-card__description">Ajusta tu estatura y peso utilizando los controles.</p>
+                        <p class="component-card__description">Ajusta tu estatura y peso utilizando los controles. Selecciona el sistema que prefieras para ingresarlos.</p>
                     </div>
                 </div>
-                <div class="component-card__actions component-card__actions--start" style="gap: 20px; flex-wrap: wrap;">
+                <div class="component-card__actions component-card__actions--start" style="flex-direction: column; align-items: flex-start; gap: 15px;">
                     
-                    <div style="display: flex; flex-direction: column; gap: 5px;">
-                        <span class="component-label" style="font-size: 0.85rem; color: var(--text-secondary);">Estatura (metros)</span>
-                        <div class="component-inline-control component-inline-control--fixed">
-                            <div class="component-inline-control__group">
-                                <button type="button" class="component-inline-control__btn" data-action="adjustNumber" data-target="channelHeightInput" data-step="-0.10" data-min="1.00"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
-                                <button type="button" class="component-inline-control__btn" data-action="adjustNumber" data-target="channelHeightInput" data-step="-0.01" data-min="1.00"><span class="material-symbols-rounded">chevron_left</span></button>
-                            </div>
-                            <div class="component-inline-control__center" id="display-channelHeightInput"><?php echo htmlspecialchars($height ?: '1.70'); ?></div>
-                            <div class="component-inline-control__group">
-                                <button type="button" class="component-inline-control__btn" data-action="adjustNumber" data-target="channelHeightInput" data-step="0.01" data-max="2.50"><span class="material-symbols-rounded">chevron_right</span></button>
-                                <button type="button" class="component-inline-control__btn" data-action="adjustNumber" data-target="channelHeightInput" data-step="0.10" data-max="2.50"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
-                            </div>
-                        </div>
-                        <input type="hidden" id="channelHeightInput" value="<?php echo htmlspecialchars($height ?: '1.70'); ?>">
+                    <div class="measurement-toggle-wrap" style="display: flex; gap: 10px;">
+                        <button type="button" class="component-button component-button--h34 <?php echo $prefSystem === 'metric' ? 'component-button--dark' : ''; ?>" data-action="switchMeasure" data-sys="metric">Métrico (m / kg)</button>
+                        <button type="button" class="component-button component-button--h34 <?php echo $prefSystem === 'imperial' ? 'component-button--dark' : ''; ?>" data-action="switchMeasure" data-sys="imperial">Imperial (ft / lbs)</button>
                     </div>
 
-                    <div style="display: flex; flex-direction: column; gap: 5px;">
-                        <span class="component-label" style="font-size: 0.85rem; color: var(--text-secondary);">Peso (kg)</span>
-                        <div class="component-inline-control component-inline-control--fixed">
-                            <div class="component-inline-control__group">
-                                <button type="button" class="component-inline-control__btn" data-action="adjustNumber" data-target="channelWeightInput" data-step="-5" data-min="30"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
-                                <button type="button" class="component-inline-control__btn" data-action="adjustNumber" data-target="channelWeightInput" data-step="-1" data-min="30"><span class="material-symbols-rounded">chevron_left</span></button>
+                    <div id="metric-inputs" style="display: <?php echo $prefSystem === 'metric' ? 'flex' : 'none'; ?>; gap: 20px; flex-wrap: wrap;">
+                        <div style="display: flex; flex-direction: column; gap: 5px;">
+                            <span class="component-label" style="font-size: 0.85rem; color: var(--text-secondary);">Estatura (metros)</span>
+                            <div class="component-inline-control component-inline-control--fixed">
+                                <div class="component-inline-control__group">
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustNumber" data-target="channelHeightInput" data-step="-0.10" data-min="1.00"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustNumber" data-target="channelHeightInput" data-step="-0.01" data-min="1.00"><span class="material-symbols-rounded">chevron_left</span></button>
+                                </div>
+                                <div class="component-inline-control__center" id="display-channelHeightInput"><?php echo number_format($h_m, 2); ?></div>
+                                <div class="component-inline-control__group">
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustNumber" data-target="channelHeightInput" data-step="0.01" data-max="2.50"><span class="material-symbols-rounded">chevron_right</span></button>
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustNumber" data-target="channelHeightInput" data-step="0.10" data-max="2.50"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
+                                </div>
                             </div>
-                            <div class="component-inline-control__center" id="display-channelWeightInput"><?php echo htmlspecialchars($weight ?: '70.0'); ?></div>
-                            <div class="component-inline-control__group">
-                                <button type="button" class="component-inline-control__btn" data-action="adjustNumber" data-target="channelWeightInput" data-step="1" data-max="250"><span class="material-symbols-rounded">chevron_right</span></button>
-                                <button type="button" class="component-inline-control__btn" data-action="adjustNumber" data-target="channelWeightInput" data-step="5" data-max="250"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
+                            <input type="hidden" id="channelHeightInput" value="<?php echo number_format($h_m, 2); ?>">
+                        </div>
+
+                        <div style="display: flex; flex-direction: column; gap: 5px;">
+                            <span class="component-label" style="font-size: 0.85rem; color: var(--text-secondary);">Peso (kg)</span>
+                            <div class="component-inline-control component-inline-control--fixed">
+                                <div class="component-inline-control__group">
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustNumber" data-target="channelWeightInput" data-step="-5" data-min="30"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustNumber" data-target="channelWeightInput" data-step="-1" data-min="30"><span class="material-symbols-rounded">chevron_left</span></button>
+                                </div>
+                                <div class="component-inline-control__center" id="display-channelWeightInput"><?php echo number_format($w_kg, 1); ?></div>
+                                <div class="component-inline-control__group">
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustNumber" data-target="channelWeightInput" data-step="1" data-max="250"><span class="material-symbols-rounded">chevron_right</span></button>
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustNumber" data-target="channelWeightInput" data-step="5" data-max="250"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
+                                </div>
+                            </div>
+                            <input type="hidden" id="channelWeightInput" value="<?php echo number_format($w_kg, 1); ?>">
+                        </div>
+                    </div>
+
+                    <div id="imperial-inputs" style="display: <?php echo $prefSystem === 'imperial' ? 'flex' : 'none'; ?>; gap: 20px; flex-wrap: wrap;">
+                        <div style="display: flex; gap: 10px;">
+                            <div style="display: flex; flex-direction: column; gap: 5px;">
+                                <span class="component-label" style="font-size: 0.85rem; color: var(--text-secondary);">Pies (ft)</span>
+                                <div class="component-inline-control component-inline-control--fixed" style="width: 120px;">
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustNumber" data-target="channelHeightFtInput" data-step="-1" data-min="3"><span class="material-symbols-rounded">chevron_left</span></button>
+                                    <div class="component-inline-control__center" id="display-channelHeightFtInput"><?php echo $h_ft; ?></div>
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustNumber" data-target="channelHeightFtInput" data-step="1" data-max="8"><span class="material-symbols-rounded">chevron_right</span></button>
+                                </div>
+                                <input type="hidden" id="channelHeightFtInput" value="<?php echo $h_ft; ?>">
+                            </div>
+
+                            <div style="display: flex; flex-direction: column; gap: 5px;">
+                                <span class="component-label" style="font-size: 0.85rem; color: var(--text-secondary);">Pulg. (in)</span>
+                                <div class="component-inline-control component-inline-control--fixed" style="width: 120px;">
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustNumber" data-target="channelHeightInInput" data-step="-1" data-min="0" data-max="11"><span class="material-symbols-rounded">chevron_left</span></button>
+                                    <div class="component-inline-control__center" id="display-channelHeightInInput"><?php echo $h_in; ?></div>
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustNumber" data-target="channelHeightInInput" data-step="1" data-min="0" data-max="11"><span class="material-symbols-rounded">chevron_right</span></button>
+                                </div>
+                                <input type="hidden" id="channelHeightInInput" value="<?php echo $h_in; ?>">
                             </div>
                         </div>
-                        <input type="hidden" id="channelWeightInput" value="<?php echo htmlspecialchars($weight ?: '70.0'); ?>">
+
+                        <div style="display: flex; flex-direction: column; gap: 5px;">
+                            <span class="component-label" style="font-size: 0.85rem; color: var(--text-secondary);">Peso (lbs)</span>
+                            <div class="component-inline-control component-inline-control--fixed">
+                                <div class="component-inline-control__group">
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustNumber" data-target="channelWeightLbsInput" data-step="-10" data-min="60"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustNumber" data-target="channelWeightLbsInput" data-step="-1" data-min="60"><span class="material-symbols-rounded">chevron_left</span></button>
+                                </div>
+                                <div class="component-inline-control__center" id="display-channelWeightLbsInput"><?php echo $w_lbs; ?></div>
+                                <div class="component-inline-control__group">
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustNumber" data-target="channelWeightLbsInput" data-step="1" data-max="550"><span class="material-symbols-rounded">chevron_right</span></button>
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustNumber" data-target="channelWeightLbsInput" data-step="10" data-max="550"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
+                                </div>
+                            </div>
+                            <input type="hidden" id="channelWeightLbsInput" value="<?php echo $w_lbs; ?>">
+                        </div>
                     </div>
 
                 </div>

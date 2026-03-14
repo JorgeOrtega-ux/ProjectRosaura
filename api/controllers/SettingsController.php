@@ -9,7 +9,6 @@ class SettingsController {
     
     private $settingsServices;
 
-    // Inyección de Dependencias Limpia (SOLID)
     public function __construct(SettingsServices $settingsServices) {
         $this->settingsServices = $settingsServices;
     }

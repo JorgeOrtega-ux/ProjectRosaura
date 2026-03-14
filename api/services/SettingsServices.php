@@ -342,7 +342,11 @@ class SettingsServices
 
         $key = $data['key'] ?? '';
         $value = $data['value'] ?? '';
-        if (!in_array($key, ['language', 'open_links_new_tab', 'theme', 'extended_alerts'])) return ['success' => false, 'message' => 'Preferencia no válida.'];
+        
+        if (!in_array($key, ['language', 'measurement_system', 'open_links_new_tab', 'theme', 'extended_alerts'])) return ['success' => false, 'message' => 'Preferencia no válida.'];
+        
+        if ($key === 'measurement_system' && !in_array($value, ['metric', 'imperial'])) return ['success' => false, 'message' => 'Sistema de medición no válido.'];
+        
         if ($key === 'open_links_new_tab' || $key === 'extended_alerts') $value = ($value == 1) ? 1 : 0;
 
         if ($this->userRepository->updatePreference($userId, $key, $value)) {
@@ -499,7 +503,6 @@ class SettingsServices
             $codes = Utils::generateRecoveryCodes(10, 8);
             if ($this->userRepository->update2FA($userId, $secret, 1, json_encode($codes))) {
                 
-                // ACTUALIZACIÓN DUAL DE LA SESIÓN PARA ASEGURAR REFRESCO INMEDIATO
                 $this->sessionManager->set('user_2fa', 1);
                 $this->sessionManager->set('two_factor_enabled', 1); 
 
@@ -535,7 +538,6 @@ class SettingsServices
         if ($user && password_verify(trim($data['password'] ?? ''), $user['password'])) {
             if ($this->userRepository->update2FA($userId, null, 0, null)) {
                 
-                // ACTUALIZACIÓN DUAL DE LA SESIÓN PARA ASEGURAR REFRESCO INMEDIATO
                 $this->sessionManager->set('user_2fa', 0);
                 $this->sessionManager->set('two_factor_enabled', 0); 
                 

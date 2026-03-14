@@ -1,4 +1,5 @@
 <?php
+// api/controllers/ChannelController.php
 
 namespace App\Api\Controllers;
 
@@ -41,6 +42,31 @@ class ChannelController {
         }
         $channelUser['is_subscribed'] = $isSubscribed;
 
+        // --- SISTEMA DE MEDIDAS AL CONSULTAR PERFIL ---
+        $viewerSystem = $_SESSION['user_prefs']['measurement_system'] ?? 'metric';
+        $channelUser['viewer_measurement_system'] = $viewerSystem;
+        
+        if (isset($channelUser['height']) && $channelUser['height'] !== null) {
+            if ($viewerSystem === 'imperial') {
+                $totalInches = round($channelUser['height'] / 2.54);
+                $feet = floor($totalInches / 12);
+                $inches = $totalInches % 12;
+                $channelUser['display_height'] = $feet . "'" . $inches . '"';
+                $channelUser['height_raw_imperial'] = $totalInches; 
+            } else {
+                $channelUser['display_height'] = number_format($channelUser['height'] / 100, 2) . ' m';
+            }
+        }
+
+        if (isset($channelUser['weight']) && $channelUser['weight'] !== null) {
+            if ($viewerSystem === 'imperial') {
+                $channelUser['display_weight'] = round($channelUser['weight'] * 2.20462, 1) . ' lbs';
+                $channelUser['weight_raw_imperial'] = round($channelUser['weight'] * 2.20462, 1);
+            } else {
+                $channelUser['display_weight'] = round($channelUser['weight'], 1) . ' kg';
+            }
+        }
+
         return ['success' => true, 'channel' => $channelUser];
     }
 
@@ -49,7 +75,6 @@ class ChannelController {
             return ['success' => false, 'message' => 'Debes iniciar sesión para suscribirte.'];
         }
 
-        // --- RATE LIMIT PARA SUSCRIPCIONES ---
         $action = "subscribe_" . $_SESSION['user_id'];
         $check = $this->rateLimiter->check($action, RedisRateLimiter::LIMIT_SUBSCRIPTIONS_ATTEMPTS, RedisRateLimiter::LIMIT_SUBSCRIPTIONS_MINUTES, 'Has realizado demasiadas acciones recientemente.');
         
@@ -57,7 +82,6 @@ class ChannelController {
             return ['success' => false, 'message' => $check['message']];
         }
         $this->rateLimiter->record($action, RedisRateLimiter::LIMIT_SUBSCRIPTIONS_ATTEMPTS, RedisRateLimiter::LIMIT_SUBSCRIPTIONS_MINUTES);
-        // --------------------------------------
 
         $subscriberId = $_SESSION['user_id'];
         $channelIdentifier = $data['identifier'] ?? '';
@@ -116,13 +140,26 @@ class ChannelController {
 
         $updated = $this->userRepo->updateChannelProfile($_SESSION['user_id'], $description, $identifier, $contactEmail);
 
-        // --- ACTUALIZAR PERFIL EXTENDIDO ---
+        // --- SISTEMA DE MEDIDAS AL GUARDAR PERFIL ---
+        $system = $_SESSION['user_prefs']['measurement_system'] ?? 'metric';
+        if (isset($data['measurement_system'])) {
+            $system = $data['measurement_system'];
+        }
+
+        $height = isset($data['height']) && is_numeric($data['height']) ? (float)$data['height'] : null;
+        $weight = isset($data['weight']) && is_numeric($data['weight']) ? (float)$data['weight'] : null;
+
+        if ($system === 'imperial') {
+            if ($height !== null) $height = round($height * 2.54, 2); 
+            if ($weight !== null) $weight = round($weight * 0.453592, 2); 
+        }
+
         $profileData = [
             'relationship_status' => isset($data['relationship_status']) && $data['relationship_status'] !== '' ? $data['relationship_status'] : null,
             'interested_in' => isset($data['interested_in']) && $data['interested_in'] !== '' ? $data['interested_in'] : null,
             'gender' => isset($data['gender']) && $data['gender'] !== '' ? $data['gender'] : null,
-            'height' => isset($data['height']) && is_numeric($data['height']) ? (float)$data['height'] : null,
-            'weight' => isset($data['weight']) && is_numeric($data['weight']) ? (float)$data['weight'] : null,
+            'height' => $height,
+            'weight' => $weight,
             'hair_color' => isset($data['hair_color']) && $data['hair_color'] !== '' ? $data['hair_color'] : null,
             'boobs' => isset($data['boobs']) && $data['boobs'] !== '' ? $data['boobs'] : null,
             'ethnicity' => isset($data['ethnicity']) && $data['ethnicity'] !== '' ? $data['ethnicity'] : null,
@@ -260,3 +297,4 @@ class ChannelController {
         return ['success' => false, 'message' => 'Error interno al procesar y guardar la imagen recortada.'];
     }
 }
+?>

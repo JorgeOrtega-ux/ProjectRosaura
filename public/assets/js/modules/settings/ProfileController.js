@@ -14,7 +14,6 @@ export class ProfileController {
         this.handleChangeBound = this.handleChange.bind(this);
         this.handleInputBound = this.handleInput.bind(this);
 
-        // Agregamos un debounce timeout para validaciones en tiempo real
         this.identifierValidationTimeout = null;
     }
 
@@ -40,7 +39,6 @@ export class ProfileController {
             this.isDefaultAvatar = true;
         }
 
-        // Configurar la validación del input del identificador si existe
         this.setupIdentifierValidation();
     }
 
@@ -50,13 +48,11 @@ export class ProfileController {
         document.addEventListener('input', this.handleInputBound);
     }
 
-    // --- NUEVO: Configuración para la validación asíncrona del identificador ---
     setupIdentifierValidation() {
         const identifierInput = document.querySelector('[data-ref="input-identifier"]');
         if (!identifierInput) return;
 
         identifierInput.addEventListener('input', (e) => {
-            // Limpieza básica inmediata en el cliente
             let val = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '');
             if(e.target.value !== val) {
                 e.target.value = val;
@@ -81,11 +77,10 @@ export class ProfileController {
 
             this.identifierValidationTimeout = setTimeout(() => {
                 this.validateIdentifier(val);
-            }, 500); // 500ms de debounce
+            }, 500);
         });
     }
 
-    // Función para mostrar el estado de la validación
     setIdentifierStatus(message, type) {
         let statusEl = document.querySelector('.identifier-status-msg');
         if(!statusEl) {
@@ -96,7 +91,7 @@ export class ProfileController {
         }
 
         statusEl.textContent = message;
-        statusEl.className = 'identifier-status-msg component-text-small mt-1'; // Reset
+        statusEl.className = 'identifier-status-msg component-text-small mt-1'; 
         
         const btnSave = document.querySelector('[data-action="saveIdentifier"]');
 
@@ -119,11 +114,7 @@ export class ProfileController {
         if(btnSave) btnSave.disabled = false;
     }
 
-    // Validar con la API (Nota: Asegúrate de tener esta ruta en tu API si decides implementar validación en tiempo real separada)
     async validateIdentifier(identifier) {
-        // En este ejemplo, asumo que tienes un endpoint para validar, o podrías usar un try simulado
-        // const response = await this.api.post(ApiRoutes.Settings.ValidateIdentifier, { identifier: identifier });
-        // Simulación temporal para el frontend, idealmente llamar a la API
         if(['admin', 'settings', 'login'].includes(identifier)) {
              this.setIdentifierStatus('Identificador no disponible.', 'error');
         } else {
@@ -148,7 +139,6 @@ export class ProfileController {
         const btnSaveUsername = e.target.closest('[data-action="saveUsername"]');
         if (btnSaveUsername) this.saveUsername(btnSaveUsername);
 
-        // NUEVO: Botón para guardar el identificador en los ajustes
         const btnSaveIdentifier = e.target.closest('[data-action="saveIdentifier"]');
         if (btnSaveIdentifier) this.saveIdentifier(btnSaveIdentifier);
 
@@ -165,6 +155,9 @@ export class ProfileController {
     handleChange(e) {
         if (e.target && e.target.getAttribute('data-ref') === 'input-avatar-file') {
             this.handleFileSelection(e);
+        }
+        if (e.target && e.target.getAttribute('data-action') === 'updateMeasurementSystem') {
+            this.updateMeasurementSystem(e.target);
         }
     }
 
@@ -259,6 +252,16 @@ export class ProfileController {
         }
     }
 
+    async updateMeasurementSystem(selectEl) {
+        const val = selectEl.value;
+        const result = await this.api.post(ApiRoutes.Settings.UpdatePreferences, { key: 'measurement_system', value: val });
+        if (result.success) {
+            this.showMessage(result.message, 'success');
+        } else {
+            this.showMessage(result.message, 'error');
+        }
+    }
+
     async saveAvatar(btn) {
         if (!this.selectedFile) return;
         this.setButtonLoading(btn);
@@ -326,7 +329,6 @@ export class ProfileController {
         } else this.showMessage(result.message, 'error');
     }
 
-    // --- NUEVO: Función para guardar el identificador editado ---
     async saveIdentifier(btn) {
         const input = document.querySelector('[data-ref="input-identifier"]');
         if (!input) return;
@@ -338,10 +340,9 @@ export class ProfileController {
             return; 
         }
 
-        if (btn.disabled) return; // Por si hay un error de validación asíncrona previo
+        if (btn.disabled) return;
 
         this.setButtonLoading(btn);
-        // Supone que creaste un endpoint UpdateIdentifier en el backend (SettingsController/SettingsServices)
         const result = await this.api.post(ApiRoutes.Settings.UpdateIdentifier, { identifier: val });
         this.restoreButton(btn);
 

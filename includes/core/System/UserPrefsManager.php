@@ -23,7 +23,7 @@ class UserPrefsManager implements UserPrefsManagerInterface {
             $acceptLang = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '';
             $assignedLang = Utils::getClosestLanguage($acceptLang);
             
-            $insPref = $this->pdo->prepare("INSERT INTO user_preferences (user_id, language, open_links_new_tab, theme, extended_alerts) VALUES (?, ?, 1, 'system', 0)");
+            $insPref = $this->pdo->prepare("INSERT INTO user_preferences (user_id, language, measurement_system, open_links_new_tab, theme, extended_alerts) VALUES (?, ?, 'metric', 1, 'system', 0)");
             $insPref->execute([$userId, $assignedLang]);
             
             $stmtPref->execute([$userId]);
@@ -34,21 +34,12 @@ class UserPrefsManager implements UserPrefsManagerInterface {
 
     /**
      * Obtiene de forma global el idioma activo que está visualizando el usuario.
-     * Sirve para que la capa de Repositorio o Servicios pueda ejecutar 
-     * traducciones dinámicas o fallback (ej: títulos de los videos).
-     * * Orden de prioridad:
-     * 1. Cookie 'language' (Prioridad frontend).
-     * 2. Si está logueado, preferencia en base de datos.
-     * 3. Cabecera HTTP del navegador.
-     * 4. Fallback a 'en-US'.
      */
     public static function getActiveLanguage(PDO $pdo = null, $userId = null): string {
-        // 1. Verificar cookie local
         if (isset($_COOKIE['language']) && !empty($_COOKIE['language'])) {
             return $_COOKIE['language'];
         }
 
-        // 2. Verificar en la base de datos si tenemos instancia y usuario
         if ($pdo !== null && $userId !== null) {
             $stmt = $pdo->prepare("SELECT language FROM user_preferences WHERE user_id = ?");
             $stmt->execute([$userId]);
@@ -58,13 +49,31 @@ class UserPrefsManager implements UserPrefsManagerInterface {
             }
         }
 
-        // 3. Verificar cabecera HTTP
         if (isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
             return Utils::getClosestLanguage($_SERVER['HTTP_ACCEPT_LANGUAGE']);
         }
 
-        // 4. Default
         return 'en-US';
+    }
+
+    /**
+     * Obtiene de forma global el sistema de medición activo ('metric' o 'imperial').
+     */
+    public static function getActiveMeasurementSystem(PDO $pdo = null, $userId = null): string {
+        if (isset($_COOKIE['measurement_system']) && !empty($_COOKIE['measurement_system'])) {
+            return $_COOKIE['measurement_system'];
+        }
+
+        if ($pdo !== null && $userId !== null) {
+            $stmt = $pdo->prepare("SELECT measurement_system FROM user_preferences WHERE user_id = ?");
+            $stmt->execute([$userId]);
+            $sys = $stmt->fetchColumn();
+            if ($sys) {
+                return $sys;
+            }
+        }
+
+        return 'metric';
     }
 }
 ?>

@@ -99,6 +99,7 @@ CREATE TABLE IF NOT EXISTS user_preferences (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT(11) NOT NULL,
     language VARCHAR(10) DEFAULT 'en-US',
+    measurement_system ENUM('metric', 'imperial') DEFAULT 'metric',
     open_links_new_tab TINYINT(1) DEFAULT 1,
     theme ENUM('system', 'light', 'dark') DEFAULT 'system',
     extended_alerts TINYINT(1) DEFAULT 0,
@@ -315,7 +316,6 @@ CREATE TABLE IF NOT EXISTS user_watch_history (
     INDEX idx_user_watch_date (user_id, last_watched_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- NUEVAS TABLAS PARA EL SISTEMA DE RANKING BILLBOARD
 CREATE TABLE IF NOT EXISTS channel_rankings_history (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT(11) NOT NULL,
