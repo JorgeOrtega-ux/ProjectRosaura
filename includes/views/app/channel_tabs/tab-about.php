@@ -75,6 +75,20 @@
                 </ul>
             </div>
 
+            <h2 class="component-feed-title component-about-title">Ranking Diario</h2>
+            <div class="component-about-card" style="text-align: center; padding: 24px 16px;">
+                <div id="channel-ranking-display" data-user-id="<?php echo isset($channelUser['id']) ? $channelUser['id'] : ''; ?>" style="display: none; flex-direction: column; align-items: center; gap: 8px;">
+                    <div style="font-size: 14px; color: var(--text-secondary); text-transform: uppercase; font-weight: bold;">Posición Actual</div>
+                    <div style="font-size: 48px; font-weight: 900; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                        <span id="channel-ranking-position">--</span>
+                        <span id="channel-ranking-trend-icon" style="font-size: 28px;">⬜</span>
+                    </div>
+                </div>
+                <div id="channel-ranking-empty" style="font-size: 14px; color: var(--text-secondary);">
+                    El canal aún no ha sido clasificado.
+                </div>
+            </div>
+
             <?php 
             $socials = [
                 'Facebook' => ['url' => $channelUser['social_facebook'] ?? '', 'icon' => 'public'], 

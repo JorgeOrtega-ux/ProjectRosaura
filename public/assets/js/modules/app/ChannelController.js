@@ -41,9 +41,65 @@ export class ChannelController {
         // En una implementación real este endpoint traerá los datos y actualizará la UI
         const apiUrl = `/api/channel/get_by_identifier?identifier=${identifier}`;
         try {
-             console.log(`Cargando datos del canal para el identificador: ${identifier}`);
+             console.log(`[DEBUG RANKING] Iniciando carga de datos para identificador: ${identifier}`);
+             
+             // Extraer el ID de usuario desde la vista (tab-about) renderizada por PHP
+             const rankDisplayBox = document.getElementById('channel-ranking-display');
+             console.log(`[DEBUG RANKING] ¿Se encontró el div 'channel-ranking-display' en el DOM?:`, !!rankDisplayBox);
+             
+             const targetUserId = rankDisplayBox ? rankDisplayBox.getAttribute('data-user-id') : null;
+             console.log(`[DEBUG RANKING] Valor extraído de data-user-id:`, targetUserId);
+
+             if (targetUserId && targetUserId !== '') {
+                 console.log(`[DEBUG RANKING] Llamando a loadChannelRanking con ID: ${targetUserId}`);
+                 await this.loadChannelRanking(targetUserId);
+             } else {
+                 console.warn("[DEBUG RANKING] No se encontró un data-user-id válido. Revisa si el PHP está imprimiendo el ID correctamente en tab-about.php");
+             }
+
         } catch (e) {
              console.error("Error al cargar datos del canal:", e);
+        }
+    }
+
+    async loadChannelRanking(userId) {
+        console.log(`[DEBUG RANKING] Ejecutando loadChannelRanking para el usuario: ${userId}`);
+        try {
+            const response = await this.api.getChannelRanking(userId);
+            console.log(`[DEBUG RANKING] Respuesta completa de la API getChannelRanking:`, response);
+            
+            const rankDisplayBox = document.getElementById('channel-ranking-display');
+            const rankEmptyBox = document.getElementById('channel-ranking-empty');
+            
+            if (response.success && response.data && response.data.current && response.data.current.current_rank) {
+                console.log(`[DEBUG RANKING] El usuario SÍ tiene ranking válido. Rank actual:`, response.data.current.current_rank);
+                const currentData = response.data.current;
+                
+                // Mostrar caja de rank
+                if (rankDisplayBox) rankDisplayBox.style.display = 'flex';
+                if (rankEmptyBox) rankEmptyBox.style.display = 'none';
+                
+                const posEl = document.getElementById('channel-ranking-position');
+                const iconEl = document.getElementById('channel-ranking-trend-icon');
+                
+                if (posEl) posEl.innerText = `#${currentData.current_rank}`;
+                
+                if (iconEl) {
+                    if (currentData.trend === 'up') {
+                        iconEl.innerText = '🟩';
+                    } else if (currentData.trend === 'down') {
+                        iconEl.innerText = '🟥';
+                    } else {
+                        iconEl.innerText = '⬜';
+                    }
+                }
+            } else {
+                console.log(`[DEBUG RANKING] El usuario NO tiene ranking en la BD, o la API devolvió falso/vacío.`);
+                if (rankDisplayBox) rankDisplayBox.style.display = 'none';
+                if (rankEmptyBox) rankEmptyBox.style.display = 'block';
+            }
+        } catch (error) {
+            console.error("[DEBUG RANKING] Excepción capturada al solicitar el ranking a la API:", error);
         }
     }
 

@@ -141,5 +141,9 @@ return [
     'history.clear_search'=> ['controller' => 'App\Api\Controllers\HistoryController', 'action' => 'clear_search_history'],
     'history.remove_watch_item' => ['controller' => 'App\Api\Controllers\HistoryController', 'action' => 'remove_watch_item'],
     'history.remove_search_item'=> ['controller' => 'App\Api\Controllers\HistoryController', 'action' => 'remove_search_item'],
+
+    // --- NUEVAS RUTAS DE RANKING DIARIO ---
+    'rankings.get_all'     => ['controller' => 'App\Api\Controllers\RankingController', 'action' => 'getAllRankings'],
+    'rankings.get_channel' => ['controller' => 'App\Api\Controllers\RankingController', 'action' => 'getChannelRanking'],
 ];
 ?>

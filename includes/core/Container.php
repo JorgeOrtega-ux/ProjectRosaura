@@ -43,6 +43,10 @@ use App\Core\Repositories\CommentRepository;
 use App\Core\Interfaces\MediaSignerInterface;
 use App\Core\Security\MediaSigner;
 
+// ---> AÑADIDO: INTERFAZ Y REPOSITORIO DE RANKING <---
+use App\Core\Interfaces\RankingRepositoryInterface;
+use App\Core\Repositories\RankingRepository;
+
 class Container implements ContainerInterface {
     
     // --- PATRÓN SINGLETON AÑADIDO ---
@@ -86,6 +90,9 @@ class Container implements ContainerInterface {
         $this->bindings[PlaylistRepositoryInterface::class] = PlaylistRepository::class; 
         $this->bindings[CommentRepositoryInterface::class] = CommentRepository::class; 
         $this->bindings[\App\Core\Interfaces\HistoryRepositoryInterface::class] = \App\Core\Repositories\HistoryRepository::class;
+        
+        // ---> AÑADIDO: BINDING DEL REPOSITORIO DE RANKING <---
+        $this->bindings[RankingRepositoryInterface::class] = RankingRepository::class;
         
         // 5. Servicios de Seguridad de Medios
         $this->bindings[MediaSignerInterface::class] = MediaSigner::class;

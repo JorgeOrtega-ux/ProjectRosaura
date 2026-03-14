@@ -227,4 +227,27 @@ export class ApiService {
     async clearSearchHistory() { return await this.post(ApiRoutes.History.ClearSearch); }
     async removeWatchItem(videoId) { return await this.post(ApiRoutes.History.RemoveWatchItem, { video_id: videoId }); }
     async removeSearchItem(searchId) { return await this.post(ApiRoutes.History.RemoveSearchItem, { search_id: searchId }); }
+
+    // ---> NUEVOS MÉTODOS DE RANKING <---
+    async getTopRankings() { return await this.post(ApiRoutes.Rankings.GetAll); }
+    
+    async getChannelRanking(userId) { 
+        // Aunque la convención de este proyecto sea todo en POST, usamos fetch como GET 
+        // según el route-map modificado anteriormente, o podemos enviarlo por GET URL args.
+        // Adaptamos a la estructura GET definida en el Controller.
+        const url = `${this.baseUrl}?route=${ApiRoutes.Rankings.GetChannel}&user_id=${userId}`;
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+        
+        try {
+            const response = await fetch(url, {
+                method: 'GET',
+                credentials: 'same-origin',
+                headers: { 'X-CSRF-Token': csrfToken, 'X-App-Language': this.getAppLanguage() }
+            });
+            if (!response.ok) return { success: false };
+            return await response.json();
+        } catch (error) {
+            return { success: false };
+        }
+    }
 }

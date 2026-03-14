@@ -117,5 +117,10 @@ export const ApiRoutes = {
     Metrics: {
         IngestRetention: 'metrics.retention.ingest',
         GetRetention: 'metrics.retention.get'
+    },
+    // ---> NUEVO: RUTAS DE RANKINGS <---
+    Rankings: {
+        GetAll: 'rankings.get_all',
+        GetChannel: 'rankings.get_channel'
     }
 };

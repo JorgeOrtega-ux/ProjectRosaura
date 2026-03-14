@@ -19,6 +19,9 @@ CREATE TABLE `users` (
   `channel_identifier` varchar(255) UNIQUE DEFAULT NULL,
   `channel_contact_email` varchar(255) DEFAULT NULL,
   `channel_verified` tinyint(1) DEFAULT 0,
+  `current_rank` INT DEFAULT NULL,
+  `previous_rank` INT DEFAULT NULL,
+  `trend` ENUM('up', 'down', 'neutral') DEFAULT 'neutral',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
   UNIQUE KEY `uuid` (`uuid`),
@@ -184,7 +187,7 @@ CREATE TABLE IF NOT EXISTS videos (
     vtt_path VARCHAR(255) DEFAULT NULL,
     status ENUM('uploading', 'queued', 'processing', 'processed', 'failed', 'published') DEFAULT 'uploading',
     visibility ENUM('public', 'private', 'unlisted') DEFAULT 'public',
-    allow_comments TINYINT(1) DEFAULT 1, -- <-- AQUI ESTA LA COLUMNA AGREGADA
+    allow_comments TINYINT(1) DEFAULT 1,
     orientation ENUM('horizontal', 'vertical') DEFAULT 'horizontal',
     processing_progress INT DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -258,8 +261,6 @@ CREATE TABLE IF NOT EXISTS playlist_videos (
     CONSTRAINT fk_pv_video FOREIGN KEY (video_id) REFERENCES videos(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- SISTEMA DE COMENTARIOS
-
 CREATE TABLE IF NOT EXISTS video_comments (
     id INT(11) AUTO_INCREMENT PRIMARY KEY,
     video_id INT(11) NOT NULL,
@@ -287,15 +288,12 @@ CREATE TABLE IF NOT EXISTS comment_reactions (
     CONSTRAINT fk_cr_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- NUEVA TABLA: SISTEMA DE RETENCIÓN DE VIDEO (HEATMAP)
 CREATE TABLE IF NOT EXISTS video_retention_metrics (
     video_id INT(11) NOT NULL PRIMARY KEY,
     retention_data JSON NOT NULL,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_retention_video FOREIGN KEY (video_id) REFERENCES videos(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- SISTEMA DE HISTORIAL DE BÚSQUEDA Y REPRODUCCIÓN
 
 CREATE TABLE IF NOT EXISTS user_search_history (
     id INT(11) AUTO_INCREMENT PRIMARY KEY,
@@ -315,4 +313,16 @@ CREATE TABLE IF NOT EXISTS user_watch_history (
     CONSTRAINT fk_uwh_video FOREIGN KEY (video_id) REFERENCES videos(id) ON DELETE CASCADE,
     UNIQUE KEY unique_user_video (user_id, video_id),
     INDEX idx_user_watch_date (user_id, last_watched_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- NUEVAS TABLAS PARA EL SISTEMA DE RANKING BILLBOARD
+CREATE TABLE IF NOT EXISTS channel_rankings_history (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT(11) NOT NULL,
+    rank_position INT NOT NULL,
+    power_score DECIMAL(12,4) NOT NULL,
+    recorded_at DATE NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_daily_ranking (user_id, recorded_at),
+    CONSTRAINT fk_ranking_history_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

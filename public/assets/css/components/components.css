@@ -2686,4 +2686,132 @@ input:checked+.component-toggle-slider:before {
     .component-age-gate-actions .component-btn {
         flex: 1;
     }
+}/* public/assets/css/components/components-rankings.css */
+
+.component-wrapper--rankings {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.component-ranking-list-container {
+    background-color: var(--bg-surface);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+}
+
+.component-ranking-header {
+    display: flex;
+    align-items: center;
+    padding: 16px 24px;
+    background-color: var(--bg-app);
+    border-bottom: 1px solid var(--border-color);
+    font-weight: bold;
+    color: var(--text-secondary);
+    font-size: 14px;
+    text-transform: uppercase;
+}
+
+.ranking-item {
+    display: flex;
+    align-items: center;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border-lighter);
+    transition: background-color 0.2s ease;
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+}
+
+.ranking-item:hover {
+    background-color: var(--hover-color);
+}
+
+.ranking-item:last-child {
+    border-bottom: none;
+}
+
+/* Columnas */
+.rank-col-pos {
+    width: 60px;
+    font-size: 24px;
+    font-weight: 900;
+    color: var(--text-primary);
+    text-align: center;
+}
+
+.rank-col-trend {
+    width: 80px;
+    text-align: center;
+    font-size: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.trend-diff {
+    font-size: 12px;
+    font-weight: bold;
+    margin-top: 4px;
+}
+
+.rank-col-channel {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding-left: 16px;
+    overflow: hidden;
+}
+
+.rank-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    background-color: var(--border-color);
+}
+
+.rank-channel-info {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.rank-channel-name {
+    font-weight: bold;
+    font-size: 16px;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.rank-channel-handle {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.rank-col-score {
+    width: 120px;
+    text-align: right;
+    font-weight: bold;
+    font-size: 16px;
+    color: var(--text-primary);
+}
+
+/* Colores de Tendencia */
+.trend-up { color: #4CAF50; }
+.trend-down { color: #F44336; }
+.trend-neutral { color: #9E9E9E; }
+
+/* Posición Top 1, 2 y 3 */
+.ranking-item[data-rank="1"] .rank-col-pos { color: #FFD700; font-size: 32px; }
+.ranking-item[data-rank="2"] .rank-col-pos { color: #C0C0C0; font-size: 28px; }
+.ranking-item[data-rank="3"] .rank-col-pos { color: #CD7F32; font-size: 28px; }
+
+@media (max-width: 600px) {
+    .rank-col-score { display: none; }
+    .component-ranking-header .rank-col-score { display: none; }
 }
