@@ -219,7 +219,7 @@ $countriesMap = [
                 </div>
                 <div class="component-card__actions component-card__actions--start">
                     <div class="component-dropdown-wrapper">
-                        <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="menuRelStatus">
+                        <div class="component-dropdown-trigger" data-action="toggleModule" data-target="menuRelStatus">
                             <span class="material-symbols-rounded">favorite</span>
                             <span class="component-dropdown-text" id="textRelStatus"><?php echo $relStatusMap[$relStatus] ?? 'No especificado'; ?></span>
                             <span class="material-symbols-rounded">expand_more</span>
@@ -255,7 +255,7 @@ $countriesMap = [
                 </div>
                 <div class="component-card__actions component-card__actions--start">
                     <div class="component-dropdown-wrapper">
-                        <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="menuInterestedIn">
+                        <div class="component-dropdown-trigger" data-action="toggleModule" data-target="menuInterestedIn">
                             <span class="material-symbols-rounded">group</span>
                             <span class="component-dropdown-text" id="textInterestedIn"><?php echo $interestedInMap[$interestedIn] ?? 'No especificado'; ?></span>
                             <span class="material-symbols-rounded">expand_more</span>
@@ -291,7 +291,7 @@ $countriesMap = [
                 </div>
                 <div class="component-card__actions component-card__actions--start">
                     <div class="component-dropdown-wrapper">
-                        <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="menuGender">
+                        <div class="component-dropdown-trigger" data-action="toggleModule" data-target="menuGender">
                             <span class="material-symbols-rounded">person</span>
                             <span class="component-dropdown-text" id="textGender"><?php echo $genderMap[$gender] ?? 'No especificado'; ?></span>
                             <span class="material-symbols-rounded">expand_more</span>
@@ -327,7 +327,7 @@ $countriesMap = [
                 </div>
                 <div class="component-card__actions component-card__actions--start">
                     <div class="component-dropdown-wrapper">
-                        <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="menuCountry">
+                        <div class="component-dropdown-trigger" data-action="toggleModule" data-target="menuCountry">
                             <span class="material-symbols-rounded">public</span>
                             <span class="component-dropdown-text" id="textCountry"><?php echo $countriesMap[$country] ?? 'No especificado'; ?></span>
                             <span class="material-symbols-rounded">expand_more</span>
@@ -376,7 +376,7 @@ $countriesMap = [
                 </div>
                 <div class="component-card__actions component-card__actions--start">
                     <div class="component-dropdown-wrapper">
-                        <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="menuEthnicity">
+                        <div class="component-dropdown-trigger" data-action="toggleModule" data-target="menuEthnicity">
                             <span class="material-symbols-rounded">fingerprint</span>
                             <span class="component-dropdown-text" id="textEthnicity"><?php echo $ethnicityMap[$ethnicity] ?? 'No especificado'; ?></span>
                             <span class="material-symbols-rounded">expand_more</span>
@@ -412,7 +412,7 @@ $countriesMap = [
                 </div>
                 <div class="component-card__actions component-card__actions--start">
                     <div class="component-dropdown-wrapper">
-                        <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="menuEyeColor">
+                        <div class="component-dropdown-trigger" data-action="toggleModule" data-target="menuEyeColor">
                             <span class="material-symbols-rounded">visibility</span>
                             <span class="component-dropdown-text" id="textEyeColor"><?php echo $eyeColorMap[$eyeColor] ?? 'No especificado'; ?></span>
                             <span class="material-symbols-rounded">expand_more</span>
@@ -448,7 +448,7 @@ $countriesMap = [
                 </div>
                 <div class="component-card__actions component-card__actions--start">
                     <div class="component-dropdown-wrapper">
-                        <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="menuHairColor">
+                        <div class="component-dropdown-trigger" data-action="toggleModule" data-target="menuHairColor">
                             <span class="material-symbols-rounded">face</span>
                             <span class="component-dropdown-text" id="textHairColor"><?php echo $hairColorMap[$hairColor] ?? 'No especificado'; ?></span>
                             <span class="material-symbols-rounded">expand_more</span>
@@ -484,7 +484,7 @@ $countriesMap = [
                 </div>
                 <div class="component-card__actions component-card__actions--start">
                     <div class="component-dropdown-wrapper">
-                        <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="menuBoobs">
+                        <div class="component-dropdown-trigger" data-action="toggleModule" data-target="menuBoobs">
                             <span class="material-symbols-rounded">female</span>
                             <span class="component-dropdown-text" id="textBoobs"><?php echo $boobsMap[$boobs] ?? 'No especificado'; ?></span>
                             <span class="material-symbols-rounded">expand_more</span>

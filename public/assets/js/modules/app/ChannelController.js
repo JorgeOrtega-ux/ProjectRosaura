@@ -15,6 +15,9 @@ export class ChannelController {
     async init(params = {}) {
         console.log("Channel view loaded successfully.");
         
+        // Limpiamos la memoria del controlador reciclado por la SPA
+        this.channelIdentifier = null;
+
         if (params.identifier) {
             this.channelIdentifier = params.identifier;
         } else {
@@ -202,7 +205,8 @@ export class ChannelController {
     }
 
     setupLocalEditToggles() {
-        const wrapper = document.querySelector('.component-wrapper');
+        // Detecta el layout correcto dependiendo de en qué vista estemos
+        const wrapper = document.querySelector('.component-channel-layout') || document.querySelector('.component-wrapper');
         if (!wrapper) return;
 
         wrapper.addEventListener('click', (e) => {
@@ -264,23 +268,11 @@ export class ChannelController {
     }
 
     setupCustomFormControls() {
-        document.querySelectorAll('[data-action="toggleDropdown"]').forEach(trigger => {
-            trigger.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const targetId = trigger.getAttribute('data-target');
-                const targetMenu = document.getElementById(targetId);
-                
-                document.querySelectorAll('.component-module--dropdown').forEach(m => {
-                    if (m.id !== targetId) m.classList.add('disabled');
-                });
-                
-                if (targetMenu) {
-                    targetMenu.classList.toggle('disabled');
-                }
-            });
-        });
+        // Soporte dual: Vista pública (.component-channel-layout) o vista de Edición de Perfil (.component-wrapper)
+        const wrapper = document.querySelector('.component-channel-layout') || document.querySelector('.component-wrapper');
+        if (!wrapper) return;
 
-        document.querySelectorAll('[data-action="selectOption"]').forEach(option => {
+        wrapper.querySelectorAll('[data-action="selectOption"]').forEach(option => {
             option.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const inputTarget = option.getAttribute('data-target');
@@ -295,17 +287,18 @@ export class ChannelController {
                 siblings.forEach(sib => sib.classList.remove('active'));
                 option.classList.add('active');
 
-                option.closest('.component-module--dropdown').classList.add('disabled');
+                // Cerrar el módulo apoyándose en el controlador principal global
+                const currentModule = option.closest('.component-module');
+                if (window.appInstance && currentModule) {
+                    window.appInstance.closeModule(currentModule);
+                } else if (currentModule) {
+                    currentModule.classList.add('disabled');
+                    currentModule.classList.remove('active');
+                }
             });
         });
 
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('.component-dropdown-wrapper')) {
-                document.querySelectorAll('.component-module--dropdown').forEach(m => m.classList.add('disabled'));
-            }
-        });
-
-        document.querySelectorAll('[data-action="adjustNumber"]').forEach(btn => {
+        wrapper.querySelectorAll('[data-action="adjustNumber"]').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const targetId = btn.getAttribute('data-target');
@@ -337,7 +330,7 @@ export class ChannelController {
             });
         });
 
-        document.querySelectorAll('[data-action="toggleSocial"]').forEach(toggle => {
+        wrapper.querySelectorAll('[data-action="toggleSocial"]').forEach(toggle => {
             toggle.addEventListener('change', (e) => {
                 const targetId = toggle.getAttribute('data-target');
                 const area = document.getElementById('area-' + targetId);
