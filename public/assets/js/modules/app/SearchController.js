@@ -44,7 +44,7 @@ export default class SearchController {
         
         this.filterBtns.forEach(btn => {
             btn.addEventListener('click', (e) => {
-                // Ignorar si es el botón de "Filtros"
+                // Ignorar el click si viene del botón "Filtros"
                 if (e.target.closest('#search-toggle-filters')) return;
 
                 this.filterBtns.forEach(b => {
@@ -137,9 +137,9 @@ export default class SearchController {
         if (!this.channelsGrid) return;
         this.channelsGrid.innerHTML = '';
         
-        channels.forEach(channel => {
+        channels.forEach((channel, index) => {
             const channelCard = document.createElement('div');
-            channelCard.classList.add('component-search-channel-card');
+            channelCard.classList.add('component-group-item');
             
             const buildUrl = (path, defaultUrl) => {
                 if (!path) return defaultUrl;
@@ -151,21 +151,36 @@ export default class SearchController {
             const avatarSrc = buildUrl(channel.avatar_path, `${this.basePath}/public/storage/profilePictures/default/default.png`);
 
             channelCard.innerHTML = `
-                <div class="component-search-channel-avatar">
-                    <img src="${avatarSrc}" alt="${channel.username}" onerror="this.onerror=null; this.src='${this.basePath}/public/storage/profilePictures/default/default.png'">
+                <div class="component-group-item__content">
+                    <div class="component-avatar">
+                        <img src="${avatarSrc}" alt="${channel.username}" onerror="this.onerror=null; this.src='${this.basePath}/public/storage/profilePictures/default/default.png'">
+                    </div>
+                    <div class="component-group-item__text">
+                        <h4 class="component-group-item__title">${channel.username}</h4>
+                        <p class="component-group-item__desc">@${channel.handle}</p>
+                    </div>
                 </div>
-                <div class="component-search-channel-info">
-                    <h4 class="component-search-channel-name">${channel.username}</h4>
-                    <span class="component-search-channel-handle">@${channel.handle}</span>
+                <div class="component-group-item__actions">
+                    <button class="component-button component-button--pill component-button--h34">Ver canal</button>
                 </div>
-                <button class="component-search-channel-btn">Ver canal</button>
             `;
 
-            channelCard.addEventListener('click', () => {
-                if (window.SpaRouter) window.SpaRouter.navigate(`/@${channel.handle}`);
+            channelCard.addEventListener('click', (e) => {
+                if (e.target.tagName !== 'BUTTON') {
+                    if (window.SpaRouter) window.SpaRouter.navigate(`/@${channel.handle}`);
+                } else {
+                    if (window.SpaRouter) window.SpaRouter.navigate(`/@${channel.handle}`);
+                }
             });
 
             this.channelsGrid.appendChild(channelCard);
+
+            // Añadir divisor entre canales, propio de component-card--grouped
+            if (index < channels.length - 1) {
+                const divider = document.createElement('hr');
+                divider.classList.add('component-divider');
+                this.channelsGrid.appendChild(divider);
+            }
         });
     }
 
@@ -183,7 +198,7 @@ export default class SearchController {
             const createdDate = video.created_at ? new Date(video.created_at * 1000) : new Date();
             const timeAgo = this.timeSince(createdDate);
             const formattedDuration = this.formatDuration(video.duration || 0);
-            const dominantColor = video.thumbnail_dominant_color && video.thumbnail_dominant_color !== 'transparent' ? video.thumbnail_dominant_color : '#333';
+            const dominantColor = video.thumbnail_dominant_color && video.thumbnail_dominant_color !== 'transparent' ? video.thumbnail_dominant_color : '#1C1C1E';
             
             const fallbackThumb = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' fill='%23111'/%3E%3Ctext x='50%25' y='50%25' fill='%23777' font-family='sans-serif' font-size='14' text-anchor='middle' dy='.3em'%3ESin miniatura%3C/text%3E%3C/svg%3E";
             
@@ -200,27 +215,24 @@ export default class SearchController {
             const videoSrc = buildUrl(video.hls_path, '');
             const navUrl = `${this.basePath}/watch/${uuid}`;
 
+            // ESTRUCTURA EXACTA BASADA EN TU SOLICITUD
             const cardHTML = `
-                <div class="component-video-card" style="--local-dominant-color: ${dominantColor}; cursor: pointer;" data-nav="${navUrl}">
+                <div class="component-video-card " style="--local-dominant-color: ${dominantColor}; cursor: pointer;" data-nav="${navUrl}">
+                    
                     <div class="component-video-card__top">
                         <img src="${thumbPath}" alt="Miniatura de ${title}" class="component-video-card__thumbnail" loading="lazy" onerror="this.onerror=null; this.src='${fallbackThumb}'">
                         
-                        <video 
-                            data-src="${videoSrc}" 
-                            data-uuid="${uuid}"
-                            class="component-video-card__player" 
-                            muted 
-                            loop 
-                            playsinline>
-                        </video>
+                        <video data-src="${videoSrc}" data-uuid="${uuid}" class="component-video-card__player" muted="" loop="" playsinline=""></video>
 
                         <span class="component-video-card__duration">${formattedDuration}</span>
                     </div>
 
                     <div class="component-video-card__bottom">
+                        
                         <div class="component-video-card__avatar">
                             <img src="${avatarSrc}" alt="Perfil de ${video.channel_name || video.username || 'Usuario'}" loading="lazy" onerror="this.onerror=null; this.src='${this.basePath}/public/storage/profilePictures/default/default.png'">
                         </div>
+                        
                         <div class="component-video-card__info">
                             <h3 class="component-video-card__title" title="${title}">${title}</h3>
                             <p class="component-video-card__user">${video.channel_name || video.username || 'Usuario Desconocido'}</p>

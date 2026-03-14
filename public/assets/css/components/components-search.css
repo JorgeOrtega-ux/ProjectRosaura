@@ -231,4 +231,30 @@
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+}/* =========================================
+   Component: Search System
+   ========================================= */
+
+/* =========================================
+   Component: Search System
+   ========================================= */
+
+/* Estilos de estado activo para los badges de filtro */
+.component-badge.component-search-filter-active {
+    background-color: var(--text-primary, #ffffff);
+    color: var(--bg-surface, #000000);
+    border-color: var(--text-primary, #ffffff);
+}
+
+.component-badge.component-search-filter-btn {
+    transition: all 0.2s ease;
+}
+
+.component-badge.component-search-filter-btn:hover:not(.component-search-filter-active) {
+    background-color: var(--bg-hover-light, rgba(255, 255, 255, 0.1));
+}
+
+/* Modificador para asegurar que el layout no colapse mientras carga */
+#search-results-area {
+    min-height: 50vh; 
 }

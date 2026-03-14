@@ -1,42 +1,62 @@
-<div class="component-search-wrapper">
-    
-    <div class="component-search-top">
-        <div class="component-search-filters">
-            <button class="component-search-filter-btn component-search-filter-active" data-filter="all">Todo</button>
-            <button class="component-search-filter-btn" data-filter="channels">Canales</button>
-            <button class="component-search-filter-btn" data-filter="videos">Videos</button>
+<div class="view-content">
+    <div class="component-wrapper component-wrapper--full no-padding">
+        <div class="component-view-layout">
+            
+            <div class="component-view-top">
+                
+                <div class="component-view-top-left">
+                    <div class="component-badge-list">
+                        <button class="component-badge component-search-filter-btn component-search-filter-active" data-filter="all" style="cursor: pointer;">Todo</button>
+                        <button class="component-badge component-search-filter-btn" data-filter="channels" style="cursor: pointer;">Canales</button>
+                        <button class="component-badge component-search-filter-btn" data-filter="videos" style="cursor: pointer;">Videos</button>
+                    </div>
+                </div>
+                
+                <div class="component-view-top-right">
+                    <div class="component-actions">
+                        <button id="search-toggle-filters" class="component-button component-button--icon component-button--h40" data-tooltip="Filtros">
+                            <span class="material-symbols-rounded">tune</span>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="component-view-bottom" id="search-results-area" style="padding: 24px; display: flex; flex-direction: column; gap: 32px;">
+                
+                <div id="search-loading-state" style="padding: 64px 0;">
+                    <div class="component-spinner component-spinner--centered"></div>
+                    <p class="component-text-notice component-text-notice--muted" style="text-align: center; margin-top: 16px;">Buscando en la plataforma...</p>
+                </div>
+
+                <div class="component-feed-section" id="search-channels-section" style="display: none;">
+                    <div class="component-feed-header" style="margin-bottom: 16px;">
+                        <h2 class="component-feed-title">Canales</h2>
+                    </div>
+                    <div class="component-feed-body">
+                        <div class="component-card--grouped" id="search-channels-grid">
+                            </div>
+                    </div>
+                </div>
+
+                <div class="component-feed-section" id="search-videos-section" style="display: none;">
+                    <div class="component-feed-header">
+                        <h2 class="component-feed-title">Videos</h2>
+                    </div>
+                    <div class="component-feed-body">
+                        <div id="search-videos-grid" class="component-video-grid">
+                            </div>
+                    </div>
+                </div>
+
+                <div class="component-empty-state" id="search-empty-state" style="display: none; border: none; background: transparent;">
+                    <span class="material-symbols-rounded component-empty-state-icon">search_off</span>
+                    <h3 style="margin: 16px 0 8px 0; color: var(--text-primary); font-size: 18px;">No encontramos nada</h3>
+                    <p class="component-empty-state-text">Intenta buscando con palabras clave diferentes o revisa la ortografía.</p>
+                </div>
+
+            </div>
+
         </div>
-        
-        <button id="search-toggle-filters" class="component-search-filter-btn" style="display: flex; align-items: center; gap: 8px;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
-                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
-            </svg>
-            Filtros
-        </button>
-    </div>
-
-    <div class="component-search-bottom" id="search-results-area">
-        
-        <div class="component-search-loading" id="search-loading-state">
-            <div class="component-search-spinner"></div>
-            <span class="component-search-loading-text">Buscando en la plataforma...</span>
-        </div>
-
-        <section class="component-search-section" id="search-channels-section" style="display: none;">
-            <h2 class="component-search-section-title">Canales</h2>
-            <div class="component-search-channels-grid" id="search-channels-grid"></div>
-        </section>
-
-        <section class="component-search-section" id="search-videos-section" style="display: none;">
-            <h2 class="component-search-section-title">Videos</h2>
-            <div class="component-search-videos-grid" id="search-videos-grid"></div>
-        </section>
-
-        <div class="component-search-empty" id="search-empty-state" style="display: none;">
-            <div class="component-search-empty-icon">🔍</div>
-            <h3 class="component-search-empty-title">No encontramos nada</h3>
-            <p class="component-search-empty-desc">Intenta buscando con palabras clave diferentes o revisa la ortografía.</p>
-        </div>
-
     </div>
 </div>
