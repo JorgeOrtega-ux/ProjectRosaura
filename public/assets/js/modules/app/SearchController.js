@@ -2,8 +2,8 @@ import { ApiRoutes } from '../../core/api/ApiRoutes.js';
 
 export default class SearchController {
     constructor() {
-        console.log('🟡 [SearchController] Constructor iniciado. (Enterprise Mode)');
-        this.currentTab = 'all';
+        console.log('🟡 [SearchController] Constructor iniciado.');
+        this.currentFilter = 'all';
         this.lastData = null;
     }
 
@@ -17,139 +17,54 @@ export default class SearchController {
         this.videosSection = document.getElementById('search-videos-section');
         this.videosGrid = document.getElementById('search-videos-grid');
 
-        this.tabBtns = document.querySelectorAll('.component-search-tab-btn');
-        
-        // Elementos de Filtros
-        this.btnToggleFilters = document.getElementById('search-toggle-filters');
-        this.filtersPanel = document.getElementById('search-filters-panel');
-        this.btnApplyFilters = document.getElementById('search-apply-filters');
-        this.btnClearFilters = document.getElementById('search-clear-filters');
-        
-        this.inputSort = document.getElementById('search-sort-select');
-        this.inputCategory = document.getElementById('search-category-input');
-        this.inputTags = document.getElementById('search-tags-input');
-        this.inputModels = document.getElementById('search-models-input');
+        this.filterBtns = document.querySelectorAll('.component-search-filter-btn');
     }
 
     async init() {
         this.basePath = window.AppBasePath || '/ProjectRosaura';
-        this.cacheDOM();
-        
-        // Extraer query y filtros de la URL actual
+
         const urlParams = new URLSearchParams(window.location.search);
         this.query = urlParams.get('search_query') || '';
         
-        // Autocompletar los inputs con lo que venga en la URL
-        if (this.inputCategory) this.inputCategory.value = urlParams.get('category') || '';
-        if (this.inputTags) this.inputTags.value = urlParams.get('tags') || '';
-        if (this.inputModels) this.inputModels.value = urlParams.get('models') || '';
-        if (this.inputSort) this.inputSort.value = urlParams.get('sort') || 'created_at:desc';
-
+        this.cacheDOM();
         this.bindEvents();
 
-        if (!this.query && !this.inputCategory.value && !this.inputTags.value && !this.inputModels.value) {
-            this.showEmptyState("Ingresa un término de búsqueda o selecciona un filtro.");
+        if (!this.query) {
+            this.showEmptyState();
             return;
         }
 
-        document.title = `${this.query || 'Búsqueda'} - ProjectRosaura`;
+        document.title = `${this.query} - Búsqueda`;
 
         await this.fetchResults();
     }
 
     bindEvents() {
-        // Pestañas (Todo, Canales, Videos)
-        if (this.tabBtns) {
-            this.tabBtns.forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    this.tabBtns.forEach(b => b.classList.remove('component-search-tab-active'));
-                    e.target.classList.add('component-search-tab-active');
-                    this.currentTab = e.target.getAttribute('data-type') || 'all';
-                    this.renderTabs();
-                });
-            });
-        }
-
-        // Mostrar/Ocultar Panel de Filtros
-        if (this.btnToggleFilters) {
-            this.btnToggleFilters.addEventListener('click', () => {
-                const isHidden = this.filtersPanel.style.display === 'none';
-                this.filtersPanel.style.display = isHidden ? 'block' : 'none';
-                this.btnToggleFilters.classList.toggle('active', isHidden);
-            });
-        }
-
-        // Botón Limpiar Filtros
-        if (this.btnClearFilters) {
-            this.btnClearFilters.addEventListener('click', () => {
-                this.inputCategory.value = '';
-                this.inputTags.value = '';
-                this.inputModels.value = '';
-                this.inputSort.value = 'created_at:desc';
-                this.applyFiltersAndFetch();
-            });
-        }
-
-        // Botón Aplicar Filtros
-        if (this.btnApplyFilters) {
-            this.btnApplyFilters.addEventListener('click', () => {
-                this.applyFiltersAndFetch();
-            });
-        }
+        if (!this.filterBtns) return;
         
-        // Presionar Enter en los inputs de filtro
-        [this.inputCategory, this.inputTags, this.inputModels].forEach(input => {
-            if(input) {
-                input.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') this.applyFiltersAndFetch();
+        this.filterBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                // Ignorar si es el botón de "Filtros"
+                if (e.target.closest('#search-toggle-filters')) return;
+
+                this.filterBtns.forEach(b => {
+                    if (b.id !== 'search-toggle-filters') {
+                        b.classList.remove('component-search-filter-active');
+                    }
                 });
-            }
+                
+                e.target.classList.add('component-search-filter-active');
+                
+                this.currentFilter = e.target.getAttribute('data-filter') || 'all';
+                this.applyFilter();
+            });
         });
     }
 
-    applyFiltersAndFetch() {
-        // Actualizar la URL dinámicamente sin recargar la página (History API)
-        const currentUrl = new URL(window.location);
-        
-        const setOrDelete = (key, value) => {
-            if (value && value.trim() !== '') {
-                currentUrl.searchParams.set(key, value.trim());
-            } else {
-                currentUrl.searchParams.delete(key);
-            }
-        };
-
-        setOrDelete('category', this.inputCategory.value);
-        setOrDelete('tags', this.inputTags.value);
-        setOrDelete('models', this.inputModels.value);
-        
-        if (this.inputSort.value !== 'created_at:desc') {
-            currentUrl.searchParams.set('sort', this.inputSort.value);
-        } else {
-            currentUrl.searchParams.delete('sort');
-        }
-
-        window.history.pushState({}, '', currentUrl);
-        
-        // Volver a buscar con los nuevos parámetros
-        this.fetchResults();
-    }
-
     async fetchResults() {
-        this.showLoadingState();
-        
         try {
             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-            
-            // Construir Query String para la API
-            const params = new URLSearchParams();
-            if (this.query) params.append('q', this.query);
-            if (this.inputCategory?.value) params.append('category', this.inputCategory.value.trim());
-            if (this.inputTags?.value) params.append('tags', this.inputTags.value.trim());
-            if (this.inputModels?.value) params.append('models', this.inputModels.value.trim());
-            if (this.inputSort?.value) params.append('sort', this.inputSort.value);
-
-            const apiUrl = `${this.basePath}/api/index.php?route=${ApiRoutes?.Search?.Get || 'search.get'}&${params.toString()}`;
+            const apiUrl = `${this.basePath}/api/index.php?route=${ApiRoutes?.Search?.Get || 'search.get'}&q=${encodeURIComponent(this.query)}`;
             
             const response = await fetch(apiUrl, {
                 method: 'GET',
@@ -165,38 +80,49 @@ export default class SearchController {
             if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
             
             let result;
-            try { result = JSON.parse(rawText); } 
-            catch (jsonError) { throw new Error("Respuesta inválida del servidor."); }
+            try {
+                result = JSON.parse(rawText);
+            } catch (jsonError) {
+                throw new Error("Respuesta inválida del servidor.");
+            }
 
             if (result.success) {
-                this.lastData = result.data;
-                this.renderTabs();
+                this.renderResults(result.data);
             } else {
                 this.showEmptyState();
             }
         } catch (error) {
             console.error('💥 [SearchController] Error fetching:', error);
-            this.showEmptyState("Hubo un error al conectar con el motor de búsqueda.");
+            this.showEmptyState();
         }
     }
 
-    renderTabs() {
+    renderResults(data) {
+        if (this.loadingState) this.loadingState.style.display = 'none';
+        this.lastData = data;
+        this.applyFilter();
+    }
+
+    applyFilter() {
         if (!this.lastData) return;
-        
-        this.hideAll();
-        
         const data = this.lastData;
+
         const hasChannels = data.channels && data.channels.length > 0;
         const hasVideos = data.videos && data.videos.length > 0;
+
+        if (this.channelsSection) this.channelsSection.style.display = 'none';
+        if (this.videosSection) this.videosSection.style.display = 'none';
+        if (this.emptyState) this.emptyState.style.display = 'none';
+
         let showedAnything = false;
 
-        if ((this.currentTab === 'all' || this.currentTab === 'channels') && hasChannels) {
+        if ((this.currentFilter === 'all' || this.currentFilter === 'channels') && hasChannels) {
             if (this.channelsSection) this.channelsSection.style.display = 'block';
             this.renderChannels(data.channels);
             showedAnything = true;
         }
 
-        if ((this.currentTab === 'all' || this.currentTab === 'videos') && hasVideos) {
+        if ((this.currentFilter === 'all' || this.currentFilter === 'videos') && hasVideos) {
             if (this.videosSection) this.videosSection.style.display = 'block';
             this.renderVideos(data.videos);
             showedAnything = true;
@@ -270,19 +196,30 @@ export default class SearchController {
 
             const thumbPath = buildUrl(video.thumbnail_path, fallbackThumb);
             const avatarSrc = buildUrl(video.avatar_path, `${this.basePath}/public/storage/profilePictures/default/default.png`);
+            
             const videoSrc = buildUrl(video.hls_path, '');
             const navUrl = `${this.basePath}/watch/${uuid}`;
 
             const cardHTML = `
                 <div class="component-video-card" style="--local-dominant-color: ${dominantColor}; cursor: pointer;" data-nav="${navUrl}">
                     <div class="component-video-card__top">
-                        <img src="${thumbPath}" alt="Miniatura" class="component-video-card__thumbnail" loading="lazy" onerror="this.onerror=null; this.src='${fallbackThumb}'">
-                        <video data-src="${videoSrc}" data-uuid="${uuid}" class="component-video-card__player" muted loop playsinline></video>
+                        <img src="${thumbPath}" alt="Miniatura de ${title}" class="component-video-card__thumbnail" loading="lazy" onerror="this.onerror=null; this.src='${fallbackThumb}'">
+                        
+                        <video 
+                            data-src="${videoSrc}" 
+                            data-uuid="${uuid}"
+                            class="component-video-card__player" 
+                            muted 
+                            loop 
+                            playsinline>
+                        </video>
+
                         <span class="component-video-card__duration">${formattedDuration}</span>
                     </div>
+
                     <div class="component-video-card__bottom">
                         <div class="component-video-card__avatar">
-                            <img src="${avatarSrc}" alt="Perfil" loading="lazy" onerror="this.onerror=null; this.src='${this.basePath}/public/storage/profilePictures/default/default.png'">
+                            <img src="${avatarSrc}" alt="Perfil de ${video.channel_name || video.username || 'Usuario'}" loading="lazy" onerror="this.onerror=null; this.src='${this.basePath}/public/storage/profilePictures/default/default.png'">
                         </div>
                         <div class="component-video-card__info">
                             <h3 class="component-video-card__title" title="${title}">${title}</h3>
@@ -315,12 +252,16 @@ export default class SearchController {
     formatDuration(seconds) {
         const totalSeconds = parseInt(seconds, 10);
         if (isNaN(totalSeconds) || totalSeconds <= 0) return '00:00';
+
         const h = Math.floor(totalSeconds / 3600);
         const m = Math.floor((totalSeconds % 3600) / 60);
         const s = totalSeconds % 60;
+
         const mStr = m.toString().padStart(2, '0');
         const sStr = s.toString().padStart(2, '0');
-        return h > 0 ? `${h}:${mStr}:${sStr}` : `${mStr}:${sStr}`;
+
+        if (h > 0) return `${h}:${mStr}:${sStr}`;
+        return `${mStr}:${sStr}`;
     }
 
     timeSince(date) {
@@ -338,26 +279,8 @@ export default class SearchController {
         return "instantes";
     }
 
-    hideAll() {
-        if (this.channelsSection) this.channelsSection.style.display = 'none';
-        if (this.videosSection) this.videosSection.style.display = 'none';
-        if (this.emptyState) this.emptyState.style.display = 'none';
+    showEmptyState() {
         if (this.loadingState) this.loadingState.style.display = 'none';
-    }
-
-    showLoadingState() {
-        this.hideAll();
-        if (this.loadingState) this.loadingState.style.display = 'flex';
-    }
-
-    showEmptyState(customTitle = null) {
-        this.hideAll();
-        if (this.emptyState) {
-            this.emptyState.style.display = 'flex';
-            if(customTitle) {
-                const titleEl = document.getElementById('search-empty-title');
-                if(titleEl) titleEl.textContent = customTitle;
-            }
-        }
+        if (this.emptyState) this.emptyState.style.display = 'flex';
     }
 }
