@@ -18,7 +18,7 @@
     height: 16vw; 
     min-height: 150px;
     max-height: 220px;
-    background-color: #333;
+    background-color: var(--bg-surface-alt, #333);
     border-radius: 12px;
     overflow: hidden;
     margin-bottom: 24px;
@@ -61,6 +61,23 @@
     margin: 0 0 8px 0;
     font-size: 28px;
     font-weight: 700;
+    color: var(--text-primary);
+}
+
+.component-channel-title-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.component-verified-badge {
+    font-size: 22px;
+    color: var(--text-secondary, #aaaaaa);
+}
+
+.component-verified-badge--small {
+    font-size: 14px;
+    color: var(--text-secondary, #aaaaaa);
 }
 
 .component-channel-meta {
@@ -69,17 +86,43 @@
     font-size: 14px;
 }
 
+.component-channel-about-preview {
+    margin-top: 10px;
+    margin-bottom: 10px;
+    font-size: 14px;
+    color: var(--text-secondary);
+    max-width: 600px;
+}
+
+.component-channel-about-preview-text {
+    margin-bottom: 0;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.component-channel-about-preview-text.has-contact {
+    margin-bottom: 5px;
+}
+
 .component-channel-actions {
     display: flex;
     gap: 12px;
     justify-content: flex-start;
 }
 
+.component-channel-actions-wrapper {
+    margin-top: 15px;
+}
+
 .component-channel-tabs {
     display: flex;
     gap: 32px;
     border-bottom: 1px solid var(--border-color);
-    border-top: 1px solid #00000020;
+    border-top: 1px solid var(--border-color, #00000020);
     margin-bottom: 24px;
     overflow-x: auto;
     scrollbar-width: none;
@@ -101,10 +144,10 @@
 }
 
 .component-channel-tab:hover { color: var(--text-primary); }
-.component-channel-tab.is-active { color: var(--text-primary); border-bottom-color: var(--text-primary); }
+.component-channel-tab.active { color: var(--text-primary); border-bottom-color: var(--text-primary); }
 
 .component-channel-content-section { display: none; }
-.component-channel-content-section.is-active { display: block; }
+.component-channel-content-section.active { display: block; }
 
 .component-shorts-grid {
     display: grid;
@@ -217,14 +260,28 @@
 }
 .component-about-main { flex: 2; min-width: 320px; }
 .component-about-sidebar { flex: 1; min-width: 280px; max-width: 400px; }
-.component-about-title { margin-bottom: 15px; font-size: 1.25rem; }
+
+.component-about-title {
+    margin-bottom: 15px; 
+    font-size: 1.25rem;
+    color: var(--text-primary);
+}
+
+.component-about-subtitle {
+    margin-bottom: 12px;
+    font-size: 1.1rem;
+    color: var(--text-primary);
+}
+
 .component-about-card {
-    background-color: #ffffff;
-    border: 1px solid #00000020;
+    background-color: var(--bg-surface, #ffffff);
+    border: 1px solid var(--border-color, #00000020);
     border-radius: 12px;
     padding: 20px;
     margin-bottom: 40px;
+    color: var(--text-primary);
 }
+
 .component-about-text {
     white-space: pre-wrap;
     color: var(--text-primary);
@@ -232,23 +289,31 @@
     font-size: 15px;
     margin: 0;
 }
+
+.component-about-empty-state {
+    grid-column: 1 / -1;
+}
+
 .component-about-details-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 15px;
     margin-bottom: 30px;
 }
+
 .component-about-detail-item {
-    background-color: #ffffff;
-    border: 1px solid #00000020;
+    background-color: var(--bg-surface, #ffffff);
+    border: 1px solid var(--border-color, #00000020);
     border-radius: 12px;
     padding: 15px;
     display: flex;
     flex-direction: column;
     gap: 4px;
 }
+
 .component-about-detail-label { font-size: 13px; color: var(--text-secondary); }
 .component-about-detail-value { font-size: 16px; font-weight: 500; color: var(--text-primary); }
+
 .component-about-list {
     list-style: none;
     padding: 0;
@@ -257,6 +322,7 @@
     flex-direction: column;
     gap: 15px;
 }
+
 .component-about-list-item {
     display: flex;
     align-items: center;
@@ -264,13 +330,16 @@
     color: var(--text-primary);
     font-size: 15px;
 }
+
 .component-about-list-icon { font-size: 22px; color: var(--text-secondary); }
+
 .component-about-socials {
     display: flex;
     flex-direction: column;
     gap: 10px;
     margin-bottom: 40px;
 }
+
 .component-about-social-link {
     display: flex;
     align-items: center;
@@ -279,28 +348,78 @@
     color: var(--text-primary);
     font-size: 15px;
     padding: 15px;
-    background-color: #ffffff;
-    border: 1px solid #00000020;
+    background-color: var(--bg-surface, #ffffff);
+    border: 1px solid var(--border-color, #00000020);
     border-radius: 12px;
     transition: background-color 0.2s ease, border-color 0.2s ease;
 }
+
 .component-about-social-link:hover {
-    background-color: #f9f9f9;
-    border-color: #00000030;
+    background-color: var(--bg-surface-hover, #f9f9f9);
+    border-color: var(--border-color-hover, #00000030);
 }
+
 .component-about-social-icon { font-size: 22px; color: var(--accent-color, #3ea6ff); }
 .component-about-social-text { font-weight: 500; }
+
 .component-about-contact-text {
     font-size: 14px;
     color: var(--text-secondary);
     margin-bottom: 15px;
     margin-top: 0;
 }
+
+.component-about-contact-box {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 15px;
+    border: 1px solid var(--border-color, #00000020);
+    border-radius: 12px;
+    background-color: var(--bg-surface-alt, #f9f9f9);
+}
+
+.component-about-contact-icon {
+    color: var(--text-secondary);
+}
+
+.component-about-contact-link {
+    color: var(--text-primary);
+    text-decoration: none;
+    font-size: 15px;
+    font-weight: 500;
+    word-break: break-all;
+}
+
 .component-about-contact-btn {
     width: 100%;
     display: flex;
     justify-content: center;
     text-decoration: none;
+}
+
+.component-video-card__user-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Fallback Strict para Dark Mode en caso de que las variables no estén disponibles en el scope raíz */
+[data-theme="dark"] .component-about-card,
+[data-theme="dark"] .component-about-detail-item,
+[data-theme="dark"] .component-about-social-link {
+    background-color: var(--bg-surface, #1e1e1e);
+    border-color: var(--border-color, #333333);
+}
+
+[data-theme="dark"] .component-about-contact-box {
+    background-color: var(--bg-surface-alt, #252525);
+    border-color: var(--border-color, #333333);
+}
+
+[data-theme="dark"] .component-about-social-link:hover {
+    background-color: var(--bg-surface-hover, #2a2a2a);
+    border-color: var(--border-color-hover, #444444);
 }
 
 @media (max-width: 768px) {
@@ -320,6 +439,16 @@
         text-align: center;
         margin-top: -50px; 
         gap: 12px;
+    }
+    .component-channel-info-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        width: 100%;
+    }
+    .component-channel-title-wrapper {
+        justify-content: center;
     }
     .component-channel-avatar {
         width: 90px;

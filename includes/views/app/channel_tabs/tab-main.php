@@ -23,10 +23,10 @@
                             </div>
                             <div class="component-video-card__info">
                                 <h3 class="component-video-card__title" title="<?php echo htmlspecialchars($video['title']); ?>"><?php echo htmlspecialchars($video['title']); ?></h3>
-                                <p class="component-video-card__user" style="display: flex; align-items: center; gap: 4px;">
+                                <p class="component-video-card__user component-video-card__user-wrapper">
                                     <?php echo htmlspecialchars($displayName); ?>
                                     <?php if (isset($channelUser['channel_verified']) && $channelUser['channel_verified'] == 1): ?>
-                                        <span class="material-symbols-rounded" style="font-size: 14px; color: var(--text-secondary, #aaaaaa);" title="Verificado">check_circle</span>
+                                        <span class="material-symbols-rounded component-verified-badge--small" title="Verificado">check_circle</span>
                                     <?php endif; ?>
                                 </p>
                                 <p class="component-video-card__meta"><?php echo $video['views'] ?? 0; ?> vistas • <?php echo time_elapsed_string($video['created_at']); ?></p>

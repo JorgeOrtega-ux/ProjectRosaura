@@ -216,10 +216,10 @@ $channelContact = $channelExists ? ($channelUser['channel_contact_email'] ?? '')
             <img src="<?php echo htmlspecialchars($avatarPath); ?>" alt="Avatar" class="component-channel-avatar">
             
             <div class="component-channel-info-wrapper">
-                <h1 class="component-channel-title" style="display: flex; align-items: center; gap: 6px;">
+                <h1 class="component-channel-title component-channel-title-wrapper">
                     <?php echo htmlspecialchars($displayName); ?>
                     <?php if ($channelExists && isset($channelUser['channel_verified']) && $channelUser['channel_verified'] == 1): ?>
-                        <span class="material-symbols-rounded" style="font-size: 22px; color: var(--text-secondary, #aaaaaa);" title="Canal Verificado">check_circle</span>
+                        <span class="material-symbols-rounded component-verified-badge" title="Canal Verificado">check_circle</span>
                     <?php endif; ?>
                 </h1>
                 
@@ -230,16 +230,16 @@ $channelContact = $channelExists ? ($channelUser['channel_contact_email'] ?? '')
                 </p>
 
                 <?php if (!empty($channelDesc) || !empty($channelContact)): ?>
-                    <div class="component-channel-about-preview" style="margin-top: 10px; margin-bottom: 10px; font-size: 14px; color: var(--text-secondary); max-width: 600px;">
+                    <div class="component-channel-about-preview">
                         <?php if (!empty($channelDesc)): ?>
-                            <p style="margin-bottom: <?php echo !empty($channelContact) ? '5px' : '0'; ?>; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis;">
+                            <p class="component-channel-about-preview-text <?php echo !empty($channelContact) ? 'has-contact' : ''; ?>">
                                 <?php echo nl2br(htmlspecialchars($channelDesc)); ?>
                             </p>
                         <?php endif; ?>
                     </div>
                 <?php endif; ?>
                 
-                <div class="component-channel-actions" style="margin-top: 15px;">
+                <div class="component-channel-actions component-channel-actions-wrapper">
                     <?php if ($isOwner): ?>
                         <button class="component-btn-secondary" data-nav="<?php echo $appUrl; ?>/channel/<?php echo htmlspecialchars($channelUser['uuid'] ?? ''); ?>/editing/profile">Personalizar canal</button>
                     <?php else: ?>
@@ -252,27 +252,27 @@ $channelContact = $channelExists ? ($channelUser['channel_contact_email'] ?? '')
         </div>
 
         <div class="component-channel-tabs" id="channel-tabs-container">
-            <div class="component-channel-tab <?php echo $currentTab === 'main' ? 'is-active' : ''; ?>" data-target="section-main" data-tab="main">Principal</div>
-            <div class="component-channel-tab <?php echo $currentTab === 'videos' ? 'is-active' : ''; ?>" data-target="section-videos" data-tab="videos">Videos</div>
-            <div class="component-channel-tab <?php echo $currentTab === 'shorts' ? 'is-active' : ''; ?>" data-target="section-shorts" data-tab="shorts">Shorts</div>
-            <div class="component-channel-tab <?php echo $currentTab === 'about' ? 'is-active' : ''; ?>" data-target="section-about" data-tab="about">Acerca de</div>
+            <div class="component-channel-tab <?php echo $currentTab === 'main' ? 'active' : ''; ?>" data-target="section-main" data-tab="main">Principal</div>
+            <div class="component-channel-tab <?php echo $currentTab === 'videos' ? 'active' : ''; ?>" data-target="section-videos" data-tab="videos">Videos</div>
+            <div class="component-channel-tab <?php echo $currentTab === 'shorts' ? 'active' : ''; ?>" data-target="section-shorts" data-tab="shorts">Shorts</div>
+            <div class="component-channel-tab <?php echo $currentTab === 'about' ? 'active' : ''; ?>" data-target="section-about" data-tab="about">Acerca de</div>
         </div>
 
         <div class="component-channel-content">
             
-            <div class="component-channel-content-section <?php echo $currentTab === 'main' ? 'is-active' : ''; ?>" id="section-main">
+            <div class="component-channel-content-section <?php echo $currentTab === 'main' ? 'active' : ''; ?>" id="section-main">
                 <?php include __DIR__ . '/channel_tabs/tab-main.php'; ?>
             </div>
 
-            <div class="component-channel-content-section <?php echo $currentTab === 'videos' ? 'is-active' : ''; ?>" id="section-videos">
+            <div class="component-channel-content-section <?php echo $currentTab === 'videos' ? 'active' : ''; ?>" id="section-videos">
                 <?php include __DIR__ . '/channel_tabs/tab-videos.php'; ?>
             </div>
 
-            <div class="component-channel-content-section <?php echo $currentTab === 'shorts' ? 'is-active' : ''; ?>" id="section-shorts">
+            <div class="component-channel-content-section <?php echo $currentTab === 'shorts' ? 'active' : ''; ?>" id="section-shorts">
                 <?php include __DIR__ . '/channel_tabs/tab-shorts.php'; ?>
             </div>
 
-            <div class="component-channel-content-section <?php echo $currentTab === 'about' ? 'is-active' : ''; ?>" id="section-about">
+            <div class="component-channel-content-section <?php echo $currentTab === 'about' ? 'active' : ''; ?>" id="section-about">
                 <?php include __DIR__ . '/channel_tabs/tab-about.php'; ?>
             </div>
 

@@ -61,15 +61,15 @@ export class ChannelController {
             const allTabs = newContainer.querySelectorAll('.component-channel-tab');
             const sections = document.querySelectorAll('.component-channel-content-section');
 
-            allTabs.forEach(t => t.classList.remove('is-active'));
-            sections.forEach(s => s.classList.remove('is-active'));
+            allTabs.forEach(t => t.classList.remove('active'));
+            sections.forEach(s => s.classList.remove('active'));
 
-            tab.classList.add('is-active');
+            tab.classList.add('active');
 
             const targetId = tab.getAttribute('data-target');
             const targetSection = document.getElementById(targetId);
             
-            if (targetSection) targetSection.classList.add('is-active');
+            if (targetSection) targetSection.classList.add('active');
 
             const tabName = tab.getAttribute('data-tab');
             if (this.channelIdentifier && window.history) {
