@@ -613,13 +613,6 @@ export class VideoPlayerSystem {
     populateQualityMenu(levels) {
         if (!this.qualityMenuContent) return;
         this.qualityMenuContent.innerHTML = '';
-        
-        const autoItem = document.createElement('div');
-        autoItem.className = 'component-menu__item is-selected';
-        autoItem.dataset.level = -1; 
-        autoItem.innerHTML = `<span class="material-symbols-rounded component-menu__check">check</span><span>Automática</span>`;
-        autoItem.addEventListener('click', (e) => this.setQuality(e, -1));
-        this.qualityMenuContent.appendChild(autoItem);
 
         const sortedLevels = levels.map((l, index) => ({...l, originalIndex: index}))
                                    .sort((a, b) => b.height - a.height);
@@ -637,6 +630,14 @@ export class VideoPlayerSystem {
                 this.qualityMenuContent.appendChild(item);
             }
         });
+
+        // Agregamos Automática al final de la lista
+        const autoItem = document.createElement('div');
+        autoItem.className = 'component-menu__item is-selected';
+        autoItem.dataset.level = -1; 
+        autoItem.innerHTML = `<span class="material-symbols-rounded component-menu__check">check</span><span>Automática</span>`;
+        autoItem.addEventListener('click', (e) => this.setQuality(e, -1));
+        this.qualityMenuContent.appendChild(autoItem);
     }
 
     setQuality(e, levelIndex) {

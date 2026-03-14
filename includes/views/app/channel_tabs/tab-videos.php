@@ -14,7 +14,7 @@
                     <div class="component-video-card" style="--local-dominant-color: <?php echo htmlspecialchars($video['thumbnail_dominant_color'] ?? '#272727'); ?>;" data-nav="<?php echo $appUrl; ?>/watch/<?php echo htmlspecialchars($video['uuid']); ?>">
                         <div class="component-video-card__top">
                             <img src="<?php echo htmlspecialchars($thumbSrc); ?>" alt="Miniatura de <?php echo htmlspecialchars($video['title']); ?>" class="component-video-card__thumbnail" loading="lazy">
-                            <video data-src="<?php echo htmlspecialchars($videoSrc); ?>" class="component-video-card__player" muted loop playsinline></video>
+                            <video data-src="<?php echo htmlspecialchars($videoSrc); ?>" data-uuid="<?php echo htmlspecialchars($video['uuid']); ?>" class="component-video-card__player" muted loop playsinline></video>
                             <span class="component-video-card__duration"><?php echo format_duration($video['duration']); ?></span>
                         </div>
                         <div class="component-video-card__bottom">

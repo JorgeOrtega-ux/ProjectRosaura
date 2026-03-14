@@ -45,16 +45,6 @@ $channelLink = $isLoggedIn && $currentIdentifier ? APP_URL . '/@' . $currentIden
                 </div>
             </div>
             <div class="component-menu-divider"></div>
-            
-            <div class="component-menu-link nav-item" data-nav="<?php echo APP_URL; ?>/settings/history">
-                <div class="component-menu-link-icon">
-                    <span class="material-symbols-rounded">history</span>
-                </div>
-                <div class="component-menu-link-text">
-                    <span>Historial</span>
-                </div>
-            </div>
-            <div class="component-menu-divider"></div>
             <?php endif; ?>
 
             <div class="component-menu-link nav-item" data-nav="<?php echo $settingsLink; ?>">

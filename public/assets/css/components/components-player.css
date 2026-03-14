@@ -374,7 +374,7 @@
     -webkit-backdrop-filter: blur(10px);
     border-radius: 12px;
     padding: 12px;
-    min-width: 280px;
+    width: 325px;
     color: #fff;
     z-index: 50;
     opacity: 0;
