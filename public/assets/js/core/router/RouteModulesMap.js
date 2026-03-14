@@ -10,6 +10,8 @@ export const RouteModulesMap = {
     
     // Permite rutas como /watch/56b29a83-94c2-48f6-b425-3a6e7ec5fbd3
     '/watch': { path: './modules/app/WatchController.js', className: 'WatchController' },
+    // NUEVA: Permite rutas de videos en formato vertical /shorts/...
+    '/shorts': { path: './modules/app/WatchController.js', className: 'WatchController' },
     '/playlist': { path: './modules/app/PlaylistController.js', className: 'PlaylistController' },
     
     // ---> NUEVO: MÓDULO DE FEED DE PLAYLISTS <---

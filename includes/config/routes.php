@@ -8,12 +8,13 @@ return [
     // --- RUTA DEL SISTEMA DE BÚSQUEDA ---
     '/results' => ['view' => 'app/search.php'],
 
-    // --- RUTA DEL REPRODUCTOR DE VIDEO ---
+    // --- RUTAS DEL REPRODUCTOR DE VIDEO Y SHORTS ---
     '/watch/{video_uuid}' => ['view' => 'app/watch.php'], 
+    '/shorts/{video_uuid}' => ['view' => 'app/watch.php'], // NUEVA RUTA: Carga la vista del reproductor para los shorts
 
     // --- NUEVA RUTA DE VISTA DE PLAYLIST ---
     '/playlist' => ['view' => 'app/playlist.php'], // Modificado: Ahora acepta ?list=...
-      '/rankings' => ['view' => 'app/rankings.php'], // Modificado: Ahora acepta ?list=...
+    '/rankings' => ['view' => 'app/rankings.php'], // Modificado: Ahora acepta ?list=...
     '/playlist/{uuid}' => ['view' => 'app/playlist.php'], // Mantenemos compatibilidad hacia atrás
     
     // --- NUEVA RUTA: FEED DE PLAYLISTS ---

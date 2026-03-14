@@ -21,18 +21,18 @@ export class WatchController {
 
     async init() {
         const urlPath = window.location.pathname;
-        const pathSegments = urlPath.split('/');
+        const pathSegments = urlPath.split('/').filter(segment => segment.length > 0);
         
-        const watchIndex = pathSegments.indexOf('watch');
-        const videoId = (watchIndex !== -1 && pathSegments.length > watchIndex + 1) 
-                        ? pathSegments[watchIndex + 1] 
-                        : null;
+        // CORRECCIÓN CRÍTICA: Buscar el UUID sin importar si la ruta es /watch/ o /shorts/
+        // El UUID es el último segmento de la ruta limpia
+        const videoId = pathSegments[pathSegments.length - 1];
 
         const urlParams = new URLSearchParams(window.location.search);
         const playlistId = urlParams.get('list'); 
 
-        if (!videoId) {
-            this.showError404('Identificador de video no proporcionado en la URL.');
+        // Validamos que el ID parezca un UUID (formato básico) para evitar falsos positivos
+        if (!videoId || videoId.length < 30) {
+            this.showError404('Identificador de video no proporcionado o inválido.');
             return;
         }
 
@@ -74,7 +74,6 @@ export class WatchController {
                         }
                         
                         if (commentsSection) {
-                            // Verifica si los comentarios están activados (1) o desactivados (0)
                             const allowComments = (response.data.allow_comments !== undefined) ? Number(response.data.allow_comments) : 1;
                             
                             if (allowComments === 1) {
@@ -255,7 +254,6 @@ export class WatchController {
             goToCreateBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 this.closeSaveModule(moduleDropdown);
-                // Redirige al Studio a la pestaña de Playlists
                 if (window.router) {
                     window.router.navigate('/studio'); 
                 } else {
@@ -736,12 +734,10 @@ export class WatchController {
                 hoverColor = primaryColor.replace(/[\d.]+\)$/, '0.1)');
             } else hoverColor = primaryColor;
 
-            // Se lo aplicamos a las cajas de descripción y detalles
             detailBoxes.forEach(box => {
                 box.style.setProperty('--hover-bg-color', hoverColor);
             });
             
-            // AÑADIDO: Se lo aplicamos también al header de la playlist
             const playlistHeaders = (this.container || document).querySelectorAll('.watch-playlist-header');
             playlistHeaders.forEach(header => {
                 header.style.setProperty('--hover-bg-color', hoverColor);
