@@ -119,10 +119,18 @@ if ($isMaintenanceActive && !$isPrivileged) {
 
     // 4.8 NUEVO: VALIDACIÓN ESTRICTA DE UUID PARA RUTAS DEL REPRODUCTOR
     if ($currentView === 'app/watch.php') {
-        // Extraer el UUID del URL Path (se descarta la query string por el parse_url inicial)
+        // Extraer el UUID del URL Path
         $pathParts = explode('/', trim($requestUriPath, '/'));
+        
+        // Buscar el índice tanto para 'watch' como para 'shorts'
         $watchIndex = array_search('watch', $pathParts);
-        $videoUuid = ($watchIndex !== false && isset($pathParts[$watchIndex + 1])) ? $pathParts[$watchIndex + 1] : '';
+        $shortsIndex = array_search('shorts', $pathParts);
+        
+        // Determinar cuál de los dos se encontró
+        $targetIndex = ($watchIndex !== false) ? $watchIndex : (($shortsIndex !== false) ? $shortsIndex : false);
+
+        // Extraer el UUID basado en la posición encontrada
+        $videoUuid = ($targetIndex !== false && isset($pathParts[$targetIndex + 1])) ? $pathParts[$targetIndex + 1] : '';
 
         // Comprobamos con Expresión Regular si es un UUID válido (Formato 8-4-4-4-12)
         if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $videoUuid)) {
