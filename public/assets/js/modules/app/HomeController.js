@@ -41,7 +41,8 @@ export class HomeController {
         if (!this.badgesContainer) return;
         
         try {
-            const response = await this.api.get(ApiRoutes.App.GetFeedFilters);
+            // CORRECCIÓN AQUÍ: Se usa this.api.post en lugar de this.api.get
+            const response = await this.api.post(ApiRoutes.App.GetFeedFilters);
             if (response && response.success) {
                 this.renderBadges(response.data.categories);
             } else {

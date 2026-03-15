@@ -5,17 +5,18 @@ namespace App\Api\Controllers;
 
 use App\Core\Repositories\VideoRepository;
 use App\Core\Repositories\PlaylistRepository;
-// Se asume que añadirás esto más adelante cuando modifiques los repositorios
+use App\Core\Repositories\TagRepository;
 // use App\Core\Repositories\HistoryRepository; 
-// use App\Core\Repositories\TagRepository;
 
 class FeedController {
     private $videoRepo;
     private $playlistRepo;
+    private $tagRepo;
 
-    public function __construct(VideoRepository $videoRepo, PlaylistRepository $playlistRepo) {
+    public function __construct(VideoRepository $videoRepo, PlaylistRepository $playlistRepo, TagRepository $tagRepo) {
         $this->videoRepo = $videoRepo;
         $this->playlistRepo = $playlistRepo;
+        $this->tagRepo = $tagRepo;
     }
 
     public function get_feed($input) {
@@ -24,11 +25,10 @@ class FeedController {
         $category = (isset($input['category']) && $input['category'] !== 'all') ? $input['category'] : null;
         
         // Consultamos feeds por separado con soporte de categoría
-        // NOTA: Se requiere actualizar $this->videoRepo->getPublicFeed() para que acepte el parámetro $category.
         $horizontalVideos = $this->videoRepo->getPublicFeed($limit, $offset, 'horizontal', $category);
         $verticalVideos = $this->videoRepo->getPublicFeed($limit, $offset, 'vertical', $category);
         
-        // El feed de playlists generalmente no se filtra por categoría (o puedes adaptarlo luego si lo deseas)
+        // El feed de playlists generalmente no se filtra por categoría
         $publicPlaylists = $this->playlistRepo->getPublicPlaylistsFeed($limit, $offset);
 
         $formatVideos = function($videos) {
@@ -78,33 +78,22 @@ class FeedController {
     }
 
     public function get_feed_filters($input) {
-        // AQUÍ ES DONDE RESIDIRÁ LA MAGIA DEL ALGORITMO (TELEMETRÍA)
-        // Por ahora, y asumiendo que el HistoryRepo y TagRepo se modificarán después,
-        // esto simula la orquestación. Devuelvo algunas categorías top genéricas como estructura base.
-        
-        // $userId = Auth::getUserId();
-        // if ($userId) {
-        //     $categories = $this->historyRepo->getUserTopCategories($userId, 5);
-        //     if (empty($categories)) {
-        //         $categories = $this->tagRepo->getGlobalTopCategories(5);
-        //     }
-        // } else {
-        //     $categories = $this->tagRepo->getGlobalTopCategories(5);
-        // }
+        // Obtenemos los 6 mejores modelos y 4 mejores categorías basados en VISTAS REALES
+        $categories = $this->tagRepo->getGlobalTopCategories(6);
+        $models = $this->tagRepo->getGlobalTopModels(4);
 
-        // Mock mientras construyes el backend de BD:
-        $categories = [
-            ['slug' => 'gaming', 'name' => 'Gaming'],
-            ['slug' => 'music', 'name' => 'Música'],
-            ['slug' => 'vlogs', 'name' => 'Vlogs'],
-            ['slug' => 'tech', 'name' => 'Tecnología'],
-            ['slug' => 'education', 'name' => 'Educación']
-        ];
+        // Combinamos y aseguramos que haya datos
+        $filters = array_merge($categories ?: [], $models ?: []);
+
+        // Ordenamos la combinación final de mayor a menor cantidad de visualizaciones
+        usort($filters, function($a, $b) {
+            return $b['total_views'] <=> $a['total_views'];
+        });
 
         return [
             'success' => true,
             'data' => [
-                'categories' => $categories
+                'categories' => $filters
             ]
         ];
     }
