@@ -307,11 +307,10 @@ export class VideoPlayerSystem {
         if (currentSecond > 0 && currentSecond % 10 === 0 && currentSecond !== this.lastTelemetryPing) {
             this.lastTelemetryPing = currentSecond;
             if (this.currentVideoUuid) {
-                this.api.post('app.telemetry.ping', {
-                    video_uuid: this.currentVideoUuid,
-                    watch_time: currentTime,
-                    percentage: percentage
-                }).catch(e => console.warn('[VideoPlayer:Telemetry] Fallo al enviar ping', e));
+                // CORRECCIÓN APLICADA AQUÍ: 
+                // Utilizamos el método dedicado de ApiService en lugar del POST hardcodeado e incorrecto
+                this.api.sendTelemetryPing(this.currentVideoUuid, currentTime, percentage)
+                    .catch(e => console.warn('[VideoPlayer:Telemetry] Fallo al enviar ping', e));
             }
         }
     }
