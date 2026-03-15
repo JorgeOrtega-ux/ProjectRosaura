@@ -1,4 +1,6 @@
 // public/assets/js/core/router/SpaRouter.js
+import { RouteModulesMap } from './RouteModulesMap.js';
+
 export class SpaRouter {
     constructor(options = {}) {
         this.outlet = document.querySelector(options.outlet || '[data-ref="app-router-outlet"]');
@@ -32,7 +34,6 @@ export class SpaRouter {
 
                 let url = navTarget.dataset.nav;
                 
-                // CORRECCIÓN CRÍTICA: Añadir el basePath si falta
                 if (this.basePath && url.startsWith('/') && !url.startsWith(this.basePath)) {
                     url = this.basePath + url;
                 }
@@ -82,12 +83,41 @@ export class SpaRouter {
     }
 
     async loadRoute(url) {
-        // Guardia de Ruta (Middleware del Cliente): Validar Verificación de Edad
+        // Guardia 1: Verificación de Edad
         const isVerified = localStorage.getItem('age_verified') === 'true';
         if (!isVerified && !url.includes('age-restricted')) {
             console.warn("[SpaRouter] Navegación interceptada: El usuario no ha verificado su edad.");
-            // Detenemos el proceso de enrutamiento y carga hasta que el usuario confirme en el Overlay.
             return;
+        }
+
+        // Guardia 2: Verificación de Creador (Route Guard)
+        let routePathForGuard = url.split('?')[0].split('#')[0];
+        if (this.basePath && routePathForGuard.startsWith(this.basePath)) {
+            routePathForGuard = routePathForGuard.substring(this.basePath.length);
+        }
+        if (routePathForGuard.endsWith('/') && routePathForGuard.length > 1) {
+            routePathForGuard = routePathForGuard.slice(0, -1);
+        }
+        
+        let matchedConfig = RouteModulesMap[routePathForGuard];
+        if (!matchedConfig) {
+            const baseRoute = Object.keys(RouteModulesMap)
+                .sort((a, b) => b.length - a.length)
+                .find(route => routePathForGuard.startsWith(route + '/'));
+            if (baseRoute) matchedConfig = RouteModulesMap[baseRoute];
+        }
+
+        if (matchedConfig && matchedConfig.requiresCreator) {
+            const isCreator = window.appInstance && window.appInstance.canUploadVideos;
+            if (!isCreator) {
+                console.warn("[SpaRouter] Interceptado: Usuario sin permisos de creador (is_creator=0).");
+                this.renderHttpError('403', 'Acceso Denegado', 'No tienes un canal activo para acceder a Studio.', 'block');
+                
+                // Redirigir la URL de vuelta al home para no dejarlo varado en la URL bloqueada
+                window.history.replaceState(null, '', (this.basePath || '') + '/');
+                this.highlightCurrentRoute();
+                return;
+            }
         }
 
         if (this.abortController) {
@@ -145,7 +175,6 @@ export class SpaRouter {
                 }
 
                 let cleanUrl = url.split('?')[0].split('#')[0];
-                
                 let routePath = cleanUrl;
                 if (this.basePath && routePath.startsWith(this.basePath)) {
                     routePath = routePath.substring(this.basePath.length);
@@ -156,25 +185,16 @@ export class SpaRouter {
                 }
 
                 let moduleKey = routePath;
-
-                if (moduleKey.startsWith('/@')) {
-                    moduleKey = '/@channel';
-                }
+                if (moduleKey.startsWith('/@')) moduleKey = '/@channel';
 
                 window.dispatchEvent(new CustomEvent('viewLoaded', { 
-                    detail: { 
-                        url: url,
-                        cleanUrl: moduleKey 
-                    } 
+                    detail: { url: url, cleanUrl: moduleKey } 
                 }));
             } else {
                 this.renderHttpError(response.status, 'Error HTTP', 'No se pudo cargar la vista solicitada.');
             }
         } catch (error) {
-            if (error.name === 'AbortError') {
-                return;
-            }
-
+            if (error.name === 'AbortError') return;
             this.renderHttpError('Network', 'Error de Red', 'Revise su conexión a internet y vuelva a intentarlo.', 'wifi_off');
         }
     }
@@ -186,7 +206,6 @@ export class SpaRouter {
         }
     }
 
-    // NUEVA FUNCIÓN PÚBLICA PARA DISPARAR ERRORES PROGRAMÁTICAMENTE (Ej: 404 desde el WatchController)
     renderHttpError(statusCode, title = 'Error', description = 'Ha ocurrido un error inesperado.', iconName = 'error') {
         this.render(`
             <div class="component-message-layout" style="display: flex; justify-content: center; align-items: center; min-height: 50vh;">
@@ -212,13 +231,11 @@ export class SpaRouter {
         }
         if (pathWithoutBase === '') pathWithoutBase = '/';
 
-        // Variables que incluyen el ?query (para playlists y búsquedas)
         const fullNormalizedPath = normalizedPath + search;
         const fullPathWithoutBase = pathWithoutBase + search;
 
         document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
 
-        // Se hace coincidir tanto la ruta limpia como la ruta con parámetros
         const targets = document.querySelectorAll(`
             [data-nav="${normalizedPath}"], [data-nav="${normalizedPath}/"], 
             [data-nav="${pathWithoutBase}"], [data-nav="${pathWithoutBase}/"],

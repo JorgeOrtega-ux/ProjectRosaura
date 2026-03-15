@@ -18,12 +18,16 @@ document.addEventListener('DOMContentLoaded', () => {
     window.AppConfig = window.AppConfig || {};
     window.AppConfig.Images = {
         Fallbacks: {
-            // Imagen temporal para videos sin miniatura (Cámbiala luego por la tuya)
             videoThumbnail: 'https://placehold.co/1280x720/1a1a1a/e0e0e0?text=Video+No+Disponible',
-            // Imagen temporal para playlists vacías o sin miniatura (Cámbiala luego por la tuya)
             playlistEmpty: 'https://placehold.co/1280x720/2d2d2d/a0a0a0?text=Playlist+Vacia'
         }
     };
+
+    // HIDRATACIÓN DE ESTADO DEL USUARIO (Is Creator)
+    // Leemos de la variable inyectada por PHP o del localStorage como fallback
+    window.AppUserIsCreator = window.AppUserIsCreator !== undefined 
+        ? window.AppUserIsCreator 
+        : (parseInt(localStorage.getItem('pr_is_creator')) || 0);
 
     // 1. Instanciamos lógica UI base (Global)
     const app = new MainController();
@@ -58,30 +62,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnAgeReject = document.getElementById('btn-age-reject');
 
     if (ageGateOverlay && localStorage.getItem('age_verified') !== 'true') {
-        // Manejador para botón Confirmar
         if (btnAgeConfirm) {
             btnAgeConfirm.addEventListener('click', () => {
                 localStorage.setItem('age_verified', 'true');
                 ageGateOverlay.classList.remove('component-age-gate--active');
                 ageGateOverlay.classList.add('component-age-gate--hidden');
                 
-                // Si estaba en la vista de rechazo, lo devolvemos al inicio al confirmar
                 if (window.location.pathname.includes('age-restricted')) {
                     window.spaRouter.navigate(window.AppBasePath || '/');
                 } else {
-                    // Forzamos la recarga de la ruta actual si estaba bloqueada por el router
                     window.spaRouter.loadRoute(window.location.pathname);
                 }
             });
         }
 
-        // Manejador para botón Rechazar
         if (btnAgeReject) {
             btnAgeReject.addEventListener('click', () => {
                 ageGateOverlay.classList.remove('component-age-gate--active');
                 ageGateOverlay.classList.add('component-age-gate--hidden');
                 
-                // Renderizar directamente la vista de error vía el router sin recargar
                 const fallbackTitle = 'Acceso Denegado';
                 const fallbackDesc = 'No puedes acceder debido a limitaciones de edad.';
                 const title = (window.AppTranslations && window.AppTranslations['age_restricted_title']) ? window.AppTranslations['age_restricted_title'] : fallbackTitle;
@@ -89,7 +88,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 window.spaRouter.renderHttpError('403', title, desc, 'block');
                 
-                // Actualizar la URL en el navegador
                 window.history.pushState(null, '', (window.AppBasePath || '') + '/age-restricted');
                 window.spaRouter.highlightCurrentRoute();
             });
@@ -101,7 +99,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // ========================================================
     
     window.loadedControllers = {}; 
-    // Mutex Lock: Evita descargas concurrentes del mismo módulo
     window.importLocks = {}; 
 
     window.addEventListener('viewLoaded', async (e) => {
@@ -115,8 +112,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (relativePath === '') relativePath = '/';
 
-        // --- SOLUCIÓN PARA RUTAS DINÁMICAS TIPO PERFIL (Ej: /@jorge) ---
-        // CORRECCIÓN: El mapa de rutas utiliza '/@channel', no '/@'
         if (relativePath.startsWith('/@')) {
             console.log(`[Router] Ruta de perfil detectada, normalizando a "/@channel"`);
             relativePath = '/@channel';
@@ -124,9 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let moduleConfig = RouteModulesMap[relativePath];
 
-        // Soporte para otras rutas dinámicas (Ej: /studio/management-panel/ID o /channel/UUID/editing)
         if (!moduleConfig) {
-            // Ordenamos por longitud descendente para que siempre haga match con la ruta base más específica
             const baseRoute = Object.keys(RouteModulesMap)
                 .sort((a, b) => b.length - a.length)
                 .find(route => relativePath.startsWith(route + '/'));
@@ -141,7 +134,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const className = moduleConfig.className;
             console.log(`[Router] Módulo mapeado: ${className} -> ${moduleConfig.path}`);
 
-            // Si ya hay un proceso de carga activo para esta clase, esperamos
             if (window.importLocks[className]) {
                 console.log(`[Router] Esperando a que el lock de ${className} se libere...`);
                 await window.importLocks[className];
@@ -151,7 +143,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!window.loadedControllers[className]) {
                     console.log(`[Router] Descargando/Importando ${className}...`);
                     
-                    // Bloqueamos para evitar instanciaciones dobles concurrentes
                     window.importLocks[className] = import(moduleConfig.path);
                     const module = await window.importLocks[className];
                     
@@ -180,7 +171,6 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (error) {
                 console.error(`[ProjectRosaura] Error al hacer Lazy Load de: ${relativePath}`, error);
             } finally {
-                // Liberamos el candado
                 delete window.importLocks[className];
             }
         } else {
@@ -188,9 +178,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // ========================================================
-    // AUTO-ARRANQUE DE LAZY LOADING PARA LA CARGA INICIAL (F5)
-    // ========================================================
     let currentPath = window.location.pathname;
     let initialCleanUrl = currentPath.split('?')[0].split('#')[0];
     

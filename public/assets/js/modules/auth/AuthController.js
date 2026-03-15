@@ -15,7 +15,6 @@ export class AuthController {
         this.handleInputBound = this.handleInput.bind(this);
     }
 
-    // Método destroy para prevenir fugas de eventos e intervalos en la SPA
     destroy() {
         document.removeEventListener('click', this.handleClickBound);
         document.removeEventListener('input', this.handleInputBound);
@@ -195,6 +194,12 @@ export class AuthController {
         const result = await this.api.post(ApiRoutes.Auth.Login, data);
 
         if (result.success) {
+            // Guardamos el estado del creador de la respuesta API
+            if (result.user && result.user.is_creator !== undefined) {
+                localStorage.setItem('pr_is_creator', result.user.is_creator);
+                window.AppUserIsCreator = parseInt(result.user.is_creator);
+            }
+
             if (result.requires_2fa) {
                 if (window.spaRouter) window.spaRouter.navigate(this.basePath + '/login/two-factor');
                 else window.location.href = this.basePath + '/login/two-factor';
@@ -204,7 +209,6 @@ export class AuthController {
         } else {
             this.restoreButton(btn);
             
-            // REDIRECCIONES PARA CUENTAS INACTIVAS
             if (result.status === 'suspended') {
                 if (window.spaRouter) window.spaRouter.navigate(this.basePath + '/account-suspended');
                 else window.location.href = this.basePath + '/account-suspended';
@@ -237,6 +241,11 @@ export class AuthController {
         const result = await this.api.post(ApiRoutes.Auth.LoginVerify2FA, data);
 
         if (result.success) {
+            // Guardamos el estado del creador de la respuesta API
+            if (result.user && result.user.is_creator !== undefined) {
+                localStorage.setItem('pr_is_creator', result.user.is_creator);
+                window.AppUserIsCreator = parseInt(result.user.is_creator);
+            }
             window.location.href = this.basePath + '/';
         } else {
             this.restoreButton(btn);
@@ -361,6 +370,11 @@ export class AuthController {
         const result = await this.api.post(ApiRoutes.Auth.RegisterVerify, data);
 
         if (result.success) {
+            // Guardamos el estado del creador de la respuesta API
+            if (result.user && result.user.is_creator !== undefined) {
+                localStorage.setItem('pr_is_creator', result.user.is_creator);
+                window.AppUserIsCreator = parseInt(result.user.is_creator);
+            }
             window.location.href = this.basePath + '/';
         } else {
             this.restoreButton(btn);

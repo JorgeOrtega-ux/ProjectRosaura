@@ -11,9 +11,8 @@ export const RouteModulesMap = {
     // ---- MÓDULO DE BÚSQUEDA ----
     '/results': { path: './modules/app/SearchController.js', className: 'SearchController' },
     
-    // Permite rutas como /watch/56b29a83-94c2-48f6-b425-3a6e7ec5fbd3
+    // Permite rutas como /watch/UUID
     '/watch': { path: './modules/app/WatchController.js', className: 'WatchController' },
-    // NUEVA: Permite rutas de videos en formato vertical /shorts/...
     '/shorts': { path: './modules/app/WatchController.js', className: 'WatchController' },
     '/playlist': { path: './modules/app/PlaylistController.js', className: 'PlaylistController' },
     
@@ -21,9 +20,7 @@ export const RouteModulesMap = {
     '/feed/playlists': { path: './modules/app/FeedPlaylistsController.js', className: 'FeedPlaylistsController' },
     
     // ---- MÓDULO DE CANAL (PERFILES) ----
-    // Permite rutas como /@jorge
     '/@channel': { path: './modules/app/ChannelController.js', className: 'ChannelController' },
-    // Permite rutas como /channel/3494f2fb-46da-4804-9519-11f40a512c49/...
     '/channel': { path: './modules/app/ChannelController.js', className: 'ChannelController' }, 
     
     // ---- MÓDULOS DE AUTENTICACIÓN ----
@@ -37,8 +34,6 @@ export const RouteModulesMap = {
     '/settings/security': { path: './modules/settings/SecurityController.js', className: 'SecurityController' },
     '/settings/2fa': { path: './modules/settings/TwoFactorController.js', className: 'TwoFactorController' },
     '/settings/devices': { path: './modules/settings/DevicesController.js', className: 'DevicesController' },
-    
-    // ---> AÑADIDO: MÓDULO DE HISTORIAL <---
     '/settings/history': { path: './modules/settings/HistoryController.js', className: 'HistoryController' },
 
     // ---- MÓDULOS DE ADMINISTRACIÓN DE USUARIOS ----
@@ -62,10 +57,11 @@ export const RouteModulesMap = {
     '/admin/tags': { path: './modules/admin/tags/AdminTagsController.js', className: 'AdminTagsController' },
 
     // ---- MÓDULOS DE STUDIO (WEBSOCKET) ----
-    '/studio/management-panel': { path: './modules/studio/StudioController.js', className: 'StudioController' },
-    '/studio/manage-content': { path: './modules/studio/StudioController.js', className: 'StudioController' },
-    '/studio/manage-content/playlist': { path: './modules/studio/StudioController.js', className: 'StudioController' },
-    '/studio/upload': { path: './modules/studio/StudioController.js', className: 'StudioController' },
-    '/studio/uploading': { path: './modules/studio/StudioController.js', className: 'StudioController' },
-    '/studio/edit': { path: './modules/studio/StudioController.js', className: 'StudioController' }
+    // GUARDIA DE CREADOR ACTIVADO EN ESTAS RUTAS
+    '/studio/management-panel': { path: './modules/studio/StudioController.js', className: 'StudioController', requiresCreator: true },
+    '/studio/manage-content': { path: './modules/studio/StudioController.js', className: 'StudioController', requiresCreator: true },
+    '/studio/manage-content/playlist': { path: './modules/studio/StudioController.js', className: 'StudioController', requiresCreator: true },
+    '/studio/upload': { path: './modules/studio/StudioController.js', className: 'StudioController', requiresCreator: true },
+    '/studio/uploading': { path: './modules/studio/StudioController.js', className: 'StudioController', requiresCreator: true },
+    '/studio/edit': { path: './modules/studio/StudioController.js', className: 'StudioController', requiresCreator: true }
 };

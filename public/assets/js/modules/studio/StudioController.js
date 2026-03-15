@@ -53,13 +53,20 @@ export class StudioController {
     }
 
     init() {
-        // [BLINDAJE FRONTEND] Verificar permisos antes de cargar
+        // [BLINDAJE FRONTEND] Verificar permisos de Creador antes de cargar
         const hasPermission = window.appInstance ? window.appInstance.canUploadVideos : true;
 
         if (hasPermission) {
             this.manager.connect();
         } else {
-            console.warn("[StudioController] WS no conectado: Usuario sin permisos de Studio.");
+            console.warn("[StudioController] Inicialización abortada: Usuario sin permisos de Creador.");
+            // Si por alguna razón el RouteGuard falló, lo expulsamos violentamente a home
+            if (window.spaRouter) {
+                window.spaRouter.navigate(window.AppBasePath || '/');
+            } else {
+                window.location.href = (window.AppBasePath || '/') + '/';
+            }
+            return; // ABORTAR INITIALIZATION
         }
         
         if (this.activeSubController && typeof this.activeSubController.destroy === 'function') {
@@ -69,18 +76,14 @@ export class StudioController {
 
         const path = window.location.pathname;
         
-        // Enrutamiento interno con bloqueos de seguridad
+        // Enrutamiento interno
         if (path.includes('/studio/uploading') || path.includes('/studio/upload')) {
-            if (!hasPermission) return; // BLOQUEO
             this.activeSubController = new StudioUploadController(this.api, this.state);
         } else if (path.includes('/studio/manage-content/playlist')) {
-            if (!hasPermission) return; // BLOQUEO
             this.activeSubController = new StudioManagePlaylistController(this.api, this.state);
         } else if (path.includes('/studio/manage-content')) {
-            if (!hasPermission) return; // BLOQUEO
             this.activeSubController = new StudioManageContentController(this.api, this.state, this.manager);
         } else if (path.includes('/studio/edit/')) {
-            if (!hasPermission) return; // BLOQUEO
             this.activeSubController = new StudioEditController(this.api, this.state);
         } 
     }

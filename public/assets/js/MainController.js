@@ -19,10 +19,11 @@ export class MainController {
 
     get isMobile() { return window.innerWidth <= 768; }
 
-    // [BLINDAJE FRONTEND] Nueva propiedad global para verificar permisos en todo el framework JS
+    // [BLINDAJE FRONTEND] Verificación de Permisos (Is Creator)
     get canUploadVideos() {
         if (window.AppUserRole === 'founder' || window.AppUserRole === 'administrator') return true;
-        if (window.AppCanUploadVideos === true) return true;
+        if (window.AppUserIsCreator === 1 || window.AppUserIsCreator === true) return true;
+        if (window.AppCanUploadVideos === true) return true; // Legacy support
         
         // Fallback: Inferimos de la UI segura renderizada por PHP en el header
         const studioBtn = document.querySelector('.header-right [data-nav*="/studio/management-panel/"]');
@@ -40,7 +41,6 @@ export class MainController {
             this.syncUIPreferences();
             this.initBottomSheets();
             
-            // Lógica para sincronizar la caja de búsqueda con la URL (SPA Fix)
             const urlParams = new URLSearchParams(window.location.search);
             const searchQuery = urlParams.get('search_query') || '';
             const headerSearchInput = document.querySelector('.header-center .component-search-input input');
@@ -436,6 +436,7 @@ export class MainController {
         const result = await this.api.post(ApiRoutes.Auth.Logout);
 
         if (result.success) {
+            localStorage.removeItem('pr_is_creator'); // Limpieza de sesión
             const basePath = window.AppBasePath || '';
             window.location.href = basePath + '/';
         } else {

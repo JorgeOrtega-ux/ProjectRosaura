@@ -4,7 +4,7 @@
 return [
     // --- RUTAS APP FRONTEND ---
     'app.get_feed'             => ['controller' => 'App\Api\Controllers\FeedController', 'action' => 'get_feed'],
-    'app.get_feed_filters'     => ['controller' => 'App\Api\Controllers\FeedController', 'action' => 'get_feed_filters'], // ---> AÑADIDO <---
+    'app.get_feed_filters'     => ['controller' => 'App\Api\Controllers\FeedController', 'action' => 'get_feed_filters'],
     'app.get_playlist_details' => ['controller' => 'App\Api\Controllers\PlaylistController', 'action' => 'getDetails'],
     'app.get_playlist_queue'   => ['controller' => 'App\Api\Controllers\PlaylistController', 'action' => 'getQueue'],
     'app.get_video_details'    => ['controller' => 'App\Api\Controllers\VideoController', 'action' => 'getVideoDetails'],
@@ -81,6 +81,8 @@ return [
     'admin.update_status'         => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'update_status'],
     'admin.get_moderation_kardex' => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'get_moderation_kardex'],
     'admin.add_admin_note'        => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'add_admin_note'],
+    // ---> RUTA DE CREADOR AÑADIDA AQUÍ <---
+    'admin.update_creator_status' => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'update_creator_status'],
     
     // --- RUTAS DE CONFIGURACIÓN DEL SERVIDOR ---
     'admin.get_server_config'     => ['controller' => 'App\Api\Controllers\AdminController', 'action' => 'get_server_config'],
