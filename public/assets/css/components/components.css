@@ -83,7 +83,9 @@
     color: var(--text-primary);
 }
 
-/* Botones Core */
+/* ==========================================================================
+   Botones Core (Sistema Modular BEM)
+   ========================================================================== */
 .component-button {
     display: inline-flex;
     align-items: center;
@@ -91,7 +93,7 @@
     gap: 6px;
     border: 1px solid var(--border-color);
     border-radius: 8px;
-    background-color: var(--bg-surface);
+    background-color: transparent; /* Transparente por defecto */
     color: var(--text-primary);
     outline: none;
     cursor: pointer;
@@ -119,71 +121,43 @@
     opacity: 0.8;
 }
 
-.component-button--h45 {
-    height: 45px;
-    font-size: 15px;
+.component-button .material-symbols-rounded {
+    font-size: 20px;
+    transition: font-variation-settings 0.2s ease;
 }
 
-.component-button--h40 {
-    height: 40px;
+/* Relleno para iconos activos en botones */
+.component-button.active .material-symbols-rounded {
+    font-variation-settings: 'FILL' 1;
 }
 
-.component-button--h38 {
-    height: 38px;
-}
+/* Alturas Modulares */
+.component-button--h45 { height: 45px; font-size: 15px; }
+.component-button--h40 { height: 40px; }
+.component-button--h38 { height: 38px; }
+.component-button--h36 { height: 36px; }
+.component-button--h34 { height: 34px; font-size: 13px; }
+.component-button--h32 { height: 32px; font-size: 13px; }
+.component-button--h30 { height: 30px; font-size: 12px; padding: 0 6px; }
 
-.component-button--h36 {
-    height: 36px;
-}
-
-.component-button--h34 {
-    height: 34px;
-    font-size: 13px;
-}
-
-.component-button--h32 {
-    height: 32px;
-    font-size: 13px;
-}
-
-.component-button--h30 {
-    height: 30px;
-    font-size: 12px;
-    padding: 0 6px;
-}
-
+/* Modificadores de Forma */
 .component-button--icon {
     padding: 0;
     justify-content: center;
+    aspect-ratio: 1 / 1; /* Esto previene que se aplasten */
 }
 
-.component-button--icon.component-button--h40 {
-    width: 40px;
-}
+.component-button--icon.component-button--h40 { width: 40px; }
+.component-button--icon.component-button--h38 { width: 38px; }
+.component-button--icon.component-button--h36 { width: 36px; }
+.component-button--icon.component-button--h34 { width: 34px; }
+.component-button--icon.component-button--h32 { width: 32px; }
+.component-button--icon.component-button--h30 { width: 30px; }
 
-.component-button--icon.component-button--h38 {
-    width: 38px;
-}
-
-.component-button--icon.component-button--h36 {
-    width: 36px;
-}
-
-.component-button--icon.component-button--h34 {
-    width: 34px;
-}
-
-.component-button--icon.component-button--h32 {
-    width: 32px;
-}
-
-.component-button--icon.component-button--h30 {
-    width: 30px;
-}
-
-.component-button--pill {
+.component-button--rounded {
     border-radius: 9999px;
     padding: 0 16px;
+    font-weight: 600;
 }
 
 .component-button--circle {
@@ -194,25 +168,26 @@
     width: 100%;
 }
 
+/* Modificadores de Color/Contexto */
 .component-button--dark {
-    background-color: var(--action-primary);
-    color: var(--text-inverse);
-    border-color: var(--action-primary);
+    background-color: var(--text-primary); /* Este lo dejamos relleno por UX (Subscribe) */
+    color: var(--bg-surface);
+    border-color: transparent;
 }
 
 .component-button--dark:hover {
-    background-color: var(--action-primary-hover);
-    border-color: var(--action-primary-hover);
+    opacity: 0.85;
+    background-color: var(--text-primary);
 }
 
 .component-button--dark .material-symbols-rounded {
-    color: var(--text-inverse);
+    color: var(--bg-surface);
 }
 
 .component-button--danger {
     color: var(--action-danger);
     border-color: var(--action-danger);
-    background-color: var(--action-danger-bg);
+    background-color: transparent;
 }
 
 .component-button--danger:hover {
@@ -220,37 +195,40 @@
     border-color: var(--action-danger);
 }
 
-.component-btn-primary {
-    background-color: var(--text-primary, #fff);
-    color: var(--bg-surface, #000);
+/* Grupo de Botones (Ej: Like/Dislike) */
+.component-button-group {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid var(--border-color);
+    border-radius: 9999px;
+    background-color: transparent; /* Grupo transparente */
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.component-button-group--h36 { height: 36px; }
+.component-button-group--h40 { height: 40px; }
+
+.component-button-group .component-button {
+    height: 100%;
     border: none;
-    padding: 10px 20px;
-    border-radius: 24px;
-    cursor: pointer;
-    font-weight: 600;
-    font-size: 14px;
-    transition: opacity 0.2s;
+    background-color: transparent;
+    border-radius: 0;
+    margin: 0;
 }
 
-.component-btn-primary:hover {
-    opacity: 0.8;
+.component-button-group .component-button:hover,
+.component-button-group .component-button.active {
+    background-color: var(--bg-hover-light);
 }
 
-.component-btn-secondary {
-    background-color: var(--bg-surface-alt, #272727);
-    color: var(--text-primary, #fff);
-    border: none;
-    padding: 10px 20px;
-    border-radius: 24px;
-    cursor: pointer;
-    font-weight: 600;
-    font-size: 14px;
-    transition: opacity 0.2s;
+.component-button-divider {
+    width: 1px;
+    height: 65%;
+    background-color: var(--border-color);
 }
 
-.component-btn-secondary:hover {
-    opacity: 0.8;
-}
+/* ========================================================================== */
 
 .component-button--profile {
     width: 34px;

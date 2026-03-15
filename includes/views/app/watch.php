@@ -190,8 +190,8 @@
                 <div class="watch-title-container">
                     <h1 class="watch-info-title" id="watch-video-title">[Cargando Título...]</h1>
                     <div id="watch-translation-badge-container" class="hidden">
-                        <button id="watch-translation-toggle" class="watch-translation-badge" title="Cambiar idioma del título">
-                            <span class="material-symbols-rounded">g_translate</span>
+                        <button id="watch-translation-toggle" class="component-button component-button--rounded component-button--h30" title="Cambiar idioma del título">
+                            <span class="material-symbols-rounded" style="font-size: 16px;">g_translate</span>
                             <span id="watch-translation-text">Traducido</span>
                         </button>
                     </div>
@@ -207,29 +207,31 @@
                     </div>
 
                     <div class="watch-info-right">
-                        <button id="watch-btn-subscribe" class="watch-btn watch-btn-subscribe">Suscribirse</button>
+                        <button id="watch-btn-subscribe" class="component-button component-button--dark component-button--rounded component-button--h36">
+                            Suscribirse
+                        </button>
                         
-                        <div class="watch-action-group">
-                            <button id="watch-btn-like" class="watch-btn watch-btn-action" title="Me gusta">
+                        <div class="component-button-group component-button-group--h36">
+                            <button id="watch-btn-like" class="component-button component-button--h36" title="Me gusta">
                                 <span class="material-symbols-rounded">thumb_up</span>
                                 <span id="watch-like-count">--</span>
                             </button>
-                            <div class="watch-action-divider"></div>
-                            <button id="watch-btn-dislike" class="watch-btn watch-btn-action" title="No me gusta">
+                            <div class="component-button-divider"></div>
+                            <button id="watch-btn-dislike" class="component-button component-button--icon component-button--h36" title="No me gusta">
                                 <span class="material-symbols-rounded">thumb_down</span>
                             </button>
                         </div>
 
-                        <button class="watch-btn watch-btn-action" title="Compartir">
+                        <button class="component-button component-button--rounded component-button--h36" title="Compartir">
                             <span class="material-symbols-rounded">share</span> Compartir
                         </button>
                         
-                        <button class="watch-btn watch-btn-action" title="Descargar">
+                        <button class="component-button component-button--rounded component-button--h36" title="Descargar">
                             <span class="material-symbols-rounded">download</span> Descargar
                         </button>
 
                         <div class="watch-save-wrapper">
-                            <button id="watch-btn-save" class="watch-btn watch-btn-action" title="Guardar">
+                            <button id="watch-btn-save" class="component-button component-button--rounded component-button--h36" title="Guardar">
                                 <span class="material-symbols-rounded">playlist_add</span> Guardar
                             </button>
                             <?php 
