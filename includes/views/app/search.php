@@ -6,9 +6,9 @@
                 
                 <div class="component-view-top-left">
                     <div class="component-badge-list">
-                        <button class="component-badge component-search-filter-btn component-search-filter-active" data-filter="all" style="cursor: pointer;">Todo</button>
-                        <button class="component-badge component-search-filter-btn" data-filter="channels" style="cursor: pointer;">Canales</button>
-                        <button class="component-badge component-search-filter-btn" data-filter="videos" style="cursor: pointer;">Videos</button>
+                        <button class="component-badge active" data-filter="all" style="cursor: pointer;">Todo</button>
+                        <button class="component-badge" data-filter="channels" style="cursor: pointer;">Canales</button>
+                        <button class="component-badge" data-filter="videos" style="cursor: pointer;">Videos</button>
                     </div>
                 </div>
                 
@@ -18,7 +18,7 @@
                             <span class="material-symbols-rounded">tune</span>
                         </button>
 
-                        <div class="component-module component-module--dropdown component-module--dropdown-left component-module--dropdown-fixed component-module--spaced" id="moduleSearchFilters" style="position: absolute; top: 100%; right: 0; z-index: 100; display: none;">
+                        <div class="component-module component-module--dropdown component-module--dropdown-fixed component-module--spaced" id="moduleSearchFilters" style="display: none;">
                                 
                             <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding active" data-ref="menuMainFilters" style="display: block;">
                                 <div class="pill-container"><div class="drag-handle"></div></div>

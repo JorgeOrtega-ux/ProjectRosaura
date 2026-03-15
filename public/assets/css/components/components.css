@@ -1255,10 +1255,6 @@ input:checked+.component-toggle-slider:before {
     gap: 8px;
 }
 
-/* MODIFICACIÓN AQUÍ: Se eliminó background-color explícito por default 
-  (se cambia a transparent) y se añadió cursor y transición para que aplique 
-  a todos los botones de filtro/etiquetas 
-*/
 .component-badge {
     display: inline-flex;
     align-items: center;
@@ -2837,9 +2833,6 @@ input:checked+.component-toggle-slider:before {
     min-height: 100%;
 }
 
-/* MODIFICACIÓN AQUÍ: Se estandariza como contenedor fluido y se integran los estilos flex
-  que estaban inline en home.php
-*/
 .component-view-top {
     width: 100%;
     display: flex;
@@ -2847,7 +2840,8 @@ input:checked+.component-toggle-slider:before {
     align-items: center;
     flex-wrap: wrap;
     gap: 16px;
-    padding: 24px 24px 0 24px;
+    padding: 8px;
+    border-bottom: 1px solid #00000020;
 }
 
 .component-view-bottom {

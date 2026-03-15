@@ -18,7 +18,8 @@ export default class SearchController {
         this.videosSection = document.getElementById('search-videos-section');
         this.videosGrid = document.getElementById('search-videos-grid');
 
-        this.filterBtns = document.querySelectorAll('.component-search-filter-btn');
+        // BUSCAMOS DIRECTAMENTE POR EL ATRIBUTO DATA-FILTER DENTRO DE LA LISTA
+        this.filterBtns = document.querySelectorAll('.component-badge-list [data-filter]');
         
         // Elementos del Dropdown de Filtros
         this.toggleFiltersBtn = document.getElementById('search-toggle-filters');
@@ -55,11 +56,11 @@ export default class SearchController {
 
                     this.filterBtns.forEach(b => {
                         if (b.id !== 'search-toggle-filters') {
-                            b.classList.remove('component-search-filter-active');
+                            b.classList.remove('active');
                         }
                     });
                     
-                    e.target.classList.add('component-search-filter-active');
+                    e.target.classList.add('active');
                     
                     this.currentFilter = e.target.getAttribute('data-filter') || 'all';
                     this.applyFilter();
@@ -216,7 +217,6 @@ export default class SearchController {
             const channelCard = document.createElement('div');
             channelCard.classList.add('component-channel-card-modern');
             
-            // Lógica de color dominante (Mismo efecto que los videos, disparado al sistema root)
             const dominantColor = channel.dominant_color && channel.dominant_color !== 'transparent' ? channel.dominant_color : '#333333';
             channelCard.style.setProperty('--local-dominant-color', dominantColor);
             
@@ -258,14 +258,12 @@ export default class SearchController {
                 </div>
             `;
 
-            // Click general en la tarjeta (Navegar al canal)
             channelCard.addEventListener('click', (e) => {
                 if (!e.target.classList.contains('btn-channel-subscribe')) {
                     if (window.SpaRouter) window.SpaRouter.navigate(`/@${channel.handle}`);
                 }
             });
 
-            // Disparar el color dominante al hacer hover
             channelCard.addEventListener('mouseenter', () => {
                 const domColor = channelCard.style.getPropertyValue('--local-dominant-color');
                 if (domColor && domColor.trim() !== '') {
@@ -273,10 +271,9 @@ export default class SearchController {
                 }
             });
 
-            // Click exclusivo en el botón de suscripción (Llamada a API sin redireccionar)
             const subBtn = channelCard.querySelector('.btn-channel-subscribe');
             subBtn.addEventListener('click', async (e) => {
-                e.stopPropagation(); // Evitar que el click se propague a la card
+                e.stopPropagation();
                 
                 try {
                     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
@@ -292,7 +289,6 @@ export default class SearchController {
                     const resData = await response.json();
                     
                     if (resData.success) {
-                        // Optimistic UI Update
                         channel.is_subscribed = !channel.is_subscribed;
                         if (channel.is_subscribed) {
                             subBtn.classList.add('subscribed');
@@ -303,7 +299,6 @@ export default class SearchController {
                             subBtn.textContent = 'Suscribirse';
                             channel.subscribers_count = Math.max(0, (channel.subscribers_count || 0) - 1);
                         }
-                        // Actualizar UI del texto de subs (el primer badge)
                         const statsBadge = channelCard.querySelectorAll('.stat-badge')[0];
                         if(statsBadge) {
                             statsBadge.textContent = this.formatNumber(channel.subscribers_count) + ' suscriptores';
