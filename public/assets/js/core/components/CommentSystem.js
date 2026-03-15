@@ -119,7 +119,12 @@ export class CommentSystem {
                     this.commentsListEl.insertAdjacentHTML('afterbegin', newCommentHtml);
                 } else {
                     console.warn('[CommentSystem] ⚠️ Error lógico al crear comentario:', result);
-                    alert(result?.error || result?.message || 'Error al enviar el comentario.');
+                    // MEJORA: Reemplazar alert por Toast
+                    if (window.appInstance && typeof window.appInstance.showToast === 'function') {
+                        window.appInstance.showToast(result?.error || result?.message || 'Error al enviar el comentario.', 'error');
+                    } else {
+                        alert(result?.error || result?.message || 'Error al enviar el comentario.');
+                    }
                 }
             } catch (e) {
                 console.error('[CommentSystem] ❌ Excepción capturada en btnSubmit:', e);
@@ -329,7 +334,13 @@ export class CommentSystem {
                 if (wasLiked) btnLike.classList.add('active'); else btnLike.classList.remove('active');
             }
             countSpan.innerText = wasLiked ? (isLikeAction ? currentLikes + 1 : currentLikes) : (isLikeAction ? currentLikes - 1 : currentLikes);
-            alert(error.message || 'Debes iniciar sesión para reaccionar.');
+            
+            // MEJORA: Reemplazar alert por Toast para rate limits
+            if (window.appInstance && typeof window.appInstance.showToast === 'function') {
+                window.appInstance.showToast(error.message || 'Error al reaccionar.', 'error');
+            } else {
+                alert(error.message || 'Debes iniciar sesión para reaccionar.');
+            }
         }
     }
 
@@ -399,7 +410,13 @@ export class CommentSystem {
                 repliesContainer.insertAdjacentHTML('beforeend', newReplyHtml);
             } else {
                 console.warn('[CommentSystem] ⚠️ Error lógico al responder:', result);
-                alert(result?.error || result?.message || 'Error al enviar la respuesta.');
+                
+                // MEJORA: Reemplazar alert por Toast
+                if (window.appInstance && typeof window.appInstance.showToast === 'function') {
+                    window.appInstance.showToast(result?.error || result?.message || 'Error al enviar la respuesta.', 'error');
+                } else {
+                    alert(result?.error || result?.message || 'Error al enviar la respuesta.');
+                }
                 btn.disabled = false;
             }
         } catch (e) {

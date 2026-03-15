@@ -8,10 +8,10 @@
             </div>
 
             <div class="component-video-player is-paused" id="video-player-container">
-                <video id="main-video-player" class="component-video-player__video" playsinline></video>
+                <video id="main-video-player" class="component-video-player__video" playsinline preload="metadata"></video>
                 
                 <div class="component-video-player__spinner" id="player-spinner" style="display: none;">
-                    <span class="material-symbols-rounded component-video-player__spinner-icon">progress_activity</span>
+                    <div class="component-video-player__css-spinner"></div>
                 </div>
                 
                 <div class="component-video-player__controls" id="player-controls">
