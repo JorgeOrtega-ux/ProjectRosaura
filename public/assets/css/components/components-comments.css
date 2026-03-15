@@ -16,12 +16,12 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px 24px; /* Modificado a 8px */
+    padding: 8px; /* Modificado a 8px */
     border-bottom: 1px solid var(--border-color, #3F3F3F);
 }
 
 .component-comments-center {
-    padding: 8px 24px; /* Modificado a 8px */
+    padding: 8px; /* Modificado a 8px */
     border-bottom: 1px solid var(--border-color, #3F3F3F);
 }
 
@@ -52,7 +52,7 @@
 
 .component-comments-input-area {
     display: flex;
-    gap: 16px;
+    gap: 8px;
     margin-bottom: 0; 
     align-items: center; /* Alineación vertical central */
     width: 100%;
