@@ -18,6 +18,10 @@ class CommentController {
             $offset = $_GET['offset'] ?? $data['offset'] ?? 0;
             $limit = $_GET['limit'] ?? $data['limit'] ?? 20;
             
+            // Extracción y validación segura del ordenamiento
+            $sortRaw = $_GET['sort'] ?? $data['sort'] ?? 'recent';
+            $sort = in_array($sortRaw, ['recent', 'relevant']) ? $sortRaw : 'recent';
+            
             $currentUserId = $_SESSION['user_id'] ?? null;
 
             if (!$videoId) {
@@ -26,7 +30,8 @@ class CommentController {
                 exit; 
             }
 
-            $comments = $this->commentServices->getCommentsForVideo((int)$videoId, $currentUserId, (int)$limit, (int)$offset);
+            // Llamada actualizada al servicio enviando el $sort
+            $comments = $this->commentServices->getCommentsForVideo((int)$videoId, $currentUserId, (int)$limit, (int)$offset, $sort);
             
             header('Content-Type: application/json');
             echo json_encode(['success' => true, 'data' => $comments]);

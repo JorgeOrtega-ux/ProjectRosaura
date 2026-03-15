@@ -12,6 +12,7 @@ export class CommentSystem {
         this.api = api;
         this.offset = 0;
         this.limit = 20;
+        this.currentSort = 'recent'; // Por defecto, ordenar por recientes
         this.isLoading = false;
         this.hasMore = true;
         this.commentsListEl = null;
@@ -23,6 +24,7 @@ export class CommentSystem {
         console.log('[CommentSystem] 🚀 Ejecutando init()...');
         this.renderLayout();
         this.setupMainInput();
+        this.setupFilterDropdown();
         this.container.addEventListener('click', this.boundClickHandler);
         
         console.log('[CommentSystem] ⏳ Llamando a loadComments() desde init()...');
@@ -41,12 +43,26 @@ export class CommentSystem {
             <div class="component-comments" style="margin-top: 0;">
                 
                 <div class="component-comments-top">
-                    <div class="component-comments-title-wrapper">
-                        <h3 class="component-comments-title">Comentarios</h3>
+                    <div class="component-toolbar-title">Comentarios</div>
+                    <div class="component-dropdown-wrapper" style="width: auto; position: relative;">
+                        <button class="component-button component-button--icon component-button--h40 mobile-search-btn" id="btn-comments-filter" title="Filtrar">
+                            <span class="material-symbols-rounded">sort</span>
+                        </button>
+                        <div class="component-module component-module--dropdown component-module--dropdown-fixed disabled" id="dropdown-comments-filter" style="right: 0; left: auto; top: calc(100% + 5px);">
+                            <div class="component-menu component-menu--w265">
+                                <div class="component-menu-list">
+                                    <a class="component-menu-link sort-option active" data-sort="recent">
+                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">schedule</span></div>
+                                        <div class="component-menu-link-text"><span>Más recientes</span></div>
+                                    </a>
+                                    <a class="component-menu-link sort-option" data-sort="relevant">
+                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">thumb_up</span></div>
+                                        <div class="component-menu-link-text"><span>Más relevantes</span></div>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <button class="component-button component-button--icon component-button--h40 mobile-search-btn" title="Filtrar">
-                        <span class="material-symbols-rounded">filter_list</span>
-                    </button>
                 </div>
 
                 <div class="component-comments-center">
@@ -119,7 +135,6 @@ export class CommentSystem {
                     this.commentsListEl.insertAdjacentHTML('afterbegin', newCommentHtml);
                 } else {
                     console.warn('[CommentSystem] ⚠️ Error lógico al crear comentario:', result);
-                    // MEJORA: Reemplazar alert por Toast
                     if (window.appInstance && typeof window.appInstance.showToast === 'function') {
                         window.appInstance.showToast(result?.error || result?.message || 'Error al enviar el comentario.', 'error');
                     } else {
@@ -134,13 +149,53 @@ export class CommentSystem {
         });
     }
 
+    setupFilterDropdown() {
+        const btnFilter = this.container.querySelector('#btn-comments-filter');
+        const dropdownFilter = this.container.querySelector('#dropdown-comments-filter');
+        const sortOptions = this.container.querySelectorAll('.sort-option');
+
+        btnFilter.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdownFilter.classList.toggle('disabled');
+            dropdownFilter.classList.toggle('active');
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!dropdownFilter.classList.contains('disabled') && !btnFilter.contains(e.target) && !dropdownFilter.contains(e.target)) {
+                dropdownFilter.classList.add('disabled');
+                dropdownFilter.classList.remove('active');
+            }
+        });
+
+        sortOptions.forEach(option => {
+            option.addEventListener('click', (e) => {
+                e.preventDefault();
+                sortOptions.forEach(opt => opt.classList.remove('active'));
+                option.classList.add('active');
+                
+                const selectedSort = option.dataset.sort;
+                dropdownFilter.classList.add('disabled');
+                dropdownFilter.classList.remove('active');
+
+                if (this.currentSort !== selectedSort) {
+                    console.log(`[CommentSystem] 🔄 Cambiando filtro a: ${selectedSort}`);
+                    this.currentSort = selectedSort;
+                    this.offset = 0;
+                    this.hasMore = true;
+                    this.commentsListEl.innerHTML = ''; 
+                    this.loadComments();
+                }
+            });
+        });
+    }
+
     async loadComments() {
         if (this.isLoading || !this.hasMore) {
             console.log('[CommentSystem] 🛑 Ignorando loadComments. isLoading:', this.isLoading, 'hasMore:', this.hasMore);
             return;
         }
         
-        console.log('[CommentSystem] 🔄 Cargando comentarios...');
+        console.log(`[CommentSystem] 🔄 Cargando comentarios... (Sort: ${this.currentSort})`);
         this.isLoading = true;
         
         const loader = this.container.querySelector('#comments-loading');
@@ -151,7 +206,8 @@ export class CommentSystem {
             const payload = {
                 video_id: this.videoId,
                 offset: this.offset,
-                limit: this.limit
+                limit: this.limit,
+                sort: this.currentSort
             };
             console.log(`[CommentSystem] 📡 POST a ${ApiRoutes.Comments.Get} con payload:`, payload);
             
@@ -325,7 +381,6 @@ export class CommentSystem {
             }
         } catch (error) {
             console.error('[CommentSystem] ❌ Falló la reacción en backend. Revirtiendo UI...', error);
-            // Revertir en caso de error
             if (isLikeAction) {
                 if (wasLiked) btnLike.classList.add('active'); else btnLike.classList.remove('active');
                 if (wasDisliked) btnDislike.classList.add('active'); else btnDislike.classList.remove('active');
@@ -335,7 +390,6 @@ export class CommentSystem {
             }
             countSpan.innerText = wasLiked ? (isLikeAction ? currentLikes + 1 : currentLikes) : (isLikeAction ? currentLikes - 1 : currentLikes);
             
-            // MEJORA: Reemplazar alert por Toast para rate limits
             if (window.appInstance && typeof window.appInstance.showToast === 'function') {
                 window.appInstance.showToast(error.message || 'Error al reaccionar.', 'error');
             } else {
@@ -349,7 +403,6 @@ export class CommentSystem {
         const container = document.getElementById(`reply-form-${commentId}`);
         if (!container) return;
 
-        // Esto ahora heredará la imagen correcta que seteamos en renderLayout
         const currentUserAvatarSrc = document.getElementById('comments-current-user-avatar')?.src || `${window.AppBasePath || ''}/public/assets/images/default-avatar.png`;
 
         container.innerHTML = `
@@ -411,7 +464,6 @@ export class CommentSystem {
             } else {
                 console.warn('[CommentSystem] ⚠️ Error lógico al responder:', result);
                 
-                // MEJORA: Reemplazar alert por Toast
                 if (window.appInstance && typeof window.appInstance.showToast === 'function') {
                     window.appInstance.showToast(result?.error || result?.message || 'Error al enviar la respuesta.', 'error');
                 } else {

@@ -261,8 +261,8 @@
                         <div class="watch-details-meta" id="watch-models-categories-header">
                             <span class="watch-meta-highlight">Modelos y Categorías</span>
                         </div>
-                        <div class="watch-info-tags-list" id="watch-video-tags-container">
-                            <span class="watch-tag-item watch-tag-item--loading">Cargando...</span>
+                        <div class="component-badge-list" id="watch-video-tags-container">
+                            <span class="component-badge component-badge--sm" style="opacity: 0.5;">Cargando...</span>
                         </div>
                     </div>
 
@@ -270,8 +270,8 @@
                         <div class="watch-details-meta">
                             <span class="watch-meta-highlight">Etiquetas</span>
                         </div>
-                        <div class="watch-info-tags-list" id="watch-video-custom-tags-container">
-                            <span class="watch-tag-item watch-tag-item--loading">Cargando...</span>
+                        <div class="component-badge-list" id="watch-video-custom-tags-container">
+                            <span class="component-badge component-badge--sm" style="opacity: 0.5;">Cargando...</span>
                         </div>
                     </div>
                 </div>

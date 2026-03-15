@@ -10,21 +10,23 @@ class CommentServices {
     private Client $redis;
     private VideoRepositoryInterface $videoRepo;
 
-    // AÑADIDO TIPO 'Client' PARA $redis. Vital para que el Container no explote.
     public function __construct(CommentRepositoryInterface $commentRepo, Client $redis, VideoRepositoryInterface $videoRepo) {
         $this->commentRepo = $commentRepo;
         $this->redis = $redis;
         $this->videoRepo = $videoRepo;
     }
 
-    public function getCommentsForVideo(int $videoId, ?int $currentUserId, int $limit = 20, int $offset = 0): array {
-        $cacheKey = "video:{$videoId}:comments:{$offset}:{$limit}";
+    // Se agrega el parámetro de ordenación $sort
+    public function getCommentsForVideo(int $videoId, ?int $currentUserId, int $limit = 20, int $offset = 0, string $sort = 'recent'): array {
+        // Incluimos el parámetro sort en la clave de caché para no cruzar los datos
+        $cacheKey = "video:{$videoId}:comments:{$sort}:{$offset}:{$limit}";
         
         $cached = $this->redis->get($cacheKey);
         if ($cached) {
             $comments = json_decode($cached, true);
         } else {
-            $comments = $this->commentRepo->getCommentsByVideo($videoId, $limit, $offset);
+            // Se le envía el $sort al repositorio de la DB
+            $comments = $this->commentRepo->getCommentsByVideo($videoId, $limit, $offset, $sort);
             foreach ($comments as &$comment) {
                 $comment['replies'] = $this->commentRepo->getRepliesByComment($comment['id']);
             }
@@ -88,7 +90,6 @@ class CommentServices {
 
     public function addComment(int $videoId, int $userId, string $content, ?int $parentId = null): array {
         
-        // Verificamos si los comentarios están permitidos antes de insertarlo en DB
         if (!$this->videoRepo->commentsAllowed($videoId)) {
             throw new \Exception('COMMENTS_DISABLED');
         }
@@ -99,6 +100,7 @@ class CommentServices {
             $commentId = $this->commentRepo->insertComment($videoId, $userId, $content);
         }
 
+        // Limpiamos los cacheados sin importar si estaban en recent o relevant
         $keys = $this->redis->keys("video:{$videoId}:comments:*");
         if (!empty($keys)) {
             $this->redis->del($keys);

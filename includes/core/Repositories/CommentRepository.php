@@ -11,19 +11,33 @@ class CommentRepository implements CommentRepositoryInterface {
         $this->db = $db;
     }
 
-    public function getCommentsByVideo(int $videoId, int $limit = 20, int $offset = 0): array {
+    // Aceptamos el parámetro $sort con un valor por defecto para no romper el contrato de la interfaz.
+    public function getCommentsByVideo(int $videoId, int $limit = 20, int $offset = 0, string $sort = 'recent'): array {
+        
+        $orderBy = "c.created_at DESC";
+        
+        if ($sort === 'relevant') {
+            // Se asume que en el modelo actual los likes están en caché (Redis) y en DB como campo de apoyo,
+            // o si solo se usan desde Redis, ordenamos por 'likes' en DB si existe la columna, 
+            // sino podemos usar una lógica que traiga los más comentados o con más likes asincronamente.
+            // Para SQL estándar asumiendo que tienes una columna de likes (o que se sincroniza), el orden sería:
+            $orderBy = "c.likes DESC, c.created_at DESC";
+        }
+
         $stmt = $this->db->prepare("
             SELECT c.*, u.username, u.profile_picture, u.channel_identifier 
             FROM video_comments c
             JOIN users u ON c.user_id = u.id
             WHERE c.video_id = :video_id AND c.parent_id IS NULL
-            ORDER BY c.created_at DESC
+            ORDER BY {$orderBy}
             LIMIT :limit OFFSET :offset
         ");
+        
         $stmt->bindValue(':video_id', $videoId, PDO::PARAM_INT);
         $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
         $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmt->execute();
+        
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 

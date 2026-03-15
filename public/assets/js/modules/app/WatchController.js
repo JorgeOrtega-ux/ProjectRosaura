@@ -683,19 +683,19 @@ export class WatchController {
             let tagsHTML = '';
             if (data.models && data.models.length > 0) {
                 tagsHTML += data.models.map(m => 
-                    `<span class="watch-tag-item"><span class="material-symbols-rounded">star</span> ${m.name}</span>`
+                    `<span class="component-badge component-badge--sm"><span class="material-symbols-rounded">star</span> ${m.name}</span>`
                 ).join('');
                 hasModelsOrCategories = true;
             }
             if (data.categories && data.categories.length > 0) {
                 tagsHTML += data.categories.map(c => 
-                    `<span class="watch-tag-item"><span class="material-symbols-rounded">label</span> ${c.name}</span>`
+                    `<span class="component-badge component-badge--sm"><span class="material-symbols-rounded">label</span> ${c.name}</span>`
                 ).join('');
                 hasModelsOrCategories = true;
             }
 
             if (tagsHTML === '') {
-                tagsContainer.innerHTML = '<span class="watch-tag-item" style="opacity: 0.5;">Sin modelos ni categorías</span>';
+                tagsContainer.innerHTML = '<span class="component-badge component-badge--sm" style="opacity: 0.5;">Sin modelos ni categorías</span>';
             } else {
                 tagsContainer.innerHTML = tagsHTML;
             }
@@ -710,7 +710,7 @@ export class WatchController {
             if (customTags && customTags.length > 0) {
                 let customTagsHTML = customTags.map(t => {
                     const tagName = (typeof t === 'object') ? t.name : t;
-                    return `<span class="watch-tag-item"><span class="material-symbols-rounded">tag</span> ${tagName}</span>`;
+                    return `<span class="component-badge component-badge--sm"><span class="material-symbols-rounded">tag</span> ${tagName}</span>`;
                 }).join('');
 
                 customTagsContainer.innerHTML = customTagsHTML;
