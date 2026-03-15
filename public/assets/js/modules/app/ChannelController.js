@@ -169,7 +169,12 @@ export class ChannelController {
                     if (window.router) window.router.navigate('/login');
                     else window.location.href = (window.AppBasePath || '') + '/login';
                 } else {
-                    this.dialog.show('error', { title: 'Aviso', message: response.message || 'Error al procesar la solicitud.' });
+                    // MEJORA: Usar Toast en lugar de Dialog para rate limits u otros errores de suscripción
+                    if (window.appInstance && typeof window.appInstance.showToast === 'function') {
+                        window.appInstance.showToast(response.message || 'Error al procesar la solicitud.', 'error');
+                    } else {
+                        this.dialog.show('error', { title: 'Aviso', message: response.message || 'Error al procesar la solicitud.' });
+                    }
                 }
             } else {
                 newBtn.innerText = response.is_subscribed ? 'Suscrito' : 'Suscribirse';
@@ -441,7 +446,11 @@ export class ChannelController {
                 });
 
                 if (response.success) {
-                    this.dialog.show('success', { title: '¡Publicado!', message: response.message });
+                    if (window.appInstance && typeof window.appInstance.showToast === 'function') {
+                        window.appInstance.showToast(response.message, 'success');
+                    } else {
+                        this.dialog.show('success', { title: '¡Publicado!', message: response.message });
+                    }
                     if (identifier && window.history && this.channelIdentifier && identifier !== this.channelIdentifier) {
                         const currentUrl = window.location.href;
                         const newUrl = currentUrl.replace(`/@${this.channelIdentifier}`, `/@${identifier}`);
@@ -449,11 +458,19 @@ export class ChannelController {
                         this.channelIdentifier = identifier;
                     }
                 } else {
-                    this.dialog.show('error', { title: 'Error', message: response.message });
+                    if (window.appInstance && typeof window.appInstance.showToast === 'function') {
+                        window.appInstance.showToast(response.message, 'error');
+                    } else {
+                        this.dialog.show('error', { title: 'Error', message: response.message });
+                    }
                 }
             } catch (error) {
                 console.error("Error al publicar perfil:", error);
-                this.dialog.show('error', { title: 'Error', message: 'Ha ocurrido un error de conexión.' });
+                if (window.appInstance && typeof window.appInstance.showToast === 'function') {
+                    window.appInstance.showToast('Ha ocurrido un error de conexión.', 'error');
+                } else {
+                    this.dialog.show('error', { title: 'Error', message: 'Ha ocurrido un error de conexión.' });
+                }
             } finally {
                 newBtn.innerText = originalText;
                 newBtn.disabled = false;
@@ -481,10 +498,14 @@ export class ChannelController {
 
             const maxSize = 6 * 1024 * 1024;
             if (file.size > maxSize) {
-                this.dialog.show('error', {
-                    title: 'Archivo muy grande',
-                    message: 'Para obtener los mejores resultados en todos los dispositivos, usa una imagen de 2048 × 1152 píxeles como mínimo y 6 MB como máximo.'
-                });
+                if (window.appInstance && typeof window.appInstance.showToast === 'function') {
+                    window.appInstance.showToast('La imagen es demasiado grande. Límite: 6 MB.', 'error');
+                } else {
+                    this.dialog.show('error', {
+                        title: 'Archivo muy grande',
+                        message: 'Para obtener los mejores resultados en todos los dispositivos, usa una imagen de 2048 × 1152 píxeles como mínimo y 6 MB como máximo.'
+                    });
+                }
                 fileInput.value = '';
                 return;
             }
@@ -496,10 +517,14 @@ export class ChannelController {
                 URL.revokeObjectURL(objectUrl);
                 
                 if (img.width < 1024 || img.height < 576) {
-                    this.dialog.show('error', {
-                        title: 'Dimensiones insuficientes',
-                        message: 'Las imágenes deben ser de 1024 × 576 píxeles como mínimo. Para obtener los mejores resultados en todos los dispositivos, usa una imagen de 2048 × 1152 píxeles como mínimo y 6 MB como máximo.'
-                    });
+                    if (window.appInstance && typeof window.appInstance.showToast === 'function') {
+                        window.appInstance.showToast('La imagen es demasiado pequeña. Mínimo: 1024 x 576.', 'error');
+                    } else {
+                        this.dialog.show('error', {
+                            title: 'Dimensiones insuficientes',
+                            message: 'Las imágenes deben ser de 1024 × 576 píxeles como mínimo. Para obtener los mejores resultados en todos los dispositivos, usa una imagen de 2048 × 1152 píxeles como mínimo y 6 MB como máximo.'
+                        });
+                    }
                     fileInput.value = '';
                     return;
                 }
@@ -514,7 +539,11 @@ export class ChannelController {
 
             img.onerror = () => {
                 URL.revokeObjectURL(objectUrl);
-                alert("El archivo seleccionado no es una imagen válida.");
+                if (window.appInstance && typeof window.appInstance.showToast === 'function') {
+                    window.appInstance.showToast('El archivo seleccionado no es una imagen válida.', 'error');
+                } else {
+                    alert("El archivo seleccionado no es una imagen válida.");
+                }
             };
 
             img.src = objectUrl;
@@ -708,7 +737,11 @@ export class ChannelController {
 
         if (result.confirmed) {
             try {
-                this.dialog.show('success', { title: 'Procesando...', message: 'Subiendo y recortando tu banner, por favor espera.' });
+                if (window.appInstance && typeof window.appInstance.showToast === 'function') {
+                    window.appInstance.showToast('Subiendo y recortando tu banner...', 'info');
+                } else {
+                    this.dialog.show('success', { title: 'Procesando...', message: 'Subiendo y recortando tu banner, por favor espera.' });
+                }
 
                 const formData = new FormData();
                 formData.append('banner', file);
@@ -733,13 +766,25 @@ export class ChannelController {
                         bannerContainer.style.backgroundImage = `url('${apiResult.banner_url}')`;
                     }
                     
-                    this.dialog.show('success', { title: '¡Listo!', message: 'Tu banner ha sido actualizado correctamente.' });
+                    if (window.appInstance && typeof window.appInstance.showToast === 'function') {
+                        window.appInstance.showToast('Banner actualizado correctamente.', 'success');
+                    } else {
+                        this.dialog.show('success', { title: '¡Listo!', message: 'Tu banner ha sido actualizado correctamente.' });
+                    }
                 } else {
-                    this.dialog.show('error', { title: 'Error', message: apiResult.message || 'No se pudo subir el banner.' });
+                    if (window.appInstance && typeof window.appInstance.showToast === 'function') {
+                        window.appInstance.showToast(apiResult.message || 'No se pudo subir el banner.', 'error');
+                    } else {
+                        this.dialog.show('error', { title: 'Error', message: apiResult.message || 'No se pudo subir el banner.' });
+                    }
                 }
             } catch (error) {
                 console.error("Error al subir el banner:", error);
-                this.dialog.show('error', { title: 'Error', message: 'Ha ocurrido un error inesperado al contactar con el servidor.' });
+                if (window.appInstance && typeof window.appInstance.showToast === 'function') {
+                    window.appInstance.showToast('Error inesperado al contactar con el servidor.', 'error');
+                } else {
+                    this.dialog.show('error', { title: 'Error', message: 'Ha ocurrido un error inesperado al contactar con el servidor.' });
+                }
             }
         }
     }

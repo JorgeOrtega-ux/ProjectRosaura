@@ -179,7 +179,12 @@ export class WatchController {
                     return;
                 }
                 
-                this.dialog.show('error', { title: 'Aviso', message: response.message });
+                // MEJORA: Usar Toast en lugar de Dialog para rate limits u otros errores de like
+                if (window.appInstance && typeof window.appInstance.showToast === 'function') {
+                    window.appInstance.showToast(response.message, 'error');
+                } else {
+                    this.dialog.show('error', { title: 'Aviso', message: response.message });
+                }
                 
                 if (wasActive) primaryBtn.classList.add('active');
                 else primaryBtn.classList.remove('active');
@@ -323,7 +328,12 @@ export class WatchController {
                 
                 if (!toggleRes.success) {
                     cb.checked = !isChecked; 
-                    this.dialog.show('error', { title: 'Error', message: toggleRes.message });
+                    // MEJORA: Usar Toast en lugar de Dialog para rate limits de playlists
+                    if (window.appInstance && typeof window.appInstance.showToast === 'function') {
+                        window.appInstance.showToast(toggleRes.message, 'error');
+                    } else {
+                        this.dialog.show('error', { title: 'Error', message: toggleRes.message });
+                    }
                 }
             });
         });
@@ -370,7 +380,12 @@ export class WatchController {
                     if (window.router) window.router.navigate('/login');
                     else window.location.href = (window.AppBasePath || '') + '/login';
                 } else {
-                    this.dialog.show('error', { title: 'Aviso', message: response.message });
+                    // MEJORA: Usar Toast en lugar de Dialog para rate limits de suscripción
+                    if (window.appInstance && typeof window.appInstance.showToast === 'function') {
+                        window.appInstance.showToast(response.message, 'error');
+                    } else {
+                        this.dialog.show('error', { title: 'Aviso', message: response.message });
+                    }
                 }
             } else {
                 newBtn.innerText = response.is_subscribed ? 'Suscrito' : 'Suscribirse';

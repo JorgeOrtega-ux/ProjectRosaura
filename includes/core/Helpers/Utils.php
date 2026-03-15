@@ -220,7 +220,18 @@ class Utils {
                 $pb = hexdec(substr($hex, 4, 2));
             }
 
-            $distance = sqrt(pow($r - $pr, 2) + pow($g - $pg, 2) + pow($b - $pb, 2));
+            // Distancia de color perceptual mejorada (Aproximación Redmean)
+            // Es mucho más exacta a la vista humana que la distancia Euclideana básica.
+            $rMean = ($r + $pr) / 2;
+            $dR = $r - $pr;
+            $dG = $g - $pg;
+            $dB = $b - $pb;
+
+            $weightR = 2 + ($rMean / 256);
+            $weightG = 4.0;
+            $weightB = 2 + ((255 - $rMean) / 256);
+
+            $distance = sqrt(($weightR * $dR * $dR) + ($weightG * $dG * $dG) + ($weightB * $dB * $dB));
 
             if ($minDistance === null || $distance < $minDistance) {
                 $minDistance = $distance;
@@ -249,18 +260,86 @@ class Utils {
         
         if (!$img) return null;
         
-        $thumb = imagecreatetruecolor(1, 1);
-        imagecopyresampled($thumb, $img, 0, 0, 0, 0, 1, 1, imagesx($img), imagesy($img));
+        // Algoritmo Enterprise para extraer Color Dominante y Vibrante real
+        $w = 50; // Resolución optimizada para balance de rendimiento/precisión
+        $h = 50;
+        $thumb = imagecreatetruecolor($w, $h);
         
-        $rgb = imagecolorat($thumb, 0, 0);
-        $r = ($rgb >> 16) & 0xFF;
-        $g = ($rgb >> 8) & 0xFF;
-        $b = $rgb & 0xFF;
+        // Evitar que transparencias se vuelvan negras (forzamos fondo blanco)
+        $white = imagecolorallocate($thumb, 255, 255, 255);
+        imagefilledrectangle($thumb, 0, 0, $w, $h, $white);
+        imagecopyresampled($thumb, $img, 0, 0, 0, 0, $w, $h, imagesx($img), imagesy($img));
+        
+        $colorCounts = [];
+        
+        for ($x = 0; $x < $w; $x += 2) { // Step de 2 para procesar más rápido sin perder calidad
+            for ($y = 0; $y < $h; $y += 2) {
+                $rgb = imagecolorat($thumb, $x, $y);
+                $r = ($rgb >> 16) & 0xFF;
+                $g = ($rgb >> 8) & 0xFF;
+                $b = $rgb & 0xFF;
+                
+                // Cuantización de colores en bloques (agrupa colores muy similares)
+                $rQ = min(255, max(0, round($r / 16) * 16));
+                $gQ = min(255, max(0, round($g / 16) * 16));
+                $bQ = min(255, max(0, round($b / 16) * 16));
+                
+                $hex = sprintf("%02x%02x%02x", $rQ, $gQ, $bQ);
+                
+                // Cálculo de luminancia y saturación
+                $max = max($r, $g, $b);
+                $min = min($r, $g, $b);
+                $luma = (0.299 * $r + 0.587 * $g + 0.114 * $b);
+                $saturation = ($max == 0) ? 0 : ($max - $min) / $max;
+                
+                // Sistema de pesos: Penalizar negros puros, grises y blancos quemados
+                // y premiar colores saturados/vibrantes.
+                if ($luma < 25 || $luma > 235) {
+                    $weight = 0.1; // Restamos importancia a sombras y luces quemadas
+                } else {
+                    $weight = 1 + ($saturation * 4); // Premiamos fuertemente la saturación
+                }
+                
+                if (!isset($colorCounts[$hex])) {
+                    $colorCounts[$hex] = ['r' => 0, 'g' => 0, 'b' => 0, 'weight' => 0, 'count' => 0];
+                }
+                
+                $colorCounts[$hex]['r'] += $r;
+                $colorCounts[$hex]['g'] += $g;
+                $colorCounts[$hex]['b'] += $b;
+                $colorCounts[$hex]['weight'] += $weight;
+                $colorCounts[$hex]['count']++;
+            }
+        }
         
         imagedestroy($img);
         imagedestroy($thumb);
         
-        return self::getNearestPaletteColor($r, $g, $b);
+        if (empty($colorCounts)) return null;
+        
+        // Determinar el cluster ganador (mayor peso ponderado)
+        $maxWeight = -1;
+        $dominant = null;
+        
+        foreach ($colorCounts as $hex => $data) {
+            if ($data['weight'] > $maxWeight) {
+                $maxWeight = $data['weight'];
+                $dominant = $data;
+            }
+        }
+        
+        if (!$dominant) return null;
+        
+        // Promediar exactamente los colores dentro del cluster dominante ganador
+        $avgR = round($dominant['r'] / $dominant['count']);
+        $avgG = round($dominant['g'] / $dominant['count']);
+        $avgB = round($dominant['b'] / $dominant['count']);
+        
+        $finalHex = sprintf("#%02x%02x%02x", $avgR, $avgG, $avgB);
+        
+        // Devolvemos el color real exacto en HEX (Ya no se limita la paleta estricta).
+        // Así nos aseguramos de que cada video SIEMPRE encuentre un tono perfecto en su glow.
+        return strtoupper($finalHex);
     }
 }
 ?>
