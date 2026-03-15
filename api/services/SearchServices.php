@@ -23,7 +23,7 @@ class SearchServices {
     /**
      * Realiza una búsqueda avanzada en Meilisearch utilizando filtros y ordenamientos
      */
-    public function performSearch(string $query, array $filters = [], string $sort = 'created_at:desc'): array {
+    public function performSearch(string $query, array $filters = [], string $sort = 'relevant'): array {
         try {
             if (isset($_SESSION['user_id']) && !empty($query)) {
                 $this->historyService->logSearchEvent($_SESSION['user_id'], $query);
@@ -54,9 +54,13 @@ class SearchServices {
             }
 
             $searchParams = [
-                'limit' => 24,
-                'sort' => [$sort]
+                'limit' => 24
             ];
+
+            // Solo agregamos sort si NO es relevant. MeiliSearch usa relevancia por defecto 
+            if ($sort !== 'relevant') {
+                $searchParams['sort'] = [$sort];
+            }
 
             if (!empty($meiliFilters)) {
                 $searchParams['filter'] = implode(" AND ", $meiliFilters);

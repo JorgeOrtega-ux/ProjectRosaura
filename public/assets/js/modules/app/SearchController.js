@@ -4,6 +4,7 @@ export default class SearchController {
     constructor() {
         console.log('🟡 [SearchController] Constructor iniciado.');
         this.currentFilter = 'all';
+        this.currentSort = 'relevant';
         this.lastData = null;
     }
 
@@ -18,6 +19,13 @@ export default class SearchController {
         this.videosGrid = document.getElementById('search-videos-grid');
 
         this.filterBtns = document.querySelectorAll('.component-search-filter-btn');
+        
+        // Elementos del Dropdown de Filtros
+        this.toggleFiltersBtn = document.getElementById('search-toggle-filters');
+        this.filtersModule = document.getElementById('moduleSearchFilters');
+        this.sortInputs = document.querySelectorAll('input[name="sortSearch"]');
+        this.openSubMenuBtns = document.querySelectorAll('[data-action="openFilterSubMenu"]');
+        this.backToMainBtns = document.querySelectorAll('[data-action="backToMainFilters"]');
     }
 
     async init() {
@@ -40,31 +48,107 @@ export default class SearchController {
     }
 
     bindEvents() {
-        if (!this.filterBtns) return;
-        
-        this.filterBtns.forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                // Ignorar el click si viene del botón "Filtros"
-                if (e.target.closest('#search-toggle-filters')) return;
+        if (this.filterBtns) {
+            this.filterBtns.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    if (e.target.closest('#search-toggle-filters') || e.target.closest('#moduleSearchFilters')) return;
 
-                this.filterBtns.forEach(b => {
-                    if (b.id !== 'search-toggle-filters') {
-                        b.classList.remove('component-search-filter-active');
-                    }
+                    this.filterBtns.forEach(b => {
+                        if (b.id !== 'search-toggle-filters') {
+                            b.classList.remove('component-search-filter-active');
+                        }
+                    });
+                    
+                    e.target.classList.add('component-search-filter-active');
+                    
+                    this.currentFilter = e.target.getAttribute('data-filter') || 'all';
+                    this.applyFilter();
                 });
-                
-                e.target.classList.add('component-search-filter-active');
-                
-                this.currentFilter = e.target.getAttribute('data-filter') || 'all';
-                this.applyFilter();
             });
+        }
+
+        // Lógica para abrir/cerrar el Dropdown principal
+        if (this.toggleFiltersBtn && this.filtersModule) {
+            this.toggleFiltersBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isVisible = this.filtersModule.style.display === 'block';
+                this.filtersModule.style.display = isVisible ? 'none' : 'block';
+
+                if (!isVisible) {
+                    // Resetear vista al menú principal al abrir
+                    this.showMenuSection('menuMainFilters');
+                }
+            });
+
+            // Cerrar el dropdown al hacer click fuera
+            document.addEventListener('click', (e) => {
+                if (this.filtersModule.style.display === 'block') {
+                    if (!this.filtersModule.contains(e.target) && !this.toggleFiltersBtn.contains(e.target)) {
+                        this.filtersModule.style.display = 'none';
+                    }
+                }
+            });
+        }
+
+        // Navegación dentro del Dropdown (Submenús)
+        if (this.openSubMenuBtns) {
+            this.openSubMenuBtns.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const targetId = btn.getAttribute('data-target');
+                    this.showMenuSection(targetId);
+                });
+            });
+        }
+
+        if (this.backToMainBtns) {
+            this.backToMainBtns.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.showMenuSection('menuMainFilters');
+                });
+            });
+        }
+
+        // Detectar cambios en el Radio Button de Ordenar
+        if (this.sortInputs) {
+            this.sortInputs.forEach(input => {
+                input.addEventListener('change', (e) => {
+                    this.currentSort = e.target.value;
+                    // Forzar re-búsqueda con el nuevo filtro
+                    this.fetchResults(); 
+                });
+            });
+        }
+    }
+
+    showMenuSection(targetRef) {
+        // Ocultar todas las secciones
+        document.querySelectorAll('#moduleSearchFilters .component-menu').forEach(m => {
+            m.classList.remove('active');
+            m.classList.add('disabled');
+            m.style.display = 'none';
         });
+
+        // Mostrar la solicitada
+        const targetMenu = document.querySelector(`[data-ref="${targetRef}"]`);
+        if (targetMenu) {
+            targetMenu.classList.remove('disabled');
+            targetMenu.classList.add('active');
+            targetMenu.style.display = 'block';
+        }
     }
 
     async fetchResults() {
         try {
+            // Activar loader en caso de que sea un re-fetch (por cambio de filtro)
+            if (this.loadingState) this.loadingState.style.display = 'block';
+            if (this.emptyState) this.emptyState.style.display = 'none';
+            if (this.channelsSection) this.channelsSection.style.display = 'none';
+            if (this.videosSection) this.videosSection.style.display = 'none';
+
             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-            const apiUrl = `${this.basePath}/api/index.php?route=${ApiRoutes?.Search?.Get || 'search.get'}&q=${encodeURIComponent(this.query)}`;
+            const apiUrl = `${this.basePath}/api/index.php?route=${ApiRoutes?.Search?.Get || 'search.get'}&q=${encodeURIComponent(this.query)}&sort=${encodeURIComponent(this.currentSort)}`;
             
             const response = await fetch(apiUrl, {
                 method: 'GET',
@@ -175,7 +259,6 @@ export default class SearchController {
 
             this.channelsGrid.appendChild(channelCard);
 
-            // Añadir divisor entre canales, propio de component-card--grouped
             if (index < channels.length - 1) {
                 const divider = document.createElement('hr');
                 divider.classList.add('component-divider');
@@ -215,7 +298,6 @@ export default class SearchController {
             const videoSrc = buildUrl(video.hls_path, '');
             const navUrl = `${this.basePath}/watch/${uuid}`;
 
-            // ESTRUCTURA EXACTA BASADA EN TU SOLICITUD
             const cardHTML = `
                 <div class="component-video-card " style="--local-dominant-color: ${dominantColor}; cursor: pointer;" data-nav="${navUrl}">
                     

@@ -13,10 +13,95 @@
                 </div>
                 
                 <div class="component-view-top-right">
-                    <div class="component-actions">
+                    <div class="component-actions" style="position: relative;">
                         <button id="search-toggle-filters" class="component-button component-button--icon component-button--h40" data-tooltip="Filtros">
                             <span class="material-symbols-rounded">tune</span>
                         </button>
+
+                        <div class="component-module component-module--dropdown component-module--dropdown-left component-module--dropdown-fixed component-module--spaced" id="moduleSearchFilters" style="position: absolute; top: 100%; right: 0; z-index: 100; display: none;">
+                                
+                            <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding active" data-ref="menuMainFilters" style="display: block;">
+                                <div class="pill-container"><div class="drag-handle"></div></div>
+                                
+                                <div class="component-menu-header">
+                                    <div class="component-menu-header-box">
+                                        <span class="component-menu-header-title">Opciones de filtrado</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="component-menu-list component-menu-list--compact">
+                                    <div class="component-menu-link component-menu-link--bordered" data-action="openFilterSubMenu" data-target="menuFilterSort">
+                                        <div class="component-menu-link-icon">
+                                            <span class="material-symbols-rounded">sort</span>
+                                        </div>
+                                        <div class="component-menu-link-text">
+                                            <span>Organizar por</span>
+                                        </div>
+                                        <div class="component-menu-link-icon">
+                                            <span class="material-symbols-rounded">chevron_right</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding disabled" data-ref="menuFilterSort" style="display: none;">
+                                <div class="pill-container"><div class="drag-handle"></div></div>
+                                
+                                <div class="component-menu-header">
+                                    <div class="component-menu-header-box">
+                                        <button class="component-button component-button--icon component-button--h30 component-button--back" data-action="backToMainFilters">
+                                            <span class="material-symbols-rounded">arrow_back</span>
+                                        </button>
+                                        <span class="component-menu-header-title">Organizar por</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="component-menu-list component-menu-list--scrollable component-menu-list--compact">
+                                    <label class="component-menu-link component-menu-link--bordered">
+                                        <div class="component-menu-link-icon">
+                                            <input type="radio" name="sortSearch" value="relevant" checked>
+                                        </div>
+                                        <div class="component-menu-link-text">
+                                            <span>Más relevante</span>
+                                        </div>
+                                    </label>
+                                    <label class="component-menu-link component-menu-link--bordered">
+                                        <div class="component-menu-link-icon">
+                                            <input type="radio" name="sortSearch" value="created_at:desc">
+                                        </div>
+                                        <div class="component-menu-link-text">
+                                            <span>Más reciente</span>
+                                        </div>
+                                    </label>
+                                    <label class="component-menu-link component-menu-link--bordered">
+                                        <div class="component-menu-link-icon">
+                                            <input type="radio" name="sortSearch" value="views:desc">
+                                        </div>
+                                        <div class="component-menu-link-text">
+                                            <span>Más vistos</span>
+                                        </div>
+                                    </label>
+                                    <label class="component-menu-link component-menu-link--bordered">
+                                        <div class="component-menu-link-icon">
+                                            <input type="radio" name="sortSearch" value="likes:desc">
+                                        </div>
+                                        <div class="component-menu-link-text">
+                                            <span>Mejor valorados</span>
+                                        </div>
+                                    </label>
+                                    <label class="component-menu-link component-menu-link--bordered">
+                                        <div class="component-menu-link-icon">
+                                            <input type="radio" name="sortSearch" value="duration:desc">
+                                        </div>
+                                        <div class="component-menu-link-text">
+                                            <span>Más largos</span>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+
+                        </div>
+
                     </div>
                 </div>
 

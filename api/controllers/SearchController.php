@@ -40,13 +40,13 @@ class SearchController {
         // Limpiar filtros vacíos
         $filters = array_filter($filters);
 
-        // Soporte para ordenamiento (sort = "views:desc", "created_at:desc", etc)
-        $sort = isset($input['sort']) ? trim($input['sort']) : 'created_at:desc';
+        // Soporte para ordenamiento añadido
+        $sort = isset($input['sort']) ? trim($input['sort']) : 'relevant';
         
-        // Validación de seguridad para sort
-        $allowedSorts = ['created_at:desc', 'created_at:asc', 'views:desc', 'views:asc'];
+        // Validación de seguridad para sort (incluyendo los nuevos filtros)
+        $allowedSorts = ['relevant', 'created_at:desc', 'created_at:asc', 'views:desc', 'views:asc', 'likes:desc', 'duration:desc'];
         if (!in_array($sort, $allowedSorts)) {
-            $sort = 'created_at:desc';
+            $sort = 'relevant';
         }
 
         if (empty($query) && empty($filters)) {
