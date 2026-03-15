@@ -216,6 +216,10 @@ export default class SearchController {
             const channelCard = document.createElement('div');
             channelCard.classList.add('component-channel-card-modern');
             
+            // Lógica de color dominante (Mismo efecto que los videos, disparado al sistema root)
+            const dominantColor = channel.dominant_color && channel.dominant_color !== 'transparent' ? channel.dominant_color : '#333333';
+            channelCard.style.setProperty('--local-dominant-color', dominantColor);
+            
             const buildUrl = (path, defaultUrl) => {
                 if (!path) return defaultUrl;
                 if (path.startsWith('http')) return path;
@@ -230,8 +234,10 @@ export default class SearchController {
             const bannerSrc = buildUrl(channel.banner_path, defaultBanner);
             
             const subCountStr = this.formatNumber(channel.subscribers_count || 0) + ' suscriptores';
+            const videosCountStr = this.formatNumber(channel.videos_count || 0) + ' videos';
             const isSubbed = channel.is_subscribed ? 'subscribed' : '';
             const btnText = channel.is_subscribed ? 'Suscrito' : 'Suscribirse';
+            const description = channel.description ? channel.description : '';
 
             channelCard.innerHTML = `
                 <div class="channel-card-banner">
@@ -243,10 +249,12 @@ export default class SearchController {
                 <div class="channel-card-info">
                     <h4 class="channel-card-name" title="${channel.username}">${channel.username}</h4>
                     <p class="channel-card-handle">@${channel.handle}</p>
-                    <div class="channel-card-stats">${subCountStr}</div>
+                    ${description ? `<p class="channel-card-description">${description}</p>` : ''}
                 </div>
                 <div class="channel-card-actions">
-                    <button class="btn-channel-subscribe ${isSubbed}" data-channel-id="${channel.id}">${btnText}</button>
+                    <span class="component-badge stat-badge">${subCountStr}</span>
+                    <span class="component-badge stat-badge">${videosCountStr}</span>
+                    <button class="component-badge btn-channel-subscribe ${isSubbed}" data-channel-id="${channel.id}">${btnText}</button>
                 </div>
             `;
 
@@ -254,6 +262,14 @@ export default class SearchController {
             channelCard.addEventListener('click', (e) => {
                 if (!e.target.classList.contains('btn-channel-subscribe')) {
                     if (window.SpaRouter) window.SpaRouter.navigate(`/@${channel.handle}`);
+                }
+            });
+
+            // Disparar el color dominante al hacer hover
+            channelCard.addEventListener('mouseenter', () => {
+                const domColor = channelCard.style.getPropertyValue('--local-dominant-color');
+                if (domColor && domColor.trim() !== '') {
+                    document.documentElement.style.setProperty('--global-dominant-color', domColor);
                 }
             });
 
@@ -287,12 +303,13 @@ export default class SearchController {
                             subBtn.textContent = 'Suscribirse';
                             channel.subscribers_count = Math.max(0, (channel.subscribers_count || 0) - 1);
                         }
-                        // Actualizar UI del texto de subs
-                        const statsDiv = channelCard.querySelector('.channel-card-stats');
-                        statsDiv.textContent = this.formatNumber(channel.subscribers_count) + ' suscriptores';
+                        // Actualizar UI del texto de subs (el primer badge)
+                        const statsBadge = channelCard.querySelectorAll('.stat-badge')[0];
+                        if(statsBadge) {
+                            statsBadge.textContent = this.formatNumber(channel.subscribers_count) + ' suscriptores';
+                        }
                     } else {
                         console.error('Error al suscribirse:', resData.message);
-                        // Idealmente mostrar un Toast aquí
                     }
                 } catch (err) {
                     console.error('Error en red al intentar suscribirse:', err);
