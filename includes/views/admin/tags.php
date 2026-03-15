@@ -3,10 +3,10 @@
 if (session_status() === PHP_SESSION_NONE) session_start();
 ?>
 <div class="view-content">
+    
     <div class="component-wrapper" data-ref="manage-tags-wrapper">
         
         <div class="component-sticky-toolbar">
-            
             <div class="component-toolbar-primary">
                 <div class="component-toolbar-mode active" data-ref="toolbar-default-mode">
                     <div class="component-toolbar-left">
@@ -23,38 +23,23 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                             </button>
                             
                             <div class="component-module component-module--dropdown component-module--dropdown-left component-module--dropdown-fixed component-module--spaced disabled" data-module="moduleTagFilters">
-                                
                                 <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding active" data-ref="menuMainFilters">
                                     <div class="pill-container"><div class="drag-handle"></div></div>
-                                    
                                     <div class="component-menu-header">
                                         <div class="component-menu-header-box">
                                             <span class="component-menu-header-title">Filtrar resultados</span>
                                         </div>
                                     </div>
-                                    
                                     <div class="component-menu-list component-menu-list--compact">
                                         <div class="component-menu-link component-menu-link--bordered" data-action="openFilterSubMenu" data-target="menuFilterType">
-                                            <div class="component-menu-link-icon">
-                                                <span class="material-symbols-rounded">category</span>
-                                            </div>
-                                            <div class="component-menu-link-text">
-                                                <span>Tipo de etiqueta</span>
-                                            </div>
-                                            <div class="component-menu-link-icon">
-                                                <span class="material-symbols-rounded">chevron_right</span>
-                                            </div>
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">category</span></div>
+                                            <div class="component-menu-link-text"><span>Tipo de etiqueta</span></div>
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">chevron_right</span></div>
                                         </div>
                                         <div class="component-menu-link component-menu-link--bordered" data-action="openFilterSubMenu" data-target="menuFilterGender">
-                                            <div class="component-menu-link-icon">
-                                                <span class="material-symbols-rounded">wc</span>
-                                            </div>
-                                            <div class="component-menu-link-text">
-                                                <span>Género del Modelo</span>
-                                            </div>
-                                            <div class="component-menu-link-icon">
-                                                <span class="material-symbols-rounded">chevron_right</span>
-                                            </div>
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">wc</span></div>
+                                            <div class="component-menu-link-text"><span>Género del Modelo</span></div>
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">chevron_right</span></div>
                                         </div>
                                     </div>
                                 </div>
@@ -74,17 +59,13 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                             <div class="component-menu-link-icon">
                                                 <input type="checkbox" class="filter-checkbox" data-filter-type="type" value="category" checked>
                                             </div>
-                                            <div class="component-menu-link-text">
-                                                <span data-i18n="tag_type_category">Categoría</span>
-                                            </div>
+                                            <div class="component-menu-link-text"><span>Categoría</span></div>
                                         </label>
                                         <label class="component-menu-link component-menu-link--bordered">
                                             <div class="component-menu-link-icon">
                                                 <input type="checkbox" class="filter-checkbox" data-filter-type="type" value="modelo" checked>
                                             </div>
-                                            <div class="component-menu-link-text">
-                                                <span data-i18n="tag_type_modelo">Modelo</span>
-                                            </div>
+                                            <div class="component-menu-link-text"><span>Modelo</span></div>
                                         </label>
                                     </div>
                                 </div>
@@ -101,46 +82,29 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                     </div>
                                     <div class="component-menu-list component-menu-list--scrollable component-menu-list--compact">
                                         <label class="component-menu-link component-menu-link--bordered">
-                                            <div class="component-menu-link-icon">
-                                                <input type="checkbox" class="filter-checkbox" data-filter-type="gender" value="female" checked>
-                                            </div>
-                                            <div class="component-menu-link-text">
-                                                <span data-i18n="tag_gender_female">Femenino</span>
-                                            </div>
+                                            <div class="component-menu-link-icon"><input type="checkbox" class="filter-checkbox" data-filter-type="gender" value="female" checked></div>
+                                            <div class="component-menu-link-text"><span>Femenino</span></div>
                                         </label>
                                         <label class="component-menu-link component-menu-link--bordered">
-                                            <div class="component-menu-link-icon">
-                                                <input type="checkbox" class="filter-checkbox" data-filter-type="gender" value="male" checked>
-                                            </div>
-                                            <div class="component-menu-link-text">
-                                                <span data-i18n="tag_gender_male">Masculino</span>
-                                            </div>
+                                            <div class="component-menu-link-icon"><input type="checkbox" class="filter-checkbox" data-filter-type="gender" value="male" checked></div>
+                                            <div class="component-menu-link-text"><span>Masculino</span></div>
                                         </label>
                                         <label class="component-menu-link component-menu-link--bordered">
-                                            <div class="component-menu-link-icon">
-                                                <input type="checkbox" class="filter-checkbox" data-filter-type="gender" value="trans" checked>
-                                            </div>
-                                            <div class="component-menu-link-text">
-                                                <span data-i18n="tag_gender_trans">Trans</span>
-                                            </div>
+                                            <div class="component-menu-link-icon"><input type="checkbox" class="filter-checkbox" data-filter-type="gender" value="trans" checked></div>
+                                            <div class="component-menu-link-text"><span>Trans</span></div>
                                         </label>
                                         <label class="component-menu-link component-menu-link--bordered">
-                                            <div class="component-menu-link-icon">
-                                                <input type="checkbox" class="filter-checkbox" data-filter-type="gender" value="other" checked>
-                                            </div>
-                                            <div class="component-menu-link-text">
-                                                <span data-i18n="tag_gender_other">Otro</span>
-                                            </div>
+                                            <div class="component-menu-link-icon"><input type="checkbox" class="filter-checkbox" data-filter-type="gender" value="other" checked></div>
+                                            <div class="component-menu-link-text"><span>Otro</span></div>
                                         </label>
                                     </div>
                                 </div>
-
                             </div>
                         </div>
 
                     </div>
                     <div class="component-toolbar-right">
-                        <button class="component-button component-button--dark component-button--h40" data-action="openAddTagModal">
+                        <button class="component-button component-button--dark component-button--h40" data-action="openTagEditor">
                             <span class="material-symbols-rounded">add</span>
                             <span class="hide-on-mobile" data-i18n="btn_add_tag">Añadir Etiqueta</span>
                         </button>
@@ -170,9 +134,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 
             <div class="component-toolbar-secondary" data-ref="secondary-toolbar">
                 <div class="component-search">
-                    <div class="component-search-icon">
-                        <span class="material-symbols-rounded">search</span>
-                    </div>
+                    <div class="component-search-icon"><span class="material-symbols-rounded">search</span></div>
                     <div class="component-search-input">
                         <input type="text" data-ref="tag-search-input" placeholder="Buscar etiqueta...">
                     </div>
@@ -225,55 +187,149 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                 </div>
             </div>
         </div>
-
     </div>
-</div>
 
-<div class="component-dialog-overlay" id="tagModalOverlay">
-    <div class="component-dialog-wrapper">
-        <div class="component-dialog-box">
-            <div class="pill-container"></div> 
-            <div class="component-dialog-header">
-                <h2 class="component-dialog-title" id="tagModalTitle" data-i18n="modal_add_tag_title">Nueva Etiqueta</h2>
-            </div>
-            
-            <div class="component-dialog-content">
-                <form id="tagForm">
-                    <input type="hidden" id="tagId" name="id" value="">
-                    
-                    <div class="component-input-group">
-                        <label class="component-label" for="tagName" data-i18n="lbl_tag_name">Nombre</label>
-                        <input type="text" class="component-input" id="tagName" name="name" placeholder="Ej. Amateur, Mia Khalifa..." required>
-                    </div>
 
-                    <div class="component-input-group">
-                        <label class="component-label" for="tagType" data-i18n="lbl_tag_type">Tipo de etiqueta</label>
-                        <select class="component-input" id="tagType" name="type" required>
-                            <option value="category" data-i18n="tag_type_category">Categoría</option>
-                            <option value="modelo" data-i18n="tag_type_modelo">Modelo</option>
-                        </select>
-                    </div>
-
-                    <div class="component-input-group" id="tagGenderGroup" style="display: none;">
-                        <label class="component-label" for="tagGender" data-i18n="lbl_tag_gender">Género del modelo</label>
-                        <select class="component-input" id="tagGender" name="gender">
-                            <option value="female" data-i18n="tag_gender_female">Femenino</option>
-                            <option value="male" data-i18n="tag_gender_male">Masculino</option>
-                            <option value="trans" data-i18n="tag_gender_trans">Trans</option>
-                            <option value="other" data-i18n="tag_gender_other">Otro</option>
-                        </select>
-                    </div>
-                </form>
-            </div>
-            
-            <div class="component-dialog-actions" style="margin-top: 24px; display: flex; justify-content: flex-end; gap: 12px;">
-                <button class="component-button component-button--light" data-action="closeTagModal" data-i18n="btn_cancel">Cancelar</button>
-                <button class="component-button component-button--dark" data-action="submitTagForm" data-i18n="btn_save_tag">Guardar</button>
+    <div class="component-wrapper disabled" data-ref="editor-tags-wrapper">
+        
+        <div class="component-sticky-toolbar">
+            <div class="component-toolbar-primary">
+                <div class="component-toolbar-left">
+                    <button class="component-button component-button--icon component-button--h40" data-action="closeTagEditor" data-tooltip="Volver al listado" data-position="bottom">
+                        <span class="material-symbols-rounded">arrow_back</span>
+                    </button>
+                    <div class="component-toolbar-title" id="tagEditorToolbarTitle">Nueva Etiqueta</div>
+                </div>
+                <div class="component-toolbar-right">
+                    <button class="component-button component-button--dark component-button--h40" data-action="submitTagForm">
+                        <span class="material-symbols-rounded">save</span>
+                        <span class="hide-on-mobile">Guardar</span>
+                    </button>
+                </div>
             </div>
         </div>
-        
-        <button class="component-dialog-close-btn" data-action="closeTagModal">
-            <span class="material-symbols-rounded">close</span>
-        </button>
+
+        <div class="component-header-card">
+            <h1 class="component-page-title" id="tagEditorHeaderTitle">Nueva Etiqueta</h1>
+            <p class="component-page-description">Configura los detalles de la etiqueta o categoría.</p>
+        </div>
+
+        <div class="component-content-section">
+            <form id="tagForm">
+                <input type="hidden" id="tagId" name="id" value="">
+                
+                <div class="component-card component-card--grouped">
+                    
+                    <div class="component-group-item component-group-item--stacked">
+                        <div class="component-card__content">
+                            <div class="component-card__text">
+                                <h2 class="component-card__title">Nombre de la etiqueta</h2>
+                                <p class="component-card__description">El nombre principal que identificará a esta categoría o modelo.</p>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--stretch">
+                            <div class="component-input-group component-input-group--h34">
+                                <input type="text" class="component-input-field component-input-field--simple" id="tagName" name="name" placeholder="Ej. Amateur, Mia Khalifa..." required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="component-group-item component-group-item--stacked">
+                        <div class="component-card__content">
+                            <div class="component-card__text">
+                                <h2 class="component-card__title">Tipo de etiqueta</h2>
+                                <p class="component-card__description">Define si es una categoría general o un modelo específico.</p>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--start">
+                            <input type="hidden" id="tagType" name="type" value="category">
+                            
+                            <div class="component-dropdown-wrapper">
+                                <div class="component-dropdown-trigger" data-action="toggleCustomDropdown" data-target="moduleTagType">
+                                    <span class="material-symbols-rounded" id="tagTypeIcon">category</span>
+                                    <span class="component-dropdown-text" id="tagTypeText">Categoría</span>
+                                    <span class="material-symbols-rounded">expand_more</span>
+                                </div>
+                                <div class="component-module component-module--dropdown component-module--dropdown-left disabled" id="moduleTagType">
+                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding">
+                                        <div class="component-menu-list component-menu-list--scrollable">
+                                            
+                                            <div class="component-menu-link active" data-action="setTagDropdownValue" data-field="Type" data-value="category" data-text="Categoría" data-icon="category">
+                                                <div class="component-menu-link-icon">
+                                                    <span class="material-symbols-rounded">category</span>
+                                                </div>
+                                                <div class="component-menu-link-text">
+                                                    <span>Categoría</span>
+                                                </div>
+                                            </div>
+
+                                            <div class="component-menu-link" data-action="setTagDropdownValue" data-field="Type" data-value="modelo" data-text="Modelo" data-icon="star">
+                                                <div class="component-menu-link-icon">
+                                                    <span class="material-symbols-rounded">star</span>
+                                                </div>
+                                                <div class="component-menu-link-text">
+                                                    <span>Modelo</span>
+                                                </div>
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div class="component-group-item component-group-item--stacked" id="tagGenderGroup" style="display: none;">
+                        <div class="component-card__content">
+                            <div class="component-card__text">
+                                <h2 class="component-card__title">Género del modelo</h2>
+                                <p class="component-card__description">Aplicable solo si el tipo de etiqueta es "Modelo".</p>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--start">
+                            <input type="hidden" id="tagGender" name="gender" value="female">
+                            
+                            <div class="component-dropdown-wrapper">
+                                <div class="component-dropdown-trigger" data-action="toggleCustomDropdown" data-target="moduleTagGender">
+                                    <span class="material-symbols-rounded" id="tagGenderIcon">female</span>
+                                    <span class="component-dropdown-text" id="tagGenderText">Femenino</span>
+                                    <span class="material-symbols-rounded">expand_more</span>
+                                </div>
+                                <div class="component-module component-module--dropdown component-module--dropdown-left disabled" id="moduleTagGender">
+                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding">
+                                        <div class="component-menu-list component-menu-list--scrollable">
+                                            
+                                            <div class="component-menu-link active" data-action="setTagDropdownValue" data-field="Gender" data-value="female" data-text="Femenino" data-icon="female">
+                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">female</span></div>
+                                                <div class="component-menu-link-text"><span>Femenino</span></div>
+                                            </div>
+
+                                            <div class="component-menu-link" data-action="setTagDropdownValue" data-field="Gender" data-value="male" data-text="Masculino" data-icon="male">
+                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">male</span></div>
+                                                <div class="component-menu-link-text"><span>Masculino</span></div>
+                                            </div>
+
+                                            <div class="component-menu-link" data-action="setTagDropdownValue" data-field="Gender" data-value="trans" data-text="Trans" data-icon="transgender">
+                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">transgender</span></div>
+                                                <div class="component-menu-link-text"><span>Trans</span></div>
+                                            </div>
+
+                                            <div class="component-menu-link" data-action="setTagDropdownValue" data-field="Gender" data-value="other" data-text="Otro" data-icon="person">
+                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">person</span></div>
+                                                <div class="component-menu-link-text"><span>Otro</span></div>
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+            </form>
+        </div>
     </div>
 </div>

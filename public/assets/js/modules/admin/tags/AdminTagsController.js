@@ -14,15 +14,14 @@ export class AdminTagsController {
     async init() {
         this.bindEvents();
         await this.loadTags();
-        console.log("AdminTagsController inicializado con soporte de Modelos y Género.");
     }
 
     bindEvents() {
         if (this.eventsBound) return; 
 
         document.addEventListener('click', (e) => {
-            const addTagBtn = e.target.closest('[data-action="openAddTagModal"]');
-            const closeTagBtn = e.target.closest('[data-action="closeTagModal"]');
+            const addTagBtn = e.target.closest('[data-action="openTagEditor"]');
+            const closeTagBtn = e.target.closest('[data-action="closeTagEditor"]');
             const submitTagBtn = e.target.closest('[data-action="submitTagForm"]');
             
             const searchBtn = e.target.closest('[data-action="searchTag"]');
@@ -36,13 +35,13 @@ export class AdminTagsController {
             const editTagBtn = e.target.closest('[data-action="editSelectedTag"]');
             const deleteTagBtn = e.target.closest('[data-action="deleteSelectedTag"]');
             
-            const isOverlay = e.target.classList.contains('component-dialog-overlay');
-            const isWrapper = e.target.classList.contains('component-dialog-wrapper');
-
-            if (addTagBtn) { e.preventDefault(); this.openModal(); }
-            if (closeTagBtn) { e.preventDefault(); this.closeModal(); }
+            // Componentes Dropdown Custom del Editor
+            const toggleDropdownBtn = e.target.closest('[data-action="toggleCustomDropdown"]');
+            const setValueBtn = e.target.closest('[data-action="setTagDropdownValue"]');
+            
+            if (addTagBtn) { e.preventDefault(); this.openEditor(); }
+            if (closeTagBtn) { e.preventDefault(); this.closeEditor(); }
             if (submitTagBtn) { e.preventDefault(); this.submitForm(); }
-            if ((isOverlay || isWrapper) && e.target.closest('#tagModalOverlay')) this.closeModal();
 
             if (searchBtn) this.toggleSearchToolbar();
             if (toggleFiltersBtn) this.toggleFiltersModule();
@@ -60,12 +59,30 @@ export class AdminTagsController {
             if (editTagBtn) {
                 e.preventDefault();
                 const tag = this.tags.find(t => t.id == this.selectedTagId);
-                if (tag) this.openModal(tag);
+                if (tag) this.openEditor(tag);
             }
 
             if (deleteTagBtn) {
                 e.preventDefault();
                 this.deleteTag(this.selectedTagId);
+            }
+
+            // --- Lógica de Dropdowns UI ---
+            if (toggleDropdownBtn) {
+                e.preventDefault();
+                this.toggleCustomDropdown(toggleDropdownBtn.getAttribute('data-target'));
+            }
+
+            if (setValueBtn) {
+                e.preventDefault();
+                this.setDropdownValue(setValueBtn);
+            }
+
+            // Cerrar dropdowns si se hace clic fuera
+            if (!e.target.closest('.component-dropdown-wrapper')) {
+                document.querySelectorAll('#moduleTagType, #moduleTagGender').forEach(mod => {
+                    if (mod) mod.classList.add('disabled');
+                });
             }
         });
 
@@ -79,14 +96,7 @@ export class AdminTagsController {
             if (e.target && e.target.classList.contains('filter-checkbox')) {
                 this.applyAllFilters();
             }
-            
-            // Lógica para mostrar/ocultar género en el modal
-            if (e.target && e.target.id === 'tagType') {
-                this.handleTypeChange(e.target.value);
-            }
         });
-
-        this.bindStaticModalDragEvents();
 
         window.addEventListener('viewLoaded', (e) => {
             if (e.detail.url.includes('/admin/tags')) {
@@ -103,75 +113,64 @@ export class AdminTagsController {
         this.eventsBound = true; 
     }
 
-    handleTypeChange(type) {
-        const genderGroup = document.getElementById('tagGenderGroup');
-        const genderSelect = document.getElementById('tagGender');
-        if (genderGroup && genderSelect) {
-            if (type === 'modelo') {
-                genderGroup.style.display = 'block';
-                genderSelect.setAttribute('required', 'required');
-            } else {
-                genderGroup.style.display = 'none';
-                genderSelect.removeAttribute('required');
-            }
+    // --- Métodos de Dropdown Custom ---
+    
+    toggleCustomDropdown(targetId) {
+        const targetModule = document.getElementById(targetId);
+        if (!targetModule) return;
+
+        const isCurrentlyDisabled = targetModule.classList.contains('disabled');
+        
+        // Cierra todos los custom dropdowns del formulario
+        document.querySelectorAll('#moduleTagType, #moduleTagGender').forEach(mod => {
+            mod.classList.add('disabled');
+        });
+
+        // Abre si estaba cerrado
+        if (isCurrentlyDisabled) {
+            targetModule.classList.remove('disabled');
         }
     }
 
-    bindStaticModalDragEvents() {
-        const overlay = document.getElementById('tagModalOverlay');
-        if (!overlay) return;
-        
-        const wrapper = overlay.querySelector('.component-dialog-wrapper');
-        const pill = overlay.querySelector('.pill-container');
-        
-        if (!wrapper || !pill) return;
+    setDropdownValue(btn) {
+        const field = btn.getAttribute('data-field'); // "Type" o "Gender"
+        const value = btn.getAttribute('data-value');
+        const text = btn.getAttribute('data-text');
+        const icon = btn.getAttribute('data-icon');
 
-        let startY = 0;
-        let currentDiff = 0;
-        let isDragging = false;
+        // 1. Actualizar el input oculto
+        const inputEl = document.getElementById(`tag${field}`);
+        if (inputEl) inputEl.value = value;
 
-        pill.addEventListener('pointerdown', (e) => {
-            if (window.innerWidth > 768) return;
-            if (e.pointerType === 'mouse' && e.button !== 0) return; 
+        // 2. Actualizar la vista del trigger
+        const textEl = document.getElementById(`tag${field}Text`);
+        const iconEl = document.getElementById(`tag${field}Icon`);
+        if (textEl) textEl.innerText = text;
+        if (iconEl && icon) iconEl.innerText = icon;
 
-            isDragging = true;
-            startY = e.clientY;
-            
-            overlay.classList.add('is-dragging');
-            wrapper.setPointerCapture(e.pointerId);
-        });
+        // 3. Marcar activo en la lista
+        const moduleMenu = document.getElementById(`moduleTag${field}`);
+        if (moduleMenu) {
+            moduleMenu.querySelectorAll('.component-menu-link').forEach(link => link.classList.remove('active'));
+            btn.classList.add('active');
+            moduleMenu.classList.add('disabled'); // Cerrar menú
+        }
 
-        wrapper.addEventListener('pointermove', (e) => {
-            if (!isDragging) return;
-            currentDiff = e.clientY - startY;
-            
-            if (currentDiff > 0) {
-                wrapper.style.transform = `translateY(${currentDiff}px)`;
-            }
-        });
-
-        const endDrag = (e) => {
-            if (!isDragging) return;
-            isDragging = false;
-            
-            overlay.classList.remove('is-dragging');
-            
-            if (wrapper.hasPointerCapture(e.pointerId)) {
-                wrapper.releasePointerCapture(e.pointerId);
-            }
-
-            if (currentDiff > wrapper.offsetHeight * 0.35) {
-                this.closeModal();
-            } else {
-                wrapper.removeAttribute('style'); 
-            }
-            
-            currentDiff = 0;
-        };
-
-        wrapper.addEventListener('pointerup', endDrag);
-        wrapper.addEventListener('pointercancel', endDrag);
+        // 4. Lógica extra de visibilidad (Type -> muestra u oculta Gender)
+        if (field === 'Type') {
+            this.handleTypeChange(value);
+        }
     }
+
+    handleTypeChange(type) {
+        const genderGroup = document.getElementById('tagGenderGroup');
+        if (genderGroup) {
+            // Usamos display flex para mantener el diseño stacked del componente
+            genderGroup.style.display = type === 'modelo' ? 'flex' : 'none';
+        }
+    }
+
+    // --- Core API y Vista del Listado ---
 
     async loadTags() {
         try {
@@ -191,22 +190,12 @@ export class AdminTagsController {
     }
 
     getGenderLabel(gender) {
-        const labels = {
-            'female': 'Femenino',
-            'male': 'Masculino',
-            'trans': 'Trans',
-            'other': 'Otro'
-        };
+        const labels = { 'female': 'Femenino', 'male': 'Masculino', 'trans': 'Trans', 'other': 'Otro' };
         return labels[gender] || '-';
     }
 
     getGenderIcon(gender) {
-        const icons = {
-            'female': 'female',
-            'male': 'male',
-            'trans': 'transgender',
-            'other': 'person'
-        };
+        const icons = { 'female': 'female', 'male': 'male', 'trans': 'transgender', 'other': 'person' };
         return icons[gender] || 'remove';
     }
 
@@ -239,7 +228,7 @@ export class AdminTagsController {
             const genderLabel = tag.type === 'modelo' ? this.getGenderLabel(tag.gender) : 'N/A';
             const genderIcon = tag.type === 'modelo' ? this.getGenderIcon(tag.gender) : 'horizontal_rule';
 
-            // --- Generar Tarjeta ---
+            // Tarjetas
             const card = document.createElement('div');
             card.className = 'component-item-card tag-card-item';
             card.setAttribute('data-action', 'selectTag');
@@ -266,7 +255,7 @@ export class AdminTagsController {
             `;
             cardsBody.appendChild(card);
 
-            // --- Generar Fila de Tabla ---
+            // Tabla
             const tr = document.createElement('tr');
             tr.className = 'tag-card-item';
             tr.setAttribute('data-action', 'selectTag');
@@ -526,45 +515,61 @@ export class AdminTagsController {
         processContainer('view-table', 'empty-search-table');
     }
 
-    openModal(tag = null) {
-        const modal = document.getElementById('tagModalOverlay');
+    // --- Flujo Editor / Formularios ---
+
+    openEditor(tag = null) {
+        const manageWrapper = document.querySelector('[data-ref="manage-tags-wrapper"]');
+        const editorWrapper = document.querySelector('[data-ref="editor-tags-wrapper"]');
         const form = document.getElementById('tagForm');
-        const wrapper = modal ? modal.querySelector('.component-dialog-wrapper') : null;
         
-        if (!form || !modal) return;
+        if (!form || !manageWrapper || !editorWrapper) return;
 
         form.reset();
         document.getElementById('tagId').value = tag ? tag.id : '';
         
+        // Determinar textos del encabezado y toolbar
+        const editorTitleText = tag ? 'Editar Etiqueta' : 'Nueva Etiqueta';
+        document.getElementById('tagEditorToolbarTitle').innerText = editorTitleText;
+        document.getElementById('tagEditorHeaderTitle').innerText = editorTitleText;
+        
         if (tag) {
-            document.getElementById('tagModalTitle').innerText = 'Editar Etiqueta';
             document.getElementById('tagName').value = tag.name;
-            document.getElementById('tagType').value = tag.type;
-            if (tag.type === 'modelo') {
-                document.getElementById('tagGender').value = tag.gender;
+            
+            // Simular click en la opción correspondiente al Tipo
+            const typeBtn = document.querySelector(`[data-action="setTagDropdownValue"][data-field="Type"][data-value="${tag.type}"]`);
+            if (typeBtn) this.setDropdownValue(typeBtn);
+
+            // Simular click en Género si es modelo
+            if (tag.type === 'modelo' && tag.gender) {
+                const genderBtn = document.querySelector(`[data-action="setTagDropdownValue"][data-field="Gender"][data-value="${tag.gender}"]`);
+                if (genderBtn) this.setDropdownValue(genderBtn);
             }
         } else {
-            document.getElementById('tagModalTitle').innerText = 'Nueva Etiqueta';
+            // Valores por defecto al crear
+            const defaultTypeBtn = document.querySelector(`[data-action="setTagDropdownValue"][data-field="Type"][data-value="category"]`);
+            if (defaultTypeBtn) this.setDropdownValue(defaultTypeBtn);
+            
+            const defaultGenderBtn = document.querySelector(`[data-action="setTagDropdownValue"][data-field="Gender"][data-value="female"]`);
+            if (defaultGenderBtn) this.setDropdownValue(defaultGenderBtn);
         }
 
-        this.handleTypeChange(document.getElementById('tagType').value);
-
-        if (wrapper) wrapper.removeAttribute('style'); 
-        
-        requestAnimationFrame(() => {
-            modal.classList.add('active');
-        });
+        // Intercambiar visibilidad
+        manageWrapper.classList.add('disabled');
+        editorWrapper.classList.remove('disabled');
     }
 
-    closeModal() {
-        const modal = document.getElementById('tagModalOverlay');
-        if (modal) {
-            modal.classList.remove('active');
+    closeEditor() {
+        const manageWrapper = document.querySelector('[data-ref="manage-tags-wrapper"]');
+        const editorWrapper = document.querySelector('[data-ref="editor-tags-wrapper"]');
+        
+        if (manageWrapper && editorWrapper) {
+            editorWrapper.classList.add('disabled');
+            manageWrapper.classList.remove('disabled');
             
             setTimeout(() => {
                 const form = document.getElementById('tagForm');
                 if (form) form.reset();
-                this.handleTypeChange('category'); // Reset visual
+                this.handleTypeChange('category'); 
             }, 300);
         }
     }
@@ -592,7 +597,7 @@ export class AdminTagsController {
             const res = await this.api.post(action, payload);
             if (res.success) {
                 window.dialogSystem.show('success', { title: 'Éxito', message: res.message || 'La etiqueta se ha guardado correctamente.' });
-                this.closeModal();
+                this.closeEditor();
                 await this.loadTags();
             } else {
                 window.dialogSystem.show('error', { title: 'Error', message: res.message || 'No se pudo guardar la etiqueta.' });
