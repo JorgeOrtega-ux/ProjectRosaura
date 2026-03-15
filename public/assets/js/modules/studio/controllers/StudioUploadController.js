@@ -52,10 +52,17 @@ export class StudioUploadController {
     }
 
     async handleFilesSelection(files) {
+        // [BLINDAJE FRONTEND] Doble check antes de enviar archivos a RAM
+        const hasPermission = window.appInstance ? window.appInstance.canUploadVideos : true;
+        if (!hasPermission) {
+            alert("Acceso denegado: No tienes permisos para subir videos.");
+            return;
+        }
+
         if (!files || files.length === 0) return;
         
         const routeName = ApiRoutes.Studio?.UploadVideo || 'studio.upload_video';
-        const originalLanguage = 'es-419'; // Idioma por defecto. El usuario lo editará en uploading.php
+        const originalLanguage = 'es-419'; 
 
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
@@ -237,7 +244,6 @@ export class StudioUploadController {
         const descInput = document.getElementById('videoDescriptionInput');
         if (descInput) descInput.value = video.description || '';
 
-        // Actualizar UI del Idioma Original
         const langInput = document.getElementById('videoOriginalLanguageInput');
         const langTriggerText = document.getElementById('selectedOriginalLangText');
         if (langInput && video.original_language) {
@@ -254,7 +260,6 @@ export class StudioUploadController {
 
         this.syncVisibilityUI(video.visibility || 'public');
         
-        // Sincronizar UI de Comentarios
         const allowCommentsValue = (video.allow_comments !== undefined) ? String(video.allow_comments) : '1';
         const commentsInput = document.getElementById('videoAllowCommentsInput');
         if (commentsInput) commentsInput.value = allowCommentsValue;
@@ -473,7 +478,6 @@ export class StudioUploadController {
             e.stopImmediatePropagation();
             const target = btn.getAttribute('data-target');
             if (target && target.startsWith('title-')) {
-                // SOLUCIÓN JAVASCRIPT: Se evalúa correctamente si se está viendo o editando en vez de forzar a true.
                 const isViewBox = btn.closest(`[data-state="${target}-view"]`) !== null;
                 this.setEditState(target, isViewBox);
             }
@@ -700,6 +704,13 @@ export class StudioUploadController {
     }
 
     attachEvents() {
+        // [BLINDAJE FRONTEND] No inyectar eventos de interfaz si el usuario no tiene permisos
+        const hasPermission = window.appInstance ? window.appInstance.canUploadVideos : true;
+        if (!hasPermission) {
+            console.warn("[StudioUploadController] Eventos bloqueados: Usuario sin permisos.");
+            return;
+        }
+
         document.addEventListener('change', this.handleDocumentChangeBound);
         document.addEventListener('dragover', this.handleDocumentDragOverBound);
         document.addEventListener('dragleave', this.handleDocumentDragLeaveBound);

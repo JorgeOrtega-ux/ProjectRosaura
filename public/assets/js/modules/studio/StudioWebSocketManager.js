@@ -1,3 +1,4 @@
+// public/assets/js/modules/studio/StudioWebSocketManager.js
 export class StudioWebSocketManager {
     constructor() {
         this.ws = null;
@@ -32,6 +33,13 @@ export class StudioWebSocketManager {
     onMessage(type, callback) { this.callbacks[type] = callback; }
 
     connect() {
+        // [BLINDAJE FRONTEND] Bloquear intento de conexión si no hay permisos
+        const hasPermission = window.appInstance ? window.appInstance.canUploadVideos : true;
+        if (!hasPermission) {
+            console.warn('[WS] Conexión abortada: Usuario sin permisos de Studio.');
+            return;
+        }
+
         if (this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) return;
         this.isConnecting = true;
         try {
@@ -44,12 +52,11 @@ export class StudioWebSocketManager {
             this.ws.onmessage = (event) => {
                 try {
                     const data = JSON.parse(event.data);
-                    if (data.status === "error" && (data.code === "AUTH_FAILED" || data.code === "AUTH_TIMEOUT")) {
+                    if (data.status === "error" && (data.code === "AUTH_FAILED" || data.code === "AUTH_TIMEOUT" || data.code === "FORBIDDEN")) {
                         this.disconnect(); return;
                     }
                     if (data.type === 'progress' || data.type === 'completed' || data.type === 'failed') {
                         if (this.callbacks['progressUpdate']) this.callbacks['progressUpdate'](data);
-                        // AÑADIDO: Despachar el evento global para que la UI se actualice
                         window.dispatchEvent(new CustomEvent('studioVideoProgress', { detail: data }));
                     }
                 } catch (error) { console.error('[WS] Error parseando mensaje', error); }
@@ -60,7 +67,7 @@ export class StudioWebSocketManager {
     }
 
     disconnect() {
-        if (this.ws) { this.ws.close(1000, "Navegación fuera de Studio"); this.ws = null; }
+        if (this.ws) { this.ws.close(1000, "Navegación fuera de Studio o sin permisos"); this.ws = null; }
     }
 
     handleRouteUpdate(event) {

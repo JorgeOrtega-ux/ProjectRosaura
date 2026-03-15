@@ -12,6 +12,7 @@ CREATE TABLE `users` (
   `two_factor_enabled` tinyint(1) DEFAULT 0,
   `two_factor_recovery_codes` text DEFAULT NULL,
   `role` enum('user','moderator','administrator','founder') DEFAULT 'user',
+  `can_upload_videos` tinyint(1) DEFAULT 0,
   `user_status` enum('active','deleted') DEFAULT 'active',
   `profile_picture` varchar(255) NOT NULL,
   `banner_path` varchar(255) DEFAULT NULL,

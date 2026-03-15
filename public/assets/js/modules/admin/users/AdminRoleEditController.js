@@ -8,7 +8,7 @@ export class AdminRoleEditController {
         this.targetUserId = null;
         this.pendingRole = null; 
         this.basePath = window.AppBasePath || '';
-        this.eventsBound = false; // <-- BANDERA DE BLINDAJE
+        this.eventsBound = false; 
         
         this.roleMap = {
             'founder': 'Fundador',
@@ -21,7 +21,6 @@ export class AdminRoleEditController {
     init() {
         this.bindEvents();
         
-        // Esta lógica debe ejecutarse cada vez que init() es llamado tras renderizar la vista
         if (window.location.pathname.includes('/admin/edit-role')) {
             const urlParams = new URLSearchParams(window.location.search);
             this.targetUserId = urlParams.get('id');
@@ -35,7 +34,7 @@ export class AdminRoleEditController {
     }
 
     bindEvents() {
-        if (this.eventsBound) return; // <-- EVITA DUPLICAR EVENTOS
+        if (this.eventsBound) return;
 
         window.addEventListener('viewLoaded', (e) => {
             if (e.detail.url.includes('/admin/edit-role')) {
@@ -68,7 +67,6 @@ export class AdminRoleEditController {
             const btnSubmitUpdate = e.target.closest('[data-action="submitRoleUpdate"]');
             if (btnSubmitUpdate) this.submitRoleUpdate(btnSubmitUpdate);
 
-            // Reutilizamos el botón del "Ojo" genérico para mostrar/ocultar contraseña
             const togglePassBtn = e.target.closest('[data-action="togglePassword"]');
             if (togglePassBtn) {
                 const inputField = togglePassBtn.parentElement.querySelector('.component-input-field');
@@ -84,7 +82,17 @@ export class AdminRoleEditController {
             }
         });
 
-        this.eventsBound = true; // <-- SELLA LOS EVENTOS
+        // NUEVO LISTENER: Capturar el cambio del toggle de permisos de video
+        document.addEventListener('change', (e) => {
+            if (!window.location.pathname.includes('/admin/edit-role')) return;
+
+            if (e.target.matches('[data-action="adminToggleUploadPermission"]')) {
+                const value = e.target.checked ? 1 : 0;
+                this.saveUploadPermission(value);
+            }
+        });
+
+        this.eventsBound = true;
     }
 
     showMessage(msg, type = 'error') {
@@ -99,7 +107,6 @@ export class AdminRoleEditController {
         const passArea = document.querySelector('[data-ref="admin-role-password-area"]');
         const passInput = document.querySelector('[data-ref="admin_role_confirm_password"]');
         
-        // Limpiamos estados visuales al cargar/recargar
         this.pendingRole = null;
         if (passArea) passArea.classList.add('disabled');
         if (passInput) passInput.value = '';
@@ -116,7 +123,7 @@ export class AdminRoleEditController {
                 item.classList.toggle('active', item.getAttribute('data-value') === user.role);
             });
 
-            // --- REGLA 1: BLOQUEAR INTERACCIÓN SI EL TARGET ES FUNDADOR ---
+            // Lógica de deshabilitación del rol si es fundador
             const trigger = document.querySelector('[data-action="adminToggleModuleRole"]');
             const desc = document.querySelector('[data-ref="admin-role-desc"]');
 
@@ -126,6 +133,21 @@ export class AdminRoleEditController {
             } else {
                 if (trigger) trigger.classList.remove('disabled-interaction');
                 if (desc) desc.textContent = 'Selecciona el rol que deseas asignar a este usuario en la plataforma.';
+            }
+
+            // NUEVO: Hidratar el estado del toggle de subida de videos
+            const toggleUpload = document.querySelector('[data-ref="admin-toggle-upload-permission"]');
+            if (toggleUpload) {
+                toggleUpload.checked = (user.can_upload_videos == 1);
+                
+                // Si es admin o fundador, deshabilitamos el toggle porque ya tienen el permiso implícito
+                if (user.role === 'founder' || user.role === 'administrator') {
+                    toggleUpload.disabled = true;
+                    toggleUpload.closest('.component-group-item').style.opacity = '0.5';
+                } else {
+                    toggleUpload.disabled = false;
+                    toggleUpload.closest('.component-group-item').style.opacity = '1';
+                }
             }
 
             if (loader) loader.classList.add('disabled');
@@ -163,7 +185,7 @@ export class AdminRoleEditController {
     }
 
     cancelRoleUpdate() {
-        this.loadUserData(); // Restaura el estado visual a lo que dice la DB
+        this.loadUserData(); 
     }
 
     async submitRoleUpdate(btn) {
@@ -195,6 +217,26 @@ export class AdminRoleEditController {
             this.loadUserData(); 
         } else {
             this.showMessage(result.message, 'error');
+        }
+    }
+
+    // NUEVO: Método para enviar la petición al servidor del permiso de subida
+    async saveUploadPermission(value) {
+        // En caso de no tener ApiRoutes actualizado, resolvemos el endpoint crudo
+        const route = (ApiRoutes.Admin && ApiRoutes.Admin.UpdateUploadPermission) ? ApiRoutes.Admin.UpdateUploadPermission : (this.basePath + '/api/admin/update_upload_permission');
+        
+        const result = await this.api.post(route, { 
+            target_user_id: this.targetUserId, 
+            can_upload_videos: value 
+        });
+
+        if (result.success) {
+            this.showMessage(result.message, 'success');
+        } else {
+            this.showMessage(result.message, 'error');
+            // Revertir el estado visual en caso de error
+            const toggle = document.querySelector('[data-ref="admin-toggle-upload-permission"]');
+            if (toggle) toggle.checked = !value;
         }
     }
 }

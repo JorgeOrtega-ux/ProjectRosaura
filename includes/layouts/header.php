@@ -3,6 +3,7 @@
 $isLoggedIn = isset($_SESSION['user_id']);
 $userRole = $_SESSION['user_role'] ?? 'user';
 $userPic = $_SESSION['user_pic'] ?? '';
+$canUpload = $_SESSION['user_can_upload'] ?? 0;
 
 // Definir el identificador de usuario de forma segura
 $userIdentifier = '';
@@ -15,6 +16,7 @@ if (isset($_SESSION['user_uuid'])) {
 global $serverConfig;
 $isMaintenanceActive = isset($serverConfig['maintenance_mode']) && $serverConfig['maintenance_mode'] == 1;
 $isPrivileged = in_array($userRole, ['administrator', 'founder']);
+$hasUploadPermission = $isPrivileged || $canUpload == 1; // NUEVA REGLA
 ?>
 <script>
     window.AppRouteTitles = {
@@ -46,7 +48,6 @@ $isPrivileged = in_array($userRole, ['administrator', 'founder']);
         '/admin/logs/viewer': "<?php echo __('route_admin_logs_viewer'); ?>"
     };
 
-    // Agregar rutas dinámicas de forma segura por fuera del objeto
     <?php if ($isLoggedIn && $userIdentifier !== ''): ?>
         window.AppRouteTitles['/studio/management-panel/<?php echo $userIdentifier; ?>'] = "<?php echo __('route_studio_management'); ?>";
         window.AppRouteTitles['/studio/manage-content/<?php echo $userIdentifier; ?>'] = "<?php echo __('route_studio_content'); ?>";
@@ -94,9 +95,11 @@ $isPrivileged = in_array($userRole, ['administrator', 'founder']);
                     <span class="material-symbols-rounded">more_vert</span>
                 </button>
             <?php else: ?>
-                <button class="component-button component-button--icon component-button--h40" data-nav="<?php echo APP_URL; ?>/studio/management-panel/<?php echo $userIdentifier; ?>">
-                    <span class="material-symbols-rounded">movie_filter</span>
-                </button>
+                <?php if ($hasUploadPermission): ?>
+                    <button class="component-button component-button--icon component-button--h40" data-nav="<?php echo APP_URL; ?>/studio/management-panel/<?php echo $userIdentifier; ?>" data-tooltip="<?php echo __('route_studio_management'); ?>" data-position="bottom">
+                        <span class="material-symbols-rounded">movie_filter</span>
+                    </button>
+                <?php endif; ?>
 
                 <button class="component-button component-button--profile role-<?php echo htmlspecialchars($userRole); ?>" data-action="toggleModuleMainOptions" data-tooltip="<?php echo __('tooltip_your_account'); ?>" data-position="bottom">
                     <img src="<?php echo APP_URL; ?>/<?php echo ltrim(htmlspecialchars($userPic), '/'); ?>" alt="<?php echo __('alt_profile'); ?>">

@@ -13,7 +13,7 @@ use App\Core\Interfaces\ServerConfigRepositoryInterface;
 use App\Core\Interfaces\UserPrefsManagerInterface;
 use App\Core\Interfaces\TokenRepositoryInterface;
 use App\Core\Interfaces\RateLimiterInterface;
-use App\Core\Interfaces\TagRepositoryInterface; /* NUEVO */
+use App\Core\Interfaces\TagRepositoryInterface;
 
 
 class AdminServices {
@@ -25,7 +25,7 @@ class AdminServices {
     private $prefsManager;
     private $tokenRepository;
     private $rateLimiter;
-    private $tagRepository; /* NUEVO */
+    private $tagRepository; 
 
     public function __construct(
         UserRepositoryInterface $userRepository,
@@ -35,7 +35,7 @@ class AdminServices {
         UserPrefsManagerInterface $prefsManager,
         TokenRepositoryInterface $tokenRepository,
         RateLimiterInterface $rateLimiter,
-        TagRepositoryInterface $tagRepository /* NUEVO */
+        TagRepositoryInterface $tagRepository
     ) {
         $this->userRepository = $userRepository;
         $this->moderationRepository = $moderationRepository;
@@ -45,7 +45,7 @@ class AdminServices {
         $this->prefsManager = $prefsManager;
         $this->tokenRepository = $tokenRepository;
         $this->rateLimiter = $rateLimiter;
-        $this->tagRepository = $tagRepository; /* NUEVO */
+        $this->tagRepository = $tagRepository; 
     }
 
     private function checkAdmin() {
@@ -118,6 +118,9 @@ class AdminServices {
                 'profile_picture' => $user['profile_picture'],
                 'role' => $user['role'],
                 
+                // NUEVO PARÁMETRO EXPORTADO
+                'can_upload_videos' => $user['can_upload_videos'] ?? 0,
+                
                 'user_status' => $user['user_status'],
                 'deleted_by' => $user['deleted_by'],
                 'deleted_reason' => $user['deleted_reason'],
@@ -131,6 +134,34 @@ class AdminServices {
             ],
             'preferences' => $userPrefs
         ];
+    }
+
+    // NUEVA FUNCIÓN PARA PROCESAR EL TOGGLE DE SUBIDA
+    public function updateUploadPermission($data) {
+        if (!$this->checkAdmin()) return ['success' => false, 'message' => 'No autorizado.'];
+
+        $targetId = (int)($data['target_user_id'] ?? 0);
+        $canUpload = (int)($data['can_upload_videos'] ?? 0);
+
+        $user = $this->userRepository->findById($targetId);
+        if (!$user) return ['success' => false, 'message' => 'Usuario no encontrado.'];
+
+        if ($user['role'] === 'founder') {
+            return ['success' => false, 'message' => 'No puedes modificar permisos de un Fundador.'];
+        }
+
+        $authCheck = $this->canEditUser($user);
+        if (!$authCheck['allowed']) {
+            return ['success' => false, 'message' => $authCheck['message']];
+        }
+
+        if ($this->userRepository->updateUploadPermission($targetId, $canUpload)) {
+            $currentUserId = $this->sessionManager->get('user_id');
+            Logger::security("Admin ID: $currentUserId actualizó permiso de subida del usuario $targetId a $canUpload", 'critical');
+            return ['success' => true, 'message' => 'Permiso de subida actualizado correctamente.'];
+        }
+
+        return ['success' => false, 'message' => 'Error al actualizar el permiso en la base de datos.'];
     }
 
     public function updateAvatar($data) {

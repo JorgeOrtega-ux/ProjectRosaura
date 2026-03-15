@@ -60,6 +60,22 @@ def update_db_status(video_id, status, progress=0):
         finally:
             conn.close()
 
+# NUEVA FUNCIÓN: BARRERA DE SEGURIDAD 4
+def verify_upload_permission(user_uuid):
+    conn = get_db_connection()
+    if conn:
+        try:
+            cursor = conn.cursor(dictionary=True)
+            cursor.execute("SELECT role, can_upload_videos FROM users WHERE uuid = %s OR id = %s", (user_uuid, user_uuid))
+            user = cursor.fetchone()
+            if user:
+                return user['role'] in ['founder', 'administrator'] or user['can_upload_videos'] == 1
+        except Error as e:
+            logging.error(f"Error verificando permisos DB: {e}")
+        finally:
+            conn.close()
+    return False
+
 def get_video_info(file_path):
     """Obtiene dimensiones, duración y verifica si existe audio en el video original."""
     try:
@@ -200,6 +216,14 @@ def process_video(redis_client, job):
     input_file = job.get('file_path')
     
     logging.info(f"🚀 INICIANDO PROCESAMIENTO | Video ID: {video_id} | UUID: {uuid}")
+    
+    # BARRERA 4: Comprobación final antes de gastar recursos del servidor.
+    if not verify_upload_permission(user_id):
+        logging.error(f"🛑 VIOLACIÓN DE SEGURIDAD: Usuario {user_id} intentó inyectar procesamiento sin permisos. Tarea abortada.")
+        update_db_status(video_id, 'failed')
+        try: os.remove(input_file)
+        except OSError: pass
+        return
     
     cancel_key = f"cancel_video_{video_id}"
     if redis_client.exists(cancel_key):

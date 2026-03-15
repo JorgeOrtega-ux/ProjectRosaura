@@ -10,7 +10,6 @@ import { StudioEditController } from './controllers/StudioEditController.js';
 
 export class StudioController {
     constructor() {
-        // [FIX] Prevenir múltiples instancias principales que inyecten WS múltiples veces
         if (window._studioMainControllerInstance) {
             window._studioMainControllerInstance.destroy();
         }
@@ -25,9 +24,8 @@ export class StudioController {
 
         this.api = new ApiService();
         this.state = studioState;
-        this.activeSubController = null; // Guardar referencia del sub-controlador activo
+        this.activeSubController = null;
         
-        // Delegado global seguro para el WS
         if (!window._studioWsProgressHandlerInitialized) {
             this.manager.onMessage('progressUpdate', (data) => {
                 if (window._studioMainControllerInstance) {
@@ -44,7 +42,6 @@ export class StudioController {
     destroy() {
         window.removeEventListener('routeChange', this.handleRouteChangeBound);
         
-        // Limpiar sub-controladores para evitar fugas de memoria y listeners duplicados
         if (this.activeSubController && typeof this.activeSubController.destroy === 'function') {
             this.activeSubController.destroy();
             this.activeSubController = null;
@@ -56,9 +53,15 @@ export class StudioController {
     }
 
     init() {
-        this.manager.connect();
+        // [BLINDAJE FRONTEND] Verificar permisos antes de cargar
+        const hasPermission = window.appInstance ? window.appInstance.canUploadVideos : true;
+
+        if (hasPermission) {
+            this.manager.connect();
+        } else {
+            console.warn("[StudioController] WS no conectado: Usuario sin permisos de Studio.");
+        }
         
-        // Si se re-inicializa, destruir controlador previo primero
         if (this.activeSubController && typeof this.activeSubController.destroy === 'function') {
             this.activeSubController.destroy();
             this.activeSubController = null;
@@ -66,15 +69,18 @@ export class StudioController {
 
         const path = window.location.pathname;
         
-        // Enrutamiento interno - IMPORTANTE: El orden de validación importa.
+        // Enrutamiento interno con bloqueos de seguridad
         if (path.includes('/studio/uploading') || path.includes('/studio/upload')) {
+            if (!hasPermission) return; // BLOQUEO
             this.activeSubController = new StudioUploadController(this.api, this.state);
         } else if (path.includes('/studio/manage-content/playlist')) {
-            // Evaluamos la ruta de playlist ANTES de la de manage-content general
+            if (!hasPermission) return; // BLOQUEO
             this.activeSubController = new StudioManagePlaylistController(this.api, this.state);
         } else if (path.includes('/studio/manage-content')) {
+            if (!hasPermission) return; // BLOQUEO
             this.activeSubController = new StudioManageContentController(this.api, this.state, this.manager);
         } else if (path.includes('/studio/edit/')) {
+            if (!hasPermission) return; // BLOQUEO
             this.activeSubController = new StudioEditController(this.api, this.state);
         } 
     }
@@ -98,7 +104,6 @@ export class StudioController {
             videoObj.status = data.status;
             videoObj.processing_progress = data.progress || 100;
             
-            // Disparar un evento global que cada sub-controlador escuchará para actualizar su propia UI
             window.dispatchEvent(new CustomEvent('studioVideoProgress', { 
                 detail: { ...data, matchedKey }
             }));

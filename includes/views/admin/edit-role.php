@@ -75,7 +75,23 @@ $isFounder = ($currentUserRole === 'founder');
                     </div>
                 </div>
             </div>
-            
+
+            <div class="component-card--grouped admin-edit-group" data-ref="admin-role-extra">
+                <div class="component-group-item component-group-item--wrap">
+                    <div class="component-card__content">
+                        <div class="component-card__text">
+                            <h2 class="component-card__title">Permiso de Subida de Videos</h2>
+                            <p class="component-card__description">Otorga o revoca el permiso para que este usuario pueda subir videos. (Fundadores y administradores tienen este permiso por defecto).</p>
+                        </div>
+                    </div>
+                    <div class="component-card__actions component-card__actions--end">
+                        <label class="component-toggle-switch">
+                            <input type="checkbox" data-ref="admin-toggle-upload-permission" data-action="adminToggleUploadPermission">
+                            <span class="component-toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
             <div data-ref="admin-role-password-area" class="disabled">
                 <div class="component-card--grouped">
                     <div class="component-group-item component-group-item--stacked">

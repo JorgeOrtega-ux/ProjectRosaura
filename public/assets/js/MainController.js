@@ -19,6 +19,16 @@ export class MainController {
 
     get isMobile() { return window.innerWidth <= 768; }
 
+    // [BLINDAJE FRONTEND] Nueva propiedad global para verificar permisos en todo el framework JS
+    get canUploadVideos() {
+        if (window.AppUserRole === 'founder' || window.AppUserRole === 'administrator') return true;
+        if (window.AppCanUploadVideos === true) return true;
+        
+        // Fallback: Inferimos de la UI segura renderizada por PHP en el header
+        const studioBtn = document.querySelector('.header-right [data-nav*="/studio/management-panel/"]');
+        return studioBtn !== null;
+    }
+
     init() {
         this.checkDevice(); 
         this.initPreferences();

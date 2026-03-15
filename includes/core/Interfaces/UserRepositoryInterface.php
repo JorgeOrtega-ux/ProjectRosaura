@@ -17,7 +17,7 @@ interface UserRepositoryInterface {
     
     public function updateChannelProfile(int $id, ?string $description, ?string $identifier, ?string $contactEmail): bool;
     
-    // --- NUEVO MÉTODO PARA ACTUALIZAR PERFIL EXTENDIDO ---
+    // --- MÉTODO PARA ACTUALIZAR PERFIL EXTENDIDO ---
     public function updateExtendedProfile(int $id, array $profileData): bool;
 
     public function updateIdentifier(int $id, string $identifier): bool; 
@@ -29,5 +29,8 @@ interface UserRepositoryInterface {
     public function updateRecoveryCodes(int $id, string $recoveryCodes): bool;
     public function updatePreference(int $userId, string $key, $value): bool;
     public function updateRole(int $id, string $role): bool;
+
+    // --- NUEVO MÉTODO PARA ACTUALIZAR PERMISO DE SUBIDA ---
+    public function updateUploadPermission(int $id, int $canUpload): bool;
 }
 ?>

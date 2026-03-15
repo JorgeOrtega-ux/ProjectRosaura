@@ -279,7 +279,7 @@ class UserRepository implements UserRepositoryInterface {
         return $stmt->execute([$recoveryCodes, $id]);
     }
 
- public function updatePreference(int $userId, string $key, $value): bool {
+    public function updatePreference(int $userId, string $key, $value): bool {
         // Se agregó 'measurement_system' a la lista de claves permitidas
         $allowedKeys = ['language', 'measurement_system', 'open_links_new_tab', 'theme', 'extended_alerts'];
         if (!in_array($key, $allowedKeys)) return false;
@@ -291,6 +291,12 @@ class UserRepository implements UserRepositoryInterface {
     public function updateRole(int $id, string $role): bool {
         $stmt = $this->pdo->prepare("UPDATE users SET role = ? WHERE id = ?");
         return $stmt->execute([$role, $id]);
+    }
+
+    // NUEVO METODO: Actualizar el permiso de subir videos
+    public function updateUploadPermission(int $id, int $canUpload): bool {
+        $stmt = $this->pdo->prepare("UPDATE users SET can_upload_videos = ? WHERE id = ?");
+        return $stmt->execute([$canUpload, $id]);
     }
 }
 ?>

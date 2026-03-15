@@ -24,6 +24,9 @@ class AdminController {
     public function get_moderation_kardex($input) { return $this->adminServices->getModerationKardex($input); }
     public function add_admin_note($input) { return $this->adminServices->addAdminNote($input); }
 
+    // NUEVO: Endpoint para el permiso de subida de videos
+    public function update_upload_permission($input) { return $this->adminServices->updateUploadPermission($input); }
+
     // --- ACCIONES PARA SERVER CONFIG ---
     public function get_server_config() { return $this->adminServices->getServerConfig(); }
     public function update_server_config($input) { return $this->adminServices->updateServerConfig($input); }
