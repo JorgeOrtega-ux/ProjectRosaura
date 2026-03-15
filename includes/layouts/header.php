@@ -3,7 +3,7 @@
 $isLoggedIn = isset($_SESSION['user_id']);
 $userRole = $_SESSION['user_role'] ?? 'user';
 $userPic = $_SESSION['user_pic'] ?? '';
-$canUpload = $_SESSION['user_can_upload'] ?? 0;
+$isCreator = $_SESSION['is_creator'] ?? 0; // NUEVO: Evaluamos is_creator
 
 // Definir el identificador de usuario de forma segura
 $userIdentifier = '';
@@ -16,7 +16,6 @@ if (isset($_SESSION['user_uuid'])) {
 global $serverConfig;
 $isMaintenanceActive = isset($serverConfig['maintenance_mode']) && $serverConfig['maintenance_mode'] == 1;
 $isPrivileged = in_array($userRole, ['administrator', 'founder']);
-$hasUploadPermission = $isPrivileged || $canUpload == 1; // NUEVA REGLA
 ?>
 <script>
     window.AppRouteTitles = {
@@ -48,7 +47,7 @@ $hasUploadPermission = $isPrivileged || $canUpload == 1; // NUEVA REGLA
         '/admin/logs/viewer': "<?php echo __('route_admin_logs_viewer'); ?>"
     };
 
-    <?php if ($isLoggedIn && $userIdentifier !== ''): ?>
+    <?php if ($isLoggedIn && $userIdentifier !== '' && $isCreator == 1): ?>
         window.AppRouteTitles['/studio/management-panel/<?php echo $userIdentifier; ?>'] = "<?php echo __('route_studio_management'); ?>";
         window.AppRouteTitles['/studio/manage-content/<?php echo $userIdentifier; ?>'] = "<?php echo __('route_studio_content'); ?>";
     <?php endif; ?>
@@ -95,7 +94,7 @@ $hasUploadPermission = $isPrivileged || $canUpload == 1; // NUEVA REGLA
                     <span class="material-symbols-rounded">more_vert</span>
                 </button>
             <?php else: ?>
-                <?php if ($hasUploadPermission): ?>
+                <?php if ($isCreator == 1): ?>
                     <button class="component-button component-button--icon component-button--h40" data-nav="<?php echo APP_URL; ?>/studio/management-panel/<?php echo $userIdentifier; ?>" data-tooltip="<?php echo __('route_studio_management'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">movie_filter</span>
                     </button>

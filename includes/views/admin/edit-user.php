@@ -114,6 +114,23 @@ $maxAvatarSize = $serverConfig['max_avatar_size_mb'] ?? 2;
         </div>
 
         <div class="component-card--grouped admin-edit-group disabled">
+            <div class="component-group-item component-group-item--wrap">
+                <div class="component-card__content">
+                    <div class="component-card__text">
+                        <h2 class="component-card__title">Modo Creador</h2>
+                        <p class="component-card__description">Habilita la capacidad de subir videos y acceder a Studio publicando un canal para este usuario.</p>
+                    </div>
+                </div>
+                <div class="component-card__actions component-card__actions--end">
+                    <label class="component-toggle-switch">
+                        <input type="checkbox" data-ref="admin-toggle-creator" data-action="adminToggleCreatorStatus">
+                        <span class="component-toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="component-card--grouped admin-edit-group disabled">
             <div class="component-group-item component-group-item--stacked">
                 <div class="component-card__content">
                     <div class="component-card__text">

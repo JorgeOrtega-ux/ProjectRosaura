@@ -26,11 +26,10 @@ class StudioController {
         return $this->sessionManager->get('user_id');
     }
 
-    // NUEVO MÉTODO: Verificar permisos de subida
+    // ACTUALIZADO: Seguridad absoluta (is_creator == 1)
     private function canUserUpload() {
-        $role = strtolower($this->sessionManager->get('user_role') ?? 'user');
-        $canUpload = (int)($this->sessionManager->get('user_can_upload') ?? 0);
-        return in_array($role, ['founder', 'administrator']) || $canUpload === 1;
+        $isCreator = (int)($this->sessionManager->get('is_creator') ?? 0);
+        return $isCreator === 1;
     }
 
     private function checkRateLimit(string $action, int $maxAttempts, int $lockoutMinutes, string $customMsg = null) {
@@ -45,9 +44,9 @@ class StudioController {
 
     public function get_models($input) {
         $userId = $this->requireAuth();
-        if (!$userId) {
-            http_response_code(401);
-            return ['success' => false, 'status' => 'error', 'message' => 'No autorizado'];
+        if (!$userId || !$this->canUserUpload()) {
+            http_response_code($userId ? 403 : 401);
+            return ['success' => false, 'status' => 'error', 'message' => 'Acceso denegado al Studio.'];
         }
         try {
             $models = $this->studioServices->getTagsByType('modelo');
@@ -60,9 +59,9 @@ class StudioController {
 
     public function get_categories($input) {
         $userId = $this->requireAuth();
-        if (!$userId) {
-            http_response_code(401);
-            return ['success' => false, 'status' => 'error', 'message' => 'No autorizado'];
+        if (!$userId || !$this->canUserUpload()) {
+            http_response_code($userId ? 403 : 401);
+            return ['success' => false, 'status' => 'error', 'message' => 'Acceso denegado al Studio.'];
         }
         try {
             $categories = $this->studioServices->getTagsByType('category');
@@ -80,15 +79,13 @@ class StudioController {
             return ['success' => false, 'status' => 'error', 'message' => 'No autorizado'];
         }
 
-        // BARRERA DE SEGURIDAD 1: Controlador
         if (!$this->canUserUpload()) {
             http_response_code(403);
-            return ['success' => false, 'status' => 'error', 'message' => 'Acceso denegado: No tienes permisos para subir videos.'];
+            return ['success' => false, 'status' => 'error', 'message' => 'Acceso denegado: No tienes un canal habilitado para subir videos.'];
         }
 
         $role = strtolower($this->sessionManager->get('user_role') ?? 'user');
-        $canUpload = (int)($this->sessionManager->get('user_can_upload') ?? 0);
-
+        
         $isPreCheck = isset($input['pre_check']) ? (bool)$input['pre_check'] : (isset($_POST['pre_check']) ? (bool)$_POST['pre_check'] : false);
         $chunkIndex = isset($input['chunk_index']) ? (int)$input['chunk_index'] : (isset($_POST['chunk_index']) ? (int)$_POST['chunk_index'] : null);
         
@@ -104,7 +101,7 @@ class StudioController {
         if ($isPreCheck) {
             $totalSize = isset($input['total_size']) ? (int)$input['total_size'] : (isset($_POST['total_size']) ? (int)$_POST['total_size'] : 0);
             try {
-                $this->studioServices->validatePreUpload($userId, $role, $canUpload, $totalSize);
+                $this->studioServices->validatePreUpload($userId, $role, $totalSize);
                 return ['success' => true, 'status' => 'success', 'message' => 'Validación pre-subida exitosa'];
             } catch (\Exception $e) {
                 http_response_code(400);
@@ -126,10 +123,10 @@ class StudioController {
 
         try {
             if ($uploadId !== null && $chunkIndex !== null && $totalChunks !== null && $originalFilename) {
-                $videoData = $this->studioServices->handleChunkUpload($userId, $role, $canUpload, $files['video'], $uploadId, $chunkIndex, $totalChunks, $originalFilename, $totalSize, $originalLanguage);
+                $videoData = $this->studioServices->handleChunkUpload($userId, $role, $files['video'], $uploadId, $chunkIndex, $totalChunks, $originalFilename, $totalSize, $originalLanguage);
                 return ['success' => true, 'status' => 'success', 'data' => $videoData];
             } else {
-                $videoData = $this->studioServices->queueVideoUpload($userId, $role, $canUpload, $files['video'], $originalLanguage);
+                $videoData = $this->studioServices->queueVideoUpload($userId, $role, $files['video'], $originalLanguage);
                 return ['success' => true, 'status' => 'success', 'data' => $videoData];
             }
         } catch (\Exception $e) {
@@ -178,6 +175,11 @@ class StudioController {
             http_response_code(401);
             return ['success' => false, 'status' => 'error', 'message' => 'No autorizado'];
         }
+        
+        if (!$this->canUserUpload()) {
+            http_response_code(403);
+            return ['success' => false, 'status' => 'error', 'message' => 'Acceso denegado.'];
+        }
 
         $rate = $this->checkRateLimit('studio_update_title', 30, 5, 'Demasiadas actualizaciones de metadatos. Espera {minutes} minutos.');
         if (!$rate['allowed']) return ['success' => false, 'status' => 'error', 'message' => $rate['message']];
@@ -222,9 +224,9 @@ class StudioController {
 
     public function get_active_uploads($input) {
         $userId = $this->requireAuth();
-        if (!$userId) {
-            http_response_code(401);
-            return ['success' => false, 'status' => 'error', 'message' => 'No autorizado'];
+        if (!$userId || !$this->canUserUpload()) {
+            http_response_code($userId ? 403 : 401);
+            return ['success' => false, 'status' => 'error', 'message' => 'Acceso denegado.'];
         }
         
         try {
@@ -238,9 +240,9 @@ class StudioController {
 
     public function get_all_videos($input) {
         $userId = $this->requireAuth();
-        if (!$userId) {
-            http_response_code(401);
-            return ['success' => false, 'status' => 'error', 'message' => 'No autorizado'];
+        if (!$userId || !$this->canUserUpload()) {
+            http_response_code($userId ? 403 : 401);
+            return ['success' => false, 'status' => 'error', 'message' => 'Acceso denegado.'];
         }
         
         try {
@@ -254,9 +256,9 @@ class StudioController {
     
     public function get_video($input) {
         $userId = $this->requireAuth();
-        if (!$userId) {
-            http_response_code(401);
-            return ['success' => false, 'status' => 'error', 'message' => 'No autorizado'];
+        if (!$userId || !$this->canUserUpload()) {
+            http_response_code($userId ? 403 : 401);
+            return ['success' => false, 'status' => 'error', 'message' => 'Acceso denegado.'];
         }
         
         $uuid = $input['uuid'] ?? $_POST['uuid'] ?? null;
@@ -338,9 +340,9 @@ class StudioController {
 
     public function cancel_upload($input) {
         $userId = $this->requireAuth();
-        if (!$userId) {
-            http_response_code(401);
-            return ['success' => false, 'status' => 'error', 'message' => 'No autorizado'];
+        if (!$userId || !$this->canUserUpload()) {
+            http_response_code($userId ? 403 : 401);
+            return ['success' => false, 'status' => 'error', 'message' => 'Acceso denegado.'];
         }
 
         $videoId = $input['video_id'] ?? $_POST['video_id'] ?? null;
@@ -361,9 +363,9 @@ class StudioController {
 
     public function delete_video($input) {
         $userId = $this->requireAuth();
-        if (!$userId) {
-            http_response_code(401);
-            return ['success' => false, 'status' => 'error', 'message' => 'No autorizado'];
+        if (!$userId || !$this->canUserUpload()) {
+            http_response_code($userId ? 403 : 401);
+            return ['success' => false, 'status' => 'error', 'message' => 'Acceso denegado.'];
         }
 
         $videoId = $input['video_id'] ?? $_POST['video_id'] ?? null;

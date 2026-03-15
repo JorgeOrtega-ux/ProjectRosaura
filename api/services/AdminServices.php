@@ -118,8 +118,8 @@ class AdminServices {
                 'profile_picture' => $user['profile_picture'],
                 'role' => $user['role'],
                 
-                // NUEVO PARÁMETRO EXPORTADO
-                'can_upload_videos' => $user['can_upload_videos'] ?? 0,
+                // ACTUALIZADO: Exportamos is_creator
+                'is_creator' => $user['is_creator'] ?? 0,
                 
                 'user_status' => $user['user_status'],
                 'deleted_by' => $user['deleted_by'],
@@ -136,12 +136,12 @@ class AdminServices {
         ];
     }
 
-    // NUEVA FUNCIÓN PARA PROCESAR EL TOGGLE DE SUBIDA
-    public function updateUploadPermission($data) {
+    // ACTUALIZADO: Función para procesar el estado de Creador
+    public function updateCreatorStatus($data) {
         if (!$this->checkAdmin()) return ['success' => false, 'message' => 'No autorizado.'];
 
         $targetId = (int)($data['target_user_id'] ?? 0);
-        $canUpload = (int)($data['can_upload_videos'] ?? 0);
+        $isCreator = (int)($data['is_creator'] ?? 0);
 
         $user = $this->userRepository->findById($targetId);
         if (!$user) return ['success' => false, 'message' => 'Usuario no encontrado.'];
@@ -155,13 +155,13 @@ class AdminServices {
             return ['success' => false, 'message' => $authCheck['message']];
         }
 
-        if ($this->userRepository->updateUploadPermission($targetId, $canUpload)) {
+        if ($this->userRepository->updateCreatorStatus($targetId, $isCreator)) {
             $currentUserId = $this->sessionManager->get('user_id');
-            Logger::security("Admin ID: $currentUserId actualizó permiso de subida del usuario $targetId a $canUpload", 'critical');
-            return ['success' => true, 'message' => 'Permiso de subida actualizado correctamente.'];
+            Logger::security("Admin ID: $currentUserId actualizó estado de creador del usuario $targetId a $isCreator", 'critical');
+            return ['success' => true, 'message' => 'Estado de creador actualizado correctamente.'];
         }
 
-        return ['success' => false, 'message' => 'Error al actualizar el permiso en la base de datos.'];
+        return ['success' => false, 'message' => 'Error al actualizar el estado en la base de datos.'];
     }
 
     public function updateAvatar($data) {

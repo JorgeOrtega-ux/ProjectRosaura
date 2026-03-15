@@ -3,6 +3,7 @@
 $isLoggedIn = isset($_SESSION['user_id']);
 $userRole = $_SESSION['user_role'] ?? 'user';
 $isAdmin = ($userRole === 'founder' || $userRole === 'administrator');
+$isCreator = $_SESSION['is_creator'] ?? 0; // NUEVO: Rescatamos el estado de creador
 
 // Extraemos el identificador único que AuthServices guarda en la sesión
 $currentIdentifier = $_SESSION['user_identifier'] ?? ''; 
@@ -35,7 +36,7 @@ $channelLink = $isLoggedIn && $currentIdentifier ? APP_URL . '/@' . $currentIden
             <div class="component-menu-divider"></div>
             <?php endif; ?>
 
-            <?php if ($isLoggedIn): ?>
+            <?php if ($isLoggedIn && $isCreator == 1): ?>
             <div class="component-menu-link nav-item" data-nav="<?php echo $channelLink; ?>">
                 <div class="component-menu-link-icon">
                     <span class="material-symbols-rounded">account_box</span>

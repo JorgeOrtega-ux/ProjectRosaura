@@ -7,6 +7,7 @@ use App\Core\Helpers\Utils;
 use App\Core\Interfaces\VideoRepositoryInterface;
 use App\Core\Interfaces\TagRepositoryInterface;
 use App\Core\Interfaces\PlaylistRepositoryInterface;
+use App\Core\Interfaces\UserRepositoryInterface;
 use Predis\Client as RedisClient;
 use Exception;
 
@@ -15,6 +16,7 @@ class StudioServices {
     private $tagRepo;
     private $redis;
     private $playlistRepo;
+    private $userRepo;
     
     private $tempVideoDir = __DIR__ . '/../../storage/temp_videos/';
     private $thumbnailDir = __DIR__ . '/../../public/storage/thumbnails/';
@@ -33,11 +35,12 @@ class StudioServices {
         'mp4', 'webm', 'mkv', 'mov', 'avi', 'mpeg', 'mpg'
     ];
 
-    public function __construct(VideoRepositoryInterface $videoRepo, TagRepositoryInterface $tagRepo, RedisClient $redis, PlaylistRepositoryInterface $playlistRepo) {
+    public function __construct(VideoRepositoryInterface $videoRepo, TagRepositoryInterface $tagRepo, RedisClient $redis, PlaylistRepositoryInterface $playlistRepo, UserRepositoryInterface $userRepo) {
         $this->videoRepo = $videoRepo;
         $this->tagRepo = $tagRepo;
         $this->redis = $redis;
         $this->playlistRepo = $playlistRepo;
+        $this->userRepo = $userRepo;
         
         if (!is_dir($this->tempVideoDir)) mkdir($this->tempVideoDir, 0755, true);
         if (!is_dir($this->thumbnailDir)) mkdir($this->thumbnailDir, 0755, true);
@@ -48,6 +51,12 @@ class StudioServices {
     }
 
     private function checkLimits(int $userId, string $role) {
+        // ACTUALIZADO: Defensa en profundidad - Validar estado de creador en DB
+        $user = $this->userRepo->findById($userId);
+        if (!$user || !isset($user['is_creator']) || $user['is_creator'] != 1) {
+            throw new Exception("Tu cuenta no tiene habilitado el modo de creador. No puedes subir o modificar videos.");
+        }
+
         $maxActive = in_array($role, ['founder', 'administrator']) ? 3 : 1;
         $maxDaily = in_array($role, ['founder', 'administrator']) ? 100 : 25;
 

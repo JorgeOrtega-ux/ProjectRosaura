@@ -1,4 +1,6 @@
 <?php
+// api/controllers/AuthController.php
+
 namespace App\Api\Controllers;
 
 use App\Api\Services\AuthServices;
@@ -20,4 +22,26 @@ class AuthController {
     public function logout() { return $this->authServices->logout(); }
     public function forgot_password($input) { return $this->authServices->forgotPassword($input); }
     public function reset_password($input) { return $this->authServices->resetPassword($input); }
+    
+    // NUEVO: Endpoint para refrescar la información de sesión en el frontend (incluye is_creator)
+    public function me() {
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        if (isset($_SESSION['user_id'])) {
+            return [
+                'success' => true,
+                'user' => [
+                    'id' => $_SESSION['user_id'],
+                    'username' => $_SESSION['user_name'],
+                    'email' => $_SESSION['user_email'],
+                    'role' => $_SESSION['user_role'],
+                    'is_creator' => $_SESSION['is_creator'] ?? 0,
+                    'profile_picture' => $_SESSION['user_pic'] ?? '',
+                    'identifier' => $_SESSION['user_identifier'] ?? ''
+                ]
+            ];
+        }
+        http_response_code(401);
+        return ['success' => false, 'message' => 'No hay sesión activa.'];
+    }
 }
+?>

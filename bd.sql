@@ -12,7 +12,7 @@ CREATE TABLE `users` (
   `two_factor_enabled` tinyint(1) DEFAULT 0,
   `two_factor_recovery_codes` text DEFAULT NULL,
   `role` enum('user','moderator','administrator','founder') DEFAULT 'user',
-  `can_upload_videos` tinyint(1) DEFAULT 0,
+  `is_creator` tinyint(1) DEFAULT 0,
   `user_status` enum('active','deleted') DEFAULT 'active',
   `profile_picture` varchar(255) NOT NULL,
   `banner_path` varchar(255) DEFAULT NULL,
@@ -363,3 +363,11 @@ CREATE TABLE IF NOT EXISTS video_performance_metrics (
     last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_vpm_video FOREIGN KEY (video_id) REFERENCES videos(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ==========================================
+-- SCRIPT DE MIGRACIÓN PARA BD EXISTENTE
+-- (Ejecuta esto en tu gestor SQL si la DB ya existe)
+-- ==========================================
+-- ALTER TABLE users CHANGE can_upload_videos is_creator TINYINT(1) DEFAULT 0;
+-- UPDATE users SET is_creator = 1 WHERE role = 'founder';
+-- UPDATE users SET is_creator = 1 WHERE id IN (SELECT DISTINCT user_id FROM videos);

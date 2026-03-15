@@ -28,8 +28,10 @@ class ChannelController {
         $cleanIdentifier = ltrim($identifier, '@');
         $channelUser = $this->userRepo->findByIdentifier($cleanIdentifier);
 
-        if (!$channelUser) {
-            return ['success' => false, 'message' => 'El canal no existe.'];
+        // ACTUALIZADO: Validar que el usuario sea creador. Si no, su canal no es público.
+        if (!$channelUser || (isset($channelUser['is_creator']) && $channelUser['is_creator'] == 0)) {
+            http_response_code(404);
+            return ['success' => false, 'message' => 'El canal no existe o no está habilitado.'];
         }
 
         unset($channelUser['password'], $channelUser['two_factor_secret'], $channelUser['two_factor_recovery_codes'], $channelUser['email']);
@@ -93,8 +95,9 @@ class ChannelController {
         $cleanIdentifier = ltrim($channelIdentifier, '@');
         $channelUser = $this->userRepo->findByIdentifier($cleanIdentifier);
         
-        if (!$channelUser) {
-            return ['success' => false, 'message' => 'El canal no existe.'];
+        // ACTUALIZADO: Si no es creador, no puedes suscribirte
+        if (!$channelUser || (isset($channelUser['is_creator']) && $channelUser['is_creator'] == 0)) {
+            return ['success' => false, 'message' => 'El canal no existe o no está habilitado.'];
         }
 
         $channelId = $channelUser['id'];
@@ -116,6 +119,13 @@ class ChannelController {
     public function update_profile($data) {
         if (!isset($_SESSION['user_id'])) {
             return ['success' => false, 'message' => 'Debes iniciar sesión para realizar esta acción.'];
+        }
+        
+        // ACTUALIZADO: Solo los creadores pueden editar su perfil de canal
+        $isCreator = $_SESSION['is_creator'] ?? 0;
+        if ($isCreator != 1) {
+            http_response_code(403);
+            return ['success' => false, 'message' => 'No tienes permisos para editar un canal público.'];
         }
 
         $description = isset($data['description']) ? trim($data['description']) : null;
@@ -191,6 +201,13 @@ class ChannelController {
     public function upload_banner($data) {
         if (!isset($_SESSION['user_id'])) {
             return ['success' => false, 'message' => 'Debes iniciar sesión para realizar esta acción.'];
+        }
+        
+        // ACTUALIZADO: Solo los creadores pueden editar su banner
+        $isCreator = $_SESSION['is_creator'] ?? 0;
+        if ($isCreator != 1) {
+            http_response_code(403);
+            return ['success' => false, 'message' => 'No tienes permisos para modificar el canal.'];
         }
 
         if (!isset($_FILES['banner']) || $_FILES['banner']['error'] !== UPLOAD_ERR_OK) {

@@ -23,8 +23,9 @@ if ($page > $totalPages) {
     $offset = ($page - 1) * $limit;
 }
 
+// ACTUALIZADO: Hemos incluido u.is_creator en la consulta SQL
 $stmt = $pdo->query("
-    SELECT u.id, u.uuid, u.username, u.email, u.role, u.user_status, 
+    SELECT u.id, u.uuid, u.username, u.email, u.role, u.user_status, u.is_creator,
            ur.is_suspended, u.profile_picture, u.created_at 
     FROM users u
     LEFT JOIN user_restrictions ur ON u.id = ur.user_id
@@ -260,6 +261,10 @@ $nextPageUrl = $page < $totalPages ? '/ProjectRosaura/admin/manage-users?page=' 
                         $dataStatus = $user['user_status'] === 'deleted' ? 'deleted' : ($user['is_suspended'] ? 'suspended' : 'active');
                         $displayStatus = $user['user_status'] === 'deleted' ? __('status_deleted') : ($user['is_suspended'] ? __('status_suspended') : __('status_active'));
                         $statusIcon = $user['user_status'] === 'deleted' ? 'person_off' : ($user['is_suspended'] ? 'block' : 'check_circle');
+                        
+                        // NUEVO: Evaluación visual para Creadores
+                        $creatorIcon = $user['is_creator'] ? 'videocam' : 'videocam_off';
+                        $creatorText = $user['is_creator'] ? 'Creador Activo' : 'Sin Canal';
                     ?>
                     <div class="component-item-card user-card-item" data-action="selectUser" data-user-id="<?php echo htmlspecialchars($user['id']); ?>" data-role="<?php echo htmlspecialchars($user['role']); ?>" data-status="<?php echo htmlspecialchars($dataStatus); ?>">
                         <div class="component-badge-list">
@@ -287,6 +292,13 @@ $nextPageUrl = $page < $totalPages ? '/ProjectRosaura/admin/manage-users?page=' 
                                     <?php echo $statusIcon; ?>
                                 </span>
                                 <span class="search-target"><?php echo $displayStatus; ?></span>
+                            </div>
+                            
+                            <div class="component-badge">
+                                <span class="material-symbols-rounded">
+                                    <?php echo $creatorIcon; ?>
+                                </span>
+                                <span><?php echo $creatorText; ?></span>
                             </div>
 
                             <div class="component-badge">
@@ -322,7 +334,7 @@ $nextPageUrl = $page < $totalPages ? '/ProjectRosaura/admin/manage-users?page=' 
                         <th><?php echo __('table_header_user'); ?></th>
                         <th><?php echo __('table_header_email'); ?></th>
                         <th><?php echo __('table_header_role'); ?></th>
-                        <th><?php echo __('table_header_status'); ?></th>
+                        <th>Modo Creador</th> <th><?php echo __('table_header_status'); ?></th>
                         <th><?php echo __('table_header_uuid'); ?></th>
                         <th><?php echo __('table_header_registered'); ?></th>
                     </tr>
@@ -334,6 +346,9 @@ $nextPageUrl = $page < $totalPages ? '/ProjectRosaura/admin/manage-users?page=' 
                                 $dataStatus = $user['user_status'] === 'deleted' ? 'deleted' : ($user['is_suspended'] ? 'suspended' : 'active');
                                 $displayStatus = $user['user_status'] === 'deleted' ? __('status_deleted') : ($user['is_suspended'] ? __('status_suspended') : __('status_active'));
                                 $statusIcon = $user['user_status'] === 'deleted' ? 'person_off' : ($user['is_suspended'] ? 'block' : 'check_circle');
+                                
+                                $creatorIcon = $user['is_creator'] ? 'videocam' : 'videocam_off';
+                                $creatorText = $user['is_creator'] ? 'Sí' : 'No';
                             ?>
                             <tr class="user-card-item" data-action="selectUser" data-user-id="<?php echo htmlspecialchars($user['id']); ?>" data-role="<?php echo htmlspecialchars($user['role']); ?>" data-status="<?php echo htmlspecialchars($dataStatus); ?>">
                                 <td>
@@ -362,6 +377,14 @@ $nextPageUrl = $page < $totalPages ? '/ProjectRosaura/admin/manage-users?page=' 
                                 <td>
                                     <div class="component-badge component-badge--sm">
                                         <span class="material-symbols-rounded">
+                                            <?php echo $creatorIcon; ?>
+                                        </span>
+                                        <span class="search-target"><?php echo $creatorText; ?></span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="component-badge component-badge--sm">
+                                        <span class="material-symbols-rounded">
                                             <?php echo $statusIcon; ?>
                                         </span>
                                         <span class="search-target"><?php echo $displayStatus; ?></span>
@@ -383,7 +406,7 @@ $nextPageUrl = $page < $totalPages ? '/ProjectRosaura/admin/manage-users?page=' 
                         <?php endforeach; ?>
                         
                         <tr class="disabled" data-ref="empty-search-table">
-                            <td colspan="6" class="component-empty-table-cell">
+                            <td colspan="7" class="component-empty-table-cell">
                                 <div class="component-empty-state component-empty-state--table">
                                     <span class="material-symbols-rounded component-empty-state-icon">search_off</span>
                                     <p class="component-empty-state-text"><?php echo __('empty_search_users'); ?></p>
@@ -393,7 +416,7 @@ $nextPageUrl = $page < $totalPages ? '/ProjectRosaura/admin/manage-users?page=' 
 
                     <?php else: ?>
                         <tr>
-                            <td colspan="6" class="component-empty-table-cell">
+                            <td colspan="7" class="component-empty-table-cell">
                                 <div class="component-empty-state component-empty-state--table">
                                     <span class="material-symbols-rounded component-empty-state-icon">group_off</span>
                                     <p class="component-empty-state-text"><?php echo __('empty_users_system'); ?></p>

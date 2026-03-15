@@ -120,7 +120,7 @@ class UserRepository implements UserRepositoryInterface {
         try {
             $this->pdo->beginTransaction();
             
-            $stmtUser = $this->pdo->prepare("INSERT INTO users (uuid, username, email, password, role, user_status, profile_picture, channel_identifier) VALUES (?, ?, ?, ?, 'user', 'active', ?, ?)");
+            $stmtUser = $this->pdo->prepare("INSERT INTO users (uuid, username, email, password, role, user_status, profile_picture, channel_identifier, is_creator) VALUES (?, ?, ?, ?, 'user', 'active', ?, ?, 0)");
             $stmtUser->execute([
                 $data['uuid'], 
                 $data['username'], 
@@ -280,7 +280,6 @@ class UserRepository implements UserRepositoryInterface {
     }
 
     public function updatePreference(int $userId, string $key, $value): bool {
-        // Se agregó 'measurement_system' a la lista de claves permitidas
         $allowedKeys = ['language', 'measurement_system', 'open_links_new_tab', 'theme', 'extended_alerts'];
         if (!in_array($key, $allowedKeys)) return false;
 
@@ -293,10 +292,12 @@ class UserRepository implements UserRepositoryInterface {
         return $stmt->execute([$role, $id]);
     }
 
-    // NUEVO METODO: Actualizar el permiso de subir videos
-    public function updateUploadPermission(int $id, int $canUpload): bool {
-        $stmt = $this->pdo->prepare("UPDATE users SET can_upload_videos = ? WHERE id = ?");
-        return $stmt->execute([$canUpload, $id]);
+    // ACTUALIZADO: Manejar el estado de Creador
+    public function updateCreatorStatus(int $id, int $isCreator): bool {
+        $stmt = $this->pdo->prepare("UPDATE users SET is_creator = ? WHERE id = ?");
+        $success = $stmt->execute([$isCreator, $id]);
+        if ($success) $this->pushToSearchQueue($id, 'upsert');
+        return $success;
     }
 }
 ?>

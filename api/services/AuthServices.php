@@ -132,7 +132,7 @@ class AuthServices {
                     $this->sessionManager->set('user_name', $user['username']);
                     $this->sessionManager->set('user_email', $user['email']);
                     $this->sessionManager->set('user_role', $user['role']);
-                    $this->sessionManager->set('user_can_upload', $user['can_upload_videos'] ?? 0);
+                    $this->sessionManager->set('is_creator', $user['is_creator'] ?? 0);
                     $this->sessionManager->set('user_pic', $user['profile_picture']);
                     $this->sessionManager->set('user_identifier', $user['channel_identifier']); 
                     $this->sessionManager->set('user_prefs', $userPrefs);
@@ -333,7 +333,7 @@ class AuthServices {
             $this->sessionManager->set('user_name', $payload['username']);
             $this->sessionManager->set('user_email', $payload['email']);
             $this->sessionManager->set('user_role', 'user');
-            $this->sessionManager->set('user_can_upload', 0); // Por defecto un usuario nuevo no puede
+            $this->sessionManager->set('is_creator', 0); // Por defecto un usuario nuevo no es creador
             $this->sessionManager->set('user_pic', $profilePic);
             $this->sessionManager->set('user_identifier', $channelIdentifier);
             $this->sessionManager->set('user_prefs', $userPrefs);
@@ -397,7 +397,7 @@ class AuthServices {
             $this->sessionManager->set('user_name', $user['username']);
             $this->sessionManager->set('user_email', $user['email']);
             $this->sessionManager->set('user_role', $user['role']);
-            $this->sessionManager->set('user_can_upload', $user['can_upload_videos'] ?? 0);
+            $this->sessionManager->set('is_creator', $user['is_creator'] ?? 0);
             $this->sessionManager->set('user_pic', $user['profile_picture']);
             $this->sessionManager->set('user_identifier', $user['channel_identifier']);
             $this->sessionManager->set('user_prefs', $userPrefs);
@@ -460,7 +460,7 @@ class AuthServices {
             $this->sessionManager->set('user_name', $user['username']);
             $this->sessionManager->set('user_email', $user['email']);
             $this->sessionManager->set('user_role', $user['role']);
-            $this->sessionManager->set('user_can_upload', $user['can_upload_videos'] ?? 0);
+            $this->sessionManager->set('is_creator', $user['is_creator'] ?? 0);
             $this->sessionManager->set('user_pic', $user['profile_picture']);
             $this->sessionManager->set('user_identifier', $user['channel_identifier']);
             $this->sessionManager->set('user_prefs', $this->prefsManager->ensureDefaultPreferences($user['id']));
