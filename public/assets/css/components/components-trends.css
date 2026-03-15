@@ -24,8 +24,9 @@
 /* Hero Banner (Top 1 Video) */
 .trends-hero-banner {
     width: 100%;
-    aspect-ratio: 21/9;
-    background: linear-gradient(135deg, rgba(43,16,85,0.8), rgba(117,151,222,0.8));
+    aspect-ratio: 24 / 7;
+    max-height: 400px;
+    background-color: var(--bg-secondary, #272727);
     border-radius: 15px;
     position: relative;
     overflow: hidden;
@@ -34,14 +35,32 @@
     padding: 30px;
     box-sizing: border-box;
     cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    background-size: cover;
-    background-position: center;
+    /* Efectos idénticos a los video cards */
+    border: 1px solid var(--border-color, #333);
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .trends-hero-banner:hover {
-    transform: scale(1.01);
-    box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+    /* Shadow limpia con efecto halo del mismo color */
+    border-color: var(--local-dominant-color, #333333);
+    box-shadow: 0 0 0 8px color-mix(in srgb, var(--local-dominant-color, transparent) 15%, transparent);
+}
+
+/* Imagen real para el efecto de Zoom */
+.trends-hero-bg-img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+    transition: transform 0.3s ease;
+}
+
+/* Zoom SOLO a la imagen al hacer hover, no al contenedor */
+.trends-hero-banner:hover .trends-hero-bg-img {
+    transform: scale(1.05);
 }
 
 .trends-hero-overlay {
@@ -50,6 +69,7 @@
     background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 100%);
     padding: 40px 30px 20px 30px;
     pointer-events: none;
+    z-index: 1; /* El texto se mantiene siempre por encima de la imagen */
 }
 
 .trends-hero-badge {
@@ -77,73 +97,11 @@
     color: #ddd;
 }
 
-/* Rising Videos Carousel */
-.trends-rising-carousel {
-    display: flex;
-    gap: 15px;
-    overflow-x: auto;
-    padding-bottom: 15px;
-    scrollbar-width: thin;
-    scrollbar-color: var(--scroll-thumb, #555) transparent;
-}
-
-/* Modificador para adaptar tus VideoCards al carrusel */
-.trends-rising-carousel .video-card {
-    min-width: 260px;
-    flex: 0 0 auto;
-}
-
 /* Split Grid (Creators & Tags) */
 .trends-split-grid {
     display: grid;
     grid-template-columns: 2fr 1fr;
     gap: 25px;
-}
-
-.trends-creators-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 15px;
-}
-
-/* Creator Card */
-.trends-creator-card {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    background-color: var(--bg-secondary, #222);
-    padding: 12px;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-}
-
-.trends-creator-card:hover {
-    background-color: var(--bg-hover, #333);
-}
-
-.trends-creator-avatar {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    object-fit: cover;
-    background-color: var(--bg-tertiary, #444);
-}
-
-.trends-creator-info {
-    display: flex;
-    flex-direction: column;
-}
-
-.trends-creator-name {
-    font-weight: bold;
-    font-size: 0.95rem;
-    margin-bottom: 4px;
-}
-
-.trends-creator-stat {
-    font-size: 0.8rem;
-    color: var(--success-color, #4caf50);
 }
 
 /* Tags Cloud */
@@ -176,6 +134,7 @@
     
     .trends-hero-banner {
         aspect-ratio: 16/9;
+        max-height: none;
     }
     
     .trends-hero-title {

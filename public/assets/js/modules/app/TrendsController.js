@@ -54,18 +54,23 @@ export class TrendsController {
         }
     }
 
-  renderHero(video) {
+    renderHero(video) {
         if (!video || !this.heroContainer) return;
         
         const basePath = window.AppBasePath || '';
-        
-        // CORRECCIÓN AQUÍ: Tomamos la URL directo como viene del backend
         const thumbnailUrl = video.thumbnail;
         
-        this.heroContainer.style.backgroundImage = `url('${thumbnailUrl}')`;
+        // Extraemos el color dominante
+        const dominantColor = video.thumbnail_dominant_color && video.thumbnail_dominant_color !== 'transparent' ? video.thumbnail_dominant_color : '#333333';
+        
+        // Limpiamos estilos viejos y aplicamos la variable del color
+        this.heroContainer.style.backgroundImage = 'none';
+        this.heroContainer.style.setProperty('--local-dominant-color', dominantColor);
         this.heroContainer.classList.remove('skeleton-loading');
         
+        // Agregamos la imagen como un tag <img> independiente para poder hacerle el efecto zoom
         this.heroContainer.innerHTML = `
+            <img src="${thumbnailUrl}" alt="${this.escapeHTML(video.title)}" class="trends-hero-bg-img">
             <div class="trends-hero-overlay">
                 <span class="trends-hero-badge">#1 EN TENDENCIAS</span>
                 <h1 class="trends-hero-title">${this.escapeHTML(video.title)}</h1>
@@ -77,6 +82,14 @@ export class TrendsController {
             if (window.spaRouter) window.spaRouter.navigate(`${basePath}/watch/${video.uuid}`);
             else window.location.href = `${basePath}/watch/${video.uuid}`;
         };
+
+        // Evento hover para el resplandor de fondo global (igual que cards de video)
+        this.heroContainer.onmouseenter = () => {
+            const domColor = this.heroContainer.style.getPropertyValue('--local-dominant-color');
+            if (domColor && domColor.trim() !== '') {
+                document.documentElement.style.setProperty('--global-dominant-color', domColor);
+            }
+        };
     }
 
     renderRisingVideos(videos) {
@@ -85,7 +98,7 @@ export class TrendsController {
         
         if (!videos || videos.length === 0) {
             this.risingContainer.innerHTML = `
-                <div class="component-empty-state">
+                <div class="component-empty-state" style="border: none;">
                     <span class="material-symbols-rounded component-empty-state-icon">trending_down</span>
                     <p class="component-empty-state-text">No hay videos en tendencia en este momento.</p>
                 </div>`;
@@ -94,7 +107,6 @@ export class TrendsController {
 
         let html = '';
         videos.forEach(video => {
-            // Usamos la función interna para crear la tarjeta
             html += this.createCardHTML(video);
         });
         
@@ -113,15 +125,48 @@ export class TrendsController {
 
         const basePath = window.AppBasePath || '';
 
+        const fallbackBannerSVG = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' fill='%232a2a2a'/%3E%3C/svg%3E";
+        const defaultAvatar = `${basePath}/public/storage/profilePictures/default/default.png`;
+        const defaultBanner = `${basePath}/public/assets/img/default-banner.jpg`;
+
+        const getImageUrl = (path, type, fallback) => {
+            if (!path) return fallback;
+            if (path.startsWith('http')) return path;
+            
+            if (!path.includes('/')) {
+                if (type === 'banner') return `${basePath}/public/storage/banners/${path}`;
+                if (type === 'avatar') return `${basePath}/public/storage/profilePictures/uploaded/${path}`;
+            }
+            
+            const clean = path.replace(/^\/?public\//, '');
+            return `${basePath}/public/${clean}`;
+        };
+
         creators.forEach(creator => {
-            const avatarUrl = creator.avatar ? `${basePath}/storage/profilePictures/${creator.avatar}` : `${basePath}/storage/profilePictures/default/default.png`;
+            const username = creator.username || 'Usuario';
+            const handle = creator.handle || username.toLowerCase().replace(/\s+/g, '');
+            
+            const rawAvatar = creator.avatar_path || creator.avatar_url || creator.avatar;
+            const rawBanner = creator.banner_path || creator.banner_url || creator.banner;
+
+            const avatarUrl = getImageUrl(rawAvatar, 'avatar', defaultAvatar);
+            const bannerUrl = getImageUrl(rawBanner, 'banner', defaultBanner);
             
             const html = `
-                <div class="trends-creator-card" onclick="if(window.spaRouter) window.spaRouter.navigate('${basePath}/@${creator.username}'); else window.location.href='${basePath}/@${creator.username}';">
-                    <img src="${avatarUrl}" class="trends-creator-avatar" alt="${creator.username}">
-                    <div class="trends-creator-info">
-                        <span class="trends-creator-name">${this.escapeHTML(creator.username)}</span>
-                        <span class="trends-creator-stat">🔥 Subiendo de rango</span>
+                <div class="component-channel-card-modern" style="--local-dominant-color: #333333;" onclick="if(window.spaRouter) window.spaRouter.navigate('${basePath}/@${handle}'); else window.location.href='${basePath}/@${handle}';">
+                    <div class="channel-card-banner">
+                        <img src="${bannerUrl}" alt="Banner de ${username}" onerror="this.onerror=null; this.src='${fallbackBannerSVG}'">
+                    </div>
+                    <div class="channel-card-avatar">
+                        <img src="${avatarUrl}" alt="${username}" onerror="this.onerror=null; this.src='${defaultAvatar}'">
+                    </div>
+                    <div class="channel-card-info">
+                        <h4 class="channel-card-name" title="${username}">${this.escapeHTML(username)}</h4>
+                        <p class="channel-card-handle">@${this.escapeHTML(handle)}</p>
+                    </div>
+                    <div class="channel-card-actions">
+                        <span class="component-badge stat-badge">🔥 En tendencia</span>
+                        <button class="component-badge btn-channel-subscribe">Visitar canal</button>
                     </div>
                 </div>
             `;
@@ -147,7 +192,7 @@ export class TrendsController {
     }
 
     // ==========================================
-    // UTILERÍAS (Copiadas de HomeController para dibujar tarjetas)
+    // UTILERÍAS
     // ==========================================
 
     createCardHTML(video) {
@@ -158,13 +203,12 @@ export class TrendsController {
         const dominantColor = video.thumbnail_dominant_color !== 'transparent' ? video.thumbnail_dominant_color : '#333'; 
         const videoSrc = video.video_url || ''; 
 
-        // En Trends (Carrusel Rising), por ahora asumimos que todos son horizontales (o se adaptan a la tarjeta)
         const isVertical = video.orientation === 'vertical';
         const basePath = window.AppBasePath || '';
         const navUrl = isVertical ? `${basePath}/shorts/${video.uuid}` : `${basePath}/watch/${video.uuid}`; 
 
         return `
-            <div class="component-video-card" style="--local-dominant-color: ${dominantColor}; cursor: pointer; min-width: 280px;" data-nav="${navUrl}">
+            <div class="component-video-card" style="--local-dominant-color: ${dominantColor}; cursor: pointer;" data-nav="${navUrl}">
                 <div class="component-video-card__top">
                     <img src="${video.thumbnail_url}" alt="Miniatura de ${title}" class="component-video-card__thumbnail" loading="lazy">
                     <video 
@@ -231,9 +275,7 @@ export class TrendsController {
                 }
             });
             
-            // Adjuntamos evento de click global porque no estamos en HomeController
             card.addEventListener('click', (e) => {
-                // Evitamos activar la navegación si se hace click en el menú de opciones del video
                 if (e.target.closest('.component-video-card__menu')) return;
                 const navUrl = card.getAttribute('data-nav');
                 if (navUrl) {

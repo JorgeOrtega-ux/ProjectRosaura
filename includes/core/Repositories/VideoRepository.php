@@ -579,7 +579,7 @@ class VideoRepository implements VideoRepositoryInterface {
      */
     public function getTopTrendingVideo(): ?array {
         $sql = "SELECT v.uuid, v.title, v.localized_titles, v.original_language, 
-                       v.thumbnail_path as thumbnail, v.views as views_count, 
+                       v.thumbnail_path as thumbnail, v.thumbnail_dominant_color, v.views as views_count, 
                        u.username as channel_name 
                 FROM videos v 
                 JOIN users u ON v.user_id = u.id 
@@ -595,7 +595,7 @@ class VideoRepository implements VideoRepositoryInterface {
         // Fallback: Si no hay videos en los últimos 7 días, traemos el histórico más popular
         if (!$video) {
             $sqlFallback = "SELECT v.uuid, v.title, v.localized_titles, v.original_language, 
-                                   v.thumbnail_path as thumbnail, v.views as views_count, 
+                                   v.thumbnail_path as thumbnail, v.thumbnail_dominant_color, v.views as views_count, 
                                    u.username as channel_name 
                             FROM videos v 
                             JOIN users u ON v.user_id = u.id 

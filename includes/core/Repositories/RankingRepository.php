@@ -48,7 +48,8 @@ class RankingRepository implements RankingRepositoryInterface {
      * Los ordena por su rango actual, asegurando que están activos.
      */
     public function getTrendingCreators(int $limit = 6): array {
-        $sql = "SELECT id, username, profile_picture as avatar, current_rank, trend
+        // Agregamos banner_path as banner y channel_identifier as handle
+        $sql = "SELECT id, username, profile_picture as avatar, banner_path as banner, channel_identifier as handle, current_rank, trend
                 FROM users 
                 WHERE user_status = 'active' 
                   AND current_rank > 0 

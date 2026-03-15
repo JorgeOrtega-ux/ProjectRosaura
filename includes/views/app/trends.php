@@ -6,16 +6,20 @@
         
         <section class="trends-section">
             <div id="trends-hero-container" class="trends-hero-banner skeleton-loading">
-                </div>
+            </div>
         </section>
 
-        <section class="trends-section">
-            <h3 class="trends-section-title">
-                <i class="icon-trending-up"></i> 🚀 Ganando popularidad rápidamente
-            </h3>
-            <div id="trends-rising-container" class="trends-rising-carousel">
+        <div class="component-feed-section" style="display: block; margin-bottom: 40px;">
+            <div class="component-feed-header" style="margin-bottom: 16px;">
+                <h2 class="component-feed-title" style="display: flex; align-items: center; gap: 8px;">
+                    <i class="icon-trending-up"></i> 🚀 Ganando popularidad rápidamente
+                </h2>
+            </div>
+            <div class="component-feed-body">
+                <div id="trends-rising-container" class="component-video-grid">
                 </div>
-        </section>
+            </div>
+        </div>
 
         <section class="trends-section trends-split-grid">
             
@@ -23,8 +27,8 @@
                 <h3 class="trends-section-title">
                     <i class="icon-star"></i> ⭐ Creadores Destacados
                 </h3>
-                <div id="trends-creators-container" class="trends-creators-grid">
-                    </div>
+                <div id="trends-creators-container" class="component-channel-grid-modern">
+                </div>
             </div>
 
             <div class="trends-tags-wrapper">
@@ -32,7 +36,7 @@
                     <i class="icon-tag"></i> 🏷️ Etiquetas Populares
                 </h3>
                 <div id="trends-tags-container" class="trends-tags-cloud">
-                    </div>
+                </div>
             </div>
 
         </section>
