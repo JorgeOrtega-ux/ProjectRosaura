@@ -24,7 +24,6 @@ export class WatchController {
         const pathSegments = urlPath.split('/').filter(segment => segment.length > 0);
         
         // CORRECCIÓN CRÍTICA: Buscar el UUID sin importar si la ruta es /watch/ o /shorts/
-        // El UUID es el último segmento de la ruta limpia
         const videoId = pathSegments[pathSegments.length - 1];
 
         const urlParams = new URLSearchParams(window.location.search);
@@ -95,7 +94,8 @@ export class WatchController {
                     this.loadPlaylistData(playlistId, videoId);
                 }
 
-                this.loadRecommendedVideos(videoId);
+                // NUEVA LOGICA: Llamar a loadRecommendedVideos pasando el ID INT en lugar del UUID
+                this.loadRecommendedVideos(response.data.id);
 
             } else {
                 this.showError404(response.message || 'El video que buscas no existe o es privado.');
@@ -496,16 +496,16 @@ export class WatchController {
         }, 300);
     }
 
-    async loadRecommendedVideos(currentVideoId) {
+    // --- NUEVO ENDPOINT DE RECOMENDACIONES (ALGORITMO ENTERPRISE) ---
+    async loadRecommendedVideos(dbVideoId) {
         try {
-            const response = await this.api.post('app.get_feed', { limit: 12 });
+            const response = await this.api.post('app.get_recommendations', { video_id: dbVideoId, limit: 12 });
             
             if (response && response.success) {
                 let videoList = [];
-                if (response.data && Array.isArray(response.data.horizontal)) videoList = response.data.horizontal;
-                else if (Array.isArray(response.data)) videoList = response.data;
+                // Obtenemos directamente la data que viene del FeedController adaptado
+                if (Array.isArray(response.data)) videoList = response.data;
 
-                if (currentVideoId) videoList = videoList.filter(v => v.uuid !== currentVideoId);
                 this.renderRecommendedVideos(videoList);
             } else {
                 this.renderRecommendedVideos([]);

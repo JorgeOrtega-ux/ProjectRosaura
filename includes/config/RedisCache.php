@@ -90,13 +90,42 @@ class RedisCache {
         }
     }
 
-    // --- NUEVO MÉTODO PARA HEATMAP (HINCRBY) ---
     public function hashIncrement(string $key, string $field, int $increment = 1): int {
         if (!$this->client) return 0;
         try {
             return $this->client->hincrby($key, $field, $increment);
         } catch (Exception $e) {
             return 0;
+        }
+    }
+
+    // --- MÉTODOS PARA COLAS DE TELEMETRÍA (ALGORITMO ENTERPRISE) ---
+    public function rPush(string $key, string $value): bool {
+        if (!$this->client) return false;
+        try {
+            $this->client->rpush($key, [$value]);
+            return true;
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+
+    public function lRange(string $key, int $start, int $stop): array {
+        if (!$this->client) return [];
+        try {
+            return $this->client->lrange($key, $start, $stop);
+        } catch (Exception $e) {
+            return [];
+        }
+    }
+
+    public function lTrim(string $key, int $start, int $stop): bool {
+        if (!$this->client) return false;
+        try {
+            $this->client->ltrim($key, $start, $stop);
+            return true;
+        } catch (Exception $e) {
+            return false;
         }
     }
 }

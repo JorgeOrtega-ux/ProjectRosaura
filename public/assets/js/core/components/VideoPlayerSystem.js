@@ -75,13 +75,14 @@ export class VideoPlayerSystem {
         this.systemThemeQuery = null;
         this.systemThemeListener = null;
 
-        // --- VARIABLES DE RETENCIÓN (HEATMAP) ---
+        // --- VARIABLES DE RETENCIÓN (HEATMAP) Y TELEMETRÍA ---
         this.dbVideoId = null;
         this.chunkViews = {}; // Objeto temporal para batcheo
         this.lastChunkIndex = -1;
         this.retentionBatchInterval = null;
         this.heatmapData = []; // Para uso en Scrubbing Preview
         this.heatmapMax = 0;   // Para uso en Scrubbing Preview
+        this.lastTelemetryPing = -1; // Control de pings de algoritmo
         
         // Inicializar Overlay Principal para Scrubbing Fluido
         this.setupOverlay();
@@ -208,7 +209,8 @@ export class VideoPlayerSystem {
                 this.updateProgress();
                 this.updateBuffer();
                 this.trackRetention(); 
-                this.checkViewRegistration(); // <-- AÑADIDO PARA DISPARAR EL HISTORIAL
+                this.trackTelemetry(); // <-- NUEVO ALGORITMO TELEMETRÍA
+                this.checkViewRegistration(); 
             }
         });
 
@@ -290,6 +292,26 @@ export class VideoPlayerSystem {
                 this.api.postView(this.currentVideoUuid).catch(e => {
                     console.error("[VideoPlayer:View] Error al registrar la visita para el historial:", e);
                 });
+            }
+        }
+    }
+
+    // --- TELEMETRÍA PARA EL ALGORITMO ENTERPRISE ---
+    trackTelemetry() {
+        if (!this.video.duration || this.video.paused) return;
+        const currentTime = this.video.currentTime;
+        const percentage = (currentTime / this.video.duration) * 100;
+
+        // Enviar un ping de telemetría a Redis cada 10 segundos
+        const currentSecond = Math.floor(currentTime);
+        if (currentSecond > 0 && currentSecond % 10 === 0 && currentSecond !== this.lastTelemetryPing) {
+            this.lastTelemetryPing = currentSecond;
+            if (this.currentVideoUuid) {
+                this.api.post('app.telemetry.ping', {
+                    video_uuid: this.currentVideoUuid,
+                    watch_time: currentTime,
+                    percentage: percentage
+                }).catch(e => console.warn('[VideoPlayer:Telemetry] Fallo al enviar ping', e));
             }
         }
     }
@@ -683,6 +705,7 @@ export class VideoPlayerSystem {
         this.hasRegisteredView = false;           // <-- RESETEAMOS EL FLAG DE VISTA
         this.chunkViews = {};
         this.lastChunkIndex = -1;
+        this.lastTelemetryPing = -1;
         this.heatmapData = [];
         this.heatmapMax = 0;
         

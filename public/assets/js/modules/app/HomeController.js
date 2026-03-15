@@ -28,14 +28,15 @@ export class HomeController {
         this.btnRight = document.getElementById('btn-scroll-right');
 
         if (this.horizontalContainer || this.verticalContainer || this.playlistContainer) {
-            console.log("🚀 [HomeController] Iniciando carga de Feed...");
+            console.log("🚀 [HomeController] Iniciando carga de Feed Personalizado...");
             await this.loadFeed();
         }
     }
 
     async loadFeed() {
         try {
-            const response = await this.api.post(ApiRoutes.App.GetFeed, { limit: 20, offset: 0 });
+            // AÑADIDO: algorithm: 'personalized' para indicar al backend la intención
+            const response = await this.api.post(ApiRoutes.App.GetFeed, { limit: 20, offset: 0, algorithm: 'personalized' });
             
             console.log("🔍 [HomeController] Respuesta completa del servidor recibida:", response);
 

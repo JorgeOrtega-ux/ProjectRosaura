@@ -326,3 +326,39 @@ CREATE TABLE IF NOT EXISTS channel_rankings_history (
     UNIQUE KEY unique_daily_ranking (user_id, recorded_at),
     CONSTRAINT fk_ranking_history_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ==========================================
+-- NUEVAS TABLAS PARA EL ALGORITMO ENTERPRISE
+-- ==========================================
+
+CREATE TABLE IF NOT EXISTS user_category_affinity (
+    user_id INT(11) NOT NULL,
+    category_id INT(11) NOT NULL,
+    affinity_score DECIMAL(8,4) DEFAULT 0.0000,
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, category_id),
+    CONSTRAINT fk_uca_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_uca_category FOREIGN KEY (category_id) REFERENCES tags(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS user_tag_affinity (
+    user_id INT(11) NOT NULL,
+    tag_id INT(11) NOT NULL,
+    affinity_score DECIMAL(8,4) DEFAULT 0.0000,
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, tag_id),
+    CONSTRAINT fk_uta_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_uta_tag FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS video_performance_metrics (
+    video_id INT(11) NOT NULL PRIMARY KEY,
+    impressions INT DEFAULT 0,
+    clicks INT DEFAULT 0,
+    ctr DECIMAL(5,4) DEFAULT 0.0000,
+    avg_watch_time INT DEFAULT 0,
+    completion_rate DECIMAL(5,4) DEFAULT 0.0000,
+    engagement_score DECIMAL(10,4) DEFAULT 0.0000,
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_vpm_video FOREIGN KEY (video_id) REFERENCES videos(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

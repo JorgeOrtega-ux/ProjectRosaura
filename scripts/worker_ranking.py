@@ -30,7 +30,7 @@ def get_redis_connection():
     )
 
 def calculate_daily_rankings():
-    logging.info("Iniciando el cálculo de rankings diarios...")
+    logging.info("Iniciando el cálculo de rankings diarios de canales...")
     db = None
     cursor = None
     try:
@@ -38,8 +38,7 @@ def calculate_daily_rankings():
         cursor = db.cursor(dictionary=True)
         redis_client = get_redis_connection()
 
-        # 1. Obtener datos para calcular el Power Score.
-        # En este algoritmo base sumamos Visitas, Likes y Suscriptores para determinar el poder.
+        # 1. Obtener datos para calcular el Power Score de Canales.
         query = """
             SELECT 
                 u.id as user_id, 
@@ -59,21 +58,17 @@ def calculate_daily_rankings():
         channels = cursor.fetchall()
 
         # 2. Calcular Power Score
-       # 2. Calcular Power Score
         for channel in channels:
-            # Convertimos explícitamente los valores a flotantes (y manejamos si vienen vacíos/None)
             views = float(channel['total_views'] or 0)
             likes = float(channel['total_likes'] or 0)
             subs = float(channel['total_subs'] or 0)
             
-            # Fórmula: (Visitas * 0.4) + (Likes * 1.5) + (Subs * 3.0)
             score = (views * 0.4) + (likes * 1.5) + (subs * 3.0)
             channel['power_score'] = round(score, 4)
 
-        # 3. Ordenar canales por Power Score (Descendente)
+        # 3. Ordenar canales por Power Score
         ranked_channels = sorted(channels, key=lambda x: x['power_score'], reverse=True)
 
-        # 4. Asignar nuevo rango, determinar tendencia (🟩 up, 🟥 down, ⬜ neutral) y actualizar BD
         today_date = datetime.now().strftime('%Y-%m-%d')
         top_100_redis = []
 
@@ -81,20 +76,17 @@ def calculate_daily_rankings():
             user_id = channel['user_id']
             old_rank = channel['old_rank']
             
-            # Determinar Tendencia
             trend = 'neutral'
             if old_rank is None or old_rank == new_position:
                 trend = 'neutral'
             elif new_position < old_rank:
-                trend = 'up' # Subió en el top (número menor es mejor)
+                trend = 'up' 
             elif new_position > old_rank:
-                trend = 'down' # Bajó en el top
+                trend = 'down'
 
-            # Actualizar tabla de usuarios
             update_user_query = "UPDATE users SET previous_rank = %s, current_rank = %s, trend = %s WHERE id = %s"
             cursor.execute(update_user_query, (old_rank, new_position, trend, user_id))
 
-            # Guardar en historial
             insert_history_query = """
                 INSERT INTO channel_rankings_history (user_id, rank_position, power_score, recorded_at) 
                 VALUES (%s, %s, %s, %s)
@@ -102,7 +94,6 @@ def calculate_daily_rankings():
             """
             cursor.execute(insert_history_query, (user_id, new_position, channel['power_score'], today_date, new_position, channel['power_score']))
 
-            # Si está en el Top 100, guardarlo para Redis
             if new_position <= 100:
                 top_100_redis.append({
                     'rank': new_position,
@@ -116,33 +107,100 @@ def calculate_daily_rankings():
                 })
 
         db.commit()
-
-        # 5. Sobrescribir el Top global en Redis
         redis_client.set('channel_rankings_top', json.dumps(top_100_redis))
-        logging.info("Rankings calculados y guardados en MySQL y Redis exitosamente.")
+        logging.info("Rankings de canales calculados y guardados exitosamente.")
 
     except Exception as e:
-        if db:
-            db.rollback()
+        if db: db.rollback()
         logging.error(f"Error procesando rankings: {e}")
     finally:
-        if cursor:
-            cursor.close()
-        if db:
-            db.close()
+        if cursor: cursor.close()
+        if db: db.close()
+
+# --- NUEVA FUNCIÓN: ALGORITMO DE TENDENCIAS (TRENDING) ---
+def calculate_global_video_trending():
+    logging.info("Calculando Puntuación de Tendencias (Engagement) para todos los videos...")
+    db = get_db_connection()
+    cursor = db.cursor(dictionary=True)
+    
+    try:
+        # Obtenemos todos los videos públicos con sus métricas base
+        query = """
+            SELECT 
+                v.id, v.views, v.likes, v.dislikes, v.created_at,
+                IFNULL(vpm.completion_rate, 0) as completion_rate,
+                IFNULL(vpm.ctr, 0.05) as ctr 
+            FROM videos v
+            LEFT JOIN video_performance_metrics vpm ON v.id = vpm.video_id
+            WHERE v.status = 'published' AND v.visibility = 'public'
+        """
+        cursor.execute(query)
+        videos = cursor.fetchall()
+        
+        now = datetime.now()
+        data_to_update = []
+        
+        for vid in videos:
+            views = float(vid['views'])
+            likes = float(vid['likes'])
+            dislikes = float(vid['dislikes'])
+            completion = float(vid['completion_rate']) # Ejemplo: 0.60
+            ctr = float(vid['ctr']) # Ejemplo: 0.08
+            
+            # Fórmula de Engagement Global:
+            # Ponderación Fuerte a la Retención (Completion Rate) y CTR.
+            # Los likes suman, los dislikes restan levemente.
+            base_score = (views * ctr * 10) + (likes * 2.0) - (dislikes * 0.5)
+            
+            # Multiplicador de Retención (Si ven el 80% del video, el puntaje casi se duplica)
+            retention_multiplier = 1.0 + (completion * 1.5)
+            
+            # Penalización por edad (Time Decay severo para tendencias)
+            days_old = (now - vid['created_at']).days
+            time_decay = max(0.01, 1.0 / (1.0 + (days_old * 0.2))) # Cae rápido para mantener el feed fresco
+            
+            final_engagement_score = round((base_score * retention_multiplier) * time_decay, 4)
+            
+            data_to_update.append((vid['id'], final_engagement_score))
+        
+        # Guardar el score actualizado en la base de datos
+        update_query = """
+            INSERT INTO video_performance_metrics (video_id, engagement_score)
+            VALUES (%s, %s)
+            ON DUPLICATE KEY UPDATE engagement_score = VALUES(engagement_score), last_updated = CURRENT_TIMESTAMP
+        """
+        if data_to_update:
+            cursor.executemany(update_query, data_to_update)
+            db.commit()
+            
+        logging.info(f"Engagement Score calculado para {len(data_to_update)} videos.")
+        
+    except Exception as e:
+        if db: db.rollback()
+        logging.error(f"Error procesando video trending: {e}")
+    finally:
+        cursor.close()
+        db.close()
 
 def run_worker():
-    logging.info("Worker de Ranking iniciado en modo Always-On. Esperando las 00:00...")
+    logging.info("Worker de Ranking iniciado en modo Always-On. Esperando cronograma...")
     last_run_date = None
+    last_trend_run = 0
 
     while True:
         now = datetime.now()
         current_date = now.strftime('%Y-%m-%d')
+        current_timestamp = time.time()
         
-        # Ejecutar si son las 00:00 (medianoche) y no se ha ejecutado hoy
+        # Ejecutar Rankings de Canales a las 00:00 (medianoche) [ORIGINAL]
         if now.hour == 0 and now.minute == 0 and last_run_date != current_date:
             calculate_daily_rankings()
             last_run_date = current_date
+            
+        # Ejecutar Cálculo de Tendencias de Videos cada 1 hora (3600 segundos) [NUEVO]
+        if current_timestamp - last_trend_run > 3600:
+            calculate_global_video_trending()
+            last_trend_run = current_timestamp
             
         # Dormir 30 segundos para no saturar el CPU
         time.sleep(30)
