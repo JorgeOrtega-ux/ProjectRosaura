@@ -119,8 +119,8 @@
                         <h2 class="component-feed-title">Canales</h2>
                     </div>
                     <div class="component-feed-body">
-                        <div class="component-card--grouped" id="search-channels-grid">
-                            </div>
+                        <div class="component-channel-grid-modern" id="search-channels-grid">
+                        </div>
                     </div>
                 </div>
 

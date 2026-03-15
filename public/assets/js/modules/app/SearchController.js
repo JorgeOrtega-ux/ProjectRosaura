@@ -67,7 +67,6 @@ export default class SearchController {
             });
         }
 
-        // Lógica para abrir/cerrar el Dropdown principal
         if (this.toggleFiltersBtn && this.filtersModule) {
             this.toggleFiltersBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -75,12 +74,10 @@ export default class SearchController {
                 this.filtersModule.style.display = isVisible ? 'none' : 'block';
 
                 if (!isVisible) {
-                    // Resetear vista al menú principal al abrir
                     this.showMenuSection('menuMainFilters');
                 }
             });
 
-            // Cerrar el dropdown al hacer click fuera
             document.addEventListener('click', (e) => {
                 if (this.filtersModule.style.display === 'block') {
                     if (!this.filtersModule.contains(e.target) && !this.toggleFiltersBtn.contains(e.target)) {
@@ -90,7 +87,6 @@ export default class SearchController {
             });
         }
 
-        // Navegación dentro del Dropdown (Submenús)
         if (this.openSubMenuBtns) {
             this.openSubMenuBtns.forEach(btn => {
                 btn.addEventListener('click', (e) => {
@@ -110,12 +106,10 @@ export default class SearchController {
             });
         }
 
-        // Detectar cambios en el Radio Button de Ordenar
         if (this.sortInputs) {
             this.sortInputs.forEach(input => {
                 input.addEventListener('change', (e) => {
                     this.currentSort = e.target.value;
-                    // Forzar re-búsqueda con el nuevo filtro
                     this.fetchResults(); 
                 });
             });
@@ -123,14 +117,12 @@ export default class SearchController {
     }
 
     showMenuSection(targetRef) {
-        // Ocultar todas las secciones
         document.querySelectorAll('#moduleSearchFilters .component-menu').forEach(m => {
             m.classList.remove('active');
             m.classList.add('disabled');
             m.style.display = 'none';
         });
 
-        // Mostrar la solicitada
         const targetMenu = document.querySelector(`[data-ref="${targetRef}"]`);
         if (targetMenu) {
             targetMenu.classList.remove('disabled');
@@ -141,7 +133,6 @@ export default class SearchController {
 
     async fetchResults() {
         try {
-            // Activar loader en caso de que sea un re-fetch (por cambio de filtro)
             if (this.loadingState) this.loadingState.style.display = 'block';
             if (this.emptyState) this.emptyState.style.display = 'none';
             if (this.channelsSection) this.channelsSection.style.display = 'none';
@@ -221,9 +212,9 @@ export default class SearchController {
         if (!this.channelsGrid) return;
         this.channelsGrid.innerHTML = '';
         
-        channels.forEach((channel, index) => {
+        channels.forEach((channel) => {
             const channelCard = document.createElement('div');
-            channelCard.classList.add('component-group-item');
+            channelCard.classList.add('component-channel-card-modern');
             
             const buildUrl = (path, defaultUrl) => {
                 if (!path) return defaultUrl;
@@ -232,38 +223,83 @@ export default class SearchController {
                 return `${this.basePath}/public/${clean}`;
             };
 
-            const avatarSrc = buildUrl(channel.avatar_path, `${this.basePath}/public/storage/profilePictures/default/default.png`);
+            const defaultAvatar = `${this.basePath}/public/storage/profilePictures/default/default.png`;
+            const defaultBanner = `${this.basePath}/public/assets/img/default-banner.jpg`;
+
+            const avatarSrc = buildUrl(channel.avatar_path, defaultAvatar);
+            const bannerSrc = buildUrl(channel.banner_path, defaultBanner);
+            
+            const subCountStr = this.formatNumber(channel.subscribers_count || 0) + ' suscriptores';
+            const isSubbed = channel.is_subscribed ? 'subscribed' : '';
+            const btnText = channel.is_subscribed ? 'Suscrito' : 'Suscribirse';
 
             channelCard.innerHTML = `
-                <div class="component-group-item__content">
-                    <div class="component-avatar">
-                        <img src="${avatarSrc}" alt="${channel.username}" onerror="this.onerror=null; this.src='${this.basePath}/public/storage/profilePictures/default/default.png'">
-                    </div>
-                    <div class="component-group-item__text">
-                        <h4 class="component-group-item__title">${channel.username}</h4>
-                        <p class="component-group-item__desc">@${channel.handle}</p>
-                    </div>
+                <div class="channel-card-banner">
+                    <img src="${bannerSrc}" alt="Banner de ${channel.username}" onerror="this.src='${defaultBanner}'">
                 </div>
-                <div class="component-group-item__actions">
-                    <button class="component-button component-button--pill component-button--h34">Ver canal</button>
+                <div class="channel-card-avatar">
+                    <img src="${avatarSrc}" alt="${channel.username}" onerror="this.onerror=null; this.src='${defaultAvatar}'">
+                </div>
+                <div class="channel-card-info">
+                    <h4 class="channel-card-name" title="${channel.username}">${channel.username}</h4>
+                    <p class="channel-card-handle">@${channel.handle}</p>
+                    <div class="channel-card-stats">${subCountStr}</div>
+                </div>
+                <div class="channel-card-actions">
+                    <button class="btn-channel-subscribe ${isSubbed}" data-channel-id="${channel.id}">${btnText}</button>
                 </div>
             `;
 
+            // Click general en la tarjeta (Navegar al canal)
             channelCard.addEventListener('click', (e) => {
-                if (e.target.tagName !== 'BUTTON') {
-                    if (window.SpaRouter) window.SpaRouter.navigate(`/@${channel.handle}`);
-                } else {
+                if (!e.target.classList.contains('btn-channel-subscribe')) {
                     if (window.SpaRouter) window.SpaRouter.navigate(`/@${channel.handle}`);
                 }
             });
 
-            this.channelsGrid.appendChild(channelCard);
+            // Click exclusivo en el botón de suscripción (Llamada a API sin redireccionar)
+            const subBtn = channelCard.querySelector('.btn-channel-subscribe');
+            subBtn.addEventListener('click', async (e) => {
+                e.stopPropagation(); // Evitar que el click se propague a la card
+                
+                try {
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                    const response = await fetch(`${this.basePath}/api/index.php?route=channel.subscribe`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken
+                        },
+                        body: JSON.stringify({ channel_id: channel.id })
+                    });
+                    
+                    const resData = await response.json();
+                    
+                    if (resData.success) {
+                        // Optimistic UI Update
+                        channel.is_subscribed = !channel.is_subscribed;
+                        if (channel.is_subscribed) {
+                            subBtn.classList.add('subscribed');
+                            subBtn.textContent = 'Suscrito';
+                            channel.subscribers_count = (channel.subscribers_count || 0) + 1;
+                        } else {
+                            subBtn.classList.remove('subscribed');
+                            subBtn.textContent = 'Suscribirse';
+                            channel.subscribers_count = Math.max(0, (channel.subscribers_count || 0) - 1);
+                        }
+                        // Actualizar UI del texto de subs
+                        const statsDiv = channelCard.querySelector('.channel-card-stats');
+                        statsDiv.textContent = this.formatNumber(channel.subscribers_count) + ' suscriptores';
+                    } else {
+                        console.error('Error al suscribirse:', resData.message);
+                        // Idealmente mostrar un Toast aquí
+                    }
+                } catch (err) {
+                    console.error('Error en red al intentar suscribirse:', err);
+                }
+            });
 
-            if (index < channels.length - 1) {
-                const divider = document.createElement('hr');
-                divider.classList.add('component-divider');
-                this.channelsGrid.appendChild(divider);
-            }
+            this.channelsGrid.appendChild(channelCard);
         });
     }
 
@@ -318,7 +354,7 @@ export default class SearchController {
                         <div class="component-video-card__info">
                             <h3 class="component-video-card__title" title="${title}">${title}</h3>
                             <p class="component-video-card__user">${video.channel_name || video.username || 'Usuario Desconocido'}</p>
-                            <p class="component-video-card__meta">${views} vistas • ${timeAgo}</p>
+                            <p class="component-video-card__meta">${this.formatNumber(views)} vistas • ${timeAgo}</p>
                         </div>
                     </div>
                 </div>
@@ -356,6 +392,12 @@ export default class SearchController {
 
         if (h > 0) return `${h}:${mStr}:${sStr}`;
         return `${mStr}:${sStr}`;
+    }
+
+    formatNumber(num) {
+        if (num >= 1000000) return (num / 1000000).toFixed(1).replace(/\.0$/, '') + ' M';
+        if (num >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, '') + ' K';
+        return num.toString();
     }
 
     timeSince(date) {

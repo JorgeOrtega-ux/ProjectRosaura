@@ -28,6 +28,8 @@ try {
 
     // Configurar el índice de canales
     $client->index('channels')->updateSearchableAttributes(['username', 'handle', 'description']);
+    // Hacer que los suscriptores sean ordenables a futuro
+    $client->index('channels')->updateSortableAttributes(['subscribers_count']);
     
 } catch (Exception $e) {
     echo "⚠️ Aviso configurando índices: " . $e->getMessage() . "\n";
@@ -74,7 +76,6 @@ $videosRaw = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $videosParaIndexar = [];
 
-// Hidratar con Tags (Categorías, Modelos, Custom Tags)
 foreach ($videosRaw as $v) {
     $stmtTags = $db->prepare("
         SELECT COALESCE(t.name, vt.custom_tag_name) as name, COALESCE(t.type, vt.custom_tag_type) as type
@@ -95,7 +96,6 @@ foreach ($videosRaw as $v) {
         elseif ($t['type'] === 'custom') $v['tags'][] = $t['name'];
     }
     
-    // Asegurar tipos para Meilisearch
     $v['created_at'] = (int) $v['created_at'];
     $v['views'] = (int) $v['views'];
     
@@ -117,11 +117,18 @@ $stmt = $db->query("
         username, 
         channel_identifier AS handle, 
         profile_picture AS avatar_path, 
-        channel_description AS description 
+        banner_path,
+        channel_description AS description,
+        (SELECT COUNT(*) FROM subscriptions WHERE channel_id = users.id) AS subscribers_count
     FROM users 
     WHERE user_status = 'active'
 ");
 $channels = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Forzar tipado numérico para subscribers_count
+foreach ($channels as &$c) {
+    $c['subscribers_count'] = (int) $c['subscribers_count'];
+}
 
 if (!empty($channels)) {
     $client->index('channels')->deleteAllDocuments();
