@@ -767,6 +767,11 @@ export class VideoPlayerSystem {
             this.hls = new Hls({
                 manifestLoadingMaxRetry: 2,
                 debug: false,
+                // --- CONFIGURACIÓN DE BUFFER OPTIMIZADA (ESTILO YOUTUBE) ---
+                maxBufferLength: 30,       // Intenta mantener 30 segundos listos por delante
+                maxMaxBufferLength: 60,    // Límite absoluto de 60 segundos
+                maxBufferSize: 60 * 1024 * 1024, // Límite en memoria (60 MB)
+                // -----------------------------------------------------------
                 xhrSetup: function(xhr, url_to_load) {
                     if (tokenStr && expiresStr && url_to_load.includes('/api/media/stream/')) {
                         try {
