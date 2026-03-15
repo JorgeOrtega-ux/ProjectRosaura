@@ -4,12 +4,10 @@
 return [
     // --- RUTAS APP FRONTEND ---
     'app.get_feed'             => ['controller' => 'App\Api\Controllers\FeedController', 'action' => 'get_feed'],
+    'app.get_feed_filters'     => ['controller' => 'App\Api\Controllers\FeedController', 'action' => 'get_feed_filters'], // ---> AÑADIDO <---
     'app.get_playlist_details' => ['controller' => 'App\Api\Controllers\PlaylistController', 'action' => 'getDetails'],
     'app.get_playlist_queue'   => ['controller' => 'App\Api\Controllers\PlaylistController', 'action' => 'getQueue'],
     'app.get_video_details'    => ['controller' => 'App\Api\Controllers\VideoController', 'action' => 'getVideoDetails'],
-    
-    // ---> AÑADIDO: RUTA DE RECOMENDACIONES (Corrige el error 404) <---
-    'app.get_recommendations'  => ['controller' => 'App\Api\Controllers\FeedController', 'action' => 'getRecommendations'],
     
     // --- RUTA DE BÚSQUEDA (MEILISEARCH) ---
     'search.get'               => ['controller' => 'ProjectRosaura\Controllers\SearchController', 'action' => 'search'],
@@ -135,9 +133,6 @@ return [
     // --- NUEVAS RUTAS DE MÉTRICAS / HEATMAP ---
     'metrics.retention.ingest' => ['controller' => 'App\Api\Controllers\MetricsController', 'action' => 'ingestRetention'],
     'metrics.retention.get'    => ['controller' => 'App\Api\Controllers\MetricsController', 'action' => 'getHeatmap'],
-
-    // ---> AÑADIDO: RUTA DE TELEMETRÍA PARA EL WORKER <---
-    'telemetry.ping'           => ['controller' => 'App\Api\Controllers\TelemetryController', 'action' => 'ping'],
 
     // --- RUTAS DE HISTORIAL ---
     'history.get_watch'   => ['controller' => 'App\Api\Controllers\HistoryController', 'action' => 'get_watch_history'],

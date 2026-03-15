@@ -68,5 +68,26 @@ class HistoryRepository implements HistoryRepositoryInterface {
         $stmt = $this->db->prepare("DELETE FROM user_search_history WHERE user_id = ? AND id = ?");
         return $stmt->execute([$userId, $searchId]);
     }
+
+    // --- NUEVO MÉTODO IMPLEMENTADO PARA TELEMETRÍA DE BADGES ---
+    public function getUserTopCategories(int $userId, int $limit = 5): array {
+        // Hace un conteo de las categorías de los videos que ha visto el usuario
+        // Transforma el nombre a un "slug" amigable para la URL/Filtro
+        $sql = "SELECT t.id, t.name, LOWER(REPLACE(t.name, ' ', '-')) as slug, COUNT(*) as interaction_count
+                FROM user_watch_history h
+                JOIN video_tags vt ON h.video_id = vt.video_id
+                JOIN tags t ON vt.tag_id = t.id
+                WHERE h.user_id = :user_id AND t.type = 'category'
+                GROUP BY t.id, t.name
+                ORDER BY interaction_count DESC
+                LIMIT :limit";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(':user_id', $userId, PDO::PARAM_INT);
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
 }
 ?>

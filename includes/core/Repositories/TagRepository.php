@@ -97,5 +97,24 @@ class TagRepository implements TagRepositoryInterface {
         
         return $success;
     }
+
+    // --- NUEVO MÉTODO IMPLEMENTADO PARA OBTENER EL TOP GLOBAL ---
+    public function getGlobalTopCategories(int $limit = 5): array {
+        // Obtenemos las categorías más populares basándonos en la cantidad total de vistas de los videos que las tienen
+        $sql = "SELECT t.id, t.name, LOWER(REPLACE(t.name, ' ', '-')) as slug, SUM(v.views) as total_views
+                FROM tags t
+                JOIN video_tags vt ON t.id = vt.tag_id
+                JOIN videos v ON vt.video_id = v.id
+                WHERE t.type = 'category' AND v.status = 'published' AND v.visibility = 'public'
+                GROUP BY t.id, t.name
+                ORDER BY total_views DESC
+                LIMIT :limit";
+                
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
 }
 ?>

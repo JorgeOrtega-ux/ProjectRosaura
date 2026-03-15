@@ -336,23 +336,41 @@ class VideoRepository implements VideoRepositoryInterface {
         return (int) $stmt->fetchColumn();
     }
 
-    public function getPublicFeed(int $limit = 20, int $offset = 0, string $orientation = 'horizontal'): array {
-        $stmt = $this->db->prepare("
-            SELECT v.id, v.uuid, v.title, v.localized_titles, v.original_language, v.thumbnail_path, v.thumbnail_dominant_color, 
-                   v.duration, v.created_at, v.status, v.visibility, v.allow_comments, v.hls_path, v.temp_file_path, v.orientation,
-                   v.sprite_sheet_path, v.vtt_path, v.views,
-                   u.username, u.profile_picture AS avatar_path 
-            FROM videos v
-            JOIN users u ON v.user_id = u.id
-            WHERE v.status = 'published' AND v.visibility = 'public' AND v.orientation = :orientation
-            ORDER BY v.created_at DESC
-            LIMIT :limit OFFSET :offset
-        ");
+    // --- METODO MODIFICADO PARA INCLUIR FILTRO DE CATEGORÍAS OPCIONAL ---
+    public function getPublicFeed(int $limit = 20, int $offset = 0, string $orientation = 'horizontal', ?string $category = null): array {
+        $sql = "SELECT v.id, v.uuid, v.title, v.localized_titles, v.original_language, v.thumbnail_path, v.thumbnail_dominant_color, 
+                       v.duration, v.created_at, v.status, v.visibility, v.allow_comments, v.hls_path, v.temp_file_path, v.orientation,
+                       v.sprite_sheet_path, v.vtt_path, v.views,
+                       u.username, u.profile_picture AS avatar_path 
+                FROM videos v
+                JOIN users u ON v.user_id = u.id";
+                
+        if ($category && $category !== 'all') {
+            // Se asume que el slug se genera limpiando espacios.
+            $sql .= " JOIN video_tags vt ON v.id = vt.video_id 
+                      JOIN tags t ON vt.tag_id = t.id AND t.type = 'category'";
+        }
+
+        $sql .= " WHERE v.status = 'published' AND v.visibility = 'public' AND v.orientation = :orientation";
+
+        if ($category && $category !== 'all') {
+            $sql .= " AND LOWER(REPLACE(t.name, ' ', '-')) = :category";
+        }
+
+        $sql .= " ORDER BY v.created_at DESC LIMIT :limit OFFSET :offset";
+
+        $stmt = $this->db->prepare($sql);
         $stmt->bindValue(':orientation', $orientation, PDO::PARAM_STR);
         $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
         $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        
+        if ($category && $category !== 'all') {
+            $stmt->bindValue(':category', strtolower(trim($category)), PDO::PARAM_STR);
+        }
+        
         $stmt->execute();
         $results = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        
         return array_map([$this, 'applyLocalizedTitle'], $results);
     }
     

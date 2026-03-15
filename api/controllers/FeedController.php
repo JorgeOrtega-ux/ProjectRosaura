@@ -5,68 +5,30 @@ namespace App\Api\Controllers;
 
 use App\Core\Repositories\VideoRepository;
 use App\Core\Repositories\PlaylistRepository;
-use App\Core\Repositories\RecommendationRepository;
-use App\Config\RedisCache;
-use App\Core\System\SessionManager;
+// Se asume que añadirás esto más adelante cuando modifiques los repositorios
+// use App\Core\Repositories\HistoryRepository; 
+// use App\Core\Repositories\TagRepository;
 
 class FeedController {
     private $videoRepo;
     private $playlistRepo;
-    private $recommendationRepo;
-    private $redis;
-    private $session;
 
-    // Se inyecta SessionManager en el constructor
-    public function __construct(
-        VideoRepository $videoRepo, 
-        PlaylistRepository $playlistRepo, 
-        RecommendationRepository $recommendationRepo, 
-        RedisCache $redis,
-        SessionManager $session
-    ) {
+    public function __construct(VideoRepository $videoRepo, PlaylistRepository $playlistRepo) {
         $this->videoRepo = $videoRepo;
         $this->playlistRepo = $playlistRepo;
-        $this->recommendationRepo = $recommendationRepo;
-        $this->redis = $redis;
-        $this->session = $session;
     }
 
     public function get_feed($input) {
         $limit = isset($input['limit']) ? (int)$input['limit'] : 20;
         $offset = isset($input['offset']) ? (int)$input['offset'] : 0;
+        $category = (isset($input['category']) && $input['category'] !== 'all') ? $input['category'] : null;
         
-        // CORRECCIÓN: Uso correcto del SessionManager instanciado
-        $userId = $this->session->get('user_id'); 
+        // Consultamos feeds por separado con soporte de categoría
+        // NOTA: Se requiere actualizar $this->videoRepo->getPublicFeed() para que acepte el parámetro $category.
+        $horizontalVideos = $this->videoRepo->getPublicFeed($limit, $offset, 'horizontal', $category);
+        $verticalVideos = $this->videoRepo->getPublicFeed($limit, $offset, 'vertical', $category);
         
-        $horizontalVideos = [];
-        $verticalVideos = [];
-
-        if ($userId) {
-            // ALGORITMO: Buscar feed pre-calculado por los Workers de Python en Redis
-            $cachedHorizontalIds = $this->redis->get("feed:user:{$userId}:horizontal");
-            $cachedVerticalIds = $this->redis->get("feed:user:{$userId}:vertical");
-
-            if ($cachedHorizontalIds) {
-                $ids = json_decode($cachedHorizontalIds, true);
-                $slicedIds = array_slice($ids, $offset, $limit);
-                $horizontalVideos = $this->recommendationRepo->getVideosByIds($slicedIds);
-            }
-            
-            if ($cachedVerticalIds) {
-                $ids = json_decode($cachedVerticalIds, true);
-                $slicedIds = array_slice($ids, $offset, $limit);
-                $verticalVideos = $this->recommendationRepo->getVideosByIds($slicedIds);
-            }
-        }
-
-        // FALLBACK: Si no hay feed personalizado (Cold Start o usuario anónimo)
-        if (empty($horizontalVideos)) {
-            $horizontalVideos = $this->recommendationRepo->getColdStartFeed($limit, $offset, 'horizontal');
-        }
-        if (empty($verticalVideos)) {
-            $verticalVideos = $this->recommendationRepo->getColdStartFeed($limit, $offset, 'vertical');
-        }
-
+        // El feed de playlists generalmente no se filtra por categoría (o puedes adaptarlo luego si lo deseas)
         $publicPlaylists = $this->playlistRepo->getPublicPlaylistsFeed($limit, $offset);
 
         $formatVideos = function($videos) {
@@ -114,30 +76,36 @@ class FeedController {
             ]
         ];
     }
-    
-    // ---> CORREÇÃO AQUI: Renomeado de get_recommendations para getRecommendations <---
-    public function getRecommendations($input) {
-        $videoId = isset($input['video_id']) ? (int)$input['video_id'] : 0;
-        $limit = isset($input['limit']) ? (int)$input['limit'] : 12;
+
+    public function get_feed_filters($input) {
+        // AQUÍ ES DONDE RESIDIRÁ LA MAGIA DEL ALGORITMO (TELEMETRÍA)
+        // Por ahora, y asumiendo que el HistoryRepo y TagRepo se modificarán después,
+        // esto simula la orquestación. Devuelvo algunas categorías top genéricas como estructura base.
         
-        $videos = $this->recommendationRepo->getSimilarVideos($videoId, $limit);
-        
-        $formatVideos = function($videos) {
-            foreach ($videos as &$video) {
-                $video['avatar_url'] = !empty($video['avatar_path']) 
-                    ? APP_URL . '/' . $video['avatar_path'] 
-                    : APP_URL . '/public/storage/profilePictures/default/default.png'; 
-                    
-                $video['thumbnail_url'] = !empty($video['thumbnail_path'])
-                    ? APP_URL . '/' . $video['thumbnail_path']
-                    : APP_URL . '/public/assets/images/default-thumb.png'; 
-            }
-            return $videos;
-        };
-        
+        // $userId = Auth::getUserId();
+        // if ($userId) {
+        //     $categories = $this->historyRepo->getUserTopCategories($userId, 5);
+        //     if (empty($categories)) {
+        //         $categories = $this->tagRepo->getGlobalTopCategories(5);
+        //     }
+        // } else {
+        //     $categories = $this->tagRepo->getGlobalTopCategories(5);
+        // }
+
+        // Mock mientras construyes el backend de BD:
+        $categories = [
+            ['slug' => 'gaming', 'name' => 'Gaming'],
+            ['slug' => 'music', 'name' => 'Música'],
+            ['slug' => 'vlogs', 'name' => 'Vlogs'],
+            ['slug' => 'tech', 'name' => 'Tecnología'],
+            ['slug' => 'education', 'name' => 'Educación']
+        ];
+
         return [
             'success' => true,
-            'data' => $formatVideos($videos)
+            'data' => [
+                'categories' => $categories
+            ]
         ];
     }
 }

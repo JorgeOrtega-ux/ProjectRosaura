@@ -11,6 +11,8 @@ export class HomeController {
         this.handleScrollBound = this.updateCarouselButtons.bind(this);
         this.handleLeftClickBound = this.scrollLeft.bind(this);
         this.handleRightClickBound = this.scrollRight.bind(this);
+        
+        this.currentCategory = 'all';
     }
 
     destroy() {
@@ -26,44 +28,92 @@ export class HomeController {
         this.playlistContainer = document.getElementById('playlist-feed-container');
         this.btnLeft = document.getElementById('btn-scroll-left');
         this.btnRight = document.getElementById('btn-scroll-right');
+        this.badgesContainer = document.getElementById('home-category-badges');
 
         if (this.horizontalContainer || this.verticalContainer || this.playlistContainer) {
-            console.log("🚀 [HomeController] Iniciando carga de Feed Personalizado...");
-            await this.loadFeed();
+            console.log("🚀 [HomeController] Iniciando carga de Filtros y Feed...");
+            await this.loadFilters();
+            await this.loadFeed(this.currentCategory);
         }
     }
 
-    async loadFeed() {
+    async loadFilters() {
+        if (!this.badgesContainer) return;
+        
         try {
-            // AÑADIDO: algorithm: 'personalized' para indicar al backend la intención
-            const response = await this.api.post(ApiRoutes.App.GetFeed, { limit: 20, offset: 0, algorithm: 'personalized' });
+            const response = await this.api.get(ApiRoutes.App.GetFeedFilters);
+            if (response && response.success) {
+                this.renderBadges(response.data.categories);
+            } else {
+                this.badgesContainer.innerHTML = '';
+            }
+        } catch (error) {
+            console.error('❌ [HomeController] Error cargando filtros:', error);
+            this.badgesContainer.innerHTML = '';
+        }
+    }
+
+    renderBadges(categories) {
+        if (!categories || categories.length === 0) return;
+        
+        let html = `<button class="component-badge active" data-filter="all" style="cursor: pointer;">Todo</button>`;
+        
+        categories.forEach(cat => {
+            html += `<button class="component-badge" data-filter="${cat.slug}" style="cursor: pointer;">${cat.name}</button>`;
+        });
+        
+        this.badgesContainer.innerHTML = html;
+        
+        // Adjuntar eventos a los badges
+        const badges = this.badgesContainer.querySelectorAll('.component-badge');
+        badges.forEach(badge => {
+            badge.addEventListener('click', (e) => {
+                const selectedFilter = e.target.getAttribute('data-filter');
+                if (this.currentCategory === selectedFilter) return; // No hacer nada si ya está activo
+                
+                // Actualizar UI
+                badges.forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                
+                // Recargar feed
+                this.currentCategory = selectedFilter;
+                this.loadFeed(this.currentCategory);
+            });
+        });
+    }
+
+    async loadFeed(category = 'all') {
+        // Mostrar spinners mientras carga
+        const spinnerHTML = '<div class="component-spinner component-spinner--centered" style="margin-top: 40px;"></div>';
+        if (this.horizontalContainer) this.horizontalContainer.innerHTML = spinnerHTML;
+        if (this.verticalContainer) this.verticalContainer.innerHTML = spinnerHTML;
+        if (this.playlistContainer && category === 'all') this.playlistContainer.innerHTML = spinnerHTML;
+
+        try {
+            const response = await this.api.post(ApiRoutes.App.GetFeed, { 
+                limit: 20, 
+                offset: 0,
+                category: category
+            });
             
-            console.log("🔍 [HomeController] Respuesta completa del servidor recibida:", response);
+            console.log("🔍 [HomeController] Respuesta de Feed recibida:", response);
 
             if (response && response.success) {
-                // 🛠️ LOG DE DIAGNÓSTICO PROFUNDO PARA MULTI-IDIOMA
-                if (response.data.horizontal && response.data.horizontal.length > 0) {
-                    console.log("📺 [HomeController] Analizando títulos de videos horizontales:");
-                    response.data.horizontal.forEach((v, index) => {
-                        console.log(`  👉 Video ${index + 1}:`, {
-                            titulo_final: v.title,
-                            titulo_original: v.original_title || 'No modificado',
-                            traducciones_db: v.localized_titles
-                        });
-                    });
-                } else {
-                    console.warn("⚠️ [HomeController] No llegaron videos horizontales.");
-                }
-
                 this.renderFeed(response.data.vertical, this.verticalContainer, 'vertical');
                 this.renderFeed(response.data.horizontal, this.horizontalContainer, 'horizontal');
-                this.renderPlaylistFeed(response.data.playlists, this.playlistContainer);
+                
+                // Las playlists generalmente no se filtran por categoría de video, o si quieres puedes hacerlo
+                if (category === 'all') {
+                    this.renderPlaylistFeed(response.data.playlists, this.playlistContainer);
+                    if (this.playlistContainer) this.playlistContainer.closest('.component-feed-section').style.display = 'block';
+                } else {
+                    if (this.playlistContainer) this.playlistContainer.closest('.component-feed-section').style.display = 'none';
+                }
                 
                 if (this.verticalContainer && response.data.vertical && response.data.vertical.length > 0) {
                     this.initCarousel();
                 }
             } else {
-                console.error("❌ [HomeController] La API indicó éxito=false", response);
                 this.showError('No se pudieron cargar los videos en este momento.');
             }
         } catch (error) {
@@ -84,12 +134,16 @@ export class HomeController {
                 container.innerHTML = `
                     <div class="component-empty-state">
                         <span class="material-symbols-rounded component-empty-state-icon">videocam_off</span>
-                        <p class="component-empty-state-text">No hay videos publicados aún. ¡Sé el primero en subir uno!</p>
+                        <p class="component-empty-state-text">No hay videos en esta categoría aún.</p>
                     </div>
                 `;
             }
             return;
         }
+
+        // Restablecer visibilidad por si estaba oculto
+        const sectionWrapper = container.closest('.component-feed-section');
+        if (sectionWrapper) sectionWrapper.style.display = 'block';
 
         let html = '';
         videos.forEach(video => {
@@ -160,7 +214,6 @@ export class HomeController {
     }
 
     createCardHTML(video, orientation) {
-        // AQUÍ ES DONDE SE INYECTA EL TÍTULO QUE PHP PROCESÓ
         const title = video.title || 'Video sin título';
         const views = video.views || 0;
         const timeAgo = this.timeSince(new Date(video.created_at));
@@ -217,7 +270,6 @@ export class HomeController {
         const basePath = window.AppBasePath || '';
         const navUrl = `${basePath}/playlist/${playlist.uuid}`;
 
-        // SE AGREGÓ LA CLASE playlist-folder-style A ESTE CONTENEDOR
         return `
             <div class="component-video-card playlist-folder-style" style="--local-dominant-color: ${dominantColor}; cursor: pointer;" data-nav="${navUrl}">
                 <div class="component-video-card__top">

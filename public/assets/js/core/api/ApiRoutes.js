@@ -3,10 +3,9 @@
 export const ApiRoutes = {
     App: {
         GetFeed: 'app.get_feed',
+        GetFeedFilters: 'app.get_feed_filters', // ---> AÑADIDO: RUTA PARA BADGES DE CATEGORÍAS <---
         GetPlaylistDetails: 'app.get_playlist_details',
-        GetPlaylistQueue: 'app.get_playlist_queue',
-        GetVideoDetails: 'app.get_video_details',
-        GetRecommendations: 'app.get_recommendations'
+        GetPlaylistQueue: 'app.get_playlist_queue' 
     },
     Playlist: {
         GetForVideo: 'playlist.get_for_video',
@@ -118,10 +117,6 @@ export const ApiRoutes = {
     Metrics: {
         IngestRetention: 'metrics.retention.ingest',
         GetRetention: 'metrics.retention.get'
-    },
-    // ---> AÑADIDO: RUTAS DE TELEMETRÍA (Ping para worker) <---
-    Telemetry: {
-        Ping: 'telemetry.ping'
     },
     Rankings: {
         GetAll: 'rankings.get_all',
