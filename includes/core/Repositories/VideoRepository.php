@@ -336,7 +336,6 @@ class VideoRepository implements VideoRepositoryInterface {
         return (int) $stmt->fetchColumn();
     }
 
-    // --- METODO MODIFICADO PARA INCLUIR FILTRO DE CATEGORÍAS OPCIONAL ---
     public function getPublicFeed(int $limit = 20, int $offset = 0, string $orientation = 'horizontal', ?string $category = null): array {
         $sql = "SELECT v.id, v.uuid, v.title, v.localized_titles, v.original_language, v.thumbnail_path, v.thumbnail_dominant_color, 
                        v.duration, v.created_at, v.status, v.visibility, v.allow_comments, v.hls_path, v.temp_file_path, v.orientation,
@@ -346,7 +345,6 @@ class VideoRepository implements VideoRepositoryInterface {
                 JOIN users u ON v.user_id = u.id";
                 
         if ($category && $category !== 'all') {
-            // Se asume que el slug se genera limpiando espacios.
             $sql .= " JOIN video_tags vt ON v.id = vt.video_id 
                       JOIN tags t ON vt.tag_id = t.id AND t.type = 'category'";
         }
@@ -569,6 +567,71 @@ class VideoRepository implements VideoRepositoryInterface {
         $stmt = $this->db->prepare("SELECT allow_comments FROM videos WHERE id = :id");
         $stmt->execute([':id' => $videoId]);
         return (bool) $stmt->fetchColumn();
+    }
+
+    // ==========================================
+    // METODOS NUEVOS PARA LA SECCIÓN DE TENDENCIAS
+    // ==========================================
+
+    /**
+     * Obtiene el video #1 en tendencias (Hero Banner).
+     * Basado en la mayor cantidad de vistas en los últimos 7 días.
+     */
+    public function getTopTrendingVideo(): ?array {
+        $sql = "SELECT v.uuid, v.title, v.localized_titles, v.original_language, 
+                       v.thumbnail_path as thumbnail, v.views as views_count, 
+                       u.username as channel_name 
+                FROM videos v 
+                JOIN users u ON v.user_id = u.id 
+                WHERE v.status = 'published' 
+                  AND v.visibility = 'public' 
+                  AND v.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+                ORDER BY v.views DESC, v.likes DESC 
+                LIMIT 1";
+                
+        $stmt = $this->db->query($sql);
+        $video = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        // Fallback: Si no hay videos en los últimos 7 días, traemos el histórico más popular
+        if (!$video) {
+            $sqlFallback = "SELECT v.uuid, v.title, v.localized_titles, v.original_language, 
+                                   v.thumbnail_path as thumbnail, v.views as views_count, 
+                                   u.username as channel_name 
+                            FROM videos v 
+                            JOIN users u ON v.user_id = u.id 
+                            WHERE v.status = 'published' AND v.visibility = 'public' 
+                            ORDER BY v.views DESC LIMIT 1";
+            $stmtFallback = $this->db->query($sqlFallback);
+            $video = $stmtFallback->fetch(PDO::FETCH_ASSOC);
+        }
+
+        return $video ? $this->applyLocalizedTitle($video) : null;
+    }
+
+    /**
+     * Obtiene los videos en rápido crecimiento (Rising Videos).
+     * Formateado exactamente como VideoCardSystem.js los necesita.
+     */
+    public function getRisingVideos(int $limit = 10): array {
+        $sql = "SELECT v.id, v.uuid, v.title, v.localized_titles, v.original_language, 
+                       v.thumbnail_path, v.thumbnail_dominant_color, v.duration, v.created_at, 
+                       v.status, v.visibility, v.allow_comments, v.hls_path, v.temp_file_path, 
+                       v.orientation, v.sprite_sheet_path, v.vtt_path, v.views,
+                       u.username, u.profile_picture AS avatar_path 
+                FROM videos v
+                JOIN users u ON v.user_id = u.id
+                WHERE v.status = 'published' 
+                  AND v.visibility = 'public'
+                  AND v.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+                ORDER BY v.views DESC, v.likes DESC
+                LIMIT :limit";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        
+        $results = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        return array_map([$this, 'applyLocalizedTitle'], $results);
     }
 }
 ?>

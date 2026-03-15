@@ -263,4 +263,8 @@ export class ApiService {
             return { success: false };
         }
     }
+    // ---> AÑADIDO: MÉTODO PARA TENDENCIAS <---
+    async getDashboardTrends() {
+        return await this.post(ApiRoutes.Trends.GetDashboard);
+    }
 }

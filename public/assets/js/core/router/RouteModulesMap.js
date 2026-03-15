@@ -5,6 +5,9 @@ export const RouteModulesMap = {
     '/': { path: './modules/app/HomeController.js', className: 'HomeController' },
     '/home': { path: './modules/app/HomeController.js', className: 'HomeController' },
     
+    // ---> AÑADIDO: MÓDULO DE TENDENCIAS <---
+    '/trends': { path: './modules/app/TrendsController.js', className: 'TrendsController' },
+
     // ---- MÓDULO DE BÚSQUEDA ----
     '/results': { path: './modules/app/SearchController.js', className: 'SearchController' },
     

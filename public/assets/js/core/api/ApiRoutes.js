@@ -3,7 +3,7 @@
 export const ApiRoutes = {
     App: {
         GetFeed: 'app.get_feed',
-        GetFeedFilters: 'app.get_feed_filters', // ---> AÑADIDO: RUTA PARA BADGES DE CATEGORÍAS <---
+        GetFeedFilters: 'app.get_feed_filters', 
         GetPlaylistDetails: 'app.get_playlist_details',
         GetPlaylistQueue: 'app.get_playlist_queue' 
     },
@@ -121,5 +121,9 @@ export const ApiRoutes = {
     Rankings: {
         GetAll: 'rankings.get_all',
         GetChannel: 'rankings.get_channel'
+    },
+    // ---> AÑADIDO: MÓDULO DE TENDENCIAS <---
+    Trends: {
+        GetDashboard: 'trends.get_dashboard'
     }
 };

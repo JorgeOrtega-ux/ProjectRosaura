@@ -145,5 +145,6 @@ return [
     // --- NUEVAS RUTAS DE RANKING DIARIO ---
     'rankings.get_all'     => ['controller' => 'App\Api\Controllers\RankingController', 'action' => 'getAllRankings'],
     'rankings.get_channel' => ['controller' => 'App\Api\Controllers\RankingController', 'action' => 'getChannelRanking'],
+    'trends.get_dashboard' => ['controller' => 'App\Api\Controllers\TrendsController', 'action' => 'get_dashboard'],
 ];
 ?>

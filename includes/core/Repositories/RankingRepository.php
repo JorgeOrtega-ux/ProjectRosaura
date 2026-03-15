@@ -38,4 +38,27 @@ class RankingRepository implements RankingRepositoryInterface {
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
         return $result ?: null;
     }
+
+    // ==========================================
+    // METODO NUEVO PARA LA SECCIÓN DE TENDENCIAS
+    // ==========================================
+
+    /**
+     * Obtiene a los creadores destacados/en tendencia.
+     * Los ordena por su rango actual, asegurando que están activos.
+     */
+    public function getTrendingCreators(int $limit = 6): array {
+        $sql = "SELECT id, username, profile_picture as avatar, current_rank, trend
+                FROM users 
+                WHERE user_status = 'active' 
+                  AND current_rank > 0 
+                ORDER BY current_rank ASC 
+                LIMIT :limit";
+                
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
 }

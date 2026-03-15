@@ -1,0 +1,184 @@
+/* public/assets/css/components/components-trends.css */
+
+.trends-container {
+    padding: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+    color: var(--text-color, #ececec);
+}
+
+.trends-section {
+    margin-bottom: 40px;
+}
+
+.trends-section-title {
+    margin-bottom: 15px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--text-muted, #aaa);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Hero Banner (Top 1 Video) */
+.trends-hero-banner {
+    width: 100%;
+    aspect-ratio: 21/9;
+    background: linear-gradient(135deg, rgba(43,16,85,0.8), rgba(117,151,222,0.8));
+    border-radius: 15px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: flex-end;
+    padding: 30px;
+    box-sizing: border-box;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    background-size: cover;
+    background-position: center;
+}
+
+.trends-hero-banner:hover {
+    transform: scale(1.01);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+}
+
+.trends-hero-overlay {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 100%);
+    padding: 40px 30px 20px 30px;
+    pointer-events: none;
+}
+
+.trends-hero-badge {
+    background-color: var(--primary-color, #f00);
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    margin-bottom: 10px;
+    display: inline-block;
+}
+
+.trends-hero-title {
+    margin: 0 0 8px 0;
+    font-size: 2rem;
+    font-weight: bold;
+    color: #fff;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+.trends-hero-meta {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #ddd;
+}
+
+/* Rising Videos Carousel */
+.trends-rising-carousel {
+    display: flex;
+    gap: 15px;
+    overflow-x: auto;
+    padding-bottom: 15px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--scroll-thumb, #555) transparent;
+}
+
+/* Modificador para adaptar tus VideoCards al carrusel */
+.trends-rising-carousel .video-card {
+    min-width: 260px;
+    flex: 0 0 auto;
+}
+
+/* Split Grid (Creators & Tags) */
+.trends-split-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 25px;
+}
+
+.trends-creators-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 15px;
+}
+
+/* Creator Card */
+.trends-creator-card {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background-color: var(--bg-secondary, #222);
+    padding: 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.trends-creator-card:hover {
+    background-color: var(--bg-hover, #333);
+}
+
+.trends-creator-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    background-color: var(--bg-tertiary, #444);
+}
+
+.trends-creator-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.trends-creator-name {
+    font-weight: bold;
+    font-size: 0.95rem;
+    margin-bottom: 4px;
+}
+
+.trends-creator-stat {
+    font-size: 0.8rem;
+    color: var(--success-color, #4caf50);
+}
+
+/* Tags Cloud */
+.trends-tags-cloud {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.trends-tag {
+    background-color: var(--bg-secondary, #333);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    color: var(--text-color, #ececec);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.trends-tag:hover {
+    background-color: var(--primary-color, #3ea6ff);
+    color: #fff;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+    .trends-split-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .trends-hero-banner {
+        aspect-ratio: 16/9;
+    }
+    
+    .trends-hero-title {
+        font-size: 1.5rem;
+    }
+}
