@@ -19,9 +19,6 @@ export const RouteModulesMap = {
     
     // ---> NUEVO: MÓDULO DE FEED DE PLAYLISTS <---
     '/feed/playlists': { path: './modules/app/FeedPlaylistsController.js', className: 'FeedPlaylistsController' },
-
-    // ---> NUEVO: MÓDULO DE RANKINGS GLOBALES <---
-    '/rankings': { path: './modules/app/RankingsController.js', className: 'RankingsController' },
     
     // ---- MÓDULO DE CANAL (PERFILES) ----
     // Permite rutas como /@jorge

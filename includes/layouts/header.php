@@ -20,7 +20,6 @@ $isPrivileged = in_array($userRole, ['administrator', 'founder']);
     window.AppRouteTitles = {
         '/': "<?php echo __('route_home'); ?>",
         '/trends': "<?php echo __('route_explore'); ?>",
-        '/rankings': "Rankings Globales",
         '/login': "<?php echo __('route_login'); ?>",
         '/register': "<?php echo __('route_register'); ?>",
         '/settings': "<?php echo __('route_settings'); ?>",
@@ -79,10 +78,6 @@ $isPrivileged = in_array($userRole, ['administrator', 'founder']);
 
             <button class="component-button component-button--icon component-button--h40 mobile-search-btn" data-action="toggleMobileSearch" data-tooltip="<?php echo __('tooltip_search'); ?>" data-position="bottom">
                 <span class="material-symbols-rounded">search</span>
-            </button>
-
-            <button class="component-button component-button--icon component-button--h40" data-nav="<?php echo APP_URL; ?>/rankings" data-tooltip="Rankings Globales" data-position="bottom">
-                <span class="material-symbols-rounded">leaderboard</span>
             </button>
 
             <?php if ($isMaintenanceActive && $isPrivileged): ?>

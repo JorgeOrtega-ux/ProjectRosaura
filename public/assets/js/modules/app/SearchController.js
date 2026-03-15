@@ -71,18 +71,24 @@ export default class SearchController {
         if (this.toggleFiltersBtn && this.filtersModule) {
             this.toggleFiltersBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const isVisible = this.filtersModule.style.display === 'block';
-                this.filtersModule.style.display = isVisible ? 'none' : 'block';
-
-                if (!isVisible) {
+                
+                const isVisible = this.filtersModule.classList.contains('active');
+                
+                if (isVisible) {
+                    this.filtersModule.classList.remove('active');
+                    this.filtersModule.classList.add('disabled');
+                } else {
+                    this.filtersModule.classList.remove('disabled');
+                    this.filtersModule.classList.add('active');
                     this.showMenuSection('menuMainFilters');
                 }
             });
 
             document.addEventListener('click', (e) => {
-                if (this.filtersModule.style.display === 'block') {
+                if (this.filtersModule.classList.contains('active')) {
                     if (!this.filtersModule.contains(e.target) && !this.toggleFiltersBtn.contains(e.target)) {
-                        this.filtersModule.style.display = 'none';
+                        this.filtersModule.classList.remove('active');
+                        this.filtersModule.classList.add('disabled');
                     }
                 }
             });
@@ -121,14 +127,12 @@ export default class SearchController {
         document.querySelectorAll('#moduleSearchFilters .component-menu').forEach(m => {
             m.classList.remove('active');
             m.classList.add('disabled');
-            m.style.display = 'none';
         });
 
         const targetMenu = document.querySelector(`[data-ref="${targetRef}"]`);
         if (targetMenu) {
             targetMenu.classList.remove('disabled');
             targetMenu.classList.add('active');
-            targetMenu.style.display = 'block';
         }
     }
 
@@ -407,9 +411,9 @@ export default class SearchController {
     }
 
     formatNumber(num) {
-        if (num >= 1000000) return (num / 1000000).toFixed(1).replace(/\.0$/, '') + ' M';
-        if (num >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, '') + ' K';
-        return num.toString();
+        const parsedNum = Number(num);
+        if (isNaN(parsedNum)) return '0';
+        return parsedNum.toLocaleString('en-US');
     }
 
     timeSince(date) {

@@ -18,9 +18,9 @@
                             <span class="material-symbols-rounded">tune</span>
                         </button>
 
-                        <div class="component-module component-module--dropdown component-module--dropdown-fixed component-module--spaced" id="moduleSearchFilters" style="display: none;">
+                        <div class="component-module component-module--dropdown component-module--dropdown-fixed component-module--spaced disabled" id="moduleSearchFilters">
                                 
-                            <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding active" data-ref="menuMainFilters" style="display: block;">
+                            <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding active" data-ref="menuMainFilters">
                                 <div class="pill-container"><div class="drag-handle"></div></div>
                                 
                                 <div class="component-menu-header">
@@ -44,7 +44,7 @@
                                 </div>
                             </div>
 
-                            <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding disabled" data-ref="menuFilterSort" style="display: none;">
+                            <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding disabled" data-ref="menuFilterSort">
                                 <div class="pill-container"><div class="drag-handle"></div></div>
                                 
                                 <div class="component-menu-header">
