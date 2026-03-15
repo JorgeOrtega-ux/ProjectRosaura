@@ -15,8 +15,9 @@ class CommentController {
             $data = json_decode(file_get_contents('php://input'), true) ?? [];
             
             $videoId = $_GET['video_id'] ?? $data['video_id'] ?? null;
+            $parentId = $_GET['parent_id'] ?? $data['parent_id'] ?? null;
             $offset = $_GET['offset'] ?? $data['offset'] ?? 0;
-            $limit = $_GET['limit'] ?? $data['limit'] ?? 20;
+            $limit = $_GET['limit'] ?? $data['limit'] ?? 10;
             
             // Extracción y validación segura del ordenamiento
             $sortRaw = $_GET['sort'] ?? $data['sort'] ?? 'recent';
@@ -24,14 +25,18 @@ class CommentController {
             
             $currentUserId = $_SESSION['user_id'] ?? null;
 
-            if (!$videoId) {
+            if (!$videoId && !$parentId) {
                 http_response_code(400);
-                echo json_encode(['error' => 'video_id es requerido']);
+                echo json_encode(['error' => 'video_id o parent_id es requerido']);
                 exit; 
             }
 
-            // Llamada actualizada al servicio enviando el $sort
-            $comments = $this->commentServices->getCommentsForVideo((int)$videoId, $currentUserId, (int)$limit, (int)$offset, $sort);
+            // Si hay un parent_id, cargamos las respuestas de ese comentario
+            if ($parentId) {
+                $comments = $this->commentServices->getRepliesForComment((int)$parentId, $currentUserId, (int)$limit, (int)$offset);
+            } else {
+                $comments = $this->commentServices->getCommentsForVideo((int)$videoId, $currentUserId, (int)$limit, (int)$offset, $sort);
+            }
             
             header('Content-Type: application/json');
             echo json_encode(['success' => true, 'data' => $comments]);

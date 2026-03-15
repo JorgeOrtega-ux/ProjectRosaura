@@ -16,76 +16,63 @@ class CommentServices {
         $this->videoRepo = $videoRepo;
     }
 
-    // Se agrega el parámetro de ordenación $sort
-    public function getCommentsForVideo(int $videoId, ?int $currentUserId, int $limit = 20, int $offset = 0, string $sort = 'recent'): array {
-        // Incluimos el parámetro sort en la clave de caché para no cruzar los datos
+    public function getCommentsForVideo(int $videoId, ?int $currentUserId, int $limit = 10, int $offset = 0, string $sort = 'recent'): array {
         $cacheKey = "video:{$videoId}:comments:{$sort}:{$offset}:{$limit}";
         
         $cached = $this->redis->get($cacheKey);
         if ($cached) {
             $comments = json_decode($cached, true);
         } else {
-            // Se le envía el $sort al repositorio de la DB
             $comments = $this->commentRepo->getCommentsByVideo($videoId, $limit, $offset, $sort);
-            foreach ($comments as &$comment) {
-                $comment['replies'] = $this->commentRepo->getRepliesByComment($comment['id']);
-            }
             $this->redis->setex($cacheKey, 3600, json_encode($comments));
         }
 
         return $this->hydrateReactions($comments, $currentUserId);
     }
 
-    private function hydrateReactions(array $comments, ?int $currentUserId): array {
-        if (empty($comments)) return [];
+    public function getRepliesForComment(int $commentId, ?int $currentUserId, int $limit = 10, int $offset = 0): array {
+        $cacheKey = "comment:{$commentId}:replies:{$offset}:{$limit}";
+        
+        $cached = $this->redis->get($cacheKey);
+        if ($cached) {
+            $replies = json_decode($cached, true);
+        } else {
+            // Utilizamos el nuevo método del repositorio para respuestas paginadas
+            $replies = $this->commentRepo->getRepliesByCommentPaginated($commentId, $limit, $offset);
+            $this->redis->setex($cacheKey, 3600, json_encode($replies));
+        }
+
+        return $this->hydrateReactions($replies, $currentUserId);
+    }
+
+    private function hydrateReactions(array $items, ?int $currentUserId): array {
+        if (empty($items)) return [];
 
         $pipe = $this->redis->pipeline();
-        foreach ($comments as $comment) {
-            $pipe->hGetAll("comment:{$comment['id']}:counters");
+        foreach ($items as $item) {
+            $pipe->hGetAll("comment:{$item['id']}:counters");
             if ($currentUserId) {
-                $pipe->hGet("comment:{$comment['id']}:user_reaction", (string)$currentUserId);
-            }
-        }
-        
-        foreach ($comments as &$comment) {
-            foreach ($comment['replies'] as &$reply) {
-                $pipe->hGetAll("comment:{$reply['id']}:counters");
-                if ($currentUserId) {
-                    $pipe->hGet("comment:{$reply['id']}:user_reaction", (string)$currentUserId);
-                }
+                $pipe->hGet("comment:{$item['id']}:user_reaction", (string)$currentUserId);
             }
         }
         
         $results = $pipe->execute();
         $resultIndex = 0;
         
-        foreach ($comments as &$comment) {
+        foreach ($items as &$item) {
             $counters = $results[$resultIndex++];
-            $comment['likes'] = isset($counters['like']) ? (int)$counters['like'] : (int)$comment['likes'];
-            $comment['dislikes'] = isset($counters['dislike']) ? (int)$counters['dislike'] : (int)$comment['dislikes'];
+            $item['likes'] = isset($counters['like']) ? (int)$counters['like'] : (int)$item['likes'];
+            $item['dislikes'] = isset($counters['dislike']) ? (int)$counters['dislike'] : (int)$item['dislikes'];
             
             if ($currentUserId) {
                 $userReaction = $results[$resultIndex++];
-                $comment['user_reaction'] = $userReaction ?: null;
+                $item['user_reaction'] = $userReaction ?: null;
             } else {
-                $comment['user_reaction'] = null;
-            }
-
-            foreach ($comment['replies'] as &$reply) {
-                $replyCounters = $results[$resultIndex++];
-                $reply['likes'] = isset($replyCounters['like']) ? (int)$replyCounters['like'] : (int)$reply['likes'];
-                $reply['dislikes'] = isset($replyCounters['dislike']) ? (int)$replyCounters['dislike'] : (int)$reply['dislikes'];
-                
-                if ($currentUserId) {
-                    $replyUserReaction = $results[$resultIndex++];
-                    $reply['user_reaction'] = $replyUserReaction ?: null;
-                } else {
-                    $reply['user_reaction'] = null;
-                }
+                $item['user_reaction'] = null;
             }
         }
 
-        return $comments;
+        return $items;
     }
 
     public function addComment(int $videoId, int $userId, string $content, ?int $parentId = null): array {
@@ -96,21 +83,31 @@ class CommentServices {
         
         if ($parentId) {
             $commentId = $this->commentRepo->insertReply($videoId, $userId, $parentId, $content);
+            // Limpiamos cacheados de las respuestas
+            $keysReplies = $this->redis->keys("comment:{$parentId}:replies:*");
+            if (!empty($keysReplies)) {
+                $this->redis->del($keysReplies);
+            }
+            // Limpiamos los cacheados principales para que se actualice el contador (reply_count)
+            $keysMain = $this->redis->keys("video:{$videoId}:comments:*");
+            if (!empty($keysMain)) {
+                $this->redis->del($keysMain);
+            }
         } else {
             $commentId = $this->commentRepo->insertComment($videoId, $userId, $content);
-        }
-
-        // Limpiamos los cacheados sin importar si estaban en recent o relevant
-        $keys = $this->redis->keys("video:{$videoId}:comments:*");
-        if (!empty($keys)) {
-            $this->redis->del($keys);
+            $keysMain = $this->redis->keys("video:{$videoId}:comments:*");
+            if (!empty($keysMain)) {
+                $this->redis->del($keysMain);
+            }
         }
 
         $newComment = $this->commentRepo->getCommentById($commentId);
-        $newComment['replies'] = []; 
         $newComment['likes'] = 0;
         $newComment['dislikes'] = 0;
         $newComment['user_reaction'] = null;
+        if (!$parentId) {
+            $newComment['reply_count'] = 0;
+        }
 
         return $newComment;
     }

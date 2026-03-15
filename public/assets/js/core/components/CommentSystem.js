@@ -11,10 +11,11 @@ export class CommentSystem {
         this.container = container;
         this.api = api;
         this.offset = 0;
-        this.limit = 20;
-        this.currentSort = 'recent'; // Por defecto, ordenar por recientes
+        this.limit = 10;
+        this.currentSort = 'recent';
         this.isLoading = false;
         this.hasMore = true;
+        this.repliesState = {}; 
         this.commentsListEl = null;
         this.loadMoreBtn = null;
         this.boundClickHandler = this.handleGlobalClick.bind(this);
@@ -35,7 +36,6 @@ export class CommentSystem {
     renderLayout() {
         console.log('[CommentSystem] 🎨 Renderizando layout base...');
         
-        // FIX: Obtener el avatar del usuario logueado dinámicamente desde el header
         const headerProfileImg = document.querySelector('.component-button--profile img');
         const currentUserAvatarSrc = headerProfileImg ? headerProfileImg.src : `${window.AppBasePath || ''}/public/assets/images/default-avatar.png`;
 
@@ -125,7 +125,6 @@ export class CommentSystem {
                     input.value = '';
                     input.style.height = 'auto';
                     
-                    // Remover mensaje de vacío si existe
                     const emptyState = this.commentsListEl.querySelector('.component-comments-empty');
                     if (emptyState) {
                         emptyState.remove();
@@ -223,7 +222,6 @@ export class CommentSystem {
                     this.hasMore = false;
                 }
                 
-                // Si estamos en la primera carga y no hay comentarios, mostrar el estado vacío
                 if (this.offset === 0 && comments.length === 0) {
                     this.commentsListEl.innerHTML = `
                         <div class="component-comments-empty" style="text-align: center; padding: 40px 20px; color: var(--text-secondary);">
@@ -266,14 +264,27 @@ export class CommentSystem {
         
         const isLiked = comment.user_reaction === 'like' ? 'active' : '';
         const isDisliked = comment.user_reaction === 'dislike' ? 'active' : '';
+        const replyCount = parseInt(comment.reply_count) || 0;
 
         let repliesHtml = '';
-        if (!isReply && comment.replies && comment.replies.length > 0) {
-            repliesHtml = `<div class="component-comment-replies">`;
-            comment.replies.forEach(reply => {
-                repliesHtml += this.createCommentHtml(reply, true);
-            });
-            repliesHtml += `</div>`;
+        if (!isReply) {
+            repliesHtml = `
+                <div class="component-comment-replies-container">
+                    <div class="component-comment-replies-list" id="replies-list-${comment.id}"></div>
+                    <div class="component-comment-replies-actions" style="${replyCount === 0 ? 'display: none;' : ''}">
+                        ${replyCount > 0 ? `
+                            <button class="component-comment-btn-action btn-show-replies" data-id="${comment.id}" data-total="${replyCount}">
+                                <span class="material-symbols-rounded">expand_more</span>
+                                Mostrar ${replyCount} respuestas
+                            </button>
+                        ` : ''}
+                        <button class="component-comment-btn-action btn-hide-replies" data-id="${comment.id}" style="display: none;">
+                            <span class="material-symbols-rounded">expand_less</span>
+                            Ocultar respuestas
+                        </button>
+                    </div>
+                </div>
+            `;
         }
 
         const replyButtonHtml = !isReply ? `<button class="component-comment-btn-action btn-reply" data-id="${comment.id}">Responder</button>` : '';
@@ -300,8 +311,8 @@ export class CommentSystem {
                         </div>
                     </div>
                 </div>
-                ${repliesHtml}
                 <div class="component-comment-reply-form-container" id="reply-form-${comment.id}"></div>
+                ${repliesHtml}
             </div>
         `;
     }
@@ -325,9 +336,29 @@ export class CommentSystem {
             return;
         }
 
+        const btnCancelReply = e.target.closest('.btn-cancel-reply');
+        if (btnCancelReply) {
+            const commentId = btnCancelReply.dataset.id;
+            const formContainer = document.getElementById(`reply-form-${commentId}`);
+            if (formContainer) formContainer.innerHTML = '';
+            return;
+        }
+
         const btnSubmitReply = e.target.closest('.btn-submit-reply');
         if (btnSubmitReply) {
             this.submitReply(btnSubmitReply.dataset.id);
+            return;
+        }
+
+        const btnShowReplies = e.target.closest('.btn-show-replies');
+        if (btnShowReplies) {
+            this.loadReplies(btnShowReplies.dataset.id);
+            return;
+        }
+
+        const btnHideReplies = e.target.closest('.btn-hide-replies');
+        if (btnHideReplies) {
+            this.hideReplies(btnHideReplies.dataset.id);
             return;
         }
     }
@@ -336,7 +367,7 @@ export class CommentSystem {
         const commentId = btnElement.dataset.id;
         console.log(`[CommentSystem] 👍 Reacción disparada. ID: ${commentId}, Tipo: ${type}`);
         
-        const thread = btnElement.closest('.component-comment-thread');
+        const thread = btnElement.closest('.component-comment-thread') || btnElement.closest('.component-comment-main');
         const btnLike = thread.querySelector('.btn-like');
         const btnDislike = thread.querySelector('.btn-dislike');
         const countSpan = btnLike.querySelector('.count');
@@ -403,16 +434,24 @@ export class CommentSystem {
         const container = document.getElementById(`reply-form-${commentId}`);
         if (!container) return;
 
+        if (container.innerHTML.trim() !== '') {
+            container.innerHTML = '';
+            return;
+        }
+
         const currentUserAvatarSrc = document.getElementById('comments-current-user-avatar')?.src || `${window.AppBasePath || ''}/public/assets/images/default-avatar.png`;
 
         container.innerHTML = `
-            <div class="component-comments-input-area is-reply">
+            <div class="component-comments-input-area is-reply" style="margin-left: 56px; margin-top: 8px;">
                 <img class="component-comment-avatar" src="${currentUserAvatarSrc}" alt="Usuario">
                 <div class="component-comments-input-wrapper">
                     <textarea id="input-reply-${commentId}" class="component-comments-textarea" placeholder="Añade una respuesta..." rows="1"></textarea>
-                    <button class="component-btn-send btn-submit-reply" data-id="${commentId}" disabled title="Enviar respuesta">
-                        <span class="material-symbols-rounded">send</span>
-                    </button>
+                    <div style="display: flex; gap: 8px; margin-top: 8px; justify-content: flex-end;">
+                        <button class="component-btn-secondary btn-cancel-reply" data-id="${commentId}" style="padding: 6px 16px;">Cancelar</button>
+                        <button class="component-btn-send btn-submit-reply" data-id="${commentId}" disabled title="Enviar respuesta">
+                            <span class="material-symbols-rounded">send</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         `;
@@ -426,6 +465,67 @@ export class CommentSystem {
             input.style.height = (input.scrollHeight) + 'px';
             submitBtn.disabled = input.value.trim().length === 0;
         });
+    }
+
+    async loadReplies(commentId) {
+        if (!this.repliesState[commentId]) {
+            this.repliesState[commentId] = { offset: 0, limit: 10 };
+        }
+        
+        const state = this.repliesState[commentId];
+        const btnShow = document.querySelector(`.btn-show-replies[data-id="${commentId}"]`);
+        const btnHide = document.querySelector(`.btn-hide-replies[data-id="${commentId}"]`);
+        const listEl = document.getElementById(`replies-list-${commentId}`);
+
+        try {
+            const originalText = btnShow.innerHTML;
+            btnShow.innerHTML = `<span class="material-symbols-rounded">hourglass_empty</span>Cargando...`;
+            btnShow.disabled = true;
+
+            const payload = { video_id: this.videoId, parent_id: commentId, offset: state.offset, limit: state.limit };
+            const result = await this.api.post(ApiRoutes.Comments.Get, payload);
+
+            if (result && result.success) {
+                const replies = result.data;
+                let html = '';
+                replies.forEach(reply => {
+                    html += this.createCommentHtml(reply, true);
+                });
+                listEl.insertAdjacentHTML('beforeend', html);
+                
+                state.offset += replies.length;
+                const totalReplies = parseInt(btnShow.dataset.total || '0');
+
+                if (state.offset >= totalReplies || replies.length < state.limit) {
+                    btnShow.style.display = 'none';
+                    btnHide.style.display = 'inline-flex';
+                } else {
+                    btnShow.innerHTML = `<span class="material-symbols-rounded">expand_more</span>Mostrar más respuestas`;
+                    btnShow.disabled = false;
+                    btnHide.style.display = 'inline-flex';
+                }
+            }
+        } catch(e) {
+            console.error('[CommentSystem] ❌ Error cargando respuestas:', e);
+            btnShow.innerHTML = originalText;
+            btnShow.disabled = false;
+        }
+    }
+
+    hideReplies(commentId) {
+        const listEl = document.getElementById(`replies-list-${commentId}`);
+        const btnShow = document.querySelector(`.btn-show-replies[data-id="${commentId}"]`);
+        const btnHide = document.querySelector(`.btn-hide-replies[data-id="${commentId}"]`);
+        
+        listEl.innerHTML = '';
+        if (this.repliesState[commentId]) {
+            this.repliesState[commentId].offset = 0;
+        }
+
+        btnHide.style.display = 'none';
+        btnShow.style.display = 'inline-flex';
+        btnShow.innerHTML = `<span class="material-symbols-rounded">expand_more</span>Mostrar ${btnShow.dataset.total} respuestas`;
+        btnShow.disabled = false;
     }
 
     async submitReply(parentId) {
@@ -447,23 +547,28 @@ export class CommentSystem {
             
             if (result && result.success && result.data) {
                 console.log('[CommentSystem] ✅ Respuesta creada con éxito.');
+                
                 const formContainer = document.getElementById(`reply-form-${parentId}`);
                 formContainer.innerHTML = ''; 
 
-                const thread = document.querySelector(`.component-comment-thread[data-comment-id="${parentId}"]`);
-                let repliesContainer = thread.querySelector('.component-comment-replies');
-                
-                if (!repliesContainer) {
-                    repliesContainer = document.createElement('div');
-                    repliesContainer.className = 'component-comment-replies';
-                    thread.insertBefore(repliesContainer, formContainer);
+                const listEl = document.getElementById(`replies-list-${parentId}`);
+                const newReplyHtml = this.createCommentHtml(result.data, true);
+                listEl.insertAdjacentHTML('beforeend', newReplyHtml);
+
+                const actionsContainer = document.querySelector(`.component-comment-replies-actions[style*="display: none"]`);
+                if (actionsContainer) actionsContainer.style.display = 'block';
+
+                const btnShow = document.querySelector(`.btn-show-replies[data-id="${parentId}"]`);
+                if (btnShow) {
+                    const currentTotal = parseInt(btnShow.dataset.total || '0') + 1;
+                    btnShow.dataset.total = currentTotal;
+                    if (btnShow.innerHTML.includes('Mostrar') && !btnShow.innerHTML.includes('más')) {
+                        btnShow.innerHTML = `<span class="material-symbols-rounded">expand_more</span>Mostrar ${currentTotal} respuestas`;
+                    }
                 }
 
-                const newReplyHtml = this.createCommentHtml(result.data, true);
-                repliesContainer.insertAdjacentHTML('beforeend', newReplyHtml);
             } else {
                 console.warn('[CommentSystem] ⚠️ Error lógico al responder:', result);
-                
                 if (window.appInstance && typeof window.appInstance.showToast === 'function') {
                     window.appInstance.showToast(result?.error || result?.message || 'Error al enviar la respuesta.', 'error');
                 } else {

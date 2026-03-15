@@ -16,12 +16,12 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px; /* Modificado a 8px */
+    padding: 8px;
     border-bottom: 1px solid var(--border-color, #3F3F3F);
 }
 
 .component-comments-center {
-    padding: 8px; /* Modificado a 8px */
+    padding: 8px;
     border-bottom: 1px solid var(--border-color, #3F3F3F);
 }
 
@@ -54,7 +54,7 @@
     display: flex;
     gap: 8px;
     margin-bottom: 0; 
-    align-items: center; /* Alineación vertical central */
+    align-items: center;
     width: 100%;
 }
 
@@ -234,9 +234,43 @@
     font-variation-settings: 'FILL' 1;
 }
 
-.component-comment-replies {
-    display: flex;
-    flex-direction: column;
-    margin-top: 12px;
+/* Contenedor principal de respuestas (Mantiene la indentación) */
+.component-comment-replies-container {
     margin-left: 56px; 
+    margin-top: 8px;
+}
+
+.component-comment-replies-actions {
+    padding-top: 4px;
+}
+
+/* ==========================================================================
+   DISEÑO DARK MODE PARA BOTONES DE MOSTRAR / OCULTAR RESPUESTAS
+   ========================================================================== */
+
+.btn-show-replies, 
+.btn-hide-replies {
+    color: var(--color-primary, #3ea6ff); 
+    background-color: transparent;
+    border: none;
+    font-weight: 500;
+    font-size: 13px;
+    border-radius: 16px;
+    padding: 6px 16px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    margin-left: -4px; /* Ligero ajuste para alinear con el avatar */
+}
+
+.btn-show-replies:hover, 
+.btn-hide-replies:hover {
+    background-color: rgba(62, 166, 255, 0.15);
+}
+
+.btn-show-replies .material-symbols-rounded,
+.btn-hide-replies .material-symbols-rounded {
+    font-size: 18px;
+    margin-right: 6px;
 }
