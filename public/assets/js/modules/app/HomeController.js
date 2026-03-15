@@ -167,6 +167,11 @@ export class HomeController {
         const dominantColor = video.thumbnail_dominant_color !== 'transparent' ? video.thumbnail_dominant_color : '#333'; 
         const videoSrc = video.video_url || ''; 
 
+        // DETECCIÓN DE CALIDAD 4K: Evaluamos múltiples posibles nombres de campos de la API de forma flexible
+        const is4K = video.is_4k === true || video.is_4k === 1 || 
+                     (video.quality && video.quality.toString().toLowerCase() === '4k') || 
+                     (video.resolution && parseInt(video.resolution) >= 2160);
+
         const isVertical = orientation === 'vertical';
         const cardModifierClass = isVertical ? 'component-video-card--vertical' : '';
         
@@ -177,6 +182,7 @@ export class HomeController {
             <div class="component-video-card ${cardModifierClass}" style="--local-dominant-color: ${dominantColor}; cursor: pointer;" data-nav="${navUrl}">
                 
                 <div class="component-video-card__top">
+                    ${is4K ? '<span class="component-video-card__badge-4k">4K</span>' : ''}
                     <img src="${video.thumbnail_url}" alt="Miniatura de ${title}" class="component-video-card__thumbnail" loading="lazy">
                     
                     <video 
