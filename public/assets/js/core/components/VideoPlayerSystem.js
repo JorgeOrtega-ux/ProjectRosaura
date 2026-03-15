@@ -63,6 +63,7 @@ export class VideoPlayerSystem {
         this.wasPlayingBeforeDrag = false;
         this.vttData = [];
         this.spriteSheetUrl = null;
+        this._spriteImage = new Image(); // Objeto en memoria para dibujar en el Canvas
 
         // Variables de Ambient Mode
         this.ambientModeEnabled = true;
@@ -101,9 +102,11 @@ export class VideoPlayerSystem {
         this.previewOverlay = document.createElement('div');
         this.previewOverlay.className = 'component-player-preview-overlay';
         
-        this.previewOverlayImg = document.createElement('img');
-        this.previewOverlay.appendChild(this.previewOverlayImg);
+        // MAGIA: Usamos un Canvas puro. Se comportará exactamente igual que el tag <video>
+        this.previewCanvas = document.createElement('canvas');
+        this.previewCanvas.className = 'component-player-preview-canvas';
         
+        this.previewOverlay.appendChild(this.previewCanvas);
         this.container.insertBefore(this.previewOverlay, this.controlsContainer);
     }
 
@@ -661,6 +664,7 @@ export class VideoPlayerSystem {
         this.destroyHls(); 
         this.vttData = [];
         this.spriteSheetUrl = null;
+        this._spriteImage.src = ''; // Limpiamos la memoria
         
         this.dbVideoId = dbVideoId;
         this.currentVideoUuid = sourceIdentifier; 
@@ -722,6 +726,12 @@ export class VideoPlayerSystem {
                     }
                 }
             }
+            
+            // Pre-cargamos la imagen en el objeto en memoria para el Canvas
+            if (this.spriteSheetUrl) {
+                this._spriteImage.src = this.spriteSheetUrl;
+            }
+            
         } catch (error) {
             console.error("[VideoPlayer:VTT] Error al obtener el archivo de previsualizaciones:", error);
         }
@@ -1018,6 +1028,7 @@ export class VideoPlayerSystem {
         if (this.vttData.length > 0 && this.spriteSheetUrl) {
             const cue = this.vttData.find(c => timeAtCursor >= c.start && timeAtCursor <= c.end) || this.vttData[0];
             
+            // 1. Tarjeta Flotante Pequeña
             if (this.previewSprite) {
                 this.previewSprite.style.backgroundImage = `url(${this.spriteSheetUrl})`;
                 this.previewSprite.style.backgroundPosition = `-${cue.x}px -${cue.y}px`;
@@ -1025,22 +1036,29 @@ export class VideoPlayerSystem {
                 this.previewSprite.style.height = `${cue.h}px`;
             }
 
-            if (!isHoverOnly && this.previewOverlayImg && this.isDragging) {
-                if (this.previewOverlayImg.src !== this.spriteSheetUrl) {
-                    this.previewOverlayImg.src = this.spriteSheetUrl;
+            // 2. Fondo Gigante de Baja Calidad (MÁSCARA PERFECTA CON CANVAS)
+            if (!isHoverOnly && this.previewCanvas && this.isDragging) {
+                const ctx = this.previewCanvas.getContext('2d');
+                
+                // Le damos al canvas la proporción exacta del frame
+                if (this.previewCanvas.width !== cue.w) this.previewCanvas.width = cue.w;
+                if (this.previewCanvas.height !== cue.h) this.previewCanvas.height = cue.h;
+                
+                if (this._spriteImage && this._spriteImage.complete) {
+                    ctx.clearRect(0, 0, cue.w, cue.h);
+                    
+                    // TRUCO ANTI-SANGRADO: 
+                    // Recortamos 1 solo píxel exacto de los bordes del recuadro original.
+                    // Esto elimina cualquier línea verde o negra que haya dejado FFmpeg 
+                    // y evita que los subpíxeles sangren al escalar.
+                    const crop = 1;
+                    
+                    ctx.drawImage(
+                        this._spriteImage, 
+                        cue.x + crop, cue.y + crop, cue.w - (crop * 2), cue.h - (crop * 2), // Área de extracción
+                        0, 0, cue.w, cue.h // Destino final
+                    );
                 }
-                
-                const S_x = this.container.offsetWidth / cue.w;
-                const S_y = this.container.offsetHeight / cue.h;
-                const scale = Math.min(S_x, S_y); 
-                
-                const scaledW = cue.w * scale;
-                const scaledH = cue.h * scale;
-                const offsetX = (this.container.offsetWidth - scaledW) / 2;
-                const offsetY = (this.container.offsetHeight - scaledH) / 2;
-
-                this.previewOverlayImg.style.transformOrigin = '0 0';
-                this.previewOverlayImg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale}) translate(-${cue.x}px, -${cue.y}px)`;
             }
         }
     }

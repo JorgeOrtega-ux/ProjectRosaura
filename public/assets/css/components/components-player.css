@@ -5,10 +5,10 @@
     z-index: 1; 
     width: 100%;
     height: 100%;
-    aspect-ratio: 16 / 9; /* Garantiza el espacio al arrancar previniendo Layout Shift */
-    background-color: transparent; /* Cambiado: Se elimina el fondo rígido negro */
+    aspect-ratio: 16 / 9; 
+    background-color: transparent; 
     border-radius: 12px; 
-    border: none; /* Cambiado: Se elimina el borde sólido para un look sin marcos */
+    border: none; 
     overflow: hidden; 
     display: flex;
     align-items: center;
@@ -17,26 +17,25 @@
     box-shadow: 0 4px 30px rgba(0,0,0,0.6); 
 }
 
-/* Permitir que en pantalla completa el componente ocupe TODO el monitor sin interferencia del JS */
 .component-video-player:fullscreen,
 .component-video-player:-webkit-full-screen,
 .component-video-player:-moz-full-screen {
     width: 100vw !important;
     height: 100vh !important;
-    border-radius: 0; /* Aseguramos que en fullscreen no haya esquinas redondeadas */
+    border-radius: 0; 
 }
 
 .component-video-player__video {
     width: 100%;
     height: 100%;
     object-fit: contain; 
-    background-color: #000; /* El fondo negro se delega estrictamente a la etiqueta video para las barras de aspect-ratio */
+    background-color: #000; 
     cursor: pointer;
     outline: none;
 }
 
 /* ==========================================================================
-   ESTILOS NUEVOS: SPINNER DE CARGA CSS PURO
+   SPINNER DE CARGA CSS PURO
    ========================================================================== */
 .component-video-player__spinner {
     position: absolute;
@@ -68,7 +67,7 @@
 }
 
 /* ==========================================================================
-   ESTILOS NUEVOS: OVERLAY DE REPRODUCTOR (FLUÍDEZ EXTREMA)
+   OVERLAY DE REPRODUCTOR (CANVAS SÚPER NATIVO)
    ========================================================================== */
 .component-player-preview-overlay {
     position: absolute;
@@ -76,22 +75,22 @@
     left: 0; 
     width: 100%; 
     height: 100%;
-    background-color: #000;
-    z-index: 5; /* Entre el video (0) y los controles (10) */
+    background-color: #000 !important; /* El fondo negro para tapar siempre el video */
+    z-index: 5; 
     display: none;
-    overflow: hidden;
-    pointer-events: none; /* Crucial para no bloquear clics ni barras */
+    pointer-events: none; 
 }
 
-.component-player-preview-overlay img {
-    position: absolute;
-    top: 0; 
-    left: 0;
-    will-change: transform; /* Optimización de hardware para JS */
+.component-player-preview-canvas {
+    width: 100%;
+    height: 100%;
+    /* ¡Magia pura! Se comporta igualito que la etiqueta <video> */
+    object-fit: contain; 
+    background-color: transparent;
 }
 
 /* ==========================================================================
-   ESTILOS NUEVOS: ILUMINACIÓN CINEMATOGRÁFICA (AMBIENT MODE)
+   ILUMINACIÓN CINEMATOGRÁFICA (AMBIENT MODE)
    ========================================================================== */
 .component-video-ambient-wrapper {
     position: absolute;
@@ -100,9 +99,9 @@
     transform: translate(-50%, -50%);
     width: 100%; 
     height: 100%;
-    z-index: 0; /* CLAVE: Por debajo del reproductor de video */
+    z-index: 0; 
     pointer-events: none;
-    overflow: visible; /* Permite que el difuminado desborde la caja hacia las barras negras */
+    overflow: visible; 
 }
 
 .component-video-ambient-canvas {
@@ -154,12 +153,10 @@
     height: 6px; 
 }
 
-/* BARRA DE BUFFER / DESCARGADO */
 .component-video-player__progress-buffer {
     position: absolute; top: 0; left: 0; height: 100%; background-color: rgba(255, 255, 255, 0.4); width: 0%; border-radius: 2px; z-index: 1; transition: width 0.2s ease;
 }
 
-/* LA BARRA Y BOLITA AHORA SON COLOR #8B5CF6 */
 .component-video-player__progress-fill {
     position: absolute; top: 0; left: 0; height: 100%; background-color: #8B5CF6; width: 0%; border-radius: 2px; z-index: 2;
 }
@@ -172,7 +169,7 @@
 }
 
 /* ==========================================================================
-   ESTILOS NUEVOS: HEATMAP DE RETENCIÓN (MOMENTOS MÁS REPRODUCIDOS)
+   HEATMAP DE RETENCIÓN (MOMENTOS MÁS REPRODUCIDOS)
    ========================================================================== */
 .heatmap-canvas {
     position: absolute;
@@ -180,15 +177,14 @@
     left: 0;
     width: 100%;
     height: 40px;
-    pointer-events: none; /* No debe interferir con los clics en la barra */
+    pointer-events: none; 
     opacity: 0;
     transform-origin: bottom;
     transform: scaleY(0.5);
     transition: opacity 0.3s ease, transform 0.3s ease;
-    z-index: 1; /* Debajo de los thumb y el fill, pero visible sobre el player */
+    z-index: 1; 
 }
 
-/* Aparecer suavemente al pasar el mouse por los controles o hacer scrubbing */
 .component-video-player__controls:hover .heatmap-canvas,
 .component-video-player__progress-area.is-dragging .heatmap-canvas {
     opacity: 0.8;
@@ -196,7 +192,7 @@
 }
 
 /* ==========================================================================
-   ESTILOS NUEVOS: PREVIEW CARD Y SPRITE SHEET (SCRUBBING)
+   PREVIEW CARD Y SPRITE SHEET (SCRUBBING)
    ========================================================================== */
 .component-player-preview-card {
     position: absolute;
@@ -209,9 +205,9 @@
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.15s ease, visibility 0.15s;
-    pointer-events: none; /* Que el mouse ignore esta caja para no cortar el evento del slider */
+    pointer-events: none; 
     z-index: 100;
-    gap: 8px; /* Separación entre la imagen y el badge de tiempo */
+    gap: 8px; 
 }
 
 .component-video-player__progress-area:hover .component-player-preview-card,
@@ -221,42 +217,38 @@
 }
 
 .component-player-sprite-container {
-    width: 160px; /* Tamaño por defecto igual que el FFmpeg Worker */
+    width: 160px; 
     height: 90px;
     background-repeat: no-repeat;
     background-color: #111;
     overflow: hidden;
-    /* Estilos añadidos a la pura imagen */
     border-radius: 8px; 
     border: 2px solid #fff; 
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5); 
 }
 
-/* BADGE DE TIEMPO / MOMENTO MÁS REPRODUCIDO */
 .component-player-preview-time {
     color: #fff;
     font-size: 13px;
     font-weight: 600;
     font-family: var(--sl-font-mono, monospace);
     letter-spacing: 0.5px;
-    background-color: rgba(0, 0, 0, 0.75); /* Negro semitransparente elegante */
+    background-color: rgba(0, 0, 0, 0.75); 
     padding: 4px 12px;
     border-radius: 12px; 
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
     
-    /* LÍMITES DE ANCHO Y TEXT ELIPSIS */
-    max-width: 160px; /* Mismo ancho estricto que la imagen del sprite */
-    box-sizing: border-box; /* Asegura que el padding no rompa el ancho */
-    white-space: nowrap; /* Evita que baje a una segunda línea */
-    overflow: hidden; /* Oculta lo que sobrepasa el ancho */
-    text-overflow: ellipsis; /* Agrega los "..." al final */
+    max-width: 160px; 
+    box-sizing: border-box; 
+    white-space: nowrap; 
+    overflow: hidden; 
+    text-overflow: ellipsis; 
     
-    display: block; /* Debe ser block para que funcione el text-overflow */
+    display: block; 
     text-align: center;
     transition: all 0.2s ease;
 }
 
-/* Estilo destacado cuando detecta que es el pico más reproducido */
 .component-player-preview-time.is-peak-moment {
     font-weight: 700;
     box-shadow: 0 2px 12px rgba(255, 255, 255, 0.2);
@@ -277,12 +269,9 @@
 .component-video-player__btn:hover { background-color: rgba(255, 255, 255, 0.2); color: #fff; }
 .component-video-player__btn .material-symbols-rounded { font-size: 22px; pointer-events: none; }
 
-
 /* ==========================================================================
-   ESTILOS DE VOLUMEN (CORRECCIÓN ABSOLUTA PARA EL PADDING/SEPARACIÓN)
+   ESTILOS DE VOLUMEN
    ========================================================================== */
-
-/* 1. Transformamos el contenedor para que actúe IGUAL que un control-box (fondo negro y padding) */
 .component-video-player__volume-container { 
     position: relative;
     display: flex;
@@ -295,7 +284,6 @@
     overflow: hidden; 
 }
 
-/* 2. Capa interior que pintará el blanco EXACTAMENTE respetando el padding de 4px */
 .component-video-player__volume-container::before {
     content: '';
     position: absolute;
@@ -310,18 +298,15 @@
     pointer-events: none;
 }
 
-/* 3. Al hacer hover, se enciende SOLO la capa blanca interior */
 .component-video-player__volume-container:hover::before {
     background-color: rgba(255, 255, 255, 0.2);
 }
 
-/* Aseguramos que los controles reales estén siempre por encima del fondo blanco */
 .component-video-player__volume-container > * {
     position: relative;
     z-index: 1;
 }
 
-/* Quitamos el hover individual del botón de mute para evitar "doble capa" de blanco */
 .component-video-player__volume-container:hover .component-video-player__btn { 
     background-color: transparent; 
     color: #fff; 
@@ -332,7 +317,6 @@
 .component-video-player__volume-slider { -webkit-appearance: none; appearance: none; width: 100%; background: transparent; cursor: pointer; height: 100%; }
 .component-video-player__volume-slider:focus { outline: none; }
 
-/* CORRECCIÓN: Track de Relleno para Chrome/Safari/Edge usando Gradiente */
 .component-video-player__volume-slider::-webkit-slider-runnable-track { 
     width: 100%; 
     height: 4px; 
@@ -341,10 +325,8 @@
     border-radius: 2px; 
 }
 .component-video-player__volume-slider::-webkit-slider-thumb { height: 12px; width: 12px; border-radius: 50%; background: #fff; cursor: pointer; -webkit-appearance: none; margin-top: -4px; transition: background 0.15s ease, transform 0.1s ease; }
-/* Se mantiene blanca al hacer hover */
 .component-video-player__volume-slider::-webkit-slider-thumb:hover { background: #fff; transform: scale(1.2); }
 
-/* CORRECCIÓN: Track de Relleno para Firefox */
 .component-video-player__volume-slider::-moz-range-track { 
     width: 100%; 
     height: 4px; 
@@ -353,12 +335,9 @@
     border-radius: 2px; 
 }
 .component-video-player__volume-slider::-moz-range-thumb { height: 12px; width: 12px; border: none; border-radius: 50%; background: #fff; cursor: pointer; transition: background 0.15s ease, transform 0.1s ease; }
-/* Se mantiene blanca al hacer hover */
 .component-video-player__volume-slider::-moz-range-thumb:hover { background: #fff; transform: scale(1.2); }
 
-
 /* ========================================================================== */
-
 
 .component-video-player__time {
     color: #e1e1e1; font-size: 13px; font-weight: 500; white-space: nowrap; display: flex; align-items: center; font-family: var(--sl-font-mono, monospace); height: 30px; padding: 0 12px; border-radius: 40px; transition: background-color 0.15s ease, color 0.15s ease; cursor: default; 
@@ -368,7 +347,7 @@
 #time-current { color: #fff; font-weight: 600; }
 
 /* ==========================================================================
-   ESTILOS DEL MÓDULO DE CONFIGURACIÓN ESCALABLE (.module .component-menu)
+   MÓDULO DE CONFIGURACIÓN ESCALABLE
    ========================================================================== */
 .component-video-player__settings-module {
     position: absolute;
