@@ -19,7 +19,7 @@ $isPrivileged = in_array($userRole, ['administrator', 'founder']);
 <script>
     window.AppRouteTitles = {
         '/': "<?php echo __('route_home'); ?>",
-        '/explore': "<?php echo __('route_explore'); ?>",
+        '/trends': "<?php echo __('route_explore'); ?>",
         '/rankings': "Rankings Globales",
         '/login': "<?php echo __('route_login'); ?>",
         '/register': "<?php echo __('route_register'); ?>",

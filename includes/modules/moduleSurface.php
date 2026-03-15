@@ -24,9 +24,9 @@ $isMainArea = !$isAdminArea && !$isSettingsArea && !$isStudioArea;
                         <span><?php echo __('menu_home'); ?></span>
                     </div>
                 </div>
-                <div class="component-menu-link nav-item" data-nav="<?php echo APP_URL; ?>/explore">
+                <div class="component-menu-link nav-item" data-nav="<?php echo APP_URL; ?>/trends">
                     <div class="component-menu-link-icon">
-                        <span class="material-symbols-rounded">explore</span>
+                        <span class="material-symbols-rounded">trending_up</span>
                     </div>
                     <div class="component-menu-link-text">
                         <span><?php echo __('menu_explore'); ?></span>

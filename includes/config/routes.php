@@ -3,7 +3,7 @@
 
 return [
     '/' => ['view' => 'app/home.php'],
-    '/explore' => ['view' => 'app/explore.php'],
+    '/trends' => ['view' => 'app/trends.php'], // RUTA MODIFICADA
     
     // --- RUTA DEL SISTEMA DE BÚSQUEDA ---
     '/results' => ['view' => 'app/search.php'],
