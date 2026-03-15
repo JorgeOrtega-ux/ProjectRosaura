@@ -279,8 +279,9 @@ class UserRepository implements UserRepositoryInterface {
         return $stmt->execute([$recoveryCodes, $id]);
     }
 
-    public function updatePreference(int $userId, string $key, $value): bool {
-        $allowedKeys = ['language', 'open_links_new_tab', 'theme', 'extended_alerts'];
+ public function updatePreference(int $userId, string $key, $value): bool {
+        // Se agregó 'measurement_system' a la lista de claves permitidas
+        $allowedKeys = ['language', 'measurement_system', 'open_links_new_tab', 'theme', 'extended_alerts'];
         if (!in_array($key, $allowedKeys)) return false;
 
         $stmt = $this->pdo->prepare("UPDATE user_preferences SET {$key} = ? WHERE user_id = ?");

@@ -63,6 +63,11 @@ export class MainController {
             localStorage.setItem('pr_extended_alerts', '0');
         }
 
+        if(!localStorage.getItem('pr_measurement_system')) {
+            localStorage.setItem('pr_measurement_system', 'metric');
+            document.cookie = "measurement_system=metric; path=/; max-age=31536000"; 
+        }
+
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
             let theme = this.getPref('theme');
             if (theme === 'system') this.applyTheme('system');
@@ -79,6 +84,10 @@ export class MainController {
 
         if (key === 'language') {
             document.cookie = "pr_language=" + value + "; path=/; max-age=31536000";
+        }
+        
+        if (key === 'measurement_system') {
+            document.cookie = "measurement_system=" + value + "; path=/; max-age=31536000";
         }
 
         if (window.AppUserPrefs) {
@@ -126,6 +135,7 @@ export class MainController {
     syncUIPreferences() {
         const theme = this.getPref('theme');
         const lang = this.getPref('language');
+        const measurement = this.getPref('measurement_system') || 'metric';
         const openLinks = this.getPref('open_links_new_tab');
         const alerts = this.getPref('extended_alerts');
 
@@ -142,6 +152,9 @@ export class MainController {
             if (item.getAttribute('data-key') === 'language') {
                 item.classList.toggle('active', item.getAttribute('data-value') === lang);
             }
+            if (item.getAttribute('data-key') === 'measurement_system') {
+                item.classList.toggle('active', item.getAttribute('data-value') === measurement);
+            }
         });
 
         const themeTriggerTxt = document.querySelector('[data-action="toggleModuleTheme"] .component-dropdown-text');
@@ -154,6 +167,12 @@ export class MainController {
         if (langTriggerTxt) {
             const activeItem = document.querySelector('[data-key="language"].active .component-menu-link-text span');
             if (activeItem) langTriggerTxt.textContent = activeItem.textContent;
+        }
+        
+        const measurementTriggerTxt = document.querySelector('[data-action="toggleModuleMeasurement"] .component-dropdown-text');
+        if (measurementTriggerTxt) {
+            const activeItem = document.querySelector('[data-key="measurement_system"].active .component-menu-link-text span');
+            if (activeItem) measurementTriggerTxt.textContent = activeItem.textContent;
         }
     }
 
@@ -177,6 +196,7 @@ export class MainController {
                 else if (action === 'toggleModuleMainOptions') this.toggleModule('moduleMainOptions');
                 else if (action === 'toggleModuleLanguage') this.toggleModule('moduleLanguage');
                 else if (action === 'toggleModuleTheme') this.toggleModule('moduleTheme');
+                else if (action === 'toggleModuleMeasurement') this.toggleModule('moduleMeasurement');
                 else if (action === 'toggleMobileSearch') this.toggleMobileSearch();
                 else if (action === 'submitLogout') { e.preventDefault(); this.handleLogout(btn); }
                 else if (action === 'toggleAccordion') {
