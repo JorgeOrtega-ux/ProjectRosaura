@@ -115,7 +115,8 @@ class FeedController {
         ];
     }
     
-    public function get_recommendations($input) {
+    // ---> CORREÇÃO AQUI: Renomeado de get_recommendations para getRecommendations <---
+    public function getRecommendations($input) {
         $videoId = isset($input['video_id']) ? (int)$input['video_id'] : 0;
         $limit = isset($input['limit']) ? (int)$input['limit'] : 12;
         

@@ -92,13 +92,22 @@ export class ApiService {
     async postLike(videoUuid, type) { return await this.post(ApiRoutes.Video.ToggleLike, { video_uuid: videoUuid, type: type }); }
     async postSubscribe(identifier) { return await this.post(ApiRoutes.Channel.ToggleSubscription, { identifier: identifier }); }
 
-    // ---> NUEVOS MÉTODOS AÑADIDOS DE PLAYLIST PARA WATCH <---
+    // --- MÉTODOS DE PLAYLIST PARA WATCH ---
     async getPlaylistsForVideo(videoId) { return await this.post(ApiRoutes.Playlist.GetForVideo, { video_id: videoId }); }
     async toggleVideoInPlaylist(playlistUuid, videoId) { return await this.post(ApiRoutes.Playlist.ToggleVideo, { playlist_uuid: playlistUuid, video_id: videoId }); }
     async createPlaylist(title, visibility) { return await this.post(ApiRoutes.Playlist.Create, { title: title, visibility: visibility }); }
     
     // --- MÉTODOS DE RETENCIÓN DE VIDEO (HEATMAP) ---
     async sendRetentionBatch(videoId, data) { return await this.post(ApiRoutes.Metrics.IngestRetention, { videoId: videoId, data: data }); }
+
+    // ---> AÑADIDO: MÉTODO DE ENVÍO DE TELEMETRÍA <---
+    async sendTelemetryPing(videoUuid, watchTime, percentage) {
+        return await this.post(ApiRoutes.Telemetry.Ping, {
+            video_uuid: videoUuid,
+            watch_time: watchTime,
+            percentage: percentage
+        });
+    }
 
     async getVideoHeatmap(videoId) {
         const url = `${this.baseUrl}?route=${ApiRoutes.Metrics.GetRetention}&videoId=${videoId}`;
@@ -228,13 +237,10 @@ export class ApiService {
     async removeWatchItem(videoId) { return await this.post(ApiRoutes.History.RemoveWatchItem, { video_id: videoId }); }
     async removeSearchItem(searchId) { return await this.post(ApiRoutes.History.RemoveSearchItem, { search_id: searchId }); }
 
-    // ---> NUEVOS MÉTODOS DE RANKING <---
+    // --- MÉTODOS DE RANKING ---
     async getTopRankings() { return await this.post(ApiRoutes.Rankings.GetAll); }
     
     async getChannelRanking(userId) { 
-        // Aunque la convención de este proyecto sea todo en POST, usamos fetch como GET 
-        // según el route-map modificado anteriormente, o podemos enviarlo por GET URL args.
-        // Adaptamos a la estructura GET definida en el Controller.
         const url = `${this.baseUrl}?route=${ApiRoutes.Rankings.GetChannel}&user_id=${userId}`;
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
         

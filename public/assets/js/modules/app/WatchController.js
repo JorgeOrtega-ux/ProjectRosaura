@@ -13,7 +13,11 @@ export class WatchController {
         this.playerSystem = null;
         this.commentSystem = null;
         this.viewRegistered = false;
+        
+        // Intervalos
         this.checkPlayerInterval = null;
+        this.telemetryVideoCheckInterval = null;
+        this.telemetryInterval = null;
         
         // Modal/Dropdown State
         this.playlistModalSetupDone = false;
@@ -48,6 +52,10 @@ export class WatchController {
                     
                     this.playerSystem.loadVideo(videoId, true, dbVideoId);
                     this.setupViewTracker(videoId);
+                    
+                    // ---> AÑADIDO: INICIAR RASTREADOR DE TELEMETRÍA <---
+                    this.setupTelemetryTracker(videoId);
+                    
                     this.setupInteractions(videoId, response.data);
                     this.setupSubscription(response.data);
                     
@@ -94,7 +102,6 @@ export class WatchController {
                     this.loadPlaylistData(playlistId, videoId);
                 }
 
-                // NUEVA LOGICA: Llamar a loadRecommendedVideos pasando el ID INT en lugar del UUID
                 this.loadRecommendedVideos(response.data.id);
 
             } else {
@@ -104,6 +111,32 @@ export class WatchController {
             console.error('[WatchController] Error fetching video:', error);
             this.showError404('Ocurrió un error de red al intentar cargar el video.');
         }
+    }
+
+    // ---> NUEVA FUNCIÓN AÑADIDA: TELEMETRÍA <---
+    setupTelemetryTracker(videoUuid) {
+        // Buscamos el video de forma segura por si tarda en montar el DOM HLS
+        this.telemetryVideoCheckInterval = setInterval(() => {
+            const videoEl = document.querySelector('video');
+            if (videoEl) {
+                clearInterval(this.telemetryVideoCheckInterval);
+                
+                // Enviar un ping de telemetría a Redis cada 10 segundos
+                this.telemetryInterval = setInterval(() => {
+                    // Solo enviar datos reales de visualización activa
+                    if (!videoEl.paused && videoEl.currentTime > 0) {
+                        const watchTime = videoEl.currentTime;
+                        const duration = videoEl.duration || 0;
+                        const percentage = duration > 0 ? (watchTime / duration) * 100 : 0;
+                        
+                        // Enviar al controlador PHP silenciosamente
+                        this.api.sendTelemetryPing(videoUuid, watchTime, percentage).catch(err => {
+                            console.error('[Telemetría] Error al reportar ping:', err);
+                        });
+                    }
+                }, 10000); 
+            }
+        }, 1000);
     }
 
     setupViewTracker(videoUuid) {
@@ -496,14 +529,12 @@ export class WatchController {
         }, 300);
     }
 
-    // --- NUEVO ENDPOINT DE RECOMENDACIONES (ALGORITMO ENTERPRISE) ---
     async loadRecommendedVideos(dbVideoId) {
         try {
             const response = await this.api.post('app.get_recommendations', { video_id: dbVideoId, limit: 12 });
             
             if (response && response.success) {
                 let videoList = [];
-                // Obtenemos directamente la data que viene del FeedController adaptado
                 if (Array.isArray(response.data)) videoList = response.data;
 
                 this.renderRecommendedVideos(videoList);
@@ -763,8 +794,12 @@ export class WatchController {
         }
     }
 
+    // Asegurarse de limpiar los nuevos intervalos al destruir la vista
     destroy() {
         if (this.checkPlayerInterval) clearInterval(this.checkPlayerInterval);
+        if (this.telemetryVideoCheckInterval) clearInterval(this.telemetryVideoCheckInterval);
+        if (this.telemetryInterval) clearInterval(this.telemetryInterval);
+        
         if (this.playerSystem) {
             this.playerSystem.destroy();
             this.playerSystem = null;

@@ -8,6 +8,9 @@ return [
     'app.get_playlist_queue'   => ['controller' => 'App\Api\Controllers\PlaylistController', 'action' => 'getQueue'],
     'app.get_video_details'    => ['controller' => 'App\Api\Controllers\VideoController', 'action' => 'getVideoDetails'],
     
+    // ---> AÑADIDO: RUTA DE RECOMENDACIONES (Corrige el error 404) <---
+    'app.get_recommendations'  => ['controller' => 'App\Api\Controllers\FeedController', 'action' => 'getRecommendations'],
+    
     // --- RUTA DE BÚSQUEDA (MEILISEARCH) ---
     'search.get'               => ['controller' => 'ProjectRosaura\Controllers\SearchController', 'action' => 'search'],
     
@@ -19,7 +22,6 @@ return [
     'playlist.get_for_video'   => ['controller' => 'App\Api\Controllers\PlaylistController', 'action' => 'getPlaylistsForVideo'],
     'playlist.toggle_video'    => ['controller' => 'App\Api\Controllers\PlaylistController', 'action' => 'toggleVideo'],
     'playlist.create'          => ['controller' => 'App\Api\Controllers\PlaylistController', 'action' => 'createPlaylist'],
-    // ---> AÑADIDO: RUTA PARA EL FEED DE PLAYLISTS <---
     'playlist.get_all'         => ['controller' => 'App\Api\Controllers\PlaylistController', 'action' => 'getAllPlaylists'],
 
     // --- RUTAS DE MEDIOS PROTEGIDOS (FIRMADO) ---
@@ -133,6 +135,9 @@ return [
     // --- NUEVAS RUTAS DE MÉTRICAS / HEATMAP ---
     'metrics.retention.ingest' => ['controller' => 'App\Api\Controllers\MetricsController', 'action' => 'ingestRetention'],
     'metrics.retention.get'    => ['controller' => 'App\Api\Controllers\MetricsController', 'action' => 'getHeatmap'],
+
+    // ---> AÑADIDO: RUTA DE TELEMETRÍA PARA EL WORKER <---
+    'telemetry.ping'           => ['controller' => 'App\Api\Controllers\TelemetryController', 'action' => 'ping'],
 
     // --- RUTAS DE HISTORIAL ---
     'history.get_watch'   => ['controller' => 'App\Api\Controllers\HistoryController', 'action' => 'get_watch_history'],

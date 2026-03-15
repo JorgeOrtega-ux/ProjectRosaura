@@ -4,13 +4,14 @@ export const ApiRoutes = {
     App: {
         GetFeed: 'app.get_feed',
         GetPlaylistDetails: 'app.get_playlist_details',
-        GetPlaylistQueue: 'app.get_playlist_queue' 
+        GetPlaylistQueue: 'app.get_playlist_queue',
+        GetVideoDetails: 'app.get_video_details',
+        GetRecommendations: 'app.get_recommendations'
     },
     Playlist: {
         GetForVideo: 'playlist.get_for_video',
         ToggleVideo: 'playlist.toggle_video',
         Create: 'playlist.create',
-        // ---> AÑADIDO: CONSTANTE PARA OBTENER TODAS LAS PLAYLISTS <---
         GetAllPlaylists: 'playlist.get_all'
     },
     Search: {
@@ -118,7 +119,10 @@ export const ApiRoutes = {
         IngestRetention: 'metrics.retention.ingest',
         GetRetention: 'metrics.retention.get'
     },
-    // ---> NUEVO: RUTAS DE RANKINGS <---
+    // ---> AÑADIDO: RUTAS DE TELEMETRÍA (Ping para worker) <---
+    Telemetry: {
+        Ping: 'telemetry.ping'
+    },
     Rankings: {
         GetAll: 'rankings.get_all',
         GetChannel: 'rankings.get_channel'
