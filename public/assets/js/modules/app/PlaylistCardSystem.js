@@ -65,14 +65,20 @@ export class PlaylistCardSystem {
 
         const userName = playlistData.user_name || playlistData.creator_name || 'ProjectRosaura';
         const userAvatar = playlistData.user_avatar || `${basePath}/public/storage/profilePictures/default/b463a327-c705-4b03-960c-7c927c3649c4.png`;
-        const dominantColor = playlistData.dominant_color || '#530e17';
+        
+        // CORRECCIÓN: Se elimina el color rojo por defecto (#530e17)
+        // Si no existe, no inyectamos la variable, dejando que CSS aplique el gris neutral por defecto
+        // y permitiendo que el FeedPlaylistsController extraiga el color de la miniatura.
+        const dominantColorStyle = playlistData.dominant_color 
+            ? `--local-dominant-color: ${playlistData.dominant_color};` 
+            : '';
 
         // CAPA 2 (Network): Fallback string para inyectar en onerror
         const fallbackImg = window.AppConfig?.Images?.Fallbacks?.playlistEmpty || 'https://placehold.co/1280x720/2d2d2d/a0a0a0?text=Playlist+Vacia';
         const onErrorHTML = `onerror="this.onerror=null; this.src='${fallbackImg}';"`;
 
         return `
-            <div class="component-video-card nav-item playlist-folder-style" style="--local-dominant-color: ${dominantColor}; cursor: pointer;" data-nav="${playlistUrl}" onclick="if(window.spaRouter) { event.preventDefault(); window.spaRouter.navigate('${playlistUrl}'); } else { window.location.href='${playlistUrl}'; }">
+            <div class="component-video-card nav-item playlist-folder-style" style="${dominantColorStyle} cursor: pointer;" data-nav="${playlistUrl}" onclick="if(window.spaRouter) { event.preventDefault(); window.spaRouter.navigate('${playlistUrl}'); } else { window.location.href='${playlistUrl}'; }">
                 <div class="component-video-card__top">
                     <img src="${thumbSrc}" alt="Miniatura de ${title}" class="component-video-card__thumbnail" loading="lazy" ${onErrorHTML}>
                     <span class="component-video-card__duration" style="display: flex; align-items: center; gap: 4px; padding: 4px 8px;">

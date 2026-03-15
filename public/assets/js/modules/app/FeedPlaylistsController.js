@@ -23,7 +23,7 @@ export class FeedPlaylistsController {
 
     async loadPlaylists() {
         try {
-            // CORRECCIÓN: Ahora utilizamos la ruta correctamente declarada en ApiRoutes
+            // Utilizamos la ruta correctamente declarada en ApiRoutes
             const route = ApiRoutes.Playlist.GetAllPlaylists;
             
             // Hacemos el post mandando el objeto vacío (el backend no necesita parámetros extra aquí)
@@ -64,6 +64,56 @@ export class FeedPlaylistsController {
         playlists.forEach(playlist => {
             const cardHTML = PlaylistCardSystem.createCard(playlist);
             this.container.insertAdjacentHTML('beforeend', cardHTML);
+        });
+
+        // NUEVO: Ejecutamos el extractor de colores para pintar las pestañas acordes al video
+        this.extractDominantColors();
+    }
+
+    // Método para extraer el color promedio de la imagen de cada miniatura
+    extractDominantColors() {
+        if (!this.container) return;
+        
+        const cards = this.container.querySelectorAll('.playlist-folder-style');
+        
+        cards.forEach(card => {
+            const img = card.querySelector('.component-video-card__thumbnail');
+            
+            // Si la playlist tiene un color ya asignado en duro por HTML (ej. desde BD), lo omitimos
+            if (card.style.getPropertyValue('--local-dominant-color')) return;
+
+            if (img && img.src) {
+                // Creamos una imagen virtual en memoria para evitar modificar el DOM
+                // y prevenir que problemas de Cross-Origin rompan la UI
+                const memImg = new Image();
+                memImg.crossOrigin = 'Anonymous';
+                
+                memImg.onload = () => {
+                    try {
+                        const canvas = document.createElement('canvas');
+                        // Truco de rendimiento: Comprimir todo a 1x1 interpola todos los colores
+                        // dándonos de forma instantánea el color promedio real
+                        canvas.width = 1;
+                        canvas.height = 1;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(memImg, 0, 0, 1, 1);
+                        
+                        const data = ctx.getImageData(0, 0, 1, 1).data;
+                        
+                        // Si no es un pixel totalmente transparente, aplicamos el color
+                        if (data[3] > 0) {
+                            const color = `rgb(${data[0]}, ${data[1]}, ${data[2]})`;
+                            card.style.setProperty('--local-dominant-color', color);
+                        }
+                    } catch (e) {
+                        // Si ocurre un error de CORS o similar, lo ignoramos de forma segura.
+                        // El sistema usará el gris de respaldo del CSS nativamente.
+                        console.warn('[FeedPlaylistsController] Aviso: No se pudo procesar el color de la miniatura.', e);
+                    }
+                };
+                
+                memImg.src = img.src;
+            }
         });
     }
 
