@@ -56,7 +56,7 @@ export class VideoPlayerSystem {
         this.hls = null;
         this.lastVolume = 1; 
         this.currentVideoUuid = null;
-        this.hasRegisteredView = false; // <-- AÑADIDO PARA EL HISTORIAL
+        this.hasRegisteredView = false; 
         
         // Variables para Scrubbing y Sprite Sheet
         this.isDragging = false;
@@ -64,7 +64,7 @@ export class VideoPlayerSystem {
         this.vttData = [];
         this.spriteSheetUrl = null;
 
-        // Variables de Ambient Mode (Iluminación Cinematográfica)
+        // Variables de Ambient Mode
         this.ambientModeEnabled = true;
         this.ambientCanvas = null;
         this.ambientCtx = null;
@@ -77,14 +77,13 @@ export class VideoPlayerSystem {
 
         // --- VARIABLES DE RETENCIÓN (HEATMAP) Y TELEMETRÍA ---
         this.dbVideoId = null;
-        this.chunkViews = {}; // Objeto temporal para batcheo
+        this.chunkViews = {}; 
         this.lastChunkIndex = -1;
         this.retentionBatchInterval = null;
-        this.heatmapData = []; // Para uso en Scrubbing Preview
-        this.heatmapMax = 0;   // Para uso en Scrubbing Preview
-        this.lastTelemetryPing = -1; // Control de pings de algoritmo
+        this.heatmapData = []; 
+        this.heatmapMax = 0;   
+        this.lastTelemetryPing = -1; 
         
-        // Inicializar Overlay Principal para Scrubbing Fluido
         this.setupOverlay();
 
         this.resizeHandler = this.calculatePlayerSize.bind(this);
@@ -148,7 +147,6 @@ export class VideoPlayerSystem {
         innerContainer.style.width = `${targetWidth}px`;
         innerContainer.style.height = `${targetHeight}px`;
 
-        // CLAVE: Sincronizar el envoltorio de la luz para que SIEMPRE coincida con el video
         const ambientWrapper = document.getElementById('ambient-wrapper');
         if (ambientWrapper) {
             ambientWrapper.style.width = `${targetWidth}px`;
@@ -174,7 +172,6 @@ export class VideoPlayerSystem {
             }
         });
         
-        // EVENTOS DE CARGA / SPINNER / BUFFER
         this.video.addEventListener('waiting', () => this.showSpinner());
         this.video.addEventListener('playing', () => this.hideSpinner());
         this.video.addEventListener('canplay', () => this.hideSpinner());
@@ -191,8 +188,6 @@ export class VideoPlayerSystem {
             const value = e.target.value;
             this.video.volume = value;
             this.video.muted = (value === "0");
-            
-            // NUEVO: Sincronizar el relleno del color al arrastrar la barra
             e.target.style.setProperty('--volume-fill', `${value * 100}%`);
         });
         
@@ -203,18 +198,16 @@ export class VideoPlayerSystem {
             this.updateBuffer();
         });
         
-        // EVENTO PRINCIPAL: Registro de tiempo y recolección para el Heatmap y Registro de Historial
         this.video.addEventListener('timeupdate', () => {
             if (!this.isDragging) {
                 this.updateProgress();
                 this.updateBuffer();
                 this.trackRetention(); 
-                this.trackTelemetry(); // <-- NUEVO ALGORITMO TELEMETRÍA
+                this.trackTelemetry(); 
                 this.checkViewRegistration(); 
             }
         });
 
-        // --- EVENTOS DE SCRUBBING EXACTO ---
         this.progressArea.addEventListener('pointerdown', (e) => this.startScrubbing(e));
         document.addEventListener('pointermove', (e) => this.handlePointerMove(e));
         document.addEventListener('pointerup', (e) => this.stopScrubbing(e));
@@ -232,7 +225,6 @@ export class VideoPlayerSystem {
             });
         }
 
-        // Navegación principal del menú (flechas)
         if (this.settingsMenu) {
             const menuTriggers = this.settingsMenu.querySelectorAll('[data-target]');
             menuTriggers.forEach(trigger => {
@@ -270,7 +262,6 @@ export class VideoPlayerSystem {
         });
     }
 
-    // --- MANEJO DE SPINNER DE CARGA ---
     showSpinner() {
         if (this.playerSpinner && (!this.video || this.video.readyState < 3)) {
             this.playerSpinner.style.display = 'flex';
@@ -283,9 +274,7 @@ export class VideoPlayerSystem {
         }
     }
 
-    // --- NUEVO: DISPARADOR DEL HISTORIAL (VISITA) ---
     checkViewRegistration() {
-        // Registra la vista si el video ha superado los 3 segundos de reproducción
         if (!this.hasRegisteredView && this.video.currentTime > 3) {
             this.hasRegisteredView = true;
             if (this.currentVideoUuid) {
@@ -296,30 +285,26 @@ export class VideoPlayerSystem {
         }
     }
 
-    // --- TELEMETRÍA PARA EL ALGORITMO ENTERPRISE ---
     trackTelemetry() {
         if (!this.video.duration || this.video.paused) return;
         const currentTime = this.video.currentTime;
         const percentage = (currentTime / this.video.duration) * 100;
 
-        // Enviar un ping de telemetría a Redis cada 10 segundos
         const currentSecond = Math.floor(currentTime);
         if (currentSecond > 0 && currentSecond % 10 === 0 && currentSecond !== this.lastTelemetryPing) {
             this.lastTelemetryPing = currentSecond;
+            console.log('%c[VideoPlayerSystem] Disparando Telemetría Nativa:', 'color: #ff00ff; font-weight: bold;', { currentTime, percentage });
             if (this.currentVideoUuid) {
-                // CORRECCIÓN APLICADA AQUÍ: 
-                // Utilizamos el método dedicado de ApiService en lugar del POST hardcodeado e incorrecto
                 this.api.sendTelemetryPing(this.currentVideoUuid, currentTime, percentage)
+                    .then(res => console.log('%c[VideoPlayerSystem] Resultado Telemetría Nativa:', 'color: #ff00ff', res))
                     .catch(e => console.warn('[VideoPlayer:Telemetry] Fallo al enviar ping', e));
             }
         }
     }
 
-    // --- TRACKING DE RETENCIÓN DE VIDEO (RECOLECTOR) ---
     trackRetention() {
         if (!this.video.duration || this.video.paused) return;
 
-        // Calculamos en qué segmento del 1% del video se encuentra (0-99)
         const chunkIndex = Math.floor((this.video.currentTime / this.video.duration) * 100);
 
         if (chunkIndex >= 0 && chunkIndex < 100 && chunkIndex !== this.lastChunkIndex) {
@@ -329,9 +314,9 @@ export class VideoPlayerSystem {
                 this.chunkViews[chunkIndex] = 0;
             }
             
-            // Límite Anti-Spam (Máximo 5 conteos por "chunk" en cada envío)
             if (this.chunkViews[chunkIndex] < 5) {
                 this.chunkViews[chunkIndex]++;
+                console.log('%c[VideoPlayerSystem] Heatmap Chunk Capturado:', 'color: #ffaa00', { chunkIndex, count: this.chunkViews[chunkIndex] });
             }
         }
     }
@@ -339,7 +324,6 @@ export class VideoPlayerSystem {
     startRetentionBatcher() {
         if (this.retentionBatchInterval) clearInterval(this.retentionBatchInterval);
         
-        // Enviar lote cada 15 segundos
         this.retentionBatchInterval = setInterval(() => {
             this.sendRetentionData();
         }, 15000);
@@ -348,18 +332,19 @@ export class VideoPlayerSystem {
     sendRetentionData() {
         if (!this.dbVideoId || Object.keys(this.chunkViews).length === 0) return;
         
-        // Hacemos una copia profunda y vaciamos el caché local
         const dataToSend = { ...this.chunkViews };
+        console.log('%c[VideoPlayerSystem] Enviando Lote Retención (Heatmap):', 'color: #ffaa00; font-weight: bold;', dataToSend);
+        
         this.chunkViews = {};
         
-        this.api.sendRetentionBatch(this.dbVideoId, dataToSend).catch(e => {
+        this.api.sendRetentionBatch(this.dbVideoId, dataToSend).then(res => {
+            console.log('%c[VideoPlayerSystem] Resultado Retención (Heatmap):', 'color: #ffaa00', res);
+        }).catch(e => {
             console.error("[VideoPlayer:Heatmap] Error al enviar lote de retención:", e);
         });
     }
 
-    // --- RENDERIZADO VISUAL DEL HEATMAP ---
     renderHeatmap(data) {
-        // Guardamos los datos localmente para poder cruzarlos en el Hover (Scrubbing)
         this.heatmapData = data;
         this.heatmapMax = Math.max(...(data || []), 1);
 
@@ -370,7 +355,6 @@ export class VideoPlayerSystem {
             canvas = document.createElement('canvas');
             canvas.className = 'heatmap-canvas';
             
-            // Estilos incrustados para posicionamiento preciso sobre la barra
             canvas.style.position = 'absolute';
             canvas.style.bottom = '100%';
             canvas.style.left = '0';
@@ -385,7 +369,6 @@ export class VideoPlayerSystem {
             this.progressArea.style.position = 'relative';
             this.progressArea.appendChild(canvas);
             
-            // Interacciones Hover como en YouTube
             if (this.controlsContainer) {
                 this.controlsContainer.addEventListener('mouseenter', () => {
                     canvas.style.opacity = '0.8';
@@ -398,14 +381,12 @@ export class VideoPlayerSystem {
             }
         }
         
-        // Esperamos un instante para asegurarnos de que el DOM tiene dimensiones
         setTimeout(() => {
             canvas.width = canvas.offsetWidth || 1000;
             canvas.height = canvas.offsetHeight || 40;
             const ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // Calculamos el valor máximo para escalar la gráfica
             const maxVal = this.heatmapMax;
             
             ctx.beginPath();
@@ -413,10 +394,8 @@ export class VideoPlayerSystem {
             
             const step = canvas.width / (data.length - 1);
             
-            // Dibujamos la curva de montañas
             for (let i = 0; i < data.length; i++) {
                 const x = i * step;
-                // Ajustamos la altura (0.9 para dejar un pequeño margen superior)
                 const h = (data[i] / maxVal) * (canvas.height * 0.9);
                 const y = canvas.height - h;
                 ctx.lineTo(x, y);
@@ -425,13 +404,11 @@ export class VideoPlayerSystem {
             ctx.lineTo(canvas.width, canvas.height);
             ctx.closePath();
             
-            // Color semi-transparente para la gráfica
             ctx.fillStyle = 'rgba(255, 255, 255, 0.35)'; 
             ctx.fill();
         }, 100);
     }
 
-    // --- CONTROLES DE VELOCIDAD ---
     initSpeedControl() {
         if (!this.speedMenuContent) return;
         const items = this.speedMenuContent.querySelectorAll('.component-menu__item');
@@ -455,7 +432,6 @@ export class VideoPlayerSystem {
         });
     }
 
-    // --- DETECCIÓN DE TEMA (CLARO/OSCURO) ---
     isLightModeActive() {
         const html = document.documentElement;
         const themeAttr = html.getAttribute('data-theme');
@@ -465,7 +441,6 @@ export class VideoPlayerSystem {
         if (themeAttr === 'light' || isLightClass) return true;
         if (themeAttr === 'dark' || isDarkClass) return false;
         
-        // Fallback a la preferencia del sistema
         return window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
     }
 
@@ -475,14 +450,12 @@ export class VideoPlayerSystem {
         const status = document.getElementById('lighting-status');
         
         if (isLight) {
-            // Forzar apagado interno
             this.ambientModeEnabled = false;
             this.stopAmbientLoop();
             if (this.ambientCanvas) {
                 this.ambientCanvas.style.opacity = '0';
             }
             
-            // Actualizar la Interfaz de Usuario para reflejar el bloqueo
             if (lightingMenu) {
                 const items = lightingMenu.querySelectorAll('.component-menu__item');
                 items.forEach(i => {
@@ -503,7 +476,6 @@ export class VideoPlayerSystem {
                 status.textContent = "No disponible (Tema Claro)";
             }
         } else {
-            // Restaurar visualmente si regresa a modo oscuro
             if (lightingMenu) {
                 const items = lightingMenu.querySelectorAll('.component-menu__item');
                 items.forEach(i => {
@@ -519,7 +491,6 @@ export class VideoPlayerSystem {
         }
     }
 
-    // --- ILUMINACIÓN CINEMATOGRÁFICA (AMBIENT MODE) ---
     initLightingControl() {
         const lightingMenu = document.getElementById('setting-menu-lighting');
         if (!lightingMenu) return;
@@ -533,10 +504,8 @@ export class VideoPlayerSystem {
             this.ambientCanvas.height = 72;
         }
 
-        // Evaluar estado actual al iniciar
         this.handleThemeChange();
 
-        // 1. Observer para atributos del DOM (cuando cambia el toggle de la web)
         this.themeObserver = new MutationObserver((mutations) => {
             mutations.forEach((mutation) => {
                 if (mutation.attributeName === 'data-theme' || mutation.attributeName === 'class') {
@@ -546,7 +515,6 @@ export class VideoPlayerSystem {
         });
         this.themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'class'] });
 
-        // 2. Listener para cambios de tema en el Sistema Operativo (si está en automático)
         if (window.matchMedia) {
             this.systemThemeQuery = window.matchMedia('(prefers-color-scheme: light)');
             this.systemThemeListener = (e) => {
@@ -563,7 +531,6 @@ export class VideoPlayerSystem {
                 
                 const isEnabled = item.getAttribute('data-ambient') === "1";
                 
-                // BLOQUEO TOTAL: Si está en modo claro y trata de encenderlo, abortar.
                 if (this.isLightModeActive() && isEnabled) {
                     return; 
                 }
@@ -589,7 +556,6 @@ export class VideoPlayerSystem {
             });
         });
 
-        // Enlazar al ciclo de vida del video
         if (this.video) {
             this.video.addEventListener('play', () => this.startAmbientLoop());
             this.video.addEventListener('pause', () => this.stopAmbientLoop());
@@ -630,7 +596,6 @@ export class VideoPlayerSystem {
         }
     }
 
-    // --- LÓGICA DE SELECCIÓN DE CALIDAD HLS ---
     populateQualityMenu(levels) {
         if (!this.qualityMenuContent) return;
         this.qualityMenuContent.innerHTML = '';
@@ -652,7 +617,6 @@ export class VideoPlayerSystem {
             }
         });
 
-        // Agregamos Automática al final de la lista
         const autoItem = document.createElement('div');
         autoItem.className = 'component-menu__item is-selected';
         autoItem.dataset.level = -1; 
@@ -698,10 +662,9 @@ export class VideoPlayerSystem {
         this.vttData = [];
         this.spriteSheetUrl = null;
         
-        // --- PREPARAMOS EL HEATMAP TRACKER E HISTORIAL ---
         this.dbVideoId = dbVideoId;
-        this.currentVideoUuid = sourceIdentifier; // <-- ASEGURAMOS EL UUID
-        this.hasRegisteredView = false;           // <-- RESETEAMOS EL FLAG DE VISTA
+        this.currentVideoUuid = sourceIdentifier; 
+        this.hasRegisteredView = false;           
         this.chunkViews = {};
         this.lastChunkIndex = -1;
         this.lastTelemetryPing = -1;
@@ -860,14 +823,12 @@ export class VideoPlayerSystem {
     }
 
     destroy() {
-        // Enviar el último lote pendiente antes de destruir
         this.sendRetentionData();
         if (this.retentionBatchInterval) clearInterval(this.retentionBatchInterval);
         
         this.destroyHls();
         this.stopAmbientLoop(); 
         
-        // Limpiar observers de tema
         if (this.themeObserver) {
             this.themeObserver.disconnect();
         }
@@ -911,13 +872,11 @@ export class VideoPlayerSystem {
             this.muteIcon.textContent = 'volume_down';
         }
         
-        // Sincronizar UI del slider si el cambio vino de afuera (ej: botón mute)
         if (document.activeElement !== this.volumeSlider) {
             const val = this.video.muted ? 0 : this.video.volume;
             this.volumeSlider.value = val;
             this.volumeSlider.style.setProperty('--volume-fill', `${val * 100}%`);
         } else {
-            // Asegurar que visualmente el color siempre coincida con el value
             this.volumeSlider.style.setProperty('--volume-fill', `${this.volumeSlider.value * 100}%`);
         }
     }
@@ -950,7 +909,6 @@ export class VideoPlayerSystem {
                 this.progressBuffer.style.width = `${percent}%`;
             }
         } catch (e) {
-            // Ignorar el error si el buffer aún no está disponible
         }
     }
 
@@ -1038,24 +996,17 @@ export class VideoPlayerSystem {
         
         this.previewCard.style.left = `${cardX}px`;
 
-        // -------------------------------------------------------------
-        // LÓGICA DE DETECCIÓN: "Momento con más reproducciones"
-        // -------------------------------------------------------------
         let isPeakMoment = false;
         
-        // Verificamos si hay datos suficientes y si el máximo tiene cierta relevancia (ej: > 1)
         if (this.heatmapData && this.heatmapData.length > 0 && this.heatmapMax > 1) {
-            // Mapeamos la posición `pos` (0 a 1) al índice del arreglo de datos
             const index = Math.min(this.heatmapData.length - 1, Math.floor(pos * this.heatmapData.length));
             const currentReten = this.heatmapData[index];
             
-            // Si el momento alcanza o supera el 85% del pico máximo, lo consideramos un hito
             if (currentReten >= (this.heatmapMax * 0.85)) {
                 isPeakMoment = true;
             }
         }
 
-        // Aplicamos el texto y la clase CSS según el caso
         if (isPeakMoment) {
             this.previewTime.textContent = `${this.formatTime(timeAtCursor)} • Momento con más reproducciones`;
             this.previewTime.classList.add('is-peak-moment');
@@ -1063,7 +1014,6 @@ export class VideoPlayerSystem {
             this.previewTime.textContent = this.formatTime(timeAtCursor);
             this.previewTime.classList.remove('is-peak-moment');
         }
-        // -------------------------------------------------------------
 
         if (this.vttData.length > 0 && this.spriteSheetUrl) {
             const cue = this.vttData.find(c => timeAtCursor >= c.start && timeAtCursor <= c.end) || this.vttData[0];

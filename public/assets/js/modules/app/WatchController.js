@@ -16,10 +16,6 @@ export class WatchController {
         
         // Intervalos
         this.checkPlayerInterval = null;
-        this.telemetryVideoCheckInterval = null;
-        this.telemetryInterval = null;
-        
-        // Modal/Dropdown State
         this.playlistModalSetupDone = false;
     }
 
@@ -27,13 +23,10 @@ export class WatchController {
         const urlPath = window.location.pathname;
         const pathSegments = urlPath.split('/').filter(segment => segment.length > 0);
         
-        // CORRECCIÓN CRÍTICA: Buscar el UUID sin importar si la ruta es /watch/ o /shorts/
         const videoId = pathSegments[pathSegments.length - 1];
-
         const urlParams = new URLSearchParams(window.location.search);
         const playlistId = urlParams.get('list'); 
 
-        // Validamos que el ID parezca un UUID (formato básico) para evitar falsos positivos
         if (!videoId || videoId.length < 30) {
             this.showError404('Identificador de video no proporcionado o inválido.');
             return;
@@ -52,13 +45,9 @@ export class WatchController {
                     
                     this.playerSystem.loadVideo(videoId, true, dbVideoId);
                     this.setupViewTracker(videoId);
-                    
-                    // ---> AÑADIDO: INICIAR RASTREADOR DE TELEMETRÍA <---
-                    this.setupTelemetryTracker(videoId);
-                    
+                    // NOTA: Se eliminó setupTelemetryTracker de aquí, el PlayerSystem se encarga nativamente.
                     this.setupInteractions(videoId, response.data);
                     this.setupSubscription(response.data);
-                    
                     this.setupSaveInteraction(dbVideoId);
 
                     this.api.getVideoHeatmap(dbVideoId).then(res => {
@@ -111,32 +100,6 @@ export class WatchController {
             console.error('[WatchController] Error fetching video:', error);
             this.showError404('Ocurrió un error de red al intentar cargar el video.');
         }
-    }
-
-    // ---> NUEVA FUNCIÓN AÑADIDA: TELEMETRÍA <---
-    setupTelemetryTracker(videoUuid) {
-        // Buscamos el video de forma segura por si tarda en montar el DOM HLS
-        this.telemetryVideoCheckInterval = setInterval(() => {
-            const videoEl = document.querySelector('video');
-            if (videoEl) {
-                clearInterval(this.telemetryVideoCheckInterval);
-                
-                // Enviar un ping de telemetría a Redis cada 10 segundos
-                this.telemetryInterval = setInterval(() => {
-                    // Solo enviar datos reales de visualización activa
-                    if (!videoEl.paused && videoEl.currentTime > 0) {
-                        const watchTime = videoEl.currentTime;
-                        const duration = videoEl.duration || 0;
-                        const percentage = duration > 0 ? (watchTime / duration) * 100 : 0;
-                        
-                        // Enviar al controlador PHP silenciosamente
-                        this.api.sendTelemetryPing(videoUuid, watchTime, percentage).catch(err => {
-                            console.error('[Telemetría] Error al reportar ping:', err);
-                        });
-                    }
-                }, 10000); 
-            }
-        }, 1000);
     }
 
     setupViewTracker(videoUuid) {
@@ -794,12 +757,8 @@ export class WatchController {
         }
     }
 
-    // Asegurarse de limpiar los nuevos intervalos al destruir la vista
     destroy() {
         if (this.checkPlayerInterval) clearInterval(this.checkPlayerInterval);
-        if (this.telemetryVideoCheckInterval) clearInterval(this.telemetryVideoCheckInterval);
-        if (this.telemetryInterval) clearInterval(this.telemetryInterval);
-        
         if (this.playerSystem) {
             this.playerSystem.destroy();
             this.playerSystem = null;

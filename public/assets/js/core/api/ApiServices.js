@@ -98,15 +98,23 @@ export class ApiService {
     async createPlaylist(title, visibility) { return await this.post(ApiRoutes.Playlist.Create, { title: title, visibility: visibility }); }
     
     // --- MÉTODOS DE RETENCIÓN DE VIDEO (HEATMAP) ---
-    async sendRetentionBatch(videoId, data) { return await this.post(ApiRoutes.Metrics.IngestRetention, { videoId: videoId, data: data }); }
+    async sendRetentionBatch(videoId, data) { 
+        console.log('%c[API:Retención] Request enviada a:', 'color: #ff9900; font-weight: bold;', ApiRoutes.Metrics.IngestRetention, { videoId, data });
+        const res = await this.post(ApiRoutes.Metrics.IngestRetention, { videoId: videoId, data: data }); 
+        console.log('%c[API:Retención] Respuesta Back-end:', 'color: #ff9900; font-weight: bold;', res);
+        return res;
+    }
 
-    // ---> AÑADIDO: MÉTODO DE ENVÍO DE TELEMETRÍA <---
+    // ---> ENVÍO DE TELEMETRÍA LOGGEADO <---
     async sendTelemetryPing(videoUuid, watchTime, percentage) {
-        return await this.post(ApiRoutes.Telemetry.Ping, {
+        console.log('%c[API:Telemetría] Request enviada a:', 'color: #00ffcc; font-weight: bold;', ApiRoutes.Telemetry?.Ping, { videoUuid, watchTime, percentage });
+        const res = await this.post(ApiRoutes.Telemetry.Ping, {
             video_uuid: videoUuid,
             watch_time: watchTime,
             percentage: percentage
         });
+        console.log('%c[API:Telemetría] Respuesta Back-end:', 'color: #00ffcc; font-weight: bold;', res);
+        return res;
     }
 
     async getVideoHeatmap(videoId) {
@@ -237,7 +245,6 @@ export class ApiService {
     async removeWatchItem(videoId) { return await this.post(ApiRoutes.History.RemoveWatchItem, { video_id: videoId }); }
     async removeSearchItem(searchId) { return await this.post(ApiRoutes.History.RemoveSearchItem, { search_id: searchId }); }
 
-    // --- MÉTODOS DE RANKING ---
     async getTopRankings() { return await this.post(ApiRoutes.Rankings.GetAll); }
     
     async getChannelRanking(userId) { 

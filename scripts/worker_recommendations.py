@@ -4,11 +4,40 @@ import json
 import logging
 import mysql.connector
 import redis
-from datetime import datetime, timedelta
+from datetime import datetime
 from dotenv import load_dotenv
 
 load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - RECOMENDACIONES - %(levelname)s - %(message)s')
+
+# Configurar logs con colores básicos para la terminal
+class CustomFormatter(logging.Formatter):
+    green = "\x1b[32;20m"
+    yellow = "\x1b[33;20m"
+    red = "\x1b[31;20m"
+    cyan = "\x1b[36;20m"
+    reset = "\x1b[0m"
+    format = "%(asctime)s - RECOMENDACIONES - %(message)s"
+
+    FORMATS = {
+        logging.DEBUG: cyan + format + reset,
+        logging.INFO: green + format + reset,
+        logging.WARNING: yellow + format + reset,
+        logging.ERROR: red + format + reset,
+        logging.CRITICAL: red + "\x1b[1m" + format + reset
+    }
+
+    def format(self, record):
+        log_fmt = self.FORMATS.get(record.levelno)
+        formatter = logging.Formatter(log_fmt)
+        return formatter.format(record)
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+ch = logging.StreamHandler()
+ch.setFormatter(CustomFormatter())
+if logger.hasHandlers():
+    logger.handlers.clear()
+logger.addHandler(ch)
 
 def get_db_connection():
     return mysql.connector.connect(
@@ -27,119 +56,98 @@ def get_redis_connection():
     )
 
 def calculate_user_affinities_and_feed():
-    logging.info("Iniciando cálculo de perfiles de afinidad y generación de Feeds...")
+    logger.info("=====================================================")
+    logger.info("[START] Iniciando ciclo de worker_recommendations...")
     db = get_db_connection()
     cursor = db.cursor(dictionary=True)
     redis_client = get_redis_connection()
 
     try:
-        # 1. Obtener usuarios que se han conectado recientemente (ej. últimos 7 días)
-        # Para simplificar en esta versión, tomamos usuarios activos.
         cursor.execute("SELECT id FROM users WHERE user_status = 'active'")
         users = cursor.fetchall()
+        logger.info(f"Usuarios activos encontrados: {len(users)}")
 
         for user_row in users:
             user_id = user_row['id']
+            logger.info(f"--- Procesando Perfil para Usuario ID: {user_id} ---")
             
-            # --- FASE 1: PERFILADO (Calculamos qué le gusta al usuario basado en historial) ---
-            # Obtenemos los tags de los videos que el usuario ha interactuado positivamente o visto
+            # --- FASE 1: PERFILADO ---
             query_history = """
-                SELECT vt.tag_id, COUNT(*) as interacciones
+                SELECT vt.tag_id, t.type, t.name, COUNT(*) as interacciones
                 FROM user_watch_history uwh
                 JOIN videos v ON uwh.video_id = v.id
                 JOIN video_tags vt ON v.id = vt.video_id
+                JOIN tags t ON vt.tag_id = t.id
                 WHERE uwh.user_id = %s
-                GROUP BY vt.tag_id
+                GROUP BY vt.tag_id, t.type, t.name
                 ORDER BY interacciones DESC
-                LIMIT 10
+                LIMIT 50
             """
             cursor.execute(query_history, (user_id,))
             top_tags = cursor.fetchall()
             
-            # Actualizamos la tabla de afinidad
-            if top_tags:
-                affinity_data = []
-                max_interact = max(t['interacciones'] for t in top_tags)
-                for tag in top_tags:
-                    # Normalizamos el score entre 0 y 1
-                    score = tag['interacciones'] / float(max_interact) if max_interact > 0 else 0
-                    affinity_data.append((user_id, tag['tag_id'], score))
+            if not top_tags:
+                logger.warning(f"Usuario {user_id} NO tiene historial de tags/categorias. (Historial vacío)")
+                continue
 
-                insert_affinity = """
+            logger.info(f"Usuario {user_id}: Encontrados {len(top_tags)} tags/categorías en su historial reciente.")
+            
+            cat_data = [t for t in top_tags if t['type'] == 'category']
+            tag_data = [t for t in top_tags if t['type'] != 'category']
+
+            logger.info(f" -> De esos, {len(cat_data)} son CATEGORÍAS y {len(tag_data)} son TAGS/MODELOS.")
+
+            # Actualizar user_category_affinity
+            if cat_data:
+                max_cat = max(t['interacciones'] for t in cat_data)
+                affinity_cat = []
+                for cat in cat_data:
+                    score = cat['interacciones'] / float(max_cat) if max_cat > 0 else 0
+                    affinity_cat.append((user_id, cat['tag_id'], score))
+                    logger.info(f"    [CAT AFINIDAD] User {user_id} -> Categoría '{cat['name']}' (ID:{cat['tag_id']}) Score: {score}")
+
+                insert_cat = """
+                    INSERT INTO user_category_affinity (user_id, category_id, affinity_score)
+                    VALUES (%s, %s, %s)
+                    ON DUPLICATE KEY UPDATE affinity_score = VALUES(affinity_score), last_updated = CURRENT_TIMESTAMP
+                """
+                cursor.executemany(insert_cat, affinity_cat)
+                logger.info(f"    [SQL] Ejecutado INSERT/UPDATE en 'user_category_affinity' para {len(affinity_cat)} filas.")
+
+            # Actualizar user_tag_affinity
+            if tag_data:
+                max_tag = max(t['interacciones'] for t in tag_data)
+                affinity_tag = []
+                for tag in tag_data:
+                    score = tag['interacciones'] / float(max_tag) if max_tag > 0 else 0
+                    affinity_tag.append((user_id, tag['tag_id'], score))
+
+                insert_tag = """
                     INSERT INTO user_tag_affinity (user_id, tag_id, affinity_score)
                     VALUES (%s, %s, %s)
                     ON DUPLICATE KEY UPDATE affinity_score = VALUES(affinity_score), last_updated = CURRENT_TIMESTAMP
                 """
-                cursor.executemany(insert_affinity, affinity_data)
-                db.commit()
+                cursor.executemany(insert_tag, affinity_tag)
 
-            # --- FASE 2: GENERACIÓN DE CANDIDATOS (Recomendaciones) ---
-            # Buscamos videos publicados con los tags preferidos del usuario, 
-            # que no haya visto recientemente, ordenados por Engagement Global y Frescura.
-            tag_ids = [t['tag_id'] for t in top_tags]
-            
-            if not tag_ids:
-                continue # Usuario sin historial, usará el Cold Start general de Redis
+            db.commit()
+            logger.info(f"Usuario {user_id}: Cambios guardados en base de datos correctamente.")
 
-            format_strings = ','.join(['%s'] * len(tag_ids))
-            
-            # Buscamos Horizontal y Vertical por separado
-            orientations = ['horizontal', 'vertical']
-            for orientation in orientations:
-                query_candidates = f"""
-                    SELECT DISTINCT v.id, v.created_at, IFNULL(vpm.engagement_score, 0) as score
-                    FROM videos v
-                    JOIN video_tags vt ON v.id = vt.video_id
-                    LEFT JOIN video_performance_metrics vpm ON v.id = vpm.video_id
-                    LEFT JOIN user_watch_history uwh ON v.id = uwh.video_id AND uwh.user_id = %s
-                    WHERE v.status = 'published' AND v.visibility = 'public' 
-                    AND v.orientation = %s
-                    AND vt.tag_id IN ({format_strings})
-                    AND (uwh.last_watched_at IS NULL OR uwh.last_watched_at < DATE_SUB(NOW(), INTERVAL 7 DAY))
-                    LIMIT 200
-                """
-                
-                # Parámetros: user_id (para LEFT JOIN uwh), orientation, y luego la lista de tag_ids
-                params = [user_id, orientation] + tag_ids
-                cursor.execute(query_candidates, tuple(params))
-                candidates = cursor.fetchall()
-
-                # --- FASE 3: SCORING Y RE-RANKING (Puntuación final) ---
-                final_feed = []
-                now = datetime.now()
-                for cand in candidates:
-                    base_score = float(cand['score'])
-                    # Time Decay: Impulso a videos más nuevos. 
-                    days_old = (now - cand['created_at']).days
-                    time_multiplier = max(0.2, 1.0 - (days_old * 0.01)) # Decae un 1% por día hasta un piso del 20%
-                    
-                    final_score = base_score * time_multiplier
-                    final_feed.append({'id': cand['id'], 'score': final_score})
-
-                # Ordenar por el score final calculado
-                final_feed = sorted(final_feed, key=lambda x: x['score'], reverse=True)
-                
-                # Extraer solo los IDs del Top 50
-                top_50_ids = [item['id'] for item in final_feed[:50]]
-                
-                # --- FASE 4: GUARDADO EN REDIS ---
-                if top_50_ids:
-                    redis_key = f"feed:user:{user_id}:{orientation}"
-                    redis_client.setex(redis_key, 3600, json.dumps(top_50_ids)) # Caduca en 1 hora
-
-        logging.info("Generación de feeds personalizados completada.")
-
+    except mysql.connector.Error as err:
+        logger.error(f"[ERROR MYSQL] Código: {err.errno} - {err.msg}")
+        db.rollback()
     except Exception as e:
-        logging.error(f"Error en worker de recomendaciones: {e}")
+        logger.error(f"[ERROR PYTHON] {e}")
+        db.rollback()
     finally:
         cursor.close()
         db.close()
+        logger.info("[END] Ciclo de recomendaciones finalizado.\n")
 
 def run_worker():
-    logging.info("Worker de Recomendaciones iniciado. Ejecutando ciclo cada 30 minutos...")
+    logger.info("Arrancando worker_recommendations.py...")
     while True:
         calculate_user_affinities_and_feed()
-        time.sleep(1800) # 30 minutos
+        time.sleep(30) # Reducido a 30 segundos solo para hacer pruebas rápidas
 
 if __name__ == "__main__":
     run_worker()
