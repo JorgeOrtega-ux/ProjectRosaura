@@ -89,11 +89,12 @@
         <div class="form-group" style="margin-bottom: 15px;">
             <label style="display: block; margin-bottom: 5px; font-size: 0.9rem; color: var(--text-secondary);">Orden predeterminado</label>
             <select id="playlistOrder" class="component-input" style="width: 100%;">
-                <option value="manual">Manual</option>
-                <option value="date_added_newest">Fecha en la que se añadió (más reciente)</option>
-                <option value="date_added_oldest">Fecha en la que se añadió (más antigua)</option>
-                <option value="date_published_newest">Fecha de publicación (más reciente)</option>
-                <option value="date_published_oldest">Fecha de publicación (más antigua)</option>
+                <option value="manual">Manual (Arrastrar y soltar videos)</option>
+                <option value="published_newest">Fecha de publicación (más reciente)</option>
+                <option value="published_oldest">Fecha de publicación (más antigua)</option>
+                <option value="uploaded_newest">Fecha de subida (más reciente)</option>
+                <option value="uploaded_oldest">Fecha de subida (más antigua)</option>
+                <option value="popular">Más populares</option>
             </select>
         </div>
         

@@ -326,6 +326,9 @@ export class StudioManagePlaylistController {
                         const playlistVideoIds = playlistVideos.map(v => v.id);
 
                         container.innerHTML = ''; 
+                        container.style.display = 'flex';
+                        container.style.flexDirection = 'column';
+                        container.style.gap = '4px';
 
                         if (allVideos.length === 0) {
                             container.innerHTML = '<p style="text-align:center; padding: 20px; color: var(--text-secondary);">No tienes videos subidos aún.</p>';
@@ -336,10 +339,24 @@ export class StudioManagePlaylistController {
                         const fallbackVideoImg = window.AppConfig?.Images?.Fallbacks?.videoThumbnail || 'https://placehold.co/1280x720/1a1a1a/e0e0e0?text=Video+No+Disponible';
                         const onErrorHTML = `onerror="this.onerror=null; this.src='${fallbackVideoImg}';"`;
 
+                        // 1. Organizar el orden: Primero los que ya están en la playlist (en el orden actual), luego el resto
+                        const orderedVideos = [];
+                        
+                        playlistVideos.forEach(pv => {
+                            const fullVideo = allVideos.find(v => v.id === pv.id);
+                            if (fullVideo) orderedVideos.push(fullVideo);
+                        });
+                        
                         allVideos.forEach(v => {
+                            if (!playlistVideoIds.includes(v.id)) {
+                                orderedVideos.push(v);
+                            }
+                        });
+
+                        // 2. Renderizar cada fila permitiendo Drag and Drop
+                        orderedVideos.forEach(v => {
                             const isChecked = playlistVideoIds.includes(v.id) ? 'checked' : '';
                             const basePath = window.AppBasePath || '';
-                            // Capa 1: Fallback if path empty
                             const thumbPath = v.thumbnail_path ? `${basePath}/${v.thumbnail_path}` : fallbackVideoImg;
                             
                             const row = document.createElement('label');
@@ -348,10 +365,14 @@ export class StudioManagePlaylistController {
                             row.style.gap = '12px';
                             row.style.padding = '8px';
                             row.style.borderBottom = '1px solid var(--border-color, #f0f0f0)';
-                            row.style.cursor = 'pointer';
+                            row.style.cursor = 'grab';
                             row.style.borderRadius = '4px';
+                            row.style.backgroundColor = 'var(--bg-surface, transparent)';
+                            row.style.transition = 'opacity 0.2s, transform 0.2s';
+                            row.draggable = true;
 
                             row.innerHTML = `
+                                <span class="material-symbols-rounded drag-handle" style="color: var(--text-secondary); cursor: grab; user-select: none;">drag_indicator</span>
                                 <input type="checkbox" class="component-checkbox video-select-cb" value="${v.id}" ${isChecked}>
                                 <img src="${thumbPath}" style="width: 60px; height: 40px; object-fit: cover; border-radius: 4px; background: #000;" ${onErrorHTML}>
                                 <div style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; color: var(--text-primary);">
@@ -359,17 +380,60 @@ export class StudioManagePlaylistController {
                                 </div>
                             `;
 
-                            row.addEventListener('mouseover', () => row.style.backgroundColor = 'var(--bg-hover, #f9f9f9)');
-                            row.addEventListener('mouseout', () => row.style.backgroundColor = 'transparent');
+                            row.addEventListener('mouseover', () => { if(!row.classList.contains('dragging')) row.style.backgroundColor = 'var(--bg-hover, rgba(0,0,0,0.05))'; });
+                            row.addEventListener('mouseout', () => { if(!row.classList.contains('dragging')) row.style.backgroundColor = 'var(--bg-surface, transparent)'; });
+
+                            // Eventos Drag and Drop nativos HTML5
+                            row.addEventListener('dragstart', (e) => {
+                                row.classList.add('dragging');
+                                row.style.opacity = '0.5';
+                                e.dataTransfer.effectAllowed = 'move';
+                            });
+
+                            row.addEventListener('dragend', () => {
+                                row.classList.remove('dragging');
+                                row.style.opacity = '1';
+                                row.style.backgroundColor = 'var(--bg-surface, transparent)';
+                            });
 
                             container.appendChild(row);
                         });
+
+                        // 3. Control de soltado en el contenedor general
+                        container.addEventListener('dragover', (e) => {
+                            e.preventDefault();
+                            const afterElement = getDragAfterElement(container, e.clientY);
+                            const dragging = container.querySelector('.dragging');
+                            if (dragging) {
+                                if (afterElement == null) {
+                                    container.appendChild(dragging);
+                                } else {
+                                    container.insertBefore(dragging, afterElement);
+                                }
+                            }
+                        });
+
+                        // Función auxiliar matemática para el reordenamiento visual fluido
+                        function getDragAfterElement(container, y) {
+                            const draggableElements = [...container.querySelectorAll('label:not(.dragging)')];
+                            return draggableElements.reduce((closest, child) => {
+                                const box = child.getBoundingClientRect();
+                                const offset = y - box.top - box.height / 2;
+                                if (offset < 0 && offset > closest.offset) {
+                                    return { offset: offset, element: child };
+                                } else {
+                                    return closest;
+                                }
+                            }, { offset: Number.NEGATIVE_INFINITY }).element;
+                        }
 
                         if (btnSave) {
                             btnSave.addEventListener('click', async () => {
                                 btnSave.classList.add('loading');
                                 btnSave.disabled = true;
 
+                                // ¡El milagro ocurre aquí! querySelectorAll extrae el orden actual del DOM, 
+                                // por lo que respetará exactamente cómo el usuario ordenó los items arrastrándolos.
                                 const checkboxes = container.querySelectorAll('.video-select-cb:checked');
                                 const selectedIds = Array.from(checkboxes).map(cb => cb.value);
 

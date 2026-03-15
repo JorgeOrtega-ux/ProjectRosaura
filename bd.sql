@@ -244,7 +244,7 @@ CREATE TABLE IF NOT EXISTS playlists (
     title VARCHAR(255) NOT NULL,
     description TEXT DEFAULT NULL,
     visibility ENUM('public', 'private', 'unlisted') DEFAULT 'public',
-    video_order ENUM('published_newest', 'published_oldest', 'popular', 'uploaded_newest', 'uploaded_oldest') DEFAULT 'published_newest',
+    video_order ENUM('manual', 'published_newest', 'published_oldest', 'popular', 'uploaded_newest', 'uploaded_oldest') DEFAULT 'manual',
     type ENUM('custom', 'watch_later', 'liked_videos') DEFAULT 'custom',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

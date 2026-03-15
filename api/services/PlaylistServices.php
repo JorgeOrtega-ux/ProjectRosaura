@@ -152,7 +152,7 @@ class PlaylistServices {
         }
         
         $uuid = Utils::generateUUID();
-        $playlistId = $this->playlistRepo->create($userId, $uuid, $title, null, $visibility, 'published_newest', 'custom');
+        $playlistId = $this->playlistRepo->create($userId, $uuid, $title, null, $visibility, 'manual', 'custom');
 
         if ($playlistId) {
             return [
