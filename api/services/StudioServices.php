@@ -3,6 +3,7 @@
 
 namespace App\Api\Services;
 
+use App\Core\Helpers\Utils;
 use App\Core\Interfaces\VideoRepositoryInterface;
 use App\Core\Interfaces\TagRepositoryInterface;
 use App\Core\Interfaces\PlaylistRepositoryInterface;
@@ -30,28 +31,6 @@ class StudioServices {
 
     private $allowedVideoExtensions = [
         'mp4', 'webm', 'mkv', 'mov', 'avi', 'mpeg', 'mpg'
-    ];
-
-    // PALETA OFICIAL DE LA PLATAFORMA (Puedes editar estos HEX según tu branding)
-    private $brandPalette = [
-        // Rojos
-        '#FF3B30', '#D32F2F', '#9A0007',
-        // Naranjas
-        '#FF9500', '#F57C00', '#E65100',
-        // Amarillos
-        '#FFCC00', '#FBC02D', '#F57F17',
-        // Verdes
-        '#34C759', '#388E3C', '#1B5E20',
-        // Cian / Teal
-        '#00C7BE', '#0097A7', '#006064',
-        // Azules
-        '#007AFF', '#1976D2', '#0D47A1',
-        // Índigo / Morado
-        '#5856D6', '#512DA8', '#311B92',
-        // Rosas
-        '#FF2D55', '#C2185B', '#880E4F',
-        // Neutros (Grises, Blanco, Negro)
-        '#8E8E93', '#48484A', '#1C1C1E', '#FFFFFF', '#000000'
     ];
 
     public function __construct(VideoRepositoryInterface $videoRepo, TagRepositoryInterface $tagRepo, RedisClient $redis, PlaylistRepositoryInterface $playlistRepo) {
@@ -98,9 +77,7 @@ class StudioServices {
     }
 
     private function validateVideoMimeType(string $filePath): void {
-        $finfo = finfo_open(FILEINFO_MIME_TYPE);
-        $mime = finfo_file($finfo, $filePath);
-        finfo_close($finfo);
+        $mime = Utils::getFileMimeType($filePath);
 
         if (!in_array($mime, $this->allowedVideoMimes)) {
             throw new Exception("Por seguridad, el formato del archivo fue rechazado. Tipo detectado: " . $mime);
@@ -132,7 +109,7 @@ class StudioServices {
         $originalFilename = basename($file['name']);
         $extension = $this->validateVideoExtension($originalFilename);
 
-        $uuid = sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x', mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0x0fff) | 0x4000, mt_rand(0, 0x3fff) | 0x8000, mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff));
+        $uuid = Utils::generateUUID();
         
         $tempFilename = $uuid . '.' . $extension;
         $tempFilePath = $this->tempVideoDir . $tempFilename;
@@ -177,7 +154,7 @@ class StudioServices {
         $extension = $this->validateVideoExtension($originalFilename);
         $this->checkLimits($userId, $role);
 
-        $uploadId = preg_replace('/[^a-zA-Z0-9_-]/', '', $uploadId);
+        $uploadId = Utils::sanitizeIdentifier($uploadId, true);
         if (empty($uploadId)) throw new Exception("Upload ID inválido.");
 
         $tempFilePath = $this->tempVideoDir . $uploadId . '.part';
@@ -199,7 +176,7 @@ class StudioServices {
         }
 
         if ($chunkIndex === $totalChunks - 1) {
-            $uuid = sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x', mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0x0fff) | 0x4000, mt_rand(0, 0x3fff) | 0x8000, mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff));
+            $uuid = Utils::generateUUID();
             
             $finalTempName = $uuid . '.' . $extension;
             $finalTempPath = $this->tempVideoDir . $finalTempName;
@@ -234,72 +211,6 @@ class StudioServices {
             'total_chunks' => $totalChunks,
             'status' => 'chunk_uploaded'
         ];
-    }
-
-    /**
-     * Calcula la Distancia Euclidiana entre el color extraído de la imagen y nuestra paleta
-     * de colores predefinida. Retorna el color de la paleta que sea matemáticamente más cercano.
-     */
-    private function getNearestPaletteColor(int $r, int $g, int $b): string {
-        $minDistance = null;
-        $closestColor = '#000000';
-
-        foreach ($this->brandPalette as $hexColor) {
-            $hex = ltrim($hexColor, '#');
-            
-            if (strlen($hex) == 3) {
-                $pr = hexdec(str_repeat(substr($hex, 0, 1), 2));
-                $pg = hexdec(str_repeat(substr($hex, 1, 1), 2));
-                $pb = hexdec(str_repeat(substr($hex, 2, 1), 2));
-            } else {
-                $pr = hexdec(substr($hex, 0, 2));
-                $pg = hexdec(substr($hex, 2, 2));
-                $pb = hexdec(substr($hex, 4, 2));
-            }
-
-            // Distancia en el espacio tridimensional RGB
-            $distance = sqrt(pow($r - $pr, 2) + pow($g - $pg, 2) + pow($b - $pb, 2));
-
-            if ($minDistance === null || $distance < $minDistance) {
-                $minDistance = $distance;
-                $closestColor = $hexColor;
-            }
-        }
-
-        return $closestColor;
-    }
-
-    private function getAverageColor(string $filepath): ?string {
-        $mime = mime_content_type($filepath);
-        $img = null;
-        
-        switch ($mime) {
-            case 'image/jpeg': 
-                $img = @imagecreatefromjpeg($filepath); 
-                break;
-            case 'image/png': 
-                $img = @imagecreatefrompng($filepath); 
-                break;
-            case 'image/webp': 
-                $img = @imagecreatefromwebp($filepath); 
-                break;
-        }
-        
-        if (!$img) return null;
-        
-        $thumb = imagecreatetruecolor(1, 1);
-        imagecopyresampled($thumb, $img, 0, 0, 0, 0, 1, 1, imagesx($img), imagesy($img));
-        
-        $rgb = imagecolorat($thumb, 0, 0);
-        $r = ($rgb >> 16) & 0xFF;
-        $g = ($rgb >> 8) & 0xFF;
-        $b = $rgb & 0xFF;
-        
-        imagedestroy($img);
-        imagedestroy($thumb);
-        
-        // Retorna el color ajustado a la paleta predefinida
-        return $this->getNearestPaletteColor($r, $g, $b);
     }
 
     public function uploadThumbnail(int $userId, int $videoId, ?array $file = null, ?string $base64 = null, ?string $generatedPath = null): array {
@@ -355,9 +266,7 @@ class StudioServices {
             throw new Exception("No se proporcionó ninguna imagen.");
         }
 
-        $finfo = finfo_open(FILEINFO_MIME_TYPE);
-        $mime = finfo_file($finfo, $targetPathToValidate);
-        finfo_close($finfo);
+        $mime = Utils::getFileMimeType($targetPathToValidate);
 
         $validImageMimes = ['image/jpeg', 'image/png', 'image/webp'];
         if (!in_array($mime, $validImageMimes)) {
@@ -387,7 +296,7 @@ class StudioServices {
             }
         }
 
-        $dominantColor = $this->getAverageColor($destination);
+        $dominantColor = Utils::getAverageColor($destination);
         
         $metadata = ['thumbnail_path' => $publicPath];
         if ($dominantColor) {
@@ -628,12 +537,12 @@ class StudioServices {
 
         $hlsDir = __DIR__ . '/../../public/storage/videos/' . $video['uuid'];
         if (is_dir($hlsDir)) {
-            $this->deleteDirectory($hlsDir);
+            Utils::deleteDirectory($hlsDir);
         }
 
         $generatedThumbsDir = __DIR__ . '/../../public/storage/thumbnails/generated/' . $video['uuid'];
         if (is_dir($generatedThumbsDir)) {
-            $this->deleteDirectory($generatedThumbsDir);
+            Utils::deleteDirectory($generatedThumbsDir);
         }
 
         $this->videoRepo->delete($videoId);
@@ -643,16 +552,6 @@ class StudioServices {
 
     public function deleteVideo(int $userId, int $videoId): array {
         return $this->cancelUpload($userId, $videoId);
-    }
-
-    private function deleteDirectory(string $dir): bool {
-        if (!file_exists($dir)) return true;
-        if (!is_dir($dir)) return unlink($dir);
-        foreach (scandir($dir) as $item) {
-            if ($item == '.' || $item == '..') continue;
-            if (!$this->deleteDirectory($dir . DIRECTORY_SEPARATOR . $item)) return false;
-        }
-        return rmdir($dir);
     }
 
     public function createPlaylist(int $userId, string $title, ?string $description, string $visibility, string $videoOrder): array {
@@ -665,7 +564,7 @@ class StudioServices {
             throw new Exception("El título de la playlist es obligatorio.");
         }
         
-        $uuid = sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x', mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0x0fff) | 0x4000, mt_rand(0, 0x3fff) | 0x8000, mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff));
+        $uuid = Utils::generateUUID();
         
         $id = $this->playlistRepo->create($userId, $uuid, trim($title), $description, $visibility, $videoOrder, 'custom');
         

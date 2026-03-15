@@ -86,14 +86,7 @@ class AuthServices {
             if (count($parts) === 2) {
                 $this->tokenRepository->deleteBySelector($parts[0]);
             }
-            setcookie('remember_token', '', [
-                'expires' => time() - 3600, 
-                'path' => APP_URL ?: '/', 
-                'secure' => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on', 
-                'httponly' => true, 
-                'samesite' => 'Strict'
-            ]);
-            unset($_COOKIE['remember_token']);
+            Utils::clearRememberCookie();
         }
     }
 
@@ -285,7 +278,7 @@ class AuthServices {
         $profilePic = Utils::generateProfilePicture($payload['username'], $uuid);
         if (!$profilePic) return ['success' => false, 'message' => 'Error al generar la foto de perfil.'];
 
-        $baseHandle = preg_replace('/[^a-z0-9]/', '', strtolower($payload['username']));
+        $baseHandle = Utils::sanitizeIdentifier($payload['username']);
         if (empty($baseHandle)) $baseHandle = 'user'; 
         
         $channelIdentifier = $baseHandle;
@@ -306,7 +299,6 @@ class AuthServices {
         ]);
 
         if ($newUserId > 0) {
-            // --- INYECCIÓN DE PLAYLISTS POR DEFECTO DEL SISTEMA ---
             
             // 1. Ver más tarde
             $watchLaterUuid = Utils::generateUUID();
@@ -331,7 +323,6 @@ class AuthServices {
                 'published_newest',
                 'liked_videos' 
             );
-            // ------------------------------------------------------------------------
 
             $userPrefs = $this->prefsManager->ensureDefaultPreferences($newUserId);
 

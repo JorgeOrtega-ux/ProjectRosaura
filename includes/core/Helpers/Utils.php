@@ -5,6 +5,15 @@ namespace App\Core\Helpers;
 
 class Utils {
     
+    // PALETA OFICIAL DE LA PLATAFORMA
+    private static $brandPalette = [
+        '#FF3B30', '#D32F2F', '#9A0007', '#FF9500', '#F57C00', '#E65100',
+        '#FFCC00', '#FBC02D', '#F57F17', '#34C759', '#388E3C', '#1B5E20',
+        '#00C7BE', '#0097A7', '#006064', '#007AFF', '#1976D2', '#0D47A1',
+        '#5856D6', '#512DA8', '#311B92', '#FF2D55', '#C2185B', '#880E4F',
+        '#8E8E93', '#48484A', '#1C1C1E', '#FFFFFF', '#000000'
+    ];
+
     public static function generateUUID() {
         return sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
             mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff),
@@ -21,7 +30,6 @@ class Utils {
         $imageContent = @file_get_contents($url);
         if ($imageContent === false) return false;
 
-        // Utilizamos la constante absoluta para no depender de rutas relativas
         $storageDir = ROOT_PATH . '/public/storage/profilePictures/default/';
         if (!is_dir($storageDir)) mkdir($storageDir, 0777, true);
         $fileName = $uuid . '.png';
@@ -110,7 +118,6 @@ class Utils {
         $subdomains = explode('.', $domainPart);
         if (count($subdomains) < 2) return ['valid' => false, 'message' => 'El dominio del correo electrónico debe incluir una extensión válida.'];
         foreach ($subdomains as $sub) {
-            // El RFC de DNS (1035) limita cada etiqueta de subdominio a 63 caracteres. 
             if (strlen($sub) < 2 || strlen($sub) > 63) return ['valid' => false, 'message' => 'Cada parte del dominio separada por un punto debe tener entre 2 y 63 caracteres.'];
         }
         return ['valid' => true];
@@ -129,7 +136,6 @@ class Utils {
         return ($dimensions[0] >= $minWidth && $dimensions[1] >= $minHeight);
     }
 
-    // --- NUEVAS FUNCIONES DE CONVERSIÓN ---
     public static function formatHeight($meters, $system = 'metric') {
         $m = (float)$meters;
         if ($m <= 0) return 'No especificado';
@@ -142,10 +148,10 @@ class Utils {
                 $feet += 1;
                 $inches = 0;
             }
-            return "{$feet}'{$inches}\""; // Ej: 5'9"
+            return "{$feet}'{$inches}\""; 
         }
         
-        return number_format($m, 2) . ' m'; // Ej: 1.75 m
+        return number_format($m, 2) . ' m'; 
     }
 
     public static function formatWeight($kg, $system = 'metric') {
@@ -154,10 +160,107 @@ class Utils {
         
         if ($system === 'imperial') {
             $lbs = round($k * 2.20462);
-            return "{$lbs} lbs"; // Ej: 154 lbs
+            return "{$lbs} lbs"; 
         }
         
-        return number_format($k, 0) . ' kg'; // Ej: 70 kg
+        return number_format($k, 0) . ' kg'; 
+    }
+
+    public static function getFileMimeType($filePath) {
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mime = finfo_file($finfo, $filePath);
+        finfo_close($finfo);
+        return $mime;
+    }
+
+    public static function clearRememberCookie() {
+        if (isset($_COOKIE['remember_token'])) {
+            setcookie('remember_token', '', [
+                'expires' => time() - 3600, 
+                'path' => APP_URL ?: '/', 
+                'secure' => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on', 
+                'httponly' => true, 
+                'samesite' => 'Strict'
+            ]);
+            unset($_COOKIE['remember_token']);
+        }
+    }
+
+    public static function deleteDirectory(string $dir): bool {
+        if (!file_exists($dir)) return true;
+        if (!is_dir($dir)) return unlink($dir);
+        foreach (scandir($dir) as $item) {
+            if ($item == '.' || $item == '..') continue;
+            if (!self::deleteDirectory($dir . DIRECTORY_SEPARATOR . $item)) return false;
+        }
+        return rmdir($dir);
+    }
+
+    public static function sanitizeIdentifier($string, $allowDashes = false) {
+        if ($allowDashes) {
+            return preg_replace('/[^a-zA-Z0-9_-]/', '', $string);
+        }
+        return preg_replace('/[^a-z0-9]/', '', strtolower($string));
+    }
+
+    public static function getNearestPaletteColor(int $r, int $g, int $b): string {
+        $minDistance = null;
+        $closestColor = '#000000';
+
+        foreach (self::$brandPalette as $hexColor) {
+            $hex = ltrim($hexColor, '#');
+            
+            if (strlen($hex) == 3) {
+                $pr = hexdec(str_repeat(substr($hex, 0, 1), 2));
+                $pg = hexdec(str_repeat(substr($hex, 1, 1), 2));
+                $pb = hexdec(str_repeat(substr($hex, 2, 1), 2));
+            } else {
+                $pr = hexdec(substr($hex, 0, 2));
+                $pg = hexdec(substr($hex, 2, 2));
+                $pb = hexdec(substr($hex, 4, 2));
+            }
+
+            $distance = sqrt(pow($r - $pr, 2) + pow($g - $pg, 2) + pow($b - $pb, 2));
+
+            if ($minDistance === null || $distance < $minDistance) {
+                $minDistance = $distance;
+                $closestColor = $hexColor;
+            }
+        }
+
+        return $closestColor;
+    }
+
+    public static function getAverageColor(string $filepath): ?string {
+        $mime = self::getFileMimeType($filepath);
+        $img = null;
+        
+        switch ($mime) {
+            case 'image/jpeg': 
+                $img = @imagecreatefromjpeg($filepath); 
+                break;
+            case 'image/png': 
+                $img = @imagecreatefrompng($filepath); 
+                break;
+            case 'image/webp': 
+                $img = @imagecreatefromwebp($filepath); 
+                break;
+        }
+        
+        if (!$img) return null;
+        
+        $thumb = imagecreatetruecolor(1, 1);
+        imagecopyresampled($thumb, $img, 0, 0, 0, 0, 1, 1, imagesx($img), imagesy($img));
+        
+        $rgb = imagecolorat($thumb, 0, 0);
+        $r = ($rgb >> 16) & 0xFF;
+        $g = ($rgb >> 8) & 0xFF;
+        $b = $rgb & 0xFF;
+        
+        imagedestroy($img);
+        imagedestroy($thumb);
+        
+        return self::getNearestPaletteColor($r, $g, $b);
     }
 }
 ?>

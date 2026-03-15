@@ -68,9 +68,7 @@ class SettingsServices
             return ['success' => false, 'message' => "La imagen supera el límite de {$maxSizeMb}MB."];
         }
 
-        $finfo = finfo_open(FILEINFO_MIME_TYPE);
-        $mime = finfo_file($finfo, $file['tmp_name']);
-        finfo_close($finfo);
+        $mime = Utils::getFileMimeType($file['tmp_name']);
         if ($mime !== 'image/png' && $mime !== 'image/jpeg') return ['success' => false, 'message' => 'Solo se permiten formatos PNG y JPG.'];
 
         $fileName = Utils::generateUUID() . (($mime === 'image/png') ? '.png' : '.jpg');
@@ -446,7 +444,7 @@ class SettingsServices
                 $this->moderationRepository->logAction($userId, null, 'deleted', 'Eliminada por el propio usuario desde la configuración.', null, null);
                 
                 $this->tokenRepository->deleteAllByUserId($userId);
-                if (isset($_COOKIE['remember_token'])) setcookie('remember_token', '', ['expires' => time() - 3600, 'path' => APP_URL ?: '/']);
+                Utils::clearRememberCookie();
                 Logger::security("Cuenta de usuario eliminada por si mismo", 'warning', ['user_id' => $userId, 'ip' => Utils::getIpAddress()]);
 
                 $this->sessionManager->destroy();
@@ -593,16 +591,7 @@ class SettingsServices
             if ($this->tokenRepository->deleteAllByUserId($userId)) {
                 Logger::security("Todas las sesiones de dispositivos fueron revocadas (incluyendo la actual)", 'info', ['user_id' => $userId, 'ip' => Utils::getIpAddress()]);
                 $this->sessionManager->destroy();
-                if (isset($_COOKIE['remember_token'])) {
-                    setcookie('remember_token', '', [
-                        'expires' => time() - 3600, 
-                        'path' => APP_URL ?: '/', 
-                        'secure' => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on', 
-                        'httponly' => true, 
-                        'samesite' => 'Strict'
-                    ]);
-                    unset($_COOKIE['remember_token']);
-                }
+                Utils::clearRememberCookie();
                 return ['success' => true, 'message' => 'Todas las sesiones cerradas.'];
             }
         } else {
