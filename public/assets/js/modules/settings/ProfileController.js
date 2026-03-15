@@ -150,14 +150,23 @@ export class ProfileController {
 
         const btnSaveEmail = e.target.closest('[data-action="saveEmail"]');
         if (btnSaveEmail) this.saveEmail(btnSaveEmail);
+        
+        // --- EVENTOS NUEVOS PARA EL MODULO DE MEDICIÓN ---
+        const btnToggleMeasurement = e.target.closest('[data-action="toggleModuleMeasurement"]');
+        if (btnToggleMeasurement) this.toggleModuleMeasurement(btnToggleMeasurement);
+
+        const btnSetMeasurement = e.target.closest('[data-action="setMeasurement"]');
+        if (btnSetMeasurement) this.updateMeasurementSystem(btnSetMeasurement);
+        
+        // Cerrar el módulo si se hace clic fuera
+        if (!e.target.closest('.component-dropdown-wrapper')) {
+            document.querySelectorAll('.component-module-floating').forEach(m => m.style.display = 'none');
+        }
     }
 
     handleChange(e) {
         if (e.target && e.target.getAttribute('data-ref') === 'input-avatar-file') {
             this.handleFileSelection(e);
-        }
-        if (e.target && e.target.getAttribute('data-action') === 'updateMeasurementSystem') {
-            this.updateMeasurementSystem(e.target);
         }
     }
 
@@ -252,11 +261,47 @@ export class ProfileController {
         }
     }
 
-    async updateMeasurementSystem(selectEl) {
-        const val = selectEl.value;
+    // --- NUEVAS FUNCIONES PARA EL TRIGGER Y LA API ---
+    toggleModuleMeasurement(triggerBtn) {
+        const module = triggerBtn.nextElementSibling;
+        if (module && module.classList.contains('component-module-floating')) {
+            const isVisible = module.style.display === 'block';
+            document.querySelectorAll('.component-module-floating').forEach(m => m.style.display = 'none');
+            module.style.display = isVisible ? 'none' : 'block';
+        }
+    }
+
+    async updateMeasurementSystem(itemEl) {
+        const val = itemEl.getAttribute('data-value');
+        const text = itemEl.getAttribute('data-text');
+        const module = itemEl.closest('.component-module-floating');
+
         const result = await this.api.post(ApiRoutes.Settings.UpdatePreferences, { key: 'measurement_system', value: val });
+        
         if (result.success) {
             this.showMessage(result.message, 'success');
+            
+            // Actualizar el texto del trigger visualmente
+            const displayEl = document.querySelector('[data-ref="display-measurement"]');
+            if (displayEl) displayEl.textContent = text;
+
+            // Actualizar la lista (Quitar y poner la palomita/check)
+            if (module) {
+                module.querySelectorAll('.component-list-item').forEach(li => {
+                    li.classList.remove('active');
+                    const check = li.querySelector('.material-symbols-rounded');
+                    if(check) check.remove();
+                });
+                itemEl.classList.add('active');
+                itemEl.insertAdjacentHTML('beforeend', '<span class="material-symbols-rounded" style="font-size: 18px;">check</span>');
+                module.style.display = 'none'; // Cerrar el módulo
+            }
+
+            // Actualizar el objeto global de preferencias de la aplicación si existe
+            if (window.AppUserPrefs) {
+                window.AppUserPrefs.measurement_system = val;
+            }
+
         } else {
             this.showMessage(result.message, 'error');
         }

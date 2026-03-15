@@ -60,10 +60,19 @@ class UserPrefsManager implements UserPrefsManagerInterface {
      * Obtiene de forma global el sistema de medición activo ('metric' o 'imperial').
      */
     public static function getActiveMeasurementSystem(PDO $pdo = null, $userId = null): string {
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        
+        // 1. Prioridad máxima: La sesión actual cargada
+        if (isset($_SESSION['user_prefs']['measurement_system'])) {
+            return $_SESSION['user_prefs']['measurement_system'];
+        }
+
+        // 2. Fallback a la Cookie si existe
         if (isset($_COOKIE['measurement_system']) && !empty($_COOKIE['measurement_system'])) {
             return $_COOKIE['measurement_system'];
         }
 
+        // 3. Fallback a la Base de Datos
         if ($pdo !== null && $userId !== null) {
             $stmt = $pdo->prepare("SELECT measurement_system FROM user_preferences WHERE user_id = ?");
             $stmt->execute([$userId]);
@@ -73,6 +82,7 @@ class UserPrefsManager implements UserPrefsManagerInterface {
             }
         }
 
+        // Por defecto
         return 'metric';
     }
 }

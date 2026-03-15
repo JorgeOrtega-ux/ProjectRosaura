@@ -42,6 +42,9 @@ $languages = [
     'pt-PT' => 'Português (Portugal)'
 ];
 $currentLangText = $languages[$prefLang] ?? 'Español (Latinoamérica)';
+
+// Texto actual del sistema de medición
+$currentMeasurementText = $prefMeasurement === 'imperial' ? 'Imperial (lbs / ft-in)' : 'Métrico (kg / cm)';
 ?>
 
 <div class="view-content">
@@ -173,18 +176,24 @@ $currentLangText = $languages[$prefLang] ?? 'Español (Latinoamérica)';
             
             <hr class="component-divider">
 
-            <div class="component-group-item component-group-item--wrap">
+            <div class="component-group-item component-group-item--stacked">
                 <div class="component-card__content">
                     <div class="component-card__text">
                         <h2 class="component-card__title">Sistema de Medición</h2>
                         <p class="component-card__description">Elige cómo prefieres ver y registrar medidas (peso, altura, etc).</p>
                     </div>
                 </div>
-                <div class="component-card__actions component-card__actions--end">
-                    <select class="component-input-field" data-action="updateMeasurementSystem" style="width: 200px;">
-                        <option value="metric" <?php echo $prefMeasurement === 'metric' ? 'selected' : ''; ?>>Métrico (kg / cm)</option>
-                        <option value="imperial" <?php echo $prefMeasurement === 'imperial' ? 'selected' : ''; ?>>Imperial (lbs / ft-in)</option>
-                    </select>
+                <div class="component-card__actions component-card__actions--start">
+                    
+                    <div class="component-dropdown-wrapper">
+                        <div class="component-dropdown-trigger" data-action="toggleModuleMeasurement">
+                            <span class="material-symbols-rounded">straighten</span>
+                            <span class="component-dropdown-text" data-ref="display-measurement"><?php echo htmlspecialchars($currentMeasurementText); ?></span>
+                            <span class="material-symbols-rounded">expand_more</span>
+                        </div>
+                        <?php include __DIR__ . '/../../modules/moduleMeasurement.php'; ?>
+                    </div>
+
                 </div>
             </div>
         </div>

@@ -1,3 +1,7 @@
+<?php
+// Obtenemos la preferencia del visualizador
+$viewerMeasurementSystem = \App\Core\System\UserPrefsManager::getActiveMeasurementSystem();
+?>
 <div class="component-feed-section">
     <div class="component-about-layout">
         
@@ -28,15 +32,24 @@
                     'Color de ojos' => $eyeColorMap[$channelUser['eye_color'] ?? ''] ?? 'No especificado',
                     'Color de cabello' => $hairColorMap[$channelUser['hair_color'] ?? ''] ?? 'No especificado',
                     'Pechos / Busto' => $boobsMap[$channelUser['boobs'] ?? ''] ?? 'No especificado',
-                    'Estatura' => !empty($channelUser['display_height']) ? htmlspecialchars($channelUser['display_height']) : (!empty($channelUser['height']) ? htmlspecialchars($channelUser['height']) . ' m' : 'No especificado'),
-                    'Peso' => !empty($channelUser['display_weight']) ? htmlspecialchars($channelUser['display_weight']) : (!empty($channelUser['weight']) ? htmlspecialchars($channelUser['weight']) . ' kg' : 'No especificado'),
+                    
+                    // --- AQUÍ APLICAMOS LA MAGIA DE CONVERSIÓN ---
+                    'Estatura' => !empty($channelUser['display_height']) 
+                                  ? htmlspecialchars($channelUser['display_height']) 
+                                  : \App\Core\Helpers\Utils::formatHeight($channelUser['height'] ?? 0, $viewerMeasurementSystem),
+                    
+                    'Peso' => !empty($channelUser['display_weight']) 
+                              ? htmlspecialchars($channelUser['display_weight']) 
+                              : \App\Core\Helpers\Utils::formatWeight($channelUser['weight'] ?? 0, $viewerMeasurementSystem),
+                    // ----------------------------------------------
+
                     'Tatuajes' => !empty($channelUser['tattoos']) ? 'Sí' : 'No',
                     'Perforaciones' => !empty($channelUser['piercings']) ? 'Sí' : 'No',
                 ];
                 
                 $hasAnyDetail = false;
                 foreach($details as $label => $value) {
-                    if ($value !== 'No especificado' && $value !== '0.00 m' && $value !== '0.00 kg' && $value !== '') {
+                    if ($value !== 'No especificado' && $value !== '0.00 m' && $value !== '0 kg' && $value !== '') {
                         $hasAnyDetail = true;
                         echo '
                         <div class="component-about-detail-item">

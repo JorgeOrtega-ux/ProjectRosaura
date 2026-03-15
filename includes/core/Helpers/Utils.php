@@ -122,12 +122,42 @@ class Utils {
         return ['valid' => true];
     }
 
-    // --- NUEVO MÉTODO PARA VALIDAR DIMENSIONES DE IMAGEN ---
     public static function validateImageDimensions($filePath, $minWidth, $minHeight) {
         $dimensions = @getimagesize($filePath);
         if (!$dimensions) return false;
         
         return ($dimensions[0] >= $minWidth && $dimensions[1] >= $minHeight);
+    }
+
+    // --- NUEVAS FUNCIONES DE CONVERSIÓN ---
+    public static function formatHeight($meters, $system = 'metric') {
+        $m = (float)$meters;
+        if ($m <= 0) return 'No especificado';
+        
+        if ($system === 'imperial') {
+            $totalInches = $m * 39.3701;
+            $feet = floor($totalInches / 12);
+            $inches = round($totalInches % 12);
+            if ($inches == 12) {
+                $feet += 1;
+                $inches = 0;
+            }
+            return "{$feet}'{$inches}\""; // Ej: 5'9"
+        }
+        
+        return number_format($m, 2) . ' m'; // Ej: 1.75 m
+    }
+
+    public static function formatWeight($kg, $system = 'metric') {
+        $k = (float)$kg;
+        if ($k <= 0) return 'No especificado';
+        
+        if ($system === 'imperial') {
+            $lbs = round($k * 2.20462);
+            return "{$lbs} lbs"; // Ej: 154 lbs
+        }
+        
+        return number_format($k, 0) . ' kg'; // Ej: 70 kg
     }
 }
 ?>
