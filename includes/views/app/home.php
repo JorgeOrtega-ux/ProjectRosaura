@@ -1,6 +1,6 @@
 <div class="component-view-layout">
             
-    <div class="component-view-top" style="padding: 24px 24px 0 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+    <div class="component-view-top">
         
         <div class="component-view-top-left">
             <div class="component-badge-list" id="home-category-badges">
@@ -9,7 +9,7 @@
         </div>
         
         <div class="component-view-top-right">
-            </div>
+        </div>
 
     </div>
 
@@ -37,7 +37,7 @@
                         <span class="material-symbols-rounded">chevron_left</span>
                     </button>
 
-                    <div class="carousel-viewport" style="overflow: hidden;">
+                    <div class="carousel-viewport">
                         <div id="vertical-feed-container" class="component-video-scroll carousel-track">
                             <div class="component-spinner component-spinner--centered" style="margin-top: 40px;"></div>
                         </div>

@@ -28,35 +28,6 @@
     gap: 12px;
 }
 
-.component-search-filter-btn,
-.component-search-tab-btn {
-    background-color: transparent;
-    color: var(--text-primary, #333333);
-    border: 1px solid #00000020;
-    padding: 4px 12px;
-    border-radius: 20px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    transition: all 0.2s ease;
-}
-
-.component-search-filter-btn:hover,
-.component-search-tab-btn:hover {
-    background-color: rgba(0, 0, 0, 0.05);
-}
-
-.component-search-filter-active,
-.component-search-tab-active {
-    background-color: #000000;
-    color: #ffffff;
-    border-color: #000000;
-}
-
-.component-search-filter-active:hover,
-.component-search-tab-active:hover {
-    background-color: #222222;
-}
-
 /* --- Bottom Section & Status --- */
 .component-search-bottom {
     display: flex;
@@ -185,21 +156,6 @@
     overflow: hidden;
 }
 
-/* Estilos de estado activo para los badges de filtro */
-.component-badge.component-search-filter-active {
-    background-color: var(--text-primary, #ffffff);
-    color: var(--bg-surface, #000000);
-    border-color: var(--text-primary, #ffffff);
-}
-
-.component-badge.component-search-filter-btn {
-    transition: all 0.2s ease;
-}
-
-.component-badge.component-search-filter-btn:hover:not(.component-search-filter-active) {
-    background-color: var(--bg-hover-light, rgba(255, 255, 255, 0.1));
-}
-
 #search-results-area {
     min-height: 50vh; 
 }
@@ -310,20 +266,7 @@
     padding: 0 4px;
 }
 
-/* Badges para estadísticas y botón */
-.component-badge {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 6px 14px;
-    border-radius: 20px;
-    font-size: 0.85rem;
-    font-weight: 500;
-    border: 1px solid var(--border-color, #333);
-    background-color: var(--bg-secondary, #1f1f1f);
-    color: var(--text-primary, #ffffff);
-}
-
+/* Botones y Badges específicos para cards de Canales */
 .stat-badge {
     color: var(--text-secondary, #aaaaaa);
     background-color: rgba(255, 255, 255, 0.05);

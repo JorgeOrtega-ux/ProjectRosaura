@@ -1255,6 +1255,10 @@ input:checked+.component-toggle-slider:before {
     gap: 8px;
 }
 
+/* MODIFICACIÓN AQUÍ: Se eliminó background-color explícito por default 
+  (se cambia a transparent) y se añadió cursor y transición para que aplique 
+  a todos los botones de filtro/etiquetas 
+*/
 .component-badge {
     display: inline-flex;
     align-items: center;
@@ -1263,10 +1267,16 @@ input:checked+.component-toggle-slider:before {
     border-radius: 20px;
     font-size: 13px;
     font-weight: 500;
-    background-color: var(--bg-surface);
+    background-color: transparent;
     color: var(--text-primary);
     border: 1px solid var(--border-color);
     white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.component-badge:hover:not(.active) {
+    background-color: var(--bg-hover-light, rgba(255, 255, 255, 0.1));
 }
 
 .component-badge .material-symbols-rounded {
@@ -2826,11 +2836,25 @@ input:checked+.component-toggle-slider:before {
     width: 100%;
     min-height: 100%;
 }
+
+/* MODIFICACIÓN AQUÍ: Se estandariza como contenedor fluido y se integran los estilos flex
+  que estaban inline en home.php
+*/
 .component-view-top {
     width: 100%;
-    max-width: 1200px;
-    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    padding: 24px 24px 0 24px;
 }
+
 .component-view-bottom {
     flex: 1;
+}
+
+.component-badge.active {
+    background-color: #000000;
+    color: #fff;
 }

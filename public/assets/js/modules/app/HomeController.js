@@ -41,7 +41,6 @@ export class HomeController {
         if (!this.badgesContainer) return;
         
         try {
-            // CORRECCIÓN AQUÍ: Se usa this.api.post en lugar de this.api.get
             const response = await this.api.post(ApiRoutes.App.GetFeedFilters);
             if (response && response.success) {
                 this.renderBadges(response.data.categories);
@@ -57,26 +56,23 @@ export class HomeController {
     renderBadges(categories) {
         if (!categories || categories.length === 0) return;
         
-        let html = `<button class="component-badge active" data-filter="all" style="cursor: pointer;">Todo</button>`;
+        let html = `<button class="component-badge active" data-filter="all">Todo</button>`;
         
         categories.forEach(cat => {
-            html += `<button class="component-badge" data-filter="${cat.slug}" style="cursor: pointer;">${cat.name}</button>`;
+            html += `<button class="component-badge" data-filter="${cat.slug}">${cat.name}</button>`;
         });
         
         this.badgesContainer.innerHTML = html;
         
-        // Adjuntar eventos a los badges
         const badges = this.badgesContainer.querySelectorAll('.component-badge');
         badges.forEach(badge => {
             badge.addEventListener('click', (e) => {
                 const selectedFilter = e.target.getAttribute('data-filter');
-                if (this.currentCategory === selectedFilter) return; // No hacer nada si ya está activo
+                if (this.currentCategory === selectedFilter) return; 
                 
-                // Actualizar UI
                 badges.forEach(b => b.classList.remove('active'));
                 e.target.classList.add('active');
                 
-                // Recargar feed
                 this.currentCategory = selectedFilter;
                 this.loadFeed(this.currentCategory);
             });
@@ -84,7 +80,6 @@ export class HomeController {
     }
 
     async loadFeed(category = 'all') {
-        // Mostrar spinners mientras carga
         const spinnerHTML = '<div class="component-spinner component-spinner--centered" style="margin-top: 40px;"></div>';
         if (this.horizontalContainer) this.horizontalContainer.innerHTML = spinnerHTML;
         if (this.verticalContainer) this.verticalContainer.innerHTML = spinnerHTML;
@@ -103,7 +98,6 @@ export class HomeController {
                 this.renderFeed(response.data.vertical, this.verticalContainer, 'vertical');
                 this.renderFeed(response.data.horizontal, this.horizontalContainer, 'horizontal');
                 
-                // Las playlists generalmente no se filtran por categoría de video, o si quieres puedes hacerlo
                 if (category === 'all') {
                     this.renderPlaylistFeed(response.data.playlists, this.playlistContainer);
                     if (this.playlistContainer) this.playlistContainer.closest('.component-feed-section').style.display = 'block';
@@ -142,7 +136,6 @@ export class HomeController {
             return;
         }
 
-        // Restablecer visibilidad por si estaba oculto
         const sectionWrapper = container.closest('.component-feed-section');
         if (sectionWrapper) sectionWrapper.style.display = 'block';
 
