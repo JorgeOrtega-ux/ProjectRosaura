@@ -30,7 +30,8 @@ interface UserRepositoryInterface {
     public function updatePreference(int $userId, string $key, $value): bool;
     public function updateRole(int $id, string $role): bool;
 
-    // --- NUEVO MÉTODO PARA ACTUALIZAR PERMISO DE SUBIDA ---
-    public function updateUploadPermission(int $id, int $canUpload): bool;
+    // --- MÉTODO ACTUALIZADO PARA ESTADO DE CREADOR ---
+    // (Hemos eliminado la vieja función updateUploadPermission que causaba el Fatal Error)
+    public function updateCreatorStatus(int $id, int $isCreator): bool;
 }
 ?>
