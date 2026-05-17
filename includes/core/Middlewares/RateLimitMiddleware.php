@@ -23,16 +23,17 @@ class RateLimitMiddleware implements MiddlewareInterface {
         $maxAttempts = $params['max'] ?? RL::DEFAULT_MAX_ATTEMPTS;
         $decayMinutes = $params['time'] ?? RL::DEFAULT_DECAY_MINUTES;
         $identifierType = $params['identifier'] ?? RL::ID_IP;
+        
+        // Obtenemos si la ruta actual ha sido marcada como crítica en la configuración
+        $isCritical = $params['is_critical'] ?? false;
 
         // Determinar quién es el usuario
         $identifier = Utils::getIpAddress(); 
 
         if ($identifierType === RL::ID_IP_AND_EMAIL) {
-            // Nota: Se ha cambiado el string mágico 'guest' por RL::ID_GUEST
             $emailOrUser = $input['email'] ?? $input['username'] ?? RL::ID_GUEST;
             $identifier .= '|' . strtolower(trim($emailOrUser));
         } elseif ($identifierType === RL::ID_USER_ID) {
-            // CORRECCIÓN FALLA 8: MULTI-ACCOUNT RATE LIMIT BYPASS
             $sessionId = session_id();
             $identifier = !empty($sessionId) ? $sessionId : Utils::getIpAddress();
         }
@@ -41,14 +42,15 @@ class RateLimitMiddleware implements MiddlewareInterface {
         $safeTarget = md5($identifier);
         $redisKey = CacheConst::PREFIX_RATE_LIMIT . "{$actionPrefix}:{$safeTarget}";
 
-        // Ejecutamos la evaluación y el registro
-        $limitCheck = $this->rateLimiter->consume($redisKey, $maxAttempts, $decayMinutes);
+        // Ejecutamos la evaluación y el registro pasando el nuevo parámetro $isCritical
+        $limitCheck = $this->rateLimiter->consume($redisKey, $maxAttempts, $decayMinutes, $isCritical);
 
         if (!$limitCheck['allowed']) {
-            Logger::security("Rate limit excedido por middleware", 'warning', [
+            Logger::security("Rate limit excedido por middleware o servicio no disponible", 'warning', [
                 'action' => $actionPrefix,
                 'identifier' => $identifier, // Rastro del identificador real para auditoría
-                'redis_key' => $redisKey
+                'redis_key' => $redisKey,
+                'is_critical' => $isCritical
             ]);
             
             http_response_code(429);

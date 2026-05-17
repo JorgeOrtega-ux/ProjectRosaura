@@ -84,22 +84,9 @@ class AuthServices {
         $userAgent = substr($_SERVER['HTTP_USER_AGENT'] ?? 'Unknown', 0, 255);
         $ipAddress = substr(Utils::getIpAddress(), 0, 45);
         
-        // --- NUEVO: Obtener Geolocalización ---
-        $location = 'Local / Unknown'; // Valor por defecto
-        if (!in_array($ipAddress, ['127.0.0.1', '::1', '0.0.0.0', 'localhost'])) {
-            // Timeout muy corto para evitar bloquear el login si la API está caída
-            $context = stream_context_create(['http' => ['timeout' => 1.5]]);
-            $geoData = @file_get_contents("http://ip-api.com/json/{$ipAddress}?fields=city,country", false, $context);
-            
-            if ($geoData) {
-                $geoJson = json_decode($geoData, true);
-                if (!empty($geoJson['city']) && !empty($geoJson['country'])) {
-                    $location = $geoJson['city'] . ', ' . $geoJson['country'];
-                }
-            }
-        }
+        // --- MODIFICADO: Geolocalización diferida para evitar latencia y bloqueos síncronos ---
+        $location = 'Unknown'; 
         
-        // Se añade el nuevo parámetro $location al TokenRepository
         if (!$this->tokenRepository->createToken($userId, $selector, $hashedValidator, $expiresAt, $userAgent, $ipAddress, $location)) {
              Logger::error("Failed to create remember token in database", ['user_id' => $userId]);
         }
@@ -354,9 +341,10 @@ class AuthServices {
         $email = trim($data['email'] ?? ''); $password = trim($data['password'] ?? '');
         if (empty($email) || empty($password)) return ['success' => false, 'message_key' => 'validation.missing_fields'];
         
-        $rateCheck = $this->rateLimiter->consume(RateLimitConstants::KEY_AUTH_REGISTER_STEP1 . "_{$email}", RateLimitConstants::MAX_10, RateLimitConstants::TIME_60); 
+        // Se añade true (isCritical) al rate limiter
+        $rateCheck = $this->rateLimiter->consume(RateLimitConstants::KEY_AUTH_REGISTER_STEP1 . "_{$email}", RateLimitConstants::MAX_10, RateLimitConstants::TIME_60, true); 
         if (!$rateCheck['allowed']) {
-            return ['success' => false, 'message_key' => 'error.rate_limit_exceeded'];
+            return ['success' => false, 'message_key' => $rateCheck['message_key'] ?? 'error.rate_limit_exceeded'];
         }
 
         $eVal = Utils::validateEmailFormat($email); 
@@ -414,8 +402,9 @@ class AuthServices {
         $username = trim($data['username'] ?? '');
         if (empty($username)) return ['success' => false, 'message_key' => 'validation.missing_fields'];
 
-        $rateCheck = $this->rateLimiter->consume(RateLimitConstants::KEY_AUTH_REGISTER_STEP2 . "_{$regEmail}", RateLimitConstants::MAX_5, RateLimitConstants::TIME_60);
-        if (!$rateCheck['allowed']) return ['success' => false, 'message_key' => 'error.rate_limit_exceeded'];
+        // Se añade true (isCritical) al rate limiter
+        $rateCheck = $this->rateLimiter->consume(RateLimitConstants::KEY_AUTH_REGISTER_STEP2 . "_{$regEmail}", RateLimitConstants::MAX_5, RateLimitConstants::TIME_60, true);
+        if (!$rateCheck['allowed']) return ['success' => false, 'message_key' => $rateCheck['message_key'] ?? 'error.rate_limit_exceeded'];
         
         $minUser = $this->config['min_username_length'];
         $maxUser = $this->config['max_username_length'];
@@ -453,8 +442,9 @@ class AuthServices {
 
         $email = $regFlows[$regToken]['email'];
         
-        $rateCheck = $this->rateLimiter->consume(RateLimitConstants::KEY_AUTH_RESEND_CODE . "_{$email}", RateLimitConstants::MAX_5, RateLimitConstants::TIME_60); 
-        if (!$rateCheck['allowed']) return ['success' => false, 'message_key' => 'error.rate_limit_exceeded'];
+        // Se añade true (isCritical) al rate limiter
+        $rateCheck = $this->rateLimiter->consume(RateLimitConstants::KEY_AUTH_RESEND_CODE . "_{$email}", RateLimitConstants::MAX_5, RateLimitConstants::TIME_60, true); 
+        if (!$rateCheck['allowed']) return ['success' => false, 'message_key' => $rateCheck['message_key'] ?? 'error.rate_limit_exceeded'];
         
         $username = $regFlows[$regToken]['username'];
         $password = $regFlows[$regToken]['password']; 
@@ -493,8 +483,9 @@ class AuthServices {
         if (!isset($regFlows[$regToken])) return ['success' => false, 'message_key' => 'auth.session_expired'];
 
         $identifier = $regFlows[$regToken]['email'];
-        $rateCheck = $this->rateLimiter->consume(RateLimitConstants::KEY_AUTH_REGISTER_VERIFY . "_{$identifier}", RateLimitConstants::MAX_10, RateLimitConstants::TIME_15); 
-        if (!$rateCheck['allowed']) return ['success' => false, 'message_key' => 'error.too_many_attempts'];
+        // Se añade true (isCritical) al rate limiter
+        $rateCheck = $this->rateLimiter->consume(RateLimitConstants::KEY_AUTH_REGISTER_VERIFY . "_{$identifier}", RateLimitConstants::MAX_10, RateLimitConstants::TIME_15, true); 
+        if (!$rateCheck['allowed']) return ['success' => false, 'message_key' => $rateCheck['message_key'] ?? 'error.too_many_attempts'];
 
         $verification = $this->verificationCodeRepository->findLatestValidByIdentifierAndType($identifier, DatabaseConstants::VERIFY_TYPE_ACTIVATION);
         if (!$verification) return ['success' => false, 'message_key' => 'auth.invalid_or_expired_code'];
@@ -559,9 +550,10 @@ class AuthServices {
         $attempts = $this->config['login_rate_limit_attempts'];
         $minutes = $this->config['login_rate_limit_minutes'];
         
-        $rateCheck = $this->rateLimiter->consume(RateLimitConstants::KEY_AUTH_LOGIN . "_{$email}", $attempts, $minutes);
+        // Se añade true (isCritical) al rate limiter
+        $rateCheck = $this->rateLimiter->consume(RateLimitConstants::KEY_AUTH_LOGIN . "_{$email}", $attempts, $minutes, true);
         
-        if (!$rateCheck['allowed']) return ['success' => false, 'message_key' => 'error.rate_limit_exceeded'];
+        if (!$rateCheck['allowed']) return ['success' => false, 'message_key' => $rateCheck['message_key'] ?? 'error.rate_limit_exceeded'];
 
         $user = $this->userRepository->findByEmail($email);
 
@@ -701,9 +693,10 @@ class AuthServices {
         
         $attempts = $this->config['login_rate_limit_attempts'];
         $minutes = $this->config['login_rate_limit_minutes'];
-        $rateCheck = $this->rateLimiter->consume(RateLimitConstants::KEY_AUTH_LOGIN_2FA . "_{$userId}", $attempts, $minutes);
+        // Se añade true (isCritical) al rate limiter
+        $rateCheck = $this->rateLimiter->consume(RateLimitConstants::KEY_AUTH_LOGIN_2FA . "_{$userId}", $attempts, $minutes, true);
         
-        if (!$rateCheck['allowed']) return ['success' => false, 'message_key' => 'error.rate_limit_exceeded'];
+        if (!$rateCheck['allowed']) return ['success' => false, 'message_key' => $rateCheck['message_key'] ?? 'error.rate_limit_exceeded'];
 
         $user = $this->userRepository->findById($userId);
 
@@ -784,8 +777,9 @@ class AuthServices {
         $attempts = $this->config['forgot_password_rate_limit_attempts'];
         $minutes = $this->config['forgot_password_rate_limit_minutes'];
         
-        $rateCheck = $this->rateLimiter->consume(RateLimitConstants::KEY_AUTH_FORGOT_PASSWORD . "_{$email}", $attempts, $minutes);
-        if (!$rateCheck['allowed']) return ['success' => false, 'message_key' => 'error.rate_limit_exceeded'];
+        // Se añade true (isCritical) al rate limiter
+        $rateCheck = $this->rateLimiter->consume(RateLimitConstants::KEY_AUTH_FORGOT_PASSWORD . "_{$email}", $attempts, $minutes, true);
+        if (!$rateCheck['allowed']) return ['success' => false, 'message_key' => $rateCheck['message_key'] ?? 'error.rate_limit_exceeded'];
 
         $user = $this->userRepository->findByEmail($email);
 

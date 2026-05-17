@@ -15,7 +15,15 @@ class RedisRateLimiter implements RateLimiterInterface {
         $this->redis = $redis;
     }
 
-    public function consume(string $key, int $maxAttempts, int $lockoutMinutes): array {
+    /**
+     * Consume un intento del Rate Limiter.
+     * @param string $key Identificador único en Redis
+     * @param int $maxAttempts Intentos máximos permitidos
+     * @param int $lockoutMinutes Minutos de bloqueo
+     * @param bool $isCritical Define si aplicar Fall-Closed ante fallos de Redis
+     * @return array
+     */
+    public function consume(string $key, int $maxAttempts, int $lockoutMinutes, bool $isCritical = false): array {
         try {
             // Script de Lua para operación atómica (Race Condition resuelta)
             // Lógica de "Fixed Window" para evitar el efecto Tarpit permanente.
@@ -48,9 +56,19 @@ class RedisRateLimiter implements RateLimiterInterface {
             return ['allowed' => true];
 
         } catch (Exception $e) {
-            // Failing Open: En caso de que Redis esté caído temporalmente, permitimos pasar 
-            // la petición para no bloquear todo el sistema, pero registramos el error crítico.
-            Logger::error("Redis Rate Limiter consume failed (Failing Open)", ['key' => $key, 'exception' => $e]);
+            Logger::error("Redis Rate Limiter consume failed", [
+                'key' => $key, 
+                'is_critical' => $isCritical,
+                'exception' => $e
+            ]);
+            
+            // IMPLEMENTACIÓN DEL FAIL-CLOSED CONTEXTUAL
+            if ($isCritical) {
+                // Rutas críticas de autenticación fallan cerradas para evitar fuerza bruta si cae Redis
+                return ['allowed' => false, 'message_key' => 'error.system_unavailable'];
+            }
+            
+            // Failing Open: Permite el acceso solo para navegación general no crítica
             return ['allowed' => true];
         }
     }

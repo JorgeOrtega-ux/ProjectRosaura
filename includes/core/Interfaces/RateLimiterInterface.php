@@ -5,17 +5,18 @@ namespace App\Core\Interfaces;
 
 interface RateLimiterInterface {
     /**
-     * Evalúa y consume un intento de forma atómica.
-     * * @param string $key Identificador único pre-construido para Redis
-     * @param int $maxAttempts Número máximo de intentos permitidos
-     * @param int $lockoutMinutes Tiempo de expiración (castigo/ventana) en minutos
-     * @return array Estructura con 'allowed' (bool) y 'message_key' (string) en caso de fallo
+     * Registra y evalúa un intento contra el límite permitido.
+     * * @param string $key Identificador único de la acción y el usuario/IP.
+     * @param int $maxAttempts Número máximo de intentos permitidos.
+     * @param int $lockoutMinutes Tiempo en minutos que durará el bloqueo si se excede el límite.
+     * @param bool $isCritical Define si la acción es crítica (ej. Auth). Si es true, fallará cerrado en caso de error del servicio.
+     * @return array Array asociativo con 'allowed' (bool) y opcionalmente 'message_key' (string).
      */
-    public function consume(string $key, int $maxAttempts, int $lockoutMinutes): array;
+    public function consume(string $key, int $maxAttempts, int $lockoutMinutes, bool $isCritical = false): array;
 
     /**
-     * Limpia los registros de límite de tasa para una llave específica.
-     * * @param string $key Identificador único pre-construido para Redis
+     * Limpia el registro de intentos para una llave específica (útil tras un login exitoso).
+     * * @param string $key Identificador único de la acción y el usuario/IP a limpiar.
      * @return void
      */
     public function clear(string $key): void;
