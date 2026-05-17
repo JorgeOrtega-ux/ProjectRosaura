@@ -1,0 +1,2605 @@
+/* public/assets/css/components/components.css */
+
+.component-layout-centered {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    min-height: 100%;
+    padding: 24px;
+}
+
+.view-content {
+    width: 100%;
+    height: 100%;
+    display: flex;          /* FIX 1: Cadena Flexbox */
+    flex-direction: column; /* FIX 1: Cadena Flexbox */
+    padding: 0;
+}
+
+.component-wrapper {
+    width: 100%;
+    max-width: 625px;
+    margin: 0 auto;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+}
+
+.component-wrapper--full {
+    max-width: 100% !important;
+}
+
+.component-wrapper.no-padding {
+    padding: 0 !important;
+}
+
+/* ÁREA DE SCROLL INDEPENDIENTE PARA VISTAS CON CABECERA FIJA */
+.component-viewport {
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+    display: flex;
+    flex-direction: column;
+}
+
+/* UTILIDADES DE ALTURA AGREGADAS PARA LA EXPANSIÓN 100% */
+.h-full {
+    height: 100% !important;
+}
+.h-full-flex {
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+.component-loader-center {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    min-height: 200px;
+}
+.component-loader-center.disabled {
+    display: none !important;
+}
+
+/* =========================================
+   TOP / BOTTOM DATA STRUCTURE
+   ========================================= */
+
+.component-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px;
+    border-bottom: 1px solid var(--border-color);
+    background-color: transparent;
+    gap: 8px;
+    min-height: 56px;
+    position: relative; /* Contexto relativo para anclar el buscador flotante */
+    flex-shrink: 0; /* EVITA QUE SE ENCOJA CON EL FLEX */
+}
+
+.component-top.disabled {
+    display: none !important;
+}
+
+.component-top-left, 
+.component-top-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.component-top-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    height: 40px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 0 8px; 
+}
+
+.component-bottom {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    gap: 16px;
+    min-height: 0;
+}
+
+.component-bottom--constrained {
+    max-width: 700px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.component-bottom--padded {
+    padding: 16px;
+}
+
+.component-bottom .component-table-wrapper {
+    border: none;
+    border-radius: 0;
+}
+
+/* ========================================= */
+
+.component-actions {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+}
+
+.component-actions.disabled {
+    display: none !important;
+}
+
+.component-actions.active {
+    display: flex;
+}
+
+.component-search {
+    width: 425px;
+    height: 40px;
+    display: flex;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background-color: var(--bg-surface);
+}
+
+.component-search--full {
+    width: 100%;
+}
+
+.component-search--h36 {
+    height: 36px;
+}
+
+.component-search-icon {
+    width: 45px;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: var(--text-secondary);
+    flex-shrink: 0; 
+}
+
+.component-search-input {
+    flex: 1 1 auto;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.component-search-input > input {
+    width: 100%;
+    height: 100%;
+    border: none;
+    outline: none;
+    background-color: transparent;
+    padding-right: 12px;
+    font-size: 14px;
+    font-family: inherit; 
+    color: var(--text-primary);
+}
+
+/* SEARCH TOOLBAR FLOTANTE */
+.component-search-toolbar {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 50%;
+    z-index: 110;
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 8px;
+    box-shadow: var(--shadow-card);
+    display: flex;
+    transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
+    
+    /* FIX DEFINITIVO: Deja 8px de margen de cada pared en móvil, máximo 425px en PC */
+    width: calc(100% - 16px);
+    max-width: 425px; 
+    transform: translateX(-50%);
+}
+
+.component-search-toolbar.disabled {
+    opacity: 0;
+    visibility: hidden;
+    transform: translate(-50%, -10px);
+    pointer-events: none;
+}
+
+.component-search-toolbar.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, 0);
+}
+
+/* Forzamos que el input interno ocupe siempre el espacio de su padre estable */
+.component-search-toolbar .component-search {
+    width: 100%;
+    max-width: 100%;
+}
+
+.component-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    gap: 6px; 
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background-color: var(--bg-surface);
+    color: var(--text-primary);
+    outline: none;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+    padding: 0 12px; 
+    text-decoration: none;
+    user-select: none;
+    white-space: nowrap;
+    font-family: inherit; 
+    position: relative;
+}
+
+.component-button:hover {
+    background-color: var(--bg-hover-light); 
+}
+
+.component-button:active {
+    transform: scale(0.96); 
+}
+
+.component-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.8;
+}
+
+.component-button--h45 { height: 45px; font-size: 15px; }
+.component-button--h40 { height: 40px; }
+.component-button--h36 { height: 36px; }
+.component-button--h34 { height: 34px; font-size: 13px; }
+.component-button--h32 { height: 32px; font-size: 13px; }
+.component-button--h30 { height: 30px; font-size: 12px; padding: 0 6px;}
+
+.component-button--icon {
+    padding: 0;
+    justify-content: center;
+}
+
+.component-button--icon.component-button--h40 { width: 40px; }
+.component-button--icon.component-button--h36 { width: 36px; }
+.component-button--icon.component-button--h34 { width: 34px; }
+.component-button--icon.component-button--h32 { width: 32px; }
+.component-button--icon.component-button--h30 { width: 30px; }
+
+.component-button--full { width: 100%; }
+
+.component-button--dark {
+    background-color: var(--action-primary);
+    color: var(--text-inverse);
+    border-color: var(--action-primary);
+}
+
+.component-button--dark:hover {
+    background-color: var(--action-primary-hover);
+    border-color: var(--action-primary-hover);
+}
+
+.component-button--dark .material-symbols-rounded {
+    color: var(--text-inverse); 
+}
+
+.component-button--danger {
+    color: var(--action-danger);
+    border-color: var(--action-danger);
+    background-color: var(--action-danger-bg);
+}
+
+.component-button--danger:hover {
+    background-color: var(--action-danger-hover);
+    border-color: var(--action-danger);
+}
+
+.component-button.has-active-filter::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 10px;
+    height: 10px;
+    background-color: var(--text-primary);
+    border-radius: 50%;
+    border: 2px solid var(--bg-surface);
+    box-sizing: border-box;
+}
+
+.component-button--profile {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    padding: 0;
+    border: none;
+    background-color: transparent;
+    position: relative;
+    cursor: pointer;
+    margin: 4px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.component-button--profile img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    position: relative;
+    z-index: 2;
+}
+
+.component-button--profile::before {
+    content: '';
+    position: absolute;
+    top: -4px;
+    left: -4px;
+    right: -4px;
+    bottom: -4px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    z-index: 1;
+    pointer-events: none;
+    transition: background 0.2s ease;
+}
+
+/* ESTILO HÍBRIDO PERFECTO PARA EL BOTÓN DE PERFIL */
+.component-button--profile.role-dynamic::before { 
+    border: none;
+    background: var(--active-role-bg, transparent);
+    padding: 2px; /* Define el grosor del borde de forma estable */
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+}
+
+.component-button--profile:active {
+    transform: scale(0.92);
+}
+
+.component-button--back {
+    border: none;
+    box-shadow: none;
+    margin-left: -6px;
+    background: transparent;
+}
+
+.component-button--back .material-symbols-rounded {
+    font-size: 18px;
+}
+
+.component-module {
+    display: block;
+}
+
+.component-module.disabled {
+    display: none;
+}
+
+.component-module.active {
+    display: flex;
+}
+
+.component-module--dropdown {
+    position: absolute;
+    top: calc(100% + 5px);
+    right: 0;
+    z-index: 100;
+}
+
+.component-module--dropdown-left {
+    right: 0 !important;
+    left: auto !important;
+}
+
+.component-module--dropdown-fixed {
+    width: max-content;
+}
+
+.component-module--spaced {
+    top: calc(100% + 10px);
+}
+
+.component-dropdown-wrapper .component-module--dropdown:not(.component-module--dropdown-fixed) {
+    width: 100%;
+}
+
+.component-module--sidebar {
+    padding: 12px;
+    height: 100%;
+    position: absolute; 
+    top: 0;
+    left: 0;
+    z-index: 50; 
+}
+
+.component-menu {
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow-card);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+.component-menu.disabled {
+    display: none !important;
+}
+
+.component-menu.active {
+    display: flex;
+}
+
+.component-menu--no-padding {
+    padding: 0;
+    overflow: auto; 
+}
+
+.component-menu--w265 { width: 265px; }
+.component-menu--w-full { width: 100%; }
+.component-menu--h-auto { height: auto; }
+.component-menu--h-full { height: 100%; }
+
+.component-menu-header {
+    flex: 0 0 auto; 
+    display: flex;
+    flex-direction: column;
+    padding: 8px; 
+    border-bottom: 1px solid var(--border-color); 
+}
+
+.component-menu-header-box {
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.component-menu-header-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.component-menu-top {
+    flex: 1 0 auto; 
+    display: flex;
+    flex-direction: column;
+    padding: 8px;
+}
+
+.component-menu-bottom {
+    flex: 0 0 auto; 
+    display: flex;
+    flex-direction: column;
+    padding: 8px;
+    border-top: 1px solid var(--border-color); 
+}
+
+.component-menu-list {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 8px;
+}
+
+.component-menu-list--compact {
+    padding: 8px;
+    gap: 8px;
+}
+
+.component-menu-list--scrollable {
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+    padding: 8px; 
+}
+
+.component-menu-list--scrollable .component-menu-link {
+    width: 100%; 
+    margin: 0;   
+}
+
+.component-menu-link {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    height: 40px;
+    text-decoration: none;
+    color: var(--text-primary);
+    border-radius: 8px;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+    cursor: pointer;
+    flex-shrink: 0; 
+}
+
+.component-menu-link:hover,
+.component-menu-link.active {
+    background-color: var(--bg-hover-light);
+}
+
+.component-menu-link--bordered {
+    border: 1px solid var(--border-color);
+}
+
+.component-menu-divider {
+    width: 100%;
+    height: 1px;
+    flex-shrink: 0;
+    background-color: var(--border-color);
+    border-radius: 1px;
+}
+
+.component-menu-link-icon {
+    width: 45px;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-shrink: 0; 
+}
+
+.component-menu-link-text {
+    flex: 1 1 auto;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    font-size: 14px;
+    font-weight: 500;
+    min-width: 0; 
+}
+
+.component-menu-link-text span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    display: block;
+}
+
+.component-menu-link input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    cursor: pointer;
+    accent-color: var(--action-primary);
+}
+
+.pill-container {
+    display: none;
+}
+
+.drag-handle {
+    width: 40px;
+    height: 4px;
+    background-color: var(--text-tertiary);
+    border-radius: 10px;
+}
+
+.component-form-box {
+    width: 100%;
+    max-width: 325px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.component-form-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 8px;
+}
+
+.component-form-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.component-form-desc {
+    font-size: 15px;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.component-form-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.component-input-group {
+    position: relative;
+    width: 100%;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background-color: var(--bg-input);
+    transition: border-color 0.2s ease;
+}
+
+.component-input-group--h34 {
+    height: 34px !important;
+}
+
+.component-input-group:focus-within {
+    border-color: var(--border-color-hover);
+}
+
+.component-input-field {
+    width: 100%;
+    height: 100%;
+    border: none;
+    outline: none;
+    background-color: transparent;
+    padding: 16px 12px 4px 12px;
+    font-size: 15px;
+    color: var(--text-primary);
+    font-family: inherit;
+}
+
+.component-input-field--simple {
+    padding: 0 12px !important;
+}
+
+.component-input-field--with-icon {
+    padding-right: 44px;
+}
+
+.component-input-field::placeholder {
+    color: transparent;
+}
+
+.component-input-label {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 15px;
+    color: var(--text-secondary);
+    pointer-events: none;
+    transition: all 0.2s ease;
+}
+
+.component-input-field:focus ~ .component-input-label,
+.component-input-field:not(:placeholder-shown) ~ .component-input-label {
+    top: 12px;
+    font-size: 11px;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.component-input-toggle {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-secondary);
+    cursor: pointer;
+    user-select: none;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.component-input-toggle:hover {
+    color: var(--text-primary);
+}
+
+textarea.component-input-field {
+    width: 100%;
+    height: auto;
+    min-height: 100px;
+    resize: none;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background-color: var(--bg-input);
+    padding: 12px;
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--text-primary);
+    font-family: inherit;
+    transition: border-color 0.2s ease;
+}
+
+textarea.component-input-field:focus {
+    border-color: var(--border-color-hover);
+    outline: none;
+}
+
+textarea.component-input-field::placeholder {
+    color: var(--text-secondary);
+}
+
+.component-link-container {
+    display: flex;
+    width: 100%;
+}
+
+.component-link-container--start {
+    justify-content: flex-start;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.component-link-container--right {
+    justify-content: flex-end;
+}
+
+.component-link-container--center {
+    justify-content: center;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.component-link-text {
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.component-link {
+    font-size: 14px;
+    color: var(--text-primary);
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.component-link:hover {
+    text-decoration: underline;
+}
+
+.component-header-card {
+    text-align: center;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 24px;
+    background-color: var(--bg-surface);
+}
+
+.component-page-title {
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0 0 8px 0;
+    color: var(--text-primary);
+}
+
+.component-page-description {
+    font-size: 15px;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.component-card--grouped {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    background-color: var(--bg-surface);
+}
+
+.component-card--grouped.disabled {
+    display: none;
+}
+
+/* FIX 2: Modificador para anidación (elimina bordes dobles, fondos y radios) */
+.component-card--flush {
+    border: none !important;
+    border-radius: 0 !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+}
+
+.component-list--flush {
+    gap: 0 !important;
+}
+
+.component-group-item {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px;
+    gap: 16px;
+}
+
+.component-group-item--wrap {
+    flex-wrap: wrap;
+}
+
+.component-group-item--stacked {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.component-group-item--stacked .component-card__actions {
+    width: 100%;
+}
+
+.component-group-item--stateful {
+    display: block;
+    width: 100%;
+    padding: 24px;
+}
+
+.component-divider {
+    border: 0;
+    border-top: 1px solid var(--border-color);
+    width: 100%;
+    margin: 0;
+}
+
+.component-card__content {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+
+.component-card__content--full {
+    width: 100%;
+}
+
+.component-card__content--start {
+    align-items: flex-start;
+}
+
+.component-card__text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+}
+
+.component-card__form-area {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    margin-top: 12px;
+}
+
+.component-card__title {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.component-card__description {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.4;
+}
+
+.component-display-value {
+    font-size: 15px;
+    color: var(--text-primary);
+}
+
+.component-text-notice {
+    font-size: 14px;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.component-text-notice--error {
+    color: var(--color-error);
+    font-weight: 600;
+}
+
+.component-text-notice--muted {
+    color: var(--text-tertiary);
+}
+
+.component-card__actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.component-card__actions--end {
+    flex-grow: 1;
+    justify-content: flex-end;
+}
+
+.component-state-box {
+    width: 100%;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px; 
+}
+
+.component-state-box.disabled {
+    display: none !important;
+}
+
+.component-state-box.active {
+    display: flex;
+}
+
+.component-card__icon-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+
+.component-card__icon-container--bordered {
+    border: 1px solid var(--border-color);
+    background-color: transparent;
+}
+
+.component-card__icon-container span.material-symbols-rounded {
+    color: var(--text-secondary);
+    font-size: 22px;
+}
+
+.component-edit-row {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 16px;
+    margin-top: 6px; 
+}
+
+.component-edit-row .component-input-group {
+    flex: 1; 
+}
+
+.component-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background-color: var(--bg-app);
+}
+
+.component-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 2px solid var(--bg-surface);
+    position: relative;
+    z-index: 2;
+}
+
+.component-avatar::before {
+    content: '';
+    position: absolute;
+    top: -4px;
+    left: -4px;
+    right: -4px;
+    bottom: -4px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    z-index: 1;
+}
+
+/* ESTILO HÍBRIDO PERFECTO PARA EL AVATAR GRANDE */
+.component-avatar.role-dynamic::before { 
+    border: none;
+    background: var(--active-role-bg, transparent);
+    padding: 2px; /* Define el grosor del borde de forma estable */
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+}
+
+.component-avatar__overlay {
+    position: absolute;
+    inset: 0;
+    background-color: var(--overlay-dark);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-inverse);
+    opacity: 0;
+    cursor: pointer;
+    z-index: 3;
+    transition: opacity 0.2s ease;
+}
+
+.component-avatar:hover .component-avatar__overlay {
+    opacity: 1;
+}
+
+.component-avatar--static {
+    margin: 0;
+    cursor: default;
+}
+
+.component-avatar--static-sm {
+    margin: 0;
+    cursor: default;
+    width: 30px;
+    height: 30px;
+    border: 1px solid var(--border-color) !important;
+    background-color: var(--bg-surface);
+}
+
+.component-avatar--static-sm .material-symbols-rounded {
+    font-size: 16px !important;
+}
+
+/* MODIFICADORES DE TAMAÑO PARA AVATARES DENTRO DE MENUS DE CUENTAS */
+.component-avatar--40 {
+    width: 40px;
+    height: 40px;
+    margin: 0;
+}
+
+.component-avatar--36 {
+    width: 36px;
+    height: 36px;
+    margin: 0;
+}
+
+.component-toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+}
+
+.component-toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.component-toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--border-color);
+    border-radius: 34px;
+    transition: .3s;
+    border: 1px solid var(--border-color);
+}
+
+.component-toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 2px;
+    bottom: 2px;
+    background-color: var(--text-inverse);
+    border-radius: 50%;
+    transition: .3s ease;
+    box-shadow: var(--shadow-card);
+}
+
+input:checked + .component-toggle-slider {
+    background-color: var(--action-primary);
+    border-color: var(--action-primary);
+}
+
+input:checked + .component-toggle-slider:before {
+    transform: translateX(20px);
+}
+
+.component-dropdown-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 265px;
+}
+
+.component-dropdown-wrapper--fit {
+    max-width: fit-content;
+}
+
+.component-dropdown-wrapper.component-dropdown-wrapper--auto {
+    width: auto;
+    min-width: max-content;
+}
+
+.component-dropdown-wrapper .component-dropdown-trigger {
+    max-width: 100%;
+}
+
+.component-dropdown-trigger {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    max-width: 265px;
+    height: 40px;
+    padding: 0 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background-color: var(--bg-surface);
+    cursor: pointer;
+    color: var(--text-primary);
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.component-dropdown-trigger:hover {
+    border-color: var(--border-color-hover);
+}
+
+.component-dropdown-text {
+    flex: 1;
+    font-weight: 500;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+}
+
+.component-setup-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+}
+
+.component-setup-container.active {
+    display: flex;
+}
+
+.component-setup-container.disabled {
+    display: none !important;
+}
+
+.component-accordion {
+    overflow: hidden;
+}
+
+.component-accordion-header {
+    cursor: pointer;
+    user-select: none;
+    /* Transición suave para el color y los radios inferiores */
+    transition: background-color 0.2s ease, border-bottom-left-radius 0.2s ease, border-bottom-right-radius 0.2s ease; 
+    border-bottom: 1px solid transparent;
+    
+    /* FIX: Solo radio en la parte inferior cuando está contraído */
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+    
+    /* Aseguramos que la parte superior sea recta para pegarse al ítem de arriba */
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+}
+
+.component-accordion-header:hover {
+    background-color: var(--bg-hover-light);
+}
+
+.component-accordion.active .component-accordion-header {
+    border-bottom-color: var(--border-lighter);
+    /* Al expandirse, se vuelve totalmente recto abajo para unirse a la lista */
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.component-accordion-icon {
+    color: var(--text-secondary);
+    transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.component-accordion.active .component-accordion-icon {
+    transform: rotate(180deg);
+}
+
+.component-accordion-body {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.component-accordion.active .component-accordion-body {
+    grid-template-rows: 1fr;
+}
+
+.component-accordion-content {
+    min-height: 0;
+    overflow: hidden;
+    padding: 0;
+    opacity: 0;
+    transition: opacity 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), padding 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.component-accordion.active .component-accordion-content {
+    opacity: 1;
+}
+
+.component-2fa-setup {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    align-items: stretch;
+}
+
+.component-2fa-qr-col {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 12px;
+}
+
+.component-2fa-qr-col img {
+    width: 130px;
+    height: 130px;
+    display: block;
+}
+
+/* FIX: Contenedor estático del código QR para evitar brincos en la carga */
+[data-ref="2fa-qr-container"] {
+    width: 150px;
+    height: 150px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.component-2fa-secret-col {
+    flex: 1;
+    min-width: 200px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.component-2fa-secret-col h3, 
+.component-2fa-instructions-col h3 {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0 0 12px 0;
+    color: var(--text-primary);
+}
+
+.component-2fa-secret-col p {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin: 0 0 8px 0;
+}
+
+/* FIX: Nuevo diseño para el cuadro del código manual que se ve bien en dark mode */
+.component-2fa-secret-box {
+    background-color: var(--bg-input, var(--bg-surface-alt));
+    border: 2px dashed var(--border-color-hover, var(--border-color));
+    padding: 12px;
+    border-radius: 8px;
+    font-family: monospace;
+    font-weight: bold;
+    text-align: center;
+    letter-spacing: 2px;
+    color: var(--text-primary);
+    word-break: break-all;
+}
+
+.component-2fa-instructions-col {
+    flex: 2;
+    min-width: 250px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.component-2fa-instructions-col ol {
+    margin: 0;
+    padding-left: 20px;
+    color: var(--text-secondary);
+    font-size: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.component-recovery-code {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background-color: var(--bg-surface);
+}
+
+.component-recovery-code-icon {
+    font-size: 18px !important;
+    color: var(--text-secondary);
+}
+
+.component-recovery-code-text {
+    font-family: monospace;
+    font-size: 14px;
+    letter-spacing: 1.5px;
+    color: var(--text-primary);
+    font-weight: 700;
+}
+
+.component-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+}
+
+.component-item-card {
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 16px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+    cursor: pointer; 
+}
+
+.component-item-card:hover {
+    border-color: var(--border-color-hover);
+}
+
+.component-item-card.selected {
+    border-color: var(--border-color-hover);
+    box-shadow: 0 0 0 1px var(--border-color-hover);
+    background-color: var(--bg-surface);
+}
+
+.component-badge-list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.component-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    background-color: var(--bg-surface);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    white-space: nowrap;
+}
+
+.component-badge .material-symbols-rounded {
+    font-size: 16px;
+    color: var(--text-secondary);
+}
+
+.component-badge--sm {
+    padding: 4px 10px;
+    font-size: 12px;
+}
+
+.component-badge--sm .material-symbols-rounded {
+    font-size: 14px;
+}
+
+.component-table-wrapper {
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    width: 100%;
+    
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+.component-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 14px;
+}
+
+.component-table th, 
+.component-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-color);
+    text-align: left;
+    white-space: nowrap;
+    color: var(--text-primary);
+}
+
+.component-table th {
+    color: var(--text-secondary);
+    font-weight: 600;
+    background-color: var(--bg-surface);
+    position: sticky;
+    top: 0;
+    z-index: 10; /* FIX 1: Evita que los avatares traspasen la cabecera al scrollear (es menor a dropdowns que son 100) */
+}
+
+.component-table tr:last-child td,
+.component-table tr.last-visible-row td {
+    border-bottom: none;
+}
+
+.component-table tr.component-table-row {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.component-table tr.component-table-row:hover {
+    background-color: var(--bg-surface-alt);
+}
+
+.component-table tr.component-table-row.selected {
+    background-color: var(--bg-surface);
+}
+
+.component-table tr.component-table-row.selected td:first-child {
+    box-shadow: inset 4px 0 0 0 var(--border-color-hover);
+}
+
+.td-user-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.component-inline-control {
+    display: flex;
+    align-items: center;
+    height: 40px;
+    padding: 3px;         
+    gap: 3px;             
+    border: 1px solid var(--border-color);
+    border-radius: 10px;  
+    background-color: var(--bg-surface);
+    box-sizing: border-box;
+}
+
+.component-inline-control--fixed {
+    width: 240px; 
+    max-width: 100%;
+}
+
+.component-inline-control__group {
+    display: flex;
+    align-items: center;
+    gap: 3px;             
+    height: 100%;
+}
+
+.component-inline-control__btn {
+    background: transparent;
+    border: 1px solid var(--border-color); 
+    border-radius: 6px;          
+    height: 32px;
+    width: 32px;                 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--text-primary);
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.component-inline-control__btn .material-symbols-rounded {
+    font-size: 18px; 
+}
+
+.component-inline-control__btn:hover:not(.disabled-interaction) {
+    background-color: var(--bg-hover-light);
+    border-color: var(--border-color-hover);
+}
+
+.component-inline-control__btn:active:not(.disabled-interaction) {
+    background-color: var(--border-color);
+}
+
+.component-inline-control__center {
+    flex: 1;
+    text-align: center;
+    height: 32px;
+    min-width: 44px;
+    padding: 0 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-primary);
+    border: 1px solid var(--border-color); 
+    border-radius: 6px;
+    background-color: transparent;
+    user-select: none;
+    box-sizing: border-box;
+}
+
+.component-calendar {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+}
+
+.component-calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.component-calendar-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-transform: capitalize;
+}
+
+.component-calendar-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.component-calendar-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    justify-items: center;
+}
+
+.component-calendar-day {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: none;
+    background-color: transparent;
+    color: var(--text-primary);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s ease, color 0.2s ease, transform 0.1s ease;
+}
+
+.component-calendar-day:hover:not(.muted):not(.active) {
+    background-color: var(--bg-hover-light);
+}
+
+.component-calendar-day:active:not(.muted) {
+    transform: scale(0.9);
+}
+
+.component-calendar-day.active {
+    background-color: var(--action-primary);
+    color: var(--text-inverse);
+    font-weight: 700;
+    box-shadow: var(--shadow-card);
+}
+
+.component-calendar-day.muted {
+    color: var(--text-tertiary);
+    cursor: default;
+}
+
+.component-calendar-time {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    padding-top: 16px;
+    border-top: 1px dashed var(--border-lighter);
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.component-calendar-time input[type="number"]::-webkit-inner-spin-button,
+.component-calendar-time input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.component-calendar-time input[type="number"] {
+    -moz-appearance: textfield;
+    text-align: center;
+    font-weight: 700;
+    font-size: 15px;
+}
+
+.component-calendar-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 16px;
+}
+
+/* =========================================
+   LOGS FILE VIEWER - FIX HEIGHT & DUAL MODE
+   ========================================= */
+
+.component-file-viewer {
+    flex: 1;
+    display: none; 
+    flex-direction: column;
+    background-color: transparent; 
+    border: none; 
+    border-radius: 0; 
+    overflow: hidden;
+    min-height: 0; 
+    box-shadow: none; 
+}
+
+.component-file-viewer.active {
+    display: flex;
+}
+
+.component-tabs-header {
+    display: flex;
+    flex-direction: row;
+    overflow-x: auto;
+    background-color: transparent; 
+    border-bottom: 1px solid var(--border-color);
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-color) transparent;
+    flex-shrink: 0;
+}
+
+.component-tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 12px;
+    height: 40px;
+    border-right: 1px solid var(--border-color);
+    background-color: transparent;
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-family: var(--sl-font-mono);
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.component-tab:hover {
+    background-color: var(--bg-hover-light);
+}
+
+.component-tab.active {
+    background-color: var(--bg-surface);
+    color: var(--text-primary);
+    border-bottom: 2px solid var(--action-primary);
+}
+
+.component-tab-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    color: var(--text-tertiary);
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.component-tab-close:hover {
+    background-color: var(--border-color);
+    color: var(--color-error);
+}
+
+.component-tab-close .material-symbols-rounded {
+    font-size: 14px;
+}
+
+.component-viewer-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0; 
+}
+
+.component-viewer-textarea,
+.component-viewer-code {
+    width: 100%;
+    height: 100%;
+    flex: 1;
+    border: none;
+    padding: 8px;
+    font-family: var(--sl-font-mono, monospace);
+    font-size: 13px;
+    line-height: 1.5;
+    outline: none;
+}
+
+.component-viewer-textarea {
+    resize: none;
+    background-color: var(--bg-code-editor) !important; 
+    color: var(--text-code-base) !important;            
+    white-space: pre; 
+    overflow-wrap: normal;
+    overflow-x: auto;
+}
+
+.component-viewer-textarea.disabled,
+.component-viewer-code.disabled {
+    display: none !important;
+}
+
+.component-viewer-textarea.active,
+.component-viewer-code.active {
+    display: block;
+}
+
+.component-viewer-textarea--error {
+    color: var(--color-error);
+}
+
+/* =========================================
+   SYNTAX HIGHLIGHTING (VS CODE STYLE)
+   ========================================= */
+
+:root {
+    --bg-code-editor: var(--bg-surface, #ffffff);
+    --text-code-base: var(--text-primary, #333333);
+    --token-date: #005cc5;
+    --token-error: #d73a49;
+    --token-warning: #e36209;
+    --token-info: #22863a;
+    --token-debug: #6f42c1;
+    --token-path: #032f62;
+}
+
+html[data-theme="dark"], 
+body[data-theme="dark"], 
+[data-theme="dark"] {
+    --bg-code-editor: #1e1e1e;
+    --text-code-base: #d4d4d4;
+    --token-date: #569cd6;
+    --token-error: #f44747;
+    --token-warning: #cca700;
+    --token-info: #608b4e;
+    --token-debug: #c586c0;
+    --token-path: #ce9178;
+}
+
+.component-viewer-code {
+    background-color: var(--bg-code-editor) !important;  
+    color: var(--text-code-base) !important;             
+    white-space: pre;
+    overflow-x: auto;
+    overflow-y: auto;
+}
+
+.log-token-date { color: var(--token-date); }
+.log-token-error { color: var(--token-error); font-weight: bold; }
+.log-token-warning { color: var(--token-warning); }
+.log-token-info { color: var(--token-info); }
+.log-token-debug { color: var(--token-debug); }
+.log-token-path { color: var(--token-path); }
+
+/* ========================================= */
+
+.component-empty-state {
+    text-align: center;
+    padding: 40px;
+    background: var(--bg-surface);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+}
+
+.component-empty-state-icon {
+    font-size: 48px !important;
+    color: var(--text-tertiary);
+}
+
+.component-empty-state-text {
+    color: var(--text-secondary);
+    font-size: 15px;
+    margin-top: 8px;
+    margin-bottom: 0;
+}
+
+.component-empty-table-cell {
+    padding: 0 !important;
+}
+
+.component-empty-state--table {
+    border-radius: 0;
+    border: none;
+    background: transparent;
+}
+
+.component-message-layout {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    min-height: calc(100vh - 120px);
+    padding: 24px;
+}
+
+.component-message-box {
+    width: 500px;
+    height: 350px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    background-color: transparent;
+    border: none;
+}
+
+.component-message-icon-wrapper {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.component-message-icon {
+    font-size: 48px;
+    color: var(--color-error);
+}
+
+.component-message-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--color-error);
+    margin-bottom: 12px;
+}
+
+.component-message-desc {
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.disabled-interaction {
+    opacity: 0.6;
+    pointer-events: none !important;
+}
+
+@keyframes component-spin {
+    to { transform: rotate(360deg); }
+}
+
+.component-spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border-color);
+    border-top-color: var(--action-primary);
+    border-radius: 50%;
+    animation: component-spin 0.8s linear infinite;
+}
+
+.component-spinner--centered {
+    margin: 0 auto;
+    display: block;
+}
+
+.component-button--dark .component-spinner {
+    border-color: rgba(255, 255, 255, 0.3);
+    border-top-color: var(--text-inverse);
+}
+
+.component-alert-error {
+    background-color: var(--color-error-bg);
+    border: 1px solid var(--color-error);
+    color: var(--color-error);
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    text-align: center;
+    display: none;
+    width: 100%;
+}
+
+.component-alert-error.active {
+    display: flex;
+}
+
+.component-alert-success {
+    background-color: var(--color-success-bg);
+    border: 1px solid var(--color-success);
+    color: var(--color-success);
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    text-align: center;
+    display: none;
+}
+
+.component-alert-success.active {
+    display: block;
+}
+
+.toast-container {
+    position: fixed;
+    bottom: 24px;
+    left: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    z-index: 9999;
+    pointer-events: none; 
+}
+
+.component-toast {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 280px;
+    max-width: 350px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    background-color: var(--text-primary);
+    box-shadow: var(--shadow-card);
+    pointer-events: auto; 
+    transform: translateX(-120%);
+    opacity: 0;
+    transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.3s ease;
+}
+
+.component-toast.show {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.component-toast.hide {
+    transform: translateX(-120%);
+    opacity: 0;
+}
+
+.component-toast-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--bg-surface);
+}
+
+.component-toast-text {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--bg-surface);
+}
+
+.component-dialog-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: var(--overlay-dark); 
+    z-index: 2000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.component-dialog-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.component-dialog-wrapper {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: center;
+    width: 100%;
+    padding: 0 24px;
+    transform: scale(0.95);
+    transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.component-dialog-overlay.active .component-dialog-wrapper {
+    transform: scale(1);
+}
+
+.component-dialog-box {
+    background-color: var(--bg-surface);
+    border-radius: 12px;
+    padding: 24px;
+    width: 100%;
+    max-width: 425px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    box-shadow: var(--shadow-card);
+}
+
+.component-dialog-content--centered {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 16px 0;
+    gap: 16px;
+    width: 100%;
+}
+
+.component-dialog-close-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: var(--overlay-dark);
+    color: var(--text-inverse);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+    margin-left: 16px;
+    flex-shrink: 0;
+}
+
+.component-dialog-close-btn:hover {
+    background-color: var(--action-primary);
+    transform: scale(1.05);
+}
+
+.component-dialog-close-btn:active {
+    transform: scale(0.95);
+}
+
+.hide-on-desktop {
+    display: none !important;
+}
+
+.component-dialog-header {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.component-dialog-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.component-dialog-desc {
+    font-size: 15px;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.5;
+}
+
+.component-dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+[data-tooltip] {
+    cursor: pointer;
+}
+
+.component-tooltip {
+    z-index: 9999;
+    background-color: var(--text-primary); 
+    color: var(--bg-surface); 
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: inherit;
+    border-radius: 6px;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transform: scale(0.96);
+    transition: opacity 0.2s ease, visibility 0.2s, transform 0.2s ease;
+    box-shadow: var(--shadow-card);
+}
+
+.component-tooltip-arrow,
+.component-tooltip-arrow::before {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: inherit;
+}
+
+.component-tooltip-arrow {
+    visibility: hidden;
+}
+
+.component-tooltip-arrow::before {
+    visibility: visible;
+    content: '';
+    transform: rotate(45deg);
+}
+
+.component-tooltip[data-popper-placement^='top'] > .component-tooltip-arrow { bottom: -4px; }
+.component-tooltip[data-popper-placement^='bottom'] > .component-tooltip-arrow { top: -4px; }
+.component-tooltip[data-popper-placement^='left'] > .component-tooltip-arrow { right: -4px; }
+.component-tooltip[data-popper-placement^='right'] > .component-tooltip-arrow { left: -4px; }
+
+.component-tooltip.show {
+    opacity: 1;
+    visibility: visible;
+    transform: scale(1);
+}
+
+.component-input-field:-webkit-autofill,
+.component-input-field:-webkit-autofill:hover, 
+.component-input-field:-webkit-autofill:focus, 
+.component-input-field:-webkit-autofill:active {
+    -webkit-text-fill-color: var(--text-primary);
+    transition: background-color 5000s ease-in-out 0s;
+}
+
+@media (max-width: 600px) {
+    .component-group-item {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .component-state-box.active {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .component-edit-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+    .component-edit-row .component-input-group {
+        flex: none; 
+        width: 100%;
+    }
+    .component-card__actions {
+        margin-top: 8px;
+    }
+    .component-group-item--stacked .component-card__actions,
+    .component-edit-row .component-card__actions {
+        margin-top: 0; 
+    }
+    .component-card__actions--stretch {
+        width: 100%;
+        display: flex;
+        flex-direction: row;
+        gap: 8px;
+    }
+    .component-card__actions--stretch .component-button {
+        flex: 1;
+        width: auto;
+    }
+    .component-card__actions--start {
+        width: 100%;
+        display: flex;
+        flex-direction: row;
+        justify-content: flex-start;
+    }
+    .component-card__actions--end {
+        width: 100%;
+        display: flex;
+        flex-direction: column; 
+        justify-content: center;
+        align-items: flex-end;
+    }
+    .component-card__actions--end .component-button {
+        width: 100%;
+    }
+    .toast-container {
+        left: 16px;
+        right: 16px;
+        bottom: 16px;
+        align-items: center;
+    }
+    .component-toast {
+        width: 100%;
+        max-width: 100%;
+        transform: translateY(120%);
+    }
+    .component-toast.show {
+        transform: translateY(0);
+    }
+    .component-toast.hide {
+        transform: translateY(120%);
+    }
+}
+
+@media (max-width: 465px) {
+    .component-dropdown-trigger {
+        max-width: 100%;
+    }
+    .component-dropdown-wrapper {
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    .component-search {
+        width: 100%; 
+    }
+    
+    .component-module--sidebar {
+        display: none; 
+        padding: 0; 
+        width: 100%; 
+        background: var(--bg-surface);
+    }
+    .component-module--sidebar .component-menu {
+        width: 100%; 
+        border-radius: 0; 
+        border: none;
+        box-shadow: none;
+    }
+    .component-module--dropdown {
+        position: fixed !important;
+        top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
+        z-index: 1000;
+        display: flex;
+        width: 100%;
+        height: 100%;
+        align-items: flex-end;
+        background-color: var(--overlay-dark);
+        transition: display 0.3s allow-discrete, background-color 0.3s ease;
+    }
+    .component-module--dropdown.disabled {
+        display: none !important;
+        background-color: rgba(0, 0, 0, 0);
+    }
+    .component-module--dropdown .component-menu {
+        width: 100%;
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+        transform: translateY(0);
+        transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+        will-change: transform;
+        padding-top: 0; 
+        max-height: 90vh;
+    }
+    .component-module--dropdown.disabled .component-menu {
+        transform: translateY(100%);
+    }
+    @starting-style {
+        .component-module--dropdown {
+            background-color: rgba(0, 0, 0, 0);
+        }
+        .component-module--dropdown .component-menu {
+            transform: translateY(100%);
+        }
+    }
+    .component-module--dropdown.is-dragging .component-menu {
+        transition: none; 
+    }
+    .pill-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        flex-shrink: 0;
+        padding-top: 8px; 
+        padding-bottom: 8px; 
+        cursor: grab;
+        touch-action: none; 
+    }
+    .pill-container + .component-menu-header,
+    .pill-container + .component-menu-list,
+    .pill-container + .component-menu-list--scrollable {
+        padding-top: 0;
+    }
+    .pill-container + .component-menu-header {
+        padding-top: 0;
+    }
+    .component-dialog-overlay {
+        align-items: flex-end;
+    }
+    .component-dialog-wrapper {
+        padding: 0;
+        margin: 0;
+        transform: translateY(100%);
+    }
+    .component-dialog-overlay.active .component-dialog-wrapper {
+        transform: translateY(0);
+    }
+    .component-dialog-overlay.is-dragging .component-dialog-wrapper {
+        transition: none; 
+    }
+    .component-dialog-box {
+        max-width: 100%;
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+        padding-top: 0; 
+        padding-bottom: 24px;
+        margin: 0;
+    }
+    .component-dialog-close-btn {
+        display: none;
+    }
+    .hide-on-desktop {
+        display: inline-flex !important;
+    }
+    .component-dialog-actions {
+        flex-direction: column-reverse; 
+    }
+    .component-dialog-actions .component-button {
+        width: 100%; 
+    }
+}
+
+.component-dropdown-wrapper.component-dropdown-wrapper--w265 {
+    width: 265px;
+    min-width: 265px;
+    flex-shrink: 0; 
+}
+
+
+/* =========================================
+   CHART SYSTEM (GENERIC DASHBOARDS)
+   ========================================= */
+
+.component-chart-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 16px;
+    width: 100%;
+}
+
+.component-chart-item {
+    grid-column: span 12;
+}
+
+@media (min-width: 768px) {
+    .component-chart-item {
+        grid-column: span 4; 
+    }
+    
+    .component-chart-item--col-span-6 {
+        grid-column: span 6; 
+    }
+    
+    .component-chart-item--col-span-8 {
+        grid-column: span 8; 
+    }
+    
+    .component-chart-item--full-width {
+        grid-column: span 12; 
+    }
+}
+
+.component-chart-wrapper {
+    position: relative;
+    height: 300px;
+    max-height: 300px;
+    width: 100%;
+    
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: var(--shadow-card);
+    
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.component-chart-wrapper:hover {
+    border-color: var(--border-color-hover);
+}
+.component-bottom--padded {
+    padding: 16px;
+}
+
+/* =========================================
+   ROLE BUILDER - ESTRUCTURA DINAMICA COLOR PICKER & PREVIEW
+   ========================================= */
+
+.component-preview-ring {
+    width: 64px; height: 64px; border-radius: 50%; padding: 4px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    transition: background 0.05s linear; box-shadow: var(--shadow-card);
+    background-color: #808080; 
+}
+.component-preview-ring__inner {
+    width: 100%; height: 100%; background-color: var(--bg-app);
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+}
+.component-preview-ring__inner span { font-size: 32px; color: var(--text-secondary); }
+
+.component-color-list { display: flex; flex-direction: column; width: 100%; }
+.component-color-row { width: 100%; display: flex; flex-direction: column; }
+.component-color-list .component-color-row:last-child .component-divider { display: none; }
+
+.component-dropdown-wrapper--color { width: 100%; }
+.component-dropdown-trigger--color { width: 100%; justify-content: space-between; }
+.component-dropdown-trigger__left { display: flex; align-items: center; gap: 8px; }
+.component-color-swatch { 
+    width: 20px; height: 20px; border-radius: 50%; 
+    border: 1px solid var(--border-color); background-color: #808080;
+}
+.component-text--mono { font-family: monospace; }
+
+.component-color-picker { 
+    display: flex; flex-direction: column; gap: 12px; width: 100%; 
+    padding: 0 16px 16px 16px; 
+}
+
+.component-color-picker__sv-area { 
+    height: 125px; border-radius: 8px; width: 100%;
+    position: relative; overflow: hidden; cursor: crosshair; touch-action: none; 
+    background-color: hsl(0, 100%, 50%);
+}
+.component-color-picker__sv-bg { 
+    position: absolute; inset: 0; 
+    background: linear-gradient(to top, #000, transparent), linear-gradient(to right, #fff, transparent); 
+}
+.component-color-picker__sv-thumb { 
+    position: absolute; width: 16px; height: 16px; border: 2px solid #fff; 
+    border-radius: 50%; transform: translate(-50%, -50%); 
+    box-shadow: 0 0 4px rgba(0,0,0,0.6); pointer-events: none; z-index: 2; 
+    left: 0%; top: 50%;
+}
+
+.component-color-picker__hue-area { 
+    height: 16px; border-radius: 8px; width: 100%;
+    position: relative; cursor: pointer; touch-action: none; 
+    background: linear-gradient(to right, #f00 0%, #ff0 17%, #0f0 33%, #0ff 50%, #00f 67%, #f0f 83%, #f00 100%); 
+}
+.component-color-picker__hue-thumb { 
+    position: absolute; width: 14px; height: 18px; background: #fff; 
+    border: 1px solid var(--border-color); border-radius: 4px; 
+    transform: translate(-50%, -1px); box-shadow: 0 1px 3px rgba(0,0,0,0.3); 
+    pointer-events: none; z-index: 2; left: 0%;
+}
+
+.component-input-field--mono { font-family: monospace; text-align: center; padding: 0; }
+.component-color-picker__controls { display: flex; gap: 12px; align-items: center; width: 100%; }
+.component-color-picker__percentage { flex: 1; }
+
+/* =========================================
+   NUEVO: ACCOUNT SWITCHER (MULTI-SESIÓN)
+   ========================================= */
+
+.component-account-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+    text-decoration: none;
+    background: transparent;
+    width: 100%;
+    text-align: left;
+    height: auto;
+}
+
+.component-account-item:hover {
+    background-color: var(--bg-hover-light);
+}
+
+.component-account-item.active {
+    background-color: var(--bg-surface-alt);
+    cursor: default;
+}
+
+.component-account-info {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+}
+
+.component-account-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.component-account-email {
+    font-size: 12px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.component-account-check {
+    color: var(--action-primary);
+    font-size: 20px !important;
+}
+
+.component-account-item--add .component-account-name {
+    font-weight: 500;
+}
+
+/* =========================================
+   ZERO-TRUST UI DEFENSE (TURNSTILE)
+   ========================================= */
+
+/* 1. Ocultar preventivamente el contenedor cuando está completamente vacío */
+[data-ref="turnstile-container"]:empty {
+    display: none !important;
+}
+
+/* 2. Ocultar el contenedor si Cloudflare resolvió de forma invisible 
+      (inyectó el input oculto para el token pero NO dibujó el iframe interactivo) */
+[data-ref="turnstile-container"]:not(:has(iframe)) {
+    display: none !important;
+}

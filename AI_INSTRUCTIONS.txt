@@ -1,0 +1,251 @@
+=============================================================================
+CONTEXTO DE ARQUITECTURA: PROJECT ROSAURA (FULL STACK JS & PHP)
+=============================================================================
+INSTRUCCIÓN ESTRICTA PARA LA IA: Si vas a generar, refactorizar o modificar 
+archivos JavaScript, vistas HTML/PHP o Backend PHP (Controladores, Servicios, 
+Repositorios) para este proyecto, DEBES cumplir obligatoriamente las 
+siguientes reglas arquitectónicas. No hay excepciones.
+
+=============================================================================
+PARTE 1: FRONTEND (VANILLA JS SPA & CONTROLADORES)
+=============================================================================
+La arquitectura Frontend es una Single Page Application (SPA) en Vanilla JS, 
+donde el enrutador (SpaRouter) monta y desmonta Controladores de Módulo.
+
+-----------------------------------------------------------------------------
+REGLA 1: Constructor Inerte y Bindings Obligatorios
+-----------------------------------------------------------------------------
+- El `constructor()` NUNCA debe ejecutar lógica de inicio, llamadas a la API, 
+  instanciar controladores de ciclo de vida activos (AbortController) ni hacer 
+  búsquedas en el DOM (`querySelector`).
+- Su único propósito es inicializar las variables de la clase en null/vacío 
+  y hacer `.bind(this)` a TODOS los manejadores de eventos.
+- EJEMPLO: 
+  this.api = new ApiService();
+  this.abortController = null;
+  this.handleClickBound = this.handleClick.bind(this);
+
+-----------------------------------------------------------------------------
+REGLA 2: Ciclo de Vida Controlado (init & destroy)
+-----------------------------------------------------------------------------
+- Toda la lógica de arranque (DOM, validaciones iniciales) va en `init()`.
+- Aquí se debe invocar `this.bindEvents()`.
+- El método `init()` es llamado externamente por el enrutador cada vez que 
+  se ingresa o se regresa a la vista.
+
+-----------------------------------------------------------------------------
+REGLA 3: Delegación de Eventos Global y Pura
+-----------------------------------------------------------------------------
+- ESTRICTAMENTE PROHIBIDO hacer `addEventListener` a elementos individuales 
+  (ej. `querySelectorAll('btn').forEach(b => b.addEventListener)`).
+- Todos los eventos (`click`, `change`, `input`) se adjuntan a nivel global al 
+  `document` o `window` dentro de la función `bindEvents()`.
+- En los manejadores (ej. `handleClick(e)`), usa Event Delegation interceptando 
+  la acción con `e.target.closest('[data-action="..."]')`.
+
+-----------------------------------------------------------------------------
+REGLA 4: Limpieza Rigurosa (destroy)
+-----------------------------------------------------------------------------
+- Todo controlador debe tener un método `destroy()`.
+- Debes hacer `removeEventListener` del `document` usando las variables 
+  "bindeadas" en el constructor (ej. `this.handleClickBound`).
+- Debes limpiar cualquier `setInterval` o `setTimeout` activo.
+
+-----------------------------------------------------------------------------
+REGLA 5: Sistema de UI Propio (Cero Native Alerts)
+-----------------------------------------------------------------------------
+- ESTRICTAMENTE PROHIBIDO el uso de `alert()`, `confirm()`, o `prompt()` nativos.
+- Para notificaciones usa: `showMessage(__('clave_traduccion'), 'success' | 'error');`
+- Para confirmaciones usa: `await window.dialogSystem.show('nombreDialogo');`
+- Para estados de carga en botones usa: `setButtonLoading(btn)` y `restoreButton(btn)`.
+- Siempre debes importar estas utilidades al inicio del archivo:
+  `import { showMessage, setButtonLoading, restoreButton } from '../../core/utils/uiUtils.js';`
+
+-----------------------------------------------------------------------------
+REGLA 6: Desacoplamiento de CSS y JS (data-ref y data-action)
+-----------------------------------------------------------------------------
+- ESTRICTAMENTE PROHIBIDO usar clases CSS (`.clase`) o IDs (`#id`) para 
+  SELECCIONAR elementos del DOM (`querySelector`) o escuchar eventos en JS.
+- EXCEPCIÓN DE ESTADO: SÍ está permitido agregar o quitar clases de estado visual 
+  como `.selected`, `.active` o `.disabled` usando `classList`, SIEMPRE Y CUANDO 
+  el elemento se haya obtenido previamente mediante `data-ref` o `data-action`.
+- Para referencias visuales, leer inputs o actualizar texto, usa: `[data-ref="nombre-elemento"]`
+- Para botones y acciones clickeables, usa: `[data-action="nombreAccion"]`
+- Las vistas PHP/HTML deben estructurarse usando exclusivamente estos atributos.
+- Para ocultar elementos completamente usa estrictamente la clase CSS `.disabled`.
+
+-----------------------------------------------------------------------------
+REGLA 7: Prevención de Promesas Huérfanas (AbortController en INIT)
+-----------------------------------------------------------------------------
+- Todo controlador debe implementar un AbortController para evitar fugas de memoria.
+- En `init()`, inicializa `this.abortController = new AbortController();`. 
+  NUNCA en el constructor.
+- En TODAS las llamadas a la API, pasa `this.abortController.signal` como último parámetro.
+- Inmediatamente después del `await` de la API, verifica `if (res.aborted) return;`.
+- En el método `destroy()`, ejecuta `if (this.abortController) this.abortController.abort();`.
+
+-----------------------------------------------------------------------------
+REGLA 8: Navegación Programática Correcta (SpaRouter)
+-----------------------------------------------------------------------------
+- Usa EXCLUSIVAMENTE el método `Maps()` para redirigir tras acciones.
+- ESTRICTAMENTE PROHIBIDO usar `window.spaRouter.loadRoute(url)` directamente.
+- USO CORRECTO: `if (window.spaRouter) window.spaRouter.navigate(this.basePath + '/nueva/ruta');`
+
+-----------------------------------------------------------------------------
+REGLA 9: Cero Textos Hardcodeados, Sin Fallbacks y Sin Console Logs
+-----------------------------------------------------------------------------
+- ESTRICTAMENTE PROHIBIDO dejar `console.log()`, `console.error()` en el código.
+- ESTRICTAMENTE PROHIBIDO escribir textos legibles para el usuario directamente en el JS.
+- ESTRICTAMENTE PROHIBIDO usar "respaldos" (fallbacks) de traducciones con texto duro.
+  INCORRECTO: `showMessage(__('err_session') || 'Sesión expirada', 'error');`
+  INCORRECTO: `this.showError(__('err_session') || 'Error');`
+  CORRECTO: `showMessage(__('err_session'), 'error');`
+- TODO texto debe usar ÚNICAMENTE la clave de la función `__()`.
+
+=============================================================================
+PLANTILLA BASE REQUERIDA PARA CONTROLADORES JS:
+=============================================================================
+import { ApiRoutes } from '../../core/api/ApiRoutes.js';
+import { ApiService } from '../../core/api/ApiServices.js';
+import { showMessage, setButtonLoading, restoreButton } from '../../core/utils/uiUtils.js';
+
+class NombreController {
+    constructor() {
+        this.api = new ApiService();
+        this.basePath = window.AppBasePath || '';
+        this.abortController = null;
+        
+        this.handleClickBound = this.handleClick.bind(this);
+    }
+
+    init() {
+        this.abortController = new AbortController();
+        this.bindEvents();
+    }
+
+    destroy() {
+        if (this.abortController) this.abortController.abort();
+        document.removeEventListener('click', this.handleClickBound);
+    }
+
+    bindEvents() {
+        document.addEventListener('click', this.handleClickBound);
+    }
+
+    handleClick(e) {
+        const btnSave = e.target.closest('[data-action="saveData"]');
+        if (btnSave) {
+            e.preventDefault();
+            this.saveData(btnSave);
+        }
+    }
+
+    async saveData(btn) {
+        setButtonLoading(btn);
+        const data = { key: 'value' };
+        
+        const res = await this.api.post(ApiRoutes.Modulo.Accion, data, this.abortController.signal);
+        if (res.aborted) return; 
+        
+        restoreButton(btn);
+        if (res.success) {
+            showMessage(__('msg_save_success'), 'success');
+            if (window.spaRouter) window.spaRouter.navigate(this.basePath + '/ruta/destino');
+        } else {
+            showMessage(res.message, 'error');
+        }
+    }
+}
+
+export { NombreController };
+
+
+=============================================================================
+PARTE 2: BACKEND (API PHP)
+=============================================================================
+
+-----------------------------------------------------------------------------
+REGLA 10: Separación de Responsabilidades (MVC / Service Pattern)
+-----------------------------------------------------------------------------
+- CONTROLADORES (`api/controllers/`): Únicamente leen el Request, llaman al 
+  Servicio correspondiente y retornan con `Utils::jsonResponse()`. ¡PROHIBIDA 
+  la lógica de negocio o queries SQL aquí!
+- SERVICIOS (`api/services/`): Contienen la lógica de negocio. NO interactúan 
+  directamente con PDO/SQL; consumen Repositorios.
+- REPOSITORIOS (`includes/core/Repositories/`): Único lugar para consultas SQL.
+
+-----------------------------------------------------------------------------
+REGLA 11: Cero Textos Hardcodeados y Sin Fallbacks en PHP
+-----------------------------------------------------------------------------
+- ESTRICTAMENTE PROHIBIDO quemar textos de éxito/error en español/inglés.
+- ESTRICTAMENTE PROHIBIDO usar respaldos como `__('clave') ?? 'Texto'`.
+- Para cualquier mensaje hacia el Frontend, usa OBLIGATORIAMENTE el helper `__()`.
+  INCORRECTO: `return Utils::jsonResponse(false, 'Error fatal');`
+  INCORRECTO: `return Utils::jsonResponse(false, __('err_fatal') ?: 'Error fatal');`
+  CORRECTO: `return Utils::jsonResponse(false, __('err_fatal'));`
+
+-----------------------------------------------------------------------------
+REGLA 12: Reutilización Obligatoria de `Utils.php`
+-----------------------------------------------------------------------------
+- No crees funciones para generar tokens, validar emails o sanitizar 
+  sin antes revisar `includes/core/Helpers/Utils.php`.
+- Retorno HTTP OBLIGATORIO: `Utils::jsonResponse($success, $message, $data, $code)`.
+
+-----------------------------------------------------------------------------
+REGLA 13: Nada de Depuración en Producción
+-----------------------------------------------------------------------------
+- ESTRICTAMENTE PROHIBIDO usar `var_dump()`, `print_r()`, `echo` o `die()`.
+- Utiliza EXCLUSIVAMENTE `Logger::error()`, `Logger::info()`, etc.
+
+-----------------------------------------------------------------------------
+REGLA 14: Seguridad y Base de Datos (PDO Preparado)
+-----------------------------------------------------------------------------
+- En Repositorios, OBLIGATORIO usar sentencias preparadas (`prepare()` -> `execute()`).
+- NUNCA interpolar variables directamente en cadenas SQL.
+
+-----------------------------------------------------------------------------
+REGLA 15: Manejo Controlado de Excepciones
+-----------------------------------------------------------------------------
+- Los Repositorios lanzan `\Exception`.
+- Los Servicios capturan (`catch`), usan `Logger::error($e->getMessage())` y 
+  devuelven una respuesta genérica limpia: 
+  `return ['success' => false, 'message' => __('err_database')];`.
+- NUNCA exponer `$e->getMessage()` hacia el JSON del cliente.
+
+
+=============================================================================
+PARTE 3: VISTAS PHP / HTML (FRONTEND UI)
+=============================================================================
+
+-----------------------------------------------------------------------------
+REGLA 16: Cero Estilos en Línea (No Inline Styles)
+-----------------------------------------------------------------------------
+- ESTRICTAMENTE PROHIBIDO el uso del atributo `style="..."` en cualquier elemento.
+- Todos los estilos deben ser aplicados mediante clases utilitarias o clases de componentes existentes en el CSS del proyecto (`components.css`, `root.css`, etc.).
+
+-----------------------------------------------------------------------------
+REGLA 17: Cero Atributos ID y Exclusividad de Data Attributes
+-----------------------------------------------------------------------------
+- ESTRICTAMENTE PROHIBIDO el uso del atributo `id="..."` para identificar elementos.
+- Única excepción válida (100% justificada): Cuando una librería de terceros o un requerimiento estricto de accesibilidad (ARIA) obligue irrefutablemente a usar un ID.
+- Para referenciar elementos desde JavaScript, utiliza EXCLUSIVAMENTE `data-ref="..."` (lectura/referencia) y `data-action="..."` (eventos click/change).
+
+-----------------------------------------------------------------------------
+REGLA 18: Atributos data-ref Flexibles (Wrappers)
+-----------------------------------------------------------------------------
+- NO es obligatorio colocar un atributo `data-ref` en el contenedor padre o "wrapper" de una vista (ej. `data-ref="manage-users-wrapper"`) a menos que el controlador JavaScript lo necesite específicamente para inicializar lógica, reiniciar el DOM o limitar su alcance. 
+- Si la vista funciona correctamente sin envolver todo el contenido en un `data-ref` (como sucede en varias vistas estáticas), simplemente omítelo para mantener el código más limpio.
+
+-----------------------------------------------------------------------------
+REGLA 19: Cero Textos Hardcodeados en la Interfaz
+-----------------------------------------------------------------------------
+- ESTRICTAMENTE PROHIBIDO escribir texto visible (títulos, párrafos, tooltips, placeholders, aria-labels) directamente en el HTML.
+- Todo texto renderizado debe utilizar la función de traducción OBLIGATORIAMENTE.
+  INCORRECTO: `<button>Guardar Cambios</button>`
+  CORRECTO: `<button><?php echo __('btn_save_changes'); ?></button>`
+
+-----------------------------------------------------------------------------
+REGLA 20: Cero Anotaciones o Comentarios Basura
+-----------------------------------------------------------------------------
+- ESTRICTAMENTE PROHIBIDO dejar código comentado (``, `/* */`, `//`) o "notas basura" en las vistas finales (ej. ``, ``).
+- El código HTML/PHP debe estar 100% limpio. Si la estructura es buena e indentada, los comentarios estructurales sobran.
