@@ -42,6 +42,7 @@ class DatabaseManager {
         try {
             $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $user, $pass);
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            $pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, false); // MITIGACIÓN SQLi: Deshabilita preparaciones emuladas
             
             $appTimezone = $_ENV['APP_TIMEZONE'] ?? 'UTC';
             $offset = (new \DateTime('now', new \DateTimeZone($appTimezone)))->format('P');
@@ -75,6 +76,7 @@ class DatabaseManager {
         try {
             $pdo = new PDO("mysql:host=$host;charset=utf8mb4", $user, $pass);
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            $pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, false); // MITIGACIÓN SQLi: Deshabilita preparaciones emuladas
             
             $appTimezone = $_ENV['APP_TIMEZONE'] ?? 'UTC';
             $offset = (new \DateTime('now', new \DateTimeZone($appTimezone)))->format('P');

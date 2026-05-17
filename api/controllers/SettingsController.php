@@ -4,19 +4,13 @@
 namespace App\Api\Controllers;
 
 use App\Api\Services\SettingsServices;
-use App\Core\System\Logger;
 
-class SettingsController {
+class SettingsController extends BaseController {
     
     private $settingsServices;
 
     public function __construct(SettingsServices $settingsServices) {
         $this->settingsServices = $settingsServices;
-    }
-
-    private function handleException(\Throwable $e, $methodName) {
-        Logger::critical("Unhandled exception in SettingsController::{$methodName}: " . $e->getMessage(), ['exception' => $e]);
-        return ['success' => false, 'message_key' => 'error.internal_server_error'];
     }
 
     public function update_avatar($input) {
@@ -69,7 +63,6 @@ class SettingsController {
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
 
-    // MODIFICADO: Solo retransmite la petición, la lógica interna cambió a scheduleDeletion
     public function delete_account($input) {
         try { return $this->settingsServices->deleteAccount($input); }
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }

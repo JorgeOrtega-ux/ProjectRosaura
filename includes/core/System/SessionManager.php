@@ -12,7 +12,6 @@ use Predis\Client;
 
 class SessionManager implements SessionManagerInterface {
     
-    // Almacenamos el Singleton de Redis inyectado
     private $redis;
 
     public function __construct(Client $redis) {
@@ -25,15 +24,12 @@ class SessionManager implements SessionManagerInterface {
             if (session_status() === PHP_SESSION_NONE) {
                 session_start();
             }
-            // Asegurar que siempre exista un token CSRF
             $this->getCsrfToken();
             
-            // Inicializar la estructura de multi-sesión si no existe
             if (!$this->has(SessionConstants::KEY_LINKED_ACCOUNTS)) {
                 $this->set(SessionConstants::KEY_LINKED_ACCOUNTS, []);
             }
             
-            // Forzar limpieza si hay cuentas expulsadas
             $this->enforcePassiveInvalidation();
 
         } catch (Exception $e) {
@@ -77,10 +73,6 @@ class SessionManager implements SessionManagerInterface {
             return false;
         }
     }
-
-    // ==========================================
-    // MULTI-SESIÓN CONCURRENTE
-    // ==========================================
 
     public function isLoggedIn(): bool {
         return $this->has(SessionConstants::KEY_ACTIVE_ACCOUNT) && !empty($this->get(SessionConstants::KEY_LINKED_ACCOUNTS, []));
@@ -158,9 +150,6 @@ class SessionManager implements SessionManagerInterface {
         $this->removeAccountSilently($userId);
     }
 
-    // ==========================================
-    // DEFENSA CSRF
-    // ==========================================
     public function getCsrfToken(): string {
         $activeId = $this->getActiveAccountId();
         
@@ -190,10 +179,6 @@ class SessionManager implements SessionManagerInterface {
 
         return hash_equals($this->get(SessionConstants::KEY_CSRF_TOKEN, ''), $token);
     }
-
-    // ==========================================
-    // PURGA Y DESTRUCCIÓN PASIVA MULTI-ACCOUNT
-    // ==========================================
 
     public function destroyUserSessions(int $userId): void {
         $this->invalidateAccountInPool($userId);
@@ -260,6 +245,7 @@ class SessionManager implements SessionManagerInterface {
         }
     }
 
+    // REFACTORIZADO Y CORREGIDO: Resuelve el bug crítico integrando el nuevo helper centralizado multi-cuenta de Utils
     public function enforcePassiveInvalidation(): void {
         $accounts = $this->getLinkedAccounts();
         if (empty($accounts)) return;
@@ -267,11 +253,12 @@ class SessionManager implements SessionManagerInterface {
         try {
             $accountsToDrop = [];
 
-            $currentSelector = isset($_COOKIE['remember_token']) ? explode(':', $_COOKIE['remember_token'])[0] : '';
-            $selectorReauthTime = (!empty($currentSelector)) ? $this->redis->get(CacheConstants::PREFIX_FORCE_REAUTH_DEVICE . $currentSelector) : null;
-
             foreach ($accounts as $userId => $accountData) {
                 $sessionCreatedAt = $accountData[SessionConstants::KEY_SESSION_CREATED_AT] ?? 0;
+
+                // SOLUCIÓN AL BUG: Se obtiene el selector real del dispositivo mapeando correctamente las sesiones multi-cuenta
+                $currentSelector = \App\Core\Helpers\Utils::getCurrentDeviceSelector($userId);
+                $selectorReauthTime = (!empty($currentSelector)) ? $this->redis->get(CacheConstants::PREFIX_FORCE_REAUTH_DEVICE . $currentSelector) : null;
 
                 if ($selectorReauthTime !== null && $sessionCreatedAt < (int)$selectorReauthTime) {
                     $accountsToDrop[] = $userId;

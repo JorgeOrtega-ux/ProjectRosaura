@@ -4,10 +4,10 @@
 namespace App\Api\Controllers;
 
 use App\Api\Services\AuthServices;
-use App\Core\System\Logger;
 use App\Core\Security\TurnstileValidator;
+use App\Core\Helpers\Utils; // Importación añadida para mitigación de IP Spoofing
 
-class AuthController {
+class AuthController extends BaseController {
     
     private $authServices;
     private $turnstile;
@@ -17,14 +17,9 @@ class AuthController {
         $this->turnstile = new TurnstileValidator();
     }
 
-    private function handleException(\Throwable $e, $methodName) {
-        Logger::critical("Unhandled exception in AuthController::{$methodName}: " . $e->getMessage(), ['exception' => $e]);
-        return ['success' => false, 'message_key' => 'error.internal_server_error'];
-    }
-
     public function register_step1($input) {
         $turnstileToken = $input['turnstile_token'] ?? null;
-        if (!$this->turnstile->isValid($turnstileToken, $_SERVER['REMOTE_ADDR'] ?? null)) {
+        if (!$this->turnstile->isValid($turnstileToken, Utils::getIpAddress())) {
             return ['success' => false, 'message_key' => 'error.captcha_failed'];
         }
 
@@ -64,7 +59,7 @@ class AuthController {
 
     public function login($input) {
         $turnstileToken = $input['turnstile_token'] ?? null;
-        if (!$this->turnstile->isValid($turnstileToken, $_SERVER['REMOTE_ADDR'] ?? null)) {
+        if (!$this->turnstile->isValid($turnstileToken, Utils::getIpAddress())) {
             return ['success' => false, 'message_key' => 'error.captcha_failed'];
         }
 
@@ -78,7 +73,7 @@ class AuthController {
 
     public function login_verify_2fa($input) {
         $turnstileToken = $input['turnstile_token'] ?? null;
-        if (!$this->turnstile->isValid($turnstileToken, $_SERVER['REMOTE_ADDR'] ?? null)) {
+        if (!$this->turnstile->isValid($turnstileToken, Utils::getIpAddress())) {
             return ['success' => false, 'message_key' => 'error.captcha_failed'];
         }
 
@@ -119,7 +114,7 @@ class AuthController {
 
     public function forgot_password($input) {
         $turnstileToken = $input['turnstile_token'] ?? null;
-        if (!$this->turnstile->isValid($turnstileToken, $_SERVER['REMOTE_ADDR'] ?? null)) {
+        if (!$this->turnstile->isValid($turnstileToken, Utils::getIpAddress())) {
             return ['success' => false, 'message_key' => 'error.captcha_failed'];
         }
 
@@ -132,7 +127,7 @@ class AuthController {
 
     public function reset_password($input) {
         $turnstileToken = $input['turnstile_token'] ?? null;
-        if (!$this->turnstile->isValid($turnstileToken, $_SERVER['REMOTE_ADDR'] ?? null)) {
+        if (!$this->turnstile->isValid($turnstileToken, Utils::getIpAddress())) {
             return ['success' => false, 'message_key' => 'error.captcha_failed'];
         }
 

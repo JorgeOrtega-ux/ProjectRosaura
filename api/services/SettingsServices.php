@@ -539,30 +539,20 @@ class SettingsServices
 
         $userId = $this->sessionManager->get('user_id');
         
-        // Determinar el selector actual, soportando tokens simples o de multi-cuenta
-        $currentSelector = '';
-        if (isset($_COOKIE['remember_tokens'])) {
-            $tokensMap = json_decode($_COOKIE['remember_tokens'], true) ?: [];
-            if (isset($tokensMap[$userId]) && is_string($tokensMap[$userId])) {
-                $currentSelector = explode(':', $tokensMap[$userId])[0];
-            }
-        } elseif (isset($_COOKIE['remember_token'])) {
-            $currentSelector = explode(':', $_COOKIE['remember_token'])[0];
-        }
+        // REFACTORIZADO: Remoción de bloque repetido, ahora usa el helper unificado
+        $currentSelector = Utils::getCurrentDeviceSelector($userId);
 
         $devices = $this->tokenRepository->getActiveDevicesByUserId($userId);
         $currentDeviceIndex = -1;
 
-        // Recorrer e identificar el dispositivo actual
         foreach ($devices as $index => &$device) {
             $device['is_current'] = ($device['selector'] === $currentSelector);
             if ($device['is_current']) {
                 $currentDeviceIndex = $index;
             }
-            unset($device['selector']); // Nunca enviamos el selector al frontend por seguridad
+            unset($device['selector']); 
         }
 
-        // Si existe el dispositivo actual y no está en la posición 0, lo movemos al principio
         if ($currentDeviceIndex > 0) {
             $currentDevice = array_splice($devices, $currentDeviceIndex, 1)[0];
             array_unshift($devices, $currentDevice);
@@ -578,12 +568,10 @@ class SettingsServices
         $userId = $this->sessionManager->get('user_id');
         $tokenId = (int)($data['device_id'] ?? 0);
         
-        // 1. Obtener el selector del dispositivo ANTES de borrarlo para poder invalidar en Redis
         $selectorToRevoke = $this->tokenRepository->findSelectorByIdAndUserId($tokenId, $userId);
 
         if ($this->tokenRepository->revokeDevice($tokenId, $userId)) {
             
-            // 2. Ejecutar Invalidación Selectiva de esa sesión exacta
             if ($selectorToRevoke) {
                 Utils::invalidateUserSessions($this->sessionManager, $userId, false, $selectorToRevoke);
             }
@@ -600,23 +588,14 @@ class SettingsServices
 
         $userId = $this->sessionManager->get('user_id');
         
-        // Soporte para multi-sesión
-        $currentSelector = '';
-        if (isset($_COOKIE['remember_tokens'])) {
-            $tokensMap = json_decode($_COOKIE['remember_tokens'], true) ?: [];
-            if (isset($tokensMap[$userId]) && is_string($tokensMap[$userId])) {
-                $currentSelector = explode(':', $tokensMap[$userId])[0];
-            }
-        } elseif (isset($_COOKIE['remember_token'])) {
-            $currentSelector = explode(':', $_COOKIE['remember_token'])[0];
-        }
+        // REFACTORIZADO: Remoción de bloque repetido, ahora usa el helper unificado
+        $currentSelector = Utils::getCurrentDeviceSelector($userId);
         
         $type = $data['type'] ?? 'revoke_other';
 
         if ($type === 'revoke_all') {
             if ($this->tokenRepository->deleteAllByUserId($userId)) {
                 
-                // FlushAll true hace una invalidación total
                 Utils::invalidateUserSessions($this->sessionManager, $userId, true);
                 
                 $this->sessionManager->removeAccount($userId);
@@ -643,14 +622,10 @@ class SettingsServices
                 return ['success' => true, 'message_key' => 'settings.all_sessions_revoked'];
             }
        } else {
-            // 1. OBTENEMOS TODOS LOS DISPOSITIVOS ANTES DE BORRARLOS
-            // Para saber qué selectores debemos matar en Redis
             $devicesToRevoke = $this->tokenRepository->getActiveDevicesByUserId($userId);
 
             if ($this->tokenRepository->revokeOtherDevices($userId, $currentSelector)) {
                 
-                // 2. ATAQUE DE PRECISIÓN EN REDIS: 
-                // Invalidamos solo los selectores que NO sean el actual
                 foreach ($devicesToRevoke as $device) {
                     if ($device['selector'] !== $currentSelector) {
                         Utils::invalidateUserSessions($this->sessionManager, $userId, false, $device['selector']);

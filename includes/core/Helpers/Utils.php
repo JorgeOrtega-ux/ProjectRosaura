@@ -44,16 +44,14 @@ class Utils {
         return 'public/storage/profilePictures/default/' . $fileName;
     }
 
+    // REFACTORIZADO: Coordina la responsabilidad directamente con la implementación del SessionManager
     public static function generateCSRFToken(SessionManagerInterface $sessionManager) {
-        if (!$sessionManager->has('csrf_token')) {
-            $sessionManager->set('csrf_token', bin2hex(random_bytes(32)));
-        }
-        return $sessionManager->get('csrf_token');
+        return $sessionManager->getCsrfToken();
     }
 
+    // REFACTORIZADO: Coordina la responsabilidad directamente con la implementación del SessionManager
     public static function validateCSRFToken($token, SessionManagerInterface $sessionManager) {
-        if (!$sessionManager->has('csrf_token') || empty($token)) return false;
-        return hash_equals($sessionManager->get('csrf_token'), $token);
+        return $sessionManager->validateCsrfToken($token ?? '');
     }
 
     public static function getClosestLanguage($acceptLanguage) {
@@ -299,15 +297,12 @@ class Utils {
         return new \Predis\Client($connectionParams);
     }
 
-    // MODIFICADO: Añadido parámetro opcional $selector para habilitar Invalidación Selectiva
     public static function invalidateUserSessions(SessionManagerInterface $sessionManager, $userId, $flushAll = false, $selector = null) {
         if ($flushAll && method_exists($sessionManager, 'flushAllSessionsForUser')) {
             $sessionManager->flushAllSessionsForUser($userId);
         } elseif (!empty($selector) && method_exists($sessionManager, 'invalidateDeviceInPool')) {
-            // Matamos EXCLUSIVAMENTE el dispositivo solicitado
             $sessionManager->invalidateDeviceInPool($selector);
         } elseif (method_exists($sessionManager, 'invalidateAccountInPool')) {
-            // Comportamiento anterior de respaldo (Nuclear)
             $sessionManager->invalidateAccountInPool($userId);
         }
     }
@@ -319,6 +314,38 @@ class Utils {
 
     public static function calculateExpirationDate($minutes = 15) {
         return date('Y-m-d H:i:s', strtotime("+{$minutes} minutes"));
+    }
+
+    // NUEVA FUNCIÓN: Extrae de forma unificada el selector activo soportando cookies JSON multi-cuenta y legacy
+    public static function getCurrentDeviceSelector($userId = null) {
+        if ($userId !== null && isset($_COOKIE['remember_tokens'])) {
+            $tokensMap = json_decode($_COOKIE['remember_tokens'], true) ?: [];
+            if (isset($tokensMap[$userId]) && is_string($tokensMap[$userId])) {
+                return explode(':', $tokensMap[$userId])[0];
+            }
+        } elseif (isset($_COOKIE['remember_tokens'])) {
+            $tokensMap = json_decode($_COOKIE['remember_tokens'], true) ?: [];
+            if (!empty($tokensMap)) {
+                $firstValue = reset($tokensMap);
+                if (is_string($firstValue)) {
+                    return explode(':', $firstValue)[0];
+                }
+            }
+        }
+
+        if (isset($_COOKIE['remember_token']) && is_string($_COOKIE['remember_token'])) {
+            return explode(':', $_COOKIE['remember_token'])[0];
+        }
+
+        return '';
+    }
+
+    // NUEVA FUNCIÓN: Centraliza la sanitización estricta de textos comunes para el sistema
+    public static function sanitizeText($text) {
+        if (empty($text)) return null;
+        $clean = strip_tags($text);
+        $clean = htmlspecialchars(trim($clean), ENT_QUOTES, 'UTF-8');
+        return empty($clean) ? null : $clean;
     }
 }
 ?>

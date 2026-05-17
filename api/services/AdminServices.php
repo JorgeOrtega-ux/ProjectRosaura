@@ -334,6 +334,7 @@ class AdminServices {
 
         $currentWeight = $this->getCurrentAdminWeight();
 
+        // CORREGIDO: Se agregó el símbolo de dólar ($) a currentUserId
         $adminData = $this->userRepository->findById($currentUserId);
         if (!$adminData || !password_verify($password, $adminData['password'])) {
             return ['success' => false, 'message_key' => 'auth.incorrect_password'];
@@ -404,7 +405,6 @@ class AdminServices {
                 Utils::invalidateUserSessions($this->sessionManager, $targetId, true);
                 $this->tokenRepository->deleteAllByUserId($targetId);
 
-                // Enviar la estructura JSON al worker, quien ahora se encarga de procesar el mail transaccional.
                 $payload = json_encode([
                     'user_id' => $targetId,
                     'email' => $user['email'],
@@ -456,13 +456,6 @@ class AdminServices {
             return ['success' => false, 'message_key' => 'auth.incorrect_password'];
         }
 
-        $sanitizeText = function($text) {
-            if (empty($text)) return null;
-            $clean = strip_tags($text);
-            $clean = htmlspecialchars(trim($clean), ENT_QUOTES, 'UTF-8');
-            return empty($clean) ? null : $clean;
-        };
-
         $dbIsSuspended = (isset($data['is_suspended']) && $data['is_suspended'] == 1) ? 1 : 0;
         $dbSuspensionType = null;
         $dbSuspensionReason = null;
@@ -472,7 +465,7 @@ class AdminServices {
         if ($dbIsSuspended === 1) {
             $dbSuspensionType = ($data['suspension_type'] === DB::SUSPENSION_TEMP) ? DB::SUSPENSION_TEMP : DB::SUSPENSION_PERM;
             $rawSuspensionReason = $data['suspension_reason'] ?? null;
-            $dbSuspensionReason = $sanitizeText($rawSuspensionReason);
+            $dbSuspensionReason = Utils::sanitizeText($rawSuspensionReason);
 
             if ($dbSuspensionReason && mb_strlen($dbSuspensionReason) > 500) return ['success' => false, 'message_key' => 'validation.reason_too_long'];
             

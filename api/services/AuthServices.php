@@ -134,6 +134,8 @@ class AuthServices {
             if (isset($_COOKIE['remember_tokens'])) {
                 $tokens = json_decode($_COOKIE['remember_tokens'], true) ?: [];
                 if (is_array($tokens)) {
+                    // MITIGACIÓN DOS: Limitar estrictamente a 5 operaciones de base de datos
+                    $tokens = array_slice($tokens, 0, 5, true);
                     foreach ($tokens as $tokenStr) {
                         if (!is_string($tokenStr)) continue; 
                         $parts = explode(':', $tokenStr);
@@ -163,6 +165,8 @@ class AuthServices {
                     
                     // Filtrar basura antes de guardar de nuevo
                     $cleanTokens = [];
+                    // MITIGACIÓN DOS: Evitar procesamiento de miles de nodos falsos
+                    $tokens = array_slice($tokens, 0, 10, true); 
                     foreach ($tokens as $k => $v) {
                         if (is_string($v) && (is_numeric($k) || $k === 'legacy')) {
                             $cleanTokens[$k] = $v;

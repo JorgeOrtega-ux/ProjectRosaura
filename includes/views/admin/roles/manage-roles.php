@@ -86,7 +86,7 @@ $isSuperAdmin = in_array(4, $userRolesArray) ? 1 : 0;
                     <thead>
                         <tr>
                             <th><?php echo __('admin_roles_col_system_role'); ?></th>
-                            <th class="text-center" data-width="120"><?php echo __('admin_roles_col_hierarchy'); ?></th>
+                            <th data-width="120"><?php echo __('admin_roles_col_hierarchy'); ?></th>
                             <th data-width="180"><?php echo __('admin_roles_col_created_at'); ?></th>
                         </tr>
                     </thead>
@@ -139,12 +139,20 @@ $isSuperAdmin = in_array(4, $userRolesArray) ? 1 : 0;
                                     </div>
                                 </div>
                             </td>
-                            <td class="text-center">
-                                <span class="font-mono text-medium font-13">
-                                    <?php echo (int)$role['weight']; ?>
-                                </span>
+                            <td>
+                                <div class="component-badge component-badge--sm">
+                                    <span class="material-symbols-rounded">layers</span>
+                                    <span class="font-mono font-medium">
+                                        <?php echo (int)$role['weight']; ?>
+                                    </span>
+                                </div>
                             </td>
-                            <td class="text-secondary"><?php echo $createdAt; ?></td>
+                            <td>
+                                <div class="component-badge component-badge--sm">
+                                    <span class="material-symbols-rounded">calendar_month</span>
+                                    <span><?php echo $createdAt; ?></span>
+                                </div>
+                            </td>
                         </tr>
                         <?php endforeach; ?>
                         
