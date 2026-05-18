@@ -72,7 +72,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/user-history?id=' . $targ
             <div class="component-top-right">
                 <div class="component-actions active" data-ref="header-default-actions">
                     
-                    <button class="component-button component-button--icon component-button--h40" data-action="searchLog" data-ref="btn-toggle-search" data-tooltip="<?php echo __('search_user_placeholder'); ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-action="searchLog" data-ref="btn-toggle-search" data-tooltip="<?php echo __('search_history_placeholder'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">search</span>
                     </button>
 
@@ -92,15 +92,15 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/user-history?id=' . $targ
                                 <div class="component-menu-list component-menu-list--compact">
                                     <label class="component-menu-link component-menu-link--bordered">
                                         <div class="component-menu-link-icon"><input type="checkbox" class="filter-checkbox" data-filter-type="category" value="moderation" checked></div>
-                                        <div class="component-menu-link-text"><span><?php echo __('filter_status'); ?></span></div>
+                                        <div class="component-menu-link-text"><span><?php echo __('filter_category_moderation'); ?></span></div>
                                     </label>
                                     <label class="component-menu-link component-menu-link--bordered">
                                         <div class="component-menu-link-icon"><input type="checkbox" class="filter-checkbox" data-filter-type="category" value="role" checked></div>
-                                        <div class="component-menu-link-text"><span><?php echo __('filter_role'); ?></span></div>
+                                        <div class="component-menu-link-text"><span><?php echo __('filter_category_roles'); ?></span></div>
                                     </label>
                                     <label class="component-menu-link component-menu-link--bordered">
                                         <div class="component-menu-link-icon"><input type="checkbox" class="filter-checkbox" data-filter-type="category" value="profile" checked></div>
-                                        <div class="component-menu-link-text"><span><?php echo __('tooltip_manage_account'); ?></span></div>
+                                        <div class="component-menu-link-text"><span><?php echo __('filter_category_profile'); ?></span></div>
                                     </label>
                                 </div>
                             </div>
@@ -130,7 +130,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/user-history?id=' . $targ
                         <span class="material-symbols-rounded">search</span>
                     </div>
                     <div class="component-search-input">
-                        <input type="text" data-ref="log-search-input" placeholder="<?php echo __('search_user_placeholder'); ?>">
+                        <input type="text" data-ref="log-search-input" placeholder="<?php echo __('search_history_placeholder'); ?>">
                     </div>
                 </div>
             </div>
@@ -146,7 +146,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/user-history?id=' . $targ
                             <th><?php echo __('table_header_action'); ?></th>
                             <th><?php echo __('table_header_details'); ?></th>
                             <th><?php echo __('table_header_admin'); ?></th>
-                            </tr>
+                        </tr>
                     </thead>
                     <tbody data-ref="history-table-body">
                         <?php if (empty($paginatedLogs)): ?>
@@ -261,7 +261,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/user-history?id=' . $targ
                                 <td colspan="4" class="component-empty-table-cell">
                                     <div class="component-empty-state component-empty-state--table">
                                         <span class="material-symbols-rounded component-empty-state-icon">search_off</span>
-                                        <p class="component-empty-state-text"><?php echo __('empty_search_users'); ?></p>
+                                        <p class="component-empty-state-text"><?php echo __('empty_search_history'); ?></p>
                                     </div>
                                 </td>
                             </tr>
