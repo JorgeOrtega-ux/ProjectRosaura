@@ -2641,3 +2641,56 @@ body[data-theme="dark"],
 [data-ref="turnstile-container"]:not(:has(iframe)) {
     display: none !important;
 }
+
+
+/* =========================================
+   ANIMACIÓN DE SOMBRA SCROLL PARA .component-top
+   ========================================= */
+
+.component-top {
+    transition: border-bottom-color 0.3s ease;
+}
+
+/* Sombra dinámica igual que el header principal */
+.component-top::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    height: 16px;
+    background: linear-gradient(to bottom, var(--border-lighter), transparent);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    z-index: 10; /* Z-index elevado para pasar por encima de las tablas y contenidos */
+}
+
+/* Estado al aplicar scroll */
+.component-top.shadow {
+    border-bottom-color: transparent;
+}
+
+.component-top.shadow::after {
+    opacity: 1;
+}
+
+/* Soporte para Modo Oscuro: Ocultar el degradado y mantener un borde sutil */
+html[data-theme="dark"] .component-top::after,
+html.dark-theme .component-top::after {
+    display: none;
+}
+
+html[data-theme="dark"] .component-top.shadow,
+html.dark-theme .component-top.shadow {
+    border-bottom-color: var(--border-color);
+}
+
+@media (prefers-color-scheme: dark) {
+    html:not([data-theme="light"]):not(.light-theme) .component-top::after {
+        display: none;
+    }
+    html:not([data-theme="light"]):not(.light-theme) .component-top.shadow {
+        border-bottom-color: var(--border-color);
+    }
+}

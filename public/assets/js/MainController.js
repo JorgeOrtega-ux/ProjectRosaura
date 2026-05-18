@@ -47,7 +47,9 @@ export class MainController {
 
     destroy() {
         window.removeEventListener('resize', this.handleResizeBound);
-        if (this.dom.scrolleableArea) this.dom.scrolleableArea.removeEventListener('scroll', this.handleScrollBound);
+        
+        // Removemos el listener de scroll global en fase de captura
+        document.removeEventListener('scroll', this.handleScrollBound, true);
         
         document.removeEventListener('click', this.handleDocumentClickBound);
         document.removeEventListener('change', this.handleDocumentChangeBound);
@@ -65,7 +67,10 @@ export class MainController {
 
     bindEvents() {
         window.addEventListener('resize', this.handleResizeBound);
-        if (this.dom.scrolleableArea) this.dom.scrolleableArea.addEventListener('scroll', this.handleScrollBound);
+        
+        // Escuchamos el evento de scroll en fase de captura (true) para interceptar 
+        // eventos de scroll que no burbujean (como los de .component-viewport dinámicos)
+        document.addEventListener('scroll', this.handleScrollBound, true);
 
         document.addEventListener('click', this.handleDocumentClickBound);
         document.addEventListener('change', this.handleDocumentChangeBound);
@@ -208,9 +213,21 @@ export class MainController {
         }
     }
 
-    handleScroll() {
-        if(this.dom.topBar && this.dom.scrolleableArea) {
+    handleScroll(e) {
+        // 1. Manejar el scroll global (general-content-scrolleable)
+        if (this.dom.topBar && this.dom.scrolleableArea && e.target === this.dom.scrolleableArea) {
             this.dom.topBar.classList.toggle('shadow', this.dom.scrolleableArea.scrollTop > 0);
+        }
+
+        // 2. Manejar el scroll interno de los componentes dinámicos (component-viewport)
+        if (e.target && e.target.classList && e.target.classList.contains('component-viewport')) {
+            const parent = e.target.parentElement;
+            if (parent) {
+                const topComponent = parent.querySelector('.component-top');
+                if (topComponent) {
+                    topComponent.classList.toggle('shadow', e.target.scrollTop > 0);
+                }
+            }
         }
     }
 
