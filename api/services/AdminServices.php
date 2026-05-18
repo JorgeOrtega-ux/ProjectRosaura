@@ -88,6 +88,15 @@ class AdminServices {
         $highestTargetRole = $this->roleRepository->getHighestPriorityRole($targetUser['id']);
         $targetWeight = $highestTargetRole ? (int)$highestTargetRole['weight'] : 1;
 
+        // [PARCHE DE SEGURIDAD]: Prohibir a SuperAdmins editar a otros SuperAdmins (Excepto el Dueño Sistema ID 1)
+        if ($targetWeight >= SecurityConstants::WEIGHT_SUPER_ADMIN && $currentUserId != 1) {
+            Logger::warning("Attempt to modify a SuperAdmin account blocked", [
+                'admin_id' => $currentUserId,
+                'target_user_id' => $targetUser['id']
+            ]);
+            return ['allowed' => false, 'message_key' => 'admin.insufficient_privileges'];
+        }
+
         if ($currentWeight <= $targetWeight && $currentWeight < SecurityConstants::WEIGHT_SUPER_ADMIN) {
             Logger::warning("Insufficient privileges to modify target user", [
                 'admin_id' => $currentUserId,
@@ -231,6 +240,19 @@ class AdminServices {
         $authCheck = $this->canEditUser($user);
         if (!$authCheck['allowed']) return ['success' => false, 'message_key' => $authCheck['message_key']];
 
+        // [PARCHE DE SEGURIDAD]: Validación Sudo-Mode con protección Anti-DoS
+        $password = $data['password'] ?? '';
+        $currentUserId = $this->sessionManager->get('user_id');
+
+        $rateCheck = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_PASSWORD_VERIFY, 5, 15);
+        if (!$rateCheck['allowed']) return ['success' => false, 'message_key' => $rateCheck['message_key']];
+
+        $adminData = $this->userRepository->findById($currentUserId);
+        if (!$adminData || !password_verify($password, $adminData['password'])) {
+            return ['success' => false, 'message_key' => 'auth.incorrect_password'];
+        }
+        $this->rateLimiter->clear(RateLimitConstants::KEY_ADM_PASSWORD_VERIFY . "_admin_{$currentUserId}"); // Limpiar en éxito
+
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_EDIT_USERNAME, 20, 30);
         if (!$rl['allowed']) return ['success' => false, 'message_key' => $rl['message_key']];
 
@@ -245,7 +267,6 @@ class AdminServices {
 
         $oldUsername = $user['username'];
         if ($this->userRepository->updateUsername($targetId, $username)) {
-            $currentUserId = $this->sessionManager->get('user_id');
             $this->moderationRepository->logAction($targetId, $currentUserId, 'profile_username', "Nombre de usuario cambiado de '{$oldUsername}' a '{$username}'", null);
             return ['success' => true, 'message_key' => 'admin.username_updated', 'new_username' => $username];
         }
@@ -261,6 +282,19 @@ class AdminServices {
         $authCheck = $this->canEditUser($user);
         if (!$authCheck['allowed']) return ['success' => false, 'message_key' => $authCheck['message_key']];
 
+        // [PARCHE DE SEGURIDAD]: Validación Sudo-Mode con protección Anti-DoS
+        $password = $data['password'] ?? '';
+        $currentUserId = $this->sessionManager->get('user_id');
+
+        $rateCheck = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_PASSWORD_VERIFY, 5, 15);
+        if (!$rateCheck['allowed']) return ['success' => false, 'message_key' => $rateCheck['message_key']];
+
+        $adminData = $this->userRepository->findById($currentUserId);
+        if (!$adminData || !password_verify($password, $adminData['password'])) {
+            return ['success' => false, 'message_key' => 'auth.incorrect_password'];
+        }
+        $this->rateLimiter->clear(RateLimitConstants::KEY_ADM_PASSWORD_VERIFY . "_admin_{$currentUserId}"); // Limpiar en éxito
+
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_EDIT_EMAIL, 20, 30);
         if (!$rl['allowed']) return ['success' => false, 'message_key' => $rl['message_key']];
 
@@ -273,7 +307,6 @@ class AdminServices {
 
         $oldEmail = $user['email'];
         if ($this->userRepository->updateEmail($targetId, $email)) {
-            $currentUserId = $this->sessionManager->get('user_id');
             $this->moderationRepository->logAction($targetId, $currentUserId, 'profile_email', "Correo cambiado de '{$oldEmail}' a '{$email}'", null);
             
             $mailer = new Mailer();
@@ -329,16 +362,21 @@ class AdminServices {
         $authCheck = $this->canEditUser($user);
         if (!$authCheck['allowed']) return ['success' => false, 'message_key' => $authCheck['message_key']];
 
-        $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_EDIT_ROLE, 10, 30);
-        if (!$rl['allowed']) return ['success' => false, 'message_key' => $rl['message_key']];
+        // [PARCHE DE SEGURIDAD]: Anti-DoS - Consumir RateLimit de Contraseña primero
+        $rateCheck = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_PASSWORD_VERIFY, 5, 15);
+        if (!$rateCheck['allowed']) return ['success' => false, 'message_key' => $rateCheck['message_key']];
 
-        $currentWeight = $this->getCurrentAdminWeight();
-
-        // CORREGIDO: Se agregó el símbolo de dólar ($) a currentUserId
         $adminData = $this->userRepository->findById($currentUserId);
         if (!$adminData || !password_verify($password, $adminData['password'])) {
             return ['success' => false, 'message_key' => 'auth.incorrect_password'];
         }
+        $this->rateLimiter->clear(RateLimitConstants::KEY_ADM_PASSWORD_VERIFY . "_admin_{$currentUserId}"); // Limpiar en éxito
+
+        // Consumir RateLimit Funcional después de validar password
+        $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_EDIT_ROLE, 10, 30);
+        if (!$rl['allowed']) return ['success' => false, 'message_key' => $rl['message_key']];
+
+        $currentWeight = $this->getCurrentAdminWeight();
 
         try {
             if ($this->roleRepository->syncUserRoles($targetId, $rolesIds, $currentWeight)) {
@@ -372,13 +410,19 @@ class AdminServices {
 
         $currentUserId = $this->sessionManager->get('user_id');
 
-        $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_DELETE_USER, 20, 30);
-        if (!$rl['allowed']) return ['success' => false, 'message_key' => $rl['message_key']];
+        // [PARCHE DE SEGURIDAD]: Anti-DoS - Consumir RateLimit de Contraseña primero
+        $rateCheck = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_PASSWORD_VERIFY, 5, 15);
+        if (!$rateCheck['allowed']) return ['success' => false, 'message_key' => $rateCheck['message_key']];
 
         $adminData = $this->userRepository->findById($currentUserId);
         if (!$adminData || !password_verify($password, $adminData['password'])) {
             return ['success' => false, 'message_key' => 'auth.incorrect_password'];
         }
+        $this->rateLimiter->clear(RateLimitConstants::KEY_ADM_PASSWORD_VERIFY . "_admin_{$currentUserId}"); // Limpiar en éxito
+
+        // Consumir RateLimit Funcional
+        $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_DELETE_USER, 20, 30);
+        if (!$rl['allowed']) return ['success' => false, 'message_key' => $rl['message_key']];
 
         $deletedReason = 'account_deleted_by_admin';
         $successCount = 0;
@@ -448,13 +492,19 @@ class AdminServices {
         $authCheck = $this->canEditUser($user);
         if (!$authCheck['allowed']) return ['success' => false, 'message_key' => $authCheck['message_key']];
 
-        $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_EDIT_STATUS, 20, 30);
-        if (!$rl['allowed']) return ['success' => false, 'message_key' => $rl['message_key']];
+        // [PARCHE DE SEGURIDAD]: Anti-DoS - Consumir RateLimit de Contraseña primero
+        $rateCheck = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_PASSWORD_VERIFY, 5, 15);
+        if (!$rateCheck['allowed']) return ['success' => false, 'message_key' => $rateCheck['message_key']];
 
         $adminData = $this->userRepository->findById($currentUserId);
         if (!$adminData || !password_verify($password, $adminData['password'])) {
             return ['success' => false, 'message_key' => 'auth.incorrect_password'];
         }
+        $this->rateLimiter->clear(RateLimitConstants::KEY_ADM_PASSWORD_VERIFY . "_admin_{$currentUserId}"); // Limpiar en éxito
+
+        // Consumir RateLimit Funcional
+        $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_EDIT_STATUS, 20, 30);
+        if (!$rl['allowed']) return ['success' => false, 'message_key' => $rl['message_key']];
 
         $dbIsSuspended = (isset($data['is_suspended']) && $data['is_suspended'] == 1) ? 1 : 0;
         $dbSuspensionType = null;
@@ -615,7 +665,8 @@ class AdminServices {
         if (!$rl['allowed']) return ['success' => false, 'message_key' => $rl['message_key']];
 
         $name = trim($data['name'] ?? '');
-        $weight = (int)($data['weight'] ?? 1); 
+        // [PARCHE DE SEGURIDAD]: Evitar pesos negativos
+        $weight = max(1, (int)($data['weight'] ?? 1)); 
         $currentWeight = $this->getCurrentAdminWeight();
 
         if ($currentWeight < SecurityConstants::WEIGHT_SUPER_ADMIN && $weight >= $currentWeight) {
@@ -655,7 +706,8 @@ class AdminServices {
             $weight = (int)$existingById['weight'];
         } else {
             $name = trim($data['name'] ?? '');
-            $weight = (int)($data['weight'] ?? 1);
+            // [PARCHE DE SEGURIDAD]: Evitar pesos negativos
+            $weight = max(1, (int)($data['weight'] ?? 1));
 
             if ($currentWeight < SecurityConstants::WEIGHT_SUPER_ADMIN && $weight >= $currentWeight) {
                 return ['success' => false, 'message_key' => 'admin.hierarchical_restriction'];
@@ -849,13 +901,13 @@ class AdminServices {
     private function _executeMaintenanceDeletion($password, $rateLimitKey, $patterns, $successMessageKey) {
         $currentUserId = $this->sessionManager->get('user_id');
 
+        $rl = $this->applyAdminRateLimit($rateLimitKey, 5, 5);
+        if (!$rl['allowed']) return ['success' => false, 'message_key' => $rl['message_key']];
+
         $adminData = $this->userRepository->findById($currentUserId);
         if (!$adminData || !password_verify($password, $adminData['password'])) {
             return ['success' => false, 'message_key' => 'auth.incorrect_password'];
         }
-        
-        $rl = $this->applyAdminRateLimit($rateLimitKey, 5, 5);
-        if (!$rl['allowed']) return ['success' => false, 'message_key' => $rl['message_key']];
 
         try {
             $redis = Utils::getRedisClient();
@@ -1046,16 +1098,22 @@ class AdminServices {
     public function restoreBackup($data) {
         if (!$this->hasPermission('restore_backups')) return ['success' => false, 'message_key' => 'error.unauthorized'];
         
-        $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_BACKUP_RESTORE, 3, 30);
-        if (!$rl['allowed']) return ['success' => false, 'message_key' => $rl['message_key']];
+        // [PARCHE DE SEGURIDAD]: Anti-DoS - Consumir RateLimit de Contraseña primero
+        $currentUserId = $this->sessionManager->get('user_id');
+        $rateCheck = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_PASSWORD_VERIFY, 5, 15);
+        if (!$rateCheck['allowed']) return ['success' => false, 'message_key' => $rateCheck['message_key']];
 
         $password = $data['password'] ?? '';
-        $currentUserId = $this->sessionManager->get('user_id');
         $adminData = $this->userRepository->findById($currentUserId);
         
         if (!$adminData || !password_verify($password, $adminData['password'])) {
             return ['success' => false, 'message_key' => 'auth.incorrect_password'];
         }
+        $this->rateLimiter->clear(RateLimitConstants::KEY_ADM_PASSWORD_VERIFY . "_admin_{$currentUserId}"); // Limpiar en éxito
+
+        // Consumir RateLimit Funcional
+        $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_BACKUP_RESTORE, 3, 30);
+        if (!$rl['allowed']) return ['success' => false, 'message_key' => $rl['message_key']];
 
         $backupId = $data['backup_id'] ?? '';
         if (empty($backupId)) return ['success' => false, 'message_key' => 'validation.invalid_backup_id'];

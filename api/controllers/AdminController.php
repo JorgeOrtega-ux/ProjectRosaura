@@ -54,7 +54,8 @@ class AdminController extends BaseController {
             $this->requirePermission('edit_users');
             $safeInput = [
                 'target_user_id' => $input['target_user_id'] ?? null,
-                'username' => $input['username'] ?? null
+                'username' => $input['username'] ?? null,
+                'password' => $input['password'] ?? null // [PARCHE DE SEGURIDAD]: Agregado para Sudo-Mode
             ];
             return $this->respond($this->adminServices->updateUsername($safeInput)); 
         }
@@ -66,7 +67,8 @@ class AdminController extends BaseController {
             $this->requirePermission('edit_users');
             $safeInput = [
                 'target_user_id' => $input['target_user_id'] ?? null,
-                'email' => $input['email'] ?? null
+                'email' => $input['email'] ?? null,
+                'password' => $input['password'] ?? null // [PARCHE DE SEGURIDAD]: Agregado para Sudo-Mode
             ];
             return $this->respond($this->adminServices->updateEmail($safeInput)); 
         }
