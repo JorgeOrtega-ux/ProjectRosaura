@@ -9,6 +9,9 @@ from datetime import datetime
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+import random
+import urllib.parse
+import requests
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -56,7 +59,10 @@ class Logger:
     @staticmethod
     def warning(message): Logger.write('warning', message, 'worker')
 
+
+# ==========================================
 # Configuración de Entorno
+# ==========================================
 DB_HOST = os.getenv('DB_HOST', 'db')
 DB_USER = os.getenv('DB_USER', 'root')
 DB_PASS = os.getenv('DB_PASS', 'root')
@@ -66,7 +72,11 @@ REDIS_HOST = os.getenv('REDIS_HOST', 'redis')
 REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
 REDIS_PASS = os.getenv('REDIS_PASS', None)
 
-QUEUE_NAME = 'queue:account_deletion'
+APP_ROOT_PATH = os.getenv('APP_ROOT_PATH', '/app')
+
+QUEUE_ACCOUNT_DELETION = 'queue:account_deletion'
+QUEUE_EMAILS = 'queue:emails' # Lista para futuro uso
+
 
 def get_db_connection():
     return mysql.connector.connect(
@@ -76,16 +86,17 @@ def get_db_connection():
         database=DB_NAME
     )
 
+
 def get_redis_connection():
     if REDIS_PASS:
         return redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASS, decode_responses=True)
     return redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
 
+
+# ==========================================
+# LÓGICA: ELIMINACIÓN DE CUENTAS
+# ==========================================
 def send_deletion_email(to_email, username, reason):
-    """
-    Envía un correo transaccional informando sobre la eliminación permanente de la cuenta
-    usando la configuración SMTP del sistema.
-    """
     smtp_host = os.getenv('SMTP_HOST')
     if not smtp_host:
         Logger.warning("SMTP no configurado. Se omite envío de correo.")
@@ -128,11 +139,8 @@ def send_deletion_email(to_email, username, reason):
     except Exception as e:
         Logger.error(f"Fallo de red/SMTP al enviar correo a {to_email}: {e}")
 
+
 def process_deletion(payload):
-    """
-    Ejecuta el hard delete en la base de datos y borra las imágenes físicas.
-    Además, envía la alerta al correo del usuario fuera del proceso bloqueante de PHP.
-    """
     user_id = payload.get('user_id')
     email = payload.get('email')
     username = payload.get('username')
@@ -143,7 +151,6 @@ def process_deletion(payload):
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
         
-        # En caso de que la alerta venga del scheduler pasivo y no traiga email/username, los buscamos
         if not email or not username:
             cursor.execute("SELECT email, username FROM users WHERE id = %s", (user_id,))
             row = cursor.fetchone()
@@ -151,7 +158,6 @@ def process_deletion(payload):
                 email = row['email']
                 username = row['username']
         
-        # Buscar el uuid y la foto de perfil para borrarlos del almacenamiento físico antes de hacer drop en base de datos
         cursor.execute("SELECT uuid, profile_picture FROM users WHERE id = %s", (user_id,))
         user_data = cursor.fetchone()
         
@@ -159,16 +165,13 @@ def process_deletion(payload):
             profile_pic = user_data.get('profile_picture')
             uuid_str = user_data.get('uuid')
             
-            base_path = os.getenv('APP_ROOT_PATH', '/app')
-            
-            # 1. Borrar la foto asignada actualmente
             if profile_pic and 'fallbacks/avatar-default.png' not in profile_pic:
                 if '/public/' in profile_pic:
                     pic_relative = profile_pic[profile_pic.find('public/'):]
                 else:
                     pic_relative = profile_pic.lstrip('/')
                     
-                pic_path = os.path.join(base_path, pic_relative)
+                pic_path = os.path.join(APP_ROOT_PATH, pic_relative)
                 if os.path.exists(pic_path) and os.path.isfile(pic_path):
                     try:
                         os.remove(pic_path)
@@ -176,9 +179,8 @@ def process_deletion(payload):
                     except Exception as e:
                         Logger.error(f"Error al eliminar foto actual: {e}")
             
-            # 2. Borrar avatares huerfanos default
             if uuid_str:
-                orphan_default = os.path.join(base_path, f"public/storage/profilePictures/default/{uuid_str}.png")
+                orphan_default = os.path.join(APP_ROOT_PATH, f"public/storage/profilePictures/default/{uuid_str}.png")
                 if os.path.exists(orphan_default) and os.path.isfile(orphan_default):
                     try:
                         os.remove(orphan_default)
@@ -191,7 +193,6 @@ def process_deletion(payload):
         conn.commit()
         Logger.info(f"Usuario ID: {user_id} eliminado con éxito de la base de datos.")
         
-        # Ya que la limpieza ha finalizado exitosamente en la DB, enviamos la notificación
         if email and username:
             send_deletion_email(email, username, reason)
         
@@ -204,70 +205,173 @@ def process_deletion(payload):
             cursor.close()
             conn.close()
 
+
+# ==========================================
+# LÓGICA: MANTENIMIENTO (Conserje)
+# ==========================================
+def heal_default_avatars():
+    Logger.info("[TAREA] Iniciando sanación de avatares...")
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        
+        fallback_path = 'public/assets/img/fallbacks/avatar-default.png'
+        cursor.execute("SELECT id, username, uuid FROM users WHERE profile_picture = %s", (fallback_path,))
+        users = cursor.fetchall()
+        
+        if not users:
+            Logger.info("No hay avatares que sanar el día de hoy.")
+            return
+
+        allowed_colors = ['2563eb', '16a34a', '7c3aed', 'dc2626', 'ea580c', '374151']
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        }
+        
+        for user in users:
+            user_id = user['id']
+            username = user['username']
+            uuid_str = user['uuid']
+            
+            initial = username[0].upper() if username else 'U'
+            color = random.choice(allowed_colors)
+            
+            url = f"https://ui-avatars.com/api/?name={urllib.parse.quote(initial)}&background={color}&color=fff&size=512&font-size=0.5"
+            
+            try:
+                response = requests.get(url, headers=headers, timeout=5)
+                content_type = response.headers.get('Content-Type', '')
+                
+                if response.status_code == 200 and 'image' in content_type:
+                    file_name = f"{uuid_str}.png"
+                    rel_path = f"public/storage/profilePictures/default/{file_name}"
+                    full_path = os.path.join(APP_ROOT_PATH, rel_path)
+                    
+                    os.makedirs(os.path.dirname(full_path), exist_ok=True)
+                    
+                    with open(full_path, 'wb') as f:
+                        f.write(response.content)
+                        
+                    os.chmod(full_path, 0o644)
+                        
+                    cursor.execute("UPDATE users SET profile_picture = %s WHERE id = %s", (rel_path, user_id))
+                    conn.commit()
+                    Logger.info(f"[ÉXITO] Avatar sanado para usuario: {username}")
+                else:
+                    Logger.warning(f"[FALLO] La API bloqueó la petición o no mandó imagen (Content-Type: {content_type}) para {username}")
+                    
+            except requests.exceptions.RequestException as e:
+                Logger.error(f"[ERROR RED] No se pudo descargar avatar para {username}: {e}")
+                
+    except mysql.connector.Error as err:
+        Logger.error(f"[ERROR DB] Fallo de MySQL en sanación: {err}")
+    finally:
+        if conn and conn.is_connected():
+            cursor.close()
+            conn.close()
+
+def future_maintenance_tasks():
+    pass
+
+
+# ==========================================
+# LOOPS PRINCIPALES
+# ==========================================
 def worker_loop():
     """
-    Hilo bloqueante que escucha constantemente la cola de Redis.
-    Procesa las peticiones instantáneas (Admin) o las que inyecta el cron.
+    Hilo bloqueante que escucha constantemente las colas de Redis.
+    Puede escuchar múltiples colas simultáneamente.
     """
     r = get_redis_connection()
-    Logger.info(f"Worker de eliminación iniciado y escuchando la cola '{QUEUE_NAME}'...")
+    queues_to_listen = [QUEUE_ACCOUNT_DELETION, QUEUE_EMAILS]
+    Logger.info(f"Worker unificado iniciado, escuchando colas: {', '.join(queues_to_listen)}...")
     
     while True:
         try:
-            # BLPOP bloquea hasta que haya un elemento
-            _, payload_str = r.blpop(QUEUE_NAME, timeout=0)
-            payload = json.loads(payload_str)
-            
-            if payload and 'user_id' in payload:
-                process_deletion(payload)
+            # blpop con lista de colas. Retorna una tupla: (nombre_cola, valor)
+            result = r.blpop(queues_to_listen, timeout=0)
+            if result:
+                queue_name, payload_str = result
+                payload = json.loads(payload_str)
+                
+                if queue_name == QUEUE_ACCOUNT_DELETION:
+                    if payload and 'user_id' in payload:
+                        process_deletion(payload)
+                
+                # elif queue_name == QUEUE_EMAILS:
+                #    process_emails(payload)
                 
         except redis.RedisError as re:
-            Logger.error(f"Error de conexión con Redis: {re}")
+            Logger.error(f"Error de conexión con Redis en hilo principal: {re}")
             time.sleep(5)
         except Exception as e:
             Logger.error(f"Error en el worker loop: {e}")
             time.sleep(5)
 
+
 def scheduler_loop():
     """
-    Hilo que actúa como cron. Revisa la base de datos cada hora
-    buscando usuarios cuyo periodo de gracia haya expirado.
+    Hilo orquestador (cron) unificado basado en diferencias de tiempo (delta time).
+    No bloquea la ejecución de otras tareas cuando duerme.
     """
-    Logger.info("Scheduler de eliminación iniciado. Revisando cada 60 minutos.")
+    Logger.info("Scheduler orquestador iniciado.")
     r = get_redis_connection()
     
+    # Inicializamos en 0 para que se ejecuten inmediatamente al encender el contenedor
+    last_deletion_check = 0
+    last_maintenance_check = 0
+
+    # Intervalos de tiempo en segundos
+    DELETION_INTERVAL = 3600  # 60 minutos
+    MAINTENANCE_INTERVAL = 86400  # 24 horas
+    
     while True:
-        conn = None
-        try:
-            conn = get_db_connection()
-            cursor = conn.cursor(dictionary=True)
-            
-            # Buscar usuarios cuyo periodo de gracia expiró
-            cursor.execute("SELECT id FROM users WHERE deletion_scheduled_at IS NOT NULL AND deletion_scheduled_at <= NOW()")
-            users_to_delete = cursor.fetchall()
-            
-            for user in users_to_delete:
-                user_id = user['id']
-                payload = json.dumps({"user_id": user_id})
-                r.rpush(QUEUE_NAME, payload)
-                Logger.info(f"Scheduler empujó el ID {user_id} a la cola de eliminación.")
+        current_time = time.time()
+        
+        # --- TAREA 1: Borrado de cuentas programado ---
+        if current_time - last_deletion_check >= DELETION_INTERVAL:
+            Logger.info("Scheduler: Revisando expiración del periodo de gracia de cuentas...")
+            conn = None
+            try:
+                conn = get_db_connection()
+                cursor = conn.cursor(dictionary=True)
                 
-        except mysql.connector.Error as err:
-            Logger.error(f"Error MySQL en el scheduler: {err}")
-        except Exception as e:
-            Logger.error(f"Error en el scheduler loop: {e}")
-        finally:
-            if conn and conn.is_connected():
-                cursor.close()
-                conn.close()
+                cursor.execute("SELECT id FROM users WHERE deletion_scheduled_at IS NOT NULL AND deletion_scheduled_at <= NOW()")
+                users_to_delete = cursor.fetchall()
                 
-        # Dormir 60 minutos (3600 seg) antes de la siguiente revisión
-        time.sleep(3600)
+                for user in users_to_delete:
+                    user_id = user['id']
+                    payload = json.dumps({"user_id": user_id})
+                    r.rpush(QUEUE_ACCOUNT_DELETION, payload)
+                    Logger.info(f"Scheduler empujó el ID {user_id} a la cola de eliminación.")
+                    
+                last_deletion_check = time.time() # Actualizamos el reloj
+            except Exception as e:
+                Logger.error(f"Error en scheduler (Cuentas): {e}")
+            finally:
+                if conn and conn.is_connected():
+                    cursor.close()
+                    conn.close()
+
+        # --- TAREA 2: Tareas de mantenimiento (Avatares, etc.) ---
+        if current_time - last_maintenance_check >= MAINTENANCE_INTERVAL:
+            Logger.info("Scheduler: Ejecutando tareas de mantenimiento periódico...")
+            try:
+                heal_default_avatars()
+                future_maintenance_tasks()
+                last_maintenance_check = time.time() # Actualizamos el reloj
+            except Exception as e:
+                Logger.error(f"Error en scheduler (Mantenimiento): {e}")
+
+        # El scheduler duerme solo 60 segundos antes de volver a verificar el reloj
+        time.sleep(60)
+
 
 if __name__ == "__main__":
-    # Iniciar el scheduler en un hilo secundario (daemon)
+    # Iniciar el scheduler en un hilo secundario
     scheduler_thread = threading.Thread(target=scheduler_loop, daemon=True)
     scheduler_thread.start()
     
-    # Ejecutar el worker bloqueante en el hilo principal
+    # Ejecutar el worker bloqueante (escucha de colas) en el hilo principal
     worker_loop()

@@ -27,7 +27,6 @@ services:
     container_name: rosaura_db
     restart: always
     environment:
-      # Docker usará esto para crear todo automáticamente
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
       MYSQL_DATABASE: ${DB_IDENTITY_NAME}
       MYSQL_USER: ${DB_USER}
@@ -37,12 +36,10 @@ services:
       - "3306:3306"
     volumes:
       - db_data:/var/lib/mysql
-      # Tu script db_identity.sql seguirá ejecutándose para crear las tablas
       - ./docker/mysql/init:/docker-entrypoint-initdb.d 
     networks:
       - rosaura_network
     healthcheck:
-      # El healthcheck ahora usa la variable DB_ROOT_PASSWORD correcta
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$${DB_ROOT_PASSWORD}"]
       interval: 10s
       timeout: 5s
@@ -83,34 +80,14 @@ services:
     networks:
       - rosaura_network
 
-  worker_account_deletion:
+  # NUEVO SERVICIO UNIFICADO QUE REEMPLAZA A ACCOUNT DELETION Y MAINTENANCE
+  worker_system_tasks:
     build:
       context: .
       dockerfile: docker/python/Dockerfile.worker
-    container_name: rosaura_worker_account_deletion
+    container_name: rosaura_worker_system_tasks
     restart: always
-    command: python -u scripts/worker_account_deletion.py
-    volumes:
-      - .:/app
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_started
-    env_file:
-      - .env
-    environment:
-      - TZ=${APP_TIMEZONE:-UTC}
-    networks:
-      - rosaura_network
-
-  worker_maintenance:
-    build:
-      context: .
-      dockerfile: docker/python/Dockerfile.worker
-    container_name: rosaura_worker_maintenance
-    restart: always
-    command: python -u scripts/worker_maintenance.py
+    command: python -u scripts/worker_system_tasks.py
     volumes:
       - .:/app
     depends_on:

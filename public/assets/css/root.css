@@ -423,8 +423,8 @@
     --shadow-card: var(--sl-shadow-medium);
 
     /* --- CODE EDITOR (LIGHT) --- */
-    --bg-code-editor: #ffffff;
-    --text-code-base: #111111;
+    --bg-code-editor: var(--bg-surface, #ffffff);
+    --text-code-base: var(--text-primary, #333333);
     --token-comment: #16a34a; 
     --token-string: #d32f2f;
     --token-number: #1a73e8;
@@ -520,6 +520,8 @@
 
 /* Se aplica cuando el modo oscuro es forzado manualmente (acepta clases y atributos) */
 html[data-theme="dark"], 
+body[data-theme="dark"],
+[data-theme="dark"],
 html.dark-theme {
     /* --- Backgrounds --- */
     --bg-app: #0e0e11;
