@@ -45,10 +45,10 @@ class TelemetryServices {
             
             $jsonPayload = json_encode($data);
             if ($jsonPayload) {
-                // CORRECCIÓN AQUÍ: Usamos getClient() nativo de tu clase RedisCache
                 $client = $this->redis->getClient();
                 if ($client) {
-                    $client->rPush($queueName, [$jsonPayload]);
+                    // CORRECCIÓN: Evitar enviar esto como un array.
+                    $client->rpush($queueName, $jsonPayload);
                 }
             }
         } catch (\Exception $e) {

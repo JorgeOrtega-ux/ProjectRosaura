@@ -53,3 +53,11 @@ CREATE TABLE IF NOT EXISTS auth_events (
     INDEX idx_created_at (created_at),
     INDEX idx_event (event_type)
 ) ENGINE=InnoDB;
+
+-- ==========================================
+-- PERMISOS PARA EL USUARIO DE LA APLICACIÓN
+-- ==========================================
+-- Esto garantiza que el usuario definido en .env (system_web_executor)
+-- tenga control total sobre la base de datos de telemetría.
+GRANT ALL PRIVILEGES ON db_telemetry.* TO 'system_web_executor'@'%';
+FLUSH PRIVILEGES;

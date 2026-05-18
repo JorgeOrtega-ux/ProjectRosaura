@@ -21,44 +21,31 @@ class TelemetryController extends BaseController {
         $this->userPrefs = $userPrefs;
     }
 
-    public function collect(): void {
-        $userId = $this->session->get('user_id'); // ID interno de DB para Preferences
-        $userUuid = $this->session->get('user_uuid'); // UUID expuesto
+    // CORRECCIÓN: Ahora retorna un array. api/index.php se encargará de enviarlo al JS.
+    public function collect(array $input = []): array {
+        error_log("📥 [TELEMETRY_CONTROLLER] Petición recibida en api/index.php -> telemetry.collect");
         
-        // Verificar si el usuario ha desactivado la telemetría usando el userId correcto
+        $userId = $this->session->get('user_id'); 
+        $userUuid = $this->session->get('user_uuid'); 
+        
         if ($userId && !$this->userPrefs->getPreference($userId, 'allow_telemetry', true)) {
-            $this->sendAcceptedResponse();
-            return;
+            return ['success' => true, 'status' => 'opt_out'];
         }
 
-        $input = json_decode(file_get_contents('php://input'), true);
-        
-        if ($input) {
+        if (!empty($input)) {
             $ipAddress = $_SERVER['REMOTE_ADDR'] ?? null;
             
-            // Procesar un array de eventos (batching desde el frontend)
             if (isset($input['events']) && is_array($input['events'])) {
+                error_log("🔄 [TELEMETRY_CONTROLLER] Guardando " . count($input['events']) . " eventos en Redis.");
                 foreach ($input['events'] as $event) {
                     $this->telemetryServices->processFrontendPayload($event, $userUuid, $ipAddress);
                 }
             } else {
-                $this->telemetryServices->processFrontendPayload($input, $userUuid, $ipAddress);
+                error_log("❌ [TELEMETRY_CONTROLLER] Payload válido pero sin array 'events'.");
             }
         }
         
-        $this->sendAcceptedResponse();
-    }
-
-    private function sendAcceptedResponse(): void {
-        // Devuelve 202 Accepted inmediatamente.
-        http_response_code(202);
-        header('Content-Type: application/json');
-        echo json_encode(['status' => 'accepted']);
-        
-        // Si el servidor soporta fastcgi, cerramos la conexión y dejamos que el proceso termine
-        if (function_exists('fastcgi_finish_request')) {
-            fastcgi_finish_request();
-        }
+        return ['success' => true, 'status' => 'accepted'];
     }
 }
 ?>

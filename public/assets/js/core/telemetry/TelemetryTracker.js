@@ -1,14 +1,16 @@
-// public/assets/js/core/telemetry/TelemetryTracker.js
-
 export default class TelemetryTracker {
-    constructor(config = {}) {
-        this.endpoint = '/api/telemetry/collect';
+   constructor(config = {}) {
+        // CORRECCIÓN: Apuntamos al núcleo del API, no a una URL fantasma.
+        this.endpoint = '/api/index.php'; 
+        
         this.allowTelemetry = config.allowTelemetry !== false;
         this.batch = [];
-        this.batchSizeLimit = 20; // Enviar cuando se acumulen 20 eventos
-        this.flushIntervalMs = 15000; // O enviar cada 15 segundos
+        this.batchSizeLimit = 3; 
+        this.flushIntervalMs = 3000; 
         
         this.sessionUUID = this.generateSessionUUID();
+        
+        console.log("📡 [TelemetryTracker] Inicializado. Permitido:", this.allowTelemetry);
         
         if (this.allowTelemetry) {
             this.init();
@@ -16,22 +18,22 @@ export default class TelemetryTracker {
     }
 
     init() {
-        // 1. Iniciar el envío periódico (Batching)
         this.intervalId = setInterval(() => this.flush(), this.flushIntervalMs);
 
-        // 2. Escuchar la salida de la página para enviar el último lote
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'hidden') {
+                console.log("📡 [TelemetryTracker] Documento oculto, forzando flush...");
                 this.flush(true);
             }
         });
 
-        // 3. Delegación de eventos global para clics (Aislado con data-attributes)
         document.body.addEventListener('click', (e) => {
             const target = e.target.closest('[data-telemetry-click]');
             if (target) {
                 const action = target.getAttribute('data-telemetry-click');
                 const metadata = target.getAttribute('data-telemetry-meta') || null;
+                
+                console.log(`🖱️ [TelemetryTracker] Clic detectado: ${action}`);
                 
                 this.trackEvent('interaction', {
                     action_type: action,
@@ -42,12 +44,9 @@ export default class TelemetryTracker {
         });
     }
 
-    /**
-     * Registra una vista de página. Deberá ser llamado desde SpaRouter.js en viewLoaded
-     */
     trackPageview(path, loadTimeMs = 0) {
         if (!this.allowTelemetry) return;
-
+        console.log(`👁️ [TelemetryTracker] Pageview registrado: ${path}`);
         this.pushToBatch({
             type: 'pageview',
             data: {
@@ -61,12 +60,8 @@ export default class TelemetryTracker {
         });
     }
 
-    /**
-     * Registra eventos específicos del lienzo u otras interacciones
-     */
     trackEvent(category, data) {
         if (!this.allowTelemetry) return;
-
         this.pushToBatch({
             type: category === 'canvas' ? 'canvas_interaction' : 'interaction',
             data: data
@@ -75,38 +70,46 @@ export default class TelemetryTracker {
 
     pushToBatch(payload) {
         this.batch.push(payload);
+        console.log(`📦 [TelemetryTracker] Evento añadido al lote. Tamaño actual: ${this.batch.length}/${this.batchSizeLimit}`);
         if (this.batch.length >= this.batchSizeLimit) {
             this.flush();
         }
     }
 
-    flush(isUnloading = false) {
+flush(isUnloading = false) {
         if (this.batch.length === 0 || !this.allowTelemetry) return;
 
-        const payload = JSON.stringify({ events: this.batch });
+        const payload = JSON.stringify({ 
+            route: 'telemetry.collect',
+            events: this.batch 
+        });
+        
+        console.log("🚀 [TelemetryTracker] Enviando lote al servidor:", JSON.parse(payload));
 
-        // Si la página se está cerrando, usar sendBeacon para garantizar la entrega
-        if (isUnloading && navigator.sendBeacon) {
-            navigator.sendBeacon(this.endpoint, payload);
-        } else {
-            // Envío asíncrono normal en segundo plano
-            fetch(this.endpoint, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: payload,
-                keepalive: isUnloading // Fallback si sendBeacon falla al salir
-            }).catch(() => {
-                // Falla silenciosa, la telemetría no debe romper la experiencia
-            });
-        }
+        // Extraer el token CSRF para pasar el filtro de seguridad de api/index.php
+        const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+        const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
 
-        // Limpiar el lote
+        // Usamos Fetch (con keepalive) en lugar de sendBeacon para asegurar 
+        // que podamos enviar el Header de CSRF sin problemas.
+        fetch(this.endpoint, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken
+            },
+            body: payload,
+            keepalive: isUnloading
+        }).then(response => {
+            console.log(`✅ [TelemetryTracker] API respondió con estado: ${response.status}`);
+        }).catch(err => {
+            console.error(`❌ [TelemetryTracker] Error de red:`, err);
+        });
+
         this.batch = [];
     }
 
-    // --- Utilidades ---
     generateSessionUUID() {
-        // UUID v4 simple para identificar sesiones temporales en el frontend
         return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
             const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
             return v.toString(16);
