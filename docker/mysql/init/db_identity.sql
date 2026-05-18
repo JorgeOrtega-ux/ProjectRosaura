@@ -37,14 +37,14 @@ CREATE TABLE IF NOT EXISTS `role_permissions` (
   CONSTRAINT `fk_rp_permission` FOREIGN KEY (`permission_id`) REFERENCES `permissions` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Insertar roles por defecto con la nueva estructura JSON, el campo weight (prioridad) y bandera is_system
+-- Insertar roles por defecto
 INSERT IGNORE INTO roles (id, name, color, weight, is_system) VALUES 
 (1, 'User', '{"type":"solid","colors":["#808080"]}', 1, 1),
 (2, 'Moderator', '{"type":"solid","colors":["#28a745"]}', 50, 1),
 (3, 'Administrator', '{"type":"solid","colors":["#fd7e14"]}', 80, 1),
 (4, 'SuperAdministrator', '{"type":"solid","colors":["#dc3545"]}', 100, 1);
 
--- Insertar NUEVOS permisos granulares (is_critical = 1 para acciones destructivas o de alto riesgo)
+-- Insertar permisos granulares
 INSERT IGNORE INTO permissions (id, name, description, is_critical) VALUES 
 (1, 'access_admin_panel', 'desc_access_admin_panel', 0),
 (2, 'view_users', 'desc_view_users', 0),
@@ -100,7 +100,7 @@ CREATE TABLE IF NOT EXISTS `users` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- ==========================================
--- NUEVA TABLA PIVOTE DE ROLES MÚLTIPLES
+-- TABLA PIVOTE DE ROLES MÚLTIPLES
 -- ==========================================
 CREATE TABLE IF NOT EXISTS `user_roles` (
   `user_id` int(11) NOT NULL,
@@ -111,7 +111,7 @@ CREATE TABLE IF NOT EXISTS `user_roles` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- ==========================================
--- TABLAS EXISTENTES DEPENDIENTES
+-- TABLAS DEPENDIENTES
 -- ==========================================
 CREATE TABLE IF NOT EXISTS user_restrictions (
     user_id INT(11) NOT NULL PRIMARY KEY,
@@ -126,8 +126,9 @@ CREATE TABLE IF NOT EXISTS user_restrictions (
     CONSTRAINT fk_user_restrictions FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+-- MIGRACIÓN A BIGINT: Prevención de desbordamiento de IDs en logs de larga duración
 CREATE TABLE IF NOT EXISTS moderation_logs (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id INT(11) NOT NULL,
     admin_id INT(11) DEFAULT NULL,
     action_type VARCHAR(50) NOT NULL,
@@ -139,17 +140,17 @@ CREATE TABLE IF NOT EXISTS moderation_logs (
     CONSTRAINT fk_mod_log_admin FOREIGN KEY (admin_id) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+-- MIGRACIÓN A BIGINT Y COMPOSITE INDEXES:
 CREATE TABLE IF NOT EXISTS profile_changes_log (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id INT(11) NOT NULL,
     change_type ENUM('avatar', 'username', 'email', 'password', '2fa') NOT NULL,
     old_value VARCHAR(255) DEFAULT NULL,
     new_value VARCHAR(255) DEFAULT NULL,
     ip_address VARCHAR(45) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    INDEX (user_id),
-    INDEX (change_type),
-    INDEX (created_at),
+    -- Reemplazo de 3 índices simples ineficientes por un único Índice Compuesto ideal para los Rate Limits
+    INDEX idx_user_change_date (user_id, change_type, created_at),
     CONSTRAINT fk_user_profile_log FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -166,15 +167,16 @@ CREATE TABLE IF NOT EXISTS user_preferences (
     CONSTRAINT fk_user_preferences FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- MIGRACIÓN A BIGINT: Los tokens se generan y expiran masivamente.
 CREATE TABLE IF NOT EXISTS auth_tokens (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id INT(11) NOT NULL,
     selector VARCHAR(255) NOT NULL,
     hashed_validator VARCHAR(255) NOT NULL,
     expires_at DATETIME NOT NULL,
     user_agent VARCHAR(255) DEFAULT NULL,
     ip_address VARCHAR(45) DEFAULT NULL,
-    location VARCHAR(255) DEFAULT NULL, -- NUEVO CAMPO DE UBICACIÓN AÑADIDO
+    location VARCHAR(255) DEFAULT NULL,
     CONSTRAINT fk_user_tokens FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     INDEX (selector)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

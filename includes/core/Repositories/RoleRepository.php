@@ -25,7 +25,8 @@ class RoleRepository implements RoleRepositoryInterface {
 
     public function findById(int $id): ?array {
         $tblRoles = DB::TBL_ROLES;
-        $stmt = $this->pdo->prepare("SELECT * FROM {$tblRoles} WHERE id = ?");
+        // LIMIT 1 añadido para detener el escaneo
+        $stmt = $this->pdo->prepare("SELECT * FROM {$tblRoles} WHERE id = ? LIMIT 1");
         $stmt->execute([$id]);
         $role = $stmt->fetch(PDO::FETCH_ASSOC);
         return $role ?: null;
@@ -33,7 +34,8 @@ class RoleRepository implements RoleRepositoryInterface {
 
     public function findByName(string $name): ?array {
         $tblRoles = DB::TBL_ROLES;
-        $stmt = $this->pdo->prepare("SELECT * FROM {$tblRoles} WHERE name = ?");
+        // LIMIT 1 añadido
+        $stmt = $this->pdo->prepare("SELECT * FROM {$tblRoles} WHERE name = ? LIMIT 1");
         $stmt->execute([$name]);
         $role = $stmt->fetch(PDO::FETCH_ASSOC);
         return $role ?: null;
@@ -84,8 +86,6 @@ class RoleRepository implements RoleRepositoryInterface {
         return $stmt->execute([$id]);
     }
 
-    // --- MÉTODOS DE PERMISOS GLOBALES ---
-
     public function getAllPermissions(): array {
         $tblPerms = DB::TBL_PERMISSIONS;
         $stmt = $this->pdo->query("SELECT id, name, description, is_critical FROM {$tblPerms} ORDER BY id ASC");
@@ -134,10 +134,15 @@ class RoleRepository implements RoleRepositoryInterface {
             $validPermissions = $this->getValidPermissionIds($permissionsArray);
 
             if (!empty($validPermissions)) {
-                $insertStmt = $this->pdo->prepare("INSERT INTO {$tblRolePerms} (role_id, permission_id) VALUES (?, ?)");
+                // Optimización: BULK INSERT
+                $placeholders = implode(',', array_fill(0, count($validPermissions), '(?, ?)'));
+                $values = [];
                 foreach ($validPermissions as $permissionId) {
-                    $insertStmt->execute([$roleId, $permissionId]);
+                    $values[] = $roleId;
+                    $values[] = $permissionId;
                 }
+                $insertStmt = $this->pdo->prepare("INSERT INTO {$tblRolePerms} (role_id, permission_id) VALUES {$placeholders}");
+                $insertStmt->execute($values);
             }
 
             $this->pdo->commit();
@@ -149,10 +154,7 @@ class RoleRepository implements RoleRepositoryInterface {
         }
     }
 
-    // --- NUEVO: MÉTODOS MULTI-ROLE ---
-
     public function syncUserRoles(int $userId, array $roleIds, int $executorWeight): bool {
-        // También refactorizado este hardcode 1 que existía previamente
         if (!in_array(SecurityConstants::DEFAULT_USER_ROLE_ID, $roleIds)) {
             $roleIds[] = SecurityConstants::DEFAULT_USER_ROLE_ID;
         }
@@ -177,9 +179,16 @@ class RoleRepository implements RoleRepositoryInterface {
             $delStmt = $this->pdo->prepare("DELETE FROM {$tblUserRoles} WHERE user_id = ?");
             $delStmt->execute([$userId]);
 
-            $insStmt = $this->pdo->prepare("INSERT INTO {$tblUserRoles} (user_id, role_id) VALUES (?, ?)");
-            foreach ($rolesData as $rd) {
-                $insStmt->execute([$userId, $rd['id']]);
+            if (!empty($rolesData)) {
+                // Optimización: BULK INSERT
+                $placeholders = implode(',', array_fill(0, count($rolesData), '(?, ?)'));
+                $values = [];
+                foreach ($rolesData as $rd) {
+                    $values[] = $userId;
+                    $values[] = $rd['id'];
+                }
+                $insStmt = $this->pdo->prepare("INSERT INTO {$tblUserRoles} (user_id, role_id) VALUES {$placeholders}");
+                $insStmt->execute($values);
             }
 
             $this->pdo->commit();

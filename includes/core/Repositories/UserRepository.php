@@ -10,6 +10,7 @@ use App\Core\System\DatabaseConstants as DB;
 use App\Core\System\SecurityConstants;
 use PDO;
 use PDOException;
+use Exception;
 
 class UserRepository implements UserRepositoryInterface {
     private $pdo;
@@ -18,84 +19,93 @@ class UserRepository implements UserRepositoryInterface {
         $this->pdo = $db->getConnection(DB::CONN_IDENTITY);
     }
 
-    public function findById(int $id): ?array {
+    /**
+     * MÉTODO PRIVADO DRY: Evita el producto cartesiano masivo de JOINs al separar
+     * la obtención de datos base del usuario, sus roles y sus permisos.
+     */
+    private function getUserWithDetails(string $column, $value): ?array {
         $tblUsers = DB::TBL_USERS;
-        $tblRoles = DB::TBL_ROLES;
-        $tblUserRoles = DB::TBL_USER_ROLES;
-        $tblRolePerms = DB::TBL_ROLE_PERMISSIONS;
-        $tblPerms = DB::TBL_PERMISSIONS;
         $tblUserRestr = DB::TBL_USER_RESTRICTIONS;
 
         try {
-            $stmt = $this->pdo->prepare("
+            // 1. Obtener datos base y restricciones (Relación 1 a 1, rápido y directo)
+            $stmtUser = $this->pdo->prepare("
                 SELECT 
-                    u.*, 
+                    u.id, u.uuid, u.username, u.email, u.password, u.profile_picture, 
+                    u.two_factor_secret, u.two_factor_enabled, u.two_factor_recovery_codes, u.deletion_scheduled_at, u.created_at,
                     ur.is_suspended, ur.suspension_type, ur.suspension_reason, ur.suspension_end_date, 
-                    ur.deleted_by, ur.deleted_reason, ur.admin_notes,
-                    SUBSTRING_INDEX(GROUP_CONCAT(DISTINCT r.name ORDER BY r.weight DESC SEPARATOR '|||'), '|||', 1) as role_name,
-                    SUBSTRING_INDEX(GROUP_CONCAT(DISTINCT r.color ORDER BY r.weight DESC SEPARATOR '|||'), '|||', 1) as role_color,
-                    CAST(SUBSTRING_INDEX(GROUP_CONCAT(DISTINCT r.weight ORDER BY r.weight DESC SEPARATOR '|||'), '|||', 1) AS UNSIGNED) as role_weight,
-                    GROUP_CONCAT(DISTINCT r.id) as assigned_roles_ids,
-                    GROUP_CONCAT(DISTINCT p.name) as permissions
+                    ur.deleted_by, ur.deleted_reason, ur.admin_notes
                 FROM {$tblUsers} u 
                 LEFT JOIN {$tblUserRestr} ur ON u.id = ur.user_id 
-                LEFT JOIN {$tblUserRoles} uroles ON u.id = uroles.user_id
-                LEFT JOIN {$tblRoles} r ON uroles.role_id = r.id
-                LEFT JOIN {$tblRolePerms} rp ON r.id = rp.role_id
-                LEFT JOIN {$tblPerms} p ON rp.permission_id = p.id
-                WHERE u.id = ?
-                GROUP BY u.id
+                WHERE u.{$column} = ?
+                LIMIT 1
             ");
-            $stmt->execute([$id]);
-            $user = $stmt->fetch(PDO::FETCH_ASSOC);
-            return $user ?: null;
+            $stmtUser->execute([$value]);
+            $user = $stmtUser->fetch(PDO::FETCH_ASSOC);
+
+            if (!$user) return null;
+
+            // 2. Obtener roles principales (Evita multiplicar filas con permisos)
+            $tblRoles = DB::TBL_ROLES;
+            $tblUserRoles = DB::TBL_USER_ROLES;
+            
+            $stmtRoles = $this->pdo->prepare("
+                SELECT 
+                    SUBSTRING_INDEX(GROUP_CONCAT(r.name ORDER BY r.weight DESC SEPARATOR '|||'), '|||', 1) as role_name,
+                    SUBSTRING_INDEX(GROUP_CONCAT(r.color ORDER BY r.weight DESC SEPARATOR '|||'), '|||', 1) as role_color,
+                    CAST(SUBSTRING_INDEX(GROUP_CONCAT(r.weight ORDER BY r.weight DESC SEPARATOR '|||'), '|||', 1) AS UNSIGNED) as role_weight,
+                    GROUP_CONCAT(r.id) as assigned_roles_ids
+                FROM {$tblRoles} r
+                INNER JOIN {$tblUserRoles} ur ON r.id = ur.role_id
+                WHERE ur.user_id = ?
+            ");
+            $stmtRoles->execute([$user['id']]);
+            $rolesData = $stmtRoles->fetch(PDO::FETCH_ASSOC);
+
+            if ($rolesData) {
+                $user['role_name'] = $rolesData['role_name'];
+                $user['role_color'] = $rolesData['role_color'];
+                $user['role_weight'] = $rolesData['role_weight'];
+                $user['assigned_roles_ids'] = $rolesData['assigned_roles_ids'];
+            }
+
+            // 3. Obtener permisos combinados y únicos
+            $tblRolePerms = DB::TBL_ROLE_PERMISSIONS;
+            $tblPerms = DB::TBL_PERMISSIONS;
+
+            $stmtPerms = $this->pdo->prepare("
+                SELECT GROUP_CONCAT(DISTINCT p.name) as permissions
+                FROM {$tblPerms} p
+                INNER JOIN {$tblRolePerms} rp ON p.id = rp.permission_id
+                INNER JOIN {$tblUserRoles} ur ON rp.role_id = ur.role_id
+                WHERE ur.user_id = ?
+            ");
+            $stmtPerms->execute([$user['id']]);
+            $permsData = $stmtPerms->fetch(PDO::FETCH_ASSOC);
+
+            $user['permissions'] = $permsData ? $permsData['permissions'] : null;
+
+            return $user;
+
         } catch (PDOException $e) {
-            Logger::error("Database error in " . __METHOD__, ['user_id' => $id, 'exception' => $e]);
+            Logger::error("Database error in " . __METHOD__, ['column' => $column, 'value' => $value, 'exception' => $e]);
             return null;
         }
     }
 
-    public function findByEmail(string $email): ?array {
-        $tblUsers = DB::TBL_USERS;
-        $tblRoles = DB::TBL_ROLES;
-        $tblUserRoles = DB::TBL_USER_ROLES;
-        $tblRolePerms = DB::TBL_ROLE_PERMISSIONS;
-        $tblPerms = DB::TBL_PERMISSIONS;
-        $tblUserRestr = DB::TBL_USER_RESTRICTIONS;
+    public function findById(int $id): ?array {
+        return $this->getUserWithDetails('id', $id);
+    }
 
-        try {
-            $stmt = $this->pdo->prepare("
-                SELECT 
-                    u.*, 
-                    ur.is_suspended, ur.suspension_type, ur.suspension_reason, ur.suspension_end_date, 
-                    ur.deleted_by, ur.deleted_reason, ur.admin_notes,
-                    SUBSTRING_INDEX(GROUP_CONCAT(DISTINCT r.name ORDER BY r.weight DESC SEPARATOR '|||'), '|||', 1) as role_name,
-                    SUBSTRING_INDEX(GROUP_CONCAT(DISTINCT r.color ORDER BY r.weight DESC SEPARATOR '|||'), '|||', 1) as role_color,
-                    CAST(SUBSTRING_INDEX(GROUP_CONCAT(DISTINCT r.weight ORDER BY r.weight DESC SEPARATOR '|||'), '|||', 1) AS UNSIGNED) as role_weight,
-                    GROUP_CONCAT(DISTINCT r.id) as assigned_roles_ids,
-                    GROUP_CONCAT(DISTINCT p.name) as permissions
-                FROM {$tblUsers} u 
-                LEFT JOIN {$tblUserRestr} ur ON u.id = ur.user_id 
-                LEFT JOIN {$tblUserRoles} uroles ON u.id = uroles.user_id
-                LEFT JOIN {$tblRoles} r ON uroles.role_id = r.id
-                LEFT JOIN {$tblRolePerms} rp ON r.id = rp.role_id
-                LEFT JOIN {$tblPerms} p ON rp.permission_id = p.id
-                WHERE u.email = ?
-                GROUP BY u.id
-            ");
-            $stmt->execute([$email]);
-            $user = $stmt->fetch(PDO::FETCH_ASSOC);
-            return $user ?: null;
-        } catch (PDOException $e) {
-            Logger::error("Database error in " . __METHOD__, ['email' => $email, 'exception' => $e]);
-            return null;
-        }
+    public function findByEmail(string $email): ?array {
+        return $this->getUserWithDetails('email', $email);
     }
 
     public function findByUsername(string $username): ?array {
         $tblUsers = DB::TBL_USERS;
         try {
-            $stmt = $this->pdo->prepare("SELECT id FROM {$tblUsers} WHERE username = ?");
+            // Se añade LIMIT 1 para detener el escaneo en cuanto encuentre coincidencia
+            $stmt = $this->pdo->prepare("SELECT id FROM {$tblUsers} WHERE username = ? LIMIT 1");
             $stmt->execute([$username]);
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
             return $user ?: null;
@@ -123,20 +133,25 @@ class UserRepository implements UserRepositoryInterface {
             ]);
             $userId = (int) $this->pdo->lastInsertId();
 
-            $stmtRole = $this->pdo->prepare("INSERT INTO {$tblUserRoles} (user_id, role_id) VALUES (?, ?)");
             $rolesToAssign = isset($data['roles']) && is_array($data['roles']) ? $data['roles'] : [SecurityConstants::DEFAULT_USER_ROLE_ID];
             if (!in_array(SecurityConstants::DEFAULT_USER_ROLE_ID, $rolesToAssign)) $rolesToAssign[] = SecurityConstants::DEFAULT_USER_ROLE_ID;
 
+            // Optimización: BULK INSERT para roles (Evita viajes de ida y vuelta a la DB)
+            $placeholders = implode(',', array_fill(0, count($rolesToAssign), '(?, ?)'));
+            $values = [];
             foreach ($rolesToAssign as $roleId) {
-                $stmtRole->execute([$userId, (int)$roleId]);
+                $values[] = $userId;
+                $values[] = (int)$roleId;
             }
+            $stmtRole = $this->pdo->prepare("INSERT INTO {$tblUserRoles} (user_id, role_id) VALUES {$placeholders}");
+            $stmtRole->execute($values);
 
             $stmtRest = $this->pdo->prepare("INSERT INTO {$tblUserRestr} (user_id) VALUES (?)");
             $stmtRest->execute([$userId]);
 
             $this->pdo->commit();
             return $userId;
-        } catch (\Exception $e) { 
+        } catch (Exception $e) { 
             $this->pdo->rollBack();
             Logger::error("Database error in " . __METHOD__, ['email' => $data['email'], 'username' => $data['username'], 'exception' => $e]);
             return 0;

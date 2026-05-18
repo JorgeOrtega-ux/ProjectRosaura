@@ -46,7 +46,8 @@ class ProfileLogRepository implements ProfileLogRepositoryInterface {
         $tblProfileLog = DB::TBL_PROFILE_CHANGES_LOG;
 
         try {
-            $stmt = $this->pdo->prepare("SELECT * FROM {$tblProfileLog} WHERE user_id = ? ORDER BY created_at DESC");
+            // Optimización: Columnas específicas, sin SELECT *
+            $stmt = $this->pdo->prepare("SELECT id, change_type, old_value, new_value, ip_address, created_at FROM {$tblProfileLog} WHERE user_id = ? ORDER BY created_at DESC");
             $stmt->execute([$userId]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
