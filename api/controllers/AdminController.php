@@ -130,10 +130,15 @@ class AdminController extends BaseController {
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
 
+    // OPTIMIZADO: Ahora acepta los parámetros de paginación para enviarlos al Service
     public function get_moderation_kardex($input) {
         try { 
             $this->requirePermission('view_kardex');
-            $safeInput = ['target_user_id' => $input['target_user_id'] ?? null];
+            $safeInput = [
+                'target_user_id' => $input['target_user_id'] ?? null,
+                'page' => $input['page'] ?? 1,
+                'limit' => $input['limit'] ?? 10
+            ];
             return $this->respond($this->adminServices->getModerationKardex($safeInput)); 
         }
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
@@ -263,13 +268,12 @@ class AdminController extends BaseController {
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
 
-    // NUEVO: Alternar Botón de Pánico
     public function toggle_panic_mode($input) {
         try { 
             $this->requirePermission('perform_system_maintenance');
             $safeInput = [
                 'password' => $input['password'] ?? null,
-                'is_active' => $input['is_active'] ?? null // Booleano esperado desde el frontend
+                'is_active' => $input['is_active'] ?? null
             ];
             return $this->respond($this->adminServices->togglePanicMode($safeInput)); 
         }

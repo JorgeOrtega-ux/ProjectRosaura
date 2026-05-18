@@ -30,6 +30,19 @@ class ProfileLogRepository implements ProfileLogRepositoryInterface {
         }
     }
 
+    // NUEVO: Requerido para calcular el total de páginas
+    public function countAllLogsByUserId(int $userId): int {
+        $tblProfileLog = DB::TBL_PROFILE_CHANGES_LOG;
+        try {
+            $stmt = $this->pdo->prepare("SELECT COUNT(id) FROM {$tblProfileLog} WHERE user_id = ?");
+            $stmt->execute([$userId]);
+            return (int) $stmt->fetchColumn();
+        } catch (PDOException $e) {
+            Logger::error("Database error in " . __METHOD__, ['user_id' => $userId, 'exception' => $e]);
+            return 0;
+        }
+    }
+
     public function logChange(int $userId, string $changeType, ?string $oldValue, ?string $newValue, string $ipAddress): bool {
         $tblProfileLog = DB::TBL_PROFILE_CHANGES_LOG;
 
@@ -42,13 +55,24 @@ class ProfileLogRepository implements ProfileLogRepositoryInterface {
         }
     }
 
-    public function getLogsByUserId(int $userId): array {
+    // OPTIMIZADO: Ahora acepta limit y offset nativos para integrarse con la paginación
+    public function getLogsByUserId(int $userId, int $limit = 50, int $offset = 0): array {
         $tblProfileLog = DB::TBL_PROFILE_CHANGES_LOG;
 
         try {
-            // Optimización: Columnas específicas, sin SELECT *
-            $stmt = $this->pdo->prepare("SELECT id, change_type, old_value, new_value, ip_address, created_at FROM {$tblProfileLog} WHERE user_id = ? ORDER BY created_at DESC");
-            $stmt->execute([$userId]);
+            $stmt = $this->pdo->prepare("
+                SELECT id, change_type, old_value, new_value, ip_address, created_at 
+                FROM {$tblProfileLog} 
+                WHERE user_id = :userId 
+                ORDER BY created_at DESC 
+                LIMIT :limit OFFSET :offset
+            ");
+            
+            $stmt->bindValue(':userId', $userId, PDO::PARAM_INT);
+            $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+            $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+            $stmt->execute();
+            
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
             Logger::error("Database error in " . __METHOD__, ['user_id' => $userId, 'exception' => $e]);

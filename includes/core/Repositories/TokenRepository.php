@@ -63,8 +63,18 @@ class TokenRepository implements TokenRepositoryInterface {
         }
     }
 
+    /**
+     * OPTIMIZADO: Medida de seguridad (Guard Clause) para evitar saturación de memoria
+     * o desbordamiento de la consulta SQL si el input es manipulado maliciosamente.
+     */
     public function findValidTokensBySelectors(array $selectors): array {
         if (empty($selectors)) return [];
+        
+        // Prevención de ataques mediante listas masivas (Max ~100 tokens procesados a la vez)
+        if (count($selectors) > 100) {
+            $selectors = array_slice($selectors, 0, 100);
+            Logger::warning("Se han detectado demasiados selectores en findValidTokensBySelectors, truncando a 100 por seguridad.", []);
+        }
         
         $tblAuthTokens = DB::TBL_AUTH_TOKENS;
         $tblUsers = DB::TBL_USERS;
@@ -85,7 +95,6 @@ class TokenRepository implements TokenRepositoryInterface {
         }
     }
 
-    // NUEVO MÉTODO IMPLEMENTADO
     public function findSelectorByIdAndUserId(int $tokenId, int $userId): ?string {
         $tblAuthTokens = DB::TBL_AUTH_TOKENS;
         try {
@@ -135,13 +144,25 @@ class TokenRepository implements TokenRepositoryInterface {
         }
     }
 
-    public function getActiveDevicesByUserId(int $userId): array {
+    /**
+     * OPTIMIZADO: Límite duro integrado a la consulta para proteger la DB contra ataques DDoS
+     * de creación masiva de sesiones si el rate limit general llegase a fallar.
+     */
+    public function getActiveDevicesByUserId(int $userId, int $limit = 50): array {
         $tblAuthTokens = DB::TBL_AUTH_TOKENS;
 
         try {
-            // Se incluye el nuevo campo `location`
-            $stmt = $this->pdo->prepare("SELECT id, user_agent, ip_address, location, expires_at, selector FROM {$tblAuthTokens} WHERE user_id = ? ORDER BY expires_at DESC");
-            $stmt->execute([$userId]);
+            $stmt = $this->pdo->prepare("
+                SELECT id, user_agent, ip_address, location, expires_at, selector 
+                FROM {$tblAuthTokens} 
+                WHERE user_id = :userId 
+                ORDER BY expires_at DESC 
+                LIMIT :limit
+            ");
+            $stmt->bindValue(':userId', $userId, PDO::PARAM_INT);
+            $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+            $stmt->execute();
+            
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
             Logger::error("Database error in " . __METHOD__, ['user_id' => $userId, 'exception' => $e]);

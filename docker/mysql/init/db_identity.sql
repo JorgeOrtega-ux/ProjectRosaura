@@ -126,7 +126,6 @@ CREATE TABLE IF NOT EXISTS user_restrictions (
     CONSTRAINT fk_user_restrictions FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- MIGRACIÓN A BIGINT: Prevención de desbordamiento de IDs en logs de larga duración
 CREATE TABLE IF NOT EXISTS moderation_logs (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id INT(11) NOT NULL,
@@ -140,7 +139,6 @@ CREATE TABLE IF NOT EXISTS moderation_logs (
     CONSTRAINT fk_mod_log_admin FOREIGN KEY (admin_id) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- MIGRACIÓN A BIGINT Y COMPOSITE INDEXES:
 CREATE TABLE IF NOT EXISTS profile_changes_log (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id INT(11) NOT NULL,
@@ -149,8 +147,10 @@ CREATE TABLE IF NOT EXISTS profile_changes_log (
     new_value VARCHAR(255) DEFAULT NULL,
     ip_address VARCHAR(45) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    -- Reemplazo de 3 índices simples ineficientes por un único Índice Compuesto ideal para los Rate Limits
+    -- Índice para los Rate Limits
     INDEX idx_user_change_date (user_id, change_type, created_at),
+    -- NUEVO: Índice para ordenar historiales de forma ultra rápida sin Filesort
+    INDEX idx_user_created (user_id, created_at),
     CONSTRAINT fk_user_profile_log FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -167,7 +167,6 @@ CREATE TABLE IF NOT EXISTS user_preferences (
     CONSTRAINT fk_user_preferences FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- MIGRACIÓN A BIGINT: Los tokens se generan y expiran masivamente.
 CREATE TABLE IF NOT EXISTS auth_tokens (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id INT(11) NOT NULL,
@@ -178,20 +177,20 @@ CREATE TABLE IF NOT EXISTS auth_tokens (
     ip_address VARCHAR(45) DEFAULT NULL,
     location VARCHAR(255) DEFAULT NULL,
     CONSTRAINT fk_user_tokens FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    INDEX (selector)
+    INDEX (selector),
+    -- NUEVO: Índice para que el recolector de basura (GC) elimine caducados instantáneamente
+    INDEX idx_expires_at (expires_at),
+    -- NUEVO: Índice para listar dispositivos activos sin filesort
+    INDEX idx_user_expires (user_id, expires_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS server_config (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    
-    -- Ajustes Generales de Cuenta
     min_password_length INT NOT NULL DEFAULT 8,
     max_password_length INT NOT NULL DEFAULT 64,
     min_username_length INT NOT NULL DEFAULT 3,
     max_username_length INT NOT NULL DEFAULT 32,
     max_avatar_size_mb INT NOT NULL DEFAULT 2,
-    
-    -- Ajustes Generales de Accesos y Sesiones
     session_lifetime_minutes INT NOT NULL DEFAULT 120,
     max_active_sessions_per_user INT NOT NULL DEFAULT 3,
     allow_registrations TINYINT(1) NOT NULL DEFAULT 1,
@@ -200,8 +199,6 @@ CREATE TABLE IF NOT EXISTS server_config (
     registration_rate_limit_minutes INT NOT NULL DEFAULT 15,
     verification_code_expiration_minutes INT NOT NULL DEFAULT 15,
     password_reset_expiration_minutes INT NOT NULL DEFAULT 15,
-    
-    -- Ajustes de Limites para Usuarios
     username_change_cooldown_days INT NOT NULL DEFAULT 7,
     username_change_max_attempts INT NOT NULL DEFAULT 1,
     email_change_cooldown_days INT NOT NULL DEFAULT 7,
@@ -212,8 +209,6 @@ CREATE TABLE IF NOT EXISTS server_config (
     login_rate_limit_minutes INT NOT NULL DEFAULT 15,
     forgot_password_rate_limit_attempts INT NOT NULL DEFAULT 3,
     forgot_password_rate_limit_minutes INT NOT NULL DEFAULT 30,
-    
-    -- Limites de Acción de Administradores
     admin_edit_avatar_attempts INT NOT NULL DEFAULT 20,
     admin_edit_avatar_minutes INT NOT NULL DEFAULT 30,
     admin_edit_username_attempts INT NOT NULL DEFAULT 20,
@@ -228,36 +223,25 @@ CREATE TABLE IF NOT EXISTS server_config (
     admin_delete_user_minutes INT NOT NULL DEFAULT 30,
     admin_add_note_attempts INT NOT NULL DEFAULT 30,
     admin_add_note_minutes INT NOT NULL DEFAULT 30,
-    
-    -- Limites Base Admin Generales
     admin_read_data_attempts INT NOT NULL DEFAULT 120,
     admin_read_data_minutes INT NOT NULL DEFAULT 1,
     admin_password_verify_attempts INT NOT NULL DEFAULT 5,
     admin_password_verify_minutes INT NOT NULL DEFAULT 15,
-    
-    -- Limites de Acciones Redis Admin
     admin_redis_read_attempts INT NOT NULL DEFAULT 30,
     admin_redis_read_minutes INT NOT NULL DEFAULT 1,
     admin_redis_delete_attempts INT NOT NULL DEFAULT 100,
     admin_redis_delete_minutes INT NOT NULL DEFAULT 1,
     admin_flush_redis_sessions_attempts INT NOT NULL DEFAULT 5,
     admin_flush_redis_sessions_minutes INT NOT NULL DEFAULT 5,
-    
-    -- Limites de Backups Manuales
     admin_backup_create_attempts INT NOT NULL DEFAULT 5,
     admin_backup_create_minutes INT NOT NULL DEFAULT 30,
     admin_backup_restore_attempts INT NOT NULL DEFAULT 3,
     admin_backup_restore_minutes INT NOT NULL DEFAULT 30,
-    
-    -- Automatización Backups
     auto_backup_enabled TINYINT(1) NOT NULL DEFAULT 0,
     auto_backup_frequency_hours INT NOT NULL DEFAULT 24,
     auto_backup_retention_count INT NOT NULL DEFAULT 5,
     backup_schema_config LONGTEXT DEFAULT NULL,
-    
-    -- Sistema General
     maintenance_mode TINYINT(1) NOT NULL DEFAULT 0,
-    
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

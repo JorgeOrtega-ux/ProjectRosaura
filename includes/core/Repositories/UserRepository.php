@@ -20,15 +20,15 @@ class UserRepository implements UserRepositoryInterface {
     }
 
     /**
-     * MÉTODO PRIVADO DRY: Evita el producto cartesiano masivo de JOINs al separar
-     * la obtención de datos base del usuario, sus roles y sus permisos.
+     * OPTIMIZADO: Eliminado el GROUP_CONCAT. Previene pérdida de permisos por límites de longitud en MySQL
+     * y elimina el riesgo de colisión de delimitadores.
      */
     private function getUserWithDetails(string $column, $value): ?array {
         $tblUsers = DB::TBL_USERS;
         $tblUserRestr = DB::TBL_USER_RESTRICTIONS;
 
         try {
-            // 1. Obtener datos base y restricciones (Relación 1 a 1, rápido y directo)
+            // 1. Obtener datos base y restricciones (Relación 1 a 1)
             $stmtUser = $this->pdo->prepare("
                 SELECT 
                     u.id, u.uuid, u.username, u.email, u.password, u.profile_picture, 
@@ -45,51 +45,122 @@ class UserRepository implements UserRepositoryInterface {
 
             if (!$user) return null;
 
-            // 2. Obtener roles principales (Evita multiplicar filas con permisos)
+            // 2. Obtener roles de manera segura y ordenada por peso
             $tblRoles = DB::TBL_ROLES;
             $tblUserRoles = DB::TBL_USER_ROLES;
             
             $stmtRoles = $this->pdo->prepare("
-                SELECT 
-                    SUBSTRING_INDEX(GROUP_CONCAT(r.name ORDER BY r.weight DESC SEPARATOR '|||'), '|||', 1) as role_name,
-                    SUBSTRING_INDEX(GROUP_CONCAT(r.color ORDER BY r.weight DESC SEPARATOR '|||'), '|||', 1) as role_color,
-                    CAST(SUBSTRING_INDEX(GROUP_CONCAT(r.weight ORDER BY r.weight DESC SEPARATOR '|||'), '|||', 1) AS UNSIGNED) as role_weight,
-                    GROUP_CONCAT(r.id) as assigned_roles_ids
+                SELECT r.id, r.name, r.color, r.weight
                 FROM {$tblRoles} r
                 INNER JOIN {$tblUserRoles} ur ON r.id = ur.role_id
                 WHERE ur.user_id = ?
+                ORDER BY r.weight DESC
             ");
             $stmtRoles->execute([$user['id']]);
-            $rolesData = $stmtRoles->fetch(PDO::FETCH_ASSOC);
+            $roles = $stmtRoles->fetchAll(PDO::FETCH_ASSOC);
 
-            if ($rolesData) {
-                $user['role_name'] = $rolesData['role_name'];
-                $user['role_color'] = $rolesData['role_color'];
-                $user['role_weight'] = $rolesData['role_weight'];
-                $user['assigned_roles_ids'] = $rolesData['assigned_roles_ids'];
+            if (!empty($roles)) {
+                $mainRole = $roles[0];
+                $user['role_name'] = $mainRole['name'];
+                $user['role_color'] = $mainRole['color'];
+                $user['role_weight'] = $mainRole['weight'];
+                $user['assigned_roles_ids'] = implode(',', array_column($roles, 'id'));
+            } else {
+                $user['role_name'] = null;
+                $user['role_color'] = null;
+                $user['role_weight'] = null;
+                $user['assigned_roles_ids'] = null;
             }
 
-            // 3. Obtener permisos combinados y únicos
+            // 3. Obtener permisos de forma segura superando el límite de 1024 caracteres
             $tblRolePerms = DB::TBL_ROLE_PERMISSIONS;
             $tblPerms = DB::TBL_PERMISSIONS;
 
             $stmtPerms = $this->pdo->prepare("
-                SELECT GROUP_CONCAT(DISTINCT p.name) as permissions
+                SELECT DISTINCT p.name
                 FROM {$tblPerms} p
                 INNER JOIN {$tblRolePerms} rp ON p.id = rp.permission_id
                 INNER JOIN {$tblUserRoles} ur ON rp.role_id = ur.role_id
                 WHERE ur.user_id = ?
             ");
             $stmtPerms->execute([$user['id']]);
-            $permsData = $stmtPerms->fetch(PDO::FETCH_ASSOC);
+            $permissionsArray = $stmtPerms->fetchAll(PDO::FETCH_COLUMN);
 
-            $user['permissions'] = $permsData ? $permsData['permissions'] : null;
+            $user['permissions'] = !empty($permissionsArray) ? implode(',', $permissionsArray) : null;
 
             return $user;
 
         } catch (PDOException $e) {
             Logger::error("Database error in " . __METHOD__, ['column' => $column, 'value' => $value, 'exception' => $e]);
             return null;
+        }
+    }
+
+    /**
+     * NUEVO: Soluciona el problema N+1 del Panel de Administración mediante Eager Loading
+     */
+    public function getUsersList(int $limit, int $offset): array {
+        $tblUsers = DB::TBL_USERS;
+        $tblUserRestr = DB::TBL_USER_RESTRICTIONS;
+        $tblRoles = DB::TBL_ROLES;
+        $tblUserRoles = DB::TBL_USER_ROLES;
+
+        try {
+            $stmtUsers = $this->pdo->prepare("
+                SELECT u.id, u.uuid, u.username, u.email, u.profile_picture, u.created_at,
+                       ur.is_suspended, ur.suspension_type
+                FROM {$tblUsers} u
+                LEFT JOIN {$tblUserRestr} ur ON u.id = ur.user_id
+                ORDER BY u.id DESC
+                LIMIT :limit OFFSET :offset
+            ");
+            $stmtUsers->bindValue(':limit', $limit, PDO::PARAM_INT);
+            $stmtUsers->bindValue(':offset', $offset, PDO::PARAM_INT);
+            $stmtUsers->execute();
+            
+            $users = $stmtUsers->fetchAll(PDO::FETCH_ASSOC);
+            if (empty($users)) return [];
+
+            $userIds = array_column($users, 'id');
+            $placeholders = implode(',', array_fill(0, count($userIds), '?'));
+
+            $stmtRoles = $this->pdo->prepare("
+                SELECT user_roles.user_id, r.id as role_id, r.name, r.color, r.weight
+                FROM {$tblUserRoles} user_roles
+                INNER JOIN {$tblRoles} r ON user_roles.role_id = r.id
+                WHERE user_roles.user_id IN ($placeholders)
+                ORDER BY user_roles.user_id, r.weight DESC
+            ");
+            $stmtRoles->execute($userIds);
+            $rolesData = $stmtRoles->fetchAll(PDO::FETCH_ASSOC);
+
+            $rolesByUser = [];
+            foreach ($rolesData as $row) {
+                $uid = $row['user_id'];
+                if (!isset($rolesByUser[$uid])) $rolesByUser[$uid] = [];
+                $rolesByUser[$uid][] = $row;
+            }
+
+            foreach ($users as &$user) {
+                $uid = $user['id'];
+                if (isset($rolesByUser[$uid])) {
+                    $mainRole = $rolesByUser[$uid][0];
+                    $user['role_name'] = $mainRole['name'];
+                    $user['role_color'] = $mainRole['color'];
+                    $user['role_weight'] = $mainRole['weight'];
+                    $user['assigned_roles_ids'] = implode(',', array_column($rolesByUser[$uid], 'role_id'));
+                } else {
+                    $user['role_name'] = null;
+                    $user['role_color'] = null;
+                    $user['role_weight'] = null;
+                    $user['assigned_roles_ids'] = null;
+                }
+            }
+
+            return $users;
+        } catch (PDOException $e) {
+            Logger::error("Database error in " . __METHOD__, ['exception' => $e]);
+            return [];
         }
     }
 
@@ -104,7 +175,6 @@ class UserRepository implements UserRepositoryInterface {
     public function findByUsername(string $username): ?array {
         $tblUsers = DB::TBL_USERS;
         try {
-            // Se añade LIMIT 1 para detener el escaneo en cuanto encuentre coincidencia
             $stmt = $this->pdo->prepare("SELECT id FROM {$tblUsers} WHERE username = ? LIMIT 1");
             $stmt->execute([$username]);
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -136,7 +206,6 @@ class UserRepository implements UserRepositoryInterface {
             $rolesToAssign = isset($data['roles']) && is_array($data['roles']) ? $data['roles'] : [SecurityConstants::DEFAULT_USER_ROLE_ID];
             if (!in_array(SecurityConstants::DEFAULT_USER_ROLE_ID, $rolesToAssign)) $rolesToAssign[] = SecurityConstants::DEFAULT_USER_ROLE_ID;
 
-            // Optimización: BULK INSERT para roles (Evita viajes de ida y vuelta a la DB)
             $placeholders = implode(',', array_fill(0, count($rolesToAssign), '(?, ?)'));
             $values = [];
             foreach ($rolesToAssign as $roleId) {

@@ -572,17 +572,24 @@ class AdminServices {
         return ['success' => false, 'message_key' => 'error.update_failed'];
     }
 
+// OPTIMIZADO: Ahora procesa y construye el JSON con el bloque "pagination"
     public function getModerationKardex($data) {
         if (!$this->hasPermission('view_kardex')) return ['success' => false, 'message_key' => 'error.unauthorized'];
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_READ_DATA, 120, 1);
         if (!$rl['allowed']) return ['success' => false, 'message_key' => $rl['message_key']];
         
         $targetId = (int)($data['target_user_id'] ?? 0);
+        $page = max(1, (int)($data['page'] ?? 1));
+        $limit = max(1, (int)($data['limit'] ?? 10));
+
         $user = $this->userRepository->findById($targetId);
         if (!$user) return ['success' => false, 'message_key' => 'admin.user_not_found'];
 
+        // Obtener historial principal
         $modLogs = $this->moderationRepository->getKardex($targetId);
-        $profileLogs = $this->profileLogRepository->getLogsByUserId($targetId);
+        
+        // Obtener cambios de perfil (Límite amplio para permitir la concatenación cronológica sin matar la RAM)
+        $profileLogs = $this->profileLogRepository->getLogsByUserId($targetId, 1000, 0);
         
         foreach ($profileLogs as $pl) {
             $modLogs[] = [
@@ -590,16 +597,34 @@ class AdminServices {
                 'action_type' => 'profile_' . $pl['change_type'],
                 'reason' => 'Dato: ' . $pl['change_type'] . ' | Valor previo: ' . ($pl['old_value'] ?? 'N/A') . ' | Nuevo: ' . ($pl['new_value'] ?? 'N/A'),
                 'admin_username' => 'Acción del Usuario',
-                'admin_profile_picture' => null,
-                'admin_role' => 'user'
+                'admin_profile_picture' => $user['profile_picture'] ?? null,
+                'admin_role' => 'user',
+                'admin_role_color' => $user['role_color'] ?? '{"type":"solid","colors":["#808080"]}'
             ];
         }
 
+        // Ordenar cronológicamente descendente
         usort($modLogs, function($a, $b) {
             return strtotime($b['created_at']) - strtotime($a['created_at']);
         });
 
-        return ['success' => true, 'logs' => $modLogs];
+        // Aplicar slice para la paginación a nivel PHP
+        $totalItems = count($modLogs);
+        $totalPages = ceil($totalItems / $limit);
+        $offset = ($page - 1) * $limit;
+        
+        $paginatedLogs = array_slice($modLogs, $offset, $limit);
+
+        return [
+            'success' => true, 
+            'data' => $paginatedLogs,
+            'pagination' => [
+                'current_page' => $page,
+                'per_page' => $limit,
+                'total_items' => $totalItems,
+                'total_pages' => $totalPages > 0 ? $totalPages : 1
+            ]
+        ];
     }
 
     private function validateAndFormatRoleColor($data) {
