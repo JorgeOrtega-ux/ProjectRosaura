@@ -24,10 +24,13 @@ if (!$user) {
     exit;
 }
 
+$limit = 25; 
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+if ($page < 1) $page = 1;
+
 $modLogs = $modRepo->getKardex($targetUserId);
 $profileLogs = $profileLogRepo->getLogsByUserId($targetUserId);
 
-// Anexar logs de ediciones hechas por el propio usuario (Perfil)
 foreach ($profileLogs as $pl) {
     $modLogs[] = [
         'created_at' => $pl['created_at'],
@@ -40,22 +43,102 @@ foreach ($profileLogs as $pl) {
     ];
 }
 
-// Ordenar por fecha descendente
 usort($modLogs, function($a, $b) {
     return strtotime($b['created_at']) - strtotime($a['created_at']);
 });
+
+$totalItems = count($modLogs);
+$totalPages = ceil($totalItems / $limit);
+if ($totalPages < 1) $totalPages = 1;
+if ($page > $totalPages) {
+    $page = $totalPages;
+}
+
+$offset = ($page - 1) * $limit;
+$paginatedLogs = array_slice($modLogs, $offset, $limit);
+
+$appUrl = defined('APP_URL') ? APP_URL : '';
+$prevPageUrl = $page > 1 ? $appUrl . '/admin/user-history?id=' . $targetUserId . '&page=' . ($page - 1) : '#';
+$nextPageUrl = $page < $totalPages ? $appUrl . '/admin/user-history?id=' . $targetUserId . '&page=' . ($page + 1) : '#';
 ?>
 <div class="view-content" data-user-id="<?php echo $targetUserId; ?>">
-    <div class="component-wrapper component-wrapper--full no-padding">
+    <div class="component-wrapper component-wrapper--full no-padding h-full-flex" data-ref="user-history-wrapper">
         
         <div class="component-top">
             <div class="component-top-left">
                 <h1 class="component-top-title"><?php echo __('admin_user_history_title'); ?></h1>
             </div>
+
+            <div class="component-top-right">
+                <div class="component-actions active" data-ref="header-default-actions">
+                    
+                    <button class="component-button component-button--icon component-button--h40" data-action="searchLog" data-ref="btn-toggle-search" data-tooltip="<?php echo __('search_user_placeholder'); ?>" data-position="bottom">
+                        <span class="material-symbols-rounded">search</span>
+                    </button>
+
+                    <div class="component-dropdown-wrapper component-dropdown-wrapper--fit">
+                        <button class="component-button component-button--icon component-button--h40" data-action="toggleModule" data-target="moduleLogFilters" data-ref="btn-toggle-filters" data-tooltip="<?php echo __('tooltip_filters'); ?>" data-position="bottom">
+                            <span class="material-symbols-rounded">tune</span>
+                        </button>
+                        
+                        <div class="component-module component-module--dropdown component-module--dropdown-fixed component-module--spaced disabled" data-module="moduleLogFilters">
+                            <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding active" data-ref="menuMainFilters">
+                                <div class="pill-container"><div class="drag-handle"></div></div>
+                                <div class="component-menu-header">
+                                    <div class="component-menu-header-box">
+                                        <span class="component-menu-header-title"><?php echo __('filter_search_title'); ?></span>
+                                    </div>
+                                </div>
+                                <div class="component-menu-list component-menu-list--compact">
+                                    <label class="component-menu-link component-menu-link--bordered">
+                                        <div class="component-menu-link-icon"><input type="checkbox" class="filter-checkbox" data-filter-type="category" value="moderation" checked></div>
+                                        <div class="component-menu-link-text"><span><?php echo __('filter_status'); ?></span></div>
+                                    </label>
+                                    <label class="component-menu-link component-menu-link--bordered">
+                                        <div class="component-menu-link-icon"><input type="checkbox" class="filter-checkbox" data-filter-type="category" value="role" checked></div>
+                                        <div class="component-menu-link-text"><span><?php echo __('filter_role'); ?></span></div>
+                                    </label>
+                                    <label class="component-menu-link component-menu-link--bordered">
+                                        <div class="component-menu-link-icon"><input type="checkbox" class="filter-checkbox" data-filter-type="category" value="profile" checked></div>
+                                        <div class="component-menu-link-text"><span><?php echo __('tooltip_manage_account'); ?></span></div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="component-inline-control" data-ref="pagination-container" data-tooltip="<?php echo __('pagination_tooltip', ['page' => $page, 'total' => $totalPages]); ?>" data-position="bottom">
+                        <div class="component-inline-control__group">
+                            <button class="component-inline-control__btn <?php echo $page <= 1 ? 'disabled-interaction' : ''; ?>" <?php echo $page > 1 ? 'data-nav="'.$prevPageUrl.'"' : ''; ?>>
+                                <span class="material-symbols-rounded">chevron_left</span>
+                            </button>
+                        </div>
+                        <div class="component-inline-control__center"><?php echo $page; ?></div>
+                        <div class="component-inline-control__group">
+                            <button class="component-inline-control__btn <?php echo $page >= $totalPages ? 'disabled-interaction' : ''; ?>" <?php echo $page < $totalPages ? 'data-nav="'.$nextPageUrl.'"' : ''; ?>>
+                                <span class="material-symbols-rounded">chevron_right</span>
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="component-search-toolbar disabled" data-ref="search-toolbar">
+                <div class="component-search">
+                    <div class="component-search-icon">
+                        <span class="material-symbols-rounded">search</span>
+                    </div>
+                    <div class="component-search-input">
+                        <input type="text" data-ref="log-search-input" placeholder="<?php echo __('search_user_placeholder'); ?>">
+                    </div>
+                </div>
+            </div>
+
         </div>
 
         <div class="component-bottom">
-            <div class="component-table-wrapper" data-ref="history-table-container">
+            <div class="component-table-wrapper" data-ref="view-table">
                 <table class="component-table">
                     <thead>
                         <tr>
@@ -63,10 +146,10 @@ usort($modLogs, function($a, $b) {
                             <th><?php echo __('table_header_action'); ?></th>
                             <th><?php echo __('table_header_details'); ?></th>
                             <th><?php echo __('table_header_admin'); ?></th>
-                        </tr>
+                            </tr>
                     </thead>
                     <tbody data-ref="history-table-body">
-                        <?php if (empty($modLogs)): ?>
+                        <?php if (empty($paginatedLogs)): ?>
                         <tr>
                             <td colspan="4" class="component-empty-table-cell">
                                 <div class="component-empty-state component-empty-state--table">
@@ -76,10 +159,10 @@ usort($modLogs, function($a, $b) {
                             </td>
                         </tr>
                         <?php else: ?>
-                            <?php foreach ($modLogs as $log): 
+                            <?php foreach ($paginatedLogs as $log): 
                                 $adminPic = !empty($log['admin_profile_picture']) 
-                                    ? (defined('APP_URL') ? APP_URL : '') . '/' . ltrim($log['admin_profile_picture'], '/') 
-                                    : (defined('APP_URL') ? APP_URL : '') . '/public/assets/img/fallbacks/avatar-default.png';
+                                    ? $appUrl . '/' . ltrim($log['admin_profile_picture'], '/') 
+                                    : $appUrl . '/public/assets/img/fallbacks/avatar-default.png';
                                 
                                 $adminName = !empty($log['admin_username']) ? $log['admin_username'] : __('lbl_system');
                                 
@@ -88,29 +171,26 @@ usort($modLogs, function($a, $b) {
 
                                 $actionText = __('action_updated');
                                 $actionIcon = 'info';
+                                $logCategory = 'other';
                                 
                                 switch($log['action_type']) {
-                                    case 'suspended': $actionIcon = 'block'; $actionText = __('action_suspended'); break;
-                                    case 'unsuspended': $actionIcon = 'lock_open'; $actionText = __('action_unsuspended'); break;
-                                    case 'deleted': $actionIcon = 'person_off'; $actionText = __('action_deleted'); break;
-                                    case 'restored': $actionIcon = 'settings_backup_restore'; $actionText = __('action_restored'); break;
-                                    case 'role_changed': $actionIcon = 'admin_panel_settings'; $actionText = __('action_role_changed'); break;
-                                    case 'profile_updated': $actionIcon = 'manage_accounts'; $actionText = __('action_profile_updated'); break;
-                                    case 'profile_username': $actionIcon = 'badge'; $actionText = __('action_profile_username'); break;
-                                    case 'profile_email': $actionIcon = 'mail'; $actionText = __('action_profile_email'); break;
-                                    case 'profile_avatar': $actionIcon = 'account_circle'; $actionText = __('action_profile_avatar'); break;
-                                    case 'profile_preferences': $actionIcon = 'tune'; $actionText = __('action_profile_preferences'); break;
+                                    case 'suspended': $actionIcon = 'block'; $actionText = __('action_suspended'); $logCategory = 'moderation'; break;
+                                    case 'unsuspended': $actionIcon = 'lock_open'; $actionText = __('action_unsuspended'); $logCategory = 'moderation'; break;
+                                    case 'deleted': $actionIcon = 'person_off'; $actionText = __('action_deleted'); $logCategory = 'moderation'; break;
+                                    case 'restored': $actionIcon = 'settings_backup_restore'; $actionText = __('action_restored'); $logCategory = 'moderation'; break;
+                                    case 'role_changed': $actionIcon = 'admin_panel_settings'; $actionText = __('action_role_changed'); $logCategory = 'role'; break;
+                                    case 'profile_updated': $actionIcon = 'manage_accounts'; $actionText = __('action_profile_updated'); $logCategory = 'profile'; break;
+                                    case 'profile_username': $actionIcon = 'badge'; $actionText = __('action_profile_username'); $logCategory = 'profile'; break;
+                                    case 'profile_email': $actionIcon = 'mail'; $actionText = __('action_profile_email'); $logCategory = 'profile'; break;
+                                    case 'profile_avatar': $actionIcon = 'account_circle'; $actionText = __('action_profile_avatar'); $logCategory = 'profile'; break;
+                                    case 'profile_preferences': $actionIcon = 'tune'; $actionText = __('action_profile_preferences'); $logCategory = 'profile'; break;
                                 }
 
-                                // -------------------------------------------------------------
-                                // LÓGICA CORREGIDA PARA PARSEAR EL JSON DE COLOR
-                                // -------------------------------------------------------------
                                 $roleColorJson = $log['admin_role_color'] ?? '{"type":"solid","colors":["#808080"]}';
                                 $colorData = json_decode($roleColorJson, true);
                                 $activeBgCss = '#808080';
                                 
                                 if (is_array($colorData) && !empty($colorData['colors'])) {
-                                    // Esta función extrae el color ya sea si viene directo como texto o dentro de 'hex'
                                     $extractColor = function($item) {
                                         return is_array($item) ? ($item['hex'] ?? '#808080') : $item;
                                     };
@@ -131,24 +211,24 @@ usort($modLogs, function($a, $b) {
                                     $adminBadgeIcon = 'person';
                                 } elseif ($adminName === __('lbl_system')) {
                                     $adminBadgeIcon = 'smart_toy';
-                                    $activeBgCss = '#6c757d'; // Color default del sistema si no hay rol
+                                    $activeBgCss = '#6c757d'; 
                                 }
                             ?>
-                            <tr class="component-table-row">
+                            <tr class="component-table-row log-row" data-log-category="<?php echo htmlspecialchars($logCategory); ?>">
                                 <td>
                                     <div class="component-badge component-badge--sm">
                                         <span class="material-symbols-rounded">calendar_month</span>
-                                        <span><?php echo $dateStr; ?></span>
+                                        <span class="search-target"><?php echo $dateStr; ?></span>
                                     </div>
                                 </td>
                                 <td>
                                     <div class="component-badge component-badge--sm">
                                         <span class="material-symbols-rounded"><?php echo $actionIcon; ?></span>
-                                        <span><?php echo $actionText; ?></span>
+                                        <span class="search-target"><?php echo $actionText; ?></span>
                                     </div>
                                 </td>
                                 <td>
-                                    <div class="td-details-content text-sm">
+                                    <div class="td-details-content text-sm search-target">
                                         <?php if (!empty($log['reason'])): ?>
                                             <div><strong><?php echo __('lbl_reason'); ?>:</strong> <?php echo htmlspecialchars($log['reason']); ?></div>
                                         <?php endif; ?>
@@ -176,6 +256,16 @@ usort($modLogs, function($a, $b) {
                                 </td>
                             </tr>
                             <?php endforeach; ?>
+
+                            <tr class="disabled" data-ref="empty-search-table">
+                                <td colspan="4" class="component-empty-table-cell">
+                                    <div class="component-empty-state component-empty-state--table">
+                                        <span class="material-symbols-rounded component-empty-state-icon">search_off</span>
+                                        <p class="component-empty-state-text"><?php echo __('empty_search_users'); ?></p>
+                                    </div>
+                                </td>
+                            </tr>
+
                         <?php endif; ?>
                     </tbody>
                 </table>
