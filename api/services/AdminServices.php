@@ -124,6 +124,54 @@ class AdminServices {
         return ['allowed' => true];
     }
 
+    // NUEVO MÉTODO PRIVADO: Centraliza la validación Sudo-Mode (Anti-DoS) eliminando la duplicación en 8 métodos críticos
+    private function verifyAdminSudoMode(string $password): array {
+        $currentUserId = $this->sessionManager->get('user_id');
+        $rateCheck = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_PASSWORD_VERIFY, 5, 15);
+        if (!$rateCheck['allowed']) return ['success' => false, 'message_key' => $rateCheck['message_key']];
+
+        $adminData = $this->userRepository->findById($currentUserId);
+        if (!$adminData || !password_verify($password, $adminData['password'])) {
+            return ['success' => false, 'message_key' => 'auth.incorrect_password'];
+        }
+        $this->rateLimiter->clear(RateLimitConstants::KEY_ADM_PASSWORD_VERIFY . "_admin_{$currentUserId}");
+        return ['success' => true, 'admin_id' => $currentUserId];
+    }
+
+    // NUEVO MÉTODO PRIVADO: Centraliza y unifica el encolamiento de Backups modulares y personalizados en Redis (DRY)
+    private function dispatchBackupJob(string $type, array $modules, ?array $schema = null): array {
+        try {
+            $redis = Utils::getRedisClient();
+
+            $lockAcquired = $redis->set(CacheConstants::PREFIX_LOCK_BACKUP, '1', 'EX', 1800, 'NX');
+            if (!$lockAcquired) {
+                return ['success' => false, 'message_key' => 'error.backup_in_progress'];
+            }
+
+            $jobId = Utils::generateUUID();
+            $jobKey = CacheConstants::PREFIX_BACKUP_JOB . $jobId;
+            $message = ($type === 'manual_custom') ? 'En cola para ejecución personalizada modular...' : 'En cola para ejecución de backup modular...';
+
+            $redis->hmset($jobKey, ['status' => 'pending', 'message' => $message, 'created_at' => time()]);
+            $redis->expire($jobKey, 3600);
+
+            $payloadData = [
+                'job_id' => $jobId, 
+                'type' => $type, 
+                'modules' => $modules,
+                'requested_by' => $this->sessionManager->get('user_id')
+            ];
+            if ($schema !== null) {
+                $payloadData['schema'] = $schema;
+            }
+
+            $redis->rpush(CacheConstants::QUEUE_BACKUP, json_encode($payloadData));
+            return ['success' => true, 'message_key' => 'admin.backup_queued', 'job_id' => $jobId];
+        } catch (\Exception $e) {
+            return ['success' => false, 'message_key' => 'error.redis_communication'];
+        }
+    }
+
     public function getUser($data) {
         if (!$this->hasPermission('view_users')) return ['success' => false, 'message_key' => 'error.unauthorized'];
         
@@ -240,23 +288,16 @@ class AdminServices {
         $authCheck = $this->canEditUser($user);
         if (!$authCheck['allowed']) return ['success' => false, 'message_key' => $authCheck['message_key']];
 
-        // [PARCHE DE SEGURIDAD]: Validación Sudo-Mode con protección Anti-DoS
-        $password = $data['password'] ?? '';
-        $currentUserId = $this->sessionManager->get('user_id');
-
-        $rateCheck = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_PASSWORD_VERIFY, 5, 15);
-        if (!$rateCheck['allowed']) return ['success' => false, 'message_key' => $rateCheck['message_key']];
-
-        $adminData = $this->userRepository->findById($currentUserId);
-        if (!$adminData || !password_verify($password, $adminData['password'])) {
-            return ['success' => false, 'message_key' => 'auth.incorrect_password'];
-        }
-        $this->rateLimiter->clear(RateLimitConstants::KEY_ADM_PASSWORD_VERIFY . "_admin_{$currentUserId}"); // Limpiar en éxito
+        // REFACTORIZADO: Inyección del validador Sudo-Mode unificado (DRY)
+        $sudo = $this->verifyAdminSudoMode($data['password'] ?? '');
+        if (!$sudo['success']) return $sudo;
+        $currentUserId = $sudo['admin_id'];
 
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_EDIT_USERNAME, 20, 30);
         if (!$rl['allowed']) return ['success' => false, 'message_key' => $rl['message_key']];
 
-        $username = trim($data['username'] ?? '');
+        // REFACTORIZADO: Saneamiento estricto contra XSS usando el helper global
+        $username = Utils::sanitizeText($data['username'] ?? '');
         $minLen = $this->config['min_username_length'] ?? 3;
         $maxLen = $this->config['max_username_length'] ?? 32;
         
@@ -282,18 +323,10 @@ class AdminServices {
         $authCheck = $this->canEditUser($user);
         if (!$authCheck['allowed']) return ['success' => false, 'message_key' => $authCheck['message_key']];
 
-        // [PARCHE DE SEGURIDAD]: Validación Sudo-Mode con protección Anti-DoS
-        $password = $data['password'] ?? '';
-        $currentUserId = $this->sessionManager->get('user_id');
-
-        $rateCheck = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_PASSWORD_VERIFY, 5, 15);
-        if (!$rateCheck['allowed']) return ['success' => false, 'message_key' => $rateCheck['message_key']];
-
-        $adminData = $this->userRepository->findById($currentUserId);
-        if (!$adminData || !password_verify($password, $adminData['password'])) {
-            return ['success' => false, 'message_key' => 'auth.incorrect_password'];
-        }
-        $this->rateLimiter->clear(RateLimitConstants::KEY_ADM_PASSWORD_VERIFY . "_admin_{$currentUserId}"); // Limpiar en éxito
+        // REFACTORIZADO: Inyección del validador Sudo-Mode unificado (DRY)
+        $sudo = $this->verifyAdminSudoMode($data['password'] ?? '');
+        if (!$sudo['success']) return $sudo;
+        $currentUserId = $sudo['admin_id'];
 
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_EDIT_EMAIL, 20, 30);
         if (!$rl['allowed']) return ['success' => false, 'message_key' => $rl['message_key']];
@@ -350,27 +383,19 @@ class AdminServices {
 
         $targetId = (int)($data['target_user_id'] ?? 0);
         $rolesIds = $data['roles'] ?? [];
-        $password = $data['password'] ?? '';
 
         if (!is_array($rolesIds) || empty($rolesIds)) return ['success' => false, 'message_key' => 'validation.invalid_role'];
 
-        $currentUserId = $this->sessionManager->get('user_id');
         $user = $this->userRepository->findById($targetId);
-        
         if (!$user) return ['success' => false, 'message_key' => 'admin.user_not_found'];
 
         $authCheck = $this->canEditUser($user);
         if (!$authCheck['allowed']) return ['success' => false, 'message_key' => $authCheck['message_key']];
 
-        // [PARCHE DE SEGURIDAD]: Anti-DoS - Consumir RateLimit de Contraseña primero
-        $rateCheck = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_PASSWORD_VERIFY, 5, 15);
-        if (!$rateCheck['allowed']) return ['success' => false, 'message_key' => $rateCheck['message_key']];
-
-        $adminData = $this->userRepository->findById($currentUserId);
-        if (!$adminData || !password_verify($password, $adminData['password'])) {
-            return ['success' => false, 'message_key' => 'auth.incorrect_password'];
-        }
-        $this->rateLimiter->clear(RateLimitConstants::KEY_ADM_PASSWORD_VERIFY . "_admin_{$currentUserId}"); // Limpiar en éxito
+        // REFACTORIZADO: Inyección del validador Sudo-Mode unificado (DRY)
+        $sudo = $this->verifyAdminSudoMode($data['password'] ?? '');
+        if (!$sudo['success']) return $sudo;
+        $currentUserId = $sudo['admin_id'];
 
         // Consumir RateLimit Funcional después de validar password
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_EDIT_ROLE, 10, 30);
@@ -402,23 +427,15 @@ class AdminServices {
         if (!$this->hasPermission('delete_users')) return ['success' => false, 'message_key' => 'error.unauthorized'];
 
         $userIds = $data['user_ids'] ?? [];
-        $password = $data['password'] ?? '';
         
         if (!is_array($userIds) || empty($userIds)) {
             return ['success' => false, 'message_key' => 'validation.invalid_data'];
         }
 
-        $currentUserId = $this->sessionManager->get('user_id');
-
-        // [PARCHE DE SEGURIDAD]: Anti-DoS - Consumir RateLimit de Contraseña primero
-        $rateCheck = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_PASSWORD_VERIFY, 5, 15);
-        if (!$rateCheck['allowed']) return ['success' => false, 'message_key' => $rateCheck['message_key']];
-
-        $adminData = $this->userRepository->findById($currentUserId);
-        if (!$adminData || !password_verify($password, $adminData['password'])) {
-            return ['success' => false, 'message_key' => 'auth.incorrect_password'];
-        }
-        $this->rateLimiter->clear(RateLimitConstants::KEY_ADM_PASSWORD_VERIFY . "_admin_{$currentUserId}"); // Limpiar en éxito
+        // REFACTORIZADO: Inyección del validador Sudo-Mode unificado (DRY)
+        $sudo = $this->verifyAdminSudoMode($data['password'] ?? '');
+        if (!$sudo['success']) return $sudo;
+        $currentUserId = $sudo['admin_id'];
 
         // Consumir RateLimit Funcional
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_DELETE_USER, 20, 30);
@@ -482,25 +499,17 @@ class AdminServices {
         if (!$this->hasPermission('moderate_users')) return ['success' => false, 'message_key' => 'error.unauthorized'];
 
         $targetId = (int)($data['target_user_id'] ?? 0);
-        $password = $data['password'] ?? '';
         
         $user = $this->userRepository->findById($targetId);
         if (!$user) return ['success' => false, 'message_key' => 'admin.user_not_found'];
 
-        $currentUserId = $this->sessionManager->get('user_id');
-
         $authCheck = $this->canEditUser($user);
         if (!$authCheck['allowed']) return ['success' => false, 'message_key' => $authCheck['message_key']];
 
-        // [PARCHE DE SEGURIDAD]: Anti-DoS - Consumir RateLimit de Contraseña primero
-        $rateCheck = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_PASSWORD_VERIFY, 5, 15);
-        if (!$rateCheck['allowed']) return ['success' => false, 'message_key' => $rateCheck['message_key']];
-
-        $adminData = $this->userRepository->findById($currentUserId);
-        if (!$adminData || !password_verify($password, $adminData['password'])) {
-            return ['success' => false, 'message_key' => 'auth.incorrect_password'];
-        }
-        $this->rateLimiter->clear(RateLimitConstants::KEY_ADM_PASSWORD_VERIFY . "_admin_{$currentUserId}"); // Limpiar en éxito
+        // REFACTORIZADO: Inyección del validador Sudo-Mode unificado (DRY)
+        $sudo = $this->verifyAdminSudoMode($data['password'] ?? '');
+        if (!$sudo['success']) return $sudo;
+        $currentUserId = $sudo['admin_id'];
 
         // Consumir RateLimit Funcional
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_EDIT_STATUS, 20, 30);
@@ -664,7 +673,8 @@ class AdminServices {
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_EDIT_ROLE, 20, 30);
         if (!$rl['allowed']) return ['success' => false, 'message_key' => $rl['message_key']];
 
-        $name = trim($data['name'] ?? '');
+        // REFACTORIZADO: Saneamiento estricto i18n del nombre del rol contra XSS
+        $name = Utils::sanitizeText($data['name'] ?? '');
         // [PARCHE DE SEGURIDAD]: Evitar pesos negativos
         $weight = max(1, (int)($data['weight'] ?? 1)); 
         $currentWeight = $this->getCurrentAdminWeight();
@@ -705,7 +715,8 @@ class AdminServices {
             $name = $existingById['name'];
             $weight = (int)$existingById['weight'];
         } else {
-            $name = trim($data['name'] ?? '');
+            // REFACTORIZADO: Saneamiento estricto i18n del nombre del rol contra XSS
+            $name = Utils::sanitizeText($data['name'] ?? '');
             // [PARCHE DE SEGURIDAD]: Evitar pesos negativos
             $weight = max(1, (int)($data['weight'] ?? 1));
 
@@ -846,18 +857,9 @@ class AdminServices {
     public function updateServerConfig($data) {
         if (!$this->hasPermission('manage_server_config')) return ['success' => false, 'message_key' => 'error.unauthorized'];
 
-        $password = $data['password'] ?? '';
-        $currentUserId = $this->sessionManager->get('user_id');
-
-        $rateCheck = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_PASSWORD_VERIFY, 5, 15);
-        if (!$rateCheck['allowed']) return ['success' => false, 'message_key' => $rateCheck['message_key']];
-
-        $adminData = $this->userRepository->findById($currentUserId);
-        if (!$adminData || !password_verify($password, $adminData['password'])) {
-            return ['success' => false, 'message_key' => 'auth.incorrect_password'];
-        }
-        
-        $this->rateLimiter->clear("admin_password_verify_admin_{$currentUserId}");
+        // REFACTORIZADO: Inyección del validador Sudo-Mode unificado (DRY)
+        $sudo = $this->verifyAdminSudoMode($data['password'] ?? '');
+        if (!$sudo['success']) return $sudo;
 
         $allowedFields = [
             'min_password_length', 'max_password_length', 'min_username_length', 'max_username_length', 'max_avatar_size_mb',
@@ -902,7 +904,7 @@ class AdminServices {
         $currentUserId = $this->sessionManager->get('user_id');
 
         $rl = $this->applyAdminRateLimit($rateLimitKey, 5, 5);
-        if (!$rl['allowed']) return ['success' => false, 'message_key' => $rl['message_key']];
+        if (!$rl['allowed']) return ['success' => false, 'message_key' => 'error.unauthorized'];
 
         $adminData = $this->userRepository->findById($currentUserId);
         if (!$adminData || !password_verify($password, $adminData['password'])) {
@@ -956,25 +958,18 @@ class AdminServices {
         return $this->_executeMaintenanceDeletion($data['password'] ?? '', RateLimitConstants::KEY_ADM_REDIS_DELETE, $patterns, 'admin.maintenance_rate_limits_reset');
     }
 
-    // --- NUEVO MÉTODO: PROTOCOLO DE PÁNICO ---
+    // --- REFACTORIZADO: PROTOCOLO DE PÁNICO AHORA CON SUDO-MODE CENTRALIZADO ---
     public function togglePanicMode($data) {
         if (!$this->hasPermission('perform_system_maintenance')) {
             return ['success' => false, 'message_key' => 'error.unauthorized'];
         }
 
-        $password = $data['password'] ?? '';
         $isActive = filter_var($data['is_active'] ?? false, FILTER_VALIDATE_BOOLEAN);
-        $currentUserId = $this->sessionManager->get('user_id');
 
-        // [PARCHE DE SEGURIDAD]: Validación Sudo-Mode con protección Anti-DoS
-        $rateCheck = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_PASSWORD_VERIFY, 5, 15);
-        if (!$rateCheck['allowed']) return ['success' => false, 'message_key' => $rateCheck['message_key']];
-
-        $adminData = $this->userRepository->findById($currentUserId);
-        if (!$adminData || !password_verify($password, $adminData['password'])) {
-            return ['success' => false, 'message_key' => 'auth.incorrect_password'];
-        }
-        $this->rateLimiter->clear(RateLimitConstants::KEY_ADM_PASSWORD_VERIFY . "_admin_{$currentUserId}"); // Limpiar en éxito
+        // REFACTORIZADO: Inyección del validador Sudo-Mode unificado (DRY)
+        $sudo = $this->verifyAdminSudoMode($data['password'] ?? '');
+        if (!$sudo['success']) return $sudo;
+        $currentUserId = $sudo['admin_id'];
 
         // Consumir RateLimit Funcional
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_TOGGLE_PANIC, 5, 5);
@@ -1023,34 +1018,8 @@ class AdminServices {
         
         $modules = $data['modules'] ?? ['db' => true, 'avatars_uploaded' => false, 'avatars_default' => false];
 
-        try {
-            $redis = Utils::getRedisClient();
-
-            $lockAcquired = $redis->set(CacheConstants::PREFIX_LOCK_BACKUP, '1', 'EX', 1800, 'NX');
-            
-            if (!$lockAcquired) {
-                return ['success' => false, 'message_key' => 'error.backup_in_progress'];
-            }
-
-            $jobId = Utils::generateUUID();
-            $jobKey = CacheConstants::PREFIX_BACKUP_JOB . $jobId;
-
-            $redis->hmset($jobKey, ['status' => 'pending', 'message' => 'En cola para ejecución de backup modular...', 'created_at' => time()]);
-            $redis->expire($jobKey, 3600);
-
-            $payload = json_encode([
-                'job_id' => $jobId, 
-                'type' => 'manual', 
-                'modules' => $modules,
-                'requested_by' => $this->sessionManager->get('user_id')
-            ]);
-            
-            $redis->rpush(CacheConstants::QUEUE_BACKUP, $payload);
-
-            return ['success' => true, 'message_key' => 'admin.backup_queued', 'job_id' => $jobId];
-        } catch (\Exception $e) {
-            return ['success' => false, 'message_key' => 'error.redis_communication'];
-        }
+        // REFACTORIZADO: Despacho unificado modular delegando en dispatchBackupJob (DRY)
+        return $this->dispatchBackupJob('manual', $modules);
     }
 
     public function getBackupSchema() {
@@ -1089,33 +1058,8 @@ class AdminServices {
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_BACKUP_CREATE, 5, 30);
         if (!$rl['allowed']) return ['success' => false, 'message_key' => $rl['message_key']];
         
-        try {
-            $redis = Utils::getRedisClient();
-
-            $lockAcquired = $redis->set(CacheConstants::PREFIX_LOCK_BACKUP, '1', 'EX', 1800, 'NX');
-            if (!$lockAcquired) {
-                return ['success' => false, 'message_key' => 'error.backup_in_progress'];
-            }
-
-            $jobId = Utils::generateUUID();
-            $jobKey = CacheConstants::PREFIX_BACKUP_JOB . $jobId;
-
-            $redis->hmset($jobKey, ['status' => 'pending', 'message' => 'En cola para ejecución personalizada modular...', 'created_at' => time()]);
-            $redis->expire($jobKey, 3600);
-            
-            $payload = json_encode([
-                'job_id' => $jobId, 
-                'type' => 'manual_custom', 
-                'schema' => $schema, 
-                'modules' => $modules,
-                'requested_by' => $this->sessionManager->get('user_id')
-            ]);
-            $redis->rpush(CacheConstants::QUEUE_BACKUP, $payload);
-
-            return ['success' => true, 'message_key' => 'admin.backup_queued', 'job_id' => $jobId];
-        } catch (\Exception $e) {
-            return ['success' => false, 'message_key' => 'error.redis_communication'];
-        }
+        // REFACTORIZADO: Despacho unificado modular personalizado delegando en dispatchBackupJob (DRY)
+        return $this->dispatchBackupJob('manual_custom', $modules, $schema);
     }
 
     public function backupStatus($data) {
@@ -1144,18 +1088,10 @@ class AdminServices {
     public function restoreBackup($data) {
         if (!$this->hasPermission('restore_backups')) return ['success' => false, 'message_key' => 'error.unauthorized'];
         
-        // [PARCHE DE SEGURIDAD]: Anti-DoS - Consumir RateLimit de Contraseña primero
-        $currentUserId = $this->sessionManager->get('user_id');
-        $rateCheck = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_PASSWORD_VERIFY, 5, 15);
-        if (!$rateCheck['allowed']) return ['success' => false, 'message_key' => $rateCheck['message_key']];
-
-        $password = $data['password'] ?? '';
-        $adminData = $this->userRepository->findById($currentUserId);
-        
-        if (!$adminData || !password_verify($password, $adminData['password'])) {
-            return ['success' => false, 'message_key' => 'auth.incorrect_password'];
-        }
-        $this->rateLimiter->clear(RateLimitConstants::KEY_ADM_PASSWORD_VERIFY . "_admin_{$currentUserId}"); // Limpiar en éxito
+        // REFACTORIZADO: Inyección del validador Sudo-Mode unificado (DRY)
+        $sudo = $this->verifyAdminSudoMode($data['password'] ?? '');
+        if (!$sudo['success']) return $sudo;
+        $currentUserId = $sudo['admin_id'];
 
         // Consumir RateLimit Funcional
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_BACKUP_RESTORE, 3, 30);
@@ -1240,8 +1176,8 @@ class AdminServices {
         try {
             $redis = Utils::getRedisClient();
 
-            $isRestoring = $redis->exists(CacheConstants::KEY_SYSTEM_RESTORING);
-            return ['success' => true, 'is_running' => (bool)$isRestoring, 'status' => $isRestoring ? 'restoring' : 'finished'];
+            $isRunning = $redis->exists(CacheConstants::KEY_SYSTEM_RESTORING);
+            return ['success' => true, 'is_running' => (bool)$isRunning, 'status' => $isRunning ? 'restoring' : 'finished'];
         } catch (\Exception $e) {
             return ['success' => false, 'message_key' => 'error.redis_communication'];
         }
