@@ -5,7 +5,7 @@ namespace App\Api\Controllers;
 
 use App\Api\Services\AuthServices;
 use App\Core\Security\TurnstileValidator;
-use App\Core\Helpers\Utils; // Importación añadida para mitigación de IP Spoofing
+use App\Core\Helpers\Utils; 
 
 class AuthController extends BaseController {
     
@@ -17,11 +17,18 @@ class AuthController extends BaseController {
         $this->turnstile = new TurnstileValidator();
     }
 
-    public function register_step1($input) {
+    // NUEVA FUNCIÓN: Abstracción de la validación del Turnstile para limpiar los endpoints (DRY)
+    private function validateCaptcha($input) {
         $turnstileToken = $input['turnstile_token'] ?? null;
         if (!$this->turnstile->isValid($turnstileToken, Utils::getIpAddress())) {
             return ['success' => false, 'message_key' => 'error.captcha_failed'];
         }
+        return ['success' => true];
+    }
+
+    public function register_step1($input) {
+        $captcha = $this->validateCaptcha($input);
+        if (!$captcha['success']) return $captcha;
 
         $safeInput = [
             'email' => $input['email'] ?? null,
@@ -58,10 +65,8 @@ class AuthController extends BaseController {
     }
 
     public function login($input) {
-        $turnstileToken = $input['turnstile_token'] ?? null;
-        if (!$this->turnstile->isValid($turnstileToken, Utils::getIpAddress())) {
-            return ['success' => false, 'message_key' => 'error.captcha_failed'];
-        }
+        $captcha = $this->validateCaptcha($input);
+        if (!$captcha['success']) return $captcha;
 
         $safeInput = [
             'email' => $input['email'] ?? null,
@@ -72,10 +77,8 @@ class AuthController extends BaseController {
     }
 
     public function login_verify_2fa($input) {
-        $turnstileToken = $input['turnstile_token'] ?? null;
-        if (!$this->turnstile->isValid($turnstileToken, Utils::getIpAddress())) {
-            return ['success' => false, 'message_key' => 'error.captcha_failed'];
-        }
+        $captcha = $this->validateCaptcha($input);
+        if (!$captcha['success']) return $captcha;
 
         $safeInput = [
             'code' => $input['code'] ?? null,
@@ -113,10 +116,8 @@ class AuthController extends BaseController {
     }
 
     public function forgot_password($input) {
-        $turnstileToken = $input['turnstile_token'] ?? null;
-        if (!$this->turnstile->isValid($turnstileToken, Utils::getIpAddress())) {
-            return ['success' => false, 'message_key' => 'error.captcha_failed'];
-        }
+        $captcha = $this->validateCaptcha($input);
+        if (!$captcha['success']) return $captcha;
 
         $safeInput = [
             'email' => $input['email'] ?? null
@@ -126,10 +127,8 @@ class AuthController extends BaseController {
     }
 
     public function reset_password($input) {
-        $turnstileToken = $input['turnstile_token'] ?? null;
-        if (!$this->turnstile->isValid($turnstileToken, Utils::getIpAddress())) {
-            return ['success' => false, 'message_key' => 'error.captcha_failed'];
-        }
+        $captcha = $this->validateCaptcha($input);
+        if (!$captcha['success']) return $captcha;
 
         $safeInput = [
             'token' => $input['token'] ?? null,

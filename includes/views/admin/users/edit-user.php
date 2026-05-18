@@ -7,6 +7,7 @@ use App\Config\DatabaseManager;
 use App\Core\Repositories\UserRepository;
 use App\Core\Repositories\RoleRepository;
 use App\Core\System\UserPrefsManager;
+use App\Core\System\Translator;
 use App\Core\System\DatabaseConstants as DB;
 
 $maxAvatarSize = $serverConfig['max_avatar_size_mb'] ?? 2;
@@ -67,14 +68,8 @@ $formattedAvatar = (!empty($user['profile_picture']) && strpos($user['profile_pi
     : $user['profile_picture'];
 $isDefaultAvatar = strpos($formattedAvatar, '/default/') !== false;
 
-// Nombres base de lenguajes se mantienen en su forma nativa para mejor UX global
-$langMap = [
-    'en-US' => 'English (United States)', 'en-GB' => 'English (United Kingdom)',
-    'fr-FR' => 'Français (France)', 'de-DE' => 'Deutsch (Deutschland)',
-    'it-IT' => 'Italiano (Italia)', 'es-419' => 'Español (Latinoamérica)',
-    'es-MX' => 'Español (México)', 'es-ES' => 'Español (España)',
-    'pt-BR' => 'Português (Brasil)', 'pt-PT' => 'Português (Portugal)'
-];
+// Obtenemos los idiomas de forma centralizada desde el Translator
+$langMap = Translator::getAvailableLanguages();
 
 $themeMap = [
     DB::THEME_SYSTEM => __('theme_system'), 

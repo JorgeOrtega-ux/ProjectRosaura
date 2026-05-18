@@ -157,6 +157,15 @@ class Utils {
         return ['valid' => true];
     }
 
+    // NUEVA FUNCIÓN: Centraliza la validación de formato del nombre de usuario
+    public static function validateUsernameFormat($username, $minLen = 3, $maxLen = 32) {
+        $userLen = mb_strlen(trim($username), 'UTF-8');
+        if ($userLen < $minLen || $userLen > $maxLen) {
+            return ['valid' => false, 'message_key' => 'validation.invalid_length'];
+        }
+        return ['valid' => true];
+    }
+
     public static function getMaintenanceFilePath() {
         return dirname(__DIR__, 3) . '/storage/system/.maintenance';
     }
@@ -316,7 +325,6 @@ class Utils {
         return date('Y-m-d H:i:s', strtotime("+{$minutes} minutes"));
     }
 
-    // NUEVA FUNCIÓN: Extrae de forma unificada el selector activo soportando cookies JSON multi-cuenta y legacy
     public static function getCurrentDeviceSelector($userId = null) {
         if ($userId !== null && isset($_COOKIE['remember_tokens'])) {
             $tokensMap = json_decode($_COOKIE['remember_tokens'], true) ?: [];
@@ -338,6 +346,33 @@ class Utils {
         }
 
         return '';
+    }
+
+    // NUEVA FUNCIÓN: Extrae de forma segura TODOS los selectores de la cookie
+    public static function getAllDeviceSelectors($userId = null) {
+        $selectors = [];
+        
+        if (isset($_COOKIE['remember_tokens'])) {
+            $tokensMap = json_decode($_COOKIE['remember_tokens'], true) ?: [];
+            if (is_array($tokensMap)) {
+                foreach ($tokensMap as $k => $cookieVal) {
+                    if (!is_string($cookieVal)) continue;
+                    if ($userId !== null && $k != $userId) continue;
+                    
+                    $parts = explode(':', $cookieVal);
+                    if (count($parts) === 2) {
+                        $selectors[] = $parts[0];
+                    }
+                }
+            }
+        } elseif (isset($_COOKIE['remember_token']) && is_string($_COOKIE['remember_token'])) {
+            $parts = explode(':', $_COOKIE['remember_token']);
+            if (count($parts) === 2) {
+                $selectors[] = $parts[0];
+            }
+        }
+        
+        return $selectors;
     }
 
     // NUEVA FUNCIÓN: Centraliza la sanitización estricta de textos comunes para el sistema

@@ -52,23 +52,52 @@ class AuthServices {
         $this->roleRepository = $roleRepository;
     }
 
-    public function isCurrentDeviceValid() {
-        if (!$this->sessionManager->has(SessionConstants::KEY_ACTIVE_ACCOUNT)) return false;
-        
-        $userId = $this->sessionManager->get(SessionConstants::KEY_ACTIVE_ACCOUNT);
+    // NUEVO MÉTODO PRIVADO: Centraliza y abstrae la lectura segura de cookies remember para mitigar inflación DoS
+    private function readRememberTokens(): array {
         $tokens = [];
         if (isset($_COOKIE['remember_tokens'])) {
-            $tokens = json_decode($_COOKIE['remember_tokens'], true) ?: [];
+            $parsed = json_decode($_COOKIE['remember_tokens'], true) ?: [];
+            if (is_array($parsed)) {
+                foreach ($parsed as $k => $v) {
+                    if (is_string($v) && (is_numeric($k) || $k === 'legacy')) {
+                        $tokens[$k] = $v;
+                    }
+                }
+            }
         } elseif (isset($_COOKIE['remember_token'])) {
-            $tokens[$userId] = $_COOKIE['remember_token'];
+            $tokens['legacy'] = $_COOKIE['remember_token'];
         }
+        return $tokens;
+    }
 
-        if (!isset($tokens[$userId]) || !is_string($tokens[$userId])) return false;
-
-        $parts = explode(':', $tokens[$userId]);
-        if (count($parts) !== 2) return false;
+    // NUEVO MÉTODO PRIVADO: Centraliza la persistencia estructurada y segura de cookies remember
+    private function saveRememberTokens(array $tokens, int $days): void {
+        if (count($tokens) > 5) {
+            $tokens = array_slice($tokens, -5, 5, true);
+        }
         
-        $selector = $parts[0];
+        $encodedTokens = json_encode($tokens);
+        $isSecure = Utils::isSecureConnection();
+
+        setcookie('remember_tokens', $encodedTokens, [
+            'expires' => time() + (CacheConstants::TTL_ONE_DAY * $days),
+            'path' => parse_url(APP_URL, PHP_URL_PATH) ?: '/',
+            'secure' => $isSecure,
+            'httponly' => true,
+            'samesite' => 'Strict'
+        ]);
+
+        $_COOKIE['remember_tokens'] = $encodedTokens;
+    }
+
+    public function isCurrentDeviceValid() {
+        if (!$this->sessionManager->has(SessionConstants::KEY_ACTIVE_ACCOUNT)) return false;
+        $userId = $this->sessionManager->get(SessionConstants::KEY_ACTIVE_ACCOUNT);
+        
+        // REFACTORIZADO: Uso del método centralizado del helper global para extraer el selector activo
+        $selector = Utils::getCurrentDeviceSelector($userId);
+        if (empty($selector)) return false;
+
         $token = $this->tokenRepository->findValidTokenBySelectorAndUserId($selector, $userId);
         return $token !== null;
     }
@@ -92,61 +121,23 @@ class AuthServices {
         }
         
         $cookieValue = $selector . ':' . $validator;
-        $tokens = [];
         
-        // Bloquear inflación de cookies validando tipo y cantidad
-        if (isset($_COOKIE['remember_tokens'])) {
-            $parsed = json_decode($_COOKIE['remember_tokens'], true) ?: [];
-            if (is_array($parsed)) {
-                foreach ($parsed as $k => $v) {
-                    if (is_string($v) && (is_numeric($k) || $k === 'legacy')) {
-                        $tokens[$k] = $v;
-                    }
-                }
-            }
-        } elseif (isset($_COOKIE['remember_token'])) {
-            $tokens['legacy'] = $_COOKIE['remember_token'];
-        }
-
+        // REFACTORIZADO: Uso de abstracciones de cookies para manipulación limpia
+        $tokens = $this->readRememberTokens();
         $tokens[$userId] = $cookieValue;
         
-        // Límite de seguridad: máximo 5 cuentas recordadas por navegador
-        if (count($tokens) > 5) {
-            $tokens = array_slice($tokens, -5, 5, true);
-        }
-        
-        $encodedTokens = json_encode($tokens);
-        $isSecure = Utils::isSecureConnection();
-
-        setcookie('remember_tokens', $encodedTokens, [
-            'expires' => time() + (CacheConstants::TTL_ONE_DAY * $days),
-            'path' => parse_url(APP_URL, PHP_URL_PATH) ?: '/',
-            'secure' => $isSecure,
-            'httponly' => true,
-            'samesite' => 'Strict'
-        ]);
-
-        $_COOKIE['remember_tokens'] = $encodedTokens;
+        $this->saveRememberTokens($tokens, $days);
     }
 
     public function clearRememberToken($userId = null) {
         if ($userId === null) {
-            if (isset($_COOKIE['remember_tokens'])) {
-                $tokens = json_decode($_COOKIE['remember_tokens'], true) ?: [];
-                if (is_array($tokens)) {
-                    // MITIGACIÓN DOS: Limitar estrictamente a 5 operaciones de base de datos
-                    $tokens = array_slice($tokens, 0, 5, true);
-                    foreach ($tokens as $tokenStr) {
-                        if (!is_string($tokenStr)) continue; 
-                        $parts = explode(':', $tokenStr);
-                        if (count($parts) === 2) $this->tokenRepository->deleteBySelector($parts[0]);
-                    }
-                }
-            } elseif (isset($_COOKIE['remember_token'])) {
-                if (is_string($_COOKIE['remember_token'])) { 
-                    $parts = explode(':', $_COOKIE['remember_token']);
-                    if (count($parts) === 2) $this->tokenRepository->deleteBySelector($parts[0]);
-                }
+            $tokens = $this->readRememberTokens();
+            // MITIGACIÓN DOS: Limitar estrictamente a 5 operaciones de base de datos
+            $tokens = array_slice($tokens, 0, 5, true);
+            foreach ($tokens as $tokenStr) {
+                if (!is_string($tokenStr)) continue; 
+                $parts = explode(':', $tokenStr);
+                if (count($parts) === 2) $this->tokenRepository->deleteBySelector($parts[0]);
             }
 
             setcookie('remember_tokens', '', ['expires' => time() - 3600, 'path' => '/']);
@@ -229,54 +220,36 @@ class AuthServices {
         $redisCache = new RedisCache();
         $sessionId = session_id() ?: 'cli';
         $lockName = "session_pool_switch_sess_" . $sessionId;
-        $lockToken = $redisCache->acquireLock($lockName, 3);
 
-        try {
+        // REFACTORIZADO: Eliminado Boilerplate try-finally delegando el control a executeWithLock
+        return $redisCache->executeWithLock($lockName, 3, function($lockToken) use ($targetUserId) {
             if ($this->sessionManager->switchActiveAccount($targetUserId)) {
                 return ['success' => true, 'message_key' => 'auth.account_switched'];
             }
-        } finally {
-            if ($lockToken) $redisCache->releaseLock($lockName, $lockToken);
-        }
-
-        return ['success' => false, 'message_key' => 'auth.account_not_found'];
+            return ['success' => false, 'message_key' => 'auth.account_not_found'];
+        });
     }
 
     public function autoLogin() {
         if ($this->sessionManager->isLoggedIn() && empty($_COOKIE['remember_tokens']) && empty($_COOKIE['remember_token'])) return false;
         
-        $tokensMap = [];
-        if (!empty($_COOKIE['remember_tokens'])) {
-            $tokensMap = json_decode($_COOKIE['remember_tokens'], true) ?: [];
-        } elseif (!empty($_COOKIE['remember_token'])) {
-            $tokensMap['legacy'] = $_COOKIE['remember_token'];
-        }
+        // REFACTORIZADO: Extrae de forma masiva e i18n todos los selectores de cookies concurrentes desde el Helper global
+        $selectors = Utils::getAllDeviceSelectors();
 
-        if (is_array($tokensMap) && count($tokensMap) > 10) {
+        if (empty($selectors) || count($selectors) > 10) {
             $this->clearRememberToken();
             return false;
         }
 
-        if (empty($tokensMap) || !is_array($tokensMap)) {
-            $this->clearRememberToken();
-            return false;
-        }
-
-        $selectors = [];
+        // Reconstrucción controlada del mapa de validadores para hash_equals posterior
         $validators = [];
-        foreach ($tokensMap as $key => $cookieVal) {
+        $tokensMap = $this->readRememberTokens();
+        foreach ($tokensMap as $cookieVal) {
             if (!is_string($cookieVal)) continue;
-
             $parts = explode(':', $cookieVal);
             if (count($parts) === 2) {
-                $selectors[] = $parts[0];
                 $validators[$parts[0]] = $parts[1];
             }
-        }
-
-        if (empty($selectors)) {
-            $this->clearRememberToken();
-            return false;
         }
 
         $dbTokens = $this->tokenRepository->findValidTokensBySelectors($selectors);
@@ -286,9 +259,9 @@ class AuthServices {
 
         $redisCache = new RedisCache();
         $lockName = "autologin_pool_" . md5(implode('|', $selectors));
-        $lockToken = $redisCache->acquireLock($lockName, 5);
 
-        try {
+        // REFACTORIZADO: Ejecución síncrona segura encapsulada mediante executeWithLock de RedisCache
+        return $redisCache->executeWithLock($lockName, 5, function($lockToken) use ($dbTokens, $validators, &$loginSuccess, &$needsRegeneration, $initialActiveId) {
             foreach ($dbTokens as $token) {
                 $selector = $token['selector'];
                 $expectedValidator = $validators[$selector] ?? '';
@@ -322,23 +295,21 @@ class AuthServices {
                     $this->tokenRepository->deleteAllByUserId($token['user_id']);
                 }
             }
-        } finally {
-            if ($lockToken) $redisCache->releaseLock($lockName, $lockToken);
-        }
-        
-        if ($needsRegeneration) {
-            $this->sessionManager->regenerate(true);
-        }
+            
+            if ($needsRegeneration) {
+                $this->sessionManager->regenerate(true);
+            }
 
-        if ($loginSuccess && $initialActiveId) {
-            $this->switchAccount(['user_id' => $initialActiveId]);
-        }
+            if ($loginSuccess && $initialActiveId) {
+                $this->switchAccount(['user_id' => $initialActiveId]);
+            }
 
-        if (!$loginSuccess && !$this->sessionManager->isLoggedIn()) {
-            $this->clearRememberToken();
-            return false;
-        }
-        return $loginSuccess;
+            if (!$loginSuccess && !$this->sessionManager->isLoggedIn()) {
+                $this->clearRememberToken();
+                return false;
+            }
+            return $loginSuccess;
+        });
     }
 
     public function registerStep1($data) {
@@ -403,7 +374,9 @@ class AuthServices {
 
         $regEmail = $regFlows[$regToken]['email'];
         $regPassword = $regFlows[$regToken]['password']; 
-        $username = trim($data['username'] ?? '');
+        
+        // REFACTORIZADO: Saneamiento estricto contra inyecciones XSS usando el helper global
+        $username = Utils::sanitizeText($data['username'] ?? '');
         if (empty($username)) return ['success' => false, 'message_key' => 'validation.missing_fields'];
 
         // Se añade true (isCritical) al rate limiter
@@ -412,7 +385,10 @@ class AuthServices {
         
         $minUser = $this->config['min_username_length'];
         $maxUser = $this->config['max_username_length'];
-        if (strlen($username) < $minUser || strlen($username) > $maxUser) return ['success' => false, 'message_key' => 'validation.invalid_length'];
+        
+        // REFACTORIZADO: Validación centralizada delegando la responsabilidad de longitud al Helper
+        $userValidation = Utils::validateUsernameFormat($username, $minUser, $maxUser);
+        if (!$userValidation['valid']) return ['success' => false, 'message_key' => $userValidation['message_key']];
         
         if ($this->userRepository->findByUsername($username)) return ['success' => false, 'message_key' => 'validation.username_in_use'];
 
@@ -518,9 +494,9 @@ class AuthServices {
             
             $redisCache = new RedisCache();
             $lockName = "session_pool_reg_" . $newUserId;
-            $lockToken = $redisCache->acquireLock($lockName, 5);
 
-            try {
+            // REFACTORIZADO: Encapsulamiento del lock síncrono mediante callback aislado
+            return $redisCache->executeWithLock($lockName, 5, function($lockToken) use ($user, $newUserId, &$regFlows, $regToken, $verification) {
                 if (!$this->setAuthSession($user)) {
                     unset($regFlows[$regToken]);
                     $this->sessionManager->set(SessionConstants::KEY_REG_FLOWS, $regFlows);
@@ -533,15 +509,13 @@ class AuthServices {
                 }
 
                 $this->createRememberToken($newUserId);
-            } finally {
-                if ($lockToken) $redisCache->releaseLock($lockName, $lockToken);
-            }
-            
-            unset($regFlows[$regToken]);
-            $this->sessionManager->set(SessionConstants::KEY_REG_FLOWS, $regFlows);
-            $this->verificationCodeRepository->deleteById($verification['id']);
+                
+                unset($regFlows[$regToken]);
+                $this->sessionManager->set(SessionConstants::KEY_REG_FLOWS, $regFlows);
+                $this->verificationCodeRepository->deleteById($verification['id']);
 
-            return ['success' => true, 'message_key' => 'auth.account_created'];
+                return ['success' => true, 'message_key' => 'auth.account_created'];
+            });
         }
         
         return ['success' => false, 'message_key' => 'error.database'];
@@ -604,9 +578,9 @@ class AuthServices {
 
             $redisCache = new RedisCache();
             $lockName = "session_pool_login_" . $user['id'];
-            $lockToken = $redisCache->acquireLock($lockName, 5);
 
-            try {
+            // REFACTORIZADO: Abstracción try-finally con executeWithLock para automatizar el ciclo de vida del mutex
+            return $redisCache->executeWithLock($lockName, 5, function($lockToken) use ($user) {
                 if (!$this->setAuthSession($user)) {
                     return ['success' => false, 'message_key' => 'auth.max_accounts_reached'];
                 }
@@ -616,11 +590,8 @@ class AuthServices {
                 }
                 
                 $this->createRememberToken($user['id']);
-            } finally {
-                if ($lockToken) $redisCache->releaseLock($lockName, $lockToken);
-            }
-
-            return ['success' => true, 'requires_2fa' => false, 'message_key' => 'auth.login_success'];
+                return ['success' => true, 'requires_2fa' => false, 'message_key' => 'auth.login_success'];
+            });
         }
         
         return ['success' => false, 'message_key' => 'auth.incorrect_credentials'];
@@ -664,9 +635,9 @@ class AuthServices {
 
             $redisCache = new RedisCache();
             $lockName = "session_pool_login_" . $user['id'];
-            $lockToken = $redisCache->acquireLock($lockName, 5);
 
-            try {
+            // REFACTORIZADO: Boilerplate try-finally extirpado mediante encapsulación funcional con candado mutex
+            return $redisCache->executeWithLock($lockName, 5, function($lockToken) use ($user, $rememberDevice) {
                 if (!$this->setAuthSession($user)) {
                     return ['success' => false, 'message_key' => 'auth.max_accounts_reached'];
                 }
@@ -674,11 +645,8 @@ class AuthServices {
                 if ($rememberDevice) {
                     $this->createRememberToken($user['id']);
                 }
-            } finally {
-                if ($lockToken) $redisCache->releaseLock($lockName, $lockToken);
-            }
-
-            return ['success' => true, 'requires_2fa' => false, 'message_key' => 'auth.login_success'];
+                return ['success' => true, 'requires_2fa' => false, 'message_key' => 'auth.login_success'];
+            });
         }
 
         return ['success' => false, 'message_key' => 'error.update_failed'];
@@ -730,9 +698,9 @@ class AuthServices {
             
             $redisCache = new RedisCache();
             $lockName = "session_pool_2fa_" . $user['id'];
-            $lockToken = $redisCache->acquireLock($lockName, 5);
 
-            try {
+            // REFACTORIZADO: Remoción de try-finally delegando el release del candado a executeWithLock
+            return $redisCache->executeWithLock($lockName, 5, function($lockToken) use ($user, $tempToken, &$pending2fa) {
                 if (!$this->setAuthSession($user)) {
                     unset($pending2fa[$tempToken]);
                     $this->sessionManager->set(SessionConstants::KEY_PENDING_2FA, $pending2fa);
@@ -746,11 +714,8 @@ class AuthServices {
                 unset($pending2fa[$tempToken]);
                 $this->sessionManager->set(SessionConstants::KEY_PENDING_2FA, $pending2fa);
                 $this->createRememberToken($user['id']);
-            } finally {
-                if ($lockToken) $redisCache->releaseLock($lockName, $lockToken);
-            }
-
-            return ['success' => true, 'message_key' => 'auth.login_success'];
+                return ['success' => true, 'message_key' => 'auth.login_success'];
+            });
         }
 
         return ['success' => false, 'message_key' => 'auth.incorrect_code'];

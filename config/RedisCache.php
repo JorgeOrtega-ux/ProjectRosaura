@@ -125,6 +125,19 @@ class RedisCache {
         }
     }
 
+    // NUEVA FUNCIÓN: Ejecuta una función anónima (callback) asegurada mediante bloqueo distribuido
+    // Elimina la necesidad de repetir la estructura try-finally en los servicios.
+    public function executeWithLock(string $name, int $timeoutSeconds, callable $callback) {
+        $lockToken = $this->acquireLock($name, $timeoutSeconds);
+        try {
+            return $callback($lockToken);
+        } finally {
+            if ($lockToken) {
+                $this->releaseLock($name, $lockToken);
+            }
+        }
+    }
+
     private function loadEnv($path) {
         if (!file_exists($path)) {
             return;
