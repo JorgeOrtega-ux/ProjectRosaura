@@ -55,7 +55,7 @@ class AdminController extends BaseController {
             $safeInput = [
                 'target_user_id' => $input['target_user_id'] ?? null,
                 'username' => $input['username'] ?? null,
-                'password' => $input['password'] ?? null // [PARCHE DE SEGURIDAD]: Agregado para Sudo-Mode
+                'password' => $input['password'] ?? null
             ];
             return $this->respond($this->adminServices->updateUsername($safeInput)); 
         }
@@ -68,7 +68,7 @@ class AdminController extends BaseController {
             $safeInput = [
                 'target_user_id' => $input['target_user_id'] ?? null,
                 'email' => $input['email'] ?? null,
-                'password' => $input['password'] ?? null // [PARCHE DE SEGURIDAD]: Agregado para Sudo-Mode
+                'password' => $input['password'] ?? null
             ];
             return $this->respond($this->adminServices->updateEmail($safeInput)); 
         }
@@ -259,6 +259,19 @@ class AdminController extends BaseController {
             $this->requirePermission('perform_system_maintenance');
             $safeInput = ['password' => $input['password'] ?? null];
             return $this->respond($this->adminServices->resetRateLimits($safeInput)); 
+        }
+        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
+
+    // NUEVO: Alternar Botón de Pánico
+    public function toggle_panic_mode($input) {
+        try { 
+            $this->requirePermission('perform_system_maintenance');
+            $safeInput = [
+                'password' => $input['password'] ?? null,
+                'is_active' => $input['is_active'] ?? null // Booleano esperado desde el frontend
+            ];
+            return $this->respond($this->adminServices->togglePanicMode($safeInput)); 
         }
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }

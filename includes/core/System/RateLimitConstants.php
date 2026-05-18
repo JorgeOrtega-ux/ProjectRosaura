@@ -76,6 +76,7 @@ class RateLimitConstants {
     public const KEY_ADM_UPDATE_SERVER_CFG = 'admin_update_server_config';
     public const KEY_ADM_FLUSH_SESSIONS = 'admin_flush_redis_sessions';
     public const KEY_ADM_REDIS_DELETE = 'admin_redis_delete';
+    public const KEY_ADM_TOGGLE_PANIC = 'admin_toggle_panic';
     public const KEY_ADM_BACKUP_CREATE = 'admin_backup_create'; // NUEVA
     public const KEY_ADM_CREATE_BACKUP = 'admin_create_backup';
     public const KEY_ADM_BACKUP_STATUS = 'admin_backup_status';

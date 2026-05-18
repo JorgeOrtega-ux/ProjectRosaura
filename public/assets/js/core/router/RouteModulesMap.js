@@ -17,7 +17,7 @@ export const RouteModulesMap = {
     '/reset-password': { path: './modules/auth/AuthController.js', className: 'AuthController', skeletonType: 'layout-auth' },
     
     // ---- MÓDULOS DE CONFIGURACIÓN (SETTINGS) ----
-    '/settings': { path: './modules/settings/ProfileController.js', className: 'ProfileController', skeletonType: 'layout-settings-profile' }, // <-- AÑADIDO PARA EL LINK DEL MENÚ
+    '/settings': { path: './modules/settings/ProfileController.js', className: 'ProfileController', skeletonType: 'layout-settings-profile' },
     '/settings/your-profile': { path: './modules/settings/ProfileController.js', className: 'ProfileController', skeletonType: 'layout-settings-profile' },
     '/settings/security': { path: './modules/settings/SecurityController.js', className: 'SecurityController', skeletonType: 'layout-settings-generic' },
     '/settings/change-password': { path: './modules/settings/SecurityController.js', className: 'SecurityController', skeletonType: 'layout-form-constrained' },
@@ -30,7 +30,7 @@ export const RouteModulesMap = {
     '/settings/delete-account': { path: './modules/settings/SecurityController.js', className: 'SecurityController', skeletonType: 'layout-form-constrained' },
     
     // ---- MÓDULOS DE ADMINISTRACIÓN DE USUARIOS Y ROLES ----
-    '/admin': { path: './modules/admin/AdminDashboardController.js', className: 'AdminDashboardController', requiresAdminLang: true, skeletonType: 'layout-dashboard' }, // <-- AÑADIDO PARA EL LINK DEL MENÚ
+    '/admin': { path: './modules/admin/AdminDashboardController.js', className: 'AdminDashboardController', requiresAdminLang: true, skeletonType: 'layout-dashboard' },
     '/admin/dashboard': { path: './modules/admin/AdminDashboardController.js', className: 'AdminDashboardController', requiresAdminLang: true, skeletonType: 'layout-dashboard' },
     '/admin/manage-users': { path: './modules/admin/users/AdminUsersController.js', className: 'AdminUsersController', requiresAdminLang: true, skeletonType: 'layout-table' },
     '/admin/manage-roles': { path: './modules/admin/roles/AdminRolesController.js', className: 'AdminRolesController', requiresAdminLang: true, skeletonType: 'layout-table' }, 
@@ -46,7 +46,7 @@ export const RouteModulesMap = {
 
     // ---- MÓDULOS DE SISTEMA / SERVIDOR ----
     '/admin/server-config': { path: './modules/admin/server/AdminServerConfigController.js', className: 'AdminServerConfigController', requiresAdminLang: true, skeletonType: 'layout-admin-actions' },
-    '/admin/server/maintenance': { path: './modules/admin/server/AdminSystemMaintenanceController.js', className: 'AdminSystemMaintenanceController', requiresAdminLang: true, skeletonType: 'layout-admin-actions' },
+    '/admin/protocols': { path: './modules/admin/server/AdminSystemProtocolsController.js', className: 'AdminSystemProtocolsController', requiresAdminLang: true, skeletonType: 'layout-admin-actions' }, // ACTUALIZADO
     
     // ---- MÓDULOS DE BACKUPS ----
     '/admin/backups': { path: './modules/admin/backups/AdminBackupsController.js', className: 'AdminBackupsController', requiresAdminLang: true, skeletonType: 'layout-table' },

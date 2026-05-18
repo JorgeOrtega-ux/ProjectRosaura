@@ -51,6 +51,7 @@ $routeTitles = [
     '/admin/backups' => __('route_admin_backups'),
     '/admin/backups/automation' => __('route_admin_backups_automation'),
     '/admin/server-config' => __('route_admin_server'),
+    '/admin/protocols' => __('route_admin_protocols'), // NUEVA RUTA AGREGADA
     '/admin/logs' => __('route_admin_logs'),
     '/admin/logs/viewer' => __('route_admin_logs_viewer')
 ];

@@ -232,6 +232,10 @@ return [
         'controller' => 'App\Api\Controllers\AdminController', 'action' => 'reset_rate_limits',
         'middleware' => [['type' => 'RateLimit', 'key' => RL::KEY_ADM_REDIS_DELETE, 'max' => RL::MAX_5, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
+    'admin.toggle_panic_mode' => [
+        'controller' => 'App\Api\Controllers\AdminController', 'action' => 'toggle_panic_mode',
+        'middleware' => [['type' => 'RateLimit', 'key' => RL::KEY_ADM_TOGGLE_PANIC, 'max' => RL::MAX_5, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
+    ],
 
     // --- RUTAS DE COPIAS DE SEGURIDAD ---
     'admin.create_backup' => [

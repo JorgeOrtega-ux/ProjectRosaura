@@ -57,8 +57,8 @@ return [
     
     '/admin/server-config' => ['view' => 'admin/system/server-config.php', 'auth' => true, 'permissions' => ['manage_server_config'], 'requires_2fa' => false],
     
-    // --- MANTENIMIENTO DEL SERVIDOR (NUEVO) ---
-    '/admin/server/maintenance' => ['view' => 'admin/system/maintenance.php', 'auth' => true, 'permissions' => ['perform_system_maintenance'], 'requires_2fa' => false],
+    // --- PROTOCOLOS Y MANTENIMIENTO DEL SERVIDOR ---
+    '/admin/protocols' => ['view' => 'admin/system/protocols.php', 'auth' => true, 'permissions' => ['perform_system_maintenance'], 'requires_2fa' => false],
     
     '/admin/logs' => ['view' => 'admin/logs/logs.php', 'auth' => true, 'permissions' => ['view_logs'], 'requires_2fa' => false],
     '/admin/logs/viewer' => ['view' => 'admin/logs/logs-viewer.php', 'auth' => true, 'permissions' => ['view_logs'], 'requires_2fa' => false]

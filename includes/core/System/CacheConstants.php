@@ -22,6 +22,7 @@ class CacheConstants {
     
     // Estados del Sistema (NUEVOS)
     public const KEY_SYSTEM_RESTORING = 'system_status:restoring';
+    public const KEY_SYSTEM_PANIC_MODE = 'system_status:panic_mode';
 
     // Patrones de Limpieza / Mantenimiento (NUEVOS)
     public const PATTERN_CACHE = 'cache:*';

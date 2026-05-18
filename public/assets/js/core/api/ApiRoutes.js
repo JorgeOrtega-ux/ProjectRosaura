@@ -49,7 +49,7 @@ export const ApiRoutes = {
         
         // --- GESTIÓN DE ESTADO ---
         UpdateSuspension: 'admin.update_suspension', 
-        DeleteUsers: 'admin.delete_users', // NUEVA RUTA PARA BORRADO MASIVO
+        DeleteUsers: 'admin.delete_users', 
         
         GetModerationKardex: 'admin.get_moderation_kardex',
         AddAdminNote: 'admin.add_admin_note',
@@ -70,6 +70,7 @@ export const ApiRoutes = {
         MaintenanceFlushSessions: 'admin.maintenance_flush_sessions',
         MaintenanceClearCache: 'admin.maintenance_clear_cache',
         MaintenanceResetRateLimits: 'admin.maintenance_reset_rate_limits',
+        TogglePanicMode: 'admin.toggle_panic_mode', // NUEVO PROTOCOLO
 
         CreateBackup: 'admin.create_backup',
         RestoreBackup: 'admin.restore_backup',

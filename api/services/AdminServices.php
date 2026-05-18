@@ -956,6 +956,52 @@ class AdminServices {
         return $this->_executeMaintenanceDeletion($data['password'] ?? '', RateLimitConstants::KEY_ADM_REDIS_DELETE, $patterns, 'admin.maintenance_rate_limits_reset');
     }
 
+    // --- NUEVO MÉTODO: PROTOCOLO DE PÁNICO ---
+    public function togglePanicMode($data) {
+        if (!$this->hasPermission('perform_system_maintenance')) {
+            return ['success' => false, 'message_key' => 'error.unauthorized'];
+        }
+
+        $password = $data['password'] ?? '';
+        $isActive = filter_var($data['is_active'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        $currentUserId = $this->sessionManager->get('user_id');
+
+        // [PARCHE DE SEGURIDAD]: Validación Sudo-Mode con protección Anti-DoS
+        $rateCheck = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_PASSWORD_VERIFY, 5, 15);
+        if (!$rateCheck['allowed']) return ['success' => false, 'message_key' => $rateCheck['message_key']];
+
+        $adminData = $this->userRepository->findById($currentUserId);
+        if (!$adminData || !password_verify($password, $adminData['password'])) {
+            return ['success' => false, 'message_key' => 'auth.incorrect_password'];
+        }
+        $this->rateLimiter->clear(RateLimitConstants::KEY_ADM_PASSWORD_VERIFY . "_admin_{$currentUserId}"); // Limpiar en éxito
+
+        // Consumir RateLimit Funcional
+        $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_TOGGLE_PANIC, 5, 5);
+        if (!$rl['allowed']) return ['success' => false, 'message_key' => $rl['message_key']];
+
+        try {
+            $redis = Utils::getRedisClient();
+
+            if ($isActive) {
+                // Activar modo pánico
+                $redis->set(CacheConstants::KEY_SYSTEM_PANIC_MODE, '1');
+                Logger::critical("SYSTEM PANIC MODE ACTIVATED by admin ID: {$currentUserId}", ['admin_id' => $currentUserId]);
+                $messageKey = 'admin.panic_mode_activated';
+            } else {
+                // Desactivar modo pánico
+                $redis->del(CacheConstants::KEY_SYSTEM_PANIC_MODE);
+                Logger::info("SYSTEM PANIC MODE DEACTIVATED by admin ID: {$currentUserId}", ['admin_id' => $currentUserId]);
+                $messageKey = 'admin.panic_mode_deactivated';
+            }
+
+            return ['success' => true, 'message_key' => $messageKey, 'is_active' => $isActive];
+        } catch (\Exception $e) {
+            Logger::error("Error toggling panic mode via Redis", ['exception' => $e->getMessage()]);
+            return ['success' => false, 'message_key' => 'error.redis_communication'];
+        }
+    }
+
     private function getBackupDir() {
         $dir = ROOT_PATH . '/storage/backups/';
         if (!is_dir($dir)) {

@@ -25,7 +25,7 @@ if (!$config) {
             <h1 class="component-top-title"><?php echo __('admin_server_title'); ?></h1>
         </div>
         <div class="component-top-right">
-            <button class="component-button component-button--icon component-button--h40" data-nav="/admin/server/maintenance" data-tooltip="<?php echo __('tooltip_server_maintenance'); ?>" data-position="bottom">
+            <button class="component-button component-button--icon component-button--h40" data-nav="/admin/protocols" data-tooltip="<?php echo __('tooltip_server_maintenance'); ?>" data-position="bottom">
                 <span class="material-symbols-rounded">build</span>
             </button>
             <button class="component-button component-button--icon component-button--h40 disabled-interaction" data-action="submitServerConfig" data-ref="btn-save-config" data-tooltip="<?php echo __('tooltip_save_config'); ?>" data-position="bottom">
