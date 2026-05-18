@@ -30,13 +30,28 @@ class UserPrefsManager implements UserPrefsManagerInterface {
             $assignedLang = Utils::getClosestLanguage($acceptLang);
             $themeSystem = DB::THEME_SYSTEM; // USO DE LA CONSTANTE DE TEMA
             
-            $insPref = $this->pdo->prepare("INSERT INTO {$tblUserPrefs} (user_id, language, open_links_new_tab, theme, extended_alerts) VALUES (?, ?, 1, ?, 0)");
+            // SE INCLUYE allow_telemetry = 1 POR DEFECTO
+            $insPref = $this->pdo->prepare("INSERT INTO {$tblUserPrefs} (user_id, language, open_links_new_tab, theme, extended_alerts, allow_telemetry) VALUES (?, ?, 1, ?, 0, 1)");
             $insPref->execute([$userId, $assignedLang, $themeSystem]);
             
             $stmtPref->execute([$userId]);
             $userPrefs = $stmtPref->fetch(PDO::FETCH_ASSOC);
         }
         return $userPrefs;
+    }
+
+    // NUEVO MÉTODO PARA LEER PREFERENCIAS INDIVIDUALES
+    public function getPreference($userId, string $key, $default = null) {
+        $prefs = $this->ensureDefaultPreferences($userId);
+        
+        if (isset($prefs[$key])) {
+            // Manejar booleanos guardados como tinyint(1) en DB
+            if ($prefs[$key] === '1' || $prefs[$key] === 1) return true;
+            if ($prefs[$key] === '0' || $prefs[$key] === 0) return false;
+            return $prefs[$key];
+        }
+        
+        return $default;
     }
 }
 ?>

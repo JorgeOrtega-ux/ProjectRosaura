@@ -161,6 +161,7 @@ CREATE TABLE IF NOT EXISTS user_preferences (
     open_links_new_tab TINYINT(1) DEFAULT 1,
     theme ENUM('system', 'light', 'dark') DEFAULT 'system',
     extended_alerts TINYINT(1) DEFAULT 0,
+    allow_telemetry TINYINT(1) DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY (user_id),

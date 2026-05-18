@@ -3,6 +3,7 @@ import { MainController } from './MainController.js';
 import { SpaRouter } from './core/router/SpaRouter.js';
 import { DialogSystem } from './core/components/DialogSystem.js';
 import { TooltipSystem } from './core/components/TooltipSystem.js';
+import TelemetryTracker from './core/telemetry/TelemetryTracker.js'; // NUEVA IMPORTACIÓN
 
 // Importamos nuestro Mapa de Rutas
 import { RouteModulesMap } from './core/router/RouteModulesMap.js';
@@ -25,6 +26,12 @@ document.addEventListener('DOMContentLoaded', () => {
         outlet: '[data-ref="app-router-outlet"]'
     });
 
+    // 5. NUEVO: Instanciamos el Tracker de Telemetría
+    const allowTelemetry = window.AppUserPrefs && window.AppUserPrefs.allow_telemetry !== undefined 
+                           ? parseInt(window.AppUserPrefs.allow_telemetry) === 1 
+                           : true;
+    window.telemetryTracker = new TelemetryTracker({ allowTelemetry });
+
     // ========================================================
     // MOTOR DE CARGA DIFERIDA (LAZY LOADING) REFORZADO CON CICLO DE VIDA
     // ========================================================
@@ -38,7 +45,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.addEventListener('viewLoaded', async (e) => {
         const cleanUrl = e.detail.cleanUrl; 
+        const loadTimeMs = e.detail.loadTimeMs || 0; // NUEVO: Atrapamos el tiempo de carga
         
+        // Registrar la vista en la Telemetría
+        if (window.telemetryTracker) {
+            window.telemetryTracker.trackPageview(cleanUrl, loadTimeMs);
+        }
+
         let relativePath = cleanUrl;
         if (window.AppBasePath && cleanUrl.startsWith(window.AppBasePath)) {
             relativePath = cleanUrl.replace(window.AppBasePath, '');
@@ -138,10 +151,12 @@ document.addEventListener('DOMContentLoaded', () => {
         initialCleanUrl = initialCleanUrl.slice(0, -1);
     }
 
+    // Nota: El loadTimeMs inicial será 0 ya que la página se renderizó en el servidor (PHP)
     window.dispatchEvent(new CustomEvent('viewLoaded', { 
         detail: { 
             url: currentPath,
-            cleanUrl: initialCleanUrl 
+            cleanUrl: initialCleanUrl,
+            loadTimeMs: 0 
         } 
     }));
 });

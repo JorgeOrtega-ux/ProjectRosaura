@@ -10,5 +10,14 @@ interface UserPrefsManagerInterface {
      * @return array
      */
     public function ensureDefaultPreferences($userId);
+
+    /**
+     * Obtiene el valor de una preferencia específica.
+     * @param int $userId
+     * @param string $key
+     * @param mixed $default
+     * @return mixed
+     */
+    public function getPreference($userId, string $key, $default = null);
 }
 ?>

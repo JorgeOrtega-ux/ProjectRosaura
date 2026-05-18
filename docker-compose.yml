@@ -80,7 +80,6 @@ services:
     networks:
       - rosaura_network
 
-  # NUEVO SERVICIO UNIFICADO QUE REEMPLAZA A ACCOUNT DELETION Y MAINTENANCE
   worker_system_tasks:
     build:
       context: .
@@ -88,6 +87,28 @@ services:
     container_name: rosaura_worker_system_tasks
     restart: always
     command: python -u scripts/worker_system_tasks.py
+    volumes:
+      - .:/app
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    env_file:
+      - .env
+    environment:
+      - TZ=${APP_TIMEZONE:-UTC}
+    networks:
+      - rosaura_network
+
+  # NUEVO SERVICIO: WORKER DE TELEMETRIA
+  worker_telemetry:
+    build:
+      context: .
+      dockerfile: docker/python/Dockerfile.worker
+    container_name: rosaura_worker_telemetry
+    restart: always
+    command: python -u scripts/worker_telemetry.py
     volumes:
       - .:/app
     depends_on:

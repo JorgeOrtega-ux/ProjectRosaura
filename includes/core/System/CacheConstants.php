@@ -20,6 +20,12 @@ class CacheConstants {
     public const QUEUE_BACKUP = 'backup_queue';
     public const QUEUE_ACCOUNT_DELETION = 'queue:account_deletion';
     
+    // Colas de Telemetría (NUEVAS)
+    public const QUEUE_TELEMETRY_API_LATENCY = 'api_latency';
+    public const QUEUE_TELEMETRY_PAGEVIEWS   = 'pageviews';
+    public const QUEUE_TELEMETRY_CANVAS      = 'canvas_interactions';
+    public const QUEUE_TELEMETRY_AUTH        = 'auth_events';
+
     // Estados del Sistema (NUEVOS)
     public const KEY_SYSTEM_RESTORING = 'system_status:restoring';
     public const KEY_SYSTEM_PANIC_MODE = 'system_status:panic_mode';

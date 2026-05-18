@@ -128,6 +128,8 @@ export class SpaRouter {
             this._showLoaderInOutlet(cleanUrlForLoader);
         }
 
+        const startTime = performance.now(); // NUEVO: Iniciamos cronómetro de latencia + renderizado
+
         try {
             const fetchPromise = fetch(url, {
                 method: 'GET',
@@ -182,10 +184,13 @@ export class SpaRouter {
                     cleanUrl = cleanUrl.slice(0, -1);
                 }
 
+                const loadTimeMs = Math.round(performance.now() - startTime); // NUEVO: Terminamos de medir
+
                 window.dispatchEvent(new CustomEvent('viewLoaded', { 
                     detail: { 
                         url: url,
-                        cleanUrl: cleanUrl 
+                        cleanUrl: cleanUrl,
+                        loadTimeMs: loadTimeMs // NUEVO: Reporte expuesto
                     } 
                 }));
             } else {

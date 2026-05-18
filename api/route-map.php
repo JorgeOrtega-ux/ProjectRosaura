@@ -164,7 +164,6 @@ return [
         'middleware' => [['type' => 'RateLimit', 'key' => RL::KEY_ADM_UPDATE_ROLE, 'max' => RL::MAX_20, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
     
-    // ACTUALIZADO: NUEVA RUTA PARA BORRADO MASIVO
     'admin.delete_users' => [
         'controller' => 'App\Api\Controllers\AdminController', 'action' => 'delete_users',
         'middleware' => [['type' => 'RateLimit', 'key' => RL::KEY_ADM_DELETE_USER, 'max' => RL::MAX_20, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
@@ -273,6 +272,12 @@ return [
     'admin.get_translations' => [
         'controller' => 'App\Api\Controllers\AdminController', 'action' => 'get_admin_translations',
         'middleware' => [['type' => 'RateLimit', 'key' => RL::KEY_ADM_GET_TRANSLATIONS, 'max' => RL::MAX_60, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
+    ],
+    
+    // --- NUEVA RUTA DE TELEMETRÍA (Tracker Frontend) ---
+    'telemetry.collect' => [
+        'controller' => 'App\Api\Controllers\TelemetryController', 'action' => 'collect',
+        'middleware' => [] // Sin rate limit estricto. Es asíncrono y en "batches".
     ],
 ];
 ?>

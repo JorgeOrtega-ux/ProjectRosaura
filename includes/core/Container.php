@@ -31,6 +31,10 @@ use App\Core\Interfaces\ModerationRepositoryInterface;
 use App\Core\Repositories\RoleRepository;
 use App\Core\Interfaces\RoleRepositoryInterface;
 
+// NUEVOS IMPORT DE TELEMETRÍA
+use App\Core\Interfaces\TelemetryRepositoryInterface;
+use App\Core\Repositories\TelemetryRepository;
+
 class Container implements ContainerInterface {
     private $instances = [];
     private $bindings = [];
@@ -42,8 +46,6 @@ class Container implements ContainerInterface {
         $this->instances[DatabaseManager::class] = $db; 
         
         // 1.1 Registrar Singleton base estricto (Redis)
-        // Al almacenarlo en instances[Client::class], el auto-wiring
-        // lo inyectará directamente al constructor del SessionManager
         $redis = new RedisCache();
         $this->instances[Client::class] = $redis->getClient();
         
@@ -62,6 +64,8 @@ class Container implements ContainerInterface {
         $this->bindings[ModerationRepositoryInterface::class] = ModerationRepository::class;
         $this->bindings[RoleRepositoryInterface::class] = RoleRepository::class;
         
+        // 4. NUEVO: Repositorio de Telemetría
+        $this->bindings[TelemetryRepositoryInterface::class] = TelemetryRepository::class;
     }
 
     public function get(string $id) {
