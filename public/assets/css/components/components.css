@@ -12,8 +12,8 @@
 .view-content {
     width: 100%;
     height: 100%;
-    display: flex;          /* FIX 1: Cadena Flexbox */
-    flex-direction: column; /* FIX 1: Cadena Flexbox */
+    display: flex;
+    flex-direction: column;
     padding: 0;
 }
 
@@ -34,7 +34,6 @@
     padding: 0 !important;
 }
 
-/* ÁREA DE SCROLL INDEPENDIENTE PARA VISTAS CON CABECERA FIJA */
 .component-viewport {
     flex: 1;
     min-height: 0;
@@ -46,7 +45,6 @@
     flex-direction: column;
 }
 
-/* UTILIDADES DE ALTURA AGREGADAS PARA LA EXPANSIÓN 100% */
 .h-full {
     height: 100% !important;
 }
@@ -81,8 +79,8 @@
     background-color: transparent;
     gap: 8px;
     min-height: 56px;
-    position: relative; /* Contexto relativo para anclar el buscador flotante */
-    flex-shrink: 0; /* EVITA QUE SE ENCOJA CON EL FLEX */
+    position: relative;
+    flex-shrink: 0;
 }
 
 .component-top.disabled {
@@ -198,7 +196,6 @@
     color: var(--text-primary);
 }
 
-/* SEARCH TOOLBAR FLOTANTE */
 .component-search-toolbar {
     position: absolute;
     top: calc(100% + 8px);
@@ -211,8 +208,6 @@
     box-shadow: var(--shadow-card);
     display: flex;
     transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
-    
-    /* FIX DEFINITIVO: Deja 8px de margen de cada pared en móvil, máximo 425px en PC */
     width: calc(100% - 16px);
     max-width: 425px; 
     transform: translateX(-50%);
@@ -231,7 +226,6 @@
     transform: translate(-50%, 0);
 }
 
-/* Forzamos que el input interno ocupe siempre el espacio de su padre estable */
 .component-search-toolbar .component-search {
     width: 100%;
     max-width: 100%;
@@ -311,7 +305,7 @@
 .component-button--danger {
     color: var(--action-danger);
     border-color: var(--action-danger);
-    background-color: var(--action-danger-bg);
+    background-color: transparent; 
 }
 
 .component-button--danger:hover {
@@ -371,11 +365,10 @@
     transition: background 0.2s ease;
 }
 
-/* ESTILO HÍBRIDO PERFECTO PARA EL BOTÓN DE PERFIL */
 .component-button--profile.role-dynamic::before { 
     border: none;
     background: var(--active-role-bg, transparent);
-    padding: 2px; /* Define el grosor del borde de forma estable */
+    padding: 2px;
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
@@ -757,10 +750,11 @@ textarea.component-input-field::placeholder {
     width: 100%;
 }
 
+/* MARGEN ELIMINADO COMO SE SOLICITÓ */
 .component-link-container--start {
     justify-content: flex-start;
     gap: 8px;
-    margin-top: 8px;
+    margin-top: 0; 
 }
 
 .component-link-container--right {
@@ -823,7 +817,6 @@ textarea.component-input-field::placeholder {
     display: none;
 }
 
-/* FIX 2: Modificador para anidación (elimina bordes dobles, fondos y radios) */
 .component-card--flush {
     border: none !important;
     border-radius: 0 !important;
@@ -975,7 +968,7 @@ textarea.component-input-field::placeholder {
 
 .component-card__icon-container--bordered {
     border: 1px solid var(--border-color);
-    background-color: transparent;
+    background-color: var(--bg-surface);
 }
 
 .component-card__icon-container span.material-symbols-rounded {
@@ -1029,11 +1022,10 @@ textarea.component-input-field::placeholder {
     z-index: 1;
 }
 
-/* ESTILO HÍBRIDO PERFECTO PARA EL AVATAR GRANDE */
 .component-avatar.role-dynamic::before { 
     border: none;
     background: var(--active-role-bg, transparent);
-    padding: 2px; /* Define el grosor del borde de forma estable */
+    padding: 2px;
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
@@ -1076,7 +1068,6 @@ textarea.component-input-field::placeholder {
     font-size: 16px !important;
 }
 
-/* MODIFICADORES DE TAMAÑO PARA AVATARES DENTRO DE MENUS DE CUENTAS */
 .component-avatar--40 {
     width: 40px;
     height: 40px;
@@ -1208,15 +1199,10 @@ input:checked + .component-toggle-slider:before {
 .component-accordion-header {
     cursor: pointer;
     user-select: none;
-    /* Transición suave para el color y los radios inferiores */
     transition: background-color 0.2s ease, border-bottom-left-radius 0.2s ease, border-bottom-right-radius 0.2s ease; 
     border-bottom: 1px solid transparent;
-    
-    /* FIX: Solo radio en la parte inferior cuando está contraído */
     border-bottom-left-radius: 12px;
     border-bottom-right-radius: 12px;
-    
-    /* Aseguramos que la parte superior sea recta para pegarse al ítem de arriba */
     border-top-left-radius: 0;
     border-top-right-radius: 0;
 }
@@ -1227,7 +1213,6 @@ input:checked + .component-toggle-slider:before {
 
 .component-accordion.active .component-accordion-header {
     border-bottom-color: var(--border-lighter);
-    /* Al expandirse, se vuelve totalmente recto abajo para unirse a la lista */
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
 }
@@ -1287,7 +1272,6 @@ input:checked + .component-toggle-slider:before {
     display: block;
 }
 
-/* FIX: Contenedor estático del código QR para evitar brincos en la carga */
 [data-ref="2fa-qr-container"] {
     width: 150px;
     height: 150px;
@@ -1322,7 +1306,6 @@ input:checked + .component-toggle-slider:before {
     margin: 0 0 8px 0;
 }
 
-/* FIX: Nuevo diseño para el cuadro del código manual que se ve bien en dark mode */
 .component-2fa-secret-box {
     background-color: var(--bg-input, var(--bg-surface-alt));
     border: 2px dashed var(--border-color-hover, var(--border-color));
@@ -1477,7 +1460,7 @@ input:checked + .component-toggle-slider:before {
     background-color: var(--bg-surface);
     position: sticky;
     top: 0;
-    z-index: 10; /* FIX 1: Evita que los avatares traspasen la cabecera al scrollear (es menor a dropdowns que son 100) */
+    z-index: 10;
 }
 
 .component-table tr:last-child td,
@@ -2040,7 +2023,11 @@ body[data-theme="dark"],
     color: var(--bg-surface);
 }
 
-.component-dialog-overlay {
+/* =========================================
+   SISTEMA DE MODALES GENÉRICOS
+   ========================================= */
+
+.component-modal-overlay {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
     background-color: var(--overlay-dark); 
@@ -2053,12 +2040,12 @@ body[data-theme="dark"],
     transition: opacity 0.3s ease, visibility 0.3s ease;
 }
 
-.component-dialog-overlay.active {
+.component-modal-overlay.active {
     opacity: 1;
     visibility: visible;
 }
 
-.component-dialog-wrapper {
+.component-modal-wrapper {
     display: flex;
     flex-direction: row;
     align-items: flex-start;
@@ -2069,11 +2056,11 @@ body[data-theme="dark"],
     transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.component-dialog-overlay.active .component-dialog-wrapper {
+.component-modal-overlay.active .component-modal-wrapper {
     transform: scale(1);
 }
 
-.component-dialog-box {
+.component-modal-box {
     background-color: var(--bg-surface);
     border-radius: 12px;
     padding: 24px;
@@ -2081,24 +2068,108 @@ body[data-theme="dark"],
     max-width: 425px;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 8px;
     box-shadow: var(--shadow-card);
 }
 
-.component-dialog-content--centered {
+.component-modal-content--centered {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     text-align: center;
     padding: 16px 0;
-    gap: 16px;
+    gap: 8px;
     width: 100%;
 }
 
-.component-dialog-close-btn {
-    width: 40px;
-    height: 40px;
+.component-modal-header {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.component-modal-header--with-icon {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+}
+
+.component-modal-header-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    flex: 1;
+    text-align: left;
+    justify-content: center;
+}
+
+.component-modal-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.component-modal-desc {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.5;
+}
+
+.component-modal-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+}
+
+.component-modal-body--scrollable {
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: 8px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+.component-permissions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.component-role-color-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.component-role-color-preview {
+    width: 45px;
+    height: 45px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    padding: 0;
+    background: none;
+}
+
+.component-role-color-text {
+    font-family: monospace;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.component-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.component-modal-close-btn {
+    width: 32px; 
+    height: 32px;
     border-radius: 50%;
     background-color: var(--overlay-dark);
     color: var(--text-inverse);
@@ -2107,48 +2178,21 @@ body[data-theme="dark"],
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background-color 0.2s ease, transform 0.2s ease;
-    margin-left: 16px;
+    transition: background-color 0.2s ease; 
+    margin-left: 8px;
     flex-shrink: 0;
 }
 
-.component-dialog-close-btn:hover {
-    background-color: var(--action-primary);
-    transform: scale(1.05);
+.component-modal-close-btn .material-symbols-rounded {
+    font-size: 20px;
 }
 
-.component-dialog-close-btn:active {
-    transform: scale(0.95);
+.component-modal-close-btn:hover {
+    background-color: var(--action-primary);
 }
 
 .hide-on-desktop {
     display: none !important;
-}
-
-.component-dialog-header {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.component-dialog-title {
-    font-size: 20px;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin: 0;
-}
-
-.component-dialog-desc {
-    font-size: 15px;
-    color: var(--text-secondary);
-    margin: 0;
-    line-height: 1.5;
-}
-
-.component-dialog-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
 }
 
 [data-tooltip] {
@@ -2222,7 +2266,7 @@ body[data-theme="dark"],
     .component-edit-row {
         flex-direction: column;
         align-items: stretch;
-        gap: 12px;
+        gap: 8px;
     }
     .component-edit-row .component-input-group {
         flex: none; 
@@ -2364,21 +2408,21 @@ body[data-theme="dark"],
     .pill-container + .component-menu-header {
         padding-top: 0;
     }
-    .component-dialog-overlay {
+    .component-modal-overlay {
         align-items: flex-end;
     }
-    .component-dialog-wrapper {
+    .component-modal-wrapper {
         padding: 0;
         margin: 0;
         transform: translateY(100%);
     }
-    .component-dialog-overlay.active .component-dialog-wrapper {
+    .component-modal-overlay.active .component-modal-wrapper {
         transform: translateY(0);
     }
-    .component-dialog-overlay.is-dragging .component-dialog-wrapper {
+    .component-modal-overlay.is-dragging .component-modal-wrapper {
         transition: none; 
     }
-    .component-dialog-box {
+    .component-modal-box {
         max-width: 100%;
         border-bottom-left-radius: 0;
         border-bottom-right-radius: 0;
@@ -2386,16 +2430,16 @@ body[data-theme="dark"],
         padding-bottom: 24px;
         margin: 0;
     }
-    .component-dialog-close-btn {
+    .component-modal-close-btn {
         display: none;
     }
     .hide-on-desktop {
         display: inline-flex !important;
     }
-    .component-dialog-actions {
+    .component-modal-actions {
         flex-direction: column-reverse; 
     }
-    .component-dialog-actions .component-button {
+    .component-modal-actions .component-button {
         width: 100%; 
     }
 }
@@ -2457,9 +2501,6 @@ body[data-theme="dark"],
 
 .component-chart-wrapper:hover {
     border-color: var(--border-color-hover);
-}
-.component-bottom--padded {
-    padding: 16px;
 }
 
 /* =========================================
@@ -2593,13 +2634,10 @@ body[data-theme="dark"],
    ZERO-TRUST UI DEFENSE (TURNSTILE)
    ========================================= */
 
-/* 1. Ocultar preventivamente el contenedor cuando está completamente vacío */
 [data-ref="turnstile-container"]:empty {
     display: none !important;
 }
 
-/* 2. Ocultar el contenedor si Cloudflare resolvió de forma invisible 
-      (inyectó el input oculto para el token pero NO dibujó el iframe interactivo) */
 [data-ref="turnstile-container"]:not(:has(iframe)) {
     display: none !important;
 }

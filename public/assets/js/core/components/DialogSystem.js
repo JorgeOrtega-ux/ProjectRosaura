@@ -22,8 +22,6 @@ export class DialogSystem {
         
         this.initialized = false;
 
-        // FIX ARQUITECTÓNICO: Auto-inicialización obligatoria al instanciar.
-        // Esto garantiza que los eventos siempre se deleguen, incluso si el AppInit olvida llamar a init()
         this.init();
     }
 
@@ -81,17 +79,17 @@ export class DialogSystem {
             const container = this._getContainer();
 
             this.activeOverlay = document.createElement('div');
-            this.activeOverlay.className = 'component-dialog-overlay';
+            this.activeOverlay.className = 'component-modal-overlay';
             
             this.activeWrapper = document.createElement('div');
-            this.activeWrapper.className = 'component-dialog-wrapper';
+            this.activeWrapper.className = 'component-modal-wrapper';
             
             this.activeBox = document.createElement('div');
-            this.activeBox.className = 'component-dialog-box';
+            this.activeBox.className = 'component-modal-box';
             this.activeBox.innerHTML = this.templates[templateName].build(data);
             
             const closeBtn = document.createElement('button');
-            closeBtn.className = 'component-dialog-close-btn';
+            closeBtn.className = 'component-modal-close-btn';
             closeBtn.innerHTML = '<span class="material-symbols-rounded">close</span>';
             
             this.activeWrapper.appendChild(this.activeBox);
@@ -109,17 +107,17 @@ export class DialogSystem {
         if (!this.activeResolveFn) return; 
 
         // 1. Botón de cerrar explícito
-        const closeBtn = e.target.closest('.component-dialog-close-btn');
+        const closeBtn = e.target.closest('.component-modal-close-btn');
         if (closeBtn) {
             this.closeCurrent(false);
             return;
         }
 
         // 2. Búsqueda de botones de acción
-        const actionBtn = e.target.closest('[data-dialog-action], [data-action="confirm"], [data-action="cancel"], #btn_confirm_custom_backup');
+        const actionBtn = e.target.closest('[data-modal-action], [data-action="confirm"], [data-action="cancel"], #btn_confirm_custom_backup');
         
         if (actionBtn) {
-            let action = actionBtn.getAttribute('data-dialog-action') || actionBtn.getAttribute('data-action');
+            let action = actionBtn.getAttribute('data-modal-action') || actionBtn.getAttribute('data-action');
             
             // Fallback para IDs específicos
             if (!action && actionBtn.id === 'btn_confirm_custom_backup') {

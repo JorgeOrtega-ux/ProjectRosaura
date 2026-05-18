@@ -1,5 +1,5 @@
 <?php
-// includes/views/settings/guest.php
+// includes/views/settings/preferences/guest.php
 $prefLang = $_COOKIE['pr_language'] ?? 'es-419';
 
 // Obtenemos la lista centralizada de idiomas
@@ -30,7 +30,7 @@ $currentLangText = $languages[$prefLang] ?? __('default_language_text');
                                 <span class="component-dropdown-text"><?php echo htmlspecialchars($currentLangText); ?></span>
                                 <span class="material-symbols-rounded">expand_more</span>
                             </div>
-                            <?php include __DIR__ . '/../../modules/moduleLanguage.php'; ?>
+                            <?php include __DIR__ . '/../../../modules/moduleLanguage.php'; ?>
                         </div>
 
                     </div>
@@ -53,7 +53,7 @@ $currentLangText = $languages[$prefLang] ?? __('default_language_text');
                                 <span class="component-dropdown-text"><?php echo __('theme_system'); ?></span>
                                 <span class="material-symbols-rounded">expand_more</span>
                             </div>
-                            <?php include __DIR__ . '/../../modules/moduleTheme.php'; ?>
+                            <?php include __DIR__ . '/../../../modules/moduleTheme.php'; ?>
                         </div>
 
                     </div>
