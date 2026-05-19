@@ -3,8 +3,7 @@ import { MainController } from './MainController.js';
 import { SpaRouter } from './core/router/SpaRouter.js';
 import { DialogSystem } from './core/components/DialogSystem.js';
 import { TooltipSystem } from './core/components/TooltipSystem.js';
-import TelemetryTracker from './core/telemetry/TelemetryTracker.js'; // NUEVA IMPORTACIÓN
-
+import { TelemetryTracker } from './core/telemetry/TelemetryTracker.js';
 // Importamos nuestro Mapa de Rutas
 import { RouteModulesMap } from './core/router/RouteModulesMap.js';
 
