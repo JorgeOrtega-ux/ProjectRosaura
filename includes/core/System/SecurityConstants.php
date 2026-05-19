@@ -16,5 +16,19 @@ class SecurityConstants {
     
     // Criptografía y Tokens
     public const TOKEN_LENGTH_BYTES = 32;
+
+    // Constantes de Seguridad de Red (ASN)
+    // Proveedores o Datacenters frecuentemente utilizados para bots, proxies o ataques
+    public const RISKY_ASNS = [
+        'Amazon.com',
+        'Amazon Technologies Inc.',
+        'DigitalOcean, LLC',
+        'Hetzner Online GmbH',
+        'OVH SAS',
+        'Linode',
+        'Vultr Holdings, LLC',
+        'Google Cloud',
+        'Microsoft Corporation'
+    ];
 }
 ?>

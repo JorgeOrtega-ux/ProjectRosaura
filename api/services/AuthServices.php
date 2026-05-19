@@ -116,9 +116,9 @@ class AuthServices {
         
         // --- MODIFICADO: Integración del motor MaxMind local para la lectura de la base de datos .mmdb ---
         $location = GeoIpHelper::getLocation($ipAddress); 
+        $asn = GeoIpHelper::getASN($ipAddress);
         
-        
-        if (!$this->tokenRepository->createToken($userId, $selector, $hashedValidator, $expiresAt, $userAgent, $ipAddress, $location)) {
+        if (!$this->tokenRepository->createToken($userId, $selector, $hashedValidator, $expiresAt, $userAgent, $ipAddress, $location, $asn)) {
              Logger::error("Failed to create remember token in database", ['user_id' => $userId]);
         }
         
@@ -193,6 +193,9 @@ class AuthServices {
         $permissions = $this->roleRepository->getMergedPermissionsForUser($user['id']);
         $assignedRolesIds = !empty($user['assigned_roles_ids']) ? array_map('intval', explode(',', $user['assigned_roles_ids'])) : [SecurityConstants::DEFAULT_USER_ROLE_ID];
 
+        $ipAddress = Utils::getIpAddress();
+        $asn = GeoIpHelper::getASN($ipAddress);
+
         $userData = [
             'user_id' => $user['id'],
             'user_uuid' => $user['uuid'],
@@ -205,7 +208,8 @@ class AuthServices {
             'user_permissions' => $permissions,
             'user_pic' => $user['profile_picture'],
             'user_prefs' => $userPrefs,
-            'user_2fa' => $user['two_factor_enabled'] ?? 0
+            'user_2fa' => $user['two_factor_enabled'] ?? 0,
+            'user_asn' => $asn // Se inyecta en la sesión actual
         ];
 
         return $this->sessionManager->addAccount($user['id'], $userData);
@@ -547,12 +551,25 @@ class AuthServices {
         if ($user && password_verify($password, $user['password'])) {
             $this->rateLimiter->clear(RateLimitConstants::KEY_AUTH_LOGIN . "_{$email}");
             
+            $ipAddress = Utils::getIpAddress();
+            $asn = GeoIpHelper::getASN($ipAddress);
+            
+            // Verificación de seguridad de ASN (Notificación Silenciosa de Telemetría)
+            if (in_array($asn, SecurityConstants::RISKY_ASNS)) {
+                Logger::warning("Login efectuado desde un Datacenter / ASN de Riesgo", [
+                    'user_id' => $user['id'],
+                    'email' => $user['email'],
+                    'asn' => $asn,
+                    'ip' => $ipAddress
+                ]);
+            }
+
             if (!empty($user['deletion_scheduled_at'])) {
                 if (strtotime($user['deletion_scheduled_at']) <= time()) {
                     $this->telemetryServices->logAuthEvent([
                         'event_type' => 'login_blocked_deleted',
                         'user_uuid' => $user['uuid'],
-                        'ip_address' => Utils::getIpAddress()
+                        'ip_address' => $ipAddress
                     ]);
                     return ['success' => false, 'status' => 'deleted', 'message_key' => 'auth.account_deleted'];
                 }
@@ -580,7 +597,7 @@ class AuthServices {
                     $this->telemetryServices->logAuthEvent([
                         'event_type' => 'login_blocked_suspended',
                         'user_uuid' => $user['uuid'],
-                        'ip_address' => Utils::getIpAddress()
+                        'ip_address' => $ipAddress
                     ]);
                     return ['success' => false, 'status' => 'suspended', 'message_key' => 'auth.account_suspended'];
                 }
@@ -595,7 +612,7 @@ class AuthServices {
                 $this->telemetryServices->logAuthEvent([
                     'event_type' => 'login_pending_2fa',
                     'user_uuid' => $user['uuid'],
-                    'ip_address' => Utils::getIpAddress()
+                    'ip_address' => $ipAddress
                 ]);
                 
                 return ['success' => true, 'requires_2fa' => true, 'temp_auth_token' => $tempToken, 'message_key' => 'auth.requires_2fa'];
@@ -604,12 +621,12 @@ class AuthServices {
             $redisCache = new RedisCache();
             $lockName = "session_pool_login_" . $user['id'];
 
-            return $redisCache->executeWithLock($lockName, 5, function($lockToken) use ($user) {
+            return $redisCache->executeWithLock($lockName, 5, function($lockToken) use ($user, $ipAddress) {
                 if (!$this->setAuthSession($user)) {
                     $this->telemetryServices->logAuthEvent([
                         'event_type' => 'login_failed_max_sessions',
                         'user_uuid' => $user['uuid'],
-                        'ip_address' => Utils::getIpAddress()
+                        'ip_address' => $ipAddress
                     ]);
                     return ['success' => false, 'message_key' => 'auth.max_accounts_reached'];
                 }
@@ -623,7 +640,7 @@ class AuthServices {
                 $this->telemetryServices->logAuthEvent([
                     'event_type' => 'login_success',
                     'user_uuid' => $user['uuid'],
-                    'ip_address' => Utils::getIpAddress()
+                    'ip_address' => $ipAddress
                 ]);
                 
                 return ['success' => true, 'requires_2fa' => false, 'message_key' => 'auth.login_success'];

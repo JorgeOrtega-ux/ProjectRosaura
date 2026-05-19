@@ -43,12 +43,12 @@ class ProfileLogRepository implements ProfileLogRepositoryInterface {
         }
     }
 
-    public function logChange(int $userId, string $changeType, ?string $oldValue, ?string $newValue, string $ipAddress): bool {
+    public function logChange(int $userId, string $changeType, ?string $oldValue, ?string $newValue, string $ipAddress, ?string $asn = null): bool {
         $tblProfileLog = DB::TBL_PROFILE_CHANGES_LOG;
 
         try {
-            $stmt = $this->pdo->prepare("INSERT INTO {$tblProfileLog} (user_id, change_type, old_value, new_value, ip_address) VALUES (?, ?, ?, ?, ?)");
-            return $stmt->execute([$userId, $changeType, $oldValue, $newValue, $ipAddress]);
+            $stmt = $this->pdo->prepare("INSERT INTO {$tblProfileLog} (user_id, change_type, old_value, new_value, ip_address, asn) VALUES (?, ?, ?, ?, ?, ?)");
+            return $stmt->execute([$userId, $changeType, $oldValue, $newValue, $ipAddress, $asn]);
         } catch (PDOException $e) {
             Logger::error("Database error in " . __METHOD__, ['user_id' => $userId, 'change_type' => $changeType, 'exception' => $e]);
             return false;
@@ -61,7 +61,7 @@ class ProfileLogRepository implements ProfileLogRepositoryInterface {
 
         try {
             $stmt = $this->pdo->prepare("
-                SELECT id, change_type, old_value, new_value, ip_address, created_at 
+                SELECT id, change_type, old_value, new_value, ip_address, asn, created_at 
                 FROM {$tblProfileLog} 
                 WHERE user_id = :userId 
                 ORDER BY created_at DESC 

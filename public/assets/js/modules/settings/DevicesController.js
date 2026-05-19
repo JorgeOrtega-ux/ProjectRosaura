@@ -94,7 +94,6 @@ class DevicesController {
         const div = document.createElement('div');
         div.className = 'component-group-item device-item-row';
         
-        // LIMPIEZA: Se sustituyen los estilos en línea por clases BEM semánticas
         const badgeOrBtn = device.is_current ? `
             <div class="component-badge component-badge--sm component-badge--success">
                 <span class="material-symbols-rounded component-icon--sm">verified</span>
@@ -106,18 +105,20 @@ class DevicesController {
             </button>
         `;
 
-        // LÓGICA CONDICIONAL UI: Solo renderizar badge si la ubicación es real y no es local.
+        // MODIFICADO: Se inyecta el ASN a un lado de la Ciudad (Ej: Ciudad de México (Telcel))
         let locationBadge = '';
         if (device.location && device.location !== 'Unknown' && device.location !== 'Local Network') {
+            const asnText = device.asn ? ` (${device.asn})` : '';
             locationBadge = `
-                <div class="component-badge component-badge--sm">
+                <div class="component-badge component-badge--sm" title="${device.location}${asnText}">
                     <span class="material-symbols-rounded">location_on</span>
-                    <span>${device.location}</span>
+                    <span style="max-width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: inline-block;">
+                        ${device.location}${asnText}
+                    </span>
                 </div>
             `;
         }
 
-        // LIMPIEZA: Control dinámico de clases para el peso de la fuente en lugar de style="font-weight: 700;"
         const titleClass = device.is_current ? 'component-card__title component-text--bold' : 'component-card__title';
 
         div.innerHTML = `

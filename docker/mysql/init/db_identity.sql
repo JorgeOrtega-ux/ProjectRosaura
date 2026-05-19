@@ -146,6 +146,7 @@ CREATE TABLE IF NOT EXISTS profile_changes_log (
     old_value VARCHAR(255) DEFAULT NULL,
     new_value VARCHAR(255) DEFAULT NULL,
     ip_address VARCHAR(45) NOT NULL,
+    asn VARCHAR(255) DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     -- Índice para los Rate Limits
     INDEX idx_user_change_date (user_id, change_type, created_at),
@@ -177,6 +178,7 @@ CREATE TABLE IF NOT EXISTS auth_tokens (
     user_agent VARCHAR(255) DEFAULT NULL,
     ip_address VARCHAR(45) DEFAULT NULL,
     location VARCHAR(255) DEFAULT NULL,
+    asn VARCHAR(255) DEFAULT NULL,
     CONSTRAINT fk_user_tokens FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     INDEX (selector),
     -- NUEVO: Índice para que el recolector de basura (GC) elimine caducados instantáneamente

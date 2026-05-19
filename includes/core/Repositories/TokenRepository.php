@@ -17,12 +17,12 @@ class TokenRepository implements TokenRepositoryInterface {
         $this->pdo = $db->getConnection(DB::CONN_IDENTITY);
     }
 
-    public function createToken(int $userId, string $selector, string $hashedValidator, string $expiresAt, string $userAgent, string $ipAddress, ?string $location = null): bool {
+    public function createToken(int $userId, string $selector, string $hashedValidator, string $expiresAt, string $userAgent, string $ipAddress, ?string $location = null, ?string $asn = null): bool {
         $tblAuthTokens = DB::TBL_AUTH_TOKENS;
 
         try {
-            $stmt = $this->pdo->prepare("INSERT INTO {$tblAuthTokens} (user_id, selector, hashed_validator, expires_at, user_agent, ip_address, location) VALUES (?, ?, ?, ?, ?, ?, ?)");
-            return $stmt->execute([$userId, $selector, $hashedValidator, $expiresAt, $userAgent, $ipAddress, $location]);
+            $stmt = $this->pdo->prepare("INSERT INTO {$tblAuthTokens} (user_id, selector, hashed_validator, expires_at, user_agent, ip_address, location, asn) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+            return $stmt->execute([$userId, $selector, $hashedValidator, $expiresAt, $userAgent, $ipAddress, $location, $asn]);
         } catch (PDOException $e) {
             Logger::error("Database error in " . __METHOD__, ['user_id' => $userId, 'ip_address' => $ipAddress, 'exception' => $e]);
             return false;
@@ -153,7 +153,7 @@ class TokenRepository implements TokenRepositoryInterface {
 
         try {
             $stmt = $this->pdo->prepare("
-                SELECT id, user_agent, ip_address, location, expires_at, selector 
+                SELECT id, user_agent, ip_address, location, asn, expires_at, selector 
                 FROM {$tblAuthTokens} 
                 WHERE user_id = :userId 
                 ORDER BY expires_at DESC 

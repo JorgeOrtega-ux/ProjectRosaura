@@ -36,6 +36,7 @@ foreach ($profileLogs as $pl) {
         'created_at' => $pl['created_at'],
         'action_type' => 'profile_' . $pl['change_type'],
         'reason' => __('lbl_data') . ': ' . $pl['change_type'] . ' | ' . __('lbl_prev_value') . ': ' . ($pl['old_value'] ?? __('lbl_na')) . ' | ' . __('lbl_new_value') . ': ' . ($pl['new_value'] ?? __('lbl_na')),
+        'asn' => $pl['asn'] ?? null,
         'admin_username' => __('lbl_user_action'),
         'admin_profile_picture' => $user['profile_picture'] ?? null,
         'admin_role' => 'user',
@@ -145,13 +146,14 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/user-history?id=' . $targ
                             <th><?php echo __('table_header_date'); ?></th>
                             <th><?php echo __('table_header_action'); ?></th>
                             <th><?php echo __('table_header_details'); ?></th>
+                            <th><?php echo __('table_header_asn') ?? 'Red / Proveedor'; ?></th>
                             <th><?php echo __('table_header_admin'); ?></th>
                         </tr>
                     </thead>
                     <tbody data-ref="history-table-body">
                         <?php if (empty($paginatedLogs)): ?>
                         <tr>
-                            <td colspan="4" class="component-empty-table-cell">
+                            <td colspan="5" class="component-empty-table-cell">
                                 <div class="component-empty-state component-empty-state--table">
                                     <span class="material-symbols-rounded component-empty-state-icon">history</span>
                                     <p class="component-empty-state-text"><?php echo __('admin_history_empty'); ?></p>
@@ -244,6 +246,18 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/user-history?id=' . $targ
                                     </div>
                                 </td>
                                 <td>
+                                    <?php if (!empty($log['asn'])): ?>
+                                        <div class="component-badge component-badge--sm component-badge--outline" title="<?php echo htmlspecialchars($log['asn']); ?>">
+                                            <span class="material-symbols-rounded">router</span>
+                                            <span class="search-target" style="max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: inline-block;">
+                                                <?php echo htmlspecialchars($log['asn']); ?>
+                                            </span>
+                                        </div>
+                                    <?php else: ?>
+                                        <span style="color: var(--text-muted); font-size: 0.875rem;"><?php echo __('lbl_na') ?? 'N/A'; ?></span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
                                     <div class="td-user-info">
                                         <div class="component-button--profile role-dynamic component-avatar--static-sm" style="--active-role-bg: <?php echo htmlspecialchars($activeBgCss, ENT_QUOTES, 'UTF-8'); ?>;">
                                             <img src="<?php echo htmlspecialchars($adminPic); ?>" alt="<?php echo __('alt_avatar'); ?>">
@@ -258,7 +272,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/user-history?id=' . $targ
                             <?php endforeach; ?>
 
                             <tr class="disabled" data-ref="empty-search-table">
-                                <td colspan="4" class="component-empty-table-cell">
+                                <td colspan="5" class="component-empty-table-cell">
                                     <div class="component-empty-state component-empty-state--table">
                                         <span class="material-symbols-rounded component-empty-state-icon">search_off</span>
                                         <p class="component-empty-state-text"><?php echo __('empty_search_history'); ?></p>

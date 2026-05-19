@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS api_latency (
     latency_ms FLOAT NOT NULL,
     user_uuid CHAR(36) NULL,
     ip_address VARCHAR(45) NULL,
+    asn VARCHAR(255) NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_created_at (created_at),
     INDEX idx_endpoint (endpoint),
@@ -49,6 +50,7 @@ CREATE TABLE IF NOT EXISTS auth_events (
     event_type VARCHAR(50) NOT NULL,
     user_uuid CHAR(36) NULL,
     ip_address VARCHAR(45) NULL,
+    asn VARCHAR(255) NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_created_at (created_at),
     INDEX idx_event (event_type)

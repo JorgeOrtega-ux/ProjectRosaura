@@ -3,6 +3,8 @@ namespace App\Api\Services;
 
 use App\Config\RedisCache;
 use App\Core\System\Logger;
+use App\Core\Helpers\Utils;
+use App\Core\Helpers\GeoIpHelper;
 
 class TelemetryServices {
     private RedisCache $redis;
@@ -29,6 +31,10 @@ class TelemetryServices {
         
         $data['user_uuid'] = $userUuid;
         
+        if ($ipAddress) {
+            $data['ip_address'] = $ipAddress;
+        }
+        
         if ($type === 'pageview') {
             $this->pushToQueue('telemetry_pageviews', $data);
         } elseif ($type === 'interaction') {
@@ -40,6 +46,12 @@ class TelemetryServices {
         try {
             if (!isset($data['created_at'])) {
                 $data['created_at'] = date('Y-m-d H:i:s');
+            }
+
+            // Inyección automática del ASN si la IP está presente
+            $ip = $data['ip_address'] ?? Utils::getIpAddress();
+            if (!isset($data['asn']) && $ip) {
+                $data['asn'] = GeoIpHelper::getASN($ip);
             }
             
             $jsonPayload = json_encode($data);

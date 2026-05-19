@@ -82,6 +82,11 @@ class SessionManager implements SessionManagerInterface {
         return $this->get(SessionConstants::KEY_ACTIVE_ACCOUNT);
     }
 
+    // Método añadido para poder recuperar el ASN en tiempo real desde la capa de vista/frontend
+    public function getActiveAccountAsn(): ?string {
+        return $this->get('user_asn');
+    }
+
     public function getLinkedAccounts(): array {
         return $this->get(SessionConstants::KEY_LINKED_ACCOUNTS, []);
     }
@@ -101,6 +106,8 @@ class SessionManager implements SessionManagerInterface {
             foreach (SessionConstants::ROOT_KEYS as $key) {
                 $this->remove($key);
             }
+            // Eliminar manualmente el ASN si se limpia la raíz
+            $this->remove('user_asn'); 
         }
     }
 

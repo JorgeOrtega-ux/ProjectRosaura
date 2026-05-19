@@ -50,5 +50,37 @@ class GeoIpHelper {
             return null;
         }
     }
+
+    /**
+     * Obtiene la organización/ISP (ASN) a partir de una dirección IP utilizando
+     * la base de datos local GeoLite2-ASN.
+     *
+     * @param string $ip La dirección IP real del cliente.
+     * @return string|null El nombre de la organización o null.
+     */
+    public static function getASN(string $ip): ?string {
+        
+        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
+            return null; 
+        }
+
+        $databaseFile = dirname(__DIR__, 3) . '/storage/geoip/GeoLite2-ASN.mmdb';
+
+        if (!file_exists($databaseFile)) {
+            return null;
+        }
+
+        try {
+            $reader = new Reader($databaseFile);
+            $record = $reader->asn($ip);
+            
+            // Devuelve el nombre de la organización proveedora de internet (ej. Google LLC, Telmex)
+            return $record->autonomousSystemOrganization;
+            
+        } catch (Exception $e) {
+            // Falla de forma silenciosa si la IP no es encontrada en la base de datos ASN
+            return null;
+        }
+    }
 }
 ?>
