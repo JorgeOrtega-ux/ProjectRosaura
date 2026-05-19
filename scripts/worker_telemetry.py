@@ -4,6 +4,10 @@ import time
 import redis
 import mysql.connector
 from mysql.connector import Error
+import logging
+
+# Configuración básica de logs para no perder errores en silencio
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 REDIS_HOST = os.getenv('REDIS_HOST', 'redis')
 REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
@@ -41,7 +45,8 @@ class TelemetryWorker:
                 user=DB_USER,
                 password=DB_PASS
             )
-        except Error:
+        except Error as e:
+            logging.error(f"Error conectando a BD Telemetría: {e}")
             self.db_conn = None
 
     def process_queues(self):
@@ -53,25 +58,35 @@ class TelemetryWorker:
 
         try:
             for queue_name, table_name in QUEUES.items():
+                # 1. LECTURA EN BLOQUE USANDO REDIS PIPELINE
+                pipe = self.r.pipeline()
+                for _ in range(BATCH_SIZE):
+                    pipe.lpop(queue_name)
+                
+                raw_items = pipe.execute()
+                
                 batch = []
-                while len(batch) < BATCH_SIZE:
-                    item = self.r.lpop(queue_name)
-                    if not item:
-                        break
-                    try:
-                        batch.append(json.loads(item))
-                    except json.JSONDecodeError:
-                        continue
+                raw_payloads = [] # Guardamos las cadenas crudas para posible recuperación
+                
+                for item in raw_items:
+                    if item:
+                        try:
+                            batch.append(json.loads(item))
+                            raw_payloads.append(item)
+                        except json.JSONDecodeError:
+                            logging.error(f"JSON corrupto ignorado en {queue_name}: {item}")
+                            continue
                 
                 if batch:
-                    self.insert_batch(cursor, table_name, batch)
+                    self.insert_batch(cursor, table_name, queue_name, batch, raw_payloads)
 
-        except Exception:
-            pass
+        except Exception as e:
+            logging.error(f"Error crítico al procesar colas: {e}")
         finally:
-            cursor.close()
+            if cursor:
+                cursor.close()
 
-    def insert_batch(self, cursor, table_name, batch):
+    def insert_batch(self, cursor, table_name, queue_name, batch, raw_payloads):
         if not batch:
             return
 
@@ -85,14 +100,25 @@ class TelemetryWorker:
         try:
             cursor.executemany(sql, values)
             self.db_conn.commit()
-        except Error:
+            # logging.info(f"Insertados {len(batch)} registros en {table_name}") # Descomentar para debug intenso
+        except Error as e:
             self.db_conn.rollback()
+            logging.error(f"Fallo MySQL en {table_name}: {e}. Enviando {len(batch)} registros a DLQ.")
+            
+            # 2. MANEJO REAL DE ERRORES: Reinyectar a Dead Letter Queue (DLQ)
+            dlq_name = f"{queue_name}_dlq"
+            try:
+                # Insertamos todos los registros crudos de golpe en la cola de fallos
+                self.r.rpush(dlq_name, *raw_payloads)
+            except Exception as redis_err:
+                logging.critical(f"Fallo catastrófico al guardar en DLQ ({dlq_name}): {redis_err}")
 
 if __name__ == "__main__":
+    logging.info("Worker de Telemetría Iniciado.")
     worker = TelemetryWorker()
     while True:
         try:
             worker.process_queues()
-        except Exception:
-            pass
+        except Exception as e:
+            logging.error(f"Excepción no controlada en el loop principal: {e}")
         time.sleep(FLUSH_INTERVAL)

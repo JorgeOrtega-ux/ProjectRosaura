@@ -4,22 +4,19 @@ namespace App\Api\Controllers;
 use App\Api\Controllers\BaseController;
 use App\Api\Services\TelemetryServices;
 use App\Core\System\SessionManager;
-use App\Core\Interfaces\UserPrefsManagerInterface;
+use App\Core\Helpers\Utils; // <-- Importación necesaria para la IP
 use App\Core\System\Logger;
 
 class TelemetryController extends BaseController {
     private TelemetryServices $telemetryServices;
     private SessionManager $session;
-    private UserPrefsManagerInterface $userPrefs;
 
     public function __construct(
         TelemetryServices $telemetryServices, 
-        SessionManager $session,
-        UserPrefsManagerInterface $userPrefs
+        SessionManager $session
     ) {
         $this->telemetryServices = $telemetryServices;
         $this->session = $session;
-        $this->userPrefs = $userPrefs;
     }
 
     /**
@@ -27,12 +24,16 @@ class TelemetryController extends BaseController {
      * Retorna un array que api/index.php procesará para enviar al cliente.
      */
     public function collect(array $input = []): array {
-        Logger::info("Petición recibida en api/index.php -> telemetry.collect");
-        
         $userId = $this->session->get('user_id'); 
         $userUuid = $this->session->get('user_uuid'); 
         
-        if ($userId && !$this->userPrefs->getPreference($userId, 'allow_telemetry', true)) {
+        // LEEMOS DESDE SESIÓN, NO DESDE MYSQL. (Si no está seteado, asumimos true por defecto)
+        $allowTelemetry = $this->session->get('allow_telemetry');
+        if ($allowTelemetry === null) {
+            $allowTelemetry = true;
+        }
+        
+        if ($userId && !$allowTelemetry) {
             return [
                 'success' => true, 
                 'status' => 'opt_out'
@@ -40,15 +41,25 @@ class TelemetryController extends BaseController {
         }
 
         if (!empty($input)) {
-            $ipAddress = $_SERVER['REMOTE_ADDR'] ?? null;
+            // USO DEL HELPER SEGURO DE IP
+            $ipAddress = Utils::getIpAddress();
             
             if (isset($input['events']) && is_array($input['events'])) {
-                Logger::info("Guardando " . count($input['events']) . " eventos en Redis.");
+                
+                // LÍMITE DURO PARA EVITAR ATAQUES POR SATURACIÓN (DoS)
+                if (count($input['events']) > 50) {
+                    Logger::warning("Payload de telemetría abusivo bloqueado desde IP: " . $ipAddress);
+                    return [
+                        'success' => false, 
+                        'status' => 'payload_too_large'
+                    ];
+                }
+
                 foreach ($input['events'] as $event) {
                     $this->telemetryServices->processFrontendPayload($event, $userUuid, $ipAddress);
                 }
             } else {
-                Logger::error("Payload válido pero sin array 'events'.");
+                Logger::error("Payload válido pero sin array 'events'. IP: " . $ipAddress);
             }
         }
         

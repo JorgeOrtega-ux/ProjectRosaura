@@ -68,6 +68,12 @@ DB_USER = os.getenv('DB_USER', 'root')
 DB_PASS = os.getenv('DB_PASS', 'root')
 DB_NAME = os.getenv('DB_NAME', 'db_identity')
 
+# Variables para Base de Datos de Telemetría (Limpieza)
+DB_TEL_HOST = os.getenv('DB_TELEMETRY_HOST', 'db')
+DB_TEL_NAME = os.getenv('DB_TELEMETRY_NAME', 'db_telemetry')
+DB_TEL_USER = os.getenv('DB_TELEMETRY_USER', 'system_web_executor')
+DB_TEL_PASS = os.getenv('DB_TELEMETRY_PASSWORD', 'secret')
+
 REDIS_HOST = os.getenv('REDIS_HOST', 'redis')
 REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
 REDIS_PASS = os.getenv('REDIS_PASS', None)
@@ -86,6 +92,13 @@ def get_db_connection():
         database=DB_NAME
     )
 
+def get_telemetry_db_connection():
+    return mysql.connector.connect(
+        host=DB_TEL_HOST,
+        user=DB_TEL_USER,
+        password=DB_TEL_PASS,
+        database=DB_TEL_NAME
+    )
 
 def get_redis_connection():
     if REDIS_PASS:
@@ -271,6 +284,32 @@ def heal_default_avatars():
             cursor.close()
             conn.close()
 
+def cleanup_old_telemetry():
+    Logger.info("[TAREA] Iniciando limpieza de telemetría antigua (más de 90 días)...")
+    conn = None
+    try:
+        conn = get_telemetry_db_connection()
+        cursor = conn.cursor()
+        
+        tables = ['api_latency', 'pageviews', 'page_interactions', 'auth_events']
+        total_deleted = 0
+        
+        for table in tables:
+            cursor.execute(f"DELETE FROM {table} WHERE created_at < NOW() - INTERVAL 90 DAY")
+            deleted = cursor.rowcount
+            total_deleted += deleted
+            if deleted > 0:
+                Logger.info(f"Limpieza en {table}: {deleted} registros eliminados.")
+            
+        conn.commit()
+        Logger.info(f"[ÉXITO] Limpieza de telemetría finalizada. Total: {total_deleted} registros liberados.")
+    except mysql.connector.Error as err:
+        Logger.error(f"[ERROR DB] Fallo de MySQL limpiando telemetría: {err}")
+    finally:
+        if conn and conn.is_connected():
+            cursor.close()
+            conn.close()
+
 def future_maintenance_tasks():
     pass
 
@@ -359,6 +398,7 @@ def scheduler_loop():
             Logger.info("Scheduler: Ejecutando tareas de mantenimiento periódico...")
             try:
                 heal_default_avatars()
+                cleanup_old_telemetry() # <--- Llamada añadida aquí
                 future_maintenance_tasks()
                 last_maintenance_check = time.time() # Actualizamos el reloj
             except Exception as e:

@@ -4,6 +4,7 @@ namespace App\Core\Middlewares;
 use App\Core\Interfaces\MiddlewareInterface;
 use App\Api\Services\TelemetryServices;
 use App\Core\System\SessionManager;
+use App\Core\Helpers\Utils; // <-- Importación necesaria
 
 class TelemetryMiddleware implements MiddlewareInterface {
     private TelemetryServices $telemetryServices;
@@ -24,7 +25,9 @@ class TelemetryMiddleware implements MiddlewareInterface {
         }
 
         $userUuid = $this->session->get('user_uuid');
-        $ipAddress = $_SERVER['REMOTE_ADDR'] ?? null;
+        // CAMBIO CRÍTICO: Usamos Utils en vez de REMOTE_ADDR para no perder la IP real tras el proxy
+        $ipAddress = Utils::getIpAddress();
+        
         $telemetrySvc = $this->telemetryServices; 
 
         // Como el framework exige retornar un booleano y no puede envolver el ciclo,
