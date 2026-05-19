@@ -1,12 +1,13 @@
 import { ApiService } from '../api/ApiServices.js';
 
 class TelemetryTracker {
-    constructor() {
+    constructor(options = {}) {
         this.api = new ApiService();
         this.basePath = window.AppBasePath || '';
         this.abortController = null;
         
-        this.allowTelemetry = true;
+        // Se corrige para aceptar el parametro enviado desde AppInit
+        this.allowTelemetry = options.allowTelemetry !== undefined ? options.allowTelemetry : true;
         this.batch = [];
         this.batchSizeLimit = 3;
         this.flushIntervalMs = 3000;

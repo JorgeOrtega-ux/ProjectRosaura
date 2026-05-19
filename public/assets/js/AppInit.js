@@ -30,6 +30,9 @@ document.addEventListener('DOMContentLoaded', () => {
                            ? parseInt(window.AppUserPrefs.allow_telemetry) === 1 
                            : true;
     window.telemetryTracker = new TelemetryTracker({ allowTelemetry });
+    
+    // CORRECCIÓN: Faltaba llamar a init() para instanciar el AbortController
+    window.telemetryTracker.init();
 
     // ========================================================
     // MOTOR DE CARGA DIFERIDA (LAZY LOADING) REFORZADO CON CICLO DE VIDA
