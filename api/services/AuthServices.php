@@ -31,6 +31,7 @@ class AuthServices {
     private $verificationCodeRepository;
     private $config; 
     private $roleRepository;
+    private $telemetryServices; // NUEVO: Instancia de telemetría
 
     public function __construct(
         RateLimiterInterface $rateLimiter, 
@@ -40,7 +41,8 @@ class AuthServices {
         TokenRepositoryInterface $tokenRepository,
         VerificationCodeRepositoryInterface $verificationCodeRepository,
         ServerConfigRepositoryInterface $configRepository,
-        RoleRepositoryInterface $roleRepository
+        RoleRepositoryInterface $roleRepository,
+        TelemetryServices $telemetryServices // NUEVO: Inyección del servicio
     ) {
         $this->rateLimiter = $rateLimiter;
         $this->prefsManager = $prefsManager;
@@ -50,6 +52,7 @@ class AuthServices {
         $this->verificationCodeRepository = $verificationCodeRepository;
         $this->config = $configRepository->getConfig(); 
         $this->roleRepository = $roleRepository;
+        $this->telemetryServices = $telemetryServices; // NUEVO: Asignación
     }
 
     // NUEVO MÉTODO PRIVADO: Centraliza y abstrae la lectura segura de cookies remember para mitigar inflación DoS
@@ -224,8 +227,19 @@ class AuthServices {
         // REFACTORIZADO: Eliminado Boilerplate try-finally delegando el control a executeWithLock
         return $redisCache->executeWithLock($lockName, 3, function($lockToken) use ($targetUserId) {
             if ($this->sessionManager->switchActiveAccount($targetUserId)) {
+                $user = $this->userRepository->findById($targetUserId);
+                $this->telemetryServices->logAuthEvent([
+                    'event_type' => 'switch_account_success',
+                    'user_uuid' => $user ? $user['uuid'] : null,
+                    'ip_address' => Utils::getIpAddress()
+                ]);
                 return ['success' => true, 'message_key' => 'auth.account_switched'];
             }
+            $this->telemetryServices->logAuthEvent([
+                'event_type' => 'switch_account_failed',
+                'user_uuid' => null,
+                'ip_address' => Utils::getIpAddress()
+            ]);
             return ['success' => false, 'message_key' => 'auth.account_not_found'];
         });
     }
@@ -285,6 +299,13 @@ class AuthServices {
                             $this->createRememberToken($user['id']);
                             $loginSuccess = true;
                             $needsRegeneration = true;
+                            
+                            // Log Auto-login Exitoso
+                            $this->telemetryServices->logAuthEvent([
+                                'event_type' => 'auto_login_success',
+                                'user_uuid' => $user['uuid'],
+                                'ip_address' => Utils::getIpAddress()
+                            ]);
                         } else {
                             continue;
                         }
@@ -492,6 +513,13 @@ class AuthServices {
         if ($newUserId > 0) {
             $user = $this->userRepository->findById($newUserId);
             
+            // Log de Registro Exitoso
+            $this->telemetryServices->logAuthEvent([
+                'event_type' => 'register_success',
+                'user_uuid' => $user['uuid'],
+                'ip_address' => Utils::getIpAddress()
+            ]);
+            
             $redisCache = new RedisCache();
             $lockName = "session_pool_reg_" . $newUserId;
 
@@ -540,6 +568,11 @@ class AuthServices {
             
             if (!empty($user['deletion_scheduled_at'])) {
                 if (strtotime($user['deletion_scheduled_at']) <= time()) {
+                    $this->telemetryServices->logAuthEvent([
+                        'event_type' => 'login_blocked_deleted',
+                        'user_uuid' => $user['uuid'],
+                        'ip_address' => Utils::getIpAddress()
+                    ]);
                     return ['success' => false, 'status' => 'deleted', 'message_key' => 'auth.account_deleted'];
                 }
 
@@ -563,6 +596,11 @@ class AuthServices {
                     $this->userRepository->liftSuspension($user['id']);
                     $user['is_suspended'] = 0;
                 } else {
+                    $this->telemetryServices->logAuthEvent([
+                        'event_type' => 'login_blocked_suspended',
+                        'user_uuid' => $user['uuid'],
+                        'ip_address' => Utils::getIpAddress()
+                    ]);
                     return ['success' => false, 'status' => 'suspended', 'message_key' => 'auth.account_suspended'];
                 }
             }
@@ -573,6 +611,12 @@ class AuthServices {
                 $pending2fa[$tempToken] = $user['id'];
                 $this->sessionManager->set(SessionConstants::KEY_PENDING_2FA, $pending2fa);
                 
+                $this->telemetryServices->logAuthEvent([
+                    'event_type' => 'login_pending_2fa',
+                    'user_uuid' => $user['uuid'],
+                    'ip_address' => Utils::getIpAddress()
+                ]);
+                
                 return ['success' => true, 'requires_2fa' => true, 'temp_auth_token' => $tempToken, 'message_key' => 'auth.requires_2fa'];
             }
 
@@ -582,6 +626,11 @@ class AuthServices {
             // REFACTORIZADO: Abstracción try-finally con executeWithLock para automatizar el ciclo de vida del mutex
             return $redisCache->executeWithLock($lockName, 5, function($lockToken) use ($user) {
                 if (!$this->setAuthSession($user)) {
+                    $this->telemetryServices->logAuthEvent([
+                        'event_type' => 'login_failed_max_sessions',
+                        'user_uuid' => $user['uuid'],
+                        'ip_address' => Utils::getIpAddress()
+                    ]);
                     return ['success' => false, 'message_key' => 'auth.max_accounts_reached'];
                 }
                 
@@ -590,9 +639,24 @@ class AuthServices {
                 }
                 
                 $this->createRememberToken($user['id']);
+                
+                $this->telemetryServices->logAuthEvent([
+                    'event_type' => 'login_success',
+                    'user_uuid' => $user['uuid'],
+                    'ip_address' => Utils::getIpAddress()
+                ]);
+                
                 return ['success' => true, 'requires_2fa' => false, 'message_key' => 'auth.login_success'];
             });
         }
+        
+        // Evento de Fallo de Autenticación
+        $this->telemetryServices->logAuthEvent([
+            'event_type' => 'login_failed',
+            'user_uuid' => $user ? $user['uuid'] : null,
+            'email_attempt' => $email, // Dato adicional opcional
+            'ip_address' => Utils::getIpAddress()
+        ]);
         
         return ['success' => false, 'message_key' => 'auth.incorrect_credentials'];
     }
@@ -639,12 +703,24 @@ class AuthServices {
             // REFACTORIZADO: Boilerplate try-finally extirpado mediante encapsulación funcional con candado mutex
             return $redisCache->executeWithLock($lockName, 5, function($lockToken) use ($user, $rememberDevice) {
                 if (!$this->setAuthSession($user)) {
+                    $this->telemetryServices->logAuthEvent([
+                        'event_type' => 'cancel_deletion_failed_max_sessions',
+                        'user_uuid' => $user['uuid'],
+                        'ip_address' => Utils::getIpAddress()
+                    ]);
                     return ['success' => false, 'message_key' => 'auth.max_accounts_reached'];
                 }
                 
                 if ($rememberDevice) {
                     $this->createRememberToken($user['id']);
                 }
+                
+                $this->telemetryServices->logAuthEvent([
+                    'event_type' => 'cancel_deletion_success',
+                    'user_uuid' => $user['uuid'],
+                    'ip_address' => Utils::getIpAddress()
+                ]);
+                
                 return ['success' => true, 'requires_2fa' => false, 'message_key' => 'auth.login_success'];
             });
         }
@@ -714,28 +790,67 @@ class AuthServices {
                 unset($pending2fa[$tempToken]);
                 $this->sessionManager->set(SessionConstants::KEY_PENDING_2FA, $pending2fa);
                 $this->createRememberToken($user['id']);
+                
+                $this->telemetryServices->logAuthEvent([
+                    'event_type' => '2fa_success',
+                    'user_uuid' => $user['uuid'],
+                    'ip_address' => Utils::getIpAddress()
+                ]);
+                
                 return ['success' => true, 'message_key' => 'auth.login_success'];
             });
         }
 
+        $this->telemetryServices->logAuthEvent([
+            'event_type' => '2fa_failed',
+            'user_uuid' => $user['uuid'],
+            'ip_address' => Utils::getIpAddress()
+        ]);
+        
         return ['success' => false, 'message_key' => 'auth.incorrect_code'];
     }
 
     public function logout() {
         $activeUserId = $this->sessionManager->getActiveAccountId();
+        $userUuid = null;
+        
         if ($activeUserId) {
+            $user = $this->userRepository->findById($activeUserId);
+            $userUuid = $user ? $user['uuid'] : null;
             $this->clearRememberToken($activeUserId);
             $this->sessionManager->removeAccount($activeUserId);
         } else {
             $this->clearRememberToken();
             $this->sessionManager->destroy();
         }
+        
+        $this->telemetryServices->logAuthEvent([
+            'event_type' => 'logout',
+            'user_uuid' => $userUuid,
+            'ip_address' => Utils::getIpAddress()
+        ]);
+        
         return ['success' => true, 'message_key' => 'auth.logout_success'];
     }
 
     public function logoutAll() {
+        $activeUserId = $this->sessionManager->getActiveAccountId();
+        $userUuid = null;
+        
+        if ($activeUserId) {
+            $user = $this->userRepository->findById($activeUserId);
+            $userUuid = $user ? $user['uuid'] : null;
+        }
+        
         $this->clearRememberToken(); 
         $this->sessionManager->destroy();
+        
+        $this->telemetryServices->logAuthEvent([
+            'event_type' => 'logout_all',
+            'user_uuid' => $userUuid,
+            'ip_address' => Utils::getIpAddress()
+        ]);
+        
         return ['success' => true, 'message_key' => 'auth.logout_success'];
     }
 
@@ -779,6 +894,13 @@ class AuthServices {
             
             $mailer = new Mailer();
             if ($mailer->sendPasswordResetLink($email, $user['username'], $resetLink)) {
+                
+                $this->telemetryServices->logAuthEvent([
+                    'event_type' => 'password_reset_request',
+                    'user_uuid' => $user['uuid'],
+                    'ip_address' => Utils::getIpAddress()
+                ]);
+                
                 return ['success' => true, 'message_key' => 'auth.recovery_email_sent'];
             }
         }
@@ -808,6 +930,12 @@ class AuthServices {
             
             $mailer = new Mailer();
             $mailer->sendPasswordChangeNotification($email, $user['username']);
+            
+            $this->telemetryServices->logAuthEvent([
+                'event_type' => 'password_reset_success',
+                'user_uuid' => $user['uuid'],
+                'ip_address' => Utils::getIpAddress()
+            ]);
             
             return ['success' => true, 'message_key' => 'auth.password_reset_success'];
         }
