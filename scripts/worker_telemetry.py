@@ -5,7 +5,6 @@ import redis
 import mysql.connector
 from mysql.connector import Error
 
-# Configuración desde variables de entorno
 REDIS_HOST = os.getenv('REDIS_HOST', 'redis')
 REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
 REDIS_PASSWORD = os.getenv('REDIS_PASS', None)
@@ -15,16 +14,15 @@ DB_NAME = os.getenv('DB_TELEMETRY_NAME', 'db_telemetry')
 DB_USER = os.getenv('DB_TELEMETRY_USER', 'system_web_executor')
 DB_PASS = os.getenv('DB_TELEMETRY_PASSWORD', 'secret')
 
-# Colas de Redis
 QUEUES = {
     'telemetry_api_latency': 'api_latency',
     'telemetry_pageviews': 'pageviews',
-    'telemetry_canvas': 'canvas_interactions',
+    'telemetry_interactions': 'page_interactions',
     'telemetry_auth': 'auth_events'
 }
 
 BATCH_SIZE = 500
-FLUSH_INTERVAL = 5 # Segundos
+FLUSH_INTERVAL = 5
 
 class TelemetryWorker:
     def __init__(self):
@@ -37,26 +35,21 @@ class TelemetryWorker:
             return
         
         try:
-            print(f"Intentando conectar a MySQL ({DB_HOST})...")
             self.db_conn = mysql.connector.connect(
                 host=DB_HOST,
                 database=DB_NAME,
                 user=DB_USER,
                 password=DB_PASS
             )
-            print("✅ Conexión a MySQL establecida con éxito.")
-        except Error as e:
-            print(f"❌ Error conectando a MySQL: {e}")
+        except Error:
             self.db_conn = None
 
     def process_queues(self):
-        # Asegurar que la conexión a DB esté viva
         self.connect_db()
         if not self.db_conn:
             return
 
         cursor = self.db_conn.cursor()
-        total_inserted = 0
 
         try:
             for queue_name, table_name in QUEUES.items():
@@ -72,16 +65,9 @@ class TelemetryWorker:
                 
                 if batch:
                     self.insert_batch(cursor, table_name, batch)
-                    total_inserted += len(batch)
 
-            if total_inserted > 0:
-                print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Procesados y guardados {total_inserted} eventos de telemetría.")
-            else:
-                # Opcional: imprimir latido para saber que el worker sigue vivo
-                print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Colas vacías. Esperando nuevos eventos...")
-
-        except Exception as e:
-            print(f"Error procesando colas: {e}")
+        except Exception:
+            pass
         finally:
             cursor.close()
 
@@ -99,18 +85,14 @@ class TelemetryWorker:
         try:
             cursor.executemany(sql, values)
             self.db_conn.commit()
-        except Error as e:
-            print(f"❌ Error en bulk insert para {table_name}: {e}")
+        except Error:
             self.db_conn.rollback()
 
 if __name__ == "__main__":
-    print("🚀 Iniciando Worker de Telemetría v2.0...")
     worker = TelemetryWorker()
-    
     while True:
         try:
             worker.process_queues()
-        except Exception as e:
-            print(f"❌ Error crítico en el ciclo principal del worker: {e}")
-            
+        except Exception:
+            pass
         time.sleep(FLUSH_INTERVAL)

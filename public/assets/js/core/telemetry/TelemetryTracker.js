@@ -1,52 +1,69 @@
-export default class TelemetryTracker {
-   constructor(config = {}) {
-        // CORRECCIÓN: Apuntamos al núcleo del API, no a una URL fantasma.
-        this.endpoint = '/api/index.php'; 
+import { ApiService } from '../api/ApiServices.js';
+
+class TelemetryTracker {
+    constructor() {
+        this.api = new ApiService();
+        this.basePath = window.AppBasePath || '';
+        this.abortController = null;
         
-        this.allowTelemetry = config.allowTelemetry !== false;
+        this.allowTelemetry = true;
         this.batch = [];
-        this.batchSizeLimit = 3; 
-        this.flushIntervalMs = 3000; 
+        this.batchSizeLimit = 3;
+        this.flushIntervalMs = 3000;
+        this.intervalId = null;
+        this.sessionUUID = null;
         
-        this.sessionUUID = this.generateSessionUUID();
-        
-        console.log("📡 [TelemetryTracker] Inicializado. Permitido:", this.allowTelemetry);
-        
-        if (this.allowTelemetry) {
-            this.init();
-        }
+        this.handleClickBound = this.handleClick.bind(this);
+        this.handleVisibilityChangeBound = this.handleVisibilityChange.bind(this);
+        this.flushBound = this.flush.bind(this);
     }
 
     init() {
-        this.intervalId = setInterval(() => this.flush(), this.flushIntervalMs);
+        this.abortController = new AbortController();
+        this.sessionUUID = this.generateSessionUUID();
+        
+        if (!this.allowTelemetry) return;
 
-        document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'hidden') {
-                console.log("📡 [TelemetryTracker] Documento oculto, forzando flush...");
-                this.flush(true);
-            }
-        });
+        this.bindEvents();
+        this.intervalId = setInterval(this.flushBound, this.flushIntervalMs);
+    }
 
-        document.body.addEventListener('click', (e) => {
-            const target = e.target.closest('[data-telemetry-click]');
-            if (target) {
-                const action = target.getAttribute('data-telemetry-click');
-                const metadata = target.getAttribute('data-telemetry-meta') || null;
-                
-                console.log(`🖱️ [TelemetryTracker] Clic detectado: ${action}`);
-                
-                this.trackEvent('interaction', {
-                    action_type: action,
-                    metadata: metadata ? JSON.parse(metadata) : null,
-                    path: window.location.pathname
-                });
-            }
-        });
+    destroy() {
+        if (this.abortController) this.abortController.abort();
+        if (this.intervalId) clearInterval(this.intervalId);
+        
+        document.removeEventListener('click', this.handleClickBound);
+        document.removeEventListener('visibilitychange', this.handleVisibilityChangeBound);
+    }
+
+    bindEvents() {
+        document.addEventListener('click', this.handleClickBound);
+        document.addEventListener('visibilitychange', this.handleVisibilityChangeBound);
+    }
+
+    handleClick(e) {
+        const target = e.target.closest('[data-telemetry-click]');
+        if (target) {
+            const action = target.getAttribute('data-telemetry-click');
+            const metadata = target.getAttribute('data-telemetry-meta') || null;
+            
+            this.trackEvent('interaction', {
+                action_type: action,
+                metadata: metadata ? JSON.parse(metadata) : null,
+                path: window.location.pathname
+            });
+        }
+    }
+
+    handleVisibilityChange() {
+        if (document.visibilityState === 'hidden') {
+            this.flush(true);
+        }
     }
 
     trackPageview(path, loadTimeMs = 0) {
         if (!this.allowTelemetry) return;
-        console.log(`👁️ [TelemetryTracker] Pageview registrado: ${path}`);
+        
         this.pushToBatch({
             type: 'pageview',
             data: {
@@ -62,51 +79,46 @@ export default class TelemetryTracker {
 
     trackEvent(category, data) {
         if (!this.allowTelemetry) return;
+        
         this.pushToBatch({
-            type: category === 'canvas' ? 'canvas_interaction' : 'interaction',
+            type: category,
             data: data
         });
     }
 
     pushToBatch(payload) {
         this.batch.push(payload);
-        console.log(`📦 [TelemetryTracker] Evento añadido al lote. Tamaño actual: ${this.batch.length}/${this.batchSizeLimit}`);
         if (this.batch.length >= this.batchSizeLimit) {
             this.flush();
         }
     }
 
-flush(isUnloading = false) {
+    async flush(isUnloading = false) {
         if (this.batch.length === 0 || !this.allowTelemetry) return;
 
-        const payload = JSON.stringify({ 
-            route: 'telemetry.collect',
-            events: this.batch 
-        });
+        const payload = { 
+            events: [...this.batch] 
+        };
         
-        console.log("🚀 [TelemetryTracker] Enviando lote al servidor:", JSON.parse(payload));
-
-        // Extraer el token CSRF para pasar el filtro de seguridad de api/index.php
-        const csrfMeta = document.querySelector('meta[name="csrf-token"]');
-        const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
-
-        // Usamos Fetch (con keepalive) en lugar de sendBeacon para asegurar 
-        // que podamos enviar el Header de CSRF sin problemas.
-        fetch(this.endpoint, {
-            method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken
-            },
-            body: payload,
-            keepalive: isUnloading
-        }).then(response => {
-            console.log(`✅ [TelemetryTracker] API respondió con estado: ${response.status}`);
-        }).catch(err => {
-            console.error(`❌ [TelemetryTracker] Error de red:`, err);
-        });
-
         this.batch = [];
+
+        if (isUnloading && navigator.sendBeacon) {
+            const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+            const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+
+            fetch(this.basePath + '/api/index.php?route=telemetry.collect', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                body: JSON.stringify(payload),
+                keepalive: true
+            }).catch(() => {});
+        } else {
+            const route = 'telemetry.collect';
+            this.api.post(route, payload, this.abortController.signal).catch(() => {});
+        }
     }
 
     generateSessionUUID() {
@@ -128,3 +140,5 @@ flush(isUnloading = false) {
         return 'light';
     }
 }
+
+export { TelemetryTracker };

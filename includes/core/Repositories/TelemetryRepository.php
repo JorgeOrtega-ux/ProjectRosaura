@@ -35,18 +35,14 @@ class TelemetryRepository implements TelemetryRepositoryInterface {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function getCanvasActivityStats(string $canvasUuid, string $startDate, string $endDate): array {
+    public function getPageInteractionsStats(string $startDate, string $endDate): array {
         $stmt = $this->db->prepare("
             SELECT action_type, COUNT(*) as action_count 
-            FROM canvas_interactions 
-            WHERE canvas_uuid = :canvas_uuid AND created_at BETWEEN :start AND :end 
+            FROM page_interactions 
+            WHERE created_at BETWEEN :start AND :end 
             GROUP BY action_type
         ");
-        $stmt->execute([
-            'canvas_uuid' => $canvasUuid,
-            'start' => $startDate,
-            'end' => $endDate
-        ]);
+        $stmt->execute(['start' => $startDate, 'end' => $endDate]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 

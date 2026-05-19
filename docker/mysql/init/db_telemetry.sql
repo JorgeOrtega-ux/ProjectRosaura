@@ -31,22 +31,22 @@ CREATE TABLE IF NOT EXISTS pageviews (
     INDEX idx_path (path)
 ) ENGINE=InnoDB;
 
--- Tabla para eventos específicos de negocio y lienzo (Frontend/Backend)
-CREATE TABLE IF NOT EXISTS canvas_interactions (
+-- Tabla para eventos específicos de interacción en la interfaz (Frontend)
+CREATE TABLE IF NOT EXISTS page_interactions (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    canvas_uuid CHAR(36) NOT NULL,
-    action_type VARCHAR(50) NOT NULL, -- ej. 'pixel_placed', 'tool_changed', 'canvas_loaded'
+    action_type VARCHAR(50) NOT NULL,
+    path VARCHAR(255) NULL,
     user_uuid CHAR(36) NULL,
-    metadata JSON NULL, -- Para guardar datos extra sin romper el esquema
+    metadata JSON NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_canvas_created (canvas_uuid, created_at),
+    INDEX idx_created_at (created_at),
     INDEX idx_action (action_type)
 ) ENGINE=InnoDB;
 
 -- Tabla para telemetría de seguridad (Backend)
 CREATE TABLE IF NOT EXISTS auth_events (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    event_type VARCHAR(50) NOT NULL, -- ej. 'login_success', 'captcha_failed', '2fa_verified'
+    event_type VARCHAR(50) NOT NULL,
     user_uuid CHAR(36) NULL,
     ip_address VARCHAR(45) NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -57,7 +57,5 @@ CREATE TABLE IF NOT EXISTS auth_events (
 -- ==========================================
 -- PERMISOS PARA EL USUARIO DE LA APLICACIÓN
 -- ==========================================
--- Esto garantiza que el usuario definido en .env (system_web_executor)
--- tenga control total sobre la base de datos de telemetría.
 GRANT ALL PRIVILEGES ON db_telemetry.* TO 'system_web_executor'@'%';
 FLUSH PRIVILEGES;
