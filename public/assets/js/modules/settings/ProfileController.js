@@ -77,7 +77,6 @@ class ProfileController {
         const btnSaveEmail = e.target.closest('[data-action="saveEmail"]');
         if (btnSaveEmail) this.saveEmail(btnSaveEmail);
         
-        // MODIFICADO: Acción de eliminación de cuenta desde el frontend
         const btnDeleteAccount = e.target.closest('[data-action="submitDeleteAccount"]');
         if (btnDeleteAccount) this.deleteAccount(btnDeleteAccount);
     }
@@ -87,7 +86,6 @@ class ProfileController {
             this.handleFileSelection(e);
         }
         
-        // MODIFICADO: Lógica para mostrar la contraseña al aceptar los términos
         if (e.target && e.target.getAttribute('data-ref') === 'chk_confirm_delete') {
             const passwordArea = document.querySelector('[data-ref="delete_password_area"]');
             if (passwordArea) {
@@ -377,7 +375,6 @@ class ProfileController {
         } else showMessage(result.message, 'error');
     }
 
-    // MODIFICADO: Agendamiento de la eliminación (30 días)
     async deleteAccount(btn) {
         const chkConfirm = document.querySelector('[data-ref="chk_confirm_delete"]');
         const passInput = document.querySelector('[data-ref="delete_account_password"]');

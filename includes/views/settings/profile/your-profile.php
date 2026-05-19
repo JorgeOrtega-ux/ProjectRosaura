@@ -59,6 +59,8 @@ $isDefaultAvatar = strpos($userPic, '/default/') !== false || strpos($userPic, '
 $userPrefs = $_SESSION['user_prefs'] ?? [];
 $prefLang = $userPrefs['language'] ?? ($_COOKIE['pr_language'] ?? 'es-419');
 $prefOpenLinks = isset($userPrefs['open_links_new_tab']) ? (int)$userPrefs['open_links_new_tab'] : 1;
+$prefTelemetry = isset($userPrefs['allow_telemetry']) ? (int)$userPrefs['allow_telemetry'] : 1; // NUEVA VARIABLE DE TELEMETRÍA
+
 $languages = \App\Core\System\Translator::getAvailableLanguages();
 $currentLangText = $languages[$prefLang] ?? __('default_language_text');
 ?>
@@ -202,6 +204,23 @@ $currentLangText = $languages[$prefLang] ?? __('default_language_text');
                     <div class="component-card__actions component-card__actions--end">
                         <label class="component-toggle-switch">
                             <input type="checkbox" data-action="togglePreference" data-key="open_links_new_tab" <?php echo $prefOpenLinks === 1 ? 'checked' : ''; ?>>
+                            <span class="component-toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="component-card--grouped">
+                <div class="component-group-item component-group-item--wrap">
+                    <div class="component-card__content">
+                        <div class="component-card__text">
+                            <h2 class="component-card__title"><?php echo __('settings.telemetry.title'); ?></h2>
+                            <p class="component-card__description"><?php echo __('settings.telemetry.desc'); ?></p>
+                        </div>
+                    </div>
+                    <div class="component-card__actions component-card__actions--end">
+                        <label class="component-toggle-switch">
+                            <input type="checkbox" data-action="togglePreference" data-key="allow_telemetry" <?php echo $prefTelemetry === 1 ? 'checked' : ''; ?>>
                             <span class="component-toggle-slider"></span>
                         </label>
                     </div>

@@ -320,7 +320,8 @@ class SettingsServices
             }
         }
         
-        if ($key === 'open_links_new_tab' || $key === 'extended_alerts') $value = ($value == 1) ? 1 : 0;
+        // MODIFICACIÓN APLICADA AQUÍ: Se añade allow_telemetry a la comprobación
+        if ($key === 'open_links_new_tab' || $key === 'extended_alerts' || $key === 'allow_telemetry') $value = ($value == 1) ? 1 : 0;
 
         if ($this->userRepository->updatePreference($userId, $key, $value)) {
             $userPrefs = $this->sessionManager->get('user_prefs', []);
