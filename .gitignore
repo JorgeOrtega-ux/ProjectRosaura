@@ -26,6 +26,16 @@ storage/backups/*.enc
 storage/backups/*.gz
 !storage/backups/.htaccess
 
+# === BLOQUEO ESTRICTO: DATOS SENSIBLES Y ARCHIVOS BINARIOS ===
+
+# Ignorar la base de datos binaria de GeoIP
+/storage/geoip/*.mmdb
+
+# Ignorar todas las fotos de perfil (tanto las predeterminadas como las subidas)
+/public/storage/profilePictures/default/*
+/public/storage/profilePictures/uploaded/*
+!/public/storage/profilePictures/.htaccess
+
 # Ignorar archivos generados por editores / IDEs
 .idea/
 .vscode/

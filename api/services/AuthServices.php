@@ -4,6 +4,7 @@
 namespace App\Api\Services;
 
 use App\Core\Helpers\Utils;
+use App\Core\Helpers\GeoIpHelper;
 use App\Core\Mail\Mailer; 
 use App\Core\Security\GoogleAuthenticator;
 use App\Core\System\Logger;
@@ -31,7 +32,7 @@ class AuthServices {
     private $verificationCodeRepository;
     private $config; 
     private $roleRepository;
-    private $telemetryServices; // NUEVO: Instancia de telemetría
+    private $telemetryServices; 
 
     public function __construct(
         RateLimiterInterface $rateLimiter, 
@@ -42,7 +43,7 @@ class AuthServices {
         VerificationCodeRepositoryInterface $verificationCodeRepository,
         ServerConfigRepositoryInterface $configRepository,
         RoleRepositoryInterface $roleRepository,
-        TelemetryServices $telemetryServices // NUEVO: Inyección del servicio
+        TelemetryServices $telemetryServices 
     ) {
         $this->rateLimiter = $rateLimiter;
         $this->prefsManager = $prefsManager;
@@ -52,10 +53,9 @@ class AuthServices {
         $this->verificationCodeRepository = $verificationCodeRepository;
         $this->config = $configRepository->getConfig(); 
         $this->roleRepository = $roleRepository;
-        $this->telemetryServices = $telemetryServices; // NUEVO: Asignación
+        $this->telemetryServices = $telemetryServices; 
     }
 
-    // NUEVO MÉTODO PRIVADO: Centraliza y abstrae la lectura segura de cookies remember para mitigar inflación DoS
     private function readRememberTokens(): array {
         $tokens = [];
         if (isset($_COOKIE['remember_tokens'])) {
@@ -73,7 +73,6 @@ class AuthServices {
         return $tokens;
     }
 
-    // NUEVO MÉTODO PRIVADO: Centraliza la persistencia estructurada y segura de cookies remember
     private function saveRememberTokens(array $tokens, int $days): void {
         if (count($tokens) > 5) {
             $tokens = array_slice($tokens, -5, 5, true);
@@ -97,7 +96,6 @@ class AuthServices {
         if (!$this->sessionManager->has(SessionConstants::KEY_ACTIVE_ACCOUNT)) return false;
         $userId = $this->sessionManager->get(SessionConstants::KEY_ACTIVE_ACCOUNT);
         
-        // REFACTORIZADO: Uso del método centralizado del helper global para extraer el selector activo
         $selector = Utils::getCurrentDeviceSelector($userId);
         if (empty($selector)) return false;
 
@@ -116,8 +114,9 @@ class AuthServices {
         $userAgent = substr($_SERVER['HTTP_USER_AGENT'] ?? 'Unknown', 0, 255);
         $ipAddress = substr(Utils::getIpAddress(), 0, 45);
         
-        // --- MODIFICADO: Geolocalización diferida para evitar latencia y bloqueos síncronos ---
-        $location = 'Unknown'; 
+        // --- MODIFICADO: Integración del motor MaxMind local para la lectura de la base de datos .mmdb ---
+        $location = GeoIpHelper::getLocation($ipAddress); 
+        
         
         if (!$this->tokenRepository->createToken($userId, $selector, $hashedValidator, $expiresAt, $userAgent, $ipAddress, $location)) {
              Logger::error("Failed to create remember token in database", ['user_id' => $userId]);
@@ -125,7 +124,6 @@ class AuthServices {
         
         $cookieValue = $selector . ':' . $validator;
         
-        // REFACTORIZADO: Uso de abstracciones de cookies para manipulación limpia
         $tokens = $this->readRememberTokens();
         $tokens[$userId] = $cookieValue;
         
@@ -135,7 +133,6 @@ class AuthServices {
     public function clearRememberToken($userId = null) {
         if ($userId === null) {
             $tokens = $this->readRememberTokens();
-            // MITIGACIÓN DOS: Limitar estrictamente a 5 operaciones de base de datos
             $tokens = array_slice($tokens, 0, 5, true);
             foreach ($tokens as $tokenStr) {
                 if (!is_string($tokenStr)) continue; 
@@ -157,9 +154,7 @@ class AuthServices {
                     
                     unset($tokens[$userId]);
                     
-                    // Filtrar basura antes de guardar de nuevo
                     $cleanTokens = [];
-                    // MITIGACIÓN DOS: Evitar procesamiento de miles de nodos falsos
                     $tokens = array_slice($tokens, 0, 10, true); 
                     foreach ($tokens as $k => $v) {
                         if (is_string($v) && (is_numeric($k) || $k === 'legacy')) {
@@ -224,7 +219,6 @@ class AuthServices {
         $sessionId = session_id() ?: 'cli';
         $lockName = "session_pool_switch_sess_" . $sessionId;
 
-        // REFACTORIZADO: Eliminado Boilerplate try-finally delegando el control a executeWithLock
         return $redisCache->executeWithLock($lockName, 3, function($lockToken) use ($targetUserId) {
             if ($this->sessionManager->switchActiveAccount($targetUserId)) {
                 $user = $this->userRepository->findById($targetUserId);
@@ -247,7 +241,6 @@ class AuthServices {
     public function autoLogin() {
         if ($this->sessionManager->isLoggedIn() && empty($_COOKIE['remember_tokens']) && empty($_COOKIE['remember_token'])) return false;
         
-        // REFACTORIZADO: Extrae de forma masiva e i18n todos los selectores de cookies concurrentes desde el Helper global
         $selectors = Utils::getAllDeviceSelectors();
 
         if (empty($selectors) || count($selectors) > 10) {
@@ -255,7 +248,6 @@ class AuthServices {
             return false;
         }
 
-        // Reconstrucción controlada del mapa de validadores para hash_equals posterior
         $validators = [];
         $tokensMap = $this->readRememberTokens();
         foreach ($tokensMap as $cookieVal) {
@@ -274,7 +266,6 @@ class AuthServices {
         $redisCache = new RedisCache();
         $lockName = "autologin_pool_" . md5(implode('|', $selectors));
 
-        // REFACTORIZADO: Ejecución síncrona segura encapsulada mediante executeWithLock de RedisCache
         return $redisCache->executeWithLock($lockName, 5, function($lockToken) use ($dbTokens, $validators, &$loginSuccess, &$needsRegeneration, $initialActiveId) {
             foreach ($dbTokens as $token) {
                 $selector = $token['selector'];
@@ -300,7 +291,6 @@ class AuthServices {
                             $loginSuccess = true;
                             $needsRegeneration = true;
                             
-                            // Log Auto-login Exitoso
                             $this->telemetryServices->logAuthEvent([
                                 'event_type' => 'auto_login_success',
                                 'user_uuid' => $user['uuid'],
@@ -337,7 +327,6 @@ class AuthServices {
         $email = trim($data['email'] ?? ''); $password = trim($data['password'] ?? '');
         if (empty($email) || empty($password)) return ['success' => false, 'message_key' => 'validation.missing_fields'];
         
-        // Se añade true (isCritical) al rate limiter
         $rateCheck = $this->rateLimiter->consume(RateLimitConstants::KEY_AUTH_REGISTER_STEP1 . "_{$email}", RateLimitConstants::MAX_10, RateLimitConstants::TIME_60, true); 
         if (!$rateCheck['allowed']) {
             return ['success' => false, 'message_key' => $rateCheck['message_key'] ?? 'error.rate_limit_exceeded'];
@@ -396,18 +385,15 @@ class AuthServices {
         $regEmail = $regFlows[$regToken]['email'];
         $regPassword = $regFlows[$regToken]['password']; 
         
-        // REFACTORIZADO: Saneamiento estricto contra inyecciones XSS usando el helper global
         $username = Utils::sanitizeText($data['username'] ?? '');
         if (empty($username)) return ['success' => false, 'message_key' => 'validation.missing_fields'];
 
-        // Se añade true (isCritical) al rate limiter
         $rateCheck = $this->rateLimiter->consume(RateLimitConstants::KEY_AUTH_REGISTER_STEP2 . "_{$regEmail}", RateLimitConstants::MAX_5, RateLimitConstants::TIME_60, true);
         if (!$rateCheck['allowed']) return ['success' => false, 'message_key' => $rateCheck['message_key'] ?? 'error.rate_limit_exceeded'];
         
         $minUser = $this->config['min_username_length'];
         $maxUser = $this->config['max_username_length'];
         
-        // REFACTORIZADO: Validación centralizada delegando la responsabilidad de longitud al Helper
         $userValidation = Utils::validateUsernameFormat($username, $minUser, $maxUser);
         if (!$userValidation['valid']) return ['success' => false, 'message_key' => $userValidation['message_key']];
         
@@ -443,7 +429,6 @@ class AuthServices {
 
         $email = $regFlows[$regToken]['email'];
         
-        // Se añade true (isCritical) al rate limiter
         $rateCheck = $this->rateLimiter->consume(RateLimitConstants::KEY_AUTH_RESEND_CODE . "_{$email}", RateLimitConstants::MAX_5, RateLimitConstants::TIME_60, true); 
         if (!$rateCheck['allowed']) return ['success' => false, 'message_key' => $rateCheck['message_key'] ?? 'error.rate_limit_exceeded'];
         
@@ -484,7 +469,6 @@ class AuthServices {
         if (!isset($regFlows[$regToken])) return ['success' => false, 'message_key' => 'auth.session_expired'];
 
         $identifier = $regFlows[$regToken]['email'];
-        // Se añade true (isCritical) al rate limiter
         $rateCheck = $this->rateLimiter->consume(RateLimitConstants::KEY_AUTH_REGISTER_VERIFY . "_{$identifier}", RateLimitConstants::MAX_10, RateLimitConstants::TIME_15, true); 
         if (!$rateCheck['allowed']) return ['success' => false, 'message_key' => $rateCheck['message_key'] ?? 'error.too_many_attempts'];
 
@@ -513,7 +497,6 @@ class AuthServices {
         if ($newUserId > 0) {
             $user = $this->userRepository->findById($newUserId);
             
-            // Log de Registro Exitoso
             $this->telemetryServices->logAuthEvent([
                 'event_type' => 'register_success',
                 'user_uuid' => $user['uuid'],
@@ -523,7 +506,6 @@ class AuthServices {
             $redisCache = new RedisCache();
             $lockName = "session_pool_reg_" . $newUserId;
 
-            // REFACTORIZADO: Encapsulamiento del lock síncrono mediante callback aislado
             return $redisCache->executeWithLock($lockName, 5, function($lockToken) use ($user, $newUserId, &$regFlows, $regToken, $verification) {
                 if (!$this->setAuthSession($user)) {
                     unset($regFlows[$regToken]);
@@ -556,7 +538,6 @@ class AuthServices {
         $attempts = $this->config['login_rate_limit_attempts'];
         $minutes = $this->config['login_rate_limit_minutes'];
         
-        // Se añade true (isCritical) al rate limiter
         $rateCheck = $this->rateLimiter->consume(RateLimitConstants::KEY_AUTH_LOGIN . "_{$email}", $attempts, $minutes, true);
         
         if (!$rateCheck['allowed']) return ['success' => false, 'message_key' => $rateCheck['message_key'] ?? 'error.rate_limit_exceeded'];
@@ -623,7 +604,6 @@ class AuthServices {
             $redisCache = new RedisCache();
             $lockName = "session_pool_login_" . $user['id'];
 
-            // REFACTORIZADO: Abstracción try-finally con executeWithLock para automatizar el ciclo de vida del mutex
             return $redisCache->executeWithLock($lockName, 5, function($lockToken) use ($user) {
                 if (!$this->setAuthSession($user)) {
                     $this->telemetryServices->logAuthEvent([
@@ -650,11 +630,10 @@ class AuthServices {
             });
         }
         
-        // Evento de Fallo de Autenticación
         $this->telemetryServices->logAuthEvent([
             'event_type' => 'login_failed',
             'user_uuid' => $user ? $user['uuid'] : null,
-            'email_attempt' => $email, // Dato adicional opcional
+            'email_attempt' => $email, 
             'ip_address' => Utils::getIpAddress()
         ]);
         
@@ -700,7 +679,6 @@ class AuthServices {
             $redisCache = new RedisCache();
             $lockName = "session_pool_login_" . $user['id'];
 
-            // REFACTORIZADO: Boilerplate try-finally extirpado mediante encapsulación funcional con candado mutex
             return $redisCache->executeWithLock($lockName, 5, function($lockToken) use ($user, $rememberDevice) {
                 if (!$this->setAuthSession($user)) {
                     $this->telemetryServices->logAuthEvent([
@@ -741,7 +719,6 @@ class AuthServices {
         
         $attempts = $this->config['login_rate_limit_attempts'];
         $minutes = $this->config['login_rate_limit_minutes'];
-        // Se añade true (isCritical) al rate limiter
         $rateCheck = $this->rateLimiter->consume(RateLimitConstants::KEY_AUTH_LOGIN_2FA . "_{$userId}", $attempts, $minutes, true);
         
         if (!$rateCheck['allowed']) return ['success' => false, 'message_key' => $rateCheck['message_key'] ?? 'error.rate_limit_exceeded'];
@@ -775,7 +752,6 @@ class AuthServices {
             $redisCache = new RedisCache();
             $lockName = "session_pool_2fa_" . $user['id'];
 
-            // REFACTORIZADO: Remoción de try-finally delegando el release del candado a executeWithLock
             return $redisCache->executeWithLock($lockName, 5, function($lockToken) use ($user, $tempToken, &$pending2fa) {
                 if (!$this->setAuthSession($user)) {
                     unset($pending2fa[$tempToken]);
@@ -861,7 +837,6 @@ class AuthServices {
         $attempts = $this->config['forgot_password_rate_limit_attempts'];
         $minutes = $this->config['forgot_password_rate_limit_minutes'];
         
-        // Se añade true (isCritical) al rate limiter
         $rateCheck = $this->rateLimiter->consume(RateLimitConstants::KEY_AUTH_FORGOT_PASSWORD . "_{$email}", $attempts, $minutes, true);
         if (!$rateCheck['allowed']) return ['success' => false, 'message_key' => $rateCheck['message_key'] ?? 'error.rate_limit_exceeded'];
 

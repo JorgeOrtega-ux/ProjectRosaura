@@ -44,12 +44,10 @@ class Utils {
         return 'public/storage/profilePictures/default/' . $fileName;
     }
 
-    // REFACTORIZADO: Coordina la responsabilidad directamente con la implementación del SessionManager
     public static function generateCSRFToken(SessionManagerInterface $sessionManager) {
         return $sessionManager->getCsrfToken();
     }
 
-    // REFACTORIZADO: Coordina la responsabilidad directamente con la implementación del SessionManager
     public static function validateCSRFToken($token, SessionManagerInterface $sessionManager) {
         return $sessionManager->validateCsrfToken($token ?? '');
     }
@@ -94,12 +92,17 @@ class Utils {
             $trustedProxies = array_merge($trustedProxies, array_map('trim', explode(',', $envProxies)));
         }
 
-        if (in_array($realIp, $trustedProxies)) {
+        // Determinar si la IP remota es un proxy de confianza o cae dentro del rango de IPs privadas (Docker default: 172.x.x.x, 10.x.x.x, 192.168.x.x)
+        $isTrusted = in_array($realIp, $trustedProxies) || filter_var($realIp, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false;
+
+        if ($isTrusted) {
             if (!empty($_SERVER['HTTP_CF_CONNECTING_IP'])) {
                 $ip = $_SERVER['HTTP_CF_CONNECTING_IP'];
             } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
                 $ipList = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
                 $ip = trim($ipList[0]);
+            } elseif (!empty($_SERVER['HTTP_X_REAL_IP'])) {
+                $ip = $_SERVER['HTTP_X_REAL_IP'];
             } else {
                 $ip = $realIp;
             }
@@ -157,7 +160,6 @@ class Utils {
         return ['valid' => true];
     }
 
-    // NUEVA FUNCIÓN: Centraliza la validación de formato del nombre de usuario
     public static function validateUsernameFormat($username, $minLen = 3, $maxLen = 32) {
         $userLen = mb_strlen(trim($username), 'UTF-8');
         if ($userLen < $minLen || $userLen > $maxLen) {
@@ -348,7 +350,6 @@ class Utils {
         return '';
     }
 
-    // NUEVA FUNCIÓN: Extrae de forma segura TODOS los selectores de la cookie
     public static function getAllDeviceSelectors($userId = null) {
         $selectors = [];
         
@@ -375,7 +376,6 @@ class Utils {
         return $selectors;
     }
 
-    // NUEVA FUNCIÓN: Centraliza la sanitización estricta de textos comunes para el sistema
     public static function sanitizeText($text) {
         if (empty($text)) return null;
         $clean = strip_tags($text);

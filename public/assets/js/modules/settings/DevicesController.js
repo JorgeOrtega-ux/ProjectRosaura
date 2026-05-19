@@ -82,7 +82,7 @@ class DevicesController {
             container.appendChild(this.createDeviceElement(device));
         });
 
-        // 3. Agregar Divisor y el Ítem de "Cerrar Todas" (el que me pediste meter en el grupo)
+        // 3. Agregar Divisor y el Ítem de "Cerrar Todas"
         const finalHr = document.createElement('hr');
         finalHr.className = 'component-divider';
         container.appendChild(finalHr);
@@ -94,9 +94,10 @@ class DevicesController {
         const div = document.createElement('div');
         div.className = 'component-group-item device-item-row';
         
+        // LIMPIEZA: Se sustituyen los estilos en línea por clases BEM semánticas
         const badgeOrBtn = device.is_current ? `
-            <div class="component-badge component-badge--sm" style="background: rgba(40, 167, 69, 0.1); color: #28a745; border-color: rgba(40, 167, 69, 0.2);">
-                <span class="material-symbols-rounded" style="font-size: 16px;">verified</span>
+            <div class="component-badge component-badge--sm component-badge--success">
+                <span class="material-symbols-rounded component-icon--sm">verified</span>
                 ${__('device_current') || 'Sesión Actual'}
             </div>
         ` : `
@@ -105,7 +106,19 @@ class DevicesController {
             </button>
         `;
 
-        let locationText = device.location === 'Local / Unknown' ? 'Localhost' : (device.location || __('device_unknown_location'));
+        // LÓGICA CONDICIONAL UI: Solo renderizar badge si la ubicación es real y no es local.
+        let locationBadge = '';
+        if (device.location && device.location !== 'Unknown' && device.location !== 'Local Network') {
+            locationBadge = `
+                <div class="component-badge component-badge--sm">
+                    <span class="material-symbols-rounded">location_on</span>
+                    <span>${device.location}</span>
+                </div>
+            `;
+        }
+
+        // LIMPIEZA: Control dinámico de clases para el peso de la fuente en lugar de style="font-weight: 700;"
+        const titleClass = device.is_current ? 'component-card__title component-text--bold' : 'component-card__title';
 
         div.innerHTML = `
             <div class="component-card__content">
@@ -113,12 +126,9 @@ class DevicesController {
                     <span class="material-symbols-rounded">${parsedUA.icon}</span>
                 </div>
                 <div class="component-card__text">
-                    <h2 class="component-card__title" style="${device.is_current ? 'font-weight: 700;' : ''}">${parsedUA.os} - ${parsedUA.browser}</h2>
-                    <div class="component-badge-list" style="margin-top: 6px;">
-                        <div class="component-badge component-badge--sm">
-                            <span class="material-symbols-rounded">location_on</span>
-                            <span>${locationText}</span>
-                        </div>
+                    <h2 class="${titleClass}">${parsedUA.os} - ${parsedUA.browser}</h2>
+                    <div class="component-badge-list component-badge-list--spaced">
+                        ${locationBadge}
                         <div class="component-badge component-badge--sm">
                             <span class="material-symbols-rounded">wifi</span>
                             <span>${device.ip_address || __('device_unknown_ip')}</span>
@@ -131,7 +141,7 @@ class DevicesController {
         return div;
     }
 
-createRevokeAllItem() {
+    createRevokeAllItem() {
         const div = document.createElement('div');
         div.className = 'component-group-item component-group-item--wrap';
         div.innerHTML = `
