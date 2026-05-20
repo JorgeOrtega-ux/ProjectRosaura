@@ -30,6 +30,7 @@ class SessionManager implements SessionManagerInterface {
                 $this->set(SessionConstants::KEY_LINKED_ACCOUNTS, []);
             }
             
+            // Garantizamos la lectura pasiva de invalidación en cada ciclo de solicitud
             $this->enforcePassiveInvalidation();
 
         } catch (Exception $e) {
@@ -82,7 +83,6 @@ class SessionManager implements SessionManagerInterface {
         return $this->get(SessionConstants::KEY_ACTIVE_ACCOUNT);
     }
 
-    // Método añadido para poder recuperar el ASN en tiempo real desde la capa de vista/frontend
     public function getActiveAccountAsn(): ?string {
         return $this->get('user_asn');
     }
@@ -106,7 +106,6 @@ class SessionManager implements SessionManagerInterface {
             foreach (SessionConstants::ROOT_KEYS as $key) {
                 $this->remove($key);
             }
-            // Eliminar manualmente el ASN si se limpia la raíz
             $this->remove('user_asn'); 
         }
     }
@@ -220,6 +219,8 @@ class SessionManager implements SessionManagerInterface {
         }
     }
 
+    // Estos métodos persisten como APIs públicas, pero la carga principal ahora
+    // se detona atómicamente desde el RoleRepository
     public function invalidateAccountInPool(int $userId): void {
         try {
             $this->redis->setex(CacheConstants::PREFIX_FORCE_REAUTH_USER . $userId, CacheConstants::TTL_ONE_DAY, time());
@@ -252,7 +253,7 @@ class SessionManager implements SessionManagerInterface {
         }
     }
 
-    // REFACTORIZADO Y CORREGIDO: Resuelve el bug crítico integrando el nuevo helper centralizado multi-cuenta de Utils
+    // El motor principal que consume las señales emitidas por el Repositorio de Roles
     public function enforcePassiveInvalidation(): void {
         $accounts = $this->getLinkedAccounts();
         if (empty($accounts)) return;
@@ -263,7 +264,6 @@ class SessionManager implements SessionManagerInterface {
             foreach ($accounts as $userId => $accountData) {
                 $sessionCreatedAt = $accountData[SessionConstants::KEY_SESSION_CREATED_AT] ?? 0;
 
-                // SOLUCIÓN AL BUG: Se obtiene el selector real del dispositivo mapeando correctamente las sesiones multi-cuenta
                 $currentSelector = \App\Core\Helpers\Utils::getCurrentDeviceSelector($userId);
                 $selectorReauthTime = (!empty($currentSelector)) ? $this->redis->get(CacheConstants::PREFIX_FORCE_REAUTH_DEVICE . $currentSelector) : null;
 
@@ -278,6 +278,7 @@ class SessionManager implements SessionManagerInterface {
                     continue;
                 }
 
+                // Escucha activamente los Triggers emitidos por RoleRepository
                 $roles = $accountData['user_roles'] ?? [];
                 foreach ($roles as $roleId) {
                     $roleReauthTime = $this->redis->get(CacheConstants::PREFIX_FORCE_REAUTH_ROLE . $roleId);

@@ -31,7 +31,6 @@ use App\Core\Interfaces\ModerationRepositoryInterface;
 use App\Core\Repositories\RoleRepository;
 use App\Core\Interfaces\RoleRepositoryInterface;
 
-// NUEVOS IMPORT DE TELEMETRÍA
 use App\Core\Interfaces\TelemetryRepositoryInterface;
 use App\Core\Repositories\TelemetryRepository;
 
@@ -49,6 +48,10 @@ class Container implements ContainerInterface {
         $redis = new RedisCache();
         $this->instances[Client::class] = $redis->getClient();
         
+        // CORRECCIÓN VITAL: Registrar la clase RedisCache en sí misma para que el inyector de dependencias
+        // sepa cómo resolver el nuevo constructor de RoleRepository, permitiendo el uso de executeWithLock()
+        $this->instances[RedisCache::class] = $redis;
+        
         // 2. Registrar Bindings (Interfaces conectadas a Implementaciones)
         $this->bindings[RateLimiterInterface::class] = RedisRateLimiter::class; 
         
@@ -64,7 +67,7 @@ class Container implements ContainerInterface {
         $this->bindings[ModerationRepositoryInterface::class] = ModerationRepository::class;
         $this->bindings[RoleRepositoryInterface::class] = RoleRepository::class;
         
-        // 4. NUEVO: Repositorio de Telemetría
+        // 4. Repositorio de Telemetría
         $this->bindings[TelemetryRepositoryInterface::class] = TelemetryRepository::class;
     }
 

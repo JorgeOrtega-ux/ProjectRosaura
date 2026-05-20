@@ -124,7 +124,6 @@ class AdminServices {
         return ['allowed' => true];
     }
 
-    // NUEVO MÉTODO PRIVADO: Centraliza la validación Sudo-Mode (Anti-DoS) eliminando la duplicación en 8 métodos críticos
     private function verifyAdminSudoMode(string $password): array {
         $currentUserId = $this->sessionManager->get('user_id');
         $rateCheck = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_PASSWORD_VERIFY, 5, 15);
@@ -138,7 +137,6 @@ class AdminServices {
         return ['success' => true, 'admin_id' => $currentUserId];
     }
 
-    // NUEVO MÉTODO PRIVADO: Centraliza y unifica el encolamiento de Backups modulares y personalizados en Redis (DRY)
     private function dispatchBackupJob(string $type, array $modules, ?array $schema = null): array {
         try {
             $redis = Utils::getRedisClient();
@@ -288,7 +286,6 @@ class AdminServices {
         $authCheck = $this->canEditUser($user);
         if (!$authCheck['allowed']) return ['success' => false, 'message_key' => $authCheck['message_key']];
 
-        // REFACTORIZADO: Inyección del validador Sudo-Mode unificado (DRY)
         $sudo = $this->verifyAdminSudoMode($data['password'] ?? '');
         if (!$sudo['success']) return $sudo;
         $currentUserId = $sudo['admin_id'];
@@ -296,7 +293,6 @@ class AdminServices {
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_EDIT_USERNAME, 20, 30);
         if (!$rl['allowed']) return ['success' => false, 'message_key' => $rl['message_key']];
 
-        // REFACTORIZADO: Saneamiento estricto contra XSS usando el helper global
         $username = Utils::sanitizeText($data['username'] ?? '');
         $minLen = $this->config['min_username_length'] ?? 3;
         $maxLen = $this->config['max_username_length'] ?? 32;
@@ -323,7 +319,6 @@ class AdminServices {
         $authCheck = $this->canEditUser($user);
         if (!$authCheck['allowed']) return ['success' => false, 'message_key' => $authCheck['message_key']];
 
-        // REFACTORIZADO: Inyección del validador Sudo-Mode unificado (DRY)
         $sudo = $this->verifyAdminSudoMode($data['password'] ?? '');
         if (!$sudo['success']) return $sudo;
         $currentUserId = $sudo['admin_id'];
@@ -392,12 +387,10 @@ class AdminServices {
         $authCheck = $this->canEditUser($user);
         if (!$authCheck['allowed']) return ['success' => false, 'message_key' => $authCheck['message_key']];
 
-        // REFACTORIZADO: Inyección del validador Sudo-Mode unificado (DRY)
         $sudo = $this->verifyAdminSudoMode($data['password'] ?? '');
         if (!$sudo['success']) return $sudo;
         $currentUserId = $sudo['admin_id'];
 
-        // Consumir RateLimit Funcional después de validar password
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_EDIT_ROLE, 10, 30);
         if (!$rl['allowed']) return ['success' => false, 'message_key' => $rl['message_key']];
 
@@ -432,12 +425,10 @@ class AdminServices {
             return ['success' => false, 'message_key' => 'validation.invalid_data'];
         }
 
-        // REFACTORIZADO: Inyección del validador Sudo-Mode unificado (DRY)
         $sudo = $this->verifyAdminSudoMode($data['password'] ?? '');
         if (!$sudo['success']) return $sudo;
         $currentUserId = $sudo['admin_id'];
 
-        // Consumir RateLimit Funcional
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_DELETE_USER, 20, 30);
         if (!$rl['allowed']) return ['success' => false, 'message_key' => $rl['message_key']];
 
@@ -506,12 +497,10 @@ class AdminServices {
         $authCheck = $this->canEditUser($user);
         if (!$authCheck['allowed']) return ['success' => false, 'message_key' => $authCheck['message_key']];
 
-        // REFACTORIZADO: Inyección del validador Sudo-Mode unificado (DRY)
         $sudo = $this->verifyAdminSudoMode($data['password'] ?? '');
         if (!$sudo['success']) return $sudo;
         $currentUserId = $sudo['admin_id'];
 
-        // Consumir RateLimit Funcional
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_EDIT_STATUS, 20, 30);
         if (!$rl['allowed']) return ['success' => false, 'message_key' => $rl['message_key']];
 
@@ -572,7 +561,6 @@ class AdminServices {
         return ['success' => false, 'message_key' => 'error.update_failed'];
     }
 
-// OPTIMIZADO: Ahora procesa y construye el JSON con el bloque "pagination"
     public function getModerationKardex($data) {
         if (!$this->hasPermission('view_kardex')) return ['success' => false, 'message_key' => 'error.unauthorized'];
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_READ_DATA, 120, 1);
@@ -585,10 +573,8 @@ class AdminServices {
         $user = $this->userRepository->findById($targetId);
         if (!$user) return ['success' => false, 'message_key' => 'admin.user_not_found'];
 
-        // Obtener historial principal
         $modLogs = $this->moderationRepository->getKardex($targetId);
         
-        // Obtener cambios de perfil (Límite amplio para permitir la concatenación cronológica sin matar la RAM)
         $profileLogs = $this->profileLogRepository->getLogsByUserId($targetId, 1000, 0);
         
         foreach ($profileLogs as $pl) {
@@ -603,12 +589,10 @@ class AdminServices {
             ];
         }
 
-        // Ordenar cronológicamente descendente
         usort($modLogs, function($a, $b) {
             return strtotime($b['created_at']) - strtotime($a['created_at']);
         });
 
-        // Aplicar slice para la paginación a nivel PHP
         $totalItems = count($modLogs);
         $totalPages = ceil($totalItems / $limit);
         $offset = ($page - 1) * $limit;
@@ -698,9 +682,7 @@ class AdminServices {
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_EDIT_ROLE, 20, 30);
         if (!$rl['allowed']) return ['success' => false, 'message_key' => $rl['message_key']];
 
-        // REFACTORIZADO: Saneamiento estricto i18n del nombre del rol contra XSS
         $name = Utils::sanitizeText($data['name'] ?? '');
-        // [PARCHE DE SEGURIDAD]: Evitar pesos negativos
         $weight = max(1, (int)($data['weight'] ?? 1)); 
         $currentWeight = $this->getCurrentAdminWeight();
 
@@ -740,9 +722,7 @@ class AdminServices {
             $name = $existingById['name'];
             $weight = (int)$existingById['weight'];
         } else {
-            // REFACTORIZADO: Saneamiento estricto i18n del nombre del rol contra XSS
             $name = Utils::sanitizeText($data['name'] ?? '');
-            // [PARCHE DE SEGURIDAD]: Evitar pesos negativos
             $weight = max(1, (int)($data['weight'] ?? 1));
 
             if ($currentWeight < SecurityConstants::WEIGHT_SUPER_ADMIN && $weight >= $currentWeight) {
@@ -760,9 +740,7 @@ class AdminServices {
 
         try {
             if ($this->roleRepository->update($id, $name, $colorCheck['color_string'], $weight, $currentWeight)) {
-                if (method_exists($this->sessionManager, 'invalidateRoleInPool')) {
-                    $this->sessionManager->invalidateRoleInPool($id);
-                }
+                // ELIMINADO: La invalidación ahora ocurre de manera atómica y centralizada dentro de RoleRepository
                 return ['success' => true, 'message_key' => 'admin.role_updated'];
             }
         } catch (\Exception $e) {
@@ -860,9 +838,7 @@ class AdminServices {
 
         try {
             if ($this->roleRepository->assignPermissionsToRole($roleId, $permissionsArray, $currentWeight)) {
-                if (method_exists($this->sessionManager, 'invalidateRoleInPool')) {
-                    $this->sessionManager->invalidateRoleInPool($roleId);
-                }
+                // ELIMINADO: La invalidación ahora ocurre de manera atómica y centralizada dentro de RoleRepository
                 return ['success' => true, 'message_key' => 'admin.role_permissions_updated'];
             }
         } catch (\Exception $e) {
@@ -882,7 +858,6 @@ class AdminServices {
     public function updateServerConfig($data) {
         if (!$this->hasPermission('manage_server_config')) return ['success' => false, 'message_key' => 'error.unauthorized'];
 
-        // REFACTORIZADO: Inyección del validador Sudo-Mode unificado (DRY)
         $sudo = $this->verifyAdminSudoMode($data['password'] ?? '');
         if (!$sudo['success']) return $sudo;
 
@@ -983,7 +958,6 @@ class AdminServices {
         return $this->_executeMaintenanceDeletion($data['password'] ?? '', RateLimitConstants::KEY_ADM_REDIS_DELETE, $patterns, 'admin.maintenance_rate_limits_reset');
     }
 
-    // --- REFACTORIZADO: PROTOCOLO DE PÁNICO AHORA CON SUDO-MODE CENTRALIZADO ---
     public function togglePanicMode($data) {
         if (!$this->hasPermission('perform_system_maintenance')) {
             return ['success' => false, 'message_key' => 'error.unauthorized'];
@@ -991,12 +965,10 @@ class AdminServices {
 
         $isActive = filter_var($data['is_active'] ?? false, FILTER_VALIDATE_BOOLEAN);
 
-        // REFACTORIZADO: Inyección del validador Sudo-Mode unificado (DRY)
         $sudo = $this->verifyAdminSudoMode($data['password'] ?? '');
         if (!$sudo['success']) return $sudo;
         $currentUserId = $sudo['admin_id'];
 
-        // Consumir RateLimit Funcional
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_TOGGLE_PANIC, 5, 5);
         if (!$rl['allowed']) return ['success' => false, 'message_key' => $rl['message_key']];
 
@@ -1004,12 +976,10 @@ class AdminServices {
             $redis = Utils::getRedisClient();
 
             if ($isActive) {
-                // Activar modo pánico
                 $redis->set(CacheConstants::KEY_SYSTEM_PANIC_MODE, '1');
                 Logger::critical("SYSTEM PANIC MODE ACTIVATED by admin ID: {$currentUserId}", ['admin_id' => $currentUserId]);
                 $messageKey = 'admin.panic_mode_activated';
             } else {
-                // Desactivar modo pánico
                 $redis->del(CacheConstants::KEY_SYSTEM_PANIC_MODE);
                 Logger::info("SYSTEM PANIC MODE DEACTIVATED by admin ID: {$currentUserId}", ['admin_id' => $currentUserId]);
                 $messageKey = 'admin.panic_mode_deactivated';
@@ -1043,7 +1013,6 @@ class AdminServices {
         
         $modules = $data['modules'] ?? ['db' => true, 'avatars_uploaded' => false, 'avatars_default' => false];
 
-        // REFACTORIZADO: Despacho unificado modular delegando en dispatchBackupJob (DRY)
         return $this->dispatchBackupJob('manual', $modules);
     }
 
@@ -1083,7 +1052,6 @@ class AdminServices {
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_BACKUP_CREATE, 5, 30);
         if (!$rl['allowed']) return ['success' => false, 'message_key' => $rl['message_key']];
         
-        // REFACTORIZADO: Despacho unificado modular personalizado delegando en dispatchBackupJob (DRY)
         return $this->dispatchBackupJob('manual_custom', $modules, $schema);
     }
 
@@ -1113,12 +1081,10 @@ class AdminServices {
     public function restoreBackup($data) {
         if (!$this->hasPermission('restore_backups')) return ['success' => false, 'message_key' => 'error.unauthorized'];
         
-        // REFACTORIZADO: Inyección del validador Sudo-Mode unificado (DRY)
         $sudo = $this->verifyAdminSudoMode($data['password'] ?? '');
         if (!$sudo['success']) return $sudo;
         $currentUserId = $sudo['admin_id'];
 
-        // Consumir RateLimit Funcional
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_BACKUP_RESTORE, 3, 30);
         if (!$rl['allowed']) return ['success' => false, 'message_key' => $rl['message_key']];
 

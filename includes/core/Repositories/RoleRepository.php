@@ -5,6 +5,8 @@ namespace App\Core\Repositories;
 
 use App\Core\Interfaces\RoleRepositoryInterface;
 use App\Config\DatabaseManager;
+use App\Config\RedisCache;
+use App\Core\System\CacheConstants;
 use App\Core\System\DatabaseConstants as DB;
 use App\Core\System\SecurityConstants;
 use PDO;
@@ -12,39 +14,292 @@ use Exception;
 
 class RoleRepository implements RoleRepositoryInterface {
     private $pdo;
+    private $redisCache;
+    private $redisClient;
 
-    public function __construct(DatabaseManager $dbManager) {
+    public function __construct(DatabaseManager $dbManager, RedisCache $redisCache) {
         $this->pdo = $dbManager->getConnection(DB::CONN_IDENTITY);
+        $this->redisCache = $redisCache;
+        $this->redisClient = $redisCache->getClient();
     }
 
+    // ==========================================
+    // MÉTODOS DE INVALIDACIÓN (ATOMICIDAD & SEÑALES PASIVAS)
+    // ==========================================
+
+    private function _deleteKeysByPattern(string $pattern): void {
+        if (!$this->redisClient || defined('SYSTEM_DEGRADED')) return;
+        try {
+            $cursor = '0';
+            do {
+                $result = $this->redisClient->executeRaw(['SCAN', $cursor, 'MATCH', $pattern, 'COUNT', 100]);
+                if(!$result) break;
+                $cursor = $result[0];
+                $keys = $result[1] ?? [];
+                if (!empty($keys)) {
+                    $this->redisClient->del($keys);
+                }
+            } while ($cursor !== '0');
+        } catch (Exception $e) {
+            throw $e; // Permite el rollBack si Redis falla
+        }
+    }
+
+    public function invalidateGlobalRolesCache(): void {
+        if (!$this->redisClient || defined('SYSTEM_DEGRADED')) return;
+        $this->redisClient->del([CacheConstants::PREFIX_ROLES_ALL]);
+        $this->_deleteKeysByPattern(CacheConstants::PREFIX_ROLE_BY_ID . '*');
+        $this->_deleteKeysByPattern(CacheConstants::PREFIX_ROLE_BY_NAME . '*');
+    }
+
+    public function invalidateRoleCache(int $roleId): void {
+        if (!$this->redisClient || defined('SYSTEM_DEGRADED')) return;
+        
+        $this->redisClient->del([
+            CacheConstants::PREFIX_ROLE_BY_ID . $roleId,
+            CacheConstants::PREFIX_ROLE_PERMS . $roleId
+        ]);
+        
+        // Emisión de Señal de Invalidación Pasiva para SessionManager
+        $this->redisClient->setex(CacheConstants::PREFIX_FORCE_REAUTH_ROLE . $roleId, CacheConstants::TTL_ONE_DAY, time());
+        
+        $this->invalidateGlobalRolesCache();
+    }
+
+    public function invalidateUserCache(int $userId): void {
+        if (!$this->redisClient || defined('SYSTEM_DEGRADED')) return;
+        
+        $this->redisClient->del([
+            CacheConstants::PREFIX_USER_ROLES . $userId,
+            CacheConstants::PREFIX_USER_PERMS . $userId,
+            CacheConstants::PREFIX_USER_HIGHEST_ROLE . $userId
+        ]);
+
+        // Emisión de Señal de Invalidación Pasiva para SessionManager
+        $this->redisClient->setex(CacheConstants::PREFIX_FORCE_REAUTH_USER . $userId, CacheConstants::TTL_ONE_DAY, time());
+    }
+
+    public function invalidateGlobalPermissionsCache(): void {
+        if (!$this->redisClient || defined('SYSTEM_DEGRADED')) return;
+        $this->redisClient->del([CacheConstants::PREFIX_ALL_PERMISSIONS]);
+    }
+
+    // ==========================================
+    // MÉTODOS DE LECTURA (CACHE-ASIDE + STAMPEDE LOCKS)
+    // ==========================================
+
     public function getAll(): array {
-        $tblRoles = DB::TBL_ROLES;
-        $stmt = $this->pdo->query("SELECT id, name, color, weight, is_system, created_at, updated_at FROM {$tblRoles} ORDER BY weight DESC, id ASC");
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $cacheKey = CacheConstants::PREFIX_ROLES_ALL;
+        $cached = $this->redisClient ? $this->redisClient->get($cacheKey) : null;
+        if ($cached) return json_decode($cached, true);
+
+        return $this->redisCache->executeWithLock('lock_rbac_all_roles', 5, function() use ($cacheKey) {
+            $cached = $this->redisClient ? $this->redisClient->get($cacheKey) : null;
+            if ($cached) return json_decode($cached, true);
+
+            $tblRoles = DB::TBL_ROLES;
+            $stmt = $this->pdo->query("SELECT id, name, color, weight, is_system, created_at, updated_at FROM {$tblRoles} ORDER BY weight DESC, id ASC");
+            $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if ($this->redisClient) $this->redisClient->setex($cacheKey, CacheConstants::TTL_ONE_DAY, json_encode($data));
+            return $data;
+        });
     }
 
     public function findById(int $id): ?array {
-        $tblRoles = DB::TBL_ROLES;
-        // LIMIT 1 añadido para detener el escaneo
-        $stmt = $this->pdo->prepare("SELECT * FROM {$tblRoles} WHERE id = ? LIMIT 1");
-        $stmt->execute([$id]);
-        $role = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $role ?: null;
+        $cacheKey = CacheConstants::PREFIX_ROLE_BY_ID . $id;
+        $cached = $this->redisClient ? $this->redisClient->get($cacheKey) : null;
+        if ($cached) return json_decode($cached, true);
+
+        return $this->redisCache->executeWithLock('lock_rbac_role_' . $id, 5, function() use ($id, $cacheKey) {
+            $cached = $this->redisClient ? $this->redisClient->get($cacheKey) : null;
+            if ($cached) return json_decode($cached, true);
+
+            $tblRoles = DB::TBL_ROLES;
+            $stmt = $this->pdo->prepare("SELECT * FROM {$tblRoles} WHERE id = ? LIMIT 1");
+            $stmt->execute([$id]);
+            $role = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($role && $this->redisClient) $this->redisClient->setex($cacheKey, CacheConstants::TTL_ONE_DAY, json_encode($role));
+            return $role ?: null;
+        });
     }
 
     public function findByName(string $name): ?array {
-        $tblRoles = DB::TBL_ROLES;
-        // LIMIT 1 añadido
-        $stmt = $this->pdo->prepare("SELECT * FROM {$tblRoles} WHERE name = ? LIMIT 1");
-        $stmt->execute([$name]);
-        $role = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $role ?: null;
+        $cacheKey = CacheConstants::PREFIX_ROLE_BY_NAME . md5($name);
+        $cached = $this->redisClient ? $this->redisClient->get($cacheKey) : null;
+        if ($cached) return json_decode($cached, true);
+
+        return $this->redisCache->executeWithLock('lock_rbac_role_name_' . md5($name), 5, function() use ($name, $cacheKey) {
+            $cached = $this->redisClient ? $this->redisClient->get($cacheKey) : null;
+            if ($cached) return json_decode($cached, true);
+
+            $tblRoles = DB::TBL_ROLES;
+            $stmt = $this->pdo->prepare("SELECT * FROM {$tblRoles} WHERE name = ? LIMIT 1");
+            $stmt->execute([$name]);
+            $role = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($role && $this->redisClient) $this->redisClient->setex($cacheKey, CacheConstants::TTL_ONE_DAY, json_encode($role));
+            return $role ?: null;
+        });
     }
 
+    public function getAllPermissions(): array {
+        $cacheKey = CacheConstants::PREFIX_ALL_PERMISSIONS;
+        $cached = $this->redisClient ? $this->redisClient->get($cacheKey) : null;
+        if ($cached) return json_decode($cached, true);
+
+        return $this->redisCache->executeWithLock('lock_rbac_all_perms', 5, function() use ($cacheKey) {
+            $cached = $this->redisClient ? $this->redisClient->get($cacheKey) : null;
+            if ($cached) return json_decode($cached, true);
+
+            $tblPerms = DB::TBL_PERMISSIONS;
+            $stmt = $this->pdo->query("SELECT id, name, description, is_critical FROM {$tblPerms} ORDER BY id ASC");
+            $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if ($this->redisClient) $this->redisClient->setex($cacheKey, CacheConstants::TTL_ONE_WEEK, json_encode($data));
+            return $data;
+        });
+    }
+
+    public function getRolePermissions(int $roleId): array {
+        $cacheKey = CacheConstants::PREFIX_ROLE_PERMS . $roleId;
+        $cached = $this->redisClient ? $this->redisClient->get($cacheKey) : null;
+        if ($cached) return json_decode($cached, true);
+
+        return $this->redisCache->executeWithLock('lock_rbac_role_perms_' . $roleId, 5, function() use ($roleId, $cacheKey) {
+            $cached = $this->redisClient ? $this->redisClient->get($cacheKey) : null;
+            if ($cached) return json_decode($cached, true);
+
+            $tblPerms = DB::TBL_PERMISSIONS;
+            $tblRolePerms = DB::TBL_ROLE_PERMISSIONS;
+
+            $stmt = $this->pdo->prepare("
+                SELECT p.id, p.name, p.description, p.is_critical 
+                FROM {$tblPerms} p
+                INNER JOIN {$tblRolePerms} rp ON p.id = rp.permission_id
+                WHERE rp.role_id = ?
+            ");
+            $stmt->execute([$roleId]);
+            $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if ($this->redisClient) $this->redisClient->setex($cacheKey, CacheConstants::TTL_ONE_DAY, json_encode($data));
+            return $data;
+        });
+    }
+
+    // Optimizado: Consume del caché de GetAllPermissions
+    public function getValidPermissionIds(array $ids): array {
+        if (empty($ids)) return [];
+        $allPerms = $this->getAllPermissions(); 
+        $validIds = array_column($allPerms, 'id');
+        return array_values(array_intersect($ids, $validIds));
+    }
+
+    public function getUserRoles(int $userId): array {
+        $cacheKey = CacheConstants::PREFIX_USER_ROLES . $userId;
+        $cached = $this->redisClient ? $this->redisClient->get($cacheKey) : null;
+        if ($cached) return json_decode($cached, true);
+
+        return $this->redisCache->executeWithLock('lock_rbac_user_roles_' . $userId, 5, function() use ($userId, $cacheKey) {
+            $cached = $this->redisClient ? $this->redisClient->get($cacheKey) : null;
+            if ($cached) return json_decode($cached, true);
+
+            $tblRoles = DB::TBL_ROLES;
+            $tblUserRoles = DB::TBL_USER_ROLES;
+
+            $stmt = $this->pdo->prepare("
+                SELECT r.id, r.name, r.color, r.weight 
+                FROM {$tblRoles} r 
+                INNER JOIN {$tblUserRoles} ur ON r.id = ur.role_id 
+                WHERE ur.user_id = ? 
+                ORDER BY r.weight DESC
+            ");
+            $stmt->execute([$userId]);
+            $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if ($this->redisClient) $this->redisClient->setex($cacheKey, CacheConstants::TTL_ONE_DAY, json_encode($data));
+            return $data;
+        });
+    }
+
+    public function getMergedPermissionsForUser(int $userId): array {
+        $cacheKey = CacheConstants::PREFIX_USER_PERMS . $userId;
+        $cached = $this->redisClient ? $this->redisClient->get($cacheKey) : null;
+        if ($cached) return json_decode($cached, true);
+
+        return $this->redisCache->executeWithLock('lock_rbac_user_perms_' . $userId, 5, function() use ($userId, $cacheKey) {
+            $cached = $this->redisClient ? $this->redisClient->get($cacheKey) : null;
+            if ($cached) return json_decode($cached, true);
+
+            $tblPerms = DB::TBL_PERMISSIONS;
+            $tblRolePerms = DB::TBL_ROLE_PERMISSIONS;
+            $tblUserRoles = DB::TBL_USER_ROLES;
+
+            $stmt = $this->pdo->prepare("
+                SELECT DISTINCT p.name 
+                FROM {$tblPerms} p
+                INNER JOIN {$tblRolePerms} rp ON p.id = rp.permission_id
+                INNER JOIN {$tblUserRoles} ur ON rp.role_id = ur.role_id
+                WHERE ur.user_id = ?
+            ");
+            $stmt->execute([$userId]);
+            $data = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+            if ($this->redisClient) $this->redisClient->setex($cacheKey, CacheConstants::TTL_ONE_DAY, json_encode($data));
+            return $data;
+        });
+    }
+
+    public function getHighestPriorityRole(int $userId): ?array {
+        $cacheKey = CacheConstants::PREFIX_USER_HIGHEST_ROLE . $userId;
+        $cached = $this->redisClient ? $this->redisClient->get($cacheKey) : null;
+        if ($cached) return json_decode($cached, true);
+
+        return $this->redisCache->executeWithLock('lock_rbac_user_highrole_' . $userId, 5, function() use ($userId, $cacheKey) {
+            $cached = $this->redisClient ? $this->redisClient->get($cacheKey) : null;
+            if ($cached) return json_decode($cached, true);
+
+            $tblRoles = DB::TBL_ROLES;
+            $tblUserRoles = DB::TBL_USER_ROLES;
+
+            $stmt = $this->pdo->prepare("
+                SELECT r.id, r.name, r.color, r.weight 
+                FROM {$tblRoles} r 
+                INNER JOIN {$tblUserRoles} ur ON r.id = ur.role_id 
+                WHERE ur.user_id = ? 
+                ORDER BY r.weight DESC LIMIT 1
+            ");
+            $stmt->execute([$userId]);
+            $role = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($role && $this->redisClient) $this->redisClient->setex($cacheKey, CacheConstants::TTL_ONE_DAY, json_encode($role));
+            return $role ?: null;
+        });
+    }
+
+    // ==========================================
+    // MÉTODOS DE ESCRITURA (CON INVALIDACIÓN ATÓMICA INTRA-TRANSACCIONAL)
+    // ==========================================
+
     public function create(string $name, string $colorJson, int $weight = 1): bool {
-        $tblRoles = DB::TBL_ROLES;
-        $stmt = $this->pdo->prepare("INSERT INTO {$tblRoles} (name, color, weight) VALUES (?, ?, ?)");
-        return $stmt->execute([$name, $colorJson, $weight]);
+        try {
+            $this->pdo->beginTransaction();
+            $tblRoles = DB::TBL_ROLES;
+            
+            $stmt = $this->pdo->prepare("INSERT INTO {$tblRoles} (name, color, weight) VALUES (?, ?, ?)");
+            $stmt->execute([$name, $colorJson, $weight]);
+
+            // Invalidar caché ANTES del commit
+            $this->invalidateGlobalRolesCache();
+
+            $this->pdo->commit();
+            return true;
+        } catch (Exception $e) {
+            if ($this->pdo->inTransaction()) $this->pdo->rollBack();
+            error_log("Error in RoleRepository::create: " . $e->getMessage());
+            return false;
+        }
     }
 
     public function update(int $id, string $name, string $colorJson, int $weight, int $executorWeight): bool {
@@ -53,19 +308,32 @@ class RoleRepository implements RoleRepositoryInterface {
 
         $tblRoles = DB::TBL_ROLES;
 
-        // TECHO DE CRISTAL
+        // Comprobación de Seguridad fuera de la transacción
         if ($executorWeight < SecurityConstants::WEIGHT_SUPER_ADMIN && (int)$role['weight'] >= $executorWeight) {
             throw new Exception("Security Violation: Intento de modificar un rol de jerarquía superior o igual.");
         }
 
-        // INMUTABILIDAD DEL SISTEMA
-        if ((int)$role['is_system'] === 1) {
-            $stmt = $this->pdo->prepare("UPDATE {$tblRoles} SET color = ? WHERE id = ?");
-            return $stmt->execute([$colorJson, $id]);
-        }
+        try {
+            $this->pdo->beginTransaction();
 
-        $stmt = $this->pdo->prepare("UPDATE {$tblRoles} SET name = ?, color = ?, weight = ? WHERE id = ?");
-        return $stmt->execute([$name, $colorJson, $weight, $id]);
+            if ((int)$role['is_system'] === 1) {
+                $stmt = $this->pdo->prepare("UPDATE {$tblRoles} SET color = ? WHERE id = ?");
+                $stmt->execute([$colorJson, $id]);
+            } else {
+                $stmt = $this->pdo->prepare("UPDATE {$tblRoles} SET name = ?, color = ?, weight = ? WHERE id = ?");
+                $stmt->execute([$name, $colorJson, $weight, $id]);
+            }
+
+            // Elimina caché y dispara enforcePassiveInvalidation en Redis ANTES del commit
+            $this->invalidateRoleCache($id);
+
+            $this->pdo->commit();
+            return true;
+        } catch (Exception $e) {
+            if ($this->pdo->inTransaction()) $this->pdo->rollBack();
+            error_log("Error in RoleRepository::update: " . $e->getMessage());
+            return false;
+        }
     }
 
     public function delete(int $id, int $executorWeight): bool {
@@ -82,37 +350,20 @@ class RoleRepository implements RoleRepositoryInterface {
             throw new Exception("Security Violation: Intento de eliminar un rol de jerarquía superior o igual.");
         }
 
-        $stmt = $this->pdo->prepare("DELETE FROM {$tblRoles} WHERE id = ?");
-        return $stmt->execute([$id]);
-    }
+        try {
+            $this->pdo->beginTransaction();
+            $stmt = $this->pdo->prepare("DELETE FROM {$tblRoles} WHERE id = ?");
+            $stmt->execute([$id]);
 
-    public function getAllPermissions(): array {
-        $tblPerms = DB::TBL_PERMISSIONS;
-        $stmt = $this->pdo->query("SELECT id, name, description, is_critical FROM {$tblPerms} ORDER BY id ASC");
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
+            $this->invalidateRoleCache($id);
 
-    public function getRolePermissions(int $roleId): array {
-        $tblPerms = DB::TBL_PERMISSIONS;
-        $tblRolePerms = DB::TBL_ROLE_PERMISSIONS;
-
-        $stmt = $this->pdo->prepare("
-            SELECT p.id, p.name, p.description, p.is_critical 
-            FROM {$tblPerms} p
-            INNER JOIN {$tblRolePerms} rp ON p.id = rp.permission_id
-            WHERE rp.role_id = ?
-        ");
-        $stmt->execute([$roleId]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-
-    public function getValidPermissionIds(array $ids): array {
-        if (empty($ids)) return [];
-        $tblPerms = DB::TBL_PERMISSIONS;
-        $inQuery = implode(',', array_fill(0, count($ids), '?'));
-        $stmt = $this->pdo->prepare("SELECT id FROM {$tblPerms} WHERE id IN ($inQuery)");
-        $stmt->execute($ids);
-        return $stmt->fetchAll(PDO::FETCH_COLUMN);
+            $this->pdo->commit();
+            return true;
+        } catch (Exception $e) {
+            if ($this->pdo->inTransaction()) $this->pdo->rollBack();
+            error_log("Error in RoleRepository::delete: " . $e->getMessage());
+            return false;
+        }
     }
 
     public function assignPermissionsToRole(int $roleId, array $permissionsArray, int $executorWeight): bool {
@@ -134,7 +385,6 @@ class RoleRepository implements RoleRepositoryInterface {
             $validPermissions = $this->getValidPermissionIds($permissionsArray);
 
             if (!empty($validPermissions)) {
-                // Optimización: BULK INSERT
                 $placeholders = implode(',', array_fill(0, count($validPermissions), '(?, ?)'));
                 $values = [];
                 foreach ($validPermissions as $permissionId) {
@@ -145,10 +395,13 @@ class RoleRepository implements RoleRepositoryInterface {
                 $insertStmt->execute($values);
             }
 
+            // Invalida permisos de rol y genera Trigger a los SessionManagers
+            $this->invalidateRoleCache($roleId);
+
             $this->pdo->commit();
             return true;
         } catch (Exception $e) {
-            $this->pdo->rollBack();
+            if ($this->pdo->inTransaction()) $this->pdo->rollBack();
             error_log("Error in assignPermissionsToRole: " . $e->getMessage());
             return false;
         }
@@ -180,7 +433,6 @@ class RoleRepository implements RoleRepositoryInterface {
             $delStmt->execute([$userId]);
 
             if (!empty($rolesData)) {
-                // Optimización: BULK INSERT
                 $placeholders = implode(',', array_fill(0, count($rolesData), '(?, ?)'));
                 $values = [];
                 foreach ($rolesData as $rd) {
@@ -191,60 +443,16 @@ class RoleRepository implements RoleRepositoryInterface {
                 $insStmt->execute($values);
             }
 
+            // Invalida la jerarquía/permisos del usuario y empuja Trigger a SessionManager
+            $this->invalidateUserCache($userId);
+
             $this->pdo->commit();
             return true;
         } catch (Exception $e) {
-            $this->pdo->rollBack();
+            if ($this->pdo->inTransaction()) $this->pdo->rollBack();
             error_log("Error in syncUserRoles: " . $e->getMessage());
             return false;
         }
-    }
-
-    public function getUserRoles(int $userId): array {
-        $tblRoles = DB::TBL_ROLES;
-        $tblUserRoles = DB::TBL_USER_ROLES;
-
-        $stmt = $this->pdo->prepare("
-            SELECT r.id, r.name, r.color, r.weight 
-            FROM {$tblRoles} r 
-            INNER JOIN {$tblUserRoles} ur ON r.id = ur.role_id 
-            WHERE ur.user_id = ? 
-            ORDER BY r.weight DESC
-        ");
-        $stmt->execute([$userId]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-
-    public function getMergedPermissionsForUser(int $userId): array {
-        $tblPerms = DB::TBL_PERMISSIONS;
-        $tblRolePerms = DB::TBL_ROLE_PERMISSIONS;
-        $tblUserRoles = DB::TBL_USER_ROLES;
-
-        $stmt = $this->pdo->prepare("
-            SELECT DISTINCT p.name 
-            FROM {$tblPerms} p
-            INNER JOIN {$tblRolePerms} rp ON p.id = rp.permission_id
-            INNER JOIN {$tblUserRoles} ur ON rp.role_id = ur.role_id
-            WHERE ur.user_id = ?
-        ");
-        $stmt->execute([$userId]);
-        return $stmt->fetchAll(PDO::FETCH_COLUMN);
-    }
-
-    public function getHighestPriorityRole(int $userId): ?array {
-        $tblRoles = DB::TBL_ROLES;
-        $tblUserRoles = DB::TBL_USER_ROLES;
-
-        $stmt = $this->pdo->prepare("
-            SELECT r.id, r.name, r.color, r.weight 
-            FROM {$tblRoles} r 
-            INNER JOIN {$tblUserRoles} ur ON r.id = ur.role_id 
-            WHERE ur.user_id = ? 
-            ORDER BY r.weight DESC LIMIT 1
-        ");
-        $stmt->execute([$userId]);
-        $role = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $role ?: null;
     }
 }
 ?>
