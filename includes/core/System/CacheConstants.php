@@ -14,23 +14,26 @@ class CacheConstants {
     public const PREFIX_FORCE_REAUTH_ROLE = 'force_reauth:role:';
     public const PREFIX_FORCE_REAUTH_DEVICE = 'force_reauth:selector:';
     
-    // Prefijos y Colas de Jobs (NUEVOS)
+    // Prefijos y Colas de Jobs
     public const PREFIX_BACKUP_JOB = 'backup_job:';
     public const PREFIX_LOCK_BACKUP = 'lock:backup_in_progress';
     public const QUEUE_BACKUP = 'backup_queue';
     public const QUEUE_ACCOUNT_DELETION = 'queue:account_deletion';
     
-    // Colas de Telemetría (NUEVAS)
+    // Colas de Telemetría
     public const QUEUE_TELEMETRY_API_LATENCY = 'api_latency';
     public const QUEUE_TELEMETRY_PAGEVIEWS   = 'pageviews';
     public const QUEUE_TELEMETRY_CANVAS      = 'canvas_interactions';
     public const QUEUE_TELEMETRY_AUTH        = 'auth_events';
 
-    // Estados del Sistema (NUEVOS)
+    // Estados del Sistema
     public const KEY_SYSTEM_RESTORING = 'system_status:restoring';
     public const KEY_SYSTEM_PANIC_MODE = 'system_status:panic_mode';
 
-    // Patrones de Limpieza / Mantenimiento (NUEVOS)
+    // Configuración Global (NUEVO)
+    public const KEY_SERVER_CONFIG = 'system:server_config';
+
+    // Patrones de Limpieza / Mantenimiento
     public const PATTERN_CACHE = 'cache:*';
     public const PATTERN_PR_CACHE = 'PR_cache:*';
 

@@ -7,14 +7,18 @@ use App\Core\Interfaces\ServerConfigRepositoryInterface;
 use App\Config\DatabaseManager;
 use App\Core\System\Logger;
 use App\Core\System\DatabaseConstants as DB;
+use App\Core\System\CacheConstants;
+use Predis\Client;
 use PDO;
 use PDOException;
 
 class ServerConfigRepository implements ServerConfigRepositoryInterface {
     private $pdo;
+    private $redis;
 
-    public function __construct(DatabaseManager $db) {
+    public function __construct(DatabaseManager $db, Client $redis) {
         $this->pdo = $db->getConnection(DB::CONN_IDENTITY);
+        $this->redis = $redis;
     }
 
     public function getConfig(): array {
@@ -94,13 +98,41 @@ class ServerConfigRepository implements ServerConfigRepositoryInterface {
             'maintenance_mode' => 0
         ];
 
+        // 1. INTENTAR LEER LA CONFIGURACIÓN DESDE REDIS
+        try {
+            $cachedConfig = $this->redis->get(CacheConstants::KEY_SERVER_CONFIG);
+            if ($cachedConfig) {
+                $decodedConfig = json_decode($cachedConfig, true);
+                if (is_array($decodedConfig)) {
+                    return $decodedConfig;
+                }
+            }
+        } catch (\Exception $e) {
+            Logger::error("Redis cache read failed in " . __METHOD__, ['exception' => $e]);
+        }
+
+        // 2. FALLBACK A MYSQL (Si no estaba en caché o Redis falló)
         $tblServerConfig = DB::TBL_SERVER_CONFIG;
 
         try {
             $stmt = $this->pdo->query("SELECT * FROM {$tblServerConfig} LIMIT 1");
             $config = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            return $config ?: $defaultConfig;
+            $finalConfig = $config ?: $defaultConfig;
+
+            // 3. GUARDAR EL RESULTADO EN REDIS PARA PRÓXIMAS CONSULTAS (TTL: 1 Semana)
+            try {
+                $this->redis->setex(
+                    CacheConstants::KEY_SERVER_CONFIG,
+                    CacheConstants::TTL_ONE_WEEK,
+                    json_encode($finalConfig)
+                );
+            } catch (\Exception $e) {
+                Logger::error("Redis cache write failed in " . __METHOD__, ['exception' => $e]);
+            }
+
+            return $finalConfig;
+            
         } catch (PDOException $e) {
             Logger::error("Database error in " . __METHOD__ . " - Returning default config", ['exception' => $e]);
             return $defaultConfig;
@@ -128,7 +160,19 @@ class ServerConfigRepository implements ServerConfigRepositoryInterface {
             $sql = "UPDATE {$tblServerConfig} SET " . implode(', ', $fields) . " WHERE id = 1";
             $stmt = $this->pdo->prepare($sql);
             
-            return $stmt->execute($values);
+            $result = $stmt->execute($values);
+
+            // 4. INVALIDAR LA CACHÉ AL ACTUALIZAR EXITOSAMENTE EN MYSQL
+            if ($result) {
+                try {
+                    $this->redis->del(CacheConstants::KEY_SERVER_CONFIG);
+                } catch (\Exception $e) {
+                    Logger::error("Redis cache invalidation failed in " . __METHOD__, ['exception' => $e]);
+                }
+            }
+
+            return $result;
+            
         } catch (PDOException $e) {
             Logger::error("Database error in " . __METHOD__, ['exception' => $e]);
             return false;
