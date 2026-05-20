@@ -26,5 +26,10 @@ interface UserRepositoryInterface {
     public function scheduleDeletion(int $userId, string $date): bool;
     public function cancelDeletion(int $userId): bool;
     public function deleteUserHard(int $userId): bool;
+
+    // ==========================================
+    // NUEVOS MÉTODOS PARA DASHBOARD METRICS
+    // ==========================================
+    public function getRegistrationStats(string $startDate, string $endDate): array;
 }
 ?>

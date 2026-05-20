@@ -135,6 +135,10 @@ return [
     ],
 
     // --- RUTAS ADMINISTRADOR ---
+    'admin.get_dashboard_metrics' => [
+        'controller' => 'App\Api\Controllers\AdminController', 'action' => 'get_dashboard_metrics',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'adm_dashboard_metrics', 'max' => RL::MAX_60, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
+    ],
     'admin.get_user' => [
         'controller' => 'App\Api\Controllers\AdminController', 'action' => 'get_user',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => RL::KEY_ADM_GET_USER, 'max' => RL::MAX_30, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]

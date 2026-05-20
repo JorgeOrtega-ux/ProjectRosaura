@@ -39,6 +39,7 @@ export const ApiRoutes = {
         RevokeAllDevices: 'settings.revoke_all_devices'
     },
     Admin: {
+        GetDashboardMetrics: 'admin.get_dashboard_metrics', // NUEVA RUTA
         GetUser: 'admin.get_user',
         UpdateAvatar: 'admin.update_avatar',
         DeleteAvatar: 'admin.delete_avatar',

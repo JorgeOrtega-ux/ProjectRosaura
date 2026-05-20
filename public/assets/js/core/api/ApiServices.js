@@ -169,4 +169,12 @@ export class ApiService {
     async updateRolePermissions(roleId, permissionsArray) {
         return await this.post(ApiRoutes.Admin.UpdateRolePermissions, { id: roleId, permissions: permissionsArray });
     }
+
+    // --- NUEVO MÉTODO PARA EL DASHBOARD ---
+    async getDashboardMetrics(startDate, endDate) {
+        return await this.post(ApiRoutes.Admin.GetDashboardMetrics, { 
+            start_date: startDate, 
+            end_date: endDate 
+        });
+    }
 }

@@ -367,5 +367,18 @@ class AdminController extends BaseController {
         }
         return $this->respond(['success' => false, 'message' => 'Admin translations not found']);
     }
+
+    // --- NUEVO MÉTODO PARA DASHBOARD METRICS ---
+    public function get_dashboard_metrics($input) {
+        try {
+            $this->requirePermission('access_admin_panel');
+            $safeInput = [
+                'start_date' => $input['start_date'] ?? null,
+                'end_date' => $input['end_date'] ?? null
+            ];
+            return $this->respond($this->adminServices->getDashboardMetrics($safeInput));
+        }
+        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
 }
 ?>

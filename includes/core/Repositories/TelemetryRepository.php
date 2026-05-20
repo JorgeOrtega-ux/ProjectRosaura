@@ -45,5 +45,30 @@ class TelemetryRepository implements TelemetryRepositoryInterface {
         $stmt->execute(['start' => $startDate, 'end' => $endDate]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    // --- NUEVOS MÉTODOS PARA DASHBOARD METRICS ---
+    public function getPageviewsOverTime(string $startDate, string $endDate): array {
+        $stmt = $this->db->prepare("
+            SELECT DATE(created_at) as date, COUNT(*) as count 
+            FROM pageviews 
+            WHERE created_at >= :start AND created_at <= :end 
+            GROUP BY DATE(created_at) 
+            ORDER BY date ASC
+        ");
+        $stmt->execute(['start' => $startDate, 'end' => $endDate]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function getAuthEventsOverTime(string $startDate, string $endDate, string $eventType = 'login_success'): array {
+        $stmt = $this->db->prepare("
+            SELECT DATE(created_at) as date, COUNT(*) as count 
+            FROM auth_events 
+            WHERE event_type = :event_type AND created_at >= :start AND created_at <= :end 
+            GROUP BY DATE(created_at) 
+            ORDER BY date ASC
+        ");
+        $stmt->execute(['start' => $startDate, 'end' => $endDate, 'event_type' => $eventType]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }
 ?>

@@ -1,0 +1,287 @@
+// public/assets/js/modules/admin/AdminDashboardController.js
+
+import { ApiService } from '../../core/api/ApiServices.js';
+import { showMessage } from '../../core/utils/uiUtils.js';
+
+export class AdminDashboardController {
+    constructor() {
+        this.api = new ApiService();
+        this.dom = {};
+        this.chartInstances = {
+            registrations: null,
+            activity: null
+        };
+        this.isChartJsLoaded = false;
+    }
+
+    async init() {
+        this.cacheDOM();
+        this.bindEvents();
+        
+        // Mostrar estado de carga en las tarjetas temporalmente
+        this._setLoadingState();
+
+        // Cargar script de Chart.js dinámicamente si no existe
+        await this.loadChartJs();
+
+        // Realizar la primera petición de datos
+        await this.fetchAndRenderData();
+    }
+
+    cacheDOM() {
+        this.dom.startDateInput = document.getElementById('dash-start-date');
+        this.dom.endDateInput = document.getElementById('dash-end-date');
+        this.dom.btnApply = document.getElementById('dash-apply-filters');
+
+        this.dom.statNewUsers = document.getElementById('stat-new-users');
+        this.dom.statLogins = document.getElementById('stat-logins');
+        this.dom.statPageviews = document.getElementById('stat-pageviews');
+
+        this.dom.canvasRegistrations = document.getElementById('chart-registrations');
+        this.dom.canvasActivity = document.getElementById('chart-activity');
+    }
+
+    bindEvents() {
+        if (this.dom.btnApply) {
+            this.dom.btnApply.addEventListener('click', () => {
+                this._setLoadingState();
+                this.fetchAndRenderData();
+            });
+        }
+    }
+
+    /**
+     * Inyecta el script de Chart.js mediante CDN de manera asíncrona
+     * Solo se descarga cuando un Admin entra al Dashboard
+     */
+    async loadChartJs() {
+        if (window.Chart) {
+            this.isChartJsLoaded = true;
+            return Promise.resolve();
+        }
+
+        return new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+            script.async = true;
+            script.onload = () => {
+                this.isChartJsLoaded = true;
+                resolve();
+            };
+            script.onerror = () => {
+                showMessage(window.__ ? window.__('error_loading_chartjs') : 'Error al cargar librerías gráficas', 'error');
+                reject(new Error('Failed to load Chart.js'));
+            };
+            document.head.appendChild(script);
+        });
+    }
+
+    _setLoadingState() {
+        if (this.dom.statNewUsers) this.dom.statNewUsers.textContent = '...';
+        if (this.dom.statLogins) this.dom.statLogins.textContent = '...';
+        if (this.dom.statPageviews) this.dom.statPageviews.textContent = '...';
+        
+        if (this.dom.btnApply) {
+            this.dom.btnApply.disabled = true;
+            this.dom.btnApply.style.opacity = '0.7';
+        }
+    }
+
+    async fetchAndRenderData() {
+        const startDate = this.dom.startDateInput.value;
+        const endDate = this.dom.endDateInput.value;
+
+        // Validaciones básicas
+        if (new Date(startDate) > new Date(endDate)) {
+            showMessage(window.__ ? window.__('validation_invalid_date_range') : 'La fecha de inicio no puede ser mayor a la fecha final', 'error');
+            this._resetButtonState();
+            return;
+        }
+
+        const response = await this.api.getDashboardMetrics(startDate, endDate);
+
+        this._resetButtonState();
+
+        if (response && response.success) {
+            this.updateStatsCards(response.summary);
+            this.renderCharts(response.charts);
+        } else {
+            showMessage(response?.message || 'Error al obtener datos', 'error');
+            this.updateStatsCards({ new_users: 0, logins: 0, pageviews: 0 });
+        }
+    }
+
+    _resetButtonState() {
+        if (this.dom.btnApply) {
+            this.dom.btnApply.disabled = false;
+            this.dom.btnApply.style.opacity = '1';
+        }
+    }
+
+    updateStatsCards(summary) {
+        if (this.dom.statNewUsers) this.dom.statNewUsers.textContent = summary.new_users;
+        if (this.dom.statLogins) this.dom.statLogins.textContent = summary.logins;
+        if (this.dom.statPageviews) this.dom.statPageviews.textContent = summary.pageviews;
+    }
+
+    renderCharts(chartData) {
+        if (!this.isChartJsLoaded || !window.Chart) return;
+
+        // 1. Gráfica de Registros (Evolución)
+        if (this.dom.canvasRegistrations) {
+            // Destruir instancia previa si existe para evitar "efecto fantasma" o superposición
+            if (this.chartInstances.registrations) {
+                this.chartInstances.registrations.destroy();
+            }
+
+            const ctxReg = this.dom.canvasRegistrations.getContext('2d');
+            this.chartInstances.registrations = new window.Chart(ctxReg, {
+                type: 'line',
+                data: {
+                    labels: chartData.labels,
+                    datasets: [{
+                        label: window.__ ? window.__('admin_dashboard_new_users') : 'Nuevos Usuarios',
+                        data: chartData.registrations,
+                        borderColor: '#3b82f6', // Color primario
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.3, // Curvatura suave
+                        fill: true,
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: '#3b82f6'
+                    }]
+                },
+                options: this._getChartOptions()
+            });
+        }
+
+        // 2. Gráfica de Actividad (Vistas vs Logins)
+        if (this.dom.canvasActivity) {
+            if (this.chartInstances.activity) {
+                this.chartInstances.activity.destroy();
+            }
+
+            const ctxAct = this.dom.canvasActivity.getContext('2d');
+            this.chartInstances.activity = new window.Chart(ctxAct, {
+                type: 'bar',
+                data: {
+                    labels: chartData.labels,
+                    datasets: [
+                        {
+                            type: 'line',
+                            label: window.__ ? window.__('admin_dashboard_logins') : 'Inicios de Sesión',
+                            data: chartData.logins,
+                            borderColor: '#10b981', // Verde
+                            backgroundColor: '#10b981',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            yAxisID: 'y'
+                        },
+                        {
+                            type: 'bar',
+                            label: window.__ ? window.__('admin_dashboard_pageviews') : 'Vistas de Página',
+                            data: chartData.pageviews,
+                            backgroundColor: 'rgba(139, 92, 246, 0.6)', // Morado semi-transparente
+                            borderColor: '#8b5cf6',
+                            borderWidth: 1,
+                            borderRadius: 4,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    ...this._getChartOptions(),
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false }
+                        },
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            beginAtZero: true,
+                            title: { display: true, text: 'Logins' }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            beginAtZero: true,
+                            grid: { drawOnChartArea: false }, // No superponer líneas de cuadrícula
+                            title: { display: true, text: 'Pageviews' }
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    /**
+     * Opciones globales comunes para mantener consistencia visual
+     */
+    _getChartOptions() {
+        return {
+            responsive: true,
+            maintainAspectRatio: false, // Fundamental para que el contenedor CSS controle la altura
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        usePointStyle: true,
+                        boxWidth: 8
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 10,
+                    titleFont: { size: 13 },
+                    bodyFont: { size: 13 },
+                    cornerRadius: 8
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        display: false, // Limpiar el eje X
+                        drawBorder: false
+                    },
+                    ticks: {
+                        maxTicksLimit: 10 // No sobrecargar de fechas si el rango es muy grande
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)',
+                        drawBorder: false
+                    }
+                }
+            }
+        };
+    }
+
+    /**
+     * Se llama automáticamente por el SpaRouter al cambiar de ruta
+     * Previene fugas de memoria destruyendo los Canvas
+     */
+    destroy() {
+        if (this.chartInstances.registrations) {
+            this.chartInstances.registrations.destroy();
+        }
+        if (this.chartInstances.activity) {
+            this.chartInstances.activity.destroy();
+        }
+        
+        // Limpiar listeners si es necesario
+        if (this.dom.btnApply) {
+            // El recolector de basura de JS suele limpiar esto al borrar el DOM, 
+            // pero es buena práctica mencionarlo.
+            const newBtn = this.dom.btnApply.cloneNode(true);
+            this.dom.btnApply.parentNode.replaceChild(newBtn, this.dom.btnApply);
+        }
+    }
+}

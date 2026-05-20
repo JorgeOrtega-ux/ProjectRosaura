@@ -233,20 +233,31 @@ export const SkeletonTemplates = {
 
     /**
      * 8. DASHBOARD GRID (Admin Dashboard)
+     * ACTUALIZADO PARA COINCIDIR CON LA NUEVA UI (Filtros + Cards + Gráficas)
      */
     dashboardGrid() {
-        let cards = '';
-        for (let i = 0; i < 8; i++) {
-            cards += `
-            <div class="component-card--grouped" style="padding: 24px; display: flex; flex-direction: column;">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
-                    <div class="skeleton-box sk-h-16 sk-w-50"></div>
-                    <div class="skeleton-box sk-rounded" style="width: 36px; height: 36px;"></div>
+        let statCards = '';
+        for (let i = 0; i < 3; i++) {
+            statCards += `
+            <div class="component-card--grouped" style="padding: 20px; display: flex; align-items: center;">
+                <div class="skeleton-box sk-rounded" style="width: 56px; height: 56px; margin-right: 16px; flex-shrink: 0;"></div>
+                <div style="display: flex; flex-direction: column; width: 100%;">
+                    <div class="skeleton-box sk-h-14 sk-w-50 sk-mb-8"></div>
+                    <div class="skeleton-box sk-h-24 sk-w-30"></div>
                 </div>
-                <div class="skeleton-box sk-h-34 sk-w-40 sk-mb-8"></div>
-                <div class="skeleton-box sk-h-14 sk-w-30"></div>
             </div>`;
         }
+
+        let charts = `
+            <div class="component-card--grouped" style="padding: 20px;">
+                <div class="skeleton-box sk-h-20 sk-w-40 sk-mb-16"></div>
+                <div class="skeleton-box sk-w-100" style="height: 300px;"></div>
+            </div>
+            <div class="component-card--grouped" style="padding: 20px;">
+                <div class="skeleton-box sk-h-20 sk-w-40 sk-mb-16"></div>
+                <div class="skeleton-box sk-w-100" style="height: 300px;"></div>
+            </div>
+        `;
         
         return `
         <div class="view-content">
@@ -255,15 +266,32 @@ export const SkeletonTemplates = {
                     <div class="skeleton-box sk-h-24 sk-w-30"></div>
                 </div>
                 <div class="component-top-right">
-                    <div class="skeleton-box sk-h-40" style="width: 140px; border-radius:8px;"></div>
+                    <div class="skeleton-box sk-h-40" style="width: 40px; border-radius:8px; margin-right: 8px;"></div>
+                    <div class="skeleton-box sk-h-40" style="width: 40px; border-radius:8px;"></div>
                 </div>
             </div>
-            <div class="component-viewport">
-                <div class="component-wrapper component-wrapper--full">
-                    <div class="component-bottom">
-                        <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:24px;">
-                            ${cards}
+            <div class="component-wrapper component-wrapper--full no-padding">
+                <div class="component-bottom dashboard-container" style="padding: 24px;">
+                    <div class="component-card--grouped" style="padding: 16px 20px; display: flex; gap: 16px; align-items: flex-end;">
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            <div class="skeleton-box sk-h-14 sk-w-30"></div>
+                            <div class="skeleton-box sk-h-34" style="width: 150px;"></div>
                         </div>
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            <div class="skeleton-box sk-h-14 sk-w-30"></div>
+                            <div class="skeleton-box sk-h-34" style="width: 150px;"></div>
+                        </div>
+                        <div style="margin-left: auto;">
+                            <div class="skeleton-box sk-h-40" style="width: 120px; border-radius: 8px;"></div>
+                        </div>
+                    </div>
+                    
+                    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:20px;">
+                        ${statCards}
+                    </div>
+
+                    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap:20px; margin-top: 20px;">
+                        ${charts}
                     </div>
                 </div>
             </div>

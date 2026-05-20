@@ -335,5 +335,24 @@ class UserRepository implements UserRepositoryInterface {
             return false;
         }
     }
+
+    // --- NUEVO MÉTODO PARA DASHBOARD METRICS ---
+    public function getRegistrationStats(string $startDate, string $endDate): array {
+        $tblUsers = DB::TBL_USERS;
+        try {
+            $stmt = $this->pdo->prepare("
+                SELECT DATE(created_at) as date, COUNT(id) as count 
+                FROM {$tblUsers} 
+                WHERE created_at >= ? AND created_at <= ?
+                GROUP BY DATE(created_at) 
+                ORDER BY date ASC
+            ");
+            $stmt->execute([$startDate, $endDate]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            Logger::error("Database error in " . __METHOD__, ['exception' => $e]);
+            return [];
+        }
+    }
 }
 ?>

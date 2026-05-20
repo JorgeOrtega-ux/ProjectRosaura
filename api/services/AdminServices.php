@@ -15,6 +15,7 @@ use App\Core\Interfaces\TokenRepositoryInterface;
 use App\Core\Interfaces\RateLimiterInterface;
 use App\Core\Interfaces\RoleRepositoryInterface;
 use App\Core\Interfaces\ProfileLogRepositoryInterface;
+use App\Core\Interfaces\TelemetryRepositoryInterface; // INYECTADO
 use App\Config\DatabaseManager;
 use App\Core\System\DatabaseConstants as DB; 
 use App\Core\System\SecurityConstants;
@@ -33,6 +34,7 @@ class AdminServices {
     private $rateLimiter;
     private $roleRepository;
     private $profileLogRepository;
+    private $telemetryRepository; // INYECTADO
 
     public function __construct(
         UserRepositoryInterface $userRepository,
@@ -43,7 +45,8 @@ class AdminServices {
         TokenRepositoryInterface $tokenRepository,
         RateLimiterInterface $rateLimiter,
         RoleRepositoryInterface $roleRepository,
-        ProfileLogRepositoryInterface $profileLogRepository
+        ProfileLogRepositoryInterface $profileLogRepository,
+        TelemetryRepositoryInterface $telemetryRepository // INYECTADO
     ) {
         $this->userRepository = $userRepository;
         $this->moderationRepository = $moderationRepository;
@@ -55,6 +58,7 @@ class AdminServices {
         $this->rateLimiter = $rateLimiter;
         $this->roleRepository = $roleRepository;
         $this->profileLogRepository = $profileLogRepository;
+        $this->telemetryRepository = $telemetryRepository; // INYECTADO
     }
 
     private function hasPermission($permission) {
@@ -1172,6 +1176,74 @@ class AdminServices {
         } catch (\Exception $e) {
             return ['success' => false, 'message_key' => 'error.redis_communication'];
         }
+    }
+
+    // --- NUEVO MÉTODO PARA DASHBOARD METRICS ---
+    public function getDashboardMetrics($data) {
+        if (!$this->hasPermission('access_admin_panel')) {
+            return ['success' => false, 'message_key' => 'error.unauthorized'];
+        }
+        
+        // Asumiendo que KEY_ADM_READ_DATA existe en RateLimitConstants (como en los otros métodos GET de admin)
+        $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_READ_DATA, 120, 1);
+        if (!$rl['allowed']) return ['success' => false, 'message_key' => $rl['message_key']];
+
+        $startDate = $data['start_date'] ?? date('Y-m-d', strtotime('-30 days'));
+        $endDate = $data['end_date'] ?? date('Y-m-d');
+
+        // Normalizar formato de fechas
+        $start = $startDate . ' 00:00:00';
+        $end = $endDate . ' 23:59:59';
+
+        // Fetch data
+        $registrations = $this->userRepository->getRegistrationStats($start, $end);
+        $pageviews = $this->telemetryRepository->getPageviewsOverTime($start, $end);
+        $logins = $this->telemetryRepository->getAuthEventsOverTime($start, $end, 'login_success');
+
+        // Construir arreglo de etiquetas continuo (para evitar huecos en la gráfica)
+        $labels = [];
+        $current = strtotime($startDate);
+        $last = strtotime($endDate);
+        while ($current <= $last) {
+            $labels[] = date('Y-m-d', $current);
+            $current = strtotime('+1 day', $current);
+        }
+
+        // Función anónima para formatear los datos consultados mapeados contra el arreglo de fechas
+        $formatDataset = function($dataArray, $labels) {
+            $map = [];
+            foreach ($dataArray as $row) {
+                $map[$row['date']] = (int)$row['count'];
+            }
+            $result = [];
+            foreach ($labels as $lbl) {
+                $result[] = $map[$lbl] ?? 0;
+            }
+            return $result;
+        };
+
+        $regData = $formatDataset($registrations, $labels);
+        $pvData = $formatDataset($pageviews, $labels);
+        $loginData = $formatDataset($logins, $labels);
+
+        $totalRegs = array_sum($regData);
+        $totalPv = array_sum($pvData);
+        $totalLogins = array_sum($loginData);
+
+        return [
+            'success' => true,
+            'summary' => [
+                'new_users' => $totalRegs,
+                'pageviews' => $totalPv,
+                'logins' => $totalLogins
+            ],
+            'charts' => [
+                'labels' => $labels,
+                'registrations' => $regData,
+                'pageviews' => $pvData,
+                'logins' => $loginData
+            ]
+        ];
     }
 }
 ?>
