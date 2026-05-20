@@ -1,5 +1,12 @@
 <?php
 // includes/layouts/app.php
+
+// --- INICIALIZADORES DE SEGURIDAD (Fallback) ---
+$isLoggedIn = $isLoggedIn ?? false;
+$currentView = $currentView ?? 'system/message.php';
+$isAuthRoute = $isAuthRoute ?? false;
+// -----------------------------------------------
+
 global $serverConfig; 
 
 $isDegraded = defined('SYSTEM_DEGRADED') && SYSTEM_DEGRADED === true;
