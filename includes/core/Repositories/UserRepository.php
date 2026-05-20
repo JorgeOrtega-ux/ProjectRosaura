@@ -4,6 +4,7 @@
 namespace App\Core\Repositories;
 
 use App\Core\Interfaces\UserRepositoryInterface;
+use App\Core\Interfaces\RoleRepositoryInterface;
 use App\Config\DatabaseManager;
 use App\Core\System\Logger;
 use App\Core\System\DatabaseConstants as DB;
@@ -14,14 +15,16 @@ use Exception;
 
 class UserRepository implements UserRepositoryInterface {
     private $pdo;
+    private $roleRepository;
 
-    public function __construct(DatabaseManager $db) {
+    public function __construct(DatabaseManager $db, RoleRepositoryInterface $roleRepository) {
         $this->pdo = $db->getConnection(DB::CONN_IDENTITY);
+        $this->roleRepository = $roleRepository;
     }
 
     /**
-     * OPTIMIZADO: Eliminado el GROUP_CONCAT. Previene pérdida de permisos por límites de longitud en MySQL
-     * y elimina el riesgo de colisión de delimitadores.
+     * OPTIMIZADO: Delegamos la hidratación de roles y permisos al RoleRepository 
+     * aprovechando toda la infraestructura de Redis en lugar de consultas SQL nativas.
      */
     private function getUserWithDetails(string $column, $value): ?array {
         $tblUsers = DB::TBL_USERS;
@@ -45,19 +48,8 @@ class UserRepository implements UserRepositoryInterface {
 
             if (!$user) return null;
 
-            // 2. Obtener roles de manera segura y ordenada por peso
-            $tblRoles = DB::TBL_ROLES;
-            $tblUserRoles = DB::TBL_USER_ROLES;
-            
-            $stmtRoles = $this->pdo->prepare("
-                SELECT r.id, r.name, r.color, r.weight
-                FROM {$tblRoles} r
-                INNER JOIN {$tblUserRoles} ur ON r.id = ur.role_id
-                WHERE ur.user_id = ?
-                ORDER BY r.weight DESC
-            ");
-            $stmtRoles->execute([$user['id']]);
-            $roles = $stmtRoles->fetchAll(PDO::FETCH_ASSOC);
+            // 2. Obtener roles hidratados de forma segura mediante Redis
+            $roles = $this->roleRepository->getUserRoles($user['id']);
 
             if (!empty($roles)) {
                 $mainRole = $roles[0];
@@ -72,20 +64,8 @@ class UserRepository implements UserRepositoryInterface {
                 $user['assigned_roles_ids'] = null;
             }
 
-            // 3. Obtener permisos de forma segura superando el límite de 1024 caracteres
-            $tblRolePerms = DB::TBL_ROLE_PERMISSIONS;
-            $tblPerms = DB::TBL_PERMISSIONS;
-
-            $stmtPerms = $this->pdo->prepare("
-                SELECT DISTINCT p.name
-                FROM {$tblPerms} p
-                INNER JOIN {$tblRolePerms} rp ON p.id = rp.permission_id
-                INNER JOIN {$tblUserRoles} ur ON rp.role_id = ur.role_id
-                WHERE ur.user_id = ?
-            ");
-            $stmtPerms->execute([$user['id']]);
-            $permissionsArray = $stmtPerms->fetchAll(PDO::FETCH_COLUMN);
-
+            // 3. Obtener permisos consolidados mediante Redis
+            $permissionsArray = $this->roleRepository->getMergedPermissionsForUser($user['id']);
             $user['permissions'] = !empty($permissionsArray) ? implode(',', $permissionsArray) : null;
 
             return $user;
@@ -97,7 +77,9 @@ class UserRepository implements UserRepositoryInterface {
     }
 
     /**
-     * NUEVO: Soluciona el problema N+1 del Panel de Administración mediante Eager Loading
+     * NOTA: Este método se deja con su Eager Loading SQL nativo intencionalmente 
+     * ya que es mejor consultar roles en lotes (IN) para listas en el Panel de Administración 
+     * que realizar decenas de loops individuales hacia Redis.
      */
     public function getUsersList(int $limit, int $offset): array {
         $tblUsers = DB::TBL_USERS;
