@@ -35,17 +35,6 @@ class TelemetryRepository implements TelemetryRepositoryInterface {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function getPageInteractionsStats(string $startDate, string $endDate): array {
-        $stmt = $this->db->prepare("
-            SELECT action_type, COUNT(*) as action_count 
-            FROM page_interactions 
-            WHERE created_at BETWEEN :start AND :end 
-            GROUP BY action_type
-        ");
-        $stmt->execute(['start' => $startDate, 'end' => $endDate]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-
     public function getAuthEventsStats(string $startDate, string $endDate): array {
         $stmt = $this->db->prepare("
             SELECT event_type, COUNT(*) as event_count 

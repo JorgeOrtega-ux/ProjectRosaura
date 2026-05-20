@@ -6,7 +6,6 @@ class TelemetryTracker {
         this.basePath = window.AppBasePath || '';
         this.abortController = null;
         
-        // Se corrige para aceptar el parametro enviado desde AppInit
         this.allowTelemetry = options.allowTelemetry !== undefined ? options.allowTelemetry : true;
         this.batch = [];
         this.batchSizeLimit = 3;
@@ -14,7 +13,6 @@ class TelemetryTracker {
         this.intervalId = null;
         this.sessionUUID = null;
         
-        this.handleClickBound = this.handleClick.bind(this);
         this.handleVisibilityChangeBound = this.handleVisibilityChange.bind(this);
         this.flushBound = this.flush.bind(this);
     }
@@ -40,27 +38,11 @@ class TelemetryTracker {
         if (this.abortController) this.abortController.abort();
         if (this.intervalId) clearInterval(this.intervalId);
         
-        document.removeEventListener('click', this.handleClickBound);
         document.removeEventListener('visibilitychange', this.handleVisibilityChangeBound);
     }
 
     bindEvents() {
-        document.addEventListener('click', this.handleClickBound);
         document.addEventListener('visibilitychange', this.handleVisibilityChangeBound);
-    }
-
-    handleClick(e) {
-        const target = e.target.closest('[data-telemetry-click]');
-        if (target) {
-            const action = target.getAttribute('data-telemetry-click');
-            const metadata = target.getAttribute('data-telemetry-meta') || null;
-            
-            this.trackEvent('interaction', {
-                action_type: action,
-                metadata: metadata ? JSON.parse(metadata) : null,
-                path: window.location.pathname
-            });
-        }
     }
 
     handleVisibilityChange() {

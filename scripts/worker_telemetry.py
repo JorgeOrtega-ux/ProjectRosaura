@@ -21,7 +21,6 @@ DB_PASS = os.getenv('DB_TELEMETRY_PASSWORD', 'secret')
 QUEUES = {
     'telemetry_api_latency': 'api_latency',
     'telemetry_pageviews': 'pageviews',
-    'telemetry_interactions': 'page_interactions',
     'telemetry_auth': 'auth_events'
 }
 
@@ -90,11 +89,32 @@ class TelemetryWorker:
         if not batch:
             return
 
-        keys = batch[0].keys()
+        # 1. PREGUNTAR A MYSQL: ¿Qué columnas existen realmente en esta tabla?
+        try:
+            cursor.execute(f"SHOW COLUMNS FROM {table_name}")
+            valid_columns = {row[0] for row in cursor.fetchall()}
+        except Error as e:
+            logging.error(f"Fallo al consultar esquema de {table_name}: {e}")
+            return
+
+        # 2. Recopilar TODAS las llaves únicas presentes en el lote JSON
+        all_keys = set()
+        for item in batch:
+            all_keys.update(item.keys())
+            
+        # 3. FILTRO MAESTRO: Intersectar. Solo usar llaves del JSON que SÍ existan en la tabla MySQL
+        keys = list(all_keys.intersection(valid_columns))
+        
+        if not keys:
+            logging.error(f"Ninguna llave del payload coincide con las columnas de {table_name}")
+            return
+
         columns = ', '.join(keys)
         placeholders = ', '.join(['%s'] * len(keys))
         
         sql = f"INSERT INTO {table_name} ({columns}) VALUES ({placeholders})"
+        
+        # Usar .get(key) para rellenar con None (NULL) si a un registro le falta el dato
         values = [tuple(item.get(key) for key in keys) for item in batch]
 
         try:
@@ -105,10 +125,9 @@ class TelemetryWorker:
             self.db_conn.rollback()
             logging.error(f"Fallo MySQL en {table_name}: {e}. Enviando {len(batch)} registros a DLQ.")
             
-            # 2. MANEJO REAL DE ERRORES: Reinyectar a Dead Letter Queue (DLQ)
+            # MANEJO REAL DE ERRORES: Reinyectar a Dead Letter Queue (DLQ)
             dlq_name = f"{queue_name}_dlq"
             try:
-                # Insertamos todos los registros crudos de golpe en la cola de fallos
                 self.r.rpush(dlq_name, *raw_payloads)
             except Exception as redis_err:
                 logging.critical(f"Fallo catastrófico al guardar en DLQ ({dlq_name}): {redis_err}")

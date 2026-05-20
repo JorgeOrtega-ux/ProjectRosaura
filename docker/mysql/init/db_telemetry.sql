@@ -32,18 +32,6 @@ CREATE TABLE IF NOT EXISTS pageviews (
     INDEX idx_path (path)
 ) ENGINE=InnoDB;
 
--- Tabla para eventos específicos de interacción en la interfaz (Frontend)
-CREATE TABLE IF NOT EXISTS page_interactions (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    action_type VARCHAR(50) NOT NULL,
-    path VARCHAR(255) NULL,
-    user_uuid CHAR(36) NULL,
-    metadata JSON NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_created_at (created_at),
-    INDEX idx_action (action_type)
-) ENGINE=InnoDB;
-
 -- Tabla para telemetría de seguridad (Backend)
 CREATE TABLE IF NOT EXISTS auth_events (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,

@@ -37,8 +37,6 @@ class TelemetryServices {
         
         if ($type === 'pageview') {
             $this->pushToQueue('telemetry_pageviews', $data);
-        } elseif ($type === 'interaction') {
-            $this->pushToQueue('telemetry_interactions', $data);
         }
     }
 
