@@ -9,17 +9,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
             <div class="component-top-left">
                 <h1 class="component-top-title"><?php echo __('admin_logs_viewer_title'); ?></h1>
             </div>
-            <div class="component-top-right" style="display: flex; gap: 8px; align-items: center;">
-                
-                <div class="component-search component-search--sm" style="width: 220px;">
-                    <div class="component-search-icon">
-                        <span class="material-symbols-rounded">router</span>
-                    </div>
-                    <div class="component-search-input">
-                        <input type="text" data-ref="logs-asn-filter" placeholder="<?php echo __('admin_logs_filter_asn') ?? 'Filtrar por ASN...'; ?>">
-                    </div>
-                </div>
-
+            <div class="component-top-right">
                 <button class="component-button component-button--icon component-button--h36" data-action="toggle-syntax" data-tooltip="<?php echo __('admin_logs_viewer_toggle_syntax'); ?>">
                     <span class="material-symbols-rounded">code_blocks</span>
                 </button>

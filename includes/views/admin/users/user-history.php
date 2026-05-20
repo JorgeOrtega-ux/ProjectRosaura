@@ -3,6 +3,8 @@
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 use App\Config\DatabaseManager;
+use App\Config\RedisCache;
+use App\Core\Repositories\RoleRepository;
 use App\Core\Repositories\UserRepository;
 use App\Core\Repositories\ModerationRepository;
 use App\Core\Repositories\ProfileLogRepository;
@@ -14,7 +16,9 @@ if ($targetUserId <= 0) {
 }
 
 $db = new DatabaseManager();
-$userRepo = new UserRepository($db);
+$redis = new RedisCache();
+$roleRepo = new RoleRepository($db, $redis);
+$userRepo = new UserRepository($db, $roleRepo);
 $modRepo = new ModerationRepository($db);
 $profileLogRepo = new ProfileLogRepository($db);
 
@@ -72,10 +76,6 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/user-history?id=' . $targ
 
             <div class="component-top-right">
                 <div class="component-actions active" data-ref="header-default-actions">
-                    
-                    <button class="component-button component-button--icon component-button--h40" data-action="searchLog" data-ref="btn-toggle-search" data-tooltip="<?php echo __('search_history_placeholder'); ?>" data-position="bottom">
-                        <span class="material-symbols-rounded">search</span>
-                    </button>
 
                     <div class="component-dropdown-wrapper component-dropdown-wrapper--fit">
                         <button class="component-button component-button--icon component-button--h40" data-action="toggleModule" data-target="moduleLogFilters" data-ref="btn-toggle-filters" data-tooltip="<?php echo __('tooltip_filters'); ?>" data-position="bottom">
@@ -124,18 +124,6 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/user-history?id=' . $targ
 
                 </div>
             </div>
-
-            <div class="component-search-toolbar disabled" data-ref="search-toolbar">
-                <div class="component-search">
-                    <div class="component-search-icon">
-                        <span class="material-symbols-rounded">search</span>
-                    </div>
-                    <div class="component-search-input">
-                        <input type="text" data-ref="log-search-input" placeholder="<?php echo __('search_history_placeholder'); ?>">
-                    </div>
-                </div>
-            </div>
-
         </div>
 
         <div class="component-bottom">
@@ -220,17 +208,17 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/user-history?id=' . $targ
                                 <td>
                                     <div class="component-badge component-badge--sm">
                                         <span class="material-symbols-rounded">calendar_month</span>
-                                        <span class="search-target"><?php echo $dateStr; ?></span>
+                                        <span><?php echo $dateStr; ?></span>
                                     </div>
                                 </td>
                                 <td>
                                     <div class="component-badge component-badge--sm">
                                         <span class="material-symbols-rounded"><?php echo $actionIcon; ?></span>
-                                        <span class="search-target"><?php echo $actionText; ?></span>
+                                        <span><?php echo $actionText; ?></span>
                                     </div>
                                 </td>
                                 <td>
-                                    <div class="td-details-content text-sm search-target">
+                                    <div class="td-details-content text-sm">
                                         <?php if (!empty($log['reason'])): ?>
                                             <div><strong><?php echo __('lbl_reason'); ?>:</strong> <?php echo htmlspecialchars($log['reason']); ?></div>
                                         <?php endif; ?>
@@ -249,7 +237,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/user-history?id=' . $targ
                                     <?php if (!empty($log['asn'])): ?>
                                         <div class="component-badge component-badge--sm component-badge--outline" title="<?php echo htmlspecialchars($log['asn']); ?>">
                                             <span class="material-symbols-rounded">router</span>
-                                            <span class="search-target" style="max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: inline-block;">
+                                            <span style="max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: inline-block;">
                                                 <?php echo htmlspecialchars($log['asn']); ?>
                                             </span>
                                         </div>
@@ -264,7 +252,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/user-history?id=' . $targ
                                         </div>
                                         <div class="component-badge component-badge--sm">
                                             <span class="material-symbols-rounded"><?php echo $adminBadgeIcon; ?></span>
-                                            <span class="search-target font-medium"><?php echo htmlspecialchars($adminName); ?></span>
+                                            <span class="font-medium"><?php echo htmlspecialchars($adminName); ?></span>
                                         </div>
                                     </div>
                                 </td>
@@ -274,8 +262,8 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/user-history?id=' . $targ
                             <tr class="disabled" data-ref="empty-search-table">
                                 <td colspan="5" class="component-empty-table-cell">
                                     <div class="component-empty-state component-empty-state--table">
-                                        <span class="material-symbols-rounded component-empty-state-icon">search_off</span>
-                                        <p class="component-empty-state-text"><?php echo __('empty_search_history'); ?></p>
+                                        <span class="material-symbols-rounded component-empty-state-icon">filter_alt_off</span>
+                                        <p class="component-empty-state-text">No hay registros para las categorías seleccionadas.</p>
                                     </div>
                                 </td>
                             </tr>

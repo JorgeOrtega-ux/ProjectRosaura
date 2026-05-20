@@ -8,7 +8,6 @@ class AdminUserHistoryController {
         
         this.handleGlobalClickBound = this.handleGlobalClick.bind(this);
         this.handlePaginationClickBound = this.handlePaginationClick.bind(this);
-        this.handleGlobalInputBound = this.handleGlobalInput.bind(this);
         this.handleGlobalChangeBound = this.handleGlobalChange.bind(this);
         this.handleViewLoadedBound = this.handleViewLoaded.bind(this);
     }
@@ -25,7 +24,6 @@ class AdminUserHistoryController {
         if (this.abortController) this.abortController.abort();
         document.removeEventListener('click', this.handlePaginationClickBound, true);
         document.removeEventListener('click', this.handleGlobalClickBound);
-        document.removeEventListener('input', this.handleGlobalInputBound);
         document.removeEventListener('change', this.handleGlobalChangeBound);
         window.removeEventListener('viewLoaded', this.handleViewLoadedBound);
         this.isInitialized = false;
@@ -34,7 +32,6 @@ class AdminUserHistoryController {
     bindEvents() {
         document.addEventListener('click', this.handlePaginationClickBound, true);
         document.addEventListener('click', this.handleGlobalClickBound);
-        document.addEventListener('input', this.handleGlobalInputBound);
         document.addEventListener('change', this.handleGlobalChangeBound);
         window.addEventListener('viewLoaded', this.handleViewLoadedBound);
     }
@@ -55,23 +52,9 @@ class AdminUserHistoryController {
     }
 
     handleGlobalClick(e) {
-        const searchBtn = e.target.closest('[data-action="searchLog"]');
-        
-        if (searchBtn) this.toggleSearchToolbar();
-        
-        const searchToolbar = document.querySelector('[data-ref="search-toolbar"]');
-        if (searchToolbar && !searchToolbar.classList.contains('disabled')) {
-            if (!e.target.closest('[data-ref="search-toolbar"]') && !searchBtn) {
-                searchToolbar.classList.remove('active');
-                searchToolbar.classList.add('disabled');
-            }
-        }
-    }
-
-    handleGlobalInput(e) {
-        if (e.target && e.target.getAttribute('data-ref') === 'log-search-input') {
-            this.applyAllFilters();
-        }
+        // Se mantiene para futuros handlers globales si es necesario,
+        // ya que la funcionalidad de toggle del menú de filtros 
+        // recae en appInstance (toggleModule).
     }
 
     handleGlobalChange(e) {
@@ -87,16 +70,7 @@ class AdminUserHistoryController {
     }
 
     resetViewState() {
-        const searchInput = document.querySelector('[data-ref="log-search-input"]');
-        if (searchInput) searchInput.value = '';
         document.querySelectorAll('.filter-checkbox').forEach(cb => cb.checked = true);
-        
-        const searchToolbar = document.querySelector('[data-ref="search-toolbar"]');
-        if (searchToolbar) {
-            searchToolbar.classList.remove('active');
-            searchToolbar.classList.add('disabled');
-        }
-
         this.applyAllFilters();
     }
 
@@ -153,41 +127,9 @@ class AdminUserHistoryController {
         }
     }
 
-    toggleSearchToolbar() {
-        const searchToolbar = document.querySelector('[data-ref="search-toolbar"]');
-        const searchInput = document.querySelector('[data-ref="log-search-input"]');
-        const filtersModule = document.querySelector('[data-module="moduleLogFilters"]');
-        
-        if (filtersModule && !filtersModule.classList.contains('disabled')) {
-            if (window.appInstance) window.appInstance.closeModule(filtersModule);
-        }
-
-        if (searchToolbar) {
-            if (searchToolbar.classList.contains('disabled')) {
-                searchToolbar.classList.remove('disabled');
-                searchToolbar.classList.add('active');
-                if (searchInput) {
-                    setTimeout(() => searchInput.focus(), 50);
-                }
-            } else {
-                searchToolbar.classList.remove('active');
-                searchToolbar.classList.add('disabled');
-            }
-        }
-    }
-
     applyAllFilters() {
-        const queryInput = document.querySelector('[data-ref="log-search-input"]');
-        const query = (queryInput ? queryInput.value : '').toLowerCase().trim();
-        
         const categoryCheckboxes = Array.from(document.querySelectorAll('.filter-checkbox[data-filter-type="category"]'));
         const checkedCategories = categoryCheckboxes.filter(cb => cb.checked).map(cb => cb.value);
-
-        const searchBtn = document.querySelector('[data-ref="btn-toggle-search"]');
-        if (searchBtn) {
-            if (query.length > 0) searchBtn.classList.add('has-active-filter');
-            else searchBtn.classList.remove('has-active-filter');
-        }
 
         const filtersBtn = document.querySelector('[data-ref="btn-toggle-filters"]');
         if (filtersBtn) {
@@ -210,15 +152,9 @@ class AdminUserHistoryController {
             item.classList.remove('last-visible-row');
             
             const itemCategory = item.getAttribute('data-log-category') || 'other';
-            
-            const textContent = Array.from(item.querySelectorAll('.search-target'))
-                .map(el => el.textContent.toLowerCase())
-                .join(' ');
-            
-            const matchesSearch = query === '' || textContent.includes(query);
             const matchesCategory = checkedCategories.includes(itemCategory) || itemCategory === 'other';
 
-            if (matchesSearch && matchesCategory) {
+            if (matchesCategory) {
                 item.classList.remove('disabled');
                 visibleCount++;
                 lastVisibleItem = item;

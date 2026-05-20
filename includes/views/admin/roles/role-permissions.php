@@ -3,6 +3,7 @@
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 use App\Config\DatabaseManager;
+use App\Config\RedisCache;
 use App\Core\Repositories\RoleRepository;
 
 // 1. VALIDACIÓN ESTRICTA A NIVEL SERVIDOR
@@ -21,7 +22,8 @@ $roleId = (int)$_GET['id'];
 
 // 2. HIDRATACIÓN DE DATOS (SERVER-SIDE)
 $dbManager = new DatabaseManager();
-$roleRepo = new RoleRepository($dbManager);
+$redis = new RedisCache();
+$roleRepo = new RoleRepository($dbManager, $redis);
 
 $role = $roleRepo->findById($roleId);
 if (!$role) {

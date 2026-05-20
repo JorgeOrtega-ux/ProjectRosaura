@@ -15,7 +15,6 @@ class AdminLogsViewerController {
 
         this.handleViewLoadedBound = this.handleViewLoaded.bind(this);
         this.handleClickBound = this.handleClick.bind(this);
-        this.handleInputBound = this.handleInput.bind(this); // NUEVO: Listener de input para filtrar
     }
 
     init() {
@@ -32,25 +31,16 @@ class AdminLogsViewerController {
 
         window.removeEventListener('viewLoaded', this.handleViewLoadedBound);
         document.removeEventListener('click', this.handleClickBound);
-        document.removeEventListener('input', this.handleInputBound);
     }
 
     bindEvents() {
         window.addEventListener('viewLoaded', this.handleViewLoadedBound);
         document.addEventListener('click', this.handleClickBound);
-        document.addEventListener('input', this.handleInputBound); // NUEVO: Atar el input
     }
 
     handleViewLoaded(e) {
         if (e.detail.url.includes('/admin/logs/viewer')) {
             this.loadLogs(e.detail.url);
-        }
-    }
-
-    // NUEVO: Método para interceptar escritura en el input de ASN/Log Filter
-    handleInput(e) {
-        if (e.target && e.target.getAttribute('data-ref') === 'logs-asn-filter') {
-            this.filterLogs(e.target.value);
         }
     }
 
@@ -65,13 +55,7 @@ class AdminLogsViewerController {
             this.isSyntaxModeEnabled = !this.isSyntaxModeEnabled;
             toggleSyntaxBtn.classList.toggle('component-button--dark', this.isSyntaxModeEnabled);
             if (this.activeTabId) {
-                // Al cambiar la vista, reaplicamos el filtro si existe
-                const filterInput = document.querySelector('[data-ref="logs-asn-filter"]');
-                if (filterInput && filterInput.value.trim() !== '') {
-                    this.filterLogs(filterInput.value);
-                } else {
-                    this.switchTab(this.activeTabId);
-                }
+                this.switchTab(this.activeTabId);
             }
             return;
         }
@@ -200,51 +184,11 @@ class AdminLogsViewerController {
         return safeText;
     }
 
-    // NUEVO: Lógica que aísla las líneas que coinciden con el ASN o texto de búsqueda
-    filterLogs(query) {
-        if (!this.activeTabId || !this.logsData[this.activeTabId]) return;
-        
-        const content = this.logsData[this.activeTabId].error 
-            ? this.logsData[this.activeTabId].error 
-            : (this.logsData[this.activeTabId].content || __('msg_empty_log_file'));
-        
-        if (!query.trim()) {
-            this.switchTab(this.activeTabId);
-            return;
-        }
-
-        const lines = content.split('\n');
-        const lowerQuery = query.toLowerCase();
-        
-        // Filtramos buscando coincidencias en la línea completa
-        const filteredLines = lines.filter(line => line.toLowerCase().includes(lowerQuery));
-        const newContent = filteredLines.length > 0 
-            ? filteredLines.join('\n') 
-            : (__('empty_search_history') || 'No se encontraron registros para este filtro.');
-
-        const textarea = document.querySelector('[data-ref="logs-viewer-textarea"]');
-        const codeContainer = document.querySelector('[data-ref="logs-viewer-code"]');
-        
-        if (!textarea || !codeContainer) return;
-
-        if (this.isSyntaxModeEnabled) {
-            codeContainer.innerHTML = this.parseLogSyntax(newContent);
-            codeContainer.scrollTop = 0;
-        } else {
-            textarea.value = newContent;
-            textarea.scrollTop = 0;
-        }
-    }
-
     switchTab(id) {
         if (!this.logsData[id]) return;
         
         this.activeTabId = id;
         this.renderTabs();
-
-        // Al cambiar de tab, limpiamos el filtro visual para no causar confusión
-        const filterInput = document.querySelector('[data-ref="logs-asn-filter"]');
-        if (filterInput) filterInput.value = '';
 
         const textarea = document.querySelector('[data-ref="logs-viewer-textarea"]');
         const codeContainer = document.querySelector('[data-ref="logs-viewer-code"]');

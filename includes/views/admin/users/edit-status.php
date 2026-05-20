@@ -3,7 +3,9 @@
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 use App\Config\DatabaseManager;
+use App\Config\RedisCache;
 use App\Core\Repositories\UserRepository;
+use App\Core\Repositories\RoleRepository;
 use App\Core\System\DatabaseConstants as DB;
 
 $targetUserId = isset($_GET['id']) ? (int)$_GET['id'] : 0;
@@ -13,7 +15,9 @@ if ($targetUserId <= 0) {
 }
 
 $db = new DatabaseManager();
-$userRepo = new UserRepository($db);
+$redis = new RedisCache();
+$roleRepo = new RoleRepository($db, $redis);
+$userRepo = new UserRepository($db, $roleRepo);
 $user = $userRepo->findById($targetUserId);
 
 if (!$user) {
