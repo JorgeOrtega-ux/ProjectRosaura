@@ -81,7 +81,8 @@ class AdminBackupsRestoreController {
 
         if (!resultDialog.confirmed) return;
 
-        const password = resultDialog.data['dialog_verify_password'] ? resultDialog.data['dialog_verify_password'].trim() : '';
+        // AQUÍ SE CORRIGIÓ LA EXTRACCIÓN CON EL ID REAL DEL TEMPLATE
+        const password = resultDialog.data['modal_verify_password'] ? resultDialog.data['modal_verify_password'].trim() : '';
 
         if (!password) {
             showMessage(__('err_password_authorize_restore'), 'error');

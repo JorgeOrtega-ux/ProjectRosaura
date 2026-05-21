@@ -87,7 +87,8 @@ class AdminUserRoleEditController {
 
         if (!resultDialog.confirmed) return;
 
-        const password = resultDialog.data['dialog_verify_password'] ? resultDialog.data['dialog_verify_password'].trim() : '';
+        // AQUÍ SE CORRIGIÓ LA EXTRACCIÓN CON EL ID REAL DEL TEMPLATE
+        const password = resultDialog.data['modal_verify_password'] ? resultDialog.data['modal_verify_password'].trim() : '';
 
         if (!password) {
             showMessage(_t('err_require_password_to_confirm', 'Contraseña requerida'), 'error');

@@ -1,4 +1,13 @@
 =============================================================================
+DIRECTIVA MAESTRA SUPREMA: ¡TOLERANCIA CERO AL TEXTO HARDCODEADO!
+=============================================================================
+BAJO NINGUNA CIRCUNSTANCIA DEBES DEJAR TEXTO HARDCODEADO EN NINGÚN ARCHIVO. 
+Todo, ABSOLUTAMENTE TODO, hasta el detalle más mínimo (títulos, botones, placeholders, aria-labels, alertas, mensajes de error, tooltips, opciones de un select) DEBE implementarse utilizando estrictamente el sistema y claves de traducción. 
+
+ESTÁN ESTRICTAMENTE PROHIBIDOS LOS FALLBACKS (textos de respaldo) en JavaScript, PHP o HTML. Si necesitas un texto, inventa una clave lógica (ej. `__('lbl_nuevo_texto')`), pero NUNCA escribas la cadena de texto legible para el usuario en el código. 
+=============================================================================
+
+=============================================================================
 CONTEXTO DE ARQUITECTURA: PROJECT ROSAURA (FULL STACK JS & PHP)
 =============================================================================
 INSTRUCCIÓN ESTRICTA PARA LA IA: Si vas a generar, refactorizar o modificar 
@@ -52,13 +61,16 @@ REGLA 4: Limpieza Rigurosa (destroy)
 - Debes limpiar cualquier `setInterval` o `setTimeout` activo.
 
 -----------------------------------------------------------------------------
-REGLA 5: Sistema de UI Propio (Cero Native Alerts)
+REGLA 5: Sistema de UI y Extracción de Datos de Diálogos
 -----------------------------------------------------------------------------
 - ESTRICTAMENTE PROHIBIDO el uso de `alert()`, `confirm()`, o `prompt()` nativos.
 - Para notificaciones usa: `showMessage(__('clave_traduccion'), 'success' | 'error');`
 - Para confirmaciones usa: `await window.dialogSystem.show('nombreDialogo');`
 - Para estados de carga en botones usa: `setButtonLoading(btn)` y `restoreButton(btn)`.
-- Siempre debes importar estas utilidades al inicio del archivo:
+- EXTRACCIÓN DE DATOS: Cuando recolectes datos del `dialogSystem`, las llaves devueltas en `result.data` corresponden EXACTAMENTE al `id`, `name` o `data-ref` del input en el template. 
+  - ESTRICTAMENTE PROHIBIDO buscar llaves con el prefijo `dialog_` (ej. `dialog_verify_password`).
+  - Los templates actuales usan el prefijo `modal_` (ej. `modal_verify_password`). Extrae los datos usando exactamente esa llave: `result.data['modal_verify_password']`.
+- Siempre debes importar utilidades visuales al inicio:
   `import { showMessage, setButtonLoading, restoreButton } from '../../core/utils/uiUtils.js';`
 
 -----------------------------------------------------------------------------
@@ -95,12 +107,12 @@ REGLA 8: Navegación Programática Correcta (SpaRouter)
 REGLA 9: Cero Textos Hardcodeados, Sin Fallbacks y Sin Console Logs
 -----------------------------------------------------------------------------
 - ESTRICTAMENTE PROHIBIDO dejar `console.log()`, `console.error()` en el código.
-- ESTRICTAMENTE PROHIBIDO escribir textos legibles para el usuario directamente en el JS.
-- ESTRICTAMENTE PROHIBIDO usar "respaldos" (fallbacks) de traducciones con texto duro.
+- ESTRICTAMENTE PROHIBIDO escribir textos legibles para el usuario directamente en el JS (Tolerancia Cero).
+- ESTRICTAMENTE PROHIBIDO usar "respaldos" (fallbacks) de traducciones, ya sea enviando un segundo parámetro a funciones como `_t()` o evaluando un string estático.
   INCORRECTO: `showMessage(__('err_session') || 'Sesión expirada', 'error');`
-  INCORRECTO: `this.showError(__('err_session') || 'Error');`
+  INCORRECTO: `this.showError(_t('err_session', 'Error fallback'));`
   CORRECTO: `showMessage(__('err_session'), 'error');`
-- TODO texto debe usar ÚNICAMENTE la clave de la función `__()`.
+- TODO texto debe usar ÚNICAMENTE la clave de la función de traducción oficial.
 
 =============================================================================
 PLANTILLA BASE REQUERIDA PARA CONTROLADORES JS:
@@ -168,21 +180,23 @@ PARTE 2: BACKEND (API PHP)
 REGLA 10: Separación de Responsabilidades (MVC / Service Pattern)
 -----------------------------------------------------------------------------
 - CONTROLADORES (`api/controllers/`): Únicamente leen el Request, llaman al 
-  Servicio correspondiente y retornan con `Utils::jsonResponse()`. ¡PROHIBIDA 
-  la lógica de negocio o queries SQL aquí!
+  Servicio correspondiente y retornan con `Utils::jsonResponse()`. 
+  ¡PROHIBIDA la lógica de negocio o queries SQL aquí!
 - SERVICIOS (`api/services/`): Contienen la lógica de negocio. NO interactúan 
   directamente con PDO/SQL; consumen Repositorios.
 - REPOSITORIOS (`includes/core/Repositories/`): Único lugar para consultas SQL.
 
 -----------------------------------------------------------------------------
-REGLA 11: Cero Textos Hardcodeados y Sin Fallbacks en PHP
+REGLA 11: Cero Textos Hardcodeados y Absolutamente Cero Fallbacks
 -----------------------------------------------------------------------------
-- ESTRICTAMENTE PROHIBIDO quemar textos de éxito/error en español/inglés.
-- ESTRICTAMENTE PROHIBIDO usar respaldos como `__('clave') ?? 'Texto'`.
-- Para cualquier mensaje hacia el Frontend, usa OBLIGATORIAMENTE el helper `__()`.
+- ESTRICTAMENTE PROHIBIDO quemar textos de éxito/error en español/inglés en los archivos PHP (Tolerancia Cero).
+- ESTRICTAMENTE PROHIBIDO proporcionar cadenas de texto duro como "fallbacks" o métodos de respaldo (e.g. coalescencia nula, operadores ternarios, o envío de segundo parámetro a funciones de traducción).
+- Para cualquier mensaje hacia el Frontend, usa OBLIGATORIAMENTE la clave pura con la función `__()`.
   INCORRECTO: `return Utils::jsonResponse(false, 'Error fatal');`
   INCORRECTO: `return Utils::jsonResponse(false, __('err_fatal') ?: 'Error fatal');`
+  INCORRECTO: `return Utils::jsonResponse(false, __('err_fatal', 'Error fatal'));`
   CORRECTO: `return Utils::jsonResponse(false, __('err_fatal'));`
+- Los archivos JSON de traducción son la única fuente de verdad. No deben existir textos de respaldo en la lógica de Controladores, Servicios o Repositorios.
 
 -----------------------------------------------------------------------------
 REGLA 12: Reutilización Obligatoria de `Utils.php`
@@ -192,10 +206,11 @@ REGLA 12: Reutilización Obligatoria de `Utils.php`
 - Retorno HTTP OBLIGATORIO: `Utils::jsonResponse($success, $message, $data, $code)`.
 
 -----------------------------------------------------------------------------
-REGLA 13: Nada de Depuración en Producción
+REGLA 13: Depuración y Registro Estricto (Logger Obligatorio)
 -----------------------------------------------------------------------------
 - ESTRICTAMENTE PROHIBIDO usar `var_dump()`, `print_r()`, `echo` o `die()`.
-- Utiliza EXCLUSIVAMENTE `Logger::error()`, `Logger::info()`, etc.
+- TODO archivo PHP que requiera registrar eventos, depurar estados o capturar excepciones, debe instanciar o llamar estáticamente al sistema Logger oficial del proyecto (`Logger::error()`, `Logger::info()`, `Logger::warning()`, etc.).
+- Ningún error atrapado en bloques `catch` debe pasar desapercibido, todos deben ser registrados mediante el Logger antes de retornar una respuesta genérica al cliente.
 
 -----------------------------------------------------------------------------
 REGLA 14: Seguridad y Base de Datos (PDO Preparado)
@@ -207,8 +222,8 @@ REGLA 14: Seguridad y Base de Datos (PDO Preparado)
 REGLA 15: Manejo Controlado de Excepciones
 -----------------------------------------------------------------------------
 - Los Repositorios lanzan `\Exception`.
-- Los Servicios capturan (`catch`), usan `Logger::error($e->getMessage())` y 
-  devuelven una respuesta genérica limpia: 
+- Los Servicios capturan (`catch`), registran el error obligatoriamente usando `Logger::error($e->getMessage())` y 
+  devuelven una respuesta genérica limpia e INTERNACIONALIZADA: 
   `return ['success' => false, 'message' => __('err_database')];`.
 - NUNCA exponer `$e->getMessage()` hacia el JSON del cliente.
 
@@ -233,19 +248,21 @@ REGLA 17: Cero Atributos ID y Exclusividad de Data Attributes
 -----------------------------------------------------------------------------
 REGLA 18: Atributos data-ref Flexibles (Wrappers)
 -----------------------------------------------------------------------------
-- NO es obligatorio colocar un atributo `data-ref` en el contenedor padre o "wrapper" de una vista (ej. `data-ref="manage-users-wrapper"`) a menos que el controlador JavaScript lo necesite específicamente para inicializar lógica, reiniciar el DOM o limitar su alcance. 
+- NO es obligatorio colocar un atributo `data-ref` en el contenedor padre o "wrapper" de una vista (ej. `data-ref="manage-users-wrapper"`) a menos que el controlador JavaScript lo necesite específicamente para inicializar lógica, reiniciar el DOM o limitar su alcance.
 - Si la vista funciona correctamente sin envolver todo el contenido en un `data-ref` (como sucede en varias vistas estáticas), simplemente omítelo para mantener el código más limpio.
 
 -----------------------------------------------------------------------------
-REGLA 19: Cero Textos Hardcodeados en la Interfaz
+REGLA 19: Cero Textos Hardcodeados en la Interfaz (Absoluto)
 -----------------------------------------------------------------------------
-- ESTRICTAMENTE PROHIBIDO escribir texto visible (títulos, párrafos, tooltips, placeholders, aria-labels) directamente en el HTML.
-- Todo texto renderizado debe utilizar la función de traducción OBLIGATORIAMENTE.
+- ESTRICTAMENTE PROHIBIDO escribir texto visible u oculto (títulos, párrafos, tooltips, placeholders, aria-labels, opciones de un select) directamente en el HTML.
+- Todo texto renderizado debe utilizar la función de traducción OBLIGATORIAMENTE, incluso si parece un detalle insignificante.
   INCORRECTO: `<button>Guardar Cambios</button>`
+  INCORRECTO: `<input type="text" placeholder="Escribe tu nombre">`
   CORRECTO: `<button><?php echo __('btn_save_changes'); ?></button>`
+  CORRECTO: `<input type="text" placeholder="<?php echo __('placeholder_name'); ?>">`
 
 -----------------------------------------------------------------------------
 REGLA 20: Cero Anotaciones o Comentarios Basura
 -----------------------------------------------------------------------------
-- ESTRICTAMENTE PROHIBIDO dejar código comentado (``, `/* */`, `//`) o "notas basura" en las vistas finales (ej. ``, ``).
+- ESTRICTAMENTE PROHIBIDO dejar código comentado o "notas basura" en las vistas finales.
 - El código HTML/PHP debe estar 100% limpio. Si la estructura es buena e indentada, los comentarios estructurales sobran.
