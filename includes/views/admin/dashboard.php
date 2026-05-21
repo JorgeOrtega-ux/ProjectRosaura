@@ -13,6 +13,10 @@ $canViewLogs = in_array('view_logs', $userPermissions);
 $defaultStartDate = date('Y-m-d', strtotime('-30 days'));
 $defaultEndDate = date('Y-m-d');
 
+// Formatos de visualización sugeridos para los triggers
+$displayStartDate = date('d M Y, 00:00', strtotime($defaultStartDate));
+$displayEndDate = date('d M Y, 23:59', strtotime($defaultEndDate));
+
 ?>
 <div class="view-content">
     <div class="component-wrapper component-wrapper--full no-padding h-full-flex">
@@ -24,30 +28,49 @@ $defaultEndDate = date('Y-m-d');
             <div class="component-top-right">
                 
                 <div class="dashboard-date-filter">
-                    <div class="component-input-group component-input-group--h34 dashboard-date-filter__input">
-                        <input type="date" id="dash-start-date" class="component-input-field component-input-field--simple" value="<?php echo $defaultStartDate; ?>">
+                    <input type="hidden" id="dash-start-date" value="<?php echo $defaultStartDate; ?>">
+                    <div class="component-dropdown-wrapper">
+                        <div class="component-dropdown-trigger" data-action="toggleModule" data-target="adminModuleCalendarStart">
+                            <span class="material-symbols-rounded">calendar_month</span>
+                            <span class="component-dropdown-text" data-ref="admin-startDate-text"><?php echo $displayStartDate; ?></span>
+                        </div>
+                        <?php 
+                        $calendarModuleId = 'adminModuleCalendarStart';
+                        include __DIR__ . '/../../modules/moduleCalendar.php'; 
+                        ?>
                     </div>
+
                     <span class="dashboard-date-filter__separator">-</span>
-                    <div class="component-input-group component-input-group--h34 dashboard-date-filter__input">
-                        <input type="date" id="dash-end-date" class="component-input-field component-input-field--simple" value="<?php echo $defaultEndDate; ?>">
+                    
+                    <input type="hidden" id="dash-end-date" value="<?php echo $defaultEndDate; ?>">
+                    <div class="component-dropdown-wrapper">
+                        <div class="component-dropdown-trigger" data-action="toggleModule" data-target="adminModuleCalendarEnd">
+                            <span class="material-symbols-rounded">calendar_month</span>
+                            <span class="component-dropdown-text" data-ref="admin-endDate-text"><?php echo $displayEndDate; ?></span>
+                        </div>
+                        <?php 
+                        $calendarModuleId = 'adminModuleCalendarEnd';
+                        include __DIR__ . '/../../modules/moduleCalendar.php'; 
+                        ?>
                     </div>
-                    <button id="dash-apply-filters" class="component-button component-button--icon component-button--h34" data-tooltip="<?php echo __('btn_apply_filters', 'Filtrar'); ?>" data-position="bottom">
+
+                    <button id="dash-apply-filters" class="component-button component-button--icon component-button--h40" data-tooltip="<?php echo __('btn_apply_filters', 'Filtrar'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">filter_alt</span>
                     </button>
                 </div>
 
                 <div class="dashboard-header-divider"></div>
 
-                <button class="component-button component-button--icon component-button--h34 <?php echo !$canManageRoles ? 'disabled-interaction' : ''; ?>" data-nav="<?php echo APP_URL; ?>/admin/manage-roles" data-tooltip="<?php echo __('btn_manage_roles'); ?>" data-position="bottom">
+                <button class="component-button component-button--icon component-button--h40 <?php echo !$canManageRoles ? 'disabled-interaction' : ''; ?>" data-nav="<?php echo APP_URL; ?>/admin/manage-roles" data-tooltip="<?php echo __('btn_manage_roles'); ?>" data-position="bottom">
                     <span class="material-symbols-rounded">admin_panel_settings</span>
                 </button>
-                <button class="component-button component-button--icon component-button--h34 <?php echo !$canViewLogs ? 'disabled-interaction' : ''; ?>" data-nav="<?php echo APP_URL; ?>/admin/logs" data-tooltip="<?php echo __('btn_view_logs'); ?>" data-position="bottom">
+                <button class="component-button component-button--icon component-button--h40 <?php echo !$canViewLogs ? 'disabled-interaction' : ''; ?>" data-nav="<?php echo APP_URL; ?>/admin/logs" data-tooltip="<?php echo __('btn_view_logs'); ?>" data-position="bottom">
                     <span class="material-symbols-rounded">receipt_long</span>
                 </button>
             </div>
         </div>
 
-        <div class="component-bottom component-bottom--padded dashboard-wrapper">
+        <div class="component-bottom component-bottom--padded">
             
             <div class="dashboard-grid">
                 <div class="component-item-card stat-card">

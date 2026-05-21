@@ -2,6 +2,7 @@
 
 import { ApiService } from '../../core/api/ApiServices.js';
 import { showMessage } from '../../core/utils/uiUtils.js';
+import { CalendarSystem } from '../../core/components/CalendarSystem.js';
 
 export class AdminDashboardController {
     constructor() {
@@ -12,11 +13,16 @@ export class AdminDashboardController {
             activity: null
         };
         this.isChartJsLoaded = false;
+        
+        // Instanciamos pasándole el contenedor específico para evitar conflictos
+        this.calendarStart = new CalendarSystem('[data-module="adminModuleCalendarStart"]');
+        this.calendarEnd = new CalendarSystem('[data-module="adminModuleCalendarEnd"]');
     }
 
     async init() {
         this.cacheDOM();
         this.bindEvents();
+        this.initCalendars();
         
         // Mostrar estado de carga en las tarjetas temporalmente
         this._setLoadingState();
@@ -39,6 +45,32 @@ export class AdminDashboardController {
 
         this.dom.canvasRegistrations = document.getElementById('chart-registrations');
         this.dom.canvasActivity = document.getElementById('chart-activity');
+    }
+
+    initCalendars() {
+        this.calendarStart.init();
+        const startVal = this.dom.startDateInput ? this.dom.startDateInput.value : '';
+        this.calendarStart.setup(startVal ? `${startVal}T00:00` : '', (isoString, displayString) => {
+            if (this.dom.startDateInput) this.dom.startDateInput.value = isoString.split('T')[0];
+            const textRef = document.querySelector('[data-ref="admin-startDate-text"]');
+            if (textRef) textRef.textContent = displayString;
+        }, () => {
+            if (this.dom.startDateInput) this.dom.startDateInput.value = '';
+            const textRef = document.querySelector('[data-ref="admin-startDate-text"]');
+            if (textRef) textRef.textContent = window.__ ? window.__('btn_clear') : 'Sin fecha';
+        });
+
+        this.calendarEnd.init();
+        const endVal = this.dom.endDateInput ? this.dom.endDateInput.value : '';
+        this.calendarEnd.setup(endVal ? `${endVal}T23:59` : '', (isoString, displayString) => {
+            if (this.dom.endDateInput) this.dom.endDateInput.value = isoString.split('T')[0];
+            const textRef = document.querySelector('[data-ref="admin-endDate-text"]');
+            if (textRef) textRef.textContent = displayString;
+        }, () => {
+            if (this.dom.endDateInput) this.dom.endDateInput.value = '';
+            const textRef = document.querySelector('[data-ref="admin-endDate-text"]');
+            if (textRef) textRef.textContent = window.__ ? window.__('btn_clear') : 'Sin fecha';
+        });
     }
 
     bindEvents() {
@@ -91,7 +123,7 @@ export class AdminDashboardController {
         const endDate = this.dom.endDateInput.value;
 
         // Validaciones básicas
-        if (new Date(startDate) > new Date(endDate)) {
+        if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
             showMessage(window.__ ? window.__('validation_invalid_date_range') : 'La fecha de inicio no puede ser mayor a la fecha final', 'error');
             this._resetButtonState();
             return;
@@ -273,6 +305,9 @@ export class AdminDashboardController {
         if (this.chartInstances.activity) {
             this.chartInstances.activity.destroy();
         }
+        
+        this.calendarStart.destroy();
+        this.calendarEnd.destroy();
         
         // Limpiar listeners si es necesario
         if (this.dom.btnApply) {

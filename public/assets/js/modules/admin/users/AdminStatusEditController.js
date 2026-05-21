@@ -25,12 +25,11 @@ class AdminStatusEditController {
         };
 
         this.maps = {
-            isSuspended: { '0': __('suspension_none'), '1': __('suspension_active') },
-            suspendedType: { 'temporary': __('suspension_temp'), 'permanent': __('suspension_perm') },
-            suspensionDuration: { '1': __('duration_1d'), '3': __('duration_3d'), '7': __('duration_7d'), '14': __('duration_14d'), '30': __('duration_30d'), 'custom': __('duration_custom') }
+            isSuspended: { '0': 'suspension_none', '1': 'suspension_active' },
+            suspendedType: { 'temporary': 'suspension_temp', 'permanent': 'suspension_perm' },
+            suspensionDuration: { '1': 'duration_1d', '3': 'duration_3d', '7': 'duration_7d', '14': 'duration_14d', '30': 'duration_30d', 'custom': 'suspension_custom_time' }
         };
 
-        // Usamos las Keys directas como llaves del objeto (Arquitectura limpia)
         this.reasonDurations = {
             'reason_terms': 7, 'reason_fake_info': 30, 'reason_illegal': 30,
             'reason_fraud_use': 14, 'reason_abuse': 3, 'reason_prohibited_content': 7,
@@ -102,8 +101,10 @@ class AdminStatusEditController {
                 if (inpSuspCustom) inpSuspCustom.value = this.state.customSuspensionReason || '';
                 if (chkNotifySuspension) chkNotifySuspension.checked = this.state.notifyUserSuspension;
 
-                this.updateCalendarText();
-                this.syncVisuals();
+                // SOLUCIÓN: En la carga inicial, el servidor ya hizo el trabajo de textos (SSR).
+                // No llamamos updateCalendarText() y pasamos false a syncVisuals() 
+                // para que NO sobreescriba los textos pre-renderizados, evitando cualquier caché en JS.
+                this.syncVisuals(false); 
                 this.renderUI();
                 this.checkForChanges();
             } catch (error) {
@@ -159,6 +160,7 @@ class AdminStatusEditController {
             const module = btnSetDropdown.closest('.component-module');
             if (module && window.appInstance) window.appInstance.closeModule(module);
             
+            // Aquí sí pasamos (true implícito) porque el usuario acaba de interactuar
             this.syncVisuals();
             this.renderUI();
             this.checkForChanges(); 
@@ -214,21 +216,27 @@ class AdminStatusEditController {
         textEl.textContent = `${d.getDate()} ${__('lbl_of')} ${monthsStr[d.getMonth()]} ${d.getFullYear()}, ${h}:${m}`;
     }
 
-    syncVisuals() {
+    syncVisuals(updateText = true) {
         const syncLabel = (key) => {
             const val = this.state[key];
-            const el = document.querySelector(`[data-ref="admin-${key}-text"]`);
-            if (el) {
-                if (key === 'suspensionReason') {
-                    if (!val) el.textContent = __('lbl_select_suspension_reason');
-                    else if (this.reasonDurations.hasOwnProperty(val)) el.textContent = __(val);
-                    else el.textContent = val;
-                } else {
-                    el.textContent = this.maps[key] ? this.maps[key][val] : val;
+            
+            // SOLUCIÓN: Solo actualizar el texto si se requiere explícitamente.
+            if (updateText) {
+                const el = document.querySelector(`[data-ref="admin-${key}-text"]`);
+                if (el) {
+                    if (key === 'suspensionReason') {
+                        if (!val) el.textContent = __('lbl_select_suspension_reason');
+                        else if (this.reasonDurations.hasOwnProperty(val)) el.textContent = __(val);
+                        else el.textContent = val;
+                    } else {
+                        el.textContent = this.maps[key] && this.maps[key][val] ? __(this.maps[key][val]) : val;
+                    }
                 }
             }
+            
+            // Esto SÍ se ejecuta siempre para aplicar las clases "active" al menú HTML
             document.querySelectorAll(`[data-action="adminSetDropdown"][data-key="${key}"]`).forEach(item => {
-                item.classList.toggle('active', item.getAttribute('data-value') === val);
+                item.classList.toggle('active', item.getAttribute('data-value') === String(val));
             });
         };
 

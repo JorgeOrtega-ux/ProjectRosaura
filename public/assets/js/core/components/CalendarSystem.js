@@ -2,7 +2,8 @@
 import { showMessage } from '../utils/uiUtils.js';
 
 export class CalendarSystem {
-    constructor() {
+    constructor(containerSelector = null) {
+        this.containerSelector = containerSelector;
         this.currentDate = new Date();
         this.selectedDate = null;
         this.onConfirm = null;
@@ -15,6 +16,13 @@ export class CalendarSystem {
         // REGLA 1: Bindings obligatorios
         this.handleClickBound = this.handleClick.bind(this);
         this.handleFocusOutBound = this.handleFocusOut.bind(this);
+    }
+
+    getContainer() {
+        if (this.containerSelector) {
+            return document.querySelector(this.containerSelector) || document;
+        }
+        return document;
     }
 
     init() {
@@ -41,16 +49,18 @@ export class CalendarSystem {
             this.selectedDate = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
             this.currentDate = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
 
-            const hInput = document.querySelector('[data-ref="calendar-hours"]');
-            const mInput = document.querySelector('[data-ref="calendar-minutes"]');
+            const container = this.getContainer();
+            const hInput = container.querySelector('[data-ref="calendar-hours"]');
+            const mInput = container.querySelector('[data-ref="calendar-minutes"]');
             if (hInput) hInput.value = timeParts[0];
             if (mInput) mInput.value = timeParts[1];
         } else {
             this.selectedDate = null;
             this.currentDate = new Date();
             
-            const hInput = document.querySelector('[data-ref="calendar-hours"]');
-            const mInput = document.querySelector('[data-ref="calendar-minutes"]');
+            const container = this.getContainer();
+            const hInput = container.querySelector('[data-ref="calendar-hours"]');
+            const mInput = container.querySelector('[data-ref="calendar-minutes"]');
             if (hInput) hInput.value = '00';
             if (mInput) mInput.value = '00';
         }
@@ -65,6 +75,12 @@ export class CalendarSystem {
     }
 
     handleClick(e) {
+        const container = this.getContainer();
+        // Ignorar clicks que no provengan de la instancia específica de este calendario
+        if (container !== document && !container.contains(e.target)) {
+            return;
+        }
+
         const btnPrev = e.target.closest('[data-action="calendarPrevMonth"]');
         const btnNext = e.target.closest('[data-action="calendarNextMonth"]');
         const btnDay = e.target.closest('[data-action="calendarSelectDay"]');
@@ -72,15 +88,18 @@ export class CalendarSystem {
         const btnClear = e.target.closest('[data-action="calendarClear"]');
         const btnCancel = e.target.closest('[data-action="calendarCancel"]');
 
-        if (btnPrev) this.changeMonth(-1);
-        if (btnNext) this.changeMonth(1);
-        if (btnDay) this.selectDay(btnDay);
-        if (btnConfirm) this.confirm();
-        if (btnClear) this.clear();
-        if (btnCancel) this.cancel();
+        if (btnPrev && container.contains(btnPrev)) this.changeMonth(-1);
+        if (btnNext && container.contains(btnNext)) this.changeMonth(1);
+        if (btnDay && container.contains(btnDay)) this.selectDay(btnDay);
+        if (btnConfirm && container.contains(btnConfirm)) this.confirm();
+        if (btnClear && container.contains(btnClear)) this.clear();
+        if (btnCancel && container.contains(btnCancel)) this.cancel();
     }
 
     handleFocusOut(e) {
+        const container = this.getContainer();
+        if (container !== document && !container.contains(e.target)) return;
+
         if (e.target.getAttribute('data-ref') === 'calendar-hours') {
             let val = parseInt(e.target.value) || 0;
             if (val < 0) val = 0;
@@ -96,6 +115,7 @@ export class CalendarSystem {
     }
 
     render() {
+        const container = this.getContainer();
         const year = this.currentDate.getFullYear();
         const month = this.currentDate.getMonth();
         
@@ -103,10 +123,10 @@ export class CalendarSystem {
         const daysInMonth = new Date(year, month + 1, 0).getDate();
         const daysInPrevMonth = new Date(year, month, 0).getDate();
         
-        const title = document.querySelector('[data-ref="calendar-title"]');
+        const title = container.querySelector('[data-ref="calendar-title"]');
         if (title) title.textContent = `${this.monthsStr[month]} ${year}`;
         
-        const daysContainer = document.querySelector('[data-ref="calendar-days"]');
+        const daysContainer = container.querySelector('[data-ref="calendar-days"]');
         if (!daysContainer) return;
         daysContainer.innerHTML = '';
         
@@ -152,8 +172,9 @@ export class CalendarSystem {
             return;
         }
         
-        const hInput = document.querySelector('[data-ref="calendar-hours"]');
-        const mInput = document.querySelector('[data-ref="calendar-minutes"]');
+        const container = this.getContainer();
+        const hInput = container.querySelector('[data-ref="calendar-hours"]');
+        const mInput = container.querySelector('[data-ref="calendar-minutes"]');
         
         const h = hInput ? hInput.value.padStart(2, '0') : '00';
         const m = mInput ? mInput.value.padStart(2, '0') : '00';
@@ -181,7 +202,8 @@ export class CalendarSystem {
     }
 
     closeModule() {
-        const daysContainer = document.querySelector('[data-ref="calendar-days"]');
+        const container = this.getContainer();
+        const daysContainer = container.querySelector('[data-ref="calendar-days"]');
         if (daysContainer && window.appInstance) {
             const module = daysContainer.closest('.component-module');
             if (module) window.appInstance.closeModule(module);

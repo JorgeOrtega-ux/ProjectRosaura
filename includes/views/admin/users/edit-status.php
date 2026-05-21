@@ -349,7 +349,7 @@ if ($initialState['isSuspended'] === '1') {
                                                 <span class="material-symbols-rounded">calendar_month</span>
                                                 <span class="component-dropdown-text" data-ref="admin-endDate-text"><?php echo $displayTexts['endDate']; ?></span>
                                             </div>
-                                            <?php include __DIR__ . '/../../modules/moduleCalendar.php'; ?>
+                                            <?php include __DIR__ . '/../../../modules/moduleCalendar.php'; ?>
                                         </div>
                                     </div>
                                 </div>
