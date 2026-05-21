@@ -82,8 +82,7 @@ export class AdminDashboardController {
         if (this.dom.statPageviews) this.dom.statPageviews.textContent = '...';
         
         if (this.dom.btnApply) {
-            this.dom.btnApply.disabled = true;
-            this.dom.btnApply.style.opacity = '0.7';
+            this.dom.btnApply.classList.add('disabled-interaction');
         }
     }
 
@@ -113,8 +112,7 @@ export class AdminDashboardController {
 
     _resetButtonState() {
         if (this.dom.btnApply) {
-            this.dom.btnApply.disabled = false;
-            this.dom.btnApply.style.opacity = '1';
+            this.dom.btnApply.classList.remove('disabled-interaction');
         }
     }
 
