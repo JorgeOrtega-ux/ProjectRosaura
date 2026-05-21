@@ -99,7 +99,8 @@ class ProfileController {
     }
 
     handleInput(e) {
-        if (e.target && e.target.id === 'dialog_email_code') {
+        // CORRECCIÓN: modal_email_code
+        if (e.target && e.target.id === 'modal_email_code') {
             let val = e.target.value.replace(/\D/g, ''); 
             let formatted = '';
             for (let i = 0; i < val.length; i++) {
@@ -284,7 +285,8 @@ class ProfileController {
             if (this.dialogResendInterval) clearInterval(this.dialogResendInterval);
 
             if (verifyDialog.confirmed) {
-                const code = verifyDialog.data['dialog_email_code'];
+                // CORRECCIÓN: modal_email_code
+                const code = verifyDialog.data['modal_email_code'];
                 if (!code) { 
                     showMessage(__('err_code_required'), 'error'); 
                     return; 

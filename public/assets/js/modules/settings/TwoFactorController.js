@@ -156,8 +156,9 @@ class TwoFactorController {
         const isConfirmed = await window.dialogSystem.show('activate2FADialog');
         if (!isConfirmed.confirmed) return;
 
-        const codeInput = document.getElementById('dialog_2fa_code');
-        const code = codeInput ? codeInput.value.trim() : '';
+        // CORRECCIÓN: Evitamos la condición de carrera extrayendo del DOM
+        // y consumimos la llave modal_2fa_code directamente del payload encapsulado de la promesa.
+        const code = isConfirmed.data['modal_2fa_code'] ? isConfirmed.data['modal_2fa_code'].trim() : '';
 
         if (code.length !== 6) {
             showMessage(__('err_code_6_digits') || 'El código debe tener 6 dígitos', 'error');

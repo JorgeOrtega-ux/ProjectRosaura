@@ -167,7 +167,7 @@ export class DialogSystem {
             if (result !== false && this.activeBox) {
                 const inputs = this.activeBox.querySelectorAll('input, select, textarea');
                 inputs.forEach(inp => { 
-                    const key = inp.id || inp.name;
+                    const key = inp.id || inp.name || inp.getAttribute('data-ref'); // <-- AÑADIDO data-ref
                     if (key) {
                         if (inp.type === 'checkbox' || inp.type === 'radio') {
                             formData[key] = inp.checked;

@@ -24,17 +24,20 @@ class AdminStatusEditController {
             notifyUserSuspension: true
         };
 
-        this.maps = {
-            isSuspended: { '0': 'suspension_none', '1': 'suspension_active' },
-            suspendedType: { 'temporary': 'suspension_temp', 'permanent': 'suspension_perm' },
-            suspensionDuration: { '1': 'duration_1d', '3': 'duration_3d', '7': 'duration_7d', '14': 'duration_14d', '30': 'duration_30d', 'custom': 'suspension_custom_time' }
-        };
+        // Arquitectura de Espejo: Se ha ELIMINADO this.maps por completo. 
+        // JS ya no interviene en las traducciones de las opciones.
 
         this.reasonDurations = {
             'reason_terms': 7, 'reason_fake_info': 30, 'reason_illegal': 30,
             'reason_fraud_use': 14, 'reason_abuse': 3, 'reason_prohibited_content': 7,
             'reason_ip_violation': 14, 'reason_spam_bot': 7, 'reason_security_breach': 30,
             'reason_unauthorized_commercial': 14, 'reason_other': 1 
+        };
+
+        // Almacenaremos los placeholders originales tal como los imprimió PHP
+        this.defaultTexts = {
+            suspensionReason: '',
+            endDate: ''
         };
 
         this.handleViewLoadedBound = this.handleViewLoaded.bind(this);
@@ -101,9 +104,13 @@ class AdminStatusEditController {
                 if (inpSuspCustom) inpSuspCustom.value = this.state.customSuspensionReason || '';
                 if (chkNotifySuspension) chkNotifySuspension.checked = this.state.notifyUserSuspension;
 
-                // SOLUCIÓN: En la carga inicial, el servidor ya hizo el trabajo de textos (SSR).
-                // No llamamos updateCalendarText() y pasamos false a syncVisuals() 
-                // para que NO sobreescriba los textos pre-renderizados, evitando cualquier caché en JS.
+                // Capturamos los placeholders estáticos desde el DOM antes de hacer cualquier cosa
+                const reasonEl = document.querySelector('[data-ref="admin-suspensionReason-text"]');
+                if (reasonEl) this.defaultTexts.suspensionReason = reasonEl.textContent.trim();
+                
+                const dateEl = document.querySelector('[data-ref="admin-endDate-text"]');
+                if (dateEl) this.defaultTexts.endDate = dateEl.textContent.trim();
+
                 this.syncVisuals(false); 
                 this.renderUI();
                 this.checkForChanges();
@@ -132,7 +139,7 @@ class AdminStatusEditController {
                     () => {
                         this.state.endDate = '';
                         const textEl = document.querySelector('[data-ref="admin-endDate-text"]');
-                        if (textEl) textEl.textContent = __('lbl_select_date_time');
+                        if (textEl) textEl.textContent = this.defaultTexts.endDate; // Usamos el fallback estático
                         this.checkForChanges(); 
                     }
                 );
@@ -160,8 +167,7 @@ class AdminStatusEditController {
             const module = btnSetDropdown.closest('.component-module');
             if (module && window.appInstance) window.appInstance.closeModule(module);
             
-            // Aquí sí pasamos (true implícito) porque el usuario acaba de interactuar
-            this.syncVisuals();
+            this.syncVisuals(true);
             this.renderUI();
             this.checkForChanges(); 
         }
@@ -206,7 +212,8 @@ class AdminStatusEditController {
         const textEl = document.querySelector('[data-ref="admin-endDate-text"]');
         if (!textEl) return;
         if (!this.state.endDate) {
-            textEl.textContent = __('lbl_select_date_time');
+            // Utilizamos el placeholder estático extraído del DOM sin llamar a __()
+            textEl.textContent = this.defaultTexts.endDate;
             return;
         }
         const d = new Date(this.state.endDate);
@@ -218,26 +225,40 @@ class AdminStatusEditController {
 
     syncVisuals(updateText = true) {
         const syncLabel = (key) => {
-            const val = this.state[key];
+            const val = String(this.state[key]);
+            let selectedText = '';
             
-            // SOLUCIÓN: Solo actualizar el texto si se requiere explícitamente.
+            // 1. Encontrar el menú HTML y extraer el texto DIRECTAMENTE del nodo
+            // Esto anula por completo la necesidad de traducir, obligando a JS a 
+            // usar estrictamente el texto (o la llave cruda) que PHP renderizó.
+            document.querySelectorAll(`[data-action="adminSetDropdown"][data-key="${key}"]`).forEach(item => {
+                const isMatch = item.getAttribute('data-value') === val;
+                item.classList.toggle('active', isMatch);
+                
+                if (isMatch) {
+                    const textNode = item.querySelector('.component-menu-link-text');
+                    if (textNode) {
+                        selectedText = textNode.textContent.trim();
+                    }
+                }
+            });
+
+            // 2. Aplicar el texto clonado al trigger visual
             if (updateText) {
                 const el = document.querySelector(`[data-ref="admin-${key}-text"]`);
                 if (el) {
-                    if (key === 'suspensionReason') {
-                        if (!val) el.textContent = __('lbl_select_suspension_reason');
-                        else if (this.reasonDurations.hasOwnProperty(val)) el.textContent = __(val);
-                        else el.textContent = val;
-                    } else {
-                        el.textContent = this.maps[key] && this.maps[key][val] ? __(this.maps[key][val]) : val;
+                    if (selectedText) {
+                        el.textContent = selectedText;
+                    } else if (key === 'suspensionReason') {
+                        // Si no hay opción (ej. se borró al volver isSuspended a 0)
+                        if (!val) {
+                            el.textContent = this.defaultTexts.suspensionReason;
+                        } else {
+                            el.textContent = val;
+                        }
                     }
                 }
             }
-            
-            // Esto SÍ se ejecuta siempre para aplicar las clases "active" al menú HTML
-            document.querySelectorAll(`[data-action="adminSetDropdown"][data-key="${key}"]`).forEach(item => {
-                item.classList.toggle('active', item.getAttribute('data-value') === String(val));
-            });
         };
 
         ['isSuspended', 'suspensionReason', 'suspendedType', 'suspensionDuration'].forEach(key => syncLabel(key));
