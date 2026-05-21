@@ -261,8 +261,11 @@ export class AdminDashboardController {
                 legend: {
                     position: 'top',
                     labels: {
-                        usePointStyle: true,
-                        boxWidth: 8
+                        // Modificado para usar rectángulos puros
+                        boxWidth: 16,
+                        boxHeight: 12,
+                        useBorderRadius: true,
+                        borderRadius: 3 // Borde de rectángulo suave, pon en 0 si lo quieres rígido.
                     }
                 },
                 tooltip: {

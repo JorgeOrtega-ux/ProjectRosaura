@@ -27,7 +27,7 @@ $displayEndDate = date('d M Y, 23:59', strtotime($defaultEndDate));
             </div>
             <div class="component-top-right">
                 
-                <div class="dashboard-date-filter">
+                <div class="component-filter-bar">
                     <input type="hidden" id="dash-start-date" value="<?php echo $defaultStartDate; ?>">
                     <div class="component-dropdown-wrapper">
                         <div class="component-dropdown-trigger" data-action="toggleModule" data-target="adminModuleCalendarStart">
@@ -40,7 +40,7 @@ $displayEndDate = date('d M Y, 23:59', strtotime($defaultEndDate));
                         ?>
                     </div>
 
-                    <span class="dashboard-date-filter__separator">-</span>
+                    <span class="component-filter-bar__separator">-</span>
                     
                     <input type="hidden" id="dash-end-date" value="<?php echo $defaultEndDate; ?>">
                     <div class="component-dropdown-wrapper">
@@ -59,7 +59,7 @@ $displayEndDate = date('d M Y, 23:59', strtotime($defaultEndDate));
                     </button>
                 </div>
 
-                <div class="dashboard-header-divider"></div>
+                <div class="component-header-divider"></div>
 
                 <button class="component-button component-button--icon component-button--h40 <?php echo !$canManageRoles ? 'disabled-interaction' : ''; ?>" data-nav="<?php echo APP_URL; ?>/admin/manage-roles" data-tooltip="<?php echo __('btn_manage_roles'); ?>" data-position="bottom">
                     <span class="material-symbols-rounded">admin_panel_settings</span>
@@ -72,53 +72,53 @@ $displayEndDate = date('d M Y, 23:59', strtotime($defaultEndDate));
 
         <div class="component-bottom component-bottom--padded">
             
-            <div class="dashboard-grid">
-                <div class="component-item-card stat-card">
-                    <div class="component-card__icon-container component-card__icon-container--bordered stat-card__icon">
+            <div class="component-stat-grid">
+                <div class="component-item-card component-stat-card">
+                    <div class="component-card__icon-container component-card__icon-container--bordered component-stat-card__icon">
                         <span class="material-symbols-rounded">person_add</span>
                     </div>
-                    <div class="stat-card__content">
-                        <span class="stat-card__title"><?php echo __('admin_dashboard_new_users', 'Nuevos Registros'); ?></span>
-                        <span class="stat-card__value" id="stat-new-users">--</span>
+                    <div class="component-stat-card__content">
+                        <span class="component-stat-card__title"><?php echo __('admin_dashboard_new_users', 'Nuevos Registros'); ?></span>
+                        <span class="component-stat-card__value" id="stat-new-users">--</span>
                     </div>
                 </div>
 
-                <div class="component-item-card stat-card">
-                    <div class="component-card__icon-container component-card__icon-container--bordered stat-card__icon">
+                <div class="component-item-card component-stat-card">
+                    <div class="component-card__icon-container component-card__icon-container--bordered component-stat-card__icon">
                         <span class="material-symbols-rounded">login</span>
                     </div>
-                    <div class="stat-card__content">
-                        <span class="stat-card__title"><?php echo __('admin_dashboard_logins', 'Inicios de Sesión'); ?></span>
-                        <span class="stat-card__value" id="stat-logins">--</span>
+                    <div class="component-stat-card__content">
+                        <span class="component-stat-card__title"><?php echo __('admin_dashboard_logins', 'Inicios de Sesión'); ?></span>
+                        <span class="component-stat-card__value" id="stat-logins">--</span>
                     </div>
                 </div>
 
-                <div class="component-item-card stat-card">
-                    <div class="component-card__icon-container component-card__icon-container--bordered stat-card__icon">
+                <div class="component-item-card component-stat-card">
+                    <div class="component-card__icon-container component-card__icon-container--bordered component-stat-card__icon">
                         <span class="material-symbols-rounded">visibility</span>
                     </div>
-                    <div class="stat-card__content">
-                        <span class="stat-card__title"><?php echo __('admin_dashboard_pageviews', 'Vistas de Página'); ?></span>
-                        <span class="stat-card__value" id="stat-pageviews">--</span>
+                    <div class="component-stat-card__content">
+                        <span class="component-stat-card__title"><?php echo __('admin_dashboard_pageviews', 'Vistas de Página'); ?></span>
+                        <span class="component-stat-card__value" id="stat-pageviews">--</span>
                     </div>
                 </div>
             </div>
 
-            <div class="dashboard-charts">
-                <div class="component-item-card chart-card">
-                    <div class="chart-card__header">
+            <div class="component-charts-layout">
+                <div class="component-item-card component-chart-card">
+                    <div class="component-chart-card__header">
                         <h3 class="component-card__title"><?php echo __('admin_dashboard_chart_registrations', 'Evolución de Registros'); ?></h3>
                     </div>
-                    <div class="chart-card__canvas-wrapper">
+                    <div class="component-chart-card__canvas">
                         <canvas id="chart-registrations"></canvas>
                     </div>
                 </div>
 
-                <div class="component-item-card chart-card">
-                    <div class="chart-card__header">
+                <div class="component-item-card component-chart-card">
+                    <div class="component-chart-card__header">
                         <h3 class="component-card__title"><?php echo __('admin_dashboard_chart_activity', 'Actividad del Sistema (Vistas vs Logins)'); ?></h3>
                     </div>
-                    <div class="chart-card__canvas-wrapper">
+                    <div class="component-chart-card__canvas">
                         <canvas id="chart-activity"></canvas>
                     </div>
                 </div>

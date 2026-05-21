@@ -240,7 +240,6 @@ html.dark-theme .component-top.shadow {
     width: 100%;
 }
 
-/* MARGEN ELIMINADO COMO SE SOLICITÓ */
 .component-link-container--start {
     justify-content: flex-start;
     gap: 8px;
@@ -1730,7 +1729,7 @@ input:checked + .component-toggle-slider:before {
     margin-top: 16px;
 }
 
-/* Gráficos (Charts) */
+/* Gráficos (Charts) genéricos */
 .component-chart-grid {
     display: grid;
     grid-template-columns: repeat(12, 1fr);
@@ -2687,48 +2686,39 @@ input:checked + .component-toggle-slider:before {
 }
 
 /* ==========================================================================
-   ADMIN DASHBOARD COMPONENTES
+   16. COMPONENTES GENÉRICOS DE ESTADÍSTICAS Y GRÁFICOS (STATS & CHARTS)
    ========================================================================== */
 
-.dashboard-wrapper {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-    width: 100%;
-}
-
-/* --- Controles Superiores (Fechas en Top Bar) --- */
-.dashboard-date-filter {
+.component-filter-bar {
     display: flex;
     align-items: center;
     gap: 8px;
 }
 
-.dashboard-date-filter__input {
+.component-filter-bar__input {
     width: 130px;
 }
 
-.dashboard-date-filter__separator {
+.component-filter-bar__separator {
     color: var(--text-secondary);
     font-weight: 500;
 }
 
-.dashboard-header-divider {
+.component-header-divider {
     width: 1px;
     height: 24px;
     background-color: var(--border-color);
     margin: 0 4px;
 }
 
-/* --- Grid de Tarjetas (Stats) --- */
-.dashboard-grid {
+.component-stat-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
     gap: 20px;
     width: 100%;
 }
 
-.stat-card {
+.component-stat-card {
     display: flex;
     align-items: center;
     gap: 16px;
@@ -2736,23 +2726,23 @@ input:checked + .component-toggle-slider:before {
     cursor: default;
 }
 
-.stat-card__icon {
+.component-stat-card__icon {
     width: 56px;
     height: 56px;
 }
 
-.stat-card__icon span.material-symbols-rounded {
+.component-stat-card__icon span.material-symbols-rounded {
     font-size: 28px;
     color: var(--text-primary);
 }
 
-.stat-card__content {
+.component-stat-card__content {
     display: flex;
     flex-direction: column;
     gap: 4px;
 }
 
-.stat-card__title {
+.component-stat-card__title {
     font-size: 13px;
     font-weight: 600;
     color: var(--text-secondary);
@@ -2761,30 +2751,32 @@ input:checked + .component-toggle-slider:before {
     margin: 0;
 }
 
-.stat-card__value {
-    font-size: 32px;
+.component-stat-card__value {
+    font-size: 24px; /* Bajado de 32 a 24 para que no sea tan alto */
     font-weight: 700;
     color: var(--text-primary);
     line-height: 1.1;
 }
 
-/* --- Contenedores de Gráficas --- */
-.dashboard-charts {
+.component-charts-layout {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+    /* max(100%, 450px) para que en móviles respete el 100% en vez de hacer overflow */
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 450px), 1fr));
     gap: 20px;
     width: 100%;
 }
 
-.chart-card {
+.component-chart-card {
     display: flex;
     flex-direction: column;
     padding: 24px;
     gap: 16px;
     cursor: default;
+    width: 100%;
+    overflow: hidden; /* Evitar que el canvas desborde el contenedor del card */
 }
 
-.chart-card__header {
+.component-chart-card__header {
     display: flex;
     align-items: center;
     border-bottom: 1px solid var(--border-color);
@@ -2792,34 +2784,34 @@ input:checked + .component-toggle-slider:before {
     margin: 0;
 }
 
-.chart-card__canvas-wrapper {
+.component-chart-card__canvas {
     position: relative;
     width: 100%;
     height: 300px;
 }
 
-/* Responsividad para móviles */
+/* Responsividad extra para móviles de estas clases genéricas */
 @media (max-width: 768px) {
-    .dashboard-charts {
+    .component-charts-layout {
         grid-template-columns: 1fr;
     }
     
-    .chart-card__canvas-wrapper {
+    .component-chart-card__canvas {
         height: 250px;
     }
 
-    .dashboard-date-filter {
+    .component-filter-bar {
         width: 100%;
         justify-content: space-between;
         margin-top: 8px;
         order: 3;
     }
 
-    .dashboard-date-filter__input {
+    .component-filter-bar__input {
         flex: 1;
     }
 
-    .dashboard-header-divider {
+    .component-header-divider {
         display: none;
     }
 }
