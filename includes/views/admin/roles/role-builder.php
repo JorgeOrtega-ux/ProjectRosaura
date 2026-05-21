@@ -128,7 +128,8 @@ if (!function_exists('renderColorBlock')) {
                                     <div class="component-color-picker__hue-area" data-action="dragHue">
                                         <div class="component-color-picker__hue-thumb" data-ref="hueThumb" style="left: ' . $hueThumbLeft . ';"></div>
                                     </div>
-                                    <div class="component-input-group component-input-group--h34">
+                                    <div class="component-input-group component-input-group--h34 component-input-group--color">
+                                        <div class="component-color-swatch" data-ref="hexInputPreview" style="width: 20px; height: 20px; flex-shrink: 0; background-color: ' . $hex . ';"></div>
                                         <input type="text" class="component-input-field component-input-field--mono" data-ref="hexInput" value="' . $hex . '" readonly>
                                     </div>
                                     <div class="component-color-picker__controls ' . $controlsClass . '" data-ref="controlsContainer">

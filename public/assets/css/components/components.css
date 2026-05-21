@@ -2059,17 +2059,19 @@ input:checked + .component-toggle-slider:before {
 .component-text--mono { font-family: monospace; }
 
 .component-color-picker { 
-    display: flex; flex-direction: column; gap: 12px; width: 100%; 
-    padding: 0 16px 16px 16px; 
+    display: flex; flex-direction: column; gap: 8px; width: 100%; 
+    padding: 0; 
 }
 
+/* Removido el overflow: hidden para que el puntero (thumb) pueda verse completo al llegar a los bordes */
 .component-color-picker__sv-area { 
     height: 125px; border-radius: 8px; width: 100%;
-    position: relative; overflow: hidden; cursor: crosshair; touch-action: none; 
+    position: relative; cursor: crosshair; touch-action: none; 
     background-color: hsl(0, 100%, 50%);
 }
+/* Agregado border-radius para mantener el fondo en las esquinas ahora que el área no oculta los bordes */
 .component-color-picker__sv-bg { 
-    position: absolute; inset: 0; 
+    position: absolute; inset: 0; border-radius: 8px;
     background: linear-gradient(to top, #000, transparent), linear-gradient(to right, #fff, transparent); 
 }
 .component-color-picker__sv-thumb { 
@@ -2080,19 +2082,23 @@ input:checked + .component-toggle-slider:before {
 }
 
 .component-color-picker__hue-area { 
-    height: 16px; border-radius: 8px; width: 100%;
+    height: 12px; border-radius: 8px; width: 100%;
     position: relative; cursor: pointer; touch-action: none; 
     background: linear-gradient(to right, #f00 0%, #ff0 17%, #0f0 33%, #0ff 50%, #00f 67%, #f0f 83%, #f00 100%); 
 }
 .component-color-picker__hue-thumb { 
-    position: absolute; width: 14px; height: 18px; background: #fff; 
-    border: 1px solid var(--border-color); border-radius: 4px; 
-    transform: translate(-50%, -1px); box-shadow: 0 1px 3px rgba(0,0,0,0.3); 
-    pointer-events: none; z-index: 2; left: 0%;
+    position: absolute; width: 16px; height: 16px; border: 2px solid #fff; 
+    border-radius: 50%; transform: translate(-50%, -50%); 
+    box-shadow: 0 0 4px rgba(0,0,0,0.6); pointer-events: none; z-index: 2; left: 0%; top: 50%;
 }
 
-.component-input-field--mono { font-family: monospace; text-align: center; padding: 0; }
-.component-color-picker__controls { display: flex; gap: 12px; align-items: center; width: 100%; }
+.component-input-field--mono { font-family: monospace; text-align: left; padding: 0 8px; }
+
+/* Padding general de 8px solicitado */
+.component-input-group--color { padding: 0 8px; }
+.component-input-group--color .component-input-field { padding-left: 8px; padding-right: 0; }
+
+.component-color-picker__controls { display: flex; gap: 8px; align-items: center; width: 100%; }
 .component-color-picker__percentage { flex: 1; }
 
 /* Selector de Cuentas (Account Switcher) */

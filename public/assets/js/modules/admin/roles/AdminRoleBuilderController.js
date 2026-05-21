@@ -119,7 +119,8 @@ class AdminRoleBuilderController {
                                         <div class="component-color-picker__hue-area" data-action="dragHue">
                                             <div class="component-color-picker__hue-thumb" data-ref="hueThumb"></div>
                                         </div>
-                                        <div class="component-input-group component-input-group--h34">
+                                        <div class="component-input-group component-input-group--h34 component-input-group--color">
+                                            <div class="component-color-swatch" data-ref="hexInputPreview" style="width: 20px; height: 20px; flex-shrink: 0;"></div>
                                             <input type="text" class="component-input-field component-input-field--mono" data-ref="hexInput" value="#808080" readonly>
                                         </div>
                                         <div class="component-color-picker__controls" data-ref="controlsContainer">
@@ -299,6 +300,9 @@ class AdminRoleBuilderController {
 
         const hexInput = pickerNode.querySelector('[data-ref="hexInput"]');
         if(hexInput) hexInput.value = hex;
+        
+        const hexInputPreview = pickerNode.querySelector('[data-ref="hexInputPreview"]');
+        if(hexInputPreview) hexInputPreview.style.backgroundColor = hex;
 
         const blockRow = pickerNode.closest('[data-component="color-block"]');
         if(blockRow) {
