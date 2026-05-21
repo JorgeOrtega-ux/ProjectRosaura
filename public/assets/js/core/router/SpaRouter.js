@@ -30,7 +30,8 @@ export class SpaRouter {
     }
 
     handlePopState(e) {
-        const url = window.location.pathname;
+        // FIX Problema 1: Añadido window.location.search para no perder parámetros como ?id=1 al retroceder/avanzar
+        const url = window.location.pathname + window.location.search;
         this.loadRoute(url);
     }
 
