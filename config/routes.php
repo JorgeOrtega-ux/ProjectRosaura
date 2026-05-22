@@ -4,6 +4,7 @@
 return [
     '/' => ['view' => 'app/home.php'],
     '/explore' => ['view' => 'app/explore.php'],
+    '/design' => ['view' => 'app/design.php'], // <-- NUEVA RUTA AGREGADA
     
     // --- RUTAS DE AUTENTICACIÓN (Solo invitados) ---
     '/login' => ['view' => 'auth/login.php', 'guest_only' => true],
