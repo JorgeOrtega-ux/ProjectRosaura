@@ -1,0 +1,13 @@
+FROM python:3.11-slim
+
+# Instalar el cliente de MySQL y dependencias del sistema (Se agregó tzdata)
+RUN apt-get update && apt-get install -y default-mysql-client tzdata && rm -rf /var/lib/apt/lists/*
+
+# Configurar directorio de trabajo
+WORKDIR /app
+
+# Instalar las librerías necesarias de Python (SE AGREGÓ 'requests')
+RUN pip install --no-cache-dir cryptography mysql-connector-python redis python-dotenv requests
+
+# Comando por defecto para ejecutar el worker
+CMD ["python", "-u", "scripts/worker_backups.py"]

@@ -1,0 +1,205 @@
+/* public/assets/css/styles.css */
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,100..900;1,100..900&display=swap');
+
+* {
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+    font-family: "Roboto Condensed", sans-serif;
+}
+
+body,html {
+    width: 100%;
+    height: 100%;
+}
+
+.page-wrapper {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* ========================================= */
+/* --- MAIN LAYOUT STRUCTURE ---             */
+/* ========================================= */
+
+.main-content {
+    width: 100%;
+    height: 100%;
+    background-color: var(--bg-app);
+}
+
+.general-content {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--bg-surface);
+    border: none;
+}
+
+.general-content-top {
+    width: 100%;
+    height: auto;
+    padding: 8px;
+    border-bottom: 1px solid var(--border-color);
+    position: relative;
+    /* FIX: Aumentamos el z-index del contenedor principal superior a 100 para que gane sobre las tablas */
+    z-index: 100;
+    transition: border-bottom-color 0.3s ease;
+}
+
+/* --- Estado Active (Shadow del Header al hacer scroll en Modo Claro) --- */
+.general-content-top::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    height: 16px;
+    background: linear-gradient(to bottom, var(--border-lighter), transparent);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+.general-content-top.shadow {
+    border-bottom-color: transparent;
+}
+
+.general-content-top.shadow::after {
+    opacity: 1;
+}
+
+/* Override para Modo Oscuro: Desactivar sombra de scroll y mantener borde */
+html[data-theme="dark"] .general-content-top::after,
+html.dark-theme .general-content-top::after {
+    display: none;
+}
+
+html[data-theme="dark"] .general-content-top.shadow,
+html.dark-theme .general-content-top.shadow {
+    border-bottom-color: var(--border-color);
+}
+
+@media (prefers-color-scheme: dark) {
+    html:not([data-theme="light"]):not(.light-theme) .general-content-top::after {
+        display: none;
+    }
+    html:not([data-theme="light"]):not(.light-theme) .general-content-top.shadow {
+        border-bottom-color: var(--border-color);
+    }
+}
+
+.general-content-bottom {
+    flex: 1 1 auto;
+    position: relative;
+    overflow: hidden; 
+    display: flex;
+    flex-direction: row; 
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+}
+
+.general-content-scrolleable {
+    flex: 1; 
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+/* ========================================= */
+/* --- HEADER LAYOUT ---                     */
+/* ========================================= */
+
+.header {
+    width: 100%;
+    height: auto; 
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    position: relative;
+    align-items: center;
+    transition: all 0.2s ease;
+}
+
+.header-left {
+    flex: 1;
+    height: 100%;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.header-center {
+    flex: 0 0 auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.header-right {
+    flex: 1;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.header .mobile-search-btn {
+    display: none; 
+}
+
+/* ========================================= */
+/* --- RESPONSIVE LAYOUT LOGIC ---           */
+/* ========================================= */
+
+@media (max-width: 768px) {
+    .main-content {
+        padding: 0;
+    }
+
+    .general-content {
+        border-radius: 0;
+        border: none !important; /* Forzar que en móvil pegue a los bordes de la pantalla */
+    }
+
+    /* FIX 1: Eliminar bordes redondos de los subcontenedores en móvil para evitar recortes (ej. sombra tabla) */
+    .general-content-bottom {
+        border-radius: 0 !important;
+    }
+
+    .header {
+        flex-wrap: wrap;
+    }
+
+    .header-center {
+        display: none; 
+        flex: 0 0 100%; 
+        order: 3; 
+    }
+
+    .header-left {
+        order: 1;
+    }
+
+    .header-right {
+        order: 2;
+    }
+
+    .header .mobile-search-btn {
+        display: inline-flex;
+    }
+
+    .header.header--search-active .header-center {
+        display: flex; 
+    }
+}
+
+/* Aseguramos que los elementos .disabled verdaderamente se oculten */
+.disabled {
+    display: none !important;
+}

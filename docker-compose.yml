@@ -1,0 +1,131 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: rosaura_app
+    ports:
+      - "80:80"
+    volumes:
+      - .:/var/www/html
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    env_file:
+      - .env
+    environment:
+      - TZ=${APP_TIMEZONE:-UTC}
+    networks:
+      - rosaura_network
+
+  db:
+    image: mysql:8.0
+    container_name: rosaura_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_IDENTITY_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASS}
+      TZ: ${APP_TIMEZONE:-UTC}
+    ports:
+      - "127.0.0.1:3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d 
+    networks:
+      - rosaura_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$${DB_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:alpine
+    container_name: rosaura_redis
+    restart: always
+    environment:
+      - TZ=${APP_TIMEZONE:-UTC}
+    command: redis-server --requirepass "${REDIS_PASS}"
+    env_file:
+      - .env
+    ports:
+      - "127.0.0.1:6379:6379"
+    networks:
+      - rosaura_network
+
+  worker_backups:
+    build:
+      context: .
+      dockerfile: docker/python/Dockerfile.worker
+    container_name: rosaura_worker_backups
+    restart: always
+    command: python -u scripts/worker_backups.py
+    volumes:
+      - .:/app
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    env_file:
+      - .env
+    environment:
+      - TZ=${APP_TIMEZONE:-UTC}
+    networks:
+      - rosaura_network
+
+  worker_system_tasks:
+    build:
+      context: .
+      dockerfile: docker/python/Dockerfile.worker
+    container_name: rosaura_worker_system_tasks
+    restart: always
+    command: python -u scripts/worker_system_tasks.py
+    volumes:
+      - .:/app
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    env_file:
+      - .env
+    environment:
+      - TZ=${APP_TIMEZONE:-UTC}
+    networks:
+      - rosaura_network
+
+  # NUEVO SERVICIO: WORKER DE TELEMETRIA
+  worker_telemetry:
+    build:
+      context: .
+      dockerfile: docker/python/Dockerfile.worker
+    container_name: rosaura_worker_telemetry
+    restart: always
+    command: python -u scripts/worker_telemetry.py
+    volumes:
+      - .:/app
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    env_file:
+      - .env
+    environment:
+      - TZ=${APP_TIMEZONE:-UTC}
+    networks:
+      - rosaura_network
+
+networks:
+  rosaura_network:
+    driver: bridge
+
+volumes:
+  db_data:
