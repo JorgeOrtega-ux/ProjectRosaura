@@ -291,7 +291,7 @@ def cleanup_old_telemetry():
         conn = get_telemetry_db_connection()
         cursor = conn.cursor()
         
-        tables = ['api_latency', 'pageviews', 'page_interactions', 'auth_events']
+        tables = ['api_latency', 'pageviews', 'auth_events']
         total_deleted = 0
         
         for table in tables:
