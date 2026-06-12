@@ -6,9 +6,6 @@ import inspect
 import mysql.connector
 import redis
 from datetime import datetime
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 import random
 import urllib.parse
 import requests
@@ -107,77 +104,26 @@ def get_redis_connection():
 
 
 # ==========================================
-# LÓGICA: ELIMINACIÓN DE CUENTAS
+# LÓGICA: ELIMINACIÓN TOTAL DE CUENTAS
 # ==========================================
-def send_deletion_email(to_email, username, reason):
-    smtp_host = os.getenv('SMTP_HOST')
-    if not smtp_host:
-        Logger.warning("SMTP no configurado. Se omite envío de correo.")
-        return
-
-    smtp_port = int(os.getenv('SMTP_PORT', 587))
-    smtp_user = os.getenv('SMTP_USER')
-    smtp_pass = os.getenv('SMTP_PASS')
-    smtp_from = os.getenv('SMTP_FROM_EMAIL', smtp_user)
-    app_name = os.getenv('APP_NAME', 'ProjectRosaura')
-
-    msg = MIMEMultipart('alternative')
-    msg['Subject'] = f"Tu cuenta en {app_name} ha sido eliminada permanentemente"
-    msg['From'] = f"{app_name} <{smtp_from}>"
-    msg['To'] = to_email
-
-    html_content = f"""
-    <html>
-    <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
-        <h2 style="color: #d9534f;">Hola, {username}</h2>
-        <p>Te notificamos de manera oficial que tu cuenta en <b>{app_name}</b> y todos tus datos asociados han sido eliminados de manera permanente de nuestros servidores.</p>
-        <p><b>Razón o contexto de la eliminación:</b> {reason}</p>
-        <p>Esta acción es irreversible y tu información ya no podrá ser recuperada.</p>
-        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
-        <p style="font-size: 12px; color: #999;">Este es un mensaje automático de seguridad, por favor no respondas a este correo directo.</p>
-    </body>
-    </html>
-    """
-    msg.attach(MIMEText(html_content, 'html'))
-
-    try:
-        server = smtplib.SMTP(smtp_host, smtp_port)
-        server.ehlo()
-        server.starttls()
-        if smtp_user and smtp_pass:
-            server.login(smtp_user, smtp_pass)
-        server.sendmail(smtp_from, [to_email], msg.as_string())
-        server.quit()
-        Logger.info(f"Correo transaccional de eliminación enviado exitosamente a {to_email}")
-    except Exception as e:
-        Logger.error(f"Fallo de red/SMTP al enviar correo a {to_email}: {e}")
-
-
 def process_deletion(payload):
     user_id = payload.get('user_id')
-    email = payload.get('email')
-    username = payload.get('username')
-    reason = payload.get('reason', 'account_deleted_by_admin')
     
-    conn = None
+    conn_id = None
+    conn_tel = None
     try:
-        conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        # 1. Conexión a BD Principal (Identity)
+        conn_id = get_db_connection()
+        cursor_id = conn_id.cursor(dictionary=True)
         
-        if not email or not username:
-            cursor.execute("SELECT email, username FROM users WHERE id = %s", (user_id,))
-            row = cursor.fetchone()
-            if row:
-                email = row['email']
-                username = row['username']
-        
-        cursor.execute("SELECT uuid, profile_picture FROM users WHERE id = %s", (user_id,))
-        user_data = cursor.fetchone()
+        cursor_id.execute("SELECT uuid, profile_picture FROM users WHERE id = %s", (user_id,))
+        user_data = cursor_id.fetchone()
         
         if user_data:
             profile_pic = user_data.get('profile_picture')
             uuid_str = user_data.get('uuid')
             
+            # --- BORRADO FÍSICO DE ARCHIVOS ---
             if profile_pic and 'fallbacks/avatar-default.png' not in profile_pic:
                 if '/public/' in profile_pic:
                     pic_relative = profile_pic[profile_pic.find('public/'):]
@@ -200,23 +146,61 @@ def process_deletion(payload):
                         Logger.info(f"Avatar default huérfano eliminado: {orphan_default}")
                     except Exception as e:
                         pass
+
+            # --- DESTRUCCIÓN EN BASE DE DATOS DE TELEMETRÍA ---
+            if uuid_str:
+                try:
+                    conn_tel = get_telemetry_db_connection()
+                    cursor_tel = conn_tel.cursor()
+                    
+                    telemetry_tables = ['api_latency', 'pageviews', 'auth_events']
+                    total_tel_deleted = 0
+                    
+                    for table in telemetry_tables:
+                        try:
+                            # Ejecuta el borrado buscando por user_uuid
+                            cursor_tel.execute(f"DELETE FROM {table} WHERE user_uuid = %s", (uuid_str,))
+                            total_tel_deleted += cursor_tel.rowcount
+                        except mysql.connector.Error as e:
+                            Logger.warning(f"Aviso en telemetría (Tabla {table}): {e}")
+
+                    conn_tel.commit()
+                    Logger.info(f"Telemetría completamente purgada para UUID {uuid_str}. ({total_tel_deleted} registros eliminados)")
+                except mysql.connector.Error as err:
+                    Logger.error(f"Error al intentar conectar/borrar telemetría para UUID {uuid_str}: {err}")
+                finally:
+                    if conn_tel and conn_tel.is_connected():
+                        cursor_tel.close()
+                        conn_tel.close()
+
+        # --- DESTRUCCIÓN EN BASE DE DATOS PRINCIPAL ---
+        Logger.info(f"Iniciando erradicación de datos del usuario ID: {user_id} en db_identity")
         
-        Logger.info(f"Eliminando físicamente al usuario ID: {user_id}")
-        cursor.execute("DELETE FROM users WHERE id = %s", (user_id,))
-        conn.commit()
-        Logger.info(f"Usuario ID: {user_id} eliminado con éxito de la base de datos.")
+        # Limpieza profunda de tablas relacionadas (por si no tienen ON DELETE CASCADE en MySQL)
+        tables_to_clean = [
+            'sessions', 'user_roles', 'profile_logs', 
+            'verification_codes', 'personal_access_tokens'
+        ]
         
-        if email and username:
-            send_deletion_email(email, username, reason)
+        for table in tables_to_clean:
+            try:
+                cursor_id.execute(f"DELETE FROM {table} WHERE user_id = %s", (user_id,))
+            except mysql.connector.Error:
+                pass # Ignoramos silenciosamente si la tabla no existe en este proyecto
+
+        # Finalmente borrar al usuario de la tabla maestra
+        cursor_id.execute("DELETE FROM users WHERE id = %s", (user_id,))
+        conn_id.commit()
+        Logger.info(f"[ÉXITO] Usuario ID: {user_id} erradicado completamente de todas las bases de datos y el disco.")
         
     except mysql.connector.Error as err:
         Logger.error(f"Error MySQL al borrar usuario {user_id}: {err}")
     except Exception as e:
         Logger.error(f"Error inesperado al borrar usuario {user_id}: {e}")
     finally:
-        if conn and conn.is_connected():
-            cursor.close()
-            conn.close()
+        if conn_id and conn_id.is_connected():
+            cursor_id.close()
+            conn_id.close()
 
 
 # ==========================================
@@ -398,7 +382,7 @@ def scheduler_loop():
             Logger.info("Scheduler: Ejecutando tareas de mantenimiento periódico...")
             try:
                 heal_default_avatars()
-                cleanup_old_telemetry() # <--- Llamada añadida aquí
+                cleanup_old_telemetry()
                 future_maintenance_tasks()
                 last_maintenance_check = time.time() # Actualizamos el reloj
             except Exception as e:
