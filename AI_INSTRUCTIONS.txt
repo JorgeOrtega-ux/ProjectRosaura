@@ -306,3 +306,11 @@ REGLA 23: Logs en Inglés, Estructurados y Nivel Enterprise (Cero Emojis)
 - Dado que Python no puede utilizar el sistema de traducciones dinámico de la web de la misma forma, TODOS los logs, salidas de consola y mensajes generados por los scripts de Python deben estar estrictamente en INGLÉS.
 - CERO EMOJIS. Los logs deben ser estructurados, serios y de nivel "enterprise" (ej. `[INFO] Telemetry worker started successfully.`, `[ERROR] Failed to connect to Redis instance.`).
 - CERO FALLBACKS. Aplica la misma rigurosidad que en PHP y JS; no dejes mensajes dobles o código de respaldo. Mantén el código y la generación de logs de forma limpia y directa.
+
+-----------------------------------------------------------------------------
+REGLA 24: Prohibición de Exposición de Errores (Zero Data Leakage)
+-----------------------------------------------------------------------------
+- ESTRICTAMENTE PROHIBIDO enviar, imprimir o exponer mensajes de error técnicos (PHP, sentencias SQL, trazas de Redis, fallos de conexión o excepciones del servidor) hacia el frontend.
+- ESTRICTAMENTE PROHIBIDO dejar `console.log()`, `console.error()` o similares en el código de producción que revelen el funcionamiento interno.
+- TODO error, excepción o fallo técnico DEBE ser capturado y registrado de forma silenciosa utilizando exclusivamente el sistema interno `Logger.
+- El cliente (Frontend) ÚNICAMENTE debe recibir respuestas genéricas, limpias e internacionalizadas mediante el sistema de traducción (ej. `return Utils::jsonResponse(false, __('err_internal_server'));`), asegurando que la causa técnica real quede completamente opaca para el usuario.
