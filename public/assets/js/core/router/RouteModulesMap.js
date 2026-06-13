@@ -54,7 +54,6 @@ export const RouteModulesMap = {
 
     // ---- MÓDULOS DE SISTEMA / SERVIDOR ----
     '/admin/server-config': { path: './modules/admin/server/AdminServerConfigController.js', className: 'AdminServerConfigController', requiresAdminLang: true, skeletonType: 'layout-admin-actions' },
-    '/admin/protocols': { path: './modules/admin/server/AdminSystemProtocolsController.js', className: 'AdminSystemProtocolsController', requiresAdminLang: true, skeletonType: 'layout-admin-actions' },
     
     // ---- MÓDULOS DE BACKUPS ----
     '/admin/backups': { path: './modules/admin/backups/AdminBackupsController.js', className: 'AdminBackupsController', requiresAdminLang: true, skeletonType: 'layout-table' },

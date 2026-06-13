@@ -221,24 +221,6 @@ return [
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => RL::KEY_ADM_UPDATE_SERVER_CFG, 'max' => RL::MAX_10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
 
-    // --- RUTAS DE MANTENIMIENTO DEL SERVIDOR ---
-    'admin.maintenance_flush_sessions' => [
-        'controller' => 'App\Api\Controllers\AdminController', 'action' => 'flush_sessions',
-        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => RL::KEY_ADM_FLUSH_SESSIONS, 'max' => RL::MAX_5, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
-    ],
-    'admin.maintenance_clear_cache' => [
-        'controller' => 'App\Api\Controllers\AdminController', 'action' => 'clear_cache',
-        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => RL::KEY_ADM_REDIS_DELETE, 'max' => RL::MAX_5, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
-    ],
-    'admin.maintenance_reset_rate_limits' => [
-        'controller' => 'App\Api\Controllers\AdminController', 'action' => 'reset_rate_limits',
-        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => RL::KEY_ADM_REDIS_DELETE, 'max' => RL::MAX_5, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
-    ],
-    'admin.toggle_panic_mode' => [
-        'controller' => 'App\Api\Controllers\AdminController', 'action' => 'toggle_panic_mode',
-        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => RL::KEY_ADM_TOGGLE_PANIC, 'max' => RL::MAX_5, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
-    ],
-
     // --- RUTAS DE COPIAS DE SEGURIDAD ---
     'admin.create_backup' => [
         'controller' => 'App\Api\Controllers\AdminController', 'action' => 'create_backup',

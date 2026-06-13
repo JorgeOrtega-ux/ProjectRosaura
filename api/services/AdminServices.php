@@ -905,99 +905,6 @@ class AdminServices {
         return ['success' => false, 'message' => __('error.update_failed')];
     }
 
-    private function _executeMaintenanceDeletion($password, $rateLimitKey, $patterns, $successMessageKey) {
-        $currentUserId = $this->sessionManager->get('user_id');
-
-        $rl = $this->applyAdminRateLimit($rateLimitKey, 5, 5);
-        if (!$rl['allowed']) return ['success' => false, 'message' => __('error.unauthorized')];
-
-        $adminData = $this->userRepository->findById($currentUserId);
-        if (!$adminData || !password_verify($password, $adminData['password'])) {
-            return ['success' => false, 'message' => __('auth.incorrect_password')];
-        }
-
-        try {
-            $redis = Utils::getRedisClient();
-            
-            $totalDeleted = 0;
-            
-            $patterns = is_array($patterns) ? $patterns : [$patterns];
-
-            foreach ($patterns as $pattern) {
-                $cursor = '0';
-                $count = 100;
-
-                do {
-                    $result = $redis->executeRaw(['SCAN', $cursor, 'MATCH', $pattern, 'COUNT', $count]);
-                    $cursor = $result[0];
-                    $keys = $result[1];
-
-                    if (!empty($keys)) {
-                        $deleted = $redis->del($keys);
-                        $totalDeleted += $deleted;
-                    }
-                } while ($cursor !== '0');
-            }
-            
-            return ['success' => true, 'message' => __($successMessageKey), 'deleted_count' => $totalDeleted];
-        } catch (\Exception $e) {
-            Logger::error("[ERROR] Redis deletion failed: " . $e->getMessage());
-            return ['success' => false, 'message' => __('error.redis_communication')];
-        }
-    }
-
-    public function flushSessions($data) {
-        if (!$this->hasPermission('perform_system_maintenance')) return ['success' => false, 'message' => __('error.unauthorized')];
-        $patterns = [CacheConstants::PREFIX_PHPSESSID . '*', CacheConstants::PREFIX_USER_SESSIONS . '*'];
-        return $this->_executeMaintenanceDeletion($data['password'] ?? '', RateLimitConstants::KEY_ADM_FLUSH_SESSIONS, $patterns, 'admin.maintenance_sessions_flushed');
-    }
-
-    public function clearSystemCache($data) {
-        if (!$this->hasPermission('perform_system_maintenance')) return ['success' => false, 'message' => __('error.unauthorized')];
-        $patterns = [CacheConstants::PATTERN_CACHE, CacheConstants::PATTERN_PR_CACHE];
-        return $this->_executeMaintenanceDeletion($data['password'] ?? '', RateLimitConstants::KEY_ADM_REDIS_DELETE, $patterns, 'admin.maintenance_cache_cleared');
-    }
-
-    public function resetRateLimits($data) {
-        if (!$this->hasPermission('perform_system_maintenance')) return ['success' => false, 'message' => __('error.unauthorized')];
-        $patterns = [CacheConstants::PREFIX_RATE_LIMIT . '*', '*_attempts*', 'login_*', 'register_*'];
-        return $this->_executeMaintenanceDeletion($data['password'] ?? '', RateLimitConstants::KEY_ADM_REDIS_DELETE, $patterns, 'admin.maintenance_rate_limits_reset');
-    }
-
-    public function togglePanicMode($data) {
-        if (!$this->hasPermission('perform_system_maintenance')) {
-            return ['success' => false, 'message' => __('error.unauthorized')];
-        }
-
-        $isActive = filter_var($data['is_active'] ?? false, FILTER_VALIDATE_BOOLEAN);
-
-        $sudo = $this->verifyAdminSudoMode($data['password'] ?? '');
-        if (!$sudo['success']) return $sudo;
-        $currentUserId = $sudo['admin_id'];
-
-        $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_TOGGLE_PANIC, 5, 5);
-        if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
-
-        try {
-            $redis = Utils::getRedisClient();
-
-            if ($isActive) {
-                $redis->set(CacheConstants::KEY_SYSTEM_PANIC_MODE, '1');
-                Logger::info("[INFO] System panic mode activated by admin", ['admin_id' => $currentUserId]);
-                $messageKey = 'admin.panic_mode_activated';
-            } else {
-                $redis->del(CacheConstants::KEY_SYSTEM_PANIC_MODE);
-                Logger::info("[INFO] System panic mode deactivated by admin", ['admin_id' => $currentUserId]);
-                $messageKey = 'admin.panic_mode_deactivated';
-            }
-
-            return ['success' => true, 'message' => __($messageKey), 'is_active' => $isActive];
-        } catch (\Exception $e) {
-            Logger::error("[ERROR] Redis communication failed during panic mode toggle: " . $e->getMessage());
-            return ['success' => false, 'message' => __('error.redis_communication')];
-        }
-    }
-
     private function getBackupDir() {
         $dir = ROOT_PATH . '/storage/backups/';
         if (!is_dir($dir)) {
@@ -1246,3 +1153,4 @@ class AdminServices {
         ];
     }
 }
+?>

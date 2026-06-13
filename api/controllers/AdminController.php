@@ -238,45 +238,6 @@ class AdminController extends BaseController {
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
 
-    public function flush_sessions($input) {
-        try { 
-            $this->requirePermission('perform_system_maintenance');
-            $safeInput = ['password' => $input['password'] ?? null];
-            return $this->respond($this->adminServices->flushSessions($safeInput)); 
-        }
-        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
-    }
-
-    public function clear_cache($input) {
-        try { 
-            $this->requirePermission('perform_system_maintenance');
-            $safeInput = ['password' => $input['password'] ?? null];
-            return $this->respond($this->adminServices->clearSystemCache($safeInput)); 
-        }
-        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
-    }
-
-    public function reset_rate_limits($input) {
-        try { 
-            $this->requirePermission('perform_system_maintenance');
-            $safeInput = ['password' => $input['password'] ?? null];
-            return $this->respond($this->adminServices->resetRateLimits($safeInput)); 
-        }
-        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
-    }
-
-    public function toggle_panic_mode($input) {
-        try { 
-            $this->requirePermission('perform_system_maintenance');
-            $safeInput = [
-                'password' => $input['password'] ?? null,
-                'is_active' => $input['is_active'] ?? null
-            ];
-            return $this->respond($this->adminServices->togglePanicMode($safeInput)); 
-        }
-        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
-    }
-
     public function create_backup($input = []) {
         try { 
             $this->requirePermission('create_backups');
