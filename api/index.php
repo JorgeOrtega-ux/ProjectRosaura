@@ -23,6 +23,7 @@ define('APP_URL', rtrim($_ENV['APP_URL'], '/'));
 use App\Core\Helpers\Utils;
 use App\Core\Container;
 use App\Core\System\Logger;
+use App\Core\System\Translator;
 use App\Api\Services\AuthServices;
 use App\Core\Interfaces\UserRepositoryInterface;
 use App\Core\Interfaces\ServerConfigRepositoryInterface;
@@ -79,7 +80,6 @@ session_start();
 
 $container = new Container();
 
-// --- Rate Limiter Global ---
 try {
     $rateLimiter = $container->get(\App\Core\Interfaces\RateLimiterInterface::class);
     
@@ -104,7 +104,6 @@ try {
     $authService = $container->get(AuthServices::class);
     $userRepo = $container->get(UserRepositoryInterface::class);
 
-    // MODIFICACIÓN: Evaluamos de forma segura sin llamar al índice inexistente 'user_status'
     if ($sessionManager->isLoggedIn()) {
         if (!$authService->isCurrentDeviceValid()) {
             Logger::security("Session revoked for user ID: " . $sessionManager->getActiveAccountId(), 'warning', ['ip' => Utils::getIpAddress()]);
@@ -115,7 +114,6 @@ try {
         } else {
             $liveUser = $userRepo->findById($sessionManager->getActiveAccountId());
             
-            // CORRECCIÓN PRINCIPAL: Si $liveUser es falso, ya fue purgado de la base de datos por el worker
             if (!$liveUser || !empty($liveUser['deletion_scheduled_at'])) {
                 $authService->logout();
                 http_response_code(403); 
@@ -147,6 +145,33 @@ try {
     http_response_code(500);
     echo json_encode(['success' => false, 'message_key' => 'error.database_offline']);
     exit;
+}
+
+$lang = 'es-419';
+$userPrefs = $sessionManager->get('user_prefs', []);
+
+if ($sessionManager->isLoggedIn() && !empty($userPrefs['language'])) {
+    $lang = $userPrefs['language'];
+} elseif (isset($_COOKIE['pr_language'])) {
+    $lang = $_COOKIE['pr_language']; 
+} else {
+    $lang = Utils::getClosestLanguage($_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '');
+}
+
+try { 
+    Translator::init($lang); 
+} catch (\Throwable $e) {
+    Logger::error("Failed to initialize translator system in API context. " . $e->getMessage());
+}
+
+if (!function_exists('__')) { 
+    function __($key, $params = []) { 
+        try { 
+            return Translator::get($key, $params); 
+        } catch (\Throwable $e) { 
+            return $key; 
+        }
+    } 
 }
 
 $requestToken = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
