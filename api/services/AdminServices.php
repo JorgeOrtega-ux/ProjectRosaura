@@ -1,5 +1,4 @@
 <?php
-// api/services/AdminServices.php
 
 namespace App\Api\Services;
 
@@ -15,7 +14,7 @@ use App\Core\Interfaces\TokenRepositoryInterface;
 use App\Core\Interfaces\RateLimiterInterface;
 use App\Core\Interfaces\RoleRepositoryInterface;
 use App\Core\Interfaces\ProfileLogRepositoryInterface;
-use App\Core\Interfaces\TelemetryRepositoryInterface; // INYECTADO
+use App\Core\Interfaces\TelemetryRepositoryInterface;
 use App\Config\DatabaseManager;
 use App\Core\System\DatabaseConstants as DB; 
 use App\Core\System\SecurityConstants;
@@ -34,7 +33,7 @@ class AdminServices {
     private $rateLimiter;
     private $roleRepository;
     private $profileLogRepository;
-    private $telemetryRepository; // INYECTADO
+    private $telemetryRepository;
 
     public function __construct(
         UserRepositoryInterface $userRepository,
@@ -46,7 +45,7 @@ class AdminServices {
         RateLimiterInterface $rateLimiter,
         RoleRepositoryInterface $roleRepository,
         ProfileLogRepositoryInterface $profileLogRepository,
-        TelemetryRepositoryInterface $telemetryRepository // INYECTADO
+        TelemetryRepositoryInterface $telemetryRepository
     ) {
         $this->userRepository = $userRepository;
         $this->moderationRepository = $moderationRepository;
@@ -58,7 +57,7 @@ class AdminServices {
         $this->rateLimiter = $rateLimiter;
         $this->roleRepository = $roleRepository;
         $this->profileLogRepository = $profileLogRepository;
-        $this->telemetryRepository = $telemetryRepository; // INYECTADO
+        $this->telemetryRepository = $telemetryRepository;
     }
 
     private function hasPermission($permission) {
@@ -92,9 +91,8 @@ class AdminServices {
         $highestTargetRole = $this->roleRepository->getHighestPriorityRole($targetUser['id']);
         $targetWeight = $highestTargetRole ? (int)$highestTargetRole['weight'] : 1;
 
-        // [PARCHE DE SEGURIDAD]: Prohibir a SuperAdmins editar a otros SuperAdmins (Excepto el Dueño Sistema ID 1)
         if ($targetWeight >= SecurityConstants::WEIGHT_SUPER_ADMIN && $currentUserId != 1) {
-            Logger::warning("Attempt to modify a SuperAdmin account blocked", [
+            Logger::warning("Attempt_to_modify_a_SuperAdmin_account_blocked", [
                 'admin_id' => $currentUserId,
                 'target_user_id' => $targetUser['id']
             ]);
@@ -102,7 +100,7 @@ class AdminServices {
         }
 
         if ($currentWeight <= $targetWeight && $currentWeight < SecurityConstants::WEIGHT_SUPER_ADMIN) {
-            Logger::warning("Insufficient privileges to modify target user", [
+            Logger::warning("Insufficient_privileges_to_modify_target_user", [
                 'admin_id' => $currentUserId,
                 'target_user_id' => $targetUser['id']
             ]);
@@ -167,7 +165,7 @@ class AdminServices {
                 $payloadData['schema'] = $schema;
             }
 
-            $redis->rpush(CacheConstants::QUEUE_BACKUP, json_encode($payloadData));
+            $redis->rpush(CacheConstants::QUEUE_BACKUP, [json_encode($payloadData)]);
             return ['success' => true, 'message_key' => 'admin.backup_queued', 'job_id' => $jobId];
         } catch (\Exception $e) {
             return ['success' => false, 'message_key' => 'error.redis_communication'];
@@ -403,7 +401,7 @@ class AdminServices {
         try {
             if ($this->roleRepository->syncUserRoles($targetId, $rolesIds, $currentWeight)) {
                 $rolesStr = implode(', ', $rolesIds);
-                Logger::critical("Admin updated user roles", ['admin_id' => $currentUserId, 'target_user_id' => $targetId, 'new_roles' => $rolesIds]);
+                Logger::critical("Admin_updated_user_roles", ['admin_id' => $currentUserId, 'target_user_id' => $targetId, 'new_roles' => $rolesIds]);
                 
                 $this->moderationRepository->logAction($targetId, $currentUserId, 'role_changed', "Roles actualizados a IDs: [{$rolesStr}]", null, null);
                 
@@ -467,7 +465,7 @@ class AdminServices {
                     'username' => $user['username'],
                     'reason' => $deletedReason
                 ]);
-                $redisClient->rpush(CacheConstants::QUEUE_ACCOUNT_DELETION, $payload);
+                $redisClient->rpush(CacheConstants::QUEUE_ACCOUNT_DELETION, [$payload]);
                 
                 $this->moderationRepository->logAction($targetId, $currentUserId, 'deleted', "Borrado duro y masivo por Admin.", null, null);
                 
@@ -485,7 +483,7 @@ class AdminServices {
                 'failed_count' => $failedCount
             ];
         } catch (\Exception $e) {
-            Logger::error("Error connecting to Redis for bulk account deletion job", ['exception' => $e]);
+            Logger::error("Error_connecting_to_Redis_for_bulk_account_deletion_job", ['exception' => $e]);
             return ['success' => false, 'message_key' => 'error.redis_communication'];
         }
     }
@@ -744,7 +742,6 @@ class AdminServices {
 
         try {
             if ($this->roleRepository->update($id, $name, $colorCheck['color_string'], $weight, $currentWeight)) {
-                // ELIMINADO: La invalidación ahora ocurre de manera atómica y centralizada dentro de RoleRepository
                 return ['success' => true, 'message_key' => 'admin.role_updated'];
             }
         } catch (\Exception $e) {
@@ -842,7 +839,6 @@ class AdminServices {
 
         try {
             if ($this->roleRepository->assignPermissionsToRole($roleId, $permissionsArray, $currentWeight)) {
-                // ELIMINADO: La invalidación ahora ocurre de manera atómica y centralizada dentro de RoleRepository
                 return ['success' => true, 'message_key' => 'admin.role_permissions_updated'];
             }
         } catch (\Exception $e) {
@@ -981,17 +977,17 @@ class AdminServices {
 
             if ($isActive) {
                 $redis->set(CacheConstants::KEY_SYSTEM_PANIC_MODE, '1');
-                Logger::critical("SYSTEM PANIC MODE ACTIVATED by admin ID: {$currentUserId}", ['admin_id' => $currentUserId]);
+                Logger::critical("SYSTEM_PANIC_MODE_ACTIVATED", ['admin_id' => $currentUserId]);
                 $messageKey = 'admin.panic_mode_activated';
             } else {
                 $redis->del(CacheConstants::KEY_SYSTEM_PANIC_MODE);
-                Logger::info("SYSTEM PANIC MODE DEACTIVATED by admin ID: {$currentUserId}", ['admin_id' => $currentUserId]);
+                Logger::info("SYSTEM_PANIC_MODE_DEACTIVATED", ['admin_id' => $currentUserId]);
                 $messageKey = 'admin.panic_mode_deactivated';
             }
 
             return ['success' => true, 'message_key' => $messageKey, 'is_active' => $isActive];
         } catch (\Exception $e) {
-            Logger::error("Error toggling panic mode via Redis", ['exception' => $e->getMessage()]);
+            Logger::error("Error_toggling_panic_mode_via_Redis", ['exception' => $e->getMessage()]);
             return ['success' => false, 'message_key' => 'error.redis_communication'];
         }
     }
@@ -1121,7 +1117,7 @@ class AdminServices {
             $redis->setex(CacheConstants::KEY_SYSTEM_RESTORING, 900, '1');
             
             $payload = json_encode(['job_id' => $jobId, 'type' => 'restore', 'backup_file' => $filename, 'requested_by' => $currentUserId]);
-            $redis->rpush(CacheConstants::QUEUE_BACKUP, $payload);
+            $redis->rpush(CacheConstants::QUEUE_BACKUP, [$payload]);
 
             return ['success' => true, 'message_key' => 'admin.restore_queued', 'job_id' => $jobId];
         } catch (\Exception $e) {
@@ -1178,29 +1174,24 @@ class AdminServices {
         }
     }
 
-    // --- NUEVO MÉTODO PARA DASHBOARD METRICS ---
     public function getDashboardMetrics($data) {
         if (!$this->hasPermission('access_admin_panel')) {
             return ['success' => false, 'message_key' => 'error.unauthorized'];
         }
         
-        // Asumiendo que KEY_ADM_READ_DATA existe en RateLimitConstants (como en los otros métodos GET de admin)
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_READ_DATA, 120, 1);
         if (!$rl['allowed']) return ['success' => false, 'message_key' => $rl['message_key']];
 
         $startDate = $data['start_date'] ?? date('Y-m-d', strtotime('-30 days'));
         $endDate = $data['end_date'] ?? date('Y-m-d');
 
-        // Normalizar formato de fechas
         $start = $startDate . ' 00:00:00';
         $end = $endDate . ' 23:59:59';
 
-        // Fetch data
         $registrations = $this->userRepository->getRegistrationStats($start, $end);
         $pageviews = $this->telemetryRepository->getPageviewsOverTime($start, $end);
         $logins = $this->telemetryRepository->getAuthEventsOverTime($start, $end, 'login_success');
 
-        // Construir arreglo de etiquetas continuo (para evitar huecos en la gráfica)
         $labels = [];
         $current = strtotime($startDate);
         $last = strtotime($endDate);
@@ -1209,7 +1200,6 @@ class AdminServices {
             $current = strtotime('+1 day', $current);
         }
 
-        // Función anónima para formatear los datos consultados mapeados contra el arreglo de fechas
         $formatDataset = function($dataArray, $labels) {
             $map = [];
             foreach ($dataArray as $row) {
@@ -1246,4 +1236,3 @@ class AdminServices {
         ];
     }
 }
-?>

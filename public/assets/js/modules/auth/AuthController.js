@@ -1,4 +1,3 @@
-// public/assets/js/modules/auth/AuthController.js
 import { ApiRoutes } from '../../core/api/ApiRoutes.js';
 import { ApiService } from '../../core/api/ApiServices.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../core/utils/uiUtils.js';
@@ -77,7 +76,6 @@ class AuthController {
         const switchAccountBtn = e.target.closest('[data-action="switchAccount"]');
         const logoutAllBtn = e.target.closest('[data-action="logoutAll"]');
 
-        // Nuevas acciones para cancelar eliminación de cuenta
         const cancelDeletionBtn = e.target.closest('[data-action="cancelAccountDeletion"]');
         const continueDeletionBtn = e.target.closest('[data-action="continueAccountDeletion"]');
 
@@ -116,9 +114,9 @@ class AuthController {
         let timeLeft = seconds;
 
         if (isLink) {
-            element.classList.add('disabled-interaction', 'component-text-notice--muted');
+            element.classList.add('disabled-interactive', 'component-text-notice--muted');
         } else {
-            element.disabled = true;
+            element.classList.add('disabled-interactive');
         }
 
         element.textContent = `${defaultText} (${timeLeft})`;
@@ -128,9 +126,9 @@ class AuthController {
             if (timeLeft <= 0) {
                 clearInterval(this.resendInterval);
                 if (isLink) {
-                    element.classList.remove('disabled-interaction', 'component-text-notice--muted');
+                    element.classList.remove('disabled-interactive', 'component-text-notice--muted');
                 } else {
-                    element.disabled = false;
+                    element.classList.remove('disabled-interactive');
                     element.dataset.originalText = defaultText;
                 }
                 element.textContent = defaultText;
@@ -320,20 +318,18 @@ class AuthController {
             if (result.status === 'pending_deletion') {
                 const formWrapper = document.querySelector('.component-form-box');
                 if (formWrapper) {
-                    const originalContent = formWrapper.innerHTML;
-
                     formWrapper.innerHTML = `
-                        <div class="component-auth-header" style="text-align: center; margin-bottom: 24px;">
-                            <div style="background: rgba(255, 193, 7, 0.1); width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto;">
-                                <span class="material-symbols-rounded" style="color: #ffc107; font-size: 32px;">schedule</span>
-                            </div>
-                            <h2 style="font-size: 20px; font-weight: 600; color: var(--color-text-primary); margin-bottom: 8px;">Cuenta en eliminación</h2>
-                            <p style="font-size: 14px; color: var(--color-text-secondary); line-height: 1.5;">Tu cuenta ha sido programada para ser eliminada permanentemente el <strong>${new Date(result.scheduled_at).toLocaleDateString()}</strong>.</p>
+                        <div class="component-form-header">
+                            <h1 class="component-form-title">Cuenta en eliminación</h1>
+                            <p class="component-form-desc">Tu cuenta ha sido programada para ser eliminada permanentemente el <strong>${new Date(result.scheduled_at).toLocaleDateString()}</strong>.</p>
                         </div>
-                        <p style="margin-bottom: 20px; font-size: 14px; color: var(--color-text-primary); text-align: center;">¿Deseas cancelar el proceso y recuperar el acceso a tu cuenta?</p>
-                        <div style="display: flex; flex-direction: column; gap: 12px;">
-                            <button class="component-button component-button--primary" data-action="cancelAccountDeletion" data-token="${result.temp_auth_token}">Sí, cancelar eliminación y entrar</button>
-                            <button class="component-button" style="background: transparent; color: var(--color-text-secondary); border: 1px solid var(--color-border);" data-action="continueAccountDeletion">No, mantener eliminación y salir</button>
+                        <div class="component-form-body">
+                            <p style="margin-bottom: 24px; font-size: 14px; color: var(--color-text-primary); text-align: center;">¿Deseas cancelar el proceso y recuperar el acceso a tu cuenta?</p>
+                            <button class="component-button component-button--dark component-button--h45 component-button--full" data-action="cancelAccountDeletion" data-token="${result.temp_auth_token}">Sí, cancelar eliminación y entrar</button>
+                            
+                            <div class="component-link-container component-link-container--center" style="margin-top: 16px;">
+                                <span class="component-link" data-action="continueAccountDeletion" style="cursor: pointer;">No, mantener eliminación y salir</span>
+                            </div>
                         </div>
                     `;
                 } else {
@@ -534,7 +530,7 @@ class AuthController {
 
     async handleResendRegisterCode(btn) {
         this.clearMessages();
-        if (btn.classList.contains('disabled-interaction')) return;
+        if (btn.classList.contains('disabled-interactive')) return;
 
         const regToken = sessionStorage.getItem('reg_token');
         if (!regToken) {
@@ -542,7 +538,7 @@ class AuthController {
             return;
         }
 
-        btn.classList.add('disabled-interaction', 'component-text-notice--muted');
+        btn.classList.add('disabled-interactive', 'component-text-notice--muted');
         btn.textContent = __('btn_sending');
 
         const data = { reg_token: regToken };
@@ -560,7 +556,7 @@ class AuthController {
             if (result.cooldown) {
                 this.startResendTimer(btn, defaultText, result.cooldown, true);
             } else {
-                btn.classList.remove('disabled-interaction', 'component-text-notice--muted');
+                btn.classList.remove('disabled-interactive', 'component-text-notice--muted');
                 btn.textContent = defaultText;
             }
         }
@@ -587,7 +583,6 @@ class AuthController {
 
         if (result.aborted) return;
 
-        // CORRECCIÓN 3: Fallback explícito y restauración del botón en el caso de éxito
         let defaultText = __('btn_resend_email');
         if (defaultText === 'btn_resend_email') {
             defaultText = 'Reenviar correo';
@@ -595,7 +590,7 @@ class AuthController {
 
         if (result.success) {
             this.showSuccess(result.message);
-            restoreButton(btn); // <- ES VITAL LLAMARLO ANTES DE INICIAR EL TEMPORIZADOR PARA QUITAR LAS CLASES DE "LOADING"
+            restoreButton(btn);
             this.startResendTimer(btn, defaultText, 60, false);
         } else {
             if (typeof turnstile !== 'undefined' && this.turnstileWidgetId !== undefined) turnstile.reset(this.turnstileWidgetId);

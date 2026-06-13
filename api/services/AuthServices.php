@@ -1,5 +1,4 @@
 <?php
-// api/services/AuthServices.php
 
 namespace App\Api\Services;
 
@@ -114,12 +113,11 @@ class AuthServices {
         $userAgent = substr($_SERVER['HTTP_USER_AGENT'] ?? 'Unknown', 0, 255);
         $ipAddress = substr(Utils::getIpAddress(), 0, 45);
         
-        // --- MODIFICADO: Integración del motor MaxMind local para la lectura de la base de datos .mmdb ---
         $location = GeoIpHelper::getLocation($ipAddress); 
         $asn = GeoIpHelper::getASN($ipAddress);
         
         if (!$this->tokenRepository->createToken($userId, $selector, $hashedValidator, $expiresAt, $userAgent, $ipAddress, $location, $asn)) {
-             Logger::error("Failed to create remember token in database", ['user_id' => $userId]);
+             Logger::error("Failed_to_create_remember_token_in_database", ['user_id' => $userId]);
         }
         
         $cookieValue = $selector . ':' . $validator;
@@ -209,7 +207,7 @@ class AuthServices {
             'user_pic' => $user['profile_picture'],
             'user_prefs' => $userPrefs,
             'user_2fa' => $user['two_factor_enabled'] ?? 0,
-            'user_asn' => $asn // Se inyecta en la sesión actual
+            'user_asn' => $asn
         ];
 
         return $this->sessionManager->addAccount($user['id'], $userData);
@@ -554,9 +552,8 @@ class AuthServices {
             $ipAddress = Utils::getIpAddress();
             $asn = GeoIpHelper::getASN($ipAddress);
             
-            // Verificación de seguridad de ASN (Notificación Silenciosa de Telemetría)
             if (in_array($asn, SecurityConstants::RISKY_ASNS)) {
-                Logger::warning("Login efectuado desde un Datacenter / ASN de Riesgo", [
+                Logger::warning("Login_attempt_from_a_risky_datacenter", [
                     'user_id' => $user['id'],
                     'email' => $user['email'],
                     'asn' => $asn,
@@ -879,8 +876,6 @@ class AuthServices {
         $this->verificationCodeRepository->deleteByIdentifierAndType($email, DatabaseConstants::VERIFY_TYPE_PASSWORD);
         
         if ($this->verificationCodeRepository->createCode($email, DatabaseConstants::VERIFY_TYPE_PASSWORD, $token, $payload, $expiresAt)) {
-            
-            // CORRECCIÓN 1: Enlace limpio basado estrictamente en APP_URL y eliminando barras redundantes.
             $resetLink = rtrim(APP_URL, '/') . "/reset-password?token=" . $token;
             
             $mailer = new Mailer();
