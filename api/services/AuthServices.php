@@ -117,7 +117,7 @@ class AuthServices {
         $asn = GeoIpHelper::getASN($ipAddress);
         
         if (!$this->tokenRepository->createToken($userId, $selector, $hashedValidator, $expiresAt, $userAgent, $ipAddress, $location, $asn)) {
-             Logger::error("Failed_to_create_remember_token_in_database", ['user_id' => $userId]);
+             Logger::error("[ERROR] Failed to create remember token in database", ['user_id' => $userId]);
         }
         
         $cookieValue = $selector . ':' . $validator;
@@ -215,7 +215,7 @@ class AuthServices {
 
     public function switchAccount($data) {
         $targetUserId = (int)($data['user_id'] ?? 0);
-        if ($targetUserId <= 0) return ['success' => false, 'message_key' => 'validation.missing_fields'];
+        if ($targetUserId <= 0) return ['success' => false, 'message' => __('validation.missing_fields')];
 
         $redisCache = new RedisCache();
         $sessionId = session_id() ?: 'cli';
@@ -229,14 +229,14 @@ class AuthServices {
                     'user_uuid' => $user ? $user['uuid'] : null,
                     'ip_address' => Utils::getIpAddress()
                 ]);
-                return ['success' => true, 'message_key' => 'auth.account_switched'];
+                return ['success' => true, 'message' => __('auth.account_switched')];
             }
             $this->telemetryServices->logAuthEvent([
                 'event_type' => 'switch_account_failed',
                 'user_uuid' => null,
                 'ip_address' => Utils::getIpAddress()
             ]);
-            return ['success' => false, 'message_key' => 'auth.account_not_found'];
+            return ['success' => false, 'message' => __('auth.account_not_found')];
         });
     }
 
@@ -327,15 +327,15 @@ class AuthServices {
 
     public function registerStep1($data) {
         $email = trim($data['email'] ?? ''); $password = trim($data['password'] ?? '');
-        if (empty($email) || empty($password)) return ['success' => false, 'message_key' => 'validation.missing_fields'];
+        if (empty($email) || empty($password)) return ['success' => false, 'message' => __('validation.missing_fields')];
         
         $rateCheck = $this->rateLimiter->consume(RateLimitConstants::KEY_AUTH_REGISTER_STEP1 . "_{$email}", RateLimitConstants::MAX_10, RateLimitConstants::TIME_60, true); 
         if (!$rateCheck['allowed']) {
-            return ['success' => false, 'message_key' => $rateCheck['message_key'] ?? 'error.rate_limit_exceeded'];
+            return ['success' => false, 'message' => __($rateCheck['message_key'] ?? 'error.rate_limit_exceeded')];
         }
 
         $eVal = Utils::validateEmailFormat($email); 
-        if (!$eVal['valid']) return ['success' => false, 'message_key' => 'validation.invalid_email'];
+        if (!$eVal['valid']) return ['success' => false, 'message' => __('validation.invalid_email')];
         
         if (!empty($this->config['allowed_email_domains'])) {
             $allowedDomainsRaw = $this->config['allowed_email_domains'];
@@ -354,15 +354,15 @@ class AuthServices {
                     if (strpos($allowed, '@') !== 0) $allowed = '@' . $allowed;
                     if ($domain === $allowed) { $isAllowed = true; break; }
                 }
-                if (!$isAllowed) return ['success' => false, 'message_key' => 'validation.domain_not_allowed'];
+                if (!$isAllowed) return ['success' => false, 'message' => __('validation.domain_not_allowed')];
             }
         }
 
         $pVal = Utils::validatePasswordFormat($password, $this->config['min_password_length'], $this->config['max_password_length']); 
-        if (!$pVal['valid']) return ['success' => false, 'message_key' => 'validation.invalid_password_format'];
+        if (!$pVal['valid']) return ['success' => false, 'message' => __('validation.invalid_password_format')];
         
         if ($this->userRepository->findByEmail($email)) {
-            return ['success' => false, 'message_key' => 'validation.email_in_use'];
+            return ['success' => false, 'message' => __('validation.email_in_use')];
         }
         
         $regToken = bin2hex(random_bytes(16));
@@ -373,7 +373,7 @@ class AuthServices {
         
         $this->sessionManager->set(SessionConstants::KEY_REG_FLOWS, $regFlows);
         
-        return ['success' => true, 'message_key' => 'auth.register_step1_success', 'reg_token' => $regToken];
+        return ['success' => true, 'message' => __('auth.register_step1_success'), 'reg_token' => $regToken];
     }
 
     public function registerStep2($data) {
@@ -381,25 +381,25 @@ class AuthServices {
         $regFlows = $this->sessionManager->get(SessionConstants::KEY_REG_FLOWS, []);
         
         if (empty($regToken) || !isset($regFlows[$regToken])) {
-            return ['success' => false, 'message_key' => 'auth.session_expired'];
+            return ['success' => false, 'message' => __('auth.session_expired')];
         }
 
         $regEmail = $regFlows[$regToken]['email'];
         $regPassword = $regFlows[$regToken]['password']; 
         
         $username = Utils::sanitizeText($data['username'] ?? '');
-        if (empty($username)) return ['success' => false, 'message_key' => 'validation.missing_fields'];
+        if (empty($username)) return ['success' => false, 'message' => __('validation.missing_fields')];
 
         $rateCheck = $this->rateLimiter->consume(RateLimitConstants::KEY_AUTH_REGISTER_STEP2 . "_{$regEmail}", RateLimitConstants::MAX_5, RateLimitConstants::TIME_60, true);
-        if (!$rateCheck['allowed']) return ['success' => false, 'message_key' => $rateCheck['message_key'] ?? 'error.rate_limit_exceeded'];
+        if (!$rateCheck['allowed']) return ['success' => false, 'message' => __($rateCheck['message_key'] ?? 'error.rate_limit_exceeded')];
         
         $minUser = $this->config['min_username_length'];
         $maxUser = $this->config['max_username_length'];
         
         $userValidation = Utils::validateUsernameFormat($username, $minUser, $maxUser);
-        if (!$userValidation['valid']) return ['success' => false, 'message_key' => $userValidation['message_key']];
+        if (!$userValidation['valid']) return ['success' => false, 'message' => __($userValidation['message_key'])];
         
-        if ($this->userRepository->findByUsername($username)) return ['success' => false, 'message_key' => 'validation.username_in_use'];
+        if ($this->userRepository->findByUsername($username)) return ['success' => false, 'message' => __('validation.username_in_use')];
 
         $code = Utils::generateNumericCode(12);
         $payload = json_encode(['email' => $regEmail, 'password' => $regPassword, 'username' => $username]);
@@ -413,12 +413,12 @@ class AuthServices {
             
             $mailer = new Mailer();
             if ($mailer->sendVerificationCode($regEmail, $username, $code)) {
-                return ['success' => true, 'message_key' => 'auth.verification_code_sent'];
+                return ['success' => true, 'message' => __('auth.verification_code_sent')];
             } else {
-                return ['success' => false, 'message_key' => 'error.email_delivery'];
+                return ['success' => false, 'message' => __('error.email_delivery')];
             }
         }
-        return ['success' => false, 'message_key' => 'error.database'];
+        return ['success' => false, 'message' => __('error.database')];
     }
 
     public function registerResendCode($data) {
@@ -426,13 +426,13 @@ class AuthServices {
         $regFlows = $this->sessionManager->get(SessionConstants::KEY_REG_FLOWS, []);
         
         if (empty($regToken) || !isset($regFlows[$regToken]) || !isset($regFlows[$regToken]['username'])) {
-            return ['success' => false, 'message_key' => 'auth.session_expired'];
+            return ['success' => false, 'message' => __('auth.session_expired')];
         }
 
         $email = $regFlows[$regToken]['email'];
         
         $rateCheck = $this->rateLimiter->consume(RateLimitConstants::KEY_AUTH_RESEND_CODE . "_{$email}", RateLimitConstants::MAX_5, RateLimitConstants::TIME_60, true); 
-        if (!$rateCheck['allowed']) return ['success' => false, 'message_key' => $rateCheck['message_key'] ?? 'error.rate_limit_exceeded'];
+        if (!$rateCheck['allowed']) return ['success' => false, 'message' => __($rateCheck['message_key'] ?? 'error.rate_limit_exceeded')];
         
         $username = $regFlows[$regToken]['username'];
         $password = $regFlows[$regToken]['password']; 
@@ -440,7 +440,7 @@ class AuthServices {
         $lastCode = $this->verificationCodeRepository->findLatestValidByIdentifierAndType($email, DatabaseConstants::VERIFY_TYPE_ACTIVATION);
         if ($lastCode && isset($lastCode['seconds_elapsed']) && $lastCode['seconds_elapsed'] < 60) {
             $timeLeft = 60 - (int)$lastCode['seconds_elapsed'];
-            return ['success' => false, 'message_key' => 'error.cooldown_active', 'cooldown' => $timeLeft];
+            return ['success' => false, 'message' => __('error.cooldown_active'), 'cooldown' => $timeLeft];
         }
 
         $code = Utils::generateNumericCode(12);
@@ -454,36 +454,36 @@ class AuthServices {
         if ($this->verificationCodeRepository->createCode($email, DatabaseConstants::VERIFY_TYPE_ACTIVATION, $code, $payload, $expiresAt)) {
             $mailer = new Mailer();
             if ($mailer->sendVerificationCode($email, $username, $code)) {
-                return ['success' => true, 'message_key' => 'auth.code_resent'];
+                return ['success' => true, 'message' => __('auth.code_resent')];
             } else {
-                return ['success' => false, 'message_key' => 'error.email_delivery'];
+                return ['success' => false, 'message' => __('error.email_delivery')];
             }
         }
-        return ['success' => false, 'message_key' => 'error.update_failed'];
+        return ['success' => false, 'message' => __('error.update_failed')];
     }
 
     public function registerVerify($data) {
         $regToken = $data['reg_token'] ?? '';
         $code = str_replace('-', '', trim($data['code'] ?? ''));
-        if (empty($code) || empty($regToken)) return ['success' => false, 'message_key' => 'validation.missing_fields'];
+        if (empty($code) || empty($regToken)) return ['success' => false, 'message' => __('validation.missing_fields')];
         
         $regFlows = $this->sessionManager->get(SessionConstants::KEY_REG_FLOWS, []);
-        if (!isset($regFlows[$regToken])) return ['success' => false, 'message_key' => 'auth.session_expired'];
+        if (!isset($regFlows[$regToken])) return ['success' => false, 'message' => __('auth.session_expired')];
 
         $identifier = $regFlows[$regToken]['email'];
         $rateCheck = $this->rateLimiter->consume(RateLimitConstants::KEY_AUTH_REGISTER_VERIFY . "_{$identifier}", RateLimitConstants::MAX_10, RateLimitConstants::TIME_15, true); 
-        if (!$rateCheck['allowed']) return ['success' => false, 'message_key' => $rateCheck['message_key'] ?? 'error.too_many_attempts'];
+        if (!$rateCheck['allowed']) return ['success' => false, 'message' => __($rateCheck['message_key'] ?? 'error.too_many_attempts')];
 
         $verification = $this->verificationCodeRepository->findLatestValidByIdentifierAndType($identifier, DatabaseConstants::VERIFY_TYPE_ACTIVATION);
-        if (!$verification) return ['success' => false, 'message_key' => 'auth.invalid_or_expired_code'];
-        if ($verification['code'] !== $code) return ['success' => false, 'message_key' => 'auth.incorrect_code'];
+        if (!$verification) return ['success' => false, 'message' => __('auth.invalid_or_expired_code')];
+        if ($verification['code'] !== $code) return ['success' => false, 'message' => __('auth.incorrect_code')];
 
         $this->rateLimiter->clear(RateLimitConstants::KEY_AUTH_REGISTER_VERIFY . "_{$identifier}"); 
         $payload = json_decode($verification['payload'], true);
         $uuid = Utils::generateUUID();
         $profilePic = Utils::generateProfilePicture($payload['username'], $uuid);
         
-        if (!$profilePic) return ['success' => false, 'message_key' => 'error.internal_server_error'];
+        if (!$profilePic) return ['success' => false, 'message' => __('error.internal_server_error')];
 
         $defaultRoleId = $this->config['default_user_role_id'] ?? SecurityConstants::DEFAULT_USER_ROLE_ID;
 
@@ -513,7 +513,7 @@ class AuthServices {
                     unset($regFlows[$regToken]);
                     $this->sessionManager->set(SessionConstants::KEY_REG_FLOWS, $regFlows);
                     $this->verificationCodeRepository->deleteById($verification['id']);
-                    return ['success' => true, 'message_key' => 'auth.account_created_limit_reached'];
+                    return ['success' => true, 'message' => __('auth.account_created_limit_reached')];
                 }
 
                 if (method_exists($this->sessionManager, 'restoreAccountInPool')) {
@@ -526,23 +526,23 @@ class AuthServices {
                 $this->sessionManager->set(SessionConstants::KEY_REG_FLOWS, $regFlows);
                 $this->verificationCodeRepository->deleteById($verification['id']);
 
-                return ['success' => true, 'message_key' => 'auth.account_created'];
+                return ['success' => true, 'message' => __('auth.account_created')];
             });
         }
         
-        return ['success' => false, 'message_key' => 'error.database'];
+        return ['success' => false, 'message' => __('error.database')];
     }
 
     public function login($data) {
         $email = trim($data['email'] ?? ''); $password = trim($data['password'] ?? '');
-        if (empty($email) || empty($password)) return ['success' => false, 'message_key' => 'validation.missing_fields'];
+        if (empty($email) || empty($password)) return ['success' => false, 'message' => __('validation.missing_fields')];
 
         $attempts = $this->config['login_rate_limit_attempts'];
         $minutes = $this->config['login_rate_limit_minutes'];
         
         $rateCheck = $this->rateLimiter->consume(RateLimitConstants::KEY_AUTH_LOGIN . "_{$email}", $attempts, $minutes, true);
         
-        if (!$rateCheck['allowed']) return ['success' => false, 'message_key' => $rateCheck['message_key'] ?? 'error.rate_limit_exceeded'];
+        if (!$rateCheck['allowed']) return ['success' => false, 'message' => __($rateCheck['message_key'] ?? 'error.rate_limit_exceeded')];
 
         $user = $this->userRepository->findByEmail($email);
 
@@ -553,7 +553,7 @@ class AuthServices {
             $asn = GeoIpHelper::getASN($ipAddress);
             
             if (in_array($asn, SecurityConstants::RISKY_ASNS)) {
-                Logger::warning("Login_attempt_from_a_risky_datacenter", [
+                Logger::warning("[WARNING] Login attempt from a risky datacenter", [
                     'user_id' => $user['id'],
                     'email' => $user['email'],
                     'asn' => $asn,
@@ -568,7 +568,7 @@ class AuthServices {
                         'user_uuid' => $user['uuid'],
                         'ip_address' => $ipAddress
                     ]);
-                    return ['success' => false, 'status' => 'deleted', 'message_key' => 'auth.account_deleted'];
+                    return ['success' => false, 'status' => 'deleted', 'message' => __('auth.account_deleted')];
                 }
 
                 $tempToken = bin2hex(random_bytes(16));
@@ -582,7 +582,7 @@ class AuthServices {
                     'requires_action' => 'cancel_deletion',
                     'temp_auth_token' => $tempToken, 
                     'scheduled_at' => $user['deletion_scheduled_at'],
-                    'message_key' => 'auth.account_pending_deletion'
+                    'message' => __('auth.account_pending_deletion')
                 ];
             }
             
@@ -596,7 +596,7 @@ class AuthServices {
                         'user_uuid' => $user['uuid'],
                         'ip_address' => $ipAddress
                     ]);
-                    return ['success' => false, 'status' => 'suspended', 'message_key' => 'auth.account_suspended'];
+                    return ['success' => false, 'status' => 'suspended', 'message' => __('auth.account_suspended')];
                 }
             }
             
@@ -612,7 +612,7 @@ class AuthServices {
                     'ip_address' => $ipAddress
                 ]);
                 
-                return ['success' => true, 'requires_2fa' => true, 'temp_auth_token' => $tempToken, 'message_key' => 'auth.requires_2fa'];
+                return ['success' => true, 'requires_2fa' => true, 'temp_auth_token' => $tempToken, 'message' => __('auth.requires_2fa')];
             }
 
             $redisCache = new RedisCache();
@@ -625,7 +625,7 @@ class AuthServices {
                         'user_uuid' => $user['uuid'],
                         'ip_address' => $ipAddress
                     ]);
-                    return ['success' => false, 'message_key' => 'auth.max_accounts_reached'];
+                    return ['success' => false, 'message' => __('auth.max_accounts_reached')];
                 }
                 
                 if (method_exists($this->sessionManager, 'restoreAccountInPool')) {
@@ -640,7 +640,7 @@ class AuthServices {
                     'ip_address' => $ipAddress
                 ]);
                 
-                return ['success' => true, 'requires_2fa' => false, 'message_key' => 'auth.login_success'];
+                return ['success' => true, 'requires_2fa' => false, 'message' => __('auth.login_success')];
             });
         }
         
@@ -651,22 +651,22 @@ class AuthServices {
             'ip_address' => Utils::getIpAddress()
         ]);
         
-        return ['success' => false, 'message_key' => 'auth.incorrect_credentials'];
+        return ['success' => false, 'message' => __('auth.incorrect_credentials')];
     }
 
     public function cancelAccountDeletion($data) {
         $tempToken = trim($data['temp_auth_token'] ?? '');
         $rememberDevice = !empty($data['remember_device']);
-        if (empty($tempToken)) return ['success' => false, 'message_key' => 'validation.missing_fields'];
+        if (empty($tempToken)) return ['success' => false, 'message' => __('validation.missing_fields')];
         
         $pendingDeletion = $this->sessionManager->get(SessionConstants::KEY_PENDING_DELETION, []);
-        if (!isset($pendingDeletion[$tempToken])) return ['success' => false, 'message_key' => 'auth.session_expired'];
+        if (!isset($pendingDeletion[$tempToken])) return ['success' => false, 'message' => __('auth.session_expired')];
 
         $userId = $pendingDeletion[$tempToken];
         $user = $this->userRepository->findById($userId);
 
         if (!$user) {
-            return ['success' => false, 'message_key' => 'auth.invalid_account_status'];
+            return ['success' => false, 'message' => __('auth.invalid_account_status')];
         }
 
         if ($this->userRepository->cancelDeletion($userId)) {
@@ -687,7 +687,7 @@ class AuthServices {
                 $pending2fa[$token2fa] = $user['id'];
                 $this->sessionManager->set(SessionConstants::KEY_PENDING_2FA, $pending2fa);
                 
-                return ['success' => true, 'requires_2fa' => true, 'temp_auth_token' => $token2fa, 'message_key' => 'auth.requires_2fa'];
+                return ['success' => true, 'requires_2fa' => true, 'temp_auth_token' => $token2fa, 'message' => __('auth.requires_2fa')];
             }
 
             $redisCache = new RedisCache();
@@ -700,7 +700,7 @@ class AuthServices {
                         'user_uuid' => $user['uuid'],
                         'ip_address' => Utils::getIpAddress()
                     ]);
-                    return ['success' => false, 'message_key' => 'auth.max_accounts_reached'];
+                    return ['success' => false, 'message' => __('auth.max_accounts_reached')];
                 }
                 
                 if ($rememberDevice) {
@@ -713,21 +713,21 @@ class AuthServices {
                     'ip_address' => Utils::getIpAddress()
                 ]);
                 
-                return ['success' => true, 'requires_2fa' => false, 'message_key' => 'auth.login_success'];
+                return ['success' => true, 'requires_2fa' => false, 'message' => __('auth.login_success')];
             });
         }
 
-        return ['success' => false, 'message_key' => 'error.update_failed'];
+        return ['success' => false, 'message' => __('error.update_failed')];
     }
 
     public function loginVerify2FA($data) {
         $code = trim($data['code'] ?? '');
         $tempToken = trim($data['temp_auth_token'] ?? '');
         
-        if (empty($code) || empty($tempToken)) return ['success' => false, 'message_key' => 'validation.missing_fields'];
+        if (empty($code) || empty($tempToken)) return ['success' => false, 'message' => __('validation.missing_fields')];
         
         $pending2fa = $this->sessionManager->get(SessionConstants::KEY_PENDING_2FA, []);
-        if (!isset($pending2fa[$tempToken])) return ['success' => false, 'message_key' => 'auth.session_expired'];
+        if (!isset($pending2fa[$tempToken])) return ['success' => false, 'message' => __('auth.session_expired')];
 
         $userId = $pending2fa[$tempToken];
         
@@ -735,12 +735,12 @@ class AuthServices {
         $minutes = $this->config['login_rate_limit_minutes'];
         $rateCheck = $this->rateLimiter->consume(RateLimitConstants::KEY_AUTH_LOGIN_2FA . "_{$userId}", $attempts, $minutes, true);
         
-        if (!$rateCheck['allowed']) return ['success' => false, 'message_key' => $rateCheck['message_key'] ?? 'error.rate_limit_exceeded'];
+        if (!$rateCheck['allowed']) return ['success' => false, 'message' => __($rateCheck['message_key'] ?? 'error.rate_limit_exceeded')];
 
         $user = $this->userRepository->findById($userId);
 
         if (!$user || empty($user['two_factor_enabled']) || !empty($user['deletion_scheduled_at']) || (isset($user['is_suspended']) && $user['is_suspended'] == 1)) {
-            return ['success' => false, 'message_key' => 'auth.invalid_account_status'];
+            return ['success' => false, 'message' => __('auth.invalid_account_status')];
         }
 
         $isValid = false;
@@ -770,7 +770,7 @@ class AuthServices {
                 if (!$this->setAuthSession($user)) {
                     unset($pending2fa[$tempToken]);
                     $this->sessionManager->set(SessionConstants::KEY_PENDING_2FA, $pending2fa);
-                    return ['success' => false, 'message_key' => 'auth.max_accounts_reached'];
+                    return ['success' => false, 'message' => __('auth.max_accounts_reached')];
                 }
                 
                 if (method_exists($this->sessionManager, 'restoreAccountInPool')) {
@@ -787,7 +787,7 @@ class AuthServices {
                     'ip_address' => Utils::getIpAddress()
                 ]);
                 
-                return ['success' => true, 'message_key' => 'auth.login_success'];
+                return ['success' => true, 'message' => __('auth.login_success')];
             });
         }
 
@@ -797,7 +797,7 @@ class AuthServices {
             'ip_address' => Utils::getIpAddress()
         ]);
         
-        return ['success' => false, 'message_key' => 'auth.incorrect_code'];
+        return ['success' => false, 'message' => __('auth.incorrect_code')];
     }
 
     public function logout() {
@@ -820,7 +820,7 @@ class AuthServices {
             'ip_address' => Utils::getIpAddress()
         ]);
         
-        return ['success' => true, 'message_key' => 'auth.logout_success'];
+        return ['success' => true, 'message' => __('auth.logout_success')];
     }
 
     public function logoutAll() {
@@ -841,29 +841,29 @@ class AuthServices {
             'ip_address' => Utils::getIpAddress()
         ]);
         
-        return ['success' => true, 'message_key' => 'auth.logout_success'];
+        return ['success' => true, 'message' => __('auth.logout_success')];
     }
 
     public function forgotPassword($data) {
         $email = trim($data['email'] ?? '');
-        if (empty($email)) return ['success' => false, 'message_key' => 'validation.missing_fields'];
+        if (empty($email)) return ['success' => false, 'message' => __('validation.missing_fields')];
         
         $attempts = $this->config['forgot_password_rate_limit_attempts'];
         $minutes = $this->config['forgot_password_rate_limit_minutes'];
         
         $rateCheck = $this->rateLimiter->consume(RateLimitConstants::KEY_AUTH_FORGOT_PASSWORD . "_{$email}", $attempts, $minutes, true);
-        if (!$rateCheck['allowed']) return ['success' => false, 'message_key' => $rateCheck['message_key'] ?? 'error.rate_limit_exceeded'];
+        if (!$rateCheck['allowed']) return ['success' => false, 'message' => __($rateCheck['message_key'] ?? 'error.rate_limit_exceeded')];
 
         $user = $this->userRepository->findByEmail($email);
 
         if (!$user || !empty($user['deletion_scheduled_at']) || (isset($user['is_suspended']) && $user['is_suspended'] == 1)) {
-            return ['success' => false, 'message_key' => 'auth.account_unavailable'];
+            return ['success' => false, 'message' => __('auth.account_unavailable')];
         }
 
         $lastCode = $this->verificationCodeRepository->findLatestValidByIdentifierAndType($email, DatabaseConstants::VERIFY_TYPE_PASSWORD);
         if ($lastCode && isset($lastCode['seconds_elapsed']) && $lastCode['seconds_elapsed'] < 60) {
             $timeLeft = 60 - (int)$lastCode['seconds_elapsed'];
-            return ['success' => false, 'message_key' => 'error.cooldown_active', 'cooldown' => $timeLeft];
+            return ['success' => false, 'message' => __('error.cooldown_active'), 'cooldown' => $timeLeft];
         }
 
         $token = bin2hex(random_bytes(32)); 
@@ -887,23 +887,23 @@ class AuthServices {
                     'ip_address' => Utils::getIpAddress()
                 ]);
                 
-                return ['success' => true, 'message_key' => 'auth.recovery_email_sent'];
+                return ['success' => true, 'message' => __('auth.recovery_email_sent')];
             }
         }
         
-        return ['success' => false, 'message_key' => 'error.internal_server_error'];
+        return ['success' => false, 'message' => __('error.internal_server_error')];
     }
 
     public function resetPassword($data) {
         $token = trim($data['token'] ?? ''); $password = trim($data['password'] ?? '');
-        if (empty($token) || empty($password)) return ['success' => false, 'message_key' => 'validation.missing_fields'];
+        if (empty($token) || empty($password)) return ['success' => false, 'message' => __('validation.missing_fields')];
         
         $passValidation = Utils::validatePasswordFormat($password, $this->config['min_password_length'], $this->config['max_password_length']);
-        if (!$passValidation['valid']) return ['success' => false, 'message_key' => 'validation.invalid_password_format'];
+        if (!$passValidation['valid']) return ['success' => false, 'message' => __('validation.invalid_password_format')];
 
         $verification = $this->verificationCodeRepository->findValidByCodeAndType($token, DatabaseConstants::VERIFY_TYPE_PASSWORD);
 
-        if (!$verification) return ['success' => false, 'message_key' => 'auth.invalid_or_expired_token'];
+        if (!$verification) return ['success' => false, 'message' => __('auth.invalid_or_expired_token')];
 
         $email = $verification['identifier'];
         $user = $this->userRepository->findByEmail($email);
@@ -923,10 +923,9 @@ class AuthServices {
                 'ip_address' => Utils::getIpAddress()
             ]);
             
-            return ['success' => true, 'message_key' => 'auth.password_reset_success'];
+            return ['success' => true, 'message' => __('auth.password_reset_success')];
         }
         
-        return ['success' => false, 'message_key' => 'error.update_failed'];
+        return ['success' => false, 'message' => __('error.update_failed')];
     }
 }
-?>

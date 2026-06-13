@@ -85,26 +85,26 @@ class AdminServices {
         $currentWeight = $this->getCurrentAdminWeight();
         
         if ($currentUserId == $targetUser['id']) {
-            return ['allowed' => false, 'message_key' => 'admin.cannot_edit_self'];
+            return ['allowed' => false, 'message' => __('admin.cannot_edit_self')];
         }
 
         $highestTargetRole = $this->roleRepository->getHighestPriorityRole($targetUser['id']);
         $targetWeight = $highestTargetRole ? (int)$highestTargetRole['weight'] : 1;
 
         if ($targetWeight >= SecurityConstants::WEIGHT_SUPER_ADMIN && $currentUserId != 1) {
-            Logger::warning("Attempt_to_modify_a_SuperAdmin_account_blocked", [
+            Logger::warning("[WARNING] Attempt to modify a SuperAdmin account blocked", [
                 'admin_id' => $currentUserId,
                 'target_user_id' => $targetUser['id']
             ]);
-            return ['allowed' => false, 'message_key' => 'admin.insufficient_privileges'];
+            return ['allowed' => false, 'message' => __('admin.insufficient_privileges')];
         }
 
         if ($currentWeight <= $targetWeight && $currentWeight < SecurityConstants::WEIGHT_SUPER_ADMIN) {
-            Logger::warning("Insufficient_privileges_to_modify_target_user", [
+            Logger::warning("[WARNING] Insufficient privileges to modify target user", [
                 'admin_id' => $currentUserId,
                 'target_user_id' => $targetUser['id']
             ]);
-            return ['allowed' => false, 'message_key' => 'admin.insufficient_privileges'];
+            return ['allowed' => false, 'message' => __('admin.insufficient_privileges')];
         }
 
         return ['allowed' => true];
@@ -120,7 +120,7 @@ class AdminServices {
         $rateCheck = $this->rateLimiter->consume("{$actionKey}_{$currentUserId}", $attempts, $minutes);
         
         if (!$rateCheck['allowed']) {
-            return ['allowed' => false, 'message_key' => 'error.rate_limit_exceeded'];
+            return ['allowed' => false, 'message' => __('error.rate_limit_exceeded')];
         }
         
         return ['allowed' => true];
@@ -129,11 +129,11 @@ class AdminServices {
     private function verifyAdminSudoMode(string $password): array {
         $currentUserId = $this->sessionManager->get('user_id');
         $rateCheck = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_PASSWORD_VERIFY, 5, 15);
-        if (!$rateCheck['allowed']) return ['success' => false, 'message_key' => $rateCheck['message_key']];
+        if (!$rateCheck['allowed']) return ['success' => false, 'message' => $rateCheck['message']];
 
         $adminData = $this->userRepository->findById($currentUserId);
         if (!$adminData || !password_verify($password, $adminData['password'])) {
-            return ['success' => false, 'message_key' => 'auth.incorrect_password'];
+            return ['success' => false, 'message' => __('auth.incorrect_password')];
         }
         $this->rateLimiter->clear(RateLimitConstants::KEY_ADM_PASSWORD_VERIFY . "_admin_{$currentUserId}");
         return ['success' => true, 'admin_id' => $currentUserId];
@@ -145,7 +145,7 @@ class AdminServices {
 
             $lockAcquired = $redis->set(CacheConstants::PREFIX_LOCK_BACKUP, '1', 'EX', 1800, 'NX');
             if (!$lockAcquired) {
-                return ['success' => false, 'message_key' => 'error.backup_in_progress'];
+                return ['success' => false, 'message' => __('error.backup_in_progress')];
             }
 
             $jobId = Utils::generateUUID();
@@ -166,22 +166,23 @@ class AdminServices {
             }
 
             $redis->rpush(CacheConstants::QUEUE_BACKUP, [json_encode($payloadData)]);
-            return ['success' => true, 'message_key' => 'admin.backup_queued', 'job_id' => $jobId];
+            return ['success' => true, 'message' => __('admin.backup_queued'), 'job_id' => $jobId];
         } catch (\Exception $e) {
-            return ['success' => false, 'message_key' => 'error.redis_communication'];
+            Logger::error("[ERROR] Dispatch backup job failed: " . $e->getMessage());
+            return ['success' => false, 'message' => __('error.redis_communication')];
         }
     }
 
     public function getUser($data) {
-        if (!$this->hasPermission('view_users')) return ['success' => false, 'message_key' => 'error.unauthorized'];
+        if (!$this->hasPermission('view_users')) return ['success' => false, 'message' => __('error.unauthorized')];
         
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_READ_DATA, 120, 1);
-        if (!$rl['allowed']) return ['success' => false, 'message_key' => $rl['message_key']];
+        if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
         
         $targetId = (int)($data['target_user_id'] ?? 0);
         $user = $this->userRepository->findById($targetId);
         
-        if (!$user) return ['success' => false, 'message_key' => 'admin.user_not_found'];
+        if (!$user) return ['success' => false, 'message' => __('admin.user_not_found')];
 
         $userPrefs = $this->prefsManager->ensureDefaultPreferences($targetId);
         $assignedRoles = !empty($user['assigned_roles_ids']) ? array_map('intval', explode(',', $user['assigned_roles_ids'])) : [SecurityConstants::DEFAULT_USER_ROLE_ID];
@@ -212,20 +213,20 @@ class AdminServices {
     }
 
     public function updateAvatar($data) {
-        if (!$this->hasPermission('edit_users')) return ['success' => false, 'message_key' => 'error.unauthorized'];
+        if (!$this->hasPermission('edit_users')) return ['success' => false, 'message' => __('error.unauthorized')];
         $targetId = (int)($data['target_user_id'] ?? 0);
         $user = $this->userRepository->findById($targetId);
-        if (!$user) return ['success' => false, 'message_key' => 'admin.user_not_found'];
+        if (!$user) return ['success' => false, 'message' => __('admin.user_not_found')];
 
         $authCheck = $this->canEditUser($user);
-        if (!$authCheck['allowed']) return ['success' => false, 'message_key' => $authCheck['message_key']];
+        if (!$authCheck['allowed']) return ['success' => false, 'message' => $authCheck['message']];
 
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_EDIT_AVATAR, 20, 30);
-        if (!$rl['allowed']) return ['success' => false, 'message_key' => $rl['message_key']];
+        if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
 
         $files = $data['_files'] ?? [];
         if (!isset($files['avatar'])) {
-            return ['success' => false, 'message_key' => 'upload.error'];
+            return ['success' => false, 'message' => __('upload.error')];
         }
         
         $file = $files['avatar'];
@@ -244,29 +245,29 @@ class AdminServices {
             if ($this->userRepository->updateAvatar($targetId, $newRelPath)) {
                 $currentUserId = $this->sessionManager->get('user_id');
                 $this->moderationRepository->logAction($targetId, $currentUserId, 'profile_avatar', "Avatar actualizado por el administrador", null);
-                return ['success' => true, 'message_key' => 'admin.avatar_updated', 'new_avatar' => APP_URL . '/' . ltrim($newRelPath, '/')];
+                return ['success' => true, 'message' => __('admin.avatar_updated'), 'new_avatar' => APP_URL . '/' . ltrim($newRelPath, '/')];
             }
         } else {
-            return ['success' => false, 'message_key' => $uploadResult['message_key']];
+            return ['success' => false, 'message' => __($uploadResult['message_key'])];
         }
 
-        return ['success' => false, 'message_key' => 'error.internal_server_error'];
+        return ['success' => false, 'message' => __('error.internal_server_error')];
     }
 
     public function deleteAvatar($data) {
-        if (!$this->hasPermission('edit_users')) return ['success' => false, 'message_key' => 'error.unauthorized'];
+        if (!$this->hasPermission('edit_users')) return ['success' => false, 'message' => __('error.unauthorized')];
         $targetId = (int)($data['target_user_id'] ?? 0);
         $user = $this->userRepository->findById($targetId);
-        if (!$user) return ['success' => false, 'message_key' => 'admin.user_not_found'];
+        if (!$user) return ['success' => false, 'message' => __('admin.user_not_found')];
 
         $authCheck = $this->canEditUser($user);
-        if (!$authCheck['allowed']) return ['success' => false, 'message_key' => $authCheck['message_key']];
+        if (!$authCheck['allowed']) return ['success' => false, 'message' => $authCheck['message']];
 
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_EDIT_AVATAR, 20, 30);
-        if (!$rl['allowed']) return ['success' => false, 'message_key' => $rl['message_key']];
+        if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
 
         $oldPic = $user['profile_picture'];
-        if (strpos($oldPic, '/default/') !== false) return ['success' => false, 'message_key' => 'admin.avatar_already_default'];
+        if (strpos($oldPic, '/default/') !== false) return ['success' => false, 'message' => __('admin.avatar_already_default')];
 
         Utils::deleteOldAvatar($oldPic);
 
@@ -274,66 +275,66 @@ class AdminServices {
         if ($this->userRepository->updateAvatar($targetId, $newRelPath)) {
             $currentUserId = $this->sessionManager->get('user_id');
             $this->moderationRepository->logAction($targetId, $currentUserId, 'profile_avatar', "Avatar eliminado (restaurado a predeterminado)", null);
-            return ['success' => true, 'message_key' => 'admin.avatar_deleted', 'new_avatar' => APP_URL . '/' . ltrim($newRelPath, '/')];
+            return ['success' => true, 'message' => __('admin.avatar_deleted'), 'new_avatar' => APP_URL . '/' . ltrim($newRelPath, '/')];
         }
-        return ['success' => false, 'message_key' => 'error.database'];
+        return ['success' => false, 'message' => __('error.database')];
     }
 
     public function updateUsername($data) {
-        if (!$this->hasPermission('edit_users')) return ['success' => false, 'message_key' => 'error.unauthorized'];
+        if (!$this->hasPermission('edit_users')) return ['success' => false, 'message' => __('error.unauthorized')];
         $targetId = (int)($data['target_user_id'] ?? 0);
         $user = $this->userRepository->findById($targetId);
-        if (!$user) return ['success' => false, 'message_key' => 'admin.user_not_found'];
+        if (!$user) return ['success' => false, 'message' => __('admin.user_not_found')];
 
         $authCheck = $this->canEditUser($user);
-        if (!$authCheck['allowed']) return ['success' => false, 'message_key' => $authCheck['message_key']];
+        if (!$authCheck['allowed']) return ['success' => false, 'message' => $authCheck['message']];
 
         $sudo = $this->verifyAdminSudoMode($data['password'] ?? '');
         if (!$sudo['success']) return $sudo;
         $currentUserId = $sudo['admin_id'];
 
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_EDIT_USERNAME, 20, 30);
-        if (!$rl['allowed']) return ['success' => false, 'message_key' => $rl['message_key']];
+        if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
 
         $username = Utils::sanitizeText($data['username'] ?? '');
         $minLen = $this->config['min_username_length'] ?? 3;
         $maxLen = $this->config['max_username_length'] ?? 32;
         
-        if (strlen($username) < $minLen || strlen($username) > $maxLen) return ['success' => false, 'message_key' => 'validation.invalid_length'];
+        if (strlen($username) < $minLen || strlen($username) > $maxLen) return ['success' => false, 'message' => __('validation.invalid_length')];
 
         $existingUser = $this->userRepository->findByUsername($username);
-        if ($existingUser && $existingUser['id'] != $targetId) return ['success' => false, 'message_key' => 'validation.username_in_use'];
+        if ($existingUser && $existingUser['id'] != $targetId) return ['success' => false, 'message' => __('validation.username_in_use')];
 
         $oldUsername = $user['username'];
         if ($this->userRepository->updateUsername($targetId, $username)) {
             $this->moderationRepository->logAction($targetId, $currentUserId, 'profile_username', "Nombre de usuario cambiado de '{$oldUsername}' a '{$username}'", null);
-            return ['success' => true, 'message_key' => 'admin.username_updated', 'new_username' => $username];
+            return ['success' => true, 'message' => __('admin.username_updated'), 'new_username' => $username];
         }
-        return ['success' => false, 'message_key' => 'error.update_failed'];
+        return ['success' => false, 'message' => __('error.update_failed')];
     }
 
     public function updateEmail($data) {
-        if (!$this->hasPermission('edit_users')) return ['success' => false, 'message_key' => 'error.unauthorized'];
+        if (!$this->hasPermission('edit_users')) return ['success' => false, 'message' => __('error.unauthorized')];
         $targetId = (int)($data['target_user_id'] ?? 0);
         $user = $this->userRepository->findById($targetId);
-        if (!$user) return ['success' => false, 'message_key' => 'admin.user_not_found'];
+        if (!$user) return ['success' => false, 'message' => __('admin.user_not_found')];
 
         $authCheck = $this->canEditUser($user);
-        if (!$authCheck['allowed']) return ['success' => false, 'message_key' => $authCheck['message_key']];
+        if (!$authCheck['allowed']) return ['success' => false, 'message' => $authCheck['message']];
 
         $sudo = $this->verifyAdminSudoMode($data['password'] ?? '');
         if (!$sudo['success']) return $sudo;
         $currentUserId = $sudo['admin_id'];
 
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_EDIT_EMAIL, 20, 30);
-        if (!$rl['allowed']) return ['success' => false, 'message_key' => $rl['message_key']];
+        if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
 
         $email = trim($data['email'] ?? '');
         $emailValidation = Utils::validateEmailFormat($email);
-        if (!$emailValidation['valid']) return ['success' => false, 'message_key' => 'validation.invalid_email'];
+        if (!$emailValidation['valid']) return ['success' => false, 'message' => __('validation.invalid_email')];
 
         $existingUser = $this->userRepository->findByEmail($email);
-        if ($existingUser && $existingUser['id'] != $targetId) return ['success' => false, 'message_key' => 'validation.email_in_use'];
+        if ($existingUser && $existingUser['id'] != $targetId) return ['success' => false, 'message' => __('validation.email_in_use')];
 
         $oldEmail = $user['email'];
         if ($this->userRepository->updateEmail($targetId, $email)) {
@@ -342,89 +343,90 @@ class AdminServices {
             $mailer = new Mailer();
             $mailer->sendSecurityAlertEmailChanged($oldEmail, $user['username'], $email);
 
-            return ['success' => true, 'message_key' => 'admin.email_updated', 'new_email' => $email];
+            return ['success' => true, 'message' => __('admin.email_updated'), 'new_email' => $email];
         }
-        return ['success' => false, 'message_key' => 'error.update_failed'];
+        return ['success' => false, 'message' => __('error.update_failed')];
     }
 
     public function updatePreference($data) {
-        if (!$this->hasPermission('edit_users')) return ['success' => false, 'message_key' => 'error.unauthorized'];
+        if (!$this->hasPermission('edit_users')) return ['success' => false, 'message' => __('error.unauthorized')];
         $targetId = (int)($data['target_user_id'] ?? 0);
         $user = $this->userRepository->findById($targetId);
-        if (!$user) return ['success' => false, 'message_key' => 'admin.user_not_found'];
+        if (!$user) return ['success' => false, 'message' => __('admin.user_not_found')];
 
         $authCheck = $this->canEditUser($user);
-        if (!$authCheck['allowed']) return ['success' => false, 'message_key' => $authCheck['message_key']];
+        if (!$authCheck['allowed']) return ['success' => false, 'message' => $authCheck['message']];
 
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_EDIT_PREFS, 50, 30);
-        if (!$rl['allowed']) return ['success' => false, 'message_key' => $rl['message_key']];
+        if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
 
         $key = $data['key'] ?? '';
         $value = $data['value'] ?? '';
 
-        if (!in_array($key, DB::ALLOWED_PREF_KEYS)) return ['success' => false, 'message_key' => 'validation.invalid_preference'];
+        if (!in_array($key, DB::ALLOWED_PREF_KEYS)) return ['success' => false, 'message' => __('validation.invalid_preference')];
         if ($key === 'open_links_new_tab' || $key === 'extended_alerts') $value = ($value == 1) ? 1 : 0;
 
         if ($this->userRepository->updatePreference($targetId, $key, $value)) {
             $currentUserId = $this->sessionManager->get('user_id');
             $valStr = is_bool($value) ? ($value ? 'true' : 'false') : (string)$value;
             $this->moderationRepository->logAction($targetId, $currentUserId, 'profile_preferences', "Preferencia '{$key}' actualizada a '{$valStr}'", null);
-            return ['success' => true, 'message_key' => 'admin.preference_updated'];
+            return ['success' => true, 'message' => __('admin.preference_updated')];
         }
         
-        return ['success' => false, 'message_key' => 'error.update_failed'];
+        return ['success' => false, 'message' => __('error.update_failed')];
     }
 
     public function updateRoles($data) {
-        if (!$this->hasPermission('assign_roles')) return ['success' => false, 'message_key' => 'error.unauthorized'];
+        if (!$this->hasPermission('assign_roles')) return ['success' => false, 'message' => __('error.unauthorized')];
 
         $targetId = (int)($data['target_user_id'] ?? 0);
         $rolesIds = $data['roles'] ?? [];
 
-        if (!is_array($rolesIds) || empty($rolesIds)) return ['success' => false, 'message_key' => 'validation.invalid_role'];
+        if (!is_array($rolesIds) || empty($rolesIds)) return ['success' => false, 'message' => __('validation.invalid_role')];
 
         $user = $this->userRepository->findById($targetId);
-        if (!$user) return ['success' => false, 'message_key' => 'admin.user_not_found'];
+        if (!$user) return ['success' => false, 'message' => __('admin.user_not_found')];
 
         $authCheck = $this->canEditUser($user);
-        if (!$authCheck['allowed']) return ['success' => false, 'message_key' => $authCheck['message_key']];
+        if (!$authCheck['allowed']) return ['success' => false, 'message' => $authCheck['message']];
 
         $sudo = $this->verifyAdminSudoMode($data['password'] ?? '');
         if (!$sudo['success']) return $sudo;
         $currentUserId = $sudo['admin_id'];
 
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_EDIT_ROLE, 10, 30);
-        if (!$rl['allowed']) return ['success' => false, 'message_key' => $rl['message_key']];
+        if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
 
         $currentWeight = $this->getCurrentAdminWeight();
 
         try {
             if ($this->roleRepository->syncUserRoles($targetId, $rolesIds, $currentWeight)) {
                 $rolesStr = implode(', ', $rolesIds);
-                Logger::critical("Admin_updated_user_roles", ['admin_id' => $currentUserId, 'target_user_id' => $targetId, 'new_roles' => $rolesIds]);
+                Logger::info("[INFO] Admin updated user roles", ['admin_id' => $currentUserId, 'target_user_id' => $targetId, 'new_roles' => $rolesIds]);
                 
                 $this->moderationRepository->logAction($targetId, $currentUserId, 'role_changed', "Roles actualizados a IDs: [{$rolesStr}]", null, null);
                 
                 Utils::invalidateUserSessions($this->sessionManager, $targetId);
                 
-                return ['success' => true, 'message_key' => 'admin.role_updated'];
+                return ['success' => true, 'message' => __('admin.role_updated')];
             }
         } catch (\Exception $e) {
+            Logger::error("[ERROR] Update roles failed: " . $e->getMessage());
             if (strpos($e->getMessage(), 'Security Violation') !== false) {
-                return ['success' => false, 'message_key' => 'admin.hierarchical_restriction'];
+                return ['success' => false, 'message' => __('admin.hierarchical_restriction')];
             }
         }
         
-        return ['success' => false, 'message_key' => 'error.update_failed'];
+        return ['success' => false, 'message' => __('error.update_failed')];
     }
 
     public function deleteUsers($data) {
-        if (!$this->hasPermission('delete_users')) return ['success' => false, 'message_key' => 'error.unauthorized'];
+        if (!$this->hasPermission('delete_users')) return ['success' => false, 'message' => __('error.unauthorized')];
 
         $userIds = $data['user_ids'] ?? [];
         
         if (!is_array($userIds) || empty($userIds)) {
-            return ['success' => false, 'message_key' => 'validation.invalid_data'];
+            return ['success' => false, 'message' => __('validation.invalid_data')];
         }
 
         $sudo = $this->verifyAdminSudoMode($data['password'] ?? '');
@@ -432,7 +434,7 @@ class AdminServices {
         $currentUserId = $sudo['admin_id'];
 
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_DELETE_USER, 20, 30);
-        if (!$rl['allowed']) return ['success' => false, 'message_key' => $rl['message_key']];
+        if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
 
         $deletedReason = 'account_deleted_by_admin';
         $successCount = 0;
@@ -473,38 +475,38 @@ class AdminServices {
             }
 
             if ($successCount === 0) {
-                 return ['success' => false, 'message_key' => 'admin.no_users_deleted', 'deleted_count' => 0, 'failed_count' => $failedCount];
+                 return ['success' => false, 'message' => __('admin.no_users_deleted'), 'deleted_count' => 0, 'failed_count' => $failedCount];
             }
 
             return [
                 'success' => true, 
-                'message_key' => 'admin.account_deleted',
+                'message' => __('admin.account_deleted'),
                 'deleted_count' => $successCount,
                 'failed_count' => $failedCount
             ];
         } catch (\Exception $e) {
-            Logger::error("Error_connecting_to_Redis_for_bulk_account_deletion_job", ['exception' => $e]);
-            return ['success' => false, 'message_key' => 'error.redis_communication'];
+            Logger::error("[ERROR] Redis communication failed during bulk user deletion: " . $e->getMessage());
+            return ['success' => false, 'message' => __('error.redis_communication')];
         }
     }
 
     public function updateSuspension($data) {
-        if (!$this->hasPermission('moderate_users')) return ['success' => false, 'message_key' => 'error.unauthorized'];
+        if (!$this->hasPermission('moderate_users')) return ['success' => false, 'message' => __('error.unauthorized')];
 
         $targetId = (int)($data['target_user_id'] ?? 0);
         
         $user = $this->userRepository->findById($targetId);
-        if (!$user) return ['success' => false, 'message_key' => 'admin.user_not_found'];
+        if (!$user) return ['success' => false, 'message' => __('admin.user_not_found')];
 
         $authCheck = $this->canEditUser($user);
-        if (!$authCheck['allowed']) return ['success' => false, 'message_key' => $authCheck['message_key']];
+        if (!$authCheck['allowed']) return ['success' => false, 'message' => $authCheck['message']];
 
         $sudo = $this->verifyAdminSudoMode($data['password'] ?? '');
         if (!$sudo['success']) return $sudo;
         $currentUserId = $sudo['admin_id'];
 
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_EDIT_STATUS, 20, 30);
-        if (!$rl['allowed']) return ['success' => false, 'message_key' => $rl['message_key']];
+        if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
 
         $dbIsSuspended = (isset($data['is_suspended']) && $data['is_suspended'] == 1) ? 1 : 0;
         $dbSuspensionType = null;
@@ -517,13 +519,13 @@ class AdminServices {
             $rawSuspensionReason = $data['suspension_reason'] ?? null;
             $dbSuspensionReason = Utils::sanitizeText($rawSuspensionReason);
 
-            if ($dbSuspensionReason && mb_strlen($dbSuspensionReason) > 500) return ['success' => false, 'message_key' => 'validation.reason_too_long'];
+            if ($dbSuspensionReason && mb_strlen($dbSuspensionReason) > 500) return ['success' => false, 'message' => __('validation.reason_too_long')];
             
             if ($dbSuspensionType === DB::SUSPENSION_TEMP && !empty($data['end_date'])) {
                 $format = 'Y-m-d H:i:s';
                 $d = \DateTime::createFromFormat($format, $data['end_date']);
-                if (!$d || $d->format($format) !== $data['end_date']) return ['success' => false, 'message_key' => 'validation.invalid_date'];
-                if ($d->getTimestamp() <= time()) return ['success' => false, 'message_key' => 'validation.date_in_past'];
+                if (!$d || $d->format($format) !== $data['end_date']) return ['success' => false, 'message' => __('validation.invalid_date')];
+                if ($d->getTimestamp() <= time()) return ['success' => false, 'message' => __('validation.date_in_past')];
                 $dbEndDate = $data['end_date'];
             }
         }
@@ -557,23 +559,23 @@ class AdminServices {
                     $mailer->sendAccountStatusNotification($user['email'], $user['username'], 'suspended', $dbSuspensionReason, $dbEndDate);
                 }
             }
-            return ['success' => true, 'message_key' => 'admin.status_updated'];
+            return ['success' => true, 'message' => __('admin.status_updated')];
         }
         
-        return ['success' => false, 'message_key' => 'error.update_failed'];
+        return ['success' => false, 'message' => __('error.update_failed')];
     }
 
     public function getModerationKardex($data) {
-        if (!$this->hasPermission('view_kardex')) return ['success' => false, 'message_key' => 'error.unauthorized'];
+        if (!$this->hasPermission('view_kardex')) return ['success' => false, 'message' => __('error.unauthorized')];
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_READ_DATA, 120, 1);
-        if (!$rl['allowed']) return ['success' => false, 'message_key' => $rl['message_key']];
+        if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
         
         $targetId = (int)($data['target_user_id'] ?? 0);
         $page = max(1, (int)($data['page'] ?? 1));
         $limit = max(1, (int)($data['limit'] ?? 10));
 
         $user = $this->userRepository->findById($targetId);
-        if (!$user) return ['success' => false, 'message_key' => 'admin.user_not_found'];
+        if (!$user) return ['success' => false, 'message' => __('admin.user_not_found')];
 
         $modLogs = $this->moderationRepository->getKardex($targetId);
         
@@ -622,11 +624,11 @@ class AdminServices {
         if ($angle > 360) $angle = 360;
 
         if (!in_array($type, ['solid', 'gradient'])) {
-            return ['valid' => false, 'message_key' => 'validation.invalid_color_type'];
+            return ['valid' => false, 'message' => __('validation.invalid_color_type')];
         }
 
         if (!is_array($rawColors) || empty($rawColors)) {
-            return ['valid' => false, 'message_key' => 'validation.invalid_color'];
+            return ['valid' => false, 'message' => __('validation.invalid_color')];
         }
 
         $validColors = [];
@@ -653,17 +655,17 @@ class AdminServices {
         }
 
         if (empty($validColors)) {
-            return ['valid' => false, 'message_key' => 'validation.invalid_color'];
+            return ['valid' => false, 'message' => __('validation.invalid_color')];
         }
 
         if ($type === 'solid') {
             $validColors = [['hex' => $validColors[0]['hex'], 'percentage' => 100]]; 
         } elseif ($type === 'gradient') {
             if (count($validColors) < 2) {
-                return ['valid' => false, 'message_key' => 'validation.gradient_requires_multiple_colors'];
+                return ['valid' => false, 'message' => __('validation.gradient_requires_multiple_colors')];
             }
             if ($totalPercentage !== 100) {
-                return ['valid' => false, 'message_key' => 'validation.invalid_percentage_sum'];
+                return ['valid' => false, 'message' => __('validation.invalid_percentage_sum')];
             }
         }
 
@@ -672,50 +674,50 @@ class AdminServices {
     }
 
     public function getRoles() {
-        if (!$this->hasPermission('view_roles')) return ['success' => false, 'message_key' => 'error.unauthorized'];
+        if (!$this->hasPermission('view_roles')) return ['success' => false, 'message' => __('error.unauthorized')];
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_READ_DATA, 120, 1);
-        if (!$rl['allowed']) return ['success' => false, 'message_key' => $rl['message_key']];
+        if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
         
         return ['success' => true, 'roles' => $this->roleRepository->getAll()];
     }
 
     public function createRole($data) {
-        if (!$this->hasPermission('manage_roles_structure')) return ['success' => false, 'message_key' => 'error.unauthorized'];
+        if (!$this->hasPermission('manage_roles_structure')) return ['success' => false, 'message' => __('error.unauthorized')];
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_EDIT_ROLE, 20, 30);
-        if (!$rl['allowed']) return ['success' => false, 'message_key' => $rl['message_key']];
+        if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
 
         $name = Utils::sanitizeText($data['name'] ?? '');
         $weight = max(1, (int)($data['weight'] ?? 1)); 
         $currentWeight = $this->getCurrentAdminWeight();
 
         if ($currentWeight < SecurityConstants::WEIGHT_SUPER_ADMIN && $weight >= $currentWeight) {
-            return ['success' => false, 'message_key' => 'admin.hierarchical_restriction'];
+            return ['success' => false, 'message' => __('admin.hierarchical_restriction')];
         }
 
-        if (strlen($name) < 2 || strlen($name) > 50) return ['success' => false, 'message_key' => 'validation.invalid_length'];
+        if (strlen($name) < 2 || strlen($name) > 50) return ['success' => false, 'message' => __('validation.invalid_length')];
 
         $colorCheck = $this->validateAndFormatRoleColor($data);
-        if (!$colorCheck['valid']) return ['success' => false, 'message_key' => $colorCheck['message_key']];
+        if (!$colorCheck['valid']) return ['success' => false, 'message' => $colorCheck['message']];
 
-        if ($this->roleRepository->findByName($name)) return ['success' => false, 'message_key' => 'validation.role_exists'];
+        if ($this->roleRepository->findByName($name)) return ['success' => false, 'message' => __('validation.role_exists')];
 
         if ($this->roleRepository->create($name, $colorCheck['color_string'], $weight)) {
-            return ['success' => true, 'message_key' => 'admin.role_created'];
+            return ['success' => true, 'message' => __('admin.role_created')];
         }
 
-        return ['success' => false, 'message_key' => 'error.database'];
+        return ['success' => false, 'message' => __('error.database')];
     }
 
     public function editRole($data) {
-        if (!$this->hasPermission('manage_roles_structure')) return ['success' => false, 'message_key' => 'error.unauthorized'];
+        if (!$this->hasPermission('manage_roles_structure')) return ['success' => false, 'message' => __('error.unauthorized')];
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_EDIT_ROLE, 20, 30);
-        if (!$rl['allowed']) return ['success' => false, 'message_key' => $rl['message_key']];
+        if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
 
         $id = (int)($data['id'] ?? 0);
-        if ($id <= 0) return ['success' => false, 'message_key' => 'validation.invalid_data'];
+        if ($id <= 0) return ['success' => false, 'message' => __('validation.invalid_data')];
 
         $existingById = $this->roleRepository->findById($id);
-        if (!$existingById) return ['success' => false, 'message_key' => 'admin.role_not_found'];
+        if (!$existingById) return ['success' => false, 'message' => __('admin.role_not_found')];
 
         $currentWeight = $this->getCurrentAdminWeight();
         $isSystemRole = (isset($existingById['is_system']) ? (int)$existingById['is_system'] === 1 : $id <= SecurityConstants::MAX_SYSTEM_ROLE_ID);
@@ -728,92 +730,94 @@ class AdminServices {
             $weight = max(1, (int)($data['weight'] ?? 1));
 
             if ($currentWeight < SecurityConstants::WEIGHT_SUPER_ADMIN && $weight >= $currentWeight) {
-                return ['success' => false, 'message_key' => 'admin.hierarchical_restriction'];
+                return ['success' => false, 'message' => __('admin.hierarchical_restriction')];
             }
 
-            if (strlen($name) < 2 || strlen($name) > 50) return ['success' => false, 'message_key' => 'validation.invalid_length'];
+            if (strlen($name) < 2 || strlen($name) > 50) return ['success' => false, 'message' => __('validation.invalid_length')];
             
             $existingByName = $this->roleRepository->findByName($name);
-            if ($existingByName && $existingByName['id'] !== $id) return ['success' => false, 'message_key' => 'validation.role_exists'];
+            if ($existingByName && $existingByName['id'] !== $id) return ['success' => false, 'message' => __('validation.role_exists')];
         }
 
         $colorCheck = $this->validateAndFormatRoleColor($data);
-        if (!$colorCheck['valid']) return ['success' => false, 'message_key' => $colorCheck['message_key']];
+        if (!$colorCheck['valid']) return ['success' => false, 'message' => $colorCheck['message']];
 
         try {
             if ($this->roleRepository->update($id, $name, $colorCheck['color_string'], $weight, $currentWeight)) {
-                return ['success' => true, 'message_key' => 'admin.role_updated'];
+                return ['success' => true, 'message' => __('admin.role_updated')];
             }
         } catch (\Exception $e) {
+            Logger::error("[ERROR] Edit role failed: " . $e->getMessage());
             if (strpos($e->getMessage(), 'Security Violation') !== false) {
-                return ['success' => false, 'message_key' => 'error.unauthorized', 'http_code' => 403];
+                return ['success' => false, 'message' => __('error.unauthorized'), 'http_code' => 403];
             }
         }
 
-        return ['success' => false, 'message_key' => 'error.update_failed'];
+        return ['success' => false, 'message' => __('error.update_failed')];
     }
 
     public function deleteRole($data) {
-        if (!$this->hasPermission('manage_roles_structure')) return ['success' => false, 'message_key' => 'error.unauthorized'];
+        if (!$this->hasPermission('manage_roles_structure')) return ['success' => false, 'message' => __('error.unauthorized')];
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_EDIT_ROLE, 20, 30);
-        if (!$rl['allowed']) return ['success' => false, 'message_key' => $rl['message_key']];
+        if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
 
         $id = (int)($data['id'] ?? 0);
-        if ($id <= 0) return ['success' => false, 'message_key' => 'validation.invalid_data'];
+        if ($id <= 0) return ['success' => false, 'message' => __('validation.invalid_data')];
 
         $existingById = $this->roleRepository->findById($id);
-        if (!$existingById) return ['success' => false, 'message_key' => 'admin.role_not_found'];
+        if (!$existingById) return ['success' => false, 'message' => __('admin.role_not_found')];
 
         $isSystemRole = (isset($existingById['is_system']) ? (int)$existingById['is_system'] === 1 : $id <= SecurityConstants::MAX_SYSTEM_ROLE_ID);
         if ($isSystemRole) {
-            return ['success' => false, 'message_key' => 'admin.cannot_delete_base_role', 'http_code' => 403];
+            return ['success' => false, 'message' => __('admin.cannot_delete_base_role'), 'http_code' => 403];
         }
 
         $currentWeight = $this->getCurrentAdminWeight();
 
         try {
             if ($this->roleRepository->delete($id, $currentWeight)) {
-                return ['success' => true, 'message_key' => 'admin.role_deleted'];
+                return ['success' => true, 'message' => __('admin.role_deleted')];
             }
         } catch (\Exception $e) {
+            Logger::error("[ERROR] Delete role failed: " . $e->getMessage());
             if (strpos($e->getMessage(), 'Security Violation') !== false) {
-                return ['success' => false, 'message_key' => 'error.unauthorized', 'http_code' => 403];
+                return ['success' => false, 'message' => __('error.unauthorized'), 'http_code' => 403];
             }
         }
 
-        return ['success' => false, 'message_key' => 'error.database'];
+        return ['success' => false, 'message' => __('error.database')];
     }
 
     public function getPermissionsList() {
-        if ($this->getCurrentAdminWeight() < SecurityConstants::WEIGHT_SUPER_ADMIN) return ['success' => false, 'message_key' => 'error.unauthorized'];
+        if ($this->getCurrentAdminWeight() < SecurityConstants::WEIGHT_SUPER_ADMIN) return ['success' => false, 'message' => __('error.unauthorized')];
         return ['success' => true, 'permissions' => $this->roleRepository->getAllPermissions()];
     }
 
     public function getRolePermissions($data) {
-        if ($this->getCurrentAdminWeight() < SecurityConstants::WEIGHT_SUPER_ADMIN) return ['success' => false, 'message_key' => 'error.unauthorized'];
+        if ($this->getCurrentAdminWeight() < SecurityConstants::WEIGHT_SUPER_ADMIN) return ['success' => false, 'message' => __('error.unauthorized')];
         
         $roleId = (int)($data['id'] ?? 0);
-        if ($roleId <= 0) return ['success' => false, 'message_key' => 'validation.invalid_data'];
+        if ($roleId <= 0) return ['success' => false, 'message' => __('validation.invalid_data')];
 
         return ['success' => true, 'permissions' => $this->roleRepository->getRolePermissions($roleId)];
     }
 
     public function updateRolePermissions($data) {
-        if (!$this->hasPermission('manage_roles_structure')) return ['success' => false, 'message_key' => 'error.unauthorized'];
+        if (!$this->hasPermission('manage_roles_structure')) return ['success' => false, 'message' => __('error.unauthorized')];
         
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_EDIT_ROLE, 20, 30);
-        if (!$rl['allowed']) return ['success' => false, 'message_key' => $rl['message_key']];
+        if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
 
         $roleId = (int)($data['id'] ?? 0);
         $permissionsArray = $data['permissions'] ?? [];
 
-        if ($roleId <= 0 || !is_array($permissionsArray)) return ['success' => false, 'message_key' => 'validation.invalid_data'];
+        if ($roleId <= 0 || !is_array($permissionsArray)) return ['success' => false, 'message' => __('validation.invalid_data')];
 
         $targetRole = $this->roleRepository->findById($roleId);
-        if (!$targetRole) return ['success' => false, 'message_key' => 'admin.role_not_found'];
+        if (!$targetRole) return ['success' => false, 'message' => __('admin.role_not_found')];
         
         if ($targetRole['weight'] >= SecurityConstants::WEIGHT_SUPER_ADMIN) {
-            return ['success' => false, 'message_key' => 'admin.cannot_edit_superadmin_permissions'];
+            return ['success' => false, 'message' => __('admin.cannot_edit_superadmin_permissions')];
         }
 
         $currentWeight = $this->getCurrentAdminWeight();
@@ -830,33 +834,34 @@ class AdminServices {
 
         if ($attemptingToGrantCritical) {
             if ($currentWeight < SecurityConstants::WEIGHT_SUPER_ADMIN) {
-                return ['success' => false, 'message_key' => 'admin.insufficient_privileges_to_grant_critical', 'http_code' => 403];
+                return ['success' => false, 'message' => __('admin.insufficient_privileges_to_grant_critical'), 'http_code' => 403];
             }
             if ((int)$targetRole['weight'] < SecurityConstants::WEIGHT_CRITICAL_ROLE_MIN) {
-                return ['success' => false, 'message_key' => 'admin.role_weight_too_low_for_critical', 'http_code' => 403];
+                return ['success' => false, 'message' => __('admin.role_weight_too_low_for_critical'), 'http_code' => 403];
             }
         }
 
         try {
             if ($this->roleRepository->assignPermissionsToRole($roleId, $permissionsArray, $currentWeight)) {
-                return ['success' => true, 'message_key' => 'admin.role_permissions_updated'];
+                return ['success' => true, 'message' => __('admin.role_permissions_updated')];
             }
         } catch (\Exception $e) {
+            Logger::error("[ERROR] Update role permissions failed: " . $e->getMessage());
             if (strpos($e->getMessage(), 'Security Violation') !== false) {
-                return ['success' => false, 'message_key' => 'error.unauthorized', 'http_code' => 403];
+                return ['success' => false, 'message' => __('error.unauthorized'), 'http_code' => 403];
             }
         }
 
-        return ['success' => false, 'message_key' => 'error.update_failed'];
+        return ['success' => false, 'message' => __('error.update_failed')];
     }
 
     public function getServerConfig() {
-        if (!$this->hasPermission('manage_server_config')) return ['success' => false, 'message_key' => 'error.unauthorized'];
+        if (!$this->hasPermission('manage_server_config')) return ['success' => false, 'message' => __('error.unauthorized')];
         return ['success' => true, 'config' => $this->configRepository->getConfig()];
     }
 
     public function updateServerConfig($data) {
-        if (!$this->hasPermission('manage_server_config')) return ['success' => false, 'message_key' => 'error.unauthorized'];
+        if (!$this->hasPermission('manage_server_config')) return ['success' => false, 'message' => __('error.unauthorized')];
 
         $sudo = $this->verifyAdminSudoMode($data['password'] ?? '');
         if (!$sudo['success']) return $sudo;
@@ -892,23 +897,23 @@ class AdminServices {
             }
         }
 
-        if (empty($updateData)) return ['success' => false, 'message_key' => 'validation.invalid_data'];
+        if (empty($updateData)) return ['success' => false, 'message' => __('validation.invalid_data')];
 
         if ($this->configRepository->updateConfig($updateData)) {
-            return ['success' => true, 'message_key' => 'admin.config_updated'];
+            return ['success' => true, 'message' => __('admin.config_updated')];
         }
-        return ['success' => false, 'message_key' => 'error.update_failed'];
+        return ['success' => false, 'message' => __('error.update_failed')];
     }
 
     private function _executeMaintenanceDeletion($password, $rateLimitKey, $patterns, $successMessageKey) {
         $currentUserId = $this->sessionManager->get('user_id');
 
         $rl = $this->applyAdminRateLimit($rateLimitKey, 5, 5);
-        if (!$rl['allowed']) return ['success' => false, 'message_key' => 'error.unauthorized'];
+        if (!$rl['allowed']) return ['success' => false, 'message' => __('error.unauthorized')];
 
         $adminData = $this->userRepository->findById($currentUserId);
         if (!$adminData || !password_verify($password, $adminData['password'])) {
-            return ['success' => false, 'message_key' => 'auth.incorrect_password'];
+            return ['success' => false, 'message' => __('auth.incorrect_password')];
         }
 
         try {
@@ -934,33 +939,34 @@ class AdminServices {
                 } while ($cursor !== '0');
             }
             
-            return ['success' => true, 'message_key' => $successMessageKey, 'deleted_count' => $totalDeleted];
+            return ['success' => true, 'message' => __($successMessageKey), 'deleted_count' => $totalDeleted];
         } catch (\Exception $e) {
-            return ['success' => false, 'message_key' => 'error.redis_communication'];
+            Logger::error("[ERROR] Redis deletion failed: " . $e->getMessage());
+            return ['success' => false, 'message' => __('error.redis_communication')];
         }
     }
 
     public function flushSessions($data) {
-        if (!$this->hasPermission('perform_system_maintenance')) return ['success' => false, 'message_key' => 'error.unauthorized'];
+        if (!$this->hasPermission('perform_system_maintenance')) return ['success' => false, 'message' => __('error.unauthorized')];
         $patterns = [CacheConstants::PREFIX_PHPSESSID . '*', CacheConstants::PREFIX_USER_SESSIONS . '*'];
         return $this->_executeMaintenanceDeletion($data['password'] ?? '', RateLimitConstants::KEY_ADM_FLUSH_SESSIONS, $patterns, 'admin.maintenance_sessions_flushed');
     }
 
     public function clearSystemCache($data) {
-        if (!$this->hasPermission('perform_system_maintenance')) return ['success' => false, 'message_key' => 'error.unauthorized'];
+        if (!$this->hasPermission('perform_system_maintenance')) return ['success' => false, 'message' => __('error.unauthorized')];
         $patterns = [CacheConstants::PATTERN_CACHE, CacheConstants::PATTERN_PR_CACHE];
         return $this->_executeMaintenanceDeletion($data['password'] ?? '', RateLimitConstants::KEY_ADM_REDIS_DELETE, $patterns, 'admin.maintenance_cache_cleared');
     }
 
     public function resetRateLimits($data) {
-        if (!$this->hasPermission('perform_system_maintenance')) return ['success' => false, 'message_key' => 'error.unauthorized'];
+        if (!$this->hasPermission('perform_system_maintenance')) return ['success' => false, 'message' => __('error.unauthorized')];
         $patterns = [CacheConstants::PREFIX_RATE_LIMIT . '*', '*_attempts*', 'login_*', 'register_*'];
         return $this->_executeMaintenanceDeletion($data['password'] ?? '', RateLimitConstants::KEY_ADM_REDIS_DELETE, $patterns, 'admin.maintenance_rate_limits_reset');
     }
 
     public function togglePanicMode($data) {
         if (!$this->hasPermission('perform_system_maintenance')) {
-            return ['success' => false, 'message_key' => 'error.unauthorized'];
+            return ['success' => false, 'message' => __('error.unauthorized')];
         }
 
         $isActive = filter_var($data['is_active'] ?? false, FILTER_VALIDATE_BOOLEAN);
@@ -970,25 +976,25 @@ class AdminServices {
         $currentUserId = $sudo['admin_id'];
 
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_TOGGLE_PANIC, 5, 5);
-        if (!$rl['allowed']) return ['success' => false, 'message_key' => $rl['message_key']];
+        if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
 
         try {
             $redis = Utils::getRedisClient();
 
             if ($isActive) {
                 $redis->set(CacheConstants::KEY_SYSTEM_PANIC_MODE, '1');
-                Logger::critical("SYSTEM_PANIC_MODE_ACTIVATED", ['admin_id' => $currentUserId]);
+                Logger::info("[INFO] System panic mode activated by admin", ['admin_id' => $currentUserId]);
                 $messageKey = 'admin.panic_mode_activated';
             } else {
                 $redis->del(CacheConstants::KEY_SYSTEM_PANIC_MODE);
-                Logger::info("SYSTEM_PANIC_MODE_DEACTIVATED", ['admin_id' => $currentUserId]);
+                Logger::info("[INFO] System panic mode deactivated by admin", ['admin_id' => $currentUserId]);
                 $messageKey = 'admin.panic_mode_deactivated';
             }
 
-            return ['success' => true, 'message_key' => $messageKey, 'is_active' => $isActive];
+            return ['success' => true, 'message' => __($messageKey), 'is_active' => $isActive];
         } catch (\Exception $e) {
-            Logger::error("Error_toggling_panic_mode_via_Redis", ['exception' => $e->getMessage()]);
-            return ['success' => false, 'message_key' => 'error.redis_communication'];
+            Logger::error("[ERROR] Redis communication failed during panic mode toggle: " . $e->getMessage());
+            return ['success' => false, 'message' => __('error.redis_communication')];
         }
     }
 
@@ -1003,12 +1009,12 @@ class AdminServices {
 
     public function createBackup($data = []) {
         if (!$this->hasPermission('create_backups')) {
-            return ['success' => false, 'message_key' => 'error.unauthorized'];
+            return ['success' => false, 'message' => __('error.unauthorized')];
         }
 
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_BACKUP_CREATE, 5, 30);
         if (!$rl['allowed']) {
-            return ['success' => false, 'message_key' => $rl['message_key']];
+            return ['success' => false, 'message' => $rl['message']];
         }
         
         $modules = $data['modules'] ?? ['db' => true, 'avatars_uploaded' => false, 'avatars_default' => false];
@@ -1018,7 +1024,7 @@ class AdminServices {
 
     public function getBackupSchema() {
         if (!$this->hasPermission('create_backups')) {
-            return ['success' => false, 'message_key' => 'error.unauthorized'];
+            return ['success' => false, 'message' => __('error.unauthorized')];
         }
         try {
             $dbManager = new DatabaseManager();
@@ -1033,69 +1039,71 @@ class AdminServices {
             }
             return ['success' => true, 'schema' => $schema];
         } catch (\Exception $e) {
-            return ['success' => false, 'message_key' => 'error.database'];
+            Logger::error("[ERROR] Get backup schema failed: " . $e->getMessage());
+            return ['success' => false, 'message' => __('error.database')];
         }
     }
 
     public function createCustomBackup($data) {
         if (!$this->hasPermission('create_backups')) {
-            return ['success' => false, 'message_key' => 'error.unauthorized'];
+            return ['success' => false, 'message' => __('error.unauthorized')];
         }
         
         $schema = $data['schema'] ?? null;
         $modules = $data['modules'] ?? ['db' => true, 'avatars_uploaded' => false, 'avatars_default' => false];
 
         if (!$schema || !is_array($schema)) {
-            return ['success' => false, 'message_key' => 'validation.invalid_data'];
+            return ['success' => false, 'message' => __('validation.invalid_data')];
         }
 
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_BACKUP_CREATE, 5, 30);
-        if (!$rl['allowed']) return ['success' => false, 'message_key' => $rl['message_key']];
+        if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
         
         return $this->dispatchBackupJob('manual_custom', $modules, $schema);
     }
 
     public function backupStatus($data) {
         if (!$this->hasPermission('create_backups') && !$this->hasPermission('restore_backups')) {
-            return ['success' => false, 'message_key' => 'error.unauthorized'];
+            return ['success' => false, 'message' => __('error.unauthorized')];
         }
 
         $jobId = $data['job_id'] ?? '';
-        if (empty($jobId)) return ['success' => false, 'message_key' => 'validation.missing_job_id'];
+        if (empty($jobId)) return ['success' => false, 'message' => __('validation.missing_job_id')];
 
         try {
             $redis = Utils::getRedisClient();
 
             $jobKey = CacheConstants::PREFIX_BACKUP_JOB . $jobId;
             if (!$redis->exists($jobKey)) {
-                return ['success' => false, 'status' => 'not_found', 'message_key' => 'admin.backup_job_not_found'];
+                return ['success' => false, 'status' => 'not_found', 'message' => __('admin.backup_job_not_found')];
             }
 
             $statusData = $redis->hgetall($jobKey);
             return ['success' => true, 'status' => $statusData['status'] ?? 'unknown', 'job_message' => $statusData['message'] ?? ''];
         } catch (\Exception $e) {
-            return ['success' => false, 'message_key' => 'error.redis_communication'];
+            Logger::error("[ERROR] Get backup status failed: " . $e->getMessage());
+            return ['success' => false, 'message' => __('error.redis_communication')];
         }
     }
 
     public function restoreBackup($data) {
-        if (!$this->hasPermission('restore_backups')) return ['success' => false, 'message_key' => 'error.unauthorized'];
+        if (!$this->hasPermission('restore_backups')) return ['success' => false, 'message' => __('error.unauthorized')];
         
         $sudo = $this->verifyAdminSudoMode($data['password'] ?? '');
         if (!$sudo['success']) return $sudo;
         $currentUserId = $sudo['admin_id'];
 
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_BACKUP_RESTORE, 3, 30);
-        if (!$rl['allowed']) return ['success' => false, 'message_key' => $rl['message_key']];
+        if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
 
         $backupId = $data['backup_id'] ?? '';
-        if (empty($backupId)) return ['success' => false, 'message_key' => 'validation.invalid_backup_id'];
+        if (empty($backupId)) return ['success' => false, 'message' => __('validation.invalid_backup_id')];
         
         $filename = basename(base64_decode($backupId));
         $filepath = $this->getBackupDir() . $filename;
         
         if (!file_exists($filepath) || pathinfo($filename, PATHINFO_EXTENSION) !== 'enc') {
-            return ['success' => false, 'message_key' => 'admin.backup_file_missing'];
+            return ['success' => false, 'message' => __('admin.backup_file_missing')];
         }
 
         try {
@@ -1103,7 +1111,7 @@ class AdminServices {
 
             $lockAcquired = $redis->set(CacheConstants::PREFIX_LOCK_BACKUP, '1', 'EX', 1800, 'NX');
             if (!$lockAcquired) {
-                return ['success' => false, 'message_key' => 'error.backup_in_progress'];
+                return ['success' => false, 'message' => __('error.backup_in_progress')];
             }
 
             Utils::enableMaintenance();
@@ -1119,17 +1127,18 @@ class AdminServices {
             $payload = json_encode(['job_id' => $jobId, 'type' => 'restore', 'backup_file' => $filename, 'requested_by' => $currentUserId]);
             $redis->rpush(CacheConstants::QUEUE_BACKUP, [$payload]);
 
-            return ['success' => true, 'message_key' => 'admin.restore_queued', 'job_id' => $jobId];
+            return ['success' => true, 'message' => __('admin.restore_queued'), 'job_id' => $jobId];
         } catch (\Exception $e) {
-            return ['success' => false, 'message_key' => 'error.redis_communication'];
+            Logger::error("[ERROR] Restore backup failed: " . $e->getMessage());
+            return ['success' => false, 'message' => __('error.redis_communication')];
         }
     }
 
     public function readLogs($data) {
-        if (!$this->hasPermission('view_logs')) return ['success' => false, 'message_key' => 'error.unauthorized'];
+        if (!$this->hasPermission('view_logs')) return ['success' => false, 'message' => __('error.unauthorized')];
         $files = $data['files'] ?? [];
-        if (!is_array($files) || empty($files)) return ['success' => false, 'message_key' => 'validation.no_files_specified'];
-        if (count($files) > 10) return ['success' => false, 'message_key' => 'validation.too_many_files'];
+        if (!is_array($files) || empty($files)) return ['success' => false, 'message' => __('validation.no_files_specified')];
+        if (count($files) > 10) return ['success' => false, 'message' => __('validation.too_many_files')];
 
         $contents = [];
         $logBaseDir = realpath(ROOT_PATH . '/logs/');
@@ -1162,7 +1171,7 @@ class AdminServices {
     }
 
     public function checkWorkerStatus() {
-        if (!$this->hasPermission('view_logs')) return ['success' => false, 'message_key' => 'error.unauthorized'];
+        if (!$this->hasPermission('view_logs')) return ['success' => false, 'message' => __('error.unauthorized')];
         
         try {
             $redis = Utils::getRedisClient();
@@ -1170,17 +1179,18 @@ class AdminServices {
             $isRunning = $redis->exists(CacheConstants::KEY_SYSTEM_RESTORING);
             return ['success' => true, 'is_running' => (bool)$isRunning, 'status' => $isRunning ? 'restoring' : 'finished'];
         } catch (\Exception $e) {
-            return ['success' => false, 'message_key' => 'error.redis_communication'];
+            Logger::error("[ERROR] Check worker status failed: " . $e->getMessage());
+            return ['success' => false, 'message' => __('error.redis_communication')];
         }
     }
 
     public function getDashboardMetrics($data) {
         if (!$this->hasPermission('access_admin_panel')) {
-            return ['success' => false, 'message_key' => 'error.unauthorized'];
+            return ['success' => false, 'message' => __('error.unauthorized')];
         }
         
         $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_READ_DATA, 120, 1);
-        if (!$rl['allowed']) return ['success' => false, 'message_key' => $rl['message_key']];
+        if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
 
         $startDate = $data['start_date'] ?? date('Y-m-d', strtotime('-30 days'));
         $endDate = $data['end_date'] ?? date('Y-m-d');

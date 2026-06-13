@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Api\Services;
 
 use App\Config\RedisCache;
@@ -46,7 +47,6 @@ class TelemetryServices {
                 $data['created_at'] = date('Y-m-d H:i:s');
             }
 
-            // Inyección automática del ASN si la IP está presente
             $ip = $data['ip_address'] ?? Utils::getIpAddress();
             if (!isset($data['asn']) && $ip) {
                 $data['asn'] = GeoIpHelper::getASN($ip);
@@ -56,12 +56,12 @@ class TelemetryServices {
             if ($jsonPayload) {
                 $client = $this->redis->getClient();
                 if ($client) {
-                    $client->rpush($queueName, $jsonPayload);
+                    // CORRECCIÓN: Se envuelve $jsonPayload en un array
+                    $client->rpush($queueName, [$jsonPayload]);
                 }
             }
         } catch (\Exception $e) {
-            Logger::error("Telemetry Redis Push Error: " . $e->getMessage());
+            Logger::error("[ERROR] Telemetry Redis Push Error: " . $e->getMessage());
         }
     }
 }
-?>
