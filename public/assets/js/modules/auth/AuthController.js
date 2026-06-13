@@ -215,6 +215,16 @@ class AuthController {
         }
     }
 
+    _resetTurnstile() {
+        if (typeof turnstile !== 'undefined' && this.turnstileWidgetId !== undefined) {
+            try {
+                turnstile.reset(this.turnstileWidgetId);
+            } catch (error) {
+                // Se ignora silenciosamente si el widget no está listo en el DOM
+            }
+        }
+    }
+
     _renderTurnstile() {
         if (typeof turnstile === 'undefined') return;
 
@@ -222,12 +232,16 @@ class AuthController {
 
         turnstileElements.forEach(el => {
             if (el.innerHTML.trim() === '') {
-                this.turnstileWidgetId = turnstile.render(el, {
-                    sitekey: el.getAttribute('data-sitekey'),
-                    action: el.getAttribute('data-action'),
-                    appearance: 'interaction-only',
-                    size: 'invisible'
-                });
+                try {
+                    this.turnstileWidgetId = turnstile.render(el, {
+                        sitekey: el.getAttribute('data-sitekey'),
+                        action: el.getAttribute('data-action'),
+                        appearance: 'interaction-only',
+                        size: 'invisible'
+                    });
+                } catch (error) {
+                    // Evitar crash si el script de Cloudflare carga de forma asíncrona inestable
+                }
             }
         });
     }
@@ -235,27 +249,37 @@ class AuthController {
     async _getTurnstileToken() {
         if (typeof turnstile === 'undefined') return null;
 
-        const existingToken = turnstile.getResponse(this.turnstileWidgetId);
-        if (existingToken) return existingToken;
+        try {
+            const existingToken = turnstile.getResponse(this.turnstileWidgetId);
+            if (existingToken) return existingToken;
+        } catch (error) {
+            // El ID existe pero el iframe aún no, se atrapa el error para no romper la promesa
+        }
 
         return new Promise((resolve) => {
             if (this.turnstileWidgetId !== undefined) {
                 const timeoutId = setTimeout(() => {
-                    turnstile.reset(this.turnstileWidgetId);
+                    this._resetTurnstile();
                     resolve(null);
                 }, 8000);
 
-                turnstile.execute(this.turnstileWidgetId, {
-                    callback: (token) => {
-                        clearTimeout(timeoutId);
-                        resolve(token);
-                    },
-                    'error-callback': () => {
-                        clearTimeout(timeoutId);
-                        turnstile.reset(this.turnstileWidgetId);
-                        resolve(null);
-                    }
-                });
+                try {
+                    turnstile.execute(this.turnstileWidgetId, {
+                        callback: (token) => {
+                            clearTimeout(timeoutId);
+                            resolve(token);
+                        },
+                        'error-callback': () => {
+                            clearTimeout(timeoutId);
+                            this._resetTurnstile();
+                            resolve(null);
+                        }
+                    });
+                } catch (error) {
+                    // Si falla el execute porque el usuario hizo click demasiado rápido
+                    clearTimeout(timeoutId);
+                    resolve(null);
+                }
             } else {
                 resolve(null);
             }
@@ -312,7 +336,7 @@ class AuthController {
                 window.location.href = this.basePath + '/';
             }
         } else {
-            if (typeof turnstile !== 'undefined' && this.turnstileWidgetId !== undefined) turnstile.reset(this.turnstileWidgetId);
+            this._resetTurnstile();
             restoreButton(btn);
 
             if (result.status === 'pending_deletion') {
@@ -406,7 +430,7 @@ class AuthController {
             sessionStorage.removeItem('temp_auth_token');
             window.location.href = this.basePath + '/';
         } else {
-            if (typeof turnstile !== 'undefined' && this.turnstileWidgetId !== undefined) turnstile.reset(this.turnstileWidgetId);
+            this._resetTurnstile();
             restoreButton(btn);
             this.showError(result.message);
         }
@@ -458,7 +482,7 @@ class AuthController {
             if (window.spaRouter) window.spaRouter.navigate(this.basePath + '/register/aditional-data');
             else window.location.href = this.basePath + '/register/aditional-data';
         } else {
-            if (typeof turnstile !== 'undefined' && this.turnstileWidgetId !== undefined) turnstile.reset(this.turnstileWidgetId);
+            this._resetTurnstile();
             restoreButton(btn);
             this.showError(result.message);
         }
@@ -593,7 +617,7 @@ class AuthController {
             restoreButton(btn);
             this.startResendTimer(btn, defaultText, 60, false);
         } else {
-            if (typeof turnstile !== 'undefined' && this.turnstileWidgetId !== undefined) turnstile.reset(this.turnstileWidgetId);
+            this._resetTurnstile();
             restoreButton(btn);
             this.showError(result.message);
             if (result.cooldown) {
@@ -637,7 +661,7 @@ class AuthController {
                 else window.location.href = this.basePath + '/login';
             }, 2000);
         } else {
-            if (typeof turnstile !== 'undefined' && this.turnstileWidgetId !== undefined) turnstile.reset(this.turnstileWidgetId);
+            this._resetTurnstile();
             restoreButton(btn);
             this.showError(result.message);
         }

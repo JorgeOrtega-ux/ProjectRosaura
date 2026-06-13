@@ -52,23 +52,23 @@ export const DialogTemplates = {
         build: (data) => `
             <div class="pill-container"><div class="drag-handle"></div></div>
             <div class="component-modal-header">
-                <h2 class="component-modal-title">Busca el código que te enviamos</h2>
-                <p class="component-modal-desc">Para hacer cambios en tu cuenta, primero tienes que ingresar el código que te enviamos a <b>${data.email || 'tu correo'}</b>.</p>
+                <h2 class="component-modal-title">${__('title_verify_email')}</h2>
+                <p class="component-modal-desc">${__('desc_verify_email').replace(':email', `<b>${data.email}</b>`)}</p>
             </div>
             <div class="component-modal-body">
                 <div class="component-input-group">
-                    <input type="text" id="modal_email_code" class="component-input-field" placeholder=" " maxlength="14">
-                    <label for="modal_email_code" class="component-input-label">Código de verificación</label>
+                    <input type="text" data-ref="modal_email_code" class="component-input-field" placeholder=" " maxlength="14">
+                    <label class="component-input-label">${__('lbl_verification_code')}</label>
                 </div>
                 
                 <div class="component-link-container component-link-container--start">
-                    <span class="component-link-text">¿No recibiste el código?</span>
-                    <span class="component-link disabled-interaction component-text-notice--muted" id="btn-dialog-resend-code">Reenviar código de verificación (60)</span>
+                    <span class="component-link-text">${__('txt_not_received_code')}</span>
+                    <span class="component-link disabled-interactive component-text-notice--muted" data-action="dialogResendCode">${__('btn_resend_code')} (60)</span>
                 </div>
             </div>
             <div class="component-modal-actions">
-                <button class="component-button component-button--h45 hide-on-desktop" data-modal-action="cancel">Cancelar</button>
-                <button class="component-button component-button--h45 component-button--dark component-button--full" data-modal-action="confirm">Verificar</button>
+                <button class="component-button component-button--h45 hide-on-desktop" data-modal-action="cancel">${__('btn_cancel')}</button>
+                <button class="component-button component-button--h45 component-button--dark component-button--full" data-modal-action="confirm">${__('btn_verify')}</button>
             </div>
         `
     },

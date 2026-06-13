@@ -71,7 +71,7 @@ class ProfileController {
         const btnRequestEmail = e.target.closest('[data-action="requestEmailUpdate"]');
         if (btnRequestEmail) this.handleEmailUpdateRequest();
 
-        const btnResendDialog = e.target.closest('#btn-dialog-resend-code');
+        const btnResendDialog = e.target.closest('[data-action="dialogResendCode"]');
         if (btnResendDialog) this.resendEmailUpdateCode(btnResendDialog);
 
         const btnSaveEmail = e.target.closest('[data-action="saveEmail"]');
@@ -99,8 +99,7 @@ class ProfileController {
     }
 
     handleInput(e) {
-        // CORRECCIÓN: modal_email_code
-        if (e.target && e.target.id === 'modal_email_code') {
+        if (e.target && e.target.getAttribute('data-ref') === 'modal_email_code') {
             let val = e.target.value.replace(/\D/g, ''); 
             let formatted = '';
             for (let i = 0; i < val.length; i++) {
@@ -273,7 +272,7 @@ class ProfileController {
             const currentEmail = document.querySelector('[data-ref="display-email"]').textContent.trim();
             const verifyDialogPromise = window.dialogSystem.show('verifyEmailCode', { email: currentEmail });
             
-            const resendBtn = document.getElementById('btn-dialog-resend-code');
+            const resendBtn = document.querySelector('[data-action="dialogResendCode"]');
             if (resendBtn) {
                 let elapsed = res.elapsed || 0;
                 let remainingTime = Math.max(0, 60 - elapsed);
@@ -285,7 +284,6 @@ class ProfileController {
             if (this.dialogResendInterval) clearInterval(this.dialogResendInterval);
 
             if (verifyDialog.confirmed) {
-                // CORRECCIÓN: modal_email_code
                 const code = verifyDialog.data['modal_email_code'];
                 if (!code) { 
                     showMessage(__('err_code_required'), 'error'); 
@@ -307,9 +305,9 @@ class ProfileController {
     }
 
     async resendEmailUpdateCode(btn) {
-        if (btn.classList.contains('disabled-interaction')) return;
+        if (btn.classList.contains('disabled-interactive')) return;
         
-        btn.classList.add('disabled-interaction', 'component-text-notice--muted', 'disabled');
+        btn.classList.add('disabled-interactive', 'component-text-notice--muted');
 
         const result = await this.api.post(ApiRoutes.Settings.ResendEmailCode, {}, this.abortController.signal);
         
@@ -323,7 +321,7 @@ class ProfileController {
             if (result.cooldown) {
                 this.startDialogResendTimer(btn, result.cooldown);
             } else {
-                btn.classList.remove('disabled-interaction', 'component-text-notice--muted', 'disabled');
+                btn.classList.remove('disabled-interactive', 'component-text-notice--muted');
                 btn.textContent = __('btn_resend_code');
             }
         }
@@ -337,10 +335,10 @@ class ProfileController {
         const updateUI = () => {
             if (timeLeft <= 0) {
                 clearInterval(this.dialogResendInterval);
-                element.classList.remove('disabled-interaction', 'component-text-notice--muted', 'disabled');
+                element.classList.remove('disabled-interactive', 'component-text-notice--muted');
                 element.textContent = defaultText;
             } else {
-                element.classList.add('disabled-interaction', 'component-text-notice--muted', 'disabled');
+                element.classList.add('disabled-interactive', 'component-text-notice--muted');
                 element.textContent = `${defaultText} (${timeLeft})`;
             }
         };
