@@ -1,5 +1,4 @@
 <?php
-// includes/config/RedisCache.php
 
 namespace App\Config;
 
@@ -34,17 +33,16 @@ class RedisCache {
 
         try {
             $this->client = new Client($parameters);
-            $this->client->ping(); // Probar conexión
+            $this->client->ping();
         } catch (Exception $e) {
-            Logger::database("Connection error to Redis: " . $e->getMessage(), 'error');
+            Logger::error('Redis connection failure.', [
+                'exception' => $e->getMessage()
+            ]);
             $this->setupDummyClient();
         }
     }
 
     private function setupDummyClient() {
-        // CLIENTE FANTASMA (Dummy Client)
-        // Crea un objeto anónimo que absorbe cualquier petición (get, set, exists) y devuelve null.
-        // Esto permite que el sistema asuma que la caché está vacía y use archivos locales sin colapsar.
         $this->client = new class {
             public function __call($name, $arguments) {
                 return null;
@@ -68,49 +66,41 @@ class RedisCache {
             }
             return false;
         } catch (Exception $e) {
-            Logger::database("Error flushing Redis database: " . $e->getMessage(), 'error');
+            Logger::error('Redis database flush failure.', [
+                'exception' => $e->getMessage()
+            ]);
             return false;
         }
     }
 
-    // ==========================================
-    // DISTRIBUTED LOCKS (MUTEX) PARA CONDICIONES DE CARRERA
-    // ==========================================
-
-    /**
-     * Adquiere un bloqueo distribuido en Redis para operaciones críticas
-     */
     public function acquireLock(string $name, int $timeoutSeconds = 5) {
-        // Si el sistema está degradado, dejamos pasar en memoria local
         if (!$this->client || defined('SYSTEM_DEGRADED')) {
             return bin2hex(random_bytes(16)); 
         }
 
         try {
             $token = bin2hex(random_bytes(16));
-            // SetNX: Establece la llave solo si NO existe, con caducidad para evitar deadlocks
             $result = $this->client->set("lock:{$name}", $token, 'EX', $timeoutSeconds, 'NX');
             
             if ($result) {
-                return $token; // Lock adquirido con éxito
+                return $token;
             }
         } catch (Exception $e) {
-            Logger::error("Redis acquireLock failed for: {$name}", ['exception' => $e]);
+            Logger::error('Redis acquire lock failure.', [
+                'lock_name' => $name, 
+                'exception' => $e->getMessage()
+            ]);
         }
         
         return false;
     }
 
-    /**
-     * Libera de forma segura un bloqueo distribuido (Operación Atómica usando Lua)
-     */
     public function releaseLock(string $name, string $token): bool {
         if (!$this->client || defined('SYSTEM_DEGRADED')) {
             return true;
         }
 
         try {
-            // Script de Lua para asegurar que solo quien tiene el token correcto pueda borrar la llave
             $script = '
                 if redis.call("GET", KEYS[1]) == ARGV[1] then
                     return redis.call("DEL", KEYS[1])
@@ -120,13 +110,14 @@ class RedisCache {
             ';
             return (bool)$this->client->eval($script, 1, "lock:{$name}", $token);
         } catch (Exception $e) {
-            Logger::error("Redis releaseLock failed for: {$name}", ['exception' => $e]);
+            Logger::error('Redis release lock failure.', [
+                'lock_name' => $name, 
+                'exception' => $e->getMessage()
+            ]);
             return false;
         }
     }
 
-    // NUEVA FUNCIÓN: Ejecuta una función anónima (callback) asegurada mediante bloqueo distribuido
-    // Elimina la necesidad de repetir la estructura try-finally en los servicios.
     public function executeWithLock(string $name, int $timeoutSeconds, callable $callback) {
         $lockToken = $this->acquireLock($name, $timeoutSeconds);
         try {

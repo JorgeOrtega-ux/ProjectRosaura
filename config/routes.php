@@ -1,11 +1,9 @@
 <?php
-// config/routes.php
 
 return [
     '/' => ['view' => 'app/home.php'],
     '/explore' => ['view' => 'app/explore.php'],
     
-    // --- RUTAS DE AUTENTICACIÓN (Solo invitados) ---
     '/login' => ['view' => 'auth/login.php', 'guest_only' => true],
     '/login/two-factor' => ['view' => 'auth/login.php', 'guest_only' => true],
     '/register' => ['view' => 'auth/register.php', 'guest_only' => true],
@@ -14,11 +12,9 @@ return [
     '/forgot-password' => ['view' => 'auth/forgot-password.php', 'guest_only' => true],
     '/reset-password' => ['view' => 'auth/reset-password.php', 'guest_only' => true],
     
-    // --- RUTAS DE SISTEMA PÚBLICAS (Manejo de estados) ---
     '/account-suspended' => ['view' => 'system/message.php'],
     '/account-deleted' => ['view' => 'system/message.php'],
 
-    // --- RUTAS DE POLÍTICAS DEL SITIO ---
     '/site-policy' => ['view' => 'site-policy/site-policy.php'],
     '/site-policy/terms-conditions' => ['view' => 'site-policy/terms-conditions.php'],
     '/site-policy/privacy-policy' => ['view' => 'site-policy/privacy-policy.php'],
@@ -26,11 +22,9 @@ return [
     '/site-policy/legal-notice' => ['view' => 'site-policy/legal-notice.php'],
     '/site-policy/refund-policy' => ['view' => 'site-policy/refund-policy.php'],
     
-    // --- RUTAS DE CONFIGURACIÓN ---
     '/settings' => ['view' => 'settings/index.php'],
     '/settings/guest' => ['view' => 'settings/preferences/guest.php', 'guest_only' => true],
 
-    // --- RUTAS PROTEGIDAS (Requieren autenticación, sin validación de permisos RBAC) ---
     '/settings/your-profile' => ['view' => 'settings/profile/your-profile.php', 'auth' => true],
     '/settings/security' => ['view' => 'settings/security/security.php', 'auth' => true],
     '/settings/accessibility' => ['view' => 'settings/preferences/accessibility.php', 'auth' => true],
@@ -43,7 +37,6 @@ return [
     '/settings/devices' => ['view' => 'settings/security/devices.php', 'auth' => true],
     '/settings/delete-account' => ['view' => 'settings/profile/delete-account.php', 'auth' => true],
 
-    // --- RUTAS DE ADMINISTRADOR (Con validación granular de permisos) ---
     '/admin' => ['view' => 'admin/dashboard.php', 'auth' => true, 'permissions' => ['access_admin_panel'], 'requires_2fa' => false],
     '/admin/dashboard' => ['view' => 'admin/dashboard.php', 'auth' => true, 'permissions' => ['access_admin_panel'], 'requires_2fa' => false],
     
@@ -65,7 +58,6 @@ return [
     
     '/admin/server-config' => ['view' => 'admin/system/server-config.php', 'auth' => true, 'permissions' => ['manage_server_config'], 'requires_2fa' => false],
     
-    // --- PROTOCOLOS Y MANTENIMIENTO DEL SERVIDOR ---
     '/admin/protocols' => ['view' => 'admin/system/protocols.php', 'auth' => true, 'permissions' => ['perform_system_maintenance'], 'requires_2fa' => false],
     
     '/admin/logs' => ['view' => 'admin/logs/logs.php', 'auth' => true, 'permissions' => ['view_logs'], 'requires_2fa' => false],
