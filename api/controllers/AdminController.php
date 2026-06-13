@@ -1,6 +1,4 @@
 <?php
-// api/controllers/AdminController.php
-
 namespace App\Api\Controllers;
 
 use App\Api\Services\AdminServices;
@@ -130,7 +128,6 @@ class AdminController extends BaseController {
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
 
-    // OPTIMIZADO: Ahora acepta los parámetros de paginación para enviarlos al Service
     public function get_moderation_kardex($input) {
         try { 
             $this->requirePermission('view_kardex');
@@ -305,7 +302,7 @@ class AdminController extends BaseController {
                 'password' => $input['password'] ?? null
             ];
             if (empty($safeInput['backup_id']) || empty($safeInput['password'])) {
-                return $this->respond(['success' => false, 'message_key' => 'validation.missing_fields']);
+                return $this->respond(['success' => false, 'message' => __('err_validation_missing_fields')]);
             }
             return $this->respond($this->adminServices->restoreBackup($safeInput)); 
         }
@@ -365,10 +362,9 @@ class AdminController extends BaseController {
             $data = json_decode($json, true) ?: [];
             return $this->respond(['success' => true, 'data' => $data]);
         }
-        return $this->respond(['success' => false, 'message' => 'Admin translations not found']);
+        return $this->respond(['success' => false, 'message' => __('err_admin_translations_not_found')]);
     }
 
-    // --- NUEVO MÉTODO PARA DASHBOARD METRICS ---
     public function get_dashboard_metrics($input) {
         try {
             $this->requirePermission('access_admin_panel');

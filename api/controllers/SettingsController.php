@@ -1,6 +1,4 @@
 <?php
-// api/controllers/SettingsController.php
-
 namespace App\Api\Controllers;
 
 use App\Api\Services\SettingsServices;

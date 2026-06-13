@@ -1,6 +1,4 @@
 <?php
-// api/controllers/AuthController.php
-
 namespace App\Api\Controllers;
 
 use App\Api\Services\AuthServices;
@@ -17,11 +15,10 @@ class AuthController extends BaseController {
         $this->turnstile = new TurnstileValidator();
     }
 
-    // NUEVA FUNCIÓN: Abstracción de la validación del Turnstile para limpiar los endpoints (DRY)
     private function validateCaptcha($input) {
         $turnstileToken = $input['turnstile_token'] ?? null;
         if (!$this->turnstile->isValid($turnstileToken, Utils::getIpAddress())) {
-            return ['success' => false, 'message_key' => 'error.captcha_failed'];
+            return ['success' => false, 'message' => __('err_captcha_failed')];
         }
         return ['success' => true];
     }

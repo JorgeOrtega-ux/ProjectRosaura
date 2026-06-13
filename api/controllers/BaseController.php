@@ -1,16 +1,10 @@
 <?php
-// api/controllers/BaseController.php
-
 namespace App\Api\Controllers;
 
 use App\Core\System\Logger;
 
 class BaseController {
     
-    /**
-     * Manejador global de excepciones para todos los controladores.
-     * Registra el error en el log identificando la clase hija y el método exacto.
-     */
     protected function handleException(\Throwable $e, $methodName) {
         $className = (new \ReflectionClass($this))->getShortName();
         
@@ -18,16 +12,13 @@ class BaseController {
         
         if (strpos($e->getMessage(), 'Security Violation') !== false || strpos($e->getMessage(), 'Unauthorized') !== false) {
             http_response_code(403);
-            return ['success' => false, 'message_key' => 'error.unauthorized'];
+            return ['success' => false, 'message' => __('err_unauthorized')];
         }
         
         http_response_code(500);
-        return ['success' => false, 'message_key' => 'error.internal_server_error'];
+        return ['success' => false, 'message' => __('err_internal_server_error')];
     }
 
-    /**
-     * Estandariza la respuesta evaluando códigos HTTP y bloqueos jerárquicos.
-     */
     protected function respond($result) {
         if (isset($result['http_code'])) {
             http_response_code($result['http_code']);
