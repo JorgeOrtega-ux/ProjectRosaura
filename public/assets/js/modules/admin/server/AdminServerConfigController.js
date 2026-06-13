@@ -14,6 +14,7 @@ class AdminServerConfigController {
         this.handleClickBound = this.handleClick.bind(this);
         this.handleChangeBound = this.handleChange.bind(this);
         this.handleInputBound = this.handleInput.bind(this);
+        this.handleKeydownBound = this.handleKeydown.bind(this);
     }
 
     init() {
@@ -34,6 +35,7 @@ class AdminServerConfigController {
         document.removeEventListener('click', this.handleClickBound);
         document.removeEventListener('change', this.handleChangeBound);
         document.removeEventListener('input', this.handleInputBound);
+        document.removeEventListener('keydown', this.handleKeydownBound);
     }
 
     bindEvents() {
@@ -41,6 +43,7 @@ class AdminServerConfigController {
         document.addEventListener('click', this.handleClickBound);
         document.addEventListener('change', this.handleChangeBound);
         document.addEventListener('input', this.handleInputBound);
+        document.addEventListener('keydown', this.handleKeydownBound);
     }
 
     handleViewLoaded(e) {
@@ -71,6 +74,10 @@ class AdminServerConfigController {
             this.state['allow_registrations'] = e.target.checked ? 1 : 0;
             this.checkForChanges();
         }
+
+        if (e.target && e.target.getAttribute('data-action') === 'toggleDomain') {
+            this.updateDomainsState();
+        }
     }
 
     handleInput(e) {
@@ -82,6 +89,15 @@ class AdminServerConfigController {
                 this.state[field] = e.target.value;
                 this.checkForChanges();
             }
+        }
+    }
+
+    handleKeydown(e) {
+        if (!window.location.pathname.includes('/admin/server-config')) return;
+        
+        if (e.key === 'Enter' && e.target && e.target.getAttribute('data-action') === 'addCustomDomain') {
+            e.preventDefault();
+            this.addCustomDomain(e.target);
         }
     }
 
@@ -113,6 +129,12 @@ class AdminServerConfigController {
         const registrationsSwitch = document.querySelector('[data-ref="toggle_allow_registrations"]');
         if (registrationsSwitch) {
             state['allow_registrations'] = registrationsSwitch.checked ? 1 : 0;
+        }
+
+        // 4. Dominios de correo permitidos (extraer del input oculto para convertir a array)
+        const rawDomainsEl = document.querySelector('[data-ref="raw_allowed_email_domains"]');
+        if (rawDomainsEl) {
+            state['allowed_email_domains'] = rawDomainsEl.value;
         }
 
         this.state = state;
@@ -149,6 +171,91 @@ class AdminServerConfigController {
         const registrationsSwitch = document.querySelector('[data-ref="toggle_allow_registrations"]');
         if (registrationsSwitch && this.state.allow_registrations !== undefined) {
             registrationsSwitch.checked = (parseInt(this.state.allow_registrations) === 1);
+        }
+
+        // Parseo y renderizado de la interfaz visual de Dominios
+        if (this.state.allowed_email_domains !== undefined) {
+            const domainsList = this.state.allowed_email_domains.split(',').map(d => d.trim()).filter(d => d !== '');
+            this.renderDomainsUI(domainsList);
+        }
+    }
+
+    renderDomainsUI(domainsList) {
+        // Reiniciamos todas las opciones predefinidas por precaución
+        document.querySelectorAll('.domain-checkbox').forEach(cb => cb.checked = false);
+        
+        const listContainer = document.querySelector('[data-ref="list_allowed_domains"]');
+        if (!listContainer) return;
+
+        domainsList.forEach(domain => {
+            let checkbox = listContainer.querySelector(`.domain-checkbox[value="${domain}"]`);
+            
+            if (checkbox) {
+                checkbox.checked = true;
+            } else {
+                // Si el dominio no está en la lista HTML, lo creamos dinámicamente y lo marcamos
+                const tpl = `
+                    <label class="component-menu-link component-menu-link--bordered">
+                        <div class="component-menu-link-icon">
+                            <input type="checkbox" class="domain-checkbox" data-action="toggleDomain" value="${domain}" checked>
+                        </div>
+                        <div class="component-menu-link-text"><span>${domain}</span></div>
+                    </label>
+                `;
+                listContainer.insertAdjacentHTML('beforeend', tpl);
+            }
+        });
+
+        this.updateDomainTextInfo(domainsList.length);
+    }
+
+    addCustomDomain(inputEl) {
+        let domain = inputEl.value.trim().toLowerCase();
+        
+        // Validación básica de dominio (algo.com, test.net)
+        const domainRegex = /^[a-z0-9.-]+\.[a-z]{2,}$/i;
+        if (!domainRegex.test(domain)) {
+            showMessage('Formato de dominio inválido', 'error');
+            return;
+        }
+
+        const listContainer = document.querySelector('[data-ref="list_allowed_domains"]');
+        if (!listContainer) return;
+
+        // Validamos si ya existe en las etiquetas generadas
+        let existingCb = listContainer.querySelector(`.domain-checkbox[value="${domain}"]`);
+        
+        if (existingCb) {
+            existingCb.checked = true;
+        } else {
+            // Creamos un nuevo elemento
+            const tpl = `
+                <label class="component-menu-link component-menu-link--bordered">
+                    <div class="component-menu-link-icon">
+                        <input type="checkbox" class="domain-checkbox" data-action="toggleDomain" value="${domain}" checked>
+                    </div>
+                    <div class="component-menu-link-text"><span>${domain}</span></div>
+                </label>
+            `;
+            listContainer.insertAdjacentHTML('beforeend', tpl);
+        }
+
+        inputEl.value = ''; // Limpiar el input
+        this.updateDomainsState(); // Sincronizar con el estado
+    }
+
+    updateDomainsState() {
+        const checkedBoxes = Array.from(document.querySelectorAll('.domain-checkbox:checked')).map(cb => cb.value);
+        this.state['allowed_email_domains'] = checkedBoxes.join(',');
+        
+        this.updateDomainTextInfo(checkedBoxes.length);
+        this.checkForChanges();
+    }
+
+    updateDomainTextInfo(count) {
+        const textEl = document.querySelector('[data-ref="text_allowed_domains"]');
+        if (textEl) {
+            textEl.textContent = count > 0 ? `${count} seleccionados` : 'Ninguno';
         }
     }
 

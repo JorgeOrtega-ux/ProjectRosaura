@@ -860,15 +860,16 @@ class AdminServices {
         return ['success' => true, 'config' => $this->configRepository->getConfig()];
     }
 
-    public function updateServerConfig($data) {
+public function updateServerConfig($data) {
         if (!$this->hasPermission('manage_server_config')) return ['success' => false, 'message' => __('error.unauthorized')];
 
         $sudo = $this->verifyAdminSudoMode($data['password'] ?? '');
         if (!$sudo['success']) return $sudo;
 
+        // 1. AÑADIR 'allowed_email_domains' A LA LISTA DE CAMPOS PERMITIDOS
         $allowedFields = [
             'min_password_length', 'max_password_length', 'min_username_length', 'max_username_length', 'max_avatar_size_mb',
-            'session_lifetime_minutes', 'max_active_sessions_per_user', 'allow_registrations', 'registration_rate_limit_attempts', 'registration_rate_limit_minutes',
+            'session_lifetime_minutes', 'max_active_sessions_per_user', 'allow_registrations', 'allowed_email_domains', 'registration_rate_limit_attempts', 'registration_rate_limit_minutes',
             'verification_code_expiration_minutes', 'password_reset_expiration_minutes',
             'username_change_cooldown_days', 'username_change_max_attempts', 'email_change_cooldown_days', 'email_change_max_attempts',
             'avatar_change_cooldown_days', 'avatar_change_max_attempts', 'login_rate_limit_attempts', 'login_rate_limit_minutes',
@@ -888,7 +889,8 @@ class AdminServices {
         if (isset($data['config']) && is_array($data['config'])) {
             foreach ($allowedFields as $field) {
                 if (isset($data['config'][$field])) {
-                    if ($field === 'backup_schema_config') {
+                    // 2. EVITAR QUE 'allowed_email_domains' SE CONVIERTA A ENTERO (INT)
+                    if ($field === 'backup_schema_config' || $field === 'allowed_email_domains') {
                         $updateData[$field] = $data['config'][$field];
                     } else {
                         $updateData[$field] = max(0, (int)$data['config'][$field]);

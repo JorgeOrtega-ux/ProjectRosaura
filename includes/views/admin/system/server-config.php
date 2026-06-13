@@ -96,10 +96,47 @@ if (!$config) {
                                         <h2 class="component-card__title"><?php echo __('admin_config_allowed_domains_title'); ?></h2>
                                         <p class="component-card__description"><?php echo __('admin_config_allowed_domains_desc'); ?></p>
                                         <div class="component-card__form-area" style="margin-top: 15px;">
-                                            <div class="component-input-group">
-                                                <input type="text" class="component-input-field" data-ref="input_allowed_email_domains" data-action="updateTextConfig" data-field="allowed_email_domains" placeholder=" " value="<?php echo htmlspecialchars($config['allowed_email_domains'] ?? ''); ?>">
-                                                <label class="component-input-label"><?php echo __('lbl_allowed_domains_placeholder'); ?></label>
+                                            <div class="component-dropdown-wrapper">
+                                                <div class="component-dropdown-trigger" data-action="toggleModule" data-target="moduleAllowedDomains">
+                                                    <span class="material-symbols-rounded">domain</span>
+                                                    <span class="component-dropdown-text" data-ref="text_allowed_domains">Ninguno</span>
+                                                    <span class="material-symbols-rounded">expand_more</span>
+                                                </div>
+                                                <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="moduleAllowedDomains" style="width: 100%; max-width: 320px;">
+                                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding">
+                                                        <div class="pill-container"><div class="drag-handle"></div></div>
+                                                        <div class="component-menu-list component-menu-list--scrollable component-menu-list--compact" data-ref="list_allowed_domains" style="max-height: 220px;">
+                                                            <label class="component-menu-link component-menu-link--bordered">
+                                                                <div class="component-menu-link-icon"><input type="checkbox" class="domain-checkbox" data-action="toggleDomain" value="gmail.com"></div>
+                                                                <div class="component-menu-link-text"><span>gmail.com</span></div>
+                                                            </label>
+                                                            <label class="component-menu-link component-menu-link--bordered">
+                                                                <div class="component-menu-link-icon"><input type="checkbox" class="domain-checkbox" data-action="toggleDomain" value="outlook.com"></div>
+                                                                <div class="component-menu-link-text"><span>outlook.com</span></div>
+                                                            </label>
+                                                            <label class="component-menu-link component-menu-link--bordered">
+                                                                <div class="component-menu-link-icon"><input type="checkbox" class="domain-checkbox" data-action="toggleDomain" value="yahoo.com"></div>
+                                                                <div class="component-menu-link-text"><span>yahoo.com</span></div>
+                                                            </label>
+                                                            <label class="component-menu-link component-menu-link--bordered">
+                                                                <div class="component-menu-link-icon"><input type="checkbox" class="domain-checkbox" data-action="toggleDomain" value="hotmail.com"></div>
+                                                                <div class="component-menu-link-text"><span>hotmail.com</span></div>
+                                                            </label>
+                                                            </div>
+                                                        <div class="component-menu-footer" style="padding: 10px; border-top: 1px solid var(--border-color);">
+                                                            <div class="component-search component-search--full component-search--h36">
+                                                                <div class="component-search-icon">
+                                                                    <span class="material-symbols-rounded">add</span>
+                                                                </div>
+                                                                <div class="component-search-input">
+                                                                    <input type="text" data-action="addCustomDomain" placeholder="Añadir dominio y presionar Enter">
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
+                                            <input type="hidden" data-ref="raw_allowed_email_domains" value="<?php echo htmlspecialchars($config['allowed_email_domains'] ?? ''); ?>">
                                         </div>
                                     </div>
                                 </div>
