@@ -80,12 +80,12 @@ REGLA 6: Desacoplamiento de CSS y JS (data-ref y data-action)
 - ESTRICTAMENTE PROHIBIDO usar clases CSS (`.clase`) o IDs (`#id`) para 
   SELECCIONAR elementos del DOM (`querySelector`) o escuchar eventos en JS.
 - EXCEPCIÓN DE ESTADO: SÍ está permitido agregar o quitar clases de estado visual 
-  como `.selected`, `.active` o `.disabled` usando `classList`, SIEMPRE Y CUANDO 
+  como `.selected`, `.active`, `.disabled` o `.disabled-interaction` usando `classList`, SIEMPRE Y CUANDO 
   el elemento se haya obtenido previamente mediante `data-ref` o `data-action`.
 - Para referencias visuales, leer inputs o actualizar texto, usa: `[data-ref="nombre-elemento"]`
 - Para botones y acciones clickeables, usa: `[data-action="nombreAccion"]`
 - Las vistas PHP/HTML deben estructurarse usando exclusivamente estos atributos.
-- Para ocultar elementos completamente usa estrictamente la clase CSS `.disabled`.
+- Para ocultar o deshabilitar elementos completamente usa estrictamente las clases CSS `.disabled` o `.disabled-interaction`.
 
 -----------------------------------------------------------------------------
 REGLA 7: Prevención de Promesas Huérfanas (AbortController en INIT)
@@ -181,7 +181,7 @@ PARTE 2: BACKEND (API PHP)
 REGLA 10: Separación de Responsabilidades (MVC / Service Pattern) y Carga Server-Side
 -----------------------------------------------------------------------------
 - CONTROLADORES API (`api/controllers/`): Únicamente leen el Request, llaman al 
-  Servicio correspondiente y retornan con `Utils::jsonResponse()`. 
+  Servicio correspondiente y retornan con `Utils::jsonResponse()`.
   ¡PROHIBIDA la lógica de negocio o queries SQL aquí!
 - SERVICIOS (`api/services/`): Contienen la lógica de negocio. NO interactúan 
   directamente con PDO/SQL; consumen Repositorios.
@@ -202,8 +202,7 @@ REGLA 11: Cero Textos Hardcodeados y Absolutamente Cero Fallbacks
   INCORRECTO: `return Utils::jsonResponse(false, __('err_fatal') ?: 'Error fatal');`
   INCORRECTO: `return Utils::jsonResponse(false, __('err_fatal', 'Error fatal'));`
   CORRECTO: `return Utils::jsonResponse(false, __('err_fatal'));`
-- Los archivos JSON de traducción son la única fuente de verdad.
-  No deben existir textos de respaldo en la lógica de Controladores, Servicios o Repositorios.
+- Los archivos JSON de traducción son la única fuente de verdad. No deben existir textos de respaldo en la lógica de Controladores, Servicios o Repositorios.
 
 -----------------------------------------------------------------------------
 REGLA 12: Reutilización Obligatoria de `Utils.php`
@@ -269,10 +268,10 @@ REGLA 19: Cero Textos Hardcodeados en la Interfaz (Absoluto)
   CORRECTO: `<input type="text" placeholder="<?php echo __('placeholder_name'); ?>">`
 
 -----------------------------------------------------------------------------
-REGLA 20: Cero Anotaciones o Comentarios Basura
+REGLA 20: Cero Anotaciones o Comentarios Basura (HTML, PHP y Python)
 -----------------------------------------------------------------------------
-- ESTRICTAMENTE PROHIBIDO dejar código comentado o "notas basura" en las vistas finales.
-- El código HTML/PHP debe estar 100% limpio. Si la estructura es buena e indentada, los comentarios estructurales sobran.
+- ESTRICTAMENTE PROHIBIDO dejar código comentado, bloques de separación inútiles (ej. `# ==================`, `// ===============`) o "notas basura" explicativas (ej. `# blpop con lista de colas...`) en las vistas finales, archivos PHP o scripts de Python.
+- El código HTML, PHP y Python debe estar 100% limpio y ser autodescriptivo. Si la estructura es buena e indentada, los comentarios estructurales sobran.
 
 -----------------------------------------------------------------------------
 REGLA 21: Uso de Texto Simulado (Lorem Ipsum) para Datos Faltantes
@@ -288,3 +287,21 @@ REGLA 21: Uso de Texto Simulado (Lorem Ipsum) para Datos Faltantes
   Phasellus fermentum in, dolor. Pellentesque facilisis. Nulla imperdiet sit amet magna. Vestibulum dapibus, mauris nec malesuada fames ac turpis velit, rhoncus eu, luctus et interdum adipiscing wisi."
 
 - NOTA: Esta es la ÚNICA excepción permitida a la Regla 19 de "Cero Textos Hardcodeados", exclusivamente cuando se trate de texto de relleno/mockup temporal para evaluar el diseño y maquetación visual.
+
+-----------------------------------------------------------------------------
+REGLA 22: Prohibición Absoluta del Atributo Nativo `disabled`
+-----------------------------------------------------------------------------
+- ESTRICTAMENTE PROHIBIDO utilizar el atributo HTML nativo `disabled` en inputs, botones o cualquier elemento interactivo.
+- En su lugar, debes utilizar EXCLUSIVAMENTE las clases CSS `.disabled-interaction` y/o `.disabled` para manejar el estado visual y deshabilitar los eventos (pointer-events) desde CSS/JS.
+
+
+=============================================================================
+PARTE 4: BACKEND (PYTHON WORKERS / SCRIPTS)
+=============================================================================
+
+-----------------------------------------------------------------------------
+REGLA 23: Logs en Inglés, Estructurados y Nivel Enterprise (Cero Emojis)
+-----------------------------------------------------------------------------
+- Dado que Python no puede utilizar el sistema de traducciones dinámico de la web de la misma forma, TODOS los logs, salidas de consola y mensajes generados por los scripts de Python deben estar estrictamente en INGLÉS.
+- CERO EMOJIS. Los logs deben ser estructurados, serios y de nivel "enterprise" (ej. `[INFO] Telemetry worker started successfully.`, `[ERROR] Failed to connect to Redis instance.`).
+- CERO FALLBACKS. Aplica la misma rigurosidad que en PHP y JS; no dejes mensajes dobles o código de respaldo. Mantén el código y la generación de logs de forma limpia y directa.

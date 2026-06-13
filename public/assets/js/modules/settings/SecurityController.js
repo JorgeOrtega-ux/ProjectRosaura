@@ -43,16 +43,19 @@ class SecurityController {
         const btnUpdatePass = e.target.closest('[data-action="submitUpdatePassword"]');
         if (btnUpdatePass) this.updatePassword(btnUpdatePass);
 
-        const btnDeleteAccount = e.target.closest('[data-action="submitDeleteAccount"]');
-        if (btnDeleteAccount) this.deleteAccount(btnDeleteAccount);
+        const btnPromptDelete = e.target.closest('[data-action="promptDeleteAccount"]');
+        if (btnPromptDelete) this.promptDeleteAccount(btnPromptDelete);
     }
 
     handleChange(e) {
         if (e.target && e.target.getAttribute('data-ref') === 'chk_confirm_delete') {
-            const passArea = document.querySelector('[data-ref="delete_password_area"]');
-            if (passArea) {
-                if (e.target.checked) passArea.classList.remove('disabled');
-                else passArea.classList.add('disabled');
+            const topDeleteBtn = document.querySelector('[data-ref="btn-top-delete"]');
+            if (topDeleteBtn) {
+                if (e.target.checked) {
+                    topDeleteBtn.classList.remove('disabled-interaction');
+                } else {
+                    topDeleteBtn.classList.add('disabled-interaction');
+                }
             }
         }
     }
@@ -117,25 +120,44 @@ class SecurityController {
         } else showMessage(result.message, 'error');
     }
 
-    async deleteAccount(btn) {
-        const input = document.querySelector('[data-ref="delete_account_password"]');
-        if (!input) return;
-        const pass = input.value;
-        if (!pass) {
-            showMessage(__('err_password_confirm_required'), 'error');
+    async promptDeleteAccount(btn) {
+        if (btn.classList.contains('disabled-interaction')) return;
+
+        const chkConfirm = document.querySelector('[data-ref="chk_confirm_delete"]');
+        if (!chkConfirm || !chkConfirm.checked) {
+            showMessage("Debes confirmar la eliminación.", "error");
             return;
         }
 
-        setButtonLoading(btn);
-        const res = await this.api.post(ApiRoutes.Settings.DeleteAccount, { password: pass }, this.abortController.signal);
-        
-        if (res.aborted) return;
-        
-        if (res.success) {
-            window.location.href = this.basePath + '/';
-        } else {
+        const dialog = await window.dialogSystem.show('confirmDeleteAccountDialog', {
+            title: typeof window.__ === 'function' ? (window.__('admin_verify_identity_title') || 'Verificar identidad') : 'Verificar identidad',
+            desc: typeof window.__ === 'function' ? (window.__('del_acc_verify_desc') || 'Ingresa tu contraseña para confirmar.') : 'Ingresa tu contraseña para confirmar.'
+        });
+
+        if (dialog.confirmed) {
+            const passInput = dialog.data['modal_delete_password'];
+            if (!passInput) {
+                showMessage(typeof window.__ === 'function' ? (window.__('err_password_required') || "Contraseña requerida") : "Contraseña requerida", "error");
+                return;
+            }
+
+            setButtonLoading(btn);
+
+            const data = { password: passInput };
+            const result = await this.api.post(ApiRoutes.Settings.DeleteAccount, data, this.abortController.signal);
+
+            if (result.aborted) return;
+
             restoreButton(btn);
-            showMessage(res.message, 'error');
+
+            if (result.success) {
+                showMessage(result.message || "Proceso de eliminación iniciado con éxito.", "success");
+                setTimeout(() => {
+                    window.location.href = this.basePath + '/login';
+                }, 2000);
+            } else {
+                showMessage(result.message, "error");
+            }
         }
     }
 }

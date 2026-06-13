@@ -159,6 +159,32 @@ export const DialogTemplates = {
         `
     },
 
+    confirmDeleteAccountDialog: {
+        build: (data) => `
+            <div class="pill-container"><div class="drag-handle"></div></div>
+            <div class="component-modal-header component-modal-header--with-icon">
+                <div class="component-card__icon-container component-card__icon-container--bordered">
+                    <span class="material-symbols-rounded">warning</span>
+                </div>
+                <div class="component-modal-header-text">
+                    <h2 class="component-modal-title">${data.title || 'Verificar identidad'}</h2>
+                    <p class="component-modal-desc">${data.desc || 'Por favor, ingresa tu contraseña actual para continuar.'}</p>
+                </div>
+            </div>
+            <div class="component-modal-body">
+                <div class="component-input-group">
+                    <input type="password" id="modal_delete_password" class="component-input-field component-input-field--with-icon" placeholder=" ">
+                    <label for="modal_delete_password" class="component-input-label">Contraseña</label>
+                    <span class="material-symbols-rounded component-input-toggle" data-modal-action="togglePassword">visibility_off</span>
+                </div>
+            </div>
+            <div class="component-modal-actions">
+                <button class="component-button component-button--h45 hide-on-desktop" data-modal-action="cancel">Cancelar</button>
+                <button class="component-button component-button--h45 component-button--danger component-button--full" data-modal-action="confirm">Eliminar cuenta</button>
+            </div>
+        `
+    },
+
     warning: {
         build: (data) => `
             <div class="pill-container"><div class="drag-handle"></div></div>

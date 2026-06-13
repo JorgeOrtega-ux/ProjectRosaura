@@ -3,72 +3,56 @@
 if (session_status() === PHP_SESSION_NONE) session_start();
 ?>
 <div class="view-content">
-    <div class="component-wrapper">
-        <div class="component-bottom">
-            <div class="component-header-card">
-                <h1 class="component-page-title"><?php echo __('del_acc_title'); ?></h1>
-                <p class="component-page-description"><?php echo __('del_acc_desc'); ?></p>
-            </div>
 
-            <div class="component-card--grouped">
+    <div class="component-top">
+        <div class="component-top-left">
+            <h1 class="component-top-title"><?php echo __('del_acc_title'); ?></h1>
+        </div>
+        <div class="component-top-right">
+            <button class="component-button component-button--h40 component-button--danger disabled-interaction" data-action="promptDeleteAccount" data-ref="btn-top-delete">
+                <?php echo __('btn_delete_account_final'); ?>
+            </button>
+        </div>
+    </div>
 
-                <div class="component-group-item component-group-item--stacked">
-                    <div class="component-card__content component-card__content--full component-card__content--start">
-                        <div class="component-card__icon-container component-card__icon-container--bordered">
-                            <span class="material-symbols-rounded">schedule</span>
-                        </div>
-                        <div class="component-card__text">
-                            <h2 class="component-card__title"><?php echo __('del_acc_grace_period_title'); ?></h2>
-                            <p class="component-card__description"><?php echo __('del_acc_grace_period_desc'); ?></p>
-                        </div>
-                    </div>
-                </div>
+    <div class="component-viewport">
+        <div class="component-wrapper">
+            <div class="component-bottom">
+                
+                <div class="component-card--grouped">
 
-                <hr class="component-divider">
-
-                <div class="component-group-item component-group-item--wrap">
-                    <div class="component-card__content">
-                        <div class="component-card__icon-container component-card__icon-container--bordered">
-                            <span class="material-symbols-rounded">fact_check</span>
-                        </div>
-                        <div class="component-card__text">
-                            <h2 class="component-card__title"><?php echo __('del_acc_confirm_title'); ?></h2>
-                            <p class="component-card__description"><?php echo __('del_acc_confirm_desc'); ?></p>
-                        </div>
-                    </div>
-                    <div class="component-card__actions component-card__actions--end">
-                        <label class="component-toggle-switch">
-                            <input type="checkbox" data-ref="chk_confirm_delete">
-                            <span class="component-toggle-slider"></span>
-                        </label>
-                    </div>
-                </div>
-
-                <div data-ref="delete_password_area" class="disabled">
-                    <hr class="component-divider">
                     <div class="component-group-item component-group-item--stacked">
                         <div class="component-card__content component-card__content--full component-card__content--start">
                             <div class="component-card__icon-container component-card__icon-container--bordered">
-                                <span class="material-symbols-rounded">lock</span>
+                                <span class="material-symbols-rounded">schedule</span>
                             </div>
                             <div class="component-card__text">
-                                <h2 class="component-card__title"><?php echo __('admin_verify_identity_title'); ?></h2>
-                                <p class="component-card__description"><?php echo __('del_acc_verify_desc'); ?></p>
+                                <h2 class="component-card__title"><?php echo __('del_acc_grace_period_title'); ?></h2>
+                                <p class="component-card__description"><?php echo __('del_acc_grace_period_desc'); ?></p>
+                            </div>
+                        </div>
+                    </div>
 
-                                <div class="component-card__form-area">
-                                    <div class="component-input-group">
-                                        <input type="password" data-ref="delete_account_password" class="component-input-field component-input-field--with-icon" placeholder=" ">
-                                        <label class="component-input-label"><?php echo __('lbl_password'); ?></label>
-                                        <span class="material-symbols-rounded component-input-toggle" data-action="togglePassword">visibility_off</span>
-                                    </div>
-                                </div>
+                    <hr class="component-divider">
+
+                    <div class="component-group-item component-group-item--wrap">
+                        <div class="component-card__content">
+                            <div class="component-card__icon-container component-card__icon-container--bordered">
+                                <span class="material-symbols-rounded">fact_check</span>
+                            </div>
+                            <div class="component-card__text">
+                                <h2 class="component-card__title"><?php echo __('del_acc_confirm_title'); ?></h2>
+                                <p class="component-card__description"><?php echo __('del_acc_confirm_desc'); ?></p>
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--end">
-                            <button class="component-button component-button--h36" data-nav="<?php echo APP_URL; ?>/settings/security"><?php echo __('btn_cancel'); ?></button>
-                            <button class="component-button component-button--h36 component-button--danger" data-action="submitDeleteAccount"><?php echo __('btn_delete_account_final'); ?></button>
+                            <label class="component-toggle-switch">
+                                <input type="checkbox" data-ref="chk_confirm_delete">
+                                <span class="component-toggle-slider"></span>
+                            </label>
                         </div>
                     </div>
+
                 </div>
 
             </div>
