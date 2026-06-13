@@ -21,7 +21,14 @@ $errorMsg = null;
 
 // Validación de protección de acceso directo al paso del 2FA
 if ($relativePath === '/login/two-factor') {
-    if (empty($_SESSION['pending_2fa_user_id'])) {
+    // FIX: Buscar en el array correcto que genera AuthServices.php
+    $sessionKey = defined('\App\Core\System\SessionConstants::KEY_PENDING_2FA') 
+                  ? \App\Core\System\SessionConstants::KEY_PENDING_2FA 
+                  : 'pending_2fa';
+                  
+    $pending2FA = $_SESSION[$sessionKey] ?? [];
+    
+    if (empty($pending2FA)) {
         $errorMsg = __('reg_no_data'); // Reutilizamos el mensaje de 'No hay datos previos...'
     }
 }
