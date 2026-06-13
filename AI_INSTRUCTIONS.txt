@@ -181,16 +181,17 @@ PARTE 2: BACKEND (API PHP)
 REGLA 10: Separación de Responsabilidades (MVC / Service Pattern) y Carga Server-Side
 -----------------------------------------------------------------------------
 - CONTROLADORES API (`api/controllers/`): Únicamente leen el Request, llaman al 
-  Servicio correspondiente y retornan con `Utils::jsonResponse()`.
+  Servicio correspondiente y retornan con `Utils::jsonResponse()`. 
   ¡PROHIBIDA la lógica de negocio o queries SQL aquí!
-- SERVICIOS (`api/services/`): Contienen la lógica de negocio. NO interactúan 
-  directamente con PDO/SQL; consumen Repositorios.
+- SERVICIOS (`api/services/`): Contienen la lógica de negocio. 
+  NO interactúan directamente con PDO/SQL; consumen Repositorios.
 - REPOSITORIOS (`includes/core/Repositories/`): Recomendado como lugar principal para consultas SQL.
 - EXCEPCIÓN PARA CARGA A NIVEL SERVIDOR (SSR): Aunque la comunicación principal de la SPA 
   es mediante JS y la API, SE PERMITE de forma opcional realizar consultas (vía PDO o 
   Repositorios) directamente en los archivos de vista PHP (`includes/views/`) cuando la 
   sección requiera carga de datos en tiempo de ejecución del lado del servidor (Server-Side 
   Rendering) antes de mostrar la página.
+- SI LO QUE ESTÁS MODIFICANDO YA TIENE CARGA CON JS, O CARGA A NIVEL SERVIDOR, ASÍ DÉJALO. (Respeta estrictamente la estrategia de carga original que ya implemente el archivo).
 
 -----------------------------------------------------------------------------
 REGLA 11: Cero Textos Hardcodeados y Absolutamente Cero Fallbacks

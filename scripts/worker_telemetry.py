@@ -1,13 +1,54 @@
 import os
 import json
 import time
+import inspect
 import redis
 import mysql.connector
 from mysql.connector import Error
-import logging
+from datetime import datetime
 
-# Configuración básica de logs para no perder errores en silencio
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+class Logger:
+    @staticmethod
+    def write(level, message, category='worker'):
+        date_str = datetime.now().strftime('%Y-%m-%d')
+        time_str = datetime.now().strftime('%H:%M:%S')
+        print(f"[{date_str} {time_str}] [{level.upper()}] {message}")
+        try:
+            frame = inspect.currentframe().f_back.f_back
+            caller_file = os.path.basename(frame.f_code.co_filename)
+            caller_line = frame.f_lineno
+        except Exception:
+            caller_file = 'Unknown'
+            caller_line = 'Unknown'
+
+        log_data = {
+            "timestamp": f"{date_str} {time_str}",
+            "level": level.upper(),
+            "category": category,
+            "message": message,
+            "source": f"{caller_file}:{caller_line}"
+        }
+
+        log_dir = os.path.join(BASE_DIR, 'logs', category)
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir, exist_ok=True)
+            with open(os.path.join(log_dir, '.htaccess'), 'w') as f:
+                f.write("Deny from all\nOptions -Indexes")
+
+        log_file = os.path.join(log_dir, f"{date_str}.log")
+        with open(log_file, 'a', encoding='utf-8') as f:
+            f.write(json.dumps(log_data, ensure_ascii=False) + '\n')
+
+    @staticmethod
+    def info(message): Logger.write('info', message, 'worker')
+    @staticmethod
+    def error(message): Logger.write('error', message, 'worker')
+    @staticmethod
+    def warning(message): Logger.write('warning', message, 'worker')
+    @staticmethod
+    def critical(message): Logger.write('critical', message, 'worker')
 
 REDIS_HOST = os.getenv('REDIS_HOST', 'redis')
 REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
@@ -29,14 +70,34 @@ FLUSH_INTERVAL = 5
 
 class TelemetryWorker:
     def __init__(self):
-        self.r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD, decode_responses=True)
+        self.r = self.init_redis()
         self.db_conn = None
         self.connect_db()
+
+    def init_redis(self):
+        try:
+            client_args = {
+                'host': REDIS_HOST,
+                'port': REDIS_PORT,
+                'decode_responses': True,
+                'socket_timeout': 30,
+                'socket_connect_timeout': 10,
+                'socket_keepalive': True,
+                'retry_on_timeout': True
+            }
+            if REDIS_PASSWORD:
+                client_args['password'] = REDIS_PASSWORD
+                
+            client = redis.Redis(**client_args)
+            client.ping()
+            return client
+        except Exception as e:
+            Logger.critical(f"Redis initialization protocol failed in Telemetry Worker: {e}")
+            return None
 
     def connect_db(self):
         if self.db_conn and self.db_conn.is_connected():
             return
-        
         try:
             self.db_conn = mysql.connector.connect(
                 host=DB_HOST,
@@ -45,10 +106,15 @@ class TelemetryWorker:
                 password=DB_PASS
             )
         except Error as e:
-            logging.error(f"Error conectando a BD Telemetría: {e}")
+            Logger.error(f"Telemetry database connection protocol failure: {e}")
             self.db_conn = None
 
     def process_queues(self):
+        if not self.r:
+            self.r = self.init_redis()
+            if not self.r:
+                return
+
         self.connect_db()
         if not self.db_conn:
             return
@@ -57,15 +123,19 @@ class TelemetryWorker:
 
         try:
             for queue_name, table_name in QUEUES.items():
-                # 1. LECTURA EN BLOQUE USANDO REDIS PIPELINE
                 pipe = self.r.pipeline()
                 for _ in range(BATCH_SIZE):
                     pipe.lpop(queue_name)
                 
-                raw_items = pipe.execute()
+                try:
+                    raw_items = pipe.execute()
+                except redis.RedisError as e:
+                    Logger.error(f"Redis pipeline execution timeout or fault on queue {queue_name}: {e}")
+                    self.r = None
+                    break
                 
                 batch = []
-                raw_payloads = [] # Guardamos las cadenas crudas para posible recuperación
+                raw_payloads = []
                 
                 for item in raw_items:
                     if item:
@@ -73,14 +143,14 @@ class TelemetryWorker:
                             batch.append(json.loads(item))
                             raw_payloads.append(item)
                         except json.JSONDecodeError:
-                            logging.error(f"JSON corrupto ignorado en {queue_name}: {item}")
+                            Logger.error(f"Corrupted JSON payload intercepted and discarded in queue {queue_name}: {item}")
                             continue
                 
                 if batch:
                     self.insert_batch(cursor, table_name, queue_name, batch, raw_payloads)
 
         except Exception as e:
-            logging.error(f"Error crítico al procesar colas: {e}")
+            Logger.critical(f"Critical execution error during queue processing cycle: {e}")
         finally:
             if cursor:
                 cursor.close()
@@ -89,55 +159,46 @@ class TelemetryWorker:
         if not batch:
             return
 
-        # 1. PREGUNTAR A MYSQL: ¿Qué columnas existen realmente en esta tabla?
         try:
             cursor.execute(f"SHOW COLUMNS FROM {table_name}")
             valid_columns = {row[0] for row in cursor.fetchall()}
         except Error as e:
-            logging.error(f"Fallo al consultar esquema de {table_name}: {e}")
+            Logger.error(f"Schema evaluation failed for structural table {table_name}: {e}")
             return
 
-        # 2. Recopilar TODAS las llaves únicas presentes en el lote JSON
         all_keys = set()
         for item in batch:
             all_keys.update(item.keys())
             
-        # 3. FILTRO MAESTRO: Intersectar. Solo usar llaves del JSON que SÍ existan en la tabla MySQL
         keys = list(all_keys.intersection(valid_columns))
         
         if not keys:
-            logging.error(f"Ninguna llave del payload coincide con las columnas de {table_name}")
+            Logger.error(f"Payload schema mismatch. Keys rejected for table {table_name}")
             return
 
         columns = ', '.join(keys)
         placeholders = ', '.join(['%s'] * len(keys))
-        
         sql = f"INSERT INTO {table_name} ({columns}) VALUES ({placeholders})"
-        
-        # Usar .get(key) para rellenar con None (NULL) si a un registro le falta el dato
         values = [tuple(item.get(key) for key in keys) for item in batch]
 
         try:
             cursor.executemany(sql, values)
             self.db_conn.commit()
-            # logging.info(f"Insertados {len(batch)} registros en {table_name}") # Descomentar para debug intenso
         except Error as e:
             self.db_conn.rollback()
-            logging.error(f"Fallo MySQL en {table_name}: {e}. Enviando {len(batch)} registros a DLQ.")
-            
-            # MANEJO REAL DE ERRORES: Reinyectar a Dead Letter Queue (DLQ)
+            Logger.error(f"MySQL transactional insertion failed on {table_name}: {e}. Routing {len(batch)} payloads to DLQ.")
             dlq_name = f"{queue_name}_dlq"
             try:
                 self.r.rpush(dlq_name, *raw_payloads)
             except Exception as redis_err:
-                logging.critical(f"Fallo catastrófico al guardar en DLQ ({dlq_name}): {redis_err}")
+                Logger.critical(f"Catastrophic failure writing payloads to Dead Letter Queue ({dlq_name}): {redis_err}")
 
 if __name__ == "__main__":
-    logging.info("Worker de Telemetría Iniciado.")
+    Logger.info("Telemetry ingestion worker node online.")
     worker = TelemetryWorker()
     while True:
         try:
             worker.process_queues()
         except Exception as e:
-            logging.error(f"Excepción no controlada en el loop principal: {e}")
+            Logger.error(f"Unhandled exception detected in main worker loop: {e}")
         time.sleep(FLUSH_INTERVAL)
