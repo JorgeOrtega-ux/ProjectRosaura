@@ -860,13 +860,12 @@ class AdminServices {
         return ['success' => true, 'config' => $this->configRepository->getConfig()];
     }
 
-public function updateServerConfig($data) {
+    public function updateServerConfig($data) {
         if (!$this->hasPermission('manage_server_config')) return ['success' => false, 'message' => __('error.unauthorized')];
 
         $sudo = $this->verifyAdminSudoMode($data['password'] ?? '');
         if (!$sudo['success']) return $sudo;
 
-        // 1. AÑADIR 'allowed_email_domains' A LA LISTA DE CAMPOS PERMITIDOS
         $allowedFields = [
             'min_password_length', 'max_password_length', 'min_username_length', 'max_username_length', 'max_avatar_size_mb',
             'session_lifetime_minutes', 'max_active_sessions_per_user', 'allow_registrations', 'allowed_email_domains', 'registration_rate_limit_attempts', 'registration_rate_limit_minutes',
@@ -889,7 +888,6 @@ public function updateServerConfig($data) {
         if (isset($data['config']) && is_array($data['config'])) {
             foreach ($allowedFields as $field) {
                 if (isset($data['config'][$field])) {
-                    // 2. EVITAR QUE 'allowed_email_domains' SE CONVIERTA A ENTERO (INT)
                     if ($field === 'backup_schema_config' || $field === 'allowed_email_domains') {
                         $updateData[$field] = $data['config'][$field];
                     } else {
@@ -1111,46 +1109,17 @@ public function updateServerConfig($data) {
         $pageviews = $this->telemetryRepository->getPageviewsOverTime($start, $end);
         $logins = $this->telemetryRepository->getAuthEventsOverTime($start, $end, 'login_success');
 
-        $labels = [];
-        $current = strtotime($startDate);
-        $last = strtotime($endDate);
-        while ($current <= $last) {
-            $labels[] = date('Y-m-d', $current);
-            $current = strtotime('+1 day', $current);
-        }
-
-        $formatDataset = function($dataArray, $labels) {
-            $map = [];
-            foreach ($dataArray as $row) {
-                $map[$row['date']] = (int)$row['count'];
-            }
-            $result = [];
-            foreach ($labels as $lbl) {
-                $result[] = $map[$lbl] ?? 0;
-            }
-            return $result;
-        };
-
-        $regData = $formatDataset($registrations, $labels);
-        $pvData = $formatDataset($pageviews, $labels);
-        $loginData = $formatDataset($logins, $labels);
-
-        $totalRegs = array_sum($regData);
-        $totalPv = array_sum($pvData);
-        $totalLogins = array_sum($loginData);
+        // Optimización: Sumar directamente los valores sin iterar múltiples veces sobre fechas ni usar formateadores intermedios.
+        $totalRegs = array_sum(array_column($registrations, 'count'));
+        $totalPv = array_sum(array_column($pageviews, 'count'));
+        $totalLogins = array_sum(array_column($logins, 'count'));
 
         return [
             'success' => true,
             'summary' => [
-                'new_users' => $totalRegs,
-                'pageviews' => $totalPv,
-                'logins' => $totalLogins
-            ],
-            'charts' => [
-                'labels' => $labels,
-                'registrations' => $regData,
-                'pageviews' => $pvData,
-                'logins' => $loginData
+                'new_users' => (int)$totalRegs,
+                'pageviews' => (int)$totalPv,
+                'logins' => (int)$totalLogins
             ]
         ];
     }
