@@ -1,5 +1,4 @@
 <?php
-// includes/core/Repositories/ProfileLogRepository.php
 
 namespace App\Core\Repositories;
 
@@ -30,7 +29,6 @@ class ProfileLogRepository implements ProfileLogRepositoryInterface {
         }
     }
 
-    // NUEVO: Requerido para calcular el total de páginas
     public function countAllLogsByUserId(int $userId): int {
         $tblProfileLog = DB::TBL_PROFILE_CHANGES_LOG;
         try {
@@ -55,7 +53,6 @@ class ProfileLogRepository implements ProfileLogRepositoryInterface {
         }
     }
 
-    // OPTIMIZADO: Ahora acepta limit y offset nativos para integrarse con la paginación
     public function getLogsByUserId(int $userId, int $limit = 50, int $offset = 0): array {
         $tblProfileLog = DB::TBL_PROFILE_CHANGES_LOG;
 

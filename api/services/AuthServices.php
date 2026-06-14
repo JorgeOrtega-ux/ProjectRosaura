@@ -78,11 +78,12 @@ class AuthServices {
         }
         
         $encodedTokens = json_encode($tokens);
+        $cookiePath = parse_url(APP_URL, PHP_URL_PATH) ?: '/';
         $isSecure = Utils::isSecureConnection();
 
         setcookie('remember_tokens', $encodedTokens, [
             'expires' => time() + (CacheConstants::TTL_ONE_DAY * $days),
-            'path' => parse_url(APP_URL, PHP_URL_PATH) ?: '/',
+            'path' => $cookiePath,
             'secure' => $isSecure,
             'httponly' => true,
             'samesite' => 'Strict'
@@ -117,7 +118,7 @@ class AuthServices {
         $asn = GeoIpHelper::getASN($ipAddress);
         
         if (!$this->tokenRepository->createToken($userId, $selector, $hashedValidator, $expiresAt, $userAgent, $ipAddress, $location, $asn)) {
-             Logger::error("[ERROR] Failed to create remember token in database", ['user_id' => $userId]);
+             Logger::error("token_creation_error", ['user_id' => $userId]);
         }
         
         $cookieValue = $selector . ':' . $validator;
@@ -129,6 +130,9 @@ class AuthServices {
     }
 
     public function clearRememberToken($userId = null) {
+        $cookiePath = parse_url(APP_URL, PHP_URL_PATH) ?: '/';
+        $isSecure = Utils::isSecureConnection();
+
         if ($userId === null) {
             $tokens = $this->readRememberTokens();
             $tokens = array_slice($tokens, 0, 5, true);
@@ -138,8 +142,8 @@ class AuthServices {
                 if (count($parts) === 2) $this->tokenRepository->deleteBySelector($parts[0]);
             }
 
-            setcookie('remember_tokens', '', ['expires' => time() - 3600, 'path' => '/']);
-            setcookie('remember_token', '', ['expires' => time() - 3600, 'path' => '/']);
+            setcookie('remember_tokens', '', ['expires' => time() - 3600, 'path' => $cookiePath, 'secure' => $isSecure, 'httponly' => true, 'samesite' => 'Strict']);
+            setcookie('remember_token', '', ['expires' => time() - 3600, 'path' => $cookiePath, 'secure' => $isSecure, 'httponly' => true, 'samesite' => 'Strict']);
             
             unset($_COOKIE['remember_tokens']);
             unset($_COOKIE['remember_token']);
@@ -161,15 +165,14 @@ class AuthServices {
                     }
 
                     if (empty($cleanTokens)) {
-                        setcookie('remember_tokens', '', ['expires' => time() - 3600, 'path' => '/']);
+                        setcookie('remember_tokens', '', ['expires' => time() - 3600, 'path' => $cookiePath, 'secure' => $isSecure, 'httponly' => true, 'samesite' => 'Strict']);
                         unset($_COOKIE['remember_tokens']);
                     } else {
                         $days = $this->config['remember_me_days'] ?? 30;
                         $encodedTokens = json_encode($cleanTokens);
-                        $isSecure = Utils::isSecureConnection();
                         
                         setcookie('remember_tokens', $encodedTokens, [
-                            'expires' => time() + (CacheConstants::TTL_ONE_DAY * $days), 'path' => '/', 'secure' => $isSecure, 'httponly' => true, 'samesite' => 'Strict'
+                            'expires' => time() + (CacheConstants::TTL_ONE_DAY * $days), 'path' => $cookiePath, 'secure' => $isSecure, 'httponly' => true, 'samesite' => 'Strict'
                         ]);
                         $_COOKIE['remember_tokens'] = $encodedTokens;
                     }
@@ -553,12 +556,8 @@ class AuthServices {
             $asn = GeoIpHelper::getASN($ipAddress);
             
             if (in_array($asn, SecurityConstants::RISKY_ASNS)) {
-                Logger::warning("[WARNING] Login attempt from a risky datacenter", [
-                    'user_id' => $user['id'],
-                    'email' => $user['email'],
-                    'asn' => $asn,
-                    'ip' => $ipAddress
-                ]);
+                $payload = json_encode(['event' => 'risky_asn_login_attempt', 'user_id' => $user['id'], 'asn' => $asn, 'ip' => $ipAddress]);
+                Logger::warning("security_alert", ['details' => $payload]);
             }
 
             if (!empty($user['deletion_scheduled_at'])) {

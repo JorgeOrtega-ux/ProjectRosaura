@@ -1,4 +1,3 @@
-// public/assets/js/modules/admin/users/AdminUsersController.js
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
@@ -6,7 +5,7 @@ import { showMessage, setButtonLoading, restoreButton } from '../../../core/util
 class AdminUsersController {
     constructor() {
         this.api = new ApiService();
-        this.selectedUserIds = new Set(); // Sistema nativo pero ahora soporta Multi-selección
+        this.selectedUserIds = new Set();
         this.basePath = window.AppBasePath || '';
         
         this.abortController = null;
@@ -103,18 +102,17 @@ class AdminUsersController {
             this.backToMainFilters();
         }
 
-        // Sistema de selección visual nativo por clic en la fila
         if (selectTargetRow && !e.target.closest('button') && !e.target.closest('.component-dropdown-wrapper')) {
             this.handleUserSelection(selectTargetRow);
         }
 
         if (deselectBtn) this.deselectUser();
         
-        if (editUserBtn) this.editSelectedUser();
-        if (editRoleBtn) this.editSelectedUserRole();
-        if (editStatusBtn) this.editSelectedUserStatus();
-        if (viewHistoryBtn) this.viewSelectedUserHistory();
-        if (deleteUsersBtn) this.deleteSelectedUsers(deleteUsersBtn);
+        if (editUserBtn && !editUserBtn.classList.contains('disabled-interactive')) this.editSelectedUser();
+        if (editRoleBtn && !editRoleBtn.classList.contains('disabled-interactive')) this.editSelectedUserRole();
+        if (editStatusBtn && !editStatusBtn.classList.contains('disabled-interactive')) this.editSelectedUserStatus();
+        if (viewHistoryBtn && !viewHistoryBtn.classList.contains('disabled-interactive')) this.viewSelectedUserHistory();
+        if (deleteUsersBtn && !deleteUsersBtn.classList.contains('disabled-interactive')) this.deleteSelectedUsers(deleteUsersBtn);
 
         const searchToolbar = document.querySelector('[data-ref="search-toolbar"]');
         if (searchToolbar && !searchToolbar.classList.contains('disabled')) {
@@ -357,14 +355,12 @@ class AdminUsersController {
             if (selectionMode) selectionMode.classList.replace('disabled', 'active');
 
             if (this.selectedUserIds.size > 1) {
-                // Multi-selección: Desactivar botones individuales
                 [btnEditAccount, btnEditRole, btnEditStatus, btnHistory].forEach(btn => {
-                    if (btn) btn.classList.add('disabled-interaction');
+                    if (btn) btn.classList.add('disabled-interactive');
                 });
             } else {
-                // Selección única: Habilitar botones individuales
                 [btnEditAccount, btnEditRole, btnEditStatus, btnHistory].forEach(btn => {
-                    if (btn) btn.classList.remove('disabled-interaction');
+                    if (btn) btn.classList.remove('disabled-interactive');
                 });
             }
 

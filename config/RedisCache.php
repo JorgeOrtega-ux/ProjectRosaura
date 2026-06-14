@@ -55,7 +55,26 @@ class RedisCache {
     }
 
     public function getClient() {
-        return $this->client;
+        $client = $this->client;
+        
+        if (!$client) {
+            return null;
+        }
+
+        return new class($client) {
+            private $client;
+            
+            public function __construct($client) { 
+                $this->client = $client; 
+            }
+            
+            public function __call($name, $args) {
+                if ($name === 'rpush' && isset($args[1]) && !is_array($args[1])) {
+                    $args[1] = [$args[1]];
+                }
+                return $this->client->$name(...$args);
+            }
+        };
     }
 
     public function flushAll() {

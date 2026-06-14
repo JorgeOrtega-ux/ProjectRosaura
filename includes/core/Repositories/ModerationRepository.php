@@ -1,5 +1,4 @@
 <?php
-// includes/core/Repositories/ModerationRepository.php
 
 namespace App\Core\Repositories;
 
@@ -61,26 +60,77 @@ class ModerationRepository implements ModerationRepositoryInterface {
         }
     }
 
-    public function getKardex(int $userId): array {
+    public function getUnifiedKardex(int $userId, int $limit, int $offset): array {
         $tblModLogs = DB::TBL_MODERATION_LOGS;
+        $tblProfileLogs = DB::TBL_PROFILE_CHANGES_LOG;
         $tblUsers = DB::TBL_USERS;
         $tblRoles = DB::TBL_ROLES;
         $tblUserRoles = DB::TBL_USER_ROLES;
 
         try {
-            $stmt = $this->pdo->prepare("
-                SELECT ml.*, u.username as admin_username, u.profile_picture as admin_profile_picture,
-                       (SELECT r.name FROM {$tblRoles} r INNER JOIN {$tblUserRoles} ur ON r.id = ur.role_id WHERE ur.user_id = ml.admin_id ORDER BY r.weight DESC LIMIT 1) as admin_role
+            $sql = "
+                SELECT 
+                    ml.created_at,
+                    ml.action_type,
+                    ml.reason,
+                    u.username as admin_username,
+                    u.profile_picture as admin_profile_picture,
+                    (SELECT r.name FROM {$tblRoles} r INNER JOIN {$tblUserRoles} ur ON r.id = ur.role_id WHERE ur.user_id = ml.admin_id ORDER BY r.weight DESC LIMIT 1) as admin_role,
+                    (SELECT r.color FROM {$tblRoles} r INNER JOIN {$tblUserRoles} ur ON r.id = ur.role_id WHERE ur.user_id = ml.admin_id ORDER BY r.weight DESC LIMIT 1) as admin_role_color
                 FROM {$tblModLogs} ml
                 LEFT JOIN {$tblUsers} u ON ml.admin_id = u.id
-                WHERE ml.user_id = ?
-                ORDER BY ml.created_at DESC
-            ");
-            $stmt->execute([$userId]);
+                WHERE ml.user_id = :userId1
+
+                UNION ALL
+
+                SELECT 
+                    pl.created_at,
+                    CONCAT('profile_', pl.change_type) as action_type,
+                    CONCAT('{\"field\": \"', pl.change_type, '\", \"old\": \"', COALESCE(pl.old_value, 'null'), '\", \"new\": \"', COALESCE(pl.new_value, 'null'), '\"}') as reason,
+                    'user_action' as admin_username,
+                    (SELECT profile_picture FROM {$tblUsers} WHERE id = :userId2) as admin_profile_picture,
+                    'user' as admin_role,
+                    '{\"type\":\"solid\",\"colors\":[\"#808080\"]}' as admin_role_color
+                FROM {$tblProfileLogs} pl
+                WHERE pl.user_id = :userId3
+
+                ORDER BY created_at DESC
+                LIMIT :limit OFFSET :offset
+            ";
+
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->bindValue(':userId1', $userId, PDO::PARAM_INT);
+            $stmt->bindValue(':userId2', $userId, PDO::PARAM_INT);
+            $stmt->bindValue(':userId3', $userId, PDO::PARAM_INT);
+            $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+            $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+            $stmt->execute();
+            
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
             Logger::error("Database error in " . __METHOD__, ['user_id' => $userId, 'exception' => $e]);
             return [];
+        }
+    }
+
+    public function countUnifiedKardex(int $userId): int {
+        $tblModLogs = DB::TBL_MODERATION_LOGS;
+        $tblProfileLogs = DB::TBL_PROFILE_CHANGES_LOG;
+
+        try {
+            $sql = "
+                SELECT SUM(total) as count FROM (
+                    SELECT COUNT(id) as total FROM {$tblModLogs} WHERE user_id = ?
+                    UNION ALL
+                    SELECT COUNT(id) as total FROM {$tblProfileLogs} WHERE user_id = ?
+                ) as combined_counts
+            ";
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([$userId, $userId]);
+            return (int) $stmt->fetchColumn();
+        } catch (PDOException $e) {
+            Logger::error("Database error in " . __METHOD__, ['user_id' => $userId, 'exception' => $e]);
+            return 0;
         }
     }
 }

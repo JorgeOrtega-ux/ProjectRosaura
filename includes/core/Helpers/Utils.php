@@ -92,7 +92,6 @@ class Utils {
             $trustedProxies = array_merge($trustedProxies, array_map('trim', explode(',', $envProxies)));
         }
 
-        // Determinar si la IP remota es un proxy de confianza o cae dentro del rango de IPs privadas (Docker default: 172.x.x.x, 10.x.x.x, 192.168.x.x)
         $isTrusted = in_array($realIp, $trustedProxies) || filter_var($realIp, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false;
 
         if ($isTrusted) {
@@ -305,7 +304,22 @@ class Utils {
             $connectionParams['password'] = $_ENV['REDIS_PASS'];
         }
         
-        return new \Predis\Client($connectionParams);
+        $client = new \Predis\Client($connectionParams);
+
+        return new class($client) {
+            private $client;
+            
+            public function __construct($client) { 
+                $this->client = $client; 
+            }
+            
+            public function __call($name, $args) {
+                if ($name === 'rpush' && isset($args[1]) && !is_array($args[1])) {
+                    $args[1] = [$args[1]];
+                }
+                return $this->client->$name(...$args);
+            }
+        };
     }
 
     public static function invalidateUserSessions(SessionManagerInterface $sessionManager, $userId, $flushAll = false, $selector = null) {

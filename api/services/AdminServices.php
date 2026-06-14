@@ -150,7 +150,7 @@ class AdminServices {
 
             $jobId = Utils::generateUUID();
             $jobKey = CacheConstants::PREFIX_BACKUP_JOB . $jobId;
-            $message = ($type === 'manual_custom') ? 'En cola para ejecución personalizada modular...' : 'En cola para ejecución de backup modular...';
+            $message = ($type === 'manual_custom') ? 'queued_custom_backup' : 'queued_modular_backup';
 
             $redis->hmset($jobKey, ['status' => 'pending', 'message' => $message, 'created_at' => time()]);
             $redis->expire($jobKey, 3600);
@@ -165,7 +165,7 @@ class AdminServices {
                 $payloadData['schema'] = $schema;
             }
 
-            $redis->rpush(CacheConstants::QUEUE_BACKUP, [json_encode($payloadData)]);
+            $redis->rpush(CacheConstants::QUEUE_BACKUP, json_encode($payloadData));
             return ['success' => true, 'message' => __('admin.backup_queued'), 'job_id' => $jobId];
         } catch (\Exception $e) {
             Logger::error("[ERROR] Dispatch backup job failed: " . $e->getMessage());
@@ -244,7 +244,8 @@ class AdminServices {
 
             if ($this->userRepository->updateAvatar($targetId, $newRelPath)) {
                 $currentUserId = $this->sessionManager->get('user_id');
-                $this->moderationRepository->logAction($targetId, $currentUserId, 'profile_avatar', "Avatar actualizado por el administrador", null);
+                $logPayload = json_encode(['event' => 'admin_override_avatar', 'target_user' => $targetId, 'admin_user' => $currentUserId]);
+                $this->moderationRepository->logAction($targetId, $currentUserId, 'profile_avatar', $logPayload, null);
                 return ['success' => true, 'message' => __('admin.avatar_updated'), 'new_avatar' => APP_URL . '/' . ltrim($newRelPath, '/')];
             }
         } else {
@@ -274,7 +275,8 @@ class AdminServices {
         $newRelPath = Utils::generateProfilePicture($user['username'], $user['uuid']);
         if ($this->userRepository->updateAvatar($targetId, $newRelPath)) {
             $currentUserId = $this->sessionManager->get('user_id');
-            $this->moderationRepository->logAction($targetId, $currentUserId, 'profile_avatar', "Avatar eliminado (restaurado a predeterminado)", null);
+            $logPayload = json_encode(['event' => 'admin_delete_avatar', 'target_user' => $targetId, 'admin_user' => $currentUserId]);
+            $this->moderationRepository->logAction($targetId, $currentUserId, 'profile_avatar', $logPayload, null);
             return ['success' => true, 'message' => __('admin.avatar_deleted'), 'new_avatar' => APP_URL . '/' . ltrim($newRelPath, '/')];
         }
         return ['success' => false, 'message' => __('error.database')];
@@ -307,7 +309,8 @@ class AdminServices {
 
         $oldUsername = $user['username'];
         if ($this->userRepository->updateUsername($targetId, $username)) {
-            $this->moderationRepository->logAction($targetId, $currentUserId, 'profile_username', "Nombre de usuario cambiado de '{$oldUsername}' a '{$username}'", null);
+            $logPayload = json_encode(['event' => 'admin_update_username', 'old_username' => $oldUsername, 'new_username' => $username, 'admin_user' => $currentUserId]);
+            $this->moderationRepository->logAction($targetId, $currentUserId, 'profile_username', $logPayload, null);
             return ['success' => true, 'message' => __('admin.username_updated'), 'new_username' => $username];
         }
         return ['success' => false, 'message' => __('error.update_failed')];
@@ -338,7 +341,8 @@ class AdminServices {
 
         $oldEmail = $user['email'];
         if ($this->userRepository->updateEmail($targetId, $email)) {
-            $this->moderationRepository->logAction($targetId, $currentUserId, 'profile_email', "Correo cambiado de '{$oldEmail}' a '{$email}'", null);
+            $logPayload = json_encode(['event' => 'admin_update_email', 'old_email' => $oldEmail, 'new_email' => $email, 'admin_user' => $currentUserId]);
+            $this->moderationRepository->logAction($targetId, $currentUserId, 'profile_email', $logPayload, null);
             
             $mailer = new Mailer();
             $mailer->sendSecurityAlertEmailChanged($oldEmail, $user['username'], $email);
@@ -369,7 +373,8 @@ class AdminServices {
         if ($this->userRepository->updatePreference($targetId, $key, $value)) {
             $currentUserId = $this->sessionManager->get('user_id');
             $valStr = is_bool($value) ? ($value ? 'true' : 'false') : (string)$value;
-            $this->moderationRepository->logAction($targetId, $currentUserId, 'profile_preferences', "Preferencia '{$key}' actualizada a '{$valStr}'", null);
+            $logPayload = json_encode(['event' => 'admin_update_preference', 'key' => $key, 'new_value' => $valStr, 'admin_user' => $currentUserId]);
+            $this->moderationRepository->logAction($targetId, $currentUserId, 'profile_preferences', $logPayload, null);
             return ['success' => true, 'message' => __('admin.preference_updated')];
         }
         
@@ -401,10 +406,9 @@ class AdminServices {
 
         try {
             if ($this->roleRepository->syncUserRoles($targetId, $rolesIds, $currentWeight)) {
-                $rolesStr = implode(', ', $rolesIds);
                 Logger::info("[INFO] Admin updated user roles", ['admin_id' => $currentUserId, 'target_user_id' => $targetId, 'new_roles' => $rolesIds]);
-                
-                $this->moderationRepository->logAction($targetId, $currentUserId, 'role_changed', "Roles actualizados a IDs: [{$rolesStr}]", null, null);
+                $logPayload = json_encode(['event' => 'admin_update_roles', 'new_roles' => $rolesIds, 'admin_user' => $currentUserId]);
+                $this->moderationRepository->logAction($targetId, $currentUserId, 'role_changed', $logPayload, null, null);
                 
                 Utils::invalidateUserSessions($this->sessionManager, $targetId);
                 
@@ -467,9 +471,10 @@ class AdminServices {
                     'username' => $user['username'],
                     'reason' => $deletedReason
                 ]);
-                $redisClient->rpush(CacheConstants::QUEUE_ACCOUNT_DELETION, [$payload]);
+                $redisClient->rpush(CacheConstants::QUEUE_ACCOUNT_DELETION, $payload);
                 
-                $this->moderationRepository->logAction($targetId, $currentUserId, 'deleted', "Borrado duro y masivo por Admin.", null, null);
+                $logPayload = json_encode(['event' => 'admin_bulk_delete_user', 'admin_user' => $currentUserId]);
+                $this->moderationRepository->logAction($targetId, $currentUserId, 'deleted', $logPayload, null, null);
                 
                 $successCount++;
             }
@@ -547,7 +552,8 @@ class AdminServices {
 
         if ($this->moderationRepository->updateStatus($targetId, 'active', null, null, $dbIsSuspended, $dbSuspensionType, $dbSuspensionReason, $dbEndDate, null)) {
             if ($actionType !== 'note_updated') {
-                $this->moderationRepository->logAction($targetId, $currentUserId, $actionType, $logReason, $dbEndDate, null);
+                $logPayload = json_encode(['event' => 'admin_update_suspension', 'action' => $actionType, 'reason' => $logReason, 'admin_user' => $currentUserId]);
+                $this->moderationRepository->logAction($targetId, $currentUserId, $actionType, $logPayload, $dbEndDate, null);
             }
             if ($dbIsSuspended === 1) {
                 $this->tokenRepository->deleteAllByUserId($targetId);
@@ -573,35 +579,14 @@ class AdminServices {
         $targetId = (int)($data['target_user_id'] ?? 0);
         $page = max(1, (int)($data['page'] ?? 1));
         $limit = max(1, (int)($data['limit'] ?? 10));
+        $offset = ($page - 1) * $limit;
 
         $user = $this->userRepository->findById($targetId);
         if (!$user) return ['success' => false, 'message' => __('admin.user_not_found')];
 
-        $modLogs = $this->moderationRepository->getKardex($targetId);
-        
-        $profileLogs = $this->profileLogRepository->getLogsByUserId($targetId, 1000, 0);
-        
-        foreach ($profileLogs as $pl) {
-            $modLogs[] = [
-                'created_at' => $pl['created_at'],
-                'action_type' => 'profile_' . $pl['change_type'],
-                'reason' => 'Dato: ' . $pl['change_type'] . ' | Valor previo: ' . ($pl['old_value'] ?? 'N/A') . ' | Nuevo: ' . ($pl['new_value'] ?? 'N/A'),
-                'admin_username' => 'Acción del Usuario',
-                'admin_profile_picture' => $user['profile_picture'] ?? null,
-                'admin_role' => 'user',
-                'admin_role_color' => $user['role_color'] ?? '{"type":"solid","colors":["#808080"]}'
-            ];
-        }
-
-        usort($modLogs, function($a, $b) {
-            return strtotime($b['created_at']) - strtotime($a['created_at']);
-        });
-
-        $totalItems = count($modLogs);
+        $paginatedLogs = $this->moderationRepository->getUnifiedKardex($targetId, $limit, $offset);
+        $totalItems = $this->moderationRepository->countUnifiedKardex($targetId);
         $totalPages = ceil($totalItems / $limit);
-        $offset = ($page - 1) * $limit;
-        
-        $paginatedLogs = array_slice($modLogs, $offset, $limit);
 
         return [
             'success' => true, 
@@ -1027,12 +1012,12 @@ class AdminServices {
             $jobId = Utils::generateUUID();
             $jobKey = CacheConstants::PREFIX_BACKUP_JOB . $jobId;
 
-            $redis->hmset($jobKey, ['status' => 'pending', 'message' => 'En cola para restauración...', 'created_at' => time()]);
+            $redis->hmset($jobKey, ['status' => 'pending', 'message' => 'queued_restore', 'created_at' => time()]);
             $redis->expire($jobKey, 3600);
             $redis->setex(CacheConstants::KEY_SYSTEM_RESTORING, 900, '1');
             
             $payload = json_encode(['job_id' => $jobId, 'type' => 'restore', 'backup_file' => $filename, 'requested_by' => $currentUserId]);
-            $redis->rpush(CacheConstants::QUEUE_BACKUP, [$payload]);
+            $redis->rpush(CacheConstants::QUEUE_BACKUP, $payload);
 
             return ['success' => true, 'message' => __('admin.restore_queued'), 'job_id' => $jobId];
         } catch (\Exception $e) {
@@ -1109,17 +1094,46 @@ class AdminServices {
         $pageviews = $this->telemetryRepository->getPageviewsOverTime($start, $end);
         $logins = $this->telemetryRepository->getAuthEventsOverTime($start, $end, 'login_success');
 
-        // Optimización: Sumar directamente los valores sin iterar múltiples veces sobre fechas ni usar formateadores intermedios.
-        $totalRegs = array_sum(array_column($registrations, 'count'));
-        $totalPv = array_sum(array_column($pageviews, 'count'));
-        $totalLogins = array_sum(array_column($logins, 'count'));
+        $labels = [];
+        $current = strtotime($startDate);
+        $last = strtotime($endDate);
+        while ($current <= $last) {
+            $labels[] = date('Y-m-d', $current);
+            $current = strtotime('+1 day', $current);
+        }
+
+        $formatDataset = function($dataArray, $labels) {
+            $map = [];
+            foreach ($dataArray as $row) {
+                $map[$row['date']] = (int)$row['count'];
+            }
+            $result = [];
+            foreach ($labels as $lbl) {
+                $result[] = $map[$lbl] ?? 0;
+            }
+            return $result;
+        };
+
+        $regData = $formatDataset($registrations, $labels);
+        $pvData = $formatDataset($pageviews, $labels);
+        $loginData = $formatDataset($logins, $labels);
+
+        $totalRegs = array_sum($regData);
+        $totalPv = array_sum($pvData);
+        $totalLogins = array_sum($loginData);
 
         return [
             'success' => true,
             'summary' => [
-                'new_users' => (int)$totalRegs,
-                'pageviews' => (int)$totalPv,
-                'logins' => (int)$totalLogins
+                'new_users' => $totalRegs,
+                'pageviews' => $totalPv,
+                'logins' => $totalLogins
+            ],
+            'charts' => [
+                'labels' => $labels,
+                'registrations' => $regData,
+                'pageviews' => $pvData,
+                'logins' => $loginData
             ]
         ];
     }

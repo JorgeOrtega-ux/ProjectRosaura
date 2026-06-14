@@ -58,7 +58,8 @@ class SettingsServices
         $cooldownDays = $this->config['avatar_change_cooldown_days'];
 
         if (!$this->canChangeProfileData($userId, DB::LOG_CHANGE_AVATAR, $maxAttempts, $cooldownDays)) {
-            Logger::warning("[WARNING] Rate limit exceeded for avatar change", ['user_id' => $userId]);
+            $payload = json_encode(['event' => 'rate_limit_exceeded', 'type' => 'avatar_change', 'user_id' => $userId]);
+            Logger::warning("rate_limit_event", ['details' => $payload]);
             return ['success' => false, 'message' => __('error.rate_limit_exceeded')];
         }
 
@@ -80,7 +81,7 @@ class SettingsServices
             $newRelPath = 'public/storage/profilePictures/uploaded/' . $fileName;
 
             if ($this->userRepository->updateAvatar($userId, $newRelPath)) {
-                $this->logProfileChange($userId, DB::LOG_CHANGE_AVATAR, $oldPic, $newRelPath);
+                $this->logProfileChange($userId, DB::LOG_CHANGE_AVATAR, json_encode(['avatar' => $oldPic]), json_encode(['avatar' => $newRelPath]));
                 $this->sessionManager->set('user_pic', $newRelPath);
                 return ['success' => true, 'message' => __('settings.avatar_updated'), 'new_avatar' => APP_URL . '/' . ltrim($newRelPath, '/')];
             }
@@ -106,7 +107,7 @@ class SettingsServices
 
         $newRelPath = Utils::generateProfilePicture($this->sessionManager->get('user_name'), $this->sessionManager->get('user_uuid'));
         if ($this->userRepository->updateAvatar($userId, $newRelPath)) {
-            $this->logProfileChange($userId, DB::LOG_CHANGE_AVATAR, $oldPic, $newRelPath);
+            $this->logProfileChange($userId, DB::LOG_CHANGE_AVATAR, json_encode(['avatar' => $oldPic]), json_encode(['avatar' => $newRelPath]));
             $this->sessionManager->set('user_pic', $newRelPath);
             return ['success' => true, 'message' => __('settings.avatar_deleted'), 'new_avatar' => APP_URL . '/' . ltrim($newRelPath, '/')];
         }
@@ -142,7 +143,7 @@ class SettingsServices
 
         $oldUsername = $this->sessionManager->get('user_name', '');
         if ($this->userRepository->updateUsername($userId, $username)) {
-            $this->logProfileChange($userId, DB::LOG_CHANGE_USERNAME, $oldUsername, $username);
+            $this->logProfileChange($userId, DB::LOG_CHANGE_USERNAME, json_encode(['username' => $oldUsername]), json_encode(['username' => $username]));
             $this->sessionManager->set('user_name', $username);
             return ['success' => true, 'message' => __('settings.username_updated'), 'new_username' => $username];
         }
@@ -283,7 +284,7 @@ class SettingsServices
 
         $oldEmail = $this->sessionManager->get('user_email', '');
         if ($this->userRepository->updateEmail($userId, $email)) {
-            $this->logProfileChange($userId, DB::LOG_CHANGE_EMAIL, $oldEmail, $email);
+            $this->logProfileChange($userId, DB::LOG_CHANGE_EMAIL, json_encode(['email' => $oldEmail]), json_encode(['email' => $email]));
             $this->sessionManager->set('user_email', $email);
             $this->sessionManager->remove('can_update_email_expires');
             return ['success' => true, 'message' => __('settings.email_updated'), 'new_email' => $email];
@@ -384,7 +385,7 @@ class SettingsServices
         if (!$pVal['valid']) return ['success' => false, 'message' => __('validation.invalid_password_format')];
 
         if ($this->userRepository->updatePassword($userId, password_hash($newPassword, PASSWORD_BCRYPT))) {
-            $this->logProfileChange($userId, DB::LOG_CHANGE_PASSWORD, '***', '***');
+            $this->logProfileChange($userId, DB::LOG_CHANGE_PASSWORD, json_encode(['security' => 'redacted']), json_encode(['security' => 'updated']));
             $this->sessionManager->remove('can_change_password_expires');
             $this->rateLimiter->clear(RateLimitConstants::KEY_SET_UPDATE_PASSWORD . "_{$userId}");
             
@@ -486,7 +487,7 @@ class SettingsServices
                 $this->sessionManager->remove('2fa_setup_secret');
                 $this->rateLimiter->clear(RateLimitConstants::KEY_2FA_ENABLE . "_{$userId}"); 
 
-                $this->logProfileChange($userId, DB::LOG_CHANGE_2FA, 'disabled', 'enabled');
+                $this->logProfileChange($userId, DB::LOG_CHANGE_2FA, json_encode(['status' => 'disabled']), json_encode(['status' => 'enabled']));
                 
                 $mailer = new Mailer();
                 $mailer->send2FAStatusNotification($this->sessionManager->get('user_email'), $this->sessionManager->get('user_name'), 'enabled');
@@ -520,7 +521,7 @@ class SettingsServices
                 $this->sessionManager->set('user_2fa', 0);
                 $this->rateLimiter->clear(RateLimitConstants::KEY_2FA_DISABLE . "_{$userId}");
 
-                $this->logProfileChange($userId, DB::LOG_CHANGE_2FA, 'enabled', 'disabled');
+                $this->logProfileChange($userId, DB::LOG_CHANGE_2FA, json_encode(['status' => 'enabled']), json_encode(['status' => 'disabled']));
                 
                 $mailer = new Mailer();
                 $mailer->send2FAStatusNotification($this->sessionManager->get('user_email'), $this->sessionManager->get('user_name'), 'disabled');
@@ -595,23 +596,16 @@ class SettingsServices
                 
                 $this->sessionManager->removeAccount($userId);
 
+                $cookiePath = parse_url(APP_URL, PHP_URL_PATH) ?: '/';
+                $isSecure = Utils::isSecureConnection();
+
                 if (isset($_COOKIE['remember_tokens'])) {
-                    $tokens = json_decode($_COOKIE['remember_tokens'], true) ?: [];
-                    if (isset($tokens[$userId])) unset($tokens[$userId]);
-                    
-                    if (empty($tokens)) {
-                        setcookie('remember_tokens', '', ['expires' => time() - 3600, 'path' => APP_URL ?: '/']);
-                        unset($_COOKIE['remember_tokens']);
-                    } else {
-                        $isSecure = Utils::isSecureConnection();
-                        $encoded = json_encode($tokens);
-                        setcookie('remember_tokens', $encoded, ['expires' => time() + (86400 * 30), 'path' => APP_URL ?: '/', 'secure' => $isSecure, 'httponly' => true, 'samesite' => 'Strict']);
-                    }
+                    setcookie('remember_tokens', '', ['expires' => time() - 3600, 'path' => $cookiePath, 'secure' => $isSecure, 'httponly' => true, 'samesite' => 'Strict']);
+                    unset($_COOKIE['remember_tokens']);
                 }
                 
                 if (isset($_COOKIE['remember_token'])) {
-                    $isSecure = Utils::isSecureConnection();
-                    setcookie('remember_token', '', ['expires' => time() - 3600, 'path' => APP_URL ?: '/', 'secure' => $isSecure, 'httponly' => true, 'samesite' => 'Strict']);
+                    setcookie('remember_token', '', ['expires' => time() - 3600, 'path' => $cookiePath, 'secure' => $isSecure, 'httponly' => true, 'samesite' => 'Strict']);
                     unset($_COOKIE['remember_token']);
                 }
                 return ['success' => true, 'message' => __('settings.all_sessions_revoked')];
@@ -679,7 +673,12 @@ class SettingsServices
     {
         $ip = Utils::getIpAddress();
         if (!$this->profileLogRepository->logChange($userId, $changeType, $oldValue, $newValue, $ip)) {
-            Logger::error("[ERROR] Failed to log profile change in database", ['user_id' => $userId, 'change_type' => $changeType]);
+            $errorPayload = json_encode([
+                'event' => 'profile_log_failure',
+                'user_id' => $userId,
+                'change_type' => $changeType
+            ]);
+            Logger::error("profile_update_error", ['details' => $errorPayload]);
         }
     }
 }

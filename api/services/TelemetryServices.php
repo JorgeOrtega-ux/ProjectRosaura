@@ -56,12 +56,13 @@ class TelemetryServices {
             if ($jsonPayload) {
                 $client = $this->redis->getClient();
                 if ($client) {
-                    // CORRECCIÓN: Se envuelve $jsonPayload en un array
-                    $client->rpush($queueName, [$jsonPayload]);
+                    $client->rpush($queueName, $jsonPayload);
                 }
             }
         } catch (\Exception $e) {
-            Logger::error("[ERROR] Telemetry Redis Push Error: " . $e->getMessage());
+            Logger::error("telemetry_redis_push_error", [
+                "exception_message" => $e->getMessage()
+            ]);
         }
     }
 }
