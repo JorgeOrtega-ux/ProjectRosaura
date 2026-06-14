@@ -1,4 +1,3 @@
-// public/assets/js/modules/admin/users/AdminStatusEditController.js
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
@@ -24,9 +23,6 @@ class AdminStatusEditController {
             notifyUserSuspension: true
         };
 
-        // Arquitectura de Espejo: Se ha ELIMINADO this.maps por completo. 
-        // JS ya no interviene en las traducciones de las opciones.
-
         this.reasonDurations = {
             'reason_terms': 7, 'reason_fake_info': 30, 'reason_illegal': 30,
             'reason_fraud_use': 14, 'reason_abuse': 3, 'reason_prohibited_content': 7,
@@ -34,7 +30,6 @@ class AdminStatusEditController {
             'reason_unauthorized_commercial': 14, 'reason_other': 1 
         };
 
-        // Almacenaremos los placeholders originales tal como los imprimió PHP
         this.defaultTexts = {
             suspensionReason: '',
             endDate: ''
@@ -104,7 +99,6 @@ class AdminStatusEditController {
                 if (inpSuspCustom) inpSuspCustom.value = this.state.customSuspensionReason || '';
                 if (chkNotifySuspension) chkNotifySuspension.checked = this.state.notifyUserSuspension;
 
-                // Capturamos los placeholders estáticos desde el DOM antes de hacer cualquier cosa
                 const reasonEl = document.querySelector('[data-ref="admin-suspensionReason-text"]');
                 if (reasonEl) this.defaultTexts.suspensionReason = reasonEl.textContent.trim();
                 
@@ -115,7 +109,7 @@ class AdminStatusEditController {
                 this.renderUI();
                 this.checkForChanges();
             } catch (error) {
-                console.error("Error al analizar el estado inicial desde el DOM:", error);
+                console.error("[System Log] Initial state parsing failed", error);
             }
         }
     }
@@ -139,7 +133,7 @@ class AdminStatusEditController {
                     () => {
                         this.state.endDate = '';
                         const textEl = document.querySelector('[data-ref="admin-endDate-text"]');
-                        if (textEl) textEl.textContent = this.defaultTexts.endDate; // Usamos el fallback estático
+                        if (textEl) textEl.textContent = this.defaultTexts.endDate;
                         this.checkForChanges(); 
                     }
                 );
@@ -186,6 +180,21 @@ class AdminStatusEditController {
             this.state.customSuspensionReason = e.target.value;
             this.checkForChanges(); 
             this.renderUI();
+        } else if (ref === 'suspension-reason-search') {
+            const query = e.target.value.toLowerCase();
+            const list = document.querySelector('[data-ref="suspension-reason-list"]');
+            if (list) {
+                const items = list.querySelectorAll('.component-menu-link');
+                items.forEach(item => {
+                    const textNode = item.querySelector('.component-menu-link-text');
+                    const text = textNode ? textNode.textContent.toLowerCase() : item.textContent.toLowerCase();
+                    if (text.includes(query)) {
+                        item.style.display = '';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            }
         }
     }
 
@@ -212,7 +221,6 @@ class AdminStatusEditController {
         const textEl = document.querySelector('[data-ref="admin-endDate-text"]');
         if (!textEl) return;
         if (!this.state.endDate) {
-            // Utilizamos el placeholder estático extraído del DOM sin llamar a __()
             textEl.textContent = this.defaultTexts.endDate;
             return;
         }
@@ -228,9 +236,6 @@ class AdminStatusEditController {
             const val = String(this.state[key]);
             let selectedText = '';
             
-            // 1. Encontrar el menú HTML y extraer el texto DIRECTAMENTE del nodo
-            // Esto anula por completo la necesidad de traducir, obligando a JS a 
-            // usar estrictamente el texto (o la llave cruda) que PHP renderizó.
             document.querySelectorAll(`[data-action="adminSetDropdown"][data-key="${key}"]`).forEach(item => {
                 const isMatch = item.getAttribute('data-value') === val;
                 item.classList.toggle('active', isMatch);
@@ -243,14 +248,12 @@ class AdminStatusEditController {
                 }
             });
 
-            // 2. Aplicar el texto clonado al trigger visual
             if (updateText) {
                 const el = document.querySelector(`[data-ref="admin-${key}-text"]`);
                 if (el) {
                     if (selectedText) {
                         el.textContent = selectedText;
                     } else if (key === 'suspensionReason') {
-                        // Si no hay opción (ej. se borró al volver isSuspended a 0)
                         if (!val) {
                             el.textContent = this.defaultTexts.suspensionReason;
                         } else {
@@ -338,7 +341,6 @@ class AdminStatusEditController {
 
         if (!resultDialog.confirmed) return;
 
-        // AQUÍ SE CORRIGIÓ LA EXTRACCIÓN CON EL ID REAL DEL TEMPLATE
         const password = resultDialog.data['modal_verify_password'] ? resultDialog.data['modal_verify_password'].trim() : '';
         if (!password) { showMessage(__('err_admin_password_required'), 'error'); return; }
 

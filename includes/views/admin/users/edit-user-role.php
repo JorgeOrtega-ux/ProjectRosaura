@@ -1,5 +1,4 @@
 <?php
-// includes/views/admin/users/edit-user-role.php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 use App\Config\DatabaseManager;
@@ -24,7 +23,6 @@ if (!$user) {
     exit;
 }
 
-// Obtener TODOS los roles del sistema y los asignados a este usuario
 $allRoles = $roleRepo->getAll();
 $assignedRoles = $roleRepo->getUserRoles($targetUserId);
 $assignedRoleIds = array_column($assignedRoles, 'id');
@@ -81,31 +79,8 @@ $isTargetSuperAdmin = in_array(4, $assignedRoleIds);
                             $isDisabled = ($r['id'] == 4 || $isHigherHierarchy || $r['id'] == 1 || $isTargetSuperAdmin) ? true : false;
                             
                             $isChecked = in_array($r['id'], $assignedRoleIds) ? 'checked' : '';
-                            $disabledAttr = $isDisabled ? 'disabled' : '';
+                            $disabledClass = $isDisabled ? 'disabled-interactive' : '';
                             $opacityStyle = $isDisabled ? 'opacity: 0.6; pointer-events: none;' : '';
-
-                            // Renderizado de Color del Rol
-                            $cssBackground = '#808080';
-                            $parsedColor = json_decode($r['color'], true);
-                            if (json_last_error() === JSON_ERROR_NONE && isset($parsedColor['colors'])) {
-                                if ($parsedColor['type'] === 'solid') {
-                                    $cssBackground = is_string($parsedColor['colors'][0]) ? $parsedColor['colors'][0] : ($parsedColor['colors'][0]['hex'] ?? '#808080');
-                                } elseif ($parsedColor['type'] === 'gradient') {
-                                    $angle = $parsedColor['angle'] ?? 0;
-                                    $stops = [];
-                                    $prevStop = 0;
-                                    $colorsCount = count($parsedColor['colors']);
-                                    foreach ($parsedColor['colors'] as $i => $c) {
-                                        $hex = is_string($c) ? $c : ($c['hex'] ?? '#000');
-                                        $percentage = isset($c['percentage']) ? (int)$c['percentage'] : floor(100 / $colorsCount);
-                                        $endStop = $prevStop + $percentage;
-                                        if ($i === $colorsCount - 1) $endStop = 100;
-                                        $stops[] = "{$hex} {$prevStop}% {$endStop}%";
-                                        $prevStop = $endStop;
-                                    }
-                                    $cssBackground = "conic-gradient(from {$angle}deg, " . implode(', ', $stops) . ")";
-                                }
-                            }
                         ?>
                         
                         <hr class="component-divider">
@@ -114,7 +89,6 @@ $isTargetSuperAdmin = in_array(4, $assignedRoleIds);
                             <div class="component-card__content">
                                 <div class="component-card__text">
                                     <h2 class="component-card__title" style="display: flex; align-items: center; gap: 8px;">
-                                        <span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:<?php echo $cssBackground; ?>;"></span>
                                         <?php echo htmlspecialchars($rTrans); ?>
                                         
                                         <?php if($r['id'] == 1): ?> 
@@ -130,7 +104,7 @@ $isTargetSuperAdmin = in_array(4, $assignedRoleIds);
                             </div>
                             <div class="component-card__actions component-card__actions--end">
                                 <label class="component-toggle-switch <?php echo $isDisabled ? 'disabled-interaction' : ''; ?>">
-                                    <input type="checkbox" name="assigned_roles[]" value="<?php echo htmlspecialchars($r['id']); ?>" class="admin-role-checkbox" <?php echo $isChecked; ?> <?php echo $disabledAttr; ?>>
+                                    <input type="checkbox" name="assigned_roles[]" value="<?php echo htmlspecialchars($r['id']); ?>" class="admin-role-checkbox <?php echo $disabledClass; ?>" <?php echo $isChecked; ?>>
                                     <span class="component-toggle-slider"></span>
                                 </label>
                             </div>

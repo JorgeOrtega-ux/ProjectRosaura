@@ -24,7 +24,6 @@ if (!$user) {
     exit;
 }
 
-// Configuración inicial de Estado (Para suspensiones)
 $initialState = [
     'isSuspended' => ($user['is_suspended'] == 1) ? '1' : '0',
     'suspensionReason' => '',
@@ -35,7 +34,6 @@ $initialState = [
     'notifyUserSuspension' => true
 ];
 
-// Arreglo unificado usando exclusivamente Keys
 $predefinedSuspension = [
     'reason_terms', 'reason_fake_info', 'reason_illegal', 'reason_fraud_use',
     'reason_abuse', 'reason_prohibited_content', 'reason_ip_violation',
@@ -43,7 +41,6 @@ $predefinedSuspension = [
 ];
 
 if ($user['suspension_reason']) {
-    // Si la razón en DB es una llave oficial, la mantenemos, si no, es 'reason_other' y la metemos a custom.
     if (in_array($user['suspension_reason'], $predefinedSuspension)) {
         $initialState['suspensionReason'] = $user['suspension_reason'];
     } else {
@@ -60,7 +57,6 @@ if ($user['is_suspended'] == 1 && $user['suspension_type'] === DB::SUSPENSION_TE
 
 $initialStateJson = htmlspecialchars(json_encode($initialState), ENT_QUOTES, 'UTF-8');
 
-// --- SSR: PRE-RENDER DE TEXTOS PARA EVITAR PARPADEO CON TRADUCCIONES ---
 $displayTexts = [
     'isSuspended' => ($initialState['isSuspended'] === '1') ? __('suspension_active') : __('suspension_none'),
     'suspensionReason' => !empty($initialState['suspensionReason']) ? (in_array($initialState['suspensionReason'], $predefinedSuspension) ? __($initialState['suspensionReason']) : $initialState['suspensionReason']) : __('lbl_select_suspension_reason'),
@@ -87,7 +83,6 @@ if (!empty($initialState['endDate'])) {
     $displayTexts['endDate'] = "{$day} " . __('lbl_of') . " {$monthsStr[$monthIndex]} {$year}, {$time}";
 }
 
-// --- SSR: PRE-RENDER DE VISIBILIDAD ---
 $vis = [
     'suspension_reason' => 'disabled', 'suspension_custom' => 'disabled', 'suspension_type' => 'disabled',
     'suspension_duration' => 'disabled', 'suspension_date' => 'disabled', 'notify_user_suspension' => 'disabled'
@@ -106,7 +101,6 @@ if ($initialState['isSuspended'] === '1') {
     $vis['notify_user_suspension'] = '';
 }
 ?>
-
 <div class="view-content" data-user-id="<?php echo $targetUserId; ?>" data-initial-state="<?php echo $initialStateJson; ?>">
     
     <div class="component-top">
@@ -184,8 +178,19 @@ if ($initialState['isSuspended'] === '1') {
                                             <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="adminModuleSuspensionReason">
                                                 <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
                                                     <div class="pill-container"><div class="drag-handle"></div></div>
-                                                    <div class="component-menu-list component-menu-list--scrollable">
-                                                        
+                                                    
+                                                    <div class="component-menu-header">
+                                                        <div class="component-search component-search--full component-search--h36">
+                                                            <div class="component-search-icon">
+                                                                <span class="material-symbols-rounded">search</span>
+                                                            </div>
+                                                            <div class="component-search-input">
+                                                                <input type="text" data-ref="suspension-reason-search" placeholder="<?php echo __('placeholder_search') ?? 'Buscar...'; ?>">
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="component-menu-list component-menu-list--scrollable" data-ref="suspension-reason-list">
                                                         <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionReason" data-value="reason_terms">
                                                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">gavel</span></div>
                                                             <div class="component-menu-link-text"><span><?php echo __('reason_terms'); ?></span></div>
@@ -230,7 +235,6 @@ if ($initialState['isSuspended'] === '1') {
                                                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">more_horiz</span></div>
                                                             <div class="component-menu-link-text"><span><?php echo __('reason_other'); ?></span></div>
                                                         </div>
-
                                                     </div>
                                                 </div>
                                             </div>
@@ -376,8 +380,6 @@ if ($initialState['isSuspended'] === '1') {
                         </div>
 
                     </div>
-
-                    <div style="height: 40px;"></div>
 
                 </div>
             </div>
