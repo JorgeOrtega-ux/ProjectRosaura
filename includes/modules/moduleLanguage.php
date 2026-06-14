@@ -1,11 +1,10 @@
 <?php 
-// includes/modules/moduleLanguage.php
 $userPrefs = $_SESSION['user_prefs'] ?? [];
 $currentLang = $userPrefs['language'] ?? ($_COOKIE['pr_language'] ?? 'es-419');
 $languages = \App\Core\System\Translator::getAvailableLanguages();
 ?>
 <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="moduleLanguage">
-    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding">
+    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
         <div class="pill-container"><div class="drag-handle"></div></div>
         <div class="component-menu-header">
             <div class="component-search component-search--full component-search--h36">

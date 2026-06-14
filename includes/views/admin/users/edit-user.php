@@ -1,5 +1,4 @@
 <?php
-// includes/views/admin/users/edit-user.php
 if (session_status() === PHP_SESSION_NONE) session_start();
 global $serverConfig;
 
@@ -35,7 +34,6 @@ if (!$user) {
 
 $prefs = $prefsManager->ensureDefaultPreferences($targetUserId);
 
-// Lógica de color del rol dominante para el Borde del Avatar
 $roleColorRaw = $user['role_color'] ?? '';
 $activeRoleBg = 'var(--text-muted)';
 
@@ -70,7 +68,6 @@ $formattedAvatar = (!empty($user['profile_picture']) && strpos($user['profile_pi
     : $user['profile_picture'];
 $isDefaultAvatar = strpos($formattedAvatar, '/default/') !== false;
 
-// Obtenemos los idiomas de forma centralizada desde el Translator
 $langMap = Translator::getAvailableLanguages();
 
 $themeMap = [
@@ -198,7 +195,7 @@ $themeMap = [
                                     <span class="material-symbols-rounded">expand_more</span>
                                 </div>
                                 <div class="component-module component-module--dropdown component-module--dropdown-left disabled bs-initialized" data-module="adminModuleLanguage">
-                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding">
+                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
                                         <div class="pill-container"><div class="drag-handle"></div></div>
                                         <div class="component-menu-header">
                                             <div class="component-search component-search--full component-search--h36">
@@ -241,7 +238,7 @@ $themeMap = [
                                     <span class="material-symbols-rounded">expand_more</span>
                                 </div>
                                 <div class="component-module component-module--dropdown component-module--dropdown-left disabled bs-initialized" data-module="adminModuleTheme">
-                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding">
+                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
                                         <div class="pill-container"><div class="drag-handle"></div></div>
                                         <div class="component-menu-list component-menu-list--scrollable">
                                             <div class="component-menu-link <?php echo $prefs['theme'] === DB::THEME_SYSTEM ? 'active' : ''; ?>" data-action="adminSetPref" data-key="theme" data-value="<?php echo DB::THEME_SYSTEM; ?>">

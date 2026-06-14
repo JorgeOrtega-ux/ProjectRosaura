@@ -1,5 +1,4 @@
 <?php
-// includes/views/admin/users/edit-status.php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 use App\Config\DatabaseManager;
@@ -148,7 +147,7 @@ if ($initialState['isSuspended'] === '1') {
                                             <span class="material-symbols-rounded">expand_more</span>
                                         </div>
                                         <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="adminModuleSuspended">
-                                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding">
+                                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
                                                 <div class="pill-container"><div class="drag-handle"></div></div>
                                                 <div class="component-menu-list component-menu-list--scrollable">
                                                     <div class="component-menu-link" data-action="adminSetDropdown" data-key="isSuspended" data-value="0">
@@ -183,7 +182,7 @@ if ($initialState['isSuspended'] === '1') {
                                                 <span class="material-symbols-rounded">expand_more</span>
                                             </div>
                                             <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="adminModuleSuspensionReason">
-                                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding">
+                                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
                                                     <div class="pill-container"><div class="drag-handle"></div></div>
                                                     <div class="component-menu-list component-menu-list--scrollable">
                                                         
@@ -271,7 +270,7 @@ if ($initialState['isSuspended'] === '1') {
                                                 <span class="material-symbols-rounded">expand_more</span>
                                             </div>
                                             <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="adminModuleSuspendedType">
-                                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding">
+                                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
                                                     <div class="pill-container"><div class="drag-handle"></div></div>
                                                     <div class="component-menu-list component-menu-list--scrollable">
                                                         <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspendedType" data-value="<?php echo DB::SUSPENSION_TEMP; ?>">
@@ -307,7 +306,7 @@ if ($initialState['isSuspended'] === '1') {
                                                 <span class="material-symbols-rounded">expand_more</span>
                                             </div>
                                             <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="adminModuleSuspensionDuration">
-                                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding">
+                                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
                                                     <div class="pill-container"><div class="drag-handle"></div></div>
                                                     <div class="component-menu-list component-menu-list--scrollable">
                                                         <div class="component-menu-link" data-action="adminSetDropdown" data-key="suspensionDuration" data-value="1">

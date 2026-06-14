@@ -1,5 +1,4 @@
 <?php 
-// includes/modules/moduleTheme.php
 $userPrefs = $_SESSION['user_prefs'] ?? [];
 $currentTheme = $userPrefs['theme'] ?? 'system';
 
@@ -11,7 +10,7 @@ $themes = [
 ?>
 <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="moduleTheme">
     
-    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding">
+    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
         
         <div class="pill-container"><div class="drag-handle"></div></div>
 
