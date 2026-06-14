@@ -2,10 +2,8 @@
 // includes/views/admin/dashboard.php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
-// Obtenemos los permisos del usuario de la sesión, si no existe devolvemos un array vacío
 $userPermissions = $_SESSION['user_permissions'] ?? [];
 
-// Validamos si tiene los permisos requeridos usando la NUEVA NOMENCLATURA
 $canManageRoles = in_array('view_roles', $userPermissions);
 $canViewLogs = in_array('view_logs', $userPermissions);
 
@@ -59,26 +57,6 @@ $canViewLogs = in_array('view_logs', $userPermissions);
                     <div class="component-stat-card__content">
                         <span class="component-stat-card__title"><?php echo __('admin_dashboard_pageviews', 'Vistas de Página'); ?></span>
                         <span class="component-stat-card__value" id="stat-pageviews">--</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="component-charts-layout">
-                <div class="component-item-card component-chart-card">
-                    <div class="component-chart-card__header">
-                        <h3 class="component-card__title"><?php echo __('admin_dashboard_chart_registrations', 'Evolución de Registros'); ?></h3>
-                    </div>
-                    <div class="component-chart-card__canvas">
-                        <canvas id="chart-registrations"></canvas>
-                    </div>
-                </div>
-
-                <div class="component-item-card component-chart-card">
-                    <div class="component-chart-card__header">
-                        <h3 class="component-card__title"><?php echo __('admin_dashboard_chart_activity', 'Actividad del Sistema (Vistas vs Logins)'); ?></h3>
-                    </div>
-                    <div class="component-chart-card__canvas">
-                        <canvas id="chart-activity"></canvas>
                     </div>
                 </div>
             </div>
