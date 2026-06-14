@@ -56,7 +56,7 @@ class TelemetryServices {
             if ($jsonPayload) {
                 $client = $this->redis->getClient();
                 if ($client) {
-                    $client->rpush($queueName, $jsonPayload);
+                    $client->rpush($queueName, [$jsonPayload]);
                 }
             }
         } catch (\Exception $e) {

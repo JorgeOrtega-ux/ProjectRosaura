@@ -92,7 +92,7 @@ class AdminServices {
         $targetWeight = $highestTargetRole ? (int)$highestTargetRole['weight'] : 1;
 
         if ($targetWeight >= SecurityConstants::WEIGHT_SUPER_ADMIN && $currentUserId != 1) {
-            Logger::warning("[WARNING] Attempt to modify a SuperAdmin account blocked", [
+            Logger::warning("admin_privilege_escalation_blocked", [
                 'admin_id' => $currentUserId,
                 'target_user_id' => $targetUser['id']
             ]);
@@ -100,7 +100,7 @@ class AdminServices {
         }
 
         if ($currentWeight <= $targetWeight && $currentWeight < SecurityConstants::WEIGHT_SUPER_ADMIN) {
-            Logger::warning("[WARNING] Insufficient privileges to modify target user", [
+            Logger::warning("admin_insufficient_privileges", [
                 'admin_id' => $currentUserId,
                 'target_user_id' => $targetUser['id']
             ]);
@@ -165,10 +165,10 @@ class AdminServices {
                 $payloadData['schema'] = $schema;
             }
 
-            $redis->rpush(CacheConstants::QUEUE_BACKUP, json_encode($payloadData));
+            $redis->rpush(CacheConstants::QUEUE_BACKUP, [json_encode($payloadData)]);
             return ['success' => true, 'message' => __('admin.backup_queued'), 'job_id' => $jobId];
         } catch (\Exception $e) {
-            Logger::error("[ERROR] Dispatch backup job failed: " . $e->getMessage());
+            Logger::error("dispatch_backup_job_failed", ["exception" => $e->getMessage()]);
             return ['success' => false, 'message' => __('error.redis_communication')];
         }
     }
@@ -406,7 +406,7 @@ class AdminServices {
 
         try {
             if ($this->roleRepository->syncUserRoles($targetId, $rolesIds, $currentWeight)) {
-                Logger::info("[INFO] Admin updated user roles", ['admin_id' => $currentUserId, 'target_user_id' => $targetId, 'new_roles' => $rolesIds]);
+                Logger::info("admin_update_user_roles", ['admin_id' => $currentUserId, 'target_user_id' => $targetId, 'new_roles' => $rolesIds]);
                 $logPayload = json_encode(['event' => 'admin_update_roles', 'new_roles' => $rolesIds, 'admin_user' => $currentUserId]);
                 $this->moderationRepository->logAction($targetId, $currentUserId, 'role_changed', $logPayload, null, null);
                 
@@ -415,7 +415,7 @@ class AdminServices {
                 return ['success' => true, 'message' => __('admin.role_updated')];
             }
         } catch (\Exception $e) {
-            Logger::error("[ERROR] Update roles failed: " . $e->getMessage());
+            Logger::error("update_roles_failed", ["exception" => $e->getMessage()]);
             if (strpos($e->getMessage(), 'Security Violation') !== false) {
                 return ['success' => false, 'message' => __('admin.hierarchical_restriction')];
             }
@@ -471,7 +471,7 @@ class AdminServices {
                     'username' => $user['username'],
                     'reason' => $deletedReason
                 ]);
-                $redisClient->rpush(CacheConstants::QUEUE_ACCOUNT_DELETION, $payload);
+                $redisClient->rpush(CacheConstants::QUEUE_ACCOUNT_DELETION, [$payload]);
                 
                 $logPayload = json_encode(['event' => 'admin_bulk_delete_user', 'admin_user' => $currentUserId]);
                 $this->moderationRepository->logAction($targetId, $currentUserId, 'deleted', $logPayload, null, null);
@@ -490,7 +490,7 @@ class AdminServices {
                 'failed_count' => $failedCount
             ];
         } catch (\Exception $e) {
-            Logger::error("[ERROR] Redis communication failed during bulk user deletion: " . $e->getMessage());
+            Logger::error("redis_communication_failed", ["exception" => $e->getMessage()]);
             return ['success' => false, 'message' => __('error.redis_communication')];
         }
     }
@@ -732,7 +732,7 @@ class AdminServices {
                 return ['success' => true, 'message' => __('admin.role_updated')];
             }
         } catch (\Exception $e) {
-            Logger::error("[ERROR] Edit role failed: " . $e->getMessage());
+            Logger::error("edit_role_failed", ["exception" => $e->getMessage()]);
             if (strpos($e->getMessage(), 'Security Violation') !== false) {
                 return ['success' => false, 'message' => __('error.unauthorized'), 'http_code' => 403];
             }
@@ -764,7 +764,7 @@ class AdminServices {
                 return ['success' => true, 'message' => __('admin.role_deleted')];
             }
         } catch (\Exception $e) {
-            Logger::error("[ERROR] Delete role failed: " . $e->getMessage());
+            Logger::error("delete_role_failed", ["exception" => $e->getMessage()]);
             if (strpos($e->getMessage(), 'Security Violation') !== false) {
                 return ['success' => false, 'message' => __('error.unauthorized'), 'http_code' => 403];
             }
@@ -831,7 +831,7 @@ class AdminServices {
                 return ['success' => true, 'message' => __('admin.role_permissions_updated')];
             }
         } catch (\Exception $e) {
-            Logger::error("[ERROR] Update role permissions failed: " . $e->getMessage());
+            Logger::error("update_role_permissions_failed", ["exception" => $e->getMessage()]);
             if (strpos($e->getMessage(), 'Security Violation') !== false) {
                 return ['success' => false, 'message' => __('error.unauthorized'), 'http_code' => 403];
             }
@@ -931,7 +931,7 @@ class AdminServices {
             }
             return ['success' => true, 'schema' => $schema];
         } catch (\Exception $e) {
-            Logger::error("[ERROR] Get backup schema failed: " . $e->getMessage());
+            Logger::error("get_backup_schema_failed", ["exception" => $e->getMessage()]);
             return ['success' => false, 'message' => __('error.database')];
         }
     }
@@ -973,7 +973,7 @@ class AdminServices {
             $statusData = $redis->hgetall($jobKey);
             return ['success' => true, 'status' => $statusData['status'] ?? 'unknown', 'job_message' => $statusData['message'] ?? ''];
         } catch (\Exception $e) {
-            Logger::error("[ERROR] Get backup status failed: " . $e->getMessage());
+            Logger::error("get_backup_status_failed", ["exception" => $e->getMessage()]);
             return ['success' => false, 'message' => __('error.redis_communication')];
         }
     }
@@ -1017,11 +1017,11 @@ class AdminServices {
             $redis->setex(CacheConstants::KEY_SYSTEM_RESTORING, 900, '1');
             
             $payload = json_encode(['job_id' => $jobId, 'type' => 'restore', 'backup_file' => $filename, 'requested_by' => $currentUserId]);
-            $redis->rpush(CacheConstants::QUEUE_BACKUP, $payload);
+            $redis->rpush(CacheConstants::QUEUE_BACKUP, [$payload]);
 
             return ['success' => true, 'message' => __('admin.restore_queued'), 'job_id' => $jobId];
         } catch (\Exception $e) {
-            Logger::error("[ERROR] Restore backup failed: " . $e->getMessage());
+            Logger::error("restore_backup_failed", ["exception" => $e->getMessage()]);
             return ['success' => false, 'message' => __('error.redis_communication')];
         }
     }
@@ -1071,7 +1071,7 @@ class AdminServices {
             $isRunning = $redis->exists(CacheConstants::KEY_SYSTEM_RESTORING);
             return ['success' => true, 'is_running' => (bool)$isRunning, 'status' => $isRunning ? 'restoring' : 'finished'];
         } catch (\Exception $e) {
-            Logger::error("[ERROR] Check worker status failed: " . $e->getMessage());
+            Logger::error("check_worker_status_failed", ["exception" => $e->getMessage()]);
             return ['success' => false, 'message' => __('error.redis_communication')];
         }
     }
@@ -1138,4 +1138,3 @@ class AdminServices {
         ];
     }
 }
-?>
