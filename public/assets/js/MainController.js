@@ -18,6 +18,7 @@ export class MainController {
         this.handleDocumentClickBound = this.handleDocumentClick.bind(this);
         this.handleDocumentChangeBound = this.handleDocumentChange.bind(this);
         this.handleDocumentKeydownBound = this.handleDocumentKeydown.bind(this);
+        this.handleDocumentInputBound = this.handleDocumentInput.bind(this);
         this.handleThemeMediaQueryBound = this.handleThemeMediaQuery.bind(this);
         this.handleViewLoadedBound = this.handleViewLoaded.bind(this);
         this.handleMaintenanceBound = this.handleMaintenanceTriggered.bind(this);
@@ -47,14 +48,11 @@ export class MainController {
 
     destroy() {
         window.removeEventListener('resize', this.handleResizeBound);
-        
-        // Removemos el listener de scroll global en fase de captura
         document.removeEventListener('scroll', this.handleScrollBound, true);
-        
         document.removeEventListener('click', this.handleDocumentClickBound);
         document.removeEventListener('change', this.handleDocumentChangeBound);
         document.removeEventListener('keydown', this.handleDocumentKeydownBound);
-        
+        document.removeEventListener('input', this.handleDocumentInputBound);
         document.removeEventListener('pointerdown', this.handlePointerDownBound);
         document.removeEventListener('pointermove', this.handlePointerMoveBound);
         document.removeEventListener('pointerup', this.handlePointerUpBound);
@@ -67,15 +65,11 @@ export class MainController {
 
     bindEvents() {
         window.addEventListener('resize', this.handleResizeBound);
-        
-        // Escuchamos el evento de scroll en fase de captura (true) para interceptar 
-        // eventos de scroll que no burbujean (como los de .component-viewport dinámicos)
         document.addEventListener('scroll', this.handleScrollBound, true);
-
         document.addEventListener('click', this.handleDocumentClickBound);
         document.addEventListener('change', this.handleDocumentChangeBound);
         document.addEventListener('keydown', this.handleDocumentKeydownBound);
-        
+        document.addEventListener('input', this.handleDocumentInputBound);
         document.addEventListener('pointerdown', this.handlePointerDownBound);
         document.addEventListener('pointermove', this.handlePointerMoveBound);
         document.addEventListener('pointerup', this.handlePointerUpBound);
@@ -214,12 +208,10 @@ export class MainController {
     }
 
     handleScroll(e) {
-        // 1. Manejar el scroll global (general-content-scrolleable)
         if (this.dom.topBar && this.dom.scrolleableArea && e.target === this.dom.scrolleableArea) {
             this.dom.topBar.classList.toggle('shadow', this.dom.scrolleableArea.scrollTop > 0);
         }
 
-        // 2. Manejar el scroll interno de los componentes dinámicos (component-viewport)
         if (e.target && e.target.classList && e.target.classList.contains('component-viewport')) {
             const parent = e.target.parentElement;
             if (parent) {
@@ -289,6 +281,38 @@ export class MainController {
 
     handleDocumentKeydown(e) {
         if (e.key === 'Escape' && this.config.closeOnEsc) this.closeAllModules();
+    }
+
+    handleDocumentInput(e) {
+        const ref = e.target.getAttribute('data-ref');
+        if (ref === 'language-search') {
+            const query = e.target.value.toLowerCase().trim();
+            const module = e.target.closest('.component-module');
+            if (!module) return;
+            
+            const list = module.querySelector('[data-ref="language-list"]');
+            const emptyState = module.querySelector('[data-ref="language-empty"]');
+            
+            if (list) {
+                let hasVisibleItems = false;
+                const items = list.querySelectorAll('.component-menu-link:not(.disabled-interactive)');
+                
+                items.forEach(item => {
+                    const textNode = item.querySelector('.component-menu-link-text');
+                    const text = textNode ? textNode.textContent.toLowerCase() : item.textContent.toLowerCase();
+                    if (text.includes(query)) {
+                        item.style.display = '';
+                        hasVisibleItems = true;
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+                
+                if (emptyState) {
+                    emptyState.hidden = hasVisibleItems;
+                }
+            }
+        }
     }
 
     toggleEditState(field) {
@@ -411,8 +435,6 @@ export class MainController {
     }
 
     openModule(module) { 
-        // FIX ULTRA-FONDO: Reiniciar los submenús SILENCIOSAMENTE antes de que 
-        // el módulo se vuelva visible. Así siempre arranca de cero.
         const mainMenu = module.querySelector('[data-menu="main-options"]');
         const accountMenu = module.querySelector('[data-menu="account-switcher"]');
         
@@ -424,15 +446,11 @@ export class MainController {
             accountMenu.classList.add('disabled');
         }
 
-        // Ahora sí, mostramos el módulo
         module.classList.replace('disabled', 'active'); 
     }
     
     closeModule(module) { 
-        // Al cerrar, solo ocultamos el módulo y soltamos el drag (sin timers peligrosos)
         module.classList.replace('active', 'disabled'); 
-        
-        // Restaurar estado drag
         module.querySelectorAll('.component-menu').forEach(p => p.removeAttribute('style'));
     }
     
@@ -465,10 +483,6 @@ export class MainController {
         let newDevice = width <= 768 ? __('device_mobile') : (width <= 1024 ? __('device_tablet') : __('device_desktop'));
         if (this.state.currentDevice !== newDevice) this.state.currentDevice = newDevice;
     }
-
-    // ==========================================
-    // METODOS DE AUTENTICACION / MULTISESION
-    // ==========================================
 
     async handleSwitchAccount(accountId, btnElement) {
         if (!accountId) return;

@@ -181,19 +181,28 @@ class AdminStatusEditController {
             this.checkForChanges(); 
             this.renderUI();
         } else if (ref === 'suspension-reason-search') {
-            const query = e.target.value.toLowerCase();
+            const query = e.target.value.toLowerCase().trim();
             const list = document.querySelector('[data-ref="suspension-reason-list"]');
+            const emptyState = document.querySelector('[data-ref="suspension-reason-empty"]');
+            
             if (list) {
-                const items = list.querySelectorAll('.component-menu-link');
+                let hasVisibleItems = false;
+                const items = list.querySelectorAll('.component-menu-link:not(.disabled-interactive)');
+                
                 items.forEach(item => {
                     const textNode = item.querySelector('.component-menu-link-text');
                     const text = textNode ? textNode.textContent.toLowerCase() : item.textContent.toLowerCase();
                     if (text.includes(query)) {
                         item.style.display = '';
+                        hasVisibleItems = true;
                     } else {
                         item.style.display = 'none';
                     }
                 });
+                
+                if (emptyState) {
+                    emptyState.hidden = hasVisibleItems;
+                }
             }
         }
     }

@@ -235,6 +235,13 @@ if ($initialState['isSuspended'] === '1') {
                                                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">more_horiz</span></div>
                                                             <div class="component-menu-link-text"><span><?php echo __('reason_other'); ?></span></div>
                                                         </div>
+                                                        
+                                                        <div class="component-menu-empty" data-ref="suspension-reason-empty" hidden>
+                                                             <div class="component-menu-link disabled-interactive">
+                                                                 <div class="component-menu-link-icon"><span class="material-symbols-rounded">search_off</span></div>
+                                                                 <div class="component-menu-link-text"><span class="component-text-notice--muted"><?php echo __('no_results_found') ?? 'No se encontraron resultados'; ?></span></div>
+                                                             </div>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>

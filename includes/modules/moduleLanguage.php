@@ -12,11 +12,11 @@ $languages = \App\Core\System\Translator::getAvailableLanguages();
                     <span class="material-symbols-rounded">search</span>
                 </div>
                 <div class="component-search-input">
-                    <input type="text" placeholder="<?php echo __('search_language'); ?>">
+                    <input type="text" data-ref="language-search" placeholder="<?php echo __('search_language'); ?>">
                 </div>
             </div>
         </div>
-        <div class="component-menu-list component-menu-list--scrollable">
+        <div class="component-menu-list component-menu-list--scrollable" data-ref="language-list">
             <?php foreach ($languages as $code => $name): ?>
             <div class="component-menu-link <?php echo ($currentLang === $code) ? 'active' : ''; ?>" data-action="setPref" data-key="language" data-value="<?php echo htmlspecialchars($code); ?>">
                 <div class="component-menu-link-icon">
@@ -27,6 +27,13 @@ $languages = \App\Core\System\Translator::getAvailableLanguages();
                 </div>
             </div>
             <?php endforeach; ?>
+            
+            <div class="component-menu-empty" data-ref="language-empty" hidden>
+                 <div class="component-menu-link disabled-interactive">
+                     <div class="component-menu-link-icon"><span class="material-symbols-rounded">search_off</span></div>
+                     <div class="component-menu-link-text"><span class="component-text-notice--muted"><?php echo __('no_results_found') ?? 'No se encontraron resultados'; ?></span></div>
+                 </div>
+            </div>
         </div>
     </div>
 </div>
