@@ -1,6 +1,4 @@
 <?php
-// includes/core/Repositories/RedisVerificationCodeRepository.php
-
 namespace App\Core\Repositories;
 
 use App\Core\Interfaces\VerificationCodeRepositoryInterface;
@@ -16,14 +14,13 @@ class RedisVerificationCodeRepository implements VerificationCodeRepositoryInter
 
     public function createCode(string $identifier, string $codeType, string $code, string $payload, string $expiresAt): bool {
         try {
-            // Simulamos un ID auto-incremental único para compatibilidad con la Interfaz actual
             $id = $this->redis->incr('seq:verification_codes');
             
             $now = time();
             $expiresTime = strtotime($expiresAt);
             $ttl = $expiresTime - $now;
             
-            if ($ttl <= 0) $ttl = 900; // Fallback 15 minutos por seguridad
+            if ($ttl <= 0) $ttl = 900; 
 
             $data = [
                 'id' => $id,
@@ -37,18 +34,13 @@ class RedisVerificationCodeRepository implements VerificationCodeRepositoryInter
 
             $json = json_encode($data);
 
-            // 1. Registro principal (Por ID)
             $this->redis->setex("vercode:id:{$id}", $ttl, $json);
-
-            // 2. Índice por identificador y tipo (Ej. Email + account_activation)
             $this->redis->setex("vercode:ident:{$identifier}:{$codeType}", $ttl, $id);
-
-            // 3. Índice directo por código exacto
             $this->redis->setex("vercode:code:{$code}:{$codeType}", $ttl, $id);
 
             return true;
         } catch (\Exception $e) {
-            Logger::error("Redis error in " . __METHOD__, ['identifier' => $identifier, 'code_type' => $codeType, 'exception' => $e]);
+            Logger::error("Redis code creation failed", ['identifier' => $identifier, 'code_type' => $codeType, 'exception' => $e->getMessage()]);
             return false;
         }
     }
@@ -67,7 +59,7 @@ class RedisVerificationCodeRepository implements VerificationCodeRepositoryInter
             $data['seconds_elapsed'] = time() - strtotime($data['created_at']);
             return $data;
         } catch (\Exception $e) {
-            Logger::error("Redis error in " . __METHOD__, ['identifier' => $identifier, 'code_type' => $codeType, 'exception' => $e]);
+            Logger::error("Redis find code by identifier failed", ['identifier' => $identifier, 'code_type' => $codeType, 'exception' => $e->getMessage()]);
             return null;
         }
     }
@@ -82,7 +74,7 @@ class RedisVerificationCodeRepository implements VerificationCodeRepositoryInter
             $json = $this->redis->get("vercode:id:{$id}");
             return $json ? json_decode($json, true) : null;
         } catch (\Exception $e) {
-            Logger::error("Redis error in " . __METHOD__, ['code_type' => $codeType, 'exception' => $e]);
+            Logger::error("Redis find code failed", ['code_type' => $codeType, 'exception' => $e->getMessage()]);
             return null;
         }
     }
@@ -91,7 +83,7 @@ class RedisVerificationCodeRepository implements VerificationCodeRepositoryInter
         try {
             return (bool) $this->redis->exists("vercode:ident:{$identifier}:{$codeType}");
         } catch (\Exception $e) {
-            Logger::error("Redis error in " . __METHOD__, ['identifier' => $identifier, 'code_type' => $codeType, 'exception' => $e]);
+            Logger::error("Redis active code check failed", ['identifier' => $identifier, 'code_type' => $codeType, 'exception' => $e->getMessage()]);
             return false;
         }
     }
@@ -101,14 +93,13 @@ class RedisVerificationCodeRepository implements VerificationCodeRepositoryInter
             $json = $this->redis->get("vercode:id:{$id}");
             if ($json) {
                 $data = json_decode($json, true);
-                // Destruimos todos los índices asociados manualmente
                 $this->redis->del("vercode:ident:{$data['identifier']}:{$data['code_type']}");
                 $this->redis->del("vercode:code:{$data['code']}:{$data['code_type']}");
                 $this->redis->del("vercode:id:{$id}");
             }
             return true;
         } catch (\Exception $e) {
-            Logger::error("Redis error in " . __METHOD__, ['id' => $id, 'exception' => $e]);
+            Logger::error("Redis delete code by ID failed", ['id' => $id, 'exception' => $e->getMessage()]);
             return false;
         }
     }
@@ -122,9 +113,8 @@ class RedisVerificationCodeRepository implements VerificationCodeRepositoryInter
             }
             return true;
         } catch (\Exception $e) {
-            Logger::error("Redis error in " . __METHOD__, ['identifier' => $identifier, 'code_type' => $codeType, 'exception' => $e]);
+            Logger::error("Redis delete code by identifier failed", ['identifier' => $identifier, 'code_type' => $codeType, 'exception' => $e->getMessage()]);
             return false;
         }
     }
 }
-?>

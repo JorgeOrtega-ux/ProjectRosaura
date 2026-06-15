@@ -1,6 +1,4 @@
 <?php
-// includes/core/System/RedisSessionHandler.php
-
 namespace App\Core\System;
 
 use SessionHandlerInterface;
@@ -36,7 +34,7 @@ class RedisSessionHandler implements SessionHandlerInterface {
             $data = $this->redis->get($this->prefix . $id);
             return $data === null ? '' : $data;
         } catch (Exception $e) {
-            Logger::error("Redis session read failed", ['session_id' => $id, 'exception' => $e]);
+            Logger::error("Redis session read failed", ['session_id' => $id, 'exception' => $e->getMessage()]);
             return '';
         }
     }
@@ -46,20 +44,14 @@ class RedisSessionHandler implements SessionHandlerInterface {
         try {
             $this->redis->setex($this->prefix . $id, $this->ttl, $data);
 
-            // ================================================================
-            // ÍNDICES SECUNDARIOS PARA PURGA DE SESIONES FANTASMA (STALE SESSIONS)
-            // ================================================================
             $sessionArray = $this->parseSessionData($data);
 
             if (isset($sessionArray['accounts']) && is_array($sessionArray['accounts'])) {
                 foreach ($sessionArray['accounts'] as $accountId => $accountData) {
-                    
-                    // Indexar cada cuenta en el pool a este PHPSESSID
                     $idxKey = CacheConstants::PREFIX_USER_SESSIONS . $accountId;
                     $this->redis->sadd($idxKey, $id);
                     $this->redis->expire($idxKey, $this->ttl);
                     
-                    // Indexar cada rol que posee la cuenta a este PHPSESSID
                     if (isset($accountData['user_roles']) && is_array($accountData['user_roles'])) {
                         foreach ($accountData['user_roles'] as $roleId) {
                             $this->redis->sadd("idx:role_sessions:{$roleId}", $id);
@@ -71,7 +63,7 @@ class RedisSessionHandler implements SessionHandlerInterface {
 
             return true;
         } catch (Exception $e) {
-            Logger::error("Redis session write failed", ['session_id' => $id, 'exception' => $e]);
+            Logger::error("Redis session write failed", ['session_id' => $id, 'exception' => $e->getMessage()]);
             return false;
         }
     }
@@ -82,7 +74,7 @@ class RedisSessionHandler implements SessionHandlerInterface {
             $this->redis->del($this->prefix . $id);
             return true;
         } catch (Exception $e) {
-            Logger::error("Redis session destroy failed", ['session_id' => $id, 'exception' => $e]);
+            Logger::error("Redis session destroy failed", ['session_id' => $id, 'exception' => $e->getMessage()]);
             return false;
         }
     }
@@ -92,9 +84,6 @@ class RedisSessionHandler implements SessionHandlerInterface {
         return true;
     }
 
-    /**
-     * Decodifica la sesión de forma segura sin interferir con $_SESSION en memoria
-     */
     private function parseSessionData(string $session_data): array {
         $return_data = [];
         $offset = 0;
@@ -103,20 +92,25 @@ class RedisSessionHandler implements SessionHandlerInterface {
         while ($offset < $length) {
             $pos = strpos($session_data, "|", $offset);
             if ($pos === false) {
-                break; // Formato inválido o fin
+                break;
             }
             $num = $pos - $offset;
             $varname = substr($session_data, $offset, $num);
             $offset += $num + 1;
 
             $str = substr($session_data, $offset);
-            $data = @unserialize($str);
+            
+            $data = null;
+            try {
+                $data = unserialize($str);
+            } catch (\Throwable $e) {
+                Logger::error("Session unserialize failure", ['exception' => $e->getMessage()]);
+            }
+            
             $return_data[$varname] = $data;
-
             $offset += strlen(serialize($data));
         }
 
         return $return_data;
     }
 }
-?>

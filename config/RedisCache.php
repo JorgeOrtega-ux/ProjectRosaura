@@ -1,25 +1,24 @@
 <?php
-
 namespace App\Config;
 
 use Predis\Client;
 use Exception;
 use App\Core\System\Logger;
+use App\Core\Helpers\EnvLoader;
 
 class RedisCache {
     private $client;
 
     public function __construct() {
-        $this->loadEnv(ROOT_PATH . '/.env');
+        $host = EnvLoader::get('REDIS_HOST', '');
+        $port = (int)EnvLoader::get('REDIS_PORT', 6379);
 
-        if (!isset($_ENV['REDIS_HOST']) || !isset($_ENV['REDIS_PORT'])) {
+        if (empty($host)) {
             $this->setupDummyClient();
             return;
         }
 
-        $host = $_ENV['REDIS_HOST'];
-        $port = (int)$_ENV['REDIS_PORT'];
-        $pass = $_ENV['REDIS_PASS'] ?? null;
+        $pass = EnvLoader::get('REDIS_PASS', '');
 
         $parameters = [
             'scheme' => 'tcp',
@@ -35,7 +34,7 @@ class RedisCache {
             $this->client = new Client($parameters);
             $this->client->ping();
         } catch (Exception $e) {
-            Logger::error('Redis connection failure.', [
+            Logger::error('Redis connection failure', [
                 'exception' => $e->getMessage()
             ]);
             $this->setupDummyClient();
@@ -66,7 +65,7 @@ class RedisCache {
             }
             return false;
         } catch (Exception $e) {
-            Logger::error('Redis database flush failure.', [
+            Logger::error('Redis database flush failure', [
                 'exception' => $e->getMessage()
             ]);
             return false;
@@ -86,7 +85,7 @@ class RedisCache {
                 return $token;
             }
         } catch (Exception $e) {
-            Logger::error('Redis acquire lock failure.', [
+            Logger::error('Redis acquire lock failure', [
                 'lock_name' => $name, 
                 'exception' => $e->getMessage()
             ]);
@@ -110,7 +109,7 @@ class RedisCache {
             ';
             return (bool)$this->client->eval($script, 1, "lock:{$name}", $token);
         } catch (Exception $e) {
-            Logger::error('Redis release lock failure.', [
+            Logger::error('Redis release lock failure', [
                 'lock_name' => $name, 
                 'exception' => $e->getMessage()
             ]);
@@ -128,31 +127,4 @@ class RedisCache {
             }
         }
     }
-
-    private function loadEnv($path) {
-        if (!file_exists($path)) {
-            return;
-        }
-
-        $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-        foreach ($lines as $line) {
-            if (strpos(trim($line), '#') === 0) continue;
-            if (strpos($line, '=') === false) continue;
-
-            list($name, $value) = explode('=', $line, 2);
-            $name = trim($name);
-            $value = trim($value);
-
-            if (preg_match('/^"(.*)"$/', $value, $matches) || preg_match("/^'(.*)'$/", $value, $matches)) {
-                $value = $matches[1];
-            }
-
-            if (!array_key_exists($name, $_SERVER) && !array_key_exists($name, $_ENV)) {
-                putenv(sprintf('%s=%s', $name, $value));
-                $_ENV[$name] = $value;
-                $_SERVER[$name] = $value;
-            }
-        }
-    }
 }
-?>

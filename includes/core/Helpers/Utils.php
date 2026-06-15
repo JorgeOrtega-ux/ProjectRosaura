@@ -1,12 +1,8 @@
 <?php
-// includes/core/Helpers/Utils.php
-
 namespace App\Core\Helpers;
-
 use App\Core\Interfaces\SessionManagerInterface;
 
 class Utils {
-    
     public static function generateUUID() {
         $data = random_bytes(16);
         $data[6] = chr(ord($data[6]) & 0x0f | 0x40);
@@ -28,14 +24,19 @@ class Utils {
             ]
         ]);
 
-        $imageContent = @file_get_contents($url, false, $context);
+        $imageContent = false;
+        try {
+            $imageContent = file_get_contents($url, false, $context);
+        } catch (\Throwable $e) {
+            \App\Core\System\Logger::error('Avatar generation failed', ['url' => $url, 'exception' => $e->getMessage()]);
+        }
         
         if ($imageContent === false || empty($imageContent)) {
             return 'public/assets/img/fallbacks/avatar-default.png';
         }
 
         $storageDir = ROOT_PATH . '/public/storage/profilePictures/default/';
-        if (!is_dir($storageDir)) mkdir($storageDir, 0777, true);
+        if (!is_dir($storageDir)) mkdir($storageDir, 0755, true);
         
         $fileName = $uuid . '.png';
         $filePath = $storageDir . $fileName;
@@ -84,7 +85,6 @@ class Utils {
 
     public static function getIpAddress() {
         $realIp = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
-        
         $trustedProxies = ['127.0.0.1', '::1']; 
         
         $envProxies = \App\Core\Helpers\EnvLoader::get('TRUSTED_PROXIES', '');
@@ -92,7 +92,6 @@ class Utils {
             $trustedProxies = array_merge($trustedProxies, array_map('trim', explode(',', $envProxies)));
         }
 
-        // Determinar si la IP remota es un proxy de confianza o cae dentro del rango de IPs privadas (Docker default: 172.x.x.x, 10.x.x.x, 192.168.x.x)
         $isTrusted = in_array($realIp, $trustedProxies) || filter_var($realIp, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false;
 
         if ($isTrusted) {
@@ -180,7 +179,7 @@ class Utils {
         $path = self::getMaintenanceFilePath();
         $dir = dirname($path);
         if (!is_dir($dir)) {
-            mkdir($dir, 0777, true);
+            mkdir($dir, 0755, true);
         }
         file_put_contents($path, json_encode(['maintenance_started_at' => time()]));
         return true;
@@ -249,25 +248,33 @@ class Utils {
         $fileName = self::generateUUID() . (($mime === 'image/png') ? '.png' : '.jpg');
         
         if (!is_dir($uploadDir)) {
-            mkdir($uploadDir, 0777, true);
+            mkdir($uploadDir, 0755, true);
         }
         
         $destPath = rtrim($uploadDir, '/') . '/' . $fileName;
         $imageRecreated = false;
 
         if ($mime === 'image/png') {
-            $sourceImage = @imagecreatefrompng($file['tmp_name']);
-            if ($sourceImage !== false) {
-                imagealphablending($sourceImage, false);
-                imagesavealpha($sourceImage, true);
-                $imageRecreated = imagepng($sourceImage, $destPath);
-                imagedestroy($sourceImage);
+            try {
+                $sourceImage = imagecreatefrompng($file['tmp_name']);
+                if ($sourceImage !== false) {
+                    imagealphablending($sourceImage, false);
+                    imagesavealpha($sourceImage, true);
+                    $imageRecreated = imagepng($sourceImage, $destPath);
+                    imagedestroy($sourceImage);
+                }
+            } catch (\Throwable $e) {
+                \App\Core\System\Logger::error('Image processing failed', ['format' => 'png', 'exception' => $e->getMessage()]);
             }
         } elseif ($mime === 'image/jpeg') {
-            $sourceImage = @imagecreatefromjpeg($file['tmp_name']);
-            if ($sourceImage !== false) {
-                $imageRecreated = imagejpeg($sourceImage, $destPath, 90);
-                imagedestroy($sourceImage);
+            try {
+                $sourceImage = imagecreatefromjpeg($file['tmp_name']);
+                if ($sourceImage !== false) {
+                    $imageRecreated = imagejpeg($sourceImage, $destPath, 90);
+                    imagedestroy($sourceImage);
+                }
+            } catch (\Throwable $e) {
+                \App\Core\System\Logger::error('Image processing failed', ['format' => 'jpeg', 'exception' => $e->getMessage()]);
             }
         }
 
@@ -283,10 +290,9 @@ class Utils {
             if (strpos($oldPicPath, 'fallbacks/avatar-default.png') !== false) {
                 return false;
             }
-
             if (strpos($oldPicPath, 'uploaded/') !== false || strpos($oldPicPath, 'default/') !== false) {
-                $oldPicRelative = str_replace(['/ProjectRosaura/', APP_URL . '/'], '', $oldPicPath);
-                $oldPath = ROOT_PATH . '/' . ltrim($oldPicRelative, '/');
+                $oldPicRelative = str_replace(APP_URL . '/', '', ltrim($oldPicPath, '/'));
+                $oldPath = ROOT_PATH . '/' . $oldPicRelative;
                 if (file_exists($oldPath) && is_file($oldPath)) {
                     unlink($oldPath);
                     return true;
@@ -294,18 +300,6 @@ class Utils {
             }
         }
         return false;
-    }
-
-    public static function getRedisClient() {
-        $redisHost = $_ENV['REDIS_HOST'] ?? '127.0.0.1';
-        $redisPort = (int)($_ENV['REDIS_PORT'] ?? 6379);
-        $connectionParams = ['scheme' => 'tcp', 'host' => $redisHost, 'port' => $redisPort];
-        
-        if (!empty($_ENV['REDIS_PASS'])) {
-            $connectionParams['password'] = $_ENV['REDIS_PASS'];
-        }
-        
-        return new \Predis\Client($connectionParams);
     }
 
     public static function invalidateUserSessions(SessionManagerInterface $sessionManager, $userId, $flushAll = false, $selector = null) {
@@ -319,8 +313,27 @@ class Utils {
     }
 
     public static function isSecureConnection() {
-        return (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') || 
-               (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
+        if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') {
+            return true;
+        }
+
+        if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') {
+            $realIp = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+            $trustedProxies = ['127.0.0.1', '::1']; 
+            
+            $envProxies = \App\Core\Helpers\EnvLoader::get('TRUSTED_PROXIES', '');
+            if (!empty($envProxies)) {
+                $trustedProxies = array_merge($trustedProxies, array_map('trim', explode(',', $envProxies)));
+            }
+
+            $isTrusted = in_array($realIp, $trustedProxies) || filter_var($realIp, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false;
+
+            if ($isTrusted) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public static function calculateExpirationDate($minutes = 15) {
@@ -383,4 +396,3 @@ class Utils {
         return empty($clean) ? null : $clean;
     }
 }
-?>

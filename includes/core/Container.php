@@ -1,6 +1,4 @@
 <?php
-// includes/core/Container.php
-
 namespace App\Core;
 
 use Psr\Container\ContainerInterface;
@@ -40,26 +38,19 @@ class Container implements ContainerInterface {
     private $resolving = [];
 
     public function __construct() {
-        // 1. Registrar Singletons base (MySQL Connection Manager)
         $db = new DatabaseManager(); 
         $this->instances[DatabaseManager::class] = $db; 
         
-        // 1.1 Registrar Singleton base estricto (Redis)
         $redis = new RedisCache();
         $this->instances[Client::class] = $redis->getClient();
-        
-        // CORRECCIÓN VITAL: Registrar la clase RedisCache en sí misma para que el inyector de dependencias
-        // sepa cómo resolver el nuevo constructor de RoleRepository, permitiendo el uso de executeWithLock()
         $this->instances[RedisCache::class] = $redis;
         
-        // 2. Registrar Bindings (Interfaces conectadas a Implementaciones)
         $this->bindings[RateLimiterInterface::class] = RedisRateLimiter::class; 
         
         $this->bindings[UserPrefsManagerInterface::class] = UserPrefsManager::class;
         $this->bindings[SessionManagerInterface::class] = SessionManager::class;
         $this->bindings[UserRepositoryInterface::class] = UserRepository::class;
         
-        // 3. Repositorios Clean Architecture
         $this->bindings[TokenRepositoryInterface::class] = TokenRepository::class;
         $this->bindings[VerificationCodeRepositoryInterface::class] = RedisVerificationCodeRepository::class; 
         $this->bindings[ProfileLogRepositoryInterface::class] = ProfileLogRepository::class;
@@ -67,7 +58,6 @@ class Container implements ContainerInterface {
         $this->bindings[ModerationRepositoryInterface::class] = ModerationRepository::class;
         $this->bindings[RoleRepositoryInterface::class] = RoleRepository::class;
         
-        // 4. Repositorio de Telemetría
         $this->bindings[TelemetryRepositoryInterface::class] = TelemetryRepository::class;
     }
 
@@ -136,4 +126,3 @@ class Container implements ContainerInterface {
         return $reflection->newInstanceArgs($dependencies);
     }
 }
-?>
