@@ -1,5 +1,3 @@
-// public/assets/js/core/components/SkeletonTemplates.js
-
 export const SkeletonTemplates = {
     get(type) {
         switch (type) {
@@ -23,11 +21,11 @@ export const SkeletonTemplates = {
         return `
         <div class="component-layout-centered">
             <div class="component-form-box">
-                <div class="skeleton-box sk-h-24 sk-w-50 sk-mb-16 sk-center-x"></div>
-                <div class="skeleton-box sk-h-14 sk-w-70 sk-mb-16 sk-center-x"></div>
-                <div class="skeleton-box sk-h-45 sk-w-100 sk-mb-16" style="margin-top:32px;"></div>
-                <div class="skeleton-box sk-h-45 sk-w-100 sk-mb-16"></div>
-                <div class="skeleton-box sk-h-45 sk-w-100" style="margin-top:16px;"></div>
+                <div class="component-skeleton component-skeleton--h24 component-skeleton--centered" style="width: 50%; margin-bottom: 16px;"></div>
+                <div class="component-skeleton component-skeleton--h14 component-skeleton--centered" style="width: 70%; margin-bottom: 16px;"></div>
+                <div class="component-skeleton component-skeleton--h45" style="margin-bottom: 16px; margin-top: 32px; border-radius: 8px;"></div>
+                <div class="component-skeleton component-skeleton--h45" style="margin-bottom: 16px; border-radius: 8px;"></div>
+                <div class="component-skeleton component-skeleton--h45" style="margin-top: 16px; border-radius: 8px;"></div>
             </div>
         </div>`;
     },
@@ -41,20 +39,20 @@ export const SkeletonTemplates = {
             <div class="component-wrapper">
                 <div class="component-bottom">
                     <div class="component-header-card">
-                        <div class="skeleton-box sk-h-24 sk-w-30 sk-mb-16 sk-center-x"></div>
-                        <div class="skeleton-box sk-h-14 sk-w-60 sk-center-x"></div>
+                        <div class="component-skeleton component-skeleton--title component-skeleton--centered" style="margin-bottom: 16px;"></div>
+                        <div class="component-skeleton component-skeleton--text-medium component-skeleton--centered"></div>
                     </div>
                     <div class="component-card--grouped">
                         <div class="component-group-item">
                             <div class="component-card__content" style="display:flex; gap:16px; align-items:center; flex:1;">
-                                <div class="skeleton-box sk-rounded" style="width:64px; height:64px; flex-shrink:0;"></div>
+                                <div class="component-skeleton component-skeleton--avatar"></div>
                                 <div class="component-card__text" style="width:100%;">
-                                    <div class="skeleton-box sk-h-20 sk-w-40 sk-mb-8"></div>
-                                    <div class="skeleton-box sk-h-14 sk-w-60"></div>
+                                    <div class="component-skeleton component-skeleton--h20" style="width: 40%; margin-bottom: 8px;"></div>
+                                    <div class="component-skeleton component-skeleton--text-medium"></div>
                                 </div>
                             </div>
                             <div class="component-card__actions component-card__actions--stretch">
-                                <div class="skeleton-box sk-h-34" style="width:120px;"></div>
+                                <div class="component-skeleton component-skeleton--button"></div>
                             </div>
                         </div>
                         <hr class="component-divider">
@@ -76,8 +74,8 @@ export const SkeletonTemplates = {
             <div class="component-wrapper">
                 <div class="component-bottom">
                     <div class="component-header-card">
-                        <div class="skeleton-box sk-h-24 sk-w-30 sk-mb-16 sk-center-x"></div>
-                        <div class="skeleton-box sk-h-14 sk-w-60 sk-center-x"></div>
+                        <div class="component-skeleton component-skeleton--title component-skeleton--centered" style="margin-bottom: 16px;"></div>
+                        <div class="component-skeleton component-skeleton--text-medium component-skeleton--centered"></div>
                     </div>
                     <div class="component-card--grouped">
                         ${this._groupItemRow()}
@@ -104,10 +102,10 @@ export const SkeletonTemplates = {
         <div class="view-content">
             <div class="component-top">
                 <div class="component-top-left">
-                    <div class="skeleton-box sk-h-24 sk-w-40"></div>
+                    <div class="component-skeleton component-skeleton--title"></div>
                 </div>
                 <div class="component-top-right">
-                    <div class="skeleton-box sk-h-40 sk-rounded" style="width:40px;"></div>
+                    <div class="component-skeleton component-skeleton--avatar-sm"></div>
                 </div>
             </div>
             <div class="component-viewport">
@@ -132,17 +130,17 @@ export const SkeletonTemplates = {
     fullTable() {
         let rows = '';
         for (let i = 0; i < 8; i++) {
-            rows += `<tr><td><div class="skeleton-box sk-h-24 sk-w-100"></div></td></tr>`;
+            rows += `<tr><td><div class="component-skeleton component-skeleton--h24"></div></td></tr>`;
         }
         return `
         <div class="view-content">
             <div class="component-top">
                 <div class="component-top-left">
-                    <div class="skeleton-box sk-h-24 sk-w-30"></div>
+                    <div class="component-skeleton component-skeleton--title"></div>
                 </div>
                 <div class="component-top-right">
-                    <div class="skeleton-box sk-h-40" style="width:200px; border-radius:8px;"></div>
-                    <div class="skeleton-box sk-h-40 sk-rounded" style="width:40px;"></div>
+                    <div class="component-skeleton component-skeleton--h40" style="width: 200px; border-radius: 8px;"></div>
+                    <div class="component-skeleton component-skeleton--avatar-sm"></div>
                 </div>
             </div>
             <div class="component-viewport">
@@ -167,28 +165,28 @@ export const SkeletonTemplates = {
         <div class="view-content">
             <div class="component-top">
                 <div class="component-top-left">
-                    <div class="skeleton-box sk-h-24 sk-w-30"></div>
+                    <div class="component-skeleton component-skeleton--title"></div>
                 </div>
                 <div class="component-top-right">
-                    <div class="skeleton-box sk-h-40" style="width:120px; border-radius:8px;"></div>
+                    <div class="component-skeleton component-skeleton--button"></div>
                 </div>
             </div>
             <div class="component-viewport">
                 <div class="component-wrapper">
                     <div class="component-bottom">
                         <div class="component-card--grouped" style="padding:24px;">
-                            <div class="skeleton-box sk-h-24 sk-w-40 sk-mb-16"></div>
-                            <div class="skeleton-box sk-h-14 sk-w-60 sk-mb-16"></div>
+                            <div class="component-skeleton component-skeleton--title" style="margin-bottom: 16px;"></div>
+                            <div class="component-skeleton component-skeleton--text-medium" style="margin-bottom: 16px;"></div>
                             
                             <div style="margin-top:24px;">
-                                <div class="skeleton-box sk-h-14 sk-w-20 sk-mb-8"></div>
-                                <div class="skeleton-box sk-h-45 sk-w-100 sk-mb-16"></div>
+                                <div class="component-skeleton component-skeleton--h14" style="width: 20%; margin-bottom: 8px;"></div>
+                                <div class="component-skeleton component-skeleton--h45" style="margin-bottom: 16px; border-radius: 8px;"></div>
                                 
-                                <div class="skeleton-box sk-h-14 sk-w-20 sk-mb-8"></div>
-                                <div class="skeleton-box sk-h-45 sk-w-100 sk-mb-16"></div>
+                                <div class="component-skeleton component-skeleton--h14" style="width: 20%; margin-bottom: 8px;"></div>
+                                <div class="component-skeleton component-skeleton--h45" style="margin-bottom: 16px; border-radius: 8px;"></div>
                                 
-                                <div class="skeleton-box sk-h-14 sk-w-20 sk-mb-8"></div>
-                                <div class="skeleton-box sk-h-100 sk-w-100"></div>
+                                <div class="component-skeleton component-skeleton--h14" style="width: 20%; margin-bottom: 8px;"></div>
+                                <div class="component-skeleton component-skeleton--card"></div>
                             </div>
                         </div>
                     </div>
@@ -205,10 +203,10 @@ export const SkeletonTemplates = {
         <div class="view-content">
             <div class="component-top">
                 <div class="component-top-left">
-                    <div class="skeleton-box sk-h-24 sk-w-30"></div>
+                    <div class="component-skeleton component-skeleton--title"></div>
                 </div>
                 <div class="component-top-right">
-                    <div class="skeleton-box sk-h-40 sk-rounded" style="width:40px;"></div>
+                    <div class="component-skeleton component-skeleton--avatar-sm"></div>
                 </div>
             </div>
             <div class="component-viewport">
@@ -216,13 +214,13 @@ export const SkeletonTemplates = {
                     <div class="component-bottom">
                         <div class="component-card--grouped" style="display:flex; gap:24px; padding:24px;">
                             <div style="flex:1;">
-                                <div class="skeleton-box sk-h-34 sk-w-100 sk-mb-16"></div>
-                                <div class="skeleton-box sk-h-34 sk-w-100 sk-mb-16"></div>
-                                <div class="skeleton-box sk-h-34 sk-w-100"></div>
+                                <div class="component-skeleton component-skeleton--h34" style="margin-bottom: 16px;"></div>
+                                <div class="component-skeleton component-skeleton--h34" style="margin-bottom: 16px;"></div>
+                                <div class="component-skeleton component-skeleton--h34"></div>
                             </div>
                             <div style="flex:2;">
-                                <div class="skeleton-box sk-h-100 sk-w-100 sk-mb-16"></div>
-                                <div class="skeleton-box sk-h-100 sk-w-100"></div>
+                                <div class="component-skeleton component-skeleton--card" style="margin-bottom: 16px;"></div>
+                                <div class="component-skeleton component-skeleton--card"></div>
                             </div>
                         </div>
                     </div>
@@ -233,29 +231,28 @@ export const SkeletonTemplates = {
 
     /**
      * 8. DASHBOARD GRID (Admin Dashboard)
-     * ACTUALIZADO PARA COINCIDIR CON LA NUEVA UI (Filtros + Cards + Gráficas)
      */
     dashboardGrid() {
         let statCards = '';
         for (let i = 0; i < 3; i++) {
             statCards += `
             <div class="component-card--grouped" style="padding: 20px; display: flex; align-items: center;">
-                <div class="skeleton-box sk-rounded" style="width: 56px; height: 56px; margin-right: 16px; flex-shrink: 0;"></div>
+                <div class="component-skeleton component-skeleton--avatar" style="width: 56px; height: 56px; margin-right: 16px;"></div>
                 <div style="display: flex; flex-direction: column; width: 100%;">
-                    <div class="skeleton-box sk-h-14 sk-w-50 sk-mb-8"></div>
-                    <div class="skeleton-box sk-h-24 sk-w-30"></div>
+                    <div class="component-skeleton component-skeleton--h14" style="width: 50%; margin-bottom: 8px;"></div>
+                    <div class="component-skeleton component-skeleton--h24" style="width: 30%;"></div>
                 </div>
             </div>`;
         }
 
         let charts = `
             <div class="component-card--grouped" style="padding: 20px;">
-                <div class="skeleton-box sk-h-20 sk-w-40 sk-mb-16"></div>
-                <div class="skeleton-box sk-w-100" style="height: 300px;"></div>
+                <div class="component-skeleton component-skeleton--h20" style="width: 40%; margin-bottom: 16px;"></div>
+                <div class="component-skeleton" style="height: 300px; border-radius: 12px;"></div>
             </div>
             <div class="component-card--grouped" style="padding: 20px;">
-                <div class="skeleton-box sk-h-20 sk-w-40 sk-mb-16"></div>
-                <div class="skeleton-box sk-w-100" style="height: 300px;"></div>
+                <div class="component-skeleton component-skeleton--h20" style="width: 40%; margin-bottom: 16px;"></div>
+                <div class="component-skeleton" style="height: 300px; border-radius: 12px;"></div>
             </div>
         `;
         
@@ -263,26 +260,26 @@ export const SkeletonTemplates = {
         <div class="view-content">
             <div class="component-top">
                 <div class="component-top-left">
-                    <div class="skeleton-box sk-h-24 sk-w-30"></div>
+                    <div class="component-skeleton component-skeleton--title"></div>
                 </div>
                 <div class="component-top-right">
-                    <div class="skeleton-box sk-h-40" style="width: 40px; border-radius:8px; margin-right: 8px;"></div>
-                    <div class="skeleton-box sk-h-40" style="width: 40px; border-radius:8px;"></div>
+                    <div class="component-skeleton component-skeleton--h40" style="width: 40px; border-radius:8px; margin-right: 8px;"></div>
+                    <div class="component-skeleton component-skeleton--avatar-sm" style="border-radius:8px;"></div>
                 </div>
             </div>
             <div class="component-wrapper component-wrapper--full no-padding">
                 <div class="component-bottom dashboard-container" style="padding: 24px;">
                     <div class="component-card--grouped" style="padding: 16px 20px; display: flex; gap: 16px; align-items: flex-end;">
                         <div style="display: flex; flex-direction: column; gap: 6px;">
-                            <div class="skeleton-box sk-h-14 sk-w-30"></div>
-                            <div class="skeleton-box sk-h-34" style="width: 150px;"></div>
+                            <div class="component-skeleton component-skeleton--text-short"></div>
+                            <div class="component-skeleton component-skeleton--h34" style="width: 150px; border-radius: 8px;"></div>
                         </div>
                         <div style="display: flex; flex-direction: column; gap: 6px;">
-                            <div class="skeleton-box sk-h-14 sk-w-30"></div>
-                            <div class="skeleton-box sk-h-34" style="width: 150px;"></div>
+                            <div class="component-skeleton component-skeleton--text-short"></div>
+                            <div class="component-skeleton component-skeleton--h34" style="width: 150px; border-radius: 8px;"></div>
                         </div>
                         <div style="margin-left: auto;">
-                            <div class="skeleton-box sk-h-40" style="width: 120px; border-radius: 8px;"></div>
+                            <div class="component-skeleton component-skeleton--button"></div>
                         </div>
                     </div>
                     
@@ -306,10 +303,10 @@ export const SkeletonTemplates = {
         for (let i = 0; i < 5; i++) {
             list += `
             <div style="display:flex; padding:16px 24px; border-bottom:1px solid var(--border-color);">
-                <div class="skeleton-box sk-rounded" style="width:40px; height:40px; margin-right:16px;"></div>
+                <div class="component-skeleton component-skeleton--avatar-sm" style="margin-right: 16px;"></div>
                 <div style="flex:1; display:flex; flex-direction:column; justify-content:center;">
-                    <div class="skeleton-box sk-h-14 sk-w-40 sk-mb-8"></div>
-                    <div class="skeleton-box sk-h-14 sk-w-80"></div>
+                    <div class="component-skeleton component-skeleton--h14" style="width: 40%; margin-bottom: 8px;"></div>
+                    <div class="component-skeleton component-skeleton--h14" style="width: 80%;"></div>
                 </div>
             </div>`;
         }
@@ -318,8 +315,8 @@ export const SkeletonTemplates = {
             <div class="component-wrapper">
                 <div class="component-bottom">
                     <div class="component-header-card">
-                        <div class="skeleton-box sk-h-24 sk-w-30 sk-mb-16 sk-center-x"></div>
-                        <div class="skeleton-box sk-h-14 sk-w-60 sk-center-x"></div>
+                        <div class="component-skeleton component-skeleton--title component-skeleton--centered" style="margin-bottom: 16px;"></div>
+                        <div class="component-skeleton component-skeleton--text-medium component-skeleton--centered"></div>
                     </div>
                     <div class="component-card--grouped">
                         ${list}
@@ -336,11 +333,13 @@ export const SkeletonTemplates = {
         <div class="component-group-item">
             <div class="component-card__content" style="flex:1;">
                 <div class="component-card__text" style="width:100%;">
-                    <div class="skeleton-box sk-h-20 sk-w-30 sk-mb-8"></div>
-                    <div class="skeleton-box sk-h-14 sk-w-50"></div>
+                    <div class="component-skeleton component-skeleton--h20" style="width: 30%; margin-bottom: 8px;"></div>
+                    <div class="component-skeleton component-skeleton--h14" style="width: 50%;"></div>
                 </div>
             </div>
-            <div class="component-card__actions"><div class="skeleton-box sk-h-34" style="width:80px;"></div></div>
+            <div class="component-card__actions">
+                <div class="component-skeleton component-skeleton--h34" style="width: 80px; border-radius: 8px;"></div>
+            </div>
         </div>`;
     },
 
@@ -349,12 +348,12 @@ export const SkeletonTemplates = {
         <div class="component-group-item component-group-item--wrap">
             <div class="component-card__content" style="flex:1;">
                 <div class="component-card__text" style="width:100%;">
-                    <div class="skeleton-box sk-h-20 sk-w-40 sk-mb-8"></div>
-                    <div class="skeleton-box sk-h-14 sk-w-70"></div>
+                    <div class="component-skeleton component-skeleton--h20" style="width: 40%; margin-bottom: 8px;"></div>
+                    <div class="component-skeleton component-skeleton--h14" style="width: 70%;"></div>
                 </div>
             </div>
             <div class="component-card__actions component-card__actions--end">
-                <div class="skeleton-box" style="width:44px; height:24px; border-radius:12px;"></div>
+                <div class="component-skeleton" style="width: 44px; height: 24px; border-radius: 12px;"></div>
             </div>
         </div>`;
     },
@@ -363,14 +362,14 @@ export const SkeletonTemplates = {
         return `
         <div class="component-group-item">
             <div class="component-card__content" style="display:flex; gap:16px; align-items:center; flex:1;">
-                <div class="skeleton-box sk-rounded" style="width:40px; height:40px; flex-shrink:0;"></div>
+                <div class="component-skeleton component-skeleton--avatar-sm"></div>
                 <div class="component-card__text" style="width:100%;">
-                    <div class="skeleton-box sk-h-16 sk-w-40 sk-mb-8"></div>
-                    <div class="skeleton-box sk-h-14 sk-w-80"></div>
+                    <div class="component-skeleton component-skeleton--h16" style="width: 40%; margin-bottom: 8px;"></div>
+                    <div class="component-skeleton component-skeleton--h14" style="width: 80%;"></div>
                 </div>
             </div>
             <div class="component-card__actions component-card__actions--end">
-                <div class="skeleton-box sk-h-34" style="width:120px;"></div>
+                <div class="component-skeleton component-skeleton--button"></div>
             </div>
         </div>`;
     }

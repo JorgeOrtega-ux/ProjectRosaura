@@ -108,7 +108,7 @@ class AuthServices {
         $validator = bin2hex(random_bytes(32));
         $hashedValidator = hash('sha256', $validator);
         
-        $days = $this->config['remember_me_days'] ?? 30;
+        $days = $this->config['remember_me_days'];
         $expiresAt = date('Y-m-d H:i:s', time() + (CacheConstants::TTL_ONE_DAY * $days));
         
         $userAgent = substr($_SERVER['HTTP_USER_AGENT'] ?? 'Unknown', 0, 255);
@@ -168,7 +168,7 @@ class AuthServices {
                         setcookie('remember_tokens', '', ['expires' => time() - 3600, 'path' => $cookiePath, 'secure' => $isSecure, 'httponly' => true, 'samesite' => 'Strict']);
                         unset($_COOKIE['remember_tokens']);
                     } else {
-                        $days = $this->config['remember_me_days'] ?? 30;
+                        $days = $this->config['remember_me_days'];
                         $encodedTokens = json_encode($cleanTokens);
                         
                         setcookie('remember_tokens', $encodedTokens, [
@@ -407,7 +407,7 @@ class AuthServices {
         $code = Utils::generateNumericCode(12);
         $payload = json_encode(['email' => $regEmail, 'password' => $regPassword, 'username' => $username]);
         
-        $codeMinutes = $this->config['verification_code_minutes'] ?? 15;
+        $codeMinutes = $this->config['verification_code_minutes'];
         $expiresAt = Utils::calculateExpirationDate($codeMinutes); 
 
         if ($this->verificationCodeRepository->createCode($regEmail, DatabaseConstants::VERIFY_TYPE_ACTIVATION, $code, $payload, $expiresAt)) {
@@ -449,7 +449,7 @@ class AuthServices {
         $code = Utils::generateNumericCode(12);
         $payload = json_encode(['email' => $email, 'password' => $password, 'username' => $username]);
         
-        $codeMinutes = $this->config['verification_code_minutes'] ?? 15;
+        $codeMinutes = $this->config['verification_code_minutes'];
         $expiresAt = Utils::calculateExpirationDate($codeMinutes); 
 
         $this->verificationCodeRepository->deleteByIdentifierAndType($email, DatabaseConstants::VERIFY_TYPE_ACTIVATION);
@@ -488,7 +488,7 @@ class AuthServices {
         
         if (!$profilePic) return ['success' => false, 'message' => __('error.internal_server_error')];
 
-        $defaultRoleId = $this->config['default_user_role_id'] ?? SecurityConstants::DEFAULT_USER_ROLE_ID;
+        $defaultRoleId = $this->config['default_user_role_id'];
 
         $newUserId = $this->userRepository->createUser([
             'uuid' => $uuid,
@@ -867,7 +867,7 @@ class AuthServices {
 
         $token = bin2hex(random_bytes(32)); 
         
-        $codeMinutes = $this->config['verification_code_minutes'] ?? 15;
+        $codeMinutes = $this->config['verification_code_minutes'];
         $expiresAt = Utils::calculateExpirationDate($codeMinutes);
         
         $payload = json_encode(['email' => $email]);

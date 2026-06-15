@@ -1,5 +1,4 @@
 <?php
-// includes/core/Repositories/ServerConfigRepository.php
 
 namespace App\Core\Repositories;
 
@@ -23,24 +22,29 @@ class ServerConfigRepository implements ServerConfigRepositoryInterface {
 
     public function getConfig(): array {
         $defaultConfig = [
-            // Ajustes Generales de Cuenta
             'min_password_length' => 8,
             'max_password_length' => 64,
             'min_username_length' => 3,
             'max_username_length' => 32,
             'max_avatar_size_mb' => 2,
-            
-            // Ajustes Generales de Accesos y Sesiones
             'session_lifetime_minutes' => 120,
             'max_active_sessions_per_user' => 3,
             'allow_registrations' => 1,
             'allowed_email_domains' => '', 
             'registration_rate_limit_attempts' => 5,
             'registration_rate_limit_minutes' => 15,
-            'verification_code_expiration_minutes' => 15,
-            'password_reset_expiration_minutes' => 15,
-
-            // Ajustes de Limites para Usuarios
+            'verification_code_minutes' => 15,
+            'password_reset_minutes' => 15,
+            'remember_me_days' => 30,
+            'default_user_role_id' => 1,
+            'email_code_request_attempts' => 3,
+            'email_code_request_minutes' => 30,
+            'prefs_update_rate_limit_attempts' => 20,
+            'prefs_update_rate_limit_minutes' => 5,
+            'security_verify_attempts' => 5,
+            'security_verify_minutes' => 15,
+            'password_update_rate_limit_attempts' => 5,
+            'password_update_rate_limit_minutes' => 15,
             'username_change_cooldown_days' => 7,
             'username_change_max_attempts' => 1,
             'email_change_cooldown_days' => 7,
@@ -51,8 +55,6 @@ class ServerConfigRepository implements ServerConfigRepositoryInterface {
             'login_rate_limit_minutes' => 15,
             'forgot_password_rate_limit_attempts' => 3,
             'forgot_password_rate_limit_minutes' => 30,
-            
-            // Configuración predeterminada Anti-Hackeo
             'admin_edit_avatar_attempts' => 20,
             'admin_edit_avatar_minutes' => 30,
             'admin_edit_username_attempts' => 20,
@@ -67,38 +69,27 @@ class ServerConfigRepository implements ServerConfigRepositoryInterface {
             'admin_edit_status_minutes' => 30,
             'admin_add_note_attempts' => 30,
             'admin_add_note_minutes' => 30,
-            
-            // Limites Base Admin Generales
             'admin_read_data_attempts' => 120,
             'admin_read_data_minutes' => 1,
             'admin_password_verify_attempts' => 5,
             'admin_password_verify_minutes' => 15,
-            
-            // Limites de Acciones Redis Admin
             'admin_redis_read_attempts' => 30,
             'admin_redis_read_minutes' => 1,
             'admin_redis_delete_attempts' => 100,
             'admin_redis_delete_minutes' => 1,
             'admin_flush_redis_sessions_attempts' => 5,
             'admin_flush_redis_sessions_minutes' => 5,
-            
-            // Limites de Backups Manuales
             'admin_backup_create_attempts' => 5,
             'admin_backup_create_minutes' => 30,
             'admin_backup_restore_attempts' => 3,
             'admin_backup_restore_minutes' => 30,
-            
-            // Configuración por defecto Automatización de Backups
             'auto_backup_enabled' => 0,
             'auto_backup_frequency_hours' => 24,
             'auto_backup_retention_count' => 5,
             'backup_schema_config' => '{}', 
-
-            // Modo Mantenimiento
             'maintenance_mode' => 0
         ];
 
-        // 1. INTENTAR LEER LA CONFIGURACIÓN DESDE REDIS
         try {
             $cachedConfig = $this->redis->get(CacheConstants::KEY_SERVER_CONFIG);
             if ($cachedConfig) {
@@ -111,7 +102,6 @@ class ServerConfigRepository implements ServerConfigRepositoryInterface {
             Logger::error("Redis cache read failed in " . __METHOD__, ['exception' => $e]);
         }
 
-        // 2. FALLBACK A MYSQL (Si no estaba en caché o Redis falló)
         $tblServerConfig = DB::TBL_SERVER_CONFIG;
 
         try {
@@ -120,7 +110,6 @@ class ServerConfigRepository implements ServerConfigRepositoryInterface {
 
             $finalConfig = $config ?: $defaultConfig;
 
-            // 3. GUARDAR EL RESULTADO EN REDIS PARA PRÓXIMAS CONSULTAS (TTL: 1 Semana)
             try {
                 $this->redis->setex(
                     CacheConstants::KEY_SERVER_CONFIG,
@@ -134,7 +123,7 @@ class ServerConfigRepository implements ServerConfigRepositoryInterface {
             return $finalConfig;
             
         } catch (PDOException $e) {
-            Logger::error("Database error in " . __METHOD__ . " - Returning default config", ['exception' => $e]);
+            Logger::error("Database error in " . __METHOD__, ['exception' => $e]);
             return $defaultConfig;
         }
     }
@@ -162,7 +151,6 @@ class ServerConfigRepository implements ServerConfigRepositoryInterface {
             
             $result = $stmt->execute($values);
 
-            // 4. INVALIDAR LA CACHÉ AL ACTUALIZAR EXITOSAMENTE EN MYSQL
             if ($result) {
                 try {
                     $this->redis->del(CacheConstants::KEY_SERVER_CONFIG);

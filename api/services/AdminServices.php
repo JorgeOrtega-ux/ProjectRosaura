@@ -141,7 +141,12 @@ class AdminServices {
 
     private function dispatchBackupJob(string $type, array $modules, ?array $schema = null): array {
         try {
-            $redis = Utils::getRedisClient();
+            $redisCache = new \App\Config\RedisCache();
+            $redis = $redisCache->getClient();
+
+            if (!$redis) {
+                return ['success' => false, 'message' => __('error.redis_communication')];
+            }
 
             $lockAcquired = $redis->set(CacheConstants::PREFIX_LOCK_BACKUP, '1', 'EX', 1800, 'NX');
             if (!$lockAcquired) {
@@ -445,7 +450,12 @@ class AdminServices {
         $failedCount = 0;
 
         try {
-            $redisClient = Utils::getRedisClient();
+            $redisCache = new \App\Config\RedisCache();
+            $redisClient = $redisCache->getClient();
+
+            if (!$redisClient) {
+                return ['success' => false, 'message' => __('error.redis_communication')];
+            }
 
             foreach ($userIds as $targetId) {
                 $targetId = (int)$targetId;
@@ -963,7 +973,12 @@ class AdminServices {
         if (empty($jobId)) return ['success' => false, 'message' => __('validation.missing_job_id')];
 
         try {
-            $redis = Utils::getRedisClient();
+            $redisCache = new \App\Config\RedisCache();
+            $redis = $redisCache->getClient();
+
+            if (!$redis) {
+                return ['success' => false, 'message' => __('error.redis_communication')];
+            }
 
             $jobKey = CacheConstants::PREFIX_BACKUP_JOB . $jobId;
             if (!$redis->exists($jobKey)) {
@@ -999,7 +1014,12 @@ class AdminServices {
         }
 
         try {
-            $redis = Utils::getRedisClient();
+            $redisCache = new \App\Config\RedisCache();
+            $redis = $redisCache->getClient();
+
+            if (!$redis) {
+                return ['success' => false, 'message' => __('error.redis_communication')];
+            }
 
             $lockAcquired = $redis->set(CacheConstants::PREFIX_LOCK_BACKUP, '1', 'EX', 1800, 'NX');
             if (!$lockAcquired) {
@@ -1066,7 +1086,12 @@ class AdminServices {
         if (!$this->hasPermission('view_logs')) return ['success' => false, 'message' => __('error.unauthorized')];
         
         try {
-            $redis = Utils::getRedisClient();
+            $redisCache = new \App\Config\RedisCache();
+            $redis = $redisCache->getClient();
+
+            if (!$redis) {
+                return ['success' => false, 'message' => __('error.redis_communication')];
+            }
 
             $isRunning = $redis->exists(CacheConstants::KEY_SYSTEM_RESTORING);
             return ['success' => true, 'is_running' => (bool)$isRunning, 'status' => $isRunning ? 'restoring' : 'finished'];

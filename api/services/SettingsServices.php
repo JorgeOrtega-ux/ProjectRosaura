@@ -67,7 +67,7 @@ class SettingsServices
         if (!isset($files['avatar'])) return ['success' => false, 'message' => __('upload.error')];
         $file = $files['avatar'];
         
-        $maxSizeMb = $this->config['max_avatar_size_mb'] ?? 2;
+        $maxSizeMb = $this->config['max_avatar_size_mb'];
         $uploadDir = ROOT_PATH . '/public/storage/profilePictures/uploaded/';
 
         $uploadResult = Utils::uploadAndSanitizeImage($file, $uploadDir, $maxSizeMb);
@@ -161,8 +161,8 @@ class SettingsServices
         }
 
         $email = $this->sessionManager->get('user_email');
-        $attempts = $this->config['email_code_request_attempts'] ?? 3;
-        $minutes = $this->config['email_code_request_minutes'] ?? 30;
+        $attempts = $this->config['email_code_request_attempts'];
+        $minutes = $this->config['email_code_request_minutes'];
         
         $rateCheck = $this->rateLimiter->consume(RateLimitConstants::KEY_SET_REQ_EMAIL_CODE . "_{$userId}", $attempts, $minutes);
         
@@ -177,7 +177,7 @@ class SettingsServices
         }
 
         $code = Utils::generateNumericCode(12);
-        $codeMinutes = $this->config['verification_code_minutes'] ?? 15;
+        $codeMinutes = $this->config['verification_code_minutes'];
         $expiresAt = Utils::calculateExpirationDate($codeMinutes);
         $payload = json_encode(['action' => 'email_update']);
 
@@ -197,8 +197,8 @@ class SettingsServices
         $userId = $this->sessionManager->get('user_id');
         $email = $this->sessionManager->get('user_email');
         
-        $attempts = $this->config['email_code_request_attempts'] ?? 3;
-        $minutes = $this->config['email_code_request_minutes'] ?? 30;
+        $attempts = $this->config['email_code_request_attempts'];
+        $minutes = $this->config['email_code_request_minutes'];
         
         $rateCheck = $this->rateLimiter->consume(RateLimitConstants::KEY_SET_RES_EMAIL_CODE . "_{$userId}", $attempts, $minutes);
         if (!$rateCheck['allowed']) {
@@ -215,7 +215,7 @@ class SettingsServices
         $this->verificationCodeRepository->deleteByIdentifierAndType($email, 'email_update');
 
         $code = Utils::generateNumericCode(12);
-        $codeMinutes = $this->config['verification_code_minutes'] ?? 15;
+        $codeMinutes = $this->config['verification_code_minutes'];
         $expiresAt = Utils::calculateExpirationDate($codeMinutes);
         $payload = json_encode(['action' => 'email_update']);
 
@@ -248,7 +248,7 @@ class SettingsServices
         if ($verification && $verification['identifier'] === $this->sessionManager->get('user_email')) {
             $this->rateLimiter->clear(RateLimitConstants::KEY_SET_VERIFY_EMAIL_CODE . "_{$userId}");
             $this->verificationCodeRepository->deleteById($verification['id']);
-            $codeMinutes = $this->config['verification_code_minutes'] ?? 15;
+            $codeMinutes = $this->config['verification_code_minutes'];
             $this->sessionManager->set('can_update_email_expires', time() + ($codeMinutes * 60));
             $this->rateLimiter->clear(RateLimitConstants::KEY_SET_REQ_EMAIL_CODE . "_{$userId}");
             return ['success' => true, 'message' => __('settings.identity_verified')];
@@ -299,8 +299,8 @@ class SettingsServices
 
         $userId = $this->sessionManager->get('user_id');
         
-        $attempts = $this->config['prefs_update_rate_limit_attempts'] ?? 20;
-        $minutes = $this->config['prefs_update_rate_limit_minutes'] ?? 5;
+        $attempts = $this->config['prefs_update_rate_limit_attempts'];
+        $minutes = $this->config['prefs_update_rate_limit_minutes'];
         
         $rateCheck = $this->rateLimiter->consume(RateLimitConstants::KEY_SET_UPDATE_PREFS . "_{$userId}", $attempts, $minutes);
         
@@ -339,8 +339,8 @@ class SettingsServices
 
         $userId = $this->sessionManager->get('user_id');
         
-        $attempts = $this->config['security_verify_attempts'] ?? 5;
-        $minutes = $this->config['security_verify_minutes'] ?? 15;
+        $attempts = $this->config['security_verify_attempts'];
+        $minutes = $this->config['security_verify_minutes'];
         
         $rateCheck = $this->rateLimiter->consume(RateLimitConstants::KEY_SET_VERIFY_PASSWORD . "_{$userId}", $attempts, $minutes);
         
@@ -352,7 +352,7 @@ class SettingsServices
 
         if ($user && password_verify(trim($data['current_password'] ?? ''), $user['password'])) {
             $this->rateLimiter->clear(RateLimitConstants::KEY_SET_VERIFY_PASSWORD . "_{$userId}");
-            $codeMinutes = $this->config['verification_code_minutes'] ?? 15;
+            $codeMinutes = $this->config['verification_code_minutes'];
             $this->sessionManager->set('can_change_password_expires', time() + ($codeMinutes * 60));
             return ['success' => true, 'message' => __('settings.identity_verified')];
         }
@@ -369,8 +369,8 @@ class SettingsServices
             return ['success' => false, 'message' => __('settings.identity_not_verified')];
         }
 
-        $attempts = $this->config['password_update_rate_limit_attempts'] ?? 5;
-        $minutes = $this->config['password_update_rate_limit_minutes'] ?? 15;
+        $attempts = $this->config['password_update_rate_limit_attempts'];
+        $minutes = $this->config['password_update_rate_limit_minutes'];
         
         $rateCheck = $this->rateLimiter->consume(RateLimitConstants::KEY_SET_UPDATE_PASSWORD . "_{$userId}", $attempts, $minutes);
         
@@ -406,8 +406,8 @@ class SettingsServices
 
         $userId = $this->sessionManager->get('user_id');
 
-        $attempts = $this->config['security_verify_attempts'] ?? 5;
-        $minutes = $this->config['security_verify_minutes'] ?? 15;
+        $attempts = $this->config['security_verify_attempts'];
+        $minutes = $this->config['security_verify_minutes'];
         $rateCheck = $this->rateLimiter->consume(RateLimitConstants::KEY_SET_DELETE_ACCOUNT . "_{$userId}", $attempts, $minutes);
         
         if (!$rateCheck['allowed']) {
@@ -460,8 +460,8 @@ class SettingsServices
 
         $userId = $this->sessionManager->get('user_id');
 
-        $attempts = $this->config['security_verify_attempts'] ?? 5;
-        $minutes = $this->config['security_verify_minutes'] ?? 15;
+        $attempts = $this->config['security_verify_attempts'];
+        $minutes = $this->config['security_verify_minutes'];
         
         $rateCheck = $this->rateLimiter->consume(RateLimitConstants::KEY_2FA_ENABLE . "_{$userId}", $attempts, $minutes);
         
@@ -505,8 +505,8 @@ class SettingsServices
 
         $userId = $this->sessionManager->get('user_id');
 
-        $attempts = $this->config['security_verify_attempts'] ?? 5;
-        $minutes = $this->config['security_verify_minutes'] ?? 15;
+        $attempts = $this->config['security_verify_attempts'];
+        $minutes = $this->config['security_verify_minutes'];
         
         $rateCheck = $this->rateLimiter->consume(RateLimitConstants::KEY_2FA_DISABLE . "_{$userId}", $attempts, $minutes);
         
@@ -634,8 +634,8 @@ class SettingsServices
 
         $userId = $this->sessionManager->get('user_id');
 
-        $attempts = $this->config['security_verify_attempts'] ?? 5;
-        $minutes = $this->config['security_verify_minutes'] ?? 15;
+        $attempts = $this->config['security_verify_attempts'];
+        $minutes = $this->config['security_verify_minutes'];
         $rateCheck = $this->rateLimiter->consume(RateLimitConstants::KEY_2FA_REGEN_CODES . "_{$userId}", $attempts, $minutes);
         
         if (!$rateCheck['allowed']) {

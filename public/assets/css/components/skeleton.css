@@ -1,28 +1,31 @@
-/* public/assets/css/components/skeleton.css */
+/* =========================================
+   SKELETON.CSS
+   Sistema de Carga (Component Skeleton)
+   ========================================= */
 
 :root {
-    /* Grises neutros puros para modo claro (sin tonos azules) */
     --sk-bg-light: #e2e2e2;
     --sk-shimmer-light: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.7) 50%, transparent 100%);
     
-    /* Grises neutros puros para modo oscuro (sin tonos azules) */
     --sk-bg-dark: #2a2a2a;
     --sk-shimmer-dark: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.06) 50%, transparent 100%);
 }
 
-.skeleton-box {
+.component-skeleton {
     background-color: var(--sk-bg-light);
     position: relative;
     overflow: hidden;
     border-radius: 6px;
     border: none !important;
+    width: 100%;
 }
 
-.dark-theme .skeleton-box { 
+html[data-theme="dark"] .component-skeleton,
+html.dark-theme .component-skeleton { 
     background-color: var(--sk-bg-dark); 
 }
 
-.skeleton-box::after {
+.component-skeleton::after {
     content: "";
     position: absolute;
     top: 0; right: 0; bottom: 0; left: 0;
@@ -31,7 +34,8 @@
     animation: sk-shimmer 1.5s infinite;
 }
 
-.dark-theme .skeleton-box::after {
+html[data-theme="dark"] .component-skeleton::after,
+html.dark-theme .component-skeleton::after {
     background-image: var(--sk-shimmer-dark);
 }
 
@@ -39,28 +43,81 @@
     100% { transform: translateX(100%); } 
 }
 
-/* Utilidades de Tamaño Estrictas para mantener limpio el JS */
-.sk-w-10 { width: 10% !important; } 
-.sk-w-20 { width: 20% !important; }
-.sk-w-30 { width: 30% !important; } 
-.sk-w-40 { width: 40% !important; }
-.sk-w-50 { width: 50% !important; }
-.sk-w-60 { width: 60% !important; }
-.sk-w-70 { width: 70% !important; }
-.sk-w-80 { width: 80% !important; } 
-.sk-w-100 { width: 100% !important; }
+/* =========================================
+   MODIFICADORES SEMÁNTICOS
+   ========================================= */
 
-/* Alturas estándar de tu proyecto */
-.sk-h-14 { height: 14px !important; } 
-.sk-h-16 { height: 16px !important; } 
-.sk-h-20 { height: 20px !important; }
-.sk-h-24 { height: 24px !important; }
-.sk-h-34 { height: 34px !important; } 
-.sk-h-45 { height: 45px !important; }
-.sk-h-100 { height: 100px !important; }
+.component-skeleton--avatar {
+    border-radius: 50% !important;
+    width: 64px;
+    height: 64px;
+    flex-shrink: 0;
+}
 
-/* Utilidades generales */
-.sk-rounded { border-radius: 50% !important; }
-.sk-mb-8 { margin-bottom: 8px !important; }
-.sk-mb-16 { margin-bottom: 16px !important; }
-.sk-center-x { margin-left: auto !important; margin-right: auto !important; }
+.component-skeleton--avatar-sm {
+    border-radius: 50% !important;
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+}
+
+.component-skeleton--title {
+    height: 24px;
+    width: 40%;
+    border-radius: 6px;
+}
+
+.component-skeleton--text {
+    height: 14px;
+    width: 100%;
+    border-radius: 4px;
+}
+
+.component-skeleton--text-short {
+    height: 14px;
+    width: 30%;
+    border-radius: 4px;
+}
+
+.component-skeleton--text-medium {
+    height: 14px;
+    width: 60%;
+    border-radius: 4px;
+}
+
+.component-skeleton--button {
+    height: 40px;
+    width: 120px;
+    border-radius: 8px;
+}
+
+.component-skeleton--button-full {
+    height: 40px;
+    width: 100%;
+    border-radius: 8px;
+}
+
+.component-skeleton--card {
+    height: 100px;
+    width: 100%;
+    border-radius: 12px;
+}
+
+/* =========================================
+   MODIFICADORES DE DIMENSIÓN DIRECTA
+   ========================================= */
+
+.component-skeleton--h14 { height: 14px; } 
+.component-skeleton--h16 { height: 16px; } 
+.component-skeleton--h20 { height: 20px; }
+.component-skeleton--h24 { height: 24px; }
+.component-skeleton--h34 { height: 34px; } 
+.component-skeleton--h40 { height: 40px; }
+.component-skeleton--h45 { height: 45px; }
+.component-skeleton--h100 { height: 100px; }
+
+/* Utilidad exclusiva si el bloque no está en flex */
+.component-skeleton--centered {
+    margin-left: auto;
+    margin-right: auto;
+}

@@ -201,7 +201,7 @@ html.dark-theme .component-top.shadow {
     flex-direction: column;
 }
 
-.disabled-interaction {
+.disabled-interactive {
     opacity: 0.6;
     pointer-events: none !important;
 }
@@ -415,7 +415,7 @@ html.dark-theme .component-top.shadow {
     transform: scale(0.96); 
 }
 
-.component-button:disabled {
+.component-button.disabled-interactive {
     cursor: not-allowed;
     opacity: 0.8;
 }
@@ -964,7 +964,7 @@ textarea.component-input-field::placeholder {
     display: flex;
     width: 100%;
     align-items: center;
-    gap: 16px;
+    gap: 8px;
     margin-top: 6px; 
 }
 
@@ -1598,12 +1598,12 @@ input:checked + .component-toggle-slider:before {
     font-size: 18px; 
 }
 
-.component-inline-control__btn:hover:not(.disabled-interaction) {
+.component-inline-control__btn:hover:not(.disabled-interactive) {
     background-color: var(--bg-hover-light);
     border-color: var(--border-color-hover);
 }
 
-.component-inline-control__btn:active:not(.disabled-interaction) {
+.component-inline-control__btn:active:not(.disabled-interactive) {
     background-color: var(--border-color);
 }
 
@@ -1627,7 +1627,7 @@ input:checked + .component-toggle-slider:before {
 }
 
 /* =========================================
-   11. COMPONENTES COMPLEJOS (CALENDARIO, GRÁFICOS)
+   11. COMPONENTES COMPLEJOS (CALENDARIO)
    ========================================= */
 
 .component-calendar {
@@ -1732,54 +1732,6 @@ input:checked + .component-toggle-slider:before {
     display: flex;
     justify-content: space-between;
     margin-top: 16px;
-}
-
-.component-chart-grid {
-    display: grid;
-    grid-template-columns: repeat(12, 1fr);
-    gap: 16px;
-    width: 100%;
-}
-
-.component-chart-item {
-    grid-column: span 12;
-}
-
-@media (min-width: 768px) {
-    .component-chart-item {
-        grid-column: span 4; 
-    }
-    
-    .component-chart-item--col-span-6 {
-        grid-column: span 6; 
-    }
-    
-    .component-chart-item--col-span-8 {
-        grid-column: span 8; 
-    }
-    
-    .component-chart-item--full-width {
-        grid-column: span 12; 
-    }
-}
-
-.component-chart-wrapper {
-    position: relative;
-    height: 300px;
-    max-height: 300px;
-    width: 100%;
-    
-    background-color: var(--bg-surface);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    padding: 16px;
-    box-shadow: var(--shadow-card);
-    
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.component-chart-wrapper:hover {
-    border-color: var(--border-color-hover);
 }
 
 /* =========================================
@@ -2685,7 +2637,7 @@ input:checked + .component-toggle-slider:before {
 }
 
 /* ==========================================================================
-   16. COMPONENTES GENÉRICOS DE ESTADÍSTICAS Y GRÁFICOS (STATS & CHARTS)
+   16. COMPONENTES GENÉRICOS DE ESTADÍSTICAS (STATS)
    ========================================================================== */
 
 .component-filter-bar {
@@ -2757,52 +2709,7 @@ input:checked + .component-toggle-slider:before {
     line-height: 1.1;
 }
 
-.component-charts-layout {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 450px), 1fr));
-    gap: 20px;
-    width: 100%;
-}
-
-.component-chart-card {
-    display: flex;
-    flex-direction: column;
-    padding: 0;
-    gap: 0;
-    cursor: default;
-    width: 100%;
-    overflow: hidden; 
-}
-
-.component-chart-card__header {
-    display: flex;
-    align-items: center;
-    border-bottom: 1px solid var(--border-color);
-    padding: 16px 24px 8px 24px;
-    margin: 0;
-}
-
-.component-chart-card__canvas {
-    position: relative;
-    width: 100%;
-    height: 300px;
-    padding: 16px 24px 24px 24px;
-}
-
 @media (max-width: 768px) {
-    .component-charts-layout {
-        grid-template-columns: 1fr;
-    }
-    
-    .component-chart-card__canvas {
-        height: 250px;
-        padding: 16px 16px 24px 16px;
-    }
-
-    .component-chart-card__header {
-        padding: 16px 16px 8px 16px;
-    }
-
     .component-filter-bar {
         width: 100%;
         justify-content: space-between;
