@@ -108,7 +108,7 @@ class AuthServices {
         $validator = bin2hex(random_bytes(32));
         $hashedValidator = hash('sha256', $validator);
         
-        $days = $this->config['remember_me_days'];
+        $days = (int)($this->config['remember_me_days'] ?? 30);
         $expiresAt = date('Y-m-d H:i:s', time() + (CacheConstants::TTL_ONE_DAY * $days));
         
         $userAgent = substr($_SERVER['HTTP_USER_AGENT'] ?? 'Unknown', 0, 255);
@@ -168,7 +168,7 @@ class AuthServices {
                         setcookie('remember_tokens', '', ['expires' => time() - 3600, 'path' => $cookiePath, 'secure' => $isSecure, 'httponly' => true, 'samesite' => 'Strict']);
                         unset($_COOKIE['remember_tokens']);
                     } else {
-                        $days = $this->config['remember_me_days'];
+                        $days = (int)($this->config['remember_me_days'] ?? 30);
                         $encodedTokens = json_encode($cleanTokens);
                         
                         setcookie('remember_tokens', $encodedTokens, [
@@ -361,7 +361,9 @@ class AuthServices {
             }
         }
 
-        $pVal = Utils::validatePasswordFormat($password, $this->config['min_password_length'], $this->config['max_password_length']); 
+        $minPass = (int)($this->config['min_password_length'] ?? 8);
+        $maxPass = (int)($this->config['max_password_length'] ?? 64);
+        $pVal = Utils::validatePasswordFormat($password, $minPass, $maxPass); 
         if (!$pVal['valid']) return ['success' => false, 'message' => __('validation.invalid_password_format')];
         
         if ($this->userRepository->findByEmail($email)) {
@@ -396,8 +398,8 @@ class AuthServices {
         $rateCheck = $this->rateLimiter->consume(RateLimitConstants::KEY_AUTH_REGISTER_STEP2 . "_{$regEmail}", RateLimitConstants::MAX_5, RateLimitConstants::TIME_60, true);
         if (!$rateCheck['allowed']) return ['success' => false, 'message' => __($rateCheck['message_key'] ?? 'error.rate_limit_exceeded')];
         
-        $minUser = $this->config['min_username_length'];
-        $maxUser = $this->config['max_username_length'];
+        $minUser = (int)($this->config['min_username_length'] ?? 3);
+        $maxUser = (int)($this->config['max_username_length'] ?? 20);
         
         $userValidation = Utils::validateUsernameFormat($username, $minUser, $maxUser);
         if (!$userValidation['valid']) return ['success' => false, 'message' => __($userValidation['message_key'])];
@@ -407,7 +409,7 @@ class AuthServices {
         $code = Utils::generateNumericCode(12);
         $payload = json_encode(['email' => $regEmail, 'password' => $regPassword, 'username' => $username]);
         
-        $codeMinutes = $this->config['verification_code_minutes'];
+        $codeMinutes = (int)($this->config['verification_code_minutes'] ?? 15);
         $expiresAt = Utils::calculateExpirationDate($codeMinutes); 
 
         if ($this->verificationCodeRepository->createCode($regEmail, DatabaseConstants::VERIFY_TYPE_ACTIVATION, $code, $payload, $expiresAt)) {
@@ -449,7 +451,7 @@ class AuthServices {
         $code = Utils::generateNumericCode(12);
         $payload = json_encode(['email' => $email, 'password' => $password, 'username' => $username]);
         
-        $codeMinutes = $this->config['verification_code_minutes'];
+        $codeMinutes = (int)($this->config['verification_code_minutes'] ?? 15);
         $expiresAt = Utils::calculateExpirationDate($codeMinutes); 
 
         $this->verificationCodeRepository->deleteByIdentifierAndType($email, DatabaseConstants::VERIFY_TYPE_ACTIVATION);
@@ -488,7 +490,7 @@ class AuthServices {
         
         if (!$profilePic) return ['success' => false, 'message' => __('error.internal_server_error')];
 
-        $defaultRoleId = $this->config['default_user_role_id'];
+        $defaultRoleId = (int)($this->config['default_user_role_id'] ?? SecurityConstants::DEFAULT_USER_ROLE_ID);
 
         $newUserId = $this->userRepository->createUser([
             'uuid' => $uuid,
@@ -540,8 +542,8 @@ class AuthServices {
         $email = trim($data['email'] ?? ''); $password = trim($data['password'] ?? '');
         if (empty($email) || empty($password)) return ['success' => false, 'message' => __('validation.missing_fields')];
 
-        $attempts = $this->config['login_rate_limit_attempts'];
-        $minutes = $this->config['login_rate_limit_minutes'];
+        $attempts = (int)($this->config['login_rate_limit_attempts'] ?? 5);
+        $minutes = (int)($this->config['login_rate_limit_minutes'] ?? 15);
         
         $rateCheck = $this->rateLimiter->consume(RateLimitConstants::KEY_AUTH_LOGIN . "_{$email}", $attempts, $minutes, true);
         
@@ -730,8 +732,8 @@ class AuthServices {
 
         $userId = $pending2fa[$tempToken];
         
-        $attempts = $this->config['login_rate_limit_attempts'];
-        $minutes = $this->config['login_rate_limit_minutes'];
+        $attempts = (int)($this->config['login_rate_limit_attempts'] ?? 5);
+        $minutes = (int)($this->config['login_rate_limit_minutes'] ?? 15);
         $rateCheck = $this->rateLimiter->consume(RateLimitConstants::KEY_AUTH_LOGIN_2FA . "_{$userId}", $attempts, $minutes, true);
         
         if (!$rateCheck['allowed']) return ['success' => false, 'message' => __($rateCheck['message_key'] ?? 'error.rate_limit_exceeded')];
@@ -847,8 +849,8 @@ class AuthServices {
         $email = trim($data['email'] ?? '');
         if (empty($email)) return ['success' => false, 'message' => __('validation.missing_fields')];
         
-        $attempts = $this->config['forgot_password_rate_limit_attempts'];
-        $minutes = $this->config['forgot_password_rate_limit_minutes'];
+        $attempts = (int)($this->config['forgot_password_rate_limit_attempts'] ?? 3);
+        $minutes = (int)($this->config['forgot_password_rate_limit_minutes'] ?? 60);
         
         $rateCheck = $this->rateLimiter->consume(RateLimitConstants::KEY_AUTH_FORGOT_PASSWORD . "_{$email}", $attempts, $minutes, true);
         if (!$rateCheck['allowed']) return ['success' => false, 'message' => __($rateCheck['message_key'] ?? 'error.rate_limit_exceeded')];
@@ -867,7 +869,7 @@ class AuthServices {
 
         $token = bin2hex(random_bytes(32)); 
         
-        $codeMinutes = $this->config['verification_code_minutes'];
+        $codeMinutes = (int)($this->config['verification_code_minutes'] ?? 15);
         $expiresAt = Utils::calculateExpirationDate($codeMinutes);
         
         $payload = json_encode(['email' => $email]);
@@ -897,7 +899,9 @@ class AuthServices {
         $token = trim($data['token'] ?? ''); $password = trim($data['password'] ?? '');
         if (empty($token) || empty($password)) return ['success' => false, 'message' => __('validation.missing_fields')];
         
-        $passValidation = Utils::validatePasswordFormat($password, $this->config['min_password_length'], $this->config['max_password_length']);
+        $minPass = (int)($this->config['min_password_length'] ?? 8);
+        $maxPass = (int)($this->config['max_password_length'] ?? 64);
+        $passValidation = Utils::validatePasswordFormat($password, $minPass, $maxPass);
         if (!$passValidation['valid']) return ['success' => false, 'message' => __('validation.invalid_password_format')];
 
         $verification = $this->verificationCodeRepository->findValidByCodeAndType($token, DatabaseConstants::VERIFY_TYPE_PASSWORD);
