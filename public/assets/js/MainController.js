@@ -342,24 +342,23 @@ export class MainController {
         if (!container) {
             container = document.createElement('div');
             container.setAttribute('data-ref', 'toast-container');
-            container.className = 'toast-container';
+            container.className = 'component-toast'; // Ahora es exactamente 'component-toast'
             document.body.appendChild(container);
         }
 
         const toast = document.createElement('div');
-        toast.className = 'component-toast';
+        toast.className = 'component-toast-item'; // Y la alerta pasa a ser el 'item'
         let iconName = type === 'success' ? 'check_circle' : 'error';
         toast.innerHTML = `<div class="component-toast-icon"><span class="material-symbols-rounded">${iconName}</span></div><div class="component-toast-text">${message}</div>`;
 
         container.appendChild(toast);
-        requestAnimationFrame(() => toast.classList.add('show'));
+        requestAnimationFrame(() => toast.classList.add('active'));
 
         let extendedAlerts = (this.getPref('extended_alerts') == 1 || this.getPref('extended_alerts') == '1');
         let duration = extendedAlerts ? 8000 : 4000;
 
         setTimeout(() => {
-            toast.classList.remove('show');
-            toast.classList.add('hide');
+            toast.classList.remove('active'); 
             setTimeout(() => {
                 toast.remove();
                 if (container.childNodes.length === 0 && container.parentNode) {

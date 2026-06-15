@@ -84,7 +84,7 @@ export class TooltipSystem {
         this.activePopper.update().then(() => {
             requestAnimationFrame(() => {
                 if (this.activeTooltip) {
-                    this.activeTooltip.classList.add('show');
+                    this.activeTooltip.classList.add('active'); // Reemplazado .show por .active
                 }
             });
         });
@@ -108,7 +108,7 @@ export class TooltipSystem {
             const tooltipToRemove = this.activeTooltip;
             const popperToRemove = this.activePopper;
 
-            tooltipToRemove.classList.remove('show');
+            tooltipToRemove.classList.remove('active'); // Reemplazado .show por .active
             
             setTimeout(() => {
                 if (popperToRemove) {
