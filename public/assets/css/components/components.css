@@ -1034,6 +1034,20 @@ textarea.component-input-field::placeholder {
     opacity: 1;
 }
 
+/* FIX: Mantiene el fondo oscuro pero vuelve el ícono blanco en Dark Theme */
+html[data-theme="dark"] .component-avatar__overlay,
+html.dark-theme .component-avatar__overlay {
+    background-color: rgba(0, 0, 0, 0.6);
+    color: #ffffff;
+}
+
+@media (prefers-color-scheme: dark) {
+    html:not([data-theme="light"]):not(.light-theme) .component-avatar__overlay {
+        background-color: rgba(0, 0, 0, 0.6);
+        color: #ffffff;
+    }
+}
+
 .component-avatar--static {
     margin: 0;
     cursor: default;

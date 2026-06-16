@@ -243,15 +243,14 @@ class AdminUsersController {
     async deleteSelectedUsers(btn) {
         if (this.selectedUserIds.size === 0) return;
 
-        const resultDialog = await window.dialogSystem.show('verifyPasswordDialog', {
-            title: "Verificación de Seguridad para Borrado",
-            desc: `Ingresa tu contraseña para autorizar la destrucción de ${this.selectedUserIds.size} usuario(s). Esta acción es irreversible.`,
-            confirmText: "Destruir Usuarios"
+        const resultDialog = await window.dialogSystem.show('verifyPasswordDeleteUsers', {
+            count: this.selectedUserIds.size
         });
 
         if (!resultDialog.confirmed) return;
 
-        const password = resultDialog.data['dialog_verify_password'] ? resultDialog.data['dialog_verify_password'].trim() : '';
+        // Se usa la llave base del template verifyPasswordDialog
+        const password = resultDialog.data['modal_verify_password'] ? resultDialog.data['modal_verify_password'].trim() : '';
         if (!password) { showMessage(__('err_admin_password_required'), 'error'); return; }
 
         setButtonLoading(btn);

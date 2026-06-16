@@ -82,7 +82,6 @@ class AdminRolesController {
         if (permsBtn) this.navigateToEditPermissions();
         if (deleteBtn) this.openDeleteRoleDialog();
 
-        // Lógica de cierre para el toolbar flotante (click-outside)
         const searchToolbar = document.querySelector('[data-ref="search-toolbar"]');
         if (searchToolbar && !searchToolbar.classList.contains('disabled')) {
             if (!e.target.closest('[data-ref="search-toolbar"]') && !searchBtn) {
@@ -196,7 +195,6 @@ class AdminRolesController {
         
         this.selectedRoleId = roleId;
         
-        // Uso de classList para estado visual
         document.querySelectorAll('[data-action="selectRoleRow"]').forEach(row => {
             if(row.getAttribute('data-role-id') == roleId) {
                 row.classList.add('selected');
@@ -213,7 +211,6 @@ class AdminRolesController {
             selectionMode.classList.replace('disabled', 'active');
         }
 
-        // VALIDACIONES DE SEGURIDAD PARA LA INTERFAZ
         const isSystem = parseInt(target.getAttribute('data-is-system') || 0, 10) === 1;
         const roleWeight = parseInt(target.getAttribute('data-role-weight') || 0, 10);
         
@@ -224,12 +221,10 @@ class AdminRolesController {
         const editBtn = document.querySelector('[data-action="editRole"]');
         const permsBtn = document.querySelector('[data-action="editPermissions"]');
 
-        // Reset visual base
         if (deleteBtn) { deleteBtn.style.opacity = '1'; deleteBtn.style.pointerEvents = 'auto'; deleteBtn.removeAttribute('title'); }
         if (editBtn) { editBtn.style.opacity = '1'; editBtn.style.pointerEvents = 'auto'; editBtn.removeAttribute('title'); }
         if (permsBtn) { permsBtn.style.opacity = '1'; permsBtn.style.pointerEvents = 'auto'; permsBtn.removeAttribute('title'); }
 
-        // Aplicación del Techo de Cristal
         if (currentUserWeight < 100 && roleWeight >= currentUserWeight) {
             if (deleteBtn) {
                 deleteBtn.style.opacity = '0.3'; deleteBtn.style.pointerEvents = 'none';
@@ -243,18 +238,15 @@ class AdminRolesController {
                 permsBtn.style.opacity = '0.3'; permsBtn.style.pointerEvents = 'none';
                 permsBtn.setAttribute('title', _t('admin_role_err_glass_ceiling', 'Jerarquía insuficiente para modificar este rol'));
             }
-            return; // Termina la evaluación aquí si el techo bloqueó todo
+            return; 
         }
 
-        // Aplicación de Inmutabilidad para roles de sistema
         if (isSystem) {
             if (deleteBtn) {
                 deleteBtn.style.opacity = '0.3';
                 deleteBtn.style.pointerEvents = 'none';
                 deleteBtn.setAttribute('title', _t('admin_role_err_base_delete', 'Los roles base del sistema no pueden ser eliminados'));
             }
-            // En esta nueva versión los roles de sistema SÍ pueden editarse (para cambiar color), 
-            // pero el Backend denegará el cambio de nombre. Dejamos el botón activo pero advertimos.
             if (editBtn) {
                 editBtn.setAttribute('title', _t('admin_role_warn_base_edit', 'Edición limitada (solo aspecto visual)'));
             }
@@ -280,29 +272,12 @@ class AdminRolesController {
         
         const selectedRow = document.querySelector(`[data-action="selectRoleRow"][data-role-id="${roleId}"]`);
         
-        // Bloqueo doble (Frontend y Backend) para sistema
         if (selectedRow && parseInt(selectedRow.getAttribute('data-is-system'), 10) === 1) {
             showMessage(_t('admin_role_err_base_delete', 'Los roles del sistema son inmutables.'), 'error');
             return; 
         }
 
         const roleName = selectedRow ? selectedRow.getAttribute('data-role-name') : _t('admin_role_fallback_name', 'Este rol');
-
-        if (!window.dialogSystem.templates['confirmDeleteRole']) {
-            window.dialogSystem.templates['confirmDeleteRole'] = {
-                build: (data) => `
-                    <div class="pill-container"><div class="drag-handle"></div></div>
-                    <div class="component-dialog-header">
-                        <h2 class="component-dialog-title">${_t('admin_role_delete_title', 'Eliminar Rol')}</h2>
-                        <p class="component-dialog-desc">${_t('admin_role_delete_desc', '¿Estás seguro de que deseas eliminar permanentemente el rol <strong>%s</strong>? Esta acción no se puede deshacer.').replace('%s', this.escapeHTML(data.roleName))}</p>
-                    </div>
-                    <div class="component-dialog-actions">
-                        <button class="component-button component-button--h45 hide-on-desktop" data-dialog-action="cancel">${_t('btn_cancel', 'Cancelar')}</button>
-                        <button class="component-button component-button--h45 component-button--danger component-button--full" data-dialog-action="confirm">${_t('btn_confirm_delete', 'Sí, eliminar')}</button>
-                    </div>
-                `
-            };
-        }
 
         const response = await window.dialogSystem.show('confirmDeleteRole', { roleName: roleName });
 
@@ -326,13 +301,6 @@ class AdminRolesController {
         } else {
             showMessage(_t('msg_error_prefix', 'Error: ') + res.message_key, 'error');
         }
-    }
-
-    escapeHTML(str) {
-        if (!str) return '';
-        return String(str).replace(/[&<>'"]/g, tag => ({
-            '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
-        }[tag]));
     }
 }
 

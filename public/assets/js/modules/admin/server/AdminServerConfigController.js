@@ -102,17 +102,13 @@ class AdminServerConfigController {
     }
 
     loadData() {
-        // En lugar de usar contenedores o bloques JSON, reconstruimos 
-        // la información vital para el DOM dinámico leyendo el HTML que el SSR nos dejó
         const state = {};
         
-        // 1. Textos numéricos (controles incrementales/decrementales)
         document.querySelectorAll('[data-ref^="val_"]').forEach(el => {
             const key = el.getAttribute('data-ref').replace('val_', '');
             state[key] = Number(el.getAttribute('data-val'));
         });
 
-        // 2. Inputs de texto puro
         document.querySelectorAll('input[data-action="updateTextConfig"]').forEach(input => {
             const key = input.getAttribute('data-field');
             if (key) {
@@ -120,7 +116,6 @@ class AdminServerConfigController {
             }
         });
 
-        // 3. Toggles de configuración binaria
         const maintenanceSwitch = document.querySelector('[data-ref="toggle_maintenance_mode"]');
         if (maintenanceSwitch) {
             state['maintenance_mode'] = maintenanceSwitch.checked ? 1 : 0;
@@ -131,7 +126,6 @@ class AdminServerConfigController {
             state['allow_registrations'] = registrationsSwitch.checked ? 1 : 0;
         }
 
-        // 4. Dominios de correo permitidos (extraer del input oculto para convertir a array)
         const rawDomainsEl = document.querySelector('[data-ref="raw_allowed_email_domains"]');
         if (rawDomainsEl) {
             state['allowed_email_domains'] = rawDomainsEl.value;
@@ -140,11 +134,9 @@ class AdminServerConfigController {
         this.state = state;
         this.initialState = JSON.parse(JSON.stringify(this.state));
 
-        // Por si se re-hidrata después de la primera carga
         this.renderValues();
         this.checkForChanges();
         
-        // Retiramos la clase disable para revelar los contenedores
         const groups = document.querySelectorAll('[data-ref="admin-config-group"]');
         groups.forEach(el => el.classList.remove('disabled'));
     }
@@ -173,7 +165,6 @@ class AdminServerConfigController {
             registrationsSwitch.checked = (parseInt(this.state.allow_registrations) === 1);
         }
 
-        // Parseo y renderizado de la interfaz visual de Dominios
         if (this.state.allowed_email_domains !== undefined) {
             const domainsList = this.state.allowed_email_domains.split(',').map(d => d.trim()).filter(d => d !== '');
             this.renderDomainsUI(domainsList);
@@ -181,7 +172,6 @@ class AdminServerConfigController {
     }
 
     renderDomainsUI(domainsList) {
-        // Reiniciamos todas las opciones predefinidas por precaución
         document.querySelectorAll('.domain-checkbox').forEach(cb => cb.checked = false);
         
         const listContainer = document.querySelector('[data-ref="list_allowed_domains"]');
@@ -193,7 +183,6 @@ class AdminServerConfigController {
             if (checkbox) {
                 checkbox.checked = true;
             } else {
-                // Si el dominio no está en la lista HTML, lo creamos dinámicamente y lo marcamos
                 const tpl = `
                     <label class="component-menu-link component-menu-link--bordered">
                         <div class="component-menu-link-icon">
@@ -212,7 +201,6 @@ class AdminServerConfigController {
     addCustomDomain(inputEl) {
         let domain = inputEl.value.trim().toLowerCase();
         
-        // Validación básica de dominio (algo.com, test.net)
         const domainRegex = /^[a-z0-9.-]+\.[a-z]{2,}$/i;
         if (!domainRegex.test(domain)) {
             showMessage('Formato de dominio inválido', 'error');
@@ -222,13 +210,11 @@ class AdminServerConfigController {
         const listContainer = document.querySelector('[data-ref="list_allowed_domains"]');
         if (!listContainer) return;
 
-        // Validamos si ya existe en las etiquetas generadas
         let existingCb = listContainer.querySelector(`.domain-checkbox[value="${domain}"]`);
         
         if (existingCb) {
             existingCb.checked = true;
         } else {
-            // Creamos un nuevo elemento
             const tpl = `
                 <label class="component-menu-link component-menu-link--bordered">
                     <div class="component-menu-link-icon">
@@ -240,8 +226,8 @@ class AdminServerConfigController {
             listContainer.insertAdjacentHTML('beforeend', tpl);
         }
 
-        inputEl.value = ''; // Limpiar el input
-        this.updateDomainsState(); // Sincronizar con el estado
+        inputEl.value = ''; 
+        this.updateDomainsState(); 
     }
 
     updateDomainsState() {
@@ -299,20 +285,14 @@ class AdminServerConfigController {
     }
 
     async submitConfig(btn) {
-        // Invocamos el diálogo de verificación antes de proceder
-        const resultDialog = await window.dialogSystem.show('verifyPasswordDialog', {
-            title: __('admin_verify_identity_title'),
-            desc: __('admin_verify_identity_desc_config'),
-            confirmText: __('btn_save_config')
-        });
+        const resultDialog = await window.dialogSystem.show('verifyPasswordSaveConfig');
 
         if (!resultDialog.confirmed) return;
 
-        // AQUÍ SE CORRIGIÓ LA EXTRACCIÓN CON EL ID REAL DEL TEMPLATE
         const password = resultDialog.data['modal_verify_password'] ? resultDialog.data['modal_verify_password'].trim() : '';
 
         if (!password) {
-            showMessage(__('err_admin_password_required'), 'error');
+            showMessage(typeof window.__ === 'function' ? window.__('err_admin_password_required') : 'Contraseña requerida', 'error');
             return;
         }
 
@@ -331,7 +311,6 @@ class AdminServerConfigController {
 
         if (result.success) {
             showMessage(result.message, 'success');
-            // Re-sincronizamos el estado actual como punto de partida 
             this.initialState = JSON.parse(JSON.stringify(this.state));
             this.checkForChanges(); 
         } else {

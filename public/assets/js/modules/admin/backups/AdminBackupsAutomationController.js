@@ -22,14 +22,14 @@ class AdminBackupsAutomationController {
         this.abortController = null;
 
         this.freqMap = {
-            0: __('freq_test_mode'),
-            1: __('freq_1_hour'),
-            3: __('freq_3_hours'),
-            6: __('freq_6_hours'),
-            12: __('freq_12_hours'),
-            24: __('freq_1_day'),
-            48: __('freq_2_days'),
-            168: __('freq_1_week')
+            0: typeof window.__ === 'function' ? window.__('freq_test_mode') : 'Modo Prueba',
+            1: typeof window.__ === 'function' ? window.__('freq_1_hour') : '1 Hora',
+            3: typeof window.__ === 'function' ? window.__('freq_3_hours') : '3 Horas',
+            6: typeof window.__ === 'function' ? window.__('freq_6_hours') : '6 Horas',
+            12: typeof window.__ === 'function' ? window.__('freq_12_hours') : '12 Horas',
+            24: typeof window.__ === 'function' ? window.__('freq_1_day') : '1 Día',
+            48: typeof window.__ === 'function' ? window.__('freq_2_days') : '2 Días',
+            168: typeof window.__ === 'function' ? window.__('freq_1_week') : '1 Semana'
         };
 
         this.handleViewLoadedBound = this.handleViewLoaded.bind(this);
@@ -66,27 +66,20 @@ class AdminBackupsAutomationController {
         }
     }
 
-    /**
-     * Carga Sincrónica (SSR): Lee el DOM renderizado por PHP
-     */
     loadData() {
         const schemaElement = document.querySelector('[data-ref="admin-auto-available-schema"]');
         if (!schemaElement) return;
 
         try {
-            // Recuperar el esquema disponible pasado por PHP
             this.availableSchema = JSON.parse(schemaElement.textContent);
 
-            // Reconstruir el estado actual leyendo el DOM
             const autoEnabled = document.querySelector('[data-ref="toggle-auto-backup"]').checked ? 1 : 0;
             const autoFreq = parseInt(document.querySelector('[data-ref="admin-autoFreq-text"]').getAttribute('data-val'));
             const autoRetention = parseInt(document.querySelector('[data-ref="val_auto_backup_retention_count"]').getAttribute('data-val'));
 
-            // Recuperar módulos
             this.selectedModules.avatars_uploaded = document.querySelector('[data-ref="auto-module-uploaded"]').checked;
             this.selectedModules.avatars_default = document.querySelector('[data-ref="auto-module-default"]').checked;
 
-            // Recuperar tablas seleccionadas de los checkboxes
             this.selectedState = {};
             for (const dbName in this.availableSchema) {
                 this.selectedState[dbName] = [];
@@ -96,7 +89,6 @@ class AdminBackupsAutomationController {
                 tableCbs.forEach(cb => this.selectedState[dbName].push(cb.value));
             }
 
-            // Crear el backup_schema_config JSON string
             const payloadSchema = { _modules: this.selectedModules };
             for (const [dbName, tables] of Object.entries(this.selectedState)) {
                 if (tables.length > 0) payloadSchema[dbName] = tables;
@@ -227,7 +219,8 @@ class AdminBackupsAutomationController {
 
         const freqText = document.querySelector('[data-ref="admin-autoFreq-text"]');
         if (freqText) {
-            freqText.textContent = this.freqMap[this.state.auto_backup_frequency_hours] || __('freq_every_x_hours').replace(':hours', this.state.auto_backup_frequency_hours);
+            let translated = typeof window.__ === 'function' ? window.__('freq_every_x_hours') : 'Cada :hours horas';
+            freqText.textContent = this.freqMap[this.state.auto_backup_frequency_hours] || translated.replace(':hours', this.state.auto_backup_frequency_hours);
             freqText.setAttribute('data-val', this.state.auto_backup_frequency_hours);
         }
 
@@ -281,19 +274,14 @@ class AdminBackupsAutomationController {
     }
 
     async handleSave(btn) {
-        const resultDialog = await window.dialogSystem.show('verifyPasswordDialog', {
-            title: __('admin_verify_identity_title'),
-            desc: __('admin_verify_identity_desc_auto'),
-            confirmText: __('btn_save_config')
-        });
+        const resultDialog = await window.dialogSystem.show('verifyPasswordSaveAutomation');
 
         if (!resultDialog.confirmed) return;
         
-        // AQUÍ SE CORRIGIÓ LA EXTRACCIÓN CON EL ID REAL DEL TEMPLATE
         const password = resultDialog.data['modal_verify_password']?.trim();
 
         if (!password) {
-            showMessage(__('err_admin_password_required'), 'error');
+            showMessage(typeof window.__ === 'function' ? window.__('err_admin_password_required') : 'Contraseña requerida', 'error');
             return;
         }
 
@@ -309,7 +297,7 @@ class AdminBackupsAutomationController {
             restoreButton(btn);
 
             if (response.success) {
-                showMessage(__('success_config_saved'), 'success');
+                showMessage(typeof window.__ === 'function' ? window.__('success_config_saved') : 'Guardado con éxito', 'success');
                 this.initialState = JSON.parse(JSON.stringify(this.state));
                 this.checkForChanges();
             } else {
@@ -317,7 +305,7 @@ class AdminBackupsAutomationController {
             }
         } catch (error) {
             restoreButton(btn);
-            showMessage(__('err_save_config'), 'error');
+            showMessage(typeof window.__ === 'function' ? window.__('err_save_config') : 'Error al guardar', 'error');
         }
     }
 }

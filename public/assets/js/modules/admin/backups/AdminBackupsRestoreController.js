@@ -69,23 +69,18 @@ class AdminBackupsRestoreController {
         const backupId = urlParams.get('id');
 
         if (!backupId) {
-            showMessage(__('err_backup_id_missing'), 'error');
+            showMessage(typeof window.__ === 'function' ? window.__('err_backup_id_missing') : 'ID de backup faltante', 'error');
             return;
         }
 
-        const resultDialog = await window.dialogSystem.show('verifyPasswordDialog', {
-            title: __('admin_verify_identity_title'),
-            desc: __('msg_confirm_restore_password'),
-            confirmText: __('btn_confirm_restore')
-        });
+        const resultDialog = await window.dialogSystem.show('verifyPasswordRestoreBackup');
 
         if (!resultDialog.confirmed) return;
 
-        // AQUÍ SE CORRIGIÓ LA EXTRACCIÓN CON EL ID REAL DEL TEMPLATE
         const password = resultDialog.data['modal_verify_password'] ? resultDialog.data['modal_verify_password'].trim() : '';
 
         if (!password) {
-            showMessage(__('err_password_authorize_restore'), 'error');
+            showMessage(typeof window.__ === 'function' ? window.__('err_password_authorize_restore') : 'Contraseña requerida', 'error');
             return;
         }
 
@@ -106,7 +101,7 @@ class AdminBackupsRestoreController {
             this.pollRestoreStatus(res.job_id, btn, originalText);
         } else {
             this.resetRestoreUI(btn, originalText);
-            showMessage(res.message || __('err_start_restore'), 'error');
+            showMessage(res.message || (typeof window.__ === 'function' ? window.__('err_start_restore') : 'Error'), 'error');
         }
     }
 
@@ -122,7 +117,7 @@ class AdminBackupsRestoreController {
                 if (res.status === 'finished') {
                     clearInterval(this.pollInterval);
                     this.resetRestoreUI(btn, originalText);
-                    showMessage(__('success_db_restored'), 'success');
+                    showMessage(typeof window.__ === 'function' ? window.__('success_db_restored') : 'Restaurado', 'success');
                     
                     window.location.href = this.basePath + '/login';
 
@@ -132,7 +127,7 @@ class AdminBackupsRestoreController {
             } else {
                 clearInterval(this.pollInterval);
                 this.resetRestoreUI(btn, originalText);
-                showMessage(res.message || __('err_connection'), 'error');
+                showMessage(res.message || (typeof window.__ === 'function' ? window.__('err_connection') : 'Error'), 'error');
             }
         }, 2500);
     }

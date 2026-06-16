@@ -62,12 +62,40 @@ REGLA 4: Limpieza Rigurosa (destroy)
 - Debes limpiar cualquier `setInterval` o `setTimeout` activo.
 
 -----------------------------------------------------------------------------
-REGLA 5: Sistema de UI y Extracción de Datos de Diálogos
+REGLA 5: Sistema de UI, Modales y Extracción de Datos (DialogTemplates.js)
 -----------------------------------------------------------------------------
 - ESTRICTAMENTE PROHIBIDO el uso de `alert()`, `confirm()`, o `prompt()` nativos.
 - Para notificaciones usa: `showMessage(__('clave_traduccion'), 'success' | 'error');`
-- Para confirmaciones usa: `await window.dialogSystem.show('nombreDialogo');`
 - Para estados de carga en botones usa: `setButtonLoading(btn)` y `restoreButton(btn)`.
+
+- CENTRALIZACIÓN ABSOLUTA DE TEMPLATES (DialogTemplates.js): Todo el HTML, estructura, textos visuales, traducciones (ej. `__('key')`) y configuración de UI para diálogos, modales o alertas DEBE residir obligatoriamente en el archivo `public/assets/js/core/components/DialogTemplates.js`.
+- PROHIBICIÓN EN CONTROLADORES JS: Los controladores tienen ESTRICTAMENTE PROHIBIDO:
+  1. Construir strings de HTML.
+  2. Inyectar textos visuales (títulos, descripciones, botones) en las llamadas al dialogSystem.
+  3. Llamar a la función de traducción `__()` para textos que van dentro de un modal.
+
+[❌ INCORRECTO - NUNCA HACER ESTO EN UN CONTROLADOR]
+const result = await window.dialogSystem.show('verifyPasswordDialog', {
+    title: "Confirmar borrado", // MAL: Texto quemado en controlador
+    desc: __('admin_verify_delete'), // MAL: Traducción en el controlador para UI
+    confirmText: "Destruir" // MAL: Texto quemado
+});
+
+[✅ CORRECTO - APROBADO]
+// En el controlador (Solo se pasa la data pura o variables de contexto):
+const result = await window.dialogSystem.show('verifyPasswordDeleteUsers', { count: 5 });
+
+// En DialogTemplates.js (Maneja toda la UI, HTML y los textos):
+verifyPasswordDeleteUsers: {
+    build: (data) => {
+        return DialogTemplates.verifyPasswordDialog.build({
+            title: __('title_delete'),
+            desc: __('desc_delete').replace(':count', data.count),
+            confirmText: __('btn_destroy')
+        });
+    }
+}
+
 - EXTRACCIÓN DE DATOS: Cuando recolectes datos del `dialogSystem`, las llaves devueltas en `result.data` corresponden EXACTAMENTE al `id`, `name` o `data-ref` del input en el template.
 - ESTRICTAMENTE PROHIBIDO buscar llaves con el prefijo `dialog_` (ej. `dialog_verify_password`).
 - Los templates actuales usan el prefijo `modal_` (ej. `modal_verify_password`). Extrae los datos usando exactamente esa llave: `result.data['modal_verify_password']`.
@@ -80,12 +108,12 @@ REGLA 6: Desacoplamiento de CSS y JS (data-ref y data-action)
 - ESTRICTAMENTE PROHIBIDO usar clases CSS (`.clase`) o IDs (`#id`) para 
   SELECCIONAR elementos del DOM (`querySelector`) o escuchar eventos en JS.
 - EXCEPCIÓN DE ESTADO: SÍ está permitido agregar o quitar clases de estado visual 
-  como `.selected`, `.active`, `.disabled` o `.disabled-interaction` usando `classList`, SIEMPRE Y CUANDO 
+  como `.selected`, `.active`, `.disabled` o `.disabled-interactive` usando `classList`, SIEMPRE Y CUANDO 
   el elemento se haya obtenido previamente mediante `data-ref` o `data-action`.
 - Para referencias visuales, leer inputs o actualizar texto, usa: `[data-ref="nombre-elemento"]`
 - Para botones y acciones clickeables, usa: `[data-action="nombreAccion"]`
 - Las vistas PHP/HTML deben estructurarse usando exclusivamente estos atributos.
-- Para ocultar o deshabilitar elementos completamente usa estrictamente las clases CSS `.disabled` o `.disabled-interaction`.
+- Para ocultar o deshabilitar elementos completamente usa estrictamente las clases CSS `.disabled` o `.disabled-interactive`.
 
 -----------------------------------------------------------------------------
 REGLA 7: Prevención de Promesas Huérfanas (AbortController en INIT)
@@ -105,15 +133,16 @@ REGLA 8: Navegación Programática Correcta (SpaRouter)
 - USO CORRECTO: `if (window.spaRouter) window.spaRouter.navigate(this.basePath + '/nueva/ruta');`
 
 -----------------------------------------------------------------------------
-REGLA 9: Cero Textos Hardcodeados, Sin Fallbacks y Sin Console Logs
+REGLA 9: Cero Textos Hardcodeados, Cero "Wrappers" de Fallback y Sin Console Logs
 -----------------------------------------------------------------------------
 - ESTRICTAMENTE PROHIBIDO dejar `console.log()`, `console.error()` en el código.
 - ESTRICTAMENTE PROHIBIDO escribir textos legibles para el usuario directamente en el JS (Tolerancia Cero).
-- ESTRICTAMENTE PROHIBIDO usar "respaldos" (fallbacks) de traducciones, ya sea enviando un segundo parámetro a funciones como `_t()` o evaluando un string estático.
-  INCORRECTO: `showMessage(__('err_session') || 'Sesión expirada', 'error');`
-  INCORRECTO: `this.showError(_t('err_session', 'Error fallback'));`
-  CORRECTO: `showMessage(__('err_session'), 'error');`
-- TODO texto debe usar ÚNICAMENTE la clave de la función de traducción oficial.
+- PROHIBICIÓN ABSOLUTA DE WRAPPERS DE TRADUCCIÓN (ej. `_t` o `__t`): Queda estrictamente prohibido definir o usar funciones intermedias o "wrappers" (como `const _t = (key, fallback) => ...`) que inyecten un fallback hardcodeado si la traducción falla.
+- Todo texto debe usar ÚNICA Y EXCLUSIVAMENTE la clave de la función de traducción oficial global `__()`.
+  [❌ INCORRECTO]: `const _t = (key, fallback) => typeof window.__ === 'function' ? window.__(key) : fallback;`
+  [❌ INCORRECTO]: `showMessage(__('err_session') || 'Sesión expirada', 'error');`
+  [❌ INCORRECTO]: `this.showError(_t('err_session', 'Error fallback'));`
+  [✅ CORRECTO]: `showMessage(__('err_session'), 'error');`
 
 =============================================================================
 PLANTILLA BASE REQUERIDA PARA CONTROLADORES JS:
@@ -181,9 +210,9 @@ PARTE 2: BACKEND (API PHP)
 REGLA 10: Separación de Responsabilidades (MVC / Service Pattern) y Carga Server-Side
 -----------------------------------------------------------------------------
 - CONTROLADORES API (`api/controllers/`): Únicamente leen el Request, llaman al 
-  Servicio correspondiente y retornan con `Utils::jsonResponse()`. 
+  Servicio correspondiente y retornan con `Utils::jsonResponse()`.
   ¡PROHIBIDA la lógica de negocio o queries SQL aquí!
-- SERVICIOS (`api/services/`): Contienen la lógica de negocio. 
+- SERVICIOS (`api/services/`): Contienen la lógica de negocio.
   NO interactúan directamente con PDO/SQL; consumen Repositorios.
 - REPOSITORIOS (`includes/core/Repositories/`): Recomendado como lugar principal para consultas SQL.
 - EXCEPCIÓN PARA CARGA A NIVEL SERVIDOR (SSR): Aunque la comunicación principal de la SPA 
@@ -191,7 +220,8 @@ REGLA 10: Separación de Responsabilidades (MVC / Service Pattern) y Carga Serve
   Repositorios) directamente en los archivos de vista PHP (`includes/views/`) cuando la 
   sección requiera carga de datos en tiempo de ejecución del lado del servidor (Server-Side 
   Rendering) antes de mostrar la página.
-- SI LO QUE ESTÁS MODIFICANDO YA TIENE CARGA CON JS, O CARGA A NIVEL SERVIDOR, ASÍ DÉJALO. (Respeta estrictamente la estrategia de carga original que ya implemente el archivo).
+- SI LO QUE ESTÁS MODIFICANDO YA TIENE CARGA CON JS, O CARGA A NIVEL SERVIDOR, ASÍ DÉJALO.
+  (Respeta estrictamente la estrategia de carga original que ya implemente el archivo).
 
 -----------------------------------------------------------------------------
 REGLA 11: Cero Textos Hardcodeados y Absolutamente Cero Fallbacks
@@ -203,7 +233,8 @@ REGLA 11: Cero Textos Hardcodeados y Absolutamente Cero Fallbacks
   INCORRECTO: `return Utils::jsonResponse(false, __('err_fatal') ?: 'Error fatal');`
   INCORRECTO: `return Utils::jsonResponse(false, __('err_fatal', 'Error fatal'));`
   CORRECTO: `return Utils::jsonResponse(false, __('err_fatal'));`
-- Los archivos JSON de traducción son la única fuente de verdad. No deben existir textos de respaldo en la lógica de Controladores, Servicios o Repositorios.
+- Los archivos JSON de traducción son la única fuente de verdad.
+  No deben existir textos de respaldo en la lógica de Controladores, Servicios o Repositorios.
 
 -----------------------------------------------------------------------------
 REGLA 12: Reutilización Obligatoria de `Utils.php`
@@ -272,7 +303,8 @@ REGLA 19: Cero Textos Hardcodeados en la Interfaz (Absoluto)
 REGLA 20: Cero Anotaciones o Comentarios Basura (HTML, PHP y Python)
 -----------------------------------------------------------------------------
 - ESTRICTAMENTE PROHIBIDO dejar código comentado, bloques de separación inútiles (ej. `# ==================`, `// ===============`) o "notas basura" explicativas (ej. `# blpop con lista de colas...`) en las vistas finales, archivos PHP o scripts de Python.
-- El código HTML, PHP y Python debe estar 100% limpio y ser autodescriptivo. Si la estructura es buena e indentada, los comentarios estructurales sobran.
+- El código HTML, PHP y Python debe estar 100% limpio y ser autodescriptivo.
+  Si la estructura es buena e indentada, los comentarios estructurales sobran.
 
 -----------------------------------------------------------------------------
 REGLA 21: Uso de Texto Simulado (Lorem Ipsum) para Datos Faltantes
@@ -281,11 +313,14 @@ REGLA 21: Uso de Texto Simulado (Lorem Ipsum) para Datos Faltantes
 
   "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
   
-  Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+  Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur 
+  sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
   
-  Curabitur pretium tincidunt lacus. Nulla gravida orci a odio. Nullam varius, turpis et commodo pharetra, est eros bibendum elit, nec luctus magna felis sollicitudin mauris. Integer in mauris eu nibh euismod gravida.
+  Curabitur pretium tincidunt lacus. Nulla gravida orci a odio. Nullam varius, turpis et commodo pharetra, est eros bibendum elit, nec luctus magna felis sollicitudin mauris.
+  Integer in mauris eu nibh euismod gravida.
   
-  Phasellus fermentum in, dolor. Pellentesque facilisis. Nulla imperdiet sit amet magna. Vestibulum dapibus, mauris nec malesuada fames ac turpis velit, rhoncus eu, luctus et interdum adipiscing wisi."
+  Phasellus fermentum in, dolor. Pellentesque facilisis. Nulla imperdiet sit amet magna.
+  Vestibulum dapibus, mauris nec malesuada fames ac turpis velit, rhoncus eu, luctus et interdum adipiscing wisi."
 
 - NOTA: Esta es la ÚNICA excepción permitida a la Regla 19 de "Cero Textos Hardcodeados", exclusivamente cuando se trate de texto de relleno/mockup temporal para evaluar el diseño y maquetación visual.
 
@@ -293,7 +328,7 @@ REGLA 21: Uso de Texto Simulado (Lorem Ipsum) para Datos Faltantes
 REGLA 22: Prohibición Absoluta del Atributo Nativo `disabled`
 -----------------------------------------------------------------------------
 - ESTRICTAMENTE PROHIBIDO utilizar el atributo HTML nativo `disabled` en inputs, botones o cualquier elemento interactivo.
-- En su lugar, debes utilizar EXCLUSIVAMENTE las clases CSS `.disabled-interaction` y/o `.disabled` para manejar el estado visual y deshabilitar los eventos (pointer-events) desde CSS/JS.
+- En su lugar, debes utilizar EXCLUSIVAMENTE las clases CSS `.disabled-interactive` y/o `.disabled` para manejar el estado visual y deshabilitar los eventos (pointer-events) desde CSS/JS.
 
 
 =============================================================================
@@ -305,12 +340,13 @@ REGLA 23: Logs en Inglés, Estructurados y Nivel Enterprise (Cero Emojis)
 -----------------------------------------------------------------------------
 - Dado que Python no puede utilizar el sistema de traducciones dinámico de la web de la misma forma, TODOS los logs, salidas de consola y mensajes generados por los scripts de Python deben estar estrictamente en INGLÉS.
 - CERO EMOJIS. Los logs deben ser estructurados, serios y de nivel "enterprise" (ej. `[INFO] Telemetry worker started successfully.`, `[ERROR] Failed to connect to Redis instance.`).
-- CERO FALLBACKS. Aplica la misma rigurosidad que en PHP y JS; no dejes mensajes dobles o código de respaldo. Mantén el código y la generación de logs de forma limpia y directa.
+- CERO FALLBACKS. Aplica la misma rigurosidad que en PHP y JS; no dejes mensajes dobles o código de respaldo.
+  Mantén el código y la generación de logs de forma limpia y directa.
 
 -----------------------------------------------------------------------------
 REGLA 24: Prohibición de Exposición de Errores (Zero Data Leakage)
 -----------------------------------------------------------------------------
 - ESTRICTAMENTE PROHIBIDO enviar, imprimir o exponer mensajes de error técnicos (PHP, sentencias SQL, trazas de Redis, fallos de conexión o excepciones del servidor) hacia el frontend.
 - ESTRICTAMENTE PROHIBIDO dejar `console.log()`, `console.error()` o similares en el código de producción que revelen el funcionamiento interno.
-- TODO error, excepción o fallo técnico DEBE ser capturado y registrado de forma silenciosa utilizando exclusivamente el sistema interno `Logger.
+- TODO error, excepción o fallo técnico DEBE ser capturado y registrado de forma silenciosa utilizando exclusivamente el sistema interno `Logger`.
 - El cliente (Frontend) ÚNICAMENTE debe recibir respuestas genéricas, limpias e internacionalizadas mediante el sistema de traducción (ej. `return Utils::jsonResponse(false, __('err_internal_server'));`), asegurando que la causa técnica real quede completamente opaca para el usuario.

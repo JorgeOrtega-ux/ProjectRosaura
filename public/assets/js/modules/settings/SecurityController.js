@@ -16,7 +16,6 @@ class SecurityController {
     }
 
     init() {
-        // Corrección del ciclo de vida del AbortController
         this.abortController = new AbortController();
         
         this.bindEvents();
@@ -65,7 +64,7 @@ class SecurityController {
         if (!input) return;
         const val = input.value.trim();
         if (val === '') { 
-            showMessage(__('err_current_password_required'), 'error'); 
+            showMessage(typeof window.__ === 'function' ? window.__('err_current_password_required') : 'Contraseña actual requerida', 'error'); 
             return; 
         }
         
@@ -92,7 +91,7 @@ class SecurityController {
         const valConfirm = confirmPass.value;
         
         if (valNew !== valConfirm) { 
-            showMessage(__('err_password_mismatch'), 'error'); 
+            showMessage(typeof window.__ === 'function' ? window.__('err_password_mismatch') : 'Las contraseñas no coinciden', 'error'); 
             return; 
         }
 
@@ -100,7 +99,11 @@ class SecurityController {
         const maxPass = this.config.max_password_length || 64;
 
         if (valNew.length < minPass || valNew.length > maxPass) { 
-            showMessage(__('err_password_length').replace(':min', minPass).replace(':max', maxPass), 'error'); 
+            let msg = typeof window.__ === 'function' ? window.__('err_password_length') : 'Longitud inválida';
+            if (msg.includes(':min')) {
+                msg = msg.replace(':min', minPass).replace(':max', maxPass);
+            }
+            showMessage(msg, 'error'); 
             return; 
         }
 
@@ -129,15 +132,12 @@ class SecurityController {
             return;
         }
 
-        const dialog = await window.dialogSystem.show('confirmDeleteAccountDialog', {
-            title: typeof window.__ === 'function' ? (window.__('admin_verify_identity_title') || 'Verificar identidad') : 'Verificar identidad',
-            desc: typeof window.__ === 'function' ? (window.__('del_acc_verify_desc') || 'Ingresa tu contraseña para confirmar.') : 'Ingresa tu contraseña para confirmar.'
-        });
+        const dialog = await window.dialogSystem.show('confirmDeleteAccountDialog');
 
         if (dialog.confirmed) {
             const passInput = dialog.data['modal_delete_password'];
             if (!passInput) {
-                showMessage(typeof window.__ === 'function' ? (window.__('err_password_required') || "Contraseña requerida") : "Contraseña requerida", "error");
+                showMessage(typeof window.__ === 'function' ? window.__('err_password_required') : 'Contraseña requerida', "error");
                 return;
             }
 

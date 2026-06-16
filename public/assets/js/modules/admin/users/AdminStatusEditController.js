@@ -1,3 +1,4 @@
+// public/assets/js/modules/admin/users/AdminStatusEditController.js
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
@@ -342,11 +343,7 @@ class AdminStatusEditController {
             }
         }
 
-        const resultDialog = await window.dialogSystem.show('verifyPasswordDialog', {
-            title: __('admin_verify_identity_title'),
-            desc: __('admin_verify_identity_status_desc'),
-            confirmText: __('tooltip_save_status')
-        });
+        const resultDialog = await window.dialogSystem.show('verifyPasswordUpdateStatus');
 
         if (!resultDialog.confirmed) return;
 

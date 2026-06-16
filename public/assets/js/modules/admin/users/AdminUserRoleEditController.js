@@ -79,15 +79,10 @@ class AdminUserRoleEditController {
             return;
         }
 
-        const resultDialog = await window.dialogSystem.show('verifyPasswordDialog', {
-            title: _t('admin_verify_identity_title', 'Verificar identidad'),
-            desc: _t('admin_verify_identity_roles_desc', 'Por favor ingresa tu contraseña para asignar los roles seleccionados a este usuario.'),
-            confirmText: _t('btn_verify_execute', 'Guardar')
-        });
+        const resultDialog = await window.dialogSystem.show('verifyPasswordUpdateRole');
 
         if (!resultDialog.confirmed) return;
 
-        // AQUÍ SE CORRIGIÓ LA EXTRACCIÓN CON EL ID REAL DEL TEMPLATE
         const password = resultDialog.data['modal_verify_password'] ? resultDialog.data['modal_verify_password'].trim() : '';
 
         if (!password) {
