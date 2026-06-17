@@ -132,11 +132,12 @@ class AdminBackupsCreateController {
 
     buildInitialHTML(container) {
         let html = '<div class="component-list component-list--flush">'; 
+        const dbEntries = Object.entries(this.schemaData);
         
-        for (const [dbName, tables] of Object.entries(this.schemaData)) {
-            
+        dbEntries.forEach(([dbName, tables], index) => {
             html += `
-                <div class="component-card--grouped component-accordion component-card--flush"> <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion" data-db="${dbName}">
+                <div class="component-card--grouped component-accordion component-card--flush"> 
+                    <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion" data-db="${dbName}">
                         
                         <div class="component-card__content">
                             <div class="component-card__text">
@@ -162,7 +163,11 @@ class AdminBackupsCreateController {
                         <div class="component-accordion-content">
             `;
             
-            tables.forEach((table, index) => {
+            tables.forEach((table, tIndex) => {
+                if (tIndex > 0) {
+                    html += `<hr class="component-divider">`;
+                }
+                
                 html += `
                             <div class="component-group-item component-group-item--wrap">
                                 <div class="component-card__content">
@@ -179,10 +184,6 @@ class AdminBackupsCreateController {
                                 </div>
                             </div>
                 `;
-                
-                if (index < tables.length - 1) {
-                    html += `       <hr class="component-divider">`;
-                }
             });
             
             html += `
@@ -190,13 +191,22 @@ class AdminBackupsCreateController {
                     </div>
                 </div>
             `;
-        }
+            
+            if (index < dbEntries.length - 1) {
+                html += `<hr class="component-divider">`;
+            }
+        });
         
         html += '</div>';
         container.innerHTML = html;
     }
 
     updateUIState() {
+        if (!this.schemaData) {
+            this.validateSelection();
+            return;
+        }
+
         for (const [dbName, tables] of Object.entries(this.schemaData)) {
             const selectedCount = this.selectedState[dbName].length;
             const totalCount = tables.length;
@@ -233,10 +243,13 @@ class AdminBackupsCreateController {
         if (!confirmBtn) return;
 
         let hasSchemaSelection = false;
-        for (const tables of Object.values(this.selectedState)) {
-            if (tables.length > 0) {
-                hasSchemaSelection = true;
-                break;
+        
+        if (this.schemaData) {
+            for (const tables of Object.values(this.selectedState)) {
+                if (tables.length > 0) {
+                    hasSchemaSelection = true;
+                    break;
+                }
             }
         }
 
@@ -268,9 +281,7 @@ class AdminBackupsCreateController {
             avatars_default: document.querySelector('[data-ref="cb-module-default"]')?.checked || false
         };
 
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '<span class="material-symbols-rounded spin-icon">autorenew</span> ' + __('btn_backing_up');
-        btn.classList.add('disabled-interaction');
+        const originalText = setButtonLoading(btn);
 
         showMessage(__('msg_sending_custom_schema'), 'success');
         const res = await this.api.post('admin.create_custom_backup', { schema: payloadSchema, modules: payloadModules }, this.abortController.signal);
@@ -296,7 +307,6 @@ class AdminBackupsCreateController {
                     clearInterval(this.pollInterval);
                     showMessage(res.job_message || __('success_backup_finished'), 'success');
                     this.resetBackupUI(btn, originalText);
-                    // FIX: Reemplazado loadRoute por navigate para corregir la actualización de la URL en la barra
                     if (window.spaRouter) window.spaRouter.navigate(this.basePath + '/admin/backups');
                 } else if (res.status === 'failed' || res.status === 'not_found') {
                     clearInterval(this.pollInterval);
@@ -320,8 +330,7 @@ class AdminBackupsCreateController {
     resetBackupUI(btn, originalText) {
         this.isBackingUp = false;
         if (btn) {
-            btn.innerHTML = originalText;
-            btn.classList.remove('disabled-interaction');
+            restoreButton(btn, originalText);
         }
     }
 }

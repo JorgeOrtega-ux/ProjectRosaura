@@ -21,13 +21,13 @@ $schemaConfig = json_decode($schemaConfigJson, true) ?: [];
 
 // 2. Traducir el valor de frecuencia para el primer renderizado (SSR)
 $freqTextMap = [
-    1 => __('freq_1_hour'),
-    3 => __('freq_3_hours'),
-    6 => __('freq_6_hours'),
-    12 => __('freq_12_hours'),
-    24 => __('freq_1_day'),
-    48 => __('freq_2_days'),
-    168 => __('freq_1_week')
+    1 => __('auto_freq_1h'),
+    3 => __('auto_freq_3h'),
+    6 => __('auto_freq_6h'),
+    12 => __('auto_freq_12h'),
+    24 => __('auto_freq_24h'),
+    48 => __('auto_freq_48h'),
+    168 => __('auto_freq_168h')
 ];
 $currentFreqText = $freqTextMap[$autoFreq] ?? str_replace(':hours', $autoFreq, __('freq_every_x_hours'));
 
@@ -180,7 +180,6 @@ $selectedModules = $schemaConfig['_modules'] ?? [
                     
                     <div class="component-accordion-body">
                         <div class="component-accordion-content">
-                            <hr class="component-divider" style="margin-top:0;">
                             
                             <div class="component-group-item component-group-item--wrap">
                                 <div class="component-card__content">
@@ -223,70 +222,84 @@ $selectedModules = $schemaConfig['_modules'] ?? [
                     </div>
                 </div>
 
-                <div class="component-card--grouped <?php echo !$autoEnabled ? 'disabled' : ''; ?>" data-ref="wrapper-auto-schema" data-form-group="admin-auto-form">
-                    <div class="component-group-item component-group-item--stacked">
+                <div class="component-card--grouped component-accordion <?php echo !$autoEnabled ? 'disabled' : ''; ?>" data-ref="wrapper-auto-schema" data-form-group="admin-auto-form">
+                    <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion" data-db="auto_schema_root">
                         <div class="component-card__content">
                             <div class="component-card__text">
                                 <h2 class="component-card__title"><?php echo __('auto_backup_schema_title'); ?></h2>
                                 <p class="component-card__description"><?php echo __('auto_backup_schema_desc'); ?></p>
                             </div>
                         </div>
+                        <div class="component-card__actions component-card__actions--end">
+                            <span class="material-symbols-rounded component-accordion-icon">expand_more</span>
+                        </div>
                     </div>
                     
-                    <hr class="component-divider">
-
-                    <div data-ref="admin-auto-schema-container">
-                        <div class="component-list component-list--flush"> <?php foreach($availableSchema as $dbName => $tables): 
-                                $selectedTables = $schemaConfig[$dbName] ?? [];
-                                $countSelected = count($selectedTables);
-                                $totalTables = count($tables);
-                            ?>
-                            <div class="component-card--grouped component-accordion component-card--flush"> <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion" data-db="<?php echo $dbName; ?>">
-                                    <div class="component-card__content">
-                                        <div class="component-card__text">
-                                            <h2 class="component-card__title"><?php echo $dbName; ?></h2>
-                                            <p class="component-card__description"><?php echo __('auto_backup_tables_available', ['count' => $totalTables]); ?></p>
-                                        </div>
-                                    </div>
-                                    <div class="component-card__actions component-card__actions--end">
-                                        <span class="component-badge component-badge--sm" data-badge="<?php echo $dbName; ?>" style="<?php echo $countSelected > 0 ? 'display: inline-flex;' : 'display: none;'; ?>">
-                                            <?php echo __('auto_backup_tables_selected', ['selected' => $countSelected, 'total' => $totalTables]); ?>
-                                        </span>
-                                        <div data-action="preventAccordion">
-                                            <label class="component-toggle-switch">
-                                                <input type="checkbox" class="auto-schema-db-cb" value="<?php echo $dbName; ?>" <?php echo $countSelected > 0 ? 'checked' : ''; ?>>
-                                                <span class="component-toggle-slider"></span>
-                                            </label>
-                                        </div>
-                                        <span class="material-symbols-rounded component-accordion-icon">expand_more</span>
-                                    </div>
-                                </div>
-                                <div class="component-accordion-body">
-                                    <div class="component-accordion-content">
-                                        <?php foreach($tables as $index => $table): ?>
-                                        <div class="component-group-item component-group-item--wrap">
+                    <div class="component-accordion-body">
+                        <div class="component-accordion-content">
+                            <div data-ref="admin-auto-schema-container">
+                                <div class="component-list component-list--flush"> 
+                                    <?php 
+                                    $dbCount = count($availableSchema);
+                                    $dbIndex = 0;
+                                    foreach($availableSchema as $dbName => $tables): 
+                                        $selectedTables = $schemaConfig[$dbName] ?? [];
+                                        $countSelected = count($selectedTables);
+                                        $totalTables = count($tables);
+                                    ?>
+                                    <div class="component-card--grouped component-accordion component-card--flush"> 
+                                        <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion" data-db="<?php echo $dbName; ?>">
                                             <div class="component-card__content">
-                                                <div class="component-card__icon-container component-card__icon-container--bordered">
-                                                    <span class="material-symbols-rounded">table_rows</span>
-                                                </div>
                                                 <div class="component-card__text">
-                                                    <h2 class="component-card__title"><?php echo $table; ?></h2>
-                                                    <p class="component-card__description"><?php echo __('auto_backup_table_desc', ['table' => $table]); ?></p>
+                                                    <h2 class="component-card__title"><?php echo $dbName; ?></h2>
+                                                    <p class="component-card__description"><?php echo __('auto_backup_tables_available', ['count' => $totalTables]); ?></p>
                                                 </div>
                                             </div>
                                             <div class="component-card__actions component-card__actions--end">
-                                                <label class="component-toggle-switch">
-                                                    <input type="checkbox" class="auto-schema-table-cb" data-db="<?php echo $dbName; ?>" value="<?php echo $table; ?>" <?php echo in_array($table, $selectedTables) ? 'checked' : ''; ?>>
-                                                    <span class="component-toggle-slider"></span>
-                                                </label>
+                                                <span class="component-badge component-badge--sm" data-badge="<?php echo $dbName; ?>" style="<?php echo $countSelected > 0 ? 'display: inline-flex;' : 'display: none;'; ?>">
+                                                    <?php echo __('auto_backup_tables_selected', ['selected' => $countSelected, 'total' => $totalTables]); ?>
+                                                </span>
+                                                <div data-action="preventAccordion">
+                                                    <label class="component-toggle-switch">
+                                                        <input type="checkbox" class="auto-schema-db-cb" value="<?php echo $dbName; ?>" <?php echo $countSelected > 0 ? 'checked' : ''; ?>>
+                                                        <span class="component-toggle-slider"></span>
+                                                    </label>
+                                                </div>
+                                                <span class="material-symbols-rounded component-accordion-icon">expand_more</span>
                                             </div>
                                         </div>
-                                        <?php if($index < $totalTables - 1) echo '<hr class="component-divider">'; ?>
-                                        <?php endforeach; ?>
+                                        <div class="component-accordion-body">
+                                            <div class="component-accordion-content">
+                                                <?php foreach($tables as $index => $table): ?>
+                                                <?php if($index > 0) echo '<hr class="component-divider">'; ?>
+                                                <div class="component-group-item component-group-item--wrap">
+                                                    <div class="component-card__content">
+                                                        <div class="component-card__icon-container component-card__icon-container--bordered">
+                                                            <span class="material-symbols-rounded">table_rows</span>
+                                                        </div>
+                                                        <div class="component-card__text">
+                                                            <h2 class="component-card__title"><?php echo $table; ?></h2>
+                                                            <p class="component-card__description"><?php echo __('auto_backup_table_desc', ['table' => $table]); ?></p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="component-card__actions component-card__actions--end">
+                                                        <label class="component-toggle-switch">
+                                                            <input type="checkbox" class="auto-schema-table-cb" data-db="<?php echo $dbName; ?>" value="<?php echo $table; ?>" <?php echo in_array($table, $selectedTables) ? 'checked' : ''; ?>>
+                                                            <span class="component-toggle-slider"></span>
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <?php endforeach; ?>
+                                            </div>
+                                        </div>
                                     </div>
+                                    <?php 
+                                    if ($dbIndex < $dbCount - 1) echo '<hr class="component-divider">'; 
+                                    $dbIndex++;
+                                    ?>
+                                    <?php endforeach; ?>
                                 </div>
                             </div>
-                            <?php endforeach; ?>
                         </div>
                     </div>
                 </div>

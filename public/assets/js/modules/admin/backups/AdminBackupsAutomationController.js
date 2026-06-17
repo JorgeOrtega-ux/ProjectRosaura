@@ -22,7 +22,6 @@ class AdminBackupsAutomationController {
         this.abortController = null;
 
         this.freqMap = {
-            0: typeof window.__ === 'function' ? window.__('freq_test_mode') : 'Modo Prueba',
             1: typeof window.__ === 'function' ? window.__('freq_1_hour') : '1 Hora',
             3: typeof window.__ === 'function' ? window.__('freq_3_hours') : '3 Horas',
             6: typeof window.__ === 'function' ? window.__('freq_6_hours') : '6 Horas',
@@ -73,12 +72,20 @@ class AdminBackupsAutomationController {
         try {
             this.availableSchema = JSON.parse(schemaElement.textContent);
 
-            const autoEnabled = document.querySelector('[data-ref="toggle-auto-backup"]').checked ? 1 : 0;
-            const autoFreq = parseInt(document.querySelector('[data-ref="admin-autoFreq-text"]').getAttribute('data-val'));
-            const autoRetention = parseInt(document.querySelector('[data-ref="val_auto_backup_retention_count"]').getAttribute('data-val'));
+            const toggleAuto = document.querySelector('[data-ref="toggle-auto-backup"]');
+            const autoEnabled = toggleAuto && toggleAuto.checked ? 1 : 0;
+            
+            const freqTextNode = document.querySelector('[data-ref="admin-autoFreq-text"]');
+            const autoFreq = freqTextNode ? parseInt(freqTextNode.getAttribute('data-val')) : 24;
+            
+            const retentionNode = document.querySelector('[data-ref="val_auto_backup_retention_count"]');
+            const autoRetention = retentionNode ? parseInt(retentionNode.getAttribute('data-val')) : 5;
 
-            this.selectedModules.avatars_uploaded = document.querySelector('[data-ref="auto-module-uploaded"]').checked;
-            this.selectedModules.avatars_default = document.querySelector('[data-ref="auto-module-default"]').checked;
+            const modUp = document.querySelector('[data-ref="auto-module-uploaded"]');
+            const modDef = document.querySelector('[data-ref="auto-module-default"]');
+            
+            this.selectedModules.avatars_uploaded = modUp ? modUp.checked : false;
+            this.selectedModules.avatars_default = modDef ? modDef.checked : false;
 
             this.selectedState = {};
             for (const dbName in this.availableSchema) {
@@ -138,7 +145,9 @@ class AdminBackupsAutomationController {
             const dbName = accordionHeader.getAttribute('data-db');
             this.expandedAccordions[dbName] = !this.expandedAccordions[dbName];
             const accordion = accordionHeader.closest('.component-accordion');
-            accordion.classList.toggle('active', this.expandedAccordions[dbName]);
+            if (accordion) {
+                accordion.classList.toggle('active', this.expandedAccordions[dbName]);
+            }
             this.updateSchemaUIState();
         }
     }
@@ -161,7 +170,9 @@ class AdminBackupsAutomationController {
 
         if (e.target && e.target.classList.contains('auto-schema-db-cb')) {
             const dbName = e.target.value;
-            this.selectedState[dbName] = e.target.checked ? [...this.availableSchema[dbName]] : [];
+            if (this.availableSchema && this.availableSchema[dbName]) {
+                this.selectedState[dbName] = e.target.checked ? [...this.availableSchema[dbName]] : [];
+            }
             this.syncSchemaState(); 
         }
 
@@ -188,7 +199,11 @@ class AdminBackupsAutomationController {
     }
 
     updateSchemaUIState() {
+        if (!this.availableSchema) return;
+
         for (const dbName in this.availableSchema) {
+            if (!this.selectedState[dbName]) continue;
+            
             const selectedCount = this.selectedState[dbName].length;
             const totalCount = this.availableSchema[dbName].length;
             const isExpanded = this.expandedAccordions[dbName];
@@ -285,7 +300,7 @@ class AdminBackupsAutomationController {
             return;
         }
 
-        setButtonLoading(btn);
+        const originalText = setButtonLoading(btn);
 
         try {
             const reqData = {
@@ -294,7 +309,7 @@ class AdminBackupsAutomationController {
             };
 
             const response = await this.api.post(ApiRoutes.Admin.UpdateServerConfig, reqData, this.abortController.signal);
-            restoreButton(btn);
+            restoreButton(btn, originalText);
 
             if (response.success) {
                 showMessage(typeof window.__ === 'function' ? window.__('success_config_saved') : 'Guardado con éxito', 'success');
@@ -304,7 +319,7 @@ class AdminBackupsAutomationController {
                 showMessage(response.message, 'error');
             }
         } catch (error) {
-            restoreButton(btn);
+            restoreButton(btn, originalText);
             showMessage(typeof window.__ === 'function' ? window.__('err_save_config') : 'Error al guardar', 'error');
         }
     }

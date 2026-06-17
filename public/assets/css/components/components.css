@@ -1406,16 +1406,17 @@ html.dark-theme .component-avatar__overlay {
     background-color: var(--bg-hover-light);
 }
 
-.component-card--grouped.component-accordion:not(.component-card--flush) .component-accordion-header {
+.component-card--grouped.component-accordion:not(.component-card--flush) > .component-accordion-header {
     border-radius: 12px;
 }
 
-.component-list--flush > .component-accordion:last-child:not(.active) .component-accordion-header {
+.component-list--flush > .component-accordion:last-child:not(.active) > .component-accordion-header {
     border-bottom-left-radius: 12px;
     border-bottom-right-radius: 12px;
 }
 
-.component-accordion.active .component-accordion-header {
+/* El uso estricto de ">" previene la herencia de estilos en sub-acordeones */
+.component-accordion.active > .component-accordion-header {
     border-bottom-color: var(--border-lighter);
     border-bottom-left-radius: 0 !important;
     border-bottom-right-radius: 0 !important;
@@ -1426,7 +1427,7 @@ html.dark-theme .component-avatar__overlay {
     transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.component-accordion.active .component-accordion-icon {
+.component-accordion.active > .component-accordion-header .component-accordion-icon {
     transform: rotate(180deg);
 }
 
@@ -1436,7 +1437,8 @@ html.dark-theme .component-avatar__overlay {
     transition: grid-template-rows 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.component-accordion.active .component-accordion-body {
+/* El uso estricto de ">" evita que se abran todos los hijos a la vez */
+.component-accordion.active > .component-accordion-body {
     grid-template-rows: 1fr;
 }
 
@@ -1448,7 +1450,7 @@ html.dark-theme .component-avatar__overlay {
     transition: opacity 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), padding 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.component-accordion.active .component-accordion-content {
+.component-accordion.active > .component-accordion-body > .component-accordion-content {
     opacity: 1;
 }
 

@@ -35,8 +35,6 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                     
                     <div class="component-accordion-body">
                         <div class="component-accordion-content">
-                            <hr class="component-divider" style="margin-top: 0;">
-
                             <div class="component-group-item component-group-item--wrap">
                                 <div class="component-card__content">
                                     <div class="component-card__icon-container component-card__icon-container--bordered">
@@ -98,19 +96,24 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                     </div>
                 </div>
 
-                <div class="component-card--grouped mt-4">
-                    <div class="component-group-item component-group-item--stacked">
+                <div class="component-card--grouped component-accordion mt-4">
+                    <div class="component-group-item component-group-item--wrap component-accordion-header" data-action="toggleAccordion" data-db="backup_schema_root">
                         <div class="component-card__content">
                             <div class="component-card__text">
                                 <h2 class="component-card__title"><?php echo __('auto_backup_schema_title'); ?></h2>
                                 <p class="component-card__description"><?php echo __('auto_backup_schema_desc'); ?></p>
                             </div>
                         </div>
+                        <div class="component-card__actions component-card__actions--end">
+                            <span class="material-symbols-rounded component-accordion-icon">expand_more</span>
+                        </div>
                     </div>
                     
-                    <hr class="component-divider">
-
-                    <div data-ref="custom-schema-container"></div>
+                    <div class="component-accordion-body">
+                        <div class="component-accordion-content">
+                            <div data-ref="custom-schema-container"></div>
+                        </div>
+                    </div>
                 </div>
                 
             </div>
