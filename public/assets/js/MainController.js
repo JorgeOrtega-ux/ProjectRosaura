@@ -229,6 +229,40 @@ export class MainController {
         if (btn) {
             const action = btn.getAttribute('data-action');
             if (action === 'toggleModule') this.toggleModule(btn.getAttribute('data-target'));
+            
+            // NUEVA LÓGICA DE HERRAMIENTAS: Maneja paneles con sub-menús intercambiables
+            else if (action === 'toggleMenuInModule') {
+                e.preventDefault();
+                const moduleName = btn.getAttribute('data-module-target');
+                const menuName = btn.getAttribute('data-menu-target');
+                const moduleEl = document.querySelector(`[data-module="${moduleName}"]`);
+                
+                if (moduleEl) {
+                    const targetMenu = moduleEl.querySelector(`[data-ref="${menuName}"]`);
+                    const isModuleActive = !moduleEl.classList.contains('disabled');
+                    const isMenuCurrentlyActive = targetMenu && !targetMenu.classList.contains('disabled');
+
+                    if (isModuleActive && isMenuCurrentlyActive) {
+                        this.closeModule(moduleEl);
+                    } else {
+                        if (!this.config.allowMultipleModules) this.closeAllModules();
+                        
+                        moduleEl.querySelectorAll('.component-menu').forEach(m => {
+                            m.classList.remove('active');
+                            m.classList.add('disabled');
+                        });
+                        
+                        if (targetMenu) {
+                            targetMenu.classList.remove('disabled');
+                            targetMenu.classList.add('active');
+                        }
+                        
+                        this.openModule(moduleEl);
+                    }
+                }
+            }
+            // FIN DE NUEVA LÓGICA
+
             else if (action === 'toggleMobileSearch') this.toggleMobileSearch();
             else if (action === 'submitLogout') { e.preventDefault(); this.handleLogout(btn); }
             else if (action === 'switchAccount') { e.preventDefault(); this.handleSwitchAccount(btn.getAttribute('data-id'), btn); }
@@ -342,12 +376,12 @@ export class MainController {
         if (!container) {
             container = document.createElement('div');
             container.setAttribute('data-ref', 'toast-container');
-            container.className = 'component-toast'; // Ahora es exactamente 'component-toast'
+            container.className = 'component-toast';
             document.body.appendChild(container);
         }
 
         const toast = document.createElement('div');
-        toast.className = 'component-toast-item'; // Y la alerta pasa a ser el 'item'
+        toast.className = 'component-toast-item';
         let iconName = type === 'success' ? 'check_circle' : 'error';
         toast.innerHTML = `<div class="component-toast-icon"><span class="material-symbols-rounded">${iconName}</span></div><div class="component-toast-text">${message}</div>`;
 

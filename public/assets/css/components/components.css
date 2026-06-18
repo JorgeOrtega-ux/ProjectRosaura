@@ -2736,13 +2736,10 @@ input:checked + .component-toggle-slider:before {
     }
 }
 
-
-/* public/assets/css/components/components.css (Añadir al final) */
-
 .component-wrapper[data-ref="design-wrapper"] {
     display: flex;
     flex-direction: column;
-    height: 100vh; /* O el tamaño 100% de la vista general dependiendo de tu contenedor core */
+    height: 100vh;
 }
 
 .component-wrapper[data-ref="design-wrapper"] .component-bottom {
@@ -2756,7 +2753,7 @@ input:checked + .component-toggle-slider:before {
     display: block;
     width: 100%;
     height: 100%;
-    cursor: default; /* El paneo se activa con Shift + Click */
+    cursor: default; 
     outline: none;
 }
 
@@ -2776,13 +2773,49 @@ input:checked + .component-toggle-slider:before {
     display: flex;
     align-items: center;
     justify-content: center;
-    pointer-events: none; /* Permite arrastrar el canvas detrás del contenedor */
+    pointer-events: none;
 }
 
 .design-action-pill .component-button {
-    pointer-events: auto; /* Rehabilita los clicks solo para el botón */
+    pointer-events: auto;
     border-radius: var(--sl-border-radius-pill);
     padding: 0 28px;
     box-shadow: var(--shadow-large);
     transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* -----------------------------------------
+   NUEVO: PALETA DE COLORES EN CUADRÍCULA
+   ----------------------------------------- */
+.design-color-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px; /* Separación exacta de 8px en todas direcciones */
+    padding: 12px 4px;
+    justify-items: center;
+}
+
+.design-color-btn {
+    width: 100%; /* 100% del espacio disponible de la columna */
+    aspect-ratio: 1 / 1; /* Garantiza que siempre sea un círculo perfecto */
+    border-radius: 50%;
+    border: none;
+    background-color: var(--color-val);
+    cursor: pointer;
+    outline: none;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.15); 
+    transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.2s ease;
+    padding: 0;
+}
+
+/* Efecto Hover / Active: Se hace más pequeño (presionado) y revela el borde */
+.design-color-btn:hover,
+.design-color-btn.active {
+    /* Mantiene el borde transparente de 2px y el borde de color exterior de 2px */
+    box-shadow: 0 0 0 2px var(--bg-surface), 0 0 0 4px var(--color-val), inset 0 0 0 1px rgba(0,0,0,0.15);
+    transform: scale(0.82); /* Se reduce para dar el efecto de presionado */
+}
+
+.design-color-btn:active {
+    transform: scale(0.75); /* Se hunde un poco más al hacer clic real */
 }

@@ -28,6 +28,9 @@ class DesignController {
         this.btnPlacePixels = null;
         this.txtPlacePixels = null;
         
+        // Estado del Pincel
+        this.currentColor = '#000000'; // Fallback por defecto
+
         // Renderizado Offscreen
         this.offscreenCanvas = null;
         this.offscreenCtx = null;
@@ -149,10 +152,31 @@ class DesignController {
     }
 
     handleClick(e) {
+        // Lógica para colocar píxeles
         const btnPlace = e.target.closest('[data-action="placePixels"]');
         if (btnPlace) {
             e.preventDefault();
             this.placePixels();
+            return;
+        }
+
+        // Lógica para seleccionar el color activo de la paleta
+        const btnColor = e.target.closest('[data-action="selectColor"]');
+        if (btnColor) {
+            e.preventDefault();
+            
+            // Remover la clase active de todos los botones de color
+            document.querySelectorAll('.design-color-btn').forEach(btn => btn.classList.remove('active'));
+            
+            // Asignar active al botón cliqueado
+            btnColor.classList.add('active');
+            
+            // Actualizar el estado del pincel
+            this.currentColor = btnColor.getAttribute('data-color') || '#000000';
+            
+            // Renderizar inmediatamente para mostrar el marco del hover con el nuevo color
+            this.requestRender();
+            return;
         }
     }
 
@@ -316,7 +340,9 @@ class DesignController {
     placePixels() {
         if (this.selectedPixels.size === 0) return;
 
-        this.offscreenCtx.fillStyle = '#000000';
+        // Utilizamos el color actualmente seleccionado
+        this.offscreenCtx.fillStyle = this.currentColor;
+        
         this.selectedPixels.forEach(key => {
             const [x, y] = key.split(',').map(Number);
             this.offscreenCtx.fillRect(x, y, 1, 1);
@@ -363,7 +389,8 @@ class DesignController {
         
         // Colores del interior del Canvas
         const gridColor = 'rgba(0, 0, 0, 0.15)'; 
-        const activeColor = '#000000'; 
+        // El contorno de la selección será del mismo color que el color elegido
+        const activeColor = this.currentColor; 
 
         this.ctx.fillStyle = bgColor; 
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -411,7 +438,6 @@ class DesignController {
         if (this.hoveredPixel) {
             const hoverKey = `${this.hoveredPixel.x},${this.hoveredPixel.y}`;
             if (!renderSet.has(hoverKey)) {
-                // Si el hover está afuera, lo fusionamos con la selección para unificar el borde
                 renderSet.add(hoverKey);
             }
         }
@@ -419,6 +445,9 @@ class DesignController {
         // 4. Dibujar Selección Combinada (Contorno perimetral inteligente en vivo)
         if (renderSet.size > 0) {
             this.ctx.strokeStyle = activeColor; 
+            
+            // Si el color activo es muy oscuro (como blanco) le ponemos un borde sombreado atrás opcional
+            // para que no se pierda, pero con el stroke simple luce más limpio de momento.
             this.ctx.lineWidth = 1 / this.transform.scale;
             this.ctx.beginPath();
             
