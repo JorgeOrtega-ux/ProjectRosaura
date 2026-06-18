@@ -7,6 +7,8 @@
  */
 export const RouteModulesMap = {
     // ---- MÓDULOS PÚBLICOS / HOME ----
+    '/design': { path: './modules/app/DesignController.js', className: 'DesignController', skeletonType: 'layout-full' },
+    
     // ---- MÓDULOS DE AUTENTICACIÓN ----
     '/login': { path: './modules/auth/AuthController.js', className: 'AuthController', skeletonType: 'layout-auth' },
     '/login/two-factor': { path: './modules/auth/AuthController.js', className: 'AuthController', skeletonType: 'layout-auth' },

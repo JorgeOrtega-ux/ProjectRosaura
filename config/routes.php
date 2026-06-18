@@ -3,6 +3,7 @@
 return [
     '/' => ['view' => 'app/home.php'],
     '/explore' => ['view' => 'app/explore.php'],
+    '/design' => ['view' => 'app/design.php'],
     
     '/login' => ['view' => 'auth/login.php', 'guest_only' => true],
     '/login/two-factor' => ['view' => 'auth/login.php', 'guest_only' => true],

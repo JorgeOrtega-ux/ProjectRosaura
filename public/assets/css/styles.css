@@ -97,8 +97,6 @@ html.dark-theme .general-content-top.shadow {
     overflow: hidden; 
     display: flex;
     flex-direction: row; 
-    border-bottom-left-radius: 12px;
-    border-bottom-right-radius: 12px;
 }
 
 .general-content-scrolleable {
