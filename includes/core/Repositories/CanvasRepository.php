@@ -36,7 +36,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
         return (int)$this->db->lastInsertId();
     }
 
-public function addMember(int $canvasId, int $userId, string $role): bool {
+    public function addMember(int $canvasId, int $userId, string $role): bool {
         $sql = "INSERT INTO " . DB::TBL_CANVAS_MEMBERS . " 
                 (canvas_id, user_id, role) 
                 VALUES (:canvas_id, :user_id, :role)
@@ -47,9 +47,10 @@ public function addMember(int $canvasId, int $userId, string $role): bool {
             ':canvas_id'   => $canvasId,
             ':user_id'     => $userId,
             ':role'        => $role,
-            ':update_role' => $role // <- Pasamos el mismo valor con el nombre del segundo parámetro
+            ':update_role' => $role
         ]);
     }
+
     // --- MÉTODOS PARA GESTIÓN (MANAGE) ---
 
     public function getUserCanvasesPaginated(int $userId, int $limit, int $offset): array {
@@ -135,7 +136,7 @@ public function addMember(int $canvasId, int $userId, string $role): bool {
         ]);
     }
 
-    // --- NUEVOS MÉTODOS PARA APROBACIONES DE ACCESO ---
+    // --- MÉTODOS PARA APROBACIONES DE ACCESO ---
 
     public function createAccessRequest(int $canvasId, int $userId): bool {
         $sql = "INSERT INTO canvas_access_requests (canvas_id, user_id, status) 
@@ -183,6 +184,37 @@ public function addMember(int $canvasId, int $userId, string $role): bool {
         $stmt->execute([':canvas_id' => $canvasId, ':user_id' => $userId]);
         $result = $stmt->fetchColumn();
         return $result ?: null;
+    }
+
+    // ==========================================
+    // PERSISTENCIA DE LIENZOS (BLOB / SNAPSHOTS)
+    // ==========================================
+
+    public function getSnapshot(int $canvasId): ?string {
+        $sql = "SELECT snapshot_data FROM canvas_snapshots WHERE canvas_id = :canvas_id LIMIT 1";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':canvas_id' => $canvasId]);
+        
+        $result = $stmt->fetchColumn();
+        
+        // El worker de Python comprime los BLOBs usando zlib, 
+        // gzuncompress es la función de PHP nativa para descomprimir zlib.
+        return $result ? @gzuncompress($result) : null;
+    }
+
+    public function saveSnapshot(int $canvasId, string $snapshotData): bool {
+        $compressed = gzcompress($snapshotData);
+        
+        $sql = "INSERT INTO canvas_snapshots (canvas_id, snapshot_data) 
+                VALUES (:canvas_id, :data)
+                ON DUPLICATE KEY UPDATE snapshot_data = :update_data, last_updated = CURRENT_TIMESTAMP";
+        
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            ':canvas_id'   => $canvasId,
+            ':data'        => $compressed,
+            ':update_data' => $compressed
+        ]);
     }
 }
 ?>

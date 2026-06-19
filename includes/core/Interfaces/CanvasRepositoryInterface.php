@@ -25,5 +25,11 @@ interface CanvasRepositoryInterface {
     // Utilidades
     public function getById(int $id): ?array;
     public function getMemberRole(int $canvasId, int $userId): ?string;
+
+    // ==========================================
+    // NUEVOS MÉTODOS DE PERSISTENCIA (SNAPSHOTS)
+    // ==========================================
+    public function getSnapshot(int $canvasId): ?string;
+    public function saveSnapshot(int $canvasId, string $snapshotData): bool;
 }
 ?>

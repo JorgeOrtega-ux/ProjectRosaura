@@ -17,9 +17,7 @@ class CanvasController extends BaseController {
 
     public function get($input) {
         try {
-            // MODIFICACIÓN: Permitir acceso a invitados (modo espectador)
-            // Si hay sesión obtenemos el ID, si no, lo dejamos en null.
-            // Eliminamos el retorno de código 401 para evitar la redirección forzada del frontend.
+            // Se permite acceso a invitados (modo espectador)
             $userId = $this->session->isLoggedIn() ? $this->session->getActiveAccountId() : null;
             $canvasId = $input['id'] ?? null;
 
@@ -27,7 +25,9 @@ class CanvasController extends BaseController {
                 return $this->respond(['success' => false, 'message' => __('err_invalid_canvas_id') ?? 'ID de lienzo no proporcionado.']);
             }
 
+            // Aquí el servicio ahora devolverá el lienzo con la variable extra 'state_base64' incluida en 'data'
             $result = $this->canvasServices->getCanvas($userId, (int)$canvasId);
+            
             return $this->respond($result);
 
         } catch (\Throwable $e) {
@@ -128,8 +128,6 @@ class CanvasController extends BaseController {
             return $this->handleException($e, __FUNCTION__);
         }
     }
-
-    // --- NUEVOS ENDPOINTS DE ACCESO ---
 
     public function request_access($input) {
         try {

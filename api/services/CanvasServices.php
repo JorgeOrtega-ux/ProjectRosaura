@@ -8,6 +8,7 @@ use App\Core\Interfaces\UserRepositoryInterface;
 use App\Core\Helpers\Utils;
 use App\Core\System\Logger;
 use App\Core\System\DatabaseConstants as DB;
+use App\Config\RedisCache; // IMPORTANTE: Integración con la capa de memoria caliente
 
 class CanvasServices {
     private $canvasRepository;
@@ -18,40 +19,86 @@ class CanvasServices {
         $this->userRepository = $userRepository;
     }
 
-    // MODIFICADO: Acepta ?int para permitir invitados (null)
     public function getCanvas(?int $userId, int $canvasId): array {
         try {
-            // 1. Obtenemos el lienzo sin restringir que deba ser obligatoriamente el dueño
+            // 1. Obtenemos el lienzo
             $canvas = $this->canvasRepository->getById($canvasId);
             
             if (!$canvas) {
                 return ['success' => false, 'message' => __('err_canvas_not_found') ?? 'Lienzo no encontrado.'];
             }
             
-            // 2. Buscamos qué rol tiene el usuario en este lienzo en específico (Solo si está logueado)
+            // 2. Buscamos qué rol tiene el usuario
             $role = null;
             if ($userId !== null) {
                 $role = $this->canvasRepository->getMemberRole($canvasId, $userId);
             }
             
-            // 3. Verificamos permisos si el lienzo es privado.
-            // Si es privado, y el usuario no es el dueño ni tiene un rol asignado, lo bloqueamos.
+            // 3. Verificamos permisos de privacidad
             if ($canvas['privacy'] === DB::PRIVACY_PRIVATE && !$role && $canvas['user_id'] !== $userId) {
                 return ['success' => false, 'message' => __('err_unauthorized') ?? 'No tienes permisos para ver este lienzo.'];
             }
             
-            // 4. Inyectamos el rol explícitamente para que el frontend lo sepa
+            // 4. Inyectamos el rol
             if ($userId !== null && $canvas['user_id'] === $userId) {
-                $canvas['role'] = 'admin'; // El dueño siempre es administrador
+                $canvas['role'] = 'admin'; 
             } else {
-                $canvas['role'] = $role ?: 'spectator'; // Si es público y no tiene rol (o es invitado), entra como espectador
+                $canvas['role'] = $role ?: 'spectator'; 
             }
 
-            // Mapeo de propiedades extra para el frontend
             $canvas['max_members'] = $canvas['max_participants'];
             $canvas['width'] = $canvas['size'];
             $canvas['height'] = $canvas['size'];
             $canvas['requires_approval'] = (bool)$canvas['requires_approval'];
+
+            // ==========================================
+            // 5. CARGAR ESTADO DEL LIENZO (REDIS -> MYSQL)
+            // ==========================================
+            $redisKey = "canvas:{$canvasId}:state";
+            $stateRaw = null;
+            $redis = null;
+
+            // Intento A: Leer desde la Memoria Caliente (Redis)
+            try {
+                if (class_exists(RedisCache::class)) {
+                    $redis = RedisCache::getConnection();
+                    if ($redis && $redis->exists($redisKey)) {
+                        $stateRaw = $redis->get($redisKey);
+                    }
+                }
+            } catch (Exception $e) {
+                Logger::error('Error leyendo lienzo de Redis.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
+            }
+
+            // Intento B: Si Redis falló o el lienzo caducó en caché, buscar en Memoria Fría (MySQL Snapshot)
+            if ($stateRaw === null || $stateRaw === false) {
+                $stateRaw = $this->canvasRepository->getSnapshot($canvasId);
+
+                // Re-hidratar Redis para los siguientes clientes que entren al lienzo
+                if ($stateRaw && $redis) {
+                    try {
+                        $redis->set($redisKey, $stateRaw);
+                    } catch (Exception $e) {}
+                }
+            }
+
+            // Intento C: Lienzo completamente virgen (Generar matriz nula de bytes)
+            if (!$stateRaw) {
+                $size = (int)$canvas['size'];
+                $totalPixels = $size * $size;
+                $stateRaw = str_repeat(chr(0), $totalPixels); // Lienzo en blanco puro
+                
+                // Inicializar en Redis
+                if ($redis) {
+                    try {
+                        $redis->set($redisKey, $stateRaw);
+                    } catch (Exception $e) {}
+                }
+            }
+
+            // Empaquetar el Array de Bytes en Base64 para enviarlo limpio vía JSON
+            // El front-end solo hará atob() y volcará al Uint8Array del canvas
+            $canvas['state_base64'] = base64_encode($stateRaw);
 
             return ['success' => true, 'data' => $canvas];
         } catch (Exception $e) {
@@ -87,7 +134,6 @@ class CanvasServices {
             ];
 
             $canvasId = $this->canvasRepository->create($canvasData);
-            
             $this->canvasRepository->addMember($canvasId, $userId, 'admin');
 
             return ['success' => true, 'message' => __('msg_canvas_created'), 'data' => ['uuid' => $uuid]];
@@ -147,9 +193,7 @@ class CanvasServices {
             }
 
             $user = $this->userRepository->findById($userId);
-            if (!$user) {
-                return ['success' => false, 'message' => __('err_unauthorized')];
-            }
+            if (!$user) return ['success' => false, 'message' => __('err_unauthorized')];
 
             $passwordHash = $user['password_hash'] ?? $user['password'] ?? '';
             if (!password_verify($password, $passwordHash)) {
@@ -158,28 +202,32 @@ class CanvasServices {
 
             $deleted = $this->canvasRepository->deleteCanvases($canvasIds, $userId);
 
+            // Al eliminar un lienzo, también podríamos limpiar Redis aquí
             if ($deleted) {
+                try {
+                    if (class_exists(RedisCache::class)) {
+                        $redis = RedisCache::getConnection();
+                        foreach ($canvasIds as $id) {
+                            $redis->del("canvas:{$id}:state");
+                        }
+                    }
+                } catch (Exception $e) {}
+
                 return ['success' => true, 'message' => __('msg_canvases_deleted') ?? 'Lienzos eliminados correctamente.'];
             }
 
             return ['success' => false, 'message' => __('err_canvases_delete_failed') ?? 'Error al eliminar los lienzos.'];
         } catch (Exception $e) {
-            Logger::error('Error deleting canvases.', [
-                'user_id' => $userId,
-                'exception' => $e->getMessage()
-            ]);
+            Logger::error('Error deleting canvases.', ['user_id' => $userId, 'exception' => $e->getMessage()]);
             return ['success' => false, 'message' => __('err_database')];
         }
     }
 
     // --- LÓGICA DE SOLICITUDES DE ACCESO ---
-
     public function requestAccess(int $userId, int $canvasId): array {
         try {
             $canvas = $this->canvasRepository->getById($canvasId);
-            if (!$canvas) {
-                return ['success' => false, 'message' => __('err_canvas_not_found') ?? 'Lienzo no encontrado.'];
-            }
+            if (!$canvas) return ['success' => false, 'message' => __('err_canvas_not_found') ?? 'Lienzo no encontrado.'];
 
             $memberRole = $this->canvasRepository->getMemberRole($canvasId, $userId);
             if ($memberRole === 'editor' || $memberRole === 'admin') {
@@ -244,7 +292,6 @@ class CanvasServices {
             if (!$canvas) return ['success' => false, 'message' => __('err_unauthorized')];
 
             $requests = $this->canvasRepository->getPendingRequests($canvasId);
-            
             return ['success' => true, 'data' => $requests];
         } catch (Exception $e) {
             return ['success' => false, 'message' => __('err_database')];

@@ -28,6 +28,7 @@ export class WebSocketManager {
         this.ws.onmessage = (event) => {
             try {
                 const data = JSON.parse(event.data);
+                // Retransmitimos ciegamente al DesignController u otros subscriptores
                 this.trigger('message', data);
             } catch (e) {
                 console.error('[WS] Error parseando mensaje entrante', e);

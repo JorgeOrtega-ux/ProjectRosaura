@@ -19,6 +19,7 @@ class DesignController {
         this.ctx = null;
         this.boardWidth = 2000;
         this.boardHeight = 1000;
+        this.canvasPaletteId = 'default';
         
         this.transform = { x: 0, y: 0, scale: 1 };
         this.isDragging = false;
@@ -110,14 +111,19 @@ class DesignController {
 
         this.wsManager = new WebSocketManager();
         
-        // Escuchar eventos remotos para inyectar directo sin parpadeos
         this.wsManager.on('message', (data) => {
-            if (data.type === 'pixel_placed' && data.pixels) {
-                data.pixels.forEach(p => {
-                    this.offscreenCtx.fillStyle = p.color;
-                    this.offscreenCtx.clearRect(p.x, p.y, 1, 1);
-                    this.offscreenCtx.fillRect(p.x, p.y, 1, 1);
-                });
+            // Adaptado al formato que envía Python: { type: "pixel", x, y, color, width, userId }
+            if (data.type === 'pixel') {
+                const pX = parseInt(data.x, 10);
+                const pY = parseInt(data.y, 10);
+                const cIdx = parseInt(data.color, 10);
+                
+                const paletteObj = getPaletteById(this.canvasPaletteId);
+                const hexColor = (paletteObj && paletteObj.colors[cIdx]) ? paletteObj.colors[cIdx] : '#000000';
+                
+                this.offscreenCtx.fillStyle = hexColor;
+                this.offscreenCtx.clearRect(pX, pY, 1, 1);
+                this.offscreenCtx.fillRect(pX, pY, 1, 1);
                 this.requestRender();
             }
         });
@@ -153,18 +159,60 @@ class DesignController {
                 this.boardHeight = parseInt(sizeStr, 10);
             }
             
-            const paletteId = wrapper.getAttribute('data-palette') || 'default';
+            this.canvasPaletteId = wrapper.getAttribute('data-palette') || 'default';
             
             this.setupCanvas();
             this.centerBoard();
-            this.renderColorPalette(paletteId);
+            this.renderColorPalette(this.canvasPaletteId);
 
-            // Iniciar conexión WebSocket al tener ID
+            // HIDRATACIÓN DEL BYTE ARRAY BASE64 PARA EVITAR PARPADEOS
+            const stateBase64 = wrapper.getAttribute('data-state');
+            if (stateBase64) {
+                this.hydrateCanvasState(stateBase64);
+            }
+
             this.initWebSocket();
         } else {
             this.setupCanvas();
             this.centerBoard();
             this.renderColorPalette('default');
+        }
+    }
+
+    hydrateCanvasState(base64String) {
+        try {
+            const binaryString = atob(base64String);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            
+            const imageData = this.offscreenCtx.createImageData(this.boardWidth, this.boardHeight);
+            const paletteColors = getPaletteById(this.canvasPaletteId).colors;
+            
+            // Volcar índices de color en la matriz visual de ImageData
+            for (let i = 0; i < bytes.length; i++) {
+                const colorIndex = bytes[i];
+                const hex = paletteColors[colorIndex] || '#FFFFFF'; // Fallback a blanco si el índice está fuera
+                
+                // Convertir Hex a RGB
+                const r = parseInt(hex.slice(1, 3), 16);
+                const g = parseInt(hex.slice(3, 5), 16);
+                const b = parseInt(hex.slice(5, 7), 16);
+                
+                const dataIdx = i * 4;
+                imageData.data[dataIdx] = r;
+                imageData.data[dataIdx + 1] = g;
+                imageData.data[dataIdx + 2] = b;
+                imageData.data[dataIdx + 3] = 255; // Alpha
+            }
+            
+            // Pintado instantáneo
+            this.offscreenCtx.putImageData(imageData, 0, 0);
+            this.requestRender();
+
+        } catch (e) {
+            console.error("Error hidratando el canvas base64", e);
         }
     }
 
@@ -255,7 +303,6 @@ class DesignController {
             if (response.message.toLowerCase().includes('unido')) {
                 setTimeout(() => window.location.reload(), 1000);
             } else {
-                btn.disabled = true;
                 btn.classList.add('disabled-interactive');
                 btn.innerHTML = '<span class="material-symbols-rounded">hourglass_empty</span> Pendiente';
             }
@@ -269,7 +316,6 @@ class DesignController {
         if (!palette || !palette.colors) return;
 
         let container = document.querySelector('[data-ref="color-palette-grid"]');
-
         if (!container) return; 
 
         container.innerHTML = '';
@@ -288,7 +334,6 @@ class DesignController {
             
             btn.style.backgroundColor = hex;
             btn.style.setProperty('--color-val', hex); 
-            
             btn.title = hex;
 
             container.appendChild(btn);
@@ -841,24 +886,32 @@ class DesignController {
     placePixels() {
         if (this.selectedPixels.size === 0 || this.isSpectator) return;
 
-        this.offscreenCtx.fillStyle = this.currentColor;
-        const pixelsToSync = [];
-        
+        // Determinar índice numérico de color de la paleta local
+        const paletteObj = getPaletteById(this.canvasPaletteId);
+        let colorIndex = 0;
+        if (paletteObj && paletteObj.colors) {
+            const idx = paletteObj.colors.indexOf(this.currentColor);
+            if (idx !== -1) colorIndex = idx;
+        }
+
         this.selectedPixels.forEach(key => {
             const [x, y] = key.split(',').map(Number);
+            this.offscreenCtx.fillStyle = this.currentColor;
             this.offscreenCtx.clearRect(x, y, 1, 1);
             this.offscreenCtx.fillRect(x, y, 1, 1);
             
-            pixelsToSync.push({ x, y, color: this.currentColor });
+            // Emitir evento para cada píxel como espera tu worker de Python
+            if (this.wsManager) {
+                this.wsManager.send({
+                    type: 'pixel',
+                    x: x,
+                    y: y,
+                    color: colorIndex,
+                    width: this.boardWidth,
+                    userId: window.activeUserId || null // Variable de entorno del sistema (o null)
+                });
+            }
         });
-
-        // Emitir a través del WebSocket
-        if (this.wsManager && pixelsToSync.length > 0) {
-            this.wsManager.send({
-                type: 'pixel_placed',
-                pixels: pixelsToSync
-            });
-        }
 
         this.selectedPixels.clear();
         this.updateSelectionUI();

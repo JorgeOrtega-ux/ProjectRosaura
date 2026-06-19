@@ -42,6 +42,31 @@ CREATE TABLE IF NOT EXISTS `canvas_access_requests` (
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 -- ==========================================
+-- TABLAS NUEVAS PARA PERSISTENCIA Y REGISTROS
+-- ==========================================
+
+CREATE TABLE IF NOT EXISTS `canvas_snapshots` (
+  `canvas_id` int(11) NOT NULL,
+  `snapshot_data` LONGBLOB NOT NULL,
+  `last_updated` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`canvas_id`),
+  CONSTRAINT `fk_snapshot_canvas` FOREIGN KEY (`canvas_id`) REFERENCES `canvases` (`id`) ON DELETE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
+
+CREATE TABLE IF NOT EXISTS `canvas_logs` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `canvas_id` int(11) NOT NULL,
+  `user_id` int(11) DEFAULT NULL,
+  `x` int(11) NOT NULL,
+  `y` int(11) NOT NULL,
+  `color_index` tinyint(3) UNSIGNED NOT NULL,
+  `placed_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_log_canvas` (`canvas_id`),
+  CONSTRAINT `fk_log_canvas` FOREIGN KEY (`canvas_id`) REFERENCES `canvases` (`id`) ON DELETE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
+
+-- ==========================================
 -- ASIGNACIÓN DE PERMISOS AL USUARIO DE LA API
 -- ==========================================
 GRANT ALL PRIVILEGES ON db_canvases.* TO 'system_web_executor'@'%';
