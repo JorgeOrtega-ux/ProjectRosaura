@@ -9,6 +9,8 @@ CREATE TABLE IF NOT EXISTS `canvases` (
   `name` varchar(100) NOT NULL,
   `description` text DEFAULT NULL,
   `privacy` enum('public', 'private', 'unlisted') DEFAULT 'private',
+  `size` varchar(20) NOT NULL DEFAULT '64',
+  `max_participants` int(11) NOT NULL DEFAULT 10,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
@@ -24,3 +26,9 @@ CREATE TABLE IF NOT EXISTS `canvas_members` (
   PRIMARY KEY (`canvas_id`, `user_id`),
   CONSTRAINT `fk_cm_canvas` FOREIGN KEY (`canvas_id`) REFERENCES `canvases` (`id`) ON DELETE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
+
+-- ==========================================
+-- ASIGNACIÓN DE PERMISOS AL USUARIO DE LA API
+-- ==========================================
+GRANT ALL PRIVILEGES ON db_canvases.* TO 'system_web_executor'@'%';
+FLUSH PRIVILEGES;
