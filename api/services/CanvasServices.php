@@ -18,16 +18,18 @@ class CanvasServices {
         $this->userRepository = $userRepository;
     }
 
-    public function createCanvas(int $userId, string $name, ?string $description, string $privacy): array {
+    public function createCanvas(int $userId, string $name, ?string $description, string $privacy, string $size = '64', int $limit = 10): array {
         try {
             $uuid = Utils::generateUUID();
             
             $canvasData = [
-                'uuid'        => $uuid,
-                'user_id'     => $userId,
-                'name'        => trim($name),
-                'description' => $description ? trim($description) : null,
-                'privacy'     => in_array($privacy, [DB::PRIVACY_PUBLIC, DB::PRIVACY_PRIVATE, DB::PRIVACY_UNLISTED]) ? $privacy : DB::PRIVACY_PRIVATE
+                'uuid'             => $uuid,
+                'user_id'          => $userId,
+                'name'             => trim($name),
+                'description'      => $description ? trim($description) : null,
+                'privacy'          => in_array($privacy, [DB::PRIVACY_PUBLIC, DB::PRIVACY_PRIVATE, DB::PRIVACY_UNLISTED]) ? $privacy : DB::PRIVACY_PRIVATE,
+                'size'             => $size,
+                'max_participants' => $limit
             ];
 
             $canvasId = $this->canvasRepository->create($canvasData);

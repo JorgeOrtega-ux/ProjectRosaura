@@ -48,14 +48,16 @@ class CanvasController extends BaseController {
             $name = $input['name'] ?? '';
             $description = $input['description'] ?? null;
             $privacy = $input['privacy'] ?? 'private';
+            $size = $input['size'] ?? '64';
+            $limit = $input['limit'] ?? 10;
 
             // Validar que el nombre no esté vacío
             if (empty(trim($name))) {
                 return ['success' => false, 'message' => __('err_canvas_name_required')];
             }
 
-            // Ejecutar el servicio
-            $result = $this->canvasServices->createCanvas($userId, $name, $description, $privacy);
+            // Ejecutar el servicio incluyendo el tamaño y el límite
+            $result = $this->canvasServices->createCanvas($userId, $name, $description, $privacy, $size, (int)$limit);
 
             // Devolver la respuesta usando el método heredado de BaseController
             return $this->respond($result);

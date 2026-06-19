@@ -17,16 +17,18 @@ class CanvasRepository implements CanvasRepositoryInterface {
 
     public function create(array $canvasData): int {
         $sql = "INSERT INTO " . DB::TBL_CANVASES . " 
-                (uuid, user_id, name, description, privacy) 
-                VALUES (:uuid, :user_id, :name, :description, :privacy)";
+                (uuid, user_id, name, description, privacy, size, max_participants) 
+                VALUES (:uuid, :user_id, :name, :description, :privacy, :size, :max_participants)";
         
         $stmt = $this->db->prepare($sql);
         $stmt->execute([
-            ':uuid'        => $canvasData['uuid'],
-            ':user_id'     => $canvasData['user_id'],
-            ':name'        => $canvasData['name'],
-            ':description' => $canvasData['description'],
-            ':privacy'     => $canvasData['privacy']
+            ':uuid'             => $canvasData['uuid'],
+            ':user_id'          => $canvasData['user_id'],
+            ':name'             => $canvasData['name'],
+            ':description'      => $canvasData['description'],
+            ':privacy'          => $canvasData['privacy'],
+            ':size'             => $canvasData['size'],
+            ':max_participants' => $canvasData['max_participants']
         ]);
 
         return (int)$this->db->lastInsertId();
@@ -48,7 +50,8 @@ class CanvasRepository implements CanvasRepositoryInterface {
     // --- NUEVOS MÉTODOS PARA GESTIÓN (MANAGE) ---
 
     public function getUserCanvasesPaginated(int $userId, int $limit, int $offset): array {
-        $sql = "SELECT id, uuid, name, description, privacy, size, participant_limit, created_at 
+        // Se corrigió participant_limit por max_participants para que concuerde con db_canvases.sql
+        $sql = "SELECT id, uuid, name, description, privacy, size, max_participants, created_at 
                 FROM " . DB::TBL_CANVASES . " 
                 WHERE user_id = :uid 
                 ORDER BY id DESC 
