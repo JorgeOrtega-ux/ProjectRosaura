@@ -10,7 +10,6 @@ class CanvasEditController {
         this.abortController = null;
         this.container = null;
         
-        // Extraer el ID del lienzo de la URL (?id=...)
         const urlParams = new URLSearchParams(window.location.search);
         this.canvasId = urlParams.get('id');
 
@@ -31,7 +30,7 @@ class CanvasEditController {
         this.abortController = new AbortController();
         
         if (!this.canvasId) {
-            showMessage(window.__ ? window.__('err_invalid_canvas_id') : 'ID de lienzo inválido.', 'error');
+            showMessage(__('err_invalid_canvas_id'), 'error');
             return;
         }
         
@@ -41,13 +40,11 @@ class CanvasEditController {
 
     destroy() {
         if (this.abortController) this.abortController.abort();
-        if (this.container) {
-            this.container.removeEventListener('click', this.handleClickBound);
-        }
+        document.removeEventListener('click', this.handleClickBound);
     }
 
     bindEvents() {
-        this.container.addEventListener('click', this.handleClickBound);
+        document.addEventListener('click', this.handleClickBound);
     }
 
     handleClick(e) {
@@ -56,10 +53,36 @@ class CanvasEditController {
 
         const action = btn.getAttribute('data-action');
         
-        // Ejecutar la acción solo si existe en este controlador
-        // (Ignorará 'toggleEditState' y 'saveCanvasName' para que lo maneje tu otro script)
+        // Ejecutamos la acción si existe en el controlador local
+        // Nota: Al no existir "toggleEditState" aquí, se ignorará y lo procesará el JS global.
         if (typeof this[action] === 'function') {
             this[action](btn, e);
+        }
+    }
+
+    saveCanvasName(btn) {
+        const container = btn.closest('.component-group-item--stateful');
+        if (!container) return;
+
+        const inputEl = container.querySelector('[data-ref="input-canvasname"]');
+        const displayEl = container.querySelector('[data-ref="display-canvasname"]');
+
+        if (inputEl && displayEl) {
+            const newName = inputEl.value.trim();
+            if (newName !== '') {
+                displayEl.textContent = newName;
+                inputEl.setAttribute('data-original-value', newName);
+                this.state.name = newName;
+            } else {
+                inputEl.value = inputEl.getAttribute('data-original-value') || '';
+            }
+        }
+
+        // Simula el clic en el botón de cancelar para que la lógica de tu script
+        // global se encargue del cambio de estado visual sin duplicidad.
+        const btnCancel = container.querySelector('[data-action="toggleEditState"]');
+        if (btnCancel) {
+            btnCancel.click();
         }
     }
 
@@ -72,13 +95,11 @@ class CanvasEditController {
             if (response && response.success) {
                 const data = response.data;
                 
-                // Actualizar estado interno
                 this.state.name = data.name;
                 this.state.description = data.description || '';
                 this.state.privacy = data.privacy;
                 this.state.max_members = data.max_members || data.max_participants || 10;
 
-                // Actualizar UI - Nombre
                 const displayCanvasName = this.container.querySelector('[data-ref="display-canvasname"]');
                 const inputCanvasName = this.container.querySelector('[data-ref="input-canvasname"]');
                 if (displayCanvasName) displayCanvasName.textContent = this.state.name;
@@ -87,15 +108,12 @@ class CanvasEditController {
                     inputCanvasName.setAttribute('data-original-value', this.state.name);
                 }
 
-                // Actualizar UI - Descripción
                 const inputCanvasDesc = this.container.querySelector('[data-ref="input-canvas-desc"]');
                 if (inputCanvasDesc) inputCanvasDesc.value = this.state.description;
 
-                // Actualizar UI - Tamaño (Visual bloqueado)
                 const textSize = this.container.querySelector('[data-ref="text-size"]');
                 if (textSize) textSize.textContent = `${data.width}x${data.height}`;
 
-                // Actualizar UI - Privacidad
                 const textPrivacy = this.container.querySelector('[data-ref="text-privacy"]');
                 const iconPrivacy = this.container.querySelector('[data-ref="icon-privacy"]');
                 
@@ -107,7 +125,7 @@ class CanvasEditController {
                 
                 if (textPrivacy && privacyMap[this.state.privacy]) {
                     const labelKey = privacyMap[this.state.privacy].label;
-                    textPrivacy.textContent = window.__ ? window.__(labelKey) : this.state.privacy;
+                    textPrivacy.textContent = __(labelKey);
                     if(iconPrivacy) iconPrivacy.textContent = privacyMap[this.state.privacy].icon;
                 }
 
@@ -120,7 +138,6 @@ class CanvasEditController {
                     }
                 });
 
-                // Actualizar UI - Límite de miembros
                 const valLimit = this.container.querySelector('[data-ref="val_limit"]');
                 if (valLimit) {
                     valLimit.textContent = this.state.max_members;
@@ -128,12 +145,11 @@ class CanvasEditController {
                 }
 
             } else {
-                showMessage(response.message || 'Error al cargar los datos del lienzo.', 'error');
+                showMessage(response.message, 'error');
             }
         } catch (error) {
             if (error.name === 'AbortError') return;
-            console.error("Error loading canvas:", error);
-            showMessage('Error al cargar los datos del lienzo.', 'error');
+            showMessage(__('err_load_canvas'), 'error');
         }
     }
 
@@ -144,7 +160,6 @@ class CanvasEditController {
         if (dropdown) {
             const isActive = dropdown.classList.contains('active');
             
-            // Cerrar otros dropdowns activos
             this.container.querySelectorAll('.component-module--dropdown').forEach(d => {
                 d.classList.remove('active');
                 d.classList.add('disabled');
@@ -171,17 +186,15 @@ class CanvasEditController {
                 const textRef = dropdownWrapper.querySelector('[data-ref="text-privacy"]');
                 const iconRef = dropdownWrapper.querySelector('[data-ref="icon-privacy"]');
                 
-                if(textRef) textRef.textContent = window.__ ? window.__(label) : label;
+                if(textRef) textRef.textContent = __(label);
                 if(iconRef) iconRef.textContent = icon;
                 
-                // Actualizar clase active en el menú
                 const menu = btn.closest('.component-menu-list');
                 if (menu) {
                     menu.querySelectorAll('.component-menu-link').forEach(l => l.classList.remove('active'));
                     btn.classList.add('active');
                 }
 
-                // Cerrar el dropdown
                 const dropdownModule = dropdownWrapper.querySelector('.component-module--dropdown');
                 if(dropdownModule) {
                     dropdownModule.classList.remove('active');
@@ -211,25 +224,21 @@ class CanvasEditController {
     }
 
     async updateCanvas(btn) {
-        // Obtener el nombre actual del input justo antes de guardar 
-        // (esencial ya que la lógica de edición en tiempo real está en otro archivo)
         const nameInput = this.container.querySelector('[data-ref="input-canvasname"]');
         if (nameInput) {
             this.state.name = nameInput.value.trim();
         }
 
-        // Obtener la descripción actual del input justo antes de guardar
         const descInput = this.container.querySelector('[data-ref="input-canvas-desc"]');
         if (descInput) {
             this.state.description = descInput.value.trim();
         }
 
         if (!this.state.name) {
-            showMessage(window.__ ? window.__('err_field_required') : 'El nombre es obligatorio', 'warning');
+            showMessage(__('err_field_required'), 'warning');
             return;
         }
 
-        // Payload final: EXCLUYE explícitamente width y height
         const payload = {
             id: this.canvasId,
             name: this.state.name,
@@ -246,14 +255,13 @@ class CanvasEditController {
             if (response.aborted) return;
 
             if (response && response.success) {
-                showMessage(window.__ ? window.__('canvas_update_success') : 'Lienzo actualizado con éxito.', 'success');
+                showMessage(__('canvas_update_success'), 'success');
             } else {
-                showMessage(response.message || 'Error al actualizar el lienzo.', 'error');
+                showMessage(response.message, 'error');
             }
         } catch (error) {
             if (error.name === 'AbortError') return;
-            console.error("Error updating canvas:", error);
-            showMessage('Error al procesar la actualización del lienzo.', 'error');
+            showMessage(__('err_update_canvas'), 'error');
         } finally {
             restoreButton(btn);
         }

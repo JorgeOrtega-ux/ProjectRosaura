@@ -9,47 +9,38 @@ class DesignController {
         this.basePath = window.AppBasePath || '';
         this.abortController = null;
         
-        // Canvas & Contexto
         this.canvas = null;
         this.ctx = null;
         this.boardWidth = 2000;
         this.boardHeight = 1000;
         
-        // Transformación y Hover
         this.transform = { x: 0, y: 0, scale: 1 };
         this.isDragging = false;
         this.lastMouse = { x: 0, y: 0 };
         this.hoveredPixel = null;
         
-        // Sistema de Selección
         this.selectedPixels = new Set();
         this.isSelecting = false;
-        this.selectionMode = 'add'; // 'add' | 'remove'
+        this.selectionMode = 'add';
         this.btnPlacePixels = null;
         this.txtPlacePixels = null;
         
-        // UI Extras
         this.coordsText = null;
         this.btnColorPalette = null;
         this.fileInput = null;
 
-        // Estado de Plantillas
         this.templates = [];
         this.activeTemplateId = null;
-        this.templateInteraction = null; // null | { type: 'move'|'resize-tl'..., startX, startY, origX, origY, origW, origH }
+        this.templateInteraction = null;
 
-        // Estado del Pincel
-        this.currentColor = '#000000'; // Fallback por defecto
+        this.currentColor = '#000000';
 
-        // Renderizado Offscreen
         this.offscreenCanvas = null;
         this.offscreenCtx = null;
         
-        // Banderas de optimización
         this.needsRender = false;
         this.animationFrameId = null;
 
-        // Bindings de Eventos
         this.handleWheelBound = this.handleWheel.bind(this);
         this.handleMouseDownBound = this.handleMouseDown.bind(this);
         this.handleMouseMoveBound = this.handleMouseMove.bind(this);
@@ -173,9 +164,6 @@ class DesignController {
         this.transform.y = Math.min(Math.max(this.transform.y, minY), maxY);
     }
 
-    // --------------------------------------------------------
-    // SISTEMA DE PLANTILLAS Y ARCHIVOS
-    // --------------------------------------------------------
     handleFileUpload(e) {
         const file = e.target.files[0];
         if (!file) return;
@@ -186,16 +174,13 @@ class DesignController {
             img.onload = () => {
                 const id = 'tpl_' + Date.now();
                 
-                // Calcular tamaño para que ocupe el 50% del tablero sin deformarse
                 const targetW = this.boardWidth * 0.5;
                 const targetH = this.boardHeight * 0.5;
                 const scale = Math.min(targetW / img.width, targetH / img.height);
                 
-                // Forzamos números enteros (píxeles completos)
                 const w = Math.round(img.width * scale);
                 const h = Math.round(img.height * scale);
                 
-                // Centrar en el tablero en coordenadas exactas
                 const x = Math.round((this.boardWidth - w) / 2);
                 const y = Math.round((this.boardHeight - h) / 2);
 
@@ -220,19 +205,47 @@ class DesignController {
         const container = document.querySelector('[data-ref="template-list"]');
         if (!container) return;
 
-        container.innerHTML = this.templates.map(tpl => `
-            <div class="component-template-card ${this.activeTemplateId === tpl.id ? 'active' : ''}" data-action="selectTemplate" data-id="${tpl.id}">
-                <img src="${tpl.src}" alt="Plantilla">
-                <div class="component-template-actions">
-                    <button class="component-template-action-btn" data-action="toggleTemplateLock" title="${tpl.locked ? 'Desbloquear para mover' : 'Bloquear para pintar encima'}">
-                        <span class="material-symbols-rounded">${tpl.locked ? 'lock' : 'lock_open'}</span>
-                    </button>
-                    <button class="component-template-action-btn" data-action="deleteTemplate" title="Eliminar">
-                        <span class="material-symbols-rounded">delete</span>
-                    </button>
-                </div>
-            </div>
-        `).join('');
+        container.innerHTML = '';
+        this.templates.forEach(tpl => {
+            const card = document.createElement('div');
+            card.className = `component-template-card ${this.activeTemplateId === tpl.id ? 'active' : ''}`;
+            card.setAttribute('data-action', 'selectTemplate');
+            card.setAttribute('data-id', tpl.id);
+
+            const img = document.createElement('img');
+            img.src = tpl.src;
+            img.alt = __('alt_template');
+            card.appendChild(img);
+
+            const actions = document.createElement('div');
+            actions.className = 'component-template-actions';
+
+            const btnLock = document.createElement('button');
+            btnLock.className = 'component-template-action-btn';
+            btnLock.setAttribute('data-action', 'toggleTemplateLock');
+            btnLock.setAttribute('title', tpl.locked ? __('title_unlock_move') : __('title_lock_paint'));
+
+            const iconLock = document.createElement('span');
+            iconLock.className = 'material-symbols-rounded';
+            iconLock.textContent = tpl.locked ? 'lock' : 'lock_open';
+            btnLock.appendChild(iconLock);
+
+            const btnDel = document.createElement('button');
+            btnDel.className = 'component-template-action-btn';
+            btnDel.setAttribute('data-action', 'deleteTemplate');
+            btnDel.setAttribute('title', __('title_delete'));
+
+            const iconDel = document.createElement('span');
+            iconDel.className = 'material-symbols-rounded';
+            iconDel.textContent = 'delete';
+            btnDel.appendChild(iconDel);
+
+            actions.appendChild(btnLock);
+            actions.appendChild(btnDel);
+
+            card.appendChild(actions);
+            container.appendChild(card);
+        });
     }
 
     toggleTemplate(id) {
@@ -299,10 +312,6 @@ class DesignController {
 
         return null;
     }
-
-    // --------------------------------------------------------
-    // EVENTOS Y LÓGICA PRINCIPAL
-    // --------------------------------------------------------
 
     handleClick(e) {
         const btnUpload = e.target.closest('[data-action="triggerTemplateUpload"]');
@@ -452,7 +461,6 @@ class DesignController {
             return;
         }
 
-        // 1. Manejar manipulación de plantillas (Píxel a Píxel + Límites)
         if (this.templateInteraction) {
             const exact = this.getExactBoardCoords(e.clientX, e.clientY);
             if (!exact) return;
@@ -462,11 +470,9 @@ class DesignController {
             const dy = exact.y - this.templateInteraction.startY;
 
             if (this.templateInteraction.type === 'move') {
-                // Forzar posición en enteros
                 let newX = Math.round(this.templateInteraction.origX + dx);
                 let newY = Math.round(this.templateInteraction.origY + dy);
                 
-                // Restringir dentro del tamaño máximo del lienzo (0 a this.boardWidth - w)
                 newX = Math.max(0, Math.min(newX, this.boardWidth - tpl.w));
                 newY = Math.max(0, Math.min(newY, this.boardHeight - tpl.h));
                 
@@ -476,7 +482,6 @@ class DesignController {
                 const aspect = this.templateInteraction.origW / this.templateInteraction.origH;
                 let newW, newH;
 
-                // Restricciones de Redimensionamiento Píxel a Píxel manteniéndose dentro
                 if (this.templateInteraction.type === 'resize-br') {
                     newW = Math.round(this.templateInteraction.origW + dx);
                     let maxW = this.boardWidth - this.templateInteraction.origX;
@@ -628,10 +633,10 @@ class DesignController {
 
         if (this.selectedPixels.size > 0) {
             this.btnPlacePixels.classList.remove('disabled-interactive');
-            this.txtPlacePixels.textContent = window.__('btn_place_pixels') || 'Colocar píxeles';
+            this.txtPlacePixels.textContent = __('btn_place_pixels');
         } else {
             this.btnPlacePixels.classList.add('disabled-interactive');
-            this.txtPlacePixels.textContent = window.__('btn_select_pixels') || 'Seleccionar píxeles';
+            this.txtPlacePixels.textContent = __('btn_select_pixels');
         }
     }
 
@@ -650,7 +655,7 @@ class DesignController {
         this.updateSelectionUI();
         this.requestRender();
         
-        showMessage(window.__('msg_pixels_placed') || 'Píxeles colocados', 'success');
+        showMessage(__('msg_pixels_placed'), 'success');
     }
 
     handleResize() {
@@ -699,11 +704,9 @@ class DesignController {
         
         this.ctx.imageSmoothingEnabled = false;
         
-        // 1. Base Blanca Central
         this.ctx.fillStyle = '#FFFFFF';
         this.ctx.fillRect(0, 0, this.boardWidth, this.boardHeight);
 
-        // 2. Plantilla de fondo (con opacidad si es aplicable)
         if (this.activeTemplateId) {
             const tpl = this.templates.find(t => t.id === this.activeTemplateId);
             if (tpl) {
@@ -712,7 +715,6 @@ class DesignController {
                 this.ctx.drawImage(tpl.img, tpl.x, tpl.y, tpl.w, tpl.h);
                 this.ctx.restore();
 
-                // Si no está bloqueada, mostramos bordes azules de control
                 if (!tpl.locked) {
                     this.ctx.save();
                     this.ctx.strokeStyle = '#2196F3';
@@ -739,7 +741,6 @@ class DesignController {
             }
         }
 
-        // 3. Cuadrícula 
         if (this.transform.scale > 4) {
             this.ctx.lineWidth = 1 / this.transform.scale;
             this.ctx.strokeStyle = gridColor; 
@@ -763,10 +764,8 @@ class DesignController {
             this.ctx.stroke();
         }
 
-        // 4. Dibujar Píxeles Finales
         this.ctx.drawImage(this.offscreenCanvas, 0, 0);
 
-        // 5. Marco de Selección y Hover
         const renderSet = new Set(this.selectedPixels);
 
         if (this.hoveredPixel) {

@@ -185,16 +185,12 @@ class CanvasesManageController {
     async deleteSelectedCanvases(btn) {
         if (this.selectedCanvasIds.size === 0) return;
 
-        // Utilizamos la funcionalidad global del sistema de diálogos (adaptada si es necesario en un futuro a verifyPasswordDeleteCanvases)
-        const resultDialog = await window.dialogSystem.show('verifyPasswordDialog', {
-            title: window.__ ? window.__('dialog_delete_canvas_title') : 'Eliminar lienzos',
-            text: `¿Estás seguro que deseas eliminar los ${this.selectedCanvasIds.size} lienzos seleccionados? Esta acción es irreversible.`
-        });
+        const resultDialog = await window.dialogSystem.show('verifyPasswordDeleteCanvases', { count: this.selectedCanvasIds.size });
 
         if (!resultDialog.confirmed) return;
 
         const password = resultDialog.data['modal_verify_password'] ? resultDialog.data['modal_verify_password'].trim() : '';
-        if (!password) { showMessage(window.__ ? window.__('err_password_required') : 'Contraseña requerida', 'error'); return; }
+        if (!password) { showMessage(__('err_password_required'), 'error'); return; }
 
         setButtonLoading(btn);
 
@@ -203,7 +199,6 @@ class CanvasesManageController {
             password: password
         };
 
-        // Ya validado y corregido, mapeará correctamente hacia "canvases.delete"
         const route = ApiRoutes.Canvases && ApiRoutes.Canvases.Delete ? ApiRoutes.Canvases.Delete : 'canvases.delete';
         const result = await this.api.post(route, payload, this.abortController.signal);
         
@@ -211,7 +206,7 @@ class CanvasesManageController {
         restoreButton(btn);
 
         if (result.success) {
-            showMessage(result.message || 'Lienzo(s) eliminado(s) con éxito.', 'success');
+            showMessage(result.message, 'success');
             this.selectedCanvasIds.clear();
 
             setTimeout(() => {
@@ -254,7 +249,6 @@ class CanvasesManageController {
             if (defaultMode) defaultMode.classList.replace('active', 'disabled');
             if (selectionMode) selectionMode.classList.replace('disabled', 'active');
 
-            // Solo 1 lienzo seleccionado permite editar y gestionar miembros
             if (this.selectedCanvasIds.size > 1) {
                 [btnEdit, btnMembers].forEach(btn => {
                     if (btn) btn.classList.add('disabled-interactive');

@@ -18,18 +18,7 @@ $canJoinCanvas = in_array('join_canvas', $userPermissions);
                     <span class="material-symbols-rounded">add_circle</span>
                 </div>
                 <div class="component-menu-link-text">
-                    <span>Crear nuevo lienzo</span>
-                </div>
-            </div>
-            <?php endif; ?>
-
-            <?php if ($canManageCanvases): ?>
-            <div class="component-menu-link nav-item" data-nav="<?php echo APP_URL; ?>/canvases/manage">
-                <div class="component-menu-link-icon">
-                    <span class="material-symbols-rounded">dashboard</span>
-                </div>
-                <div class="component-menu-link-text">
-                    <span>Administrar mis lienzos</span>
+                    <span><?php echo __('lbl_create_canvas'); ?></span>
                 </div>
             </div>
             <?php endif; ?>
@@ -40,7 +29,18 @@ $canJoinCanvas = in_array('join_canvas', $userPermissions);
                     <span class="material-symbols-rounded">group_add</span>
                 </div>
                 <div class="component-menu-link-text">
-                    <span>Unirme a un lienzo</span>
+                    <span><?php echo __('lbl_join_canvas'); ?></span>
+                </div>
+            </div>
+            <?php endif; ?>
+
+            <?php if ($canManageCanvases): ?>
+            <div class="component-menu-link component-menu-link--bordered nav-item" data-nav="<?php echo APP_URL; ?>/canvases/manage">
+                <div class="component-menu-link-icon">
+                    <span class="material-symbols-rounded">dashboard</span>
+                </div>
+                <div class="component-menu-link-text">
+                    <span><?php echo __('lbl_manage_canvases'); ?></span>
                 </div>
             </div>
             <?php endif; ?>

@@ -56,59 +56,47 @@ class CanvasesController {
 
         const action = actionBtn.getAttribute('data-action');
 
+        // Nota: Ignoramos intencionalmente "toggleEditState" para que el script global lo maneje
+
         if (action === 'toggleDropdown') {
             this.toggleDropdown(actionBtn);
         } else if (action === 'selectValue') {
             this.selectDropdownValue(actionBtn);
         } else if (action === 'adjustLimit') {
             this.adjustParticipantLimit(actionBtn);
-        } else if (action === 'toggleEditState') {
-            this.toggleEditState(actionBtn);
         } else if (action === 'saveCanvasName') {
-            this.saveCanvasName();
+            this.saveCanvasName(actionBtn);
         } else if (action === 'createCanvas') {
             e.preventDefault();
             this.submitCanvas(actionBtn);
         }
     }
 
-    toggleEditState(btn) {
-        const viewState = document.querySelector('[data-state="canvasname-view"]');
-        const editState = document.querySelector('[data-state="canvasname-edit"]');
-        const inputEl = document.querySelector('[data-ref="input-canvasname"]');
+    saveCanvasName(btn) {
+        const container = btn.closest('.component-group-item--stateful');
+        if (!container) return;
 
-        if (viewState && editState) {
-            if (viewState.classList.contains('active')) {
-                viewState.classList.remove('active');
-                viewState.classList.add('disabled');
-                editState.classList.remove('disabled');
-                editState.classList.add('active');
-                if (inputEl) inputEl.focus();
-            } else {
-                editState.classList.remove('active');
-                editState.classList.add('disabled');
-                viewState.classList.remove('disabled');
-                viewState.classList.add('active');
-                if (inputEl) inputEl.value = inputEl.getAttribute('data-original-value');
-            }
-        }
-    }
+        const inputEl = container.querySelector('[data-ref="input-canvasname"]');
+        const displayEl = container.querySelector('[data-ref="display-canvasname"]');
 
-    saveCanvasName() {
-        const inputEl = document.querySelector('[data-ref="input-canvasname"]');
-        const displayEl = document.querySelector('[data-ref="display-canvasname"]');
-        
         if (inputEl && displayEl) {
             const newName = inputEl.value.trim();
             if (newName !== '') {
                 displayEl.textContent = newName;
                 inputEl.setAttribute('data-original-value', newName);
                 this.formState.name = newName;
+            } else {
+                // Si el input está vacío, revertimos a lo que había antes
+                inputEl.value = inputEl.getAttribute('data-original-value') || '';
             }
         }
-        
-        const btnCancel = document.querySelector('[data-action="toggleEditState"]');
-        if (btnCancel) this.toggleEditState(btnCancel);
+
+        // Cerramos el estado de edición invocando limpiamente el botón de cancelar,
+        // lo cual disparará tu script global de "toggleEditState" de forma natural.
+        const btnCancel = container.querySelector('[data-action="toggleEditState"]');
+        if (btnCancel) {
+            btnCancel.click();
+        }
     }
 
     toggleDropdown(triggerBtn) {
@@ -185,6 +173,11 @@ class CanvasesController {
     }
 
     async submitCanvas(btn) {
+        const inputName = document.querySelector('[data-ref="input-canvasname"]');
+        if (inputName) {
+            this.formState.name = inputName.value.trim();
+        }
+
         const inputDesc = document.querySelector('[data-ref="input-canvas-desc"]');
         this.formState.description = inputDesc ? inputDesc.value.trim() : '';
 
