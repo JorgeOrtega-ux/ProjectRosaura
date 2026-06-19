@@ -3,7 +3,6 @@
 
 use App\Config\DatabaseManager;
 use App\Core\System\DatabaseConstants as DB;
-use App\Config\RedisCache;
 use PDO;
 
 $canvasIntId = 0; 
@@ -13,7 +12,6 @@ $canvasPalette = 'default';
 $canvasPrivacy = 'private'; 
 $canvasApproval = '0'; 
 $canvasUuid = $_GET['id'] ?? '';
-$stateBase64 = ''; 
 
 if (!empty($canvasUuid)) {
     try {
@@ -32,49 +30,6 @@ if (!empty($canvasUuid)) {
             $canvasPalette = $canvas['palette_id'] ?? 'default';
             $canvasPrivacy = $canvas['privacy'] ?? 'private';
             $canvasApproval = $canvas['requires_approval'] ?? '0';
-
-            // ==========================================
-            // LÓGICA DE HIDRATACIÓN SSR (CARGA SERVIDOR)
-            // ==========================================
-            $redisKey = "canvas:{$canvasIntId}:state";
-            $stateRaw = null;
-            $redis = null;
-
-            try {
-                if (class_exists(RedisCache::class)) {
-                    $redisInstance = new RedisCache();
-                    $redis = $redisInstance->getClient();
-                    if ($redis && $redis->exists($redisKey)) {
-                        $stateRaw = $redis->get($redisKey);
-                    }
-                }
-            } catch (\Exception $e) {
-                error_log("Error Redis en design.php: " . $e->getMessage());
-            }
-
-            if ($stateRaw === null || $stateRaw === false) {
-                $sqlSnap = "SELECT snapshot_data FROM canvas_snapshots WHERE canvas_id = :cid LIMIT 1";
-                $stmtSnap = $db->prepare($sqlSnap);
-                $stmtSnap->execute([':cid' => $canvasIntId]);
-                $snap = $stmtSnap->fetchColumn();
-                if ($snap) {
-                    $stateRaw = @gzuncompress($snap);
-                    if ($stateRaw && $redis) {
-                        try { $redis->set($redisKey, $stateRaw); } catch (\Exception $e) {}
-                    }
-                }
-            }
-
-            // Si es un lienzo virgen, generamos la matriz con byte 255 (Transparencia)
-            if (!$stateRaw) {
-                $sizeInt = (int)$canvasSize;
-                $stateRaw = str_repeat(chr(255), $sizeInt * $sizeInt);
-                if ($redis) {
-                    try { $redis->set($redisKey, $stateRaw); } catch (\Exception $e) {}
-                }
-            }
-
-            $stateBase64 = base64_encode($stateRaw);
         }
     } catch (\Exception $e) {
         error_log("Error al cargar el lienzo en la vista de diseño: " . $e->getMessage());
@@ -108,8 +63,7 @@ if (!empty($canvasUuid)) {
          data-size="<?php echo htmlspecialchars($canvasSize); ?>" 
          data-palette="<?php echo htmlspecialchars($canvasPalette); ?>"
          data-privacy="<?php echo htmlspecialchars($canvasPrivacy); ?>"
-         data-approval="<?php echo htmlspecialchars($canvasApproval); ?>"
-         data-state="<?php echo htmlspecialchars($stateBase64); ?>">
+         data-approval="<?php echo htmlspecialchars($canvasApproval); ?>">
          
         <div class="component-top">
             <div class="component-top-left" style="display: flex; align-items: center; gap: 12px;">

@@ -169,12 +169,7 @@ class DesignController {
             this.centerBoard();
             this.renderColorPalette(this.canvasPaletteId);
 
-            // HIDRATACIÓN DEL BYTE ARRAY BASE64 PARA EVITAR PARPADEOS
-            const stateBase64 = wrapper.getAttribute('data-state');
-            if (stateBase64) {
-                this.hydrateCanvasState(stateBase64);
-            }
-
+            // Iniciar o WebSocket para comunicação em tempo real
             this.initWebSocket();
         } else {
             this.setupCanvas();
@@ -247,6 +242,14 @@ class DesignController {
                 }
                 
                 this.setRoleUI(role, response.data);
+
+                // ==========================================
+                // LÓGICA DE HIDRATACIÓN VÍA AJAX
+                // ==========================================
+                if (response.data.state_base64) {
+                    this.hydrateCanvasState(response.data.state_base64);
+                }
+
             } else {
                 this.isSpectator = true;
                 

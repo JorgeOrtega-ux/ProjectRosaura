@@ -13,9 +13,17 @@ REDIS_CLIENT = None
 async def get_redis_client():
     global REDIS_CLIENT
     if REDIS_CLIENT is None:
-        redis_host = os.getenv("REDIS_HOST", "redis") # Asegura que coincida con tu servicio en docker-compose
+        redis_host = os.getenv("REDIS_HOST", "redis")
         redis_port = int(os.getenv("REDIS_PORT", 6379))
-        REDIS_CLIENT = redis.Redis(host=redis_host, port=redis_port, db=0)
+        redis_pass = os.getenv("REDIS_PASS", None) # <-- AGREGADO: Recuperar la contraseña
+        
+        REDIS_CLIENT = redis.Redis(
+            host=redis_host, 
+            port=redis_port, 
+            password=redis_pass, # <-- AGREGADO: Pasar la contraseña
+            db=0,
+            decode_responses=False # <-- AGREGADO: Importante para evitar que intente decodificar bytes como UTF-8
+        )
     return REDIS_CLIENT
 
 async def handler(websocket):
