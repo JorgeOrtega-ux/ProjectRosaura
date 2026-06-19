@@ -112,18 +112,22 @@ class DesignController {
         this.wsManager = new WebSocketManager();
         
         this.wsManager.on('message', (data) => {
-            // Adaptado al formato que envía Python: { type: "pixel", x, y, color, width, userId }
             if (data.type === 'pixel') {
                 const pX = parseInt(data.x, 10);
                 const pY = parseInt(data.y, 10);
                 const cIdx = parseInt(data.color, 10);
                 
-                const paletteObj = getPaletteById(this.canvasPaletteId);
-                const hexColor = (paletteObj && paletteObj.colors[cIdx]) ? paletteObj.colors[cIdx] : '#000000';
-                
-                this.offscreenCtx.fillStyle = hexColor;
-                this.offscreenCtx.clearRect(pX, pY, 1, 1);
-                this.offscreenCtx.fillRect(pX, pY, 1, 1);
+                if (cIdx === 255) {
+                    // Borrado / Transparente
+                    this.offscreenCtx.clearRect(pX, pY, 1, 1);
+                } else {
+                    const paletteObj = getPaletteById(this.canvasPaletteId);
+                    const hexColor = (paletteObj && paletteObj.colors[cIdx]) ? paletteObj.colors[cIdx] : '#000000';
+                    
+                    this.offscreenCtx.fillStyle = hexColor;
+                    this.offscreenCtx.clearRect(pX, pY, 1, 1);
+                    this.offscreenCtx.fillRect(pX, pY, 1, 1);
+                }
                 this.requestRender();
             }
         });
@@ -193,18 +197,27 @@ class DesignController {
             // Volcar índices de color en la matriz visual de ImageData
             for (let i = 0; i < bytes.length; i++) {
                 const colorIndex = bytes[i];
-                const hex = paletteColors[colorIndex] || '#FFFFFF'; // Fallback a blanco si el índice está fuera
-                
-                // Convertir Hex a RGB
-                const r = parseInt(hex.slice(1, 3), 16);
-                const g = parseInt(hex.slice(3, 5), 16);
-                const b = parseInt(hex.slice(5, 7), 16);
-                
                 const dataIdx = i * 4;
-                imageData.data[dataIdx] = r;
-                imageData.data[dataIdx + 1] = g;
-                imageData.data[dataIdx + 2] = b;
-                imageData.data[dataIdx + 3] = 255; // Alpha
+
+                if (colorIndex === 255) {
+                    // Píxel no pintado (Transparente)
+                    imageData.data[dataIdx] = 0;     // R
+                    imageData.data[dataIdx + 1] = 0; // G
+                    imageData.data[dataIdx + 2] = 0; // B
+                    imageData.data[dataIdx + 3] = 0; // Alpha 0 evita que se pinte el negro base
+                } else {
+                    const hex = paletteColors[colorIndex] || '#FFFFFF'; // Fallback a blanco si el índice está fuera
+                    
+                    // Convertir Hex a RGB
+                    const r = parseInt(hex.slice(1, 3), 16);
+                    const g = parseInt(hex.slice(3, 5), 16);
+                    const b = parseInt(hex.slice(5, 7), 16);
+                    
+                    imageData.data[dataIdx] = r;
+                    imageData.data[dataIdx + 1] = g;
+                    imageData.data[dataIdx + 2] = b;
+                    imageData.data[dataIdx + 3] = 255; // Alpha
+                }
             }
             
             // Pintado instantáneo

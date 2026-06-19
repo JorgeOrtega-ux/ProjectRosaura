@@ -8,7 +8,7 @@ use App\Core\Interfaces\UserRepositoryInterface;
 use App\Core\Helpers\Utils;
 use App\Core\System\Logger;
 use App\Core\System\DatabaseConstants as DB;
-use App\Config\RedisCache; // IMPORTANTE: Integración con la capa de memoria caliente
+use App\Config\RedisCache;
 
 class CanvasServices {
     private $canvasRepository;
@@ -21,25 +21,21 @@ class CanvasServices {
 
     public function getCanvas(?int $userId, int $canvasId): array {
         try {
-            // 1. Obtenemos el lienzo
             $canvas = $this->canvasRepository->getById($canvasId);
             
             if (!$canvas) {
                 return ['success' => false, 'message' => __('err_canvas_not_found') ?? 'Lienzo no encontrado.'];
             }
             
-            // 2. Buscamos qué rol tiene el usuario
             $role = null;
             if ($userId !== null) {
                 $role = $this->canvasRepository->getMemberRole($canvasId, $userId);
             }
             
-            // 3. Verificamos permisos de privacidad
             if ($canvas['privacy'] === DB::PRIVACY_PRIVATE && !$role && $canvas['user_id'] !== $userId) {
                 return ['success' => false, 'message' => __('err_unauthorized') ?? 'No tienes permisos para ver este lienzo.'];
             }
             
-            // 4. Inyectamos el rol
             if ($userId !== null && $canvas['user_id'] === $userId) {
                 $canvas['role'] = 'admin'; 
             } else {
@@ -58,10 +54,10 @@ class CanvasServices {
             $stateRaw = null;
             $redis = null;
 
-            // Intento A: Leer desde la Memoria Caliente (Redis)
             try {
                 if (class_exists(RedisCache::class)) {
-                    $redis = RedisCache::getConnection();
+                    $redisInstance = new RedisCache();
+                    $redis = $redisInstance->getClient();
                     if ($redis && $redis->exists($redisKey)) {
                         $stateRaw = $redis->get($redisKey);
                     }
@@ -70,11 +66,9 @@ class CanvasServices {
                 Logger::error('Error leyendo lienzo de Redis.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
             }
 
-            // Intento B: Si Redis falló o el lienzo caducó en caché, buscar en Memoria Fría (MySQL Snapshot)
             if ($stateRaw === null || $stateRaw === false) {
                 $stateRaw = $this->canvasRepository->getSnapshot($canvasId);
 
-                // Re-hidratar Redis para los siguientes clientes que entren al lienzo
                 if ($stateRaw && $redis) {
                     try {
                         $redis->set($redisKey, $stateRaw);
@@ -82,13 +76,12 @@ class CanvasServices {
                 }
             }
 
-            // Intento C: Lienzo completamente virgen (Generar matriz nula de bytes)
+            // Intento C: Lienzo completamente virgen (Generar matriz con byte 255 -> Transparente)
             if (!$stateRaw) {
                 $size = (int)$canvas['size'];
                 $totalPixels = $size * $size;
-                $stateRaw = str_repeat(chr(0), $totalPixels); // Lienzo en blanco puro
+                $stateRaw = str_repeat(chr(255), $totalPixels); // 255 Representa píxel transparente
                 
-                // Inicializar en Redis
                 if ($redis) {
                     try {
                         $redis->set($redisKey, $stateRaw);
@@ -96,8 +89,6 @@ class CanvasServices {
                 }
             }
 
-            // Empaquetar el Array de Bytes en Base64 para enviarlo limpio vía JSON
-            // El front-end solo hará atob() y volcará al Uint8Array del canvas
             $canvas['state_base64'] = base64_encode($stateRaw);
 
             return ['success' => true, 'data' => $canvas];
@@ -202,13 +193,15 @@ class CanvasServices {
 
             $deleted = $this->canvasRepository->deleteCanvases($canvasIds, $userId);
 
-            // Al eliminar un lienzo, también podríamos limpiar Redis aquí
             if ($deleted) {
                 try {
                     if (class_exists(RedisCache::class)) {
-                        $redis = RedisCache::getConnection();
-                        foreach ($canvasIds as $id) {
-                            $redis->del("canvas:{$id}:state");
+                        $redisInstance = new RedisCache();
+                        $redis = $redisInstance->getClient();
+                        if ($redis) {
+                            foreach ($canvasIds as $id) {
+                                $redis->del("canvas:{$id}:state");
+                            }
                         }
                     }
                 } catch (Exception $e) {}
@@ -223,7 +216,6 @@ class CanvasServices {
         }
     }
 
-    // --- LÓGICA DE SOLICITUDES DE ACCESO ---
     public function requestAccess(int $userId, int $canvasId): array {
         try {
             $canvas = $this->canvasRepository->getById($canvasId);

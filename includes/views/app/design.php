@@ -3,34 +3,78 @@
 
 use App\Config\DatabaseManager;
 use App\Core\System\DatabaseConstants as DB;
+use App\Config\RedisCache;
 use PDO;
 
-$canvasIntId = 0; // ID Numérico para la API
+$canvasIntId = 0; 
 $canvasName = '';
 $canvasSize = '64'; 
 $canvasPalette = 'default'; 
-$canvasPrivacy = 'private'; // Por defecto
-$canvasApproval = '0'; // Por defecto
+$canvasPrivacy = 'private'; 
+$canvasApproval = '0'; 
 $canvasUuid = $_GET['id'] ?? '';
+$stateBase64 = ''; 
 
 if (!empty($canvasUuid)) {
     try {
         $dbManager = new DatabaseManager();
         $db = $dbManager->getConnection(DB::CONN_CANVASES);
 
-        // Agregamos id, privacy y requires_approval a la consulta
         $sql = "SELECT id, name, size, palette_id, privacy, requires_approval FROM " . DB::TBL_CANVASES . " WHERE uuid = :uuid LIMIT 1";
         $stmt = $db->prepare($sql);
         $stmt->execute([':uuid' => $canvasUuid]);
         $canvas = $stmt->fetch(PDO::FETCH_ASSOC);
         
         if ($canvas) {
-            $canvasIntId = $canvas['id'];
+            $canvasIntId = (int)$canvas['id'];
             $canvasName = $canvas['name'];
             $canvasSize = $canvas['size'] ?? '64';
             $canvasPalette = $canvas['palette_id'] ?? 'default';
             $canvasPrivacy = $canvas['privacy'] ?? 'private';
             $canvasApproval = $canvas['requires_approval'] ?? '0';
+
+            // ==========================================
+            // LÓGICA DE HIDRATACIÓN SSR (CARGA SERVIDOR)
+            // ==========================================
+            $redisKey = "canvas:{$canvasIntId}:state";
+            $stateRaw = null;
+            $redis = null;
+
+            try {
+                if (class_exists(RedisCache::class)) {
+                    $redisInstance = new RedisCache();
+                    $redis = $redisInstance->getClient();
+                    if ($redis && $redis->exists($redisKey)) {
+                        $stateRaw = $redis->get($redisKey);
+                    }
+                }
+            } catch (\Exception $e) {
+                error_log("Error Redis en design.php: " . $e->getMessage());
+            }
+
+            if ($stateRaw === null || $stateRaw === false) {
+                $sqlSnap = "SELECT snapshot_data FROM canvas_snapshots WHERE canvas_id = :cid LIMIT 1";
+                $stmtSnap = $db->prepare($sqlSnap);
+                $stmtSnap->execute([':cid' => $canvasIntId]);
+                $snap = $stmtSnap->fetchColumn();
+                if ($snap) {
+                    $stateRaw = @gzuncompress($snap);
+                    if ($stateRaw && $redis) {
+                        try { $redis->set($redisKey, $stateRaw); } catch (\Exception $e) {}
+                    }
+                }
+            }
+
+            // Si es un lienzo virgen, generamos la matriz con byte 255 (Transparencia)
+            if (!$stateRaw) {
+                $sizeInt = (int)$canvasSize;
+                $stateRaw = str_repeat(chr(255), $sizeInt * $sizeInt);
+                if ($redis) {
+                    try { $redis->set($redisKey, $stateRaw); } catch (\Exception $e) {}
+                }
+            }
+
+            $stateBase64 = base64_encode($stateRaw);
         }
     } catch (\Exception $e) {
         error_log("Error al cargar el lienzo en la vista de diseño: " . $e->getMessage());
@@ -64,7 +108,8 @@ if (!empty($canvasUuid)) {
          data-size="<?php echo htmlspecialchars($canvasSize); ?>" 
          data-palette="<?php echo htmlspecialchars($canvasPalette); ?>"
          data-privacy="<?php echo htmlspecialchars($canvasPrivacy); ?>"
-         data-approval="<?php echo htmlspecialchars($canvasApproval); ?>">
+         data-approval="<?php echo htmlspecialchars($canvasApproval); ?>"
+         data-state="<?php echo htmlspecialchars($stateBase64); ?>">
          
         <div class="component-top">
             <div class="component-top-left" style="display: flex; align-items: center; gap: 12px;">
