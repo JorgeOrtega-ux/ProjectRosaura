@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS `canvases` (
   `description` text DEFAULT NULL,
   `privacy` enum('public', 'private', 'unlisted') DEFAULT 'private',
   `size` varchar(20) NOT NULL DEFAULT '64',
+  `palette_id` varchar(50) NOT NULL DEFAULT 'default',
   `max_participants` int(11) NOT NULL DEFAULT 10,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

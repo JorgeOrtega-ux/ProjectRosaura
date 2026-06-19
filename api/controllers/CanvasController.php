@@ -78,14 +78,16 @@ class CanvasController extends BaseController {
             $privacy = $input['privacy'] ?? 'private';
             $size = $input['size'] ?? '64';
             $limit = $input['limit'] ?? 10;
+            // Se lee palette_id, por defecto es 'default'
+            $paletteId = $input['palette_id'] ?? 'default';
 
             // Validar que el nombre no esté vacío
             if (empty(trim($name))) {
                 return ['success' => false, 'message' => __('err_canvas_name_required')];
             }
 
-            // Ejecutar el servicio incluyendo el tamaño y el límite
-            $result = $this->canvasServices->createCanvas($userId, $name, $description, $privacy, $size, (int)$limit);
+            // Ejecutar el servicio incluyendo el tamaño, el límite y la paleta
+            $result = $this->canvasServices->createCanvas($userId, $name, $description, $privacy, $size, (int)$limit, $paletteId);
 
             // Devolver la respuesta usando el método heredado de BaseController
             return $this->respond($result);
@@ -120,12 +122,13 @@ class CanvasController extends BaseController {
                 ]);
             }
             
-            // FILTRO DE SEGURIDAD ESTRICTO: Solo tomamos estos campos. 
-            // Si el cliente envía 'size', 'width', o 'height', serán descartados al no incluirlos aquí.
+            // FILTRO DE SEGURIDAD ESTRICTO: Solo tomamos estos campos.
+            // Ahora incluimos 'palette_id' en los datos autorizados para cambiar.
             $data = [
                 'name' => $input['name'] ?? null,
                 'description' => $input['description'] ?? null,
                 'privacy' => $input['privacy'] ?? null,
+                'palette_id' => $input['palette_id'] ?? null,
                 'max_participants' => $input['max_members'] ?? null
             ];
 

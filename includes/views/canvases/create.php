@@ -153,6 +153,22 @@
                     <div class="component-group-item component-group-item--stacked">
                         <div class="component-card__content">
                             <div class="component-card__text">
+                                <h2 class="component-card__title"><?php echo __('canvas_palette_title') ?? 'Paleta de Colores'; ?></h2>
+                                <p class="component-card__description"><?php echo __('canvas_palette_desc') ?? 'Elige la paleta de colores disponible para este lienzo.'; ?></p>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--start">
+                            <div class="component-palettes-wrapper" data-ref="palette-selector-container" style="display: flex; gap: 12px; flex-wrap: wrap;">
+                                <span class="component-display-value"><?php echo __('lbl_loading'); ?></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="component-divider">
+
+                    <div class="component-group-item component-group-item--stacked">
+                        <div class="component-card__content">
+                            <div class="component-card__text">
                                 <h2 class="component-card__title"><?php echo __('canvas_limit_title'); ?></h2>
                                 <p class="component-card__description"><?php echo __('canvas_limit_desc'); ?></p>
                             </div>

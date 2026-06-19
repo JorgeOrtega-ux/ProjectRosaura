@@ -3,6 +3,8 @@
 import { ApiRoutes } from '../../core/api/ApiRoutes.js';
 import { ApiService } from '../../core/api/ApiServices.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../core/utils/uiUtils.js';
+// 1. IMPORTAR LA FUNCIÓN PARA OBTENER LAS PALETAS
+import { getAllPalettes } from '../../core/constants/Palettes.js';
 
 class CanvasesController {
     constructor() {
@@ -10,11 +12,13 @@ class CanvasesController {
         this.basePath = window.AppBasePath || '';
         this.abortController = null;
         
+        // 2. AGREGAR PALETTE_ID AL ESTADO DEL FORMULARIO
         this.formState = {
             name: '',
             description: '',
             size: '64',
             privacy: 'private',
+            palette_id: 'default',
             limit: 10
         };
 
@@ -25,6 +29,8 @@ class CanvasesController {
         this.abortController = new AbortController();
         this.bindEvents();
         this.setupDefaultValues();
+        // 3. RENDERIZAR LAS PALETAS AL INICIAR
+        this.renderPalettes();
     }
 
     destroy() {
@@ -50,6 +56,34 @@ class CanvasesController {
         }
     }
 
+    // 4. LÓGICA PARA RENDERIZAR LAS PALETAS EN EL DOM
+    renderPalettes() {
+        const container = document.querySelector('[data-ref="palette-selector-container"]');
+        if (!container) return;
+
+        const palettes = getAllPalettes();
+        container.innerHTML = ''; // Esto borra el texto "Cargando..." o "lbl_loading"
+
+        palettes.forEach(palette => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = `component-button component-button--outline ${this.formState.palette_id === palette.id ? 'active' : ''}`;
+            btn.setAttribute('data-action', 'selectPalette');
+            btn.setAttribute('data-palette-id', palette.id);
+            btn.style.display = 'flex';
+            btn.style.alignItems = 'center';
+            btn.style.gap = '8px';
+            btn.style.padding = '8px 12px';
+
+            const colorsPreview = palette.colors.slice(0, 4).map(c => 
+                `<span style="display:inline-block; width:12px; height:12px; border-radius:50%; background-color:${c}; border:1px solid rgba(0,0,0,0.1);"></span>`
+            ).join('');
+
+            btn.innerHTML = `<div style="display:flex; gap:2px;">${colorsPreview}</div> <span>${palette.name}</span>`;
+            container.appendChild(btn);
+        });
+    }
+
     handleClick(e) {
         const actionBtn = e.target.closest('[data-action]');
         if (!actionBtn) return;
@@ -66,6 +100,9 @@ class CanvasesController {
             this.adjustParticipantLimit(actionBtn);
         } else if (action === 'saveCanvasName') {
             this.saveCanvasName(actionBtn);
+        // 5. INTERCEPTAR EL CLIC EN EL BOTÓN DE LA PALETA
+        } else if (action === 'selectPalette') {
+            this.selectPalette(actionBtn);
         } else if (action === 'createCanvas') {
             e.preventDefault();
             this.submitCanvas(actionBtn);
@@ -153,6 +190,16 @@ class CanvasesController {
         }
     }
 
+    // 6. ACTUALIZAR ESTADO AL SELECCIONAR UNA PALETA
+    selectPalette(btn) {
+        this.formState.palette_id = btn.getAttribute('data-palette-id');
+        const container = btn.closest('[data-ref="palette-selector-container"]');
+        if (container) {
+            container.querySelectorAll('[data-action="selectPalette"]').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+    }
+
     adjustParticipantLimit(btn) {
         const step = parseInt(btn.getAttribute('data-step'), 10);
         const min = parseInt(btn.getAttribute('data-min'), 10) || 10;
@@ -183,6 +230,7 @@ class CanvasesController {
 
         setButtonLoading(btn);
 
+        // Ya enviará 'palette_id' porque forma parte de this.formState
         const res = await this.api.post(ApiRoutes.Canvases.Create, this.formState, this.abortController.signal);
         if (res.aborted) return;
 

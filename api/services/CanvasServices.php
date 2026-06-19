@@ -42,10 +42,15 @@ class CanvasServices {
         }
     }
 
-    public function createCanvas(int $userId, string $name, ?string $description, string $privacy, string $size = '64', int $limit = 10): array {
+    // Se agregó $paletteId al método con 'default' como fallback
+    public function createCanvas(int $userId, string $name, ?string $description, string $privacy, string $size = '64', int $limit = 10, string $paletteId = 'default'): array {
         try {
             $uuid = Utils::generateUUID();
             
+            // Validación de paleta para evitar data corrupta
+            $validPalettes = ['default', 'neon', 'pastel'];
+            $paletteId = in_array($paletteId, $validPalettes) ? $paletteId : 'default';
+
             $canvasData = [
                 'uuid'             => $uuid,
                 'user_id'          => $userId,
@@ -53,6 +58,7 @@ class CanvasServices {
                 'description'      => $description ? trim($description) : null,
                 'privacy'          => in_array($privacy, [DB::PRIVACY_PUBLIC, DB::PRIVACY_PRIVATE, DB::PRIVACY_UNLISTED]) ? $privacy : DB::PRIVACY_PRIVATE,
                 'size'             => $size,
+                'palette_id'       => $paletteId,
                 'max_participants' => $limit
             ];
 
@@ -86,6 +92,13 @@ class CanvasServices {
             $validPrivacies = [DB::PRIVACY_PUBLIC, DB::PRIVACY_PRIVATE, DB::PRIVACY_UNLISTED];
             if (!in_array($data['privacy'], $validPrivacies)) {
                 $data['privacy'] = DB::PRIVACY_PRIVATE;
+            }
+
+            // Validación de paleta al actualizar
+            $validPalettes = ['default', 'neon', 'pastel'];
+            if (!isset($data['palette_id']) || !in_array($data['palette_id'], $validPalettes)) {
+                // Si viene vacío o es inválida, se mantiene la que ya tenía en la DB
+                $data['palette_id'] = $canvas['palette_id'] ?? 'default';
             }
 
             $updated = $this->canvasRepository->updateCanvasData($canvasId, $userId, $data);

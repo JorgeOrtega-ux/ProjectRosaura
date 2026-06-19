@@ -2,6 +2,7 @@
 import { ApiRoutes } from '../../core/api/ApiRoutes.js';
 import { ApiService } from '../../core/api/ApiServices.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../core/utils/uiUtils.js';
+import { getPaletteById } from '../../core/constants/Palettes.js';
 
 class DesignController {
     constructor() {
@@ -9,6 +10,9 @@ class DesignController {
         this.basePath = window.AppBasePath || '';
         this.abortController = null;
         
+        const urlParams = new URLSearchParams(window.location.search);
+        this.canvasId = urlParams.get('id');
+
         this.canvas = null;
         this.ctx = null;
         this.boardWidth = 2000;
@@ -62,20 +66,15 @@ class DesignController {
         this.btnColorPalette = document.querySelector('[data-ref="btn-color-palette"]');
         this.fileInput = document.querySelector('[data-ref="template-file-input"]');
         
-        if (this.btnColorPalette) {
-            this.btnColorPalette.style.setProperty('--active-color', this.currentColor);
-        }
-        
         if (this.canvas) {
             this.ctx = this.canvas.getContext('2d', { alpha: false });
             this.canvas.style.imageRendering = 'pixelated';
-            
-            this.setupCanvas();
-            this.centerBoard();
-            this.requestRender();
         }
 
         this.bindEvents();
+
+        // Cargamos la configuración leyendo el HTML
+        this.loadCanvasConfig();
     }
 
     destroy() {
@@ -110,6 +109,60 @@ class DesignController {
         if (this.fileInput) {
             this.fileInput.addEventListener('change', this.handleFileUploadBound);
         }
+    }
+
+    // AHORA LEE DIRECTAMENTE DEL DOM (Evita el fallo de UUID vs Integer de la API)
+    loadCanvasConfig() {
+        const wrapper = document.querySelector('[data-ref="design-wrapper"]');
+        
+        if (wrapper) {
+            const sizeStr = wrapper.getAttribute('data-size');
+            if (sizeStr) {
+                this.boardWidth = parseInt(sizeStr, 10);
+                this.boardHeight = parseInt(sizeStr, 10);
+            }
+            
+            const paletteId = wrapper.getAttribute('data-palette') || 'default';
+            
+            this.setupCanvas();
+            this.centerBoard();
+            this.renderColorPalette(paletteId);
+        } else {
+            // Fallback en caso de que no encuentre el wrapper
+            this.setupCanvas();
+            this.centerBoard();
+            this.renderColorPalette('default');
+        }
+    }
+
+    renderColorPalette(paletteId) {
+        const palette = getPaletteById(paletteId);
+        if (!palette || !palette.colors) return;
+
+        let container = document.querySelector('[data-ref="color-palette-grid"]');
+
+        if (!container) return; 
+
+        container.innerHTML = '';
+
+        this.currentColor = palette.colors[0];
+        if (this.btnColorPalette) {
+            this.btnColorPalette.style.setProperty('--active-color', this.currentColor);
+        }
+
+        palette.colors.forEach((hex, index) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = `component-color-btn ${index === 0 ? 'active' : ''}`;
+            btn.setAttribute('data-action', 'selectColor');
+            btn.setAttribute('data-color', hex);
+            btn.style.backgroundColor = hex;
+            btn.title = hex;
+
+            container.appendChild(btn);
+        });
+
+        this.requestRender();
     }
 
     setupCanvas() {

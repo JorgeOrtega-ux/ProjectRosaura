@@ -16,9 +16,10 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function create(array $canvasData): int {
+        // Se agregó palette_id
         $sql = "INSERT INTO " . DB::TBL_CANVASES . " 
-                (uuid, user_id, name, description, privacy, size, max_participants) 
-                VALUES (:uuid, :user_id, :name, :description, :privacy, :size, :max_participants)";
+                (uuid, user_id, name, description, privacy, size, palette_id, max_participants) 
+                VALUES (:uuid, :user_id, :name, :description, :privacy, :size, :palette_id, :max_participants)";
         
         $stmt = $this->db->prepare($sql);
         $stmt->execute([
@@ -28,6 +29,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
             ':description'      => $canvasData['description'],
             ':privacy'          => $canvasData['privacy'],
             ':size'             => $canvasData['size'],
+            ':palette_id'       => $canvasData['palette_id'],
             ':max_participants' => $canvasData['max_participants']
         ]);
 
@@ -50,8 +52,8 @@ class CanvasRepository implements CanvasRepositoryInterface {
     // --- MÉTODOS PARA GESTIÓN (MANAGE) ---
 
     public function getUserCanvasesPaginated(int $userId, int $limit, int $offset): array {
-        // Se corrigió participant_limit por max_participants para que concuerde con db_canvases.sql
-        $sql = "SELECT id, uuid, name, description, privacy, size, max_participants, created_at 
+        // Se agregó palette_id a la selección
+        $sql = "SELECT id, uuid, name, description, privacy, size, palette_id, max_participants, created_at 
                 FROM " . DB::TBL_CANVASES . " 
                 WHERE user_id = :uid 
                 ORDER BY id DESC 
@@ -102,10 +104,12 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function updateCanvasData(int $id, int $userId, array $data): bool {
+        // Se agregó palette_id al SET de actualización
         $sql = "UPDATE " . DB::TBL_CANVASES . " 
                 SET name = :name, 
                     description = :description, 
                     privacy = :privacy, 
+                    palette_id = :palette_id,
                     max_participants = :max_participants
                 WHERE id = :id AND user_id = :user_id";
         
@@ -114,6 +118,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
             ':name'             => $data['name'],
             ':description'      => $data['description'],
             ':privacy'          => $data['privacy'],
+            ':palette_id'       => $data['palette_id'],
             ':max_participants' => $data['max_participants'],
             ':id'               => $id,
             ':user_id'          => $userId

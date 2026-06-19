@@ -6,6 +6,8 @@ use App\Core\System\DatabaseConstants as DB;
 use PDO;
 
 $canvasName = '';
+$canvasSize = '64'; // Tamaño por defecto
+$canvasPalette = 'default'; // Paleta por defecto
 $canvasUuid = $_GET['id'] ?? '';
 
 if (!empty($canvasUuid)) {
@@ -14,21 +16,28 @@ if (!empty($canvasUuid)) {
         $dbManager = new DatabaseManager();
         $db = $dbManager->getConnection(DB::CONN_CANVASES);
 
-        $sql = "SELECT name FROM " . DB::TBL_CANVASES . " WHERE uuid = :uuid LIMIT 1";
+        // Agregamos size y palette_id a la consulta
+        $sql = "SELECT name, size, palette_id FROM " . DB::TBL_CANVASES . " WHERE uuid = :uuid LIMIT 1";
         $stmt = $db->prepare($sql);
         $stmt->execute([':uuid' => $canvasUuid]);
         $canvas = $stmt->fetch(PDO::FETCH_ASSOC);
         
         if ($canvas) {
             $canvasName = $canvas['name'];
+            $canvasSize = $canvas['size'] ?? '64';
+            $canvasPalette = $canvas['palette_id'] ?? 'default';
         }
     } catch (\Exception $e) {
-        error_log("Error al cargar el nombre del lienzo en la vista de diseño: " . $e->getMessage());
+        error_log("Error al cargar el lienzo en la vista de diseño: " . $e->getMessage());
     }
 }
 ?>
 <div class="view-content">
-    <div class="component-wrapper component-wrapper--full no-padding" data-ref="design-wrapper">
+    <div class="component-wrapper component-wrapper--full no-padding" 
+         data-ref="design-wrapper" 
+         data-size="<?php echo htmlspecialchars($canvasSize); ?>" 
+         data-palette="<?php echo htmlspecialchars($canvasPalette); ?>">
+         
         <div class="component-top">
             <div class="component-top-left" style="display: flex; align-items: center; gap: 12px;">
                 <h1 class="component-top-title"><?php echo __('lbl_design_title'); ?></h1>

@@ -3,6 +3,7 @@
 import { ApiRoutes } from '../../core/api/ApiRoutes.js';
 import { ApiService } from '../../core/api/ApiServices.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../core/utils/uiUtils.js';
+import { getAllPalettes } from '../../core/constants/Palettes.js';
 
 class CanvasEditController {
     constructor() {
@@ -17,6 +18,7 @@ class CanvasEditController {
             name: '',
             description: '',
             privacy: 'private',
+            palette_id: 'default',
             max_members: 10
         };
 
@@ -53,8 +55,6 @@ class CanvasEditController {
 
         const action = btn.getAttribute('data-action');
         
-        // Ejecutamos la acción si existe en el controlador local
-        // Nota: Al no existir "toggleEditState" aquí, se ignorará y lo procesará el JS global.
         if (typeof this[action] === 'function') {
             this[action](btn, e);
         }
@@ -78,11 +78,45 @@ class CanvasEditController {
             }
         }
 
-        // Simula el clic en el botón de cancelar para que la lógica de tu script
-        // global se encargue del cambio de estado visual sin duplicidad.
         const btnCancel = container.querySelector('[data-action="toggleEditState"]');
         if (btnCancel) {
             btnCancel.click();
+        }
+    }
+
+    renderPalettes() {
+        const container = this.container.querySelector('[data-ref="palette-selector-container"]');
+        if (!container) return;
+
+        const palettes = getAllPalettes();
+        container.innerHTML = '';
+
+        palettes.forEach(palette => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = `component-button component-button--outline ${this.state.palette_id === palette.id ? 'active' : ''}`;
+            btn.setAttribute('data-action', 'selectPalette');
+            btn.setAttribute('data-palette-id', palette.id);
+            btn.style.display = 'flex';
+            btn.style.alignItems = 'center';
+            btn.style.gap = '8px';
+            btn.style.padding = '8px 12px';
+
+            const colorsPreview = palette.colors.slice(0, 4).map(c => 
+                `<span style="display:inline-block; width:12px; height:12px; border-radius:50%; background-color:${c}; border:1px solid rgba(0,0,0,0.1);"></span>`
+            ).join('');
+
+            btn.innerHTML = `<div style="display:flex; gap:2px;">${colorsPreview}</div> <span>${palette.name}</span>`;
+            container.appendChild(btn);
+        });
+    }
+
+    selectPalette(btn) {
+        this.state.palette_id = btn.getAttribute('data-palette-id');
+        const container = btn.closest('[data-ref="palette-selector-container"]');
+        if (container) {
+            container.querySelectorAll('[data-action="selectPalette"]').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
         }
     }
 
@@ -98,6 +132,7 @@ class CanvasEditController {
                 this.state.name = data.name;
                 this.state.description = data.description || '';
                 this.state.privacy = data.privacy;
+                this.state.palette_id = data.palette_id || 'default';
                 this.state.max_members = data.max_members || data.max_participants || 10;
 
                 const displayCanvasName = this.container.querySelector('[data-ref="display-canvasname"]');
@@ -143,6 +178,9 @@ class CanvasEditController {
                     valLimit.textContent = this.state.max_members;
                     valLimit.setAttribute('data-val', this.state.max_members);
                 }
+
+                // Renderizamos la paleta visual una vez tenemos los datos
+                this.renderPalettes();
 
             } else {
                 showMessage(response.message, 'error');
@@ -244,6 +282,7 @@ class CanvasEditController {
             name: this.state.name,
             description: this.state.description,
             privacy: this.state.privacy,
+            palette_id: this.state.palette_id,
             max_members: this.state.max_members
         };
 
