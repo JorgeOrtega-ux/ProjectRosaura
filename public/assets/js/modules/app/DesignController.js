@@ -28,6 +28,16 @@ class DesignController {
         this.btnPlacePixels = null;
         this.txtPlacePixels = null;
         
+        // UI Extras
+        this.coordsText = null;
+        this.btnColorPalette = null;
+        this.fileInput = null;
+
+        // Estado de Plantillas
+        this.templates = [];
+        this.activeTemplateId = null;
+        this.templateInteraction = null; // null | { type: 'move'|'resize-tl'..., startX, startY, origX, origY, origW, origH }
+
         // Estado del Pincel
         this.currentColor = '#000000'; // Fallback por defecto
 
@@ -47,6 +57,7 @@ class DesignController {
         this.handleResizeBound = this.handleResize.bind(this);
         this.handleKeyDownBound = this.handleKeyDown.bind(this);
         this.handleClickBound = this.handleClick.bind(this);
+        this.handleFileUploadBound = this.handleFileUpload.bind(this);
         this.renderBound = this.render.bind(this);
     }
 
@@ -56,6 +67,13 @@ class DesignController {
         this.canvas = document.querySelector('[data-ref="design-canvas"]');
         this.btnPlacePixels = document.querySelector('[data-ref="pixel-action-btn"]');
         this.txtPlacePixels = document.querySelector('[data-ref="pixel-action-text"]');
+        this.coordsText = document.querySelector('[data-ref="coords-text"]');
+        this.btnColorPalette = document.querySelector('[data-ref="btn-color-palette"]');
+        this.fileInput = document.querySelector('[data-ref="template-file-input"]');
+        
+        if (this.btnColorPalette) {
+            this.btnColorPalette.style.setProperty('--active-color', this.currentColor);
+        }
         
         if (this.canvas) {
             this.ctx = this.canvas.getContext('2d', { alpha: false });
@@ -80,6 +98,10 @@ class DesignController {
         document.removeEventListener('click', this.handleClickBound);
         window.removeEventListener('resize', this.handleResizeBound);
         
+        if (this.fileInput) {
+            this.fileInput.removeEventListener('change', this.handleFileUploadBound);
+        }
+
         if (this.animationFrameId) {
             cancelAnimationFrame(this.animationFrameId);
         }
@@ -93,6 +115,10 @@ class DesignController {
         document.addEventListener('keydown', this.handleKeyDownBound);
         document.addEventListener('click', this.handleClickBound);
         window.addEventListener('resize', this.handleResizeBound);
+
+        if (this.fileInput) {
+            this.fileInput.addEventListener('change', this.handleFileUploadBound);
+        }
     }
 
     setupCanvas() {
@@ -101,11 +127,7 @@ class DesignController {
         this.offscreenCanvas = document.createElement('canvas');
         this.offscreenCanvas.width = this.boardWidth;
         this.offscreenCanvas.height = this.boardHeight;
-        this.offscreenCtx = this.offscreenCanvas.getContext('2d', { alpha: false });
-        
-        // Pizarra de dibujo SIEMPRE en blanco
-        this.offscreenCtx.fillStyle = '#FFFFFF';
-        this.offscreenCtx.fillRect(0, 0, this.boardWidth, this.boardHeight);
+        this.offscreenCtx = this.offscreenCanvas.getContext('2d', { alpha: true });
     }
 
     updateCanvasDimensions() {
@@ -151,8 +173,168 @@ class DesignController {
         this.transform.y = Math.min(Math.max(this.transform.y, minY), maxY);
     }
 
+    // --------------------------------------------------------
+    // SISTEMA DE PLANTILLAS Y ARCHIVOS
+    // --------------------------------------------------------
+    handleFileUpload(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const img = new Image();
+            img.onload = () => {
+                const id = 'tpl_' + Date.now();
+                
+                // Calcular tamaño para que ocupe el 50% del tablero sin deformarse
+                const targetW = this.boardWidth * 0.5;
+                const targetH = this.boardHeight * 0.5;
+                const scale = Math.min(targetW / img.width, targetH / img.height);
+                
+                // Forzamos números enteros (píxeles completos)
+                const w = Math.round(img.width * scale);
+                const h = Math.round(img.height * scale);
+                
+                // Centrar en el tablero en coordenadas exactas
+                const x = Math.round((this.boardWidth - w) / 2);
+                const y = Math.round((this.boardHeight - h) / 2);
+
+                this.templates.push({
+                    id, img,
+                    src: event.target.result,
+                    x, y, w, h,
+                    locked: false,
+                    opacity: 0.5 
+                });
+
+                this.renderTemplateList();
+                this.toggleTemplate(id); 
+            };
+            img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+        this.fileInput.value = ''; 
+    }
+
+    renderTemplateList() {
+        const container = document.querySelector('[data-ref="template-list"]');
+        if (!container) return;
+
+        container.innerHTML = this.templates.map(tpl => `
+            <div class="design-template-card ${this.activeTemplateId === tpl.id ? 'active' : ''}" data-action="selectTemplate" data-id="${tpl.id}">
+                <img src="${tpl.src}" alt="Plantilla">
+                <div class="design-template-actions">
+                    <button class="design-template-action-btn" data-action="toggleTemplateLock" title="${tpl.locked ? 'Desbloquear para mover' : 'Bloquear para pintar encima'}">
+                        <span class="material-symbols-rounded">${tpl.locked ? 'lock' : 'lock_open'}</span>
+                    </button>
+                    <button class="design-template-action-btn" data-action="deleteTemplate" title="Eliminar">
+                        <span class="material-symbols-rounded">delete</span>
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    toggleTemplate(id) {
+        if (this.activeTemplateId === id) {
+            this.activeTemplateId = null;
+        } else {
+            this.activeTemplateId = id;
+        }
+        this.renderTemplateList();
+        this.requestRender();
+    }
+
+    toggleLockTemplate(id) {
+        const tpl = this.templates.find(t => t.id === id);
+        if (tpl) {
+            tpl.locked = !tpl.locked;
+            this.renderTemplateList();
+            this.requestRender();
+        }
+    }
+
+    deleteTemplate(id) {
+        this.templates = this.templates.filter(t => t.id !== id);
+        if (this.activeTemplateId === id) this.activeTemplateId = null;
+        this.renderTemplateList();
+        this.requestRender();
+    }
+
+    getExactBoardCoords(clientX, clientY) {
+        if (!this.canvas) return null;
+        const rect = this.canvas.getBoundingClientRect();
+        const mouseX = clientX - rect.left;
+        const mouseY = clientY - rect.top;
+        return {
+            x: (mouseX - this.transform.x) / this.transform.scale,
+            y: (mouseY - this.transform.y) / this.transform.scale
+        };
+    }
+
+    checkTemplateHit(ex, ey) {
+        if (!this.activeTemplateId) return null;
+        const tpl = this.templates.find(t => t.id === this.activeTemplateId);
+        if (!tpl || tpl.locked) return null; 
+
+        const handleSize = 16 / this.transform.scale;
+        const hs = handleSize / 2;
+
+        const corners = [
+            { id: 'resize-tl', x: tpl.x, y: tpl.y },
+            { id: 'resize-tr', x: tpl.x + tpl.w, y: tpl.y },
+            { id: 'resize-bl', x: tpl.x, y: tpl.y + tpl.h },
+            { id: 'resize-br', x: tpl.x + tpl.w, y: tpl.y + tpl.h }
+        ];
+
+        for (const c of corners) {
+            if (ex >= c.x - hs && ex <= c.x + hs && ey >= c.y - hs && ey <= c.y + hs) {
+                return c.id;
+            }
+        }
+
+        if (ex >= tpl.x && ex <= tpl.x + tpl.w && ey >= tpl.y && ey <= tpl.y + tpl.h) {
+            return 'move';
+        }
+
+        return null;
+    }
+
+    // --------------------------------------------------------
+    // EVENTOS Y LÓGICA PRINCIPAL
+    // --------------------------------------------------------
+
     handleClick(e) {
-        // Lógica para colocar píxeles
+        const btnUpload = e.target.closest('[data-action="triggerTemplateUpload"]');
+        if (btnUpload && this.fileInput) {
+            e.preventDefault();
+            this.fileInput.click();
+            return;
+        }
+
+        const cardTemplate = e.target.closest('[data-action="selectTemplate"]');
+        if (cardTemplate && !e.target.closest('.design-template-action-btn')) {
+            const id = cardTemplate.getAttribute('data-id');
+            this.toggleTemplate(id);
+            return;
+        }
+
+        const btnLock = e.target.closest('[data-action="toggleTemplateLock"]');
+        if (btnLock) {
+            e.stopPropagation();
+            const id = btnLock.closest('.design-template-card').getAttribute('data-id');
+            this.toggleLockTemplate(id);
+            return;
+        }
+
+        const btnDelete = e.target.closest('[data-action="deleteTemplate"]');
+        if (btnDelete) {
+            e.stopPropagation();
+            const id = btnDelete.closest('.design-template-card').getAttribute('data-id');
+            this.deleteTemplate(id);
+            return;
+        }
+
         const btnPlace = e.target.closest('[data-action="placePixels"]');
         if (btnPlace) {
             e.preventDefault();
@@ -160,21 +342,18 @@ class DesignController {
             return;
         }
 
-        // Lógica para seleccionar el color activo de la paleta
         const btnColor = e.target.closest('[data-action="selectColor"]');
         if (btnColor) {
             e.preventDefault();
-            
-            // Remover la clase active de todos los botones de color
             document.querySelectorAll('.design-color-btn').forEach(btn => btn.classList.remove('active'));
-            
-            // Asignar active al botón cliqueado
             btnColor.classList.add('active');
             
-            // Actualizar el estado del pincel
             this.currentColor = btnColor.getAttribute('data-color') || '#000000';
             
-            // Renderizar inmediatamente para mostrar el marco del hover con el nuevo color
+            if (this.btnColorPalette) {
+                this.btnColorPalette.style.setProperty('--active-color', this.currentColor);
+            }
+            
             this.requestRender();
             return;
         }
@@ -218,7 +397,6 @@ class DesignController {
         const target = e.target.closest('[data-ref="design-canvas"]');
         if (!target) return;
 
-        // Paneando (Shift + Click)
         if (e.shiftKey) {
             this.isDragging = true;
             this.lastMouse = { x: e.clientX, y: e.clientY };
@@ -226,7 +404,24 @@ class DesignController {
             return;
         }
 
-        // Selección Continua de Píxeles (Click normal)
+        const exact = this.getExactBoardCoords(e.clientX, e.clientY);
+        if (exact) {
+            const hit = this.checkTemplateHit(exact.x, exact.y);
+            if (hit) {
+                const tpl = this.templates.find(t => t.id === this.activeTemplateId);
+                this.templateInteraction = {
+                    type: hit,
+                    startX: exact.x,
+                    startY: exact.y,
+                    origX: tpl.x,
+                    origY: tpl.y,
+                    origW: tpl.w,
+                    origH: tpl.h
+                };
+                return; 
+            }
+        }
+
         const coords = this.getBoardCoords(e.clientX, e.clientY);
         if (coords) {
             const key = `${coords.x},${coords.y}`;
@@ -257,6 +452,73 @@ class DesignController {
             return;
         }
 
+        // 1. Manejar manipulación de plantillas (Píxel a Píxel + Límites)
+        if (this.templateInteraction) {
+            const exact = this.getExactBoardCoords(e.clientX, e.clientY);
+            if (!exact) return;
+
+            const tpl = this.templates.find(t => t.id === this.activeTemplateId);
+            const dx = exact.x - this.templateInteraction.startX;
+            const dy = exact.y - this.templateInteraction.startY;
+
+            if (this.templateInteraction.type === 'move') {
+                // Forzar posición en enteros
+                let newX = Math.round(this.templateInteraction.origX + dx);
+                let newY = Math.round(this.templateInteraction.origY + dy);
+                
+                // Restringir dentro del tamaño máximo del lienzo (0 a this.boardWidth - w)
+                newX = Math.max(0, Math.min(newX, this.boardWidth - tpl.w));
+                newY = Math.max(0, Math.min(newY, this.boardHeight - tpl.h));
+                
+                tpl.x = newX;
+                tpl.y = newY;
+            } else {
+                const aspect = this.templateInteraction.origW / this.templateInteraction.origH;
+                let newW, newH;
+
+                // Restricciones de Redimensionamiento Píxel a Píxel manteniéndose dentro
+                if (this.templateInteraction.type === 'resize-br') {
+                    newW = Math.round(this.templateInteraction.origW + dx);
+                    let maxW = this.boardWidth - this.templateInteraction.origX;
+                    let maxW_H = (this.boardHeight - this.templateInteraction.origY) * aspect;
+                    newW = Math.max(20, Math.min(newW, maxW, maxW_H));
+                    newH = Math.round(newW / aspect);
+                    
+                    tpl.w = newW; tpl.h = newH;
+                } else if (this.templateInteraction.type === 'resize-tl') {
+                    newW = Math.round(this.templateInteraction.origW - dx);
+                    let maxW = this.templateInteraction.origX + this.templateInteraction.origW;
+                    let maxW_H = (this.templateInteraction.origY + this.templateInteraction.origH) * aspect;
+                    newW = Math.max(20, Math.min(newW, maxW, maxW_H));
+                    newH = Math.round(newW / aspect);
+                    
+                    tpl.w = newW; tpl.h = newH;
+                    tpl.x = this.templateInteraction.origX + this.templateInteraction.origW - newW;
+                    tpl.y = this.templateInteraction.origY + this.templateInteraction.origH - newH;
+                } else if (this.templateInteraction.type === 'resize-tr') {
+                    newW = Math.round(this.templateInteraction.origW + dx);
+                    let maxW = this.boardWidth - this.templateInteraction.origX;
+                    let maxW_H = (this.templateInteraction.origY + this.templateInteraction.origH) * aspect;
+                    newW = Math.max(20, Math.min(newW, maxW, maxW_H));
+                    newH = Math.round(newW / aspect);
+
+                    tpl.w = newW; tpl.h = newH;
+                    tpl.y = this.templateInteraction.origY + this.templateInteraction.origH - newH;
+                } else if (this.templateInteraction.type === 'resize-bl') {
+                    newW = Math.round(this.templateInteraction.origW - dx);
+                    let maxW = this.templateInteraction.origX + this.templateInteraction.origW;
+                    let maxW_H = (this.boardHeight - this.templateInteraction.origY) * aspect;
+                    newW = Math.max(20, Math.min(newW, maxW, maxW_H));
+                    newH = Math.round(newW / aspect);
+
+                    tpl.w = newW; tpl.h = newH;
+                    tpl.x = this.templateInteraction.origX + this.templateInteraction.origW - newW;
+                }
+            }
+            this.requestRender();
+            return; 
+        }
+
         if (this.isSelecting) {
             const coords = this.getBoardCoords(e.clientX, e.clientY);
             if (coords) {
@@ -278,14 +540,42 @@ class DesignController {
 
         const target = e.target.closest('[data-ref="design-canvas"]');
         if (target) {
+            const exact = this.getExactBoardCoords(e.clientX, e.clientY);
+            let hit = null;
+            if (exact) {
+                hit = this.checkTemplateHit(exact.x, exact.y);
+            }
+            
+            if (hit) {
+                if (hit === 'move') this.canvas.style.cursor = 'move';
+                else if (hit === 'resize-tl' || hit === 'resize-br') this.canvas.style.cursor = 'nwse-resize';
+                else if (hit === 'resize-tr' || hit === 'resize-bl') this.canvas.style.cursor = 'nesw-resize';
+                
+                if (this.hoveredPixel !== null) {
+                    this.hoveredPixel = null;
+                    if (this.coordsText) this.coordsText.textContent = '- , -';
+                    this.requestRender();
+                }
+                return;
+            } else {
+                this.canvas.style.cursor = this.isDragging ? 'grabbing' : 'default';
+            }
+            
             this.calculateHoverPixel(e.clientX, e.clientY);
         } else if (this.hoveredPixel !== null) {
             this.hoveredPixel = null;
+            if (this.coordsText) this.coordsText.textContent = '- , -';
             this.requestRender();
         }
     }
 
     handleMouseUp(e) {
+        if (this.templateInteraction) {
+            this.templateInteraction = null;
+            this.requestRender();
+            return;
+        }
+
         if (this.isDragging) {
             this.isDragging = false;
             this.canvas.classList.remove('cursor-grabbing');
@@ -323,6 +613,14 @@ class DesignController {
             this.hoveredPixel = newHover;
             this.requestRender();
         }
+
+        if (this.coordsText) {
+            if (newHover) {
+                this.coordsText.textContent = `${newHover.x} , ${newHover.y}`;
+            } else {
+                this.coordsText.textContent = '- , -';
+            }
+        }
     }
 
     updateSelectionUI() {
@@ -330,21 +628,21 @@ class DesignController {
 
         if (this.selectedPixels.size > 0) {
             this.btnPlacePixels.classList.remove('disabled-interactive');
-            this.txtPlacePixels.textContent = window.__('btn_place_pixels');
+            this.txtPlacePixels.textContent = window.__('btn_place_pixels') || 'Colocar píxeles';
         } else {
             this.btnPlacePixels.classList.add('disabled-interactive');
-            this.txtPlacePixels.textContent = window.__('btn_select_pixels');
+            this.txtPlacePixels.textContent = window.__('btn_select_pixels') || 'Seleccionar píxeles';
         }
     }
 
     placePixels() {
         if (this.selectedPixels.size === 0) return;
 
-        // Utilizamos el color actualmente seleccionado
         this.offscreenCtx.fillStyle = this.currentColor;
         
         this.selectedPixels.forEach(key => {
             const [x, y] = key.split(',').map(Number);
+            this.offscreenCtx.clearRect(x, y, 1, 1);
             this.offscreenCtx.fillRect(x, y, 1, 1);
         });
 
@@ -383,13 +681,9 @@ class DesignController {
         this.needsRender = false;
         if (!this.ctx || !this.canvas) return;
 
-        // Entorno exterior de la aplicación
         const isDark = this.isDarkMode();
         const bgColor = isDark ? '#0e0e11' : '#f5f5fa'; 
-        
-        // Colores del interior del Canvas
         const gridColor = 'rgba(0, 0, 0, 0.15)'; 
-        // El contorno de la selección será del mismo color que el color elegido
         const activeColor = this.currentColor; 
 
         this.ctx.fillStyle = bgColor; 
@@ -405,10 +699,47 @@ class DesignController {
         
         this.ctx.imageSmoothingEnabled = false;
         
-        // 1. Dibujar Lienzo Principal
-        this.ctx.drawImage(this.offscreenCanvas, 0, 0);
+        // 1. Base Blanca Central
+        this.ctx.fillStyle = '#FFFFFF';
+        this.ctx.fillRect(0, 0, this.boardWidth, this.boardHeight);
 
-        // 2. Renderizar Cuadrícula
+        // 2. Plantilla de fondo (con opacidad si es aplicable)
+        if (this.activeTemplateId) {
+            const tpl = this.templates.find(t => t.id === this.activeTemplateId);
+            if (tpl) {
+                this.ctx.save();
+                this.ctx.globalAlpha = tpl.opacity;
+                this.ctx.drawImage(tpl.img, tpl.x, tpl.y, tpl.w, tpl.h);
+                this.ctx.restore();
+
+                // Si no está bloqueada, mostramos bordes azules de control
+                if (!tpl.locked) {
+                    this.ctx.save();
+                    this.ctx.strokeStyle = '#2196F3';
+                    this.ctx.lineWidth = 2 / this.transform.scale;
+                    this.ctx.strokeRect(tpl.x, tpl.y, tpl.w, tpl.h);
+
+                    const hs = 10 / this.transform.scale;
+                    this.ctx.fillStyle = '#FFFFFF';
+                    this.ctx.strokeStyle = '#2196F3';
+                    this.ctx.lineWidth = 1.5 / this.transform.scale;
+
+                    const drawHandle = (hx, hy) => {
+                        this.ctx.fillRect(hx - hs/2, hy - hs/2, hs, hs);
+                        this.ctx.strokeRect(hx - hs/2, hy - hs/2, hs, hs);
+                    };
+
+                    drawHandle(tpl.x, tpl.y);
+                    drawHandle(tpl.x + tpl.w, tpl.y);
+                    drawHandle(tpl.x, tpl.y + tpl.h);
+                    drawHandle(tpl.x + tpl.w, tpl.y + tpl.h);
+
+                    this.ctx.restore();
+                }
+            }
+        }
+
+        // 3. Cuadrícula 
         if (this.transform.scale > 4) {
             this.ctx.lineWidth = 1 / this.transform.scale;
             this.ctx.strokeStyle = gridColor; 
@@ -432,7 +763,10 @@ class DesignController {
             this.ctx.stroke();
         }
 
-        // 3. Fusión en Tiempo Real: Creamos un Set temporal combinando la selección y el hover
+        // 4. Dibujar Píxeles Finales
+        this.ctx.drawImage(this.offscreenCanvas, 0, 0);
+
+        // 5. Marco de Selección y Hover
         const renderSet = new Set(this.selectedPixels);
 
         if (this.hoveredPixel) {
@@ -442,12 +776,8 @@ class DesignController {
             }
         }
 
-        // 4. Dibujar Selección Combinada (Contorno perimetral inteligente en vivo)
         if (renderSet.size > 0) {
             this.ctx.strokeStyle = activeColor; 
-            
-            // Si el color activo es muy oscuro (como blanco) le ponemos un borde sombreado atrás opcional
-            // para que no se pierda, pero con el stroke simple luce más limpio de momento.
             this.ctx.lineWidth = 1 / this.transform.scale;
             this.ctx.beginPath();
             
