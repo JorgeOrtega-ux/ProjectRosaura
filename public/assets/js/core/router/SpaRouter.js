@@ -125,6 +125,12 @@ export class SpaRouter {
             if (cleanUrlForLoader !== '/' && cleanUrlForLoader.endsWith('/')) {
                 cleanUrlForLoader = cleanUrlForLoader.slice(0, -1);
             }
+
+            // REDIRECCIÓN FRONTEND: Si intentan entrar a /design sin ID, los mandamos a home
+            if (cleanUrlForLoader === '/design') {
+                this.navigate(this.basePath + '/');
+                return;
+            }
             
             this._showLoaderInOutlet(cleanUrlForLoader);
         }
@@ -185,12 +191,22 @@ export class SpaRouter {
                     cleanUrl = cleanUrl.slice(0, -1);
                 }
 
+                // Normalizar moduleUrl para que el viewLoaded event sepa qué módulo JS cargar dinámicamente
+                let moduleUrl = cleanUrl;
+                if (this.basePath && moduleUrl.startsWith(this.basePath)) {
+                    moduleUrl = moduleUrl.slice(this.basePath.length);
+                }
+                if (moduleUrl.startsWith('/design/')) {
+                    moduleUrl = '/design'; // Forzamos a que resuelva la llave '/design' en el RouteModulesMap
+                }
+
                 const loadTimeMs = Math.round(performance.now() - startTime); // Terminamos de medir
 
                 window.dispatchEvent(new CustomEvent('viewLoaded', { 
                     detail: { 
                         url: url,
-                        cleanUrl: cleanUrl,
+                        cleanUrl: moduleUrl, // Mapeado a la ruta estática para módulos (/design en lugar de /design/uuid)
+                        originalUrl: cleanUrl, // Ruta original
                         loadTimeMs: loadTimeMs // Reporte expuesto
                     } 
                 }));
@@ -340,8 +356,14 @@ export class SpaRouter {
     }
 
     _showLoaderInOutlet(cleanUrl) {
+        // Mapeo dinámico para rutas con ID
+        let mapKey = cleanUrl;
+        if (cleanUrl.startsWith('/design/')) {
+            mapKey = '/design';
+        }
+
         // En lugar del spinner genérico, inyectamos el HTML del Skeleton asociado a la ruta
-        const routeConfig = RouteModulesMap[cleanUrl];
+        const routeConfig = RouteModulesMap[mapKey];
         const skeletonType = routeConfig && routeConfig.skeletonType ? routeConfig.skeletonType : 'generic';
         
         this.outlet.innerHTML = SkeletonTemplates.get(skeletonType);

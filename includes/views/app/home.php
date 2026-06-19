@@ -41,7 +41,7 @@ try {
                 <?php if (!empty($publicCanvases)): ?>
                     <?php foreach ($publicCanvases as $canvas): ?>
                         
-                        <div data-nav="/canvas/<?php echo htmlspecialchars($canvas['uuid']); ?>" style="
+                        <div data-nav="/design/<?php echo htmlspecialchars($canvas['uuid']); ?>" style="
                             height: 180px;
                             background-color: #e9ecef;
                             background-image: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);

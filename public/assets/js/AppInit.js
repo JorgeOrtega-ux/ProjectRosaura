@@ -61,6 +61,13 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (relativePath === '') relativePath = '/';
 
+        // --- CORRECCIÓN VITAL PARA RUTAS DINÁMICAS (DISEÑO CON UUID) ---
+        // Obliga al motor a utilizar el controlador de Design sin importar el UUID en la ruta
+        if (relativePath.startsWith('/design/')) {
+            relativePath = '/design';
+        }
+        // ---------------------------------------------------------------
+
         const moduleConfig = RouteModulesMap[relativePath];
 
         if (moduleConfig) {

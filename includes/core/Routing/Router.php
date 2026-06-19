@@ -32,6 +32,21 @@ class Router {
             $relativePath = '/';
         }
 
+        // --- MANEJO DE RUTAS DE DISEÑO ---
+        // 1. Redirigir si acceden a /design sin UUID al home
+        if ($relativePath === '/design') {
+            header("Location: " . $this->basePath . "/");
+            exit;
+        }
+
+        // 2. Manejar rutas dinámicas para /design/{uuid}
+        if (preg_match('#^/design/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
+            // Guardamos el uuid por si el backend (PHP) lo requiere
+            $_GET['id'] = $matches[1];
+            return ['view' => 'app/design.php'];
+        }
+        // ---------------------------------
+
         if (!array_key_exists($relativePath, $this->routes)) {
             // Auditoría: Detección de posibles bots escaneando rutas o enlaces rotos
             Logger::warning("Route not found (404)", [

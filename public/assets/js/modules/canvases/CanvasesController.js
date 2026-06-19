@@ -191,7 +191,8 @@ class CanvasesController {
         if (res.success) {
             showMessage(__('msg_canvas_created'), 'success');
             if (window.spaRouter) {
-                window.spaRouter.navigate(`${this.basePath}/canvases/${res.data.uuid}`);
+                // MODIFICADO AQUÍ PARA QUE REDIRIGA AL ENLACE CORRECTO DE DESIGN
+                window.spaRouter.navigate(`${this.basePath}/design/${res.data.uuid}`);
             }
         } else {
             showMessage(res.message, 'error');
