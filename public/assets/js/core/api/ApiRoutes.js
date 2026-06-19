@@ -79,6 +79,7 @@ export const ApiRoutes = {
     },
     // --- RUTAS DE LIENZOS ---
     Canvases: {
-        Create: 'canvases.create'
+        Create: 'canvases.create',
+        Delete: 'canvases.delete'
     }
 };

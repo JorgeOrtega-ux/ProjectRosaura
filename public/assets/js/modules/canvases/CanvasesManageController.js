@@ -203,8 +203,8 @@ class CanvasesManageController {
             password: password
         };
 
-        // Utilizará el mapa de ApiRoutes para canvases.delete cuando lo registres
-        const route = ApiRoutes.Canvases && ApiRoutes.Canvases.Delete ? ApiRoutes.Canvases.Delete : '/api/canvases/delete';
+        // Ya validado y corregido, mapeará correctamente hacia "canvases.delete"
+        const route = ApiRoutes.Canvases && ApiRoutes.Canvases.Delete ? ApiRoutes.Canvases.Delete : 'canvases.delete';
         const result = await this.api.post(route, payload, this.abortController.signal);
         
         if (result.aborted) return;
