@@ -11,7 +11,7 @@ class DesignController {
         this.abortController = null;
         
         const urlParams = new URLSearchParams(window.location.search);
-        this.canvasId = urlParams.get('id'); // UUID de la URL
+        this.canvasId = urlParams.get('id');
 
         this.canvas = null;
         this.ctx = null;
@@ -45,7 +45,6 @@ class DesignController {
         this.needsRender = false;
         this.animationFrameId = null;
         
-        // Roles y Accesos
         this.isSpectator = false;
         this.isPrivateBlocked = false;
         this.canvasIntId = null;
@@ -121,7 +120,6 @@ class DesignController {
         const wrapper = document.querySelector('[data-ref="design-wrapper"]');
         
         if (wrapper) {
-            // Leemos el ID numérico y las reglas de privacidad inyectadas desde el HTML
             this.canvasIntId = wrapper.getAttribute('data-canvas-id');
             this.canvasPrivacy = wrapper.getAttribute('data-privacy') || 'private';
             this.canvasApproval = wrapper.getAttribute('data-approval') === '1';
@@ -148,22 +146,29 @@ class DesignController {
         if (!this.canvasIntId || this.canvasIntId === '0') return;
 
         try {
-            // Mandamos el ID Numérico a la API
-            const response = await this.api.get(ApiRoutes.Canvases.Get, { id: this.canvasIntId });
+            // AQUÍ ESTABA EL ERROR: Se usaba this.api.get en lugar de this.api.post
+            const response = await this.api.post(ApiRoutes.Canvases.Get, { id: this.canvasIntId });
             
             if (response.success && response.data) {
-                this.isSpectator = false;
                 this.isPrivateBlocked = false;
-                this.setRoleUI('editor', response.data);
+                
+                // LEEMOS DINÁMICAMENTE EL ROL DE LA RESPUESTA
+                const role = response.data.role || 'spectator';
+                
+                if (role === 'admin' || role === 'editor') {
+                    this.isSpectator = false;
+                } else {
+                    this.isSpectator = true;
+                }
+                
+                this.setRoleUI(role, response.data);
             } else {
                 this.isSpectator = true;
                 
-                // Si la API rechaza y es privado, bloqueamos por completo
                 if (this.canvasPrivacy === 'private') {
                     this.isPrivateBlocked = true;
                     this.setRoleUI('blocked');
                 } else {
-                    // Si es público, se permite ver como espectador
                     this.setRoleUI('spectator');
                 }
             }
@@ -181,14 +186,12 @@ class DesignController {
         const btnJoin = document.querySelector('[data-ref="btn-join-direct"]');
         const btnRequest = document.querySelector('[data-ref="btn-request-access"]');
 
-        // Pantalla de bloqueo
         if (role === 'blocked') {
             if (overlayBlocked) overlayBlocked.classList.remove('disabled');
         } else {
             if (overlayBlocked) overlayBlocked.classList.add('disabled');
         }
 
-        // Espectador
         if (role === 'spectator') {
             if (specControls) {
                 specControls.classList.remove('disabled');
@@ -197,7 +200,6 @@ class DesignController {
             }
             if (designTools) designTools.classList.replace('active', 'disabled');
             
-            // Evaluamos el switch de Aprobación para mostrar el botón correcto
             if (this.canvasApproval) {
                 if (btnJoin) btnJoin.style.display = 'none';
                 if (btnRequest) btnRequest.style.display = 'block';
@@ -206,8 +208,7 @@ class DesignController {
                 if (btnRequest) btnRequest.style.display = 'none';
             }
         } 
-        // Editor / Owner
-        else if (role === 'editor') {
+        else if (role === 'editor' || role === 'admin') { // INCLUIDO ROL ADMIN Y EDITOR
             if (specControls) {
                 specControls.classList.add('disabled');
                 specControls.classList.remove('active');
@@ -475,7 +476,6 @@ class DesignController {
     }
 
     handleClick(e) {
-        // --- BOTONES DE ACCESO ---
         const btnJoin = e.target.closest('[data-action="joinCanvasDirectly"]');
         const btnReqAccess = e.target.closest('[data-action="requestCanvasAccess"]');
         const btnReqOverlay = e.target.closest('[data-action="requestAccessFromOverlay"]');
@@ -486,7 +486,7 @@ class DesignController {
             return;
         }
 
-        if (this.isSpectator) return; // BLOQUEAR CLICKS EN HERRAMIENTAS SI ES ESPECTADOR
+        if (this.isSpectator) return; 
 
         const btnUpload = e.target.closest('[data-action="triggerTemplateUpload"]');
         if (btnUpload && this.fileInput) {
@@ -580,7 +580,6 @@ class DesignController {
         const target = e.target.closest('[data-ref="design-canvas"]');
         if (!target) return;
 
-        // Arrastrar el lienzo siempre está permitido (incluso para espectadores)
         if (e.shiftKey || e.button === 1 || this.isSpectator) {
             this.isDragging = true;
             this.lastMouse = { x: e.clientX, y: e.clientY };
@@ -588,7 +587,6 @@ class DesignController {
             return;
         }
 
-        // Si no es espectador, permitimos interacciones con plantillas y píxeles
         const exact = this.getExactBoardCoords(e.clientX, e.clientY);
         if (exact) {
             const hit = this.checkTemplateHit(exact.x, exact.y);

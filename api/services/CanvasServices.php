@@ -20,12 +20,30 @@ class CanvasServices {
 
     public function getCanvas(int $userId, int $canvasId): array {
         try {
-            $canvas = $this->canvasRepository->getByIdAndUser($canvasId, $userId);
+            // 1. Obtenemos el lienzo sin restringir que deba ser obligatoriamente el dueño
+            $canvas = $this->canvasRepository->getById($canvasId);
             
             if (!$canvas) {
-                return ['success' => false, 'message' => __('err_canvas_not_found') ?? 'Lienzo no encontrado o no autorizado.'];
+                return ['success' => false, 'message' => __('err_canvas_not_found') ?? 'Lienzo no encontrado.'];
             }
             
+            // 2. Buscamos qué rol tiene el usuario en este lienzo en específico
+            $role = $this->canvasRepository->getMemberRole($canvasId, $userId);
+            
+            // 3. Verificamos permisos si el lienzo es privado.
+            // Si es privado, y el usuario no es el dueño ni tiene un rol asignado, lo bloqueamos.
+            if ($canvas['privacy'] === DB::PRIVACY_PRIVATE && !$role && $canvas['user_id'] !== $userId) {
+                return ['success' => false, 'message' => __('err_unauthorized') ?? 'No tienes permisos para ver este lienzo.'];
+            }
+            
+            // 4. Inyectamos el rol explícitamente para que el frontend lo sepa
+            if ($canvas['user_id'] === $userId) {
+                $canvas['role'] = 'admin'; // El dueño siempre es administrador
+            } else {
+                $canvas['role'] = $role ?: 'spectator'; // Si es público y no tiene rol, entra como espectador
+            }
+
+            // Mapeo de propiedades extra para el frontend
             $canvas['max_members'] = $canvas['max_participants'];
             $canvas['width'] = $canvas['size'];
             $canvas['height'] = $canvas['size'];
@@ -223,8 +241,6 @@ class CanvasServices {
 
             $requests = $this->canvasRepository->getPendingRequests($canvasId);
             
-            // Aquí podríamos iterar y traer datos del usuario si tuviéramos acceso al db_identity
-            // Para mantenerlo desacoplado, devolvemos los requests en bruto para que la UI los muestre
             return ['success' => true, 'data' => $requests];
         } catch (Exception $e) {
             return ['success' => false, 'message' => __('err_database')];
