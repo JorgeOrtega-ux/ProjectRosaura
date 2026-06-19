@@ -18,6 +18,30 @@ class CanvasServices {
         $this->userRepository = $userRepository;
     }
 
+    public function getCanvas(int $userId, int $canvasId): array {
+        try {
+            $canvas = $this->canvasRepository->getByIdAndUser($canvasId, $userId);
+            
+            if (!$canvas) {
+                return ['success' => false, 'message' => __('err_canvas_not_found') ?? 'Lienzo no encontrado o no autorizado.'];
+            }
+            
+            // Adaptamos la clave para el frontend
+            $canvas['max_members'] = $canvas['max_participants'];
+            $canvas['width'] = $canvas['size'];
+            $canvas['height'] = $canvas['size'];
+
+            return ['success' => true, 'data' => $canvas];
+        } catch (Exception $e) {
+            Logger::error('Error getting canvas.', [
+                'user_id' => $userId,
+                'canvas_id' => $canvasId,
+                'exception' => $e->getMessage()
+            ]);
+            return ['success' => false, 'message' => __('err_database')];
+        }
+    }
+
     public function createCanvas(int $userId, string $name, ?string $description, string $privacy, string $size = '64', int $limit = 10): array {
         try {
             $uuid = Utils::generateUUID();
@@ -44,6 +68,40 @@ class CanvasServices {
                 'exception' => $e->getMessage()
             ]);
             return ['success' => false, 'message' => __('err_database')];
+        }
+    }
+
+    public function updateCanvas(int $userId, int $canvasId, array $data): array {
+        try {
+            // Verificar existencia y propiedad
+            $canvas = $this->canvasRepository->getByIdAndUser($canvasId, $userId);
+            if (!$canvas) {
+                return ['success' => false, 'message' => __('err_canvas_not_found') ?? 'Lienzo no encontrado o sin permisos.'];
+            }
+
+            if (empty(trim($data['name']))) {
+                return ['success' => false, 'message' => __('err_canvas_name_required') ?? 'El nombre es obligatorio.'];
+            }
+            
+            $validPrivacies = [DB::PRIVACY_PUBLIC, DB::PRIVACY_PRIVATE, DB::PRIVACY_UNLISTED];
+            if (!in_array($data['privacy'], $validPrivacies)) {
+                $data['privacy'] = DB::PRIVACY_PRIVATE;
+            }
+
+            $updated = $this->canvasRepository->updateCanvasData($canvasId, $userId, $data);
+
+            if ($updated) {
+                return ['success' => true, 'message' => __('canvas_update_success') ?? 'Lienzo actualizado correctamente.'];
+            }
+
+            return ['success' => false, 'message' => __('err_canvas_update_failed') ?? 'No se pudo actualizar el lienzo.'];
+        } catch (Exception $e) {
+             Logger::error('Error updating canvas.', [
+                 'user_id' => $userId,
+                 'canvas_id' => $canvasId,
+                 'exception' => $e->getMessage()
+             ]);
+             return ['success' => false, 'message' => __('err_database')];
         }
     }
 

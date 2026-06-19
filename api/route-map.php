@@ -318,12 +318,28 @@ return [
     ],
 
     // --- RUTAS DE LIENZOS (CANVASES) ---
+    'canvases.get' => [
+        'controller' => 'App\Api\Controllers\CanvasController',
+        'action' => 'get',
+        'middleware' => [
+            ['type' => 'Telemetry'],
+            ['type' => 'RateLimit', 'key' => 'canvas_get', 'max' => RL::MAX_20, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]
+        ]
+    ],
     'canvases.create' => [
         'controller' => 'App\Api\Controllers\CanvasController',
         'action' => 'create',
         'middleware' => [
             ['type' => 'Telemetry'],
             ['type' => 'RateLimit', 'key' => 'canvas_create', 'max' => RL::MAX_5, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]
+        ]
+    ],
+    'canvases.update' => [
+        'controller' => 'App\Api\Controllers\CanvasController',
+        'action' => 'update',
+        'middleware' => [
+            ['type' => 'Telemetry'],
+            ['type' => 'RateLimit', 'key' => 'canvas_update', 'max' => RL::MAX_10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]
         ]
     ],
     'canvases.delete' => [

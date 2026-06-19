@@ -47,7 +47,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
         ]);
     }
 
-    // --- NUEVOS MÉTODOS PARA GESTIÓN (MANAGE) ---
+    // --- MÉTODOS PARA GESTIÓN (MANAGE) ---
 
     public function getUserCanvasesPaginated(int $userId, int $limit, int $offset): array {
         // Se corrigió participant_limit por max_participants para que concuerde con db_canvases.sql
@@ -85,6 +85,39 @@ class CanvasRepository implements CanvasRepositoryInterface {
         
         $params = array_merge($canvasIds, [$userId]);
         return $stmt->execute($params);
+    }
+
+    // --- NUEVOS MÉTODOS PARA EDICIÓN (EDIT) ---
+
+    public function getByIdAndUser(int $id, int $userId): ?array {
+        $sql = "SELECT * FROM " . DB::TBL_CANVASES . " WHERE id = :id AND user_id = :user_id LIMIT 1";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            ':id' => $id, 
+            ':user_id' => $userId
+        ]);
+        
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result ?: null;
+    }
+
+    public function updateCanvasData(int $id, int $userId, array $data): bool {
+        $sql = "UPDATE " . DB::TBL_CANVASES . " 
+                SET name = :name, 
+                    description = :description, 
+                    privacy = :privacy, 
+                    max_participants = :max_participants
+                WHERE id = :id AND user_id = :user_id";
+        
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            ':name'             => $data['name'],
+            ':description'      => $data['description'],
+            ':privacy'          => $data['privacy'],
+            ':max_participants' => $data['max_participants'],
+            ':id'               => $id,
+            ':user_id'          => $userId
+        ]);
     }
 }
 ?>

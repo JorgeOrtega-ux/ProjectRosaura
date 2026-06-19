@@ -20,6 +20,34 @@ class CanvasController extends BaseController {
     }
 
     /**
+     * Devuelve la información de un lienzo específico
+     */
+    public function get($input) {
+        try {
+            if (!$this->session->isLoggedIn()) {
+                return $this->respond([
+                    'success' => false, 
+                    'message' => __('err_unauthorized'), 
+                    'http_code' => 401
+                ]);
+            }
+
+            $userId = $this->session->getActiveAccountId();
+            $canvasId = $input['id'] ?? null;
+
+            if (!$canvasId) {
+                return ['success' => false, 'message' => __('err_invalid_canvas_id') ?? 'ID de lienzo no proporcionado.'];
+            }
+
+            $result = $this->canvasServices->getCanvas($userId, (int)$canvasId);
+            return $this->respond($result);
+
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
+    /**
      * El framework pasa la carga útil de la solicitud directamente al parámetro $input.
      */
     public function create($input) {
@@ -64,6 +92,47 @@ class CanvasController extends BaseController {
 
         } catch (\Throwable $e) {
             // Delegar el manejo de la excepción crítica al BaseController
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
+    /**
+     * Actualiza la configuración del lienzo BLOQUEANDO EXPLÍCITAMENTE EL TAMAÑO
+     */
+    public function update($input) {
+        try {
+            if (!$this->session->isLoggedIn()) {
+                return $this->respond([
+                    'success' => false, 
+                    'message' => __('err_unauthorized'), 
+                    'http_code' => 401
+                ]);
+            }
+
+            $userId = $this->session->getActiveAccountId();
+            $canvasId = $input['id'] ?? null;
+            
+            if (!$userId || !$canvasId) {
+                return $this->respond([
+                    'success' => false, 
+                    'message' => __('err_unauthorized') ?? 'No autorizado.', 
+                    'http_code' => 401
+                ]);
+            }
+            
+            // FILTRO DE SEGURIDAD ESTRICTO: Solo tomamos estos campos. 
+            // Si el cliente envía 'size', 'width', o 'height', serán descartados al no incluirlos aquí.
+            $data = [
+                'name' => $input['name'] ?? null,
+                'description' => $input['description'] ?? null,
+                'privacy' => $input['privacy'] ?? null,
+                'max_participants' => $input['max_members'] ?? null
+            ];
+
+            $result = $this->canvasServices->updateCanvas($userId, (int)$canvasId, $data);
+            return $this->respond($result);
+
+        } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);
         }
     }
