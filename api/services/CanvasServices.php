@@ -18,7 +18,8 @@ class CanvasServices {
         $this->userRepository = $userRepository;
     }
 
-    public function getCanvas(int $userId, int $canvasId): array {
+    // MODIFICADO: Acepta ?int para permitir invitados (null)
+    public function getCanvas(?int $userId, int $canvasId): array {
         try {
             // 1. Obtenemos el lienzo sin restringir que deba ser obligatoriamente el dueño
             $canvas = $this->canvasRepository->getById($canvasId);
@@ -27,8 +28,11 @@ class CanvasServices {
                 return ['success' => false, 'message' => __('err_canvas_not_found') ?? 'Lienzo no encontrado.'];
             }
             
-            // 2. Buscamos qué rol tiene el usuario en este lienzo en específico
-            $role = $this->canvasRepository->getMemberRole($canvasId, $userId);
+            // 2. Buscamos qué rol tiene el usuario en este lienzo en específico (Solo si está logueado)
+            $role = null;
+            if ($userId !== null) {
+                $role = $this->canvasRepository->getMemberRole($canvasId, $userId);
+            }
             
             // 3. Verificamos permisos si el lienzo es privado.
             // Si es privado, y el usuario no es el dueño ni tiene un rol asignado, lo bloqueamos.
@@ -37,10 +41,10 @@ class CanvasServices {
             }
             
             // 4. Inyectamos el rol explícitamente para que el frontend lo sepa
-            if ($canvas['user_id'] === $userId) {
+            if ($userId !== null && $canvas['user_id'] === $userId) {
                 $canvas['role'] = 'admin'; // El dueño siempre es administrador
             } else {
-                $canvas['role'] = $role ?: 'spectator'; // Si es público y no tiene rol, entra como espectador
+                $canvas['role'] = $role ?: 'spectator'; // Si es público y no tiene rol (o es invitado), entra como espectador
             }
 
             // Mapeo de propiedades extra para el frontend

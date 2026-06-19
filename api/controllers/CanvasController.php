@@ -17,15 +17,14 @@ class CanvasController extends BaseController {
 
     public function get($input) {
         try {
-            if (!$this->session->isLoggedIn()) {
-                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
-            }
-
-            $userId = $this->session->getActiveAccountId();
+            // MODIFICACIÓN: Permitir acceso a invitados (modo espectador)
+            // Si hay sesión obtenemos el ID, si no, lo dejamos en null.
+            // Eliminamos el retorno de código 401 para evitar la redirección forzada del frontend.
+            $userId = $this->session->isLoggedIn() ? $this->session->getActiveAccountId() : null;
             $canvasId = $input['id'] ?? null;
 
             if (!$canvasId) {
-                return ['success' => false, 'message' => __('err_invalid_canvas_id') ?? 'ID de lienzo no proporcionado.'];
+                return $this->respond(['success' => false, 'message' => __('err_invalid_canvas_id') ?? 'ID de lienzo no proporcionado.']);
             }
 
             $result = $this->canvasServices->getCanvas($userId, (int)$canvasId);
@@ -57,7 +56,7 @@ class CanvasController extends BaseController {
             $paletteId = $input['palette_id'] ?? 'default';
 
             if (empty(trim($name))) {
-                return ['success' => false, 'message' => __('err_canvas_name_required')];
+                return $this->respond(['success' => false, 'message' => __('err_canvas_name_required')]);
             }
 
             $result = $this->canvasServices->createCanvas($userId, $name, $description, $privacy, $requiresApproval, $size, (int)$limit, $paletteId);

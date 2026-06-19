@@ -58,7 +58,7 @@ $routeTitles = [
     '/admin/backups' => __('route_admin_backups'),
     '/admin/backups/automation' => __('route_admin_backups_automation'),
     '/admin/server-config' => __('route_admin_server'),
-    '/admin/protocols' => __('route_admin_protocols'), // NUEVA RUTA AGREGADA
+    '/admin/protocols' => __('route_admin_protocols'),
     '/admin/logs' => __('route_admin_logs'),
     '/admin/logs/viewer' => __('route_admin_logs_viewer')
 ];
@@ -96,6 +96,12 @@ if (isset($routeTitles[$currentPath])) {
         window.AppServerConfig = <?php echo isset($serverConfig) && !empty($serverConfig) ? json_encode($serverConfig) : '{}'; ?>;
         window.AppTurnstileSiteKey = "<?php echo \App\Core\Helpers\EnvLoader::get('TURNSTILE_SITE_KEY', ''); ?>";
         window.AppTranslations = <?php echo json_encode(\App\Core\System\Translator::getAll()); ?>;
+        
+        // --- CONFIGURACIÓN GLOBAL (INCLUYENDO WEBSOCKETS) ---
+        window.APP_CONFIG = {
+            wsPort: <?php echo (int)\App\Core\Helpers\EnvLoader::get('WS_PORT', 8765); ?>
+        };
+        // ----------------------------------------------------
         
         function __(key, params = {}) { 
             let text = (window.AppTranslations && window.AppTranslations[key] !== undefined) ? window.AppTranslations[key] : key; 

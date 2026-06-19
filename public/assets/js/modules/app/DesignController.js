@@ -3,12 +3,14 @@ import { ApiRoutes } from '../../core/api/ApiRoutes.js';
 import { ApiService } from '../../core/api/ApiServices.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../core/utils/uiUtils.js';
 import { getPaletteById } from '../../core/constants/Palettes.js';
+import { WebSocketManager } from '../../core/api/WebSocketManager.js';
 
 class DesignController {
     constructor() {
         this.api = new ApiService();
         this.basePath = window.AppBasePath || '';
         this.abortController = null;
+        this.wsManager = null;
         
         const urlParams = new URLSearchParams(window.location.search);
         this.canvasId = urlParams.get('id');
@@ -84,6 +86,7 @@ class DesignController {
 
     destroy() {
         if (this.abortController) this.abortController.abort();
+        if (this.wsManager) this.wsManager.disconnect();
         
         document.removeEventListener('wheel', this.handleWheelBound, { passive: false });
         document.removeEventListener('mousedown', this.handleMouseDownBound);
@@ -100,6 +103,26 @@ class DesignController {
         if (this.animationFrameId) {
             cancelAnimationFrame(this.animationFrameId);
         }
+    }
+
+    initWebSocket() {
+        if (!this.canvasIntId) return;
+
+        this.wsManager = new WebSocketManager();
+        
+        // Escuchar eventos remotos para inyectar directo sin parpadeos
+        this.wsManager.on('message', (data) => {
+            if (data.type === 'pixel_placed' && data.pixels) {
+                data.pixels.forEach(p => {
+                    this.offscreenCtx.fillStyle = p.color;
+                    this.offscreenCtx.clearRect(p.x, p.y, 1, 1);
+                    this.offscreenCtx.fillRect(p.x, p.y, 1, 1);
+                });
+                this.requestRender();
+            }
+        });
+
+        this.wsManager.connect(this.canvasIntId);
     }
 
     bindEvents() {
@@ -135,6 +158,9 @@ class DesignController {
             this.setupCanvas();
             this.centerBoard();
             this.renderColorPalette(paletteId);
+
+            // Iniciar conexión WebSocket al tener ID
+            this.initWebSocket();
         } else {
             this.setupCanvas();
             this.centerBoard();
@@ -146,13 +172,11 @@ class DesignController {
         if (!this.canvasIntId || this.canvasIntId === '0') return;
 
         try {
-            // AQUÍ ESTABA EL ERROR: Se usaba this.api.get en lugar de this.api.post
             const response = await this.api.post(ApiRoutes.Canvases.Get, { id: this.canvasIntId });
             
             if (response.success && response.data) {
                 this.isPrivateBlocked = false;
                 
-                // LEEMOS DINÁMICAMENTE EL ROL DE LA RESPUESTA
                 const role = response.data.role || 'spectator';
                 
                 if (role === 'admin' || role === 'editor') {
@@ -208,7 +232,7 @@ class DesignController {
                 if (btnRequest) btnRequest.style.display = 'none';
             }
         } 
-        else if (role === 'editor' || role === 'admin') { // INCLUIDO ROL ADMIN Y EDITOR
+        else if (role === 'editor' || role === 'admin') {
             if (specControls) {
                 specControls.classList.add('disabled');
                 specControls.classList.remove('active');
@@ -818,12 +842,23 @@ class DesignController {
         if (this.selectedPixels.size === 0 || this.isSpectator) return;
 
         this.offscreenCtx.fillStyle = this.currentColor;
+        const pixelsToSync = [];
         
         this.selectedPixels.forEach(key => {
             const [x, y] = key.split(',').map(Number);
             this.offscreenCtx.clearRect(x, y, 1, 1);
             this.offscreenCtx.fillRect(x, y, 1, 1);
+            
+            pixelsToSync.push({ x, y, color: this.currentColor });
         });
+
+        // Emitir a través del WebSocket
+        if (this.wsManager && pixelsToSync.length > 0) {
+            this.wsManager.send({
+                type: 'pixel_placed',
+                pixels: pixelsToSync
+            });
+        }
 
         this.selectedPixels.clear();
         this.updateSelectionUI();

@@ -1,5 +1,14 @@
 // public/assets/js/core/api/ApiRoutes.js
 
+export const WsConfig = {
+    port: window.APP_CONFIG?.wsPort || 8765,
+    getBaseUrl: () => {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const host = window.location.hostname;
+        return `${protocol}//${host}:${WsConfig.port}`;
+    }
+};
+
 export const ApiRoutes = {
     Auth: {
         Login: 'auth.login',

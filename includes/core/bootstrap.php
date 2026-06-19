@@ -5,7 +5,8 @@ define('ROOT_PATH', dirname(__DIR__, 2));
 
 header("X-Frame-Options: SAMEORIGIN");
 header("X-Content-Type-Options: nosniff");
-header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com https://challenges.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://api.qrserver.com; connect-src 'self' https://unpkg.com https://cdn.jsdelivr.net; frame-src 'self' https://challenges.cloudflare.com; frame-ancestors 'none';");
+// SE HAN AGREGADO ws: y wss: a connect-src PARA PERMITIR WEBSOCKETS
+header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com https://challenges.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://api.qrserver.com; connect-src 'self' https://unpkg.com https://cdn.jsdelivr.net ws: wss:; frame-src 'self' https://challenges.cloudflare.com; frame-ancestors 'none';");
 
 require_once ROOT_PATH . '/vendor/autoload.php';
 

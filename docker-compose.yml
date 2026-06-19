@@ -101,7 +101,6 @@ services:
     networks:
       - rosaura_network
 
-  # NUEVO SERVICIO: WORKER DE TELEMETRIA
   worker_telemetry:
     build:
       context: .
@@ -114,6 +113,27 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_started
+    env_file:
+      - .env
+    environment:
+      - TZ=${APP_TIMEZONE:-UTC}
+    networks:
+      - rosaura_network
+
+  websocket_server:
+    build:
+      context: .
+      dockerfile: docker/python/Dockerfile.worker
+    container_name: rosaura_websocket_server
+    restart: always
+    command: python -u scripts/websocket_server.py
+    volumes:
+      - .:/app
+    ports:
+      - "${WS_PORT:-8765}:${WS_PORT:-8765}"
+    depends_on:
       redis:
         condition: service_started
     env_file:
