@@ -55,11 +55,15 @@ INSERT IGNORE INTO permissions (id, name, description, is_critical) VALUES
   (15, 'delete_backups', 'desc_delete_backups', 1),
   (16, 'download_backups', 'desc_download_backups', 1),
   (17, 'view_logs', 'desc_view_logs', 0),
-  (18, 'delete_logs', 'desc_delete_logs', 1);
+  (18, 'delete_logs', 'desc_delete_logs', 1),
+  (19, 'create_canvas', 'desc_create_canvas', 0),
+  (20, 'manage_canvases', 'desc_manage_canvases', 0),
+  (21, 'join_canvas', 'desc_join_canvas', 0);
 
 INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES
   (4, 1), (4, 2), (4, 3), (4, 4), (4, 5), (4, 6), (4, 7), (4, 8), (4, 9),
-  (4, 10), (4, 11), (4, 12), (4, 13), (4, 14), (4, 15), (4, 16), (4, 17), (4, 18);
+  (4, 10), (4, 11), (4, 12), (4, 13), (4, 14), (4, 15), (4, 16), (4, 17), (4, 18),
+  (4, 19), (4, 20), (4, 21);
 
 INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES
   (3, 1), (3, 2), (3, 3), (3, 4), (3, 5), (3, 6), (3, 8), (3, 10), (3, 13), (3, 17);

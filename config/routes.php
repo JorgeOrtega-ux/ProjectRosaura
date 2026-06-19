@@ -38,6 +38,11 @@ return [
     '/settings/devices' => ['view' => 'settings/security/devices.php', 'auth' => true],
     '/settings/delete-account' => ['view' => 'settings/profile/delete-account.php', 'auth' => true],
 
+    // --- NUEVAS RUTAS DE LIENZOS ---
+    '/canvases/create' => ['view' => 'canvases/create.php', 'auth' => true, 'permissions' => ['create_canvas'], 'requires_2fa' => false],
+    '/canvases/manage' => ['view' => 'canvases/manage.php', 'auth' => true, 'permissions' => ['manage_canvases'], 'requires_2fa' => false],
+    '/canvases/join' => ['view' => 'canvases/join.php', 'auth' => true, 'permissions' => ['join_canvas'], 'requires_2fa' => false],
+
     '/admin' => ['view' => 'admin/dashboard.php', 'auth' => true, 'permissions' => ['access_admin_panel'], 'requires_2fa' => false],
     '/admin/dashboard' => ['view' => 'admin/dashboard.php', 'auth' => true, 'permissions' => ['access_admin_panel'], 'requires_2fa' => false],
     

@@ -26,6 +26,12 @@ global $serverConfig;
 $isMaintenanceActive = isset($serverConfig['maintenance_mode']) && $serverConfig['maintenance_mode'] == 1;
 $isPrivileged = in_array('access_admin_panel', $userPermissions);
 
+// Permisos de Lienzos
+$canCreateCanvas = in_array('create_canvas', $userPermissions);
+$canManageCanvases = in_array('manage_canvases', $userPermissions);
+$canJoinCanvas = in_array('join_canvas', $userPermissions);
+$hasCanvasAccess = $canCreateCanvas || $canManageCanvases || $canJoinCanvas;
+
 $activeRoleBg = 'var(--text-muted)';
 if ($isLoggedIn) {
     $colorData = json_decode($userRoleColorRaw, true);
@@ -116,6 +122,12 @@ if ($isLoggedIn) {
                 </button>
             <?php endif; ?>
 
+            <?php if ($isLoggedIn && $hasCanvasAccess): ?>
+                <button class="component-button component-button--icon component-button--h40" data-action="toggleModule" data-target="moduleCanvases" data-tooltip="Lienzos" data-position="bottom">
+                    <span class="material-symbols-rounded">palette</span>
+                </button>
+            <?php endif; ?>
+
             <?php if (!$isLoggedIn): ?>
                 <button class="component-button component-button--dark component-button--h40" data-nav="<?php echo APP_URL; ?>/login">
                     <?php echo __('btn_login'); ?>
@@ -139,4 +151,5 @@ if ($isLoggedIn) {
     </div>
 
     <?php include __DIR__ . '/../modules/moduleMainOptions.php'; ?>
+    <?php if ($isLoggedIn && $hasCanvasAccess) { include __DIR__ . '/../modules/moduleCanvases.php'; } ?>
 </div>
