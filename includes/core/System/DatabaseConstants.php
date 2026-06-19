@@ -9,7 +9,8 @@ class DatabaseConstants {
     // 1. CONEXIONES
     // ==========================================
     public const CONN_IDENTITY  = 'identity';
-    public const CONN_TELEMETRY = 'telemetry'; // NUEVA CONEXIÓN PARA TELEMETRÍA
+    public const CONN_TELEMETRY = 'telemetry'; 
+    public const CONN_CANVASES  = 'canvases'; // NUEVA CONEXIÓN PARA LIENZOS
 
     // ==========================================
     // 2. NOMBRES DE TABLAS
@@ -26,11 +27,15 @@ class DatabaseConstants {
     public const TBL_AUTH_TOKENS         = 'auth_tokens';
     public const TBL_SERVER_CONFIG       = 'server_config';
     
-    // Tablas de Telemetría (NUEVAS)
+    // Tablas de Telemetría 
     public const TBL_TELEMETRY_API_LATENCY   = 'api_latency';
     public const TBL_TELEMETRY_PAGEVIEWS     = 'pageviews';
     public const TBL_TELEMETRY_CANVAS        = 'canvas_interactions';
     public const TBL_TELEMETRY_AUTH_EVENTS   = 'auth_events';
+
+    // Tablas de Lienzos (NUEVAS)
+    public const TBL_CANVASES          = 'canvases';
+    public const TBL_CANVAS_MEMBERS    = 'canvas_members';
 
     // ==========================================
     // 3. VALORES ENUM / ESTADOS FIJOS
@@ -56,11 +61,16 @@ class DatabaseConstants {
     public const THEME_LIGHT  = 'light';
     public const THEME_DARK   = 'dark';
     
-    // Opciones permitidas para preferencias (Se añadió 'allow_telemetry')
+    // Opciones permitidas para preferencias 
     public const ALLOWED_PREF_KEYS = ['language', 'open_links_new_tab', 'theme', 'extended_alerts', 'allow_telemetry'];
 
-    // Tipos de Códigos de Verificación (NUEVOS)
+    // Tipos de Códigos de Verificación 
     public const VERIFY_TYPE_ACTIVATION = 'account_activation';
     public const VERIFY_TYPE_PASSWORD = 'password_reset';
+
+    // Privacidad de Lienzos (NUEVOS)
+    public const PRIVACY_PUBLIC   = 'public';
+    public const PRIVACY_PRIVATE  = 'private';
+    public const PRIVACY_UNLISTED = 'unlisted';
 }
 ?>

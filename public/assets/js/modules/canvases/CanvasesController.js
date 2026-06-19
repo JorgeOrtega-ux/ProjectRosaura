@@ -1,47 +1,47 @@
 // public/assets/js/modules/canvases/CanvasesController.js
 
-export class CanvasesController {
+import { ApiRoutes } from '../../core/api/ApiRoutes.js';
+import { ApiService } from '../../core/api/ApiServices.js';
+import { showMessage, setButtonLoading, restoreButton } from '../../core/utils/uiUtils.js';
+
+class CanvasesController {
     constructor() {
-        this.name = "CanvasesController";
-        this.container = null;
+        this.api = new ApiService();
+        this.basePath = window.AppBasePath || '';
+        this.abortController = null;
         
-        // Estado centralizado para el payload de creación
         this.formState = {
             name: '',
             description: '',
-            size: '64', // Valor por defecto
-            privacy: 'public',
-            limit: 10 // Mínimo inicial
+            size: '64',
+            privacy: 'private',
+            limit: 10
         };
 
-        this.handleAction = this.handleAction.bind(this);
+        this.handleClickBound = this.handleClick.bind(this);
     }
 
-    async init() {
-        console.log(`${this.name} initialized`);
-        this.container = document.querySelector('[data-ref="canvas-create-wrapper"]');
-        
-        if (this.container) {
-            this.container.addEventListener('click', this.handleAction);
-            
-            // Inyectamos el nombre por defecto con timestamp
-            this.setupDefaultValues();
-        }
+    init() {
+        this.abortController = new AbortController();
+        this.bindEvents();
+        this.setupDefaultValues();
     }
 
     destroy() {
-        console.log(`${this.name} destroyed`);
-        if (this.container) {
-            this.container.removeEventListener('click', this.handleAction);
-        }
+        if (this.abortController) this.abortController.abort();
+        document.removeEventListener('click', this.handleClickBound);
+    }
+
+    bindEvents() {
+        document.addEventListener('click', this.handleClickBound);
     }
 
     setupDefaultValues() {
         const timestampName = `Canvas_${Date.now()}`;
         this.formState.name = timestampName;
 
-        const displayEl = this.container.querySelector('[data-ref="display-canvasname"]');
-        const inputEl = this.container.querySelector('[data-ref="input-canvasname"]');
+        const displayEl = document.querySelector('[data-ref="display-canvasname"]');
+        const inputEl = document.querySelector('[data-ref="input-canvasname"]');
 
         if (displayEl) displayEl.textContent = timestampName;
         if (inputEl) {
@@ -50,33 +50,71 @@ export class CanvasesController {
         }
     }
 
-    handleAction(e) {
+    handleClick(e) {
         const actionBtn = e.target.closest('[data-action]');
         if (!actionBtn) return;
 
         const action = actionBtn.getAttribute('data-action');
 
-        switch (action) {
-            case 'toggleDropdown':
-                this.toggleDropdown(actionBtn);
-                break;
-            case 'selectValue':
-                this.selectDropdownValue(actionBtn);
-                break;
-            case 'adjustLimit':
-                this.adjustParticipantLimit(actionBtn);
-                break;
-            case 'createCanvas':
-                this.submitCanvas();
-                break;
+        if (action === 'toggleDropdown') {
+            this.toggleDropdown(actionBtn);
+        } else if (action === 'selectValue') {
+            this.selectDropdownValue(actionBtn);
+        } else if (action === 'adjustLimit') {
+            this.adjustParticipantLimit(actionBtn);
+        } else if (action === 'toggleEditState') {
+            this.toggleEditState(actionBtn);
+        } else if (action === 'saveCanvasName') {
+            this.saveCanvasName();
+        } else if (action === 'createCanvas') {
+            e.preventDefault();
+            this.submitCanvas(actionBtn);
         }
+    }
+
+    toggleEditState(btn) {
+        const viewState = document.querySelector('[data-state="canvasname-view"]');
+        const editState = document.querySelector('[data-state="canvasname-edit"]');
+        const inputEl = document.querySelector('[data-ref="input-canvasname"]');
+
+        if (viewState && editState) {
+            if (viewState.classList.contains('active')) {
+                viewState.classList.remove('active');
+                viewState.classList.add('disabled');
+                editState.classList.remove('disabled');
+                editState.classList.add('active');
+                if (inputEl) inputEl.focus();
+            } else {
+                editState.classList.remove('active');
+                editState.classList.add('disabled');
+                viewState.classList.remove('disabled');
+                viewState.classList.add('active');
+                if (inputEl) inputEl.value = inputEl.getAttribute('data-original-value');
+            }
+        }
+    }
+
+    saveCanvasName() {
+        const inputEl = document.querySelector('[data-ref="input-canvasname"]');
+        const displayEl = document.querySelector('[data-ref="display-canvasname"]');
+        
+        if (inputEl && displayEl) {
+            const newName = inputEl.value.trim();
+            if (newName !== '') {
+                displayEl.textContent = newName;
+                inputEl.setAttribute('data-original-value', newName);
+                this.formState.name = newName;
+            }
+        }
+        
+        const btnCancel = document.querySelector('[data-action="toggleEditState"]');
+        if (btnCancel) this.toggleEditState(btnCancel);
     }
 
     toggleDropdown(triggerBtn) {
         const targetId = triggerBtn.getAttribute('data-target');
         const targetDropdown = document.querySelector(`[data-module="${targetId}"]`);
         
-        // Cerrar otros dropdowns locales sincronizando clases active/disabled
         document.querySelectorAll('.component-module--dropdown:not(.disabled)').forEach(el => {
             if (el !== targetDropdown) {
                 el.classList.remove('active');
@@ -103,27 +141,27 @@ export class CanvasesController {
 
         this.formState[type] = value;
 
-        // Actualizar visualmente la opción activa
         const menu = optionBtn.closest('.component-menu-list');
-        menu.querySelectorAll('.component-menu-link').forEach(el => el.classList.remove('active'));
-        optionBtn.classList.add('active');
-
-        // Actualizar el trigger
-        const dropdownWrapper = optionBtn.closest('.component-dropdown-wrapper');
-        const triggerText = dropdownWrapper.querySelector('.component-dropdown-text');
-        
-        if (triggerText) triggerText.textContent = label;
-
-        if (icon) {
-            const triggerIcon = dropdownWrapper.querySelector('.component-dropdown-trigger .material-symbols-rounded:first-child');
-            if (triggerIcon) triggerIcon.textContent = icon;
+        if (menu) {
+            menu.querySelectorAll('.component-menu-link').forEach(el => el.classList.remove('active'));
+            optionBtn.classList.add('active');
         }
 
-        // Cerrar módulo sincronizando clases para que MainController lo reconozca bien
-        const module = dropdownWrapper.querySelector('.component-module--dropdown');
-        if (module) {
-            module.classList.remove('active');
-            module.classList.add('disabled');
+        const dropdownWrapper = optionBtn.closest('.component-dropdown-wrapper');
+        if (dropdownWrapper) {
+            const triggerText = dropdownWrapper.querySelector('.component-dropdown-text');
+            if (triggerText) triggerText.textContent = __(label);
+
+            if (icon) {
+                const triggerIcon = dropdownWrapper.querySelector('.component-dropdown-trigger .material-symbols-rounded:first-child');
+                if (triggerIcon) triggerIcon.textContent = icon;
+            }
+
+            const module = dropdownWrapper.querySelector('.component-module--dropdown');
+            if (module) {
+                module.classList.remove('active');
+                module.classList.add('disabled');
+            }
         }
     }
 
@@ -132,9 +170,10 @@ export class CanvasesController {
         const min = parseInt(btn.getAttribute('data-min'), 10) || 10;
         const max = parseInt(btn.getAttribute('data-max'), 10) || 50000;
         
-        const centerElement = this.container.querySelector('[data-ref="val_limit"]');
-        let currentVal = parseInt(centerElement.getAttribute('data-val'), 10) || min;
+        const centerElement = document.querySelector('[data-ref="val_limit"]');
+        if (!centerElement) return;
 
+        let currentVal = parseInt(centerElement.getAttribute('data-val'), 10) || min;
         let newVal = currentVal + step;
         
         if (newVal < min) newVal = min;
@@ -145,15 +184,26 @@ export class CanvasesController {
         centerElement.textContent = newVal;
     }
 
-    submitCanvas() {
-        // Recuperar el valor final de los inputs antes de enviar
-        const inputName = this.container.querySelector('[data-ref="input-canvasname"]');
-        const inputDesc = this.container.querySelector('[data-ref="input-canvas-desc"]');
-
-        this.formState.name = inputName ? inputName.value.trim() : this.formState.name;
+    async submitCanvas(btn) {
+        const inputDesc = document.querySelector('[data-ref="input-canvas-desc"]');
         this.formState.description = inputDesc ? inputDesc.value.trim() : '';
 
-        console.log("Creando lienzo con el payload:", this.formState);
-        // ApiServices.post('/canvases', this.formState).then(...)
+        setButtonLoading(btn);
+
+        const res = await this.api.post(ApiRoutes.Canvases.Create, this.formState, this.abortController.signal);
+        if (res.aborted) return;
+
+        restoreButton(btn);
+
+        if (res.success) {
+            showMessage(__('msg_canvas_created'), 'success');
+            if (window.spaRouter) {
+                window.spaRouter.navigate(`${this.basePath}/canvases/${res.data.uuid}`);
+            }
+        } else {
+            showMessage(res.message, 'error');
+        }
     }
 }
+
+export { CanvasesController };

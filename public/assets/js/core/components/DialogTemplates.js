@@ -10,8 +10,8 @@ export const DialogTemplates = {
             </div>
             <div class="component-modal-body">
                 <div class="component-input-group">
-                    <input type="text" id="modal_2fa_code" class="component-input-field" placeholder=" " maxlength="6" autocomplete="off">
-                    <label for="modal_2fa_code" class="component-input-label">${__('lbl_6_digit_code')}</label>
+                    <input type="text" data-ref="modal_2fa_code" class="component-input-field" placeholder=" " maxlength="6" autocomplete="off">
+                    <label class="component-input-label">${__('lbl_6_digit_code')}</label>
                 </div>
             </div>
             <div class="component-modal-actions">
@@ -147,8 +147,8 @@ export const DialogTemplates = {
             </div>
             <div class="component-modal-body">
                 <div class="component-input-group">
-                    <input type="password" id="modal_verify_password" class="component-input-field component-input-field--with-icon" placeholder=" ">
-                    <label for="modal_verify_password" class="component-input-label">${__('lbl_current_password')}</label>
+                    <input type="password" data-ref="modal_verify_password" class="component-input-field component-input-field--with-icon" placeholder=" ">
+                    <label class="component-input-label">${__('lbl_current_password')}</label>
                     <span class="material-symbols-rounded component-input-toggle" data-modal-action="togglePassword">visibility_off</span>
                 </div>
             </div>
@@ -173,8 +173,8 @@ export const DialogTemplates = {
             </div>
             <div class="component-modal-body">
                 <div class="component-input-group">
-                    <input type="password" id="modal_delete_password" class="component-input-field component-input-field--with-icon" placeholder=" ">
-                    <label for="modal_delete_password" class="component-input-label">${__('lbl_password')}</label>
+                    <input type="password" data-ref="modal_delete_password" class="component-input-field component-input-field--with-icon" placeholder=" ">
+                    <label class="component-input-label">${__('lbl_password')}</label>
                     <span class="material-symbols-rounded component-input-toggle" data-modal-action="togglePassword">visibility_off</span>
                 </div>
             </div>
@@ -200,10 +200,10 @@ export const DialogTemplates = {
             
             ${data.inputs && data.inputs.length > 0 ? `
                 <div class="component-modal-body">
-                    ${data.inputs.map(input => `
+                    ${data.inputs.map((input, idx) => `
                         <div class="component-input-group">
-                            <input type="${input.type || 'text'}" id="${input.id}" class="component-input-field ${input.type === 'password' ? 'component-input-field--with-icon' : ''}" placeholder=" " ${input.required ? 'required' : ''}>
-                            <label for="${input.id}" class="component-input-label">${input.placeholderKey ? __(input.placeholderKey) : ''}</label>
+                            <input type="${input.type || 'text'}" data-ref="modal_dynamic_input_${idx}" class="component-input-field ${input.type === 'password' ? 'component-input-field--with-icon' : ''}" placeholder=" " ${input.required ? 'required' : ''}>
+                            <label class="component-input-label">${input.placeholderKey ? __(input.placeholderKey) : ''}</label>
                             ${input.type === 'password' ? `<span class="material-symbols-rounded component-input-toggle" data-modal-action="togglePassword">visibility_off</span>` : ''}
                         </div>
                     `).join('')}
@@ -231,6 +231,15 @@ export const DialogTemplates = {
         `
     },
 
+    confirmCreateCanvas: {
+        build: () => DialogTemplates.confirmAction.build({
+            titleKey: 'title_confirm_create_canvas',
+            descKey: 'desc_confirm_create_canvas',
+            confirmClass: 'component-button--dark',
+            confirmKey: 'btn_create_canvas'
+        })
+    },
+
     dynamicFormDialog: {
         build: (data) => {
             let fieldsHtml = '';
@@ -249,7 +258,7 @@ export const DialogTemplates = {
                                 </div>
                                 <div class="component-card__actions component-card__actions--end">
                                     <label class="component-toggle-switch">
-                                        <input type="checkbox" id="modal_input_${field.name}" ${field.default ? 'checked' : ''}>
+                                        <input type="checkbox" data-ref="modal_input_${field.name}" ${field.default ? 'checked' : ''}>
                                         <span class="component-toggle-slider"></span>
                                     </label>
                                 </div>
@@ -259,8 +268,8 @@ export const DialogTemplates = {
                         fieldsHtml += `
                             <div class="component-group-item component-group-item--wrap">
                                 <div class="component-input-group">
-                                    <input type="${field.type || 'text'}" id="modal_input_${field.name}" class="component-input-field" placeholder=" " value="${field.default || ''}">
-                                    <label for="modal_input_${field.name}" class="component-input-label">${__(field.labelKey)}</label>
+                                    <input type="${field.type || 'text'}" data-ref="modal_input_${field.name}" class="component-input-field" placeholder=" " value="${field.default || ''}">
+                                    <label class="component-input-label">${__(field.labelKey)}</label>
                                 </div>
                             </div>
                         `;
@@ -290,10 +299,6 @@ export const DialogTemplates = {
             `;
         }
     },
-
-    // -------------------------------------------------------------------------
-    // VISTAS CENTRALIZADAS ESPECÍFICAS (Lógica puramente abstraída y traducida)
-    // -------------------------------------------------------------------------
 
     confirmDeleteRole: {
         build: (data) => `

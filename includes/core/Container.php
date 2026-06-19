@@ -28,9 +28,12 @@ use App\Core\Repositories\ModerationRepository;
 use App\Core\Interfaces\ModerationRepositoryInterface;
 use App\Core\Repositories\RoleRepository;
 use App\Core\Interfaces\RoleRepositoryInterface;
-
 use App\Core\Interfaces\TelemetryRepositoryInterface;
 use App\Core\Repositories\TelemetryRepository;
+
+// NUEVOS BINDINGS CANVASES
+use App\Core\Interfaces\CanvasRepositoryInterface;
+use App\Core\Repositories\CanvasRepository;
 
 class Container implements ContainerInterface {
     private $instances = [];
@@ -59,6 +62,9 @@ class Container implements ContainerInterface {
         $this->bindings[RoleRepositoryInterface::class] = RoleRepository::class;
         
         $this->bindings[TelemetryRepositoryInterface::class] = TelemetryRepository::class;
+
+        // BINDING DE REPOSITORIO DE LIENZOS
+        $this->bindings[CanvasRepositoryInterface::class] = CanvasRepository::class;
     }
 
     public function get(string $id) {

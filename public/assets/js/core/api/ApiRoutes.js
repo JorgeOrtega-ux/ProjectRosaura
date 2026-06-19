@@ -39,7 +39,7 @@ export const ApiRoutes = {
         RevokeAllDevices: 'settings.revoke_all_devices'
     },
     Admin: {
-        GetDashboardMetrics: 'admin.get_dashboard_metrics', // NUEVA RUTA
+        GetDashboardMetrics: 'admin.get_dashboard_metrics',
         GetUser: 'admin.get_user',
         UpdateAvatar: 'admin.update_avatar',
         DeleteAvatar: 'admin.delete_avatar',
@@ -71,10 +71,14 @@ export const ApiRoutes = {
         MaintenanceFlushSessions: 'admin.maintenance_flush_sessions',
         MaintenanceClearCache: 'admin.maintenance_clear_cache',
         MaintenanceResetRateLimits: 'admin.maintenance_reset_rate_limits',
-        TogglePanicMode: 'admin.toggle_panic_mode', // NUEVO PROTOCOLO
+        TogglePanicMode: 'admin.toggle_panic_mode',
 
         CreateBackup: 'admin.create_backup',
         RestoreBackup: 'admin.restore_backup',
         ReadLogs: 'admin.read_logs'
+    },
+    // --- RUTAS DE LIENZOS ---
+    Canvases: {
+        Create: 'canvases.create'
     }
 };
