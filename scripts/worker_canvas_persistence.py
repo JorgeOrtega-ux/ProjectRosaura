@@ -8,12 +8,13 @@ from zlib import compress
 # Configuración Redis
 REDIS_HOST = os.getenv("REDIS_HOST", "redis")
 REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
+REDIS_PASS = os.getenv("REDIS_PASS", None) # <-- Se agregó la contraseña de Redis
 
 # Configuración MySQL
-DB_HOST = os.getenv("DB_HOST", "mysql")
+DB_HOST = os.getenv("DB_HOST", "db") # <-- Cambiado de 'mysql' a 'db' para coincidir con tu docker-compose
 DB_USER = os.getenv("DB_USER", "system_web_executor")
-DB_PASS = os.getenv("DB_PASSWORD", "secret") # Ajustar según .env
-DB_NAME = os.getenv("DB_NAME", "db_canvases")
+DB_PASS = os.getenv("DB_PASS", "secret") # <-- Cambiado a DB_PASS para coincidir con tu .env
+DB_NAME = os.getenv("DB_CANVASES_NAME", "db_canvases") # <-- Cambiado a DB_CANVASES_NAME
 
 SYNC_INTERVAL = 60 # Segundos de espera entre cada guardado maestro
 
@@ -34,7 +35,14 @@ def main():
     
     try:
         # decode_responses=False para poder leer los bytes crudos del lienzo
-        r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=0, decode_responses=False)
+        # Se agregó el parámetro password
+        r = redis.Redis(
+            host=REDIS_HOST, 
+            port=REDIS_PORT, 
+            password=REDIS_PASS, 
+            db=0, 
+            decode_responses=False
+        )
         r.ping()
         print("[+] Conectado a Redis exitosamente.")
     except Exception as e:
