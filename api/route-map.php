@@ -326,6 +326,14 @@ return [
             ['type' => 'RateLimit', 'key' => 'canvas_create', 'max' => RL::MAX_5, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]
         ]
     ],
+    'canvases.delete' => [
+        'controller' => 'App\Api\Controllers\CanvasController',
+        'action' => 'delete',
+        'middleware' => [
+            ['type' => 'Telemetry'],
+            ['type' => 'RateLimit', 'key' => 'canvas_delete', 'max' => RL::MAX_10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]
+        ]
+    ],
 
     // --- NUEVA RUTA DE TELEMETRÍA (Tracker Frontend) ---
     'telemetry.collect' => [

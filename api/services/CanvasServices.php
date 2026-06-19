@@ -4,15 +4,18 @@ namespace App\Api\Services;
 
 use Exception;
 use App\Core\Interfaces\CanvasRepositoryInterface;
+use App\Core\Interfaces\UserRepositoryInterface;
 use App\Core\Helpers\Utils;
 use App\Core\System\Logger;
 use App\Core\System\DatabaseConstants as DB;
 
 class CanvasServices {
     private $canvasRepository;
+    private $userRepository;
 
-    public function __construct(CanvasRepositoryInterface $canvasRepository) {
+    public function __construct(CanvasRepositoryInterface $canvasRepository, UserRepositoryInterface $userRepository) {
         $this->canvasRepository = $canvasRepository;
+        $this->userRepository = $userRepository;
     }
 
     public function createCanvas(int $userId, string $name, ?string $description, string $privacy): array {
@@ -35,6 +38,38 @@ class CanvasServices {
             return ['success' => true, 'message' => __('msg_canvas_created'), 'data' => ['uuid' => $uuid]];
         } catch (Exception $e) {
             Logger::error('Error during canvas creation.', [
+                'user_id' => $userId,
+                'exception' => $e->getMessage()
+            ]);
+            return ['success' => false, 'message' => __('err_database')];
+        }
+    }
+
+    public function deleteUserCanvases(int $userId, array $canvasIds, string $password): array {
+        try {
+            if (empty($canvasIds)) {
+                return ['success' => false, 'message' => __('err_no_canvases_selected') ?? 'No se ha seleccionado ningún lienzo.'];
+            }
+
+            $user = $this->userRepository->findById($userId);
+            if (!$user) {
+                return ['success' => false, 'message' => __('err_unauthorized')];
+            }
+
+            $passwordHash = $user['password_hash'] ?? $user['password'] ?? '';
+            if (!password_verify($password, $passwordHash)) {
+                return ['success' => false, 'message' => __('err_invalid_password') ?? 'Contraseña incorrecta.'];
+            }
+
+            $deleted = $this->canvasRepository->deleteCanvases($canvasIds, $userId);
+
+            if ($deleted) {
+                return ['success' => true, 'message' => __('msg_canvases_deleted') ?? 'Lienzos eliminados correctamente.'];
+            }
+
+            return ['success' => false, 'message' => __('err_canvases_delete_failed') ?? 'Error al eliminar los lienzos.'];
+        } catch (Exception $e) {
+            Logger::error('Error deleting canvases.', [
                 'user_id' => $userId,
                 'exception' => $e->getMessage()
             ]);

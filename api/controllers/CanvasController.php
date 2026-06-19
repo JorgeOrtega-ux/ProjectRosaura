@@ -65,5 +65,53 @@ class CanvasController extends BaseController {
             return $this->handleException($e, __FUNCTION__);
         }
     }
+
+    /**
+     * Procesa la eliminación masiva o individual enviada desde el cliente JS centralizado.
+     */
+    public function delete($input) {
+        try {
+            if (!$this->session->isLoggedIn()) {
+                return $this->respond([
+                    'success' => false,
+                    'message' => __('err_unauthorized'),
+                    'http_code' => 401
+                ]);
+            }
+
+            $userId = $this->session->getActiveAccountId();
+            if (!$userId) {
+                return $this->respond([
+                    'success' => false,
+                    'message' => __('err_unauthorized'),
+                    'http_code' => 401
+                ]);
+            }
+
+            $canvasIds = $input['canvas_ids'] ?? [];
+            $password = $input['password'] ?? '';
+
+            if (empty($canvasIds)) {
+                return $this->respond([
+                    'success' => false,
+                    'message' => __('err_no_canvases_selected') ?? 'Debe seleccionar al menos un lienzo.'
+                ]);
+            }
+
+            if (empty(trim($password))) {
+                return $this->respond([
+                    'success' => false,
+                    'message' => __('err_password_required') ?? 'Debe introducir su contraseña para confirmar.'
+                ]);
+            }
+
+            $result = $this->canvasServices->deleteUserCanvases($userId, $canvasIds, $password);
+            
+            return $this->respond($result);
+
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
 }
 ?>
