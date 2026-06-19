@@ -11,8 +11,19 @@ interface CanvasRepositoryInterface {
     public function countUserCanvases(int $userId): int;
     public function deleteCanvases(array $canvasIds, int $userId): bool;
 
-    // Nuevos Métodos para Edit
+    // Métodos para Edit
     public function getByIdAndUser(int $id, int $userId): ?array;
     public function updateCanvasData(int $id, int $userId, array $data): bool;
+
+    // Nuevos Métodos para Solicitudes de Acceso
+    public function createAccessRequest(int $canvasId, int $userId): bool;
+    public function getAccessRequest(int $canvasId, int $userId): ?array;
+    public function getRequestById(int $requestId): ?array;
+    public function updateRequestStatus(int $requestId, string $status): bool;
+    public function getPendingRequests(int $canvasId): array;
+    
+    // Utilidades
+    public function getById(int $id): ?array;
+    public function getMemberRole(int $canvasId, int $userId): ?string;
 }
 ?>

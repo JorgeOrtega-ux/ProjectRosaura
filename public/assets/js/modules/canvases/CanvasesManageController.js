@@ -67,7 +67,12 @@ class CanvasesManageController {
         const editCanvasBtn = e.target.closest('[data-action="editSelectedCanvas"]');
         const manageMembersBtn = e.target.closest('[data-action="manageCanvasMembers"]');
         const deleteCanvasesBtn = e.target.closest('[data-action="deleteSelectedCanvases"]');
+        const viewRequestsBtn = e.target.closest('[data-action="viewCanvasRequests"]');
         
+        const closeRequestsBtn = e.target.closest('[data-action="closeRequestsModal"]');
+        const approveBtn = e.target.closest('[data-action="approveAccessRequest"]');
+        const rejectBtn = e.target.closest('[data-action="rejectAccessRequest"]');
+
         if (searchBtn) this.toggleSearchToolbar();
 
         if (selectTargetRow && !e.target.closest('button')) {
@@ -79,6 +84,11 @@ class CanvasesManageController {
         if (editCanvasBtn && !editCanvasBtn.classList.contains('disabled-interactive')) this.editSelectedCanvas();
         if (manageMembersBtn && !manageMembersBtn.classList.contains('disabled-interactive')) this.manageCanvasMembers();
         if (deleteCanvasesBtn && !deleteCanvasesBtn.classList.contains('disabled-interactive')) this.deleteSelectedCanvases(deleteCanvasesBtn);
+        if (viewRequestsBtn && !viewRequestsBtn.classList.contains('disabled-interactive')) this.viewCanvasRequests();
+
+        if (closeRequestsBtn) this.closeRequestsModal();
+        if (approveBtn) this.handleRequestAction('approve', approveBtn);
+        if (rejectBtn) this.handleRequestAction('reject', rejectBtn);
 
         const searchToolbar = document.querySelector('[data-ref="search-toolbar"]');
         if (searchToolbar && !searchToolbar.classList.contains('disabled')) {
@@ -182,6 +192,108 @@ class CanvasesManageController {
         else window.location.href = `${this.basePath}/canvases/members?id=${id}`;
     }
 
+    // --- LÓGICA DE SOLICITUDES DE ACCESO ---
+    async viewCanvasRequests() {
+        if (this.selectedCanvasIds.size !== 1) return;
+        const canvasId = Array.from(this.selectedCanvasIds)[0];
+        
+        const modal = document.querySelector('[data-ref="requests-modal-overlay"]');
+        if (modal) modal.classList.remove('disabled');
+
+        await this.loadPendingRequests(canvasId);
+    }
+
+    closeRequestsModal() {
+        const modal = document.querySelector('[data-ref="requests-modal-overlay"]');
+        if (modal) modal.classList.add('disabled');
+    }
+
+    async loadPendingRequests(canvasId) {
+        const container = document.querySelector('[data-ref="requests-list-container"]');
+        if (!container) return;
+
+        container.innerHTML = `
+            <div class="component-empty-state" style="padding: 24px;">
+                <span class="material-symbols-rounded component-empty-state-icon">hourglass_empty</span>
+                <p class="component-empty-state-text">Cargando solicitudes...</p>
+            </div>
+        `;
+
+        const response = await this.api.get(ApiRoutes.Canvases.GetPendingRequests, { canvas_id: canvasId });
+        
+        if (response.success && response.data) {
+            this.renderRequestsList(response.data);
+        } else {
+            container.innerHTML = `
+                <div class="component-empty-state" style="padding: 24px;">
+                    <span class="material-symbols-rounded component-empty-state-icon" style="color: var(--danger-color);">error</span>
+                    <p class="component-empty-state-text">${response.message || 'Error al cargar'}</p>
+                </div>
+            `;
+        }
+    }
+
+    renderRequestsList(requests) {
+        const container = document.querySelector('[data-ref="requests-list-container"]');
+        if (!container) return;
+
+        if (requests.length === 0) {
+            container.innerHTML = `
+                <div class="component-empty-state" style="padding: 24px;">
+                    <span class="material-symbols-rounded component-empty-state-icon">done_all</span>
+                    <p class="component-empty-state-text">No hay solicitudes pendientes.</p>
+                </div>
+            `;
+            return;
+        }
+
+        let html = '';
+        requests.forEach(req => {
+            html += `
+                <div class="request-list-item">
+                    <div class="request-list-item-info">
+                        <span class="material-symbols-rounded">person</span>
+                        <div>
+                            <div style="font-weight: 500;">Usuario ID: ${req.user_id}</div>
+                            <div style="font-size: 12px; color: var(--text-secondary);">Hace un momento</div>
+                        </div>
+                    </div>
+                    <div class="request-list-item-actions">
+                        <button class="component-button component-button--icon component-button--h34" data-action="rejectAccessRequest" data-request-id="${req.id}" title="Rechazar">
+                            <span class="material-symbols-rounded" style="color: var(--danger-color);">close</span>
+                        </button>
+                        <button class="component-button component-button--icon component-button--h34 component-button--dark" data-action="approveAccessRequest" data-request-id="${req.id}" title="Aprobar">
+                            <span class="material-symbols-rounded">check</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html;
+    }
+
+    async handleRequestAction(actionType, btn) {
+        const requestId = btn.getAttribute('data-request-id');
+        const route = actionType === 'approve' ? ApiRoutes.Canvases.ApproveRequest : ApiRoutes.Canvases.RejectRequest;
+        
+        setButtonLoading(btn);
+        
+        const response = await this.api.post(route, { request_id: requestId });
+        
+        restoreButton(btn);
+
+        if (response.success) {
+            showMessage(response.message, 'success');
+            // Recargar la lista
+            const canvasId = Array.from(this.selectedCanvasIds)[0];
+            this.loadPendingRequests(canvasId);
+        } else {
+            showMessage(response.message, 'error');
+        }
+    }
+    // -------------------------------------------
+
     async deleteSelectedCanvases(btn) {
         if (this.selectedCanvasIds.size === 0) return;
 
@@ -244,17 +356,18 @@ class CanvasesManageController {
 
         const btnEdit = document.querySelector('[data-action="editSelectedCanvas"]');
         const btnMembers = document.querySelector('[data-action="manageCanvasMembers"]');
+        const btnRequests = document.querySelector('[data-action="viewCanvasRequests"]');
 
         if (this.selectedCanvasIds.size > 0) {
             if (defaultMode) defaultMode.classList.replace('active', 'disabled');
             if (selectionMode) selectionMode.classList.replace('disabled', 'active');
 
             if (this.selectedCanvasIds.size > 1) {
-                [btnEdit, btnMembers].forEach(btn => {
+                [btnEdit, btnMembers, btnRequests].forEach(btn => {
                     if (btn) btn.classList.add('disabled-interactive');
                 });
             } else {
-                [btnEdit, btnMembers].forEach(btn => {
+                [btnEdit, btnMembers, btnRequests].forEach(btn => {
                     if (btn) btn.classList.remove('disabled-interactive');
                 });
             }

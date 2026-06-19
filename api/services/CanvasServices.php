@@ -26,10 +26,10 @@ class CanvasServices {
                 return ['success' => false, 'message' => __('err_canvas_not_found') ?? 'Lienzo no encontrado o no autorizado.'];
             }
             
-            // Adaptamos la clave para el frontend
             $canvas['max_members'] = $canvas['max_participants'];
             $canvas['width'] = $canvas['size'];
             $canvas['height'] = $canvas['size'];
+            $canvas['requires_approval'] = (bool)$canvas['requires_approval'];
 
             return ['success' => true, 'data' => $canvas];
         } catch (Exception $e) {
@@ -42,29 +42,30 @@ class CanvasServices {
         }
     }
 
-    // Se agregó $paletteId al método con 'default' como fallback
-    public function createCanvas(int $userId, string $name, ?string $description, string $privacy, string $size = '64', int $limit = 10, string $paletteId = 'default'): array {
+    public function createCanvas(int $userId, string $name, ?string $description, string $privacy, bool $requiresApproval = false, string $size = '64', int $limit = 10, string $paletteId = 'default'): array {
         try {
             $uuid = Utils::generateUUID();
             
-            // Validación de paleta para evitar data corrupta
             $validPalettes = ['default', 'neon', 'pastel'];
             $paletteId = in_array($paletteId, $validPalettes) ? $paletteId : 'default';
 
+            $validPrivacies = [DB::PRIVACY_PUBLIC, DB::PRIVACY_PRIVATE];
+            $privacy = in_array($privacy, $validPrivacies) ? $privacy : DB::PRIVACY_PRIVATE;
+
             $canvasData = [
-                'uuid'             => $uuid,
-                'user_id'          => $userId,
-                'name'             => trim($name),
-                'description'      => $description ? trim($description) : null,
-                'privacy'          => in_array($privacy, [DB::PRIVACY_PUBLIC, DB::PRIVACY_PRIVATE, DB::PRIVACY_UNLISTED]) ? $privacy : DB::PRIVACY_PRIVATE,
-                'size'             => $size,
-                'palette_id'       => $paletteId,
-                'max_participants' => $limit
+                'uuid'              => $uuid,
+                'user_id'           => $userId,
+                'name'              => trim($name),
+                'description'       => $description ? trim($description) : null,
+                'privacy'           => $privacy,
+                'requires_approval' => $requiresApproval ? 1 : 0,
+                'size'              => $size,
+                'palette_id'        => $paletteId,
+                'max_participants'  => $limit
             ];
 
             $canvasId = $this->canvasRepository->create($canvasData);
             
-            // Asignar al creador como admin en canvas_members
             $this->canvasRepository->addMember($canvasId, $userId, 'admin');
 
             return ['success' => true, 'message' => __('msg_canvas_created'), 'data' => ['uuid' => $uuid]];
@@ -79,7 +80,6 @@ class CanvasServices {
 
     public function updateCanvas(int $userId, int $canvasId, array $data): array {
         try {
-            // Verificar existencia y propiedad
             $canvas = $this->canvasRepository->getByIdAndUser($canvasId, $userId);
             if (!$canvas) {
                 return ['success' => false, 'message' => __('err_canvas_not_found') ?? 'Lienzo no encontrado o sin permisos.'];
@@ -89,17 +89,17 @@ class CanvasServices {
                 return ['success' => false, 'message' => __('err_canvas_name_required') ?? 'El nombre es obligatorio.'];
             }
             
-            $validPrivacies = [DB::PRIVACY_PUBLIC, DB::PRIVACY_PRIVATE, DB::PRIVACY_UNLISTED];
+            $validPrivacies = [DB::PRIVACY_PUBLIC, DB::PRIVACY_PRIVATE];
             if (!in_array($data['privacy'], $validPrivacies)) {
                 $data['privacy'] = DB::PRIVACY_PRIVATE;
             }
 
-            // Validación de paleta al actualizar
             $validPalettes = ['default', 'neon', 'pastel'];
             if (!isset($data['palette_id']) || !in_array($data['palette_id'], $validPalettes)) {
-                // Si viene vacío o es inválida, se mantiene la que ya tenía en la DB
                 $data['palette_id'] = $canvas['palette_id'] ?? 'default';
             }
+
+            $data['requires_approval'] = isset($data['requires_approval']) && $data['requires_approval'] ? 1 : 0;
 
             $updated = $this->canvasRepository->updateCanvasData($canvasId, $userId, $data);
 
@@ -146,6 +146,87 @@ class CanvasServices {
                 'user_id' => $userId,
                 'exception' => $e->getMessage()
             ]);
+            return ['success' => false, 'message' => __('err_database')];
+        }
+    }
+
+    // --- LÓGICA DE SOLICITUDES DE ACCESO ---
+
+    public function requestAccess(int $userId, int $canvasId): array {
+        try {
+            $canvas = $this->canvasRepository->getById($canvasId);
+            if (!$canvas) {
+                return ['success' => false, 'message' => __('err_canvas_not_found') ?? 'Lienzo no encontrado.'];
+            }
+
+            $memberRole = $this->canvasRepository->getMemberRole($canvasId, $userId);
+            if ($memberRole === 'editor' || $memberRole === 'admin') {
+                return ['success' => true, 'message' => __('msg_already_member') ?? 'Ya eres miembro de este lienzo.'];
+            }
+
+            if (!$canvas['requires_approval']) {
+                $this->canvasRepository->addMember($canvasId, $userId, 'editor');
+                return ['success' => true, 'message' => __('msg_joined_success') ?? 'Te has unido al lienzo.'];
+            }
+
+            $existingReq = $this->canvasRepository->getAccessRequest($canvasId, $userId);
+            if ($existingReq && $existingReq['status'] === 'pending') {
+                return ['success' => false, 'message' => __('err_request_pending') ?? 'Ya tienes una solicitud pendiente.'];
+            }
+
+            $this->canvasRepository->createAccessRequest($canvasId, $userId);
+            return ['success' => true, 'message' => __('msg_request_sent') ?? 'Solicitud de acceso enviada.'];
+
+        } catch (Exception $e) {
+            Logger::error('Error requesting access.', ['user_id' => $userId, 'canvas_id' => $canvasId, 'error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database')];
+        }
+    }
+
+    public function approveRequest(int $ownerId, int $requestId): array {
+        try {
+            $request = $this->canvasRepository->getRequestById($requestId);
+            if (!$request) return ['success' => false, 'message' => 'Solicitud no encontrada.'];
+
+            $canvas = $this->canvasRepository->getByIdAndUser($request['canvas_id'], $ownerId);
+            if (!$canvas) return ['success' => false, 'message' => __('err_unauthorized')];
+
+            $this->canvasRepository->updateRequestStatus($requestId, 'approved');
+            $this->canvasRepository->addMember($request['canvas_id'], $request['user_id'], 'editor');
+
+            return ['success' => true, 'message' => 'Acceso aprobado.'];
+        } catch (Exception $e) {
+            return ['success' => false, 'message' => __('err_database')];
+        }
+    }
+
+    public function rejectRequest(int $ownerId, int $requestId): array {
+        try {
+            $request = $this->canvasRepository->getRequestById($requestId);
+            if (!$request) return ['success' => false, 'message' => 'Solicitud no encontrada.'];
+
+            $canvas = $this->canvasRepository->getByIdAndUser($request['canvas_id'], $ownerId);
+            if (!$canvas) return ['success' => false, 'message' => __('err_unauthorized')];
+
+            $this->canvasRepository->updateRequestStatus($requestId, 'rejected');
+
+            return ['success' => true, 'message' => 'Acceso rechazado.'];
+        } catch (Exception $e) {
+            return ['success' => false, 'message' => __('err_database')];
+        }
+    }
+
+    public function getPendingRequests(int $userId, int $canvasId): array {
+        try {
+            $canvas = $this->canvasRepository->getByIdAndUser($canvasId, $userId);
+            if (!$canvas) return ['success' => false, 'message' => __('err_unauthorized')];
+
+            $requests = $this->canvasRepository->getPendingRequests($canvasId);
+            
+            // Aquí podríamos iterar y traer datos del usuario si tuviéramos acceso al db_identity
+            // Para mantenerlo desacoplado, devolvemos los requests en bruto para que la UI los muestre
+            return ['success' => true, 'data' => $requests];
+        } catch (Exception $e) {
             return ['success' => false, 'message' => __('err_database')];
         }
     }

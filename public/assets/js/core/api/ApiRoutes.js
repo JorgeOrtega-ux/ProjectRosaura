@@ -82,6 +82,12 @@ export const ApiRoutes = {
         Get: 'canvases.get',
         Create: 'canvases.create',
         Update: 'canvases.update',
-        Delete: 'canvases.delete'
+        Delete: 'canvases.delete',
+        
+        // --- RUTAS DE APROBACIÓN DE ACCESOS ---
+        RequestAccess: 'canvases.request_access',
+        ApproveRequest: 'canvases.approve_request',
+        RejectRequest: 'canvases.reject_request',
+        GetPendingRequests: 'canvases.get_pending_requests'
     }
 };

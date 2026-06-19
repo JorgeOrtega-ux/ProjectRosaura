@@ -11,7 +11,7 @@ class DesignController {
         this.abortController = null;
         
         const urlParams = new URLSearchParams(window.location.search);
-        this.canvasId = urlParams.get('id');
+        this.canvasId = urlParams.get('id'); // UUID de la URL
 
         this.canvas = null;
         this.ctx = null;
@@ -44,6 +44,13 @@ class DesignController {
         
         this.needsRender = false;
         this.animationFrameId = null;
+        
+        // Roles y Accesos
+        this.isSpectator = false;
+        this.isPrivateBlocked = false;
+        this.canvasIntId = null;
+        this.canvasPrivacy = 'private';
+        this.canvasApproval = false;
 
         this.handleWheelBound = this.handleWheel.bind(this);
         this.handleMouseDownBound = this.handleMouseDown.bind(this);
@@ -72,9 +79,8 @@ class DesignController {
         }
 
         this.bindEvents();
-
-        // Cargamos la configuración leyendo el HTML
         this.loadCanvasConfig();
+        this.checkCanvasAccess();
     }
 
     destroy() {
@@ -111,11 +117,15 @@ class DesignController {
         }
     }
 
-    // AHORA LEE DIRECTAMENTE DEL DOM (Evita el fallo de UUID vs Integer de la API)
     loadCanvasConfig() {
         const wrapper = document.querySelector('[data-ref="design-wrapper"]');
         
         if (wrapper) {
+            // Leemos el ID numérico y las reglas de privacidad inyectadas desde el HTML
+            this.canvasIntId = wrapper.getAttribute('data-canvas-id');
+            this.canvasPrivacy = wrapper.getAttribute('data-privacy') || 'private';
+            this.canvasApproval = wrapper.getAttribute('data-approval') === '1';
+
             const sizeStr = wrapper.getAttribute('data-size');
             if (sizeStr) {
                 this.boardWidth = parseInt(sizeStr, 10);
@@ -128,10 +138,104 @@ class DesignController {
             this.centerBoard();
             this.renderColorPalette(paletteId);
         } else {
-            // Fallback en caso de que no encuentre el wrapper
             this.setupCanvas();
             this.centerBoard();
             this.renderColorPalette('default');
+        }
+    }
+
+    async checkCanvasAccess() {
+        if (!this.canvasIntId || this.canvasIntId === '0') return;
+
+        try {
+            // Mandamos el ID Numérico a la API
+            const response = await this.api.get(ApiRoutes.Canvases.Get, { id: this.canvasIntId });
+            
+            if (response.success && response.data) {
+                this.isSpectator = false;
+                this.isPrivateBlocked = false;
+                this.setRoleUI('editor', response.data);
+            } else {
+                this.isSpectator = true;
+                
+                // Si la API rechaza y es privado, bloqueamos por completo
+                if (this.canvasPrivacy === 'private') {
+                    this.isPrivateBlocked = true;
+                    this.setRoleUI('blocked');
+                } else {
+                    // Si es público, se permite ver como espectador
+                    this.setRoleUI('spectator');
+                }
+            }
+        } catch (error) {
+            this.isSpectator = true;
+            this.setRoleUI(this.canvasPrivacy === 'private' ? 'blocked' : 'spectator');
+        }
+    }
+
+    setRoleUI(role, data = null) {
+        const overlayBlocked = document.querySelector('[data-ref="private-blocked-overlay"]');
+        const specControls = document.querySelector('[data-ref="spectator-controls"]');
+        const designTools = document.querySelector('[data-ref="design-tools-actions"]');
+        
+        const btnJoin = document.querySelector('[data-ref="btn-join-direct"]');
+        const btnRequest = document.querySelector('[data-ref="btn-request-access"]');
+
+        // Pantalla de bloqueo
+        if (role === 'blocked') {
+            if (overlayBlocked) overlayBlocked.classList.remove('disabled');
+        } else {
+            if (overlayBlocked) overlayBlocked.classList.add('disabled');
+        }
+
+        // Espectador
+        if (role === 'spectator') {
+            if (specControls) {
+                specControls.classList.remove('disabled');
+                specControls.classList.add('active');
+                specControls.style.display = 'flex';
+            }
+            if (designTools) designTools.classList.replace('active', 'disabled');
+            
+            // Evaluamos el switch de Aprobación para mostrar el botón correcto
+            if (this.canvasApproval) {
+                if (btnJoin) btnJoin.style.display = 'none';
+                if (btnRequest) btnRequest.style.display = 'block';
+            } else {
+                if (btnJoin) btnJoin.style.display = 'block';
+                if (btnRequest) btnRequest.style.display = 'none';
+            }
+        } 
+        // Editor / Owner
+        else if (role === 'editor') {
+            if (specControls) {
+                specControls.classList.add('disabled');
+                specControls.classList.remove('active');
+                specControls.style.display = 'none';
+            }
+            if (designTools) designTools.classList.replace('disabled', 'active');
+        }
+    }
+
+    async handleAccessRequest(btn) {
+        if (!this.canvasIntId) return;
+        setButtonLoading(btn);
+
+        const response = await this.api.post(ApiRoutes.Canvases.RequestAccess, { canvas_id: this.canvasIntId });
+        restoreButton(btn);
+
+        if (response.success) {
+            showMessage(response.message, 'success');
+            
+            if (response.message.toLowerCase().includes('unido')) {
+                setTimeout(() => window.location.reload(), 1000);
+            } else {
+                btn.disabled = true;
+                btn.classList.add('disabled-interactive');
+                btn.innerHTML = '<span class="material-symbols-rounded">hourglass_empty</span> Pendiente';
+            }
+        } else {
+            showMessage(response.message, 'error');
         }
     }
 
@@ -157,10 +261,8 @@ class DesignController {
             btn.setAttribute('data-action', 'selectColor');
             btn.setAttribute('data-color', hex);
             
-            // 👇 AQUÍ ESTÁ LA SOLUCIÓN 👇
             btn.style.backgroundColor = hex;
-            btn.style.setProperty('--color-val', hex); // <--- ESTA LÍNEA RESTAURA EL BORDE
-            // 👆----------------------👆
+            btn.style.setProperty('--color-val', hex); 
             
             btn.title = hex;
 
@@ -223,6 +325,7 @@ class DesignController {
     }
 
     handleFileUpload(e) {
+        if (this.isSpectator) return;
         const file = e.target.files[0];
         if (!file) return;
 
@@ -372,6 +475,19 @@ class DesignController {
     }
 
     handleClick(e) {
+        // --- BOTONES DE ACCESO ---
+        const btnJoin = e.target.closest('[data-action="joinCanvasDirectly"]');
+        const btnReqAccess = e.target.closest('[data-action="requestCanvasAccess"]');
+        const btnReqOverlay = e.target.closest('[data-action="requestAccessFromOverlay"]');
+
+        if (btnJoin || btnReqAccess || btnReqOverlay) {
+            e.preventDefault();
+            this.handleAccessRequest(btnJoin || btnReqAccess || btnReqOverlay);
+            return;
+        }
+
+        if (this.isSpectator) return; // BLOQUEAR CLICKS EN HERRAMIENTAS SI ES ESPECTADOR
+
         const btnUpload = e.target.closest('[data-action="triggerTemplateUpload"]');
         if (btnUpload && this.fileInput) {
             e.preventDefault();
@@ -464,13 +580,15 @@ class DesignController {
         const target = e.target.closest('[data-ref="design-canvas"]');
         if (!target) return;
 
-        if (e.shiftKey) {
+        // Arrastrar el lienzo siempre está permitido (incluso para espectadores)
+        if (e.shiftKey || e.button === 1 || this.isSpectator) {
             this.isDragging = true;
             this.lastMouse = { x: e.clientX, y: e.clientY };
             this.canvas.classList.add('cursor-grabbing');
             return;
         }
 
+        // Si no es espectador, permitimos interacciones con plantillas y píxeles
         const exact = this.getExactBoardCoords(e.clientX, e.clientY);
         if (exact) {
             const hit = this.checkTemplateHit(exact.x, exact.y);
@@ -605,7 +723,7 @@ class DesignController {
         if (target) {
             const exact = this.getExactBoardCoords(e.clientX, e.clientY);
             let hit = null;
-            if (exact) {
+            if (exact && !this.isSpectator) {
                 hit = this.checkTemplateHit(exact.x, exact.y);
             }
             
@@ -699,7 +817,7 @@ class DesignController {
     }
 
     placePixels() {
-        if (this.selectedPixels.size === 0) return;
+        if (this.selectedPixels.size === 0 || this.isSpectator) return;
 
         this.offscreenCtx.fillStyle = this.currentColor;
         
@@ -765,7 +883,7 @@ class DesignController {
         this.ctx.fillStyle = '#FFFFFF';
         this.ctx.fillRect(0, 0, this.boardWidth, this.boardHeight);
 
-        if (this.activeTemplateId) {
+        if (this.activeTemplateId && !this.isSpectator) {
             const tpl = this.templates.find(t => t.id === this.activeTemplateId);
             if (tpl) {
                 this.ctx.save();
@@ -826,14 +944,14 @@ class DesignController {
 
         const renderSet = new Set(this.selectedPixels);
 
-        if (this.hoveredPixel) {
+        if (this.hoveredPixel && !this.isSpectator) {
             const hoverKey = `${this.hoveredPixel.x},${this.hoveredPixel.y}`;
             if (!renderSet.has(hoverKey)) {
                 renderSet.add(hoverKey);
             }
         }
 
-        if (renderSet.size > 0) {
+        if (renderSet.size > 0 && !this.isSpectator) {
             this.ctx.strokeStyle = activeColor; 
             this.ctx.lineWidth = 1 / this.transform.scale;
             this.ctx.beginPath();

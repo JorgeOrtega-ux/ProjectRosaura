@@ -10,26 +10,15 @@ class CanvasController extends BaseController {
     private $canvasServices;
     private $session;
 
-    /**
-     * El contenedor de inyección de dependencias inyecta automáticamente los servicios y la sesión.
-     * No se llama a parent::__construct() porque BaseController no posee uno.
-     */
     public function __construct(CanvasServices $canvasServices, SessionManagerInterface $session) {
         $this->canvasServices = $canvasServices;
         $this->session = $session;
     }
 
-    /**
-     * Devuelve la información de un lienzo específico
-     */
     public function get($input) {
         try {
             if (!$this->session->isLoggedIn()) {
-                return $this->respond([
-                    'success' => false, 
-                    'message' => __('err_unauthorized'), 
-                    'http_code' => 401
-                ]);
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
             }
 
             $userId = $this->session->getActiveAccountId();
@@ -47,87 +36,57 @@ class CanvasController extends BaseController {
         }
     }
 
-    /**
-     * El framework pasa la carga útil de la solicitud directamente al parámetro $input.
-     */
     public function create($input) {
         try {
-            // Verificar si el usuario tiene una sesión válida activa
             if (!$this->session->isLoggedIn()) {
-                return $this->respond([
-                    'success' => false, 
-                    'message' => __('err_unauthorized'), 
-                    'http_code' => 401
-                ]);
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
             }
 
-            // Obtener el ID de la cuenta activa basado en tu interfaz multi-sesión
             $userId = $this->session->getActiveAccountId();
             
             if (!$userId) {
-                return $this->respond([
-                    'success' => false, 
-                    'message' => __('err_unauthorized'), 
-                    'http_code' => 401
-                ]);
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
             }
             
-            // Asignación de variables utilizando el input procesado por el Router
             $name = $input['name'] ?? '';
             $description = $input['description'] ?? null;
             $privacy = $input['privacy'] ?? 'private';
+            $requiresApproval = filter_var($input['requires_approval'] ?? false, FILTER_VALIDATE_BOOLEAN);
             $size = $input['size'] ?? '64';
             $limit = $input['limit'] ?? 10;
-            // Se lee palette_id, por defecto es 'default'
             $paletteId = $input['palette_id'] ?? 'default';
 
-            // Validar que el nombre no esté vacío
             if (empty(trim($name))) {
                 return ['success' => false, 'message' => __('err_canvas_name_required')];
             }
 
-            // Ejecutar el servicio incluyendo el tamaño, el límite y la paleta
-            $result = $this->canvasServices->createCanvas($userId, $name, $description, $privacy, $size, (int)$limit, $paletteId);
+            $result = $this->canvasServices->createCanvas($userId, $name, $description, $privacy, $requiresApproval, $size, (int)$limit, $paletteId);
 
-            // Devolver la respuesta usando el método heredado de BaseController
             return $this->respond($result);
 
         } catch (\Throwable $e) {
-            // Delegar el manejo de la excepción crítica al BaseController
             return $this->handleException($e, __FUNCTION__);
         }
     }
 
-    /**
-     * Actualiza la configuración del lienzo BLOQUEANDO EXPLÍCITAMENTE EL TAMAÑO
-     */
     public function update($input) {
         try {
             if (!$this->session->isLoggedIn()) {
-                return $this->respond([
-                    'success' => false, 
-                    'message' => __('err_unauthorized'), 
-                    'http_code' => 401
-                ]);
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
             }
 
             $userId = $this->session->getActiveAccountId();
             $canvasId = $input['id'] ?? null;
             
             if (!$userId || !$canvasId) {
-                return $this->respond([
-                    'success' => false, 
-                    'message' => __('err_unauthorized') ?? 'No autorizado.', 
-                    'http_code' => 401
-                ]);
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized') ?? 'No autorizado.', 'http_code' => 401]);
             }
             
-            // FILTRO DE SEGURIDAD ESTRICTO: Solo tomamos estos campos.
-            // Ahora incluimos 'palette_id' en los datos autorizados para cambiar.
             $data = [
                 'name' => $input['name'] ?? null,
                 'description' => $input['description'] ?? null,
                 'privacy' => $input['privacy'] ?? null,
+                'requires_approval' => filter_var($input['requires_approval'] ?? false, FILTER_VALIDATE_BOOLEAN),
                 'palette_id' => $input['palette_id'] ?? null,
                 'max_participants' => $input['max_members'] ?? null
             ];
@@ -140,49 +99,86 @@ class CanvasController extends BaseController {
         }
     }
 
-    /**
-     * Procesa la eliminación masiva o individual enviada desde el cliente JS centralizado.
-     */
     public function delete($input) {
         try {
             if (!$this->session->isLoggedIn()) {
-                return $this->respond([
-                    'success' => false,
-                    'message' => __('err_unauthorized'),
-                    'http_code' => 401
-                ]);
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
             }
 
             $userId = $this->session->getActiveAccountId();
             if (!$userId) {
-                return $this->respond([
-                    'success' => false,
-                    'message' => __('err_unauthorized'),
-                    'http_code' => 401
-                ]);
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
             }
 
             $canvasIds = $input['canvas_ids'] ?? [];
             $password = $input['password'] ?? '';
 
             if (empty($canvasIds)) {
-                return $this->respond([
-                    'success' => false,
-                    'message' => __('err_no_canvases_selected') ?? 'Debe seleccionar al menos un lienzo.'
-                ]);
+                return $this->respond(['success' => false, 'message' => __('err_no_canvases_selected') ?? 'Debe seleccionar al menos un lienzo.']);
             }
 
             if (empty(trim($password))) {
-                return $this->respond([
-                    'success' => false,
-                    'message' => __('err_password_required') ?? 'Debe introducir su contraseña para confirmar.'
-                ]);
+                return $this->respond(['success' => false, 'message' => __('err_password_required') ?? 'Debe introducir su contraseña para confirmar.']);
             }
 
             $result = $this->canvasServices->deleteUserCanvases($userId, $canvasIds, $password);
             
             return $this->respond($result);
 
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
+    // --- NUEVOS ENDPOINTS DE ACCESO ---
+
+    public function request_access($input) {
+        try {
+            if (!$this->session->isLoggedIn()) return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+            $userId = $this->session->getActiveAccountId();
+            $canvasId = $input['canvas_id'] ?? null;
+            if (!$canvasId) return $this->respond(['success' => false, 'message' => 'Lienzo no proporcionado.']);
+            
+            return $this->respond($this->canvasServices->requestAccess($userId, (int)$canvasId));
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
+    public function approve_request($input) {
+        try {
+            if (!$this->session->isLoggedIn()) return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+            $userId = $this->session->getActiveAccountId();
+            $requestId = $input['request_id'] ?? null;
+            if (!$requestId) return $this->respond(['success' => false, 'message' => 'Solicitud no proporcionada.']);
+            
+            return $this->respond($this->canvasServices->approveRequest($userId, (int)$requestId));
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
+    public function reject_request($input) {
+        try {
+            if (!$this->session->isLoggedIn()) return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+            $userId = $this->session->getActiveAccountId();
+            $requestId = $input['request_id'] ?? null;
+            if (!$requestId) return $this->respond(['success' => false, 'message' => 'Solicitud no proporcionada.']);
+            
+            return $this->respond($this->canvasServices->rejectRequest($userId, (int)$requestId));
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
+    public function get_pending_requests($input) {
+        try {
+            if (!$this->session->isLoggedIn()) return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+            $userId = $this->session->getActiveAccountId();
+            $canvasId = $input['canvas_id'] ?? null;
+            if (!$canvasId) return $this->respond(['success' => false, 'message' => 'Lienzo no proporcionado.']);
+            
+            return $this->respond($this->canvasServices->getPendingRequests($userId, (int)$canvasId));
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);
         }

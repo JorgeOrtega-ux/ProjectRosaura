@@ -321,41 +321,51 @@ return [
     'canvases.get' => [
         'controller' => 'App\Api\Controllers\CanvasController',
         'action' => 'get',
-        'middleware' => [
-            ['type' => 'Telemetry'],
-            ['type' => 'RateLimit', 'key' => 'canvas_get', 'max' => RL::MAX_20, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]
-        ]
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_get', 'max' => RL::MAX_20, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
     ],
     'canvases.create' => [
         'controller' => 'App\Api\Controllers\CanvasController',
         'action' => 'create',
-        'middleware' => [
-            ['type' => 'Telemetry'],
-            ['type' => 'RateLimit', 'key' => 'canvas_create', 'max' => RL::MAX_5, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]
-        ]
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_create', 'max' => RL::MAX_5, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
     ],
     'canvases.update' => [
         'controller' => 'App\Api\Controllers\CanvasController',
         'action' => 'update',
-        'middleware' => [
-            ['type' => 'Telemetry'],
-            ['type' => 'RateLimit', 'key' => 'canvas_update', 'max' => RL::MAX_10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]
-        ]
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_update', 'max' => RL::MAX_10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
     'canvases.delete' => [
         'controller' => 'App\Api\Controllers\CanvasController',
         'action' => 'delete',
-        'middleware' => [
-            ['type' => 'Telemetry'],
-            ['type' => 'RateLimit', 'key' => 'canvas_delete', 'max' => RL::MAX_10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]
-        ]
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_delete', 'max' => RL::MAX_10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
+    ],
+    
+    // --- RUTAS DE APROBACIÓN DE ACCESOS (NUEVAS) ---
+    'canvases.request_access' => [
+        'controller' => 'App\Api\Controllers\CanvasController',
+        'action' => 'request_access',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_req_access', 'max' => RL::MAX_5, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
+    ],
+    'canvases.approve_request' => [
+        'controller' => 'App\Api\Controllers\CanvasController',
+        'action' => 'approve_request',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_approve', 'max' => RL::MAX_20, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
+    ],
+    'canvases.reject_request' => [
+        'controller' => 'App\Api\Controllers\CanvasController',
+        'action' => 'reject_request',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_reject', 'max' => RL::MAX_20, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
+    ],
+    'canvases.get_pending_requests' => [
+        'controller' => 'App\Api\Controllers\CanvasController',
+        'action' => 'get_pending_requests',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_get_reqs', 'max' => RL::MAX_20, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
     ],
 
     // --- NUEVA RUTA DE TELEMETRÍA (Tracker Frontend) ---
     'telemetry.collect' => [
         'controller' => 'App\Api\Controllers\TelemetryController',
         'action' => 'collect',
-        'middleware' => [] // Sin rate limit estricto. Es asíncrono y en "batches". Dejamos Telemetry fuera de aquí para evitar que mida su propio tiempo de ejecución (loop lógico).
+        'middleware' => [] 
     ],
 ];
 ?>

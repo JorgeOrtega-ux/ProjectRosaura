@@ -169,3 +169,44 @@
 .component-template-action-btn .material-symbols-rounded {
     font-size: 16px;
 }
+
+/* -----------------------------------------
+   OVERLAYS Y PANTALLAS DE BLOQUEO
+   ----------------------------------------- */
+.component-fullscreen-overlay {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.component-fullscreen-overlay.disabled {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.request-list-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px;
+    background-color: var(--bg-surface-alt);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    transition: background-color 0.2s;
+}
+
+.request-list-item:hover {
+    background-color: var(--surface-hover);
+}
+
+.request-list-item-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.request-list-item-actions {
+    display: flex;
+    gap: 8px;
+}

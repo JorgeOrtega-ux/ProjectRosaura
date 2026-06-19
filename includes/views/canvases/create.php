@@ -133,13 +133,44 @@
                                                 <div class="component-menu-link-icon"><span class="material-symbols-rounded">public</span></div>
                                                 <div class="component-menu-link-text"><span><?php echo __('canvas_privacy_public'); ?></span></div>
                                             </div>
-                                            <div class="component-menu-link" data-action="selectValue" data-type="privacy" data-value="unlisted" data-label="canvas_privacy_unlisted" data-icon="link">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">link</span></div>
-                                                <div class="component-menu-link-text"><span><?php echo __('canvas_privacy_unlisted'); ?></span></div>
-                                            </div>
                                             <div class="component-menu-link active" data-action="selectValue" data-type="privacy" data-value="private" data-label="canvas_privacy_private" data-icon="lock">
                                                 <div class="component-menu-link-icon"><span class="material-symbols-rounded">lock</span></div>
                                                 <div class="component-menu-link-text"><span><?php echo __('canvas_privacy_private'); ?></span></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="component-divider">
+
+                    <div class="component-group-item component-group-item--stacked">
+                        <div class="component-card__content">
+                            <div class="component-card__text">
+                                <h2 class="component-card__title"><?php echo __('canvas_approval_title') ?? 'Aprobación de acceso'; ?></h2>
+                                <p class="component-card__description"><?php echo __('canvas_approval_desc') ?? 'Si se activa, los usuarios deberán enviar una solicitud que tú aprobarás antes de que puedan unirse y pintar.'; ?></p>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--start">
+                            <div class="component-dropdown-wrapper">
+                                <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="dropdownApproval">
+                                    <span class="material-symbols-rounded" data-ref="icon-approval">no_accounts</span>
+                                    <span class="component-dropdown-text" data-ref="text-approval"><?php echo __('canvas_approval_false') ?? 'No requiere aprobación'; ?></span>
+                                    <span class="material-symbols-rounded">expand_more</span>
+                                </div>
+                                <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="dropdownApproval">
+                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                                        <div class="pill-container"><div class="drag-handle"></div></div>
+                                        <div class="component-menu-list component-menu-list--scrollable">
+                                            <div class="component-menu-link active" data-action="selectValue" data-type="requires_approval" data-value="false" data-label="No requiere aprobación" data-icon="no_accounts">
+                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">no_accounts</span></div>
+                                                <div class="component-menu-link-text"><span><?php echo __('canvas_approval_false') ?? 'No requiere aprobación'; ?></span></div>
+                                            </div>
+                                            <div class="component-menu-link" data-action="selectValue" data-type="requires_approval" data-value="true" data-label="Requiere aprobación" data-icon="front_hand">
+                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">front_hand</span></div>
+                                                <div class="component-menu-link-text"><span><?php echo __('canvas_approval_true') ?? 'Requiere aprobación'; ?></span></div>
                                             </div>
                                         </div>
                                     </div>

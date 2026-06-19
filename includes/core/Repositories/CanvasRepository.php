@@ -16,44 +16,44 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function create(array $canvasData): int {
-        // Se agregó palette_id
         $sql = "INSERT INTO " . DB::TBL_CANVASES . " 
-                (uuid, user_id, name, description, privacy, size, palette_id, max_participants) 
-                VALUES (:uuid, :user_id, :name, :description, :privacy, :size, :palette_id, :max_participants)";
+                (uuid, user_id, name, description, privacy, requires_approval, size, palette_id, max_participants) 
+                VALUES (:uuid, :user_id, :name, :description, :privacy, :requires_approval, :size, :palette_id, :max_participants)";
         
         $stmt = $this->db->prepare($sql);
         $stmt->execute([
-            ':uuid'             => $canvasData['uuid'],
-            ':user_id'          => $canvasData['user_id'],
-            ':name'             => $canvasData['name'],
-            ':description'      => $canvasData['description'],
-            ':privacy'          => $canvasData['privacy'],
-            ':size'             => $canvasData['size'],
-            ':palette_id'       => $canvasData['palette_id'],
-            ':max_participants' => $canvasData['max_participants']
+            ':uuid'              => $canvasData['uuid'],
+            ':user_id'           => $canvasData['user_id'],
+            ':name'              => $canvasData['name'],
+            ':description'       => $canvasData['description'],
+            ':privacy'           => $canvasData['privacy'],
+            ':requires_approval' => $canvasData['requires_approval'],
+            ':size'              => $canvasData['size'],
+            ':palette_id'        => $canvasData['palette_id'],
+            ':max_participants'  => $canvasData['max_participants']
         ]);
 
         return (int)$this->db->lastInsertId();
     }
 
-    public function addMember(int $canvasId, int $userId, string $role): bool {
+public function addMember(int $canvasId, int $userId, string $role): bool {
         $sql = "INSERT INTO " . DB::TBL_CANVAS_MEMBERS . " 
                 (canvas_id, user_id, role) 
-                VALUES (:canvas_id, :user_id, :role)";
+                VALUES (:canvas_id, :user_id, :role)
+                ON DUPLICATE KEY UPDATE role = :update_role";
         
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([
-            ':canvas_id' => $canvasId,
-            ':user_id'   => $userId,
-            ':role'      => $role
+            ':canvas_id'   => $canvasId,
+            ':user_id'     => $userId,
+            ':role'        => $role,
+            ':update_role' => $role // <- Pasamos el mismo valor con el nombre del segundo parámetro
         ]);
     }
-
     // --- MÉTODOS PARA GESTIÓN (MANAGE) ---
 
     public function getUserCanvasesPaginated(int $userId, int $limit, int $offset): array {
-        // Se agregó palette_id a la selección
-        $sql = "SELECT id, uuid, name, description, privacy, size, palette_id, max_participants, created_at 
+        $sql = "SELECT id, uuid, name, description, privacy, requires_approval, size, palette_id, max_participants, created_at 
                 FROM " . DB::TBL_CANVASES . " 
                 WHERE user_id = :uid 
                 ORDER BY id DESC 
@@ -89,7 +89,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
         return $stmt->execute($params);
     }
 
-    // --- NUEVOS MÉTODOS PARA EDICIÓN (EDIT) ---
+    // --- MÉTODOS PARA EDICIÓN (EDIT) ---
 
     public function getByIdAndUser(int $id, int $userId): ?array {
         $sql = "SELECT * FROM " . DB::TBL_CANVASES . " WHERE id = :id AND user_id = :user_id LIMIT 1";
@@ -103,26 +103,86 @@ class CanvasRepository implements CanvasRepositoryInterface {
         return $result ?: null;
     }
 
+    public function getById(int $id): ?array {
+        $sql = "SELECT * FROM " . DB::TBL_CANVASES . " WHERE id = :id LIMIT 1";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':id' => $id]);
+        
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result ?: null;
+    }
+
     public function updateCanvasData(int $id, int $userId, array $data): bool {
-        // Se agregó palette_id al SET de actualización
         $sql = "UPDATE " . DB::TBL_CANVASES . " 
                 SET name = :name, 
                     description = :description, 
                     privacy = :privacy, 
+                    requires_approval = :requires_approval,
                     palette_id = :palette_id,
                     max_participants = :max_participants
                 WHERE id = :id AND user_id = :user_id";
         
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([
-            ':name'             => $data['name'],
-            ':description'      => $data['description'],
-            ':privacy'          => $data['privacy'],
-            ':palette_id'       => $data['palette_id'],
-            ':max_participants' => $data['max_participants'],
-            ':id'               => $id,
-            ':user_id'          => $userId
+            ':name'              => $data['name'],
+            ':description'       => $data['description'],
+            ':privacy'           => $data['privacy'],
+            ':requires_approval' => $data['requires_approval'],
+            ':palette_id'        => $data['palette_id'],
+            ':max_participants'  => $data['max_participants'],
+            ':id'                => $id,
+            ':user_id'           => $userId
         ]);
+    }
+
+    // --- NUEVOS MÉTODOS PARA APROBACIONES DE ACCESO ---
+
+    public function createAccessRequest(int $canvasId, int $userId): bool {
+        $sql = "INSERT INTO canvas_access_requests (canvas_id, user_id, status) 
+                VALUES (:canvas_id, :user_id, 'pending')
+                ON DUPLICATE KEY UPDATE status = 'pending', updated_at = CURRENT_TIMESTAMP";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            ':canvas_id' => $canvasId,
+            ':user_id' => $userId
+        ]);
+    }
+
+    public function getAccessRequest(int $canvasId, int $userId): ?array {
+        $sql = "SELECT * FROM canvas_access_requests WHERE canvas_id = :canvas_id AND user_id = :user_id LIMIT 1";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':canvas_id' => $canvasId, ':user_id' => $userId]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result ?: null;
+    }
+
+    public function getRequestById(int $requestId): ?array {
+        $sql = "SELECT * FROM canvas_access_requests WHERE id = :id LIMIT 1";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':id' => $requestId]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result ?: null;
+    }
+
+    public function updateRequestStatus(int $requestId, string $status): bool {
+        $sql = "UPDATE canvas_access_requests SET status = :status WHERE id = :id";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([':status' => $status, ':id' => $requestId]);
+    }
+
+    public function getPendingRequests(int $canvasId): array {
+        $sql = "SELECT * FROM canvas_access_requests WHERE canvas_id = :canvas_id AND status = 'pending' ORDER BY created_at ASC";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':canvas_id' => $canvasId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    public function getMemberRole(int $canvasId, int $userId): ?string {
+        $sql = "SELECT role FROM " . DB::TBL_CANVAS_MEMBERS . " WHERE canvas_id = :canvas_id AND user_id = :user_id LIMIT 1";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':canvas_id' => $canvasId, ':user_id' => $userId]);
+        $result = $stmt->fetchColumn();
+        return $result ?: null;
     }
 }
 ?>

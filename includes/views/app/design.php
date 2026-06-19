@@ -5,38 +5,66 @@ use App\Config\DatabaseManager;
 use App\Core\System\DatabaseConstants as DB;
 use PDO;
 
+$canvasIntId = 0; // ID Numérico para la API
 $canvasName = '';
-$canvasSize = '64'; // Tamaño por defecto
-$canvasPalette = 'default'; // Paleta por defecto
+$canvasSize = '64'; 
+$canvasPalette = 'default'; 
+$canvasPrivacy = 'private'; // Por defecto
+$canvasApproval = '0'; // Por defecto
 $canvasUuid = $_GET['id'] ?? '';
 
 if (!empty($canvasUuid)) {
     try {
-        // Inicializamos la conexión para obtener los detalles del lienzo actual de forma segura
         $dbManager = new DatabaseManager();
         $db = $dbManager->getConnection(DB::CONN_CANVASES);
 
-        // Agregamos size y palette_id a la consulta
-        $sql = "SELECT name, size, palette_id FROM " . DB::TBL_CANVASES . " WHERE uuid = :uuid LIMIT 1";
+        // Agregamos id, privacy y requires_approval a la consulta
+        $sql = "SELECT id, name, size, palette_id, privacy, requires_approval FROM " . DB::TBL_CANVASES . " WHERE uuid = :uuid LIMIT 1";
         $stmt = $db->prepare($sql);
         $stmt->execute([':uuid' => $canvasUuid]);
         $canvas = $stmt->fetch(PDO::FETCH_ASSOC);
         
         if ($canvas) {
+            $canvasIntId = $canvas['id'];
             $canvasName = $canvas['name'];
             $canvasSize = $canvas['size'] ?? '64';
             $canvasPalette = $canvas['palette_id'] ?? 'default';
+            $canvasPrivacy = $canvas['privacy'] ?? 'private';
+            $canvasApproval = $canvas['requires_approval'] ?? '0';
         }
     } catch (\Exception $e) {
         error_log("Error al cargar el lienzo en la vista de diseño: " . $e->getMessage());
     }
 }
 ?>
-<div class="view-content">
+<div class="view-content" style="position: relative;">
+    
+    <div class="component-fullscreen-overlay disabled" data-ref="private-blocked-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1000; background-color: var(--surface-primary); display: flex; align-items: center; justify-content: center; flex-direction: column;">
+        <div class="component-empty-state">
+            <span class="material-symbols-rounded component-empty-state-icon" style="font-size: 64px;">lock</span>
+            <h2 style="margin-top: 16px; font-size: 1.5rem; font-weight: 600;"><?php echo __('canvas_private_title') ?? 'Lienzo Privado'; ?></h2>
+            <p class="component-empty-state-text" style="max-width: 400px; text-align: center; margin-top: 8px;">
+                <?php echo __('canvas_private_desc') ?? 'Este lienzo es privado y requiere aprobación para entrar. Solicita acceso al propietario para poder visualizarlo y participar.'; ?>
+            </p>
+            <div style="margin-top: 24px; display: flex; gap: 12px;">
+                <button class="component-button component-button--dark component-button--h45" data-action="requestAccessFromOverlay">
+                    <span class="material-symbols-rounded">front_hand</span>
+                    <?php echo __('btn_request_access') ?? 'Solicitar Acceso'; ?>
+                </button>
+                <a href="/explore" class="component-button component-button--h45">
+                    <?php echo __('btn_go_explore') ?? 'Volver a Explorar'; ?>
+                </a>
+            </div>
+        </div>
+    </div>
+
     <div class="component-wrapper component-wrapper--full no-padding" 
          data-ref="design-wrapper" 
+         data-canvas-id="<?php echo htmlspecialchars($canvasIntId); ?>"
          data-size="<?php echo htmlspecialchars($canvasSize); ?>" 
-         data-palette="<?php echo htmlspecialchars($canvasPalette); ?>">
+         data-palette="<?php echo htmlspecialchars($canvasPalette); ?>"
+         data-privacy="<?php echo htmlspecialchars($canvasPrivacy); ?>"
+         data-approval="<?php echo htmlspecialchars($canvasApproval); ?>">
          
         <div class="component-top">
             <div class="component-top-left" style="display: flex; align-items: center; gap: 12px;">
@@ -50,8 +78,25 @@ if (!empty($canvasUuid)) {
                 <?php endif; ?>
             </div>
             
-            <div class="component-top-right">
-                <div class="component-actions active">
+            <div class="component-top-right" style="display: flex; align-items: center;">
+                
+                <div class="component-actions disabled" data-ref="spectator-controls" style="display: none; align-items: center; gap: 12px; margin-right: 16px; padding-right: 16px; border-right: 1px solid var(--border-color);">
+                    <div class="component-badge component-badge--warning" style="margin: 0;" data-tooltip="<?php echo __('tooltip_spectator') ?? 'Solo puedes observar'; ?>" data-position="bottom">
+                        <span class="material-symbols-rounded">visibility</span>
+                        <span><?php echo __('lbl_spectator') ?? 'Modo Espectador'; ?></span>
+                    </div>
+                    
+                    <button class="component-button component-button--h34" data-action="joinCanvasDirectly" data-ref="btn-join-direct" style="display: none;">
+                        <?php echo __('btn_join') ?? 'Unirse'; ?>
+                    </button>
+                    
+                    <button class="component-button component-button--h34 component-button--dark" data-action="requestCanvasAccess" data-ref="btn-request-access" style="display: none;">
+                        <span class="material-symbols-rounded" style="font-size: 18px;">front_hand</span>
+                        <?php echo __('btn_request_access') ?? 'Solicitar Acceso'; ?>
+                    </button>
+                </div>
+
+                <div class="component-actions active" data-ref="design-tools-actions">
                     <button class="component-button component-button--icon component-button--h40 component-color-indicator" style="--active-color: #000000;" data-ref="btn-color-palette" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-colors" data-tooltip="Paleta de colores" data-position="bottom">
                         <span class="material-symbols-rounded">palette</span>
                     </button>
