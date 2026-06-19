@@ -15,7 +15,6 @@ export class CanvasesController {
         };
 
         this.handleAction = this.handleAction.bind(this);
-        this.handleClickOutside = this.handleClickOutside.bind(this);
     }
 
     async init() {
@@ -24,7 +23,6 @@ export class CanvasesController {
         
         if (this.container) {
             this.container.addEventListener('click', this.handleAction);
-            document.addEventListener('click', this.handleClickOutside);
             
             // Inyectamos el nombre por defecto con timestamp
             this.setupDefaultValues();
@@ -36,7 +34,6 @@ export class CanvasesController {
         if (this.container) {
             this.container.removeEventListener('click', this.handleAction);
         }
-        document.removeEventListener('click', this.handleClickOutside);
     }
 
     setupDefaultValues() {
@@ -79,13 +76,22 @@ export class CanvasesController {
         const targetId = triggerBtn.getAttribute('data-target');
         const targetDropdown = document.querySelector(`[data-module="${targetId}"]`);
         
-        // Cerrar otros dropdowns
+        // Cerrar otros dropdowns locales sincronizando clases active/disabled
         document.querySelectorAll('.component-module--dropdown:not(.disabled)').forEach(el => {
-            if (el !== targetDropdown) el.classList.add('disabled');
+            if (el !== targetDropdown) {
+                el.classList.remove('active');
+                el.classList.add('disabled');
+            }
         });
 
         if (targetDropdown) {
-            targetDropdown.classList.toggle('disabled');
+            if (targetDropdown.classList.contains('disabled')) {
+                targetDropdown.classList.remove('disabled');
+                targetDropdown.classList.add('active');
+            } else {
+                targetDropdown.classList.remove('active');
+                targetDropdown.classList.add('disabled');
+            }
         }
     }
 
@@ -113,9 +119,12 @@ export class CanvasesController {
             if (triggerIcon) triggerIcon.textContent = icon;
         }
 
-        // Cerrar módulo
+        // Cerrar módulo sincronizando clases para que MainController lo reconozca bien
         const module = dropdownWrapper.querySelector('.component-module--dropdown');
-        if (module) module.classList.add('disabled');
+        if (module) {
+            module.classList.remove('active');
+            module.classList.add('disabled');
+        }
     }
 
     adjustParticipantLimit(btn) {
@@ -146,13 +155,5 @@ export class CanvasesController {
 
         console.log("Creando lienzo con el payload:", this.formState);
         // ApiServices.post('/canvases', this.formState).then(...)
-    }
-
-    handleClickOutside(e) {
-        if (!e.target.closest('.component-dropdown-wrapper')) {
-            document.querySelectorAll('.component-module--dropdown:not(.disabled)').forEach(el => {
-                el.classList.add('disabled');
-            });
-        }
     }
 }

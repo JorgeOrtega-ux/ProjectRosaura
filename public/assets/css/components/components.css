@@ -2552,8 +2552,10 @@ input:checked + .component-toggle-slider:before {
         width: 100%; 
     }
     
-    .component-module--sidebar:not(.component-module--sidebar-responsive) {
+    .component-module--sidebar:not(.component-module--sidebar-responsive):not(.active) {
         display: none; 
+    }
+    .component-module--sidebar:not(.component-module--sidebar-responsive) {
         padding: 0; 
         width: 100%; 
         background: var(--bg-surface);
@@ -2576,7 +2578,7 @@ input:checked + .component-toggle-slider:before {
         align-items: flex-end;
         background-color: var(--overlay-dark);
         transition: display 0.3s allow-discrete, background-color 0.3s ease;
-        padding: 0 !important; /* <---- PADDING A 0 PARA EL CONTENEDOR EN MÓVILES */
+        padding: 0 !important;
     }
     .component-module--dropdown.disabled,
     .component-module--sidebar-responsive.disabled {
