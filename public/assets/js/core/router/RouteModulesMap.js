@@ -70,6 +70,7 @@ export const RouteModulesMap = {
     // ---- MÓDULOS DE GESTIÓN DE LIENZOS ----
     '/canvases/create': { path: './modules/canvases/CanvasesController.js', className: 'CanvasesController', skeletonType: 'layout-dashboard' },
     '/canvases/manage': { path: './modules/canvases/CanvasesManageController.js', className: 'CanvasesManageController', skeletonType: 'layout-dashboard' },
+    '/canvases/manage/requests': { path: './modules/canvases/CanvasRequestsController.js', className: 'CanvasRequestsController', skeletonType: 'layout-dashboard' },
     '/canvases/join': { path: './modules/canvases/CanvasesController.js', className: 'CanvasesController', skeletonType: 'layout-dashboard' },
     '/canvases/edit': { path: './modules/canvases/CanvasEditController.js', className: 'CanvasEditController', skeletonType: 'layout-dashboard' }
 };

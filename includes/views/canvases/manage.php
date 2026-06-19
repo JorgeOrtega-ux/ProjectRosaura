@@ -202,22 +202,4 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
         </div>
 
     </div>
-
-    <div class="component-fullscreen-overlay disabled" data-ref="requests-modal-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2000; background-color: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;">
-        <div class="component-card" style="width: 100%; max-width: 500px; padding: 24px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-                <h2 class="component-card__title" style="margin: 0; font-size: 1.25rem;"><?php echo __('lbl_pending_requests') ?? 'Solicitudes de Acceso'; ?></h2>
-                <button class="component-button component-button--icon component-button--h34" data-action="closeRequestsModal">
-                    <span class="material-symbols-rounded">close</span>
-                </button>
-            </div>
-            
-            <div data-ref="requests-list-container" style="max-height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;">
-                <div class="component-empty-state" style="padding: 24px;">
-                    <span class="material-symbols-rounded component-empty-state-icon">hourglass_empty</span>
-                    <p class="component-empty-state-text"><?php echo __('lbl_loading') ?? 'Cargando...'; ?></p>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>

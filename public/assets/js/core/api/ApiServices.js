@@ -170,11 +170,23 @@ export class ApiService {
         return await this.post(ApiRoutes.Admin.UpdateRolePermissions, { id: roleId, permissions: permissionsArray });
     }
 
-    // --- NUEVO MÉTODO PARA EL DASHBOARD ---
     async getDashboardMetrics(startDate, endDate) {
         return await this.post(ApiRoutes.Admin.GetDashboardMetrics, { 
             start_date: startDate, 
             end_date: endDate 
         });
+    }
+
+    // --- NUEVOS MÉTODOS PARA SOLICITUDES DE LIENZO ---
+    async getPendingRequests(canvasId) {
+        return await this.post(ApiRoutes.Canvases.GetPendingRequests, { canvas_id: canvasId });
+    }
+
+    async approveCanvasRequest(requestId) {
+        return await this.post(ApiRoutes.Canvases.ApproveRequest, { request_id: requestId });
+    }
+
+    async rejectCanvasRequest(requestId) {
+        return await this.post(ApiRoutes.Canvases.RejectRequest, { request_id: requestId });
     }
 }
