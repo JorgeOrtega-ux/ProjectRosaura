@@ -221,13 +221,13 @@ class DesignController {
         if (!container) return;
 
         container.innerHTML = this.templates.map(tpl => `
-            <div class="design-template-card ${this.activeTemplateId === tpl.id ? 'active' : ''}" data-action="selectTemplate" data-id="${tpl.id}">
+            <div class="component-template-card ${this.activeTemplateId === tpl.id ? 'active' : ''}" data-action="selectTemplate" data-id="${tpl.id}">
                 <img src="${tpl.src}" alt="Plantilla">
-                <div class="design-template-actions">
-                    <button class="design-template-action-btn" data-action="toggleTemplateLock" title="${tpl.locked ? 'Desbloquear para mover' : 'Bloquear para pintar encima'}">
+                <div class="component-template-actions">
+                    <button class="component-template-action-btn" data-action="toggleTemplateLock" title="${tpl.locked ? 'Desbloquear para mover' : 'Bloquear para pintar encima'}">
                         <span class="material-symbols-rounded">${tpl.locked ? 'lock' : 'lock_open'}</span>
                     </button>
-                    <button class="design-template-action-btn" data-action="deleteTemplate" title="Eliminar">
+                    <button class="component-template-action-btn" data-action="deleteTemplate" title="Eliminar">
                         <span class="material-symbols-rounded">delete</span>
                     </button>
                 </div>
@@ -313,7 +313,7 @@ class DesignController {
         }
 
         const cardTemplate = e.target.closest('[data-action="selectTemplate"]');
-        if (cardTemplate && !e.target.closest('.design-template-action-btn')) {
+        if (cardTemplate && !e.target.closest('.component-template-action-btn')) {
             const id = cardTemplate.getAttribute('data-id');
             this.toggleTemplate(id);
             return;
@@ -322,7 +322,7 @@ class DesignController {
         const btnLock = e.target.closest('[data-action="toggleTemplateLock"]');
         if (btnLock) {
             e.stopPropagation();
-            const id = btnLock.closest('.design-template-card').getAttribute('data-id');
+            const id = btnLock.closest('.component-template-card').getAttribute('data-id');
             this.toggleLockTemplate(id);
             return;
         }
@@ -330,7 +330,7 @@ class DesignController {
         const btnDelete = e.target.closest('[data-action="deleteTemplate"]');
         if (btnDelete) {
             e.stopPropagation();
-            const id = btnDelete.closest('.design-template-card').getAttribute('data-id');
+            const id = btnDelete.closest('.component-template-card').getAttribute('data-id');
             this.deleteTemplate(id);
             return;
         }
@@ -345,7 +345,7 @@ class DesignController {
         const btnColor = e.target.closest('[data-action="selectColor"]');
         if (btnColor) {
             e.preventDefault();
-            document.querySelectorAll('.design-color-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.component-color-btn').forEach(btn => btn.classList.remove('active'));
             btnColor.classList.add('active');
             
             this.currentColor = btnColor.getAttribute('data-color') || '#000000';

@@ -10,7 +10,7 @@
             
             <div class="component-top-right">
                 <div class="component-actions active">
-                    <button class="component-button component-button--icon component-button--h40 btn-color-indicator" style="--active-color: #000000;" data-ref="btn-color-palette" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-colors" data-tooltip="Paleta de colores" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40 component-color-indicator" style="--active-color: #000000;" data-ref="btn-color-palette" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-colors" data-tooltip="Paleta de colores" data-position="bottom">
                         <span class="material-symbols-rounded">palette</span>
                     </button>
                     <button class="component-button component-button--icon component-button--h40" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-templates" data-tooltip="Plantillas" data-position="bottom">
@@ -20,14 +20,14 @@
             </div>
         </div>
         <div class="component-bottom">
-            <canvas data-ref="design-canvas" class="design-canvas-surface"></canvas>
+            <canvas data-ref="design-canvas" class="component-canvas-surface"></canvas>
             
             <div class="component-badge component-badge--absolute-tl">
                 <span class="material-symbols-rounded">my_location</span>
                 <span data-ref="coords-text">- , -</span>
             </div>
             
-            <div class="design-action-pill">
+            <div class="component-action-pill">
                 <button class="component-button component-button--dark component-button--h45 disabled-interactive" data-action="placePixels" data-ref="pixel-action-btn">
                     <span class="material-symbols-rounded">touch_app</span>
                     <span data-ref="pixel-action-text"><?php echo __('btn_select_pixels'); ?></span>

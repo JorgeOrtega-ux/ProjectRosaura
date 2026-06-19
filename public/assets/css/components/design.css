@@ -1,0 +1,171 @@
+/* =========================================
+   SISTEMA DE DISEÑO R/PLACE (DESIGN CANVAS)
+   ========================================= */
+.component-wrapper[data-ref="design-wrapper"] {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.component-wrapper[data-ref="design-wrapper"] .component-bottom {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    padding: 0;
+}
+
+.component-canvas-surface {
+    display: block;
+    width: 100%;
+    height: 100%;
+    cursor: default; 
+    outline: none;
+}
+
+.component-canvas-surface.cursor-grabbing {
+    cursor: grabbing !important;
+}
+
+.component-action-pill {
+    position: absolute;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+
+.component-action-pill .component-button {
+    pointer-events: auto;
+    border-radius: var(--sl-border-radius-pill);
+    padding: 0 28px;
+    box-shadow: var(--shadow-large);
+    transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.component-color-indicator {
+    position: relative;
+}
+
+.component-color-indicator::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 10px;
+    height: 10px;
+    background-color: var(--active-color, var(--text-primary));
+    border-radius: 50%;
+    border: 2px solid var(--bg-surface);
+    box-sizing: border-box;
+    transition: background-color 0.2s ease;
+}
+
+/* -----------------------------------------
+   PALETA DE COLORES EN CUADRÍCULA
+   ----------------------------------------- */
+.component-color-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px; /* Separación exacta de 8px en todas direcciones */
+    padding: 12px 4px;
+    justify-items: center;
+}
+
+.component-color-btn {
+    width: 100%; /* 100% del espacio disponible de la columna */
+    aspect-ratio: 1 / 1; /* Garantiza que siempre sea un círculo perfecto */
+    border-radius: 50%;
+    border: none;
+    background-color: var(--color-val);
+    cursor: pointer;
+    outline: none;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.15); 
+    transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.2s ease;
+    padding: 0;
+}
+
+/* Efecto Hover / Active: Se hace más pequeño (presionado) y revela el borde */
+.component-color-btn:hover,
+.component-color-btn.active {
+    box-shadow: 0 0 0 2px var(--bg-surface), 0 0 0 4px var(--color-val), inset 0 0 0 1px rgba(0,0,0,0.15);
+    transform: scale(0.82); 
+}
+
+.component-color-btn:active {
+    transform: scale(0.75); 
+}
+
+/* -----------------------------------------
+   SISTEMA DE PLANTILLAS
+   ----------------------------------------- */
+.component-template-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    width: 100%;
+}
+
+.component-template-card {
+    position: relative;
+    aspect-ratio: 1;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    background-color: var(--bg-surface-alt);
+    box-shadow: inset 0 0 0 1px var(--border-color);
+    transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.component-template-card:hover {
+    border-color: var(--border-color-hover);
+}
+
+.component-template-card.active {
+    border-color: var(--action-primary);
+}
+
+.component-template-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.component-template-actions {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    display: flex;
+    gap: 4px;
+}
+
+.component-template-action-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background-color: rgba(0, 0, 0, 0.6);
+    color: #ffffff;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.component-template-action-btn:hover {
+    background-color: rgba(0, 0, 0, 0.9);
+}
+
+.component-template-action-btn:active {
+    transform: scale(0.9);
+}
+
+.component-template-action-btn .material-symbols-rounded {
+    font-size: 16px;
+}
