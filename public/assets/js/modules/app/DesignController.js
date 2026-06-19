@@ -135,7 +135,7 @@ class DesignController {
         }
     }
 
-    renderColorPalette(paletteId) {
+   renderColorPalette(paletteId) {
         const palette = getPaletteById(paletteId);
         if (!palette || !palette.colors) return;
 
@@ -156,7 +156,12 @@ class DesignController {
             btn.className = `component-color-btn ${index === 0 ? 'active' : ''}`;
             btn.setAttribute('data-action', 'selectColor');
             btn.setAttribute('data-color', hex);
+            
+            // 👇 AQUÍ ESTÁ LA SOLUCIÓN 👇
             btn.style.backgroundColor = hex;
+            btn.style.setProperty('--color-val', hex); // <--- ESTA LÍNEA RESTAURA EL BORDE
+            // 👆----------------------👆
+            
             btn.title = hex;
 
             container.appendChild(btn);
