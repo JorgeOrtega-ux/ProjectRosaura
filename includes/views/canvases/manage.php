@@ -1,16 +1,15 @@
 <?php
 // includes/views/canvases/manage.php
-if (session_status() === PHP_SESSION_NONE) session_start();
 
-use App\Config\DatabaseManager;
-use App\Core\Helpers\Utils;
-use PDO;
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
-// Obtenemos el ID del usuario en sesión. En la arquitectura de múltiples cuentas suele estar en session.
+// Obtenemos el ID del usuario en sesión
 $userId = $_SESSION['active_account_id'] ?? $_SESSION['user_id'] ?? null;
 
 if (!$userId) {
-    echo "<div class='view-content'><p>".__('err_unauthorized')."</p></div>";
+    echo "<div class='view-content'><p>".(function_exists('__') ? __('err_unauthorized') : 'No autorizado')."</p></div>";
     return;
 }
 
@@ -19,36 +18,48 @@ $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 if ($page < 1) $page = 1;
 $offset = ($page - 1) * $limit;
 
-$db = new DatabaseManager();
-// Usamos la constante si existe, de lo contrario asumimos el nombre 'canvases' de la DB
-$connName = defined('App\Core\System\DatabaseConstants::CONN_CANVASES') ? App\Core\System\DatabaseConstants::CONN_CANVASES : 'canvases';
-$pdo = $db->getConnection($connName); 
+$canvases = [];
+$totalCanvases = 0;
+$totalPages = 1;
+$errorMessage = null;
 
-// Asumimos el nombre de tabla estándar de lienzos
-$tblCanvases = defined('App\Core\System\DatabaseConstants::TBL_CANVASES') ? App\Core\System\DatabaseConstants::TBL_CANVASES : 'canvases';
+try {
+    // Usamos Fully Qualified Class Names (FQCN) para evitar fallos si el autoloader falla en el scope dinámico
+    $db = new \App\Config\DatabaseManager();
+    
+    // Verificamos constantes de base de datos
+    $connName = defined('\App\Core\System\DatabaseConstants::CONN_CANVASES') ? \App\Core\System\DatabaseConstants::CONN_CANVASES : 'canvases';
+    $pdo = $db->getConnection($connName); 
 
-// Calcular total para paginación
-$stmtCount = $pdo->prepare("SELECT COUNT(*) FROM {$tblCanvases} WHERE user_id = :uid");
-$stmtCount->execute(['uid' => $userId]);
-$totalCanvases = (int)$stmtCount->fetchColumn();
+    $tblCanvases = defined('\App\Core\System\DatabaseConstants::TBL_CANVASES') ? \App\Core\System\DatabaseConstants::TBL_CANVASES : 'canvases';
 
-$totalPages = ceil($totalCanvases / $limit);
-if ($totalPages < 1) $totalPages = 1;
-if ($page > $totalPages) {
-    $page = $totalPages;
-    $offset = ($page - 1) * $limit;
+    // Calcular total para paginación
+    $stmtCount = $pdo->prepare("SELECT COUNT(*) FROM {$tblCanvases} WHERE user_id = :uid");
+    $stmtCount->execute(['uid' => $userId]);
+    $totalCanvases = (int)$stmtCount->fetchColumn();
+
+    $totalPages = ceil($totalCanvases / $limit);
+    if ($totalPages < 1) $totalPages = 1;
+    if ($page > $totalPages) {
+        $page = $totalPages;
+        $offset = ($page - 1) * $limit;
+    }
+
+    // Obtener los lienzos
+    $stmt = $pdo->prepare("
+        SELECT id, uuid, name, description, privacy, size, participant_limit, created_at 
+        FROM {$tblCanvases} 
+        WHERE user_id = :uid 
+        ORDER BY id DESC 
+        LIMIT $limit OFFSET $offset
+    ");
+    $stmt->execute(['uid' => $userId]);
+    $canvases = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+} catch (\Exception $e) {
+    // Capturar la excepción es vital. Evita el Fatal Error (Pantalla en blanco) e imprime el problema en UI.
+    $errorMessage = $e->getMessage();
 }
-
-// Obtener los lienzos de la página actual
-$stmt = $pdo->prepare("
-    SELECT id, uuid, name, description, privacy, size, participant_limit, created_at 
-    FROM {$tblCanvases} 
-    WHERE user_id = :uid 
-    ORDER BY id DESC 
-    LIMIT $limit OFFSET $offset
-");
-$stmt->execute(['uid' => $userId]);
-$canvases = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $appUrl = defined('APP_URL') ? APP_URL : '';
 $prevPageUrl = $page > 1 ? $appUrl . '/canvases/manage?page=' . ($page - 1) : '#';
@@ -60,44 +71,44 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
         
         <div class="component-top">
             <div class="component-top-left">
-                <h1 class="component-top-title"><?php echo __('canvases_manage_title') ?: 'Administrar mis lienzos'; ?></h1>
+                <h1 class="component-top-title"><?php echo function_exists('__') ? __('canvases_manage_title') : 'Administrar mis lienzos'; ?></h1>
             </div>
             
             <div class="component-top-right">
                 
                 <div class="component-actions disabled" data-ref="header-selection-actions">
-                    <button class="component-button component-button--icon component-button--h40" data-action="editSelectedCanvas" data-tooltip="<?php echo __('tooltip_edit_canvas') ?: 'Editar configuración'; ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-action="editSelectedCanvas" data-tooltip="<?php echo function_exists('__') ? __('tooltip_edit_canvas') : 'Editar configuración'; ?>" data-position="bottom">
                         <span class="material-symbols-rounded">edit</span>
                     </button>
 
-                    <button class="component-button component-button--icon component-button--h40" data-action="manageCanvasMembers" data-tooltip="<?php echo __('tooltip_manage_members') ?: 'Gestionar miembros'; ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-action="manageCanvasMembers" data-tooltip="<?php echo function_exists('__') ? __('tooltip_manage_members') : 'Gestionar miembros'; ?>" data-position="bottom">
                         <span class="material-symbols-rounded">group</span>
                     </button>
 
-                    <button class="component-button component-button--icon component-button--h40 component-button--danger" data-action="deleteSelectedCanvases" data-tooltip="<?php echo __('tooltip_delete_canvas') ?: 'Eliminar lienzos'; ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40 component-button--danger" data-action="deleteSelectedCanvases" data-tooltip="<?php echo function_exists('__') ? __('tooltip_delete_canvas') : 'Eliminar lienzos'; ?>" data-position="bottom">
                         <span class="material-symbols-rounded">delete</span>
                     </button>
 
-                    <button class="component-button component-button--icon component-button--h40" data-action="deselectCanvas" data-tooltip="<?php echo __('tooltip_cancel_selection') ?: 'Cancelar selección'; ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-action="deselectCanvas" data-tooltip="<?php echo function_exists('__') ? __('tooltip_cancel_selection') : 'Cancelar selección'; ?>" data-position="bottom">
                         <span class="material-symbols-rounded">close</span>
                     </button>
                 </div>
                 
                 <div class="component-actions active" data-ref="header-default-actions">
                     
-                    <button class="component-button component-button--icon component-button--h40" data-action="searchCanvas" data-ref="btn-toggle-search" data-tooltip="<?php echo __('search_canvas_placeholder') ?: 'Buscar en mis lienzos'; ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-action="searchCanvas" data-ref="btn-toggle-search" data-tooltip="<?php echo function_exists('__') ? __('search_canvas_placeholder') : 'Buscar en mis lienzos'; ?>" data-position="bottom">
                         <span class="material-symbols-rounded">search</span>
                     </button>
 
-                    <div class="component-inline-control" data-ref="pagination-container" data-tooltip="<?php echo __('pagination_tooltip', ['page' => $page, 'total' => $totalPages]) ?: "Página $page de $totalPages"; ?>" data-position="bottom">
+                    <div class="component-inline-control" data-ref="pagination-container" data-tooltip="<?php echo function_exists('__') ? __('pagination_tooltip', ['page' => $page, 'total' => $totalPages]) : "Página $page de $totalPages"; ?>" data-position="bottom">
                         <div class="component-inline-control__group">
-                            <button class="component-inline-control__btn <?php echo $page <= 1 ? 'disabled-interaction' : ''; ?>" <?php echo $page > 1 ? 'data-nav="'.$prevPageUrl.'"' : ''; ?>>
+                            <button class="component-inline-control__btn <?php echo $page <= 1 ? 'disabled-interactive' : ''; ?>" <?php echo $page > 1 ? 'data-nav="'.$prevPageUrl.'"' : ''; ?>>
                                 <span class="material-symbols-rounded">chevron_left</span>
                             </button>
                         </div>
                         <div class="component-inline-control__center"><?php echo $page; ?></div>
                         <div class="component-inline-control__group">
-                            <button class="component-inline-control__btn <?php echo $page >= $totalPages ? 'disabled-interaction' : ''; ?>" <?php echo $page < $totalPages ? 'data-nav="'.$nextPageUrl.'"' : ''; ?>>
+                            <button class="component-inline-control__btn <?php echo $page >= $totalPages ? 'disabled-interactive' : ''; ?>" <?php echo $page < $totalPages ? 'data-nav="'.$nextPageUrl.'"' : ''; ?>>
                                 <span class="material-symbols-rounded">chevron_right</span>
                             </button>
                         </div>
@@ -112,7 +123,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                         <span class="material-symbols-rounded">search</span>
                     </div>
                     <div class="component-search-input">
-                        <input type="text" data-ref="canvas-search-input" placeholder="<?php echo __('search_canvas_placeholder') ?: 'Buscar por nombre o descripción...'; ?>">
+                        <input type="text" data-ref="canvas-search-input" placeholder="<?php echo function_exists('__') ? __('search_canvas_placeholder') : 'Buscar por nombre o descripción...'; ?>">
                     </div>
                 </div>
             </div>
@@ -121,81 +132,90 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
 
         <div class="component-bottom">
             <div class="component-table-wrapper" data-ref="view-table">
-                <table class="component-table">
-                    <thead>
-                        <tr>
-                            <th><?php echo __('table_header_canvas_name') ?: 'Lienzo'; ?></th>
-                            <th><?php echo __('table_header_privacy') ?: 'Privacidad'; ?></th>
-                            <th><?php echo __('table_header_size') ?: 'Resolución'; ?></th>
-                            <th><?php echo __('table_header_limit') ?: 'Límite de usuarios'; ?></th>
-                            <th><?php echo __('table_header_registered') ?: 'Fecha de creación'; ?></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if ($canvases): ?>
-                            <?php foreach ($canvases as $canvas): ?>
-                                <tr class="component-table-row" data-action="selectCanvas" data-canvas-id="<?php echo htmlspecialchars($canvas['id']); ?>">
-                                    <td>
-                                        <div class="td-user-info">
+                <?php if ($errorMessage): ?>
+                    <div class="component-empty-state component-empty-state--table" style="padding: 40px; border: 1px solid #fca5a5; background: #fef2f2; border-radius: 8px;">
+                        <span class="material-symbols-rounded component-empty-state-icon" style="color: #ef4444;">database_off</span>
+                        <p class="component-empty-state-text" style="color: #ef4444; font-weight: 600;">Error Crítico de Base de Datos</p>
+                        <p style="color: #991b1b; font-size: 14px; margin-top: 12px; font-family: monospace; text-align: center; max-width: 600px; word-wrap: break-word;"><?php echo htmlspecialchars($errorMessage); ?></p>
+                        <p style="color: #7f1d1d; font-size: 13px; margin-top: 12px; text-align: center;">Posibles causas: La tabla 'canvases' aún no existe en la base de datos o falta la variable de entorno DB_CANVASES_NAME.</p>
+                    </div>
+                <?php else: ?>
+                    <table class="component-table">
+                        <thead>
+                            <tr>
+                                <th><?php echo function_exists('__') ? __('table_header_canvas_name') : 'Lienzo'; ?></th>
+                                <th><?php echo function_exists('__') ? __('table_header_privacy') : 'Privacidad'; ?></th>
+                                <th><?php echo function_exists('__') ? __('table_header_size') : 'Resolución'; ?></th>
+                                <th><?php echo function_exists('__') ? __('table_header_limit') : 'Límite de usuarios'; ?></th>
+                                <th><?php echo function_exists('__') ? __('table_header_registered') : 'Fecha de creación'; ?></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if ($canvases): ?>
+                                <?php foreach ($canvases as $canvas): ?>
+                                    <tr class="component-table-row" data-action="selectCanvas" data-canvas-id="<?php echo htmlspecialchars($canvas['id']); ?>">
+                                        <td>
+                                            <div class="td-user-info">
+                                                <div class="component-badge component-badge--sm">
+                                                    <span class="material-symbols-rounded">palette</span>
+                                                    <span class="search-target font-medium"><?php echo htmlspecialchars($canvas['name']); ?></span>
+                                                </div>
+                                            </div>
+                                            <?php if (!empty($canvas['description'])): ?>
+                                                <div style="font-size: 12px; color: #6b7280; margin-top: 4px;" class="search-target">
+                                                    <?php echo htmlspecialchars($canvas['description']); ?>
+                                                </div>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
                                             <div class="component-badge component-badge--sm">
-                                                <span class="material-symbols-rounded">palette</span>
-                                                <span class="search-target font-medium"><?php echo htmlspecialchars($canvas['name']); ?></span>
+                                                <span class="material-symbols-rounded"><?php echo $canvas['privacy'] === 'public' ? 'public' : 'lock'; ?></span>
+                                                <span class="search-target"><?php echo htmlspecialchars(ucfirst($canvas['privacy'])); ?></span>
                                             </div>
-                                        </div>
-                                        <?php if (!empty($canvas['description'])): ?>
-                                            <div style="font-size: 12px; color: #6b7280; margin-top: 4px;" class="search-target">
-                                                <?php echo htmlspecialchars($canvas['description']); ?>
+                                        </td>
+                                        <td>
+                                            <div class="component-badge component-badge--sm">
+                                                <span class="material-symbols-rounded">aspect_ratio</span>
+                                                <span class="search-target"><?php echo htmlspecialchars($canvas['size'] . 'x' . $canvas['size']); ?></span>
                                             </div>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td>
-                                        <div class="component-badge component-badge--sm">
-                                            <span class="material-symbols-rounded"><?php echo $canvas['privacy'] === 'public' ? 'public' : 'lock'; ?></span>
-                                            <span class="search-target"><?php echo htmlspecialchars(ucfirst($canvas['privacy'])); ?></span>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div class="component-badge component-badge--sm">
-                                            <span class="material-symbols-rounded">aspect_ratio</span>
-                                            <span class="search-target"><?php echo htmlspecialchars($canvas['size'] . 'x' . $canvas['size']); ?></span>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div class="component-badge component-badge--sm">
-                                            <span class="material-symbols-rounded">groups</span>
-                                            <span class="search-target"><?php echo htmlspecialchars($canvas['participant_limit']); ?></span>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div class="component-badge component-badge--sm">
-                                            <span class="material-symbols-rounded">calendar_month</span>
-                                            <span><?php echo date('d/m/Y', strtotime($canvas['created_at'])); ?></span>
+                                        </td>
+                                        <td>
+                                            <div class="component-badge component-badge--sm">
+                                                <span class="material-symbols-rounded">groups</span>
+                                                <span class="search-target"><?php echo htmlspecialchars($canvas['participant_limit']); ?></span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="component-badge component-badge--sm">
+                                                <span class="material-symbols-rounded">calendar_month</span>
+                                                <span><?php echo date('d/m/Y', strtotime($canvas['created_at'])); ?></span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                                
+                                <tr class="disabled" data-ref="empty-search-table">
+                                    <td colspan="5" class="component-empty-table-cell">
+                                        <div class="component-empty-state component-empty-state--table">
+                                            <span class="material-symbols-rounded component-empty-state-icon">search_off</span>
+                                            <p class="component-empty-state-text"><?php echo function_exists('__') ? __('empty_search_canvases') : 'No se encontraron lienzos que coincidan con tu búsqueda.'; ?></p>
                                         </div>
                                     </td>
                                 </tr>
-                            <?php endforeach; ?>
-                            
-                            <tr class="disabled" data-ref="empty-search-table">
-                                <td colspan="5" class="component-empty-table-cell">
-                                    <div class="component-empty-state component-empty-state--table">
-                                        <span class="material-symbols-rounded component-empty-state-icon">search_off</span>
-                                        <p class="component-empty-state-text"><?php echo __('empty_search_canvases') ?: 'No se encontraron lienzos que coincidan con tu búsqueda.'; ?></p>
-                                    </div>
-                                </td>
-                            </tr>
 
-                        <?php else: ?>
-                            <tr>
-                                <td colspan="5" class="component-empty-table-cell">
-                                    <div class="component-empty-state component-empty-state--table">
-                                        <span class="material-symbols-rounded component-empty-state-icon">palette</span>
-                                        <p class="component-empty-state-text"><?php echo __('empty_canvases_system') ?: 'Aún no has creado ningún lienzo.'; ?></p>
-                                    </div>
-                                </td>
-                            </tr>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
+                            <?php else: ?>
+                                <tr>
+                                    <td colspan="5" class="component-empty-table-cell">
+                                        <div class="component-empty-state component-empty-state--table">
+                                            <span class="material-symbols-rounded component-empty-state-icon">palette</span>
+                                            <p class="component-empty-state-text"><?php echo function_exists('__') ? __('empty_canvases_system') : 'Aún no has creado ningún lienzo.'; ?></p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                <?php endif; ?>
             </div>
         </div>
 
