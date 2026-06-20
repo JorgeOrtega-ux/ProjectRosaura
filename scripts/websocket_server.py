@@ -52,15 +52,21 @@ async def handler(websocket):
 
     try:
         async for message in websocket:
-            # Procesar el mensaje para guardarlo en la memoria caliente (Redis)
             try:
                 data = json.loads(message)
                 if data.get("type") == "pixel":
                     x = int(data.get("x", 0))
                     y = int(data.get("y", 0))
-                    color_index = int(data.get("color", 0))
                     width = int(data.get("width", 64))
                     user_id = data.get("userId")
+                    
+                    # Intercepción estricta del color para evitar fallos silenciosos
+                    raw_color = data.get("color", 0)
+                    try:
+                        color_index = int(raw_color)
+                    except ValueError:
+                        print(f"[!] AVISO: El frontend intentó pintar con '{raw_color}'. Debe ser un índice entero (0-255). Se ignoró el píxel.")
+                        continue
                     
                     # Validación básica de color (1 byte = 0-255)
                     if 0 <= color_index <= 255:
@@ -80,6 +86,8 @@ async def handler(websocket):
                         }
                         # xadd emite el evento al stream de forma cronológica
                         await r.xadd(stream_key, event_dict)
+                    else:
+                        print(f"[!] AVISO: Índice de color {color_index} fuera de rango (0-255).")
 
             except Exception as e:
                 print(f"[!] Error procesando escritura en Redis: {e}")
