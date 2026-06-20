@@ -1,5 +1,6 @@
 import os
 import time
+import json
 import redis
 import mysql.connector
 from zlib import decompress
@@ -19,28 +20,32 @@ DB_NAME = os.getenv("DB_CANVASES_NAME", "db_canvases")
 # Configuración Worker
 SYNC_INTERVAL = int(os.getenv("WORKER_SNAPSHOTS_SYNC_INTERVAL", 10))
 SNAPSHOTS_DIR = os.getenv("SNAPSHOTS_DIR", "/app/public/assets/img/snapshots")
-SCALE_FACTOR = int(os.getenv("SNAPSHOT_SCALE_FACTOR", 10)) # Multiplicador para alta definición
+SCALE_FACTOR = int(os.getenv("SNAPSHOT_SCALE_FACTOR", 10)) 
 
-# Paletas sincronizadas con public/assets/js/core/constants/Palettes.js
-APP_PALETTES = {
-    'default': [
-        '#000000', '#1A1A1A', '#333333', '#4D4D4D', '#666666', '#808080', '#999999', '#B3B3B3', '#CCCCCC', '#E6E6E6', '#F2F2F2', '#FFFFFF',
-        '#FF0000', '#FF8000', '#FFFF00', '#80FF00', '#00FF00', '#00FF80', '#00FFFF', '#0080FF', '#0000FF', '#8000FF', '#FF00FF', '#FF0080',
-        '#800000', '#804000', '#808000', '#408000', '#008000', '#008040', '#008080', '#004080', '#000080', '#400080', '#800080', '#800040'
-    ],
-    'neon': [
-        '#000000', '#111111', '#222222', '#FFFFFF',
-        '#FF0055', '#FF0099', '#CC00FF', '#7700FF',
-        '#0000FF', '#0088FF', '#00FFFF', '#00FF99',
-        '#00FF00', '#88FF00', '#FFFF00', '#FF8800'
-    ],
-    'pastel': [
-        '#4A4A4A', '#878787', '#C4C4C4', '#FFFFFF',
-        '#FFB3BA', '#FFDFBA', '#FFFFBA', '#BAFFC9',
-        '#BAE1FF', '#D6BAFF', '#FFB3E6', '#E2F0CB',
-        '#B5EAD7', '#C7CEEA', '#F1CBFF', '#FFDAC1'
-    ]
-}
+# Ruta a la fuente única de la verdad
+PALETTES_FILE_PATH = os.getenv("PALETTES_FILE_PATH", "/app/public/assets/data/palettes.json")
+APP_PALETTES = {}
+
+def load_palettes():
+    """Carga las paletas dinámicamente desde el JSON centralizado"""
+    global APP_PALETTES
+    try:
+        if os.path.exists(PALETTES_FILE_PATH):
+            with open(PALETTES_FILE_PATH, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                for pal_id, pal_data in data.items():
+                    APP_PALETTES[pal_id] = pal_data.get('colors', [])
+            print(f"[+] Paletas cargadas exitosamente desde {PALETTES_FILE_PATH}")
+        else:
+            raise FileNotFoundError("El archivo JSON no existe en la ruta.")
+    except Exception as e:
+        print(f"[!] Error cargando paletas desde {PALETTES_FILE_PATH}: {e}")
+        # Fallback de emergencia por si el volumen falla
+        APP_PALETTES['default'] = [
+            '#000000', '#1A1A1A', '#333333', '#4D4D4D', '#666666', '#808080', '#999999', '#B3B3B3', '#CCCCCC', '#E6E6E6', '#F2F2F2', '#FFFFFF',
+            '#FF0000', '#FF8000', '#FFFF00', '#80FF00', '#00FF00', '#00FF80', '#00FFFF', '#0080FF', '#0000FF', '#8000FF', '#FF00FF', '#FF0080',
+            '#800000', '#804000', '#808000', '#408000', '#008000', '#008040', '#008080', '#004080', '#000080', '#400080', '#800080', '#800040'
+        ]
 
 def hex_to_rgba(hex_color):
     """Convierte un color Hexadecimal (#FF0000) a tupla RGBA para la librería PIL"""
@@ -49,17 +54,14 @@ def hex_to_rgba(hex_color):
 
 def get_color(palette_id, index):
     """Obtiene el color en formato RGBA basado en la paleta del lienzo y el índice del píxel"""
-    # ====== EL ARREGLO MÁGICO ======
-    # Si el índice es 255, significa "Píxel sin pintar/vacío". Lo forzamos a Blanco.
     if index == 255:
-        return (255, 255, 255, 255) # Blanco sólido (Cámbialo a (255, 255, 255, 0) si prefieres PNG transparente)
+        return (255, 255, 255, 255) # Blanco sólido 
         
-    palette = APP_PALETTES.get(palette_id, APP_PALETTES['default'])
+    palette = APP_PALETTES.get(palette_id, APP_PALETTES.get('default', []))
     
     if index < len(palette):
         return hex_to_rgba(palette[index])
         
-    # Fallback visual para errores reales (Magenta brillante)
     return (255, 0, 255, 255)
 
 def get_db_connection():
@@ -90,12 +92,9 @@ def process_canvas_image(canvas_id, compressed_data, size_str, palette_id):
         width, height = parse_size(size_str)
         expected_size = width * height
         
-        # ====== OTRO CAMBIO IMPORTANTE ======
-        # Rellenar con 255 (Vacío/Blanco) en lugar de 0 (Negro)
         if len(raw_bytes) < expected_size:
             raw_bytes += bytes([255] * (expected_size - len(raw_bytes)))
             
-        # El fondo por defecto para la imagen base será Blanco
         img = Image.new('RGBA', (width, height), color=(255, 255, 255, 255))
         pixels = img.load()
         
@@ -120,6 +119,8 @@ def process_canvas_image(canvas_id, compressed_data, size_str, palette_id):
 def main():
     print("[*] Iniciando Worker de Snapshots (Imágenes PNG Alta Calidad)...")
     os.makedirs(SNAPSHOTS_DIR, exist_ok=True)
+    
+    load_palettes() # <--- Carga inicial del JSON
     
     try:
         r = redis.Redis(

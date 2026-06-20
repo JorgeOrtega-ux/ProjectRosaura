@@ -163,6 +163,7 @@ services:
       - .env
     environment:
       - TZ=${APP_TIMEZONE:-UTC}
+      - PALETTES_FILE_PATH=/app/public/assets/data/palettes.json
     networks:
       - rosaura_network
 

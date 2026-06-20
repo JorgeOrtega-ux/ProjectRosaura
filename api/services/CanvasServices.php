@@ -19,6 +19,21 @@ class CanvasServices {
         $this->userRepository = $userRepository;
     }
 
+    /**
+     * Extrae dinámicamente las paletas válidas desde la Fuente Única de la Verdad (JSON).
+     */
+    private function getValidPalettes(): array {
+        $path = dirname(__DIR__, 2) . '/public/assets/data/palettes.json';
+        if (file_exists($path)) {
+            $json = file_get_contents($path);
+            $data = json_decode($json, true);
+            if (is_array($data)) {
+                return array_keys($data); // Retorna ['default', 'neon', 'pastel', ...]
+            }
+        }
+        return ['default']; // Fallback de emergencia
+    }
+
     public function getCanvas(?int $userId, int $canvasId): array {
         try {
             $canvas = $this->canvasRepository->getById($canvasId);
@@ -105,7 +120,8 @@ class CanvasServices {
         try {
             $uuid = Utils::generateUUID();
             
-            $validPalettes = ['default', 'neon', 'pastel'];
+            // Validación dinámica desde JSON
+            $validPalettes = $this->getValidPalettes();
             $paletteId = in_array($paletteId, $validPalettes) ? $paletteId : 'default';
 
             $validPrivacies = [DB::PRIVACY_PUBLIC, DB::PRIVACY_PRIVATE];
@@ -152,7 +168,8 @@ class CanvasServices {
                 $data['privacy'] = DB::PRIVACY_PRIVATE;
             }
 
-            $validPalettes = ['default', 'neon', 'pastel'];
+            // Validación dinámica desde JSON
+            $validPalettes = $this->getValidPalettes();
             if (!isset($data['palette_id']) || !in_array($data['palette_id'], $validPalettes)) {
                 $data['palette_id'] = $canvas['palette_id'] ?? 'default';
             }
@@ -204,8 +221,6 @@ class CanvasServices {
                         }
                     }
                 } catch (Exception $e) {}
-
-                // Opcional: También podrías eliminar el archivo .jsonl físico aquí si lo deseas.
 
                 return ['success' => true, 'message' => __('msg_canvases_deleted') ?? 'Lienzos eliminados correctamente.'];
             }
@@ -291,9 +306,6 @@ class CanvasServices {
         }
     }
 
-    // ==========================================
-    // MÉTODO NUEVO PARA VALIDAR EL TIMELAPSE (JSONL)
-    // ==========================================
     public function prepareTimelapseDownload(?int $userId, int $canvasId): array {
         try {
             $canvas = $this->canvasRepository->getById($canvasId);
@@ -301,7 +313,6 @@ class CanvasServices {
                 return ['success' => false, 'message' => __('err_canvas_not_found') ?? 'Lienzo no encontrado.'];
             }
 
-            // Validar Permisos
             $role = null;
             if ($userId !== null) {
                 $role = $this->canvasRepository->getMemberRole($canvasId, $userId);
@@ -311,9 +322,6 @@ class CanvasServices {
                 return ['success' => false, 'message' => __('err_unauthorized') ?? 'No tienes permisos para ver el timelapse de este lienzo.', 'http_code' => 403];
             }
 
-            // Construir ruta física absoluta basándonos en la estructura de directorios
-            // Asumiendo que este archivo está en: api/services/
-            // La raíz del proyecto estaría en: dirname(__DIR__, 2)
             $baseDir = dirname(__DIR__, 2) . '/storage/canvases/timelapses';
             $filePath = $baseDir . '/canvas_' . $canvasId . '.jsonl';
 

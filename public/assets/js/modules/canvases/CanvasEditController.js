@@ -3,7 +3,15 @@
 import { ApiRoutes } from '../../core/api/ApiRoutes.js';
 import { ApiService } from '../../core/api/ApiServices.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../core/utils/uiUtils.js';
-import { getAllPalettes } from '../../core/constants/Palettes.js';
+
+/**
+ * Función helper local para obtener todas las paletas en formato Array.
+ * Lee desde la variable global inyectada por PHP.
+ */
+function getAllPalettes() {
+    if (!window.APP_PALETTES) return [];
+    return Object.values(window.APP_PALETTES);
+}
 
 class CanvasEditController {
     constructor() {

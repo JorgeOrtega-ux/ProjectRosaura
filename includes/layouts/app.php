@@ -67,6 +67,14 @@ $initialTitle = APP_NAME;
 if (isset($routeTitles[$currentPath])) {
     $initialTitle = $routeTitles[$currentPath] . ' - ' . APP_NAME;
 }
+
+// --- LECTURA DE PALETAS DE COLORES (SINGLE SOURCE OF TRUTH) ---
+$palettesJson = '{}';
+$palettesPath = dirname(__DIR__, 2) . '/public/assets/data/palettes.json';
+if (file_exists($palettesPath)) {
+    $palettesJson = file_get_contents($palettesPath);
+}
+// ---------------------------------------------------------------
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -96,6 +104,7 @@ if (isset($routeTitles[$currentPath])) {
         window.AppServerConfig = <?php echo isset($serverConfig) && !empty($serverConfig) ? json_encode($serverConfig) : '{}'; ?>;
         window.AppTurnstileSiteKey = "<?php echo \App\Core\Helpers\EnvLoader::get('TURNSTILE_SITE_KEY', ''); ?>";
         window.AppTranslations = <?php echo json_encode(\App\Core\System\Translator::getAll()); ?>;
+        window.APP_PALETTES = <?php echo $palettesJson; ?>;
         
         // --- CONFIGURACIÓN GLOBAL (INCLUYENDO WEBSOCKETS) ---
         window.APP_CONFIG = {
