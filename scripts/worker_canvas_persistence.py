@@ -107,6 +107,10 @@ def main():
                     # Eliminar físicamente los mensajes procesados de la memoria RAM de Redis
                     r.xdel(stream_name, *msg_ids)
                     
+                    # [NUEVO] MARCAR EL LIENZO COMO "SUCIO" PARA GENERAR SU SNAPSHOT
+                    # Solo marcamos los lienzos que realmente han recibido nuevos píxeles/eventos
+                    r.sadd("canvases:dirty_states", canvas_id)
+                    
                     print(f"[+] Escritos y confirmados {len(msgs)} eventos al archivo de timelapse del canvas {canvas_id}.")
         
         except Exception as e:
@@ -120,22 +124,33 @@ def main():
         if db_conn:
             cursor = db_conn.cursor()
             try:
-                keys_state = r.keys("canvas:*:state")
-                for key in keys_state:
-                    canvas_id_str = key.decode('utf-8').split(":")[1]
-                    canvas_bytes = r.get(key)
+                # [MODIFICADO] En lugar de r.keys("canvas:*:state"), ahora solo 
+                # consultamos los IDs de los lienzos que tuvieron actividad reciente.
+                dirty_canvases_bytes = r.smembers("canvases:dirty_states")
+                
+                if dirty_canvases_bytes:
+                    # [NUEVO] Vaciamos la lista inmediatamente para que no vuelvan a 
+                    # procesarse en el siguiente ciclo si no hay nuevos dibujos.
+                    r.delete("canvases:dirty_states")
                     
-                    if canvas_bytes:
-                        compressed_data = compress(canvas_bytes)
-                        query = """
-                            INSERT INTO canvas_snapshots (canvas_id, snapshot_data) 
-                            VALUES (%s, %s)
-                            ON DUPLICATE KEY UPDATE snapshot_data = VALUES(snapshot_data), last_updated = CURRENT_TIMESTAMP
-                        """
-                        cursor.execute(query, (canvas_id_str, compressed_data))
+                    for canvas_id_bytes in dirty_canvases_bytes:
+                        # Decodificar porque Redis con decode_responses=False devuelve bytes
+                        canvas_id_str = canvas_id_bytes.decode('utf-8')
+                        state_key = f"canvas:{canvas_id_str}:state"
                         
-                        # Registrar el ID del lienzo en el Set de pendientes para el worker de imágenes
-                        r.sadd("canvases:pending_snapshots", canvas_id_str)
+                        canvas_bytes = r.get(state_key)
+                        
+                        if canvas_bytes:
+                            compressed_data = compress(canvas_bytes)
+                            query = """
+                                INSERT INTO canvas_snapshots (canvas_id, snapshot_data) 
+                                VALUES (%s, %s)
+                                ON DUPLICATE KEY UPDATE snapshot_data = VALUES(snapshot_data), last_updated = CURRENT_TIMESTAMP
+                            """
+                            cursor.execute(query, (canvas_id_str, compressed_data))
+                            
+                            # Registrar el ID del lienzo en el Set de pendientes para el worker de imágenes
+                            r.sadd("canvases:pending_snapshots", canvas_id_str)
                 
                 db_conn.commit()
                 # print(f"[+] Snapshots sincronizados.") # Descomentar para debug intenso
