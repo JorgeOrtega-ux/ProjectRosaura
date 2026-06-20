@@ -54,6 +54,9 @@ class DesignController {
         this.canvasPrivacy = 'private';
         this.canvasApproval = false;
 
+        // Propiedad para el motor del timelapse
+        this.timelapseActive = false;
+
         this.handleWheelBound = this.handleWheel.bind(this);
         this.handleMouseDownBound = this.handleMouseDown.bind(this);
         this.handleMouseMoveBound = this.handleMouseMove.bind(this);
@@ -118,7 +121,6 @@ class DesignController {
                 const cIdx = parseInt(data.color, 10);
                 
                 if (cIdx === 255) {
-                    // Borrado / Transparente
                     this.offscreenCtx.clearRect(pX, pY, 1, 1);
                 } else {
                     const paletteObj = getPaletteById(this.canvasPaletteId);
@@ -169,7 +171,6 @@ class DesignController {
             this.centerBoard();
             this.renderColorPalette(this.canvasPaletteId);
 
-            // Iniciar o WebSocket para comunicação em tempo real
             this.initWebSocket();
         } else {
             this.setupCanvas();
@@ -189,21 +190,18 @@ class DesignController {
             const imageData = this.offscreenCtx.createImageData(this.boardWidth, this.boardHeight);
             const paletteColors = getPaletteById(this.canvasPaletteId).colors;
             
-            // Volcar índices de color en la matriz visual de ImageData
             for (let i = 0; i < bytes.length; i++) {
                 const colorIndex = bytes[i];
                 const dataIdx = i * 4;
 
                 if (colorIndex === 255) {
-                    // Píxel no pintado (Transparente)
-                    imageData.data[dataIdx] = 0;     // R
-                    imageData.data[dataIdx + 1] = 0; // G
-                    imageData.data[dataIdx + 2] = 0; // B
-                    imageData.data[dataIdx + 3] = 0; // Alpha 0 evita que se pinte el negro base
+                    imageData.data[dataIdx] = 0;     
+                    imageData.data[dataIdx + 1] = 0; 
+                    imageData.data[dataIdx + 2] = 0; 
+                    imageData.data[dataIdx + 3] = 0; 
                 } else {
-                    const hex = paletteColors[colorIndex] || '#FFFFFF'; // Fallback a blanco si el índice está fuera
+                    const hex = paletteColors[colorIndex] || '#FFFFFF'; 
                     
-                    // Convertir Hex a RGB
                     const r = parseInt(hex.slice(1, 3), 16);
                     const g = parseInt(hex.slice(3, 5), 16);
                     const b = parseInt(hex.slice(5, 7), 16);
@@ -211,11 +209,10 @@ class DesignController {
                     imageData.data[dataIdx] = r;
                     imageData.data[dataIdx + 1] = g;
                     imageData.data[dataIdx + 2] = b;
-                    imageData.data[dataIdx + 3] = 255; // Alpha
+                    imageData.data[dataIdx + 3] = 255; 
                 }
             }
             
-            // Pintado instantáneo
             this.offscreenCtx.putImageData(imageData, 0, 0);
             this.requestRender();
 
@@ -232,7 +229,6 @@ class DesignController {
             
             if (response.success && response.data) {
                 this.isPrivateBlocked = false;
-                
                 const role = response.data.role || 'spectator';
                 
                 if (role === 'admin' || role === 'editor') {
@@ -243,16 +239,12 @@ class DesignController {
                 
                 this.setRoleUI(role, response.data);
 
-                // ==========================================
-                // LÓGICA DE HIDRATACIÓN VÍA AJAX
-                // ==========================================
                 if (response.data.state_base64) {
                     this.hydrateCanvasState(response.data.state_base64);
                 }
 
             } else {
                 this.isSpectator = true;
-                
                 if (this.canvasPrivacy === 'private') {
                     this.isPrivateBlocked = true;
                     this.setRoleUI('blocked');
@@ -324,6 +316,106 @@ class DesignController {
             }
         } else {
             showMessage(response.message, 'error');
+        }
+    }
+
+    // ==========================================
+    // MOTOR DE TIMELAPSE CON REPRODUCCIÓN EN VIVO
+    // ==========================================
+    async startTimelapse() {
+        if (!this.canvasIntId || this.timelapseActive) return;
+        this.timelapseActive = true;
+        
+        // Determinar la ruta dinámica configurada en tu route-map, sino fallback.
+        const route = ApiRoutes.Canvases?.GetTimelapse || 'canvas/get_timelapse';
+
+        // Poner lienzo totalmente transparente para arrancar el Timelapse
+        this.offscreenCtx.clearRect(0, 0, this.boardWidth, this.boardHeight);
+        this.requestRender();
+
+        try {
+            // Utilizamos el nuevo método de Stream
+            const response = await this.api.stream(route, { id: this.canvasIntId }, this.abortController.signal);
+            
+            if (!response.success) {
+                showMessage(response.message || 'Error al cargar timelapse.', 'error');
+                this.timelapseActive = false;
+                this.checkCanvasAccess(); // Fallback, recargar el lienzo actual
+                return;
+            }
+
+            const reader = response.reader;
+            const decoder = new TextDecoder('utf-8');
+            let buffer = '';
+
+            // Consumir el stream en chunks según van llegando desde PHP (X-Sendfile o readfile)
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                // Decodificar los bytes y agregarlos al buffer de texto
+                buffer += decoder.decode(value, { stream: true });
+                
+                // Dividir el buffer por saltos de línea (JSON Lines)
+                let lines = buffer.split('\n');
+                
+                // Extraer el último fragmento, ya que puede estar cortado a la mitad por la red
+                buffer = lines.pop();
+
+                for (const line of lines) {
+                    if (!line.trim()) continue;
+                    
+                    try {
+                        const event = JSON.parse(line);
+                        this._drawTimelapsePixel(event);
+                    } catch (e) {
+                        console.warn("Error parseando línea del timelapse:", e);
+                    }
+                }
+                
+                // Renderizar lote progresivamente y darle respiro al navegador para pintar el Canvas
+                // requestAnimationFrame asegura que la UI no se congele durante archivos enormes.
+                this.requestRender();
+                await new Promise(resolve => requestAnimationFrame(resolve)); 
+            }
+            
+            // Si quedó algo en el buffer al finalizar la descarga completa
+            if (buffer.trim()) {
+                try {
+                    const event = JSON.parse(buffer);
+                    this._drawTimelapsePixel(event);
+                    this.requestRender();
+                } catch(e) {}
+            }
+
+            showMessage('Timelapse finalizado.', 'success');
+
+        } catch (err) {
+            if (err.name !== 'AbortError') {
+                console.error("Error reproduciendo el timelapse:", err);
+                showMessage('Error reproduciendo el timelapse.', 'error');
+                this.checkCanvasAccess();
+            }
+        } finally {
+            this.timelapseActive = false;
+        }
+    }
+
+    _drawTimelapsePixel(data) {
+        // En Redis inyectamos (u, x, y, c) en string para comprimir
+        const pX = parseInt(data.x, 10);
+        const pY = parseInt(data.y, 10);
+        const cIdx = parseInt(data.c, 10);
+
+        if (cIdx === 255) {
+            this.offscreenCtx.clearRect(pX, pY, 1, 1);
+        } else {
+            const paletteObj = getPaletteById(this.canvasPaletteId);
+            const hexColor = (paletteObj && paletteObj.colors[cIdx]) ? paletteObj.colors[cIdx] : '#000000';
+            
+            this.offscreenCtx.fillStyle = hexColor;
+            this.offscreenCtx.clearRect(pX, pY, 1, 1);
+            this.offscreenCtx.fillRect(pX, pY, 1, 1);
         }
     }
 
@@ -411,7 +503,7 @@ class DesignController {
     }
 
     handleFileUpload(e) {
-        if (this.isSpectator) return;
+        if (this.isSpectator || this.timelapseActive) return;
         const file = e.target.files[0];
         if (!file) return;
 
@@ -561,6 +653,14 @@ class DesignController {
     }
 
     handleClick(e) {
+        // Reproducir Timelapse (Cualquiera puede iniciar el streaming, hasta los invitados si es público)
+        const btnPlayTimelapse = e.target.closest('[data-action="playTimelapse"]');
+        if (btnPlayTimelapse) {
+            e.preventDefault();
+            this.startTimelapse();
+            return;
+        }
+
         const btnJoin = e.target.closest('[data-action="joinCanvasDirectly"]');
         const btnReqAccess = e.target.closest('[data-action="requestCanvasAccess"]');
         const btnReqOverlay = e.target.closest('[data-action="requestAccessFromOverlay"]');
@@ -571,7 +671,8 @@ class DesignController {
             return;
         }
 
-        if (this.isSpectator) return; 
+        // Si es espectador, no permitimos acciones de edición
+        if (this.isSpectator || this.timelapseActive) return; 
 
         const btnUpload = e.target.closest('[data-action="triggerTemplateUpload"]');
         if (btnUpload && this.fileInput) {
@@ -665,7 +766,7 @@ class DesignController {
         const target = e.target.closest('[data-ref="design-canvas"]');
         if (!target) return;
 
-        if (e.shiftKey || e.button === 1 || this.isSpectator) {
+        if (e.shiftKey || e.button === 1 || this.isSpectator || this.timelapseActive) {
             this.isDragging = true;
             this.lastMouse = { x: e.clientX, y: e.clientY };
             this.canvas.classList.add('cursor-grabbing');
@@ -806,7 +907,7 @@ class DesignController {
         if (target) {
             const exact = this.getExactBoardCoords(e.clientX, e.clientY);
             let hit = null;
-            if (exact && !this.isSpectator) {
+            if (exact && !this.isSpectator && !this.timelapseActive) {
                 hit = this.checkTemplateHit(exact.x, exact.y);
             }
             
@@ -900,9 +1001,8 @@ class DesignController {
     }
 
     placePixels() {
-        if (this.selectedPixels.size === 0 || this.isSpectator) return;
+        if (this.selectedPixels.size === 0 || this.isSpectator || this.timelapseActive) return;
 
-        // Determinar índice numérico de color de la paleta local
         const paletteObj = getPaletteById(this.canvasPaletteId);
         let colorIndex = 0;
         if (paletteObj && paletteObj.colors) {
@@ -916,7 +1016,6 @@ class DesignController {
             this.offscreenCtx.clearRect(x, y, 1, 1);
             this.offscreenCtx.fillRect(x, y, 1, 1);
             
-            // Emitir evento para cada píxel como espera tu worker de Python
             if (this.wsManager) {
                 this.wsManager.send({
                     type: 'pixel',
@@ -924,7 +1023,7 @@ class DesignController {
                     y: y,
                     color: colorIndex,
                     width: this.boardWidth,
-                    userId: window.activeUserId || null // Variable de entorno del sistema (o null)
+                    userId: window.activeUserId || null 
                 });
             }
         });
@@ -985,7 +1084,7 @@ class DesignController {
         this.ctx.fillStyle = '#FFFFFF';
         this.ctx.fillRect(0, 0, this.boardWidth, this.boardHeight);
 
-        if (this.activeTemplateId && !this.isSpectator) {
+        if (this.activeTemplateId && !this.isSpectator && !this.timelapseActive) {
             const tpl = this.templates.find(t => t.id === this.activeTemplateId);
             if (tpl) {
                 this.ctx.save();
@@ -1046,14 +1145,14 @@ class DesignController {
 
         const renderSet = new Set(this.selectedPixels);
 
-        if (this.hoveredPixel && !this.isSpectator) {
+        if (this.hoveredPixel && !this.isSpectator && !this.timelapseActive) {
             const hoverKey = `${this.hoveredPixel.x},${this.hoveredPixel.y}`;
             if (!renderSet.has(hoverKey)) {
                 renderSet.add(hoverKey);
             }
         }
 
-        if (renderSet.size > 0 && !this.isSpectator) {
+        if (renderSet.size > 0 && !this.isSpectator && !this.timelapseActive) {
             this.ctx.strokeStyle = activeColor; 
             this.ctx.lineWidth = 1 / this.transform.scale;
             this.ctx.beginPath();

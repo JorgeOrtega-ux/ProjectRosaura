@@ -8,6 +8,7 @@ services:
       - "80:80"
     volumes:
       - .:/var/www/html
+      - ./storage/canvases/timelapses:/var/www/html/storage/canvases/timelapses
     depends_on:
       db:
         condition: service_healthy
@@ -131,6 +132,7 @@ services:
     command: python -u scripts/worker_canvas_persistence.py
     volumes:
       - .:/app
+      - ./storage/canvases/timelapses:/app/storage/canvases/timelapses
     depends_on:
       db:
         condition: service_healthy

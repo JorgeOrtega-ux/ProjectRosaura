@@ -20,6 +20,11 @@ error_log
 /logs/
 !/logs/.gitkeep
 
+# === TIMELAPSES DE LIENZOS (ARCHIVOS FÍSICOS) ===
+storage/canvases/timelapses/*.jsonl
+!storage/canvases/timelapses/.htaccess
+!storage/canvases/timelapses/.gitkeep
+
 # === IGNORAR COPIAS DE SEGURIDAD DE LA BASE DE DATOS ===
 storage/backups/*.sql
 storage/backups/*.enc

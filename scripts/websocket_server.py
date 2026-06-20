@@ -2,6 +2,7 @@ import asyncio
 import websockets
 import os
 import json
+import time
 from urllib.parse import urlparse
 import redis.asyncio as redis
 
@@ -15,14 +16,14 @@ async def get_redis_client():
     if REDIS_CLIENT is None:
         redis_host = os.getenv("REDIS_HOST", "redis")
         redis_port = int(os.getenv("REDIS_PORT", 6379))
-        redis_pass = os.getenv("REDIS_PASS", None) # <-- AGREGADO: Recuperar la contraseña
+        redis_pass = os.getenv("REDIS_PASS", None)
         
         REDIS_CLIENT = redis.Redis(
             host=redis_host, 
             port=redis_port, 
-            password=redis_pass, # <-- AGREGADO: Pasar la contraseña
+            password=redis_pass,
             db=0,
-            decode_responses=False # <-- AGREGADO: Importante para evitar que intente decodificar bytes como UTF-8
+            decode_responses=False
         )
     return REDIS_CLIENT
 
@@ -58,26 +59,28 @@ async def handler(websocket):
                     x = int(data.get("x", 0))
                     y = int(data.get("y", 0))
                     color_index = int(data.get("color", 0))
-                    width = int(data.get("width", 64)) # El cliente debe enviar el ancho del lienzo actual
+                    width = int(data.get("width", 64))
                     user_id = data.get("userId")
                     
                     # Validación básica de color (1 byte = 0-255)
                     if 0 <= color_index <= 255:
                         offset = (y * width) + x
-                        redis_key = f"canvas:{canvas_id}:state"
+                        redis_state_key = f"canvas:{canvas_id}:state"
                         
-                        # Sobrescribe exactamente el byte del píxel correspondiente
-                        await r.setrange(redis_key, offset, bytes([color_index]))
+                        # 1. Sobrescribe exactamente el byte del píxel (Estado actual / Snapshot)
+                        await r.setrange(redis_state_key, offset, bytes([color_index]))
                         
-                        # Empujar a la cola para el historial (Worker lo procesará)
-                        log_data = json.dumps({
-                            "canvas_id": canvas_id,
-                            "user_id": user_id,
-                            "x": x,
-                            "y": y,
-                            "color_index": color_index
-                        })
-                        await r.lpush("canvas_logs_queue", log_data)
+                        # 2. Inyectar el evento en un REDIS STREAM (Para el archivo .jsonl / Timelapse)
+                        stream_key = f"canvas:{canvas_id}:stream"
+                        event_dict = {
+                            "u": str(user_id) if user_id else "null",
+                            "x": str(x),
+                            "y": str(y),
+                            "c": str(color_index)
+                        }
+                        # xadd emite el evento al stream de forma cronológica
+                        await r.xadd(stream_key, event_dict)
+
             except Exception as e:
                 print(f"[!] Error procesando escritura en Redis: {e}")
 

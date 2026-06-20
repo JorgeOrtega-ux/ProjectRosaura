@@ -48,7 +48,7 @@ class CanvasServices {
             $canvas['requires_approval'] = (bool)$canvas['requires_approval'];
 
             // ==========================================
-            // 5. CARGAR ESTADO DEL LIENZO (REDIS -> MYSQL)
+            // CARGAR ESTADO DEL LIENZO (REDIS -> MYSQL)
             // ==========================================
             $redisKey = "canvas:{$canvasId}:state";
             $stateRaw = null;
@@ -76,11 +76,10 @@ class CanvasServices {
                 }
             }
 
-            // Intento C: Lienzo completamente virgen (Generar matriz con byte 255 -> Transparente)
             if (!$stateRaw) {
                 $size = (int)$canvas['size'];
                 $totalPixels = $size * $size;
-                $stateRaw = str_repeat(chr(255), $totalPixels); // 255 Representa píxel transparente
+                $stateRaw = str_repeat(chr(255), $totalPixels); 
                 
                 if ($redis) {
                     try {
@@ -206,6 +205,8 @@ class CanvasServices {
                     }
                 } catch (Exception $e) {}
 
+                // Opcional: También podrías eliminar el archivo .jsonl físico aquí si lo deseas.
+
                 return ['success' => true, 'message' => __('msg_canvases_deleted') ?? 'Lienzos eliminados correctamente.'];
             }
 
@@ -287,6 +288,44 @@ class CanvasServices {
             return ['success' => true, 'data' => $requests];
         } catch (Exception $e) {
             return ['success' => false, 'message' => __('err_database')];
+        }
+    }
+
+    // ==========================================
+    // MÉTODO NUEVO PARA VALIDAR EL TIMELAPSE (JSONL)
+    // ==========================================
+    public function prepareTimelapseDownload(?int $userId, int $canvasId): array {
+        try {
+            $canvas = $this->canvasRepository->getById($canvasId);
+            if (!$canvas) {
+                return ['success' => false, 'message' => __('err_canvas_not_found') ?? 'Lienzo no encontrado.'];
+            }
+
+            // Validar Permisos
+            $role = null;
+            if ($userId !== null) {
+                $role = $this->canvasRepository->getMemberRole($canvasId, $userId);
+            }
+            
+            if ($canvas['privacy'] === DB::PRIVACY_PRIVATE && !$role && $canvas['user_id'] !== $userId) {
+                return ['success' => false, 'message' => __('err_unauthorized') ?? 'No tienes permisos para ver el timelapse de este lienzo.', 'http_code' => 403];
+            }
+
+            // Construir ruta física absoluta basándonos en la estructura de directorios
+            // Asumiendo que este archivo está en: api/services/
+            // La raíz del proyecto estaría en: dirname(__DIR__, 2)
+            $baseDir = dirname(__DIR__, 2) . '/storage/canvases/timelapses';
+            $filePath = $baseDir . '/canvas_' . $canvasId . '.jsonl';
+
+            if (!file_exists($filePath) || filesize($filePath) === 0) {
+                return ['success' => false, 'message' => 'Aún no hay datos de timelapse para este lienzo.', 'http_code' => 404];
+            }
+
+            return ['success' => true, 'file_path' => $filePath];
+
+        } catch (Exception $e) {
+            Logger::error('Error preparing timelapse download.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database') ?? 'Error interno al procesar la solicitud.'];
         }
     }
 }

@@ -158,6 +158,64 @@ export class ApiService {
         }
     }
 
+    // ==========================================
+    // NUEVO MÉTODO: CONSUMO DE STREAMS
+    // ==========================================
+    async stream(route, data = {}, signal = null) {
+        const payload = {
+            route: route,
+            ...data
+        };
+
+        const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+        const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+
+        const fetchOptions = {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': csrfToken
+            },
+            body: JSON.stringify(payload)
+        };
+
+        if (signal) fetchOptions.signal = signal;
+
+        try {
+            const response = await fetch(this.baseUrl, fetchOptions);
+
+            if (!response.ok) {
+                const handledError = this._handleHttpErrors(response);
+                if (handledError) return handledError;
+
+                if (response.status === 403 || response.status === 429) {
+                    const result = await response.json(); 
+                    const processedResult = this._processResponse(result);
+                    if (response.status === 403) {
+                        window.dispatchEvent(new CustomEvent('securityViolationTriggered', { detail: processedResult }));
+                    }
+                    return processedResult;
+                }
+                
+                throw new Error(`Error HTTP: ${response.status}`);
+            }
+
+            // A diferencia de los post normales, aquí no llamamos a response.json()
+            // Devolvemos el "Reader" para que el frontend procese la respuesta cruda conforme descarga.
+            return { 
+                success: true, 
+                reader: response.body.getReader(), 
+                totalBytes: parseInt(response.headers.get('Content-Length') || '0', 10) 
+            };
+            
+        } catch (error) {
+            if (error.name === 'AbortError') {
+                return { success: false, aborted: true }; 
+            }
+            return { success: false, message: (typeof window.__ === 'function' ? window.__('api_connection_error') : 'Error de conexión') };
+        }
+    }
+
     async getAllPermissions() {
         return await this.post(ApiRoutes.Admin.GetPermissions);
     }
@@ -177,7 +235,6 @@ export class ApiService {
         });
     }
 
-    // --- NUEVOS MÉTODOS PARA SOLICITUDES DE LIENZO ---
     async getPendingRequests(canvasId) {
         return await this.post(ApiRoutes.Canvases.GetPendingRequests, { canvas_id: canvasId });
     }

@@ -197,8 +197,6 @@ class CanvasRepository implements CanvasRepositoryInterface {
         
         $result = $stmt->fetchColumn();
         
-        // El worker de Python comprime los BLOBs usando zlib, 
-        // gzuncompress es la función de PHP nativa para descomprimir zlib.
         return $result ? @gzuncompress($result) : null;
     }
 

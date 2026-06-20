@@ -25,10 +25,66 @@ class CanvasController extends BaseController {
                 return $this->respond(['success' => false, 'message' => __('err_invalid_canvas_id') ?? 'ID de lienzo no proporcionado.']);
             }
 
-            // Aquí el servicio ahora devolverá el lienzo con la variable extra 'state_base64' incluida en 'data'
             $result = $this->canvasServices->getCanvas($userId, (int)$canvasId);
             
             return $this->respond($result);
+
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
+    // ==========================================
+    // NUEVO ENDPOINT: STREAMING DEL TIMELAPSE
+    // ==========================================
+    public function get_timelapse($input) {
+        try {
+            $userId = $this->session->isLoggedIn() ? $this->session->getActiveAccountId() : null;
+            $canvasId = $input['id'] ?? null;
+
+            if (!$canvasId) {
+                return $this->respond(['success' => false, 'message' => 'ID de lienzo no proporcionado.', 'http_code' => 400]);
+            }
+
+            // Validar permisos y existencia del archivo
+            $result = $this->canvasServices->prepareTimelapseDownload($userId, (int)$canvasId);
+
+            if (!$result['success']) {
+                $code = $result['http_code'] ?? 400;
+                http_response_code($code);
+                return $this->respond($result);
+            }
+
+            $filePath = $result['file_path'];
+
+            // Limpiar cualquier buffer previo para evitar corromper la respuesta
+            if (ob_get_level()) {
+                ob_end_clean();
+            }
+
+            // Cabeceras HTTP para descarga / streaming
+            header('Content-Type: application/x-ndjson');
+            header('Content-Disposition: attachment; filename="timelapse_' . $canvasId . '.jsonl"');
+            header('Content-Length: ' . filesize($filePath));
+            header('Cache-Control: no-cache, must-revalidate');
+            header('Pragma: no-cache');
+            header('Expires: 0');
+            
+            // --- OPTIMIZACIÓN A FUTURO ---
+            // Si algún día configuras Nginx con X-Accel o Apache con mod_xsendfile,
+            // debes descomentar la línea correspondiente y comentar 'readfile($filePath);'.
+            // Esto hará que PHP delegue la descarga 100% al servidor web (Ultra rápido).
+            // header("X-Sendfile: $filePath"); // Apache
+            // header("X-Accel-Redirect: /timelapses_internos/canvas_{$canvasId}.jsonl"); // Nginx
+            // exit;
+
+            // Fallback actual: Streaming directo mediante readfile. 
+            // Lee directo del disco al buffer de salida de red, sin inflar la RAM.
+            flush();
+            readfile($filePath);
+            
+            // Matamos la ejecución aquí para que el framework no intente hacer un json_encode del resultado.
+            exit;
 
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);
