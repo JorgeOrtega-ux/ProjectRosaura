@@ -3,7 +3,6 @@
 import { ApiRoutes } from '../../core/api/ApiRoutes.js';
 import { ApiService } from '../../core/api/ApiServices.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../core/utils/uiUtils.js';
-// 1. IMPORTAR LA FUNCIÓN PARA OBTENER LAS PALETAS
 import { getAllPalettes } from '../../core/constants/Palettes.js';
 
 class CanvasesController {
@@ -12,7 +11,6 @@ class CanvasesController {
         this.basePath = window.AppBasePath || '';
         this.abortController = null;
         
-        // 2. AGREGAR PALETTE_ID AL ESTADO DEL FORMULARIO
         this.formState = {
             name: '',
             description: '',
@@ -29,7 +27,6 @@ class CanvasesController {
         this.abortController = new AbortController();
         this.bindEvents();
         this.setupDefaultValues();
-        // 3. RENDERIZAR LAS PALETAS AL INICIAR
         this.renderPalettes();
     }
 
@@ -56,32 +53,56 @@ class CanvasesController {
         }
     }
 
-    // 4. LÓGICA PARA RENDERIZAR LAS PALETAS EN EL DOM
     renderPalettes() {
         const container = document.querySelector('[data-ref="palette-selector-container"]');
         if (!container) return;
 
         const palettes = getAllPalettes();
-        container.innerHTML = ''; // Esto borra el texto "Cargando..." o "lbl_loading"
+        container.innerHTML = '';
+
+        let activePaletteName = 'Paleta';
 
         palettes.forEach(palette => {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = `component-button component-button--outline ${this.formState.palette_id === palette.id ? 'active' : ''}`;
+            const isActive = this.formState.palette_id === palette.id;
+            if (isActive) activePaletteName = palette.name;
+
+            const btn = document.createElement('div');
+            btn.className = `component-menu-link ${isActive ? 'active' : ''}`;
             btn.setAttribute('data-action', 'selectPalette');
             btn.setAttribute('data-palette-id', palette.id);
-            btn.style.display = 'flex';
-            btn.style.alignItems = 'center';
-            btn.style.gap = '8px';
-            btn.style.padding = '8px 12px';
+            btn.setAttribute('data-palette-name', palette.name);
 
-            const colorsPreview = palette.colors.slice(0, 4).map(c => 
-                `<span style="display:inline-block; width:12px; height:12px; border-radius:50%; background-color:${c}; border:1px solid rgba(0,0,0,0.1);"></span>`
-            ).join('');
+            let colorsHtml = '';
+            const totalColors = palette.colors.length;
+            const colorsToShow = Math.min(totalColors, 4);
 
-            btn.innerHTML = `<div style="display:flex; gap:2px;">${colorsPreview}</div> <span>${palette.name}</span>`;
+            // Círculos de colores
+            for (let i = 0; i < colorsToShow; i++) {
+                colorsHtml += `<span style="display:inline-block; width:16px; height:16px; border-radius:50%; background-color:${palette.colors[i]}; border:1px solid rgba(0,0,0,0.1); margin-right: -6px; position:relative; z-index:${10 - i};"></span>`;
+            }
+
+            // Placa redondeada del remanente (Ej. +8)
+            if (totalColors > 4) {
+                const remaining = totalColors - 4;
+                colorsHtml += `<span style="display:inline-flex; align-items:center; justify-content:center; padding: 0 4px; min-width:16px; height:16px; border-radius:10px; background-color:var(--surface-hover); border:1px solid var(--border-color); font-size:10px; font-weight:600; color:var(--text-primary); margin-left: 4px; position:relative; z-index:0; box-sizing: border-box;">+${remaining}</span>`;
+            }
+
+            // Icono <- Texto -> Colores (alineados a la derecha usando margin-left: auto)
+            btn.innerHTML = `
+                <div class="component-menu-link-icon"><span class="material-symbols-rounded">palette</span></div>
+                <div class="component-menu-link-text"><span>${palette.name}</span></div>
+                <div class="component-menu-link-icon" style="width: auto; display: flex; align-items: center; margin-left: auto;">
+                    ${colorsHtml}
+                </div>
+            `;
             container.appendChild(btn);
         });
+
+        const triggerWrapper = container.closest('.component-dropdown-wrapper');
+        if (triggerWrapper) {
+            const textRef = triggerWrapper.querySelector('[data-ref="text-palette"]');
+            if (textRef) textRef.textContent = activePaletteName;
+        }
     }
 
     handleClick(e) {
@@ -89,8 +110,6 @@ class CanvasesController {
         if (!actionBtn) return;
 
         const action = actionBtn.getAttribute('data-action');
-
-        // Nota: Ignoramos intencionalmente "toggleEditState" para que el script global lo maneje
 
         if (action === 'toggleDropdown') {
             this.toggleDropdown(actionBtn);
@@ -100,7 +119,6 @@ class CanvasesController {
             this.adjustParticipantLimit(actionBtn);
         } else if (action === 'saveCanvasName') {
             this.saveCanvasName(actionBtn);
-        // 5. INTERCEPTAR EL CLIC EN EL BOTÓN DE LA PALETA
         } else if (action === 'selectPalette') {
             this.selectPalette(actionBtn);
         } else if (action === 'createCanvas') {
@@ -123,13 +141,10 @@ class CanvasesController {
                 inputEl.setAttribute('data-original-value', newName);
                 this.formState.name = newName;
             } else {
-                // Si el input está vacío, revertimos a lo que había antes
                 inputEl.value = inputEl.getAttribute('data-original-value') || '';
             }
         }
 
-        // Cerramos el estado de edición invocando limpiamente el botón de cancelar,
-        // lo cual disparará tu script global de "toggleEditState" de forma natural.
         const btnCancel = container.querySelector('[data-action="toggleEditState"]');
         if (btnCancel) {
             btnCancel.click();
@@ -190,13 +205,26 @@ class CanvasesController {
         }
     }
 
-    // 6. ACTUALIZAR ESTADO AL SELECCIONAR UNA PALETA
     selectPalette(btn) {
         this.formState.palette_id = btn.getAttribute('data-palette-id');
-        const container = btn.closest('[data-ref="palette-selector-container"]');
-        if (container) {
-            container.querySelectorAll('[data-action="selectPalette"]').forEach(b => b.classList.remove('active'));
+        const paletteName = btn.getAttribute('data-palette-name');
+
+        const menu = btn.closest('.component-menu-list');
+        if (menu) {
+            menu.querySelectorAll('.component-menu-link').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
+        }
+
+        const dropdownWrapper = btn.closest('.component-dropdown-wrapper');
+        if (dropdownWrapper) {
+            const triggerText = dropdownWrapper.querySelector('[data-ref="text-palette"]');
+            if (triggerText) triggerText.textContent = paletteName;
+
+            const dropdownModule = dropdownWrapper.querySelector('.component-module--dropdown');
+            if(dropdownModule) {
+                dropdownModule.classList.remove('active');
+                dropdownModule.classList.add('disabled');
+            }
         }
     }
 
@@ -230,7 +258,6 @@ class CanvasesController {
 
         setButtonLoading(btn);
 
-        // Ya enviará 'palette_id' porque forma parte de this.formState
         const res = await this.api.post(ApiRoutes.Canvases.Create, this.formState, this.abortController.signal);
         if (res.aborted) return;
 
@@ -239,7 +266,6 @@ class CanvasesController {
         if (res.success) {
             showMessage(__('msg_canvas_created'), 'success');
             if (window.spaRouter) {
-                // MODIFICADO AQUÍ PARA QUE REDIRIGA AL ENLACE CORRECTO DE DESIGN
                 window.spaRouter.navigate(`${this.basePath}/design/${res.data.uuid}`);
             }
         } else {

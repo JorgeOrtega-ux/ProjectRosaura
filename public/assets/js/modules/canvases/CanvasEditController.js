@@ -91,32 +91,72 @@ class CanvasEditController {
         const palettes = getAllPalettes();
         container.innerHTML = '';
 
+        let activePaletteName = 'Paleta';
+
         palettes.forEach(palette => {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = `component-button component-button--outline ${this.state.palette_id === palette.id ? 'active' : ''}`;
+            const isActive = this.state.palette_id === palette.id;
+            if (isActive) activePaletteName = palette.name;
+
+            const btn = document.createElement('div');
+            btn.className = `component-menu-link ${isActive ? 'active' : ''}`;
             btn.setAttribute('data-action', 'selectPalette');
             btn.setAttribute('data-palette-id', palette.id);
-            btn.style.display = 'flex';
-            btn.style.alignItems = 'center';
-            btn.style.gap = '8px';
-            btn.style.padding = '8px 12px';
+            btn.setAttribute('data-palette-name', palette.name);
 
-            const colorsPreview = palette.colors.slice(0, 4).map(c => 
-                `<span style="display:inline-block; width:12px; height:12px; border-radius:50%; background-color:${c}; border:1px solid rgba(0,0,0,0.1);"></span>`
-            ).join('');
+            let colorsHtml = '';
+            const totalColors = palette.colors.length;
+            const colorsToShow = Math.min(totalColors, 4);
 
-            btn.innerHTML = `<div style="display:flex; gap:2px;">${colorsPreview}</div> <span>${palette.name}</span>`;
+            // Generar los círculos de colores
+            for (let i = 0; i < colorsToShow; i++) {
+                colorsHtml += `<span style="display:inline-block; width:16px; height:16px; border-radius:50%; background-color:${palette.colors[i]}; border:1px solid rgba(0,0,0,0.1); margin-right: -6px; position:relative; z-index:${10 - i};"></span>`;
+            }
+
+            // Si hay más de 4 colores, mostrar el indicador de "+X"
+            if (totalColors > 4) {
+                const remaining = totalColors - 4;
+                colorsHtml += `<span style="display:inline-flex; align-items:center; justify-content:center; padding: 0 4px; min-width:16px; height:16px; border-radius:10px; background-color:var(--surface-hover); border:1px solid var(--border-color); font-size:10px; font-weight:600; color:var(--text-primary); margin-left: 4px; position:relative; z-index:0; box-sizing: border-box;">+${remaining}</span>`;
+            }
+
+            // Estructura: Icono Izquierda -> Texto Centro -> Colores Derecha
+            btn.innerHTML = `
+                <div class="component-menu-link-icon"><span class="material-symbols-rounded">palette</span></div>
+                <div class="component-menu-link-text"><span>${palette.name}</span></div>
+                <div class="component-menu-link-icon" style="width: auto; display: flex; align-items: center; margin-left: auto;">
+                    ${colorsHtml}
+                </div>
+            `;
             container.appendChild(btn);
         });
+
+        // Actualizar el texto del botón desplegable
+        const triggerWrapper = container.closest('.component-dropdown-wrapper');
+        if (triggerWrapper) {
+            const textRef = triggerWrapper.querySelector('[data-ref="text-palette"]');
+            if (textRef) textRef.textContent = activePaletteName;
+        }
     }
 
     selectPalette(btn) {
         this.state.palette_id = btn.getAttribute('data-palette-id');
-        const container = btn.closest('[data-ref="palette-selector-container"]');
-        if (container) {
-            container.querySelectorAll('[data-action="selectPalette"]').forEach(b => b.classList.remove('active'));
+        const paletteName = btn.getAttribute('data-palette-name');
+
+        const menu = btn.closest('.component-menu-list');
+        if (menu) {
+            menu.querySelectorAll('.component-menu-link').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
+        }
+
+        const dropdownWrapper = btn.closest('.component-dropdown-wrapper');
+        if (dropdownWrapper) {
+            const triggerText = dropdownWrapper.querySelector('[data-ref="text-palette"]');
+            if (triggerText) triggerText.textContent = paletteName;
+
+            const dropdownModule = dropdownWrapper.querySelector('.component-module--dropdown');
+            if(dropdownModule) {
+                dropdownModule.classList.remove('active');
+                dropdownModule.classList.add('disabled');
+            }
         }
     }
 
@@ -179,7 +219,7 @@ class CanvasEditController {
                     valLimit.setAttribute('data-val', this.state.max_members);
                 }
 
-                // Renderizamos la paleta visual una vez tenemos los datos
+                // Renderizamos la lista de paletas después de cargar datos
                 this.renderPalettes();
 
             } else {
