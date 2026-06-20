@@ -133,6 +133,9 @@ def main():
                             ON DUPLICATE KEY UPDATE snapshot_data = VALUES(snapshot_data), last_updated = CURRENT_TIMESTAMP
                         """
                         cursor.execute(query, (canvas_id_str, compressed_data))
+                        
+                        # Registrar el ID del lienzo en el Set de pendientes para el worker de imágenes
+                        r.sadd("canvases:pending_snapshots", canvas_id_str)
                 
                 db_conn.commit()
                 # print(f"[+] Snapshots sincronizados.") # Descomentar para debug intenso

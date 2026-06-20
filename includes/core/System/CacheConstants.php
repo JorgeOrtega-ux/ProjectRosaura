@@ -30,6 +30,9 @@ class CacheConstants {
     public const QUEUE_BACKUP = 'backup_queue';
     public const QUEUE_ACCOUNT_DELETION = 'queue:account_deletion';
     
+    // Cola para el worker de imágenes Snapshot (Python)
+    public const PENDING_SNAPSHOTS_SET = 'canvases:pending_snapshots';
+    
     // Colas de Telemetría
     public const QUEUE_TELEMETRY_API_LATENCY = 'api_latency';
     public const QUEUE_TELEMETRY_PAGEVIEWS   = 'pageviews';

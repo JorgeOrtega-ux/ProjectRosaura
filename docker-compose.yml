@@ -145,6 +145,27 @@ services:
     networks:
       - rosaura_network
 
+  worker_canvas_snapshots:
+    build:
+      context: .
+      dockerfile: docker/python/Dockerfile.worker
+    container_name: rosaura_worker_canvas_snapshots
+    restart: always
+    command: python -u scripts/worker_canvas_snapshots.py
+    volumes:
+      - .:/app
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    env_file:
+      - .env
+    environment:
+      - TZ=${APP_TIMEZONE:-UTC}
+    networks:
+      - rosaura_network
+
   websocket_server:
     build:
       context: .

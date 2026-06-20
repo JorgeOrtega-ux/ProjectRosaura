@@ -15,6 +15,29 @@ class CanvasRepository implements CanvasRepositoryInterface {
         $this->db = $databaseManager->getConnection(DB::CONN_CANVASES);
     }
 
+    /**
+     * Función auxiliar para anexar la URL de la miniatura a nivel servidor.
+     */
+    private function appendSnapshotUrl(array $canvas): array {
+        if (!isset($canvas['id'])) {
+            return $canvas;
+        }
+        
+        $snapshotPath = "/assets/img/snapshots/canvas_" . $canvas['id'] . ".png";
+        // Calculamos la ruta física absoluta basándonos en la ubicación de este archivo
+        $physicalPath = dirname(__DIR__, 3) . '/public' . $snapshotPath;
+        
+        if (file_exists($physicalPath)) {
+            $timestamp = filemtime($physicalPath);
+            // Agregamos el timestamp para evitar problemas de caché en el navegador
+            $canvas['snapshot_url'] = $snapshotPath . "?v=" . $timestamp;
+        } else {
+            $canvas['snapshot_url'] = null;
+        }
+        
+        return $canvas;
+    }
+
     public function create(array $canvasData): int {
         $sql = "INSERT INTO " . DB::TBL_CANVASES . " 
                 (uuid, user_id, name, description, privacy, requires_approval, size, palette_id, max_participants) 
@@ -66,7 +89,10 @@ class CanvasRepository implements CanvasRepositoryInterface {
         $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmt->execute();
         
-        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $results = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        
+        // Mapeamos los resultados para agregar la URL del snapshot dinámicamente
+        return array_map([$this, 'appendSnapshotUrl'], $results);
     }
 
     public function countUserCanvases(int $userId): int {
@@ -101,7 +127,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
         ]);
         
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $result ?: null;
+        return $result ? $this->appendSnapshotUrl($result) : null;
     }
 
     public function getById(int $id): ?array {
@@ -110,7 +136,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
         $stmt->execute([':id' => $id]);
         
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $result ?: null;
+        return $result ? $this->appendSnapshotUrl($result) : null;
     }
 
     public function updateCanvasData(int $id, int $userId, array $data): bool {

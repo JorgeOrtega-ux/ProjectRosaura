@@ -10,7 +10,8 @@ try {
     $dbManager = new DatabaseManager();
     $db = $dbManager->getConnection(DB::CONN_CANVASES);
 
-    $sql = "SELECT uuid, name FROM " . DB::TBL_CANVASES . " WHERE privacy = 'public' ORDER BY created_at DESC LIMIT 20";
+    // Añadimos 'id' a la consulta para poder armar la ruta del snapshot
+    $sql = "SELECT id, uuid, name FROM " . DB::TBL_CANVASES . " WHERE privacy = 'public' ORDER BY created_at DESC LIMIT 20";
     $stmt = $db->prepare($sql);
     $stmt->execute();
     $publicCanvases = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
@@ -41,10 +42,24 @@ try {
                 <?php if (!empty($publicCanvases)): ?>
                     <?php foreach ($publicCanvases as $canvas): ?>
                         
+                        <?php 
+                        // Lógica Server-Side para determinar la imagen
+                        $snapshotPath = "/assets/img/snapshots/canvas_" . $canvas['id'] . ".png";
+                        $physicalPath = dirname(__DIR__, 3) . '/public' . $snapshotPath;
+                        $bgStyle = "background-image: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);"; // Default fallback
+                        
+                        if (file_exists($physicalPath)) {
+                            $timestamp = filemtime($physicalPath);
+                            $snapshotUrl = $snapshotPath . "?v=" . $timestamp;
+                            // Insertamos la imagen y añadimos rendering pixelated para que no se vea borroso el pixel-art
+                            $bgStyle = "background-image: url('{$snapshotUrl}'), linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); background-size: cover; background-position: center; background-repeat: no-repeat; image-rendering: pixelated;";
+                        }
+                        ?>
+
                         <div data-nav="/design/<?php echo htmlspecialchars($canvas['uuid']); ?>" style="
                             height: 180px;
                             background-color: #e9ecef;
-                            background-image: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+                            <?php echo $bgStyle; ?>
                             border-radius: 12px;
                             position: relative;
                             /* Sombra interna inferior (bottom inset shadow) */
