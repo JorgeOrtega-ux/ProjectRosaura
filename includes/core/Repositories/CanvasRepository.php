@@ -242,7 +242,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     // ==========================================
-    // REINICIOS PROGRAMADOS (NUEVO)
+    // REINICIOS PROGRAMADOS
     // ==========================================
 
     public function getResetSettings(int $canvasId): ?array {
@@ -278,6 +278,26 @@ class CanvasRepository implements CanvasRepositoryInterface {
             ':upd_take_snapshot' => $settings['take_snapshot'],
             ':upd_timer_action'  => $settings['timer_action']
         ]);
+    }
+
+    // ==========================================
+    // NUEVO MÉTODO PARA GALERÍA HISTÓRICA
+    // ==========================================
+
+    public function getSnapshotsHistoryByUuid(string $uuid): array {
+        // Se asume una tabla de historial `canvas_snapshots_history` que almacena
+        // la ruta de las imágenes y la fecha de creación asociada a cada reinicio.
+        // Hacemos JOIN con la tabla de lienzos para filtrar por el UUID público.
+        $sql = "SELECT h.id, h.snapshot_path, h.created_at 
+                FROM canvas_snapshots_history h
+                INNER JOIN " . DB::TBL_CANVASES . " c ON h.canvas_id = c.id
+                WHERE c.uuid = :uuid
+                ORDER BY h.created_at DESC";
+                
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':uuid' => $uuid]);
+        
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 }
 ?>

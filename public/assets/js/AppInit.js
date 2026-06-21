@@ -25,13 +25,12 @@ document.addEventListener('DOMContentLoaded', () => {
         outlet: '[data-ref="app-router-outlet"]'
     });
 
-    // 5. NUEVO: Instanciamos el Tracker de Telemetría
+    // 5. Instanciamos el Tracker de Telemetría
     const allowTelemetry = window.AppUserPrefs && window.AppUserPrefs.allow_telemetry !== undefined 
                            ? parseInt(window.AppUserPrefs.allow_telemetry) === 1 
                            : true;
     window.telemetryTracker = new TelemetryTracker({ allowTelemetry });
     
-    // CORRECCIÓN: Faltaba llamar a init() para instanciar el AbortController
     window.telemetryTracker.init();
 
     // ========================================================
@@ -47,7 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.addEventListener('viewLoaded', async (e) => {
         const cleanUrl = e.detail.cleanUrl; 
-        const loadTimeMs = e.detail.loadTimeMs || 0; // NUEVO: Atrapamos el tiempo de carga
+        const loadTimeMs = e.detail.loadTimeMs || 0; 
         
         // Registrar la vista en la Telemetría
         if (window.telemetryTracker) {
@@ -61,12 +60,14 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (relativePath === '') relativePath = '/';
 
-        // --- CORRECCIÓN VITAL PARA RUTAS DINÁMICAS (DISEÑO CON UUID) ---
-        // Obliga al motor a utilizar el controlador de Design sin importar el UUID en la ruta
-        if (relativePath.startsWith('/design/')) {
+        // --- CORRECCIÓN VITAL PARA RUTAS DINÁMICAS ---
+        // Diferenciamos explícitamente entre la Galería de Snapshots y el Editor de Lienzo
+        if (relativePath.startsWith('/design/s/')) {
+            relativePath = '/design/s/:uuid';
+        } else if (relativePath.startsWith('/design/')) {
             relativePath = '/design';
         }
-        // ---------------------------------------------------------------
+        // ---------------------------------------------
 
         const moduleConfig = RouteModulesMap[relativePath];
 
@@ -138,7 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
             } catch (error) {
-                // Silenciado
+                console.error("Error cargando el módulo JS:", error); // Añadido para debugging
             } finally {
                 delete window.importLocks[className];
             }
@@ -160,7 +161,6 @@ document.addEventListener('DOMContentLoaded', () => {
         initialCleanUrl = initialCleanUrl.slice(0, -1);
     }
 
-    // Nota: El loadTimeMs inicial será 0 ya que la página se renderizó en el servidor (PHP)
     window.dispatchEvent(new CustomEvent('viewLoaded', { 
         detail: { 
             url: currentPath,

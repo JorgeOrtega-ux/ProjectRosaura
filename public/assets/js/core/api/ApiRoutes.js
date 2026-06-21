@@ -101,6 +101,9 @@ export const ApiRoutes = {
         
         // --- RUTAS DE REINICIOS PROGRAMADOS ---
         GetResetSettings: 'canvases.get_reset_settings',
-        UpdateResetSettings: 'canvases.update_reset_settings'
+        UpdateResetSettings: 'canvases.update_reset_settings',
+
+        // --- NUEVA RUTA DE GALERÍA DE SNAPSHOTS ---
+        GetSnapshotsGallery: 'canvases.get_snapshots_gallery'
     }
 };

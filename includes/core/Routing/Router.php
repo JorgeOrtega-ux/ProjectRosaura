@@ -39,7 +39,15 @@ class Router {
             exit;
         }
 
-        // 2. Manejar rutas dinámicas para /design/{uuid}
+        // 2. Manejar rutas dinámicas para /design/s/{uuid} (Galería de Snapshots)
+        // DEBE IR ANTES de la regla del lienzo normal para evitar conflictos
+        if (preg_match('#^/design/s/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
+            // Guardamos el uuid por si lo necesitas directo en $_GET
+            $_GET['uuid'] = $matches[1];
+            return ['view' => 'canvases/snapshots-gallery.php'];
+        }
+
+        // 3. Manejar rutas dinámicas para /design/{uuid} (Lienzo Normal)
         if (preg_match('#^/design/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
             // Guardamos el uuid por si el backend (PHP) lo requiere
             $_GET['id'] = $matches[1];

@@ -34,9 +34,6 @@ class CanvasController extends BaseController {
         }
     }
 
-    // ==========================================
-    // NUEVO ENDPOINT: STREAMING DEL TIMELAPSE
-    // ==========================================
     public function get_timelapse($input) {
         try {
             $userId = $this->session->isLoggedIn() ? $this->session->getActiveAccountId() : null;
@@ -46,7 +43,6 @@ class CanvasController extends BaseController {
                 return $this->respond(['success' => false, 'message' => 'ID de lienzo no proporcionado.', 'http_code' => 400]);
             }
 
-            // Validar permisos y existencia del archivo
             $result = $this->canvasServices->prepareTimelapseDownload($userId, (int)$canvasId);
 
             if (!$result['success']) {
@@ -57,12 +53,10 @@ class CanvasController extends BaseController {
 
             $filePath = $result['file_path'];
 
-            // Limpiar cualquier buffer previo para evitar corromper la respuesta
             if (ob_get_level()) {
                 ob_end_clean();
             }
 
-            // Cabeceras HTTP para descarga / streaming
             header('Content-Type: application/x-ndjson');
             header('Content-Disposition: attachment; filename="timelapse_' . $canvasId . '.jsonl"');
             header('Content-Length: ' . filesize($filePath));
@@ -70,20 +64,8 @@ class CanvasController extends BaseController {
             header('Pragma: no-cache');
             header('Expires: 0');
             
-            // --- OPTIMIZACIÓN A FUTURO ---
-            // Si algún día configuras Nginx con X-Accel o Apache con mod_xsendfile,
-            // debes descomentar la línea correspondiente y comentar 'readfile($filePath);'.
-            // Esto hará que PHP delegue la descarga 100% al servidor web (Ultra rápido).
-            // header("X-Sendfile: $filePath"); // Apache
-            // header("X-Accel-Redirect: /timelapses_internos/canvas_{$canvasId}.jsonl"); // Nginx
-            // exit;
-
-            // Fallback actual: Streaming directo mediante readfile. 
-            // Lee directo del disco al buffer de salida de red, sin inflar la RAM.
             flush();
             readfile($filePath);
-            
-            // Matamos la ejecución aquí para que el framework no intente hacer un json_encode del resultado.
             exit;
 
         } catch (\Throwable $e) {
@@ -185,10 +167,6 @@ class CanvasController extends BaseController {
         }
     }
 
-    // ==========================================
-    // RUTAS DE REINICIO DE LIENZOS (NUEVAS)
-    // ==========================================
-
     public function get_reset_settings($input) {
         try {
             if (!$this->session->isLoggedIn()) {
@@ -279,6 +257,27 @@ class CanvasController extends BaseController {
             if (!$canvasId) return $this->respond(['success' => false, 'message' => 'Lienzo no proporcionado.']);
             
             return $this->respond($this->canvasServices->getPendingRequests($userId, (int)$canvasId));
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
+    // ==========================================
+    // NUEVO ENDPOINT PARA OBTENER GALERÍA PÚBLICA
+    // ==========================================
+    public function get_snapshots_gallery($input) {
+        try {
+            $uuid = $input['uuid'] ?? null;
+            if (!$uuid) {
+                return $this->respond(['success' => false, 'message' => 'UUID no proporcionado.']);
+            }
+            
+            // Verificamos sesión para permitir acceso a lienzos privados si es el dueño
+            $userId = $this->session->isLoggedIn() ? $this->session->getActiveAccountId() : null;
+
+            $result = $this->canvasServices->getSnapshotsGallery($uuid, $userId);
+            return $this->respond($result);
+
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);
         }

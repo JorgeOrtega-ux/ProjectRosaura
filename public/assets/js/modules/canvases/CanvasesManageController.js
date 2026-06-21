@@ -8,6 +8,7 @@ class CanvasesManageController {
     constructor() {
         this.api = new ApiService();
         this.selectedCanvasIds = new Set();
+        this.selectedCanvasUuid = null; // Guardamos el UUID seleccionado
         this.basePath = window.AppBasePath || '';
         
         this.abortController = null;
@@ -34,6 +35,7 @@ class CanvasesManageController {
         document.removeEventListener('input', this.handleGlobalInputBound);
         window.removeEventListener('viewLoaded', this.handleViewLoadedBound);
         this.selectedCanvasIds.clear();
+        this.selectedCanvasUuid = null;
         this.isInitialized = false;
     }
 
@@ -67,6 +69,7 @@ class CanvasesManageController {
         const editCanvasBtn = e.target.closest('[data-action="editSelectedCanvas"]');
         const manageMembersBtn = e.target.closest('[data-action="manageCanvasMembers"]');
         const manageResetsBtn = e.target.closest('[data-action="manageCanvasResets"]');
+        const viewSnapshotsBtn = e.target.closest('[data-action="viewCanvasSnapshots"]');
         const deleteCanvasesBtn = e.target.closest('[data-action="deleteSelectedCanvases"]');
         const viewRequestsBtn = e.target.closest('[data-action="viewCanvasRequests"]');
 
@@ -81,6 +84,7 @@ class CanvasesManageController {
         if (editCanvasBtn && !editCanvasBtn.classList.contains('disabled-interactive')) this.editSelectedCanvas();
         if (manageMembersBtn && !manageMembersBtn.classList.contains('disabled-interactive')) this.manageCanvasMembers();
         if (manageResetsBtn && !manageResetsBtn.classList.contains('disabled-interactive')) this.manageCanvasResets();
+        if (viewSnapshotsBtn && !viewSnapshotsBtn.classList.contains('disabled-interactive')) this.viewCanvasSnapshots();
         if (deleteCanvasesBtn && !deleteCanvasesBtn.classList.contains('disabled-interactive')) this.deleteSelectedCanvases(deleteCanvasesBtn);
         if (viewRequestsBtn && !viewRequestsBtn.classList.contains('disabled-interactive')) this.viewCanvasRequests();
 
@@ -186,12 +190,17 @@ class CanvasesManageController {
         else window.location.href = `${this.basePath}/canvases/members?id=${id}`;
     }
 
-    // NUEVA ACCIÓN DE REDIRECCIÓN A REINICIOS
     manageCanvasResets() {
         if (this.selectedCanvasIds.size !== 1) return;
         const id = Array.from(this.selectedCanvasIds)[0];
         if (window.spaRouter) window.spaRouter.navigate(`${this.basePath}/canvases/manage/resets?id=${id}`);
         else window.location.href = `${this.basePath}/canvases/manage/resets?id=${id}`;
+    }
+
+    viewCanvasSnapshots() {
+        if (this.selectedCanvasIds.size !== 1 || !this.selectedCanvasUuid) return;
+        if (window.spaRouter) window.spaRouter.navigate(`${this.basePath}/design/s/${this.selectedCanvasUuid}`);
+        else window.location.href = `${this.basePath}/design/s/${this.selectedCanvasUuid}`;
     }
 
     viewCanvasRequests() {
@@ -230,6 +239,7 @@ class CanvasesManageController {
         if (result.success) {
             showMessage(result.message, 'success');
             this.selectedCanvasIds.clear();
+            this.selectedCanvasUuid = null;
 
             setTimeout(() => {
                 if (window.spaRouter) window.spaRouter.navigate(`${this.basePath}/canvases/manage`, { forceReload: true });
@@ -242,12 +252,15 @@ class CanvasesManageController {
 
     handleCanvasSelection(rowElement) {
         const canvasId = rowElement.getAttribute('data-canvas-id');
+        const uuid = rowElement.getAttribute('data-uuid');
         
         if (this.selectedCanvasIds.has(canvasId)) {
             this.selectedCanvasIds.delete(canvasId);
+            this.selectedCanvasUuid = null;
             rowElement.classList.remove('selected');
         } else {
             this.selectedCanvasIds.add(canvasId);
+            this.selectedCanvasUuid = uuid;
             rowElement.classList.add('selected');
         }
 
@@ -256,6 +269,7 @@ class CanvasesManageController {
 
     deselectCanvas() {
         this.selectedCanvasIds.clear();
+        this.selectedCanvasUuid = null;
         document.querySelectorAll('[data-action="selectCanvas"]').forEach(el => el.classList.remove('selected'));
         this.updateSelectionUI();
     }
@@ -267,19 +281,19 @@ class CanvasesManageController {
         const btnEdit = document.querySelector('[data-action="editSelectedCanvas"]');
         const btnMembers = document.querySelector('[data-action="manageCanvasMembers"]');
         const btnResets = document.querySelector('[data-action="manageCanvasResets"]');
+        const btnSnapshots = document.querySelector('[data-action="viewCanvasSnapshots"]');
         const btnRequests = document.querySelector('[data-action="viewCanvasRequests"]');
 
         if (this.selectedCanvasIds.size > 0) {
             if (defaultMode) defaultMode.classList.replace('active', 'disabled');
             if (selectionMode) selectionMode.classList.replace('disabled', 'active');
 
-            // Si hay más de un elemento seleccionado, deshabilitar acciones de 1-a-1
             if (this.selectedCanvasIds.size > 1) {
-                [btnEdit, btnMembers, btnResets, btnRequests].forEach(btn => {
+                [btnEdit, btnMembers, btnResets, btnSnapshots, btnRequests].forEach(btn => {
                     if (btn) btn.classList.add('disabled-interactive');
                 });
             } else {
-                [btnEdit, btnMembers, btnResets, btnRequests].forEach(btn => {
+                [btnEdit, btnMembers, btnResets, btnSnapshots, btnRequests].forEach(btn => {
                     if (btn) btn.classList.remove('disabled-interactive');
                 });
             }

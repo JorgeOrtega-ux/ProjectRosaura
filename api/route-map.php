@@ -351,7 +351,7 @@ return [
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_upd_reset', 'max' => RL::MAX_10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
     
-    // --- RUTAS DE APROBACIÓN DE ACCESOS (NUEVAS) ---
+    // --- RUTAS DE APROBACIÓN DE ACCESOS ---
     'canvases.request_access' => [
         'controller' => 'App\Api\Controllers\CanvasController',
         'action' => 'request_access',
@@ -371,6 +371,13 @@ return [
         'controller' => 'App\Api\Controllers\CanvasController',
         'action' => 'get_pending_requests',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_get_reqs', 'max' => RL::MAX_20, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
+    ],
+
+    // --- NUEVA RUTA PÚBLICA DE GALERÍA DE SNAPSHOTS ---
+    'canvases.get_snapshots_gallery' => [
+        'controller' => 'App\Api\Controllers\CanvasController',
+        'action' => 'get_snapshots_gallery',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_get_snapshots', 'max' => RL::MAX_30, 'time' => RL::TIME_1, 'identifier' => RL::ID_IP]]
     ],
 
     // --- NUEVA RUTA DE TELEMETRÍA (Tracker Frontend) ---

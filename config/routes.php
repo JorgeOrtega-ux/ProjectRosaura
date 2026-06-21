@@ -45,6 +45,9 @@ return [
     '/canvases/join' => ['view' => 'canvases/join.php', 'auth' => true, 'permissions' => ['join_canvas'], 'requires_2fa' => false],
     '/canvases/edit' => ['view' => 'canvases/edit.php', 'auth' => true, 'permissions' => ['manage_canvases'], 'requires_2fa' => false],
 
+    // --- NUEVA RUTA PÚBLICA DE GALERÍA DE SNAPSHOTS ---
+    '/design/s/:uuid' => ['view' => 'canvases/snapshots-gallery.php'],
+
     '/admin' => ['view' => 'admin/dashboard.php', 'auth' => true, 'permissions' => ['access_admin_panel'], 'requires_2fa' => false],
     '/admin/dashboard' => ['view' => 'admin/dashboard.php', 'auth' => true, 'permissions' => ['access_admin_panel'], 'requires_2fa' => false],
     

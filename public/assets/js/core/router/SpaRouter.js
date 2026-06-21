@@ -196,8 +196,12 @@ export class SpaRouter {
                 if (this.basePath && moduleUrl.startsWith(this.basePath)) {
                     moduleUrl = moduleUrl.slice(this.basePath.length);
                 }
-                if (moduleUrl.startsWith('/design/')) {
-                    moduleUrl = '/design'; // Forzamos a que resuelva la llave '/design' en el RouteModulesMap
+                
+                // MODIFICACIÓN CRÍTICA: Diferenciar entre Snapshot Gallery y Lienzo Normal
+                if (moduleUrl.startsWith('/design/s/')) {
+                    moduleUrl = '/design/s/:uuid';
+                } else if (moduleUrl.startsWith('/design/')) {
+                    moduleUrl = '/design'; 
                 }
 
                 const loadTimeMs = Math.round(performance.now() - startTime); // Terminamos de medir
@@ -205,7 +209,7 @@ export class SpaRouter {
                 window.dispatchEvent(new CustomEvent('viewLoaded', { 
                     detail: { 
                         url: url,
-                        cleanUrl: moduleUrl, // Mapeado a la ruta estática para módulos (/design en lugar de /design/uuid)
+                        cleanUrl: moduleUrl, // Mapeado a la ruta estática para módulos
                         originalUrl: cleanUrl, // Ruta original
                         loadTimeMs: loadTimeMs // Reporte expuesto
                     } 
@@ -305,8 +309,6 @@ export class SpaRouter {
             }
         }
 
-        // Función genérica que aplicará el fallback (.active del grupo principal) 
-        // *solo* si NO existe ya un link específicamente activo dentro del dropdown para esa sección.
         const checkDropdownFallback = (token) => {
             const dropdownItems = document.querySelectorAll('.component-module--dropdown .nav-item');
             let hasExactMatch = false;
@@ -319,12 +321,11 @@ export class SpaRouter {
                         hasExactMatch = true;
                     }
                     if (!fallbackItem) {
-                        fallbackItem = el; // Guarda la referencia al primer ítem del grupo que se encuentre (fallback natural)
+                        fallbackItem = el; 
                     }
                 }
             });
 
-            // Si ningún ítem específico hizo match con la ruta, encendemos el principal
             if (!hasExactMatch && fallbackItem) {
                 fallbackItem.classList.add('active');
             }
@@ -335,7 +336,6 @@ export class SpaRouter {
         } else if (normalizedPath.includes('/admin')) {
             checkDropdownFallback('/admin');
         } else if (normalizedPath.includes('/site-policy')) {
-            // FALLBACK NUEVO PARA SITE POLICY
             checkDropdownFallback('/site-policy');
         }
     }
@@ -356,13 +356,15 @@ export class SpaRouter {
     }
 
     _showLoaderInOutlet(cleanUrl) {
-        // Mapeo dinámico para rutas con ID
         let mapKey = cleanUrl;
-        if (cleanUrl.startsWith('/design/')) {
+        
+        // MODIFICACIÓN CRÍTICA: Diferenciar Skeletons de Galería vs Lienzo
+        if (cleanUrl.startsWith('/design/s/')) {
+            mapKey = '/design/s/:uuid';
+        } else if (cleanUrl.startsWith('/design/')) {
             mapKey = '/design';
         }
 
-        // En lugar del spinner genérico, inyectamos el HTML del Skeleton asociado a la ruta
         const routeConfig = RouteModulesMap[mapKey];
         const skeletonType = routeConfig && routeConfig.skeletonType ? routeConfig.skeletonType : 'generic';
         

@@ -64,6 +64,10 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
             <div class="component-top-right">
                 
                 <div class="component-actions disabled" data-ref="header-selection-actions">
+                    <button class="component-button component-button--icon component-button--h40 disabled-interactive" data-action="viewCanvasSnapshots" data-tooltip="<?php echo __('tooltip_view_snapshots') ?: 'Ver galería de reinicios'; ?>" data-position="bottom">
+                        <span class="material-symbols-rounded">collections</span>
+                    </button>
+
                     <button class="component-button component-button--icon component-button--h40" data-action="viewCanvasRequests" data-tooltip="<?php echo __('tooltip_view_requests') ?: 'Solicitudes de acceso'; ?>" data-position="bottom">
                         <span class="material-symbols-rounded">front_hand</span>
                     </button>
@@ -140,7 +144,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                     <tbody>
                         <?php if ($canvases): ?>
                             <?php foreach ($canvases as $canvas): ?>
-                                <tr class="component-table-row" data-action="selectCanvas" data-canvas-id="<?php echo htmlspecialchars($canvas['id']); ?>">
+                                <tr class="component-table-row" data-action="selectCanvas" data-canvas-id="<?php echo htmlspecialchars($canvas['id']); ?>" data-uuid="<?php echo htmlspecialchars($canvas['uuid']); ?>">
                                     <td>
                                         <div class="td-user-info">
                                             <div class="component-badge component-badge--sm">

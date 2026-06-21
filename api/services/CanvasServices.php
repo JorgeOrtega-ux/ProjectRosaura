@@ -11,6 +11,8 @@ use App\Core\System\Logger;
 use App\Core\System\DatabaseConstants as DB;
 use App\Core\System\CacheConstants;
 use App\Config\RedisCache;
+use App\Config\DatabaseManager;
+use PDO;
 
 class CanvasServices {
     private $canvasRepository;
@@ -243,13 +245,8 @@ class CanvasServices {
         }
     }
 
-    // ==========================================
-    // LÓGICA DE REINICIOS DE LIENZO
-    // ==========================================
-
     public function getResetSettings(int $userId, int $canvasId): array {
         try {
-            // Verificar pertenencia y permisos
             $canvas = $this->canvasRepository->getByIdAndUser($canvasId, $userId);
             if (!$canvas) {
                 return ['success' => false, 'message' => __('err_unauthorized') ?? 'No tienes permisos para ver la configuración de este lienzo.'];
@@ -257,7 +254,6 @@ class CanvasServices {
 
             $settings = $this->canvasRepository->getResetSettings($canvasId);
             if (!$settings) {
-                // Devolver estructura por defecto si no hay nada guardado aún
                 $settings = [
                     'is_active' => false,
                     'next_reset_at' => null,
@@ -291,7 +287,6 @@ class CanvasServices {
                     return ['success' => false, 'message' => 'La fecha de reinicio es obligatoria si la opción está activada.'];
                 }
                 
-                // Validar formato estricto UTC: Y-m-d H:i:s
                 $date = DateTime::createFromFormat('Y-m-d H:i:s', $data['next_reset_at']);
                 if (!$date || $date->format('Y-m-d H:i:s') !== $data['next_reset_at']) {
                     return ['success' => false, 'message' => 'Formato de fecha inválido (Debe ser UTC Y-m-d H:i:s).'];
@@ -308,7 +303,6 @@ class CanvasServices {
 
             $this->canvasRepository->updateResetSettings($canvasId, $settings);
 
-            // Sincronizar inmediatamente con Redis para que la UI de todos y los Workers lo sepan
             try {
                 if (class_exists(RedisCache::class)) {
                     $redisInstance = new RedisCache();
@@ -434,6 +428,54 @@ class CanvasServices {
 
         } catch (Exception $e) {
             Logger::error('Error preparing timelapse download.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database') ?? 'Error interno al procesar la solicitud.'];
+        }
+    }
+
+    // ==========================================
+    // NUEVO MÉTODO PARA OBTENER GALERÍA PÚBLICA
+    // ==========================================
+    public function getSnapshotsGallery(string $uuid, ?int $userId = null): array {
+        try {
+            // Verificamos permisos y existencia del lienzo usando una consulta directa
+            // ya que el CanvasRepository no tiene getByUuid definido para esta función específica.
+            $db = new DatabaseManager();
+            $pdo = $db->getConnection(DB::CONN_CANVASES);
+            $stmt = $pdo->prepare("SELECT id, user_id, name, privacy FROM " . DB::TBL_CANVASES . " WHERE uuid = :uuid LIMIT 1");
+            $stmt->execute([':uuid' => $uuid]);
+            $canvas = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$canvas) {
+                return ['success' => false, 'message' => __('err_canvas_not_found') ?? 'Lienzo no encontrado.'];
+            }
+
+            // Validar privacidad
+            if ($canvas['privacy'] === DB::PRIVACY_PRIVATE && $canvas['user_id'] !== $userId) {
+                // Opcional: Podríamos verificar el rol de miembro aquí también si lo requerimos.
+                return ['success' => false, 'message' => __('err_unauthorized') ?? 'Este lienzo es privado.'];
+            }
+
+            $history = $this->canvasRepository->getSnapshotsHistoryByUuid($uuid);
+
+            // Mapeamos para enviar rutas seguras y fechas estructuradas
+            $formattedHistory = array_map(function($item) {
+                return [
+                    'id' => $item['id'],
+                    'url' => $item['snapshot_path'],
+                    'date' => date('d/m/Y H:i', strtotime($item['created_at']))
+                ];
+            }, $history);
+
+            return [
+                'success' => true, 
+                'data' => [
+                    'canvas_name' => $canvas['name'],
+                    'snapshots' => $formattedHistory
+                ]
+            ];
+
+        } catch (Exception $e) {
+            Logger::error('Error getting snapshots gallery.', ['uuid' => $uuid, 'error' => $e->getMessage()]);
             return ['success' => false, 'message' => __('err_database') ?? 'Error interno al procesar la solicitud.'];
         }
     }
