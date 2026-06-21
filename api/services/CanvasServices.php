@@ -477,11 +477,7 @@ class CanvasServices {
 
         } catch (Exception $e) {
             Logger::error('Error getting snapshots gallery.', ['uuid' => $uuid, 'error' => $e->getMessage()]);
-            // Modificado para inyectar el error real directamente en la respuesta JSON que lee el frontend
-            return [
-                'success' => false, 
-                'message' => 'EXCEPCIÓN SERVICIO: ' . $e->getMessage() . ' en ' . $e->getFile() . ':' . $e->getLine() . "\nTrace:\n" . $e->getTraceAsString()
-            ];
+            return ['success' => false, 'message' => __('err_database') ?? 'Error interno al procesar la solicitud.'];
         }
     }
 }
