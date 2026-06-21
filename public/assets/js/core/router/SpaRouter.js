@@ -197,9 +197,11 @@ export class SpaRouter {
                     moduleUrl = moduleUrl.slice(this.basePath.length);
                 }
                 
-                // MODIFICACIÓN CRÍTICA: Diferenciar entre Snapshot Gallery y Lienzo Normal
+                // MODIFICACIÓN CRÍTICA: Diferenciar entre Snapshot Gallery, Visor de Snapshot y Lienzo Normal
                 if (moduleUrl.startsWith('/design/s/')) {
                     moduleUrl = '/design/s/:uuid';
+                } else if (moduleUrl.startsWith('/snapshot/view/')) {
+                    moduleUrl = '/snapshot/view/:id';
                 } else if (moduleUrl.startsWith('/design/')) {
                     moduleUrl = '/design'; 
                 }
@@ -358,9 +360,11 @@ export class SpaRouter {
     _showLoaderInOutlet(cleanUrl) {
         let mapKey = cleanUrl;
         
-        // MODIFICACIÓN CRÍTICA: Diferenciar Skeletons de Galería vs Lienzo
+        // MODIFICACIÓN CRÍTICA: Diferenciar Skeletons de Galería vs Lienzo vs Visor
         if (cleanUrl.startsWith('/design/s/')) {
             mapKey = '/design/s/:uuid';
+        } else if (cleanUrl.startsWith('/snapshot/view/')) {
+            mapKey = '/snapshot/view/:id';
         } else if (cleanUrl.startsWith('/design/')) {
             mapKey = '/design';
         }

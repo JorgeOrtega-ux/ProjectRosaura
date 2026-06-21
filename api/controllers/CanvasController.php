@@ -282,5 +282,26 @@ class CanvasController extends BaseController {
             return $this->handleException($e, __FUNCTION__);
         }
     }
+
+    // ==========================================
+    // NUEVO ENDPOINT: OBTENER DETALLE DEL SNAPSHOT
+    // ==========================================
+    public function get_snapshot_detail($input) {
+        try {
+            $id = $input['id'] ?? null;
+            if (!$id) {
+                return $this->respond(['success' => false, 'message' => 'ID de snapshot no proporcionado.']);
+            }
+            
+            // Verificamos sesión para permitir acceso a lienzos privados si es el dueño
+            $userId = $this->session->isLoggedIn() ? $this->session->getActiveAccountId() : null;
+
+            $result = $this->canvasServices->getSnapshotDetail($id, $userId);
+            return $this->respond($result);
+
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
 }
 ?>

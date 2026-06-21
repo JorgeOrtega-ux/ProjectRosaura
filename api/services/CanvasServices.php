@@ -298,7 +298,7 @@ class CanvasServices {
                 'is_active' => $isActive ? 1 : 0,
                 'next_reset_at' => $nextResetAt,
                 'take_snapshot' => filter_var($data['take_snapshot'] ?? true, FILTER_VALIDATE_BOOLEAN) ? 1 : 0,
-                'timer_action' => in_array($data['timer_action'] ?? 'restart', ['restart', 'stop', 'none']) ? $data['timer_action'] : 'restart'
+                'timer_action' => in_array($data['timer_action'] ?? 'restart', ['stop', 'none', 'restart']) ? $data['timer_action'] : 'restart'
             ];
 
             $this->canvasRepository->updateResetSettings($canvasId, $settings);
@@ -432,13 +432,8 @@ class CanvasServices {
         }
     }
 
-    // ==========================================
-    // NUEVO MÉTODO PARA OBTENER GALERÍA PÚBLICA
-    // ==========================================
     public function getSnapshotsGallery(string $uuid, ?int $userId = null): array {
         try {
-            // Verificamos permisos y existencia del lienzo usando una consulta directa
-            // ya que el CanvasRepository no tiene getByUuid definido para esta función específica.
             $db = new DatabaseManager();
             $pdo = $db->getConnection(DB::CONN_CANVASES);
             $stmt = $pdo->prepare("SELECT id, user_id, name, privacy FROM " . DB::TBL_CANVASES . " WHERE uuid = :uuid LIMIT 1");
@@ -449,15 +444,12 @@ class CanvasServices {
                 return ['success' => false, 'message' => __('err_canvas_not_found') ?? 'Lienzo no encontrado.'];
             }
 
-            // Validar privacidad
             if ($canvas['privacy'] === DB::PRIVACY_PRIVATE && $canvas['user_id'] !== $userId) {
-                // Opcional: Podríamos verificar el rol de miembro aquí también si lo requerimos.
                 return ['success' => false, 'message' => __('err_unauthorized') ?? 'Este lienzo es privado.'];
             }
 
             $history = $this->canvasRepository->getSnapshotsHistoryByUuid($uuid);
 
-            // Mapeamos para enviar rutas seguras y fechas estructuradas
             $formattedHistory = array_map(function($item) {
                 return [
                     'id' => $item['id'],
@@ -477,6 +469,55 @@ class CanvasServices {
 
         } catch (Exception $e) {
             Logger::error('Error getting snapshots gallery.', ['uuid' => $uuid, 'error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database') ?? 'Error interno al procesar la solicitud.'];
+        }
+    }
+
+    // ==========================================
+    // NUEVO MÉTODO: OBTENER DETALLE DEL SNAPSHOT
+    // ==========================================
+    public function getSnapshotDetail(string $snapshotId, ?int $userId = null): array {
+        try {
+            $db = new DatabaseManager();
+            $pdo = $db->getConnection(DB::CONN_CANVASES);
+
+            // Buscar el snapshot y unirse con el lienzo para obtener dimensiones y confirmar privacidad
+            $stmt = $pdo->prepare("
+                SELECT s.file_path, s.snapshot_uuid, c.size, c.privacy, c.user_id 
+                FROM canvas_snapshots_history s
+                JOIN " . DB::TBL_CANVASES . " c ON s.canvas_uuid = c.uuid
+                WHERE s.snapshot_uuid = :snapshot_id 
+                LIMIT 1
+            ");
+            $stmt->execute([':snapshot_id' => $snapshotId]);
+            $data = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$data) {
+                return ['success' => false, 'message' => __('err_snapshot_not_found') ?? 'Snapshot no encontrado.'];
+            }
+
+            // Validar privacidad
+            if ($data['privacy'] === DB::PRIVACY_PRIVATE && $data['user_id'] !== $userId) {
+                return ['success' => false, 'message' => __('err_unauthorized') ?? 'Este lienzo es privado.'];
+            }
+
+            $imageUrl = $data['file_path'];
+            // Asegurarse de que la ruta comience con '/'
+            if (!str_starts_with($imageUrl, '/')) {
+                $imageUrl = '/' . $imageUrl;
+            }
+
+            return [
+                'success' => true,
+                'data' => [
+                    'image_url' => $imageUrl,
+                    'width' => (int)$data['size'],
+                    'height' => (int)$data['size']
+                ]
+            ];
+
+        } catch (Exception $e) {
+            Logger::error('Error getting snapshot detail.', ['snapshot_id' => $snapshotId, 'error' => $e->getMessage()]);
             return ['success' => false, 'message' => __('err_database') ?? 'Error interno al procesar la solicitud.'];
         }
     }

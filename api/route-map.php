@@ -380,6 +380,13 @@ return [
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_get_snapshots', 'max' => RL::MAX_30, 'time' => RL::TIME_1, 'identifier' => RL::ID_IP]]
     ],
 
+    // --- NUEVA RUTA: OBTENER DETALLE DEL SNAPSHOT (PARA EL VISOR) ---
+    'canvases.get_snapshot_detail' => [
+        'controller' => 'App\Api\Controllers\CanvasController',
+        'action' => 'get_snapshot_detail',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_get_snap_detail', 'max' => RL::MAX_30, 'time' => RL::TIME_1, 'identifier' => RL::ID_IP]]
+    ],
+
     // --- NUEVA RUTA DE TELEMETRÍA (Tracker Frontend) ---
     'telemetry.collect' => [
         'controller' => 'App\Api\Controllers\TelemetryController',

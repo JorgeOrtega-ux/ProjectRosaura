@@ -47,6 +47,13 @@ class Router {
             return ['view' => 'canvases/snapshots-gallery.php'];
         }
 
+        // NUEVO: Manejar rutas dinámicas para /snapshot/view/{uuid} (Visor Individual)
+        if (preg_match('#^/snapshot/view/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
+            // Guardamos el id del snapshot en $_GET para que lo lea snapshot-viewer.php
+            $_GET['id'] = $matches[1];
+            return ['view' => 'app/snapshot-viewer.php'];
+        }
+
         // 3. Manejar rutas dinámicas para /design/{uuid} (Lienzo Normal)
         if (preg_match('#^/design/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
             // Guardamos el uuid por si el backend (PHP) lo requiere

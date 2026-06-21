@@ -47,6 +47,9 @@ return [
 
     // --- NUEVA RUTA PÚBLICA DE GALERÍA DE SNAPSHOTS ---
     '/design/s/:uuid' => ['view' => 'canvases/snapshots-gallery.php'],
+    
+    // --- NUEVA RUTA: VISOR DE SNAPSHOT AISLADO ---
+    '/snapshot/view/:id' => ['view' => 'app/snapshot-viewer.php'],
 
     '/admin' => ['view' => 'admin/dashboard.php', 'auth' => true, 'permissions' => ['access_admin_panel'], 'requires_2fa' => false],
     '/admin/dashboard' => ['view' => 'admin/dashboard.php', 'auth' => true, 'permissions' => ['access_admin_panel'], 'requires_2fa' => false],

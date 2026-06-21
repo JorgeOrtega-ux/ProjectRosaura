@@ -76,5 +76,8 @@ export const RouteModulesMap = {
     '/canvases/edit': { path: './modules/canvases/CanvasEditController.js', className: 'CanvasEditController', skeletonType: 'layout-dashboard' },
     
     // ---- NUEVO MÓDULO GALERÍA PÚBLICA DE SNAPSHOTS ----
-    '/design/s/:uuid': { path: './modules/canvases/CanvasSnapshotsGalleryController.js', className: 'CanvasSnapshotsGalleryController', skeletonType: 'layout-dashboard' }
+    '/design/s/:uuid': { path: './modules/canvases/CanvasSnapshotsGalleryController.js', className: 'CanvasSnapshotsGalleryController', skeletonType: 'layout-dashboard' },
+
+    // ---- NUEVO VISOR INDIVIDUAL DE SNAPSHOT ----
+    '/snapshot/view/:id': { path: './modules/app/SnapshotViewerController.js', className: 'SnapshotViewerController', skeletonType: 'layout-full' }
 };

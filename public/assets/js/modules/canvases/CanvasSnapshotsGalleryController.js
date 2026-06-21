@@ -108,8 +108,8 @@ class CanvasSnapshotsGalleryController {
             // Asumiendo que el worker guarda la imagen en public/assets/img/snapshots_history/
             const imageUrl = snapshot.url.startsWith('/') ? snapshot.url : `/${snapshot.url}`;
             
-            // URL de visualización en modo Snapshot
-            const viewUrl = `${this.basePath}/design?id=${encodeURIComponent(this.uuid)}&snapshot=${snapshot.snapshot_uuid}&img=${encodeURIComponent(imageUrl)}`;
+            // NUEVA URL DE VISUALIZACIÓN AISLADA
+            const viewUrl = `${this.basePath}/snapshot/view/${snapshot.snapshot_uuid}`;
             
             card.href = viewUrl;
 
