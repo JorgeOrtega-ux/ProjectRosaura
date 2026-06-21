@@ -34,8 +34,9 @@ class DatabaseConstants {
     public const TBL_TELEMETRY_AUTH_EVENTS   = 'auth_events';
 
     // Tablas de Lienzos (NUEVAS)
-    public const TBL_CANVASES          = 'canvases';
-    public const TBL_CANVAS_MEMBERS    = 'canvas_members';
+    public const TBL_CANVASES                   = 'canvases';
+    public const TBL_CANVAS_MEMBERS             = 'canvas_members';
+    public const TBL_CANVAS_SNAPSHOTS_HISTORY   = 'canvas_snapshots_history'; // NUEVA TABLA
 
     // ==========================================
     // 3. VALORES ENUM / ESTADOS FIJOS

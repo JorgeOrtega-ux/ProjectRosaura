@@ -100,8 +100,10 @@ class CanvasSnapshotsGalleryController {
             card.className = 'component-card component-card--snapshot';
             
             // Asumiendo que el worker guarda la imagen en public/assets/img/snapshots_history/
-            // Si tu worker la guarda directamente con una URL absoluta o relativa en BD, ajusta aquí.
             const imageUrl = snapshot.url.startsWith('/') ? snapshot.url : `/${snapshot.url}`;
+            
+            // URL Mágica: Enviamos todos los datos al DesignController por GET para ahorrarnos un Fetch en el Backend
+            const viewUrl = `${this.basePath}/design?id=${encodeURIComponent(this.uuid)}&snapshot=${snapshot.snapshot_uuid}&img=${encodeURIComponent(imageUrl)}`;
 
             card.innerHTML = `
                 <div class="component-card-image-wrapper">
@@ -110,6 +112,14 @@ class CanvasSnapshotsGalleryController {
                 <div class="component-card-content">
                     <span class="material-symbols-rounded">history</span>
                     <span class="component-card-date">${snapshot.date}</span>
+                </div>
+                <div class="component-card-actions" style="padding: 0 16px 16px; display: flex; gap: 8px;">
+                    <a href="${viewUrl}" class="component-button component-button--secondary component-button--h34" style="flex: 1; justify-content: center;" data-spa-link>
+                        <span class="material-symbols-rounded" style="font-size: 18px;">visibility</span> Ver
+                    </a>
+                    <a href="${imageUrl}" download="snapshot_${snapshot.date.replace(/[\/\s:]/g, '_')}.png" class="component-button component-button--dark component-button--h34" style="flex: 1; justify-content: center;" target="_blank">
+                        <span class="material-symbols-rounded" style="font-size: 18px;">download</span>
+                    </a>
                 </div>
             `;
             

@@ -70,6 +70,21 @@ CREATE TABLE IF NOT EXISTS `canvas_reset_settings` (
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 -- ==========================================
+-- TABLA NUEVA PARA HISTORIAL DE REINICIOS (SNAPSHOTS)
+-- ==========================================
+
+CREATE TABLE IF NOT EXISTS `canvas_snapshots_history` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `canvas_id` int(11) NOT NULL,
+  `snapshot_uuid` varchar(36) NOT NULL,
+  `file_path` varchar(255) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_snapshot_uuid` (`snapshot_uuid`),
+  CONSTRAINT `fk_history_canvas` FOREIGN KEY (`canvas_id`) REFERENCES `canvases` (`id`) ON DELETE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
+
+-- ==========================================
 -- ASIGNACIÓN DE PERMISOS AL USUARIO DE LA API
 -- ==========================================
 GRANT ALL PRIVILEGES ON db_canvases.* TO 'system_web_executor'@'%';

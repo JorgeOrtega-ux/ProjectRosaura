@@ -18,13 +18,14 @@ $nextResetAt = '';
 $timerAction = 'restart';
 
 $canvasUuid = $_GET['id'] ?? '';
+$isSnapshot = isset($_GET['snapshot']); // Bandera para saber si es historial
 
 if (!empty($canvasUuid)) {
     try {
         $dbManager = new DatabaseManager();
         $db = $dbManager->getConnection(DB::CONN_CANVASES);
 
-        // Modificado: Ahora traemos también la info de canvas_reset_settings usando un LEFT JOIN
+        // Traemos también la info de canvas_reset_settings usando un LEFT JOIN
         $sql = "SELECT c.id, c.name, c.size, c.palette_id, c.privacy, c.requires_approval, 
                        r.is_active, r.next_reset_at, r.timer_action 
                 FROM " . DB::TBL_CANVASES . " c
@@ -104,10 +105,17 @@ if (!empty($canvasUuid)) {
                         <?php echo htmlspecialchars($canvasName); ?>
                     </h1>
                 <?php endif; ?>
+
+                <?php if ($isSnapshot): ?>
+                    <span class="component-badge component-badge--warning" style="margin-left: 12px;">
+                        <span class="material-symbols-rounded">history</span> Modo Histórico
+                    </span>
+                <?php endif; ?>
             </div>
             
             <div class="component-top-right" style="display: flex; align-items: center;">
                 
+                <?php if (!$isSnapshot): ?>
                 <div class="component-actions disabled" data-ref="spectator-controls" style="display: none; align-items: center; gap: 12px; margin-right: 16px; padding-right: 16px; border-right: 1px solid var(--border-color);">
                     <div class="component-badge component-badge--warning" style="margin: 0;" data-tooltip="<?php echo __('tooltip_spectator') ?? 'Solo puedes observar'; ?>" data-position="bottom">
                         <span class="material-symbols-rounded">visibility</span>
@@ -132,6 +140,7 @@ if (!empty($canvasUuid)) {
                         <span class="material-symbols-rounded">photo_library</span>
                     </button>
                 </div>
+                <?php endif; ?>
             </div>
         </div>
         <div class="component-bottom">
@@ -147,15 +156,19 @@ if (!empty($canvasUuid)) {
                 <span data-ref="reset-timer-text">00:00:00</span>
             </div>
             
+            <?php if (!$isSnapshot): ?>
             <div class="component-action-pill">
                 <button class="component-button component-button--dark component-button--h45 disabled-interactive" data-action="placePixels" data-ref="pixel-action-btn">
                     <span class="material-symbols-rounded">touch_app</span>
                     <span data-ref="pixel-action-text"><?php echo __('btn_select_pixels'); ?></span>
                 </button>
             </div>
+            <?php endif; ?>
         </div>
     </div>
 
-    <?php require_once __DIR__ . '/../../modules/moduleDesignTools.php'; ?>
+    <?php if (!$isSnapshot): ?>
+        <?php require_once __DIR__ . '/../../modules/moduleDesignTools.php'; ?>
+    <?php endif; ?>
 
 </div>

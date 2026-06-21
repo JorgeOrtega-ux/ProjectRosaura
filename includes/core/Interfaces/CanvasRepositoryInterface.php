@@ -39,8 +39,10 @@ interface CanvasRepositoryInterface {
     public function updateResetSettings(int $canvasId, array $settings): bool;
 
     // ==========================================
-    // NUEVO MÉTODO PARA GALERÍA HISTÓRICA
+    // NUEVO MÉTODO PARA GALERÍA HISTÓRICA Y VISUALIZADOR
     // ==========================================
+    public function getSnapshotByUuid(string $uuid): ?array;
+    public function getSnapshotsByCanvasId(int $canvasId): array;
     public function getSnapshotsHistoryByUuid(string $uuid): array;
 }
 ?>

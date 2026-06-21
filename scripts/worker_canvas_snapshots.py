@@ -3,6 +3,7 @@ import time
 import json
 import redis
 import mysql.connector
+import uuid
 from zlib import decompress
 from PIL import Image
 from datetime import datetime
@@ -87,7 +88,7 @@ def parse_size(size_str):
     except:
         return 64, 64
 
-def process_canvas_image(r, canvas_id, compressed_data, size_str, palette_id):
+def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palette_id):
     try:
         raw_bytes = decompress(compressed_data)
         
@@ -123,9 +124,27 @@ def process_canvas_image(r, canvas_id, compressed_data, size_str, palette_id):
         if r.exists(f"canvas:{canvas_id}:reset_lock"):
             # Generar timestamp y guardar en la carpeta de archivo histórico
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            archive_filepath = os.path.join(ARCHIVE_DIR, f"canvas_{canvas_id}_{timestamp}.png")
+            archive_filename = f"canvas_{canvas_id}_{timestamp}.png"
+            archive_filepath = os.path.join(ARCHIVE_DIR, archive_filename)
             img_scaled.save(archive_filepath, "PNG", optimize=True)
             print(f"[+] Archivo histórico guardado exitosamente: {archive_filepath}")
+
+            # Insertar en base de datos el registro del reinicio
+            snapshot_uuid = str(uuid.uuid4())
+            public_filepath = f"/assets/img/archive/{archive_filename}"
+            
+            try:
+                cursor = db_conn.cursor()
+                insert_query = """
+                    INSERT INTO canvas_snapshots_history (canvas_id, snapshot_uuid, file_path)
+                    VALUES (%s, %s, %s)
+                """
+                cursor.execute(insert_query, (canvas_id, snapshot_uuid, public_filepath))
+                db_conn.commit()
+                cursor.close()
+                print(f"[+] Registro histórico guardado en DB con UUID: {snapshot_uuid}")
+            except Exception as e:
+                print(f"[!] Error guardando historial en DB: {e}")
 
             # Avisamos al worker de reinicios que ya puede vaciar el lienzo
             r.setex(f"canvas:{canvas_id}:snapshot_done", 60, "1")
@@ -182,8 +201,8 @@ def main():
                             size_str = result[1] if result[1] else '64'
                             palette_id = result[2] if result[2] else 'default'
                             
-                            # Pasamos Redis (r) como parámetro para que pueda evaluar los candados
-                            success = process_canvas_image(r, canvas_id, snapshot_data, size_str, palette_id)
+                            # Pasamos Redis (r) y db_conn para evaluar candados y hacer INSERTS
+                            success = process_canvas_image(r, db_conn, canvas_id, snapshot_data, size_str, palette_id)
                             if success:
                                 r.srem("canvases:pending_snapshots", canvas_id)
                                 print(f"[+] Snapshot HQ procesado: canvas_{canvas_id}.png")

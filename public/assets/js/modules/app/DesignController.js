@@ -28,6 +28,11 @@ class DesignController {
         
         const urlParams = new URLSearchParams(window.location.search);
         this.canvasId = urlParams.get('id');
+        
+        // --- NUEVAS PROPIEDADES PARA MODO SNAPSHOT ---
+        this.snapshotUuid = urlParams.get('snapshot');
+        this.snapshotImg = urlParams.get('img');
+        this.isSnapshotMode = !!(this.snapshotUuid && this.snapshotImg);
 
         this.canvas = null;
         this.ctx = null;
@@ -105,8 +110,13 @@ class DesignController {
         }
 
         this.bindEvents();
-        this.loadCanvasConfig();
-        this.checkCanvasAccess();
+        
+        if (this.isSnapshotMode) {
+            this.loadCanvasConfigForSnapshot();
+        } else {
+            this.loadCanvasConfig();
+            this.checkCanvasAccess();
+        }
     }
 
     destroy() {
@@ -132,6 +142,49 @@ class DesignController {
         if (this.resetTimerInterval) {
             clearInterval(this.resetTimerInterval);
         }
+    }
+
+    // ==========================================
+    // LÓGICA EXCLUSIVA PARA MODO SNAPSHOT
+    // ==========================================
+    
+    loadCanvasConfigForSnapshot() {
+        const wrapper = document.querySelector('[data-ref="design-wrapper"]');
+        if (wrapper) {
+            const sizeStr = wrapper.getAttribute('data-size');
+            if (sizeStr) {
+                this.boardWidth = parseInt(sizeStr, 10);
+                this.boardHeight = parseInt(sizeStr, 10);
+            }
+        }
+        this.setupCanvas();
+        this.centerBoard();
+        this.blockToolsForSnapshot();
+        this.drawImageOnCanvas(this.snapshotImg);
+    }
+
+    blockToolsForSnapshot() {
+        this.isSpectator = true;
+        this.isResetLocked = true; // Forzamos bloqueo de UI
+        
+        // Elementos que deben ocultarse ya están manejados por PHP, pero reforzamos por JS
+        if (this.btnPlacePixels) this.btnPlacePixels.style.display = 'none';
+        if (this.btnColorPalette) this.btnColorPalette.style.display = 'none';
+        
+        console.log('[DesignController] Inicializado en modo de SOLO LECTURA (Snapshot)');
+    }
+
+    drawImageOnCanvas(url) {
+        const img = new Image();
+        img.onload = () => {
+            this.offscreenCtx.clearRect(0, 0, this.boardWidth, this.boardHeight);
+            this.offscreenCtx.drawImage(img, 0, 0, this.boardWidth, this.boardHeight);
+            this.requestRender();
+        };
+        img.onerror = () => {
+            showMessage('El archivo de imagen histórico no está disponible.', 'error');
+        };
+        img.src = url;
     }
 
     initWebSocket() {

@@ -461,8 +461,9 @@ class CanvasServices {
             $formattedHistory = array_map(function($item) {
                 return [
                     'id' => $item['id'],
-                    'url' => $item['snapshot_path'],
-                    'date' => date('d/m/Y H:i', strtotime($item['created_at']))
+                    'url' => $item['file_path'],
+                    'date' => date('d/m/Y H:i', strtotime($item['created_at'])),
+                    'snapshot_uuid' => $item['snapshot_uuid']
                 ];
             }, $history);
 

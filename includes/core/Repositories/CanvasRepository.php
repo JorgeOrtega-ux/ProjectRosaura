@@ -281,15 +281,32 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     // ==========================================
-    // NUEVO MÉTODO PARA GALERÍA HISTÓRICA
+    // NUEVOS MÉTODOS PARA GALERÍA HISTÓRICA Y VISUALIZADOR
     // ==========================================
 
+    public function getSnapshotByUuid(string $uuid): ?array {
+        $sql = "SELECT h.*, c.name as canvas_name, c.uuid as original_canvas_uuid, c.size, c.palette_id
+                FROM " . DB::TBL_CANVAS_SNAPSHOTS_HISTORY . " h
+                INNER JOIN " . DB::TBL_CANVASES . " c ON h.canvas_id = c.id
+                WHERE h.snapshot_uuid = :uuid LIMIT 1";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':uuid' => $uuid]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result ?: null;
+    }
+
+    public function getSnapshotsByCanvasId(int $canvasId): array {
+        $sql = "SELECT * FROM " . DB::TBL_CANVAS_SNAPSHOTS_HISTORY . " 
+                WHERE canvas_id = :canvas_id 
+                ORDER BY created_at DESC";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':canvas_id' => $canvasId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
     public function getSnapshotsHistoryByUuid(string $uuid): array {
-        // Se asume una tabla de historial `canvas_snapshots_history` que almacena
-        // la ruta de las imágenes y la fecha de creación asociada a cada reinicio.
-        // Hacemos JOIN con la tabla de lienzos para filtrar por el UUID público.
-        $sql = "SELECT h.id, h.snapshot_path, h.created_at 
-                FROM canvas_snapshots_history h
+        $sql = "SELECT h.id, h.snapshot_uuid, h.file_path, h.created_at 
+                FROM " . DB::TBL_CANVAS_SNAPSHOTS_HISTORY . " h
                 INNER JOIN " . DB::TBL_CANVASES . " c ON h.canvas_id = c.id
                 WHERE c.uuid = :uuid
                 ORDER BY h.created_at DESC";
