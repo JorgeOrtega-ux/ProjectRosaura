@@ -185,6 +185,10 @@
     pointer-events: none;
 }
 
+.component-overlay-reset {
+    background-color: rgba(0, 0, 0, 0.6);
+}
+
 .request-list-item {
     display: flex;
     align-items: center;
@@ -209,4 +213,53 @@
 .request-list-item-actions {
     display: flex;
     gap: 8px;
+}
+
+/* -----------------------------------------
+   BADGES Y TEMPORIZADORES EN EL LIENZO
+   ----------------------------------------- */
+.component-reset-timer {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    z-index: 90;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    box-shadow: var(--shadow-md);
+    font-family: 'Inter', monospace, sans-serif;
+    font-weight: 600;
+    color: var(--text-primary);
+    transition: opacity 0.3s ease, background-color 0.3s ease, color 0.3s ease;
+}
+
+.component-reset-timer.disabled {
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+}
+
+.component-reset-timer.danger {
+    background-color: var(--action-danger);
+    color: #ffffff;
+    border-color: var(--action-danger);
+    animation: pulse-danger 1s infinite;
+}
+
+.icon-spin-slow {
+    animation: spin 3s linear infinite;
+}
+
+@keyframes pulse-danger {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.05); opacity: 0.9; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes spin {
+    100% { transform: rotate(360deg); }
 }

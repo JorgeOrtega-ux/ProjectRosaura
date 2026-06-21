@@ -66,6 +66,7 @@ class CanvasesManageController {
         
         const editCanvasBtn = e.target.closest('[data-action="editSelectedCanvas"]');
         const manageMembersBtn = e.target.closest('[data-action="manageCanvasMembers"]');
+        const manageResetsBtn = e.target.closest('[data-action="manageCanvasResets"]');
         const deleteCanvasesBtn = e.target.closest('[data-action="deleteSelectedCanvases"]');
         const viewRequestsBtn = e.target.closest('[data-action="viewCanvasRequests"]');
 
@@ -79,6 +80,7 @@ class CanvasesManageController {
         
         if (editCanvasBtn && !editCanvasBtn.classList.contains('disabled-interactive')) this.editSelectedCanvas();
         if (manageMembersBtn && !manageMembersBtn.classList.contains('disabled-interactive')) this.manageCanvasMembers();
+        if (manageResetsBtn && !manageResetsBtn.classList.contains('disabled-interactive')) this.manageCanvasResets();
         if (deleteCanvasesBtn && !deleteCanvasesBtn.classList.contains('disabled-interactive')) this.deleteSelectedCanvases(deleteCanvasesBtn);
         if (viewRequestsBtn && !viewRequestsBtn.classList.contains('disabled-interactive')) this.viewCanvasRequests();
 
@@ -184,6 +186,14 @@ class CanvasesManageController {
         else window.location.href = `${this.basePath}/canvases/members?id=${id}`;
     }
 
+    // NUEVA ACCIÓN DE REDIRECCIÓN A REINICIOS
+    manageCanvasResets() {
+        if (this.selectedCanvasIds.size !== 1) return;
+        const id = Array.from(this.selectedCanvasIds)[0];
+        if (window.spaRouter) window.spaRouter.navigate(`${this.basePath}/canvases/manage/resets?id=${id}`);
+        else window.location.href = `${this.basePath}/canvases/manage/resets?id=${id}`;
+    }
+
     viewCanvasRequests() {
         if (this.selectedCanvasIds.size !== 1) return;
         const canvasId = Array.from(this.selectedCanvasIds)[0];
@@ -256,18 +266,20 @@ class CanvasesManageController {
 
         const btnEdit = document.querySelector('[data-action="editSelectedCanvas"]');
         const btnMembers = document.querySelector('[data-action="manageCanvasMembers"]');
+        const btnResets = document.querySelector('[data-action="manageCanvasResets"]');
         const btnRequests = document.querySelector('[data-action="viewCanvasRequests"]');
 
         if (this.selectedCanvasIds.size > 0) {
             if (defaultMode) defaultMode.classList.replace('active', 'disabled');
             if (selectionMode) selectionMode.classList.replace('disabled', 'active');
 
+            // Si hay más de un elemento seleccionado, deshabilitar acciones de 1-a-1
             if (this.selectedCanvasIds.size > 1) {
-                [btnEdit, btnMembers, btnRequests].forEach(btn => {
+                [btnEdit, btnMembers, btnResets, btnRequests].forEach(btn => {
                     if (btn) btn.classList.add('disabled-interactive');
                 });
             } else {
-                [btnEdit, btnMembers, btnRequests].forEach(btn => {
+                [btnEdit, btnMembers, btnResets, btnRequests].forEach(btn => {
                     if (btn) btn.classList.remove('disabled-interactive');
                 });
             }

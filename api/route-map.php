@@ -339,6 +339,18 @@ return [
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_delete', 'max' => RL::MAX_10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
     
+    // --- RUTAS DE CONFIGURACIÓN DE REINICIOS ---
+    'canvases.get_reset_settings' => [
+        'controller' => 'App\Api\Controllers\CanvasController',
+        'action' => 'get_reset_settings',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_get_reset', 'max' => RL::MAX_20, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
+    ],
+    'canvases.update_reset_settings' => [
+        'controller' => 'App\Api\Controllers\CanvasController',
+        'action' => 'update_reset_settings',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_upd_reset', 'max' => RL::MAX_10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
+    ],
+    
     // --- RUTAS DE APROBACIÓN DE ACCESOS (NUEVAS) ---
     'canvases.request_access' => [
         'controller' => 'App\Api\Controllers\CanvasController',

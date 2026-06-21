@@ -14,7 +14,7 @@ class CacheConstants {
     public const PREFIX_FORCE_REAUTH_ROLE = 'force_reauth:role:';
     public const PREFIX_FORCE_REAUTH_DEVICE = 'force_reauth:selector:';
 
-    // NUEVO: Prefijos Estructurales de RBAC (Activos)
+    // Prefijos Estructurales de RBAC (Activos)
     public const PREFIX_ROLES_ALL = 'rbac:roles_all';
     public const PREFIX_ROLE_BY_ID = 'rbac:role:id:';
     public const PREFIX_ROLE_BY_NAME = 'rbac:role:name:';
@@ -30,8 +30,10 @@ class CacheConstants {
     public const QUEUE_BACKUP = 'backup_queue';
     public const QUEUE_ACCOUNT_DELETION = 'queue:account_deletion';
     
-    // Cola para el worker de imágenes Snapshot (Python)
+    // Colas y Llaves para Lienzos / Workers
     public const PENDING_SNAPSHOTS_SET = 'canvases:pending_snapshots';
+    public const PREFIX_CANVAS_NEXT_RESET = 'canvas:next_reset:';
+    public const PREFIX_CANVAS_RESET_LOCK = 'canvas:reset_lock:';
     
     // Colas de Telemetría
     public const QUEUE_TELEMETRY_API_LATENCY = 'api_latency';

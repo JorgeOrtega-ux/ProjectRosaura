@@ -11,6 +11,12 @@ $canvasSize = '64';
 $canvasPalette = 'default'; 
 $canvasPrivacy = 'private'; 
 $canvasApproval = '0'; 
+
+// Nuevas variables para reinicios
+$resetActive = '0';
+$nextResetAt = '';
+$timerAction = 'restart';
+
 $canvasUuid = $_GET['id'] ?? '';
 
 if (!empty($canvasUuid)) {
@@ -18,7 +24,13 @@ if (!empty($canvasUuid)) {
         $dbManager = new DatabaseManager();
         $db = $dbManager->getConnection(DB::CONN_CANVASES);
 
-        $sql = "SELECT id, name, size, palette_id, privacy, requires_approval FROM " . DB::TBL_CANVASES . " WHERE uuid = :uuid LIMIT 1";
+        // Modificado: Ahora traemos también la info de canvas_reset_settings usando un LEFT JOIN
+        $sql = "SELECT c.id, c.name, c.size, c.palette_id, c.privacy, c.requires_approval, 
+                       r.is_active, r.next_reset_at, r.timer_action 
+                FROM " . DB::TBL_CANVASES . " c
+                LEFT JOIN canvas_reset_settings r ON c.id = r.canvas_id
+                WHERE c.uuid = :uuid LIMIT 1";
+        
         $stmt = $db->prepare($sql);
         $stmt->execute([':uuid' => $canvasUuid]);
         $canvas = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -30,6 +42,10 @@ if (!empty($canvasUuid)) {
             $canvasPalette = $canvas['palette_id'] ?? 'default';
             $canvasPrivacy = $canvas['privacy'] ?? 'private';
             $canvasApproval = $canvas['requires_approval'] ?? '0';
+            
+            $resetActive = $canvas['is_active'] ?? '0';
+            $nextResetAt = $canvas['next_reset_at'] ?? '';
+            $timerAction = $canvas['timer_action'] ?? 'restart';
         }
     } catch (\Exception $e) {
         error_log("Error al cargar el lienzo en la vista de diseño: " . $e->getMessage());
@@ -57,13 +73,26 @@ if (!empty($canvasUuid)) {
         </div>
     </div>
 
+    <div class="component-fullscreen-overlay disabled component-overlay-reset" data-ref="reset-locked-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1001; display: flex; align-items: center; justify-content: center; flex-direction: column;">
+        <div class="component-empty-state" style="background: var(--bg-surface); padding: 48px; border-radius: 16px; box-shadow: var(--shadow-xl); border: 2px solid var(--action-danger);">
+            <span class="material-symbols-rounded component-empty-state-icon" style="font-size: 64px; color: var(--action-danger); animation: pulse 2s infinite;">auto_delete</span>
+            <h2 style="margin-top: 16px; font-size: 1.5rem; font-weight: 600;">Lienzo en Reinicio</h2>
+            <p class="component-empty-state-text" style="max-width: 400px; text-align: center; margin-top: 8px;">
+                El servidor está guardando la fotografía histórica final y limpiando la cuadrícula. Por favor espera unos segundos, el lienzo se desbloqueará automáticamente.
+            </p>
+        </div>
+    </div>
+
     <div class="component-wrapper component-wrapper--full no-padding" 
          data-ref="design-wrapper" 
          data-canvas-id="<?php echo htmlspecialchars($canvasIntId); ?>"
          data-size="<?php echo htmlspecialchars($canvasSize); ?>" 
          data-palette="<?php echo htmlspecialchars($canvasPalette); ?>"
          data-privacy="<?php echo htmlspecialchars($canvasPrivacy); ?>"
-         data-approval="<?php echo htmlspecialchars($canvasApproval); ?>">
+         data-approval="<?php echo htmlspecialchars($canvasApproval); ?>"
+         data-reset-active="<?php echo htmlspecialchars($resetActive); ?>"
+         data-reset-at="<?php echo htmlspecialchars($nextResetAt); ?>"
+         data-timer-action="<?php echo htmlspecialchars($timerAction); ?>">
          
         <div class="component-top">
             <div class="component-top-left" style="display: flex; align-items: center; gap: 12px;">
@@ -111,6 +140,11 @@ if (!empty($canvasUuid)) {
             <div class="component-badge component-badge--absolute-tl">
                 <span class="material-symbols-rounded">my_location</span>
                 <span data-ref="coords-text">- , -</span>
+            </div>
+
+            <div class="component-reset-timer disabled" data-ref="reset-timer-badge">
+                <span class="material-symbols-rounded icon-spin-slow">autorenew</span>
+                <span data-ref="reset-timer-text">00:00:00</span>
             </div>
             
             <div class="component-action-pill">

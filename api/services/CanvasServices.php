@@ -3,11 +3,13 @@
 namespace App\Api\Services;
 
 use Exception;
+use DateTime;
 use App\Core\Interfaces\CanvasRepositoryInterface;
 use App\Core\Interfaces\UserRepositoryInterface;
 use App\Core\Helpers\Utils;
 use App\Core\System\Logger;
 use App\Core\System\DatabaseConstants as DB;
+use App\Core\System\CacheConstants;
 use App\Config\RedisCache;
 
 class CanvasServices {
@@ -61,6 +63,14 @@ class CanvasServices {
             $canvas['width'] = $canvas['size'];
             $canvas['height'] = $canvas['size'];
             $canvas['requires_approval'] = (bool)$canvas['requires_approval'];
+
+            // Extraer info de reseteo si aplica
+            $resetSettings = $this->canvasRepository->getResetSettings($canvasId);
+            if ($resetSettings && $resetSettings['is_active']) {
+                $canvas['next_reset_at'] = $resetSettings['next_reset_at']; // Formato UTC
+            } else {
+                $canvas['next_reset_at'] = null;
+            }
 
             // ==========================================
             // CARGAR ESTADO DEL LIENZO (REDIS -> MYSQL)
@@ -217,6 +227,7 @@ class CanvasServices {
                         if ($redis) {
                             foreach ($canvasIds as $id) {
                                 $redis->del("canvas:{$id}:state");
+                                $redis->del(CacheConstants::PREFIX_CANVAS_NEXT_RESET . $id);
                             }
                         }
                     }
@@ -228,6 +239,96 @@ class CanvasServices {
             return ['success' => false, 'message' => __('err_canvases_delete_failed') ?? 'Error al eliminar los lienzos.'];
         } catch (Exception $e) {
             Logger::error('Error deleting canvases.', ['user_id' => $userId, 'exception' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database')];
+        }
+    }
+
+    // ==========================================
+    // LÓGICA DE REINICIOS DE LIENZO
+    // ==========================================
+
+    public function getResetSettings(int $userId, int $canvasId): array {
+        try {
+            // Verificar pertenencia y permisos
+            $canvas = $this->canvasRepository->getByIdAndUser($canvasId, $userId);
+            if (!$canvas) {
+                return ['success' => false, 'message' => __('err_unauthorized') ?? 'No tienes permisos para ver la configuración de este lienzo.'];
+            }
+
+            $settings = $this->canvasRepository->getResetSettings($canvasId);
+            if (!$settings) {
+                // Devolver estructura por defecto si no hay nada guardado aún
+                $settings = [
+                    'is_active' => false,
+                    'next_reset_at' => null,
+                    'take_snapshot' => true,
+                    'timer_action' => 'restart'
+                ];
+            } else {
+                $settings['is_active'] = (bool)$settings['is_active'];
+                $settings['take_snapshot'] = (bool)$settings['take_snapshot'];
+            }
+
+            return ['success' => true, 'data' => $settings];
+        } catch (Exception $e) {
+            Logger::error('Error getting reset settings.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database')];
+        }
+    }
+
+    public function updateResetSettings(int $userId, int $canvasId, array $data): array {
+        try {
+            $canvas = $this->canvasRepository->getByIdAndUser($canvasId, $userId);
+            if (!$canvas) {
+                return ['success' => false, 'message' => __('err_unauthorized') ?? 'No tienes permisos para modificar este lienzo.'];
+            }
+
+            $isActive = filter_var($data['is_active'] ?? false, FILTER_VALIDATE_BOOLEAN);
+            $nextResetAt = null;
+            
+            if ($isActive) {
+                if (empty($data['next_reset_at'])) {
+                    return ['success' => false, 'message' => 'La fecha de reinicio es obligatoria si la opción está activada.'];
+                }
+                
+                // Validar formato estricto UTC: Y-m-d H:i:s
+                $date = DateTime::createFromFormat('Y-m-d H:i:s', $data['next_reset_at']);
+                if (!$date || $date->format('Y-m-d H:i:s') !== $data['next_reset_at']) {
+                    return ['success' => false, 'message' => 'Formato de fecha inválido (Debe ser UTC Y-m-d H:i:s).'];
+                }
+                $nextResetAt = $data['next_reset_at'];
+            }
+
+            $settings = [
+                'is_active' => $isActive ? 1 : 0,
+                'next_reset_at' => $nextResetAt,
+                'take_snapshot' => filter_var($data['take_snapshot'] ?? true, FILTER_VALIDATE_BOOLEAN) ? 1 : 0,
+                'timer_action' => in_array($data['timer_action'] ?? 'restart', ['restart', 'stop', 'none']) ? $data['timer_action'] : 'restart'
+            ];
+
+            $this->canvasRepository->updateResetSettings($canvasId, $settings);
+
+            // Sincronizar inmediatamente con Redis para que la UI de todos y los Workers lo sepan
+            try {
+                if (class_exists(RedisCache::class)) {
+                    $redisInstance = new RedisCache();
+                    $redis = $redisInstance->getClient();
+                    if ($redis) {
+                        $redisKey = CacheConstants::PREFIX_CANVAS_NEXT_RESET . $canvasId;
+                        if ($isActive && $nextResetAt) {
+                            $redis->set($redisKey, $nextResetAt);
+                        } else {
+                            $redis->del($redisKey);
+                        }
+                    }
+                }
+            } catch (Exception $e) {
+                Logger::error('Error actualizando Redis para reset settings.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
+            }
+
+            return ['success' => true, 'message' => 'Configuración de reinicio actualizada correctamente.'];
+        } catch (Exception $e) {
+            Logger::error('Error updating reset settings.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
             return ['success' => false, 'message' => __('err_database')];
         }
     }

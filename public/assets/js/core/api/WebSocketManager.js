@@ -28,7 +28,10 @@ export class WebSocketManager {
         this.ws.onmessage = (event) => {
             try {
                 const data = JSON.parse(event.data);
-                // Retransmitimos ciegamente al DesignController u otros subscriptores
+                // NOTA: Este diseño de Event Emitter retransmite CUALQUIER comando enviado 
+                // desde el servidor de Python (pixel, canvas_locked, canvas_cleared, etc.) 
+                // hacia los módulos que se hayan suscrito con .on('message', callback).
+                // Es agnóstico a la lógica de negocio por diseño.
                 this.trigger('message', data);
             } catch (e) {
                 console.error('[WS] Error parseando mensaje entrante', e);

@@ -71,6 +71,13 @@ class DesignController {
         // Propiedad para el motor del timelapse
         this.timelapseActive = false;
 
+        // Propiedades de Reinicio Programado
+        this.resetActive = false;
+        this.nextResetAt = null;
+        this.timerAction = 'restart';
+        this.resetTimerInterval = null;
+        this.isResetLocked = false; // Bloquea la UI mientras se limpia todo en Backend
+
         this.handleWheelBound = this.handleWheel.bind(this);
         this.handleMouseDownBound = this.handleMouseDown.bind(this);
         this.handleMouseMoveBound = this.handleMouseMove.bind(this);
@@ -121,6 +128,10 @@ class DesignController {
         if (this.animationFrameId) {
             cancelAnimationFrame(this.animationFrameId);
         }
+
+        if (this.resetTimerInterval) {
+            clearInterval(this.resetTimerInterval);
+        }
     }
 
     initWebSocket() {
@@ -145,6 +156,12 @@ class DesignController {
                     this.offscreenCtx.fillRect(pX, pY, 1, 1);
                 }
                 this.requestRender();
+            } 
+            else if (data.type === 'canvas_locked') {
+                this.handleCanvasLocked(data);
+            } 
+            else if (data.type === 'canvas_cleared') {
+                this.handleCanvasCleared(data);
             }
         });
 
@@ -173,6 +190,11 @@ class DesignController {
             this.canvasPrivacy = wrapper.getAttribute('data-privacy') || 'private';
             this.canvasApproval = wrapper.getAttribute('data-approval') === '1';
 
+            // Configuración de Reinicios
+            this.resetActive = wrapper.getAttribute('data-reset-active') === '1';
+            this.nextResetAt = wrapper.getAttribute('data-reset-at');
+            this.timerAction = wrapper.getAttribute('data-timer-action') || 'restart';
+
             const sizeStr = wrapper.getAttribute('data-size');
             if (sizeStr) {
                 this.boardWidth = parseInt(sizeStr, 10);
@@ -185,11 +207,94 @@ class DesignController {
             this.centerBoard();
             this.renderColorPalette(this.canvasPaletteId);
 
+            if (this.resetActive && this.nextResetAt) {
+                this.startResetTimer();
+            }
+
             this.initWebSocket();
         } else {
             this.setupCanvas();
             this.centerBoard();
             this.renderColorPalette('default');
+        }
+    }
+
+    // ==========================================
+    // LÓGICA DE REINICIOS PROGRAMADOS
+    // ==========================================
+
+    startResetTimer() {
+        if (this.resetTimerInterval) clearInterval(this.resetTimerInterval);
+        
+        const badge = document.querySelector('[data-ref="reset-timer-badge"]');
+        const text = document.querySelector('[data-ref="reset-timer-text"]');
+        if (!badge || !text) return;
+        
+        if (this.timerAction === 'none') {
+            badge.classList.add('disabled');
+            return;
+        }
+        
+        badge.classList.remove('disabled');
+        
+        // Parsear UTC de manera estricta para asegurar que funcione en todas las zonas horarias
+        const targetMs = new Date(this.nextResetAt.replace(' ', 'T') + 'Z').getTime();
+        
+        const updateTimer = () => {
+            const nowMs = Date.now();
+            const diffMs = targetMs - nowMs;
+            
+            if (diffMs <= 0) {
+                text.textContent = '00:00:00';
+                badge.classList.remove('danger');
+                if (this.timerAction === 'stop') {
+                    clearInterval(this.resetTimerInterval);
+                }
+                return;
+            }
+            
+            const totalSecs = Math.floor(diffMs / 1000);
+            const hours = String(Math.floor(totalSecs / 3600)).padStart(2, '0');
+            const mins = String(Math.floor((totalSecs % 3600) / 60)).padStart(2, '0');
+            const secs = String(totalSecs % 60).padStart(2, '0');
+            
+            text.textContent = `${hours}:${mins}:${secs}`;
+            
+            if (totalSecs <= 60) {
+                badge.classList.add('danger');
+            } else {
+                badge.classList.remove('danger');
+            }
+        };
+        
+        updateTimer();
+        this.resetTimerInterval = setInterval(updateTimer, 1000);
+    }
+
+    handleCanvasLocked(data) {
+        this.isResetLocked = true;
+        const overlay = document.querySelector('[data-ref="reset-locked-overlay"]');
+        if (overlay) overlay.classList.remove('disabled');
+        
+        // Limpiamos selecciones actuales para evitar bugs
+        this.selectedPixels.clear();
+        this.updateSelectionUI();
+        this.requestRender();
+    }
+    
+    handleCanvasCleared(data) {
+        // El servidor borró la base de datos, nosotros borramos el frontend
+        this.offscreenCtx.clearRect(0, 0, this.boardWidth, this.boardHeight);
+        this.requestRender();
+        
+        this.isResetLocked = false;
+        const overlay = document.querySelector('[data-ref="reset-locked-overlay"]');
+        if (overlay) overlay.classList.add('disabled');
+        
+        // Si el WS envía la nueva fecha, reiniciamos el ciclo
+        if (data.next_reset_at) {
+            this.nextResetAt = data.next_reset_at;
+            this.startResetTimer();
         }
     }
 
@@ -337,7 +442,7 @@ class DesignController {
     // MOTOR DE TIMELAPSE CON REPRODUCCIÓN EN VIVO
     // ==========================================
     async startTimelapse() {
-        if (!this.canvasIntId || this.timelapseActive) return;
+        if (!this.canvasIntId || this.timelapseActive || this.isResetLocked) return;
         this.timelapseActive = true;
         
         // Determinar la ruta dinámica configurada en tu route-map, sino fallback.
@@ -364,6 +469,9 @@ class DesignController {
 
             // Consumir el stream en chunks según van llegando desde PHP (X-Sendfile o readfile)
             while (true) {
+                // Si justo entra un reinicio, abortamos todo y detenemos el timelapse
+                if (this.isResetLocked) break;
+
                 const { done, value } = await reader.read();
                 if (done) break;
 
@@ -388,13 +496,12 @@ class DesignController {
                 }
                 
                 // Renderizar lote progresivamente y darle respiro al navegador para pintar el Canvas
-                // requestAnimationFrame asegura que la UI no se congele durante archivos enormes.
                 this.requestRender();
                 await new Promise(resolve => requestAnimationFrame(resolve)); 
             }
             
             // Si quedó algo en el buffer al finalizar la descarga completa
-            if (buffer.trim()) {
+            if (buffer.trim() && !this.isResetLocked) {
                 try {
                     const event = JSON.parse(buffer);
                     this._drawTimelapsePixel(event);
@@ -402,7 +509,7 @@ class DesignController {
                 } catch(e) {}
             }
 
-            showMessage('Timelapse finalizado.', 'success');
+            if (!this.isResetLocked) showMessage('Timelapse finalizado.', 'success');
 
         } catch (err) {
             if (err.name !== 'AbortError') {
@@ -517,7 +624,7 @@ class DesignController {
     }
 
     handleFileUpload(e) {
-        if (this.isSpectator || this.timelapseActive) return;
+        if (this.isSpectator || this.timelapseActive || this.isResetLocked) return;
         const file = e.target.files[0];
         if (!file) return;
 
@@ -667,7 +774,6 @@ class DesignController {
     }
 
     handleClick(e) {
-        // Reproducir Timelapse (Cualquiera puede iniciar el streaming, hasta los invitados si es público)
         const btnPlayTimelapse = e.target.closest('[data-action="playTimelapse"]');
         if (btnPlayTimelapse) {
             e.preventDefault();
@@ -685,8 +791,8 @@ class DesignController {
             return;
         }
 
-        // Si es espectador, no permitimos acciones de edición
-        if (this.isSpectator || this.timelapseActive) return; 
+        // Si es espectador o el lienzo está bloqueado, evitamos interacción
+        if (this.isSpectator || this.timelapseActive || this.isResetLocked) return; 
 
         const btnUpload = e.target.closest('[data-action="triggerTemplateUpload"]');
         if (btnUpload && this.fileInput) {
@@ -780,7 +886,7 @@ class DesignController {
         const target = e.target.closest('[data-ref="design-canvas"]');
         if (!target) return;
 
-        if (e.shiftKey || e.button === 1 || this.isSpectator || this.timelapseActive) {
+        if (e.shiftKey || e.button === 1 || this.isSpectator || this.timelapseActive || this.isResetLocked) {
             this.isDragging = true;
             this.lastMouse = { x: e.clientX, y: e.clientY };
             this.canvas.classList.add('cursor-grabbing');
@@ -921,7 +1027,7 @@ class DesignController {
         if (target) {
             const exact = this.getExactBoardCoords(e.clientX, e.clientY);
             let hit = null;
-            if (exact && !this.isSpectator && !this.timelapseActive) {
+            if (exact && !this.isSpectator && !this.timelapseActive && !this.isResetLocked) {
                 hit = this.checkTemplateHit(exact.x, exact.y);
             }
             
@@ -1015,7 +1121,7 @@ class DesignController {
     }
 
     placePixels() {
-        if (this.selectedPixels.size === 0 || this.isSpectator || this.timelapseActive) return;
+        if (this.selectedPixels.size === 0 || this.isSpectator || this.timelapseActive || this.isResetLocked) return;
 
         const paletteObj = getPaletteById(this.canvasPaletteId);
         let colorIndex = 0;
@@ -1098,7 +1204,7 @@ class DesignController {
         this.ctx.fillStyle = '#FFFFFF';
         this.ctx.fillRect(0, 0, this.boardWidth, this.boardHeight);
 
-        if (this.activeTemplateId && !this.isSpectator && !this.timelapseActive) {
+        if (this.activeTemplateId && !this.isSpectator && !this.timelapseActive && !this.isResetLocked) {
             const tpl = this.templates.find(t => t.id === this.activeTemplateId);
             if (tpl) {
                 this.ctx.save();
@@ -1159,14 +1265,14 @@ class DesignController {
 
         const renderSet = new Set(this.selectedPixels);
 
-        if (this.hoveredPixel && !this.isSpectator && !this.timelapseActive) {
+        if (this.hoveredPixel && !this.isSpectator && !this.timelapseActive && !this.isResetLocked) {
             const hoverKey = `${this.hoveredPixel.x},${this.hoveredPixel.y}`;
             if (!renderSet.has(hoverKey)) {
                 renderSet.add(hoverKey);
             }
         }
 
-        if (renderSet.size > 0 && !this.isSpectator && !this.timelapseActive) {
+        if (renderSet.size > 0 && !this.isSpectator && !this.timelapseActive && !this.isResetLocked) {
             this.ctx.strokeStyle = activeColor; 
             this.ctx.lineWidth = 1 / this.transform.scale;
             this.ctx.beginPath();

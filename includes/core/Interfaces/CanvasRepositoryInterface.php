@@ -31,5 +31,11 @@ interface CanvasRepositoryInterface {
     // ==========================================
     public function getSnapshot(int $canvasId): ?string;
     public function saveSnapshot(int $canvasId, string $snapshotData): bool;
+
+    // ==========================================
+    // NUEVOS MÉTODOS DE REINICIOS PROGRAMADOS
+    // ==========================================
+    public function getResetSettings(int $canvasId): ?array;
+    public function updateResetSettings(int $canvasId, array $settings): bool;
 }
 ?>

@@ -37,7 +37,7 @@ if ($page > $totalPages) {
     $offset = ($page - 1) * $limit;
 }
 
-// CORRECCIÓN: Nombres de columnas actualizados según docker/mysql/init/db_canvases.sql
+// CORRECCIÓN: Nombres de columnas actualizados
 $stmt = $pdo->prepare("
     SELECT id, uuid, name, description, privacy, size, max_participants, created_at 
     FROM {$tblCanvases} 
@@ -66,6 +66,10 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                 <div class="component-actions disabled" data-ref="header-selection-actions">
                     <button class="component-button component-button--icon component-button--h40" data-action="viewCanvasRequests" data-tooltip="<?php echo __('tooltip_view_requests') ?: 'Solicitudes de acceso'; ?>" data-position="bottom">
                         <span class="material-symbols-rounded">front_hand</span>
+                    </button>
+
+                    <button class="component-button component-button--icon component-button--h40" data-action="manageCanvasResets" data-tooltip="<?php echo __('tooltip_manage_resets') ?: 'Programar reinicios'; ?>" data-position="bottom">
+                        <span class="material-symbols-rounded">update</span>
                     </button>
 
                     <button class="component-button component-button--icon component-button--h40" data-action="editSelectedCanvas" data-tooltip="<?php echo __('tooltip_edit_canvas') ?: 'Editar configuración'; ?>" data-position="bottom">

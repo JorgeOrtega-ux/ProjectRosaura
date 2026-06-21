@@ -41,6 +41,7 @@ return [
     '/canvases/create' => ['view' => 'canvases/create.php', 'auth' => true, 'permissions' => ['create_canvas'], 'requires_2fa' => false],
     '/canvases/manage' => ['view' => 'canvases/manage.php', 'auth' => true, 'permissions' => ['manage_canvases'], 'requires_2fa' => false],
     '/canvases/manage/requests' => ['view' => 'canvases/requests.php', 'auth' => true, 'permissions' => ['manage_canvases'], 'requires_2fa' => false],
+    '/canvases/manage/resets' => ['view' => 'canvases/components/reset-manager.php', 'auth' => true, 'permissions' => ['manage_canvases'], 'requires_2fa' => false],
     '/canvases/join' => ['view' => 'canvases/join.php', 'auth' => true, 'permissions' => ['join_canvas'], 'requires_2fa' => false],
     '/canvases/edit' => ['view' => 'canvases/edit.php', 'auth' => true, 'permissions' => ['manage_canvases'], 'requires_2fa' => false],
 

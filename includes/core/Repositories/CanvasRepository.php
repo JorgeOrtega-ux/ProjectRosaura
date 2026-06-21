@@ -240,5 +240,44 @@ class CanvasRepository implements CanvasRepositoryInterface {
             ':update_data' => $compressed
         ]);
     }
+
+    // ==========================================
+    // REINICIOS PROGRAMADOS (NUEVO)
+    // ==========================================
+
+    public function getResetSettings(int $canvasId): ?array {
+        $sql = "SELECT * FROM canvas_reset_settings WHERE canvas_id = :canvas_id LIMIT 1";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':canvas_id' => $canvasId]);
+        
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result ?: null;
+    }
+
+    public function updateResetSettings(int $canvasId, array $settings): bool {
+        $sql = "INSERT INTO canvas_reset_settings 
+                (canvas_id, is_active, next_reset_at, take_snapshot, timer_action)
+                VALUES 
+                (:canvas_id, :is_active, :next_reset_at, :take_snapshot, :timer_action)
+                ON DUPLICATE KEY UPDATE 
+                is_active = :upd_is_active,
+                next_reset_at = :upd_next_reset_at,
+                take_snapshot = :upd_take_snapshot,
+                timer_action = :upd_timer_action";
+        
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            ':canvas_id'         => $canvasId,
+            ':is_active'         => $settings['is_active'],
+            ':next_reset_at'     => $settings['next_reset_at'],
+            ':take_snapshot'     => $settings['take_snapshot'],
+            ':timer_action'      => $settings['timer_action'],
+            
+            ':upd_is_active'     => $settings['is_active'],
+            ':upd_next_reset_at' => $settings['next_reset_at'],
+            ':upd_take_snapshot' => $settings['take_snapshot'],
+            ':upd_timer_action'  => $settings['timer_action']
+        ]);
+    }
 }
 ?>

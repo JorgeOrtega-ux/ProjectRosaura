@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS `canvas_access_requests` (
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 -- ==========================================
--- TABLA NUEVA PARA PERSISTENCIA (SNAPSHOTS)
+-- TABLA PARA PERSISTENCIA (SNAPSHOTS)
 -- ==========================================
 
 CREATE TABLE IF NOT EXISTS `canvas_snapshots` (
@@ -51,6 +51,22 @@ CREATE TABLE IF NOT EXISTS `canvas_snapshots` (
   `last_updated` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`canvas_id`),
   CONSTRAINT `fk_snapshot_canvas` FOREIGN KEY (`canvas_id`) REFERENCES `canvases` (`id`) ON DELETE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
+
+-- ==========================================
+-- TABLA NUEVA PARA CONFIGURACIÓN DE REINICIOS
+-- ==========================================
+
+CREATE TABLE IF NOT EXISTS `canvas_reset_settings` (
+  `canvas_id` int(11) NOT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT 0,
+  `next_reset_at` datetime DEFAULT NULL COMMENT 'Almacenado estrictamente en UTC',
+  `take_snapshot` tinyint(1) NOT NULL DEFAULT 1,
+  `timer_action` enum('restart', 'stop', 'none') DEFAULT 'restart',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`canvas_id`),
+  CONSTRAINT `fk_reset_settings_canvas` FOREIGN KEY (`canvas_id`) REFERENCES `canvases` (`id`) ON DELETE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 -- ==========================================

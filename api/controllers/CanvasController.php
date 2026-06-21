@@ -185,6 +185,53 @@ class CanvasController extends BaseController {
         }
     }
 
+    // ==========================================
+    // RUTAS DE REINICIO DE LIENZOS (NUEVAS)
+    // ==========================================
+
+    public function get_reset_settings($input) {
+        try {
+            if (!$this->session->isLoggedIn()) {
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+            }
+
+            $userId = $this->session->getActiveAccountId();
+            $canvasId = $input['id'] ?? null;
+            if (!$canvasId) {
+                return $this->respond(['success' => false, 'message' => 'Lienzo no proporcionado.']);
+            }
+            
+            return $this->respond($this->canvasServices->getResetSettings($userId, (int)$canvasId));
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
+    public function update_reset_settings($input) {
+        try {
+            if (!$this->session->isLoggedIn()) {
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+            }
+
+            $userId = $this->session->getActiveAccountId();
+            $canvasId = $input['id'] ?? null;
+            if (!$canvasId) {
+                return $this->respond(['success' => false, 'message' => 'Lienzo no proporcionado.']);
+            }
+            
+            $data = [
+                'is_active' => filter_var($input['is_active'] ?? false, FILTER_VALIDATE_BOOLEAN),
+                'next_reset_at' => $input['next_reset_at'] ?? null,
+                'take_snapshot' => filter_var($input['take_snapshot'] ?? true, FILTER_VALIDATE_BOOLEAN),
+                'timer_action' => $input['timer_action'] ?? 'restart'
+            ];
+            
+            return $this->respond($this->canvasServices->updateResetSettings($userId, (int)$canvasId, $data));
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
     public function request_access($input) {
         try {
             if (!$this->session->isLoggedIn()) return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);

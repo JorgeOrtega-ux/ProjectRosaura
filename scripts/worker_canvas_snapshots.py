@@ -85,7 +85,7 @@ def parse_size(size_str):
     except:
         return 64, 64
 
-def process_canvas_image(canvas_id, compressed_data, size_str, palette_id):
+def process_canvas_image(r, canvas_id, compressed_data, size_str, palette_id):
     try:
         raw_bytes = decompress(compressed_data)
         
@@ -111,6 +111,15 @@ def process_canvas_image(canvas_id, compressed_data, size_str, palette_id):
         img_scaled = img.resize((final_width, final_height), Image.NEAREST)
 
         img_scaled.save(filepath, "PNG", optimize=True)
+        
+        # ==========================================
+        # INTERCONEXIÓN CON REINICIOS PROGRAMADOS
+        # ==========================================
+        # Si el candado de reinicio existe, le avisamos al worker_canvas_resets
+        # que ya terminamos de sacar la foto y puede proceder a vaciar la BD.
+        if r.exists(f"canvas:{canvas_id}:reset_lock"):
+            r.setex(f"canvas:{canvas_id}:snapshot_done", 60, "1")
+            
         return True
     except Exception as e:
         print(f"[!] Error procesando imagen PNG para lienzo {canvas_id}: {e}")
@@ -160,7 +169,8 @@ def main():
                             size_str = result[1] if result[1] else '64'
                             palette_id = result[2] if result[2] else 'default'
                             
-                            success = process_canvas_image(canvas_id, snapshot_data, size_str, palette_id)
+                            # Pasamos Redis (r) como parámetro para que pueda crear la llave de confirmación
+                            success = process_canvas_image(r, canvas_id, snapshot_data, size_str, palette_id)
                             if success:
                                 r.srem("canvases:pending_snapshots", canvas_id)
                                 print(f"[+] Snapshot HQ generado exitosamente: canvas_{canvas_id}.png")
