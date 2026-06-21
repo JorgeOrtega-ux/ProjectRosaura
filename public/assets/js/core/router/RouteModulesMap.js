@@ -66,7 +66,7 @@ export const RouteModulesMap = {
     // ---- MÓDULOS DE SISTEMA DE LOGS ----
     '/admin/logs': { path: './modules/admin/logs/AdminLogsController.js', className: 'AdminLogsController', requiresAdminLang: true, skeletonType: 'layout-table' },
     '/admin/logs/viewer': { path: './modules/admin/logs/AdminLogsViewerController.js', className: 'AdminLogsViewerController', requiresAdminLang: true, skeletonType: 'layout-list' },
-
+'/canvases/manage/resets': { path: './modules/canvases/CanvasResetController.js', className: 'CanvasResetController', skeletonType: 'layout-settings-generic' },
     // ---- MÓDULOS DE GESTIÓN DE LIENZOS ----
     '/canvases/create': { path: './modules/canvases/CanvasesController.js', className: 'CanvasesController', skeletonType: 'layout-dashboard' },
     '/canvases/manage': { path: './modules/canvases/CanvasesManageController.js', className: 'CanvasesManageController', skeletonType: 'layout-dashboard' },

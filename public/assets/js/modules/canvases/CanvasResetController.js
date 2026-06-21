@@ -10,7 +10,7 @@ class CanvasResetController {
         this.abortController = null;
         this.isInitialized = false;
         
-        this.form = null;
+        this.wrapper = null;
         this.toggleActive = null;
         this.optionsContainer = null;
         this.inputDateTime = null;
@@ -21,8 +21,6 @@ class CanvasResetController {
         this.textTimer = null;
         this.iconTimer = null;
 
-        this.btnSave = null;
-        
         this.handleGlobalClickBound = this.handleGlobalClick.bind(this);
         this.handleToggleChangeBound = this.handleToggleChange.bind(this);
     }
@@ -30,61 +28,60 @@ class CanvasResetController {
     init() {
         if (this.isInitialized) return;
         
-        this.form = document.getElementById('form-canvas-resets');
-        if (!this.form) return;
+        this.wrapper = document.querySelector('[data-ref="canvas-resets-wrapper"]');
+        if (!this.wrapper) return;
 
-        this.isInitialized = true;
         this.abortController = new AbortController();
         
-        this.toggleActive = document.getElementById('reset_is_active');
-        this.optionsContainer = document.getElementById('reset_options_container');
-        this.inputDateTime = document.getElementById('next_reset_at');
-        this.checkSnapshot = document.getElementById('take_snapshot');
+        this.toggleActive = this.wrapper.querySelector('[data-ref="reset_is_active"]');
+        this.optionsContainer = this.wrapper.querySelector('[data-ref="reset_options_container"]');
+        this.inputDateTime = this.wrapper.querySelector('[data-ref="next_reset_at"]');
+        this.checkSnapshot = this.wrapper.querySelector('[data-ref="take_snapshot"]');
         
-        this.inputTimer = document.getElementById('timer_action');
-        this.textTimer = document.querySelector('[data-ref="text-timer"]');
-        this.iconTimer = document.querySelector('[data-ref="icon-timer"]');
-
-        this.btnSave = document.getElementById('btn_save_resets');
+        this.inputTimer = this.wrapper.querySelector('[data-ref="timer_action"]');
+        this.textTimer = this.wrapper.querySelector('[data-ref="text-timer"]');
+        this.iconTimer = this.wrapper.querySelector('[data-ref="icon-timer"]');
 
         this.bindEvents();
         this.loadCurrentSettings();
+
+        this.isInitialized = true;
     }
 
     destroy() {
         if (this.abortController) this.abortController.abort();
         document.removeEventListener('click', this.handleGlobalClickBound);
-        
-        if (this.toggleActive) {
-            this.toggleActive.removeEventListener('change', this.handleToggleChangeBound);
-        }
+        document.removeEventListener('change', this.handleToggleChangeBound);
         this.isInitialized = false;
     }
 
     bindEvents() {
-        // Usamos delegación de eventos global para atrapar clics en el dropdown y en guardar
         document.addEventListener('click', this.handleGlobalClickBound);
-        this.toggleActive.addEventListener('change', this.handleToggleChangeBound);
+        document.addEventListener('change', this.handleToggleChangeBound);
     }
 
     handleGlobalClick(e) {
-        // Manejar click en el botón de guardar de la barra superior
-        const btnSaveTarget = e.target.closest('#btn_save_resets');
-        if (btnSaveTarget) {
+        const btnSave = e.target.closest('[data-action="saveSettings"]');
+        if (btnSave) {
             e.preventDefault();
-            this.saveSettings();
+            this.saveSettings(btnSave);
             return;
         }
 
-        // Manejar selección dentro del Dropdown de Timer Action
         const dropdownItem = e.target.closest('[data-action="selectTimerAction"]');
         if (dropdownItem) {
             e.preventDefault();
             this.selectTimerValue(dropdownItem);
             
-            // Cerrar el dropdown manualmente si no lo maneja tu Core global
             const module = dropdownItem.closest('.component-module--dropdown');
-            if (module) module.classList.add('disabled');
+            if (module) module.classList.add('disabled-interactive');
+        }
+    }
+
+    handleToggleChange(e) {
+        const toggleBtn = e.target.closest('[data-action="toggleActive"]');
+        if (toggleBtn) {
+            this.updateOptionsContainerState(toggleBtn.checked);
         }
     }
 
@@ -93,12 +90,10 @@ class CanvasResetController {
         const label = element.getAttribute('data-label');
         const icon = element.getAttribute('data-icon');
 
-        // Actualizar UI
         if (this.textTimer) this.textTimer.textContent = label;
         if (this.iconTimer) this.iconTimer.textContent = icon;
         if (this.inputTimer) this.inputTimer.value = value;
 
-        // Actualizar clases activas en la lista
         const parentList = element.closest('.component-menu-list');
         if (parentList) {
             parentList.querySelectorAll('.component-menu-link').forEach(item => {
@@ -108,16 +103,15 @@ class CanvasResetController {
         element.classList.add('active');
     }
 
-    handleToggleChange() {
-        const isActive = this.toggleActive.checked;
+    updateOptionsContainerState(isActive) {
+        if (!this.optionsContainer) return;
+        
         if (isActive) {
+            this.optionsContainer.classList.remove('disabled-interactive');
             this.optionsContainer.style.opacity = '1';
-            this.optionsContainer.style.pointerEvents = 'auto';
-            this.inputDateTime.required = true;
         } else {
+            this.optionsContainer.classList.add('disabled-interactive');
             this.optionsContainer.style.opacity = '0.4';
-            this.optionsContainer.style.pointerEvents = 'none';
-            this.inputDateTime.required = false;
         }
     }
 
@@ -151,80 +145,70 @@ class CanvasResetController {
     }
 
     async loadCurrentSettings() {
-        const canvasId = this.form.getAttribute('data-canvas-id');
+        const canvasId = this.wrapper.getAttribute('data-canvas-id');
         if (!canvasId) return;
 
-        try {
-            const url = `/api/canvases/${canvasId}/reset-settings`;
-            const result = await this.api.get(url, this.abortController.signal);
+        // SE ENVÍA { id: canvasId } PARA QUE COINCIDA CON PHP
+        const result = await this.api.post(ApiRoutes.Canvases.GetResetSettings, { id: canvasId }, this.abortController.signal);
 
-            if (result.aborted) return;
+        if (result.aborted) return;
 
-            if (result.success && result.data) {
-                const data = result.data;
-                
+        if (result.success && result.data) {
+            const data = result.data;
+            
+            if (this.toggleActive) {
                 this.toggleActive.checked = data.is_active;
-                this.handleToggleChange();
-
-                if (data.next_reset_at) {
-                    this.inputDateTime.value = this.utcStringToLocalInputFormat(data.next_reset_at);
-                }
-
-                this.checkSnapshot.checked = data.take_snapshot;
-                
-                if (data.timer_action) {
-                    // Buscar el elemento en el dropdown que coincide con el valor para simular el click
-                    const item = document.querySelector(`[data-action="selectTimerAction"][data-value="${data.timer_action}"]`);
-                    if (item) {
-                        this.selectTimerValue(item);
-                    }
-                }
+                this.updateOptionsContainerState(data.is_active);
             }
-        } catch (error) {
-            console.error("Error loading reset settings:", error);
-            showMessage("No se pudo cargar la configuración actual.", "error");
+
+            if (data.next_reset_at && this.inputDateTime) {
+                this.inputDateTime.value = this.utcStringToLocalInputFormat(data.next_reset_at);
+            }
+
+            if (this.checkSnapshot) {
+                this.checkSnapshot.checked = data.take_snapshot;
+            }
+            
+            if (data.timer_action) {
+                const item = this.wrapper.querySelector(`[data-action="selectTimerAction"][data-value="${data.timer_action}"]`);
+                if (item) this.selectTimerValue(item);
+            }
         }
     }
 
-    async saveSettings() {
-        const canvasId = this.form.getAttribute('data-canvas-id');
-        const isActive = this.toggleActive.checked;
-        const localTimeStr = this.inputDateTime.value;
+    async saveSettings(btnSave) {
+        const canvasId = this.wrapper.getAttribute('data-canvas-id');
+        const isActive = this.toggleActive ? this.toggleActive.checked : false;
+        const localTimeStr = this.inputDateTime ? this.inputDateTime.value : '';
 
         if (isActive && !localTimeStr) {
-            showMessage("Debes seleccionar una fecha y hora para el reinicio.", "warning");
-            this.inputDateTime.focus();
+            showMessage(__('err_reset_date_required'), 'warning');
+            if (this.inputDateTime) this.inputDateTime.focus();
             return;
         }
 
         const utcNextReset = this.localInputFormatToUtcString(localTimeStr);
 
         const payload = {
-            id: canvasId,
+            id: canvasId, // SE ENVÍA id EN LUGAR DE canvas_id PARA QUE COINCIDA CON PHP
             is_active: isActive,
             next_reset_at: utcNextReset,
-            take_snapshot: this.checkSnapshot.checked,
-            timer_action: this.inputTimer.value // Tomamos el valor del input oculto
+            take_snapshot: this.checkSnapshot ? this.checkSnapshot.checked : false,
+            timer_action: this.inputTimer ? this.inputTimer.value : 'restart'
         };
 
-        setButtonLoading(this.btnSave);
+        setButtonLoading(btnSave);
 
-        try {
-            const url = `/api/canvases/${canvasId}/reset-settings`;
-            const result = await this.api.put(url, payload, this.abortController.signal);
+        const result = await this.api.post(ApiRoutes.Canvases.UpdateResetSettings, payload, this.abortController.signal);
 
-            if (result.aborted) return;
-            
-            restoreButton(this.btnSave);
+        if (result.aborted) return;
+        
+        restoreButton(btnSave);
 
-            if (result.success) {
-                showMessage(result.message || "Configuración de reinicios guardada.", "success");
-            } else {
-                showMessage(result.message || "Ocurrió un error al guardar.", "error");
-            }
-        } catch (error) {
-            restoreButton(this.btnSave);
-            console.error("Error saving reset settings:", error);
+        if (result.success) {
+            showMessage(result.message || __('msg_save_success'), 'success');
+        } else {
+            showMessage(result.message || __('err_save_failed'), 'error');
         }
     }
 }

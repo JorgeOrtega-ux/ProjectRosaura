@@ -97,6 +97,10 @@ export const ApiRoutes = {
         RequestAccess: 'canvases.request_access',
         ApproveRequest: 'canvases.approve_request',
         RejectRequest: 'canvases.reject_request',
-        GetPendingRequests: 'canvases.get_pending_requests'
+        GetPendingRequests: 'canvases.get_pending_requests',
+        
+        // --- RUTAS DE REINICIOS PROGRAMADOS ---
+        GetResetSettings: 'canvases.get_reset_settings',
+        UpdateResetSettings: 'canvases.update_reset_settings'
     }
 };
