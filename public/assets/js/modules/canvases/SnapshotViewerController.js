@@ -1,4 +1,5 @@
-// public/assets/js/modules/app/SnapshotViewerController.js
+// public/assets/js/modules/canvases/SnapshotViewerController.js
+
 import { ApiRoutes } from '../../core/api/ApiRoutes.js';
 import { ApiService } from '../../core/api/ApiServices.js';
 import { showMessage } from '../../core/utils/uiUtils.js';
@@ -79,8 +80,10 @@ class SnapshotViewerController {
     async loadSnapshotData() {
         try {
             // Nota: Crearemos este endpoint en el paso de la API (Bloque 4)
-            const endpoint = ApiRoutes.Canvases?.GetSnapshotDetail || 'canvases/snapshots/detail';
-            const response = await this.api.get(`${endpoint}?id=${this.snapshotId}`);
+            const endpoint = ApiRoutes.Canvases?.GetSnapshotDetail || 'canvases.get_snapshot_detail';
+            
+            // CORRECCIÓN: Usar this.api.post en lugar de this.api.get
+            const response = await this.api.post(endpoint, { id: this.snapshotId });
             
             if (response.success && response.data) {
                 this.boardWidth = parseInt(response.data.width, 10) || 2000;
@@ -111,9 +114,12 @@ class SnapshotViewerController {
         this.offscreenCtx = this.offscreenCanvas.getContext('2d', { alpha: true });
     }
 
-    drawImageOnCanvas(url) {
+drawImageOnCanvas(url) {
         const img = new Image();
         img.onload = () => {
+            // 1. Apagar suavizado (anti-aliasing) en el buffer secundario
+            this.offscreenCtx.imageSmoothingEnabled = false; 
+            
             this.offscreenCtx.clearRect(0, 0, this.boardWidth, this.boardHeight);
             this.offscreenCtx.drawImage(img, 0, 0, this.boardWidth, this.boardHeight);
             this.requestRender();
@@ -310,8 +316,8 @@ class SnapshotViewerController {
         const dpr = window.devicePixelRatio || 1;
         this.ctx.scale(dpr, dpr);
         
-        this.ctx.translate(this.transform.x, this.transform.y);
-        this.ctx.scale(this.transform.scale, this.transform.scale);
+// 2. Redondear coordenadas para evitar sub-pixel rendering
+        this.ctx.translate(Math.round(this.transform.x), Math.round(this.transform.y));        this.ctx.scale(this.transform.scale, this.transform.scale);
         
         this.ctx.imageSmoothingEnabled = false;
         
@@ -341,7 +347,10 @@ class SnapshotViewerController {
             this.ctx.stroke();
         }
 
-        this.ctx.drawImage(this.offscreenCanvas, 0, 0);
+        // --- CORRECCIÓN: Verificar que offscreenCanvas exista antes de dibujarlo ---
+        if (this.offscreenCanvas) {
+            this.ctx.drawImage(this.offscreenCanvas, 0, 0);
+        }
 
         if (this.hoveredPixel) {
             this.ctx.strokeStyle = isDark ? '#FFFFFF' : '#000000';

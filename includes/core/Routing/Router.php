@@ -51,7 +51,7 @@ class Router {
         if (preg_match('#^/snapshot/view/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
             // Guardamos el id del snapshot en $_GET para que lo lea snapshot-viewer.php
             $_GET['id'] = $matches[1];
-            return ['view' => 'app/snapshot-viewer.php'];
+            return ['view' => 'canvases/snapshot-viewer.php'];
         }
 
         // 3. Manejar rutas dinámicas para /design/{uuid} (Lienzo Normal)

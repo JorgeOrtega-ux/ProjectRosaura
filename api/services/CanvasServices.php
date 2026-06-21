@@ -482,10 +482,11 @@ class CanvasServices {
             $pdo = $db->getConnection(DB::CONN_CANVASES);
 
             // Buscar el snapshot y unirse con el lienzo para obtener dimensiones y confirmar privacidad
+        // Buscar el snapshot y unirse con el lienzo para obtener dimensiones y confirmar privacidad
             $stmt = $pdo->prepare("
                 SELECT s.file_path, s.snapshot_uuid, c.size, c.privacy, c.user_id 
                 FROM canvas_snapshots_history s
-                JOIN " . DB::TBL_CANVASES . " c ON s.canvas_uuid = c.uuid
+                JOIN " . DB::TBL_CANVASES . " c ON s.canvas_id = c.id
                 WHERE s.snapshot_uuid = :snapshot_id 
                 LIMIT 1
             ");

@@ -64,6 +64,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // Diferenciamos explícitamente entre la Galería de Snapshots y el Editor de Lienzo
         if (relativePath.startsWith('/design/s/')) {
             relativePath = '/design/s/:uuid';
+        } else if (relativePath.startsWith('/snapshot/view/')) {
+            relativePath = '/snapshot/view/:id';
         } else if (relativePath.startsWith('/design/')) {
             relativePath = '/design';
         }

@@ -79,5 +79,5 @@ export const RouteModulesMap = {
     '/design/s/:uuid': { path: './modules/canvases/CanvasSnapshotsGalleryController.js', className: 'CanvasSnapshotsGalleryController', skeletonType: 'layout-dashboard' },
 
     // ---- NUEVO VISOR INDIVIDUAL DE SNAPSHOT ----
-    '/snapshot/view/:id': { path: './modules/app/SnapshotViewerController.js', className: 'SnapshotViewerController', skeletonType: 'layout-full' }
+    '/snapshot/view/:id': { path: './modules/canvases/SnapshotViewerController.js', className: 'SnapshotViewerController', skeletonType: 'layout-full' }
 };
