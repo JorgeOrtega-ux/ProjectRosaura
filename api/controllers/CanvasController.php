@@ -21,9 +21,9 @@ class CanvasController extends BaseController {
             $userId = $this->session->isLoggedIn() ? $this->session->getActiveAccountId() : null;
             $canvasId = $input['id'] ?? null;
 
-            if (!$canvasId) {
-                return $this->respond(['success' => false, 'message' => __('err_invalid_canvas_id') ?? 'ID de lienzo no proporcionado.']);
-            }
+                    if (!$canvasId) {
+                        return $this->respond(['success' => false, 'message' => __('err_invalid_canvas_id') ?? 'ID de lienzo no proporcionado.']);
+                    }
 
             $result = $this->canvasServices->getCanvas($userId, (int)$canvasId);
             
@@ -39,9 +39,9 @@ class CanvasController extends BaseController {
             $userId = $this->session->isLoggedIn() ? $this->session->getActiveAccountId() : null;
             $canvasId = $input['id'] ?? null;
 
-            if (!$canvasId) {
-                return $this->respond(['success' => false, 'message' => 'ID de lienzo no proporcionado.', 'http_code' => 400]);
-            }
+                    if (!$canvasId) {
+                        return $this->respond(['success' => false, 'message' => 'ID de lienzo no proporcionado.', 'http_code' => 400]);
+                    }
 
             $result = $this->canvasServices->prepareTimelapseDownload($userId, (int)$canvasId);
 
@@ -279,7 +279,11 @@ class CanvasController extends BaseController {
             return $this->respond($result);
 
         } catch (\Throwable $e) {
-            return $this->handleException($e, __FUNCTION__);
+            // Modificado para retornar los detalles exactos del fallo en el Controller
+            return $this->respond([
+                'success' => false,
+                'message' => 'EXCEPCIÓN CONTROLADOR: ' . $e->getMessage() . ' en ' . $e->getFile() . ':' . $e->getLine() . "\nTrace:\n" . $e->getTraceAsString()
+            ]);
         }
     }
 }

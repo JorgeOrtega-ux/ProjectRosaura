@@ -54,23 +54,31 @@ class CanvasSnapshotsGalleryController {
     }
 
     async fetchSnapshots() {
-        const route = ApiRoutes.Canvases.GetSnapshotsGallery || 'canvases.get_snapshots_gallery';
+        // Protección contra ApiRoutes desactualizado o mal importado
+        const route = (typeof ApiRoutes !== 'undefined' && ApiRoutes.Canvases && ApiRoutes.Canvases.GetSnapshotsGallery) 
+                      ? ApiRoutes.Canvases.GetSnapshotsGallery 
+                      : 'canvases.get_snapshots_gallery';
         
         try {
-            // El API service puede enviar parámetros GET como querystring si le pasamos un objeto en params o directo en la ruta
-            const result = await this.api.get(`${route}?uuid=${encodeURIComponent(this.uuid)}`, this.abortController.signal);
+            // CORRECCIÓN CLAVE: Usar this.api.post en lugar de this.api.get
+            // El backend de Rosaura maneja todo por POST mapeando la 'route' en el payload
+            const result = await this.api.post(route, { uuid: this.uuid }, this.abortController.signal);
             
             if (result.aborted) return;
 
             if (result.success) {
                 this.renderGallery(result.data.canvas_name, result.data.snapshots);
             } else {
-                showMessage(result.message, 'error');
+                // Si el backend (PHP) arroja un error controlado (incluido el detalle del Throwable modificado anteriormente), se mostrará aquí
+                showMessage(result.message || 'Error al obtener la galería.', 'error');
+                console.error("Backend Error Response:", result);
                 this.showEmptyState();
             }
 
         } catch (error) {
             if (error.name === 'AbortError') return;
+            // Si llega aquí, es un fallo de JavaScript (como una variable no definida) o red muerta.
+            console.error("Fetch Gallery JavaScript/Network Error:", error);
             showMessage('Ocurrió un error al cargar la galería.', 'error');
             this.showEmptyState();
         }
@@ -102,7 +110,7 @@ class CanvasSnapshotsGalleryController {
             // Asumiendo que el worker guarda la imagen en public/assets/img/snapshots_history/
             const imageUrl = snapshot.url.startsWith('/') ? snapshot.url : `/${snapshot.url}`;
             
-            // URL Mágica: Enviamos todos los datos al DesignController por GET para ahorrarnos un Fetch en el Backend
+            // URL Mágica: Enviamos todos los datos al DesignController por GET en la URL para ahorrarnos un Fetch en el Backend
             const viewUrl = `${this.basePath}/design?id=${encodeURIComponent(this.uuid)}&snapshot=${snapshot.snapshot_uuid}&img=${encodeURIComponent(imageUrl)}`;
 
             card.innerHTML = `
