@@ -205,6 +205,72 @@ class CanvasServices {
         }
     }
 
+    // --- ELIMINAR LIENZO ÚNICO (DESDE DROPDOWN) ---
+    public function deleteSingleCanvas(int $userId, string $uuid): array {
+        try {
+            $canvas = $this->canvasRepository->getCanvasByUuid($uuid);
+            if (!$canvas) {
+                return ['success' => false, 'message' => __('err_canvas_not_found') ?? 'Lienzo no encontrado.'];
+            }
+            if ($canvas['user_id'] !== $userId) {
+                return ['success' => false, 'message' => __('err_unauthorized') ?? 'Solo el dueño puede eliminar este lienzo.'];
+            }
+
+            $deleted = $this->canvasRepository->deleteCanvasByUuid($uuid, $userId);
+
+            if ($deleted) {
+                try {
+                    if (class_exists(RedisCache::class)) {
+                        $redisInstance = new RedisCache();
+                        $redis = $redisInstance->getClient();
+                        if ($redis) {
+                            $redis->del("canvas:{$canvas['id']}:state");
+                            $redis->del(CacheConstants::PREFIX_CANVAS_NEXT_RESET . $canvas['id']);
+                        }
+                    }
+                } catch (Exception $e) {}
+
+                return ['success' => true, 'message' => 'Lienzo eliminado exitosamente.'];
+            }
+
+            return ['success' => false, 'message' => 'Error al eliminar el lienzo.'];
+        } catch (Exception $e) {
+            Logger::error('Error deleting single canvas.', ['user_id' => $userId, 'uuid' => $uuid, 'error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database')];
+        }
+    }
+
+    // --- SALIR DE UN LIENZO ---
+    public function leaveCanvas(int $userId, string $uuid): array {
+        try {
+            $canvas = $this->canvasRepository->getCanvasByUuid($uuid);
+            if (!$canvas) {
+                return ['success' => false, 'message' => __('err_canvas_not_found') ?? 'Lienzo no encontrado.'];
+            }
+            
+            // El dueño no puede salir, solo puede eliminar el lienzo o transferirlo
+            if ($canvas['user_id'] === $userId) {
+                return ['success' => false, 'message' => 'Como dueño, no puedes salir del lienzo. Debes eliminarlo.'];
+            }
+
+            // Verifica si el usuario realmente es miembro (tiene un registro en la tabla pivote)
+            $role = $this->canvasRepository->getMemberRole($canvas['id'], $userId);
+            if (!$role) {
+                return ['success' => false, 'message' => 'No eres miembro de este lienzo.'];
+            }
+
+            $removed = $this->canvasRepository->removeMember($canvas['id'], $userId);
+            if ($removed) {
+                return ['success' => true, 'message' => 'Has abandonado el lienzo exitosamente.'];
+            }
+
+            return ['success' => false, 'message' => 'Error al salir del lienzo.'];
+        } catch (Exception $e) {
+            Logger::error('Error leaving canvas.', ['user_id' => $userId, 'uuid' => $uuid, 'error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database')];
+        }
+    }
+
     public function deleteUserCanvases(int $userId, array $canvasIds, string $password): array {
         try {
             if (empty($canvasIds)) {

@@ -26,6 +26,11 @@ interface CanvasRepositoryInterface {
     public function getById(int $id): ?array;
     public function getMemberRole(int $canvasId, int $userId): ?string;
 
+    // --- NUEVOS MÉTODOS PARA ELIMINAR / SALIR DE LIENZO ÚNICO ---
+    public function getCanvasByUuid(string $uuid): ?array;
+    public function deleteCanvasByUuid(string $uuid, int $userId): bool;
+    public function removeMember(int $canvasId, int $userId): bool;
+
     // ==========================================
     // NUEVOS MÉTODOS DE PERSISTENCIA (SNAPSHOTS)
     // ==========================================

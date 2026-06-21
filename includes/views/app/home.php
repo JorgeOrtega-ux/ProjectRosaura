@@ -4,14 +4,16 @@ use App\Core\System\DatabaseConstants as DB;
 use PDO;
 
 $publicCanvases = [];
+// Intentamos obtener el ID del usuario actual mediante sesión (ajusta según cómo manejes la sesión en tu framework)
+$currentUserId = $_SESSION['user_id'] ?? ($_SESSION['user']['id'] ?? 0);
 
 try {
     // Inicializamos la conexión mediante servidor para obtener los lienzos públicos
     $dbManager = new DatabaseManager();
     $db = $dbManager->getConnection(DB::CONN_CANVASES);
 
-    // Añadimos 'id' a la consulta para poder armar la ruta del snapshot
-    $sql = "SELECT id, uuid, name FROM " . DB::TBL_CANVASES . " WHERE privacy = 'public' ORDER BY created_at DESC LIMIT 20";
+    // CORRECCIÓN: Cambiamos 'owner_id' a 'user_id' que es la columna real en la base de datos
+    $sql = "SELECT id, uuid, name, user_id FROM " . DB::TBL_CANVASES . " WHERE privacy = 'public' ORDER BY created_at DESC LIMIT 20";
     $stmt = $db->prepare($sql);
     $stmt->execute();
     $publicCanvases = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
@@ -54,9 +56,12 @@ try {
                             // Insertamos la imagen (rendering pixelated y demas ira en la clase CSS generica)
                             $bgStyle = "background-image: url('{$snapshotUrl}'), linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);";
                         }
+
+                        // CORRECCIÓN: Verificamos contra 'user_id'
+                        $isOwner = ($canvas['user_id'] == $currentUserId);
                         ?>
 
-                        <div class="component-snapshot-card" style="<?php echo $bgStyle; ?>">
+                        <div class="component-snapshot-card" data-card-id="<?php echo $canvas['id']; ?>" style="<?php echo $bgStyle; ?>">
                             
                             <div data-nav="/design/<?php echo htmlspecialchars($canvas['uuid']); ?>" class="component-snapshot-link">
                                 <h3 class="component-snapshot-title">
@@ -76,19 +81,32 @@ try {
                                         <div class="pill-container"><div class="drag-handle"></div></div>
                                         
                                         <div class="component-menu-list">
-                                            <button type="button" class="component-menu-link">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">flag</span></div>
-                                                <div class="component-menu-link-text"><span>Reportar contenido</span></div>
+                                            <!-- 1-Abrir en una pestaña nueva -->
+                                            <button type="button" class="component-menu-link" data-action="openCanvasNewTab" data-uuid="<?php echo htmlspecialchars($canvas['uuid']); ?>">
+                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">open_in_new</span></div>
+                                                <div class="component-menu-link-text"><span>Abrir en una pestaña nueva</span></div>
                                             </button>
-                                            <button type="button" class="component-menu-link">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">link</span></div>
-                                                <div class="component-menu-link-text"><span>Copiar enlace</span></div>
+
+                                            <!-- 2-Copiar el enlace -->
+                                            <button type="button" class="component-menu-link" data-action="copyCanvasLink" data-uuid="<?php echo htmlspecialchars($canvas['uuid']); ?>">
+                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">content_copy</span></div>
+                                                <div class="component-menu-link-text"><span>Copiar el enlace</span></div>
                                             </button>
+
                                             <div class="component-menu-divider"></div>
-                                            <button type="button" class="component-menu-link component-text-notice--error">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">logout</span></div>
-                                                <div class="component-menu-link-text"><span>Salir del lienzo</span></div>
-                                            </button>
+
+                                            <!-- 3-Salir del lienzo / Eliminar lienzo -->
+                                            <?php if ($isOwner): ?>
+                                                <button type="button" class="component-menu-link component-text-notice--error" data-action="deleteCanvas" data-id="<?php echo $canvas['id']; ?>" data-uuid="<?php echo htmlspecialchars($canvas['uuid']); ?>">
+                                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">delete</span></div>
+                                                    <div class="component-menu-link-text"><span>Eliminar lienzo</span></div>
+                                                </button>
+                                            <?php else: ?>
+                                                <button type="button" class="component-menu-link component-text-notice--error" data-action="leaveCanvas" data-id="<?php echo $canvas['id']; ?>" data-uuid="<?php echo htmlspecialchars($canvas['uuid']); ?>">
+                                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">logout</span></div>
+                                                    <div class="component-menu-link-text"><span>Salir del lienzo</span></div>
+                                                </button>
+                                            <?php endif; ?>
                                         </div>
                                     </div>
                                 </div>

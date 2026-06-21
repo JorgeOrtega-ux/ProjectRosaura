@@ -212,6 +212,29 @@ class CanvasRepository implements CanvasRepositoryInterface {
         return $result ?: null;
     }
 
+    // --- NUEVOS MÉTODOS PARA ELIMINAR / SALIR DE LIENZO ÚNICO ---
+
+    public function getCanvasByUuid(string $uuid): ?array {
+        $sql = "SELECT * FROM " . DB::TBL_CANVASES . " WHERE uuid = :uuid LIMIT 1";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':uuid' => $uuid]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result ?: null;
+    }
+
+    public function deleteCanvasByUuid(string $uuid, int $userId): bool {
+        // Asumiendo que existen foreign keys en cascada en la BD para eliminar miembros y otras relaciones
+        $sql = "DELETE FROM " . DB::TBL_CANVASES . " WHERE uuid = :uuid AND user_id = :user_id";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([':uuid' => $uuid, ':user_id' => $userId]);
+    }
+
+    public function removeMember(int $canvasId, int $userId): bool {
+        $sql = "DELETE FROM " . DB::TBL_CANVAS_MEMBERS . " WHERE canvas_id = :canvas_id AND user_id = :user_id";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([':canvas_id' => $canvasId, ':user_id' => $userId]);
+    }
+
     // ==========================================
     // PERSISTENCIA DE LIENZOS (BLOB / SNAPSHOTS)
     // ==========================================

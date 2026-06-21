@@ -132,7 +132,99 @@ class CanvasesController {
         } else if (action === 'createCanvas') {
             e.preventDefault();
             this.submitCanvas(actionBtn);
+        } else if (action === 'openCanvasNewTab') {
+            this.openCanvasNewTab(actionBtn);
+        } else if (action === 'copyCanvasLink') {
+            this.copyCanvasLink(actionBtn);
+        } else if (action === 'deleteCanvas') {
+            this.deleteCanvas(actionBtn);
+        } else if (action === 'leaveCanvas') {
+            this.leaveCanvas(actionBtn);
         }
+    }
+
+    openCanvasNewTab(btn) {
+        const uuid = btn.getAttribute('data-uuid');
+        if (uuid) {
+            window.open(`${this.basePath}/design/${uuid}`, '_blank');
+        }
+    }
+
+    async copyCanvasLink(btn) {
+        const uuid = btn.getAttribute('data-uuid');
+        if (uuid) {
+            const url = `${window.location.origin}${this.basePath}/design/${uuid}`;
+            try {
+                await navigator.clipboard.writeText(url);
+                // Intenta usar i18n, fallback a texto directo
+                showMessage(window.__ ? __('msg_link_copied') || 'Enlace copiado al portapapeles' : 'Enlace copiado al portapapeles', 'success');
+                this.closeDropdowns();
+            } catch (err) {
+                showMessage(window.__ ? __('msg_copy_error') || 'Error al copiar el enlace' : 'Error al copiar el enlace', 'error');
+            }
+        }
+    }
+
+   async deleteCanvas(btn) {
+        const id = btn.getAttribute('data-id');
+        const uuid = btn.getAttribute('data-uuid');
+        if (!uuid) return;
+
+        this.closeDropdowns();
+
+        if (window.dialogSystem) {
+            const confirm = await window.dialogSystem.show('confirmDeleteCanvas', { uuid: uuid });
+            if (!confirm.confirmed) return;
+        } else if (!confirm('¿Estás seguro de que deseas eliminar este lienzo permanentemente?')) {
+            return;
+        }
+
+        // CORRECCIÓN AQUÍ: Usar .post() y enviar el uuid en el objeto de datos
+        const res = await this.api.post(ApiRoutes.Canvases.Delete, { uuid: uuid }, this.abortController.signal);
+        
+        if (res.aborted) return;
+
+        if (res.success) {
+            showMessage(window.__ ? __('msg_canvas_deleted') || 'Lienzo eliminado exitosamente' : 'Lienzo eliminado exitosamente', 'success');
+            const card = document.querySelector(`.component-snapshot-card[data-card-id="${id}"]`);
+            if (card) card.remove();
+        } else {
+            showMessage(res.message || 'Error al eliminar el lienzo', 'error');
+        }
+    }
+
+    async leaveCanvas(btn) {
+        const id = btn.getAttribute('data-id');
+        const uuid = btn.getAttribute('data-uuid');
+        if (!uuid) return;
+
+        this.closeDropdowns();
+
+        if (window.dialogSystem) {
+            const confirm = await window.dialogSystem.show('confirmLeaveCanvas', { uuid: uuid });
+            if (!confirm.confirmed) return;
+        } else if (!confirm('¿Estás seguro de que deseas salir de este lienzo? Perderás el acceso.')) {
+            return;
+        }
+
+        // CORRECCIÓN AQUÍ: Enviar el uuid en el objeto de datos, no en la URL
+        const res = await this.api.post(ApiRoutes.Canvases.Leave, { uuid: uuid }, this.abortController.signal);
+        
+        if (res.aborted) return;
+
+        if (res.success) {
+            showMessage(window.__ ? __('msg_canvas_left') || 'Has abandonado el lienzo exitosamente' : 'Has abandonado el lienzo exitosamente', 'success');
+            const card = document.querySelector(`.component-snapshot-card[data-card-id="${id}"]`);
+            if (card) card.remove();
+        } else {
+            showMessage(res.message || 'Error al salir del lienzo', 'error');
+        }
+    }
+    closeDropdowns() {
+        document.querySelectorAll('.component-module--dropdown:not(.disabled)').forEach(el => {
+            el.classList.remove('active');
+            el.classList.add('disabled');
+        });
     }
 
     saveCanvasName(btn) {

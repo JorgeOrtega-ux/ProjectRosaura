@@ -147,6 +147,14 @@ class CanvasController extends BaseController {
                 return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
             }
 
+            // Verifica si la petición es para eliminar un solo lienzo por UUID (desde el dropdown)
+            $uuid = $input['id'] ?? $input['uuid'] ?? null;
+            if ($uuid && is_string($uuid) && empty($input['canvas_ids'])) {
+                $result = $this->canvasServices->deleteSingleCanvas($userId, $uuid);
+                return $this->respond($result);
+            }
+
+            // Flujo original: Eliminación masiva (desde la sección Manage)
             $canvasIds = $input['canvas_ids'] ?? [];
             $password = $input['password'] ?? '';
 
@@ -160,6 +168,28 @@ class CanvasController extends BaseController {
 
             $result = $this->canvasServices->deleteUserCanvases($userId, $canvasIds, $password);
             
+            return $this->respond($result);
+
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
+    // --- NUEVO MÉTODO: SALIR DE UN LIENZO ---
+    public function leave($input) {
+        try {
+            if (!$this->session->isLoggedIn()) {
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+            }
+
+            $userId = $this->session->getActiveAccountId();
+            $uuid = $input['id'] ?? $input['uuid'] ?? null;
+            
+            if (!$uuid) {
+                return $this->respond(['success' => false, 'message' => 'Lienzo no proporcionado.']);
+            }
+
+            $result = $this->canvasServices->leaveCanvas($userId, $uuid);
             return $this->respond($result);
 
         } catch (\Throwable $e) {

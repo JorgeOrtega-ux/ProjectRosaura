@@ -7,6 +7,10 @@
  */
 export const RouteModulesMap = {
     // ---- MÓDULOS PÚBLICOS / HOME ----
+    '/': { path: './modules/canvases/CanvasesController.js', className: 'CanvasesController', skeletonType: 'layout-dashboard' },
+    '/home': { path: './modules/canvases/CanvasesController.js', className: 'CanvasesController', skeletonType: 'layout-dashboard' },
+    '/explore': { path: './modules/canvases/CanvasesController.js', className: 'CanvasesController', skeletonType: 'layout-dashboard' },
+    
     '/design': { path: './modules/app/DesignController.js', className: 'DesignController', skeletonType: 'layout-full' },
     
     // ---- MÓDULOS DE AUTENTICACIÓN ----

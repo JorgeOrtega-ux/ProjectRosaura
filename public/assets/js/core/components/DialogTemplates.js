@@ -240,6 +240,26 @@ export const DialogTemplates = {
         })
     },
 
+    // --- NUEVOS MODALES AGREGADOS ---
+    confirmDeleteCanvas: {
+        build: () => DialogTemplates.confirmAction.build({
+            titleKey: 'title_confirm_delete_canvas',
+            descKey: 'desc_confirm_delete_canvas',
+            confirmClass: 'component-button--danger',
+            confirmKey: 'btn_delete_canvas'
+        })
+    },
+
+    confirmLeaveCanvas: {
+        build: () => DialogTemplates.confirmAction.build({
+            titleKey: 'title_confirm_leave_canvas',
+            descKey: 'desc_confirm_leave_canvas',
+            confirmClass: 'component-button--danger',
+            confirmKey: 'btn_leave_canvas'
+        })
+    },
+    // --------------------------------
+
     dynamicFormDialog: {
         build: (data) => {
             let fieldsHtml = '';

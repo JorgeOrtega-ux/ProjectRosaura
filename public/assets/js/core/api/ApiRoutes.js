@@ -92,6 +92,7 @@ export const ApiRoutes = {
         Create: 'canvases.create',
         Update: 'canvases.update',
         Delete: 'canvases.delete',
+        Leave: 'canvases.leave', // <-- NUEVA RUTA AGREGADA
         
         // --- RUTAS DE APROBACIÓN DE ACCESOS ---
         RequestAccess: 'canvases.request_access',

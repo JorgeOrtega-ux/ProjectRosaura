@@ -338,6 +338,12 @@ return [
         'action' => 'delete',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_delete', 'max' => RL::MAX_10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
+    // --- NUEVA RUTA: SALIR DE UN LIENZO ---
+    'canvases.leave' => [
+        'controller' => 'App\Api\Controllers\CanvasController',
+        'action' => 'leave',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_leave', 'max' => RL::MAX_10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
+    ],
     
     // --- RUTAS DE CONFIGURACIÓN DE REINICIOS ---
     'canvases.get_reset_settings' => [
