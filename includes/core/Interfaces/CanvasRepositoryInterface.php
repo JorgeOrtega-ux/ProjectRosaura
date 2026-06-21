@@ -44,5 +44,12 @@ interface CanvasRepositoryInterface {
     public function getSnapshotByUuid(string $uuid): ?array;
     public function getSnapshotsByCanvasId(int $canvasId): array;
     public function getSnapshotsHistoryByUuid(string $uuid): array;
+
+    // ==========================================
+    // NUEVOS MÉTODOS PARA LIBRERÍA DE PLANTILLAS DE USUARIO
+    // ==========================================
+    public function saveTemplateMetadata(int $userId, string $filePath): int;
+    public function getUserTemplates(int $userId): array;
+    public function deleteTemplate(int $templateId, int $userId): bool;
 }
 ?>

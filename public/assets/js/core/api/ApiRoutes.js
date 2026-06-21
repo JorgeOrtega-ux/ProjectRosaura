@@ -104,6 +104,11 @@ export const ApiRoutes = {
         UpdateResetSettings: 'canvases.update_reset_settings',
 
         // --- NUEVA RUTA DE GALERÍA DE SNAPSHOTS ---
-        GetSnapshotsGallery: 'canvases.get_snapshots_gallery'
+        GetSnapshotsGallery: 'canvases.get_snapshots_gallery',
+
+        // --- NUEVAS RUTAS DE LIBRERÍA DE PLANTILLAS ---
+        UploadTemplate: 'canvases.upload_template',
+        GetTemplates: 'canvases.get_templates',
+        DeleteTemplate: 'canvases.delete_template'
     }
 };

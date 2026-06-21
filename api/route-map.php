@@ -387,6 +387,26 @@ return [
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_get_snap_detail', 'max' => RL::MAX_30, 'time' => RL::TIME_1, 'identifier' => RL::ID_IP]]
     ],
 
+    // ==========================================
+    // NUEVAS RUTAS DE PLANTILLAS DE USUARIO
+    // ==========================================
+    'canvases.upload_template' => [
+        'controller' => 'App\Api\Controllers\CanvasController',
+        'action' => 'upload_template',
+        // Límite de 10 subidas cada 5 minutos por usuario
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_upload_tpl', 'max' => 10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
+    ],
+    'canvases.get_templates' => [
+        'controller' => 'App\Api\Controllers\CanvasController',
+        'action' => 'get_templates',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_get_tpl', 'max' => 30, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
+    ],
+    'canvases.delete_template' => [
+        'controller' => 'App\Api\Controllers\CanvasController',
+        'action' => 'delete_template',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_del_tpl', 'max' => 20, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
+    ],
+
     // --- NUEVA RUTA DE TELEMETRÍA (Tracker Frontend) ---
     'telemetry.collect' => [
         'controller' => 'App\Api\Controllers\TelemetryController',

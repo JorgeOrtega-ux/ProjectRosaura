@@ -73,15 +73,12 @@ class DesignController {
         this.canvasPrivacy = 'private';
         this.canvasApproval = false;
 
-        // Propiedad para el motor del timelapse
         this.timelapseActive = false;
-
-        // Propiedades de Reinicio Programado
         this.resetActive = false;
         this.nextResetAt = null;
         this.timerAction = 'restart';
         this.resetTimerInterval = null;
-        this.isResetLocked = false; // Bloquea la UI mientras se limpia todo en Backend
+        this.isResetLocked = false; 
 
         this.handleWheelBound = this.handleWheel.bind(this);
         this.handleMouseDownBound = this.handleMouseDown.bind(this);
@@ -116,6 +113,7 @@ class DesignController {
         } else {
             this.loadCanvasConfig();
             this.checkCanvasAccess();
+            this.loadUserLibrary();
         }
     }
 
@@ -145,6 +143,160 @@ class DesignController {
     }
 
     // ==========================================
+    // LÓGICA DE LIBRERÍA DE PLANTILLAS PERSISTENTE
+    // ==========================================
+
+    async loadUserLibrary() {
+        if (this.isSpectator || this.isSnapshotMode) return;
+        try {
+            const response = await this.api.post(ApiRoutes.Canvases.GetTemplates, {});
+            if (response.success && response.data) {
+                this.renderUserLibraryDOM(response.data);
+            }
+        } catch (error) {
+            console.error("Error al cargar la librería de plantillas:", error);
+        }
+    }
+
+    renderUserLibraryDOM(templates) {
+        const container = document.querySelector('[data-ref="user-templates-grid"]');
+        if (!container) return;
+
+        container.innerHTML = '';
+        if (templates.length === 0) {
+            container.innerHTML = '<p class="component-empty-text" style="grid-column: span 2; text-align: center; opacity: 0.5; font-size: 0.8rem; padding: 10px 0;">No tienes plantillas en tu nube.</p>';
+            return;
+        }
+
+        templates.forEach(tpl => {
+            const card = document.createElement('div');
+            card.className = 'component-library-card';
+            card.style.position = 'relative';
+            card.style.borderRadius = '8px';
+            card.style.overflow = 'hidden';
+            card.style.cursor = 'pointer';
+            card.style.border = '2px solid transparent';
+            
+            const img = document.createElement('img');
+            img.src = tpl.file_path;
+            img.alt = 'Plantilla guardada';
+            img.style.width = '100%';
+            img.style.height = '70px';
+            img.style.objectFit = 'cover';
+            img.style.display = 'block';
+            img.setAttribute('data-action', 'addTemplateToCanvas');
+            img.setAttribute('data-url', tpl.file_path);
+
+            const btnDel = document.createElement('button');
+            btnDel.className = 'component-button component-button--icon component-button--danger';
+            btnDel.style.position = 'absolute';
+            btnDel.style.top = '4px';
+            btnDel.style.right = '4px';
+            btnDel.style.width = '24px';
+            btnDel.style.height = '24px';
+            btnDel.style.minHeight = '24px';
+            btnDel.style.padding = '0';
+            btnDel.innerHTML = '<span class="material-symbols-rounded" style="font-size: 14px;">delete</span>';
+            btnDel.setAttribute('data-action', 'deleteServerTemplate');
+            btnDel.setAttribute('data-id', tpl.id);
+
+            card.appendChild(img);
+            card.appendChild(btnDel);
+            container.appendChild(card);
+        });
+    }
+
+    // MÉTODO REESCRITO PARA USAR TU postForm() NATIVO DE ApiServices.js
+    async handleFileUpload(e) {
+        if (this.isSpectator || this.timelapseActive || this.isResetLocked) return;
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const btnUpload = document.querySelector('[data-action="triggerTemplateUpload"]');
+        if (btnUpload) {
+            btnUpload.classList.add('disabled-interactive');
+            btnUpload.innerHTML = '<span class="material-symbols-rounded icon-spin-slow">autorenew</span> Subiendo...';
+        }
+
+        // Empaquetamos el archivo crudo en FormData sin convertir a base64
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            // Usamos postForm de tu ApiServices.js, el cual inyecta tu token CSRF y la ruta.
+            const response = await this.api.postForm(ApiRoutes.Canvases.UploadTemplate, formData);
+
+            if (response.success) {
+                showMessage('Plantilla subida a la nube exitosamente.', 'success');
+                await this.loadUserLibrary();
+            } else {
+                showMessage(response.message || 'Error al subir la plantilla.', 'error');
+            }
+        } catch (error) {
+            console.error("Error en ApiService:", error);
+            showMessage('Error de red al intentar subir la plantilla.', 'error');
+        } finally {
+            this.fileInput.value = '';
+            if (btnUpload) {
+                btnUpload.classList.remove('disabled-interactive');
+                btnUpload.innerHTML = '<span class="material-symbols-rounded">cloud_upload</span> Subir a mi librería';
+            }
+        }
+    }
+
+    addTemplateFromLibrary(url) {
+        const img = new Image();
+        img.onload = () => {
+            const id = 'tpl_' + Date.now();
+            const targetW = this.boardWidth * 0.5;
+            const targetH = this.boardHeight * 0.5;
+            const scale = Math.min(targetW / img.width, targetH / img.height);
+            
+            const w = Math.round(img.width * scale);
+            const h = Math.round(img.height * scale);
+            
+            const x = Math.round((this.boardWidth - w) / 2);
+            const y = Math.round((this.boardHeight - h) / 2);
+
+            this.templates.push({
+                id, img,
+                src: url,
+                x, y, w, h,
+                locked: false,
+                opacity: 0.5 
+            });
+
+            this.renderTemplateList(); 
+            this.toggleTemplate(id); 
+            showMessage('Plantilla agregada al lienzo.', 'success');
+        };
+        img.onerror = () => {
+            showMessage('Error al descargar la imagen de la librería.', 'error');
+        };
+        img.src = url;
+    }
+
+    async deleteServerTemplate(id) {
+        const btn = document.querySelector(`[data-action="deleteServerTemplate"][data-id="${id}"]`);
+        if (btn) btn.classList.add('disabled-interactive');
+
+        try {
+            const response = await this.api.post(ApiRoutes.Canvases.DeleteTemplate, { id: id });
+            if (response.success) {
+                showMessage(response.message, 'success');
+                await this.loadUserLibrary();
+            } else {
+                showMessage(response.message || 'Error al eliminar', 'error');
+                if (btn) btn.classList.remove('disabled-interactive');
+            }
+        } catch (error) {
+            console.error(error);
+            showMessage('Error de conexión', 'error');
+            if (btn) btn.classList.remove('disabled-interactive');
+        }
+    }
+
+    // ==========================================
     // LÓGICA EXCLUSIVA PARA MODO SNAPSHOT
     // ==========================================
     
@@ -165,13 +317,10 @@ class DesignController {
 
     blockToolsForSnapshot() {
         this.isSpectator = true;
-        this.isResetLocked = true; // Forzamos bloqueo de UI
+        this.isResetLocked = true; 
         
-        // Elementos que deben ocultarse ya están manejados por PHP, pero reforzamos por JS
         if (this.btnPlacePixels) this.btnPlacePixels.style.display = 'none';
         if (this.btnColorPalette) this.btnColorPalette.style.display = 'none';
-        
-        console.log('[DesignController] Inicializado en modo de SOLO LECTURA (Snapshot)');
     }
 
     drawImageOnCanvas(url) {
@@ -243,7 +392,6 @@ class DesignController {
             this.canvasPrivacy = wrapper.getAttribute('data-privacy') || 'private';
             this.canvasApproval = wrapper.getAttribute('data-approval') === '1';
 
-            // Configuración de Reinicios
             this.resetActive = wrapper.getAttribute('data-reset-active') === '1';
             this.nextResetAt = wrapper.getAttribute('data-reset-at');
             this.timerAction = wrapper.getAttribute('data-timer-action') || 'restart';
@@ -272,10 +420,6 @@ class DesignController {
         }
     }
 
-    // ==========================================
-    // LÓGICA DE REINICIOS PROGRAMADOS
-    // ==========================================
-
     startResetTimer() {
         if (this.resetTimerInterval) clearInterval(this.resetTimerInterval);
         
@@ -290,7 +434,6 @@ class DesignController {
         
         badge.classList.remove('disabled');
         
-        // Parsear UTC de manera estricta para asegurar que funcione en todas las zonas horarias
         const targetMs = new Date(this.nextResetAt.replace(' ', 'T') + 'Z').getTime();
         
         const updateTimer = () => {
@@ -329,14 +472,12 @@ class DesignController {
         const overlay = document.querySelector('[data-ref="reset-locked-overlay"]');
         if (overlay) overlay.classList.remove('disabled');
         
-        // Limpiamos selecciones actuales para evitar bugs
         this.selectedPixels.clear();
         this.updateSelectionUI();
         this.requestRender();
     }
     
     handleCanvasCleared(data) {
-        // El servidor borró la base de datos, nosotros borramos el frontend
         this.offscreenCtx.clearRect(0, 0, this.boardWidth, this.boardHeight);
         this.requestRender();
         
@@ -344,7 +485,6 @@ class DesignController {
         const overlay = document.querySelector('[data-ref="reset-locked-overlay"]');
         if (overlay) overlay.classList.add('disabled');
         
-        // Si el WS envía la nueva fecha, reiniciamos el ciclo
         if (data.next_reset_at) {
             this.nextResetAt = data.next_reset_at;
             this.startResetTimer();
@@ -491,28 +631,22 @@ class DesignController {
         }
     }
 
-    // ==========================================
-    // MOTOR DE TIMELAPSE CON REPRODUCCIÓN EN VIVO
-    // ==========================================
     async startTimelapse() {
         if (!this.canvasIntId || this.timelapseActive || this.isResetLocked) return;
         this.timelapseActive = true;
         
-        // Determinar la ruta dinámica configurada en tu route-map, sino fallback.
         const route = ApiRoutes.Canvases?.GetTimelapse || 'canvas/get_timelapse';
 
-        // Poner lienzo totalmente transparente para arrancar el Timelapse
         this.offscreenCtx.clearRect(0, 0, this.boardWidth, this.boardHeight);
         this.requestRender();
 
         try {
-            // Utilizamos el nuevo método de Stream
             const response = await this.api.stream(route, { id: this.canvasIntId }, this.abortController.signal);
             
             if (!response.success) {
                 showMessage(response.message || 'Error al cargar timelapse.', 'error');
                 this.timelapseActive = false;
-                this.checkCanvasAccess(); // Fallback, recargar el lienzo actual
+                this.checkCanvasAccess(); 
                 return;
             }
 
@@ -520,21 +654,14 @@ class DesignController {
             const decoder = new TextDecoder('utf-8');
             let buffer = '';
 
-            // Consumir el stream en chunks según van llegando desde PHP (X-Sendfile o readfile)
             while (true) {
-                // Si justo entra un reinicio, abortamos todo y detenemos el timelapse
                 if (this.isResetLocked) break;
 
                 const { done, value } = await reader.read();
                 if (done) break;
 
-                // Decodificar los bytes y agregarlos al buffer de texto
                 buffer += decoder.decode(value, { stream: true });
-                
-                // Dividir el buffer por saltos de línea (JSON Lines)
                 let lines = buffer.split('\n');
-                
-                // Extraer el último fragmento, ya que puede estar cortado a la mitad por la red
                 buffer = lines.pop();
 
                 for (const line of lines) {
@@ -548,12 +675,10 @@ class DesignController {
                     }
                 }
                 
-                // Renderizar lote progresivamente y darle respiro al navegador para pintar el Canvas
                 this.requestRender();
                 await new Promise(resolve => requestAnimationFrame(resolve)); 
             }
             
-            // Si quedó algo en el buffer al finalizar la descarga completa
             if (buffer.trim() && !this.isResetLocked) {
                 try {
                     const event = JSON.parse(buffer);
@@ -576,7 +701,6 @@ class DesignController {
     }
 
     _drawTimelapsePixel(data) {
-        // En Redis inyectamos (u, x, y, c) en string para comprimir
         const pX = parseInt(data.x, 10);
         const pY = parseInt(data.y, 10);
         const cIdx = parseInt(data.c, 10);
@@ -674,44 +798,6 @@ class DesignController {
 
         this.transform.x = Math.min(Math.max(this.transform.x, minX), maxX);
         this.transform.y = Math.min(Math.max(this.transform.y, minY), maxY);
-    }
-
-    handleFileUpload(e) {
-        if (this.isSpectator || this.timelapseActive || this.isResetLocked) return;
-        const file = e.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            const img = new Image();
-            img.onload = () => {
-                const id = 'tpl_' + Date.now();
-                
-                const targetW = this.boardWidth * 0.5;
-                const targetH = this.boardHeight * 0.5;
-                const scale = Math.min(targetW / img.width, targetH / img.height);
-                
-                const w = Math.round(img.width * scale);
-                const h = Math.round(img.height * scale);
-                
-                const x = Math.round((this.boardWidth - w) / 2);
-                const y = Math.round((this.boardHeight - h) / 2);
-
-                this.templates.push({
-                    id, img,
-                    src: event.target.result,
-                    x, y, w, h,
-                    locked: false,
-                    opacity: 0.5 
-                });
-
-                this.renderTemplateList();
-                this.toggleTemplate(id); 
-            };
-            img.src = event.target.result;
-        };
-        reader.readAsDataURL(file);
-        this.fileInput.value = ''; 
     }
 
     renderTemplateList() {
@@ -844,7 +930,23 @@ class DesignController {
             return;
         }
 
-        // Si es espectador o el lienzo está bloqueado, evitamos interacción
+        const imgAdd = e.target.closest('[data-action="addTemplateToCanvas"]');
+        if (imgAdd) {
+            e.preventDefault();
+            const url = imgAdd.getAttribute('data-url');
+            this.addTemplateFromLibrary(url);
+            return;
+        }
+
+        const btnDelServer = e.target.closest('[data-action="deleteServerTemplate"]');
+        if (btnDelServer) {
+            e.preventDefault();
+            e.stopPropagation(); 
+            const id = btnDelServer.getAttribute('data-id');
+            this.deleteServerTemplate(id);
+            return;
+        }
+
         if (this.isSpectator || this.timelapseActive || this.isResetLocked) return; 
 
         const btnUpload = e.target.closest('[data-action="triggerTemplateUpload"]');

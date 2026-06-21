@@ -473,16 +473,11 @@ class CanvasServices {
         }
     }
 
-    // ==========================================
-    // NUEVO MÉTODO: OBTENER DETALLE DEL SNAPSHOT
-    // ==========================================
     public function getSnapshotDetail(string $snapshotId, ?int $userId = null): array {
         try {
             $db = new DatabaseManager();
             $pdo = $db->getConnection(DB::CONN_CANVASES);
 
-            // Buscar el snapshot y unirse con el lienzo para obtener dimensiones y confirmar privacidad
-        // Buscar el snapshot y unirse con el lienzo para obtener dimensiones y confirmar privacidad
             $stmt = $pdo->prepare("
                 SELECT s.file_path, s.snapshot_uuid, c.size, c.privacy, c.user_id 
                 FROM canvas_snapshots_history s
@@ -497,13 +492,11 @@ class CanvasServices {
                 return ['success' => false, 'message' => __('err_snapshot_not_found') ?? 'Snapshot no encontrado.'];
             }
 
-            // Validar privacidad
             if ($data['privacy'] === DB::PRIVACY_PRIVATE && $data['user_id'] !== $userId) {
                 return ['success' => false, 'message' => __('err_unauthorized') ?? 'Este lienzo es privado.'];
             }
 
             $imageUrl = $data['file_path'];
-            // Asegurarse de que la ruta comience con '/'
             if (!str_starts_with($imageUrl, '/')) {
                 $imageUrl = '/' . $imageUrl;
             }
@@ -520,6 +513,112 @@ class CanvasServices {
         } catch (Exception $e) {
             Logger::error('Error getting snapshot detail.', ['snapshot_id' => $snapshotId, 'error' => $e->getMessage()]);
             return ['success' => false, 'message' => __('err_database') ?? 'Error interno al procesar la solicitud.'];
+        }
+    }
+
+    // ==========================================
+    // LÓGICA DE PLANTILLAS DE USUARIO (REVERTIDO A NATIVO PHP $_FILES)
+    // ==========================================
+    
+    public function uploadTemplate(int $userId, array $fileInfo): array {
+        try {
+            if (!isset($fileInfo['error']) || is_array($fileInfo['error']) || $fileInfo['error'] !== UPLOAD_ERR_OK) {
+                return ['success' => false, 'message' => 'Error en la subida del archivo o archivo ausente.'];
+            }
+            
+            // Validación de peso (5MB)
+            $maxSize = 5 * 1024 * 1024;
+            if ($fileInfo['size'] > $maxSize) {
+                return ['success' => false, 'message' => 'El archivo supera el límite de 5MB.'];
+            }
+
+            // Validación rigurosa de MIME type
+            $finfo = new \finfo(FILEINFO_MIME_TYPE);
+            $ext = $finfo->file($fileInfo['tmp_name']);
+            $allowedTypes = [
+                'jpg' => 'image/jpeg',
+                'png' => 'image/png',
+                'webp' => 'image/webp'
+            ];
+            
+            $extension = array_search($ext, $allowedTypes, true);
+            if ($extension === false) {
+                return ['success' => false, 'message' => 'Formato de imagen no permitido. Usa JPG, PNG o WEBP.'];
+            }
+
+            $uploadDir = dirname(__DIR__, 2) . '/public/assets/uploads/templates/';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+
+            // Nombre único para prevenir colisiones y caché
+            $fileName = sprintf('%s_%s.%s', $userId, Utils::generateUUID(), $extension);
+            $destination = $uploadDir . $fileName;
+
+            if (!move_uploaded_file($fileInfo['tmp_name'], $destination)) {
+                Logger::error('Fallo al mover el archivo de plantilla al File System.', ['user_id' => $userId]);
+                return ['success' => false, 'message' => 'Error de escritura en el servidor.'];
+            }
+
+            $dbPath = '/assets/uploads/templates/' . $fileName;
+            
+            // Guardar en Base de Datos vía Repositorio
+            $templateId = $this->canvasRepository->saveTemplateMetadata($userId, $dbPath);
+
+            return [
+                'success' => true,
+                'message' => 'Plantilla subida y guardada correctamente.',
+                'data' => [
+                    'id' => $templateId,
+                    'url' => $dbPath
+                ]
+            ];
+
+        } catch (Exception $e) {
+            Logger::error('Error uploadTemplate.', ['user_id' => $userId, 'error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database') ?? 'Error interno del servidor.'];
+        }
+    }
+
+    public function getUserTemplates(int $userId): array {
+        try {
+            $templates = $this->canvasRepository->getUserTemplates($userId);
+            return ['success' => true, 'data' => $templates];
+        } catch (Exception $e) {
+            Logger::error('Error getUserTemplates.', ['user_id' => $userId, 'error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database') ?? 'Error al obtener la librería.'];
+        }
+    }
+
+    public function deleteTemplate(int $userId, int $templateId): array {
+        try {
+            // Obtenemos los templates para encontrar el path físico antes de borrar la metadata
+            $templates = $this->canvasRepository->getUserTemplates($userId);
+            $filePath = null;
+            
+            foreach($templates as $t) {
+                if ((int)$t['id'] === $templateId) {
+                    $filePath = $t['file_path'];
+                    break;
+                }
+            }
+
+            // Delegamos la validación de propiedad al repositorio
+            $deleted = $this->canvasRepository->deleteTemplate($templateId, $userId);
+            
+            if ($deleted) {
+                if ($filePath) {
+                    $physicalPath = dirname(__DIR__, 2) . '/public' . $filePath;
+                    if (file_exists($physicalPath)) {
+                        unlink($physicalPath); // Eliminamos del servidor físico sin suprimir errores con @
+                    }
+                }
+                return ['success' => true, 'message' => 'Plantilla eliminada correctamente de tu librería.'];
+            }
+            return ['success' => false, 'message' => 'No se pudo eliminar la plantilla o no tienes permisos.'];
+        } catch (Exception $e) {
+            Logger::error('Error deleteTemplate.', ['user_id' => $userId, 'error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database') ?? 'Error interno.'];
         }
     }
 }

@@ -85,6 +85,19 @@ CREATE TABLE IF NOT EXISTS `canvas_snapshots_history` (
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 -- ==========================================
+-- TABLA NUEVA PARA LIBRERÍA DE PLANTILLAS DE USUARIO
+-- ==========================================
+
+CREATE TABLE IF NOT EXISTS `user_templates` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `file_path` varchar(255) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  INDEX `idx_user_templates` (`user_id`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
+
+-- ==========================================
 -- ASIGNACIÓN DE PERMISOS AL USUARIO DE LA API
 -- ==========================================
 GRANT ALL PRIVILEGES ON db_canvases.* TO 'system_web_executor'@'%';

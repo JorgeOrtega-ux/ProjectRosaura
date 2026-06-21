@@ -316,5 +316,46 @@ class CanvasRepository implements CanvasRepositoryInterface {
         
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
+
+    // ==========================================
+    // LIBRERÍA DE PLANTILLAS DE USUARIO
+    // ==========================================
+
+    public function saveTemplateMetadata(int $userId, string $filePath): int {
+        $sql = "INSERT INTO user_templates (user_id, file_path) 
+                VALUES (:user_id, :file_path)";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            ':user_id'   => $userId,
+            ':file_path' => $filePath
+        ]);
+
+        return (int)$this->db->lastInsertId();
+    }
+
+    public function getUserTemplates(int $userId): array {
+        $sql = "SELECT id, user_id, file_path, created_at 
+                FROM user_templates 
+                WHERE user_id = :user_id 
+                ORDER BY created_at DESC";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':user_id' => $userId]);
+        
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    public function deleteTemplate(int $templateId, int $userId): bool {
+        // Se requiere el ID del usuario en el WHERE por razones de seguridad (Clean Architecture)
+        $sql = "DELETE FROM user_templates 
+                WHERE id = :id AND user_id = :user_id";
+        
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            ':id'      => $templateId,
+            ':user_id' => $userId
+        ]);
+    }
 }
 ?>

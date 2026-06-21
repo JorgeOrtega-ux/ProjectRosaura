@@ -262,9 +262,6 @@ class CanvasController extends BaseController {
         }
     }
 
-    // ==========================================
-    // NUEVO ENDPOINT PARA OBTENER GALERÍA PÚBLICA
-    // ==========================================
     public function get_snapshots_gallery($input) {
         try {
             $uuid = $input['uuid'] ?? null;
@@ -272,7 +269,6 @@ class CanvasController extends BaseController {
                 return $this->respond(['success' => false, 'message' => 'UUID no proporcionado.']);
             }
             
-            // Verificamos sesión para permitir acceso a lienzos privados si es el dueño
             $userId = $this->session->isLoggedIn() ? $this->session->getActiveAccountId() : null;
 
             $result = $this->canvasServices->getSnapshotsGallery($uuid, $userId);
@@ -283,9 +279,6 @@ class CanvasController extends BaseController {
         }
     }
 
-    // ==========================================
-    // NUEVO ENDPOINT: OBTENER DETALLE DEL SNAPSHOT
-    // ==========================================
     public function get_snapshot_detail($input) {
         try {
             $id = $input['id'] ?? null;
@@ -293,12 +286,72 @@ class CanvasController extends BaseController {
                 return $this->respond(['success' => false, 'message' => 'ID de snapshot no proporcionado.']);
             }
             
-            // Verificamos sesión para permitir acceso a lienzos privados si es el dueño
             $userId = $this->session->isLoggedIn() ? $this->session->getActiveAccountId() : null;
 
             $result = $this->canvasServices->getSnapshotDetail($id, $userId);
             return $this->respond($result);
 
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
+    // ==========================================
+    // ENDPOINTS DE PLANTILLAS DE USUARIO
+    // ==========================================
+
+    public function upload_template($input) {
+        try {
+            if (!$this->session->isLoggedIn()) {
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized') ?? 'No autorizado.', 'http_code' => 401]);
+            }
+            
+            $userId = $this->session->getActiveAccountId();
+            
+            if (!isset($_FILES['file'])) {
+                return $this->respond(['success' => false, 'message' => 'No se detectó ningún archivo en la solicitud.']);
+            }
+
+            $result = $this->canvasServices->uploadTemplate($userId, $_FILES['file']);
+            return $this->respond($result);
+            
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
+    public function get_templates($input) {
+        try {
+            if (!$this->session->isLoggedIn()) {
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized') ?? 'No autorizado.', 'http_code' => 401]);
+            }
+            
+            $userId = $this->session->getActiveAccountId();
+            $result = $this->canvasServices->getUserTemplates($userId);
+            
+            return $this->respond($result);
+            
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
+    public function delete_template($input) {
+        try {
+            if (!$this->session->isLoggedIn()) {
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized') ?? 'No autorizado.', 'http_code' => 401]);
+            }
+            
+            $userId = $this->session->getActiveAccountId();
+            $templateId = $input['id'] ?? null;
+            
+            if (!$templateId) {
+                return $this->respond(['success' => false, 'message' => 'ID de plantilla no proporcionado.']);
+            }
+
+            $result = $this->canvasServices->deleteTemplate($userId, (int)$templateId);
+            return $this->respond($result);
+            
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);
         }
