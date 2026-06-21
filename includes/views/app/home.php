@@ -56,10 +56,44 @@ try {
                         }
                         ?>
 
-                        <div data-nav="/design/<?php echo htmlspecialchars($canvas['uuid']); ?>" class="component-snapshot-card" style="<?php echo $bgStyle; ?>">
-                            <h3 class="component-snapshot-title">
-                                <?php echo htmlspecialchars($canvas['name']); ?>
-                            </h3>
+                        <div class="component-snapshot-card" style="<?php echo $bgStyle; ?>">
+                            
+                            <div data-nav="/design/<?php echo htmlspecialchars($canvas['uuid']); ?>" class="component-snapshot-link">
+                                <h3 class="component-snapshot-title">
+                                    <?php echo htmlspecialchars($canvas['name']); ?>
+                                </h3>
+                            </div>
+
+                            <div class="component-snapshot-actions-wrapper component-dropdown-wrapper">
+                                <div class="component-snapshot-actions">
+                                    <button type="button" class="component-button component-button--icon component-button--h32" data-action="toggleModule" data-target="snapshot-menu-<?php echo $canvas['id']; ?>">
+                                        <span class="material-symbols-rounded">more_vert</span>
+                                    </button>
+                                </div>
+                                
+                                <div class="component-module component-module--dropdown component-module--dropdown-left component-module--dropdown-fixed disabled" data-module="snapshot-menu-<?php echo $canvas['id']; ?>">
+                                    <div class="component-menu component-menu--w265">
+                                        <div class="pill-container"><div class="drag-handle"></div></div>
+                                        
+                                        <div class="component-menu-list">
+                                            <button type="button" class="component-menu-link">
+                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">flag</span></div>
+                                                <div class="component-menu-link-text"><span>Reportar contenido</span></div>
+                                            </button>
+                                            <button type="button" class="component-menu-link">
+                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">link</span></div>
+                                                <div class="component-menu-link-text"><span>Copiar enlace</span></div>
+                                            </button>
+                                            <div class="component-menu-divider"></div>
+                                            <button type="button" class="component-menu-link component-text-notice--error">
+                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">logout</span></div>
+                                                <div class="component-menu-link-text"><span>Salir del lienzo</span></div>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                         </div>
 
                     <?php endforeach; ?>

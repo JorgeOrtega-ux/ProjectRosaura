@@ -1280,6 +1280,9 @@ html.dark-theme .component-avatar__overlay {
     transition: background-color 0.15s ease, border-color 0.15s ease;
     cursor: pointer;
     flex-shrink: 0; 
+    border: none;
+    background: transparent;
+    text-align: left;
 }
 
 .component-menu-link:hover,
@@ -1297,6 +1300,7 @@ html.dark-theme .component-avatar__overlay {
     flex-shrink: 0;
     background-color: var(--border-color);
     border-radius: 1px;
+    margin: 4px 0;
 }
 
 .component-menu-link-icon {
@@ -2771,16 +2775,11 @@ input:checked + .component-toggle-slider:before {
     position: relative;
     /* Sombra interna inferior uniforme */
     box-shadow: inset 0px -70px 50px -20px rgba(0, 0, 0, 0.7);
-    display: flex;
-    align-items: flex-end;
-    padding: 20px;
-    /* Configuración del borde separado (outline) uniforme */
     outline: 2px solid transparent;
     outline-offset: 0px;
     transition: outline 0.2s ease, outline-offset 0.2s ease, transform 0.2s ease;
     cursor: pointer;
     text-decoration: none;
-    overflow: hidden;
     /* Renderizado óptimo compartido para Pixel-Art */
     background-size: cover;
     background-position: center;
@@ -2793,12 +2792,23 @@ input:checked + .component-toggle-slider:before {
     outline-offset: 2px;
 }
 
+/* -- NUEVA CAPA INVISIBLE QUE SE ENCARGA DEL ENLACE Y DE UBICAR EL TÍTULO -- */
+.component-snapshot-link {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: flex-end;
+    padding: 20px;
+    text-decoration: none;
+    z-index: 10;
+    border-radius: inherit;
+}
+
 .component-snapshot-title {
     margin: 0; 
     color: #ffffff; 
     font-size: 1.25rem; 
     font-family: inherit;
-    z-index: 10;
     text-shadow: 0px 2px 4px rgba(0,0,0,0.6);
     white-space: nowrap;
     overflow: hidden;
@@ -2842,4 +2852,33 @@ input:checked + .component-toggle-slider:before {
     100% {
         background-position: -200% 0;
     }
+}
+
+/* --- CLASES NUEVAS PARA EL BOTÓN Y MENÚ HOVER EN CARDS --- */
+.component-snapshot-actions-wrapper {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 20; /* Z-Index mayor al de la capa .component-snapshot-link para que el clic no pase a ella */
+    width: auto;
+    padding: 2px;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+/* Se asegura de que el menú se quede abierto gracias a la pseudo-clase nativa de CSS3 :has() */
+.component-snapshot-card:hover .component-snapshot-actions-wrapper,
+.component-snapshot-actions-wrapper:has(.component-module.active) {
+    opacity: 1;
+    visibility: visible;
+}
+
+.component-snapshot-actions {
+    background-color: var(--bg-surface, #ffffff);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-card, 0 2px 8px rgba(0,0,0,0.15));
 }
