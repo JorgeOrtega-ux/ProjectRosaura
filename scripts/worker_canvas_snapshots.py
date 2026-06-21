@@ -5,6 +5,7 @@ import redis
 import mysql.connector
 from zlib import decompress
 from PIL import Image
+from datetime import datetime
 
 # Configuración Redis
 REDIS_HOST = os.getenv("REDIS_HOST", "redis")
@@ -20,6 +21,7 @@ DB_NAME = os.getenv("DB_CANVASES_NAME", "db_canvases")
 # Configuración Worker
 SYNC_INTERVAL = int(os.getenv("WORKER_SNAPSHOTS_SYNC_INTERVAL", 10))
 SNAPSHOTS_DIR = os.getenv("SNAPSHOTS_DIR", "/app/public/assets/img/snapshots")
+ARCHIVE_DIR = os.getenv("SNAPSHOTS_ARCHIVE_DIR", "/app/public/assets/img/archive")
 SCALE_FACTOR = int(os.getenv("SNAPSHOT_SCALE_FACTOR", 10)) 
 
 # Ruta a la fuente única de la verdad
@@ -110,14 +112,22 @@ def process_canvas_image(r, canvas_id, compressed_data, size_str, palette_id):
         final_height = height * SCALE_FACTOR
         img_scaled = img.resize((final_width, final_height), Image.NEAREST)
 
+        # Sobrescribimos el archivo base (el que se usa en home.php)
         img_scaled.save(filepath, "PNG", optimize=True)
         
         # ==========================================
         # INTERCONEXIÓN CON REINICIOS PROGRAMADOS
         # ==========================================
-        # Si el candado de reinicio existe, le avisamos al worker_canvas_resets
-        # que ya terminamos de sacar la foto y puede proceder a vaciar la BD.
+        # Si el candado de reinicio existe, significa que este snapshot
+        # es la "foto final" antes de que se borre el lienzo.
         if r.exists(f"canvas:{canvas_id}:reset_lock"):
+            # Generar timestamp y guardar en la carpeta de archivo histórico
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            archive_filepath = os.path.join(ARCHIVE_DIR, f"canvas_{canvas_id}_{timestamp}.png")
+            img_scaled.save(archive_filepath, "PNG", optimize=True)
+            print(f"[+] Archivo histórico guardado exitosamente: {archive_filepath}")
+
+            # Avisamos al worker de reinicios que ya puede vaciar el lienzo
             r.setex(f"canvas:{canvas_id}:snapshot_done", 60, "1")
             
         return True
@@ -127,7 +137,10 @@ def process_canvas_image(r, canvas_id, compressed_data, size_str, palette_id):
 
 def main():
     print("[*] Iniciando Worker de Snapshots (Imágenes PNG Alta Calidad)...")
+    
+    # Crear directorios si no existen
     os.makedirs(SNAPSHOTS_DIR, exist_ok=True)
+    os.makedirs(ARCHIVE_DIR, exist_ok=True)
     
     load_palettes() # <--- Carga inicial del JSON
     
@@ -169,11 +182,11 @@ def main():
                             size_str = result[1] if result[1] else '64'
                             palette_id = result[2] if result[2] else 'default'
                             
-                            # Pasamos Redis (r) como parámetro para que pueda crear la llave de confirmación
+                            # Pasamos Redis (r) como parámetro para que pueda evaluar los candados
                             success = process_canvas_image(r, canvas_id, snapshot_data, size_str, palette_id)
                             if success:
                                 r.srem("canvases:pending_snapshots", canvas_id)
-                                print(f"[+] Snapshot HQ generado exitosamente: canvas_{canvas_id}.png")
+                                print(f"[+] Snapshot HQ procesado: canvas_{canvas_id}.png")
                         else:
                             r.srem("canvases:pending_snapshots", canvas_id)
                             
