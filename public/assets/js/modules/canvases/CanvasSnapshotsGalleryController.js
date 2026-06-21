@@ -60,7 +60,6 @@ class CanvasSnapshotsGalleryController {
                       : 'canvases.get_snapshots_gallery';
         
         try {
-            // CORRECCIÓN CLAVE: Usar this.api.post en lugar de this.api.get
             // El backend de Rosaura maneja todo por POST mapeando la 'route' en el payload
             const result = await this.api.post(route, { uuid: this.uuid }, this.abortController.signal);
             
@@ -69,7 +68,6 @@ class CanvasSnapshotsGalleryController {
             if (result.success) {
                 this.renderGallery(result.data.canvas_name, result.data.snapshots);
             } else {
-                // Si el backend (PHP) arroja un error controlado (incluido el detalle del Throwable modificado anteriormente), se mostrará aquí
                 showMessage(result.message || 'Error al obtener la galería.', 'error');
                 console.error("Backend Error Response:", result);
                 this.showEmptyState();
@@ -77,7 +75,6 @@ class CanvasSnapshotsGalleryController {
 
         } catch (error) {
             if (error.name === 'AbortError') return;
-            // Si llega aquí, es un fallo de JavaScript (como una variable no definida) o red muerta.
             console.error("Fetch Gallery JavaScript/Network Error:", error);
             showMessage('Ocurrió un error al cargar la galería.', 'error');
             this.showEmptyState();
@@ -104,31 +101,32 @@ class CanvasSnapshotsGalleryController {
         const fragment = document.createDocumentFragment();
 
         snapshots.forEach(snapshot => {
-            const card = document.createElement('div');
-            card.className = 'component-card component-card--snapshot';
+            const card = document.createElement('a');
+            card.className = 'snapshot-card';
+            card.setAttribute('data-spa-link', 'true'); // Integración con el SpaRouter
             
             // Asumiendo que el worker guarda la imagen en public/assets/img/snapshots_history/
             const imageUrl = snapshot.url.startsWith('/') ? snapshot.url : `/${snapshot.url}`;
             
-            // URL Mágica: Enviamos todos los datos al DesignController por GET en la URL para ahorrarnos un Fetch en el Backend
+            // URL de visualización en modo Snapshot
             const viewUrl = `${this.basePath}/design?id=${encodeURIComponent(this.uuid)}&snapshot=${snapshot.snapshot_uuid}&img=${encodeURIComponent(imageUrl)}`;
+            
+            card.href = viewUrl;
 
+            // Inyectamos las propiedades de fondo para emular home.php
+            card.style.backgroundImage = `url('${imageUrl}'), linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)`;
+            card.style.backgroundSize = 'cover';
+            card.style.backgroundPosition = 'center';
+            card.style.backgroundRepeat = 'no-repeat';
+            card.style.imageRendering = 'pixelated';
+
+            // HTML Interno modificado para quitar botones e incluir el badge de fecha
             card.innerHTML = `
-                <div class="component-card-image-wrapper">
-                    <img src="${imageUrl}" alt="Snapshot ${snapshot.date}" loading="lazy">
-                </div>
-                <div class="component-card-content">
+                <div class="snapshot-badge">
                     <span class="material-symbols-rounded">history</span>
-                    <span class="component-card-date">${snapshot.date}</span>
+                    ${snapshot.date}
                 </div>
-                <div class="component-card-actions" style="padding: 0 16px 16px; display: flex; gap: 8px;">
-                    <a href="${viewUrl}" class="component-button component-button--secondary component-button--h34" style="flex: 1; justify-content: center;" data-spa-link>
-                        <span class="material-symbols-rounded" style="font-size: 18px;">visibility</span> Ver
-                    </a>
-                    <a href="${imageUrl}" download="snapshot_${snapshot.date.replace(/[\/\s:]/g, '_')}.png" class="component-button component-button--dark component-button--h34" style="flex: 1; justify-content: center;" target="_blank">
-                        <span class="material-symbols-rounded" style="font-size: 18px;">download</span>
-                    </a>
-                </div>
+                <h3 class="snapshot-card-title">${canvasName}</h3>
             `;
             
             fragment.appendChild(card);
