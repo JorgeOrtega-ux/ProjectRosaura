@@ -51,43 +51,13 @@ try {
                         if (file_exists($physicalPath)) {
                             $timestamp = filemtime($physicalPath);
                             $snapshotUrl = $snapshotPath . "?v=" . $timestamp;
-                            // Insertamos la imagen y añadimos rendering pixelated para que no se vea borroso el pixel-art
-                            $bgStyle = "background-image: url('{$snapshotUrl}'), linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); background-size: cover; background-position: center; background-repeat: no-repeat; image-rendering: pixelated;";
+                            // Insertamos la imagen (rendering pixelated y demas ira en la clase CSS generica)
+                            $bgStyle = "background-image: url('{$snapshotUrl}'), linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);";
                         }
                         ?>
 
-                        <div data-nav="/design/<?php echo htmlspecialchars($canvas['uuid']); ?>" style="
-                            height: 180px;
-                            background-color: #e9ecef;
-                            <?php echo $bgStyle; ?>
-                            border-radius: 12px;
-                            position: relative;
-                            /* Sombra interna inferior (bottom inset shadow) */
-                            box-shadow: inset 0px -70px 50px -20px rgba(0, 0, 0, 0.7);
-                            display: flex;
-                            align-items: flex-end;
-                            padding: 20px;
-                            /* Configuración inicial del borde separado (outline) */
-                            outline: 2px solid transparent;
-                            outline-offset: 0px;
-                            transition: outline 0.2s ease, outline-offset 0.2s ease;
-                            cursor: pointer;
-                        "
-                        onmouseover="this.style.outline='2px solid #000000'; this.style.outlineOffset='2px';"
-                        onmouseout="this.style.outline='2px solid transparent'; this.style.outlineOffset='0px';"
-                        >
-                            <h3 style="
-                                margin: 0; 
-                                color: #ffffff; 
-                                font-size: 1.25rem; 
-                                font-family: inherit;
-                                z-index: 10;
-                                text-shadow: 0px 2px 4px rgba(0,0,0,0.6);
-                                white-space: nowrap;
-                                overflow: hidden;
-                                text-overflow: ellipsis;
-                                width: 100%;
-                            ">
+                        <div data-nav="/design/<?php echo htmlspecialchars($canvas['uuid']); ?>" class="component-snapshot-card" style="<?php echo $bgStyle; ?>">
+                            <h3 class="component-snapshot-title">
                                 <?php echo htmlspecialchars($canvas['name']); ?>
                             </h3>
                         </div>

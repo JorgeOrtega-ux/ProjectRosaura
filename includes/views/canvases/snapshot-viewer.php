@@ -13,9 +13,6 @@ try {
     // Función de traducción segura por si la global no está cargando en este contexto
     $title = function_exists('__') ? __('lbl_snapshot_viewer_title') : null;
     $title = $title ?: 'Visor de Snapshot';
-    
-    $btnBack = function_exists('__') ? __('btn_back') : null;
-    $btnBack = $btnBack ?: 'Volver';
 
 } catch (\Throwable $e) {
     // Si algo falla estrepitosamente en la inicialización
@@ -59,10 +56,6 @@ try {
             
             <div class="component-top-right" style="display: flex; align-items: center;">
                 <div class="component-actions active">
-                    <button class="component-button component-button--h34" onclick="window.history.back()">
-                        <span class="material-symbols-rounded">arrow_back</span>
-                        <?php echo $btnBack; ?>
-                    </button>
                 </div>
             </div>
         </div>

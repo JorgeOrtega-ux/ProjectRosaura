@@ -24,9 +24,6 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
         
         <div class="component-top">
             <div class="component-top-left" style="display: flex; align-items: center; gap: 12px;">
-                <button class="component-button component-button--icon component-button--h40" data-route="/canvases/manage" data-tooltip="<?php echo __('tooltip_back') ?: 'Volver a mis lienzos'; ?>" data-position="bottom">
-                    <span class="material-symbols-rounded">arrow_back</span>
-                </button>
                 <h1 class="component-top-title"><?php echo __('canvases_requests_title') ?: 'Solicitudes de Acceso al Lienzo'; ?></h1>
             </div>
             
@@ -47,9 +44,6 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                 </div>
                 
                 <div class="component-actions active" data-ref="header-default-actions">
-                    <button class="component-button component-button--icon component-button--h40" data-action="refreshRequests" data-tooltip="<?php echo __('tooltip_refresh') ?: 'Actualizar tabla'; ?>" data-position="bottom">
-                        <span class="material-symbols-rounded">refresh</span>
-                    </button>
                 </div>
             </div>
         </div>

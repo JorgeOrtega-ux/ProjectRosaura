@@ -2760,3 +2760,86 @@ input:checked + .component-toggle-slider:before {
         display: none;
     }
 }
+
+/* ==========================================================================
+   17. COMPONENTES DE TARJETAS DE CAPTURAS (SNAPSHOT CARDS)
+   ========================================================================== */
+.component-snapshot-card {
+    height: 180px;
+    background-color: #e9ecef;
+    border-radius: 12px;
+    position: relative;
+    /* Sombra interna inferior uniforme */
+    box-shadow: inset 0px -70px 50px -20px rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: flex-end;
+    padding: 20px;
+    /* Configuración del borde separado (outline) uniforme */
+    outline: 2px solid transparent;
+    outline-offset: 0px;
+    transition: outline 0.2s ease, outline-offset 0.2s ease, transform 0.2s ease;
+    cursor: pointer;
+    text-decoration: none;
+    overflow: hidden;
+    /* Renderizado óptimo compartido para Pixel-Art */
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    image-rendering: pixelated;
+}
+
+.component-snapshot-card:hover {
+    outline: 2px solid var(--text-primary, #000000);
+    outline-offset: 2px;
+}
+
+.component-snapshot-title {
+    margin: 0; 
+    color: #ffffff; 
+    font-size: 1.25rem; 
+    font-family: inherit;
+    z-index: 10;
+    text-shadow: 0px 2px 4px rgba(0,0,0,0.6);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+}
+
+.component-snapshot-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: rgba(0, 0, 0, 0.6);
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    backdrop-filter: blur(4px);
+}
+
+.component-snapshot-badge .material-symbols-rounded {
+    font-size: 14px;
+}
+
+.component-snapshot-skeleton {
+    height: 180px;
+    border-radius: 12px;
+    background: linear-gradient(90deg, var(--bg-tertiary) 25%, var(--bg-secondary) 50%, var(--bg-tertiary) 75%);
+    background-size: 200% 100%;
+    animation: loadingSkeleton 1.5s infinite;
+}
+
+@keyframes loadingSkeleton {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}

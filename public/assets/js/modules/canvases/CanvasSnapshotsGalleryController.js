@@ -101,32 +101,26 @@ class CanvasSnapshotsGalleryController {
         const fragment = document.createDocumentFragment();
 
         snapshots.forEach(snapshot => {
-            const card = document.createElement('a');
-            card.className = 'snapshot-card';
-            card.setAttribute('data-spa-link', 'true'); // Integración con el SpaRouter
-            
-            // Asumiendo que el worker guarda la imagen en public/assets/img/snapshots_history/
-            const imageUrl = snapshot.url.startsWith('/') ? snapshot.url : `/${snapshot.url}`;
+            const card = document.createElement('div');
+            card.className = 'component-snapshot-card';
             
             // NUEVA URL DE VISUALIZACIÓN AISLADA
             const viewUrl = `${this.basePath}/snapshot/view/${snapshot.snapshot_uuid}`;
+            card.setAttribute('data-nav', viewUrl);
+
+            // Asumiendo que el worker guarda la imagen en public/assets/img/snapshots_history/
+            const imageUrl = snapshot.url.startsWith('/') ? snapshot.url : `/${snapshot.url}`;
             
-            card.href = viewUrl;
-
-            // Inyectamos las propiedades de fondo para emular home.php
+            // Inyectamos solo la imagen de fondo, el resto se hereda de la clase CSS
             card.style.backgroundImage = `url('${imageUrl}'), linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)`;
-            card.style.backgroundSize = 'cover';
-            card.style.backgroundPosition = 'center';
-            card.style.backgroundRepeat = 'no-repeat';
-            card.style.imageRendering = 'pixelated';
 
-            // HTML Interno modificado para quitar botones e incluir el badge de fecha
+            // HTML Interno aplicando las nuevas clases base
             card.innerHTML = `
-                <div class="snapshot-badge">
+                <div class="component-snapshot-badge">
                     <span class="material-symbols-rounded">history</span>
                     ${snapshot.date}
                 </div>
-                <h3 class="snapshot-card-title">${canvasName}</h3>
+                <h3 class="component-snapshot-title">${canvasName}</h3>
             `;
             
             fragment.appendChild(card);
