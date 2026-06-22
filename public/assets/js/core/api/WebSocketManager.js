@@ -18,59 +18,60 @@ export class WebSocketManager {
         this.isIntentionalDisconnect = false;
         
         const url = `${WsConfig.getBaseUrl()}/canvas/${this.canvasId}`;
+        console.log(`[DEBUG WS] Intentando conectar a: ${url}`);
+        
         this.ws = new WebSocket(url);
 
         this.ws.onopen = () => {
-            console.info(`[WS] Conectado a la sala del lienzo: ${this.canvasId}`);
+            console.info(`[DEBUG WS] Conectado a la sala del lienzo: ${this.canvasId}`);
             this.reconnectAttempts = 0; 
+            this.trigger('open'); // Notifica al frontend
         };
 
         this.ws.onmessage = (event) => {
+            console.log(`[DEBUG WS] Mensaje crudo recibido del servidor:`, event.data);
             try {
                 const data = JSON.parse(event.data);
-                // NOTA: Este diseño de Event Emitter retransmite CUALQUIER comando enviado 
-                // desde el servidor de Python (pixel, canvas_locked, canvas_cleared, etc.) 
-                // hacia los módulos que se hayan suscrito con .on('message', callback).
-                // Es agnóstico a la lógica de negocio por diseño.
                 this.trigger('message', data);
             } catch (e) {
-                console.error('[WS] Error parseando mensaje entrante', e);
+                console.error('[DEBUG WS] Error parseando mensaje entrante', e);
             }
         };
 
         this.ws.onclose = (event) => {
+            console.warn(`[DEBUG WS] Conexión cerrada. Código: ${event.code}, Razón: ${event.reason}`);
             if (!this.isIntentionalDisconnect) {
                 this.handleReconnect();
             } else {
-                console.info('[WS] Desconectado limpiamente');
+                console.info('[DEBUG WS] Desconectado limpiamente');
             }
         };
 
         this.ws.onerror = (error) => {
-            console.error('[WS] Error en la conexión', error);
+            console.error('[DEBUG WS] Error en la conexión', error);
         };
     }
 
     handleReconnect() {
         if (this.reconnectAttempts < this.maxReconnectAttempts) {
-            // Exponential Backoff: 1s, 2s, 4s, 8s, 16s...
             const delay = this.baseDelay * Math.pow(2, this.reconnectAttempts);
-            console.warn(`[WS] Reintentando conexión en ${delay}ms...`);
+            console.warn(`[DEBUG WS] Reintentando conexión en ${delay}ms...`);
             
             setTimeout(() => {
                 this.reconnectAttempts++;
                 this.connect(this.canvasId);
             }, delay);
         } else {
-            console.error('[WS] Máximos intentos de reconexión alcanzados.');
+            console.error('[DEBUG WS] Máximos intentos de reconexión alcanzados.');
         }
     }
 
     send(payload) {
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            console.log(`[DEBUG WS] Enviando al servidor:`, payload);
             this.ws.send(JSON.stringify(payload));
         } else {
-            console.warn('[WS] Intento de envío ignorado: No hay conexión abierta.');
+            console.warn('[DEBUG WS] Intento de envío ignorado: No hay conexión abierta.', payload);
         }
     }
 

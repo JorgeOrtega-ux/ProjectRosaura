@@ -130,6 +130,8 @@ class DesignController {
     }
 
     startCooldownLoop() {
+        if (this.cooldownLoopId) cancelAnimationFrame(this.cooldownLoopId);
+        
         const tick = () => {
             if (!this.isSpectator && !this.isSnapshotMode) {
                 if (this.cooldownSec > 0 && this.cooldownBalance < this.cooldownMax) {
@@ -137,13 +139,18 @@ class DesignController {
                     let remaining = this.cooldownNextIn - elapsed;
                     
                     if (remaining <= 0) {
-                        this.cooldownBalance++;
+                        let extraTime = Math.abs(remaining);
+                        let recoveredPixels = 1 + Math.floor(extraTime / this.cooldownSec);
+
+                        this.cooldownBalance = Math.min(this.cooldownMax, this.cooldownBalance + recoveredPixels);
+
                         if (this.cooldownBalance < this.cooldownMax) {
-                            this.cooldownNextIn = this.cooldownSec;
+                            this.cooldownNextIn = this.cooldownSec - (extraTime % this.cooldownSec);
                             this.lastSyncTime = Date.now();
-                            remaining = this.cooldownSec;
+                            remaining = this.cooldownNextIn;
                         } else {
                             remaining = 0;
+                            this.cooldownNextIn = 0;
                         }
                         this.updateSelectionUI();
                     }

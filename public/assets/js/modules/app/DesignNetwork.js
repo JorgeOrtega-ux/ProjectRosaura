@@ -6,14 +6,18 @@ import { getPaletteById } from './DesignPaletteUtils.js';
 
 export const DesignNetwork = {
     initWebSocket() {
-        if (!this.canvasIntId) return;
+        console.log('[DEBUG DesignNetwork] initWebSocket() llamado. CanvasIntId:', this.canvasIntId);
+        if (!this.canvasIntId) {
+            console.warn('[DEBUG DesignNetwork] initWebSocket abortado: no hay canvasIntId.');
+            return;
+        }
 
         this.wsManager = new WebSocketManager();
         
         this.wsManager.on('open', () => {
-            if (window.activeUserId) {
-                this.wsManager.send({ type: 'init', userId: window.activeUserId });
-            }
+            const uid = window.activeUserId || document.querySelector('meta[name="user-id"]')?.content || null;
+            console.log(`[DEBUG DesignNetwork] Evento 'open' detectado. Enviando init con userId: ${uid}`);
+            this.wsManager.send({ type: 'init', userId: uid });
         });
 
         this.wsManager.on('message', (data) => {
@@ -35,6 +39,7 @@ export const DesignNetwork = {
                 this.requestRender();
             } 
             else if (data.type === 'init_cooldown' || data.type === 'pixel_confirm' || data.type === 'cooldown_error') {
+                console.log(`[DEBUG DesignNetwork] Disparando handleCooldownSync por evento tipo: ${data.type}`);
                 this.handleCooldownSync(data);
             }
             else if (data.type === 'canvas_locked') {
@@ -49,14 +54,17 @@ export const DesignNetwork = {
     },
 
     handleCooldownSync(data) {
+        console.log(`[DEBUG DesignNetwork] handleCooldownSync ejecutado. Data entrante:`, data);
         this.cooldownBalance = data.balance;
         this.cooldownMax = data.max_batch;
         this.cooldownSec = data.cooldown_sec;
         this.cooldownNextIn = data.next_replenish_in;
         this.lastSyncTime = Date.now();
         
+        console.log(`[DEBUG DesignNetwork] Estado interno actualizado -> Balance: ${this.cooldownBalance}/${this.cooldownMax}, Sig. recarga en: ${this.cooldownNextIn}s`);
+        
         if (data.type === 'cooldown_error') {
-            showMessage('Cooldown activo. No puedes colocar píxeles en este momento.', 'warning');
+            showMessage('Error de sincronización o límite alcanzado. Estado revertido.', 'warning');
         }
         
         this.updateSelectionUI();

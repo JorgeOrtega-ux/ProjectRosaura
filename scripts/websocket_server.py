@@ -6,10 +6,9 @@ import time
 from urllib.parse import urlparse
 import redis.asyncio as redis
 
-# Diccionario en memoria para gestionar las salas
-# Estructura: { "canvas_id": { client1, client2, ... } }
 ROOMS = {}
 REDIS_CLIENT = None
+USER_LOCKS = {}
 
 async def get_redis_client():
     global REDIS_CLIENT
@@ -18,45 +17,52 @@ async def get_redis_client():
         redis_port = int(os.getenv("REDIS_PORT", 6379))
         redis_pass = os.getenv("REDIS_PASS", None)
         
+        print(f"[DEBUG REDIS] Conectando a redis en {redis_host}:{redis_port}")
         REDIS_CLIENT = redis.Redis(
             host=redis_host, 
             port=redis_port, 
             password=redis_pass,
             db=0,
-            decode_responses=False # Mantenemos esto para usar bytes globalmente
+            decode_responses=False 
         )
     return REDIS_CLIENT
 
 async def get_user_cooldown(r, canvas_id, user_id, config_batch, config_sec):
-    """
-    Calcula y devuelve el saldo en tiempo real de un usuario basado en la última vez que pintó.
-    """
     user_key = f"canvas:{canvas_id}:user:{user_id}:cooldown"
     now = time.time()
     
+    print(f"[DEBUG PY] Consultando key: {user_key}")
     u_state = await r.hgetall(user_key)
     
     if not u_state:
+        print(f"[DEBUG PY] No hay estado previo para {user_id}. Asignando batch máximo: {config_batch}")
         balance = float(config_batch)
         last_t = now
     else:
-        balance = float(u_state.get(b'b', config_batch))
-        last_t = float(u_state.get(b't', now))
+        try:
+            balance = float(u_state.get(b'b', config_batch))
+            last_t = float(u_state.get(b't', now))
+            print(f"[DEBUG PY] Estado encontrado en Redis -> b: {balance}, t: {last_t}")
+        except (TypeError, ValueError) as e:
+            print(f"[DEBUG PY] Error decodificando estado en Redis para {user_id}. Reiniciando. Detalles: {e}")
+            balance = float(config_batch)
+            last_t = now
         
     if config_sec > 0:
         elapsed = now - last_t
         replenish = int(elapsed // config_sec)
+        print(f"[DEBUG PY] Calculando regeneración: {elapsed}s transcurridos, regenerando {replenish} pixeles.")
         if replenish > 0:
             balance = min(float(config_batch), balance + replenish)
             last_t = last_t + (replenish * config_sec)
             
+    if balance >= float(config_batch):
+        last_t = now 
+            
+    print(f"[DEBUG PY] Resultado final get_user_cooldown -> balance: {balance}, last_t: {last_t}")
     return balance, last_t, user_key, now
 
 async def admin_events_listener():
-    """
-    Escucha eventos administrativos (como bloqueos de reinicio) a través de Redis Pub/Sub
-    y los retransmite instantáneamente a todos los clientes conectados a la sala afectada.
-    """
     r = await get_redis_client()
     pubsub = r.pubsub()
     await pubsub.subscribe("admin:canvas_events")
@@ -71,7 +77,6 @@ async def admin_events_listener():
                     canvas_id = str(data.get("canvas_id"))
                     
                     if canvas_id in ROOMS:
-                        # Retransmitimos el evento exacto al frontend (ej. type: canvas_locked)
                         msg_str = json.dumps(data)
                         tasks = [
                             asyncio.create_task(client.send(msg_str))
@@ -85,10 +90,6 @@ async def admin_events_listener():
         print(f"[!] Error fatal en el listener de Pub/Sub: {e}")
 
 async def handler(websocket):
-    """
-    Maneja la conexión de un cliente, su asignación a una sala,
-    la escritura en Redis y la retransmisión de mensajes.
-    """
     path = websocket.request.path
     parsed_path = urlparse(path)
     path_parts = parsed_path.path.strip("/").split("/")
@@ -111,6 +112,7 @@ async def handler(websocket):
 
     try:
         async for message in websocket:
+            print(f"[DEBUG WS-PY] Recibido desde frontend: {message}")
             try:
                 data = json.loads(message)
                 
@@ -119,22 +121,30 @@ async def handler(websocket):
                 # ==========================================
                 if data.get("type") == "init":
                     user_id = data.get("userId")
+                    print(f"[DEBUG PY] Procesando petición INIT. UserId: {user_id}")
+                    
+                    raw_config = await r.hgetall(config_key)
+                    config_batch = int(raw_config.get(b'cooldown_batch', 5))
+                    config_sec = int(raw_config.get(b'cooldown_seconds', 10))
+                    print(f"[DEBUG PY] Config del lienzo en Redis -> batch: {config_batch}, sec: {config_sec}")
+                    
                     if user_id:
-                        raw_config = await r.hgetall(config_key)
-                        config_batch = int(raw_config.get(b'cooldown_batch', 5))
-                        config_sec = int(raw_config.get(b'cooldown_seconds', 10))
-                        
                         balance, last_t, _, now = await get_user_cooldown(r, canvas_id, user_id, config_batch, config_sec)
+                        next_in = round(config_sec - (now - last_t), 2) if config_sec > 0 and balance < config_batch else 0
+                    else:
+                        print(f"[DEBUG PY] Usuario no identificado, devolviendo max batch por defecto.")
+                        balance = config_batch
+                        next_in = 0
                         
-                        # Informar estado actual al cliente
-                        init_msg = json.dumps({
-                            "type": "init_cooldown",
-                            "balance": int(balance),
-                            "max_batch": config_batch,
-                            "cooldown_sec": config_sec,
-                            "next_replenish_in": round(config_sec - (now - last_t), 2) if config_sec > 0 and balance < config_batch else 0
-                        })
-                        await websocket.send(init_msg)
+                    init_msg = json.dumps({
+                        "type": "init_cooldown",
+                        "balance": int(balance),
+                        "max_batch": config_batch,
+                        "cooldown_sec": config_sec,
+                        "next_replenish_in": next_in
+                    })
+                    print(f"[DEBUG PY] Enviando respuesta de INIT al front: {init_msg}")
+                    await websocket.send(init_msg)
 
                 # ==========================================
                 # EVENTO PIXEL - INTENTO DE PINTAR
@@ -142,6 +152,7 @@ async def handler(websocket):
                 elif data.get("type") == "pixel":
                     is_locked = await r.exists(lock_key)
                     if is_locked:
+                        print(f"[DEBUG PY] Lienzo bloqueado. Ignorando pixel.")
                         continue 
                     
                     x = int(data.get("x", 0))
@@ -155,69 +166,81 @@ async def handler(websocket):
                     except ValueError:
                         continue
 
-                    if not user_id:
-                        continue # Solo usuarios identificados pueden colocar
-
-                    # 1. Validar Cooldown
                     raw_config = await r.hgetall(config_key)
                     config_batch = int(raw_config.get(b'cooldown_batch', 5))
                     config_sec = int(raw_config.get(b'cooldown_seconds', 10))
-                    
-                    balance, last_t, user_key, now = await get_user_cooldown(r, canvas_id, user_id, config_batch, config_sec)
-                    
-                    if balance >= 1:
-                        # Descontar saldo y guardar en Redis
-                        balance -= 1
-                        await r.hset(user_key, mapping={'b': balance, 't': last_t})
-                        
-                        # Devolver confirmación al usuario
-                        confirm_msg = json.dumps({
-                            "type": "pixel_confirm",
-                            "balance": int(balance),
-                            "max_batch": config_batch,
-                            "cooldown_sec": config_sec,
-                            "next_replenish_in": round(config_sec - (now - last_t), 2) if config_sec > 0 else 0
-                        })
-                        await websocket.send(confirm_msg)
 
-                        # 2. Escribir Pixel en Memoria (State y Stream)
-                        if 0 <= color_index <= 255:
-                            offset = (y * width) + x
-                            redis_state_key = f"canvas:{canvas_id}:state"
-                            await r.setrange(redis_state_key, offset, bytes([color_index]))
-                            
-                            stream_key = f"canvas:{canvas_id}:stream"
-                            event_dict = {
-                                "u": str(user_id),
-                                "x": str(x),
-                                "y": str(y),
-                                "c": str(color_index)
-                            }
-                            await r.xadd(stream_key, event_dict)
-
-                            # 3. Hacer broadcast a todos MENOS al emisor original
-                            clients_in_room = ROOMS.get(canvas_id, set())
-                            if len(clients_in_room) > 1:
-                                tasks = [
-                                    asyncio.create_task(client.send(message))
-                                    for client in clients_in_room if client != websocket
-                                ]
-                                if tasks:
-                                    await asyncio.gather(*tasks)
-
-                    else:
-                        # 4. Denegar Pixel (Cooldown Activo)
+                    if not user_id:
+                        print(f"[DEBUG PY] Intento de pintar de usuario no identificado. Denegado.")
                         error_msg = json.dumps({
                             "type": "cooldown_error",
                             "balance": 0,
                             "max_batch": config_batch,
                             "cooldown_sec": config_sec,
-                            "next_replenish_in": round(config_sec - (now - last_t), 2) if config_sec > 0 else 0
+                            "next_replenish_in": 0
                         })
                         await websocket.send(error_msg)
+                        continue 
+
+                    if user_id not in USER_LOCKS:
+                        USER_LOCKS[user_id] = asyncio.Lock()
+
+                    async with USER_LOCKS[user_id]:
+                        balance, last_t, user_key, now = await get_user_cooldown(r, canvas_id, user_id, config_batch, config_sec)
+                        
+                        if balance >= 1:
+                            balance -= 1
+                            print(f"[DEBUG PY] Descontando 1 pixel. Balance restante: {balance}")
+                            
+                            # ESCRITURA EN BYTES ESTRICTA
+                            await r.hset(user_key, mapping={b'b': str(balance).encode(), b't': str(last_t).encode()})
+                            
+                            confirm_msg = json.dumps({
+                                "type": "pixel_confirm",
+                                "balance": int(balance),
+                                "max_batch": config_batch,
+                                "cooldown_sec": config_sec,
+                                "next_replenish_in": round(config_sec - (now - last_t), 2) if config_sec > 0 else 0
+                            })
+                            print(f"[DEBUG PY] Confirmando pixel. Msg: {confirm_msg}")
+                            await websocket.send(confirm_msg)
+
+                            if 0 <= color_index <= 255:
+                                offset = (y * width) + x
+                                redis_state_key = f"canvas:{canvas_id}:state"
+                                await r.setrange(redis_state_key, offset, bytes([color_index]))
+                                
+                                stream_key = f"canvas:{canvas_id}:stream"
+                                event_dict = {
+                                    "u": str(user_id),
+                                    "x": str(x),
+                                    "y": str(y),
+                                    "c": str(color_index)
+                                }
+                                await r.xadd(stream_key, event_dict)
+
+                                clients_in_room = ROOMS.get(canvas_id, set())
+                                if len(clients_in_room) > 1:
+                                    tasks = [
+                                        asyncio.create_task(client.send(message))
+                                        for client in clients_in_room if client != websocket
+                                    ]
+                                    if tasks:
+                                        await asyncio.gather(*tasks)
+
+                        else:
+                            print(f"[DEBUG PY] Cooldown activo. Pixeles insuficientes para {user_id}.")
+                            error_msg = json.dumps({
+                                "type": "cooldown_error",
+                                "balance": 0,
+                                "max_batch": config_batch,
+                                "cooldown_sec": config_sec,
+                                "next_replenish_in": round(config_sec - (now - last_t), 2) if config_sec > 0 else 0
+                            })
+                            await websocket.send(error_msg)
 
             except Exception as e:
-                print(f"[!] Error procesando escritura en Redis: {e}")
+                print(f"[!] Error procesando mensaje del WS o escritura en Redis: {e}")
 
     except websockets.exceptions.ConnectionClosed:
         pass
@@ -238,7 +261,6 @@ async def main():
     
     print(f"Iniciando servidor WebSocket en ws://{host}:{port}")
     
-    # Iniciamos el listener de eventos en segundo plano
     asyncio.create_task(admin_events_listener())
     
     async with websockets.serve(handler, host, port):
