@@ -105,6 +105,7 @@ if (file_exists($palettesPath)) {
         window.AppTurnstileSiteKey = "<?php echo \App\Core\Helpers\EnvLoader::get('TURNSTILE_SITE_KEY', ''); ?>";
         window.AppTranslations = <?php echo json_encode(\App\Core\System\Translator::getAll()); ?>;
         window.APP_PALETTES = <?php echo $palettesJson; ?>;
+        window.activeUserId = <?php echo isset($_SESSION['active_account']) ? json_encode((string)$_SESSION['active_account']) : 'null'; ?>;
         
         // --- CONFIGURACIÓN GLOBAL (INCLUYENDO WEBSOCKETS) ---
         window.APP_CONFIG = {
