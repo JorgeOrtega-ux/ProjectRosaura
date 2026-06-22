@@ -124,6 +124,10 @@ class CanvasesController {
             this.selectDropdownValue(actionBtn);
         } else if (action === 'adjustLimit') {
             this.adjustParticipantLimit(actionBtn);
+        } else if (action === 'adjustCooldownBatch') {
+            this.adjustCooldownBatch(actionBtn);
+        } else if (action === 'adjustCooldownSeconds') {
+            this.adjustCooldownSeconds(actionBtn);
         } else if (action === 'saveCanvasName') {
             this.saveCanvasName(actionBtn);
         } else if (action === 'selectPalette') {
@@ -358,6 +362,40 @@ class CanvasesController {
         centerElement.textContent = newVal;
     }
 
+    adjustCooldownBatch(btn) {
+        const step = parseInt(btn.getAttribute('data-step'), 10);
+        const min = parseInt(btn.getAttribute('data-min') || 1, 10);
+        const max = parseInt(btn.getAttribute('data-max') || 100, 10);
+        const valRef = document.querySelector('[data-ref="val_cooldown_batch"]');
+        
+        if (valRef) {
+            let currentVal = parseInt(valRef.getAttribute('data-val'), 10) || min;
+            let newVal = currentVal + step;
+            if (newVal < min) newVal = min;
+            if (newVal > max) newVal = max;
+            this.formState.cooldown_pixels_batch = newVal;
+            valRef.textContent = newVal;
+            valRef.setAttribute('data-val', newVal);
+        }
+    }
+
+    adjustCooldownSeconds(btn) {
+        const step = parseInt(btn.getAttribute('data-step'), 10);
+        const min = parseInt(btn.getAttribute('data-min') || 0, 10);
+        const max = parseInt(btn.getAttribute('data-max') || 3600, 10);
+        const valRef = document.querySelector('[data-ref="val_cooldown_seconds"]');
+        
+        if (valRef) {
+            let currentVal = parseInt(valRef.getAttribute('data-val'), 10) || min;
+            let newVal = currentVal + step;
+            if (newVal < min) newVal = min;
+            if (newVal > max) newVal = max;
+            this.formState.cooldown_seconds = newVal;
+            valRef.textContent = newVal;
+            valRef.setAttribute('data-val', newVal);
+        }
+    }
+
     async submitCanvas(btn) {
         const inputName = document.querySelector('[data-ref="input-canvasname"]');
         if (inputName) {
@@ -369,12 +407,12 @@ class CanvasesController {
         
         const inputBatch = document.querySelector('[data-ref="val_cooldown_batch"]');
         if (inputBatch) {
-            this.formState.cooldown_pixels_batch = parseInt(inputBatch.value, 10) || 5;
+            this.formState.cooldown_pixels_batch = parseInt(inputBatch.getAttribute('data-val'), 10) || 5;
         }
 
         const inputSec = document.querySelector('[data-ref="val_cooldown_seconds"]');
         if (inputSec) {
-            this.formState.cooldown_seconds = parseInt(inputSec.value, 10) || 10;
+            this.formState.cooldown_seconds = parseInt(inputSec.getAttribute('data-val'), 10) || 10;
         }
 
         setButtonLoading(btn);

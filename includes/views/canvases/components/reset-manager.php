@@ -64,10 +64,65 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--start">
-                            <div class="component-input-group component-input-group--h34">
-                                <span class="material-symbols-rounded" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 18px; color: var(--text-secondary); pointer-events: none;">calendar_clock</span>
-                                <input type="datetime-local" data-ref="next_reset_at" class="component-input-field component-input-field--simple" style="padding-left: 36px; min-width: 200px;">
+                            
+                            <div class="component-dropdown-wrapper">
+                                <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="moduleCalendarDate">
+                                    <span class="material-symbols-rounded">calendar_month</span>
+                                    <span class="component-dropdown-text" data-ref="reset-date-text"><?php echo __('lbl_select_date') ?? 'Seleccionar fecha'; ?></span>
+                                    <span class="material-symbols-rounded">expand_more</span>
+                                </div>
+                                
+                                <input type="hidden" data-ref="next_reset_at" value="">
+
+                                <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="moduleCalendarDate">
+                                    <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding">
+                                        <div class="pill-container"><div class="drag-handle"></div></div>
+                                        
+                                        <div class="component-calendar">
+                                            <div class="component-calendar-header">
+                                                <button type="button" class="component-button component-button--icon component-button--h30" data-action="calendarPrevMonth">
+                                                    <span class="material-symbols-rounded">chevron_left</span>
+                                                </button>
+                                                <div class="component-calendar-title" data-ref="calendar-title">...</div>
+                                                <button type="button" class="component-button component-button--icon component-button--h30" data-action="calendarNextMonth">
+                                                    <span class="material-symbols-rounded">chevron_right</span>
+                                                </button>
+                                            </div>
+
+                                            <div class="component-calendar-weekdays">
+                                                <span><?php echo __('cal_su') ?? 'Do'; ?></span>
+                                                <span><?php echo __('cal_mo') ?? 'Lu'; ?></span>
+                                                <span><?php echo __('cal_tu') ?? 'Ma'; ?></span>
+                                                <span><?php echo __('cal_we') ?? 'Mi'; ?></span>
+                                                <span><?php echo __('cal_th') ?? 'Ju'; ?></span>
+                                                <span><?php echo __('cal_fr') ?? 'Vi'; ?></span>
+                                                <span><?php echo __('cal_sa') ?? 'Sa'; ?></span>
+                                            </div>
+
+                                            <div class="component-calendar-days" data-ref="calendar-days"></div>
+
+                                            <div class="component-calendar-time">
+                                                <div class="component-input-group component-input-group--h34">
+                                                    <input type="number" data-ref="calendar-hours" class="component-input-field component-input-field--simple" placeholder="<?php echo __('cal_placeholder_hh') ?? 'HH'; ?>" min="0" max="23" value="00">
+                                                </div>
+                                                <span>:</span>
+                                                <div class="component-input-group component-input-group--h34">
+                                                    <input type="number" data-ref="calendar-minutes" class="component-input-field component-input-field--simple" placeholder="<?php echo __('cal_placeholder_mm') ?? 'MM'; ?>" min="0" max="59" value="00">
+                                                </div>
+                                            </div>
+
+                                            <div class="component-calendar-actions">
+                                                <button type="button" class="component-button component-button--h30" data-action="calendarClear"><?php echo __('btn_clear'); ?></button>
+                                                <div>
+                                                    <button type="button" class="component-button component-button--h30" data-action="calendarCancel"><?php echo __('btn_cancel'); ?></button>
+                                                    <button type="button" class="component-button component-button--h30 component-button--dark" data-action="calendarConfirm"><?php echo __('btn_accept'); ?></button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
+                            
                         </div>
                     </div>
 
@@ -108,7 +163,7 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                                 
                                 <input type="hidden" data-ref="timer_action" value="restart">
 
-                                <div class="component-module component-module--dropdown component-module--dropdown-left disabled-interactive" data-module="moduleTimerAction">
+                                <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="moduleTimerAction">
                                     <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
                                         <div class="pill-container"><div class="drag-handle"></div></div>
                                         <div class="component-menu-list component-menu-list--scrollable">

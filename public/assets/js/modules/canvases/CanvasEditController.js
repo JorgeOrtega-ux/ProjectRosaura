@@ -199,10 +199,16 @@ class CanvasEditController {
                 if (textSize) textSize.textContent = `${data.width}x${data.height}`;
 
                 const inputBatch = this.container.querySelector('[data-ref="val_cooldown_batch"]');
-                if (inputBatch) inputBatch.value = this.state.cooldown_pixels_batch;
+                if (inputBatch) {
+                    inputBatch.textContent = this.state.cooldown_pixels_batch;
+                    inputBatch.setAttribute('data-val', this.state.cooldown_pixels_batch);
+                }
 
                 const inputSec = this.container.querySelector('[data-ref="val_cooldown_seconds"]');
-                if (inputSec) inputSec.value = this.state.cooldown_seconds;
+                if (inputSec) {
+                    inputSec.textContent = this.state.cooldown_seconds;
+                    inputSec.setAttribute('data-val', this.state.cooldown_seconds);
+                }
 
                 const textPrivacy = this.container.querySelector('[data-ref="text-privacy"]');
                 const iconPrivacy = this.container.querySelector('[data-ref="icon-privacy"]');
@@ -315,6 +321,44 @@ class CanvasEditController {
         }
     }
 
+    adjustCooldownBatch(btn) {
+        const step = parseInt(btn.getAttribute('data-step'), 10);
+        const min = parseInt(btn.getAttribute('data-min') || 1, 10);
+        const max = parseInt(btn.getAttribute('data-max') || 100, 10);
+        const valRef = this.container.querySelector('[data-ref="val_cooldown_batch"]');
+        
+        if (valRef) {
+            let currentVal = parseInt(valRef.getAttribute('data-val'), 10) || min;
+            let newVal = currentVal + step;
+            
+            if (newVal < min) newVal = min;
+            if (newVal > max) newVal = max;
+            
+            this.state.cooldown_pixels_batch = newVal;
+            valRef.textContent = newVal;
+            valRef.setAttribute('data-val', newVal);
+        }
+    }
+
+    adjustCooldownSeconds(btn) {
+        const step = parseInt(btn.getAttribute('data-step'), 10);
+        const min = parseInt(btn.getAttribute('data-min') || 0, 10);
+        const max = parseInt(btn.getAttribute('data-max') || 3600, 10);
+        const valRef = this.container.querySelector('[data-ref="val_cooldown_seconds"]');
+        
+        if (valRef) {
+            let currentVal = parseInt(valRef.getAttribute('data-val'), 10) || min;
+            let newVal = currentVal + step;
+            
+            if (newVal < min) newVal = min;
+            if (newVal > max) newVal = max;
+            
+            this.state.cooldown_seconds = newVal;
+            valRef.textContent = newVal;
+            valRef.setAttribute('data-val', newVal);
+        }
+    }
+
     async updateCanvas(btn) {
         const nameInput = this.container.querySelector('[data-ref="input-canvasname"]');
         if (nameInput) {
@@ -328,12 +372,12 @@ class CanvasEditController {
 
         const inputBatch = this.container.querySelector('[data-ref="val_cooldown_batch"]');
         if (inputBatch) {
-            this.state.cooldown_pixels_batch = parseInt(inputBatch.value, 10) || 5;
+            this.state.cooldown_pixels_batch = parseInt(inputBatch.getAttribute('data-val'), 10) || 5;
         }
 
         const inputSec = this.container.querySelector('[data-ref="val_cooldown_seconds"]');
         if (inputSec) {
-            this.state.cooldown_seconds = parseInt(inputSec.value, 10) || 10;
+            this.state.cooldown_seconds = parseInt(inputSec.getAttribute('data-val'), 10) || 10;
         }
 
         if (!this.state.name) {

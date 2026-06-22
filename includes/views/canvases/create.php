@@ -216,8 +216,24 @@
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--start">
-                            <div class="component-input-group component-input-group--h34" style="width: 120px;">
-                                <input type="number" data-ref="val_cooldown_batch" class="component-input-field component-input-field--simple" value="5" min="1" max="100" style="text-align: center;">
+                            <div class="component-inline-control component-inline-control--fixed">
+                                <div class="component-inline-control__group">
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustCooldownBatch" data-step="-5" data-min="1">
+                                        <span class="material-symbols-rounded">keyboard_double_arrow_left</span>
+                                    </button>
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustCooldownBatch" data-step="-1" data-min="1">
+                                        <span class="material-symbols-rounded">chevron_left</span>
+                                    </button>
+                                </div>
+                                <div class="component-inline-control__center" data-ref="val_cooldown_batch" data-val="5">5</div>
+                                <div class="component-inline-control__group">
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustCooldownBatch" data-step="1" data-max="100">
+                                        <span class="material-symbols-rounded">chevron_right</span>
+                                    </button>
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustCooldownBatch" data-step="5" data-max="100">
+                                        <span class="material-symbols-rounded">keyboard_double_arrow_right</span>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -232,8 +248,24 @@
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--start">
-                            <div class="component-input-group component-input-group--h34" style="width: 120px;">
-                                <input type="number" data-ref="val_cooldown_seconds" class="component-input-field component-input-field--simple" value="10" min="0" max="3600" style="text-align: center;">
+                            <div class="component-inline-control component-inline-control--fixed">
+                                <div class="component-inline-control__group">
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustCooldownSeconds" data-step="-10" data-min="0">
+                                        <span class="material-symbols-rounded">keyboard_double_arrow_left</span>
+                                    </button>
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustCooldownSeconds" data-step="-1" data-min="0">
+                                        <span class="material-symbols-rounded">chevron_left</span>
+                                    </button>
+                                </div>
+                                <div class="component-inline-control__center" data-ref="val_cooldown_seconds" data-val="10">10</div>
+                                <div class="component-inline-control__group">
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustCooldownSeconds" data-step="1" data-max="3600">
+                                        <span class="material-symbols-rounded">chevron_right</span>
+                                    </button>
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustCooldownSeconds" data-step="10" data-max="3600">
+                                        <span class="material-symbols-rounded">keyboard_double_arrow_right</span>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>

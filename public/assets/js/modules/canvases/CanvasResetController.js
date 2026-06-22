@@ -3,6 +3,7 @@
 import { ApiRoutes } from '../../core/api/ApiRoutes.js';
 import { ApiService } from '../../core/api/ApiServices.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../core/utils/uiUtils.js';
+import { CalendarSystem } from '../../core/components/CalendarSystem.js';
 
 class CanvasResetController {
     constructor() {
@@ -20,6 +21,8 @@ class CanvasResetController {
         this.inputTimer = null;
         this.textTimer = null;
         this.iconTimer = null;
+
+        this.calendar = null;
 
         this.handleGlobalClickBound = this.handleGlobalClick.bind(this);
         this.handleToggleChangeBound = this.handleToggleChange.bind(this);
@@ -42,6 +45,19 @@ class CanvasResetController {
         this.textTimer = this.wrapper.querySelector('[data-ref="text-timer"]');
         this.iconTimer = this.wrapper.querySelector('[data-ref="icon-timer"]');
 
+        this.calendar = new CalendarSystem('.component-module[data-module="moduleCalendarDate"]');
+        this.calendar.init();
+
+        this.calendar.setup(null, (isoString, displayString) => {
+            if (this.inputDateTime) this.inputDateTime.value = isoString;
+            const textRef = this.wrapper.querySelector('[data-ref="reset-date-text"]');
+            if (textRef) textRef.textContent = displayString;
+        }, () => {
+            if (this.inputDateTime) this.inputDateTime.value = '';
+            const textRef = this.wrapper.querySelector('[data-ref="reset-date-text"]');
+            if (textRef) textRef.textContent = __('lbl_select_date') || 'Seleccionar fecha';
+        });
+
         this.bindEvents();
         this.loadCurrentSettings();
 
@@ -50,6 +66,7 @@ class CanvasResetController {
 
     destroy() {
         if (this.abortController) this.abortController.abort();
+        if (this.calendar) this.calendar.destroy();
         document.removeEventListener('click', this.handleGlobalClickBound);
         document.removeEventListener('change', this.handleToggleChangeBound);
         this.isInitialized = false;
@@ -74,7 +91,33 @@ class CanvasResetController {
             this.selectTimerValue(dropdownItem);
             
             const module = dropdownItem.closest('.component-module--dropdown');
-            if (module) module.classList.add('disabled-interactive');
+            if (module) module.classList.add('disabled');
+        }
+
+        const btnDropdown = e.target.closest('[data-action="toggleDropdown"]');
+        if (btnDropdown) {
+            e.preventDefault();
+            this.toggleDropdown(btnDropdown);
+            return;
+        }
+    }
+
+    toggleDropdown(btn) {
+        const targetId = btn.getAttribute('data-target');
+        const dropdown = this.wrapper.querySelector(`[data-module="${targetId}"]`);
+        
+        if (dropdown) {
+            const isActive = dropdown.classList.contains('active');
+            
+            this.wrapper.querySelectorAll('.component-module--dropdown').forEach(d => {
+                d.classList.remove('active');
+                d.classList.add('disabled');
+            });
+            
+            if (!isActive) {
+                dropdown.classList.remove('disabled');
+                dropdown.classList.add('active');
+            }
         }
     }
 
@@ -162,7 +205,31 @@ class CanvasResetController {
             }
 
             if (data.next_reset_at && this.inputDateTime) {
-                this.inputDateTime.value = this.utcStringToLocalInputFormat(data.next_reset_at);
+                const localStr = this.utcStringToLocalInputFormat(data.next_reset_at);
+                this.inputDateTime.value = localStr;
+                
+                // Actualizar calendario y texto principal
+                this.calendar.setup(localStr, (isoString, displayString) => {
+                    if (this.inputDateTime) this.inputDateTime.value = isoString;
+                    const textRef = this.wrapper.querySelector('[data-ref="reset-date-text"]');
+                    if (textRef) textRef.textContent = displayString;
+                }, () => {
+                    if (this.inputDateTime) this.inputDateTime.value = '';
+                    const textRef = this.wrapper.querySelector('[data-ref="reset-date-text"]');
+                    if (textRef) textRef.textContent = __('lbl_select_date') || 'Seleccionar fecha';
+                });
+
+                // Setear el texto inicial visible del dropdown de la fecha
+                const textRef = this.wrapper.querySelector('[data-ref="reset-date-text"]');
+                if (textRef) {
+                    const dateObj = new Date(localStr);
+                    if (!isNaN(dateObj.getTime())) {
+                        const mStr = this.calendar.monthsShortStr[dateObj.getMonth()];
+                        const h = String(dateObj.getHours()).padStart(2, '0');
+                        const min = String(dateObj.getMinutes()).padStart(2, '0');
+                        textRef.textContent = `${dateObj.getDate()} de ${mStr} ${dateObj.getFullYear()}, ${h}:${min}`;
+                    }
+                }
             }
 
             if (this.checkSnapshot) {
@@ -182,15 +249,14 @@ class CanvasResetController {
         const localTimeStr = this.inputDateTime ? this.inputDateTime.value : '';
 
         if (isActive && !localTimeStr) {
-            showMessage(__('err_reset_date_required'), 'warning');
-            if (this.inputDateTime) this.inputDateTime.focus();
+            showMessage(__('err_reset_date_required') || 'La fecha de reinicio es obligatoria', 'warning');
             return;
         }
 
         const utcNextReset = this.localInputFormatToUtcString(localTimeStr);
 
         const payload = {
-            id: canvasId, // SE ENVÍA id EN LUGAR DE canvas_id PARA QUE COINCIDA CON PHP
+            id: canvasId,
             is_active: isActive,
             next_reset_at: utcNextReset,
             take_snapshot: this.checkSnapshot ? this.checkSnapshot.checked : false,
