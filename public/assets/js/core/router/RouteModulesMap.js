@@ -78,6 +78,7 @@ export const RouteModulesMap = {
     '/canvases/manage/resets': { path: './modules/canvases/CanvasResetController.js', className: 'CanvasResetController', skeletonType: 'layout-settings-generic' },
     '/canvases/join': { path: './modules/canvases/CanvasesController.js', className: 'CanvasesController', skeletonType: 'layout-dashboard' },
     '/canvases/edit': { path: './modules/canvases/CanvasEditController.js', className: 'CanvasEditController', skeletonType: 'layout-dashboard' },
+    '/canvases/members': { path: './modules/canvases/CanvasMembersController.js', className: 'CanvasMembersController', skeletonType: 'layout-dashboard' },
     
     // ---- NUEVO MÓDULO GALERÍA PÚBLICA DE SNAPSHOTS ----
     '/design/s/:uuid': { path: './modules/canvases/CanvasSnapshotsGalleryController.js', className: 'CanvasSnapshotsGalleryController', skeletonType: 'layout-dashboard' },

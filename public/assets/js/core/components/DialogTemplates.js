@@ -240,7 +240,6 @@ export const DialogTemplates = {
         })
     },
 
-    // --- NUEVOS MODALES AGREGADOS ---
     confirmDeleteCanvas: {
         build: () => DialogTemplates.confirmAction.build({
             titleKey: 'title_confirm_delete_canvas',
@@ -258,7 +257,6 @@ export const DialogTemplates = {
             confirmKey: 'btn_leave_canvas'
         })
     },
-    // --------------------------------
 
     dynamicFormDialog: {
         build: (data) => {
@@ -339,6 +337,15 @@ export const DialogTemplates = {
             titleKey: 'title_verify_delete_users',
             descHtml: __('desc_verify_delete_users').replace(':count', data.count || 0),
             confirmKey: 'btn_destroy_users'
+        })
+    },
+
+    // --- TEMPLATE AÑADIDO PARA LA ELIMINACIÓN DE LIENZOS ---
+    verifyPasswordDeleteCanvases: {
+        build: (data) => DialogTemplates.verifyPasswordDialog.build({
+            titleKey: 'title_verify_delete_canvases',
+            descHtml: __('desc_verify_delete_canvases') ? __('desc_verify_delete_canvases').replace(':count', data.count || 0) : `Se eliminarán ${data.count || 0} lienzos permanentemente. Introduce tu contraseña para confirmar.`,
+            confirmKey: 'btn_delete_canvas'
         })
     },
 
