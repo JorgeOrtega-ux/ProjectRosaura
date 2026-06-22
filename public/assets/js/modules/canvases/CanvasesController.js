@@ -25,7 +25,9 @@ class CanvasesController {
             size: '64',
             privacy: 'private',
             palette_id: 'default',
-            limit: 10
+            limit: 10,
+            cooldown_pixels_batch: 5,
+            cooldown_seconds: 10
         };
 
         this.handleClickBound = this.handleClick.bind(this);
@@ -84,18 +86,15 @@ class CanvasesController {
             const totalColors = palette.colors.length;
             const colorsToShow = Math.min(totalColors, 4);
 
-            // Círculos de colores
             for (let i = 0; i < colorsToShow; i++) {
                 colorsHtml += `<span style="display:inline-block; width:16px; height:16px; border-radius:50%; background-color:${palette.colors[i]}; border:1px solid rgba(0,0,0,0.1); margin-right: -6px; position:relative; z-index:${10 - i};"></span>`;
             }
 
-            // Placa redondeada del remanente (Ej. +8)
             if (totalColors > 4) {
                 const remaining = totalColors - 4;
                 colorsHtml += `<span style="display:inline-flex; align-items:center; justify-content:center; padding: 0 4px; min-width:16px; height:16px; border-radius:10px; background-color:var(--surface-hover); border:1px solid var(--border-color); font-size:10px; font-weight:600; color:var(--text-primary); margin-left: 4px; position:relative; z-index:0; box-sizing: border-box;">+${remaining}</span>`;
             }
 
-            // Icono <- Texto -> Colores (alineados a la derecha usando margin-left: auto)
             btn.innerHTML = `
                 <div class="component-menu-link-icon"><span class="material-symbols-rounded">palette</span></div>
                 <div class="component-menu-link-text"><span>${palette.name}</span></div>
@@ -145,7 +144,6 @@ class CanvasesController {
         }
     }
 
-    // NUEVO: Método agregado para redirigir a la galería usando el data-uuid del botón
     viewCanvasSnapshots(btn) {
         const uuid = btn.getAttribute('data-uuid');
         if (uuid) {
@@ -171,7 +169,6 @@ class CanvasesController {
             const url = `${window.location.origin}${this.basePath}/design/${uuid}`;
             try {
                 await navigator.clipboard.writeText(url);
-                // Intenta usar i18n, fallback a texto directo
                 showMessage(window.__ ? __('msg_link_copied') || 'Enlace copiado al portapapeles' : 'Enlace copiado al portapapeles', 'success');
                 this.closeDropdowns();
             } catch (err) {
@@ -369,6 +366,16 @@ class CanvasesController {
 
         const inputDesc = document.querySelector('[data-ref="input-canvas-desc"]');
         this.formState.description = inputDesc ? inputDesc.value.trim() : '';
+        
+        const inputBatch = document.querySelector('[data-ref="val_cooldown_batch"]');
+        if (inputBatch) {
+            this.formState.cooldown_pixels_batch = parseInt(inputBatch.value, 10) || 5;
+        }
+
+        const inputSec = document.querySelector('[data-ref="val_cooldown_seconds"]');
+        if (inputSec) {
+            this.formState.cooldown_seconds = parseInt(inputSec.value, 10) || 10;
+        }
 
         setButtonLoading(btn);
 

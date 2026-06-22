@@ -40,20 +40,22 @@ class CanvasRepository implements CanvasRepositoryInterface {
 
     public function create(array $canvasData): int {
         $sql = "INSERT INTO " . DB::TBL_CANVASES . " 
-                (uuid, user_id, name, description, privacy, requires_approval, size, palette_id, max_participants) 
-                VALUES (:uuid, :user_id, :name, :description, :privacy, :requires_approval, :size, :palette_id, :max_participants)";
+                (uuid, user_id, name, description, privacy, requires_approval, size, palette_id, max_participants, cooldown_pixels_batch, cooldown_seconds) 
+                VALUES (:uuid, :user_id, :name, :description, :privacy, :requires_approval, :size, :palette_id, :max_participants, :cooldown_pixels_batch, :cooldown_seconds)";
         
         $stmt = $this->db->prepare($sql);
         $stmt->execute([
-            ':uuid'              => $canvasData['uuid'],
-            ':user_id'           => $canvasData['user_id'],
-            ':name'              => $canvasData['name'],
-            ':description'       => $canvasData['description'],
-            ':privacy'           => $canvasData['privacy'],
-            ':requires_approval' => $canvasData['requires_approval'],
-            ':size'              => $canvasData['size'],
-            ':palette_id'        => $canvasData['palette_id'],
-            ':max_participants'  => $canvasData['max_participants']
+            ':uuid'                  => $canvasData['uuid'],
+            ':user_id'               => $canvasData['user_id'],
+            ':name'                  => $canvasData['name'],
+            ':description'           => $canvasData['description'],
+            ':privacy'               => $canvasData['privacy'],
+            ':requires_approval'     => $canvasData['requires_approval'],
+            ':size'                  => $canvasData['size'],
+            ':palette_id'            => $canvasData['palette_id'],
+            ':max_participants'      => $canvasData['max_participants'],
+            ':cooldown_pixels_batch' => $canvasData['cooldown_pixels_batch'],
+            ':cooldown_seconds'      => $canvasData['cooldown_seconds']
         ]);
 
         return (int)$this->db->lastInsertId();
@@ -96,7 +98,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
     // --- MÉTODOS PARA GESTIÓN (MANAGE) ---
 
     public function getUserCanvasesPaginated(int $userId, int $limit, int $offset): array {
-        $sql = "SELECT id, uuid, name, description, privacy, requires_approval, size, palette_id, max_participants, created_at 
+        $sql = "SELECT id, uuid, name, description, privacy, requires_approval, size, palette_id, max_participants, cooldown_pixels_batch, cooldown_seconds, created_at 
                 FROM " . DB::TBL_CANVASES . " 
                 WHERE user_id = :uid 
                 ORDER BY id DESC 
@@ -165,19 +167,23 @@ class CanvasRepository implements CanvasRepositoryInterface {
                     privacy = :privacy, 
                     requires_approval = :requires_approval,
                     palette_id = :palette_id,
-                    max_participants = :max_participants
+                    max_participants = :max_participants,
+                    cooldown_pixels_batch = :cooldown_pixels_batch,
+                    cooldown_seconds = :cooldown_seconds
                 WHERE id = :id AND user_id = :user_id";
         
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([
-            ':name'              => $data['name'],
-            ':description'       => $data['description'],
-            ':privacy'           => $data['privacy'],
-            ':requires_approval' => $data['requires_approval'],
-            ':palette_id'        => $data['palette_id'],
-            ':max_participants'  => $data['max_participants'],
-            ':id'                => $id,
-            ':user_id'           => $userId
+            ':name'                  => $data['name'],
+            ':description'           => $data['description'],
+            ':privacy'               => $data['privacy'],
+            ':requires_approval'     => $data['requires_approval'],
+            ':palette_id'            => $data['palette_id'],
+            ':max_participants'      => $data['max_participants'],
+            ':cooldown_pixels_batch' => $data['cooldown_pixels_batch'],
+            ':cooldown_seconds'      => $data['cooldown_seconds'],
+            ':id'                    => $id,
+            ':user_id'               => $userId
         ]);
     }
 

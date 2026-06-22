@@ -211,6 +211,38 @@
                     <div class="component-group-item component-group-item--stacked">
                         <div class="component-card__content">
                             <div class="component-card__text">
+                                <h2 class="component-card__title"><?php echo __('canvas_cooldown_batch_title') ?? 'Píxeles por lote (Capacidad)'; ?></h2>
+                                <p class="component-card__description"><?php echo __('canvas_cooldown_batch_desc') ?? 'Cantidad máxima de píxeles que un usuario puede acumular para colocar sin tener que esperar.'; ?></p>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--start">
+                            <div class="component-input-group component-input-group--h34" style="width: 120px;">
+                                <input type="number" data-ref="val_cooldown_batch" class="component-input-field component-input-field--simple" value="5" min="1" max="100" style="text-align: center;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="component-divider">
+
+                    <div class="component-group-item component-group-item--stacked">
+                        <div class="component-card__content">
+                            <div class="component-card__text">
+                                <h2 class="component-card__title"><?php echo __('canvas_cooldown_seconds_title') ?? 'Tiempo de recarga (Segundos)'; ?></h2>
+                                <p class="component-card__description"><?php echo __('canvas_cooldown_seconds_desc') ?? 'Segundos que debe esperar el usuario para regenerar 1 píxel gastado (Pon 0 para infinito).'; ?></p>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--start">
+                            <div class="component-input-group component-input-group--h34" style="width: 120px;">
+                                <input type="number" data-ref="val_cooldown_seconds" class="component-input-field component-input-field--simple" value="10" min="0" max="3600" style="text-align: center;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="component-divider">
+
+                    <div class="component-group-item component-group-item--stacked">
+                        <div class="component-card__content">
+                            <div class="component-card__text">
                                 <h2 class="component-card__title"><?php echo __('canvas_limit_title'); ?></h2>
                                 <p class="component-card__description"><?php echo __('canvas_limit_desc'); ?></p>
                             </div>

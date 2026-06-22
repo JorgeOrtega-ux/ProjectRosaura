@@ -382,17 +382,29 @@ export const DesignInteractions = {
     updateSelectionUI() {
         if (!this.btnPlacePixels || !this.txtPlacePixels) return;
 
-        if (this.selectedPixels.size > 0) {
+        const balance = Math.floor(this.cooldownBalance);
+
+        if (this.selectedPixels.size > 0 && this.selectedPixels.size <= balance) {
             this.btnPlacePixels.classList.remove('disabled-interactive');
-            this.txtPlacePixels.textContent = __('btn_place_pixels');
+            this.txtPlacePixels.textContent = window.__ ? window.__('btn_place_pixels') || 'Colocar' : 'Colocar';
         } else {
             this.btnPlacePixels.classList.add('disabled-interactive');
-            this.txtPlacePixels.textContent = __('btn_select_pixels');
+            if (this.selectedPixels.size > balance) {
+                this.txtPlacePixels.textContent = `Máx ${balance} px`;
+            } else {
+                this.txtPlacePixels.textContent = window.__ ? window.__('btn_select_pixels') || 'Seleccionar Píxeles' : 'Seleccionar Píxeles';
+            }
         }
     },
 
     placePixels() {
         if (this.selectedPixels.size === 0 || this.isSpectator || this.timelapseActive || this.isResetLocked) return;
+        
+        const balance = Math.floor(this.cooldownBalance);
+        if (this.selectedPixels.size > balance) {
+            showMessage(`Solo tienes ${balance} píxeles disponibles.`, 'warning');
+            return;
+        }
 
         const paletteObj = getPaletteById(this.canvasPaletteId);
         let colorIndex = 0;
@@ -419,11 +431,18 @@ export const DesignInteractions = {
             }
         });
 
+        // Actualización optimista de interfaz
+        this.cooldownBalance -= this.selectedPixels.size;
+        if (this.cooldownBalance < this.cooldownMax && this.cooldownNextIn <= 0) {
+            this.cooldownNextIn = this.cooldownSec;
+            this.lastSyncTime = Date.now();
+        }
+
         this.selectedPixels.clear();
         this.updateSelectionUI();
         this.requestRender();
         
-        showMessage(__('msg_pixels_placed'), 'success');
+        showMessage(window.__ ? window.__('msg_pixels_placed') || 'Píxeles colocados' : 'Píxeles colocados', 'success');
     },
 
     handleResize() {

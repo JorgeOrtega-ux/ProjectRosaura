@@ -10,6 +10,12 @@ export const DesignNetwork = {
 
         this.wsManager = new WebSocketManager();
         
+        this.wsManager.on('open', () => {
+            if (window.activeUserId) {
+                this.wsManager.send({ type: 'init', userId: window.activeUserId });
+            }
+        });
+
         this.wsManager.on('message', (data) => {
             if (data.type === 'pixel') {
                 const pX = parseInt(data.x, 10);
@@ -28,6 +34,9 @@ export const DesignNetwork = {
                 }
                 this.requestRender();
             } 
+            else if (data.type === 'init_cooldown' || data.type === 'pixel_confirm' || data.type === 'cooldown_error') {
+                this.handleCooldownSync(data);
+            }
             else if (data.type === 'canvas_locked') {
                 this.handleCanvasLocked(data);
             } 
@@ -37,6 +46,20 @@ export const DesignNetwork = {
         });
 
         this.wsManager.connect(this.canvasIntId);
+    },
+
+    handleCooldownSync(data) {
+        this.cooldownBalance = data.balance;
+        this.cooldownMax = data.max_batch;
+        this.cooldownSec = data.cooldown_sec;
+        this.cooldownNextIn = data.next_replenish_in;
+        this.lastSyncTime = Date.now();
+        
+        if (data.type === 'cooldown_error') {
+            showMessage('Cooldown activo. No puedes colocar píxeles en este momento.', 'warning');
+        }
+        
+        this.updateSelectionUI();
     },
 
     handleCanvasLocked(data) {

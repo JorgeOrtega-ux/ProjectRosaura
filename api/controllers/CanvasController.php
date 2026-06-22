@@ -109,12 +109,16 @@ class CanvasController extends BaseController {
             $size = $input['size'] ?? '64';
             $limit = $input['limit'] ?? 10;
             $paletteId = $input['palette_id'] ?? 'default';
+            
+            // Nuevas variables para el Cooldown
+            $cooldownBatch = $input['cooldown_pixels_batch'] ?? 5;
+            $cooldownSeconds = $input['cooldown_seconds'] ?? 10;
 
             if (empty(trim($name))) {
                 return $this->respond(['success' => false, 'message' => __('err_canvas_name_required')]);
             }
 
-            $result = $this->canvasServices->createCanvas($userId, $name, $description, $privacy, $requiresApproval, $size, (int)$limit, $paletteId);
+            $result = $this->canvasServices->createCanvas($userId, $name, $description, $privacy, $requiresApproval, $size, (int)$limit, $paletteId, (int)$cooldownBatch, (int)$cooldownSeconds);
 
             return $this->respond($result);
 
@@ -142,7 +146,9 @@ class CanvasController extends BaseController {
                 'privacy' => $input['privacy'] ?? null,
                 'requires_approval' => filter_var($input['requires_approval'] ?? false, FILTER_VALIDATE_BOOLEAN),
                 'palette_id' => $input['palette_id'] ?? null,
-                'max_participants' => $input['max_members'] ?? null
+                'max_participants' => $input['max_members'] ?? null,
+                'cooldown_pixels_batch' => $input['cooldown_pixels_batch'] ?? null,
+                'cooldown_seconds' => $input['cooldown_seconds'] ?? null
             ];
 
             $result = $this->canvasServices->updateCanvas($userId, (int)$canvasId, $data);

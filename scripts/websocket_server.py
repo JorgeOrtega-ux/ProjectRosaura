@@ -23,9 +23,34 @@ async def get_redis_client():
             port=redis_port, 
             password=redis_pass,
             db=0,
-            decode_responses=False
+            decode_responses=False # Mantenemos esto para usar bytes globalmente
         )
     return REDIS_CLIENT
+
+async def get_user_cooldown(r, canvas_id, user_id, config_batch, config_sec):
+    """
+    Calcula y devuelve el saldo en tiempo real de un usuario basado en la última vez que pintó.
+    """
+    user_key = f"canvas:{canvas_id}:user:{user_id}:cooldown"
+    now = time.time()
+    
+    u_state = await r.hgetall(user_key)
+    
+    if not u_state:
+        balance = float(config_batch)
+        last_t = now
+    else:
+        balance = float(u_state.get(b'b', config_batch))
+        last_t = float(u_state.get(b't', now))
+        
+    if config_sec > 0:
+        elapsed = now - last_t
+        replenish = int(elapsed // config_sec)
+        if replenish > 0:
+            balance = min(float(config_batch), balance + replenish)
+            last_t = last_t + (replenish * config_sec)
+            
+    return balance, last_t, user_key, now
 
 async def admin_events_listener():
     """
@@ -82,18 +107,39 @@ async def handler(websocket):
 
     r = await get_redis_client()
     lock_key = f"canvas:{canvas_id}:reset_lock"
+    config_key = f"canvas:{canvas_id}:config"
 
     try:
         async for message in websocket:
             try:
                 data = json.loads(message)
-                if data.get("type") == "pixel":
-                    
-                    # ==========================================
-                    # INTERCEPCIÓN ESTRICTA DE REINICIO
-                    # ==========================================
-                    # Si el lienzo está bloqueado por el worker_canvas_resets, 
-                    # ignoramos el pixel de forma silenciosa para evitar "Trazos Fantasma"
+                
+                # ==========================================
+                # EVENTO INIT - SINCRONIZACIÓN INICIAL
+                # ==========================================
+                if data.get("type") == "init":
+                    user_id = data.get("userId")
+                    if user_id:
+                        raw_config = await r.hgetall(config_key)
+                        config_batch = int(raw_config.get(b'cooldown_batch', 5))
+                        config_sec = int(raw_config.get(b'cooldown_seconds', 10))
+                        
+                        balance, last_t, _, now = await get_user_cooldown(r, canvas_id, user_id, config_batch, config_sec)
+                        
+                        # Informar estado actual al cliente
+                        init_msg = json.dumps({
+                            "type": "init_cooldown",
+                            "balance": int(balance),
+                            "max_batch": config_batch,
+                            "cooldown_sec": config_sec,
+                            "next_replenish_in": round(config_sec - (now - last_t), 2) if config_sec > 0 and balance < config_batch else 0
+                        })
+                        await websocket.send(init_msg)
+
+                # ==========================================
+                # EVENTO PIXEL - INTENTO DE PINTAR
+                # ==========================================
+                elif data.get("type") == "pixel":
                     is_locked = await r.exists(lock_key)
                     if is_locked:
                         continue 
@@ -107,38 +153,71 @@ async def handler(websocket):
                     try:
                         color_index = int(raw_color)
                     except ValueError:
-                        print(f"[!] AVISO: El frontend intentó pintar con '{raw_color}'. Debe ser un índice entero (0-255). Se ignoró el píxel.")
                         continue
+
+                    if not user_id:
+                        continue # Solo usuarios identificados pueden colocar
+
+                    # 1. Validar Cooldown
+                    raw_config = await r.hgetall(config_key)
+                    config_batch = int(raw_config.get(b'cooldown_batch', 5))
+                    config_sec = int(raw_config.get(b'cooldown_seconds', 10))
                     
-                    if 0 <= color_index <= 255:
-                        offset = (y * width) + x
-                        redis_state_key = f"canvas:{canvas_id}:state"
+                    balance, last_t, user_key, now = await get_user_cooldown(r, canvas_id, user_id, config_batch, config_sec)
+                    
+                    if balance >= 1:
+                        # Descontar saldo y guardar en Redis
+                        balance -= 1
+                        await r.hset(user_key, mapping={'b': balance, 't': last_t})
                         
-                        await r.setrange(redis_state_key, offset, bytes([color_index]))
-                        
-                        stream_key = f"canvas:{canvas_id}:stream"
-                        event_dict = {
-                            "u": str(user_id) if user_id else "null",
-                            "x": str(x),
-                            "y": str(y),
-                            "c": str(color_index)
-                        }
-                        await r.xadd(stream_key, event_dict)
+                        # Devolver confirmación al usuario
+                        confirm_msg = json.dumps({
+                            "type": "pixel_confirm",
+                            "balance": int(balance),
+                            "max_batch": config_batch,
+                            "cooldown_sec": config_sec,
+                            "next_replenish_in": round(config_sec - (now - last_t), 2) if config_sec > 0 else 0
+                        })
+                        await websocket.send(confirm_msg)
+
+                        # 2. Escribir Pixel en Memoria (State y Stream)
+                        if 0 <= color_index <= 255:
+                            offset = (y * width) + x
+                            redis_state_key = f"canvas:{canvas_id}:state"
+                            await r.setrange(redis_state_key, offset, bytes([color_index]))
+                            
+                            stream_key = f"canvas:{canvas_id}:stream"
+                            event_dict = {
+                                "u": str(user_id),
+                                "x": str(x),
+                                "y": str(y),
+                                "c": str(color_index)
+                            }
+                            await r.xadd(stream_key, event_dict)
+
+                            # 3. Hacer broadcast a todos MENOS al emisor original
+                            clients_in_room = ROOMS.get(canvas_id, set())
+                            if len(clients_in_room) > 1:
+                                tasks = [
+                                    asyncio.create_task(client.send(message))
+                                    for client in clients_in_room if client != websocket
+                                ]
+                                if tasks:
+                                    await asyncio.gather(*tasks)
+
                     else:
-                        print(f"[!] AVISO: Índice de color {color_index} fuera de rango (0-255).")
+                        # 4. Denegar Pixel (Cooldown Activo)
+                        error_msg = json.dumps({
+                            "type": "cooldown_error",
+                            "balance": 0,
+                            "max_batch": config_batch,
+                            "cooldown_sec": config_sec,
+                            "next_replenish_in": round(config_sec - (now - last_t), 2) if config_sec > 0 else 0
+                        })
+                        await websocket.send(error_msg)
 
             except Exception as e:
                 print(f"[!] Error procesando escritura en Redis: {e}")
-
-            # Hacer broadcast a todos MENOS al emisor original
-            clients_in_room = ROOMS.get(canvas_id, set())
-            if len(clients_in_room) > 1:
-                tasks = [
-                    asyncio.create_task(client.send(message))
-                    for client in clients_in_room if client != websocket
-                ]
-                if tasks:
-                    await asyncio.gather(*tasks)
 
     except websockets.exceptions.ConnectionClosed:
         pass

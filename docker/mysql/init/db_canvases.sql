@@ -13,6 +13,8 @@ CREATE TABLE IF NOT EXISTS `canvases` (
   `size` varchar(20) NOT NULL DEFAULT '64',
   `palette_id` varchar(50) NOT NULL DEFAULT 'default',
   `max_participants` int(11) NOT NULL DEFAULT 10,
+  `cooldown_pixels_batch` int(11) NOT NULL DEFAULT 5,
+  `cooldown_seconds` int(11) NOT NULL DEFAULT 10,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),

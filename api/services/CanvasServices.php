@@ -120,6 +120,15 @@ class CanvasServices {
                 if (class_exists(RedisCache::class)) {
                     $redisInstance = new RedisCache();
                     $redis = $redisInstance->getClient();
+                    
+                    // Sincronizar configuraciones de cooldown en caché para el Python
+                    if ($redis) {
+                        $redis->hMSet("canvas:{$canvasId}:config", [
+                            'cooldown_batch' => $canvas['cooldown_pixels_batch'] ?? 5,
+                            'cooldown_seconds' => $canvas['cooldown_seconds'] ?? 10
+                        ]);
+                    }
+
                     if ($redis && $redis->exists($redisKey)) {
                         $stateRaw = $redis->get($redisKey);
                     }
@@ -163,7 +172,7 @@ class CanvasServices {
         }
     }
 
-    public function createCanvas(int $userId, string $name, ?string $description, string $privacy, bool $requiresApproval = false, string $size = '64', int $limit = 10, string $paletteId = 'default'): array {
+    public function createCanvas(int $userId, string $name, ?string $description, string $privacy, bool $requiresApproval = false, string $size = '64', int $limit = 10, string $paletteId = 'default', int $cooldownBatch = 5, int $cooldownSeconds = 10): array {
         try {
             $uuid = Utils::generateUUID();
             
@@ -175,19 +184,36 @@ class CanvasServices {
             $privacy = in_array($privacy, $validPrivacies) ? $privacy : DB::PRIVACY_PRIVATE;
 
             $canvasData = [
-                'uuid'              => $uuid,
-                'user_id'           => $userId,
-                'name'              => trim($name),
-                'description'       => $description ? trim($description) : null,
-                'privacy'           => $privacy,
-                'requires_approval' => $requiresApproval ? 1 : 0,
-                'size'              => $size,
-                'palette_id'        => $paletteId,
-                'max_participants'  => $limit
+                'uuid'                  => $uuid,
+                'user_id'               => $userId,
+                'name'                  => trim($name),
+                'description'           => $description ? trim($description) : null,
+                'privacy'               => $privacy,
+                'requires_approval'     => $requiresApproval ? 1 : 0,
+                'size'                  => $size,
+                'palette_id'            => $paletteId,
+                'max_participants'      => $limit,
+                'cooldown_pixels_batch' => max(1, $cooldownBatch),
+                'cooldown_seconds'      => max(0, $cooldownSeconds)
             ];
 
             $canvasId = $this->canvasRepository->create($canvasData);
             $this->canvasRepository->addMember($canvasId, $userId, 'admin');
+
+            // Sincronizar configuraciones en Redis inmediatamente para el script de Python
+            try {
+                if (class_exists(RedisCache::class)) {
+                    $redis = (new RedisCache())->getClient();
+                    if ($redis) {
+                        $redis->hMSet("canvas:{$canvasId}:config", [
+                            'cooldown_batch' => $canvasData['cooldown_pixels_batch'],
+                            'cooldown_seconds' => $canvasData['cooldown_seconds']
+                        ]);
+                    }
+                }
+            } catch (Exception $e) {
+                Logger::error('No se pudo guardar la config de cooldown en Redis.', ['error' => $e->getMessage()]);
+            }
 
             return ['success' => true, 'message' => __('msg_canvas_created'), 'data' => ['uuid' => $uuid]];
         } catch (Exception $e) {
@@ -222,10 +248,26 @@ class CanvasServices {
             }
 
             $data['requires_approval'] = isset($data['requires_approval']) && $data['requires_approval'] ? 1 : 0;
+            
+            // Asignar fallbacks si no se envían
+            $data['cooldown_pixels_batch'] = isset($data['cooldown_pixels_batch']) ? max(1, (int)$data['cooldown_pixels_batch']) : ($canvas['cooldown_pixels_batch'] ?? 5);
+            $data['cooldown_seconds'] = isset($data['cooldown_seconds']) ? max(0, (int)$data['cooldown_seconds']) : ($canvas['cooldown_seconds'] ?? 10);
 
             $updated = $this->canvasRepository->updateCanvasData($canvasId, $userId, $data);
 
             if ($updated) {
+                try {
+                    if (class_exists(RedisCache::class)) {
+                        $redis = (new RedisCache())->getClient();
+                        if ($redis) {
+                            $redis->hMSet("canvas:{$canvasId}:config", [
+                                'cooldown_batch' => $data['cooldown_pixels_batch'],
+                                'cooldown_seconds' => $data['cooldown_seconds']
+                            ]);
+                        }
+                    }
+                } catch (Exception $e) { }
+
                 return ['success' => true, 'message' => __('canvas_update_success') ?? 'Lienzo actualizado correctamente.'];
             }
 
@@ -259,6 +301,7 @@ class CanvasServices {
                         $redis = $redisInstance->getClient();
                         if ($redis) {
                             $redis->del("canvas:{$canvas['id']}:state");
+                            $redis->del("canvas:{$canvas['id']}:config");
                             $redis->del(CacheConstants::PREFIX_CANVAS_NEXT_RESET . $canvas['id']);
                         }
                     }
@@ -352,7 +395,7 @@ class CanvasServices {
             }
 
             $removed = $this->canvasRepository->removeMember($canvasId, $targetUserId);
-            if ($removed) return ['success' => true, 'message' => 'Miembro expulsado correctamente.'];
+            if ($removed) return ['success true', 'message' => 'Miembro expulsado correctamente.'];
             
             return ['success' => false, 'message' => 'No se pudo expulsar al miembro o ya no pertenece al lienzo.'];
         } catch (Exception $e) {
@@ -385,6 +428,7 @@ class CanvasServices {
                         if ($redis) {
                             foreach ($canvasIds as $id) {
                                 $redis->del("canvas:{$id}:state");
+                                $redis->del("canvas:{$id}:config");
                                 $redis->del(CacheConstants::PREFIX_CANVAS_NEXT_RESET . $id);
                             }
                         }

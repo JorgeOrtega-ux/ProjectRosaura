@@ -12,6 +12,10 @@ $canvasPalette = 'default';
 $canvasPrivacy = 'private'; 
 $canvasApproval = '0'; 
 
+// Variables para el Cooldown
+$canvasCooldownBatch = '5';
+$canvasCooldownSeconds = '10';
+
 // Nuevas variables para reinicios
 $resetActive = '0';
 $nextResetAt = '';
@@ -25,8 +29,9 @@ if (!empty($canvasUuid)) {
         $dbManager = new DatabaseManager();
         $db = $dbManager->getConnection(DB::CONN_CANVASES);
 
-        // Traemos también la info de canvas_reset_settings usando un LEFT JOIN
+        // Traemos también la info de canvas_reset_settings y la configuración de Cooldown
         $sql = "SELECT c.id, c.name, c.size, c.palette_id, c.privacy, c.requires_approval, 
+                       c.cooldown_pixels_batch, c.cooldown_seconds,
                        r.is_active, r.next_reset_at, r.timer_action 
                 FROM " . DB::TBL_CANVASES . " c
                 LEFT JOIN canvas_reset_settings r ON c.id = r.canvas_id
@@ -44,6 +49,9 @@ if (!empty($canvasUuid)) {
             $canvasPrivacy = $canvas['privacy'] ?? 'private';
             $canvasApproval = $canvas['requires_approval'] ?? '0';
             
+            $canvasCooldownBatch = $canvas['cooldown_pixels_batch'] ?? '5';
+            $canvasCooldownSeconds = $canvas['cooldown_seconds'] ?? '10';
+
             $resetActive = $canvas['is_active'] ?? '0';
             $nextResetAt = $canvas['next_reset_at'] ?? '';
             $timerAction = $canvas['timer_action'] ?? 'restart';
@@ -91,6 +99,8 @@ if (!empty($canvasUuid)) {
          data-palette="<?php echo htmlspecialchars($canvasPalette); ?>"
          data-privacy="<?php echo htmlspecialchars($canvasPrivacy); ?>"
          data-approval="<?php echo htmlspecialchars($canvasApproval); ?>"
+         data-cooldown-batch="<?php echo htmlspecialchars($canvasCooldownBatch); ?>"
+         data-cooldown-seconds="<?php echo htmlspecialchars($canvasCooldownSeconds); ?>"
          data-reset-active="<?php echo htmlspecialchars($resetActive); ?>"
          data-reset-at="<?php echo htmlspecialchars($nextResetAt); ?>"
          data-timer-action="<?php echo htmlspecialchars($timerAction); ?>">
@@ -158,9 +168,15 @@ if (!empty($canvasUuid)) {
             
             <?php if (!$isSnapshot): ?>
             <div class="component-action-pill">
-                <button class="component-button component-button--dark component-button--h45 disabled-interactive" data-action="placePixels" data-ref="pixel-action-btn">
+                <button class="component-button component-button--dark component-button--h45 disabled-interactive" data-action="placePixels" data-ref="pixel-action-btn" style="padding-right: 8px;">
                     <span class="material-symbols-rounded">touch_app</span>
-                    <span data-ref="pixel-action-text"><?php echo __('btn_select_pixels'); ?></span>
+                    <span data-ref="pixel-action-text" style="margin-right: 4px;"><?php echo __('btn_select_pixels'); ?></span>
+                    
+                    <div class="component-cooldown-badge" data-ref="cooldown-badge" style="display: flex; align-items: center; gap: 4px; background: rgba(255,255,255,0.15); padding: 4px 8px; border-radius: 6px; font-size: 0.85rem; margin-left: 8px; font-variant-numeric: tabular-nums; min-width: max-content;">
+                        <span data-ref="cooldown-counter">--/--</span>
+                        <span class="material-symbols-rounded" style="font-size: 14px; opacity: 0.7;">timer</span>
+                        <span data-ref="cooldown-timer">0s</span>
+                    </div>
                 </button>
             </div>
             <?php endif; ?>

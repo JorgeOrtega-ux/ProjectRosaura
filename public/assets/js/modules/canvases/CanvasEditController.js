@@ -27,7 +27,9 @@ class CanvasEditController {
             description: '',
             privacy: 'private',
             palette_id: 'default',
-            max_members: 10
+            max_members: 10,
+            cooldown_pixels_batch: 5,
+            cooldown_seconds: 10
         };
 
         this.handleClickBound = this.handleClick.bind(this);
@@ -115,18 +117,15 @@ class CanvasEditController {
             const totalColors = palette.colors.length;
             const colorsToShow = Math.min(totalColors, 4);
 
-            // Generar los círculos de colores
             for (let i = 0; i < colorsToShow; i++) {
                 colorsHtml += `<span style="display:inline-block; width:16px; height:16px; border-radius:50%; background-color:${palette.colors[i]}; border:1px solid rgba(0,0,0,0.1); margin-right: -6px; position:relative; z-index:${10 - i};"></span>`;
             }
 
-            // Si hay más de 4 colores, mostrar el indicador de "+X"
             if (totalColors > 4) {
                 const remaining = totalColors - 4;
                 colorsHtml += `<span style="display:inline-flex; align-items:center; justify-content:center; padding: 0 4px; min-width:16px; height:16px; border-radius:10px; background-color:var(--surface-hover); border:1px solid var(--border-color); font-size:10px; font-weight:600; color:var(--text-primary); margin-left: 4px; position:relative; z-index:0; box-sizing: border-box;">+${remaining}</span>`;
             }
 
-            // Estructura: Icono Izquierda -> Texto Centro -> Colores Derecha
             btn.innerHTML = `
                 <div class="component-menu-link-icon"><span class="material-symbols-rounded">palette</span></div>
                 <div class="component-menu-link-text"><span>${palette.name}</span></div>
@@ -137,7 +136,6 @@ class CanvasEditController {
             container.appendChild(btn);
         });
 
-        // Actualizar el texto del botón desplegable
         const triggerWrapper = container.closest('.component-dropdown-wrapper');
         if (triggerWrapper) {
             const textRef = triggerWrapper.querySelector('[data-ref="text-palette"]');
@@ -182,6 +180,9 @@ class CanvasEditController {
                 this.state.privacy = data.privacy;
                 this.state.palette_id = data.palette_id || 'default';
                 this.state.max_members = data.max_members || data.max_participants || 10;
+                
+                this.state.cooldown_pixels_batch = data.cooldown_pixels_batch ?? 5;
+                this.state.cooldown_seconds = data.cooldown_seconds ?? 10;
 
                 const displayCanvasName = this.container.querySelector('[data-ref="display-canvasname"]');
                 const inputCanvasName = this.container.querySelector('[data-ref="input-canvasname"]');
@@ -196,6 +197,12 @@ class CanvasEditController {
 
                 const textSize = this.container.querySelector('[data-ref="text-size"]');
                 if (textSize) textSize.textContent = `${data.width}x${data.height}`;
+
+                const inputBatch = this.container.querySelector('[data-ref="val_cooldown_batch"]');
+                if (inputBatch) inputBatch.value = this.state.cooldown_pixels_batch;
+
+                const inputSec = this.container.querySelector('[data-ref="val_cooldown_seconds"]');
+                if (inputSec) inputSec.value = this.state.cooldown_seconds;
 
                 const textPrivacy = this.container.querySelector('[data-ref="text-privacy"]');
                 const iconPrivacy = this.container.querySelector('[data-ref="icon-privacy"]');
@@ -227,7 +234,6 @@ class CanvasEditController {
                     valLimit.setAttribute('data-val', this.state.max_members);
                 }
 
-                // Renderizamos la lista de paletas después de cargar datos
                 this.renderPalettes();
 
             } else {
@@ -320,6 +326,16 @@ class CanvasEditController {
             this.state.description = descInput.value.trim();
         }
 
+        const inputBatch = this.container.querySelector('[data-ref="val_cooldown_batch"]');
+        if (inputBatch) {
+            this.state.cooldown_pixels_batch = parseInt(inputBatch.value, 10) || 5;
+        }
+
+        const inputSec = this.container.querySelector('[data-ref="val_cooldown_seconds"]');
+        if (inputSec) {
+            this.state.cooldown_seconds = parseInt(inputSec.value, 10) || 10;
+        }
+
         if (!this.state.name) {
             showMessage(__('err_field_required'), 'warning');
             return;
@@ -331,7 +347,9 @@ class CanvasEditController {
             description: this.state.description,
             privacy: this.state.privacy,
             palette_id: this.state.palette_id,
-            max_members: this.state.max_members
+            max_members: this.state.max_members,
+            cooldown_pixels_batch: this.state.cooldown_pixels_batch,
+            cooldown_seconds: this.state.cooldown_seconds
         };
 
         setButtonLoading(btn);
