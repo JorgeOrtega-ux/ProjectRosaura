@@ -103,24 +103,23 @@ class CanvasSnapshotsGalleryController {
         snapshots.forEach(snapshot => {
             const card = document.createElement('div');
             card.className = 'component-snapshot-card';
-            
+
             // NUEVA URL DE VISUALIZACIÓN AISLADA
             const viewUrl = `${this.basePath}/snapshot/view/${snapshot.snapshot_uuid}`;
-            card.setAttribute('data-nav', viewUrl);
 
             // Asumiendo que el worker guarda la imagen en public/assets/img/snapshots_history/
             const imageUrl = snapshot.url.startsWith('/') ? snapshot.url : `/${snapshot.url}`;
             
-            // Inyectamos solo la imagen de fondo, el resto se hereda de la clase CSS
-            card.style.backgroundImage = `url('${imageUrl}'), linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)`;
-
-            // HTML Interno aplicando las nuevas clases base
+            // HTML Interno aplicando las nuevas clases base con <img> en lugar de style backgroundImage
             card.innerHTML = `
+                <img src="${imageUrl}" alt="${canvasName}" class="component-snapshot-card__image">
                 <div class="component-snapshot-badge">
                     <span class="material-symbols-rounded">history</span>
                     ${snapshot.date}
                 </div>
-                <h3 class="component-snapshot-title">${canvasName}</h3>
+                <div data-nav="${viewUrl}" class="component-snapshot-link">
+                    <h3 class="component-snapshot-title">${canvasName}</h3>
+                </div>
             `;
             
             fragment.appendChild(card);

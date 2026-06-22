@@ -20,7 +20,7 @@
         </div>
 
         <div class="component-bottom">
-            <div class="component-grid" data-ref="gallery-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px; padding: 20px;">
+            <div class="component-grid" data-ref="gallery-grid">
                 <?php for($i=0; $i<8; $i++): ?>
                     <div class="component-snapshot-skeleton"></div>
                 <?php endfor; ?>

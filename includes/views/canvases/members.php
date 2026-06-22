@@ -93,6 +93,10 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/members?id=' . $canvas
                 
                 <div class="component-actions active" data-ref="header-default-actions">
                     
+                    <button class="component-button component-button--icon component-button--h40" data-action="viewCanvasRequests" data-id="<?php echo $canvasId; ?>" data-tooltip="<?php echo __('tooltip_view_requests') ?: 'Solicitudes de acceso'; ?>" data-position="bottom">
+                        <span class="material-symbols-rounded">front_hand</span>
+                    </button>
+
                     <button class="component-button component-button--icon component-button--h40" data-action="searchMember" data-ref="btn-toggle-search" data-tooltip="<?php echo __('search_member_placeholder') ?: 'Buscar miembro'; ?>" data-position="bottom">
                         <span class="material-symbols-rounded">search</span>
                     </button>

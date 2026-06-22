@@ -140,6 +140,21 @@ class CanvasesController {
             this.deleteCanvas(actionBtn);
         } else if (action === 'leaveCanvas') {
             this.leaveCanvas(actionBtn);
+        } else if (action === 'viewCanvasSnapshots') {
+            this.viewCanvasSnapshots(actionBtn);
+        }
+    }
+
+    // NUEVO: Método agregado para redirigir a la galería usando el data-uuid del botón
+    viewCanvasSnapshots(btn) {
+        const uuid = btn.getAttribute('data-uuid');
+        if (uuid) {
+            this.closeDropdowns();
+            if (window.spaRouter) {
+                window.spaRouter.navigate(`${this.basePath}/design/s/${uuid}`);
+            } else {
+                window.location.href = `${this.basePath}/design/s/${uuid}`;
+            }
         }
     }
 
@@ -179,7 +194,6 @@ class CanvasesController {
             return;
         }
 
-        // CORRECCIÓN AQUÍ: Usar .post() y enviar el uuid en el objeto de datos
         const res = await this.api.post(ApiRoutes.Canvases.Delete, { uuid: uuid }, this.abortController.signal);
         
         if (res.aborted) return;
@@ -207,7 +221,6 @@ class CanvasesController {
             return;
         }
 
-        // CORRECCIÓN AQUÍ: Enviar el uuid en el objeto de datos, no en la URL
         const res = await this.api.post(ApiRoutes.Canvases.Leave, { uuid: uuid }, this.abortController.signal);
         
         if (res.aborted) return;
@@ -220,6 +233,7 @@ class CanvasesController {
             showMessage(res.message || 'Error al salir del lienzo', 'error');
         }
     }
+
     closeDropdowns() {
         document.querySelectorAll('.component-module--dropdown:not(.disabled)').forEach(el => {
             el.classList.remove('active');
