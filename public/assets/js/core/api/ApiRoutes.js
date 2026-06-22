@@ -88,11 +88,12 @@ export const ApiRoutes = {
     },
     // --- RUTAS DE LIENZOS ---
     Canvases: {
+        GetPublic: 'canvases.get_public', // <-- NUEVA RUTA AGREGADA (Para el Home)
         Get: 'canvases.get',
         Create: 'canvases.create',
         Update: 'canvases.update',
         Delete: 'canvases.delete',
-        Leave: 'canvases.leave', // <-- NUEVA RUTA AGREGADA
+        Leave: 'canvases.leave', 
         
         // --- RUTAS DE APROBACIÓN DE ACCESOS ---
         RequestAccess: 'canvases.request_access',

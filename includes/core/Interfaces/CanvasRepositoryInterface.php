@@ -6,6 +6,9 @@ interface CanvasRepositoryInterface {
     public function create(array $canvasData): int;
     public function addMember(int $canvasId, int $userId, string $role): bool;
     
+    // Métodos para Home / Explora
+    public function getPublicCanvases(int $limit = 20): array;
+
     // Métodos para Manage
     public function getUserCanvasesPaginated(int $userId, int $limit, int $offset): array;
     public function countUserCanvases(int $userId): int;

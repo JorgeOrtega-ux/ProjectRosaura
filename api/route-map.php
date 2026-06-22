@@ -318,6 +318,14 @@ return [
     ],
 
     // --- RUTAS DE LIENZOS (CANVASES) ---
+    
+    // NUEVA RUTA PARA CARGAR LIENZOS PÚBLICOS EN EL HOME (AJAX)
+    'canvases.get_public' => [
+        'controller' => 'App\Api\Controllers\CanvasController',
+        'action' => 'get_public',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_get_public', 'max' => 30, 'time' => RL::TIME_1, 'identifier' => RL::ID_IP]]
+    ],
+
     'canvases.get' => [
         'controller' => 'App\Api\Controllers\CanvasController',
         'action' => 'get',

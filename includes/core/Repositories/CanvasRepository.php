@@ -74,6 +74,25 @@ class CanvasRepository implements CanvasRepositoryInterface {
         ]);
     }
 
+    // --- MÉTODOS PARA HOME / EXPLORA ---
+
+    public function getPublicCanvases(int $limit = 20): array {
+        $sql = "SELECT id, uuid, name, user_id 
+                FROM " . DB::TBL_CANVASES . " 
+                WHERE privacy = 'public' 
+                ORDER BY created_at DESC 
+                LIMIT :limit";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        
+        $results = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        
+        // Mapeamos los resultados para agregar la URL del snapshot dinámicamente
+        return array_map([$this, 'appendSnapshotUrl'], $results);
+    }
+
     // --- MÉTODOS PARA GESTIÓN (MANAGE) ---
 
     public function getUserCanvasesPaginated(int $userId, int $limit, int $offset): array {

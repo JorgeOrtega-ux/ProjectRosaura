@@ -15,6 +15,23 @@ class CanvasController extends BaseController {
         $this->session = $session;
     }
 
+    // ==========================================
+    // NUEVO MÉTODO PARA HOME / EXPLORA
+    // ==========================================
+    public function get_public($input) {
+        try {
+            // Se permite acceso a invitados, pero necesitamos saber si está logueado para determinar si es dueño
+            $userId = $this->session->isLoggedIn() ? $this->session->getActiveAccountId() : null;
+            $limit = $input['limit'] ?? 20;
+
+            $result = $this->canvasServices->getPublicCanvases($userId, (int)$limit);
+            
+            return $this->respond($result);
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
     public function get($input) {
         try {
             // Se permite acceso a invitados (modo espectador)

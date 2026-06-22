@@ -1,28 +1,3 @@
-<?php
-use App\Config\DatabaseManager;
-use App\Core\System\DatabaseConstants as DB;
-use PDO;
-
-$publicCanvases = [];
-// Intentamos obtener el ID del usuario actual mediante sesión (ajusta según cómo manejes la sesión en tu framework)
-$currentUserId = $_SESSION['user_id'] ?? ($_SESSION['user']['id'] ?? 0);
-
-try {
-    // Inicializamos la conexión mediante servidor para obtener los lienzos públicos
-    $dbManager = new DatabaseManager();
-    $db = $dbManager->getConnection(DB::CONN_CANVASES);
-
-    // CORRECCIÓN: Cambiamos 'owner_id' a 'user_id' que es la columna real en la base de datos
-    $sql = "SELECT id, uuid, name, user_id FROM " . DB::TBL_CANVASES . " WHERE privacy = 'public' ORDER BY created_at DESC LIMIT 20";
-    $stmt = $db->prepare($sql);
-    $stmt->execute();
-    $publicCanvases = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-
-} catch (\Exception $e) {
-    error_log("Error al cargar lienzos públicos en el home: " . $e->getMessage());
-}
-?>
-
 <div class="view-content">
     <div class="component-wrapper component-wrapper--full no-padding" data-ref="purchase-history-wrapper">
         
@@ -39,89 +14,16 @@ try {
 
         <div class="component-bottom">
             
-            <div class="component-grid">
+            <div class="component-grid" id="home-public-canvases">
                 
-                <?php if (!empty($publicCanvases)): ?>
-                    <?php foreach ($publicCanvases as $canvas): ?>
-                        
-                        <?php 
-                        // Lógica Server-Side para determinar la imagen
-                        $snapshotPath = "/assets/img/snapshots/canvas_" . $canvas['id'] . ".png";
-                        $physicalPath = dirname(__DIR__, 3) . '/public' . $snapshotPath;
-                        $snapshotUrl = '';
-                        
-                        if (file_exists($physicalPath)) {
-                            $timestamp = filemtime($physicalPath);
-                            $snapshotUrl = $snapshotPath . "?v=" . $timestamp;
-                        }
-
-                        // CORRECCIÓN: Verificamos contra 'user_id'
-                        $isOwner = ($canvas['user_id'] == $currentUserId);
-                        ?>
-
-                        <div class="component-snapshot-card" data-card-id="<?php echo $canvas['id']; ?>">
-                            
-                            <?php if ($snapshotUrl): ?>
-                                <img src="<?php echo $snapshotUrl; ?>" alt="<?php echo htmlspecialchars($canvas['name']); ?>" class="component-snapshot-card__image">
-                            <?php endif; ?>
-
-                            <div data-nav="/design/<?php echo htmlspecialchars($canvas['uuid']); ?>" class="component-snapshot-link">
-                                <h3 class="component-snapshot-title">
-                                    <?php echo htmlspecialchars($canvas['name']); ?>
-                                </h3>
-                            </div>
-
-                            <div class="component-snapshot-actions-wrapper component-dropdown-wrapper">
-                                <div class="component-snapshot-actions">
-                                    <button type="button" class="component-button component-button--icon component-button--h32" data-action="toggleModule" data-target="snapshot-menu-<?php echo $canvas['id']; ?>">
-                                        <span class="material-symbols-rounded">more_vert</span>
-                                    </button>
-                                </div>
-                                
-                                <div class="component-module component-module--dropdown component-module--dropdown-left component-module--dropdown-fixed disabled" data-module="snapshot-menu-<?php echo $canvas['id']; ?>">
-                                    <div class="component-menu component-menu--w265">
-                                        <div class="pill-container"><div class="drag-handle"></div></div>
-                                        
-                                        <div class="component-menu-list">
-                                            <button type="button" class="component-menu-link" data-action="openCanvasNewTab" data-uuid="<?php echo htmlspecialchars($canvas['uuid']); ?>">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">open_in_new</span></div>
-                                                <div class="component-menu-link-text"><span>Abrir en una pestaña nueva</span></div>
-                                            </button>
-
-                                            <button type="button" class="component-menu-link" data-action="copyCanvasLink" data-uuid="<?php echo htmlspecialchars($canvas['uuid']); ?>">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">content_copy</span></div>
-                                                <div class="component-menu-link-text"><span>Copiar el enlace</span></div>
-                                            </button>
-                                            
-                                            <button type="button" class="component-menu-link" data-action="viewCanvasSnapshots" data-uuid="<?php echo htmlspecialchars($canvas['uuid']); ?>">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">collections</span></div>
-                                                <div class="component-menu-link-text"><span>Ver galería de reinicios</span></div>
-                                            </button>
-
-                                            <div class="component-menu-divider"></div>
-
-                                            <?php if ($isOwner): ?>
-                                                <button type="button" class="component-menu-link component-text-notice--error" data-action="deleteCanvas" data-id="<?php echo $canvas['id']; ?>" data-uuid="<?php echo htmlspecialchars($canvas['uuid']); ?>">
-                                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">delete</span></div>
-                                                    <div class="component-menu-link-text"><span>Eliminar lienzo</span></div>
-                                                </button>
-                                            <?php else: ?>
-                                                <button type="button" class="component-menu-link component-text-notice--error" data-action="leaveCanvas" data-id="<?php echo $canvas['id']; ?>" data-uuid="<?php echo htmlspecialchars($canvas['uuid']); ?>">
-                                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">logout</span></div>
-                                                    <div class="component-menu-link-text"><span>Salir del lienzo</span></div>
-                                                </button>
-                                            <?php endif; ?>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
+                <?php for($i = 0; $i < 8; $i++): ?>
+                    <div class="component-snapshot-card skeleton-card" style="pointer-events: none;">
+                        <div class="component-snapshot-card__image skeleton-block" style="background: var(--skeleton-bg, #e2e8f0); height: 160px; border-radius: 8px; width: 100%;"></div>
+                        <div class="component-snapshot-link" style="margin-top: 12px;">
+                            <div class="skeleton-text" style="background: var(--skeleton-bg, #e2e8f0); height: 20px; border-radius: 4px; width: 70%;"></div>
                         </div>
-
-                    <?php endforeach; ?>
-                <?php else: ?>
-                    <p style="color: #666;">No hay lienzos públicos disponibles por el momento.</p>
-                <?php endif; ?>
+                    </div>
+                <?php endfor; ?>
 
             </div>
             

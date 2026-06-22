@@ -38,6 +38,41 @@ class CanvasServices {
         return ['default']; // Fallback de emergencia
     }
 
+    // ==========================================
+    // MÉTODOS PARA HOME / EXPLORA
+    // ==========================================
+    
+    public function getPublicCanvases(?int $currentUserId, int $limit = 20): array {
+        try {
+            $canvases = $this->canvasRepository->getPublicCanvases($limit);
+            
+            $formattedCanvases = array_map(function($canvas) use ($currentUserId) {
+                // Lógica de negocio: Determinar si el usuario actual es el dueño
+                $canvas['is_owner'] = ($canvas['user_id'] === $currentUserId);
+                
+                // Lógica de Server-Side para determinar la imagen
+                $snapshotPath = "/assets/img/snapshots/canvas_" . $canvas['id'] . ".png";
+                $physicalPath = dirname(__DIR__, 2) . '/public' . $snapshotPath;
+                $snapshotUrl = null;
+                
+                if (file_exists($physicalPath)) {
+                    $timestamp = filemtime($physicalPath);
+                    $snapshotUrl = $snapshotPath . "?v=" . $timestamp;
+                }
+                
+                // Sobrescribimos o asignamos la url final generada
+                $canvas['snapshot_url'] = $snapshotUrl;
+                
+                return $canvas;
+            }, $canvases);
+            
+            return ['success' => true, 'data' => $formattedCanvases];
+        } catch (Exception $e) {
+            Logger::error('Error getting public canvases.', ['error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database') ?? 'Error al cargar los lienzos públicos.'];
+        }
+    }
+
     public function getCanvas(?int $userId, int $canvasId): array {
         try {
             $canvas = $this->canvasRepository->getById($canvasId);
