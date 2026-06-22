@@ -21,8 +21,10 @@ from cryptography.hazmat.backends import default_backend
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ENV_PATH = os.path.join(BASE_DIR, '.env')
-BACKUP_DIR = os.path.join(BASE_DIR, 'storage', 'backups')
-MAINTENANCE_FILE = os.path.join(BASE_DIR, 'storage', 'system', '.maintenance')
+
+# DIRECTORIOS ACTUALIZADOS A LA NUEVA ARQUITECTURA
+BACKUP_DIR = os.path.join(BASE_DIR, 'storage', 'private', 'backups')
+MAINTENANCE_FILE = os.path.join(BASE_DIR, 'storage', 'private', 'system', '.maintenance')
 
 load_dotenv(dotenv_path=ENV_PATH)
 
@@ -53,7 +55,8 @@ class Logger:
             "source": f"{caller_file}:{caller_line}"
         }
 
-        log_dir = os.path.join(BASE_DIR, 'logs', category)
+        # LOS LOGS AHORA SE ESCRIBEN EN STORAGE/PRIVATE/LOGS
+        log_dir = os.path.join(BASE_DIR, 'storage', 'private', 'logs', category)
         if not os.path.exists(log_dir):
             os.makedirs(log_dir, exist_ok=True)
             with open(os.path.join(log_dir, '.htaccess'), 'w') as f:
@@ -220,13 +223,13 @@ def create_backup_archive(filename_base, modules, schema_dict=None):
                         f.flush()
 
         if modules.get('avatars_uploaded', False):
-            src_uploaded = os.path.join(BASE_DIR, 'public', 'storage', 'profilePictures', 'uploaded')
+            src_uploaded = os.path.join(BASE_DIR, 'storage', 'public', 'profilePictures', 'uploaded')
             dest_uploaded = os.path.join(temp_dir, 'files', 'profilePictures', 'uploaded')
             if os.path.exists(src_uploaded):
                 shutil.copytree(src_uploaded, dest_uploaded)
 
         if modules.get('avatars_default', False):
-            src_default = os.path.join(BASE_DIR, 'public', 'storage', 'profilePictures', 'default')
+            src_default = os.path.join(BASE_DIR, 'storage', 'public', 'profilePictures', 'default')
             dest_default = os.path.join(temp_dir, 'files', 'profilePictures', 'default')
             if os.path.exists(src_default):
                 shutil.copytree(src_default, dest_default)
@@ -373,13 +376,13 @@ def process_manual_backups():
                     files_dir = os.path.join(base_extract_dir, 'files')
                     if os.path.exists(files_dir):
                         src_uploaded = os.path.join(files_dir, 'profilePictures', 'uploaded')
-                        dest_uploaded = os.path.join(BASE_DIR, 'public', 'storage', 'profilePictures', 'uploaded')
+                        dest_uploaded = os.path.join(BASE_DIR, 'storage', 'public', 'profilePictures', 'uploaded')
                         if os.path.exists(src_uploaded):
                             copy_tree_overwrite(src_uploaded, dest_uploaded)
                             Logger.info("Uploaded profile pictures restored successfully.")
 
                         src_default = os.path.join(files_dir, 'profilePictures', 'default')
-                        dest_default = os.path.join(BASE_DIR, 'public', 'storage', 'profilePictures', 'default')
+                        dest_default = os.path.join(BASE_DIR, 'storage', 'public', 'profilePictures', 'default')
                         if os.path.exists(src_default):
                             copy_tree_overwrite(src_default, dest_default)
                             Logger.info("Default profile pictures restored successfully.")

@@ -32,7 +32,7 @@ class Logger {
         $date = date('Y-m-d');
         $time = date('H:i:s');
         
-        $logDir = ROOT_PATH . '/logs/' . $category;
+        $logDir = ROOT_PATH . '/storage/private/logs/' . $category;
 
         if (!is_dir($logDir)) {
             mkdir($logDir, 0777, true);

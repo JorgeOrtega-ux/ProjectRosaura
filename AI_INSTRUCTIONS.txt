@@ -17,6 +17,31 @@ siguientes reglas arquitectónicas.
 No hay excepciones.
 
 =============================================================================
+REGLA CERO (0): ARQUITECTURA DE ALMACENAMIENTO (STORAGE & SYMLINKS)
+=============================================================================
+El sistema utiliza una arquitectura de almacenamiento segura basada en Symlinks para aislar archivos sensibles de archivos públicos. NUNCA escribas archivos directamente en la carpeta `/public` real.
+
+Estructura de Directorios:
+/ (Raíz)
+├── public/
+│   └── storage/  <-- ENLACE SIMBÓLICO (Symlink) apuntando a /storage/public
+│
+└── storage/
+    ├── public/   <-- Archivos accesibles públicamente (Avatares, Plantillas, Snapshots).
+    └── private/  <-- Archivos NO accesibles vía web (Backups, Logs, Timelapses, GeoIP).
+
+REGLAS DE DESARROLLO PARA STORAGE:
+A) Escritura y Borrado Físico (PHP / Python): Cuando el servidor necesite guardar, mover, verificar existencia (file_exists) o eliminar un archivo en el disco duro, DEBE usar la ruta absoluta apuntando a la verdadera raíz del storage:
+   - PHP Público: `ROOT_PATH . '/storage/public/profilePictures/...'`
+   - PHP Privado: `ROOT_PATH . '/storage/private/backups/...'`
+   - Python Público: `/app/storage/public/snapshots/...`
+   - Python Privado: `/app/storage/private/canvases/...`
+
+B) Lectura Virtual y Base de Datos (Frontend/Vistas): Las rutas guardadas en MySQL y las utilizadas para renderizar archivos estáticos en el HTML o CSS (Frontend) DEBEN usar siempre la ruta del enlace simbólico:
+   - DB / Frontend: `public/storage/profilePictures/uploaded/nombre.png`
+   - DB / Frontend: `public/storage/snapshots/canvas_1.png`
+
+=============================================================================
 PARTE 1: FRONTEND (VANILLA JS SPA & CONTROLADORES)
 =============================================================================
 La arquitectura Frontend es una Single Page Application (SPA) en Vanilla JS, 
@@ -67,7 +92,6 @@ REGLA 5: Sistema de UI, Modales y Extracción de Datos (DialogTemplates.js)
 - ESTRICTAMENTE PROHIBIDO el uso de `alert()`, `confirm()`, o `prompt()` nativos.
 - Para notificaciones usa: `showMessage(__('clave_traduccion'), 'success' | 'error');`
 - Para estados de carga en botones usa: `setButtonLoading(btn)` y `restoreButton(btn)`.
-
 - CENTRALIZACIÓN ABSOLUTA DE TEMPLATES (DialogTemplates.js): Todo el HTML, estructura, textos visuales, traducciones (ej. `__('key')`) y configuración de UI para diálogos, modales o alertas DEBE residir obligatoriamente en el archivo `public/assets/js/core/components/DialogTemplates.js`.
 - PROHIBICIÓN EN CONTROLADORES JS: Los controladores tienen ESTRICTAMENTE PROHIBIDO:
   1. Construir strings de HTML.
@@ -139,10 +163,11 @@ REGLA 9: Cero Textos Hardcodeados, Cero "Wrappers" de Fallback y Sin Console Log
 - ESTRICTAMENTE PROHIBIDO escribir textos legibles para el usuario directamente en el JS (Tolerancia Cero).
 - PROHIBICIÓN ABSOLUTA DE WRAPPERS DE TRADUCCIÓN (ej. `_t` o `__t`): Queda estrictamente prohibido definir o usar funciones intermedias o "wrappers" (como `const _t = (key, fallback) => ...`) que inyecten un fallback hardcodeado si la traducción falla.
 - Todo texto debe usar ÚNICA Y EXCLUSIVAMENTE la clave de la función de traducción oficial global `__()`.
-  [❌ INCORRECTO]: `const _t = (key, fallback) => typeof window.__ === 'function' ? window.__(key) : fallback;`
-  [❌ INCORRECTO]: `showMessage(__('err_session') || 'Sesión expirada', 'error');`
-  [❌ INCORRECTO]: `this.showError(_t('err_session', 'Error fallback'));`
-  [✅ CORRECTO]: `showMessage(__('err_session'), 'error');`
+
+[❌ INCORRECTO]: `const _t = (key, fallback) => typeof window.__ === 'function' ? window.__(key) : fallback;`
+[❌ INCORRECTO]: `showMessage(__('err_session') || 'Sesión expirada', 'error');`
+[❌ INCORRECTO]: `this.showError(_t('err_session', 'Error fallback'));`
+[✅ CORRECTO]: `showMessage(__('err_session'), 'error');`
 
 =============================================================================
 PLANTILLA BASE REQUERIDA PARA CONTROLADORES JS:
@@ -229,10 +254,12 @@ REGLA 11: Cero Textos Hardcodeados y Absolutamente Cero Fallbacks
 - ESTRICTAMENTE PROHIBIDO quemar textos de éxito/error en español/inglés en los archivos PHP (Tolerancia Cero).
 - ESTRICTAMENTE PROHIBIDO proporcionar cadenas de texto duro como "fallbacks" o métodos de respaldo (e.g. coalescencia nula, operadores ternarios, o envío de segundo parámetro a funciones de traducción).
 - Para cualquier mensaje hacia el Frontend, usa OBLIGATORIAMENTE la clave pura con la función `__()`.
+
   INCORRECTO: `return Utils::jsonResponse(false, 'Error fatal');`
   INCORRECTO: `return Utils::jsonResponse(false, __('err_fatal') ?: 'Error fatal');`
   INCORRECTO: `return Utils::jsonResponse(false, __('err_fatal', 'Error fatal'));`
   CORRECTO: `return Utils::jsonResponse(false, __('err_fatal'));`
+
 - Los archivos JSON de traducción son la única fuente de verdad.
   No deben existir textos de respaldo en la lógica de Controladores, Servicios o Repositorios.
 
@@ -294,6 +321,7 @@ REGLA 19: Cero Textos Hardcodeados en la Interfaz (Absoluto)
 -----------------------------------------------------------------------------
 - ESTRICTAMENTE PROHIBIDO escribir texto visible u oculto (títulos, párrafos, tooltips, placeholders, aria-labels, opciones de un select) directamente en el HTML.
 - Todo texto renderizado debe utilizar la función de traducción OBLIGATORIAMENTE, incluso si parece un detalle insignificante.
+
   INCORRECTO: `<button>Guardar Cambios</button>`
   INCORRECTO: `<input type="text" placeholder="Escribe tu nombre">`
   CORRECTO: `<button><?php echo __('btn_save_changes'); ?></button>`

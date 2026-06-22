@@ -236,7 +236,8 @@ class AdminServices {
         
         $file = $files['avatar'];
         $maxSizeMb = $this->config['max_avatar_size_mb'] ?? 2;
-        $uploadDir = ROOT_PATH . '/public/storage/profilePictures/uploaded/';
+        // ESCRITURA FÍSICA A LA VERDADERA CARPETA PÚBLICA
+        $uploadDir = ROOT_PATH . '/storage/public/profilePictures/uploaded/';
 
         $uploadResult = Utils::uploadAndSanitizeImage($file, $uploadDir, $maxSizeMb);
 
@@ -245,6 +246,7 @@ class AdminServices {
             
             Utils::deleteOldAvatar($user['profile_picture']);
             
+            // La ruta guardada en DB sigue siendo la virtual (Symlink) para que el frontend la lea
             $newRelPath = 'public/storage/profilePictures/uploaded/' . $fileName;
 
             if ($this->userRepository->updateAvatar($targetId, $newRelPath)) {
@@ -901,7 +903,8 @@ class AdminServices {
     }
 
     private function getBackupDir() {
-        $dir = ROOT_PATH . '/storage/backups/';
+        // ESCRITURA FÍSICA A LA CARPETA PRIVADA
+        $dir = ROOT_PATH . '/storage/private/backups/';
         if (!is_dir($dir)) {
             mkdir($dir, 0777, true);
             file_put_contents($dir . '.htaccess', "Deny from all\nOptions -Indexes");
@@ -1053,7 +1056,8 @@ class AdminServices {
         if (count($files) > 10) return ['success' => false, 'message' => __('validation.too_many_files')];
 
         $contents = [];
-        $logBaseDir = realpath(ROOT_PATH . '/logs/');
+        // LECTURA FÍSICA DESDE LA CARPETA PRIVADA
+        $logBaseDir = realpath(ROOT_PATH . '/storage/private/logs/');
 
         foreach ($files as $encodedFile) {
             $filename = base64_decode($encodedFile);

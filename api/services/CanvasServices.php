@@ -51,13 +51,16 @@ class CanvasServices {
                 $canvas['is_owner'] = ($canvas['user_id'] === $currentUserId);
                 
                 // Lógica de Server-Side para determinar la imagen
-                $snapshotPath = "/assets/img/snapshots/canvas_" . $canvas['id'] . ".png";
-                $physicalPath = dirname(__DIR__, 2) . '/public' . $snapshotPath;
+                // RUTA VIRTUAL (Para el cliente web)
+                $snapshotPath = "public/storage/snapshots/canvas_" . $canvas['id'] . ".png";
+                
+                // RUTA FÍSICA (Para que PHP verifique la existencia del archivo en la nueva estructura)
+                $physicalPath = dirname(__DIR__, 2) . '/storage/public/snapshots/canvas_' . $canvas['id'] . '.png';
                 $snapshotUrl = null;
                 
                 if (file_exists($physicalPath)) {
                     $timestamp = filemtime($physicalPath);
-                    $snapshotUrl = $snapshotPath . "?v=" . $timestamp;
+                    $snapshotUrl = "/" . $snapshotPath . "?v=" . $timestamp;
                 }
                 
                 // Sobrescribimos o asignamos la url final generada
@@ -617,7 +620,8 @@ class CanvasServices {
                 return ['success' => false, 'message' => __('err_unauthorized') ?? 'No tienes permisos para ver el timelapse de este lienzo.', 'http_code' => 403];
             }
 
-            $baseDir = dirname(__DIR__, 2) . '/storage/canvases/timelapses';
+            // APUNTAMOS AL DIRECTORIO PRIVADO CORRECTO
+            $baseDir = dirname(__DIR__, 2) . '/storage/private/canvases/timelapses';
             $filePath = $baseDir . '/canvas_' . $canvasId . '.jsonl';
 
             if (!file_exists($filePath) || filesize($filePath) === 0) {
@@ -651,9 +655,13 @@ class CanvasServices {
             $history = $this->canvasRepository->getSnapshotsHistoryByUuid($uuid);
 
             $formattedHistory = array_map(function($item) {
+                $imageUrl = $item['file_path'];
+                if (!str_starts_with($imageUrl, '/')) {
+                    $imageUrl = '/' . $imageUrl;
+                }
                 return [
                     'id' => $item['id'],
-                    'url' => $item['file_path'],
+                    'url' => $imageUrl,
                     'date' => date('d/m/Y H:i', strtotime($item['created_at'])),
                     'snapshot_uuid' => $item['snapshot_uuid']
                 ];
@@ -717,7 +725,7 @@ class CanvasServices {
     }
 
     // ==========================================
-    // LÓGICA DE PLANTILLAS DE USUARIO (REVERTIDO A NATIVO PHP $_FILES)
+    // LÓGICA DE PLANTILLAS DE USUARIO 
     // ==========================================
     
     public function uploadTemplate(int $userId, array $fileInfo): array {
@@ -746,7 +754,8 @@ class CanvasServices {
                 return ['success' => false, 'message' => 'Formato de imagen no permitido. Usa JPG, PNG o WEBP.'];
             }
 
-            $uploadDir = dirname(__DIR__, 2) . '/public/assets/uploads/templates/';
+            // ESCRITURA FÍSICA A LA VERDADERA CARPETA PÚBLICA
+            $uploadDir = dirname(__DIR__, 2) . '/storage/public/templates/';
             if (!is_dir($uploadDir)) {
                 mkdir($uploadDir, 0755, true);
             }
@@ -760,7 +769,8 @@ class CanvasServices {
                 return ['success' => false, 'message' => 'Error de escritura en el servidor.'];
             }
 
-            $dbPath = '/assets/uploads/templates/' . $fileName;
+            // La ruta guardada en DB sigue siendo la virtual (Symlink) para que el frontend la lea
+            $dbPath = 'public/storage/templates/' . $fileName;
             
             // Guardar en Base de Datos vía Repositorio
             $templateId = $this->canvasRepository->saveTemplateMetadata($userId, $dbPath);
@@ -770,7 +780,7 @@ class CanvasServices {
                 'message' => 'Plantilla subida y guardada correctamente.',
                 'data' => [
                     'id' => $templateId,
-                    'url' => $dbPath
+                    'url' => "/" . $dbPath
                 ]
             ];
 
@@ -808,9 +818,10 @@ class CanvasServices {
             
             if ($deleted) {
                 if ($filePath) {
-                    $physicalPath = dirname(__DIR__, 2) . '/public' . $filePath;
+                    // Traducimos la ruta virtual a la ruta física para la eliminación
+                    $physicalPath = dirname(__DIR__, 2) . '/' . str_replace('public/storage/', 'storage/public/', ltrim($filePath, '/'));
                     if (file_exists($physicalPath)) {
-                        unlink($physicalPath); // Eliminamos del servidor físico sin suprimir errores con @
+                        unlink($physicalPath); // Eliminamos del servidor físico
                     }
                 }
                 return ['success' => true, 'message' => 'Plantilla eliminada correctamente de tu librería.'];

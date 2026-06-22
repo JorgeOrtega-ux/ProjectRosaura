@@ -4,19 +4,25 @@
     # IMPORTANTE: +FollowSymLinks es obligatorio en servidores Windows para mod_rewrite
     Options +FollowSymLinks -Indexes -MultiViews
 
-    # Base de tu proyecto local (Apunta a la subcarpeta)
+    # Base de tu proyecto local
     RewriteBase /
 
-    # 1. Enrutar archivos estáticos (JS, CSS) directamente hacia la carpeta public
+    # 1. Enrutar archivos estáticos (JS, CSS)
     RewriteRule ^assets/(.*)$ public/assets/$1 [L]
 
-    # 2. Si la petición ya está apuntando a public/ internamente, la dejamos pasar
+    # =========================================================================
+    # 2. MAGIA DE APACHE: TRADUCTOR VIRTUAL DE STORAGE (Evita el bug de Docker)
+    # =========================================================================
+    # Si el navegador pide /public/storage/..., Apache buscará físicamente en /storage/public/...
+    RewriteRule ^public/storage/(.*)$ storage/public/$1 [L]
+
+    # 3. Si la petición ya está apuntando a public/ internamente, la dejamos pasar
     RewriteRule ^public/ - [L]
 
-    # 3. Si piden un archivo físico que SÍ existe (ej. un .png subido fuera de assets), dejarlo pasar
+    # 4. Si piden un archivo físico que SÍ existe (ej. un .png), dejarlo pasar
     RewriteCond %{REQUEST_FILENAME} -f
     RewriteRule ^ - [L]
 
-    # 4. Cualquier otra petición (incluyendo la raíz y las rutas SPA como /explore) va al index.php
+    # 5. Cualquier otra petición (incluyendo la raíz y las rutas SPA) va al index.php
     RewriteRule ^(.*)$ public/index.php [QSA,L]
 </IfModule>

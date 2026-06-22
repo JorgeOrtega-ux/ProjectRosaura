@@ -19,7 +19,8 @@ DB_NAME = os.getenv("DB_CANVASES_NAME", "db_canvases")
 # Configuración Worker
 SYNC_INTERVAL = int(os.getenv("WORKER_TIMELAPSE_SYNC_INTERVAL", 5)) # Frecuencia del loop
 BATCH_SIZE = int(os.getenv("WORKER_TIMELAPSE_BATCH_SIZE", 5000))    # Píxeles por archivo de golpe
-TIMELAPSE_DIR = os.getenv("TIMELAPSE_DIR", "/app/storage/canvases/timelapses")
+# RUTA FÍSICA PRIVADA
+TIMELAPSE_DIR = os.getenv("TIMELAPSE_DIR", "/app/storage/private/canvases/timelapses")
 
 CONSUMER_GROUP = "timelapse_workers"
 CONSUMER_NAME = "worker-1"

@@ -35,13 +35,15 @@ class Utils {
             return 'public/assets/img/fallbacks/avatar-default.png';
         }
 
-        $storageDir = ROOT_PATH . '/public/storage/profilePictures/default/';
+        // ESCRITURA FÍSICA A LA VERDADERA CARPETA PÚBLICA
+        $storageDir = ROOT_PATH . '/storage/public/profilePictures/default/';
         if (!is_dir($storageDir)) mkdir($storageDir, 0755, true);
         
         $fileName = $uuid . '.png';
         $filePath = $storageDir . $fileName;
         file_put_contents($filePath, $imageContent);
 
+        // Retornamos la ruta mapeada vía Symlink para que el frontend la renderice
         return 'public/storage/profilePictures/default/' . $fileName;
     }
 
@@ -168,7 +170,7 @@ class Utils {
     }
 
     public static function getMaintenanceFilePath() {
-        return dirname(__DIR__, 3) . '/storage/system/.maintenance';
+        return dirname(__DIR__, 3) . '/storage/private/system/.maintenance';
     }
 
     public static function isMaintenanceActive() {
@@ -205,7 +207,9 @@ class Utils {
         }
 
         $cleanPath = ltrim($path, '/');
-        $absolutePath = ROOT_PATH . '/' . $cleanPath;
+        // Traducimos la ruta virtual (symlink) a la física para verificar si existe
+        $realPathRelative = str_replace('public/storage/', 'storage/public/', $cleanPath);
+        $absolutePath = ROOT_PATH . '/' . $realPathRelative;
 
         if (file_exists($absolutePath) && is_file($absolutePath)) {
             return $cleanPath;
@@ -292,7 +296,10 @@ class Utils {
             }
             if (strpos($oldPicPath, 'uploaded/') !== false || strpos($oldPicPath, 'default/') !== false) {
                 $oldPicRelative = str_replace(APP_URL . '/', '', ltrim($oldPicPath, '/'));
-                $oldPath = ROOT_PATH . '/' . $oldPicRelative;
+                // Traducimos la ruta virtual (symlink) a la física para borrar el archivo
+                $realPathRelative = str_replace('public/storage/', 'storage/public/', $oldPicRelative);
+                $oldPath = ROOT_PATH . '/' . $realPathRelative;
+                
                 if (file_exists($oldPath) && is_file($oldPath)) {
                     unlink($oldPath);
                     return true;

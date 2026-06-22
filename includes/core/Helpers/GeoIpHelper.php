@@ -23,7 +23,7 @@ class GeoIpHelper {
             return null; 
         }
 
-        $databaseFile = dirname(__DIR__, 3) . '/storage/geoip/GeoLite2-City.mmdb';
+        $databaseFile = dirname(__DIR__, 3) . '/storage/private/geoip/GeoLite2-City.mmdb';
 
         // 2. Si la base de datos no se ha colocado en la carpeta, no rompemos el login.
         if (!file_exists($databaseFile)) {
@@ -64,7 +64,7 @@ class GeoIpHelper {
             return null; 
         }
 
-        $databaseFile = dirname(__DIR__, 3) . '/storage/geoip/GeoLite2-ASN.mmdb';
+        $databaseFile = dirname(__DIR__, 3) . '/storage/private/geoip/GeoLite2-ASN.mmdb';
 
         if (!file_exists($databaseFile)) {
             return null;

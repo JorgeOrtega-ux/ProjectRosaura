@@ -19,10 +19,10 @@ DB_USER = os.getenv("DB_USER", "system_web_executor")
 DB_PASS = os.getenv("DB_PASS", "secret")
 DB_NAME = os.getenv("DB_CANVASES_NAME", "db_canvases")
 
-# Configuración Worker
+# Configuración Worker (RUTAS FÍSICAS A LA CARPETA PÚBLICA)
 SYNC_INTERVAL = int(os.getenv("WORKER_SNAPSHOTS_SYNC_INTERVAL", 10))
-SNAPSHOTS_DIR = os.getenv("SNAPSHOTS_DIR", "/app/public/assets/img/snapshots")
-ARCHIVE_DIR = os.getenv("SNAPSHOTS_ARCHIVE_DIR", "/app/public/assets/img/archive")
+SNAPSHOTS_DIR = os.getenv("SNAPSHOTS_DIR", "/app/storage/public/snapshots")
+ARCHIVE_DIR = os.getenv("SNAPSHOTS_ARCHIVE_DIR", "/app/storage/public/snapshots_archive")
 SCALE_FACTOR = int(os.getenv("SNAPSHOT_SCALE_FACTOR", 10)) 
 
 # Ruta a la fuente única de la verdad
@@ -113,14 +113,12 @@ def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palet
         final_height = height * SCALE_FACTOR
         img_scaled = img.resize((final_width, final_height), Image.NEAREST)
 
-        # Sobrescribimos el archivo base (el que se usa en home.php)
+        # Sobrescribimos el archivo base físicamente
         img_scaled.save(filepath, "PNG", optimize=True)
         
         # ==========================================
         # INTERCONEXIÓN CON REINICIOS PROGRAMADOS
         # ==========================================
-        # Si el candado de reinicio existe, significa que este snapshot
-        # es la "foto final" antes de que se borre el lienzo.
         if r.exists(f"canvas:{canvas_id}:reset_lock"):
             # Generar timestamp y guardar en la carpeta de archivo histórico
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -129,9 +127,9 @@ def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palet
             img_scaled.save(archive_filepath, "PNG", optimize=True)
             print(f"[+] Archivo histórico guardado exitosamente: {archive_filepath}")
 
-            # Insertar en base de datos el registro del reinicio
+            # Insertar en base de datos la RUTA VIRTUAL (la que renderizará el frontend)
             snapshot_uuid = str(uuid.uuid4())
-            public_filepath = f"/assets/img/archive/{archive_filename}"
+            public_filepath = f"public/storage/snapshots_archive/{archive_filename}"
             
             try:
                 cursor = db_conn.cursor()

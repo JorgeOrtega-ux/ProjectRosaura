@@ -34,7 +34,8 @@ class Logger:
             "source": f"{caller_file}:{caller_line}"
         }
 
-        log_dir = os.path.join(BASE_DIR, 'logs', category)
+        # LOGS ACTUALIZADOS A CARPETA PRIVADA
+        log_dir = os.path.join(BASE_DIR, 'storage', 'private', 'logs', category)
         if not os.path.exists(log_dir):
             os.makedirs(log_dir, exist_ok=True)
             with open(os.path.join(log_dir, '.htaccess'), 'w') as f:
@@ -122,13 +123,11 @@ def process_deletion(payload):
             profile_pic = user_data.get('profile_picture')
             uuid_str = user_data.get('uuid')
             
+            # Traducción de ruta virtual a física para limpieza
             if profile_pic and 'fallbacks/avatar-default.png' not in profile_pic:
-                if '/public/' in profile_pic:
-                    pic_relative = profile_pic[profile_pic.find('public/'):]
-                else:
-                    pic_relative = profile_pic.lstrip('/')
-                    
+                pic_relative = profile_pic.lstrip('/').replace('public/storage/', 'storage/public/')
                 pic_path = os.path.join(APP_ROOT_PATH, pic_relative)
+                
                 if os.path.exists(pic_path) and os.path.isfile(pic_path):
                     try:
                         os.remove(pic_path)
@@ -137,7 +136,7 @@ def process_deletion(payload):
                         Logger.error(f"Failed to purge profile resource: {e}")
             
             if uuid_str:
-                orphan_default = os.path.join(APP_ROOT_PATH, f"public/storage/profilePictures/default/{uuid_str}.png")
+                orphan_default = os.path.join(APP_ROOT_PATH, f"storage/public/profilePictures/default/{uuid_str}.png")
                 if os.path.exists(orphan_default) and os.path.isfile(orphan_default):
                     try:
                         os.remove(orphan_default)
@@ -223,12 +222,15 @@ def heal_default_avatars():
                 
                 if response.status_code == 200 and 'image' in content_type:
                     file_name = f"{uuid_str}.png"
+                    # Se mantiene la ruta virtual (DB) pero se escribe a la física
                     rel_path = f"public/storage/profilePictures/default/{file_name}"
-                    full_path = os.path.join(APP_ROOT_PATH, rel_path)
+                    full_path = os.path.join(APP_ROOT_PATH, f"storage/public/profilePictures/default/{file_name}")
+                    
                     os.makedirs(os.path.dirname(full_path), exist_ok=True)
                     with open(full_path, 'wb') as f:
                         f.write(response.content)
                     os.chmod(full_path, 0o644)
+                    
                     cursor.execute("UPDATE users SET profile_picture = %s WHERE id = %s", (rel_path, user_id))
                     conn.commit()
                     Logger.info(f"Avatar resource restored for reference entity: {username}")
