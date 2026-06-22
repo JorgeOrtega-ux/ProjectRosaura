@@ -95,7 +95,6 @@ class SnapshotViewerController {
                 this.boardHeight = parseInt(response.data.height, 10) || 1000;
                 this.originalImageUrl = response.data.image_url;
                 
-                // [NUEVO] Verificamos si hay timelapse en la DB
                 this.hasTimelapse = response.data.has_timelapse || false;
                 
                 // Cargar paleta de colores para decodificar JSONL
@@ -189,22 +188,25 @@ class SnapshotViewerController {
 
     async fetchTimelapseData() {
         try {
-            // Hacemos un fetch directo nativo porque es un archivo de texto pesado (JSONL), no un JSON clásico
-            const url = `/api/index.php?action=canvases.get_snapshot_timelapse&id=${this.snapshotId}`;
-            const res = await fetch(url);
-            
-            if (!res.ok) throw new Error("Failed to fetch JSONL");
-            
-            const text = await res.text();
+            // [MODIFICADO] Se utiliza el proxy central del ApiService con POST
+            const endpoint = ApiRoutes.Canvases?.GetSnapshotTimelapse || 'canvases.get_snapshot_timelapse';
+            const response = await this.api.downloadText(endpoint, { id: this.snapshotId });
+
+            if (!response.success) {
+                showMessage(response.message || "Error al descargar el archivo de timelapse.", "error");
+                return false;
+            }
+
+            const text = response.data;
             const lines = text.trim().split('\n');
             
-            // Parseamos las líneas e ignoramos errores en JSON rotos
             this.timelapseData = lines.map(line => {
                 try { return JSON.parse(line); } catch(e) { return null; }
             }).filter(item => item !== null);
 
             document.getElementById('tl-progress').max = 100;
             return true;
+
         } catch(e) {
             console.error(e);
             showMessage("Error cargando el archivo de Timelapse", "error");

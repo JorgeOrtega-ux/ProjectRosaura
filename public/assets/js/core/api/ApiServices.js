@@ -158,9 +158,6 @@ export class ApiService {
         }
     }
 
-    // ==========================================
-    // NUEVO MÉTODO: CONSUMO DE STREAMS
-    // ==========================================
     async stream(route, data = {}, signal = null) {
         const payload = {
             route: route,
@@ -200,8 +197,6 @@ export class ApiService {
                 throw new Error(`Error HTTP: ${response.status}`);
             }
 
-            // A diferencia de los post normales, aquí no llamamos a response.json()
-            // Devolvemos el "Reader" para que el frontend procese la respuesta cruda conforme descarga.
             return { 
                 success: true, 
                 reader: response.body.getReader(), 
@@ -215,6 +210,58 @@ export class ApiService {
             return { success: false, message: (typeof window.__ === 'function' ? window.__('api_connection_error') : 'Error de conexión') };
         }
     }
+
+    // ==========================================
+    // NUEVO MÉTODO: DESCARGA DE ARCHIVOS DE TEXTO (JSONL, CSV)
+    // ==========================================
+    async downloadText(route, data = {}, signal = null) {
+        const payload = {
+            route: route,
+            ...data
+        };
+
+        const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+        const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+
+        const fetchOptions = {
+            method: 'POST', // Todas las peticiones a nuestra API central deben ser POST
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': csrfToken
+            },
+            body: JSON.stringify(payload)
+        };
+
+        if (signal) fetchOptions.signal = signal;
+
+        try {
+            const response = await fetch(this.baseUrl, fetchOptions);
+
+            if (!response.ok) {
+                const handledError = this._handleHttpErrors(response);
+                if (handledError) return handledError;
+                
+                // Intentar procesar como JSON para extraer mensaje de error del backend
+                try {
+                    const errorResult = await response.json();
+                    return this._processResponse(errorResult);
+                } catch (e) {
+                     throw new Error(`Error HTTP: ${response.status}`);
+                }
+            }
+
+            // Descargamos crudo como texto
+            const text = await response.text();
+            return { success: true, data: text };
+
+        } catch (error) {
+            if (error.name === 'AbortError') {
+                return { success: false, aborted: true }; 
+            }
+            return { success: false, message: (typeof window.__ === 'function' ? window.__('api_connection_error') : 'Error de conexión') };
+        }
+    }
+
 
     async getAllPermissions() {
         return await this.post(ApiRoutes.Admin.GetPermissions);

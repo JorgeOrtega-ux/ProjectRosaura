@@ -637,7 +637,7 @@ class CanvasServices {
     }
 
     // ==========================================
-    // [MODIFICADO] SE AGREGA HAS_TIMELAPSE A LOS DETALLES
+    // [MODIFICADO] SE AGREGA HAS_TIMELAPSE A LOS DETALLES Y VALIDA ROL
     // ==========================================
     public function getSnapshotDetail(string $snapshotId, ?int $userId = null): array {
         try {
@@ -645,7 +645,7 @@ class CanvasServices {
             $pdo = $db->getConnection(DB::CONN_CANVASES);
 
             $stmt = $pdo->prepare("
-                SELECT s.file_path, s.timelapse_file_path, s.snapshot_uuid, c.size, c.privacy, c.user_id, c.palette_id 
+                SELECT s.file_path, s.timelapse_file_path, s.snapshot_uuid, c.id as canvas_id, c.size, c.privacy, c.user_id, c.palette_id 
                 FROM canvas_snapshots_history s
                 JOIN " . DB::TBL_CANVASES . " c ON s.canvas_id = c.id
                 WHERE s.snapshot_uuid = :snapshot_id 
@@ -658,7 +658,12 @@ class CanvasServices {
                 return ['success' => false, 'message' => __('err_snapshot_not_found') ?? 'Snapshot no encontrado.'];
             }
 
-            if ($data['privacy'] === DB::PRIVACY_PRIVATE && $data['user_id'] !== $userId) {
+            $role = null;
+            if ($userId !== null) {
+                $role = $this->canvasRepository->getMemberRole($data['canvas_id'], $userId);
+            }
+
+            if ($data['privacy'] === DB::PRIVACY_PRIVATE && !$role && $data['user_id'] !== $userId) {
                 return ['success' => false, 'message' => __('err_unauthorized') ?? 'Este lienzo es privado.'];
             }
 
@@ -687,7 +692,7 @@ class CanvasServices {
     }
 
     // ==========================================
-    // [NUEVO] SERVICIO PARA DESCARGA DE TIMELAPSE HISTÓRICO
+    // [NUEVO] SERVICIO PARA DESCARGA DE TIMELAPSE HISTÓRICO Y VALIDA ROL
     // ==========================================
     public function prepareSnapshotTimelapseDownload(?int $userId, string $snapshotId): array {
         try {
@@ -695,7 +700,7 @@ class CanvasServices {
             $pdo = $db->getConnection(DB::CONN_CANVASES);
 
             $stmt = $pdo->prepare("
-                SELECT s.timelapse_file_path, c.privacy, c.user_id 
+                SELECT s.timelapse_file_path, c.id as canvas_id, c.privacy, c.user_id 
                 FROM canvas_snapshots_history s
                 JOIN " . DB::TBL_CANVASES . " c ON s.canvas_id = c.id
                 WHERE s.snapshot_uuid = :snapshot_id 
@@ -708,7 +713,12 @@ class CanvasServices {
                 return ['success' => false, 'message' => 'Snapshot no encontrado.', 'http_code' => 404];
             }
 
-            if ($data['privacy'] === DB::PRIVACY_PRIVATE && $data['user_id'] !== $userId) {
+            $role = null;
+            if ($userId !== null) {
+                $role = $this->canvasRepository->getMemberRole($data['canvas_id'], $userId);
+            }
+
+            if ($data['privacy'] === DB::PRIVACY_PRIVATE && !$role && $data['user_id'] !== $userId) {
                 return ['success' => false, 'message' => 'No tienes permisos para ver este timelapse.', 'http_code' => 403];
             }
 
@@ -743,8 +753,13 @@ class CanvasServices {
             if (!$canvas) {
                 return ['success' => false, 'message' => __('err_canvas_not_found') ?? 'Lienzo no encontrado.'];
             }
+            
+            $role = null;
+            if ($userId !== null) {
+                $role = $this->canvasRepository->getMemberRole($canvas['id'], $userId);
+            }
 
-            if ($canvas['privacy'] === DB::PRIVACY_PRIVATE && $canvas['user_id'] !== $userId) {
+            if ($canvas['privacy'] === DB::PRIVACY_PRIVATE && !$role && $canvas['user_id'] !== $userId) {
                 return ['success' => false, 'message' => __('err_unauthorized') ?? 'Este lienzo es privado.'];
             }
 

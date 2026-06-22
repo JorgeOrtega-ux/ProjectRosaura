@@ -412,6 +412,18 @@ return [
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_get_snap_detail', 'max' => RL::MAX_30, 'time' => RL::TIME_1, 'identifier' => RL::ID_IP]]
     ],
 
+    // --- NUEVAS RUTAS DE TIMELAPSE FALTANTES ---
+    'canvases.get_timelapse' => [
+        'controller' => 'App\Api\Controllers\CanvasController',
+        'action' => 'get_timelapse',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_get_timelapse', 'max' => RL::MAX_30, 'time' => RL::TIME_1, 'identifier' => RL::ID_IP]]
+    ],
+    'canvases.get_snapshot_timelapse' => [
+        'controller' => 'App\Api\Controllers\CanvasController',
+        'action' => 'get_snapshot_timelapse',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_get_snap_timelapse', 'max' => RL::MAX_30, 'time' => RL::TIME_1, 'identifier' => RL::ID_IP]]
+    ],
+
     // ==========================================
     // NUEVAS RUTAS DE PLANTILLAS DE USUARIO
     // ==========================================
