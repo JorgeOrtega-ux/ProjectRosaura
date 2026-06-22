@@ -338,13 +338,24 @@ return [
         'action' => 'delete',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_delete', 'max' => RL::MAX_10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
-    // --- NUEVA RUTA: SALIR DE UN LIENZO ---
     'canvases.leave' => [
         'controller' => 'App\Api\Controllers\CanvasController',
         'action' => 'leave',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_leave', 'max' => RL::MAX_10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
     
+    // --- NUEVAS RUTAS DE MODERACIÓN DE MIEMBROS ---
+    'canvases.change_member_role' => [
+        'controller' => 'App\Api\Controllers\CanvasController',
+        'action' => 'change_member_role',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_change_role', 'max' => 10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
+    ],
+    'canvases.remove_member' => [
+        'controller' => 'App\Api\Controllers\CanvasController',
+        'action' => 'remove_member',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_remove_member', 'max' => 10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
+    ],
+
     // --- RUTAS DE CONFIGURACIÓN DE REINICIOS ---
     'canvases.get_reset_settings' => [
         'controller' => 'App\Api\Controllers\CanvasController',

@@ -212,6 +212,16 @@ class CanvasRepository implements CanvasRepositoryInterface {
         return $result ?: null;
     }
 
+    public function updateMemberRole(int $canvasId, int $userId, string $role): bool {
+        $sql = "UPDATE " . DB::TBL_CANVAS_MEMBERS . " SET role = :role WHERE canvas_id = :canvas_id AND user_id = :user_id";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            ':role' => $role,
+            ':canvas_id' => $canvasId,
+            ':user_id' => $userId
+        ]);
+    }
+
     // --- NUEVOS MÉTODOS PARA ELIMINAR / SALIR DE LIENZO ÚNICO ---
 
     public function getCanvasByUuid(string $uuid): ?array {

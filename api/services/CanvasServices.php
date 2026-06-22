@@ -205,7 +205,6 @@ class CanvasServices {
         }
     }
 
-    // --- ELIMINAR LIENZO ÚNICO (DESDE DROPDOWN) ---
     public function deleteSingleCanvas(int $userId, string $uuid): array {
         try {
             $canvas = $this->canvasRepository->getCanvasByUuid($uuid);
@@ -240,7 +239,6 @@ class CanvasServices {
         }
     }
 
-    // --- SALIR DE UN LIENZO ---
     public function leaveCanvas(int $userId, string $uuid): array {
         try {
             $canvas = $this->canvasRepository->getCanvasByUuid($uuid);
@@ -268,6 +266,63 @@ class CanvasServices {
         } catch (Exception $e) {
             Logger::error('Error leaving canvas.', ['user_id' => $userId, 'uuid' => $uuid, 'error' => $e->getMessage()]);
             return ['success' => false, 'message' => __('err_database')];
+        }
+    }
+
+    public function changeMemberRole(int $requesterId, int $canvasId, int $targetUserId, string $newRole): array {
+        try {
+            $canvas = $this->canvasRepository->getById($canvasId);
+            if (!$canvas) return ['success' => false, 'message' => __('err_canvas_not_found') ?? 'Lienzo no encontrado.'];
+
+            $requesterRole = $this->canvasRepository->getMemberRole($canvasId, $requesterId);
+            if ($canvas['user_id'] === $requesterId) $requesterRole = 'admin';
+
+            if ($requesterRole !== 'admin') {
+                return ['success' => false, 'message' => __('err_unauthorized') ?? 'No tienes permisos de administrador en este lienzo.'];
+            }
+
+            if ($canvas['user_id'] === $targetUserId) {
+                return ['success' => false, 'message' => 'No puedes cambiar el rol del creador original del lienzo.'];
+            }
+
+            $validRoles = ['viewer', 'editor', 'admin'];
+            if (!in_array($newRole, $validRoles)) {
+                return ['success' => false, 'message' => 'Rol inválido.'];
+            }
+
+            $updated = $this->canvasRepository->updateMemberRole($canvasId, $targetUserId, $newRole);
+            if ($updated) return ['success' => true, 'message' => 'Rol actualizado correctamente.'];
+            
+            return ['success' => false, 'message' => 'No se pudo actualizar el rol.'];
+        } catch (Exception $e) {
+            Logger::error('Error changing member role.', ['error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database') ?? 'Error interno del servidor.'];
+        }
+    }
+
+    public function removeMember(int $requesterId, int $canvasId, int $targetUserId): array {
+        try {
+            $canvas = $this->canvasRepository->getById($canvasId);
+            if (!$canvas) return ['success' => false, 'message' => __('err_canvas_not_found') ?? 'Lienzo no encontrado.'];
+
+            $requesterRole = $this->canvasRepository->getMemberRole($canvasId, $requesterId);
+            if ($canvas['user_id'] === $requesterId) $requesterRole = 'admin';
+
+            if ($requesterRole !== 'admin') {
+                return ['success' => false, 'message' => __('err_unauthorized') ?? 'No tienes permisos de administrador en este lienzo.'];
+            }
+
+            if ($canvas['user_id'] === $targetUserId) {
+                return ['success' => false, 'message' => 'No puedes expulsar al creador original del lienzo.'];
+            }
+
+            $removed = $this->canvasRepository->removeMember($canvasId, $targetUserId);
+            if ($removed) return ['success' => true, 'message' => 'Miembro expulsado correctamente.'];
+            
+            return ['success' => false, 'message' => 'No se pudo expulsar al miembro o ya no pertenece al lienzo.'];
+        } catch (Exception $e) {
+            Logger::error('Error removing member.', ['error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database') ?? 'Error interno del servidor.'];
         }
     }
 

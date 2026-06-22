@@ -175,7 +175,6 @@ class CanvasController extends BaseController {
         }
     }
 
-    // --- NUEVO MÉTODO: SALIR DE UN LIENZO ---
     public function leave($input) {
         try {
             if (!$this->session->isLoggedIn()) {
@@ -192,6 +191,45 @@ class CanvasController extends BaseController {
             $result = $this->canvasServices->leaveCanvas($userId, $uuid);
             return $this->respond($result);
 
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
+    public function change_member_role($input) {
+        try {
+            if (!$this->session->isLoggedIn()) return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+            $userId = $this->session->getActiveAccountId();
+            
+            $canvasId = $input['canvas_id'] ?? null;
+            $targetUserId = $input['target_user_id'] ?? null;
+            $newRole = $input['role'] ?? null;
+
+            if (!$canvasId || !$targetUserId || !$newRole) {
+                return $this->respond(['success' => false, 'message' => 'Datos incompletos para cambiar el rol.']);
+            }
+
+            $result = $this->canvasServices->changeMemberRole($userId, (int)$canvasId, (int)$targetUserId, $newRole);
+            return $this->respond($result);
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
+    public function remove_member($input) {
+        try {
+            if (!$this->session->isLoggedIn()) return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+            $userId = $this->session->getActiveAccountId();
+            
+            $canvasId = $input['canvas_id'] ?? null;
+            $targetUserId = $input['target_user_id'] ?? null;
+
+            if (!$canvasId || !$targetUserId) {
+                return $this->respond(['success' => false, 'message' => 'Datos incompletos para expulsar al miembro.']);
+            }
+
+            $result = $this->canvasServices->removeMember($userId, (int)$canvasId, (int)$targetUserId);
+            return $this->respond($result);
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);
         }

@@ -37,10 +37,9 @@ try {
     $stmtCount->execute(['cid' => $canvasId]);
     $totalMembers = (int)$stmtCount->fetchColumn();
 
-    // Consulta de miembros (Si los nombres de usuario están en otra base de datos, 
-    // podrías necesitar hidratar estos datos después en PHP. Aquí asumiremos una estructura base).
+    // Consulta de miembros (Corregido: Eliminada la columna 'id' inexistente, ahora solo trae user_id)
     $stmt = $pdo->prepare("
-        SELECT id, user_id, role, joined_at 
+        SELECT user_id, role, joined_at 
         FROM {$tblMembers} 
         WHERE canvas_id = :cid 
         ORDER BY joined_at DESC 
@@ -141,7 +140,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/members?id=' . $canvas
                     <tbody>
                         <?php if ($members): ?>
                             <?php foreach ($members as $member): ?>
-                                <tr class="component-table-row" data-action="selectMember" data-member-id="<?php echo htmlspecialchars($member['id']); ?>">
+                                <tr class="component-table-row" data-action="selectMember" data-member-id="<?php echo htmlspecialchars($member['user_id']); ?>">
                                     <td>
                                         <div class="td-user-info">
                                             <div class="component-avatar component-avatar--sm" style="background-image: url('<?php echo $appUrl; ?>/public/assets/img/fallbacks/avatar-default.png'); margin-right: 12px;"></div>

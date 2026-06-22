@@ -168,19 +168,92 @@ class CanvasMembersController {
         }
     }
 
-    // --- ACCIONES DE PRUEBA (MOCKS) ---
+    // --- ACCIONES REALES COMUNICÁNDOSE CON LA API ---
     
-    changeMemberRole() {
+    async changeMemberRole() {
         if (this.selectedMemberIds.size !== 1) return;
-        const id = Array.from(this.selectedMemberIds)[0];
-        console.log(`Intentando cambiar rol para el miembro ID: ${id}`);
-        showMessage("La función 'Cambiar Rol' está en desarrollo y se implementará pronto.", "info");
+        
+        const targetUserId = Array.from(this.selectedMemberIds)[0];
+        const urlParams = new URLSearchParams(window.location.search);
+        const canvasId = urlParams.get('id');
+
+        if (!canvasId) {
+            showMessage("No se ha detectado el identificador del lienzo.", "error");
+            return;
+        }
+
+        const newRole = prompt("Ingresa el nuevo rol (viewer, editor, admin):", "viewer");
+        if (!newRole) return; // Canceló el prompt
+        
+        const normalizedRole = newRole.toLowerCase().trim();
+        if (!['viewer', 'editor', 'admin'].includes(normalizedRole)) {
+            showMessage("Debes ingresar un rol válido (viewer, editor o admin).", "error");
+            return;
+        }
+
+        try {
+            const response = await this.api.post('canvases.change_member_role', {
+                canvas_id: canvasId,
+                target_user_id: targetUserId,
+                role: normalizedRole
+            });
+
+            if (response.success) {
+                showMessage(response.message, "success");
+                this.handlePagination(window.location.href); // Recargamos para ver reflejado el cambio
+            } else {
+                showMessage(response.message, "error");
+            }
+        } catch (error) {
+            showMessage("Error de conexión al intentar cambiar el rol.", "error");
+        }
     }
 
-    removeMember() {
+    async removeMember() {
         if (this.selectedMemberIds.size === 0) return;
-        console.log(`Intentando expulsar a los miembros con IDs:`, Array.from(this.selectedMemberIds));
-        showMessage("La función 'Expulsar Miembro' está en desarrollo.", "info");
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const canvasId = urlParams.get('id');
+
+        if (!canvasId) {
+            showMessage("No se ha detectado el identificador del lienzo.", "error");
+            return;
+        }
+
+        if (!confirm(`¿Estás seguro de que deseas expulsar a ${this.selectedMemberIds.size} miembro(s)?`)) {
+            return;
+        }
+
+        try {
+            let successCount = 0;
+            let failCount = 0;
+
+            // Procesamos la expulsión uno por uno.
+            for (const targetUserId of this.selectedMemberIds) {
+                const response = await this.api.post('canvases.remove_member', {
+                    canvas_id: canvasId,
+                    target_user_id: targetUserId
+                });
+                
+                if (response.success) {
+                    successCount++;
+                } else {
+                    failCount++;
+                }
+            }
+
+            if (successCount > 0) {
+                showMessage(`Se han expulsado ${successCount} miembro(s) exitosamente.`, "success");
+                this.selectedMemberIds.clear();
+                this.handlePagination(window.location.href); 
+            }
+            if (failCount > 0) {
+                showMessage(`No se pudo expulsar a ${failCount} miembro(s). Verifica si tienen permisos de creador.`, "warning");
+            }
+            
+        } catch (error) {
+            showMessage("Error de conexión al intentar expulsar a los miembros.", "error");
+        }
     }
 
     // ---------------------------------
