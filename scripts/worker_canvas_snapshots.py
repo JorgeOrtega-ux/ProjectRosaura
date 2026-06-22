@@ -4,6 +4,7 @@ import json
 import redis
 import mysql.connector
 import uuid
+import shutil # [NUEVO] Importado para mover archivos
 from zlib import decompress
 from PIL import Image
 from datetime import datetime
@@ -19,10 +20,11 @@ DB_USER = os.getenv("DB_USER", "system_web_executor")
 DB_PASS = os.getenv("DB_PASS", "secret")
 DB_NAME = os.getenv("DB_CANVASES_NAME", "db_canvases")
 
-# Configuración Worker (RUTAS FÍSICAS A LA CARPETA PÚBLICA)
+# Configuración Worker (RUTAS FÍSICAS A LA CARPETA PÚBLICA Y PRIVADA)
 SYNC_INTERVAL = int(os.getenv("WORKER_SNAPSHOTS_SYNC_INTERVAL", 10))
 SNAPSHOTS_DIR = os.getenv("SNAPSHOTS_DIR", "/app/storage/public/snapshots")
 ARCHIVE_DIR = os.getenv("SNAPSHOTS_ARCHIVE_DIR", "/app/storage/public/snapshots_archive")
+TIMELAPSE_DIR = os.getenv("TIMELAPSE_DIR", "/app/storage/private/canvases/timelapses") # [NUEVO] Para ubicar el archivo en vivo
 SCALE_FACTOR = int(os.getenv("SNAPSHOT_SCALE_FACTOR", 10)) 
 
 # Ruta a la fuente única de la verdad
@@ -127,17 +129,40 @@ def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palet
             img_scaled.save(archive_filepath, "PNG", optimize=True)
             print(f"[+] Archivo histórico guardado exitosamente: {archive_filepath}")
 
-            # Insertar en base de datos la RUTA VIRTUAL (la que renderizará el frontend)
+            # IDs y Rutas para BD
             snapshot_uuid = str(uuid.uuid4())
             public_filepath = f"public/storage/snapshots_archive/{archive_filename}"
             
+            # ==========================================
+            # [NUEVO] SELLADO DEL ARCHIVO TIMELAPSE (JSONL)
+            # ==========================================
+            timelapse_src = os.path.join(TIMELAPSE_DIR, f"live_canvas_{canvas_id}.jsonl")
+            timelapse_dest_filename = f"snapshot_{snapshot_uuid}.jsonl"
+            timelapse_dest = os.path.join(TIMELAPSE_DIR, timelapse_dest_filename)
+            
+            timelapse_db_path = None # Variable que se guardará en MySQL
+            
+            if os.path.exists(timelapse_src):
+                try:
+                    shutil.move(timelapse_src, timelapse_dest)
+                    timelapse_db_path = f"private/canvases/timelapses/{timelapse_dest_filename}"
+                    print(f"[+] Timelapse convertido a histórico exitosamente: {timelapse_dest_filename}")
+                except Exception as e:
+                    print(f"[!] Error moviendo archivo JSONL de timelapse para el lienzo {canvas_id}: {e}")
+            else:
+                print(f"[-] No se encontró archivo 'live_canvas' para el lienzo {canvas_id}. Se guardará snapshot sin timelapse.")
+
+            # ==========================================
+            # REGISTRO EN BASE DE DATOS
+            # ==========================================
             try:
                 cursor = db_conn.cursor()
+                # [MODIFICADO] Ahora insertamos también el timelapse_file_path
                 insert_query = """
-                    INSERT INTO canvas_snapshots_history (canvas_id, snapshot_uuid, file_path)
-                    VALUES (%s, %s, %s)
+                    INSERT INTO canvas_snapshots_history (canvas_id, snapshot_uuid, file_path, timelapse_file_path)
+                    VALUES (%s, %s, %s, %s)
                 """
-                cursor.execute(insert_query, (canvas_id, snapshot_uuid, public_filepath))
+                cursor.execute(insert_query, (canvas_id, snapshot_uuid, public_filepath, timelapse_db_path))
                 db_conn.commit()
                 cursor.close()
                 print(f"[+] Registro histórico guardado en DB con UUID: {snapshot_uuid}")
@@ -158,6 +183,7 @@ def main():
     # Crear directorios si no existen
     os.makedirs(SNAPSHOTS_DIR, exist_ok=True)
     os.makedirs(ARCHIVE_DIR, exist_ok=True)
+    os.makedirs(TIMELAPSE_DIR, exist_ok=True) # [NUEVO] Aseguramos que exista
     
     load_palettes() # <--- Carga inicial del JSON
     

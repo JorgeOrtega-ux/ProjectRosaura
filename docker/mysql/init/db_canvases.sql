@@ -80,6 +80,7 @@ CREATE TABLE IF NOT EXISTS `canvas_snapshots_history` (
   `canvas_id` int(11) NOT NULL,
   `snapshot_uuid` varchar(36) NOT NULL,
   `file_path` varchar(255) NOT NULL,
+  `timelapse_file_path` varchar(255) DEFAULT NULL, -- [NUEVO] Almacena la ruta del timelapse si existe
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
   UNIQUE KEY `idx_snapshot_uuid` (`snapshot_uuid`),

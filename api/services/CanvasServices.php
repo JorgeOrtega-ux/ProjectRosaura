@@ -636,6 +636,102 @@ class CanvasServices {
         }
     }
 
+    // ==========================================
+    // [MODIFICADO] SE AGREGA HAS_TIMELAPSE A LOS DETALLES
+    // ==========================================
+    public function getSnapshotDetail(string $snapshotId, ?int $userId = null): array {
+        try {
+            $db = new DatabaseManager();
+            $pdo = $db->getConnection(DB::CONN_CANVASES);
+
+            $stmt = $pdo->prepare("
+                SELECT s.file_path, s.timelapse_file_path, s.snapshot_uuid, c.size, c.privacy, c.user_id, c.palette_id 
+                FROM canvas_snapshots_history s
+                JOIN " . DB::TBL_CANVASES . " c ON s.canvas_id = c.id
+                WHERE s.snapshot_uuid = :snapshot_id 
+                LIMIT 1
+            ");
+            $stmt->execute([':snapshot_id' => $snapshotId]);
+            $data = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$data) {
+                return ['success' => false, 'message' => __('err_snapshot_not_found') ?? 'Snapshot no encontrado.'];
+            }
+
+            if ($data['privacy'] === DB::PRIVACY_PRIVATE && $data['user_id'] !== $userId) {
+                return ['success' => false, 'message' => __('err_unauthorized') ?? 'Este lienzo es privado.'];
+            }
+
+            $imageUrl = $data['file_path'];
+            if (!str_starts_with($imageUrl, '/')) {
+                $imageUrl = '/' . $imageUrl;
+            }
+
+            $hasTimelapse = !empty($data['timelapse_file_path']);
+
+            return [
+                'success' => true,
+                'data' => [
+                    'image_url' => $imageUrl,
+                    'width' => (int)$data['size'],
+                    'height' => (int)$data['size'],
+                    'has_timelapse' => $hasTimelapse,
+                    'palette_id' => $data['palette_id'] ?? 'default'
+                ]
+            ];
+
+        } catch (Exception $e) {
+            Logger::error('Error getting snapshot detail.', ['snapshot_id' => $snapshotId, 'error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database') ?? 'Error interno al procesar la solicitud.'];
+        }
+    }
+
+    // ==========================================
+    // [NUEVO] SERVICIO PARA DESCARGA DE TIMELAPSE HISTÓRICO
+    // ==========================================
+    public function prepareSnapshotTimelapseDownload(?int $userId, string $snapshotId): array {
+        try {
+            $db = new DatabaseManager();
+            $pdo = $db->getConnection(DB::CONN_CANVASES);
+
+            $stmt = $pdo->prepare("
+                SELECT s.timelapse_file_path, c.privacy, c.user_id 
+                FROM canvas_snapshots_history s
+                JOIN " . DB::TBL_CANVASES . " c ON s.canvas_id = c.id
+                WHERE s.snapshot_uuid = :snapshot_id 
+                LIMIT 1
+            ");
+            $stmt->execute([':snapshot_id' => $snapshotId]);
+            $data = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$data) {
+                return ['success' => false, 'message' => 'Snapshot no encontrado.', 'http_code' => 404];
+            }
+
+            if ($data['privacy'] === DB::PRIVACY_PRIVATE && $data['user_id'] !== $userId) {
+                return ['success' => false, 'message' => 'No tienes permisos para ver este timelapse.', 'http_code' => 403];
+            }
+
+            if (empty($data['timelapse_file_path'])) {
+                return ['success' => false, 'message' => 'Este snapshot no cuenta con archivo de timelapse.', 'http_code' => 404];
+            }
+
+            $baseDir = dirname(__DIR__, 2) . '/storage/';
+            $filePath = $baseDir . ltrim($data['timelapse_file_path'], '/');
+
+            if (!file_exists($filePath) || filesize($filePath) === 0) {
+                return ['success' => false, 'message' => 'El archivo físico del timelapse no se encuentra en el servidor.', 'http_code' => 404];
+            }
+
+            return ['success' => true, 'file_path' => $filePath];
+
+        } catch (Exception $e) {
+            Logger::error('Error preparing snapshot timelapse.', ['snapshot_id' => $snapshotId, 'error' => $e->getMessage()]);
+            return ['success' => false, 'message' => 'Error interno al procesar la solicitud.', 'http_code' => 500];
+        }
+    }
+
+
     public function getSnapshotsGallery(string $uuid, ?int $userId = null): array {
         try {
             $db = new DatabaseManager();
@@ -677,49 +773,6 @@ class CanvasServices {
 
         } catch (Exception $e) {
             Logger::error('Error getting snapshots gallery.', ['uuid' => $uuid, 'error' => $e->getMessage()]);
-            return ['success' => false, 'message' => __('err_database') ?? 'Error interno al procesar la solicitud.'];
-        }
-    }
-
-    public function getSnapshotDetail(string $snapshotId, ?int $userId = null): array {
-        try {
-            $db = new DatabaseManager();
-            $pdo = $db->getConnection(DB::CONN_CANVASES);
-
-            $stmt = $pdo->prepare("
-                SELECT s.file_path, s.snapshot_uuid, c.size, c.privacy, c.user_id 
-                FROM canvas_snapshots_history s
-                JOIN " . DB::TBL_CANVASES . " c ON s.canvas_id = c.id
-                WHERE s.snapshot_uuid = :snapshot_id 
-                LIMIT 1
-            ");
-            $stmt->execute([':snapshot_id' => $snapshotId]);
-            $data = $stmt->fetch(PDO::FETCH_ASSOC);
-
-            if (!$data) {
-                return ['success' => false, 'message' => __('err_snapshot_not_found') ?? 'Snapshot no encontrado.'];
-            }
-
-            if ($data['privacy'] === DB::PRIVACY_PRIVATE && $data['user_id'] !== $userId) {
-                return ['success' => false, 'message' => __('err_unauthorized') ?? 'Este lienzo es privado.'];
-            }
-
-            $imageUrl = $data['file_path'];
-            if (!str_starts_with($imageUrl, '/')) {
-                $imageUrl = '/' . $imageUrl;
-            }
-
-            return [
-                'success' => true,
-                'data' => [
-                    'image_url' => $imageUrl,
-                    'width' => (int)$data['size'],
-                    'height' => (int)$data['size']
-                ]
-            ];
-
-        } catch (Exception $e) {
-            Logger::error('Error getting snapshot detail.', ['snapshot_id' => $snapshotId, 'error' => $e->getMessage()]);
             return ['success' => false, 'message' => __('err_database') ?? 'Error interno al procesar la solicitud.'];
         }
     }

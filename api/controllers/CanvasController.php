@@ -90,6 +90,48 @@ class CanvasController extends BaseController {
         }
     }
 
+    // ==========================================
+    // [NUEVO] ENDPOINT PARA EL TIMELAPSE DEL SNAPSHOT
+    // ==========================================
+    public function get_snapshot_timelapse($input) {
+        try {
+            $userId = $this->session->isLoggedIn() ? $this->session->getActiveAccountId() : null;
+            $snapshotId = $input['id'] ?? null;
+
+            if (!$snapshotId) {
+                return $this->respond(['success' => false, 'message' => 'ID de snapshot no proporcionado.', 'http_code' => 400]);
+            }
+
+            $result = $this->canvasServices->prepareSnapshotTimelapseDownload($userId, $snapshotId);
+
+            if (!$result['success']) {
+                $code = $result['http_code'] ?? 400;
+                http_response_code($code);
+                return $this->respond($result);
+            }
+
+            $filePath = $result['file_path'];
+
+            if (ob_get_level()) {
+                ob_end_clean();
+            }
+
+            header('Content-Type: application/x-ndjson');
+            header('Content-Disposition: attachment; filename="snapshot_timelapse_' . $snapshotId . '.jsonl"');
+            header('Content-Length: ' . filesize($filePath));
+            header('Cache-Control: no-cache, must-revalidate');
+            header('Pragma: no-cache');
+            header('Expires: 0');
+            
+            flush();
+            readfile($filePath);
+            exit;
+
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
     public function create($input) {
         try {
             if (!$this->session->isLoggedIn()) {

@@ -27,6 +27,16 @@ class SnapshotViewerController {
         this.needsRender = false;
         this.animationFrameId = null;
 
+        // --- ESTADO DEL REPRODUCTOR TIMELAPSE ---
+        this.hasTimelapse = false;
+        this.timelapseData = null;
+        this.isPlaying = false;
+        this.currentFrame = 0;
+        this.playbackSpeed = 5;
+        this.paletteColors = [];
+        this.playAnimationFrameId = null;
+        this.originalImageUrl = null;
+
         this.handleWheelBound = this.handleWheel.bind(this);
         this.handleMouseDownBound = this.handleMouseDown.bind(this);
         this.handleMouseMoveBound = this.handleMouseMove.bind(this);
@@ -40,7 +50,6 @@ class SnapshotViewerController {
         if (wrapper) {
             this.snapshotId = wrapper.getAttribute('data-snapshot-id');
         } else {
-            // Fallback para extraer el ID de la URL si el wrapper falla
             const parts = window.location.pathname.split('/');
             this.snapshotId = parts[parts.length - 1]; 
         }
@@ -64,9 +73,8 @@ class SnapshotViewerController {
         document.removeEventListener('mouseup', this.handleMouseUpBound);
         window.removeEventListener('resize', this.handleResizeBound);
 
-        if (this.animationFrameId) {
-            cancelAnimationFrame(this.animationFrameId);
-        }
+        if (this.animationFrameId) cancelAnimationFrame(this.animationFrameId);
+        if (this.playAnimationFrameId) cancelAnimationFrame(this.playAnimationFrameId);
     }
 
     bindEvents() {
@@ -79,20 +87,27 @@ class SnapshotViewerController {
 
     async loadSnapshotData() {
         try {
-            // Nota: Crearemos este endpoint en el paso de la API (Bloque 4)
             const endpoint = ApiRoutes.Canvases?.GetSnapshotDetail || 'canvases.get_snapshot_detail';
-            
-            // CORRECCIÓN: Usar this.api.post en lugar de this.api.get
             const response = await this.api.post(endpoint, { id: this.snapshotId });
             
             if (response.success && response.data) {
                 this.boardWidth = parseInt(response.data.width, 10) || 2000;
                 this.boardHeight = parseInt(response.data.height, 10) || 1000;
-                const imageUrl = response.data.image_url;
+                this.originalImageUrl = response.data.image_url;
+                
+                // [NUEVO] Verificamos si hay timelapse en la DB
+                this.hasTimelapse = response.data.has_timelapse || false;
+                
+                // Cargar paleta de colores para decodificar JSONL
+                await this.loadPalette(response.data.palette_id || 'default');
 
                 this.setupCanvas();
                 this.centerBoard();
-                this.drawImageOnCanvas(imageUrl);
+                this.drawImageOnCanvas(this.originalImageUrl);
+
+                if (this.hasTimelapse) {
+                    this.initTimelapseUI();
+                }
             } else {
                 showMessage(response.message || 'Error al cargar el snapshot', 'error');
                 this.setupCanvas();
@@ -106,6 +121,175 @@ class SnapshotViewerController {
         }
     }
 
+    async loadPalette(paletteId) {
+        try {
+            const res = await fetch('/public/assets/data/palettes.json');
+            if (res.ok) {
+                const data = await res.json();
+                this.paletteColors = data[paletteId]?.colors || data['default']?.colors || [];
+            }
+        } catch(e) {
+            console.error("Error loading palette JSON", e);
+        }
+    }
+
+    // ==========================================
+    // LÓGICA DEL REPRODUCTOR TIMELAPSE
+    // ==========================================
+
+    initTimelapseUI() {
+        const controls = document.getElementById('timelapse-controls');
+        if (!controls) return;
+        
+        controls.style.display = 'flex'; // Mostramos controles
+
+        const btnPlay = document.getElementById('tl-btn-play');
+        const progress = document.getElementById('tl-progress');
+        const speedSelect = document.getElementById('tl-speed');
+
+        btnPlay.addEventListener('click', async () => {
+            // Si es la primera vez que damos play, descargamos el archivo JSONL
+            if (!this.timelapseData) {
+                btnPlay.innerHTML = '<span class="material-symbols-rounded" style="font-size: 32px; animation: spin 1s linear infinite;">sync</span>';
+                const loaded = await this.fetchTimelapseData();
+                if (!loaded) {
+                    btnPlay.innerHTML = '<span class="material-symbols-rounded" style="font-size: 32px;">play_circle</span>';
+                    return;
+                }
+            }
+
+            this.isPlaying = !this.isPlaying;
+            btnPlay.innerHTML = this.isPlaying 
+                ? '<span class="material-symbols-rounded" style="font-size: 32px;">pause_circle</span>'
+                : '<span class="material-symbols-rounded" style="font-size: 32px;">play_circle</span>';
+
+            if (this.isPlaying) {
+                // Si estaba al 100%, reiniciar desde cero
+                if (this.currentFrame >= this.timelapseData.length) {
+                    this.resetCanvasToBlank();
+                    this.currentFrame = 0;
+                }
+                this.playLoop();
+            } else {
+                if (this.playAnimationFrameId) cancelAnimationFrame(this.playAnimationFrameId);
+            }
+        });
+
+        progress.addEventListener('input', (e) => {
+            if (!this.timelapseData) return;
+            const percent = parseInt(e.target.value, 10);
+            this.currentFrame = Math.floor((percent / 100) * this.timelapseData.length);
+            this.redrawToCurrentFrame();
+        });
+
+        speedSelect.addEventListener('change', (e) => {
+            this.playbackSpeed = parseInt(e.target.value, 10);
+        });
+    }
+
+    async fetchTimelapseData() {
+        try {
+            // Hacemos un fetch directo nativo porque es un archivo de texto pesado (JSONL), no un JSON clásico
+            const url = `/api/index.php?action=canvases.get_snapshot_timelapse&id=${this.snapshotId}`;
+            const res = await fetch(url);
+            
+            if (!res.ok) throw new Error("Failed to fetch JSONL");
+            
+            const text = await res.text();
+            const lines = text.trim().split('\n');
+            
+            // Parseamos las líneas e ignoramos errores en JSON rotos
+            this.timelapseData = lines.map(line => {
+                try { return JSON.parse(line); } catch(e) { return null; }
+            }).filter(item => item !== null);
+
+            document.getElementById('tl-progress').max = 100;
+            return true;
+        } catch(e) {
+            console.error(e);
+            showMessage("Error cargando el archivo de Timelapse", "error");
+            return false;
+        }
+    }
+
+    resetCanvasToBlank() {
+        // Lienzo totalmente blanco puro
+        this.offscreenCtx.fillStyle = '#FFFFFF';
+        this.offscreenCtx.fillRect(0, 0, this.boardWidth, this.boardHeight);
+        this.requestRender();
+    }
+
+    playLoop() {
+        if (!this.isPlaying) return;
+
+        let pixelsToDraw = this.playbackSpeed;
+        
+        while (pixelsToDraw > 0 && this.currentFrame < this.timelapseData.length) {
+            const pixel = this.timelapseData[this.currentFrame];
+            this.drawSinglePixel(pixel);
+            this.currentFrame++;
+            pixelsToDraw--;
+        }
+
+        this.updateProgressUI();
+        this.requestRender(); // Forzamos repintado del canvas principal
+
+        if (this.currentFrame < this.timelapseData.length) {
+            this.playAnimationFrameId = requestAnimationFrame(() => this.playLoop());
+        } else {
+            this.isPlaying = false;
+            document.getElementById('tl-btn-play').innerHTML = '<span class="material-symbols-rounded" style="font-size: 32px;">play_circle</span>';
+        }
+    }
+
+    drawSinglePixel(pixel) {
+        if (!pixel) return;
+        
+        // Interpretar si es borrado (c: 255) o color normal
+        const colorIndex = parseInt(pixel.c, 10);
+        let colorHex = '#FFFFFF';
+        
+        if (colorIndex !== 255 && this.paletteColors[colorIndex]) {
+            colorHex = this.paletteColors[colorIndex];
+        }
+
+        this.offscreenCtx.fillStyle = colorHex;
+        this.offscreenCtx.fillRect(parseInt(pixel.x, 10), parseInt(pixel.y, 10), 1, 1);
+    }
+
+    redrawToCurrentFrame() {
+        if (!this.timelapseData) return;
+        
+        // Si el usuario arrastró la barra a la izquierda o derecha de golpe
+        // debemos empezar desde blanco y pintar súper rápido hasta el frame elegido
+        this.resetCanvasToBlank();
+        
+        // Si arrastró hasta el final, mejor mostramos la imagen final optimizada original
+        if (this.currentFrame >= this.timelapseData.length) {
+             this.drawImageOnCanvas(this.originalImageUrl);
+             this.updateProgressUI();
+             return;
+        }
+
+        for (let i = 0; i < this.currentFrame; i++) {
+            this.drawSinglePixel(this.timelapseData[i]);
+        }
+        
+        this.updateProgressUI();
+        this.requestRender();
+    }
+
+    updateProgressUI() {
+        if (!this.timelapseData || this.timelapseData.length === 0) return;
+        const percent = Math.floor((this.currentFrame / this.timelapseData.length) * 100);
+        document.getElementById('tl-progress').value = percent;
+        document.getElementById('tl-time').innerText = percent + '%';
+    }
+
+    // ==========================================
+    // RENDERIZADO DEL VISOR PRINCIPAL
+    // ==========================================
+
     setupCanvas() {
         this.updateCanvasDimensions();
         this.offscreenCanvas = document.createElement('canvas');
@@ -114,12 +298,10 @@ class SnapshotViewerController {
         this.offscreenCtx = this.offscreenCanvas.getContext('2d', { alpha: true });
     }
 
-drawImageOnCanvas(url) {
+    drawImageOnCanvas(url) {
         const img = new Image();
         img.onload = () => {
-            // 1. Apagar suavizado (anti-aliasing) en el buffer secundario
             this.offscreenCtx.imageSmoothingEnabled = false; 
-            
             this.offscreenCtx.clearRect(0, 0, this.boardWidth, this.boardHeight);
             this.offscreenCtx.drawImage(img, 0, 0, this.boardWidth, this.boardHeight);
             this.requestRender();
@@ -316,8 +498,8 @@ drawImageOnCanvas(url) {
         const dpr = window.devicePixelRatio || 1;
         this.ctx.scale(dpr, dpr);
         
-// 2. Redondear coordenadas para evitar sub-pixel rendering
-        this.ctx.translate(Math.round(this.transform.x), Math.round(this.transform.y));        this.ctx.scale(this.transform.scale, this.transform.scale);
+        this.ctx.translate(Math.round(this.transform.x), Math.round(this.transform.y));        
+        this.ctx.scale(this.transform.scale, this.transform.scale);
         
         this.ctx.imageSmoothingEnabled = false;
         
@@ -347,7 +529,6 @@ drawImageOnCanvas(url) {
             this.ctx.stroke();
         }
 
-        // --- CORRECCIÓN: Verificar que offscreenCanvas exista antes de dibujarlo ---
         if (this.offscreenCanvas) {
             this.ctx.drawImage(this.offscreenCanvas, 0, 0);
         }
