@@ -3,6 +3,7 @@
 import { ApiRoutes } from '../../core/api/ApiRoutes.js';
 import { ApiService } from '../../core/api/ApiServices.js';
 import { showMessage } from '../../core/utils/uiUtils.js';
+import { CardTemplates } from '../../core/components/CardTemplates.js';
 
 class CanvasSnapshotsGalleryController {
     constructor() {
@@ -37,7 +38,6 @@ class CanvasSnapshotsGalleryController {
 
     extractUuidFromUrl() {
         const pathParts = window.location.pathname.split('/');
-        // Obtiene la última parte de la URL asumiendo el formato /design/s/{uuid}
         return pathParts.pop();
     }
 
@@ -45,7 +45,6 @@ class CanvasSnapshotsGalleryController {
         const goBackBtn = e.target.closest('[data-action="goBack"]');
         if (goBackBtn) {
             if (window.spaRouter) {
-                // Volvemos a manage en lugar de hacer un window.history.back() ciego
                 window.spaRouter.navigate(`${this.basePath}/canvases/manage`);
             } else {
                 window.location.href = `${this.basePath}/canvases/manage`;
@@ -54,13 +53,11 @@ class CanvasSnapshotsGalleryController {
     }
 
     async fetchSnapshots() {
-        // Protección contra ApiRoutes desactualizado o mal importado
         const route = (typeof ApiRoutes !== 'undefined' && ApiRoutes.Canvases && ApiRoutes.Canvases.GetSnapshotsGallery) 
                       ? ApiRoutes.Canvases.GetSnapshotsGallery 
                       : 'canvases.get_snapshots_gallery';
         
         try {
-            // El backend de Rosaura maneja todo por POST mapeando la 'route' en el payload
             const result = await this.api.post(route, { uuid: this.uuid }, this.abortController.signal);
             
             if (result.aborted) return;
@@ -90,7 +87,6 @@ class CanvasSnapshotsGalleryController {
         }
 
         if (!gridEl) return;
-
         gridEl.innerHTML = '';
 
         if (!snapshots || snapshots.length === 0) {
@@ -101,28 +97,17 @@ class CanvasSnapshotsGalleryController {
         const fragment = document.createDocumentFragment();
 
         snapshots.forEach(snapshot => {
-            const card = document.createElement('div');
-            card.className = 'component-snapshot-card';
-
-            // NUEVA URL DE VISUALIZACIÓN AISLADA
-            const viewUrl = `${this.basePath}/snapshot/view/${snapshot.snapshot_uuid}`;
-
-            // Asumiendo que el worker guarda la imagen en public/assets/img/snapshots_history/
-            const imageUrl = snapshot.url.startsWith('/') ? snapshot.url : `/${snapshot.url}`;
+            const tempDiv = document.createElement('div');
+            // Usamos la fábrica central para crear el HTML
+            tempDiv.innerHTML = CardTemplates.snapshotCard(snapshot, {
+                canvasName: canvasName,
+                basePath: this.basePath
+            });
             
-            // HTML Interno aplicando las nuevas clases base con <img> en lugar de style backgroundImage
-            card.innerHTML = `
-                <img src="${imageUrl}" alt="${canvasName}" class="component-snapshot-card__image">
-                <div class="component-snapshot-badge">
-                    <span class="material-symbols-rounded">history</span>
-                    ${snapshot.date}
-                </div>
-                <div data-nav="${viewUrl}" class="component-snapshot-link">
-                    <h3 class="component-snapshot-title">${canvasName}</h3>
-                </div>
-            `;
-            
-            fragment.appendChild(card);
+            // Extraemos solo el hijo (el div real de la tarjeta) y lo agregamos al fragmento
+            if (tempDiv.firstElementChild) {
+                fragment.appendChild(tempDiv.firstElementChild);
+            }
         });
 
         gridEl.appendChild(fragment);

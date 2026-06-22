@@ -31,4 +31,12 @@ function renderSkeleton(container, type = 'generic') {
     container.innerHTML = SkeletonTemplates.get(type);
 }
 
-export { showMessage, setButtonLoading, restoreButton, renderSkeleton };
+// NUEVO: Utilidad centralizada para prevenir ataques XSS
+function escapeHTML(str) {
+    if (!str) return '';
+    const p = document.createElement('p');
+    p.textContent = str;
+    return p.innerHTML;
+}
+
+export { showMessage, setButtonLoading, restoreButton, renderSkeleton, escapeHTML };
