@@ -375,6 +375,11 @@ return [
         'action' => 'update_reset_settings',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_upd_reset', 'max' => RL::MAX_10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
+    'canvases.reset_now' => [
+        'controller' => 'App\Api\Controllers\CanvasController',
+        'action' => 'reset_now',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_reset_now', 'max' => RL::MAX_5, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
+    ],
     
     // --- RUTAS DE APROBACIÓN DE ACCESOS ---
     'canvases.request_access' => [

@@ -343,6 +343,25 @@ class CanvasController extends BaseController {
         }
     }
 
+    public function reset_now($input) {
+        try {
+            if (!$this->session->isLoggedIn()) {
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized') ?? 'No autorizado.', 'http_code' => 401]);
+            }
+
+            $userId = $this->session->getActiveAccountId();
+            $canvasId = $input['id'] ?? null;
+            
+            if (!$canvasId) {
+                return $this->respond(['success' => false, 'message' => 'Lienzo no proporcionado.']);
+            }
+            
+            return $this->respond($this->canvasServices->resetCanvasNow($userId, (int)$canvasId));
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
     public function request_access($input) {
         try {
             if (!$this->session->isLoggedIn()) return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);

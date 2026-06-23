@@ -101,9 +101,10 @@ export const ApiRoutes = {
         RejectRequest: 'canvases.reject_request',
         GetPendingRequests: 'canvases.get_pending_requests',
         
-        // --- RUTAS DE REINICIOS PROGRAMADOS ---
+        // --- RUTAS DE REINICIOS PROGRAMADOS Y MANUALES ---
         GetResetSettings: 'canvases.get_reset_settings',
         UpdateResetSettings: 'canvases.update_reset_settings',
+        ResetNow: 'canvases.reset_now', // <--- NUEVA RUTA PARA REINICIO INMEDIATO
 
         // --- NUEVA RUTA DE GALERÍA DE SNAPSHOTS ---
         GetSnapshotsGallery: 'canvases.get_snapshots_gallery',

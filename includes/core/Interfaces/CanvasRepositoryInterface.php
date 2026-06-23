@@ -39,6 +39,7 @@ interface CanvasRepositoryInterface {
     // ==========================================
     public function getSnapshot(int $canvasId): ?string;
     public function saveSnapshot(int $canvasId, string $snapshotData): bool;
+    public function clearCanvasData(int $canvasId): bool; // <--- NUEVO: BORRADO INSTANTÁNEO
 
     // ==========================================
     // NUEVOS MÉTODOS DE REINICIOS PROGRAMADOS

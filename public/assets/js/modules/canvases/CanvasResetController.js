@@ -85,6 +85,13 @@ class CanvasResetController {
             return;
         }
 
+        const btnResetNow = e.target.closest('[data-action="resetNow"]');
+        if (btnResetNow) {
+            e.preventDefault();
+            this.confirmResetNow(btnResetNow);
+            return;
+        }
+
         const dropdownItem = e.target.closest('[data-action="selectTimerAction"]');
         if (dropdownItem) {
             e.preventDefault();
@@ -275,6 +282,42 @@ class CanvasResetController {
             showMessage(result.message || __('msg_save_success'), 'success');
         } else {
             showMessage(result.message || __('err_save_failed'), 'error');
+        }
+    }
+
+    // --- NUEVO: FLUJO DE REINICIO INMEDIATO ---
+    confirmResetNow(btnResetNow) {
+        const message = __('msg_confirm_reset_now') || '¿Estás seguro de que deseas limpiar este lienzo ahora mismo? Esta acción no se puede deshacer y los usuarios verán el cambio en tiempo real.';
+        
+        if (window.app && window.app.dialogs) {
+            window.app.dialogs.show({
+                title: __('lbl_warning') || 'Advertencia',
+                message: message,
+                confirmText: __('btn_reset_now') || 'Reiniciar Ahora',
+                confirmClass: 'component-button--danger',
+                cancelText: __('btn_cancel') || 'Cancelar',
+                onConfirm: () => this.executeResetNow(btnResetNow)
+            });
+        } else if (confirm(message)) {
+            this.executeResetNow(btnResetNow);
+        }
+    }
+
+    async executeResetNow(btn) {
+        const canvasId = this.wrapper.getAttribute('data-canvas-id');
+        
+        setButtonLoading(btn);
+
+        const result = await this.api.post(ApiRoutes.Canvases.ResetNow, { id: canvasId }, this.abortController.signal);
+
+        if (result.aborted) return;
+        
+        restoreButton(btn);
+
+        if (result.success) {
+            showMessage(result.message || __('msg_reset_now_success') || 'El lienzo ha sido limpiado.', 'success');
+        } else {
+            showMessage(result.message || __('err_reset_now_failed') || 'No se pudo reiniciar el lienzo.', 'error');
         }
     }
 }

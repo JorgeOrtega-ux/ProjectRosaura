@@ -194,6 +194,23 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                 </div>
             </div>
 
+            <div class="component-card--grouped" style="margin-top: 24px;">
+                <div class="component-group-item component-group-item--wrap">
+                    <div class="component-card__content">
+                        <div class="component-card__text">
+                            <h2 class="component-card__title" style="color: var(--color-danger);"><?php echo __('canvas_reset_now_title') ?? 'Reinicio Inmediato'; ?></h2>
+                            <p class="component-card__description"><?php echo __('canvas_reset_now_desc') ?? 'Limpia todos los píxeles del lienzo en este momento. Esta acción no se puede deshacer y los usuarios conectados verán el cambio en tiempo real.'; ?></p>
+                        </div>
+                    </div>
+                    <div class="component-card__actions component-card__actions--end">
+                        <button type="button" class="component-button component-button--danger component-button--h40" data-action="resetNow">
+                            <span class="material-symbols-rounded">delete_forever</span>
+                            <?php echo __('btn_reset_now') ?? 'Reiniciar Ahora'; ?>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 </div>

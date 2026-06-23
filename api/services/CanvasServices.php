@@ -558,6 +558,66 @@ class CanvasServices {
         }
     }
 
+    // ==========================================
+    // NUEVA FUNCIÓN: REINICIO INMEDIATO
+    // ==========================================
+    public function resetCanvasNow(int $userId, int $canvasId): array {
+        try {
+            $canvas = $this->canvasRepository->getById($canvasId);
+            if (!$canvas) {
+                return ['success' => false, 'message' => __('err_canvas_not_found') ?? 'Lienzo no encontrado.'];
+            }
+
+            // Validar permisos (dueño o admin)
+            $role = null;
+            if ($canvas['user_id'] !== $userId) {
+                $role = $this->canvasRepository->getMemberRole($canvasId, $userId);
+                if ($role !== 'admin') {
+                    return ['success' => false, 'message' => __('err_unauthorized') ?? 'No tienes permisos para reiniciar este lienzo.'];
+                }
+            }
+
+            // Aquí limpiamos la data persistente de la BD si existiera el método
+            if (method_exists($this->canvasRepository, 'clearCanvasData')) {
+                $this->canvasRepository->clearCanvasData($canvasId);
+            }
+
+            // Limpiar el estado de los pixeles en Redis a color base (Puro blanco)
+            $size = (int)$canvas['size'];
+            $totalPixels = $size * $size;
+            $emptyState = str_repeat(chr(255), $totalPixels);
+
+            try {
+                if (class_exists(RedisCache::class)) {
+                    $redisInstance = new RedisCache();
+                    $redis = $redisInstance->getClient();
+                    
+                    if ($redis) {
+                        $redisKey = "canvas:{$canvasId}:state";
+                        $redis->set($redisKey, $emptyState);
+
+                        // Publicar evento al canal de WebSockets para que el frontend reaccione
+                        $eventData = json_encode([
+                            'type' => 'canvas_cleared',
+                            'canvas_id' => $canvasId,
+                            'timestamp' => time()
+                        ]);
+                        
+                        // Enviamos broadcast por canales relevantes (usualmente canvas_events o dedicado)
+                        $redis->publish("canvas_events", $eventData);
+                    }
+                }
+            } catch (Exception $e) {
+                Logger::error('Error limpiando Redis durante el reset_now.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
+            }
+
+            return ['success' => true, 'message' => 'El lienzo ha sido limpiado inmediatamente.'];
+        } catch (Exception $e) {
+            Logger::error('Error in resetCanvasNow.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database') ?? 'Error interno al reiniciar el lienzo.'];
+        }
+    }
+
     public function requestAccess(int $userId, int $canvasId): array {
         try {
             $canvas = $this->canvasRepository->getById($canvasId);

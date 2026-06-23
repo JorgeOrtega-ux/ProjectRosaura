@@ -299,6 +299,13 @@ class CanvasRepository implements CanvasRepositoryInterface {
         ]);
     }
 
+    public function clearCanvasData(int $canvasId): bool {
+        // Elimina el snapshot guardado en la base de datos (estado del lienzo)
+        $sql = "DELETE FROM canvas_snapshots WHERE canvas_id = :canvas_id";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([':canvas_id' => $canvasId]);
+    }
+
     // ==========================================
     // REINICIOS PROGRAMADOS
     // ==========================================
