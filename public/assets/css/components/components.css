@@ -2911,3 +2911,21 @@ input:checked + .component-toggle-slider:before {
     box-shadow: var(--shadow-card, 0 2px 8px rgba(0,0,0,0.15));
     padding: 2px; /* NUEVO: Agregado aquí para que los bordes envuelvan bien al botón */
 }
+
+/* =========================================
+   SISTEMA DE DISEÑO R/PLACE (DESIGN CANVAS)
+   ========================================= */
+.component-wrapper[data-ref="design-wrapper"],
+.component-wrapper[data-ref="snapshot-wrapper"] {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.component-wrapper[data-ref="design-wrapper"] .component-bottom,
+.component-wrapper[data-ref="snapshot-wrapper"] .component-bottom {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    padding: 0;
+}

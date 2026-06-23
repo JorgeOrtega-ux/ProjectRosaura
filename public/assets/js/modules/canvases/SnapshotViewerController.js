@@ -32,7 +32,7 @@ class SnapshotViewerController {
         this.timelapseData = null;
         this.isPlaying = false;
         this.currentFrame = 0;
-        this.playbackSpeed = 5;
+        this.playbackSpeed = 5; // Velocidad 5x mantenida por defecto
         this.paletteColors = [];
         this.playAnimationFrameId = null;
         this.originalImageUrl = null;
@@ -137,30 +137,26 @@ class SnapshotViewerController {
     // ==========================================
 
     initTimelapseUI() {
-        const controls = document.getElementById('timelapse-controls');
-        if (!controls) return;
-        
-        controls.style.display = 'flex'; // Mostramos controles
-
         const btnPlay = document.getElementById('tl-btn-play');
-        const progress = document.getElementById('tl-progress');
-        const speedSelect = document.getElementById('tl-speed');
+        if (!btnPlay) return;
+        
+        btnPlay.style.display = 'flex'; // Mostramos el botón ya que hay timelapse
 
         btnPlay.addEventListener('click', async () => {
             // Si es la primera vez que damos play, descargamos el archivo JSONL
             if (!this.timelapseData) {
-                btnPlay.innerHTML = '<span class="material-symbols-rounded" style="font-size: 32px; animation: spin 1s linear infinite;">sync</span>';
+                btnPlay.innerHTML = '<span class="material-symbols-rounded" style="animation: spin 1s linear infinite;">sync</span>';
                 const loaded = await this.fetchTimelapseData();
                 if (!loaded) {
-                    btnPlay.innerHTML = '<span class="material-symbols-rounded" style="font-size: 32px;">play_circle</span>';
+                    btnPlay.innerHTML = '<span class="material-symbols-rounded">play_circle</span>';
                     return;
                 }
             }
 
             this.isPlaying = !this.isPlaying;
             btnPlay.innerHTML = this.isPlaying 
-                ? '<span class="material-symbols-rounded" style="font-size: 32px;">pause_circle</span>'
-                : '<span class="material-symbols-rounded" style="font-size: 32px;">play_circle</span>';
+                ? '<span class="material-symbols-rounded">pause_circle</span>'
+                : '<span class="material-symbols-rounded">play_circle</span>';
 
             if (this.isPlaying) {
                 // Si estaba al 100%, reiniciar desde cero
@@ -173,22 +169,10 @@ class SnapshotViewerController {
                 if (this.playAnimationFrameId) cancelAnimationFrame(this.playAnimationFrameId);
             }
         });
-
-        progress.addEventListener('input', (e) => {
-            if (!this.timelapseData) return;
-            const percent = parseInt(e.target.value, 10);
-            this.currentFrame = Math.floor((percent / 100) * this.timelapseData.length);
-            this.redrawToCurrentFrame();
-        });
-
-        speedSelect.addEventListener('change', (e) => {
-            this.playbackSpeed = parseInt(e.target.value, 10);
-        });
     }
 
     async fetchTimelapseData() {
         try {
-            // [MODIFICADO] Se utiliza el proxy central del ApiService con POST
             const endpoint = ApiRoutes.Canvases?.GetSnapshotTimelapse || 'canvases.get_snapshot_timelapse';
             const response = await this.api.downloadText(endpoint, { id: this.snapshotId });
 
@@ -204,7 +188,6 @@ class SnapshotViewerController {
                 try { return JSON.parse(line); } catch(e) { return null; }
             }).filter(item => item !== null);
 
-            document.getElementById('tl-progress').max = 100;
             return true;
 
         } catch(e) {
@@ -233,14 +216,16 @@ class SnapshotViewerController {
             pixelsToDraw--;
         }
 
-        this.updateProgressUI();
         this.requestRender(); // Forzamos repintado del canvas principal
 
         if (this.currentFrame < this.timelapseData.length) {
             this.playAnimationFrameId = requestAnimationFrame(() => this.playLoop());
         } else {
             this.isPlaying = false;
-            document.getElementById('tl-btn-play').innerHTML = '<span class="material-symbols-rounded" style="font-size: 32px;">play_circle</span>';
+            const btnPlay = document.getElementById('tl-btn-play');
+            if (btnPlay) {
+                btnPlay.innerHTML = '<span class="material-symbols-rounded">play_circle</span>';
+            }
         }
     }
 
@@ -257,35 +242,6 @@ class SnapshotViewerController {
 
         this.offscreenCtx.fillStyle = colorHex;
         this.offscreenCtx.fillRect(parseInt(pixel.x, 10), parseInt(pixel.y, 10), 1, 1);
-    }
-
-    redrawToCurrentFrame() {
-        if (!this.timelapseData) return;
-        
-        // Si el usuario arrastró la barra a la izquierda o derecha de golpe
-        // debemos empezar desde blanco y pintar súper rápido hasta el frame elegido
-        this.resetCanvasToBlank();
-        
-        // Si arrastró hasta el final, mejor mostramos la imagen final optimizada original
-        if (this.currentFrame >= this.timelapseData.length) {
-             this.drawImageOnCanvas(this.originalImageUrl);
-             this.updateProgressUI();
-             return;
-        }
-
-        for (let i = 0; i < this.currentFrame; i++) {
-            this.drawSinglePixel(this.timelapseData[i]);
-        }
-        
-        this.updateProgressUI();
-        this.requestRender();
-    }
-
-    updateProgressUI() {
-        if (!this.timelapseData || this.timelapseData.length === 0) return;
-        const percent = Math.floor((this.currentFrame / this.timelapseData.length) * 100);
-        document.getElementById('tl-progress').value = percent;
-        document.getElementById('tl-time').innerText = percent + '%';
     }
 
     // ==========================================

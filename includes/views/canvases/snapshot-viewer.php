@@ -62,37 +62,20 @@ try {
             
             <div class="component-top-right" style="display: flex; align-items: center;">
                 <div class="component-actions active">
+                    <button id="tl-btn-play" class="component-button component-button--icon component-button--h40" style="display: none;" title="Reproducir Timelapse">
+                        <span class="material-symbols-rounded">play_circle</span>
+                    </button>
                 </div>
             </div>
         </div>
 
-        <div class="component-bottom" style="position: relative;">
+        <div class="component-bottom">
             <canvas data-ref="snapshot-canvas" class="component-canvas-surface"></canvas>
             
             <div class="component-badge component-badge--absolute-tl">
                 <span class="material-symbols-rounded">my_location</span>
                 <span data-ref="coords-text">- , -</span>
             </div>
-
-            <div id="timelapse-controls" class="timelapse-player-bar" style="display: none; position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: white; padding: 10px 20px; border-radius: 30px; align-items: center; gap: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 100;">
-                <button id="tl-btn-play" style="background: none; border: none; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0;">
-                    <span class="material-symbols-rounded" style="font-size: 32px;">play_circle</span>
-                </button>
-                <input type="range" id="tl-progress" min="0" max="100" value="0" style="width: 250px; cursor: pointer;">
-                <span id="tl-time" style="font-family: monospace; font-size: 14px; min-width: 45px; text-align: right;">0%</span>
-                
-                <div style="border-left: 1px solid rgba(255,255,255,0.3); height: 20px; margin: 0 5px;"></div>
-                
-                <span style="font-size: 12px; opacity: 0.8;">Velocidad:</span>
-                <select id="tl-speed" style="background: transparent; color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 4px; padding: 2px 5px; cursor: pointer;">
-                    <option value="1" style="color: black;">1x</option>
-                    <option value="5" style="color: black;" selected>5x</option>
-                    <option value="10" style="color: black;">10x</option>
-                    <option value="50" style="color: black;">50x</option>
-                    <option value="100" style="color: black;">100x</option>
-                </select>
-            </div>
-
         </div>
     </div>
 </div>
