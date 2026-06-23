@@ -21,6 +21,9 @@ DB_NAME = os.getenv("DB_CANVASES_NAME", "db_canvases")
 
 SYNC_INTERVAL = int(os.getenv("WORKER_RESETS_SYNC_INTERVAL", 10))
 
+# Directorio donde se guardan las miniaturas de los lienzos (ajustable por entorno Docker)
+SNAPSHOTS_DIR = os.getenv("SNAPSHOTS_DIR", "/var/www/html/storage/public/snapshots")
+
 def get_db_connection():
     try:
         return mysql.connector.connect(
@@ -104,6 +107,18 @@ def process_canvas_reset(r, db_conn, row):
         
         r.set(state_key, empty_state) 
         r.delete(f"canvas:next_reset:{canvas_id}")
+        
+        # =========================================================================
+        # NUEVO: ELIMINAR LA FOTO (SNAPSHOT) FÍSICA PARA QUE NO SALGA EN HOME.PHP
+        # =========================================================================
+        snapshot_path = os.path.join(SNAPSHOTS_DIR, f"canvas_{canvas_id}.png")
+        if os.path.exists(snapshot_path):
+            try:
+                os.remove(snapshot_path)
+                print(f"[INFO] Imagen pública eliminada correctamente para el lienzo ID {canvas_id}.")
+            except Exception as e:
+                print(f"[ERROR] No se pudo eliminar la imagen pública del lienzo ID {canvas_id}: {e}")
+        # =========================================================================
         
         print(f"[INFO] Reset operation completed. Unlocking canvas ID {canvas_id}.")
         r.delete(lock_key)

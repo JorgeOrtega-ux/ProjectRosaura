@@ -298,6 +298,19 @@ class CanvasServices {
             $deleted = $this->canvasRepository->deleteCanvasByUuid($uuid, $userId);
 
             if ($deleted) {
+                // =========================================================================
+                // NUEVO: ELIMINAR LA FOTO CUANDO EL USUARIO BORRA SU LIENZO MANUALMENTE
+                // =========================================================================
+                try {
+                    $physicalPath = dirname(__DIR__, 2) . '/storage/public/snapshots/canvas_' . $canvas['id'] . '.png';
+                    if (file_exists($physicalPath)) {
+                        unlink($physicalPath);
+                    }
+                } catch (Exception $e) {
+                    Logger::error('Error eliminando la imagen física del lienzo eliminado.', ['canvas_id' => $canvas['id'], 'error' => $e->getMessage()]);
+                }
+                // =========================================================================
+
                 try {
                     if (class_exists(RedisCache::class)) {
                         $redisInstance = new RedisCache();
@@ -424,6 +437,21 @@ class CanvasServices {
             $deleted = $this->canvasRepository->deleteCanvases($canvasIds, $userId);
 
             if ($deleted) {
+                // =========================================================================
+                // NUEVO: ELIMINAR LAS FOTOS FÍSICAS AL BORRAR LIENZOS EN MASA
+                // =========================================================================
+                try {
+                    foreach ($canvasIds as $id) {
+                        $physicalPath = dirname(__DIR__, 2) . '/storage/public/snapshots/canvas_' . $id . '.png';
+                        if (file_exists($physicalPath)) {
+                            unlink($physicalPath);
+                        }
+                    }
+                } catch (Exception $e) {
+                    Logger::error('Error eliminando imágenes de los lienzos borrados.', ['error' => $e->getMessage()]);
+                }
+                // =========================================================================
+
                 try {
                     if (class_exists(RedisCache::class)) {
                         $redisInstance = new RedisCache();
