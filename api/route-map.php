@@ -1,5 +1,5 @@
 <?php
-
+// api/route-map.php
 use App\Core\System\RateLimitConstants as RL;
 
 return [
@@ -447,6 +447,20 @@ return [
         'controller' => 'App\Api\Controllers\CanvasController',
         'action' => 'delete_template',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_del_tpl', 'max' => 20, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
+    ],
+
+    // ==========================================
+    // NUEVAS RUTAS DE LIVE SHARE
+    // ==========================================
+    'canvases.create_live_share' => [
+        'controller' => 'App\Api\Controllers\CanvasController',
+        'action' => 'create_live_share',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_create_live', 'max' => 10, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
+    ],
+    'canvases.join_live_share' => [
+        'controller' => 'App\Api\Controllers\CanvasController',
+        'action' => 'join_live_share',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_join_live', 'max' => 30, 'time' => RL::TIME_1, 'identifier' => RL::ID_IP]]
     ],
 
     // --- NUEVA RUTA DE TELEMETRÍA (Tracker Frontend) ---

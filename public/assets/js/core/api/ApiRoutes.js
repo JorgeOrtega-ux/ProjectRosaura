@@ -88,7 +88,7 @@ export const ApiRoutes = {
     },
     // --- RUTAS DE LIENZOS ---
     Canvases: {
-        GetPublic: 'canvases.get_public', // <-- NUEVA RUTA AGREGADA (Para el Home)
+        GetPublic: 'canvases.get_public',
         Get: 'canvases.get',
         Create: 'canvases.create',
         Update: 'canvases.update',
@@ -104,7 +104,7 @@ export const ApiRoutes = {
         // --- RUTAS DE REINICIOS PROGRAMADOS Y MANUALES ---
         GetResetSettings: 'canvases.get_reset_settings',
         UpdateResetSettings: 'canvases.update_reset_settings',
-        ResetNow: 'canvases.reset_now', // <--- NUEVA RUTA PARA REINICIO INMEDIATO
+        ResetNow: 'canvases.reset_now',
 
         // --- NUEVA RUTA DE GALERÍA DE SNAPSHOTS ---
         GetSnapshotsGallery: 'canvases.get_snapshots_gallery',
@@ -112,6 +112,10 @@ export const ApiRoutes = {
         // --- NUEVAS RUTAS DE LIBRERÍA DE PLANTILLAS ---
         UploadTemplate: 'canvases.upload_template',
         GetTemplates: 'canvases.get_templates',
-        DeleteTemplate: 'canvases.delete_template'
+        DeleteTemplate: 'canvases.delete_template',
+
+        // --- NUEVAS RUTAS DE MODO EN VIVO (LIVE SHARE) ---
+        CreateLiveShare: 'canvases.create_live_share',
+        JoinLiveShare: 'canvases.join_live_share'
     }
 };

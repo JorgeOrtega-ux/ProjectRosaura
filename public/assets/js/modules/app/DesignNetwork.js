@@ -48,10 +48,204 @@ export const DesignNetwork = {
             else if (data.type === 'canvas_cleared') {
                 this.handleCanvasCleared(data);
             }
+            // --- LISTENERS LIVE SHARE ---
+            else if (data.type === 'live_image_updated') {
+                this.handleLiveImageUpdate(data);
+            }
+            else if (data.type === 'live_session_ended') {
+                this.handleLiveSessionEnded(data);
+            }
+            // ----------------------------
         });
 
         this.wsManager.connect(this.canvasIntId);
     },
+
+    // --- MÉTODOS DE LIVE SHARE ---
+    
+    async startLiveShare() {
+        if (!this.activeTemplateId) {
+            showMessage('Selecciona una plantilla primero', 'warning');
+            return;
+        }
+
+        const btn = document.querySelector('[data-action="startLiveShare"]');
+        if (btn) setButtonLoading(btn);
+
+        try {
+            // Reemplaza esto con tu ruta real en route-map.php
+            const route = ApiRoutes.Canvases?.CreateLiveShare || 'canvas/live-share/create';
+            const tpl = this.templates.find(t => t.id === this.activeTemplateId);
+            
+            const response = await this.api.post(route, { 
+                canvas_id: this.canvasIntId,
+                img_url: tpl.img.src,
+                x: tpl.x,
+                y: tpl.y,
+                w: tpl.w,
+                h: tpl.h,
+                opacity: tpl.opacity || 1
+            });
+
+            if (response.success && response.data?.code) {
+                this.liveShareStatus = 'owner';
+                this.liveShareCode = response.data.code;
+                this.liveTemplateId = this.activeTemplateId;
+                
+                // Entrar a la sala WebSocket
+                if (this.wsManager) {
+                    this.wsManager.send({ type: 'join_live_share', code: this.liveShareCode });
+                }
+
+                // UI
+                if (btn) btn.style.display = 'none';
+                if (this.uiLiveControls) this.uiLiveControls.style.display = 'flex';
+                if (this.uiLiveCode) this.uiLiveCode.textContent = this.liveShareCode;
+                
+                if (this.uiLiveInputX) this.uiLiveInputX.value = tpl.x;
+                if (this.uiLiveInputY) this.uiLiveInputY.value = tpl.y;
+                if (this.uiLiveInputOpacity) this.uiLiveInputOpacity.value = tpl.opacity || 1;
+
+                showMessage(`Transmitiendo plantilla: ${this.liveShareCode}`, 'success');
+            } else {
+                showMessage('Error al generar código en vivo.', 'error');
+            }
+        } catch (error) {
+            showMessage('Error de servidor al iniciar transmisión.', 'error');
+        } finally {
+            if (btn) restoreButton(btn);
+        }
+    },
+
+    stopLiveShare() {
+        if (this.liveShareStatus !== 'owner') return;
+        
+        // Avisar al servidor
+        if (this.wsManager && this.liveShareCode) {
+            this.wsManager.send({ type: 'end_live_share', code: this.liveShareCode });
+        }
+
+        this.liveShareStatus = 'none';
+        this.liveShareCode = null;
+        this.liveTemplateId = null;
+
+        const btn = document.querySelector('[data-action="startLiveShare"]');
+        if (btn) btn.style.display = 'block';
+        if (this.uiLiveControls) this.uiLiveControls.style.display = 'none';
+
+        showMessage('Transmisión detenida.', 'info');
+    },
+
+  async joinLiveImageSession(code) {
+        if (!code) return;
+        
+        const btn = document.querySelector('[data-action="joinLiveShare"]');
+        if (btn) setButtonLoading(btn);
+
+        try {
+            // Usamos la ruta oficial recién registrada
+            const route = ApiRoutes.Canvases?.JoinLiveShare || 'canvases.join_live_share';
+            
+            // CORRECCIÓN AQUÍ: Usar .post y pasar el payload { code: code }
+            const response = await this.api.post(route, { code: code });
+
+            if (response.success && response.data) {
+                this.liveShareStatus = 'spectator';
+                this.liveShareCode = code;
+                
+                const liveId = `live_tpl_${code}`;
+                this.liveTemplateId = liveId;
+
+                let tpl = this.templates.find(t => t.id === liveId);
+                if (!tpl) {
+                    const img = new Image();
+                    img.src = response.data.img_url;
+                    
+                    await new Promise((resolve) => {
+                        img.onload = () => {
+                            this.templates.push({
+                                id: liveId,
+                                img: img,
+                                x: parseInt(response.data.x) || 0,
+                                y: parseInt(response.data.y) || 0,
+                                w: parseInt(response.data.w) || img.width,
+                                h: parseInt(response.data.h) || img.height,
+                                opacity: parseFloat(response.data.opacity) || 1,
+                                locked: true, // Bloqueado para el espectador
+                                url: img.src
+                            });
+                            this.activeTemplateId = liveId;
+                            resolve();
+                        };
+                        img.onerror = resolve; 
+                    });
+                }
+
+                // Entrar a la sala WebSocket
+                if (this.wsManager) {
+                    this.wsManager.send({ type: 'join_live_share', code: this.liveShareCode });
+                }
+
+                showMessage(`Unido a la transmisión: ${code}`, 'success');
+                this.requestRender();
+
+            } else {
+                showMessage(response.message || 'Código inválido o sesión terminada.', 'error');
+            }
+        } catch (error) {
+            console.error('[LiveShare Join Error]:', error);
+            showMessage('Error al unirse a la sesión.', 'error');
+        } finally {
+            if (btn) restoreButton(btn);
+        }
+    },
+    emitLiveImageUpdate() {
+        if (this.liveShareStatus !== 'owner' || !this.liveShareCode || !this.wsManager) return;
+        
+        const tpl = this.templates.find(t => t.id === this.liveTemplateId);
+        if (!tpl) return;
+
+        this.wsManager.send({
+            type: 'update_live_share',
+            code: this.liveShareCode,
+            x: tpl.x,
+            y: tpl.y,
+            w: tpl.w,
+            h: tpl.h,
+            opacity: tpl.opacity || 1
+        });
+    },
+
+    handleLiveImageUpdate(data) {
+        if (this.liveShareStatus === 'spectator' && this.liveShareCode === data.code) {
+            const tpl = this.templates.find(t => t.id === this.liveTemplateId);
+            if (tpl) {
+                // Actualizar suavemente (DesignRender se encargará de pintarlo en el requestRender)
+                tpl.x = data.x;
+                tpl.y = data.y;
+                tpl.w = data.w;
+                tpl.h = data.h;
+                tpl.opacity = data.opacity !== undefined ? data.opacity : 1;
+                this.requestRender();
+            }
+        }
+    },
+
+    handleLiveSessionEnded(data) {
+        if (this.liveShareStatus === 'spectator' && this.liveShareCode === data.code) {
+            showMessage('La sesión en vivo ha sido finalizada por el dueño.', 'info');
+            this.liveShareStatus = 'none';
+            this.liveShareCode = null;
+            
+            // Opcional: Eliminar la plantilla cuando termine
+            this.templates = this.templates.filter(t => t.id !== this.liveTemplateId);
+            this.activeTemplateId = null;
+            this.liveTemplateId = null;
+            
+            this.requestRender();
+        }
+    },
+    // -----------------------------
 
     handleCooldownSync(data) {
         console.log(`[DEBUG DesignNetwork] handleCooldownSync ejecutado. Data entrante:`, data);

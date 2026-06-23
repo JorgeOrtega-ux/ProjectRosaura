@@ -15,9 +15,59 @@ export const DesignInteractions = {
         if (this.fileInput) {
             this.fileInput.addEventListener('change', this.handleFileUploadBound);
         }
+
+        // Vincular inputs del Live Share para actualizar manualmente coordenadas
+        if (this.uiLiveInputX) this.uiLiveInputX.addEventListener('change', this.handleLiveInputBound);
+        if (this.uiLiveInputY) this.uiLiveInputY.addEventListener('change', this.handleLiveInputBound);
+        if (this.uiLiveInputOpacity) this.uiLiveInputOpacity.addEventListener('input', this.handleLiveInputBound);
+    },
+
+    // Maneja los inputs manuales del panel "En Vivo"
+    handleLiveInput(e) {
+        if (this.liveShareStatus !== 'owner' || !this.activeTemplateId) return;
+        const tpl = this.templates.find(t => t.id === this.activeTemplateId);
+        if (!tpl) return;
+
+        if (e.target === this.uiLiveInputX) tpl.x = parseInt(e.target.value) || 0;
+        if (e.target === this.uiLiveInputY) tpl.y = parseInt(e.target.value) || 0;
+        if (e.target === this.uiLiveInputOpacity) {
+            tpl.opacity = parseFloat(e.target.value) || 1;
+            const lbl = document.querySelector('[data-ref="live-opacity-val"]');
+            if (lbl) lbl.textContent = `${Math.round(tpl.opacity * 100)}%`;
+        }
+        
+        this.requestRender();
+        this.emitLiveImageUpdate(); // Se emite la actualización en cuanto cambia el input
     },
 
     handleClick(e) {
+        // --- EVENTOS LIVE SHARE ---
+        const btnStartLive = e.target.closest('[data-action="startLiveShare"]');
+        if (btnStartLive) {
+            e.preventDefault();
+            this.startLiveShare();
+            return;
+        }
+
+        const btnStopLive = e.target.closest('[data-action="stopLiveShare"]');
+        if (btnStopLive) {
+            e.preventDefault();
+            this.stopLiveShare();
+            return;
+        }
+
+        const btnJoinLive = e.target.closest('[data-action="joinLiveShare"]');
+        if (btnJoinLive) {
+            e.preventDefault();
+            if (this.uiLiveJoinCode && this.uiLiveJoinCode.value.trim() !== '') {
+                this.joinLiveImageSession(this.uiLiveJoinCode.value.trim().toUpperCase());
+            } else {
+                showMessage('Ingresa un código válido', 'warning');
+            }
+            return;
+        }
+        // --------------------------
+
         const btnPlayTimelapse = e.target.closest('[data-action="playTimelapse"]');
         if (btnPlayTimelapse) {
             e.preventDefault();
@@ -64,6 +114,11 @@ export const DesignInteractions = {
         const cardTemplate = e.target.closest('[data-action="selectTemplate"]');
         if (cardTemplate && !e.target.closest('.component-template-action-btn')) {
             const id = cardTemplate.getAttribute('data-id');
+            // Bloqueo: Si eres espectador de una sesión en vivo de esta plantilla, no puedes seleccionarla
+            if (this.liveShareStatus === 'spectator' && this.liveTemplateId === id) {
+                showMessage('Esta plantilla está siendo controlada en vivo por su dueño.', 'info');
+                return;
+            }
             this.toggleTemplate(id);
             return;
         }
@@ -157,6 +212,12 @@ export const DesignInteractions = {
         if (exact) {
             const hit = this.checkTemplateHit(exact.x, exact.y);
             if (hit) {
+                // Prevenir mover si somos espectadores en vivo de esta plantilla
+                if (this.liveShareStatus === 'spectator' && this.liveTemplateId === this.activeTemplateId) {
+                    showMessage('Solo el dueño puede mover la imagen en vivo', 'warning');
+                    return;
+                }
+
                 const tpl = this.templates.find(t => t.id === this.activeTemplateId);
                 this.templateInteraction = {
                     type: hit,
@@ -260,6 +321,13 @@ export const DesignInteractions = {
                     tpl.x = this.templateInteraction.origX + this.templateInteraction.origW - newW;
                 }
             }
+            
+            // Actualizar UI de coords en vivo si es el dueño
+            if (this.liveShareStatus === 'owner' && this.activeTemplateId === this.liveTemplateId) {
+                if (this.uiLiveInputX) this.uiLiveInputX.value = tpl.x;
+                if (this.uiLiveInputY) this.uiLiveInputY.value = tpl.y;
+            }
+
             this.requestRender();
             return; 
         }
@@ -292,9 +360,14 @@ export const DesignInteractions = {
             }
             
             if (hit) {
-                if (hit === 'move') this.canvas.style.cursor = 'move';
-                else if (hit === 'resize-tl' || hit === 'resize-br') this.canvas.style.cursor = 'nwse-resize';
-                else if (hit === 'resize-tr' || hit === 'resize-bl') this.canvas.style.cursor = 'nesw-resize';
+                // Ocultar cursor si es espectador de la plantilla
+                if (this.liveShareStatus === 'spectator' && this.liveTemplateId === this.activeTemplateId) {
+                    this.canvas.style.cursor = 'default';
+                } else {
+                    if (hit === 'move') this.canvas.style.cursor = 'move';
+                    else if (hit === 'resize-tl' || hit === 'resize-br') this.canvas.style.cursor = 'nwse-resize';
+                    else if (hit === 'resize-tr' || hit === 'resize-bl') this.canvas.style.cursor = 'nesw-resize';
+                }
                 
                 if (this.hoveredPixel !== null) {
                     this.hoveredPixel = null;
@@ -318,6 +391,12 @@ export const DesignInteractions = {
         if (this.templateInteraction) {
             this.templateInteraction = null;
             this.requestRender();
+            
+            // OPTIMIZACIÓN: Solo emitir el evento cuando termine el drag o resize
+            if (this.liveShareStatus === 'owner' && this.activeTemplateId === this.liveTemplateId) {
+                this.emitLiveImageUpdate();
+            }
+
             return;
         }
 

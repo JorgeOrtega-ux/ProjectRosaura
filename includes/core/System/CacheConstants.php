@@ -35,6 +35,9 @@ class CacheConstants {
     public const PREFIX_CANVAS_NEXT_RESET = 'canvas:next_reset:';
     public const PREFIX_CANVAS_RESET_LOCK = 'canvas:reset_lock:';
     
+    // --- NUEVO: PREFIJO PARA LIVE SHARE ---
+    public const PREFIX_LIVE_SHARE = 'live_share:';
+    
     // Colas de Telemetría
     public const QUEUE_TELEMETRY_API_LATENCY = 'api_latency';
     public const QUEUE_TELEMETRY_PAGEVIEWS   = 'pageviews';

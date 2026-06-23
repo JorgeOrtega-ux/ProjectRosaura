@@ -1,3 +1,4 @@
+# scripts/websocket_server.py
 import asyncio
 import websockets
 import os
@@ -7,6 +8,8 @@ from urllib.parse import urlparse
 import redis.asyncio as redis
 
 ROOMS = {}
+LIVE_ROOMS = {} # Para las sesiones live share: { code: set(websockets) }
+OWNER_CONNS = {} # Mapeo { websocket: code } para limpiar si el dueño se desconecta de golpe
 REDIS_CLIENT = None
 USER_LOCKS = {}
 
@@ -147,6 +150,65 @@ async def handler(websocket):
                     await websocket.send(init_msg)
 
                 # ==========================================
+                # EVENTOS LIVE SHARE (NUEVO)
+                # ==========================================
+                elif data.get("type") == "join_live_share":
+                    code = data.get("code")
+                    if not code: continue
+                    
+                    if code not in LIVE_ROOMS:
+                        LIVE_ROOMS[code] = set()
+                    LIVE_ROOMS[code].add(websocket)
+                    
+                    print(f"[DEBUG LIVE] WS unido a sesión en vivo: {code}. Total: {len(LIVE_ROOMS[code])}")
+                    
+                elif data.get("type") == "update_live_share":
+                    code = data.get("code")
+                    if code and code in LIVE_ROOMS:
+                        # Si es el primero en actualizar, o no está registrado, lo asumimos como dueño
+                        if websocket not in OWNER_CONNS:
+                            OWNER_CONNS[websocket] = code
+                            print(f"[DEBUG LIVE] WS registrado como dueño de la sesión {code}")
+                            
+                        update_msg = json.dumps({
+                            "type": "live_image_updated",
+                            "code": code,
+                            "x": data.get("x"),
+                            "y": data.get("y"),
+                            "w": data.get("w"),
+                            "h": data.get("h"),
+                            "opacity": data.get("opacity")
+                        })
+                        # Re-transmitir a todos en la sala EXCEPTO al dueño (emisor)
+                        tasks = [
+                            asyncio.create_task(client.send(update_msg))
+                            for client in LIVE_ROOMS[code] if client != websocket
+                        ]
+                        if tasks:
+                            await asyncio.gather(*tasks)
+                            
+                elif data.get("type") == "end_live_share":
+                    code = data.get("code")
+                    if code and code in LIVE_ROOMS:
+                        end_msg = json.dumps({
+                            "type": "live_session_ended",
+                            "code": code
+                        })
+                        tasks = [
+                            asyncio.create_task(client.send(end_msg))
+                            for client in LIVE_ROOMS[code] if client != websocket
+                        ]
+                        if tasks:
+                            await asyncio.gather(*tasks)
+                            
+                        # Limpiar sala y base efímera
+                        del LIVE_ROOMS[code]
+                        await r.delete(f"live_share:{code}")
+                        if websocket in OWNER_CONNS:
+                            del OWNER_CONNS[websocket]
+                        print(f"[DEBUG LIVE] Sala {code} destruida intencionalmente por el dueño.")
+
+                # ==========================================
                 # EVENTO PIXEL - INTENTO DE PINTAR
                 # ==========================================
                 elif data.get("type") == "pixel":
@@ -247,6 +309,7 @@ async def handler(websocket):
     except Exception as e:
         print(f"[!] Error inesperado en la conexión: {e}")
     finally:
+        # Desconexión de Salas del Lienzo
         if canvas_id in ROOMS and websocket in ROOMS[canvas_id]:
             ROOMS[canvas_id].remove(websocket)
             print(f"[-] Cliente desconectado de la sala '{canvas_id}'. Total en sala: {len(ROOMS[canvas_id])}")
@@ -254,6 +317,33 @@ async def handler(websocket):
             if len(ROOMS[canvas_id]) == 0:
                 del ROOMS[canvas_id]
                 print(f"[*] Sala '{canvas_id}' eliminada por inactividad.")
+
+        # Desconexión y Limpieza de Salas Live Share
+        for code, clients in list(LIVE_ROOMS.items()):
+            if websocket in clients:
+                clients.remove(websocket)
+                print(f"[-] Cliente desconectado de sesión en vivo '{code}'.")
+                
+                # Si el que se desconecta era el dueño, destruimos la sesión
+                if websocket in OWNER_CONNS and OWNER_CONNS[websocket] == code:
+                    print(f"[*] El dueño de la sesión '{code}' se ha desconectado bruscamente. Finalizando sesión para todos.")
+                    end_msg = json.dumps({"type": "live_session_ended", "code": code})
+                    tasks = [
+                        asyncio.create_task(c.send(end_msg))
+                        for c in clients
+                    ]
+                    if tasks:
+                        await asyncio.gather(*tasks)
+                        
+                    del LIVE_ROOMS[code]
+                    try:
+                        redis_client = await get_redis_client()
+                        await redis_client.delete(f"live_share:{code}")
+                    except Exception as e:
+                        print(f"Error borrando llave live_share de Redis en Finally: {e}")
+                        
+        if websocket in OWNER_CONNS:
+            del OWNER_CONNS[websocket]
 
 async def main():
     host = os.getenv("WS_HOST", "0.0.0.0")

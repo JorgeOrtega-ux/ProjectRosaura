@@ -1,4 +1,5 @@
 <?php
+// config/RedisCache.php
 namespace App\Config;
 
 use Predis\Client;

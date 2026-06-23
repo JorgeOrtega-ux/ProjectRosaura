@@ -80,6 +80,20 @@ class DesignController {
         this.uiCooldownTimer = null;
         this.uiCooldownBadge = null;
 
+        // --- SISTEMA DE LIVE SHARE (NUEVO) ---
+        this.liveShareStatus = 'none'; // 'none' | 'owner' | 'spectator'
+        this.liveShareCode = null;
+        this.liveTemplateId = null;
+        this.uiLiveControls = null;
+        this.uiLiveCode = null;
+        this.uiLiveInputX = null;
+        this.uiLiveInputY = null;
+        this.uiLiveInputOpacity = null;
+        this.uiLiveJoinCode = null;
+        
+        this.handleLiveInputBound = this.handleLiveInput.bind(this);
+        // ------------------------------------
+
         this.handleWheelBound = this.handleWheel.bind(this);
         this.handleMouseDownBound = this.handleMouseDown.bind(this);
         this.handleMouseMoveBound = this.handleMouseMove.bind(this);
@@ -104,6 +118,14 @@ class DesignController {
         this.uiCooldownCounter = document.querySelector('[data-ref="cooldown-counter"]');
         this.uiCooldownTimer = document.querySelector('[data-ref="cooldown-timer"]');
         this.uiCooldownBadge = document.querySelector('[data-ref="cooldown-badge"]');
+
+        // Mapeo UI Modo En Vivo
+        this.uiLiveControls = document.querySelector('[data-ref="live-controls"]');
+        this.uiLiveCode = document.querySelector('[data-ref="live-share-code"]');
+        this.uiLiveInputX = document.querySelector('[data-ref="live-input-x"]');
+        this.uiLiveInputY = document.querySelector('[data-ref="live-input-y"]');
+        this.uiLiveInputOpacity = document.querySelector('[data-ref="live-input-opacity"]');
+        this.uiLiveJoinCode = document.querySelector('[data-ref="live-join-code"]');
 
         if (this.canvas) {
             this.ctx = this.canvas.getContext('2d', { alpha: false });
@@ -186,6 +208,11 @@ class DesignController {
         if (this.fileInput) {
             this.fileInput.removeEventListener('change', this.handleFileUploadBound);
         }
+
+        // Remover listeners de live share
+        if (this.uiLiveInputX) this.uiLiveInputX.removeEventListener('change', this.handleLiveInputBound);
+        if (this.uiLiveInputY) this.uiLiveInputY.removeEventListener('change', this.handleLiveInputBound);
+        if (this.uiLiveInputOpacity) this.uiLiveInputOpacity.removeEventListener('input', this.handleLiveInputBound);
 
         if (this.animationFrameId) {
             cancelAnimationFrame(this.animationFrameId);

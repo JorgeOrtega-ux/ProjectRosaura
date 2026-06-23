@@ -1,5 +1,5 @@
 <?php
-
+// api/controllers/CanvasController.php
 namespace App\Api\Controllers;
 
 use App\Api\Services\CanvasServices;
@@ -504,6 +504,58 @@ class CanvasController extends BaseController {
             $result = $this->canvasServices->deleteTemplate($userId, (int)$templateId);
             return $this->respond($result);
             
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
+    // ==========================================
+    // ENDPOINTS LIVE SHARE (NUEVO)
+    // ==========================================
+
+    public function create_live_share($input) {
+        try {
+            if (!$this->session->isLoggedIn()) {
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized') ?? 'No autorizado.', 'http_code' => 401]);
+            }
+            $userId = $this->session->getActiveAccountId();
+            
+            $canvasId = $input['canvas_id'] ?? null;
+            $imgUrl = $input['img_url'] ?? null;
+            $x = $input['x'] ?? 0;
+            $y = $input['y'] ?? 0;
+            $w = $input['w'] ?? 100;
+            $h = $input['h'] ?? 100;
+            $opacity = $input['opacity'] ?? 1;
+
+            if (!$canvasId || !$imgUrl) {
+                return $this->respond(['success' => false, 'message' => 'Faltan parámetros requeridos para crear la sesión.']);
+            }
+
+            $result = $this->canvasServices->createLiveShare($userId, (int)$canvasId, $imgUrl, (float)$x, (float)$y, (float)$w, (float)$h, (float)$opacity);
+            return $this->respond($result);
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
+    public function join_live_share($input) {
+        try {
+            // Buscamos el parámetro 'code' de la url (el enrutador lo puede mapear como 'id' o 'code')
+            $code = $input['code'] ?? $input['id'] ?? null;
+
+            if (!$code) {
+                // Alternativa por si el router manda la URI completa
+                $uriParts = explode('/', trim($_SERVER['REQUEST_URI'] ?? '', '/'));
+                $code = end($uriParts);
+            }
+
+            if (!$code || strlen($code) < 5) {
+                return $this->respond(['success' => false, 'message' => 'Código de sesión inválido.']);
+            }
+
+            $result = $this->canvasServices->joinLiveShare(strtoupper($code));
+            return $this->respond($result);
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);
         }

@@ -1,5 +1,5 @@
 <?php
-
+// api/services/CanvasServices.php
 namespace App\Api\Services;
 
 use Exception;
@@ -550,9 +550,6 @@ class CanvasServices {
         }
     }
 
-    // ==========================================
-    // REINICIO INMEDIATO (MODIFICADO)
-    // ==========================================
     public function resetCanvasNow(int $userId, int $canvasId): array {
         try {
             $canvas = $this->canvasRepository->getById($canvasId);
@@ -848,10 +845,6 @@ class CanvasServices {
         }
     }
 
-    // ==========================================
-    // LÓGICA DE PLANTILLAS DE USUARIO 
-    // ==========================================
-    
     public function uploadTemplate(int $userId, array $fileInfo): array {
         try {
             if (!isset($fileInfo['error']) || is_array($fileInfo['error']) || $fileInfo['error'] !== UPLOAD_ERR_OK) {
@@ -954,6 +947,84 @@ class CanvasServices {
         } catch (Exception $e) {
             Logger::error('Error deleteTemplate.', ['user_id' => $userId, 'error' => $e->getMessage()]);
             return ['success' => false, 'message' => __('err_database') ?? 'Error interno.'];
+        }
+    }
+
+    // ==========================================
+    // LÓGICA DE LIVE SHARE (NUEVO)
+    // ==========================================
+
+    public function createLiveShare(int $userId, int $canvasId, string $imgUrl, float $x, float $y, float $w, float $h, float $opacity): array {
+        try {
+            // Verificar permisos del usuario en el lienzo
+            $canvas = $this->canvasRepository->getById($canvasId);
+            if (!$canvas) {
+                return ['success' => false, 'message' => 'Lienzo no encontrado.'];
+            }
+            
+            $role = null;
+            if ($canvas['user_id'] !== $userId) {
+                $role = $this->canvasRepository->getMemberRole($canvasId, $userId);
+                if (!in_array($role, ['editor', 'admin'])) {
+                    return ['success' => false, 'message' => 'No tienes permisos para transmitir en este lienzo.'];
+                }
+            }
+
+            // Generar código único corto
+            $code = 'SHR-' . strtoupper(substr(bin2hex(random_bytes(3)), 0, 4));
+
+            $data = [
+                'owner_id' => $userId,
+                'canvas_id' => $canvasId,
+                'img_url' => $imgUrl,
+                'x' => $x,
+                'y' => $y,
+                'w' => $w,
+                'h' => $h,
+                'opacity' => $opacity,
+                'created_at' => time()
+            ];
+
+            if (class_exists(RedisCache::class)) {
+                $redisInstance = new RedisCache();
+                $redis = $redisInstance->getClient();
+                if ($redis) {
+                    $key = CacheConstants::PREFIX_LIVE_SHARE . $code;
+                    // Guardar como JSON string
+                    $redis->set($key, json_encode($data));
+                    // Expiración preventiva (ej. 4 horas) para evitar llenar Redis si el script de Python falla
+                    $redis->expire($key, 14400); 
+
+                    return ['success' => true, 'data' => ['code' => $code]];
+                }
+            }
+
+            return ['success' => false, 'message' => 'El servicio de transmisiones no está disponible.'];
+        } catch (Exception $e) {
+            Logger::error('Error createLiveShare.', ['error' => $e->getMessage()]);
+            return ['success' => false, 'message' => 'Error interno del servidor.'];
+        }
+    }
+
+    public function joinLiveShare(string $code): array {
+        try {
+            if (class_exists(RedisCache::class)) {
+                $redisInstance = new RedisCache();
+                $redis = $redisInstance->getClient();
+                if ($redis) {
+                    $key = CacheConstants::PREFIX_LIVE_SHARE . $code;
+                    $dataRaw = $redis->get($key);
+                    
+                    if ($dataRaw) {
+                        $data = json_decode($dataRaw, true);
+                        return ['success' => true, 'data' => $data];
+                    }
+                }
+            }
+            return ['success' => false, 'message' => 'Sesión no encontrada o ya expiró.'];
+        } catch (Exception $e) {
+            Logger::error('Error joinLiveShare.', ['error' => $e->getMessage()]);
+            return ['success' => false, 'message' => 'Error interno del servidor.'];
         }
     }
 }
