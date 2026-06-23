@@ -88,6 +88,9 @@ export const DesignNetwork = {
         const overlay = document.querySelector('[data-ref="reset-locked-overlay"]');
         if (overlay) overlay.classList.add('disabled');
         
+        // Disparar la alerta visual en vivo para todos los clientes en la sesión
+        showMessage('El lienzo ha sido limpiado en este momento.', 'info');
+        
         if (data.next_reset_at) {
             this.nextResetAt = data.next_reset_at;
             this.startResetTimer();

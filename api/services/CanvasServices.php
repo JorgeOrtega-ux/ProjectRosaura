@@ -298,9 +298,6 @@ class CanvasServices {
             $deleted = $this->canvasRepository->deleteCanvasByUuid($uuid, $userId);
 
             if ($deleted) {
-                // =========================================================================
-                // NUEVO: ELIMINAR LA FOTO CUANDO EL USUARIO BORRA SU LIENZO MANUALMENTE
-                // =========================================================================
                 try {
                     $physicalPath = dirname(__DIR__, 2) . '/storage/public/snapshots/canvas_' . $canvas['id'] . '.png';
                     if (file_exists($physicalPath)) {
@@ -309,7 +306,6 @@ class CanvasServices {
                 } catch (Exception $e) {
                     Logger::error('Error eliminando la imagen física del lienzo eliminado.', ['canvas_id' => $canvas['id'], 'error' => $e->getMessage()]);
                 }
-                // =========================================================================
 
                 try {
                     if (class_exists(RedisCache::class)) {
@@ -437,9 +433,6 @@ class CanvasServices {
             $deleted = $this->canvasRepository->deleteCanvases($canvasIds, $userId);
 
             if ($deleted) {
-                // =========================================================================
-                // NUEVO: ELIMINAR LAS FOTOS FÍSICAS AL BORRAR LIENZOS EN MASA
-                // =========================================================================
                 try {
                     foreach ($canvasIds as $id) {
                         $physicalPath = dirname(__DIR__, 2) . '/storage/public/snapshots/canvas_' . $id . '.png';
@@ -450,7 +443,6 @@ class CanvasServices {
                 } catch (Exception $e) {
                     Logger::error('Error eliminando imágenes de los lienzos borrados.', ['error' => $e->getMessage()]);
                 }
-                // =========================================================================
 
                 try {
                     if (class_exists(RedisCache::class)) {
@@ -559,7 +551,7 @@ class CanvasServices {
     }
 
     // ==========================================
-    // NUEVA FUNCIÓN: REINICIO INMEDIATO
+    // REINICIO INMEDIATO (MODIFICADO)
     // ==========================================
     public function resetCanvasNow(int $userId, int $canvasId): array {
         try {
@@ -577,44 +569,27 @@ class CanvasServices {
                 }
             }
 
-            // Aquí limpiamos la data persistente de la BD si existiera el método
-            if (method_exists($this->canvasRepository, 'clearCanvasData')) {
-                $this->canvasRepository->clearCanvasData($canvasId);
-            }
-
-            // Limpiar el estado de los pixeles en Redis a color base (Puro blanco)
-            $size = (int)$canvas['size'];
-            $totalPixels = $size * $size;
-            $emptyState = str_repeat(chr(255), $totalPixels);
-
+            // En lugar de borrar de golpe, enviamos la orden a la cola de Redis para que el Worker de Python 
+            // realice el flujo completo (Bloquear -> Tomar Snapshot -> Guardar Timelapse -> Borrar Lienzo)
             try {
                 if (class_exists(RedisCache::class)) {
                     $redisInstance = new RedisCache();
                     $redis = $redisInstance->getClient();
                     
                     if ($redis) {
-                        $redisKey = "canvas:{$canvasId}:state";
-                        $redis->set($redisKey, $emptyState);
-
-                        // Publicar evento al canal de WebSockets para que el frontend reaccione
-                        $eventData = json_encode([
-                            'type' => 'canvas_cleared',
-                            'canvas_id' => $canvasId,
-                            'timestamp' => time()
-                        ]);
-                        
-                        // Enviamos broadcast por canales relevantes (usualmente canvas_events o dedicado)
-                        $redis->publish("canvas_events", $eventData);
+                        $redis->sAdd("canvases:force_resets", $canvasId);
                     }
                 }
             } catch (Exception $e) {
-                Logger::error('Error limpiando Redis durante el reset_now.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
+                Logger::error('Error insertando orden de reseteo forzado en Redis.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
             }
 
-            return ['success' => true, 'message' => 'El lienzo ha sido limpiado inmediatamente.'];
+            // Retornamos éxito inmediatamente. El worker ya se está encargando en background.
+            return ['success' => true, 'message' => 'Orden de reinicio enviada. El lienzo se congelará para guardar el progreso y luego se limpiará automáticamente.'];
+            
         } catch (Exception $e) {
             Logger::error('Error in resetCanvasNow.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
-            return ['success' => false, 'message' => __('err_database') ?? 'Error interno al reiniciar el lienzo.'];
+            return ['success' => false, 'message' => __('err_database') ?? 'Error interno al procesar la orden de reinicio.'];
         }
     }
 
@@ -708,7 +683,6 @@ class CanvasServices {
                 return ['success' => false, 'message' => __('err_unauthorized') ?? 'No tienes permisos para ver el timelapse de este lienzo.', 'http_code' => 403];
             }
 
-            // APUNTAMOS AL DIRECTORIO PRIVADO CORRECTO
             $baseDir = dirname(__DIR__, 2) . '/storage/private/canvases/timelapses';
             $filePath = $baseDir . '/canvas_' . $canvasId . '.jsonl';
 
@@ -724,9 +698,6 @@ class CanvasServices {
         }
     }
 
-    // ==========================================
-    // [MODIFICADO] SE AGREGA HAS_TIMELAPSE A LOS DETALLES Y VALIDA ROL
-    // ==========================================
     public function getSnapshotDetail(string $snapshotId, ?int $userId = null): array {
         try {
             $db = new DatabaseManager();
@@ -779,9 +750,6 @@ class CanvasServices {
         }
     }
 
-    // ==========================================
-    // [NUEVO] SERVICIO PARA DESCARGA DE TIMELAPSE HISTÓRICO Y VALIDA ROL
-    // ==========================================
     public function prepareSnapshotTimelapseDownload(?int $userId, string $snapshotId): array {
         try {
             $db = new DatabaseManager();
