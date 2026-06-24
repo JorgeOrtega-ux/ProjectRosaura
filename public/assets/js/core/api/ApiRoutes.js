@@ -57,14 +57,12 @@ export const ApiRoutes = {
         UpdatePreference: 'admin.update_preference',
         UpdateRole: 'admin.update_role',
         
-        // --- GESTIÓN DE ESTADO ---
         UpdateSuspension: 'admin.update_suspension', 
         DeleteUsers: 'admin.delete_users', 
         
         GetModerationKardex: 'admin.get_moderation_kardex',
         AddAdminNote: 'admin.add_admin_note',
         
-        // --- RUTAS DE GESTIÓN DE ROLES Y PERMISOS ---
         GetRoles: 'admin.get_roles',
         CreateRole: 'admin.create_role',
         EditRole: 'admin.edit_role',
@@ -76,7 +74,6 @@ export const ApiRoutes = {
         GetServerConfig: 'admin.get_server_config',
         UpdateServerConfig: 'admin.update_server_config',
         
-        // --- RUTAS DE MANTENIMIENTO DEL SERVIDOR ---
         MaintenanceFlushSessions: 'admin.maintenance_flush_sessions',
         MaintenanceClearCache: 'admin.maintenance_clear_cache',
         MaintenanceResetRateLimits: 'admin.maintenance_reset_rate_limits',
@@ -86,7 +83,6 @@ export const ApiRoutes = {
         RestoreBackup: 'admin.restore_backup',
         ReadLogs: 'admin.read_logs'
     },
-    // --- RUTAS DE LIENZOS ---
     Canvases: {
         GetPublic: 'canvases.get_public',
         Get: 'canvases.get',
@@ -95,27 +91,28 @@ export const ApiRoutes = {
         Delete: 'canvases.delete',
         Leave: 'canvases.leave', 
         
-        // --- RUTAS DE APROBACIÓN DE ACCESOS ---
         RequestAccess: 'canvases.request_access',
         ApproveRequest: 'canvases.approve_request',
         RejectRequest: 'canvases.reject_request',
         GetPendingRequests: 'canvases.get_pending_requests',
         
-        // --- RUTAS DE REINICIOS PROGRAMADOS Y MANUALES ---
         GetResetSettings: 'canvases.get_reset_settings',
         UpdateResetSettings: 'canvases.update_reset_settings',
         ResetNow: 'canvases.reset_now',
 
-        // --- NUEVA RUTA DE GALERÍA DE SNAPSHOTS ---
         GetSnapshotsGallery: 'canvases.get_snapshots_gallery',
 
-        // --- NUEVAS RUTAS DE LIBRERÍA DE PLANTILLAS ---
         UploadTemplate: 'canvases.upload_template',
         GetTemplates: 'canvases.get_templates',
         DeleteTemplate: 'canvases.delete_template',
 
-        // --- NUEVAS RUTAS DE MODO EN VIVO (LIVE SHARE) ---
         CreateLiveShare: 'canvases.create_live_share',
         JoinLiveShare: 'canvases.join_live_share'
+    },
+    // --- NUEVAS RUTAS DE UBICACIONES ---
+    Locations: {
+        GetCountries: 'locations.get_countries',
+        GetStates: 'locations.get_states',
+        GetCities: 'locations.get_cities'
     }
 };

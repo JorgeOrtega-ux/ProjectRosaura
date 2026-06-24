@@ -37,6 +37,10 @@ class CacheConstants {
     
     // --- NUEVO: PREFIJO PARA LIVE SHARE ---
     public const PREFIX_LIVE_SHARE = 'live_share:';
+
+    // --- NUEVO: PREFIJOS PARA LIENZOS OFICIALES Y UBICACIONES ---
+    public const KEY_OFFICIAL_CANVASES = 'canvases:official_list';
+    public const PREFIX_LOCATIONS = 'locations:';
     
     // Colas de Telemetría
     public const QUEUE_TELEMETRY_API_LATENCY = 'api_latency';

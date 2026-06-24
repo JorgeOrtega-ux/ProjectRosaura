@@ -3,16 +3,18 @@
 import { ApiRoutes } from '../../core/api/ApiRoutes.js';
 import { ApiService } from '../../core/api/ApiServices.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../core/utils/uiUtils.js';
+import { LocationSelectors } from './LocationSelectors.js';
 
 class CanvasesManageController {
     constructor() {
         this.api = new ApiService();
         this.selectedCanvasIds = new Set();
-        this.selectedCanvasUuid = null; // Guardamos el UUID seleccionado
+        this.selectedCanvasUuid = null;
         this.basePath = window.AppBasePath || '';
         
         this.abortController = null;
         this.isInitialized = false; 
+        this.locationSelectors = null;
         
         this.handleGlobalClickBound = this.handleGlobalClick.bind(this);
         this.handlePaginationClickBound = this.handlePaginationClick.bind(this);
@@ -26,6 +28,8 @@ class CanvasesManageController {
         this.abortController = new AbortController();
         this.bindEvents();
         this.resetViewState();
+
+        this.checkAdminPermissions();
     }
 
     destroy() {
@@ -34,6 +38,12 @@ class CanvasesManageController {
         document.removeEventListener('click', this.handleGlobalClickBound);
         document.removeEventListener('input', this.handleGlobalInputBound);
         window.removeEventListener('viewLoaded', this.handleViewLoadedBound);
+        
+        if (this.locationSelectors) {
+            this.locationSelectors.destroy();
+            this.locationSelectors = null;
+        }
+
         this.selectedCanvasIds.clear();
         this.selectedCanvasUuid = null;
         this.isInitialized = false;
@@ -44,6 +54,34 @@ class CanvasesManageController {
         document.addEventListener('click', this.handleGlobalClickBound);
         document.addEventListener('input', this.handleGlobalInputBound);
         window.addEventListener('viewLoaded', this.handleViewLoadedBound);
+    }
+
+    // Método nuevo para condicionar la vista de creación
+    checkAdminPermissions() {
+        // En Rosaura, usualmente la información de permisos inyectada en el DOM o variables globales
+        let hasPerm = false;
+        if (window.APP_CONFIG && window.APP_CONFIG.permissions) {
+            hasPerm = window.APP_CONFIG.permissions.includes('canvases.manage_official') || window.APP_CONFIG.permissions.includes('canvases.create_official');
+        }
+
+        const scopeSection = document.querySelector('[data-ref="scope-section"]');
+        const scopeDivider = document.querySelector('[data-ref="scope-divider"]');
+
+        if (scopeSection) {
+            if (hasPerm) {
+                scopeSection.style.display = 'flex';
+                scopeSection.classList.remove('disabled');
+                if (scopeDivider) scopeDivider.style.display = 'block';
+
+                // Inicializar selectores dinámicos
+                this.locationSelectors = new LocationSelectors();
+                this.locationSelectors.init();
+            } else {
+                scopeSection.style.display = 'none';
+                scopeSection.classList.add('disabled');
+                if (scopeDivider) scopeDivider.style.display = 'none';
+            }
+        }
     }
 
     handlePaginationClick(e) {
@@ -106,6 +144,7 @@ class CanvasesManageController {
     handleViewLoaded(e) {
         if (e.detail.url.includes('/canvases/manage')) {
             this.resetViewState();
+            this.checkAdminPermissions();
         }
     }
 

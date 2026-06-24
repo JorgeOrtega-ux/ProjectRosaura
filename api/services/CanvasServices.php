@@ -23,19 +23,16 @@ class CanvasServices {
         $this->userRepository = $userRepository;
     }
 
-    /**
-     * Extrae dinámicamente las paletas válidas desde la Fuente Única de la Verdad (JSON).
-     */
     private function getValidPalettes(): array {
         $path = dirname(__DIR__, 2) . '/public/assets/data/palettes.json';
         if (file_exists($path)) {
             $json = file_get_contents($path);
             $data = json_decode($json, true);
             if (is_array($data)) {
-                return array_keys($data); // Retorna ['default', 'neon', 'pastel', ...]
+                return array_keys($data); 
             }
         }
-        return ['default']; // Fallback de emergencia
+        return ['default']; 
     }
 
     // ==========================================
@@ -48,13 +45,9 @@ class CanvasServices {
             
             $formattedCanvases = array_map(function($canvas) use ($currentUserId) {
                 // Lógica de negocio: Determinar si el usuario actual es el dueño
-                $canvas['is_owner'] = ($canvas['user_id'] === $currentUserId);
+                $canvas['is_owner'] = ($canvas['owner_id'] === $currentUserId && $canvas['owner_id'] !== null);
                 
-                // Lógica de Server-Side para determinar la imagen
-                // RUTA VIRTUAL (Para el cliente web)
                 $snapshotPath = "public/storage/snapshots/canvas_" . $canvas['id'] . ".png";
-                
-                // RUTA FÍSICA (Para que PHP verifique la existencia del archivo en la nueva estructura)
                 $physicalPath = dirname(__DIR__, 2) . '/storage/public/snapshots/canvas_' . $canvas['id'] . '.png';
                 $snapshotUrl = null;
                 
@@ -63,9 +56,7 @@ class CanvasServices {
                     $snapshotUrl = "/" . $snapshotPath . "?v=" . $timestamp;
                 }
                 
-                // Sobrescribimos o asignamos la url final generada
                 $canvas['snapshot_url'] = $snapshotUrl;
-                
                 return $canvas;
             }, $canvases);
             
@@ -76,7 +67,7 @@ class CanvasServices {
         }
     }
 
-    public function getCanvas(?int $userId, int $canvasId): array {
+    public function getCanvas(?int $userId, int $canvasId, bool $canManageOfficial = false): array {
         try {
             $canvas = $this->canvasRepository->getById($canvasId);
             
@@ -89,11 +80,14 @@ class CanvasServices {
                 $role = $this->canvasRepository->getMemberRole($canvasId, $userId);
             }
             
-            if ($canvas['privacy'] === DB::PRIVACY_PRIVATE && !$role && $canvas['user_id'] !== $userId) {
+            // Lógica de dueño compartido o dueño directo
+            $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+
+            if ($canvas['privacy'] === DB::PRIVACY_PRIVATE && !$role && !$isOwner) {
                 return ['success' => false, 'message' => __('err_unauthorized') ?? 'No tienes permisos para ver este lienzo.'];
             }
             
-            if ($userId !== null && $canvas['user_id'] === $userId) {
+            if ($isOwner) {
                 $canvas['role'] = 'admin'; 
             } else {
                 $canvas['role'] = $role ?: 'spectator'; 
@@ -104,17 +98,13 @@ class CanvasServices {
             $canvas['height'] = $canvas['size'];
             $canvas['requires_approval'] = (bool)$canvas['requires_approval'];
 
-            // Extraer info de reseteo si aplica
             $resetSettings = $this->canvasRepository->getResetSettings($canvasId);
             if ($resetSettings && $resetSettings['is_active']) {
-                $canvas['next_reset_at'] = $resetSettings['next_reset_at']; // Formato UTC
+                $canvas['next_reset_at'] = $resetSettings['next_reset_at'];
             } else {
                 $canvas['next_reset_at'] = null;
             }
 
-            // ==========================================
-            // CARGAR ESTADO DEL LIENZO (REDIS -> MYSQL)
-            // ==========================================
             $redisKey = "canvas:{$canvasId}:state";
             $stateRaw = null;
             $redis = null;
@@ -124,7 +114,6 @@ class CanvasServices {
                     $redisInstance = new RedisCache();
                     $redis = $redisInstance->getClient();
                     
-                    // Sincronizar configuraciones de cooldown en caché para el Python
                     if ($redis) {
                         $redis->hMSet("canvas:{$canvasId}:config", [
                             'cooldown_batch' => $canvas['cooldown_pixels_batch'] ?? 5,
@@ -175,11 +164,39 @@ class CanvasServices {
         }
     }
 
-    public function createCanvas(int $userId, string $name, ?string $description, string $privacy, bool $requiresApproval = false, string $size = '64', int $limit = 10, string $paletteId = 'default', int $cooldownBatch = 5, int $cooldownSeconds = 10): array {
+    public function createCanvas(
+        int $userId, 
+        string $name, 
+        ?string $description, 
+        string $privacy, 
+        bool $requiresApproval = false, 
+        string $size = '64', 
+        int $limit = 10, 
+        string $paletteId = 'default', 
+        int $cooldownBatch = 5, 
+        int $cooldownSeconds = 10,
+        string $scopeType = 'personal',
+        ?string $scopeRef1 = null,
+        ?string $scopeRef2 = null,
+        ?string $scopeRef3 = null,
+        bool $canManageOfficial = false
+    ): array {
         try {
+            // Validar alcance oficial y permisos
+            if ($scopeType !== 'personal' && !$canManageOfficial) {
+                return ['success' => false, 'message' => 'No tienes permisos para crear lienzos oficiales.'];
+            }
+
+            // Validar colisiones lógicas en base de datos para prevenir duplicados oficiales
+            if ($scopeType !== 'personal') {
+                $hash = md5($scopeType . '_' . ($scopeRef1 ?? '') . '_' . ($scopeRef2 ?? '') . '_' . ($scopeRef3 ?? ''));
+                $existing = $this->canvasRepository->getByScopeHash($hash);
+                if ($existing) {
+                    return ['success' => false, 'message' => 'Ya existe un lienzo oficial para esta ubicación u organización.', 'http_code' => 409];
+                }
+            }
+
             $uuid = Utils::generateUUID();
-            
-            // Validación dinámica desde JSON
             $validPalettes = $this->getValidPalettes();
             $paletteId = in_array($paletteId, $validPalettes) ? $paletteId : 'default';
 
@@ -188,7 +205,7 @@ class CanvasServices {
 
             $canvasData = [
                 'uuid'                  => $uuid,
-                'user_id'               => $userId,
+                'owner_id'              => ($scopeType === 'personal') ? $userId : null,
                 'name'                  => trim($name),
                 'description'           => $description ? trim($description) : null,
                 'privacy'               => $privacy,
@@ -197,13 +214,20 @@ class CanvasServices {
                 'palette_id'            => $paletteId,
                 'max_participants'      => $limit,
                 'cooldown_pixels_batch' => max(1, $cooldownBatch),
-                'cooldown_seconds'      => max(0, $cooldownSeconds)
+                'cooldown_seconds'      => max(0, $cooldownSeconds),
+                'scope_type'            => $scopeType,
+                'scope_ref_1'           => $scopeRef1,
+                'scope_ref_2'           => $scopeRef2,
+                'scope_ref_3'           => $scopeRef3
             ];
 
             $canvasId = $this->canvasRepository->create($canvasData);
-            $this->canvasRepository->addMember($canvasId, $userId, 'admin');
 
-            // Sincronizar configuraciones en Redis inmediatamente para el script de Python
+            // Añadir al creador como admin (solo en personales, los oficiales se gestionan por RBAC dinámico)
+            if ($scopeType === 'personal') {
+                $this->canvasRepository->addMember($canvasId, $userId, 'admin');
+            }
+
             try {
                 if (class_exists(RedisCache::class)) {
                     $redis = (new RedisCache())->getClient();
@@ -212,6 +236,11 @@ class CanvasServices {
                             'cooldown_batch' => $canvasData['cooldown_pixels_batch'],
                             'cooldown_seconds' => $canvasData['cooldown_seconds']
                         ]);
+
+                        // Limpiar caché de lista de lienzos oficiales si aplica
+                        if ($scopeType !== 'personal') {
+                            $redis->del(CacheConstants::KEY_OFFICIAL_CANVASES);
+                        }
                     }
                 }
             } catch (Exception $e) {
@@ -228,11 +257,16 @@ class CanvasServices {
         }
     }
 
-    public function updateCanvas(int $userId, int $canvasId, array $data): array {
+    public function updateCanvas(int $userId, int $canvasId, array $data, bool $canManageOfficial = false): array {
         try {
-            $canvas = $this->canvasRepository->getByIdAndUser($canvasId, $userId);
+            $canvas = $this->canvasRepository->getById($canvasId);
             if (!$canvas) {
-                return ['success' => false, 'message' => __('err_canvas_not_found') ?? 'Lienzo no encontrado o sin permisos.'];
+                return ['success' => false, 'message' => __('err_canvas_not_found') ?? 'Lienzo no encontrado.'];
+            }
+
+            $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            if (!$isOwner) {
+                return ['success' => false, 'message' => __('err_unauthorized') ?? 'No tienes permisos para editar este lienzo.'];
             }
 
             if (empty(trim($data['name']))) {
@@ -244,19 +278,16 @@ class CanvasServices {
                 $data['privacy'] = DB::PRIVACY_PRIVATE;
             }
 
-            // Validación dinámica desde JSON
             $validPalettes = $this->getValidPalettes();
             if (!isset($data['palette_id']) || !in_array($data['palette_id'], $validPalettes)) {
                 $data['palette_id'] = $canvas['palette_id'] ?? 'default';
             }
 
             $data['requires_approval'] = isset($data['requires_approval']) && $data['requires_approval'] ? 1 : 0;
-            
-            // Asignar fallbacks si no se envían
             $data['cooldown_pixels_batch'] = isset($data['cooldown_pixels_batch']) ? max(1, (int)$data['cooldown_pixels_batch']) : ($canvas['cooldown_pixels_batch'] ?? 5);
             $data['cooldown_seconds'] = isset($data['cooldown_seconds']) ? max(0, (int)$data['cooldown_seconds']) : ($canvas['cooldown_seconds'] ?? 10);
 
-            $updated = $this->canvasRepository->updateCanvasData($canvasId, $userId, $data);
+            $updated = $this->canvasRepository->updateCanvasData($canvasId, $data);
 
             if ($updated) {
                 try {
@@ -267,6 +298,10 @@ class CanvasServices {
                                 'cooldown_batch' => $data['cooldown_pixels_batch'],
                                 'cooldown_seconds' => $data['cooldown_seconds']
                             ]);
+
+                            if ($canvas['owner_id'] === null) {
+                                $redis->del(CacheConstants::KEY_OFFICIAL_CANVASES);
+                            }
                         }
                     }
                 } catch (Exception $e) { }
@@ -285,17 +320,19 @@ class CanvasServices {
         }
     }
 
-    public function deleteSingleCanvas(int $userId, string $uuid): array {
+    public function deleteSingleCanvas(int $userId, string $uuid, bool $canManageOfficial = false): array {
         try {
             $canvas = $this->canvasRepository->getCanvasByUuid($uuid);
             if (!$canvas) {
                 return ['success' => false, 'message' => __('err_canvas_not_found') ?? 'Lienzo no encontrado.'];
             }
-            if ($canvas['user_id'] !== $userId) {
-                return ['success' => false, 'message' => __('err_unauthorized') ?? 'Solo el dueño puede eliminar este lienzo.'];
+            
+            $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            if (!$isOwner) {
+                return ['success' => false, 'message' => __('err_unauthorized') ?? 'Solo el dueño (o un administrador en lienzos oficiales) puede eliminar este lienzo.'];
             }
 
-            $deleted = $this->canvasRepository->deleteCanvasByUuid($uuid, $userId);
+            $deleted = $this->canvasRepository->deleteCanvasByUuid($uuid);
 
             if ($deleted) {
                 try {
@@ -315,6 +352,10 @@ class CanvasServices {
                             $redis->del("canvas:{$canvas['id']}:state");
                             $redis->del("canvas:{$canvas['id']}:config");
                             $redis->del(CacheConstants::PREFIX_CANVAS_NEXT_RESET . $canvas['id']);
+                            
+                            if ($canvas['owner_id'] === null) {
+                                $redis->del(CacheConstants::KEY_OFFICIAL_CANVASES);
+                            }
                         }
                     }
                 } catch (Exception $e) {}
@@ -336,12 +377,10 @@ class CanvasServices {
                 return ['success' => false, 'message' => __('err_canvas_not_found') ?? 'Lienzo no encontrado.'];
             }
             
-            // El dueño no puede salir, solo puede eliminar el lienzo o transferirlo
-            if ($canvas['user_id'] === $userId) {
-                return ['success' => false, 'message' => 'Como dueño, no puedes salir del lienzo. Debes eliminarlo.'];
+            if ($canvas['owner_id'] === $userId) {
+                return ['success' => false, 'message' => 'Como dueño, no puedes salir del lienzo personal. Debes eliminarlo.'];
             }
 
-            // Verifica si el usuario realmente es miembro (tiene un registro en la tabla pivote)
             $role = $this->canvasRepository->getMemberRole($canvas['id'], $userId);
             if (!$role) {
                 return ['success' => false, 'message' => 'No eres miembro de este lienzo.'];
@@ -359,19 +398,20 @@ class CanvasServices {
         }
     }
 
-    public function changeMemberRole(int $requesterId, int $canvasId, int $targetUserId, string $newRole): array {
+    public function changeMemberRole(int $requesterId, int $canvasId, int $targetUserId, string $newRole, bool $canManageOfficial = false): array {
         try {
             $canvas = $this->canvasRepository->getById($canvasId);
             if (!$canvas) return ['success' => false, 'message' => __('err_canvas_not_found') ?? 'Lienzo no encontrado.'];
 
             $requesterRole = $this->canvasRepository->getMemberRole($canvasId, $requesterId);
-            if ($canvas['user_id'] === $requesterId) $requesterRole = 'admin';
+            $isOwner = ($canvas['owner_id'] === $requesterId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            if ($isOwner) $requesterRole = 'admin';
 
             if ($requesterRole !== 'admin') {
                 return ['success' => false, 'message' => __('err_unauthorized') ?? 'No tienes permisos de administrador en este lienzo.'];
             }
 
-            if ($canvas['user_id'] === $targetUserId) {
+            if ($canvas['owner_id'] === $targetUserId) {
                 return ['success' => false, 'message' => 'No puedes cambiar el rol del creador original del lienzo.'];
             }
 
@@ -390,24 +430,25 @@ class CanvasServices {
         }
     }
 
-    public function removeMember(int $requesterId, int $canvasId, int $targetUserId): array {
+    public function removeMember(int $requesterId, int $canvasId, int $targetUserId, bool $canManageOfficial = false): array {
         try {
             $canvas = $this->canvasRepository->getById($canvasId);
             if (!$canvas) return ['success' => false, 'message' => __('err_canvas_not_found') ?? 'Lienzo no encontrado.'];
 
             $requesterRole = $this->canvasRepository->getMemberRole($canvasId, $requesterId);
-            if ($canvas['user_id'] === $requesterId) $requesterRole = 'admin';
+            $isOwner = ($canvas['owner_id'] === $requesterId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            if ($isOwner) $requesterRole = 'admin';
 
             if ($requesterRole !== 'admin') {
                 return ['success' => false, 'message' => __('err_unauthorized') ?? 'No tienes permisos de administrador en este lienzo.'];
             }
 
-            if ($canvas['user_id'] === $targetUserId) {
+            if ($canvas['owner_id'] === $targetUserId) {
                 return ['success' => false, 'message' => 'No puedes expulsar al creador original del lienzo.'];
             }
 
             $removed = $this->canvasRepository->removeMember($canvasId, $targetUserId);
-            if ($removed) return ['success true', 'message' => 'Miembro expulsado correctamente.'];
+            if ($removed) return ['success' => true, 'message' => 'Miembro expulsado correctamente.'];
             
             return ['success' => false, 'message' => 'No se pudo expulsar al miembro o ya no pertenece al lienzo.'];
         } catch (Exception $e) {
@@ -430,6 +471,8 @@ class CanvasServices {
                 return ['success' => false, 'message' => __('err_invalid_password') ?? 'Contraseña incorrecta.'];
             }
 
+            // Nota: Este método elimina directamente donde owner_id = $userId. 
+            // Para eliminar masivamente lienzos oficiales se requerirá otro endpoint o lógica.
             $deleted = $this->canvasRepository->deleteCanvases($canvasIds, $userId);
 
             if ($deleted) {
@@ -468,10 +511,12 @@ class CanvasServices {
         }
     }
 
-    public function getResetSettings(int $userId, int $canvasId): array {
+    public function getResetSettings(int $userId, int $canvasId, bool $canManageOfficial = false): array {
         try {
-            $canvas = $this->canvasRepository->getByIdAndUser($canvasId, $userId);
-            if (!$canvas) {
+            $canvas = $this->canvasRepository->getById($canvasId);
+            $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            
+            if (!$canvas || !$isOwner) {
                 return ['success' => false, 'message' => __('err_unauthorized') ?? 'No tienes permisos para ver la configuración de este lienzo.'];
             }
 
@@ -495,10 +540,12 @@ class CanvasServices {
         }
     }
 
-    public function updateResetSettings(int $userId, int $canvasId, array $data): array {
+    public function updateResetSettings(int $userId, int $canvasId, array $data, bool $canManageOfficial = false): array {
         try {
-            $canvas = $this->canvasRepository->getByIdAndUser($canvasId, $userId);
-            if (!$canvas) {
+            $canvas = $this->canvasRepository->getById($canvasId);
+            $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+
+            if (!$canvas || !$isOwner) {
                 return ['success' => false, 'message' => __('err_unauthorized') ?? 'No tienes permisos para modificar este lienzo.'];
             }
 
@@ -550,24 +597,23 @@ class CanvasServices {
         }
     }
 
-    public function resetCanvasNow(int $userId, int $canvasId): array {
+    public function resetCanvasNow(int $userId, int $canvasId, bool $canManageOfficial = false): array {
         try {
             $canvas = $this->canvasRepository->getById($canvasId);
             if (!$canvas) {
                 return ['success' => false, 'message' => __('err_canvas_not_found') ?? 'Lienzo no encontrado.'];
             }
 
-            // Validar permisos (dueño o admin)
             $role = null;
-            if ($canvas['user_id'] !== $userId) {
+            $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+
+            if (!$isOwner) {
                 $role = $this->canvasRepository->getMemberRole($canvasId, $userId);
                 if ($role !== 'admin') {
                     return ['success' => false, 'message' => __('err_unauthorized') ?? 'No tienes permisos para reiniciar este lienzo.'];
                 }
             }
 
-            // En lugar de borrar de golpe, enviamos la orden a la cola de Redis para que el Worker de Python 
-            // realice el flujo completo (Bloquear -> Tomar Snapshot -> Guardar Timelapse -> Borrar Lienzo)
             try {
                 if (class_exists(RedisCache::class)) {
                     $redisInstance = new RedisCache();
@@ -581,7 +627,6 @@ class CanvasServices {
                 Logger::error('Error insertando orden de reseteo forzado en Redis.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
             }
 
-            // Retornamos éxito inmediatamente. El worker ya se está encargando en background.
             return ['success' => true, 'message' => 'Orden de reinicio enviada. El lienzo se congelará para guardar el progreso y luego se limpiará automáticamente.'];
             
         } catch (Exception $e) {
@@ -619,13 +664,14 @@ class CanvasServices {
         }
     }
 
-    public function approveRequest(int $ownerId, int $requestId): array {
+    public function approveRequest(int $ownerId, int $requestId, bool $canManageOfficial = false): array {
         try {
             $request = $this->canvasRepository->getRequestById($requestId);
             if (!$request) return ['success' => false, 'message' => 'Solicitud no encontrada.'];
 
-            $canvas = $this->canvasRepository->getByIdAndUser($request['canvas_id'], $ownerId);
-            if (!$canvas) return ['success' => false, 'message' => __('err_unauthorized')];
+            $canvas = $this->canvasRepository->getById($request['canvas_id']);
+            $isOwner = ($canvas['owner_id'] === $ownerId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            if (!$canvas || !$isOwner) return ['success' => false, 'message' => __('err_unauthorized')];
 
             $this->canvasRepository->updateRequestStatus($requestId, 'approved');
             $this->canvasRepository->addMember($request['canvas_id'], $request['user_id'], 'editor');
@@ -636,13 +682,14 @@ class CanvasServices {
         }
     }
 
-    public function rejectRequest(int $ownerId, int $requestId): array {
+    public function rejectRequest(int $ownerId, int $requestId, bool $canManageOfficial = false): array {
         try {
             $request = $this->canvasRepository->getRequestById($requestId);
             if (!$request) return ['success' => false, 'message' => 'Solicitud no encontrada.'];
 
-            $canvas = $this->canvasRepository->getByIdAndUser($request['canvas_id'], $ownerId);
-            if (!$canvas) return ['success' => false, 'message' => __('err_unauthorized')];
+            $canvas = $this->canvasRepository->getById($request['canvas_id']);
+            $isOwner = ($canvas['owner_id'] === $ownerId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            if (!$canvas || !$isOwner) return ['success' => false, 'message' => __('err_unauthorized')];
 
             $this->canvasRepository->updateRequestStatus($requestId, 'rejected');
 
@@ -652,10 +699,11 @@ class CanvasServices {
         }
     }
 
-    public function getPendingRequests(int $userId, int $canvasId): array {
+    public function getPendingRequests(int $userId, int $canvasId, bool $canManageOfficial = false): array {
         try {
-            $canvas = $this->canvasRepository->getByIdAndUser($canvasId, $userId);
-            if (!$canvas) return ['success' => false, 'message' => __('err_unauthorized')];
+            $canvas = $this->canvasRepository->getById($canvasId);
+            $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            if (!$canvas || !$isOwner) return ['success' => false, 'message' => __('err_unauthorized')];
 
             $requests = $this->canvasRepository->getPendingRequests($canvasId);
             return ['success' => true, 'data' => $requests];
@@ -664,7 +712,7 @@ class CanvasServices {
         }
     }
 
-    public function prepareTimelapseDownload(?int $userId, int $canvasId): array {
+    public function prepareTimelapseDownload(?int $userId, int $canvasId, bool $canManageOfficial = false): array {
         try {
             $canvas = $this->canvasRepository->getById($canvasId);
             if (!$canvas) {
@@ -676,7 +724,9 @@ class CanvasServices {
                 $role = $this->canvasRepository->getMemberRole($canvasId, $userId);
             }
             
-            if ($canvas['privacy'] === DB::PRIVACY_PRIVATE && !$role && $canvas['user_id'] !== $userId) {
+            $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+
+            if ($canvas['privacy'] === DB::PRIVACY_PRIVATE && !$role && !$isOwner) {
                 return ['success' => false, 'message' => __('err_unauthorized') ?? 'No tienes permisos para ver el timelapse de este lienzo.', 'http_code' => 403];
             }
 
@@ -695,13 +745,13 @@ class CanvasServices {
         }
     }
 
-    public function getSnapshotDetail(string $snapshotId, ?int $userId = null): array {
+    public function getSnapshotDetail(string $snapshotId, ?int $userId = null, bool $canManageOfficial = false): array {
         try {
             $db = new DatabaseManager();
             $pdo = $db->getConnection(DB::CONN_CANVASES);
 
             $stmt = $pdo->prepare("
-                SELECT s.file_path, s.timelapse_file_path, s.snapshot_uuid, c.id as canvas_id, c.size, c.privacy, c.user_id, c.palette_id 
+                SELECT s.file_path, s.timelapse_file_path, s.snapshot_uuid, c.id as canvas_id, c.size, c.privacy, c.owner_id, c.palette_id 
                 FROM canvas_snapshots_history s
                 JOIN " . DB::TBL_CANVASES . " c ON s.canvas_id = c.id
                 WHERE s.snapshot_uuid = :snapshot_id 
@@ -719,7 +769,9 @@ class CanvasServices {
                 $role = $this->canvasRepository->getMemberRole($data['canvas_id'], $userId);
             }
 
-            if ($data['privacy'] === DB::PRIVACY_PRIVATE && !$role && $data['user_id'] !== $userId) {
+            $isOwner = ($data['owner_id'] === $userId) || ($data['owner_id'] === null && $canManageOfficial);
+
+            if ($data['privacy'] === DB::PRIVACY_PRIVATE && !$role && !$isOwner) {
                 return ['success' => false, 'message' => __('err_unauthorized') ?? 'Este lienzo es privado.'];
             }
 
@@ -747,13 +799,13 @@ class CanvasServices {
         }
     }
 
-    public function prepareSnapshotTimelapseDownload(?int $userId, string $snapshotId): array {
+    public function prepareSnapshotTimelapseDownload(?int $userId, string $snapshotId, bool $canManageOfficial = false): array {
         try {
             $db = new DatabaseManager();
             $pdo = $db->getConnection(DB::CONN_CANVASES);
 
             $stmt = $pdo->prepare("
-                SELECT s.timelapse_file_path, c.id as canvas_id, c.privacy, c.user_id 
+                SELECT s.timelapse_file_path, c.id as canvas_id, c.privacy, c.owner_id 
                 FROM canvas_snapshots_history s
                 JOIN " . DB::TBL_CANVASES . " c ON s.canvas_id = c.id
                 WHERE s.snapshot_uuid = :snapshot_id 
@@ -771,7 +823,9 @@ class CanvasServices {
                 $role = $this->canvasRepository->getMemberRole($data['canvas_id'], $userId);
             }
 
-            if ($data['privacy'] === DB::PRIVACY_PRIVATE && !$role && $data['user_id'] !== $userId) {
+            $isOwner = ($data['owner_id'] === $userId) || ($data['owner_id'] === null && $canManageOfficial);
+
+            if ($data['privacy'] === DB::PRIVACY_PRIVATE && !$role && !$isOwner) {
                 return ['success' => false, 'message' => 'No tienes permisos para ver este timelapse.', 'http_code' => 403];
             }
 
@@ -795,11 +849,11 @@ class CanvasServices {
     }
 
 
-    public function getSnapshotsGallery(string $uuid, ?int $userId = null): array {
+    public function getSnapshotsGallery(string $uuid, ?int $userId = null, bool $canManageOfficial = false): array {
         try {
             $db = new DatabaseManager();
             $pdo = $db->getConnection(DB::CONN_CANVASES);
-            $stmt = $pdo->prepare("SELECT id, user_id, name, privacy FROM " . DB::TBL_CANVASES . " WHERE uuid = :uuid LIMIT 1");
+            $stmt = $pdo->prepare("SELECT id, owner_id, name, privacy FROM " . DB::TBL_CANVASES . " WHERE uuid = :uuid LIMIT 1");
             $stmt->execute([':uuid' => $uuid]);
             $canvas = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -812,7 +866,9 @@ class CanvasServices {
                 $role = $this->canvasRepository->getMemberRole($canvas['id'], $userId);
             }
 
-            if ($canvas['privacy'] === DB::PRIVACY_PRIVATE && !$role && $canvas['user_id'] !== $userId) {
+            $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+
+            if ($canvas['privacy'] === DB::PRIVACY_PRIVATE && !$role && !$isOwner) {
                 return ['success' => false, 'message' => __('err_unauthorized') ?? 'Este lienzo es privado.'];
             }
 
@@ -851,13 +907,11 @@ class CanvasServices {
                 return ['success' => false, 'message' => 'Error en la subida del archivo o archivo ausente.'];
             }
             
-            // Validación de peso (5MB)
             $maxSize = 5 * 1024 * 1024;
             if ($fileInfo['size'] > $maxSize) {
                 return ['success' => false, 'message' => 'El archivo supera el límite de 5MB.'];
             }
 
-            // Validación rigurosa de MIME type
             $finfo = new \finfo(FILEINFO_MIME_TYPE);
             $ext = $finfo->file($fileInfo['tmp_name']);
             $allowedTypes = [
@@ -871,13 +925,11 @@ class CanvasServices {
                 return ['success' => false, 'message' => 'Formato de imagen no permitido. Usa JPG, PNG o WEBP.'];
             }
 
-            // ESCRITURA FÍSICA A LA VERDADERA CARPETA PÚBLICA
             $uploadDir = dirname(__DIR__, 2) . '/storage/public/templates/';
             if (!is_dir($uploadDir)) {
                 mkdir($uploadDir, 0755, true);
             }
 
-            // Nombre único para prevenir colisiones y caché
             $fileName = sprintf('%s_%s.%s', $userId, Utils::generateUUID(), $extension);
             $destination = $uploadDir . $fileName;
 
@@ -886,10 +938,8 @@ class CanvasServices {
                 return ['success' => false, 'message' => 'Error de escritura en el servidor.'];
             }
 
-            // La ruta guardada en DB sigue siendo la virtual (Symlink) para que el frontend la lea
             $dbPath = 'public/storage/templates/' . $fileName;
             
-            // Guardar en Base de Datos vía Repositorio
             $templateId = $this->canvasRepository->saveTemplateMetadata($userId, $dbPath);
 
             return [
@@ -919,7 +969,6 @@ class CanvasServices {
 
     public function deleteTemplate(int $userId, int $templateId): array {
         try {
-            // Obtenemos los templates para encontrar el path físico antes de borrar la metadata
             $templates = $this->canvasRepository->getUserTemplates($userId);
             $filePath = null;
             
@@ -930,15 +979,13 @@ class CanvasServices {
                 }
             }
 
-            // Delegamos la validación de propiedad al repositorio
             $deleted = $this->canvasRepository->deleteTemplate($templateId, $userId);
             
             if ($deleted) {
                 if ($filePath) {
-                    // Traducimos la ruta virtual a la ruta física para la eliminación
                     $physicalPath = dirname(__DIR__, 2) . '/' . str_replace('public/storage/', 'storage/public/', ltrim($filePath, '/'));
                     if (file_exists($physicalPath)) {
-                        unlink($physicalPath); // Eliminamos del servidor físico
+                        unlink($physicalPath); 
                     }
                 }
                 return ['success' => true, 'message' => 'Plantilla eliminada correctamente de tu librería.'];
@@ -951,26 +998,26 @@ class CanvasServices {
     }
 
     // ==========================================
-    // LÓGICA DE LIVE SHARE (NUEVO)
+    // LÓGICA DE LIVE SHARE
     // ==========================================
 
-    public function createLiveShare(int $userId, int $canvasId, string $imgUrl, float $x, float $y, float $w, float $h, float $opacity): array {
+    public function createLiveShare(int $userId, int $canvasId, string $imgUrl, float $x, float $y, float $w, float $h, float $opacity, bool $canManageOfficial = false): array {
         try {
-            // Verificar permisos del usuario en el lienzo
             $canvas = $this->canvasRepository->getById($canvasId);
             if (!$canvas) {
                 return ['success' => false, 'message' => 'Lienzo no encontrado.'];
             }
             
             $role = null;
-            if ($canvas['user_id'] !== $userId) {
+            $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+
+            if (!$isOwner) {
                 $role = $this->canvasRepository->getMemberRole($canvasId, $userId);
                 if (!in_array($role, ['editor', 'admin'])) {
                     return ['success' => false, 'message' => 'No tienes permisos para transmitir en este lienzo.'];
                 }
             }
 
-            // Generar código único corto
             $code = 'SHR-' . strtoupper(substr(bin2hex(random_bytes(3)), 0, 4));
 
             $data = [
@@ -990,9 +1037,7 @@ class CanvasServices {
                 $redis = $redisInstance->getClient();
                 if ($redis) {
                     $key = CacheConstants::PREFIX_LIVE_SHARE . $code;
-                    // Guardar como JSON string
                     $redis->set($key, json_encode($data));
-                    // Expiración preventiva (ej. 4 horas) para evitar llenar Redis si el script de Python falla
                     $redis->expire($key, 14400); 
 
                     return ['success' => true, 'data' => ['code' => $code]];

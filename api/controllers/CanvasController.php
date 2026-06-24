@@ -15,12 +15,24 @@ class CanvasController extends BaseController {
         $this->session = $session;
     }
 
+    /**
+     * Función auxiliar para verificar si el usuario tiene el permiso de gestionar lienzos oficiales.
+     */
+    private function canManageOfficial(): bool {
+        if (method_exists($this->session, 'hasPermission')) {
+            return $this->session->hasPermission('canvases.manage_official');
+        } elseif (method_exists($this->session, 'getPermissions')) {
+            $perms = $this->session->getPermissions();
+            return is_array($perms) && in_array('canvases.manage_official', $perms);
+        }
+        return isset($_SESSION['permissions']) && in_array('canvases.manage_official', $_SESSION['permissions']);
+    }
+
     // ==========================================
-    // NUEVO MÉTODO PARA HOME / EXPLORA
+    // MÉTODOS PARA HOME / EXPLORA
     // ==========================================
     public function get_public($input) {
         try {
-            // Se permite acceso a invitados, pero necesitamos saber si está logueado para determinar si es dueño
             $userId = $this->session->isLoggedIn() ? $this->session->getActiveAccountId() : null;
             $limit = $input['limit'] ?? 20;
 
@@ -34,7 +46,6 @@ class CanvasController extends BaseController {
 
     public function get($input) {
         try {
-            // Se permite acceso a invitados (modo espectador)
             $userId = $this->session->isLoggedIn() ? $this->session->getActiveAccountId() : null;
             $canvasId = $input['id'] ?? null;
 
@@ -42,7 +53,7 @@ class CanvasController extends BaseController {
                 return $this->respond(['success' => false, 'message' => __('err_invalid_canvas_id') ?? 'ID de lienzo no proporcionado.']);
             }
 
-            $result = $this->canvasServices->getCanvas($userId, (int)$canvasId);
+            $result = $this->canvasServices->getCanvas($userId, (int)$canvasId, $this->canManageOfficial());
             
             return $this->respond($result);
 
@@ -60,7 +71,7 @@ class CanvasController extends BaseController {
                 return $this->respond(['success' => false, 'message' => 'ID de lienzo no proporcionado.', 'http_code' => 400]);
             }
 
-            $result = $this->canvasServices->prepareTimelapseDownload($userId, (int)$canvasId);
+            $result = $this->canvasServices->prepareTimelapseDownload($userId, (int)$canvasId, $this->canManageOfficial());
 
             if (!$result['success']) {
                 $code = $result['http_code'] ?? 400;
@@ -90,9 +101,6 @@ class CanvasController extends BaseController {
         }
     }
 
-    // ==========================================
-    // [NUEVO] ENDPOINT PARA EL TIMELAPSE DEL SNAPSHOT
-    // ==========================================
     public function get_snapshot_timelapse($input) {
         try {
             $userId = $this->session->isLoggedIn() ? $this->session->getActiveAccountId() : null;
@@ -102,7 +110,7 @@ class CanvasController extends BaseController {
                 return $this->respond(['success' => false, 'message' => 'ID de snapshot no proporcionado.', 'http_code' => 400]);
             }
 
-            $result = $this->canvasServices->prepareSnapshotTimelapseDownload($userId, $snapshotId);
+            $result = $this->canvasServices->prepareSnapshotTimelapseDownload($userId, $snapshotId, $this->canManageOfficial());
 
             if (!$result['success']) {
                 $code = $result['http_code'] ?? 400;
@@ -139,7 +147,6 @@ class CanvasController extends BaseController {
             }
 
             $userId = $this->session->getActiveAccountId();
-            
             if (!$userId) {
                 return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
             }
@@ -151,16 +158,41 @@ class CanvasController extends BaseController {
             $size = $input['size'] ?? '64';
             $limit = $input['limit'] ?? 10;
             $paletteId = $input['palette_id'] ?? 'default';
-            
-            // Nuevas variables para el Cooldown
             $cooldownBatch = $input['cooldown_pixels_batch'] ?? 5;
             $cooldownSeconds = $input['cooldown_seconds'] ?? 10;
+
+            // Nuevas variables de Alcance (Scope)
+            $scopeType = $input['scope_type'] ?? 'personal';
+            $scopeRef1 = $input['scope_ref_1'] ?? null;
+            $scopeRef2 = $input['scope_ref_2'] ?? null;
+            $scopeRef3 = $input['scope_ref_3'] ?? null;
 
             if (empty(trim($name))) {
                 return $this->respond(['success' => false, 'message' => __('err_canvas_name_required')]);
             }
 
-            $result = $this->canvasServices->createCanvas($userId, $name, $description, $privacy, $requiresApproval, $size, (int)$limit, $paletteId, (int)$cooldownBatch, (int)$cooldownSeconds);
+            // ==========================================
+            // VALIDACIÓN ESTRICTA DEL ALCANCE
+            // ==========================================
+            if ($scopeType === 'global') {
+                $scopeRef1 = null; 
+                $scopeRef2 = null; 
+                $scopeRef3 = null;
+            } elseif ($scopeType === 'country' && empty($scopeRef1)) {
+                return $this->respond(['success' => false, 'message' => 'Para un lienzo de país, debes especificar obligatoriamente el país.']);
+            } elseif ($scopeType === 'state' && (empty($scopeRef1) || empty($scopeRef2))) {
+                return $this->respond(['success' => false, 'message' => 'Para un lienzo estatal, debes especificar país y estado.']);
+            } elseif ($scopeType === 'municipality' && (empty($scopeRef1) || empty($scopeRef2) || empty($scopeRef3))) {
+                return $this->respond(['success' => false, 'message' => 'Para un lienzo municipal, debes especificar país, estado y municipio.']);
+            } elseif ($scopeType === 'organization' && empty($scopeRef1)) {
+                return $this->respond(['success' => false, 'message' => 'Para un lienzo de organización, debes especificar el nombre de la misma.']);
+            }
+
+            $result = $this->canvasServices->createCanvas(
+                $userId, $name, $description, $privacy, $requiresApproval, 
+                $size, (int)$limit, $paletteId, (int)$cooldownBatch, (int)$cooldownSeconds,
+                $scopeType, $scopeRef1, $scopeRef2, $scopeRef3, $this->canManageOfficial()
+            );
 
             return $this->respond($result);
 
@@ -193,7 +225,7 @@ class CanvasController extends BaseController {
                 'cooldown_seconds' => $input['cooldown_seconds'] ?? null
             ];
 
-            $result = $this->canvasServices->updateCanvas($userId, (int)$canvasId, $data);
+            $result = $this->canvasServices->updateCanvas($userId, (int)$canvasId, $data, $this->canManageOfficial());
             return $this->respond($result);
 
         } catch (\Throwable $e) {
@@ -212,14 +244,12 @@ class CanvasController extends BaseController {
                 return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
             }
 
-            // Verifica si la petición es para eliminar un solo lienzo por UUID (desde el dropdown)
             $uuid = $input['id'] ?? $input['uuid'] ?? null;
             if ($uuid && is_string($uuid) && empty($input['canvas_ids'])) {
-                $result = $this->canvasServices->deleteSingleCanvas($userId, $uuid);
+                $result = $this->canvasServices->deleteSingleCanvas($userId, $uuid, $this->canManageOfficial());
                 return $this->respond($result);
             }
 
-            // Flujo original: Eliminación masiva (desde la sección Manage)
             $canvasIds = $input['canvas_ids'] ?? [];
             $password = $input['password'] ?? '';
 
@@ -274,7 +304,7 @@ class CanvasController extends BaseController {
                 return $this->respond(['success' => false, 'message' => 'Datos incompletos para cambiar el rol.']);
             }
 
-            $result = $this->canvasServices->changeMemberRole($userId, (int)$canvasId, (int)$targetUserId, $newRole);
+            $result = $this->canvasServices->changeMemberRole($userId, (int)$canvasId, (int)$targetUserId, $newRole, $this->canManageOfficial());
             return $this->respond($result);
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);
@@ -293,7 +323,7 @@ class CanvasController extends BaseController {
                 return $this->respond(['success' => false, 'message' => 'Datos incompletos para expulsar al miembro.']);
             }
 
-            $result = $this->canvasServices->removeMember($userId, (int)$canvasId, (int)$targetUserId);
+            $result = $this->canvasServices->removeMember($userId, (int)$canvasId, (int)$targetUserId, $this->canManageOfficial());
             return $this->respond($result);
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);
@@ -312,7 +342,7 @@ class CanvasController extends BaseController {
                 return $this->respond(['success' => false, 'message' => 'Lienzo no proporcionado.']);
             }
             
-            return $this->respond($this->canvasServices->getResetSettings($userId, (int)$canvasId));
+            return $this->respond($this->canvasServices->getResetSettings($userId, (int)$canvasId, $this->canManageOfficial()));
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);
         }
@@ -337,7 +367,7 @@ class CanvasController extends BaseController {
                 'timer_action' => $input['timer_action'] ?? 'restart'
             ];
             
-            return $this->respond($this->canvasServices->updateResetSettings($userId, (int)$canvasId, $data));
+            return $this->respond($this->canvasServices->updateResetSettings($userId, (int)$canvasId, $data, $this->canManageOfficial()));
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);
         }
@@ -356,7 +386,7 @@ class CanvasController extends BaseController {
                 return $this->respond(['success' => false, 'message' => 'Lienzo no proporcionado.']);
             }
             
-            return $this->respond($this->canvasServices->resetCanvasNow($userId, (int)$canvasId));
+            return $this->respond($this->canvasServices->resetCanvasNow($userId, (int)$canvasId, $this->canManageOfficial()));
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);
         }
@@ -382,7 +412,7 @@ class CanvasController extends BaseController {
             $requestId = $input['request_id'] ?? null;
             if (!$requestId) return $this->respond(['success' => false, 'message' => 'Solicitud no proporcionada.']);
             
-            return $this->respond($this->canvasServices->approveRequest($userId, (int)$requestId));
+            return $this->respond($this->canvasServices->approveRequest($userId, (int)$requestId, $this->canManageOfficial()));
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);
         }
@@ -395,7 +425,7 @@ class CanvasController extends BaseController {
             $requestId = $input['request_id'] ?? null;
             if (!$requestId) return $this->respond(['success' => false, 'message' => 'Solicitud no proporcionada.']);
             
-            return $this->respond($this->canvasServices->rejectRequest($userId, (int)$requestId));
+            return $this->respond($this->canvasServices->rejectRequest($userId, (int)$requestId, $this->canManageOfficial()));
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);
         }
@@ -408,7 +438,7 @@ class CanvasController extends BaseController {
             $canvasId = $input['canvas_id'] ?? null;
             if (!$canvasId) return $this->respond(['success' => false, 'message' => 'Lienzo no proporcionado.']);
             
-            return $this->respond($this->canvasServices->getPendingRequests($userId, (int)$canvasId));
+            return $this->respond($this->canvasServices->getPendingRequests($userId, (int)$canvasId, $this->canManageOfficial()));
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);
         }
@@ -423,7 +453,7 @@ class CanvasController extends BaseController {
             
             $userId = $this->session->isLoggedIn() ? $this->session->getActiveAccountId() : null;
 
-            $result = $this->canvasServices->getSnapshotsGallery($uuid, $userId);
+            $result = $this->canvasServices->getSnapshotsGallery($uuid, $userId, $this->canManageOfficial());
             return $this->respond($result);
 
         } catch (\Throwable $e) {
@@ -440,7 +470,7 @@ class CanvasController extends BaseController {
             
             $userId = $this->session->isLoggedIn() ? $this->session->getActiveAccountId() : null;
 
-            $result = $this->canvasServices->getSnapshotDetail($id, $userId);
+            $result = $this->canvasServices->getSnapshotDetail($id, $userId, $this->canManageOfficial());
             return $this->respond($result);
 
         } catch (\Throwable $e) {
@@ -510,7 +540,7 @@ class CanvasController extends BaseController {
     }
 
     // ==========================================
-    // ENDPOINTS LIVE SHARE (NUEVO)
+    // ENDPOINTS LIVE SHARE
     // ==========================================
 
     public function create_live_share($input) {
@@ -532,7 +562,7 @@ class CanvasController extends BaseController {
                 return $this->respond(['success' => false, 'message' => 'Faltan parámetros requeridos para crear la sesión.']);
             }
 
-            $result = $this->canvasServices->createLiveShare($userId, (int)$canvasId, $imgUrl, (float)$x, (float)$y, (float)$w, (float)$h, (float)$opacity);
+            $result = $this->canvasServices->createLiveShare($userId, (int)$canvasId, $imgUrl, (float)$x, (float)$y, (float)$w, (float)$h, (float)$opacity, $this->canManageOfficial());
             return $this->respond($result);
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);
@@ -541,11 +571,9 @@ class CanvasController extends BaseController {
 
     public function join_live_share($input) {
         try {
-            // Buscamos el parámetro 'code' de la url (el enrutador lo puede mapear como 'id' o 'code')
             $code = $input['code'] ?? $input['id'] ?? null;
 
             if (!$code) {
-                // Alternativa por si el router manda la URI completa
                 $uriParts = explode('/', trim($_SERVER['REQUEST_URI'] ?? '', '/'));
                 $code = end($uriParts);
             }

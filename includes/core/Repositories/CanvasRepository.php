@@ -15,21 +15,16 @@ class CanvasRepository implements CanvasRepositoryInterface {
         $this->db = $databaseManager->getConnection(DB::CONN_CANVASES);
     }
 
-    /**
-     * Función auxiliar para anexar la URL de la miniatura a nivel servidor.
-     */
     private function appendSnapshotUrl(array $canvas): array {
         if (!isset($canvas['id'])) {
             return $canvas;
         }
         
         $snapshotPath = "/assets/img/snapshots/canvas_" . $canvas['id'] . ".png";
-        // Calculamos la ruta física absoluta basándonos en la ubicación de este archivo
         $physicalPath = dirname(__DIR__, 3) . '/public' . $snapshotPath;
         
         if (file_exists($physicalPath)) {
             $timestamp = filemtime($physicalPath);
-            // Agregamos el timestamp para evitar problemas de caché en el navegador
             $canvas['snapshot_url'] = $snapshotPath . "?v=" . $timestamp;
         } else {
             $canvas['snapshot_url'] = null;
@@ -40,13 +35,13 @@ class CanvasRepository implements CanvasRepositoryInterface {
 
     public function create(array $canvasData): int {
         $sql = "INSERT INTO " . DB::TBL_CANVASES . " 
-                (uuid, user_id, name, description, privacy, requires_approval, size, palette_id, max_participants, cooldown_pixels_batch, cooldown_seconds) 
-                VALUES (:uuid, :user_id, :name, :description, :privacy, :requires_approval, :size, :palette_id, :max_participants, :cooldown_pixels_batch, :cooldown_seconds)";
+                (uuid, owner_id, name, description, privacy, requires_approval, size, palette_id, max_participants, cooldown_pixels_batch, cooldown_seconds, scope_type, scope_ref_1, scope_ref_2, scope_ref_3) 
+                VALUES (:uuid, :owner_id, :name, :description, :privacy, :requires_approval, :size, :palette_id, :max_participants, :cooldown_pixels_batch, :cooldown_seconds, :scope_type, :scope_ref_1, :scope_ref_2, :scope_ref_3)";
         
         $stmt = $this->db->prepare($sql);
         $stmt->execute([
             ':uuid'                  => $canvasData['uuid'],
-            ':user_id'               => $canvasData['user_id'],
+            ':owner_id'              => $canvasData['owner_id'],
             ':name'                  => $canvasData['name'],
             ':description'           => $canvasData['description'],
             ':privacy'               => $canvasData['privacy'],
@@ -55,7 +50,11 @@ class CanvasRepository implements CanvasRepositoryInterface {
             ':palette_id'            => $canvasData['palette_id'],
             ':max_participants'      => $canvasData['max_participants'],
             ':cooldown_pixels_batch' => $canvasData['cooldown_pixels_batch'],
-            ':cooldown_seconds'      => $canvasData['cooldown_seconds']
+            ':cooldown_seconds'      => $canvasData['cooldown_seconds'],
+            ':scope_type'            => $canvasData['scope_type'] ?? 'personal',
+            ':scope_ref_1'           => $canvasData['scope_ref_1'] ?? null,
+            ':scope_ref_2'           => $canvasData['scope_ref_2'] ?? null,
+            ':scope_ref_3'           => $canvasData['scope_ref_3'] ?? null
         ]);
 
         return (int)$this->db->lastInsertId();
@@ -79,9 +78,9 @@ class CanvasRepository implements CanvasRepositoryInterface {
     // --- MÉTODOS PARA HOME / EXPLORA ---
 
     public function getPublicCanvases(int $limit = 20): array {
-        $sql = "SELECT id, uuid, name, user_id 
+        $sql = "SELECT id, uuid, name, owner_id, scope_type 
                 FROM " . DB::TBL_CANVASES . " 
-                WHERE privacy = 'public' 
+                WHERE privacy = 'public' AND scope_type = 'personal'
                 ORDER BY created_at DESC 
                 LIMIT :limit";
         
@@ -90,61 +89,68 @@ class CanvasRepository implements CanvasRepositoryInterface {
         $stmt->execute();
         
         $results = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        
-        // Mapeamos los resultados para agregar la URL del snapshot dinámicamente
+        return array_map([$this, 'appendSnapshotUrl'], $results);
+    }
+
+    public function getOfficialCanvases(): array {
+        $sql = "SELECT id, uuid, name, description, size, palette_id, scope_type, scope_ref_1, scope_ref_2, scope_ref_3 
+                FROM " . DB::TBL_CANVASES . " 
+                WHERE owner_id IS NULL AND scope_type != 'personal'
+                ORDER BY created_at DESC";
+                
+        $stmt = $this->db->query($sql);
+        $results = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         return array_map([$this, 'appendSnapshotUrl'], $results);
     }
 
     // --- MÉTODOS PARA GESTIÓN (MANAGE) ---
 
-    public function getUserCanvasesPaginated(int $userId, int $limit, int $offset): array {
-        $sql = "SELECT id, uuid, name, description, privacy, requires_approval, size, palette_id, max_participants, cooldown_pixels_batch, cooldown_seconds, created_at 
+    public function getUserCanvasesPaginated(int $ownerId, int $limit, int $offset): array {
+        $sql = "SELECT id, uuid, name, description, privacy, requires_approval, size, palette_id, max_participants, cooldown_pixels_batch, cooldown_seconds, created_at, scope_type 
                 FROM " . DB::TBL_CANVASES . " 
-                WHERE user_id = :uid 
+                WHERE owner_id = :oid 
                 ORDER BY id DESC 
                 LIMIT :limit OFFSET :offset";
         
         $stmt = $this->db->prepare($sql);
-        $stmt->bindValue(':uid', $userId, PDO::PARAM_INT);
+        $stmt->bindValue(':oid', $ownerId, PDO::PARAM_INT);
         $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
         $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmt->execute();
         
         $results = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        
-        // Mapeamos los resultados para agregar la URL del snapshot dinámicamente
         return array_map([$this, 'appendSnapshotUrl'], $results);
     }
 
-    public function countUserCanvases(int $userId): int {
-        $sql = "SELECT COUNT(*) FROM " . DB::TBL_CANVASES . " WHERE user_id = :uid";
+    public function countUserCanvases(int $ownerId): int {
+        $sql = "SELECT COUNT(*) FROM " . DB::TBL_CANVASES . " WHERE owner_id = :oid";
         $stmt = $this->db->prepare($sql);
-        $stmt->execute([':uid' => $userId]);
+        $stmt->execute([':oid' => $ownerId]);
         return (int)$stmt->fetchColumn();
     }
 
-    public function deleteCanvases(array $canvasIds, int $userId): bool {
+    public function deleteCanvases(array $canvasIds, int $ownerId): bool {
         if (empty($canvasIds)) {
             return false;
         }
 
         $placeholders = implode(',', array_fill(0, count($canvasIds), '?'));
         
-        $sql = "DELETE FROM " . DB::TBL_CANVASES . " WHERE id IN ($placeholders) AND user_id = ?";
+        $sql = "DELETE FROM " . DB::TBL_CANVASES . " WHERE id IN ($placeholders) AND owner_id = ?";
         $stmt = $this->db->prepare($sql);
         
-        $params = array_merge($canvasIds, [$userId]);
+        $params = array_merge($canvasIds, [$ownerId]);
         return $stmt->execute($params);
     }
 
     // --- MÉTODOS PARA EDICIÓN (EDIT) ---
 
-    public function getByIdAndUser(int $id, int $userId): ?array {
-        $sql = "SELECT * FROM " . DB::TBL_CANVASES . " WHERE id = :id AND user_id = :user_id LIMIT 1";
+    public function getByIdAndOwner(int $id, int $ownerId): ?array {
+        $sql = "SELECT * FROM " . DB::TBL_CANVASES . " WHERE id = :id AND owner_id = :owner_id LIMIT 1";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([
             ':id' => $id, 
-            ':user_id' => $userId
+            ':owner_id' => $ownerId
         ]);
         
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -160,7 +166,15 @@ class CanvasRepository implements CanvasRepositoryInterface {
         return $result ? $this->appendSnapshotUrl($result) : null;
     }
 
-    public function updateCanvasData(int $id, int $userId, array $data): bool {
+    public function getByScopeHash(string $hash): ?array {
+        $sql = "SELECT * FROM " . DB::TBL_CANVASES . " WHERE scope_hash = :hash LIMIT 1";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':hash' => $hash]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result ?: null;
+    }
+
+    public function updateCanvasData(int $id, array $data): bool {
         $sql = "UPDATE " . DB::TBL_CANVASES . " 
                 SET name = :name, 
                     description = :description, 
@@ -170,7 +184,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
                     max_participants = :max_participants,
                     cooldown_pixels_batch = :cooldown_pixels_batch,
                     cooldown_seconds = :cooldown_seconds
-                WHERE id = :id AND user_id = :user_id";
+                WHERE id = :id";
         
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([
@@ -182,8 +196,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
             ':max_participants'      => $data['max_participants'],
             ':cooldown_pixels_batch' => $data['cooldown_pixels_batch'],
             ':cooldown_seconds'      => $data['cooldown_seconds'],
-            ':id'                    => $id,
-            ':user_id'               => $userId
+            ':id'                    => $id
         ]);
     }
 
@@ -257,11 +270,10 @@ class CanvasRepository implements CanvasRepositoryInterface {
         return $result ?: null;
     }
 
-    public function deleteCanvasByUuid(string $uuid, int $userId): bool {
-        // Asumiendo que existen foreign keys en cascada en la BD para eliminar miembros y otras relaciones
-        $sql = "DELETE FROM " . DB::TBL_CANVASES . " WHERE uuid = :uuid AND user_id = :user_id";
+    public function deleteCanvasByUuid(string $uuid): bool {
+        $sql = "DELETE FROM " . DB::TBL_CANVASES . " WHERE uuid = :uuid";
         $stmt = $this->db->prepare($sql);
-        return $stmt->execute([':uuid' => $uuid, ':user_id' => $userId]);
+        return $stmt->execute([':uuid' => $uuid]);
     }
 
     public function removeMember(int $canvasId, int $userId): bool {
@@ -280,7 +292,6 @@ class CanvasRepository implements CanvasRepositoryInterface {
         $stmt->execute([':canvas_id' => $canvasId]);
         
         $result = $stmt->fetchColumn();
-        
         return $result ? @gzuncompress($result) : null;
     }
 
@@ -300,7 +311,6 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function clearCanvasData(int $canvasId): bool {
-        // Elimina el snapshot guardado en la base de datos (estado del lienzo)
         $sql = "DELETE FROM canvas_snapshots WHERE canvas_id = :canvas_id";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([':canvas_id' => $canvasId]);
@@ -412,7 +422,6 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function deleteTemplate(int $templateId, int $userId): bool {
-        // Se requiere el ID del usuario en el WHERE por razones de seguridad (Clean Architecture)
         $sql = "DELETE FROM user_templates 
                 WHERE id = :id AND user_id = :user_id";
         

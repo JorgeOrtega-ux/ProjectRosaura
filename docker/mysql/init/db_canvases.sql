@@ -5,7 +5,7 @@ USE db_canvases;
 CREATE TABLE IF NOT EXISTS `canvases` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `uuid` varchar(36) NOT NULL,
-  `user_id` int(11) NOT NULL,
+  `owner_id` int(11) DEFAULT NULL,
   `name` varchar(100) NOT NULL,
   `description` text DEFAULT NULL,
   `privacy` enum('public', 'private') DEFAULT 'private',
@@ -15,11 +15,22 @@ CREATE TABLE IF NOT EXISTS `canvases` (
   `max_participants` int(11) NOT NULL DEFAULT 10,
   `cooldown_pixels_batch` int(11) NOT NULL DEFAULT 5,
   `cooldown_seconds` int(11) NOT NULL DEFAULT 10,
+  `scope_type` enum('personal', 'global', 'country', 'state', 'municipality', 'organization') NOT NULL DEFAULT 'personal',
+  `scope_ref_1` varchar(100) DEFAULT NULL,
+  `scope_ref_2` varchar(100) DEFAULT NULL,
+  `scope_ref_3` varchar(100) DEFAULT NULL,
+  `scope_hash` varchar(64) GENERATED ALWAYS AS (
+      CASE 
+          WHEN scope_type = 'personal' THEN uuid 
+          ELSE MD5(CONCAT_WS('_', scope_type, IFNULL(scope_ref_1, ''), IFNULL(scope_ref_2, ''), IFNULL(scope_ref_3, '')))
+      END
+  ) STORED,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uuid` (`uuid`),
-  INDEX `idx_user_canvases` (`user_id`)
+  UNIQUE KEY `idx_scope_hash` (`scope_hash`),
+  INDEX `idx_owner_canvases` (`owner_id`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 CREATE TABLE IF NOT EXISTS `canvas_members` (
@@ -80,7 +91,7 @@ CREATE TABLE IF NOT EXISTS `canvas_snapshots_history` (
   `canvas_id` int(11) NOT NULL,
   `snapshot_uuid` varchar(36) NOT NULL,
   `file_path` varchar(255) NOT NULL,
-  `timelapse_file_path` varchar(255) DEFAULT NULL, -- [NUEVO] Almacena la ruta del timelapse si existe
+  `timelapse_file_path` varchar(255) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
   UNIQUE KEY `idx_snapshot_uuid` (`snapshot_uuid`),

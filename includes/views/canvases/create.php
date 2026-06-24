@@ -18,6 +18,54 @@
                 
                 <div class="component-card--grouped">
 
+                    <div class="component-group-item component-group-item--stacked disabled" data-ref="scope-section" style="display: none;">
+                        <div class="component-card__content">
+                            <div class="component-card__text">
+                                <h2 class="component-card__title" style="color: var(--color-danger);">Alcance Oficial del Lienzo (Admin)</h2>
+                                <p class="component-card__description">Define si este lienzo es de uso personal o si representa un espacio oficial único (Global, País, Estado, Municipio u Organización).</p>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--start" style="flex-direction: column; gap: 10px; align-items: flex-start; width: 100%;">
+                            
+                            <div class="component-input-group component-input-group--h34" style="width: 100%; max-width: 300px;">
+                                <select data-ref="select-scope-type" class="component-input-field component-input-field--simple">
+                                    <option value="personal" selected>Lienzo Personal (Normal)</option>
+                                    <option value="global">Lienzo Global (Único en el mundo)</option>
+                                    <option value="country">Lienzo Nacional (País)</option>
+                                    <option value="state">Lienzo Estatal</option>
+                                    <option value="municipality">Lienzo Municipal</option>
+                                    <option value="organization">Lienzo de Organización / Escuela</option>
+                                </select>
+                            </div>
+
+                            <div data-ref="scope-locations-container" style="display: none; flex-direction: column; gap: 10px; width: 100%; max-width: 300px;">
+                                <div class="component-input-group component-input-group--h34">
+                                    <select data-ref="select-scope-country" class="component-input-field component-input-field--simple">
+                                        <option value="">Selecciona un País...</option>
+                                    </select>
+                                </div>
+                                <div class="component-input-group component-input-group--h34" data-ref="wrapper-scope-state" style="display: none;">
+                                    <select data-ref="select-scope-state" class="component-input-field component-input-field--simple">
+                                        <option value="">Selecciona un Estado...</option>
+                                    </select>
+                                </div>
+                                <div class="component-input-group component-input-group--h34" data-ref="wrapper-scope-city" style="display: none;">
+                                    <select data-ref="select-scope-city" class="component-input-field component-input-field--simple">
+                                        <option value="">Selecciona un Municipio...</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div data-ref="scope-organization-container" style="display: none; width: 100%; max-width: 300px;">
+                                <div class="component-input-group component-input-group--h34">
+                                    <input type="text" data-ref="input-scope-organization" class="component-input-field component-input-field--simple" placeholder="Nombre de la Institución o Empresa">
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <hr class="component-divider" data-ref="scope-divider" style="display: none;">
                     <div class="component-group-item component-group-item--stateful">
                         
                         <div class="active component-state-box" data-state="canvasname-view">

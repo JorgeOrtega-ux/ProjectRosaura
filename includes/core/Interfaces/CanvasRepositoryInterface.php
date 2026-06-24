@@ -8,15 +8,16 @@ interface CanvasRepositoryInterface {
     
     // Métodos para Home / Explora
     public function getPublicCanvases(int $limit = 20): array;
+    public function getOfficialCanvases(): array; // <--- NUEVO
 
     // Métodos para Manage
-    public function getUserCanvasesPaginated(int $userId, int $limit, int $offset): array;
-    public function countUserCanvases(int $userId): int;
-    public function deleteCanvases(array $canvasIds, int $userId): bool;
+    public function getUserCanvasesPaginated(int $ownerId, int $limit, int $offset): array;
+    public function countUserCanvases(int $ownerId): int;
+    public function deleteCanvases(array $canvasIds, int $ownerId): bool;
 
     // Métodos para Edit
-    public function getByIdAndUser(int $id, int $userId): ?array;
-    public function updateCanvasData(int $id, int $userId, array $data): bool;
+    public function getByIdAndOwner(int $id, int $ownerId): ?array;
+    public function updateCanvasData(int $id, array $data): bool;
 
     // Nuevos Métodos para Solicitudes de Acceso
     public function createAccessRequest(int $canvasId, int $userId): bool;
@@ -27,11 +28,13 @@ interface CanvasRepositoryInterface {
     
     // Utilidades
     public function getById(int $id): ?array;
+    public function getByScopeHash(string $hash): ?array; // <--- NUEVO
     public function getMemberRole(int $canvasId, int $userId): ?string;
+    public function updateMemberRole(int $canvasId, int $userId, string $role): bool;
 
     // --- NUEVOS MÉTODOS PARA ELIMINAR / SALIR DE LIENZO ÚNICO ---
     public function getCanvasByUuid(string $uuid): ?array;
-    public function deleteCanvasByUuid(string $uuid, int $userId): bool;
+    public function deleteCanvasByUuid(string $uuid): bool;
     public function removeMember(int $canvasId, int $userId): bool;
 
     // ==========================================
@@ -39,7 +42,7 @@ interface CanvasRepositoryInterface {
     // ==========================================
     public function getSnapshot(int $canvasId): ?string;
     public function saveSnapshot(int $canvasId, string $snapshotData): bool;
-    public function clearCanvasData(int $canvasId): bool; // <--- NUEVO: BORRADO INSTANTÁNEO
+    public function clearCanvasData(int $canvasId): bool;
 
     // ==========================================
     // NUEVOS MÉTODOS DE REINICIOS PROGRAMADOS
