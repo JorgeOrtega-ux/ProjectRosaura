@@ -65,11 +65,17 @@ INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES
   (4, 10), (4, 11), (4, 12), (4, 13), (4, 14), (4, 15), (4, 16), (4, 17), (4, 18),
   (4, 19), (4, 20), (4, 21);
 
+-- Administrador: Se le añaden 19, 20 y 21
 INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES
-  (3, 1), (3, 2), (3, 3), (3, 4), (3, 5), (3, 6), (3, 8), (3, 10), (3, 13), (3, 17);
+  (3, 1), (3, 2), (3, 3), (3, 4), (3, 5), (3, 6), (3, 8), (3, 10), (3, 13), (3, 17), (3, 19), (3, 20), (3, 21);
 
+-- Moderador: Se le añaden 19, 20 y 21
 INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES
-  (2, 1), (2, 2), (2, 4), (2, 5), (2, 6);
+  (2, 1), (2, 2), (2, 4), (2, 5), (2, 6), (2, 19), (2, 20), (2, 21);
+
+-- Usuario (User - Rol 1): Se le asignan permisos de lienzo
+INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES
+  (1, 19), (1, 20), (1, 21);
 
 CREATE TABLE IF NOT EXISTS `users` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
