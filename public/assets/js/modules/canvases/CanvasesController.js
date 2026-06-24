@@ -3,6 +3,7 @@
 import { ApiRoutes } from '../../core/api/ApiRoutes.js';
 import { ApiService } from '../../core/api/ApiServices.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../core/utils/uiUtils.js';
+import { LocationSelectors } from './LocationSelectors.js';
 
 /**
  * Función helper local para obtener todas las paletas en formato Array.
@@ -18,6 +19,7 @@ class CanvasesController {
         this.api = new ApiService();
         this.basePath = window.AppBasePath || '';
         this.abortController = null;
+        this.locationSelectors = null;
         
         this.formState = {
             name: '',
@@ -38,15 +40,52 @@ class CanvasesController {
         this.bindEvents();
         this.setupDefaultValues();
         this.renderPalettes();
+        this.checkAdminPermissions();
     }
 
     destroy() {
         if (this.abortController) this.abortController.abort();
         document.removeEventListener('click', this.handleClickBound);
+        
+        if (this.locationSelectors) {
+            this.locationSelectors.destroy();
+            this.locationSelectors = null;
+        }
     }
 
     bindEvents() {
         document.addEventListener('click', this.handleClickBound);
+    }
+
+    checkAdminPermissions() {
+        let hasPerm = false;
+        if (window.APP_CONFIG && window.APP_CONFIG.permissions) {
+            const p = window.APP_CONFIG.permissions;
+            // Evaluamos permisos amplios (administrador global o manager de lienzos)
+            hasPerm = p.includes('manage_canvases') || 
+                      p.includes('access_admin_panel') || 
+                      p.includes('canvases.manage_official') || 
+                      p.includes('canvases.create_official');
+        }
+
+        const scopeSection = document.querySelector('[data-ref="scope-section"]');
+        const scopeDivider = document.querySelector('[data-ref="scope-divider"]');
+
+        if (scopeSection) {
+            if (hasPerm) {
+                scopeSection.style.display = 'flex';
+                scopeSection.classList.remove('disabled');
+                if (scopeDivider) scopeDivider.style.display = 'block';
+
+                // Inicializar selectores dinámicos
+                this.locationSelectors = new LocationSelectors();
+                this.locationSelectors.init();
+            } else {
+                scopeSection.style.display = 'none';
+                scopeSection.classList.add('disabled');
+                if (scopeDivider) scopeDivider.style.display = 'none';
+            }
+        }
     }
 
     setupDefaultValues() {
@@ -397,6 +436,7 @@ class CanvasesController {
     }
 
     async submitCanvas(btn) {
+        // Formateo clásico
         const inputName = document.querySelector('[data-ref="input-canvasname"]');
         if (inputName) {
             this.formState.name = inputName.value.trim();
@@ -413,6 +453,39 @@ class CanvasesController {
         const inputSec = document.querySelector('[data-ref="val_cooldown_seconds"]');
         if (inputSec) {
             this.formState.cooldown_seconds = parseInt(inputSec.getAttribute('data-val'), 10) || 10;
+        }
+
+        // RECOLECCIÓN DE DATOS DE ALCANCE CORREGIDA
+        const scopeSection = document.querySelector('[data-ref="scope-section"]');
+        if (scopeSection && scopeSection.style.display !== 'none') {
+            const scopeTypeEl = document.querySelector('[data-ref="select-scope-type"]');
+            const scopeType = scopeTypeEl ? scopeTypeEl.value : 'personal';
+            
+            this.formState.scope_type = scopeType;
+
+            const countryEl = document.querySelector('[data-ref="select-scope-country"]');
+            const stateEl = document.querySelector('[data-ref="select-scope-state"]');
+            const cityEl = document.querySelector('[data-ref="select-scope-city"]');
+            const orgEl = document.querySelector('[data-ref="input-scope-organization"]');
+
+            if (scopeType === 'organization') {
+                this.formState.scope_ref_1 = orgEl ? orgEl.value.trim() : null;
+                this.formState.scope_ref_2 = null;
+                this.formState.scope_ref_3 = null;
+            } else if (scopeType !== 'personal' && scopeType !== 'global') {
+                this.formState.scope_ref_1 = countryEl ? countryEl.value : null;
+                this.formState.scope_ref_2 = stateEl ? stateEl.value : null;
+                this.formState.scope_ref_3 = cityEl ? cityEl.value : null;
+            } else {
+                this.formState.scope_ref_1 = null;
+                this.formState.scope_ref_2 = null;
+                this.formState.scope_ref_3 = null;
+            }
+        } else {
+            this.formState.scope_type = 'personal';
+            this.formState.scope_ref_1 = null;
+            this.formState.scope_ref_2 = null;
+            this.formState.scope_ref_3 = null;
         }
 
         setButtonLoading(btn);

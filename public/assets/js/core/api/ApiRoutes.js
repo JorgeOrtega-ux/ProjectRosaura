@@ -19,7 +19,6 @@ export const ApiRoutes = {
         RegisterVerify: 'auth.register.verify',
         RegisterResendCode: 'auth.register.resend_code',
         
-        // Rutas Multi-Sesión
         SwitchAccount: 'auth.switch_account',
         LogoutAll: 'auth.logout_all',
         Logout: 'auth.logout',
@@ -85,6 +84,7 @@ export const ApiRoutes = {
     },
     Canvases: {
         GetPublic: 'canvases.get_public',
+        GetOfficial: 'canvases.get_official', // NUEVO ENDPOINT
         Get: 'canvases.get',
         Create: 'canvases.create',
         Update: 'canvases.update',
@@ -109,7 +109,6 @@ export const ApiRoutes = {
         CreateLiveShare: 'canvases.create_live_share',
         JoinLiveShare: 'canvases.join_live_share'
     },
-    // --- NUEVAS RUTAS DE UBICACIONES ---
     Locations: {
         GetCountries: 'locations.get_countries',
         GetStates: 'locations.get_states',

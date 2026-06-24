@@ -77,7 +77,8 @@ class LocationSelectors {
         
         try {
             this.selectCountry.innerHTML = '<option value="">Cargando países...</option>';
-            const result = await this.api.get(ApiRoutes.Locations.GetCountries, {}, this.abortController.signal);
+            // Corrección: Usar POST como manda la arquitectura central de Rosaura
+            const result = await this.api.post(ApiRoutes.Locations.GetCountries, {}, this.abortController.signal);
             
             if (result && result.success) {
                 this.selectCountry.innerHTML = '<option value="">Selecciona un País...</option>';
@@ -107,7 +108,8 @@ class LocationSelectors {
 
         try {
             this.selectState.innerHTML = '<option value="">Cargando estados...</option>';
-            const result = await this.api.get(`${ApiRoutes.Locations.GetStates}?id=${countryId}`, {}, this.abortController.signal);
+            // Corrección: Usar POST y enviar datos en el body
+            const result = await this.api.post(ApiRoutes.Locations.GetStates, { id: countryId }, this.abortController.signal);
             
             if (result && result.success) {
                 this.selectState.innerHTML = '<option value="">Selecciona un Estado...</option>';
@@ -136,7 +138,8 @@ class LocationSelectors {
 
         try {
             this.selectCity.innerHTML = '<option value="">Cargando municipios...</option>';
-            const result = await this.api.get(`${ApiRoutes.Locations.GetCities}?id=${stateId}`, {}, this.abortController.signal);
+            // Corrección: Usar POST y enviar datos en el body
+            const result = await this.api.post(ApiRoutes.Locations.GetCities, { id: stateId }, this.abortController.signal);
             
             if (result && result.success) {
                 this.selectCity.innerHTML = '<option value="">Selecciona un Municipio...</option>';

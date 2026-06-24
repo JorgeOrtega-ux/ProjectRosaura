@@ -31,9 +31,13 @@ use App\Core\Interfaces\RoleRepositoryInterface;
 use App\Core\Interfaces\TelemetryRepositoryInterface;
 use App\Core\Repositories\TelemetryRepository;
 
-// NUEVOS BINDINGS CANVASES
+// BINDINGS DE LIENZOS
 use App\Core\Interfaces\CanvasRepositoryInterface;
 use App\Core\Repositories\CanvasRepository;
+
+// BINDINGS DE UBICACIONES (NUEVO)
+use App\Core\Interfaces\LocationRepositoryInterface;
+use App\Core\Repositories\LocationRepository;
 
 class Container implements ContainerInterface {
     private $instances = [];
@@ -65,6 +69,9 @@ class Container implements ContainerInterface {
 
         // BINDING DE REPOSITORIO DE LIENZOS
         $this->bindings[CanvasRepositoryInterface::class] = CanvasRepository::class;
+
+        // BINDING DE REPOSITORIO DE UBICACIONES (NUEVO)
+        $this->bindings[LocationRepositoryInterface::class] = LocationRepository::class;
     }
 
     public function get(string $id) {

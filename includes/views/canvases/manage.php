@@ -14,6 +14,12 @@ if (!$userId) {
     return;
 }
 
+// 1. Verificamos si el usuario es administrador o gestor de lienzos
+$userPermissions = $_SESSION['user_permissions'] ?? [];
+$isAdmin = in_array('manage_canvases', $userPermissions) || 
+           in_array('access_admin_panel', $userPermissions) || 
+           in_array('canvases.manage_official', $userPermissions);
+
 $limit = 25; 
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 if ($page < 1) $page = 1;
@@ -25,8 +31,27 @@ $pdo = $db->getConnection($connName);
 
 $tblCanvases = defined('App\Core\System\DatabaseConstants::TBL_CANVASES') ? App\Core\System\DatabaseConstants::TBL_CANVASES : 'canvases';
 
+// 2. Construimos la consulta dependiendo de si es Admin o Usuario Normal
+if ($isAdmin) {
+    // El admin ve SUS lienzos y los lienzos OFICIALES (owner_id IS NULL)
+    $sqlCount = "SELECT COUNT(*) FROM {$tblCanvases} WHERE owner_id = :uid OR (owner_id IS NULL AND scope_type != 'personal')";
+    $sqlSelect = "SELECT id, uuid, name, description, privacy, size, max_participants, created_at, scope_type 
+                  FROM {$tblCanvases} 
+                  WHERE owner_id = :uid OR (owner_id IS NULL AND scope_type != 'personal')
+                  ORDER BY id DESC 
+                  LIMIT $limit OFFSET $offset";
+} else {
+    // Un usuario normal solo ve SUS lienzos
+    $sqlCount = "SELECT COUNT(*) FROM {$tblCanvases} WHERE owner_id = :uid";
+    $sqlSelect = "SELECT id, uuid, name, description, privacy, size, max_participants, created_at, scope_type 
+                  FROM {$tblCanvases} 
+                  WHERE owner_id = :uid 
+                  ORDER BY id DESC 
+                  LIMIT $limit OFFSET $offset";
+}
+
 // Calcular total para paginación
-$stmtCount = $pdo->prepare("SELECT COUNT(*) FROM {$tblCanvases} WHERE user_id = :uid");
+$stmtCount = $pdo->prepare($sqlCount);
 $stmtCount->execute(['uid' => $userId]);
 $totalCanvases = (int)$stmtCount->fetchColumn();
 
@@ -37,14 +62,8 @@ if ($page > $totalPages) {
     $offset = ($page - 1) * $limit;
 }
 
-// CORRECCIÓN: Nombres de columnas actualizados
-$stmt = $pdo->prepare("
-    SELECT id, uuid, name, description, privacy, size, max_participants, created_at 
-    FROM {$tblCanvases} 
-    WHERE user_id = :uid 
-    ORDER BY id DESC 
-    LIMIT $limit OFFSET $offset
-");
+// Obtener los lienzos
+$stmt = $pdo->prepare($sqlSelect);
 $stmt->execute(['uid' => $userId]);
 $canvases = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -146,6 +165,12 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                                             <div class="component-badge component-badge--sm">
                                                 <span class="material-symbols-rounded">palette</span>
                                                 <span class="search-target font-medium"><?php echo htmlspecialchars($canvas['name']); ?></span>
+                                                
+                                                <?php if ($canvas['scope_type'] !== 'personal'): ?>
+                                                    <span style="font-size: 10px; font-weight: 700; background: var(--color-warning); color: #000; padding: 2px 6px; border-radius: 4px; margin-left: 6px; text-transform: uppercase;">
+                                                        <?php echo htmlspecialchars($canvas['scope_type']); ?>
+                                                    </span>
+                                                <?php endif; ?>
                                             </div>
                                         </div>
                                         <?php if (!empty($canvas['description'])): ?>
@@ -195,7 +220,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                                 <td colspan="5" class="component-empty-table-cell">
                                     <div class="component-empty-state component-empty-state--table">
                                         <span class="material-symbols-rounded component-empty-state-icon">palette</span>
-                                        <p class="component-empty-state-text"><?php echo __('empty_canvases_system') ?: 'Aún no has creado ningún lienzo.'; ?></p>
+                                        <p class="component-empty-state-text"><?php echo __('empty_canvases_system') ?: 'Aún no hay ningún lienzo para mostrar.'; ?></p>
                                     </div>
                                 </td>
                             </tr>

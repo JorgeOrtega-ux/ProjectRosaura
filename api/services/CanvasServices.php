@@ -66,7 +66,35 @@ class CanvasServices {
             return ['success' => false, 'message' => __('err_database') ?? 'Error al cargar los lienzos públicos.'];
         }
     }
-
+public function getOfficialCanvases(): array {
+        try {
+            // El CanvasRepository ya tiene un método para esto (getOfficialCanvases)
+            $canvases = $this->canvasRepository->getOfficialCanvases();
+            
+            $formattedCanvases = array_map(function($canvas) {
+                // Lógica de negocio: Los lienzos oficiales no tienen dueño personal y se muestran públicos.
+                $canvas['is_owner'] = false; 
+                $canvas['privacy'] = 'public'; 
+                
+                $snapshotPath = "public/storage/snapshots/canvas_" . $canvas['id'] . ".png";
+                $physicalPath = dirname(__DIR__, 2) . '/storage/public/snapshots/canvas_' . $canvas['id'] . '.png';
+                $snapshotUrl = null;
+                
+                if (file_exists($physicalPath)) {
+                    $timestamp = filemtime($physicalPath);
+                    $snapshotUrl = "/" . $snapshotPath . "?v=" . $timestamp;
+                }
+                
+                $canvas['snapshot_url'] = $snapshotUrl;
+                return $canvas;
+            }, $canvases);
+            
+            return ['success' => true, 'data' => $formattedCanvases];
+        } catch (Exception $e) {
+            Logger::error('Error getting official canvases.', ['error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database') ?? 'Error al cargar los lienzos oficiales.'];
+        }
+    }
     public function getCanvas(?int $userId, int $canvasId, bool $canManageOfficial = false): array {
         try {
             $canvas = $this->canvasRepository->getById($canvasId);

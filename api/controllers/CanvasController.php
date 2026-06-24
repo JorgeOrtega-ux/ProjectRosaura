@@ -19,13 +19,29 @@ class CanvasController extends BaseController {
      * Función auxiliar para verificar si el usuario tiene el permiso de gestionar lienzos oficiales.
      */
     private function canManageOfficial(): bool {
-        if (method_exists($this->session, 'hasPermission')) {
-            return $this->session->hasPermission('canvases.manage_official');
-        } elseif (method_exists($this->session, 'getPermissions')) {
+        $perms = [];
+        
+        // Extraer de SessionManager si es posible
+        if (method_exists($this->session, 'getPermissions')) {
             $perms = $this->session->getPermissions();
-            return is_array($perms) && in_array('canvases.manage_official', $perms);
         }
-        return isset($_SESSION['permissions']) && in_array('canvases.manage_official', $_SESSION['permissions']);
+        
+        // O de la variable global de sesión nativa (Fallbacks)
+        if (empty($perms) && isset($_SESSION['user_permissions'])) {
+            $perms = $_SESSION['user_permissions'];
+        } elseif (empty($perms) && isset($_SESSION['permissions'])) {
+            $perms = $_SESSION['permissions'];
+        }
+        
+        if (!is_array($perms)) {
+            $perms = [];
+        }
+
+        // Validar si tiene un rol de administración o manejo de lienzos
+        return in_array('manage_canvases', $perms) || 
+               in_array('access_admin_panel', $perms) || 
+               in_array('canvases.manage_official', $perms) || 
+               in_array('canvases.create_official', $perms);
     }
 
     // ==========================================
@@ -583,6 +599,14 @@ class CanvasController extends BaseController {
             }
 
             $result = $this->canvasServices->joinLiveShare(strtoupper($code));
+            return $this->respond($result);
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+    public function get_official($input) {
+        try {
+            $result = $this->canvasServices->getOfficialCanvases();
             return $this->respond($result);
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);

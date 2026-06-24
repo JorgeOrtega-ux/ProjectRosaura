@@ -107,9 +107,10 @@ if (file_exists($palettesPath)) {
         window.APP_PALETTES = <?php echo $palettesJson; ?>;
         window.activeUserId = <?php echo isset($_SESSION['active_account']) ? json_encode((string)$_SESSION['active_account']) : 'null'; ?>;
         
-        // --- CONFIGURACIÓN GLOBAL (INCLUYENDO WEBSOCKETS) ---
+        // --- CONFIGURACIÓN GLOBAL (INCLUYENDO WEBSOCKETS Y PERMISOS) ---
         window.APP_CONFIG = {
-            wsPort: <?php echo (int)\App\Core\Helpers\EnvLoader::get('WS_PORT', 8765); ?>
+            wsPort: <?php echo (int)\App\Core\Helpers\EnvLoader::get('WS_PORT', 8765); ?>,
+            permissions: <?php echo json_encode($userPermissions ?? []); ?>
         };
         // ----------------------------------------------------
         
