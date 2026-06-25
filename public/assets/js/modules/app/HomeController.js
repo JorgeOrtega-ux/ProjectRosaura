@@ -11,9 +11,7 @@ class HomeController {
         this.basePath = window.AppBasePath || '';
         this.abortController = null;
         
-        this.containerGlobal = null;
-        this.containerOfficial = null;
-        this.containerPublic = null;
+        this.containerAll = null;
         
         this.handleGlobalClickBound = this.handleGlobalClick.bind(this);
     }
@@ -22,13 +20,9 @@ class HomeController {
         this.abortController = new AbortController();
         this.bindEvents();
         
-        this.containerGlobal = document.querySelector('[data-ref="home-global-canvases"]');
-        this.containerOfficial = document.querySelector('[data-ref="home-official-canvases"]');
-        this.containerPublic = document.querySelector('[data-ref="home-public-canvases"]');
+        this.containerAll = document.querySelector('[data-ref="home-all-canvases"]');
         
-        if (this.containerGlobal) renderSkeleton(this.containerGlobal, 'homeCanvasGrid');
-        if (this.containerOfficial) renderSkeleton(this.containerOfficial, 'homeCanvasGrid');
-        if (this.containerPublic) renderSkeleton(this.containerPublic, 'homeCanvasGrid');
+        if (this.containerAll) renderSkeleton(this.containerAll, 'homeCanvasGrid');
         
         this.loadCanvases();
     }
@@ -51,31 +45,31 @@ class HomeController {
     }
 
     async loadCanvases() {
-        // Lanzamos las peticiones en paralelo para que sea súper rápido
         const [publicRes, officialRes] = await Promise.all([
-            this.api.post(ApiRoutes.Canvases.GetPublic, { limit: 20 }, this.abortController.signal).catch(() => null),
+            this.api.post(ApiRoutes.Canvases.GetPublic, { limit: 50 }, this.abortController.signal).catch(() => null),
             this.api.post(ApiRoutes.Canvases.GetOfficial, {}, this.abortController.signal).catch(() => null)
         ]);
         
         if (this.abortController.signal.aborted) return;
         
-        // 1. Renderizar lienzos personales públicos
-        if (publicRes && publicRes.success) {
-            this.renderCanvases(this.containerPublic, publicRes.data, window.__ ? __('empty_public_canvases') : 'No hay lienzos públicos.');
-        } else {
-            this.showError(this.containerPublic, window.__ ? __('err_load_public_canvases') : 'Error al cargar lienzos.');
+        let allCanvases = [];
+
+        // Integrar los oficiales
+        if (officialRes && officialRes.success) {
+            allCanvases = allCanvases.concat(officialRes.data);
         }
 
-        // 2. Renderizar lienzos globales y oficiales (País/Estado)
-        if (officialRes && officialRes.success) {
-            const globalCanvases = officialRes.data.filter(c => c.scope_type === 'global');
-            const otherOfficial = officialRes.data.filter(c => c.scope_type !== 'global');
+        // Integrar los públicos, evitando duplicados
+        if (publicRes && publicRes.success) {
+            const existingIds = new Set(allCanvases.map(c => c.id));
+            const newPublics = publicRes.data.filter(c => !existingIds.has(c.id));
+            allCanvases = allCanvases.concat(newPublics);
+        }
 
-            this.renderCanvases(this.containerGlobal, globalCanvases, 'Aún no hay ningún lienzo global creado.');
-            this.renderCanvases(this.containerOfficial, otherOfficial, 'Aún no hay lienzos de países, estados u organizaciones creados.');
+        if (allCanvases.length > 0) {
+            this.renderCanvases(this.containerAll, allCanvases, 'Aún no hay lienzos disponibles.');
         } else {
-            this.showError(this.containerGlobal, 'Error al cargar lienzos.');
-            this.showError(this.containerOfficial, 'Error al cargar lienzos.');
+            this.showError(this.containerAll, window.__ ? __('err_load_public_canvases') : 'No se encontraron lienzos.');
         }
 
         this.reinitializeUI();
@@ -100,13 +94,11 @@ class HomeController {
     }
 
     reinitializeUI() {
-        [this.containerGlobal, this.containerOfficial, this.containerPublic].forEach(container => {
-            if (!container) return;
-            if (window.app && typeof window.app.initModules === 'function') window.app.initModules(container);
-            else if (window.uiUtils && typeof window.uiUtils.initDropdowns === 'function') window.uiUtils.initDropdowns(container);
-            
-            if (window.router && typeof window.router.bindLinks === 'function') window.router.bindLinks(container);
-        });
+        if (!this.containerAll) return;
+        if (window.app && typeof window.app.initModules === 'function') window.app.initModules(this.containerAll);
+        else if (window.uiUtils && typeof window.uiUtils.initDropdowns === 'function') window.uiUtils.initDropdowns(this.containerAll);
+        
+        if (window.router && typeof window.router.bindLinks === 'function') window.router.bindLinks(this.containerAll);
     }
 }
 
