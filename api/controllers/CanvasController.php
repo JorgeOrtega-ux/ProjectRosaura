@@ -657,5 +657,30 @@ class CanvasController extends BaseController {
             return $this->handleException($e, __FUNCTION__);
         }
     }
+
+    // ==========================================
+    // NUEVO MÉTODO: TOGGLE FAVORITOS
+    // ==========================================
+    public function toggle_favorite($input) {
+        try {
+            if (!$this->session->isLoggedIn()) {
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized') ?? 'No autorizado.', 'http_code' => 401]);
+            }
+
+            $userId = $this->session->getActiveAccountId();
+            $canvasId = $input['id'] ?? $input['canvas_id'] ?? null;
+
+            if (!$canvasId) {
+                return $this->respond(['success' => false, 'message' => 'ID de lienzo no proporcionado.']);
+            }
+
+            $result = $this->canvasServices->toggleFavorite($userId, (int)$canvasId);
+            return $this->respond($result);
+
+        } catch (\Throwable $e) {
+            // El Logger registrará silenciosamente la excepción según las instrucciones
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
 }
 ?>

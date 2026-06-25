@@ -1140,5 +1140,40 @@ class CanvasServices {
             return ['success' => false, 'message' => 'Error interno del servidor.'];
         }
     }
+
+    // ==========================================
+    // NUEVA LÓGICA DE FAVORITOS
+    // ==========================================
+
+    public function toggleFavorite(int $userId, int $canvasId): array {
+        try {
+            $canvas = $this->canvasRepository->getById($canvasId);
+            if (!$canvas) {
+                return ['success' => false, 'message' => __('err_canvas_not_found') ?? 'Lienzo no encontrado.'];
+            }
+
+            // Ejecuta la transacción atómica
+            $result = $this->canvasRepository->toggleFavorite($userId, $canvasId);
+
+            return [
+                'success' => true, 
+                'message' => 'Favoritos actualizados.',
+                'data' => [
+                    'action' => $result['action'],
+                    'favorites_count' => $result['favorites_count']
+                ]
+            ];
+            
+        } catch (Exception $e) {
+            // Se registra el fallo silenciosamente usando el logger sin delatar nada hacia el cliente
+            Logger::error('Error toggling favorite.', [
+                'user_id' => $userId, 
+                'canvas_id' => $canvasId, 
+                'error' => $e->getMessage()
+            ]);
+            
+            return ['success' => false, 'message' => __('err_database') ?? 'Error interno al procesar la solicitud.'];
+        }
+    }
 }
 ?>

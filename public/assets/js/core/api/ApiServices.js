@@ -211,9 +211,6 @@ export class ApiService {
         }
     }
 
-    // ==========================================
-    // NUEVO MÉTODO: DESCARGA DE ARCHIVOS DE TEXTO (JSONL, CSV)
-    // ==========================================
     async downloadText(route, data = {}, signal = null) {
         const payload = {
             route: route,
@@ -262,6 +259,12 @@ export class ApiService {
         }
     }
 
+    // ==========================================
+    // MÉTODO PARA TOGGLE FAVORITOS
+    // ==========================================
+    async toggleFavorite(canvasId) {
+        return await this.post(ApiRoutes.Canvases.ToggleFavorite, { id: canvasId });
+    }
 
     async getAllPermissions() {
         return await this.post(ApiRoutes.Admin.GetPermissions);

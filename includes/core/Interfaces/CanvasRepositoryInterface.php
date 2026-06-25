@@ -8,7 +8,7 @@ interface CanvasRepositoryInterface {
     
     // Métodos para Home / Explora
     public function getPublicCanvases(int $limit = 20): array;
-    public function getOfficialCanvases(): array; // <--- NUEVO
+    public function getOfficialCanvases(): array;
 
     // Métodos para Manage
     public function getUserCanvasesPaginated(int $ownerId, int $limit, int $offset): array;
@@ -28,7 +28,7 @@ interface CanvasRepositoryInterface {
     
     // Utilidades
     public function getById(int $id): ?array;
-    public function getByScopeHash(string $hash): ?array; // <--- NUEVO
+    public function getByScopeHash(string $hash): ?array;
     public function getMemberRole(int $canvasId, int $userId): ?string;
     public function updateMemberRole(int $canvasId, int $userId, string $role): bool;
 
@@ -63,5 +63,10 @@ interface CanvasRepositoryInterface {
     public function saveTemplateMetadata(int $userId, string $filePath): int;
     public function getUserTemplates(int $userId): array;
     public function deleteTemplate(int $templateId, int $userId): bool;
+
+    // ==========================================
+    // NUEVO MÉTODO PARA FAVORITOS (Transacción Atómica)
+    // ==========================================
+    public function toggleFavorite(int $userId, int $canvasId): array;
 }
 ?>

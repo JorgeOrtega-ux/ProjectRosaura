@@ -84,12 +84,14 @@ export const ApiRoutes = {
     },
     Canvases: {
         GetPublic: 'canvases.get_public',
-        GetOfficial: 'canvases.get_official', // NUEVO ENDPOINT
+        GetOfficial: 'canvases.get_official',
         Get: 'canvases.get',
         Create: 'canvases.create',
         Update: 'canvases.update',
         Delete: 'canvases.delete',
         Leave: 'canvases.leave', 
+        
+        ToggleFavorite: 'canvases.toggle_favorite', // NUEVA RUTA
         
         RequestAccess: 'canvases.request_access',
         ApproveRequest: 'canvases.approve_request',

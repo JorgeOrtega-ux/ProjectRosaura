@@ -364,6 +364,13 @@ return [
         'action' => 'leave',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_leave', 'max' => RL::MAX_10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
+
+    // NUEVA RUTA: TOGGLE FAVORITOS
+    'canvases.toggle_favorite' => [
+        'controller' => 'App\Api\Controllers\CanvasController',
+        'action' => 'toggle_favorite',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_toggle_fav', 'max' => 20, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
+    ],
     
     // --- NUEVAS RUTAS DE MODERACIÓN DE MIEMBROS ---
     'canvases.change_member_role' => [

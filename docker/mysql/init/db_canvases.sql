@@ -1,3 +1,5 @@
+-- docker/mysql/init/db_canvases.sql
+
 CREATE DATABASE IF NOT EXISTS db_canvases;
 
 USE db_canvases;
@@ -15,6 +17,7 @@ CREATE TABLE IF NOT EXISTS `canvases` (
   `max_participants` int(11) NOT NULL DEFAULT 10,
   `cooldown_pixels_batch` int(11) NOT NULL DEFAULT 5,
   `cooldown_seconds` int(11) NOT NULL DEFAULT 10,
+  `favorites_count` int(11) NOT NULL DEFAULT 0,
   `scope_type` enum('personal', 'global', 'country', 'state', 'municipality', 'organization') NOT NULL DEFAULT 'personal',
   `scope_ref_1` varchar(100) DEFAULT NULL,
   `scope_ref_2` varchar(100) DEFAULT NULL,
@@ -52,6 +55,18 @@ CREATE TABLE IF NOT EXISTS `canvas_access_requests` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `idx_canvas_user_req` (`canvas_id`, `user_id`),
   CONSTRAINT `fk_req_canvas` FOREIGN KEY (`canvas_id`) REFERENCES `canvases` (`id`) ON DELETE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
+
+-- ==========================================
+-- NUEVA TABLA PARA SISTEMA DE FAVORITOS
+-- ==========================================
+
+CREATE TABLE IF NOT EXISTS `canvas_favorites` (
+  `canvas_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`canvas_id`, `user_id`),
+  CONSTRAINT `fk_cf_canvas` FOREIGN KEY (`canvas_id`) REFERENCES `canvases` (`id`) ON DELETE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 -- ==========================================

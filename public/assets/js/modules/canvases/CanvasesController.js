@@ -178,6 +178,40 @@ class CanvasesController {
             this.leaveCanvas(actionBtn);
         } else if (action === 'viewCanvasSnapshots') {
             this.viewCanvasSnapshots(actionBtn);
+        } else if (action === 'toggleFavorite') {
+            this.toggleFavorite(actionBtn);
+        }
+    }
+
+    // ==========================================
+    // INICIO: LÓGICA DE FAVORITOS
+    // ==========================================
+    async toggleFavorite(btn) {
+        if (btn.classList.contains('disabled-interactive')) return;
+        
+        const canvasId = btn.getAttribute('data-id');
+        if (!canvasId) return;
+
+        // Se prohíbe atributos nativos de disable, en su lugar se usa la clase
+        btn.classList.add('disabled-interactive');
+
+        const res = await this.api.toggleFavorite(canvasId);
+
+        btn.classList.remove('disabled-interactive');
+
+        if (res && res.success) {
+            const countSpan = btn.querySelector('.favorite-count');
+            if (countSpan) {
+                countSpan.textContent = res.data.favorites_count;
+            }
+
+            if (res.data.action === 'added') {
+                btn.classList.add('is-favorite');
+            } else {
+                btn.classList.remove('is-favorite');
+            }
+        } else {
+            showMessage(res.message || (window.__ ? window.__('err_default') : 'Error'), 'error');
         }
     }
 

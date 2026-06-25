@@ -431,5 +431,63 @@ class CanvasRepository implements CanvasRepositoryInterface {
             ':user_id' => $userId
         ]);
     }
+
+    // ==========================================
+    // NUEVA LÓGICA DE FAVORITOS (Transacción Atómica)
+    // ==========================================
+
+    public function toggleFavorite(int $userId, int $canvasId): array {
+        try {
+            // Iniciamos la transacción
+            $this->db->beginTransaction();
+
+            // 1. Verificar el estado actual
+            $stmt = $this->db->prepare("SELECT 1 FROM canvas_favorites WHERE user_id = :user_id AND canvas_id = :canvas_id LIMIT 1");
+            $stmt->execute([':user_id' => $userId, ':canvas_id' => $canvasId]);
+            $isFavorite = $stmt->fetchColumn();
+
+            if ($isFavorite) {
+                // Eliminar el favorito
+                $delStmt = $this->db->prepare("DELETE FROM canvas_favorites WHERE user_id = :user_id AND canvas_id = :canvas_id");
+                $delStmt->execute([':user_id' => $userId, ':canvas_id' => $canvasId]);
+
+                // Decrementar el contador evitando números negativos
+                $updStmt = $this->db->prepare("UPDATE " . DB::TBL_CANVASES . " SET favorites_count = GREATEST(0, favorites_count - 1) WHERE id = :canvas_id");
+                $updStmt->execute([':canvas_id' => $canvasId]);
+
+                $action = 'removed';
+            } else {
+                // Añadir el favorito
+                $insStmt = $this->db->prepare("INSERT INTO canvas_favorites (user_id, canvas_id) VALUES (:user_id, :canvas_id)");
+                $insStmt->execute([':user_id' => $userId, ':canvas_id' => $canvasId]);
+
+                // Incrementar el contador
+                $updStmt = $this->db->prepare("UPDATE " . DB::TBL_CANVASES . " SET favorites_count = favorites_count + 1 WHERE id = :canvas_id");
+                $updStmt->execute([':canvas_id' => $canvasId]);
+
+                $action = 'added';
+            }
+
+            // Recuperar el valor actualizado del contador
+            $countStmt = $this->db->prepare("SELECT favorites_count FROM " . DB::TBL_CANVASES . " WHERE id = :canvas_id");
+            $countStmt->execute([':canvas_id' => $canvasId]);
+            $newCount = (int)$countStmt->fetchColumn();
+
+            // Guardar todo de forma permanente
+            $this->db->commit();
+
+            return [
+                'action' => $action,
+                'favorites_count' => $newCount
+            ];
+
+        } catch (Exception $e) {
+            // Si algo falla, revertimos absolutamente todo
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            throw $e;
+        }
+    }
 }
 ?>
