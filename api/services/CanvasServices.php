@@ -77,9 +77,14 @@ class CanvasServices {
         }
     }
 
+  // ==========================================
+    // MÉTODOS PARA HOME / EXPLORA / TICKETS WS
+    // ==========================================
+
     public function getPublicCanvases(?int $currentUserId, int $limit = 20): array {
         try {
-            $canvases = $this->canvasRepository->getPublicCanvases($limit);
+            // Modificado: Ahora le pasamos el $currentUserId al repositorio
+            $canvases = $this->canvasRepository->getPublicCanvases($limit, $currentUserId);
             
             $formattedCanvases = array_map(function($canvas) use ($currentUserId) {
                 // Lógica de negocio: Determinar si el usuario actual es el dueño
@@ -105,10 +110,10 @@ class CanvasServices {
         }
     }
 
-    public function getOfficialCanvases(): array {
+    public function getOfficialCanvases(?int $currentUserId = null): array {
         try {
-            // El CanvasRepository ya tiene un método para esto (getOfficialCanvases)
-            $canvases = $this->canvasRepository->getOfficialCanvases();
+            // Modificado: Ahora le pasamos el $currentUserId al repositorio
+            $canvases = $this->canvasRepository->getOfficialCanvases($currentUserId);
             
             $formattedCanvases = array_map(function($canvas) {
                 // Lógica de negocio: Los lienzos oficiales no tienen dueño personal y se muestran públicos.

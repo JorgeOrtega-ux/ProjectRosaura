@@ -12,7 +12,6 @@ export const CardTemplates = {
         const name = escapeHTML(canvas.name);
         const uuid = escapeHTML(canvas.uuid);
         const basePath = config.basePath || '';
-        const favoritesCount = canvas.favorites_count || 0;
         const isFavoriteClass = canvas.is_favorite ? 'is-favorite' : '';
         
         // Bloque de imagen
@@ -43,7 +42,6 @@ export const CardTemplates = {
                     <div class="component-snapshot-actions" style="display: flex; gap: 4px; align-items: center;">
                         <button type="button" class="component-button component-button--icon component-button--h32 btn-favorite ${isFavoriteClass}" data-action="toggleFavorite" data-id="${canvas.id}">
                             <span class="material-symbols-rounded" style="font-size: 20px;">favorite</span>
-                            <span class="favorite-count" style="font-size: 13px; font-weight: 600; margin-left: 2px;">${favoritesCount}</span>
                         </button>
                         <button type="button" class="component-button component-button--icon component-button--h32" data-action="toggleModule" data-target="snapshot-menu-${canvas.id}">
                             <span class="material-symbols-rounded">more_vert</span>
@@ -111,6 +109,6 @@ export const CardTemplates = {
      * Estado vacío genérico para listados de tarjetas
      */
     emptyState: (message) => {
-        return `<p style="color: #666; width: 100%; grid-column: 1 / -1; text-align: center;">${escapeHTML(message)}</p>`;
+        return `<p style="color: var(--text-secondary); width: 100%; grid-column: 1 / -1; text-align: center;">${escapeHTML(message)}</p>`;
     }
 };

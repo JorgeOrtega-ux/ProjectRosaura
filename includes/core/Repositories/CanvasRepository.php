@@ -77,29 +77,53 @@ class CanvasRepository implements CanvasRepositoryInterface {
 
     // --- MÉTODOS PARA HOME / EXPLORA ---
 
-    public function getPublicCanvases(int $limit = 20): array {
-        $sql = "SELECT id, uuid, name, owner_id, scope_type 
-                FROM " . DB::TBL_CANVASES . " 
-                WHERE privacy = 'public' AND scope_type = 'personal'
-                ORDER BY created_at DESC 
+// --- MÉTODOS PARA HOME / EXPLORA ---
+
+    public function getPublicCanvases(int $limit = 20, ?int $currentUserId = null): array {
+        $sql = "SELECT c.id, c.uuid, c.name, c.owner_id, c.scope_type, 
+                       CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite
+                FROM " . DB::TBL_CANVASES . " c
+                LEFT JOIN canvas_favorites f ON c.id = f.canvas_id AND f.user_id = :current_user_id
+                WHERE c.privacy = 'public' AND c.scope_type = 'personal'
+                ORDER BY c.created_at DESC 
                 LIMIT :limit";
         
         $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(':current_user_id', $currentUserId ?? 0, PDO::PARAM_INT);
         $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
         $stmt->execute();
         
         $results = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        
+        // Convertimos explícitamente a booleano para el frontend
+        $results = array_map(function($canvas) {
+            $canvas['is_favorite'] = (bool)$canvas['is_favorite'];
+            return $canvas;
+        }, $results);
+
         return array_map([$this, 'appendSnapshotUrl'], $results);
     }
 
-    public function getOfficialCanvases(): array {
-        $sql = "SELECT id, uuid, name, description, size, palette_id, scope_type, scope_ref_1, scope_ref_2, scope_ref_3 
-                FROM " . DB::TBL_CANVASES . " 
-                WHERE owner_id IS NULL AND scope_type != 'personal'
-                ORDER BY created_at DESC";
+    public function getOfficialCanvases(?int $currentUserId = null): array {
+        $sql = "SELECT c.id, c.uuid, c.name, c.description, c.size, c.palette_id, c.scope_type, c.scope_ref_1, c.scope_ref_2, c.scope_ref_3,
+                       CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite
+                FROM " . DB::TBL_CANVASES . " c
+                LEFT JOIN canvas_favorites f ON c.id = f.canvas_id AND f.user_id = :current_user_id
+                WHERE c.owner_id IS NULL AND c.scope_type != 'personal'
+                ORDER BY c.created_at DESC";
                 
-        $stmt = $this->db->query($sql);
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(':current_user_id', $currentUserId ?? 0, PDO::PARAM_INT);
+        $stmt->execute();
+        
         $results = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        
+        // Convertimos explícitamente a booleano para el frontend
+        $results = array_map(function($canvas) {
+            $canvas['is_favorite'] = (bool)$canvas['is_favorite'];
+            return $canvas;
+        }, $results);
+
         return array_map([$this, 'appendSnapshotUrl'], $results);
     }
 

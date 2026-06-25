@@ -4,6 +4,7 @@ import { ApiRoutes } from '../../core/api/ApiRoutes.js';
 import { ApiService } from '../../core/api/ApiServices.js';
 import { renderSkeleton } from '../../core/utils/uiUtils.js';
 import { CardTemplates } from '../../core/components/CardTemplates.js';
+import { CanvasCardInteractions } from '../../core/components/CanvasCardInteractions.js';
 
 class HomeController {
     constructor() {
@@ -12,12 +13,15 @@ class HomeController {
         this.abortController = null;
         
         this.containerAll = null;
+        this.cardInteractions = null;
         
         this.handleGlobalClickBound = this.handleGlobalClick.bind(this);
     }
 
     init() {
         this.abortController = new AbortController();
+        this.cardInteractions = new CanvasCardInteractions(this.api, this.basePath, this.abortController);
+        
         this.bindEvents();
         
         this.containerAll = document.querySelector('[data-ref="home-all-canvases"]');
@@ -37,10 +41,20 @@ class HomeController {
     }
 
     handleGlobalClick(e) {
-        const btnReload = e.target.closest('[data-action="reloadHome"]');
-        if (btnReload) {
+        const actionBtn = e.target.closest('[data-action]');
+        if (!actionBtn) return;
+        
+        const action = actionBtn.getAttribute('data-action');
+
+        if (action === 'reloadHome') {
             e.preventDefault();
             this.loadCanvases();
+            return;
+        }
+
+        // Delegar interacciones de las tarjetas al helper
+        if (this.cardInteractions && this.cardInteractions.handleAction(action, actionBtn)) {
+            return;
         }
     }
 

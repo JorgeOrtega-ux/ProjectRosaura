@@ -2929,3 +2929,44 @@ input:checked + .component-toggle-slider:before {
     position: relative;
     padding: 0;
 }
+
+
+
+
+
+
+
+
+
+/* ==========================================================================
+   BOTÓN DE FAVORITOS ACTIVO - VARIANTE SUTIL / ICONO ROJO RELLENO
+   ========================================================================== */
+.component-button.btn-favorite {
+    transition: color 0.2s ease, transform 0.1s ease;
+}
+
+/* Estado cuando tiene la clase .is-favorite */
+.component-button.btn-favorite.is-favorite {
+    color: #ff3b30 !important; /* Rojo brillante nativo de sistemas UI modernos */
+    background-color: var(--surface-hover) !important; /* Usa tus variables de tema */
+    border-color: transparent !important;
+}
+
+/* Activa el relleno del corazón mediante la propiedad nativa de Material Symbols */
+.component-button.btn-favorite.is-favorite .material-symbols-rounded {
+    font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 20;
+    animation: favoriteBeat 0.3s ease-in-out; /* Animación sutil de latido al activar */
+}
+
+/* Efecto hover interactivo */
+.component-button.btn-favorite.is-favorite:not(.disabled-interactive):hover {
+    transform: scale(1.1);
+    background-color: var(--surface-hover) !important;
+}
+
+/* Animación opcional de latido (Microinteracción estética) */
+@keyframes favoriteBeat {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.25); }
+    100% { transform: scale(1); }
+}

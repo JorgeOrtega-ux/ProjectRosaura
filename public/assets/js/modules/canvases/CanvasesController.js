@@ -3,6 +3,7 @@
 import { ApiRoutes } from '../../core/api/ApiRoutes.js';
 import { ApiService } from '../../core/api/ApiServices.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../core/utils/uiUtils.js';
+import { CanvasCardInteractions } from '../../core/components/CanvasCardInteractions.js';
 
 /**
  * Función helper local para obtener todas las paletas en formato Array.
@@ -18,6 +19,7 @@ class CanvasesController {
         this.api = new ApiService();
         this.basePath = window.AppBasePath || '';
         this.abortController = null;
+        this.cardInteractions = null;
         
         this.formState = {
             name: '',
@@ -40,6 +42,7 @@ class CanvasesController {
 
     init() {
         this.abortController = new AbortController();
+        this.cardInteractions = new CanvasCardInteractions(this.api, this.basePath, this.abortController);
         this.bindEvents();
         this.setupDefaultValues();
         this.renderPalettes();
@@ -151,6 +154,11 @@ class CanvasesController {
 
         const action = actionBtn.getAttribute('data-action');
 
+        // Delegar interacciones de las tarjetas al helper de manera limpia
+        if (this.cardInteractions && this.cardInteractions.handleAction(action, actionBtn)) {
+            return;
+        }
+
         if (action === 'toggleDropdown') {
             this.toggleDropdown(actionBtn);
         } else if (action === 'selectValue') {
@@ -168,50 +176,6 @@ class CanvasesController {
         } else if (action === 'createCanvas') {
             e.preventDefault();
             this.submitCanvas(actionBtn);
-        } else if (action === 'openCanvasNewTab') {
-            this.openCanvasNewTab(actionBtn);
-        } else if (action === 'copyCanvasLink') {
-            this.copyCanvasLink(actionBtn);
-        } else if (action === 'deleteCanvas') {
-            this.deleteCanvas(actionBtn);
-        } else if (action === 'leaveCanvas') {
-            this.leaveCanvas(actionBtn);
-        } else if (action === 'viewCanvasSnapshots') {
-            this.viewCanvasSnapshots(actionBtn);
-        } else if (action === 'toggleFavorite') {
-            this.toggleFavorite(actionBtn);
-        }
-    }
-
-    // ==========================================
-    // INICIO: LÓGICA DE FAVORITOS
-    // ==========================================
-    async toggleFavorite(btn) {
-        if (btn.classList.contains('disabled-interactive')) return;
-        
-        const canvasId = btn.getAttribute('data-id');
-        if (!canvasId) return;
-
-        // Se prohíbe atributos nativos de disable, en su lugar se usa la clase
-        btn.classList.add('disabled-interactive');
-
-        const res = await this.api.toggleFavorite(canvasId);
-
-        btn.classList.remove('disabled-interactive');
-
-        if (res && res.success) {
-            const countSpan = btn.querySelector('.favorite-count');
-            if (countSpan) {
-                countSpan.textContent = res.data.favorites_count;
-            }
-
-            if (res.data.action === 'added') {
-                btn.classList.add('is-favorite');
-            } else {
-                btn.classList.remove('is-favorite');
-            }
-        } else {
-            showMessage(res.message || (window.__ ? window.__('err_default') : 'Error'), 'error');
         }
     }
 
@@ -359,96 +323,6 @@ class CanvasesController {
     // ==========================================
     // FIN: LÓGICA ABSORBIDA DE LOCATIONS
     // ==========================================
-
-    viewCanvasSnapshots(btn) {
-        const uuid = btn.getAttribute('data-uuid');
-        if (uuid) {
-            this.closeDropdowns();
-            if (window.spaRouter) {
-                window.spaRouter.navigate(`${this.basePath}/design/s/${uuid}`);
-            } else {
-                window.location.href = `${this.basePath}/design/s/${uuid}`;
-            }
-        }
-    }
-
-    openCanvasNewTab(btn) {
-        const uuid = btn.getAttribute('data-uuid');
-        if (uuid) {
-            window.open(`${this.basePath}/design/${uuid}`, '_blank');
-        }
-    }
-
-    async copyCanvasLink(btn) {
-        const uuid = btn.getAttribute('data-uuid');
-        if (uuid) {
-            const url = `${window.location.origin}${this.basePath}/design/${uuid}`;
-            try {
-                await navigator.clipboard.writeText(url);
-                showMessage(window.__('msg_link_copied'), 'success');
-                this.closeDropdowns();
-            } catch (err) {
-                showMessage(window.__('err_default'), 'error');
-            }
-        }
-    }
-
-    async deleteCanvas(btn) {
-        const id = btn.getAttribute('data-id');
-        const uuid = btn.getAttribute('data-uuid');
-        if (!uuid) return;
-
-        this.closeDropdowns();
-
-        if (window.dialogSystem) {
-            const confirm = await window.dialogSystem.show('confirmDeleteCanvas', { uuid: uuid });
-            if (!confirm.confirmed) return;
-        }
-
-        const res = await this.api.post(ApiRoutes.Canvases.Delete, { uuid: uuid }, this.abortController.signal);
-        
-        if (res.aborted) return;
-
-        if (res.success) {
-            showMessage(window.__('msg_canvas_deleted'), 'success');
-            const card = document.querySelector(`.component-snapshot-card[data-card-id="${id}"]`);
-            if (card) card.remove();
-        } else {
-            showMessage(res.message, 'error');
-        }
-    }
-
-    async leaveCanvas(btn) {
-        const id = btn.getAttribute('data-id');
-        const uuid = btn.getAttribute('data-uuid');
-        if (!uuid) return;
-
-        this.closeDropdowns();
-
-        if (window.dialogSystem) {
-            const confirm = await window.dialogSystem.show('confirmLeaveCanvas', { uuid: uuid });
-            if (!confirm.confirmed) return;
-        }
-
-        const res = await this.api.post(ApiRoutes.Canvases.Leave, { uuid: uuid }, this.abortController.signal);
-        
-        if (res.aborted) return;
-
-        if (res.success) {
-            showMessage(window.__('msg_canvas_left'), 'success');
-            const card = document.querySelector(`.component-snapshot-card[data-card-id="${id}"]`);
-            if (card) card.remove();
-        } else {
-            showMessage(res.message, 'error');
-        }
-    }
-
-    closeDropdowns() {
-        document.querySelectorAll('.component-module--dropdown:not(.disabled)').forEach(el => {
-            el.classList.remove('active');
-            el.classList.add('disabled');
-        });
-    }
 
     saveCanvasName(btn) {
         const container = btn.closest('.component-group-item--stateful');
@@ -636,8 +510,7 @@ class CanvasesController {
             this.formState.cooldown_seconds = parseInt(inputSec.getAttribute('data-val'), 10) || 10;
         }
 
-        // Extracción correcta basada en los valores guardados internamente del Dropdown, 
-        // ya no de los <select> nativos (pues se eliminaron).
+        // Extracción correcta basada en los valores guardados internamente del Dropdown
         const scopeSection = document.querySelector('[data-ref="scope-section"]');
         if (scopeSection && !scopeSection.classList.contains('disabled')) {
             const scopeType = this.formState.scope_type;
