@@ -31,6 +31,9 @@ export class MainController {
     }
 
     get isMobile() { return window.innerWidth <= 768; }
+    
+    // NOTA DE IMPLEMENTACIÓN: Getter centralizado para el nivel del usuario
+    get userTier() { return window.appUserTier || 0; }
 
     init() {
         this.dom = {

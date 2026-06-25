@@ -140,6 +140,7 @@ class DesignController {
         }
 
         this.bindEvents();
+        this.applyPremiumLocks(); // NOTA DE IMPLEMENTACIÓN: Bloqueo de UI
         
         if (this.isSnapshotMode) {
             this.loadCanvasConfigForSnapshot();
@@ -154,6 +155,28 @@ class DesignController {
             }
             
             this.startCooldownLoop();
+        }
+    }
+
+    // NOTA DE IMPLEMENTACIÓN: Aplica visualmente bloqueos Premium basados en el tier
+    applyPremiumLocks() {
+        const tier = window.appUserTier || 0;
+        if (tier < 1) { // Básico
+            const liveShareMenuBtn = document.querySelector('[data-menu-target="tool-liveshare-menu"]'); // o similar según tu HTML de tools
+            if (liveShareMenuBtn) {
+                liveShareMenuBtn.classList.add('disabled-interactive');
+                liveShareMenuBtn.style.opacity = '0.5';
+                liveShareMenuBtn.setAttribute('data-tooltip', 'Compartir en vivo requiere plan Pro o Advanced 🔒');
+                // Icono de candadito sobre el botón
+                if (!liveShareMenuBtn.querySelector('.icon-lock')) {
+                    const lock = document.createElement('span');
+                    lock.className = 'material-symbols-rounded icon-lock';
+                    lock.textContent = 'lock';
+                    lock.style.cssText = 'position: absolute; bottom: 0; right: 0; font-size: 12px; color: #FFA500; background: #222; border-radius: 50%; padding: 2px;';
+                    liveShareMenuBtn.appendChild(lock);
+                    liveShareMenuBtn.style.position = 'relative';
+                }
+            }
         }
     }
 

@@ -8,6 +8,9 @@ import { TelemetryTracker } from './core/telemetry/TelemetryTracker.js';
 import { RouteModulesMap } from './core/router/RouteModulesMap.js';
 
 document.addEventListener('DOMContentLoaded', () => {
+    // NOTA DE IMPLEMENTACIÓN: Inicialización de la variable global de Suscripción
+    window.appUserTier = window.APP_USER ? window.APP_USER.subscription_tier : 0;
+
     // 1. Instanciamos lógica UI base (Global)
     const app = new MainController();
     app.init();

@@ -4,7 +4,7 @@ import json
 import redis
 import mysql.connector
 import uuid
-import shutil # [NUEVO] Importado para mover archivos
+import shutil
 from zlib import decompress
 from PIL import Image
 from datetime import datetime
@@ -19,12 +19,14 @@ DB_HOST = os.getenv("DB_HOST", "db")
 DB_USER = os.getenv("DB_USER", "system_web_executor")
 DB_PASS = os.getenv("DB_PASS", "secret")
 DB_NAME = os.getenv("DB_CANVASES_NAME", "db_canvases")
+# NOTA DE IMPLEMENTACIÓN: Necesitamos acceso cruzado a db_identity
+DB_IDENTITY_NAME = os.getenv("DB_IDENTITY_NAME", "db_identity")
 
 # Configuración Worker (RUTAS FÍSICAS A LA CARPETA PÚBLICA Y PRIVADA)
 SYNC_INTERVAL = int(os.getenv("WORKER_SNAPSHOTS_SYNC_INTERVAL", 10))
 SNAPSHOTS_DIR = os.getenv("SNAPSHOTS_DIR", "/app/storage/public/snapshots")
 ARCHIVE_DIR = os.getenv("SNAPSHOTS_ARCHIVE_DIR", "/app/storage/public/snapshots_archive")
-TIMELAPSE_DIR = os.getenv("TIMELAPSE_DIR", "/app/storage/private/canvases/timelapses") # [NUEVO] Para ubicar el archivo en vivo
+TIMELAPSE_DIR = os.getenv("TIMELAPSE_DIR", "/app/storage/private/canvases/timelapses")
 SCALE_FACTOR = int(os.getenv("SNAPSHOT_SCALE_FACTOR", 10)) 
 
 # Ruta a la fuente única de la verdad
@@ -90,7 +92,8 @@ def parse_size(size_str):
     except:
         return 64, 64
 
-def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palette_id):
+# NOTA DE IMPLEMENTACIÓN: Se añadió owner_tier como parámetro (0=Basic, 1=Pro, 2=Advanced)
+def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palette_id, owner_tier):
     try:
         raw_bytes = decompress(compressed_data)
         
@@ -115,59 +118,59 @@ def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palet
         final_height = height * SCALE_FACTOR
         img_scaled = img.resize((final_width, final_height), Image.NEAREST)
 
-        # Sobrescribimos el archivo base físicamente
+        # Sobrescribimos el archivo base físicamente (Siempre se hace para mostrar el thumbnail actual)
         img_scaled.save(filepath, "PNG", optimize=True)
         
         # ==========================================
-        # INTERCONEXIÓN CON REINICIOS PROGRAMADOS
+        # INTERCONEXIÓN CON REINICIOS PROGRAMADOS Y LIMITES
         # ==========================================
         if r.exists(f"canvas:{canvas_id}:reset_lock"):
-            # Generar timestamp y guardar en la carpeta de archivo histórico
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            archive_filename = f"canvas_{canvas_id}_{timestamp}.png"
-            archive_filepath = os.path.join(ARCHIVE_DIR, archive_filename)
-            img_scaled.save(archive_filepath, "PNG", optimize=True)
-            print(f"[+] Archivo histórico guardado exitosamente: {archive_filepath}")
-
-            # IDs y Rutas para BD
-            snapshot_uuid = str(uuid.uuid4())
-            public_filepath = f"public/storage/snapshots_archive/{archive_filename}"
             
-            # ==========================================
-            # [NUEVO] SELLADO DEL ARCHIVO TIMELAPSE (JSONL)
-            # ==========================================
-            timelapse_src = os.path.join(TIMELAPSE_DIR, f"live_canvas_{canvas_id}.jsonl")
-            timelapse_dest_filename = f"snapshot_{snapshot_uuid}.jsonl"
-            timelapse_dest = os.path.join(TIMELAPSE_DIR, timelapse_dest_filename)
-            
-            timelapse_db_path = None # Variable que se guardará en MySQL
-            
-            if os.path.exists(timelapse_src):
-                try:
-                    shutil.move(timelapse_src, timelapse_dest)
-                    timelapse_db_path = f"private/canvases/timelapses/{timelapse_dest_filename}"
-                    print(f"[+] Timelapse convertido a histórico exitosamente: {timelapse_dest_filename}")
-                except Exception as e:
-                    print(f"[!] Error moviendo archivo JSONL de timelapse para el lienzo {canvas_id}: {e}")
+            # NOTA DE IMPLEMENTACIÓN: Si es Plan Básico (0), solo pisamos el thumbnail y purganos el timelapse, SIN hacer historiales.
+            if owner_tier == 0:
+                print(f"[-] Lienzo {canvas_id} pertenece a un plan Básico. Purgando el historial de reinicio.")
+                timelapse_src = os.path.join(TIMELAPSE_DIR, f"live_canvas_{canvas_id}.jsonl")
+                if os.path.exists(timelapse_src):
+                    os.remove(timelapse_src)
             else:
-                print(f"[-] No se encontró archivo 'live_canvas' para el lienzo {canvas_id}. Se guardará snapshot sin timelapse.")
+                # Si es Pro(1) o Advanced(2) o un lienzo oficial(2 por default), guardamos todo
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                archive_filename = f"canvas_{canvas_id}_{timestamp}.png"
+                archive_filepath = os.path.join(ARCHIVE_DIR, archive_filename)
+                img_scaled.save(archive_filepath, "PNG", optimize=True)
+                print(f"[+] Archivo histórico guardado exitosamente: {archive_filepath}")
 
-            # ==========================================
-            # REGISTRO EN BASE DE DATOS
-            # ==========================================
-            try:
-                cursor = db_conn.cursor()
-                # [MODIFICADO] Ahora insertamos también el timelapse_file_path
-                insert_query = """
-                    INSERT INTO canvas_snapshots_history (canvas_id, snapshot_uuid, file_path, timelapse_file_path)
-                    VALUES (%s, %s, %s, %s)
-                """
-                cursor.execute(insert_query, (canvas_id, snapshot_uuid, public_filepath, timelapse_db_path))
-                db_conn.commit()
-                cursor.close()
-                print(f"[+] Registro histórico guardado en DB con UUID: {snapshot_uuid}")
-            except Exception as e:
-                print(f"[!] Error guardando historial en DB: {e}")
+                snapshot_uuid = str(uuid.uuid4())
+                public_filepath = f"public/storage/snapshots_archive/{archive_filename}"
+                
+                timelapse_src = os.path.join(TIMELAPSE_DIR, f"live_canvas_{canvas_id}.jsonl")
+                timelapse_dest_filename = f"snapshot_{snapshot_uuid}.jsonl"
+                timelapse_dest = os.path.join(TIMELAPSE_DIR, timelapse_dest_filename)
+                
+                timelapse_db_path = None
+                
+                if os.path.exists(timelapse_src):
+                    try:
+                        shutil.move(timelapse_src, timelapse_dest)
+                        timelapse_db_path = f"private/canvases/timelapses/{timelapse_dest_filename}"
+                        print(f"[+] Timelapse convertido a histórico exitosamente: {timelapse_dest_filename}")
+                    except Exception as e:
+                        print(f"[!] Error moviendo archivo JSONL de timelapse para el lienzo {canvas_id}: {e}")
+                else:
+                    print(f"[-] No se encontró archivo 'live_canvas' para el lienzo {canvas_id}. Se guardará snapshot sin timelapse.")
+
+                try:
+                    cursor = db_conn.cursor()
+                    insert_query = """
+                        INSERT INTO canvas_snapshots_history (canvas_id, snapshot_uuid, file_path, timelapse_file_path)
+                        VALUES (%s, %s, %s, %s)
+                    """
+                    cursor.execute(insert_query, (canvas_id, snapshot_uuid, public_filepath, timelapse_db_path))
+                    db_conn.commit()
+                    cursor.close()
+                    print(f"[+] Registro histórico guardado en DB con UUID: {snapshot_uuid}")
+                except Exception as e:
+                    print(f"[!] Error guardando historial en DB: {e}")
 
             # Avisamos al worker de reinicios que ya puede vaciar el lienzo
             r.setex(f"canvas:{canvas_id}:snapshot_done", 60, "1")
@@ -180,12 +183,11 @@ def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palet
 def main():
     print("[*] Iniciando Worker de Snapshots (Imágenes PNG Alta Calidad)...")
     
-    # Crear directorios si no existen
     os.makedirs(SNAPSHOTS_DIR, exist_ok=True)
     os.makedirs(ARCHIVE_DIR, exist_ok=True)
-    os.makedirs(TIMELAPSE_DIR, exist_ok=True) # [NUEVO] Aseguramos que exista
+    os.makedirs(TIMELAPSE_DIR, exist_ok=True)
     
-    load_palettes() # <--- Carga inicial del JSON
+    load_palettes()
     
     try:
         r = redis.Redis(
@@ -211,10 +213,12 @@ def main():
                     cursor = db_conn.cursor()
                     
                     for canvas_id in pending_canvases:
-                        query = """
-                            SELECT s.snapshot_data, c.size, c.palette_id 
+                        # NOTA DE IMPLEMENTACIÓN: JOIN cruzado a la BD identity para extraer el tier. Si es null (Oficial) asume tier 2 (Premium Ilimitado)
+                        query = f"""
+                            SELECT s.snapshot_data, c.size, c.palette_id, IFNULL(u.subscription_tier, 2) as tier
                             FROM canvas_snapshots s
                             JOIN canvases c ON s.canvas_id = c.id
+                            LEFT JOIN {DB_IDENTITY_NAME}.users u ON c.owner_id = u.id
                             WHERE s.canvas_id = %s
                         """
                         cursor.execute(query, (canvas_id,))
@@ -224,9 +228,9 @@ def main():
                             snapshot_data = result[0]
                             size_str = result[1] if result[1] else '64'
                             palette_id = result[2] if result[2] else 'default'
+                            owner_tier = result[3]
                             
-                            # Pasamos Redis (r) y db_conn para evaluar candados y hacer INSERTS
-                            success = process_canvas_image(r, db_conn, canvas_id, snapshot_data, size_str, palette_id)
+                            success = process_canvas_image(r, db_conn, canvas_id, snapshot_data, size_str, palette_id, owner_tier)
                             if success:
                                 r.srem("canvases:pending_snapshots", canvas_id)
                                 print(f"[+] Snapshot HQ procesado: canvas_{canvas_id}.png")

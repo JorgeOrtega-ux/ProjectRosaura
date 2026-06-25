@@ -10,6 +10,7 @@ use App\Core\Helpers\Utils;
 use App\Core\System\Logger;
 use App\Core\System\DatabaseConstants as DB;
 use App\Core\System\CacheConstants;
+use App\Core\System\SubscriptionPlanConstants; // NOTA DE IMPLEMENTACIÓN: Se importa el archivo de limites
 use App\Config\RedisCache;
 use App\Config\DatabaseManager;
 use PDO;
@@ -35,13 +36,8 @@ class CanvasServices {
         return ['default']; 
     }
 
-    // ==========================================
-    // MÉTODOS PARA HOME / EXPLORA / TICKETS WS
-    // ==========================================
-    
     public function generateWsTicket(?int $userId, int $canvasId): array {
         try {
-            // Verificamos si el lienzo existe
             $canvas = $this->canvasRepository->getById($canvasId);
             if (!$canvas) {
                 return ['success' => false, 'message' => __('err_canvas_not_found') ?? 'Lienzo no encontrado.', 'http_code' => 404];
@@ -49,7 +45,6 @@ class CanvasServices {
 
             $ticketUuid = Utils::generateUUID();
             
-            // Estructuramos la data del ticket. 'guest' para invitados, 'auth' para logueados.
             $ticketData = [
                 'type' => $userId !== null ? 'auth' : 'guest',
                 'user_id' => $userId,
@@ -62,7 +57,6 @@ class CanvasServices {
                 $redis = $redisInstance->getClient();
                 if ($redis) {
                     $key = "ws:ticket:{$ticketUuid}";
-                    // Se almacena en Redis con un TTL ultra corto de 15 segundos (setex)
                     $redis->setex($key, 15, json_encode($ticketData));
                     
                     return ['success' => true, 'data' => ['ticket' => $ticketUuid]];
@@ -77,17 +71,11 @@ class CanvasServices {
         }
     }
 
-  // ==========================================
-    // MÉTODOS PARA HOME / EXPLORA / TICKETS WS
-    // ==========================================
-
     public function getPublicCanvases(?int $currentUserId, int $limit = 20): array {
         try {
-            // Modificado: Ahora le pasamos el $currentUserId al repositorio
             $canvases = $this->canvasRepository->getPublicCanvases($limit, $currentUserId);
             
             $formattedCanvases = array_map(function($canvas) use ($currentUserId) {
-                // Lógica de negocio: Determinar si el usuario actual es el dueño
                 $canvas['is_owner'] = ($canvas['owner_id'] === $currentUserId && $canvas['owner_id'] !== null);
                 
                 $snapshotPath = "public/storage/snapshots/canvas_" . $canvas['id'] . ".png";
@@ -112,11 +100,9 @@ class CanvasServices {
 
     public function getOfficialCanvases(?int $currentUserId = null): array {
         try {
-            // Modificado: Ahora le pasamos el $currentUserId al repositorio
             $canvases = $this->canvasRepository->getOfficialCanvases($currentUserId);
             
             $formattedCanvases = array_map(function($canvas) {
-                // Lógica de negocio: Los lienzos oficiales no tienen dueño personal y se muestran públicos.
                 $canvas['is_owner'] = false; 
                 $canvas['privacy'] = 'public'; 
                 
@@ -150,7 +136,6 @@ class CanvasServices {
             
             $role = null;
             
-            // CORRECCIÓN: Inyección del estado de favorito para un usuario autenticado
             if ($userId !== null) {
                 $role = $this->canvasRepository->getMemberRole($canvasId, $userId);
                 
@@ -163,7 +148,6 @@ class CanvasServices {
                 $canvas['is_favorite'] = false;
             }
             
-            // Lógica de dueño compartido o dueño directo
             $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
 
             if ($canvas['privacy'] === DB::PRIVACY_PRIVATE && !$role && !$isOwner) {
@@ -279,6 +263,26 @@ class CanvasServices {
                 }
             }
 
+            // NOTA DE IMPLEMENTACIÓN: Se aplican los límites del nivel de suscripción para lienzos personales
+            if ($scopeType === 'personal') {
+                $user = $this->userRepository->findById($userId);
+                $tier = $user['subscription_tier'] ?? 0;
+                $planLimits = SubscriptionPlanConstants::getTierLimits($tier);
+
+                // 1. Limitar cantidad de lienzos creados (Requiere que agregues el método countUserCanvases a tu CanvasRepository pronto)
+                if (method_exists($this->canvasRepository, 'countUserCanvases')) {
+                    $currentCanvasCount = $this->canvasRepository->countUserCanvases($userId);
+                    if ($planLimits['max_canvases'] !== -1 && $currentCanvasCount >= $planLimits['max_canvases']) {
+                        return ['success' => false, 'message' => 'Has alcanzado el límite de lienzos de tu plan actual (' . $planLimits['name'] . '). Mejora tu plan para crear más.'];
+                    }
+                }
+
+                // 2. Limitar cantidad máxima de participantes al crear
+                if ($planLimits['max_members_per_canvas'] !== -1 && $limit > $planLimits['max_members_per_canvas']) {
+                    $limit = $planLimits['max_members_per_canvas']; // Ajustar silenciosamente al límite máximo permitido o podrías retornar un error
+                }
+            }
+
             $uuid = Utils::generateUUID();
             $validPalettes = $this->getValidPalettes();
             $paletteId = in_array($paletteId, $validPalettes) ? $paletteId : 'default';
@@ -306,7 +310,6 @@ class CanvasServices {
 
             $canvasId = $this->canvasRepository->create($canvasData);
 
-            // Añadir al creador como admin (solo en personales, los oficiales se gestionan por RBAC dinámico)
             if ($scopeType === 'personal') {
                 $this->canvasRepository->addMember($canvasId, $userId, 'admin');
             }
@@ -320,7 +323,6 @@ class CanvasServices {
                             'cooldown_seconds' => $canvasData['cooldown_seconds']
                         ]);
 
-                        // Limpiar caché de lista de lienzos oficiales si aplica
                         if ($scopeType !== 'personal') {
                             $redis->del(CacheConstants::KEY_OFFICIAL_CANVASES);
                         }
@@ -554,8 +556,6 @@ class CanvasServices {
                 return ['success' => false, 'message' => __('err_invalid_password') ?? 'Contraseña incorrecta.'];
             }
 
-            // Nota: Este método elimina directamente donde owner_id = $userId. 
-            // Para eliminar masivamente lienzos oficiales se requerirá otro endpoint o lógica.
             $deleted = $this->canvasRepository->deleteCanvases($canvasIds, $userId);
 
             if ($deleted) {
@@ -703,8 +703,6 @@ class CanvasServices {
                     $redis = $redisInstance->getClient();
                     
                     if ($redis) {
-                        // CORRECCIÓN: sAdd() a minúsculas y se encapsula el valor en un array 
-                        // para satisfacer el tipado estricto de Predis.
                         $redis->sadd("canvases:force_resets", [$canvasId]);
                     }
                 }
@@ -731,6 +729,7 @@ class CanvasServices {
             }
 
             if (!$canvas['requires_approval']) {
+                // NOTA DE IMPLEMENTACIÓN: Aquí también deberías limitar los miembros según la suscripción (tarea de Repository)
                 $this->canvasRepository->addMember($canvasId, $userId, 'editor');
                 return ['success' => true, 'message' => __('msg_joined_success') ?? 'Te has unido al lienzo.'];
             }
@@ -1082,12 +1081,16 @@ class CanvasServices {
         }
     }
 
-    // ==========================================
-    // LÓGICA DE LIVE SHARE
-    // ==========================================
-
     public function createLiveShare(int $userId, int $canvasId, string $imgUrl, float $x, float $y, float $w, float $h, float $opacity, bool $canManageOfficial = false): array {
         try {
+            // NOTA DE IMPLEMENTACIÓN: Validación de límite de plantillas en vivo del nivel de suscripción
+            $user = $this->userRepository->findById($userId);
+            $tier = $user['subscription_tier'] ?? 0;
+            
+            if (!SubscriptionPlanConstants::hasFeature($tier, 'live_templates')) {
+                return ['success' => false, 'message' => 'Tu plan actual no permite compartir plantillas en vivo. Actualiza a Pro o Advanced para usar esta herramienta.'];
+            }
+
             $canvas = $this->canvasRepository->getById($canvasId);
             if (!$canvas) {
                 return ['success' => false, 'message' => 'Lienzo no encontrado.'];
@@ -1158,10 +1161,6 @@ class CanvasServices {
         }
     }
 
-    // ==========================================
-    // NUEVA LÓGICA DE FAVORITOS
-    // ==========================================
-
     public function toggleFavorite(int $userId, int $canvasId): array {
         try {
             $canvas = $this->canvasRepository->getById($canvasId);
@@ -1169,7 +1168,6 @@ class CanvasServices {
                 return ['success' => false, 'message' => __('err_canvas_not_found') ?? 'Lienzo no encontrado.'];
             }
 
-            // Ejecuta la transacción atómica
             $result = $this->canvasRepository->toggleFavorite($userId, $canvasId);
 
             return [
@@ -1182,7 +1180,6 @@ class CanvasServices {
             ];
             
         } catch (Exception $e) {
-            // Se registra el fallo silenciosamente usando el logger sin delatar nada hacia el cliente
             Logger::error('Error toggling favorite.', [
                 'user_id' => $userId, 
                 'canvas_id' => $canvasId, 

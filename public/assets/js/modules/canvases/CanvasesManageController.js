@@ -73,6 +73,9 @@ class CanvasesManageController {
         const viewSnapshotsBtn = e.target.closest('[data-action="viewCanvasSnapshots"]');
         const deleteCanvasesBtn = e.target.closest('[data-action="deleteSelectedCanvases"]');
         const viewRequestsBtn = e.target.closest('[data-action="viewCanvasRequests"]');
+        
+        // NOTA DE IMPLEMENTACIÓN: Manejo de creación
+        const createCanvasBtn = e.target.closest('[data-action="createCanvas"]');
 
         if (searchBtn) this.toggleSearchToolbar();
 
@@ -88,12 +91,74 @@ class CanvasesManageController {
         if (viewSnapshotsBtn && !viewSnapshotsBtn.classList.contains('disabled-interactive')) this.viewCanvasSnapshots();
         if (deleteCanvasesBtn && !deleteCanvasesBtn.classList.contains('disabled-interactive')) this.deleteSelectedCanvases(deleteCanvasesBtn);
         if (viewRequestsBtn && !viewRequestsBtn.classList.contains('disabled-interactive')) this.viewCanvasRequests();
+        
+        if (createCanvasBtn && !createCanvasBtn.classList.contains('disabled-interactive')) this.createCanvas(createCanvasBtn);
 
         const searchToolbar = document.querySelector('[data-ref="search-toolbar"]');
         if (searchToolbar && !searchToolbar.classList.contains('disabled')) {
             if (!e.target.closest('[data-ref="search-toolbar"]') && !searchBtn) {
                 searchToolbar.classList.remove('active');
                 searchToolbar.classList.add('disabled');
+            }
+        }
+    }
+
+    // NOTA DE IMPLEMENTACIÓN: Lógica para Crear el Lienzo y atrapar el error 403
+    async createCanvas(btn) {
+        // Recolectar datos del DOM (create.php)
+        const nameInput = document.querySelector('[data-ref="input-canvasname"]');
+        const descInput = document.querySelector('[data-ref="input-canvas-desc"]');
+        
+        const privacyText = document.querySelector('[data-ref="text-privacy"]');
+        const sizeText = document.querySelector('[data-ref="text-size"]');
+        const approvalText = document.querySelector('[data-ref="text-approval"]');
+        const paletteText = document.querySelector('[data-ref="text-palette"]');
+        const cooldownBatchVal = document.querySelector('[data-ref="val_cooldown_batch"]');
+        const cooldownSecVal = document.querySelector('[data-ref="val_cooldown_seconds"]');
+        const limitVal = document.querySelector('[data-ref="val_limit"]');
+        
+        const scopeTypeText = document.querySelector('[data-ref="text-scope-type"]');
+        const scopeCountryText = document.querySelector('[data-ref="text-scope-country"]');
+        
+        // Conversión a valores para la API (Se simulan los ids por el texto UI que tengas configurado)
+        const payload = {
+            name: nameInput ? nameInput.value : 'Nuevo Lienzo',
+            description: descInput ? descInput.value : '',
+            privacy: (privacyText && privacyText.textContent.toLowerCase().includes('público')) ? 'public' : 'private',
+            requires_approval: (approvalText && approvalText.textContent.toLowerCase().includes('verdadero')),
+            size: sizeText ? sizeText.textContent.split('x')[0] : '64',
+            limit: limitVal ? parseInt(limitVal.textContent) : 10,
+            palette_id: 'default', // Aquí mapearías si tienes un ID en el dropdown
+            cooldown_pixels_batch: cooldownBatchVal ? parseInt(cooldownBatchVal.textContent) : 5,
+            cooldown_seconds: cooldownSecVal ? parseInt(cooldownSecVal.textContent) : 10,
+            scope_type: (scopeTypeText && !scopeTypeText.textContent.includes('Personal')) ? 'global' : 'personal'
+        };
+
+        setButtonLoading(btn);
+
+        const route = ApiRoutes.Canvases && ApiRoutes.Canvases.Create ? ApiRoutes.Canvases.Create : 'canvases.create';
+        const result = await this.api.post(route, payload, this.abortController.signal);
+        
+        if (result.aborted) return;
+        restoreButton(btn);
+
+        if (result.success) {
+            showMessage(result.message, 'success');
+            setTimeout(() => {
+                if (window.spaRouter) window.spaRouter.navigate(`${this.basePath}/canvases/manage`);
+                else window.location.href = `${this.basePath}/canvases/manage`;
+            }, 1000);
+        } else {
+            // ATRApar Error de Límite (403 / UPGRADE_REQUIRED)
+            if (result.error_code === 'UPGRADE_REQUIRED' || result.http_code === 403) {
+                const banner = document.querySelector('[data-ref="limit-reached-banner"]');
+                if (banner) {
+                    banner.style.display = 'flex';
+                    banner.classList.remove('disabled');
+                }
+                btn.classList.add('disabled-interactive'); // Bloqueamos el botón temporalmente
+            } else {
+                showMessage(result.message, 'error');
             }
         }
     }

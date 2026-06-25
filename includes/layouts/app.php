@@ -36,7 +36,7 @@ if (strpos($currentPath, '/admin') === 0) {
 $routeTitles = [
     '/' => __('route_home'),
     '/explore' => __('route_explore'),
-    '/premium' => 'Planes Premium', // <-- AÑADIDO PARA LA SECCIÓN PREMIUM
+    '/premium' => 'Planes Premium', 
     '/login' => __('route_login'),
     '/register' => __('route_register'),
     '/settings' => __('route_settings'),
@@ -69,11 +69,19 @@ if (isset($routeTitles[$currentPath])) {
     $initialTitle = $routeTitles[$currentPath] . ' - ' . APP_NAME;
 }
 
-// --- LECTURA DE PALETAS DE COLORES (SINGLE SOURCE OF TRUTH) ---
+// --- LECTURA DE PALETAS DE COLORES ---
 $palettesJson = '{}';
 $palettesPath = dirname(__DIR__, 2) . '/public/assets/data/palettes.json';
 if (file_exists($palettesPath)) {
     $palettesJson = file_get_contents($palettesPath);
+}
+
+// NOTA DE IMPLEMENTACIÓN: Extracción del Tier para el Frontend
+$activeAccountId = $_SESSION['active_account'] ?? null;
+$linkedAccounts = $_SESSION['accounts'] ?? [];
+$subscriptionTier = 0;
+if ($activeAccountId && isset($linkedAccounts[$activeAccountId])) {
+    $subscriptionTier = (int)($linkedAccounts[$activeAccountId]['subscription_tier'] ?? 0);
 }
 // ---------------------------------------------------------------
 ?>
@@ -108,6 +116,11 @@ if (file_exists($palettesPath)) {
         window.APP_PALETTES = <?php echo $palettesJson; ?>;
         window.activeUserId = <?php echo isset($_SESSION['active_account']) ? json_encode((string)$_SESSION['active_account']) : 'null'; ?>;
         
+        // NOTA DE IMPLEMENTACIÓN: Inyección de la variable APP_USER con el tier
+        window.APP_USER = {
+            subscription_tier: <?php echo $subscriptionTier; ?>
+        };
+
         // --- CONFIGURACIÓN GLOBAL (INCLUYENDO WEBSOCKETS Y PERMISOS) ---
         window.APP_CONFIG = {
             wsPort: <?php echo (int)\App\Core\Helpers\EnvLoader::get('WS_PORT', 8765); ?>,

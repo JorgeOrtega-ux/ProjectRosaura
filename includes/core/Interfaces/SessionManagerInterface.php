@@ -20,6 +20,9 @@ interface SessionManagerInterface {
     public function switchActiveAccount(int $userId): bool;
     public function removeAccount(int $userId): void;
     
+    // NOTA DE IMPLEMENTACIÓN: Método añadido para leer la suscripción
+    public function getSubscriptionTier(): int;
+    
     // CSRF
     public function getCsrfToken(): string;
     public function validateCsrfToken(string $token): bool;
@@ -35,7 +38,7 @@ interface SessionManagerInterface {
     public function destroySessionsByRoles(array $roleIds): void;
     public function invalidateAccountInPool(int $userId): void;
     
-    // NUEVO MÉTODO AÑADIDO: Invalidación selectiva por dispositivo (bug de sesiones fantasma)
+    // Invalidación selectiva por dispositivo (bug de sesiones fantasma)
     public function invalidateDeviceInPool(string $selector): void;
     
     public function invalidateRoleInPool(int $roleId): void;

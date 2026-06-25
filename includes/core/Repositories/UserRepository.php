@@ -32,9 +32,10 @@ class UserRepository implements UserRepositoryInterface {
 
         try {
             // 1. Obtener datos base y restricciones (Relación 1 a 1)
+            // NOTA DE IMPLEMENTACIÓN: Se añadió u.subscription_tier
             $stmtUser = $this->pdo->prepare("
                 SELECT 
-                    u.id, u.uuid, u.username, u.email, u.password, u.profile_picture, 
+                    u.id, u.uuid, u.username, u.email, u.password, u.subscription_tier, u.profile_picture, 
                     u.two_factor_secret, u.two_factor_enabled, u.two_factor_recovery_codes, u.deletion_scheduled_at, u.created_at,
                     ur.is_suspended, ur.suspension_type, ur.suspension_reason, ur.suspension_end_date, 
                     ur.deleted_by, ur.deleted_reason, ur.admin_notes
@@ -88,8 +89,9 @@ class UserRepository implements UserRepositoryInterface {
         $tblUserRoles = DB::TBL_USER_ROLES;
 
         try {
+            // NOTA DE IMPLEMENTACIÓN: Se añadió u.subscription_tier
             $stmtUsers = $this->pdo->prepare("
-                SELECT u.id, u.uuid, u.username, u.email, u.profile_picture, u.created_at,
+                SELECT u.id, u.uuid, u.username, u.email, u.subscription_tier, u.profile_picture, u.created_at,
                        ur.is_suspended, ur.suspension_type
                 FROM {$tblUsers} u
                 LEFT JOIN {$tblUserRestr} ur ON u.id = ur.user_id

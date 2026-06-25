@@ -6,9 +6,17 @@
             <h1 class="component-top-title"><?php echo __('canvas_create_title'); ?></h1>
         </div>
         <div class="component-top-right">
-            <button type="button" class="component-button component-button--icon component-button--h40" data-action="createCanvas" data-tooltip="<?php echo __('btn_create_canvas'); ?>" data-position="bottom">
+            <button type="button" class="component-button component-button--icon component-button--h40" data-action="createCanvas" data-ref="btn-create-canvas" data-tooltip="<?php echo __('btn_create_canvas'); ?>" data-position="bottom">
                 <span class="material-symbols-rounded">add_box</span>
             </button>
+        </div>
+    </div>
+
+    <div class="component-banner component-banner--warning disabled" data-ref="limit-reached-banner" style="margin: 0 16px 16px 16px; border-radius: 8px; background: rgba(255, 165, 0, 0.1); border: 1px solid rgba(255, 165, 0, 0.3); padding: 16px; display: none; align-items: center; gap: 12px;">
+        <span class="material-symbols-rounded" style="color: #FF8C00;">warning</span>
+        <div style="flex-grow: 1;">
+            <strong style="color: var(--text-primary);">Límite alcanzado</strong>
+            <p style="margin: 4px 0 0 0; color: var(--text-secondary); font-size: 13px;">Has alcanzado el límite de lienzos de tu plan actual. <a href="premium" data-nav="<?php echo APP_URL; ?>/premium" style="color: var(--action-primary); font-weight: bold;">Mejora tu plan para crear más</a>.</p>
         </div>
     </div>
 

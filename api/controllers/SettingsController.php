@@ -11,6 +11,20 @@ class SettingsController extends BaseController {
         $this->settingsServices = $settingsServices;
     }
 
+    // NOTA DE IMPLEMENTACIÓN: Método para procesar la mejora de nivel de suscripción
+    public function upgrade_tier($input) {
+        try { 
+            // Esto llamaría a un método en SettingsServices que procese el pago con Stripe/PayPal 
+            // y luego actualice el u.subscription_tier en la base de datos.
+            if (method_exists($this->settingsServices, 'upgradeTier')) {
+                return $this->settingsServices->upgradeTier($input); 
+            }
+            // Simulación temporal si el servicio aún no existe
+            return $this->respond(['success' => false, 'message' => 'Módulo de facturación en construcción.']);
+        }
+        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
+
     public function update_avatar($input) {
         try { return $this->settingsServices->updateAvatar($input); }
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }

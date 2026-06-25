@@ -9,7 +9,10 @@ $isDegraded = defined('SYSTEM_DEGRADED') && SYSTEM_DEGRADED === true;
 $activeAccountId = $_SESSION['active_account'] ?? null;
 $linkedAccounts = $_SESSION['accounts'] ?? [];
 
+// Extracción de la suscripción para mostrar badge en UI
+$subscriptionTier = 0;
 if ($activeAccountId !== null && isset($linkedAccounts[$activeAccountId])) {
+    $subscriptionTier = (int)($linkedAccounts[$activeAccountId]['subscription_tier'] ?? 0);
     $linkedAccounts[$activeAccountId]['user_role_color'] = $_SESSION['user_role_color'] ?? ($linkedAccounts[$activeAccountId]['user_role_color'] ?? '');
     $linkedAccounts[$activeAccountId]['user_pic'] = $_SESSION['user_pic'] ?? ($linkedAccounts[$activeAccountId]['user_pic'] ?? '');
     $_SESSION['accounts'] = $linkedAccounts;
@@ -88,6 +91,27 @@ if ($isLoggedIn) {
     .sk-hydrate.is-loaded { background-color: transparent; }
     .sk-hydrate.is-loaded::after { display: none; }
     .sk-hydrate.is-loaded img { opacity: 1; }
+
+    /* Estilos para el badge premium en el header */
+    .premium-badge {
+        position: absolute;
+        bottom: -4px;
+        right: -4px;
+        background: var(--action-primary);
+        color: white;
+        font-size: 10px;
+        font-weight: bold;
+        padding: 2px 4px;
+        border-radius: 4px;
+        line-height: 1;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        z-index: 10;
+        border: 2px solid var(--bg-surface);
+    }
+    .premium-badge.advanced {
+        background: linear-gradient(45deg, #FFD700, #FFA500);
+        color: #000;
+    }
 </style>
 
 <div class="header">
@@ -137,7 +161,7 @@ if ($isLoggedIn) {
                 </button>
             <?php else: ?>
                 <button class="component-button component-button--profile role-dynamic sk-hydrate" 
-                        style="--active-role-bg: <?php echo $activeRoleBg; ?>;"
+                        style="position: relative; --active-role-bg: <?php echo $activeRoleBg; ?>;"
                         data-action="toggleModule" 
                         data-target="moduleMainOptions" 
                         data-tooltip="<?php echo __('tooltip_options_account'); ?>" 
@@ -145,6 +169,12 @@ if ($isLoggedIn) {
                     <img src="<?php echo APP_URL; ?>/<?php echo htmlspecialchars($userPic); ?>" 
                          alt="<?php echo __('alt_profile'); ?>"
                          onload="this.parentElement.classList.add('is-loaded')">
+                         
+                    <?php if ($subscriptionTier === 1): ?>
+                        <span class="premium-badge">PRO</span>
+                    <?php elseif ($subscriptionTier === 2): ?>
+                        <span class="premium-badge advanced">ADV</span>
+                    <?php endif; ?>
                 </button>
             <?php endif; ?>
         </div>

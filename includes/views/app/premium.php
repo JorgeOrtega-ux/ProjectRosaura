@@ -1,3 +1,15 @@
+<?php
+// includes/views/app/premium.php
+if (session_status() === PHP_SESSION_NONE) session_start();
+
+// NOTA DE IMPLEMENTACIÓN: Lógica de UI para identificar el plan actual y cambiar botones
+$activeAccountId = $_SESSION['active_account'] ?? null;
+$linkedAccounts = $_SESSION['accounts'] ?? [];
+$tier = 0;
+if ($activeAccountId && isset($linkedAccounts[$activeAccountId])) {
+    $tier = (int)($linkedAccounts[$activeAccountId]['subscription_tier'] ?? 0);
+}
+?>
 <style>
 /* CSS Exclusivo para Premium adaptado a components.css */
 .pricing-grid {
@@ -236,7 +248,11 @@
                     <li><span class="material-symbols-rounded feature-icon-check">check_circle</span> Exportación en formato JPG</li>
                     <li><span class="material-symbols-rounded feature-icon-cross">cancel</span> Historial de cambios</li>
                 </ul>
-                <a href="#" class="component-button component-button--full component-button--h45">Tu Plan Actual</a>
+                <?php if ($tier === 0): ?>
+                    <a href="#" class="component-button component-button--full component-button--h45 disabled">Tu Plan Actual</a>
+                <?php else: ?>
+                    <a href="#" class="component-button component-button--full component-button--h45">Volver al Básico</a>
+                <?php endif; ?>
             </div>
 
             <div class="pricing-card featured">
@@ -255,7 +271,13 @@
                     <li><span class="material-symbols-rounded feature-icon-check">check_circle</span> Exportación PNG/SVG de alta calidad</li>
                     <li><span class="material-symbols-rounded feature-icon-check">check_circle</span> Recuperación de Snapshots</li>
                 </ul>
-                <a href="#" class="component-button component-button--dark component-button--full component-button--h45">Mejorar a Pro</a>
+                <?php if ($tier === 1): ?>
+                    <a href="#" class="component-button component-button--dark component-button--full component-button--h45 disabled">Tu Plan Actual</a>
+                <?php elseif ($tier > 1): ?>
+                    <a href="#" class="component-button component-button--dark component-button--full component-button--h45">Bajar a Pro</a>
+                <?php else: ?>
+                    <a href="#" class="component-button component-button--dark component-button--full component-button--h45">Mejorar a Pro</a>
+                <?php endif; ?>
             </div>
 
             <div class="pricing-card">
@@ -273,7 +295,11 @@
                     <li><span class="material-symbols-rounded feature-icon-check">check_circle</span> Retención total de Historial</li>
                     <li><span class="material-symbols-rounded feature-icon-check">check_circle</span> Soporte técnico 24/7 VIP</li>
                 </ul>
-                <a href="#" class="component-button component-button--full component-button--h45">Elegir Advanced</a>
+                <?php if ($tier === 2): ?>
+                    <a href="#" class="component-button component-button--full component-button--h45 disabled">Tu Plan Actual</a>
+                <?php else: ?>
+                    <a href="#" class="component-button component-button--full component-button--h45" style="background-color: var(--action-primary); color: white; border-color: var(--action-primary);">Elegir Advanced</a>
+                <?php endif; ?>
             </div>
 
         </div>
@@ -294,7 +320,7 @@
                         <tr class="component-table-row">
                             <td style="font-weight: 600;">Lienzos activos</td>
                             <td>Máximo 1</td>
-                            <td>Ilimitados</td>
+                            <td>Máximo 5</td>
                             <td>Ilimitados</td>
                         </tr>
                         <tr class="component-table-row">
@@ -312,7 +338,7 @@
                         <tr class="component-table-row">
                             <td style="font-weight: 600;">Snapshots (Historial de Versiones)</td>
                             <td><span class="material-symbols-rounded feature-icon-cross">remove</span></td>
-                            <td>Últimos 7 días</td>
+                            <td>5 Entradas</td>
                             <td>Ilimitado</td>
                         </tr>
                         <tr class="component-table-row">

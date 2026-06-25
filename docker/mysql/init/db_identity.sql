@@ -86,6 +86,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `username` varchar(50) NOT NULL,
   `email` varchar(100) NOT NULL,
   `password` varchar(255) NOT NULL,
+  `subscription_tier` tinyint(1) DEFAULT 0, -- NOTA DE IMPLEMENTACIÓN: Nuevo campo para el nivel de suscripción (0=Básico, 1=Pro, 2=Advanced)
   `two_factor_secret` varchar(64) DEFAULT NULL,
   `two_factor_enabled` tinyint(1) DEFAULT 0,
   `two_factor_recovery_codes` text DEFAULT NULL,

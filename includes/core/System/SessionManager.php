@@ -87,6 +87,11 @@ class SessionManager implements SessionManagerInterface {
         return $this->get('user_asn');
     }
 
+    // NOTA DE IMPLEMENTACIÓN: Helper nuevo para obtener el Tier desde la sesión
+    public function getSubscriptionTier(): int {
+        return (int) $this->get('subscription_tier', 0);
+    }
+
     public function getLinkedAccounts(): array {
         return $this->get(SessionConstants::KEY_LINKED_ACCOUNTS, []);
     }
@@ -219,8 +224,6 @@ class SessionManager implements SessionManagerInterface {
         }
     }
 
-    // Estos métodos persisten como APIs públicas, pero la carga principal ahora
-    // se detona atómicamente desde el RoleRepository
     public function invalidateAccountInPool(int $userId): void {
         try {
             $this->redis->setex(CacheConstants::PREFIX_FORCE_REAUTH_USER . $userId, CacheConstants::TTL_ONE_DAY, time());
@@ -253,7 +256,6 @@ class SessionManager implements SessionManagerInterface {
         }
     }
 
-    // El motor principal que consume las señales emitidas por el Repositorio de Roles
     public function enforcePassiveInvalidation(): void {
         $accounts = $this->getLinkedAccounts();
         if (empty($accounts)) return;
@@ -278,7 +280,6 @@ class SessionManager implements SessionManagerInterface {
                     continue;
                 }
 
-                // Escucha activamente los Triggers emitidos por RoleRepository
                 $roles = $accountData['user_roles'] ?? [];
                 foreach ($roles as $roleId) {
                     $roleReauthTime = $this->redis->get(CacheConstants::PREFIX_FORCE_REAUTH_ROLE . $roleId);

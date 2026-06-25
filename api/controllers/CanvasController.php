@@ -254,6 +254,13 @@ class CanvasController extends BaseController {
                 $scopeType, $scopeRef1, $scopeRef2, $scopeRef3, $this->canManageOfficial()
             );
 
+            // NOTA DE IMPLEMENTACIÓN: Capturar explícitamente el error de límites
+            if (!$result['success'] && strpos($result['message'] ?? '', 'límite') !== false) {
+                $result['http_code'] = 403;
+                $result['error_code'] = 'UPGRADE_REQUIRED';
+                http_response_code(403);
+            }
+
             return $this->respond($result);
 
         } catch (\Throwable $e) {
@@ -649,9 +656,8 @@ class CanvasController extends BaseController {
         }
     }
 
-public function get_official($input) {
+    public function get_official($input) {
         try {
-            // CORRECCIÓN: Se obtiene el ID de sesión para poder determinar los favoritos del usuario actual
             $userId = $this->session->isLoggedIn() ? $this->session->getActiveAccountId() : null;
             
             $result = $this->canvasServices->getOfficialCanvases($userId);
@@ -660,9 +666,7 @@ public function get_official($input) {
             return $this->handleException($e, __FUNCTION__);
         }
     }
-    // ==========================================
-    // NUEVO MÉTODO: TOGGLE FAVORITOS
-    // ==========================================
+
     public function toggle_favorite($input) {
         try {
             if (!$this->session->isLoggedIn()) {
@@ -680,7 +684,6 @@ public function get_official($input) {
             return $this->respond($result);
 
         } catch (\Throwable $e) {
-            // El Logger registrará silenciosamente la excepción según las instrucciones
             return $this->handleException($e, __FUNCTION__);
         }
     }
