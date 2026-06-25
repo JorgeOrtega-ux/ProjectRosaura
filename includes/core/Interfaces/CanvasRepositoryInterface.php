@@ -6,9 +6,9 @@ interface CanvasRepositoryInterface {
     public function create(array $canvasData): int;
     public function addMember(int $canvasId, int $userId, string $role): bool;
     
-    // Métodos para Home / Explora
-    public function getPublicCanvases(int $limit = 20): array;
-    public function getOfficialCanvases(): array;
+    // Métodos para Home / Explora (CORRECCIÓN: Actualizados para aceptar $currentUserId)
+    public function getPublicCanvases(int $limit = 20, ?int $currentUserId = null): array;
+    public function getOfficialCanvases(?int $currentUserId = null): array;
 
     // Métodos para Manage
     public function getUserCanvasesPaginated(int $ownerId, int $limit, int $offset): array;
@@ -68,5 +68,8 @@ interface CanvasRepositoryInterface {
     // NUEVO MÉTODO PARA FAVORITOS (Transacción Atómica)
     // ==========================================
     public function toggleFavorite(int $userId, int $canvasId): array;
+
+    // CORRECCIÓN: Firma requerida para validar favoritos desde el CanvasServices
+    public function isFavorite(int $userId, int $canvasId): bool;
 }
 ?>

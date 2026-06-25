@@ -649,15 +649,17 @@ class CanvasController extends BaseController {
         }
     }
 
-    public function get_official($input) {
+public function get_official($input) {
         try {
-            $result = $this->canvasServices->getOfficialCanvases();
+            // CORRECCIÓN: Se obtiene el ID de sesión para poder determinar los favoritos del usuario actual
+            $userId = $this->session->isLoggedIn() ? $this->session->getActiveAccountId() : null;
+            
+            $result = $this->canvasServices->getOfficialCanvases($userId);
             return $this->respond($result);
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);
         }
     }
-
     // ==========================================
     // NUEVO MÉTODO: TOGGLE FAVORITOS
     // ==========================================

@@ -129,11 +129,13 @@ class CanvasRepository implements CanvasRepositoryInterface {
 
     // --- MÉTODOS PARA GESTIÓN (MANAGE) ---
 
-    public function getUserCanvasesPaginated(int $ownerId, int $limit, int $offset): array {
-        $sql = "SELECT id, uuid, name, description, privacy, requires_approval, size, palette_id, max_participants, cooldown_pixels_batch, cooldown_seconds, created_at, scope_type 
-                FROM " . DB::TBL_CANVASES . " 
-                WHERE owner_id = :oid 
-                ORDER BY id DESC 
+public function getUserCanvasesPaginated(int $ownerId, int $limit, int $offset): array {
+        $sql = "SELECT c.id, c.uuid, c.name, c.description, c.privacy, c.requires_approval, c.size, c.palette_id, c.max_participants, c.cooldown_pixels_batch, c.cooldown_seconds, c.created_at, c.scope_type,
+                       CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite 
+                FROM " . DB::TBL_CANVASES . " c
+                LEFT JOIN canvas_favorites f ON c.id = f.canvas_id AND f.user_id = :oid
+                WHERE c.owner_id = :oid 
+                ORDER BY c.id DESC 
                 LIMIT :limit OFFSET :offset";
         
         $stmt = $this->db->prepare($sql);
@@ -143,9 +145,14 @@ class CanvasRepository implements CanvasRepositoryInterface {
         $stmt->execute();
         
         $results = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        
+        $results = array_map(function($canvas) {
+            $canvas['is_favorite'] = (bool)$canvas['is_favorite'];
+            return $canvas;
+        }, $results);
+
         return array_map([$this, 'appendSnapshotUrl'], $results);
     }
-
     public function countUserCanvases(int $ownerId): int {
         $sql = "SELECT COUNT(*) FROM " . DB::TBL_CANVASES . " WHERE owner_id = :oid";
         $stmt = $this->db->prepare($sql);
@@ -512,6 +519,12 @@ class CanvasRepository implements CanvasRepositoryInterface {
             }
             throw $e;
         }
+    }
+
+    public function isFavorite(int $userId, int $canvasId): bool {
+        $stmt = $this->db->prepare("SELECT 1 FROM canvas_favorites WHERE user_id = :user_id AND canvas_id = :canvas_id LIMIT 1");
+        $stmt->execute([':user_id' => $userId, ':canvas_id' => $canvasId]);
+        return (bool)$stmt->fetchColumn();
     }
 }
 ?>

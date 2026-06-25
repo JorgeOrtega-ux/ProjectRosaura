@@ -149,8 +149,18 @@ class CanvasServices {
             }
             
             $role = null;
+            
+            // CORRECCIÓN: Inyección del estado de favorito para un usuario autenticado
             if ($userId !== null) {
                 $role = $this->canvasRepository->getMemberRole($canvasId, $userId);
+                
+                if (method_exists($this->canvasRepository, 'isFavorite')) {
+                    $canvas['is_favorite'] = $this->canvasRepository->isFavorite($userId, $canvasId);
+                } else {
+                    $canvas['is_favorite'] = false;
+                }
+            } else {
+                $canvas['is_favorite'] = false;
             }
             
             // Lógica de dueño compartido o dueño directo
@@ -693,7 +703,9 @@ class CanvasServices {
                     $redis = $redisInstance->getClient();
                     
                     if ($redis) {
-                        $redis->sAdd("canvases:force_resets", $canvasId);
+                        // CORRECCIÓN: sAdd() a minúsculas y se encapsula el valor en un array 
+                        // para satisfacer el tipado estricto de Predis.
+                        $redis->sadd("canvases:force_resets", [$canvasId]);
                     }
                 }
             } catch (Exception $e) {
