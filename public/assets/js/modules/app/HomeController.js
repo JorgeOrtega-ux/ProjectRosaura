@@ -67,23 +67,32 @@ class HomeController {
         if (this.abortController.signal.aborted) return;
         
         let allCanvases = [];
+        let isError = false;
 
         // Integrar los oficiales
         if (officialRes && officialRes.success) {
-            allCanvases = allCanvases.concat(officialRes.data);
+            allCanvases = allCanvases.concat(officialRes.data || []);
+        } else if (!officialRes) {
+            isError = true;
         }
 
         // Integrar los públicos, evitando duplicados
         if (publicRes && publicRes.success) {
             const existingIds = new Set(allCanvases.map(c => c.id));
-            const newPublics = publicRes.data.filter(c => !existingIds.has(c.id));
+            const newPublics = (publicRes.data || []).filter(c => !existingIds.has(c.id));
             allCanvases = allCanvases.concat(newPublics);
+        } else if (!publicRes) {
+            isError = true;
         }
 
+        // Corrección de la lógica de error y estado vacío
         if (allCanvases.length > 0) {
             this.renderCanvases(this.containerAll, allCanvases, 'Aún no hay lienzos disponibles.');
+        } else if (isError) {
+            this.showError(this.containerAll, window.__ ? __('err_load_public_canvases') : 'Error al cargar lienzos. El servidor no responde.');
         } else {
-            this.showError(this.containerAll, window.__ ? __('err_load_public_canvases') : 'No se encontraron lienzos.');
+            // Succeeded pero la base de datos está vacía (0 lienzos)
+            this.renderCanvases(this.containerAll, [], 'Aún no hay lienzos disponibles para explorar.');
         }
 
         this.reinitializeUI();
