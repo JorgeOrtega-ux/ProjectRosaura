@@ -5,60 +5,151 @@ import { WebSocketManager } from '../../core/api/WebSocketManager.js';
 import { getPaletteById } from './DesignPaletteUtils.js';
 
 export const DesignNetwork = {
-    initWebSocket() {
+    // --- LÓGICA DE TICKETS Y WEBSOCKET ---
+    async getTurnstileToken() {
+        return new Promise((resolve, reject) => {
+            const wrapper = document.getElementById('cf-turnstile-wrapper');
+            const sitekey = wrapper ? wrapper.dataset.sitekey : null;
+            
+            if (!sitekey || !window.turnstile) {
+                return resolve(null);
+            }
+
+            try {
+                window.turnstile.render(wrapper, {
+                    sitekey: sitekey,
+                    callback: function(token) {
+                        resolve(token);
+                        setTimeout(() => window.turnstile.reset(wrapper), 1000); // Resetear por si se requiere después
+                    },
+                    'error-callback': function() {
+                        reject(new Error('Fallo en validación Turnstile.'));
+                    }
+                });
+            } catch (e) {
+                resolve(null);
+            }
+        });
+    },
+
+    async initWebSocket() {
         console.log('[DEBUG DesignNetwork] initWebSocket() llamado. CanvasIntId:', this.canvasIntId);
         if (!this.canvasIntId) {
             console.warn('[DEBUG DesignNetwork] initWebSocket abortado: no hay canvasIntId.');
             return;
         }
 
-        this.wsManager = new WebSocketManager();
-        
-        this.wsManager.on('open', () => {
-            const uid = window.activeUserId || document.querySelector('meta[name="user-id"]')?.content || null;
-            console.log(`[DEBUG DesignNetwork] Evento 'open' detectado. Enviando init con userId: ${uid}`);
-            this.wsManager.send({ type: 'init', userId: uid });
-        });
+        const uid = window.activeUserId || document.querySelector('meta[name="user-id"]')?.content || null;
+        let turnstileToken = null;
 
-        this.wsManager.on('message', (data) => {
-            if (data.type === 'pixel') {
-                const pX = parseInt(data.x, 10);
-                const pY = parseInt(data.y, 10);
-                const cIdx = parseInt(data.color, 10);
-                
-                if (cIdx === 255) {
-                    this.offscreenCtx.clearRect(pX, pY, 1, 1);
-                } else {
-                    const paletteObj = getPaletteById(this.canvasPaletteId);
-                    const hexColor = (paletteObj && paletteObj.colors[cIdx]) ? paletteObj.colors[cIdx] : '#000000';
+        // Si es invitado, obtener validación de Turnstile primero
+        if (!uid) {
+            try {
+                turnstileToken = await this.getTurnstileToken();
+            } catch (e) {
+                showMessage('Validación de seguridad fallida. Recarga la página.', 'error');
+                return;
+            }
+        }
+
+        try {
+            // Reclamar el Ticket HTTP
+            const route = ApiRoutes.Canvases?.GetWsTicket || 'canvases.get_ws_ticket';
+            const payload = { canvas_id: this.canvasIntId };
+            if (turnstileToken) {
+                payload['cf-turnstile-response'] = turnstileToken;
+            }
+
+            const response = await this.api.post(route, payload);
+            if (!response.success || !response.data?.ticket) {
+                showMessage(response.message || 'No se pudo obtener acceso en vivo.', 'error');
+                return;
+            }
+
+            const wsTicket = response.data.ticket;
+
+            this.wsManager = new WebSocketManager();
+            
+            this.wsManager.on('open', () => {
+                console.log(`[DEBUG DesignNetwork] Evento 'open' detectado. Enviando init con userId: ${uid}`);
+                this.wsManager.send({ type: 'init', userId: uid });
+            });
+
+            this.wsManager.on('qos_evicted', (reason) => {
+                showMessage(reason || 'Servidor lleno. Se ha dado prioridad a usuarios registrados.', 'warning');
+            });
+
+            this.wsManager.on('message', (data) => {
+                if (data.type === 'pixel') {
+                    const pX = parseInt(data.x, 10);
+                    const pY = parseInt(data.y, 10);
+                    const cIdx = parseInt(data.color, 10);
                     
-                    this.offscreenCtx.fillStyle = hexColor;
-                    this.offscreenCtx.clearRect(pX, pY, 1, 1);
-                    this.offscreenCtx.fillRect(pX, pY, 1, 1);
+                    if (cIdx === 255) {
+                        this.offscreenCtx.clearRect(pX, pY, 1, 1);
+                    } else {
+                        const paletteObj = getPaletteById(this.canvasPaletteId);
+                        const hexColor = (paletteObj && paletteObj.colors[cIdx]) ? paletteObj.colors[cIdx] : '#000000';
+                        
+                        this.offscreenCtx.fillStyle = hexColor;
+                        this.offscreenCtx.clearRect(pX, pY, 1, 1);
+                        this.offscreenCtx.fillRect(pX, pY, 1, 1);
+                    }
+                    this.requestRender();
+                } 
+                else if (data.type === 'init_cooldown' || data.type === 'pixel_confirm' || data.type === 'cooldown_error') {
+                    console.log(`[DEBUG DesignNetwork] Disparando handleCooldownSync por evento tipo: ${data.type}`);
+                    this.handleCooldownSync(data);
                 }
-                this.requestRender();
-            } 
-            else if (data.type === 'init_cooldown' || data.type === 'pixel_confirm' || data.type === 'cooldown_error') {
-                console.log(`[DEBUG DesignNetwork] Disparando handleCooldownSync por evento tipo: ${data.type}`);
-                this.handleCooldownSync(data);
-            }
-            else if (data.type === 'canvas_locked') {
-                this.handleCanvasLocked(data);
-            } 
-            else if (data.type === 'canvas_cleared') {
-                this.handleCanvasCleared(data);
-            }
-            // --- LISTENERS LIVE SHARE ---
-            else if (data.type === 'live_image_updated') {
-                this.handleLiveImageUpdate(data);
-            }
-            else if (data.type === 'live_session_ended') {
-                this.handleLiveSessionEnded(data);
-            }
-            // ----------------------------
-        });
+                else if (data.type === 'canvas_locked') {
+                    this.handleCanvasLocked(data);
+                } 
+                else if (data.type === 'canvas_cleared') {
+                    this.handleCanvasCleared(data);
+                }
+                // --- LISTENERS LIVE SHARE ---
+                else if (data.type === 'live_image_updated') {
+                    this.handleLiveImageUpdate(data);
+                }
+                else if (data.type === 'live_session_ended') {
+                    this.handleLiveSessionEnded(data);
+                }
+            });
 
-        this.wsManager.connect(this.canvasIntId);
+            // Conectar enviando el ticket
+            this.wsManager.connect(this.canvasIntId, wsTicket);
+
+            // Reemplazar lógica de reconexión para forzar la petición de un NUEVO ticket
+            this.wsManager.handleReconnect = async () => {
+                if (this.wsManager.reconnectAttempts < this.wsManager.maxReconnectAttempts) {
+                    const delay = this.wsManager.baseDelay * Math.pow(2, this.wsManager.reconnectAttempts);
+                    console.warn(`[DEBUG WS] Reintentando conexión en ${delay}ms obteniendo nuevo ticket...`);
+                    
+                    setTimeout(async () => {
+                        this.wsManager.reconnectAttempts++;
+                        let newToken = null;
+                        if (!uid) {
+                            try { newToken = await this.getTurnstileToken(); } catch(e){}
+                        }
+                        
+                        const p = { canvas_id: this.canvasIntId };
+                        if (newToken) p['cf-turnstile-response'] = newToken;
+
+                        const res = await this.api.post(route, p);
+                        if (res.success && res.data?.ticket) {
+                            this.wsManager.connect(this.canvasIntId, res.data.ticket);
+                        } else {
+                            this.wsManager.handleReconnect();
+                        }
+                    }, delay);
+                } else {
+                    console.error('[DEBUG WS] Máximos intentos de reconexión alcanzados.');
+                }
+            };
+
+        } catch (error) {
+            console.error('[DEBUG DesignNetwork] Error al inicializar WS con Ticket:', error);
+        }
     },
 
     // --- MÉTODOS DE LIVE SHARE ---
@@ -73,7 +164,6 @@ export const DesignNetwork = {
         if (btn) setButtonLoading(btn);
 
         try {
-            // Reemplaza esto con tu ruta real en route-map.php
             const route = ApiRoutes.Canvases?.CreateLiveShare || 'canvas/live-share/create';
             const tpl = this.templates.find(t => t.id === this.activeTemplateId);
             
@@ -92,12 +182,10 @@ export const DesignNetwork = {
                 this.liveShareCode = response.data.code;
                 this.liveTemplateId = this.activeTemplateId;
                 
-                // Entrar a la sala WebSocket
                 if (this.wsManager) {
                     this.wsManager.send({ type: 'join_live_share', code: this.liveShareCode });
                 }
 
-                // UI
                 if (btn) btn.style.display = 'none';
                 if (this.uiLiveControls) this.uiLiveControls.style.display = 'flex';
                 if (this.uiLiveCode) this.uiLiveCode.textContent = this.liveShareCode;
@@ -120,7 +208,6 @@ export const DesignNetwork = {
     stopLiveShare() {
         if (this.liveShareStatus !== 'owner') return;
         
-        // Avisar al servidor
         if (this.wsManager && this.liveShareCode) {
             this.wsManager.send({ type: 'end_live_share', code: this.liveShareCode });
         }
@@ -136,17 +223,14 @@ export const DesignNetwork = {
         showMessage('Transmisión detenida.', 'info');
     },
 
-  async joinLiveImageSession(code) {
+    async joinLiveImageSession(code) {
         if (!code) return;
         
         const btn = document.querySelector('[data-action="joinLiveShare"]');
         if (btn) setButtonLoading(btn);
 
         try {
-            // Usamos la ruta oficial recién registrada
             const route = ApiRoutes.Canvases?.JoinLiveShare || 'canvases.join_live_share';
-            
-            // CORRECCIÓN AQUÍ: Usar .post y pasar el payload { code: code }
             const response = await this.api.post(route, { code: code });
 
             if (response.success && response.data) {
@@ -171,7 +255,7 @@ export const DesignNetwork = {
                                 w: parseInt(response.data.w) || img.width,
                                 h: parseInt(response.data.h) || img.height,
                                 opacity: parseFloat(response.data.opacity) || 1,
-                                locked: true, // Bloqueado para el espectador
+                                locked: true, 
                                 url: img.src
                             });
                             this.activeTemplateId = liveId;
@@ -181,7 +265,6 @@ export const DesignNetwork = {
                     });
                 }
 
-                // Entrar a la sala WebSocket
                 if (this.wsManager) {
                     this.wsManager.send({ type: 'join_live_share', code: this.liveShareCode });
                 }
@@ -199,6 +282,7 @@ export const DesignNetwork = {
             if (btn) restoreButton(btn);
         }
     },
+    
     emitLiveImageUpdate() {
         if (this.liveShareStatus !== 'owner' || !this.liveShareCode || !this.wsManager) return;
         
@@ -220,7 +304,6 @@ export const DesignNetwork = {
         if (this.liveShareStatus === 'spectator' && this.liveShareCode === data.code) {
             const tpl = this.templates.find(t => t.id === this.liveTemplateId);
             if (tpl) {
-                // Actualizar suavemente (DesignRender se encargará de pintarlo en el requestRender)
                 tpl.x = data.x;
                 tpl.y = data.y;
                 tpl.w = data.w;
@@ -237,7 +320,6 @@ export const DesignNetwork = {
             this.liveShareStatus = 'none';
             this.liveShareCode = null;
             
-            // Opcional: Eliminar la plantilla cuando termine
             this.templates = this.templates.filter(t => t.id !== this.liveTemplateId);
             this.activeTemplateId = null;
             this.liveTemplateId = null;
@@ -248,6 +330,12 @@ export const DesignNetwork = {
     // -----------------------------
 
     handleCooldownSync(data) {
+        // [NUEVO] Guardia estricta: Si es espectador, no sincronizamos ni encendemos UI
+        if (this.isSpectator) {
+            console.log(`[DEBUG DesignNetwork] Ignorando sync de cooldown porque el usuario es espectador.`);
+            return;
+        }
+
         console.log(`[DEBUG DesignNetwork] handleCooldownSync ejecutado. Data entrante:`, data);
         this.cooldownBalance = data.balance;
         this.cooldownMax = data.max_batch;
@@ -282,7 +370,6 @@ export const DesignNetwork = {
         const overlay = document.querySelector('[data-ref="reset-locked-overlay"]');
         if (overlay) overlay.classList.add('disabled');
         
-        // Disparar la alerta visual en vivo para todos los clientes en la sesión
         showMessage('El lienzo ha sido limpiado en este momento.', 'info');
         
         if (data.next_reset_at) {
@@ -333,6 +420,9 @@ export const DesignNetwork = {
         const specControls = document.querySelector('[data-ref="spectator-controls"]');
         const designTools = document.querySelector('[data-ref="design-tools-actions"]');
         
+        // [NUEVO] Seleccionamos el contenedor flotante entero de la UI de píxeles
+        const actionPill = document.querySelector('.component-action-pill'); 
+        
         const btnJoin = document.querySelector('[data-ref="btn-join-direct"]');
         const btnRequest = document.querySelector('[data-ref="btn-request-access"]');
 
@@ -348,7 +438,13 @@ export const DesignNetwork = {
                 specControls.classList.add('active');
                 specControls.style.display = 'flex';
             }
-            if (designTools) designTools.classList.replace('active', 'disabled');
+            if (designTools) {
+                designTools.classList.replace('active', 'disabled');
+                designTools.style.display = 'none'; // [NUEVO] Ocultado físico completo
+            }
+            if (actionPill) {
+                actionPill.style.display = 'none'; // [NUEVO] Ocultamos el botón principal de colocar
+            }
             
             if (this.canvasApproval) {
                 if (btnJoin) btnJoin.style.display = 'none';
@@ -364,7 +460,13 @@ export const DesignNetwork = {
                 specControls.classList.remove('active');
                 specControls.style.display = 'none';
             }
-            if (designTools) designTools.classList.replace('disabled', 'active');
+            if (designTools) {
+                designTools.classList.replace('disabled', 'active');
+                designTools.style.display = 'flex'; // [NUEVO] Se muestran las herramientas (Paleta/Plantillas)
+            }
+            if (actionPill) {
+                actionPill.style.display = 'block'; // [NUEVO] Mostramos el botón principal de colocar
+            }
         }
     },
 

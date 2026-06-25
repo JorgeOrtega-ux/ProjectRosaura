@@ -4,7 +4,7 @@ import websockets
 import os
 import json
 import time
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs
 import redis.asyncio as redis
 
 ROOMS = {}
@@ -12,6 +12,10 @@ LIVE_ROOMS = {} # Para las sesiones live share: { code: set(websockets) }
 OWNER_CONNS = {} # Mapeo { websocket: code } para limpiar si el dueño se desconecta de golpe
 REDIS_CLIENT = None
 USER_LOCKS = {}
+
+# Mapeo global de metadatos de las conexiones para QoS
+# WS_META[websocket] = { 'canvas_id': string, 'type': 'guest'|'auth', 'user_id': int|None }
+WS_META = {}
 
 async def get_redis_client():
     global REDIS_CLIENT
@@ -102,14 +106,84 @@ async def handler(websocket):
         return
 
     canvas_id = path_parts[1]
+    
+    # ------------------------------------------------------------------
+    # FASE 1: SISTEMA DE TICKETS DE UN SOLO USO
+    # ------------------------------------------------------------------
+    query_params = parse_qs(parsed_path.query)
+    ticket = query_params.get('ticket', [None])[0]
 
+    if not ticket:
+        print("[DEBUG WS] Conexión rechazada: Sin ticket HTTP previo.")
+        await websocket.close(code=1008, reason="Ticket requerido para conexión.")
+        return
+
+    r = await get_redis_client()
+    ticket_key = f"ws:ticket:{ticket}"
+    
+    # Extraer el ticket de Redis
+    ticket_data_raw = await r.get(ticket_key)
+
+    if not ticket_data_raw:
+        print(f"[DEBUG WS] Conexión rechazada: Ticket '{ticket}' inválido o expirado.")
+        await websocket.close(code=1008, reason="Ticket inválido o expirado.")
+        return
+
+    # Quemar el ticket instantáneamente
+    await r.delete(ticket_key)
+    
+    # Decodificar estado del usuario que viene desde PHP
+    try:
+        decoded_str = ticket_data_raw.decode('utf-8') if isinstance(ticket_data_raw, bytes) else ticket_data_raw
+        ticket_data = json.loads(decoded_str)
+        user_type = ticket_data.get('type', 'guest')
+        ticket_user_id = ticket_data.get('user_id')
+    except Exception as e:
+        print(f"[DEBUG WS] Error parseando ticket de Redis: {e}")
+        await websocket.close(code=1008, reason="Datos de ticket corruptos.")
+        return
+
+    # ------------------------------------------------------------------
+    # FASE 2: QUALITY OF SERVICE (QoS) & EVICTION
+    # ------------------------------------------------------------------
+    MAX_CONNECTIONS = int(os.getenv("WS_MAX_CONNECTIONS", 10000))
+    QOS_THRESHOLD = int(os.getenv("WS_QOS_THRESHOLD", 9000))
+
+    if len(WS_META) >= QOS_THRESHOLD:
+        if user_type == 'guest':
+            # Si el servidor roza el límite, denegamos la entrada a los mirones (guests)
+            if len(WS_META) >= MAX_CONNECTIONS:
+                print(f"[QoS] Servidor lleno. Bloqueando conexión Guest.")
+                await websocket.close(code=4001, reason="Servidor lleno. Prioridad a usuarios registrados.")
+                return
+        else:
+            # Si entra un usuario Autenticado y estamos llenos, desalojamos un Guest al azar
+            guest_to_evict = next((ws for ws, meta in WS_META.items() if meta['type'] == 'guest'), None)
+            if guest_to_evict:
+                print(f"[QoS] Desalojando a un Guest para dar paso a un usuario Registrado (ID: {ticket_user_id})")
+                try:
+                    await guest_to_evict.close(code=4001, reason="Desalojado por QoS para dar prioridad a usuarios registrados.")
+                except:
+                    pass
+            elif len(WS_META) >= MAX_CONNECTIONS:
+                # Caso extremo: Servidor lleno solo de usuarios autenticados
+                print(f"[QoS] Servidor absolutamente saturado con cuentas autenticadas.")
+                await websocket.close(code=1013, reason="Servidor absolutamente lleno.")
+                return
+
+    # Si pasó los filtros, se registra la conexión
     if canvas_id not in ROOMS:
         ROOMS[canvas_id] = set()
     
     ROOMS[canvas_id].add(websocket)
-    print(f"[+] Cliente conectado a la sala '{canvas_id}'. Total en sala: {len(ROOMS[canvas_id])}")
+    WS_META[websocket] = {
+        'canvas_id': canvas_id,
+        'type': user_type,
+        'user_id': ticket_user_id
+    }
+    
+    print(f"[+] Cliente ({user_type}) conectado a la sala '{canvas_id}'. Total global: {len(WS_META)}")
 
-    r = await get_redis_client()
     lock_key = f"canvas:{canvas_id}:reset_lock"
     config_key = f"canvas:{canvas_id}:config"
 
@@ -150,7 +224,7 @@ async def handler(websocket):
                     await websocket.send(init_msg)
 
                 # ==========================================
-                # EVENTOS LIVE SHARE (NUEVO)
+                # EVENTOS LIVE SHARE
                 # ==========================================
                 elif data.get("type") == "join_live_share":
                     code = data.get("code")
@@ -165,7 +239,6 @@ async def handler(websocket):
                 elif data.get("type") == "update_live_share":
                     code = data.get("code")
                     if code and code in LIVE_ROOMS:
-                        # Si es el primero en actualizar, o no está registrado, lo asumimos como dueño
                         if websocket not in OWNER_CONNS:
                             OWNER_CONNS[websocket] = code
                             print(f"[DEBUG LIVE] WS registrado como dueño de la sesión {code}")
@@ -179,7 +252,6 @@ async def handler(websocket):
                             "h": data.get("h"),
                             "opacity": data.get("opacity")
                         })
-                        # Re-transmitir a todos en la sala EXCEPTO al dueño (emisor)
                         tasks = [
                             asyncio.create_task(client.send(update_msg))
                             for client in LIVE_ROOMS[code] if client != websocket
@@ -201,7 +273,6 @@ async def handler(websocket):
                         if tasks:
                             await asyncio.gather(*tasks)
                             
-                        # Limpiar sala y base efímera
                         del LIVE_ROOMS[code]
                         await r.delete(f"live_share:{code}")
                         if websocket in OWNER_CONNS:
@@ -254,7 +325,6 @@ async def handler(websocket):
                             balance -= 1
                             print(f"[DEBUG PY] Descontando 1 pixel. Balance restante: {balance}")
                             
-                            # ESCRITURA EN BYTES ESTRICTA
                             await r.hset(user_key, mapping={b'b': str(balance).encode(), b't': str(last_t).encode()})
                             
                             confirm_msg = json.dumps({
@@ -312,7 +382,6 @@ async def handler(websocket):
         # Desconexión de Salas del Lienzo
         if canvas_id in ROOMS and websocket in ROOMS[canvas_id]:
             ROOMS[canvas_id].remove(websocket)
-            print(f"[-] Cliente desconectado de la sala '{canvas_id}'. Total en sala: {len(ROOMS[canvas_id])}")
             
             if len(ROOMS[canvas_id]) == 0:
                 del ROOMS[canvas_id]
@@ -322,11 +391,9 @@ async def handler(websocket):
         for code, clients in list(LIVE_ROOMS.items()):
             if websocket in clients:
                 clients.remove(websocket)
-                print(f"[-] Cliente desconectado de sesión en vivo '{code}'.")
                 
                 # Si el que se desconecta era el dueño, destruimos la sesión
                 if websocket in OWNER_CONNS and OWNER_CONNS[websocket] == code:
-                    print(f"[*] El dueño de la sesión '{code}' se ha desconectado bruscamente. Finalizando sesión para todos.")
                     end_msg = json.dumps({"type": "live_session_ended", "code": code})
                     tasks = [
                         asyncio.create_task(c.send(end_msg))
@@ -340,10 +407,15 @@ async def handler(websocket):
                         redis_client = await get_redis_client()
                         await redis_client.delete(f"live_share:{code}")
                     except Exception as e:
-                        print(f"Error borrando llave live_share de Redis en Finally: {e}")
+                        pass
                         
         if websocket in OWNER_CONNS:
             del OWNER_CONNS[websocket]
+            
+        # Limpieza de QoS Global
+        if websocket in WS_META:
+            del WS_META[websocket]
+            print(f"[-] Cliente desconectado. Total global restante: {len(WS_META)}")
 
 async def main():
     host = os.getenv("WS_HOST", "0.0.0.0")

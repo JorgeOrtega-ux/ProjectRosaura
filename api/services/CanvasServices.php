@@ -36,9 +36,47 @@ class CanvasServices {
     }
 
     // ==========================================
-    // MÉTODOS PARA HOME / EXPLORA
+    // MÉTODOS PARA HOME / EXPLORA / TICKETS WS
     // ==========================================
     
+    public function generateWsTicket(?int $userId, int $canvasId): array {
+        try {
+            // Verificamos si el lienzo existe
+            $canvas = $this->canvasRepository->getById($canvasId);
+            if (!$canvas) {
+                return ['success' => false, 'message' => __('err_canvas_not_found') ?? 'Lienzo no encontrado.', 'http_code' => 404];
+            }
+
+            $ticketUuid = Utils::generateUUID();
+            
+            // Estructuramos la data del ticket. 'guest' para invitados, 'auth' para logueados.
+            $ticketData = [
+                'type' => $userId !== null ? 'auth' : 'guest',
+                'user_id' => $userId,
+                'canvas_id' => $canvasId,
+                'created_at' => time()
+            ];
+
+            if (class_exists(RedisCache::class)) {
+                $redisInstance = new RedisCache();
+                $redis = $redisInstance->getClient();
+                if ($redis) {
+                    $key = "ws:ticket:{$ticketUuid}";
+                    // Se almacena en Redis con un TTL ultra corto de 15 segundos (setex)
+                    $redis->setex($key, 15, json_encode($ticketData));
+                    
+                    return ['success' => true, 'data' => ['ticket' => $ticketUuid]];
+                }
+            }
+            
+            return ['success' => false, 'message' => 'El servicio de WebSockets no está disponible actualmente.', 'http_code' => 503];
+
+        } catch (Exception $e) {
+            Logger::error('Error generating WS ticket.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
+            return ['success' => false, 'message' => 'Error interno del servidor.', 'http_code' => 500];
+        }
+    }
+
     public function getPublicCanvases(?int $currentUserId, int $limit = 20): array {
         try {
             $canvases = $this->canvasRepository->getPublicCanvases($limit);
@@ -66,7 +104,8 @@ class CanvasServices {
             return ['success' => false, 'message' => __('err_database') ?? 'Error al cargar los lienzos públicos.'];
         }
     }
-public function getOfficialCanvases(): array {
+
+    public function getOfficialCanvases(): array {
         try {
             // El CanvasRepository ya tiene un método para esto (getOfficialCanvases)
             $canvases = $this->canvasRepository->getOfficialCanvases();
@@ -95,6 +134,7 @@ public function getOfficialCanvases(): array {
             return ['success' => false, 'message' => __('err_database') ?? 'Error al cargar los lienzos oficiales.'];
         }
     }
+
     public function getCanvas(?int $userId, int $canvasId, bool $canManageOfficial = false): array {
         try {
             $canvas = $this->canvasRepository->getById($canvasId);

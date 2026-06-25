@@ -3,6 +3,7 @@
 
 use App\Config\DatabaseManager;
 use App\Core\System\DatabaseConstants as DB;
+use App\Core\Helpers\EnvLoader;
 use PDO;
 
 $canvasIntId = 0; 
@@ -23,6 +24,9 @@ $timerAction = 'restart';
 
 $canvasUuid = $_GET['id'] ?? '';
 $isSnapshot = isset($_GET['snapshot']); // Bandera para saber si es historial
+
+// Cargar la clave pública de Turnstile para invitados
+$turnstileSiteKey = EnvLoader::get('TURNSTILE_SITE_KEY', '');
 
 if (!empty($canvasUuid)) {
     try {
@@ -63,6 +67,9 @@ if (!empty($canvasUuid)) {
 ?>
 <div class="view-content" style="position: relative;">
     
+    <div id="cf-turnstile-wrapper" style="display: none;" data-sitekey="<?php echo htmlspecialchars($turnstileSiteKey); ?>"></div>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" defer></script>
+
     <div class="component-fullscreen-overlay disabled" data-ref="private-blocked-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1000; background-color: var(--surface-primary); display: flex; align-items: center; justify-content: center; flex-direction: column;">
         <div class="component-empty-state">
             <span class="material-symbols-rounded component-empty-state-icon" style="font-size: 64px;">lock</span>

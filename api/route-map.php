@@ -319,6 +319,13 @@ return [
 
     // --- RUTAS DE LIENZOS (CANVASES) ---
     
+    // NUEVA RUTA PARA TICKETS DE WEBSOCKET
+    'canvases.get_ws_ticket' => [
+        'controller' => 'App\Api\Controllers\CanvasController',
+        'action' => 'get_ws_ticket',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_ws_ticket', 'max' => 10, 'time' => RL::TIME_5, 'identifier' => RL::ID_IP]]
+    ],
+
     'canvases.get_public' => [
         'controller' => 'App\Api\Controllers\CanvasController',
         'action' => 'get_public',

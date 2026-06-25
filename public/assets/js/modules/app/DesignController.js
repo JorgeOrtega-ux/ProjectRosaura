@@ -146,7 +146,13 @@ class DesignController {
         } else {
             this.loadCanvasConfig();
             this.checkCanvasAccess();
-            this.loadUserLibrary();
+            
+            // CORRECCIÓN: Solo cargar plantillas si el usuario está logueado
+            const uid = window.activeUserId || document.querySelector('meta[name="user-id"]')?.content || null;
+            if (uid) {
+                this.loadUserLibrary();
+            }
+            
             this.startCooldownLoop();
         }
     }

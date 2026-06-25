@@ -13,11 +13,16 @@ export class WebSocketManager {
         this.isIntentionalDisconnect = false;
     }
 
-    connect(canvasId) {
+    connect(canvasId, ticket = null) {
         this.canvasId = canvasId;
         this.isIntentionalDisconnect = false;
         
-        const url = `${WsConfig.getBaseUrl()}/canvas/${this.canvasId}`;
+        let url = `${WsConfig.getBaseUrl()}/canvas/${this.canvasId}`;
+        
+        if (ticket) {
+            url += `?ticket=${encodeURIComponent(ticket)}`;
+        }
+
         console.log(`[DEBUG WS] Intentando conectar a: ${url}`);
         
         this.ws = new WebSocket(url);
@@ -40,7 +45,14 @@ export class WebSocketManager {
 
         this.ws.onclose = (event) => {
             console.warn(`[DEBUG WS] Conexión cerrada. Código: ${event.code}, Razón: ${event.reason}`);
-            if (!this.isIntentionalDisconnect) {
+            
+            // Detección de Desalojo por QoS (Servidor Python envía 4001)
+            if (event.code === 4001) {
+                this.isIntentionalDisconnect = true;
+                console.warn('[DEBUG WS] Desalojado por QoS (4001). Bloqueando reconexión.');
+                this.trigger('qos_evicted', event.reason);
+            } 
+            else if (!this.isIntentionalDisconnect) {
                 this.handleReconnect();
             } else {
                 console.info('[DEBUG WS] Desconectado limpiamente');
@@ -59,6 +71,8 @@ export class WebSocketManager {
             
             setTimeout(() => {
                 this.reconnectAttempts++;
+                // Nota: DesignNetwork.js sobrescribirá este método en tiempo de ejecución 
+                // para inyectar la lógica de pedir un NUEVO ticket antes de llamar a connect()
                 this.connect(this.canvasId);
             }, delay);
         } else {

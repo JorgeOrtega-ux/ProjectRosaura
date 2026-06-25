@@ -4,6 +4,7 @@ namespace App\Api\Controllers;
 
 use App\Api\Services\CanvasServices;
 use App\Core\Interfaces\SessionManagerInterface;
+use App\Core\Security\TurnstileValidator;
 
 class CanvasController extends BaseController {
     
@@ -45,8 +46,51 @@ class CanvasController extends BaseController {
     }
 
     // ==========================================
-    // MÉTODOS PARA HOME / EXPLORA
+    // MÉTODOS PARA HOME / EXPLORA / WEBSOCKETS
     // ==========================================
+
+    public function get_ws_ticket($input) {
+        try {
+            $canvasId = $input['canvas_id'] ?? $input['id'] ?? null;
+            
+            if (!$canvasId) {
+                return $this->respond(['success' => false, 'message' => 'ID de lienzo no proporcionado.', 'http_code' => 400]);
+            }
+
+            $isLoggedIn = $this->session->isLoggedIn();
+            $userId = $isLoggedIn ? $this->session->getActiveAccountId() : null;
+
+            // Si es un invitado, exigimos validación de Cloudflare Turnstile
+            if (!$isLoggedIn) {
+                $token = $input['cf-turnstile-response'] ?? clone $input['turnstile_token'] ?? null;
+                
+                if (!$token) {
+                    return $this->respond(['success' => false, 'message' => 'Validación de seguridad (Turnstile) requerida para espectadores.', 'http_code' => 403]);
+                }
+                
+                $turnstile = new TurnstileValidator();
+                $remoteIp = $_SERVER['REMOTE_ADDR'] ?? null;
+                
+                if (!$turnstile->isValid($token, $remoteIp)) {
+                    return $this->respond(['success' => false, 'message' => 'Validación de seguridad fallida. Eres un bot sospechoso.', 'http_code' => 403]);
+                }
+            }
+
+            // Si es logueado o pasó Turnstile, se genera el Ticket
+            $result = $this->canvasServices->generateWsTicket($userId, (int)$canvasId);
+            
+            if (!$result['success']) {
+                $code = $result['http_code'] ?? 400;
+                http_response_code($code);
+            }
+            
+            return $this->respond($result);
+
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
     public function get_public($input) {
         try {
             $userId = $this->session->isLoggedIn() ? $this->session->getActiveAccountId() : null;
@@ -604,6 +648,7 @@ class CanvasController extends BaseController {
             return $this->handleException($e, __FUNCTION__);
         }
     }
+
     public function get_official($input) {
         try {
             $result = $this->canvasServices->getOfficialCanvases();
