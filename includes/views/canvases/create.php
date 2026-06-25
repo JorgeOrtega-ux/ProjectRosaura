@@ -18,56 +18,160 @@
                 
                 <div class="component-card--grouped">
 
-                    <div class="component-group-item component-group-item--stacked disabled" data-ref="scope-section" style="display: none;">
+                    <div class="component-group-item component-group-item--stacked disabled" data-ref="scope-section">
                         <div class="component-card__content">
                             <div class="component-card__text">
-                                <h2 class="component-card__title" style="color: var(--color-danger);">Alcance Oficial del Lienzo (Admin)</h2>
-                                <p class="component-card__description">Define si este lienzo es de uso personal o si representa un espacio oficial único (Global, País, Estado, Municipio u Organización).</p>
+                                <h2 class="component-card__title"><?php echo __('canvas_scope_title'); ?></h2>
+                                <p class="component-card__description"><?php echo __('canvas_scope_desc'); ?></p>
                             </div>
                         </div>
-                        <div class="component-card__actions component-card__actions--start" style="flex-direction: column; gap: 10px; align-items: flex-start; width: 100%;">
-                            
-                            <div class="component-input-group component-input-group--h34" style="width: 100%; max-width: 300px;">
-                                <select data-ref="select-scope-type" class="component-input-field component-input-field--simple">
-                                    <option value="personal" selected>Lienzo Personal (Normal)</option>
-                                    <option value="global">Lienzo Global (Único en el mundo)</option>
-                                    <option value="country">Lienzo Nacional (País)</option>
-                                    <option value="state">Lienzo Estatal</option>
-                                    <option value="municipality">Lienzo Municipal</option>
-                                    <option value="organization">Lienzo de Organización / Escuela</option>
-                                </select>
+                        <div class="component-card__actions component-card__actions--start">
+                            <div class="component-dropdown-wrapper">
+                                <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="dropdownScopeType">
+                                    <span class="material-symbols-rounded">admin_panel_settings</span>
+                                    <span class="component-dropdown-text" data-ref="text-scope-type"><?php echo __('canvas_scope_type_personal'); ?></span>
+                                    <span class="material-symbols-rounded">expand_more</span>
+                                </div>
+                                <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="dropdownScopeType">
+                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                                        <div class="pill-container"><div class="drag-handle"></div></div>
+                                        <div class="component-menu-list component-menu-list--scrollable">
+                                            <div class="component-menu-link active" data-action="selectValue" data-type="scope_type" data-value="personal" data-label="canvas_scope_type_personal" data-icon="person">
+                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">person</span></div>
+                                                <div class="component-menu-link-text"><span><?php echo __('canvas_scope_type_personal'); ?></span></div>
+                                            </div>
+                                            <div class="component-menu-link" data-action="selectValue" data-type="scope_type" data-value="global" data-label="canvas_scope_type_global" data-icon="public">
+                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">public</span></div>
+                                                <div class="component-menu-link-text"><span><?php echo __('canvas_scope_type_global'); ?></span></div>
+                                            </div>
+                                            <div class="component-menu-link" data-action="selectValue" data-type="scope_type" data-value="country" data-label="canvas_scope_type_country" data-icon="flag">
+                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">flag</span></div>
+                                                <div class="component-menu-link-text"><span><?php echo __('canvas_scope_type_country'); ?></span></div>
+                                            </div>
+                                            <div class="component-menu-link" data-action="selectValue" data-type="scope_type" data-value="state" data-label="canvas_scope_type_state" data-icon="map">
+                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">map</span></div>
+                                                <div class="component-menu-link-text"><span><?php echo __('canvas_scope_type_state'); ?></span></div>
+                                            </div>
+                                            <div class="component-menu-link" data-action="selectValue" data-type="scope_type" data-value="municipality" data-label="canvas_scope_type_municipality" data-icon="location_city">
+                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">location_city</span></div>
+                                                <div class="component-menu-link-text"><span><?php echo __('canvas_scope_type_municipality'); ?></span></div>
+                                            </div>
+                                            <div class="component-menu-link" data-action="selectValue" data-type="scope_type" data-value="organization" data-label="canvas_scope_type_organization" data-icon="domain">
+                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">domain</span></div>
+                                                <div class="component-menu-link-text"><span><?php echo __('canvas_scope_type_organization'); ?></span></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-
-                            <div data-ref="scope-locations-container" style="display: none; flex-direction: column; gap: 10px; width: 100%; max-width: 300px;">
-                                <div class="component-input-group component-input-group--h34">
-                                    <select data-ref="select-scope-country" class="component-input-field component-input-field--simple">
-                                        <option value="">Selecciona un País...</option>
-                                    </select>
-                                </div>
-                                <div class="component-input-group component-input-group--h34" data-ref="wrapper-scope-state" style="display: none;">
-                                    <select data-ref="select-scope-state" class="component-input-field component-input-field--simple">
-                                        <option value="">Selecciona un Estado...</option>
-                                    </select>
-                                </div>
-                                <div class="component-input-group component-input-group--h34" data-ref="wrapper-scope-city" style="display: none;">
-                                    <select data-ref="select-scope-city" class="component-input-field component-input-field--simple">
-                                        <option value="">Selecciona un Municipio...</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div data-ref="scope-organization-container" style="display: none; width: 100%; max-width: 300px;">
-                                <div class="component-input-group component-input-group--h34">
-                                    <input type="text" data-ref="input-scope-organization" class="component-input-field component-input-field--simple" placeholder="Nombre de la Institución o Empresa">
-                                </div>
-                            </div>
-
                         </div>
                     </div>
 
-                    <hr class="component-divider" data-ref="scope-divider" style="display: none;">
+                    <hr class="component-divider disabled" data-ref="scope-divider-country">
+                    <div class="component-group-item component-group-item--stacked disabled" data-ref="scope-section-country">
+                        <div class="component-card__content">
+                            <div class="component-card__text">
+                                <h2 class="component-card__title"><?php echo __('canvas_scope_country_title'); ?></h2>
+                                <p class="component-card__description"><?php echo __('canvas_scope_country_desc'); ?></p>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--start">
+                            <div class="component-dropdown-wrapper">
+                                <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="dropdownScopeCountry">
+                                    <span class="material-symbols-rounded" data-ref="icon-scope-country">flag</span>
+                                    <span class="component-dropdown-text" data-ref="text-scope-country"><?php echo __('canvas_scope_country_placeholder'); ?></span>
+                                    <span class="material-symbols-rounded">expand_more</span>
+                                </div>
+                                <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="dropdownScopeCountry">
+                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                                        <div class="pill-container"><div class="drag-handle"></div></div>
+                                        <div class="component-menu-list component-menu-list--scrollable" data-ref="list-scope-country">
+                                            <div class="component-menu-link disabled">
+                                                <div class="component-menu-link-text"><span><?php echo __('lbl_loading'); ?></span></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="component-divider disabled" data-ref="scope-divider-state">
+                    <div class="component-group-item component-group-item--stacked disabled" data-ref="scope-section-state">
+                        <div class="component-card__content">
+                            <div class="component-card__text">
+                                <h2 class="component-card__title"><?php echo __('canvas_scope_state_title'); ?></h2>
+                                <p class="component-card__description"><?php echo __('canvas_scope_state_desc'); ?></p>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--start">
+                            <div class="component-dropdown-wrapper">
+                                <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="dropdownScopeState">
+                                    <span class="material-symbols-rounded" data-ref="icon-scope-state">map</span>
+                                    <span class="component-dropdown-text" data-ref="text-scope-state"><?php echo __('canvas_scope_state_placeholder'); ?></span>
+                                    <span class="material-symbols-rounded">expand_more</span>
+                                </div>
+                                <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="dropdownScopeState">
+                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                                        <div class="pill-container"><div class="drag-handle"></div></div>
+                                        <div class="component-menu-list component-menu-list--scrollable" data-ref="list-scope-state">
+                                            <div class="component-menu-link disabled">
+                                                <div class="component-menu-link-text"><span><?php echo __('lbl_loading'); ?></span></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="component-divider disabled" data-ref="scope-divider-city">
+                    <div class="component-group-item component-group-item--stacked disabled" data-ref="scope-section-city">
+                        <div class="component-card__content">
+                            <div class="component-card__text">
+                                <h2 class="component-card__title"><?php echo __('canvas_scope_city_title'); ?></h2>
+                                <p class="component-card__description"><?php echo __('canvas_scope_city_desc'); ?></p>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--start">
+                            <div class="component-dropdown-wrapper">
+                                <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="dropdownScopeCity">
+                                    <span class="material-symbols-rounded" data-ref="icon-scope-city">location_city</span>
+                                    <span class="component-dropdown-text" data-ref="text-scope-city"><?php echo __('canvas_scope_city_placeholder'); ?></span>
+                                    <span class="material-symbols-rounded">expand_more</span>
+                                </div>
+                                <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="dropdownScopeCity">
+                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                                        <div class="pill-container"><div class="drag-handle"></div></div>
+                                        <div class="component-menu-list component-menu-list--scrollable" data-ref="list-scope-city">
+                                            <div class="component-menu-link disabled">
+                                                <div class="component-menu-link-text"><span><?php echo __('lbl_loading'); ?></span></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="component-divider disabled" data-ref="scope-divider-org">
+                    <div class="component-group-item component-group-item--stacked disabled" data-ref="scope-section-org">
+                        <div class="component-card__content">
+                            <div class="component-card__text">
+                                <h2 class="component-card__title"><?php echo __('canvas_scope_org_title'); ?></h2>
+                                <p class="component-card__description"><?php echo __('canvas_scope_org_desc'); ?></p>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--start">
+                            <div class="component-input-group component-input-group--h34">
+                                <input type="text" data-ref="input-scope-organization" class="component-input-field component-input-field--simple" placeholder="<?php echo __('canvas_scope_org_placeholder'); ?>">
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="component-divider disabled" data-ref="scope-divider-main">
+                    
                     <div class="component-group-item component-group-item--stateful">
-                        
                         <div class="active component-state-box" data-state="canvasname-view">
                             <div class="component-card__content">
                                 <div class="component-card__text">
@@ -197,28 +301,28 @@
                     <div class="component-group-item component-group-item--stacked">
                         <div class="component-card__content">
                             <div class="component-card__text">
-                                <h2 class="component-card__title"><?php echo __('canvas_approval_title') ?? 'Aprobación de acceso'; ?></h2>
-                                <p class="component-card__description"><?php echo __('canvas_approval_desc') ?? 'Si se activa, los usuarios deberán enviar una solicitud que tú aprobarás antes de que puedan unirse y pintar.'; ?></p>
+                                <h2 class="component-card__title"><?php echo __('canvas_approval_title'); ?></h2>
+                                <p class="component-card__description"><?php echo __('canvas_approval_desc'); ?></p>
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--start">
                             <div class="component-dropdown-wrapper">
                                 <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="dropdownApproval">
                                     <span class="material-symbols-rounded" data-ref="icon-approval">no_accounts</span>
-                                    <span class="component-dropdown-text" data-ref="text-approval"><?php echo __('canvas_approval_false') ?? 'No requiere aprobación'; ?></span>
+                                    <span class="component-dropdown-text" data-ref="text-approval"><?php echo __('canvas_approval_false'); ?></span>
                                     <span class="material-symbols-rounded">expand_more</span>
                                 </div>
                                 <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="dropdownApproval">
                                     <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
                                         <div class="pill-container"><div class="drag-handle"></div></div>
                                         <div class="component-menu-list component-menu-list--scrollable">
-                                            <div class="component-menu-link active" data-action="selectValue" data-type="requires_approval" data-value="false" data-label="No requiere aprobación" data-icon="no_accounts">
+                                            <div class="component-menu-link active" data-action="selectValue" data-type="requires_approval" data-value="false" data-label="canvas_approval_false" data-icon="no_accounts">
                                                 <div class="component-menu-link-icon"><span class="material-symbols-rounded">no_accounts</span></div>
-                                                <div class="component-menu-link-text"><span><?php echo __('canvas_approval_false') ?? 'No requiere aprobación'; ?></span></div>
+                                                <div class="component-menu-link-text"><span><?php echo __('canvas_approval_false'); ?></span></div>
                                             </div>
-                                            <div class="component-menu-link" data-action="selectValue" data-type="requires_approval" data-value="true" data-label="Requiere aprobación" data-icon="front_hand">
+                                            <div class="component-menu-link" data-action="selectValue" data-type="requires_approval" data-value="true" data-label="canvas_approval_true" data-icon="front_hand">
                                                 <div class="component-menu-link-icon"><span class="material-symbols-rounded">front_hand</span></div>
-                                                <div class="component-menu-link-text"><span><?php echo __('canvas_approval_true') ?? 'Requiere aprobación'; ?></span></div>
+                                                <div class="component-menu-link-text"><span><?php echo __('canvas_approval_true'); ?></span></div>
                                             </div>
                                         </div>
                                     </div>
@@ -232,8 +336,8 @@
                     <div class="component-group-item component-group-item--stacked">
                         <div class="component-card__content">
                             <div class="component-card__text">
-                                <h2 class="component-card__title"><?php echo __('canvas_palette_title') ?? 'Paleta de Colores'; ?></h2>
-                                <p class="component-card__description"><?php echo __('canvas_palette_desc') ?? 'Elige la paleta de colores disponible para este lienzo.'; ?></p>
+                                <h2 class="component-card__title"><?php echo __('canvas_palette_title'); ?></h2>
+                                <p class="component-card__description"><?php echo __('canvas_palette_desc'); ?></p>
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--start">
@@ -247,7 +351,7 @@
                                     <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
                                         <div class="pill-container"><div class="drag-handle"></div></div>
                                         <div class="component-menu-list component-menu-list--scrollable" data-ref="palette-selector-container">
-                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -259,8 +363,8 @@
                     <div class="component-group-item component-group-item--stacked">
                         <div class="component-card__content">
                             <div class="component-card__text">
-                                <h2 class="component-card__title"><?php echo __('canvas_cooldown_batch_title') ?? 'Píxeles por lote (Capacidad)'; ?></h2>
-                                <p class="component-card__description"><?php echo __('canvas_cooldown_batch_desc') ?? 'Cantidad máxima de píxeles que un usuario puede acumular para colocar sin tener que esperar.'; ?></p>
+                                <h2 class="component-card__title"><?php echo __('canvas_cooldown_batch_title'); ?></h2>
+                                <p class="component-card__description"><?php echo __('canvas_cooldown_batch_desc'); ?></p>
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--start">
@@ -291,8 +395,8 @@
                     <div class="component-group-item component-group-item--stacked">
                         <div class="component-card__content">
                             <div class="component-card__text">
-                                <h2 class="component-card__title"><?php echo __('canvas_cooldown_seconds_title') ?? 'Tiempo de recarga (Segundos)'; ?></h2>
-                                <p class="component-card__description"><?php echo __('canvas_cooldown_seconds_desc') ?? 'Segundos que debe esperar el usuario para regenerar 1 píxel gastado (Pon 0 para infinito).'; ?></p>
+                                <h2 class="component-card__title"><?php echo __('canvas_cooldown_seconds_title'); ?></h2>
+                                <p class="component-card__description"><?php echo __('canvas_cooldown_seconds_desc'); ?></p>
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--start">

@@ -3,7 +3,6 @@
 import { ApiRoutes } from '../../core/api/ApiRoutes.js';
 import { ApiService } from '../../core/api/ApiServices.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../core/utils/uiUtils.js';
-import { LocationSelectors } from './LocationSelectors.js';
 
 /**
  * Función helper local para obtener todas las paletas en formato Array.
@@ -19,7 +18,6 @@ class CanvasesController {
         this.api = new ApiService();
         this.basePath = window.AppBasePath || '';
         this.abortController = null;
-        this.locationSelectors = null;
         
         this.formState = {
             name: '',
@@ -29,9 +27,14 @@ class CanvasesController {
             palette_id: 'default',
             limit: 10,
             cooldown_pixels_batch: 5,
-            cooldown_seconds: 10
+            cooldown_seconds: 10,
+            scope_type: 'personal',
+            scope_country: null,
+            scope_state: null,
+            scope_city: null
         };
 
+        this.countriesLoaded = false;
         this.handleClickBound = this.handleClick.bind(this);
     }
 
@@ -46,11 +49,6 @@ class CanvasesController {
     destroy() {
         if (this.abortController) this.abortController.abort();
         document.removeEventListener('click', this.handleClickBound);
-        
-        if (this.locationSelectors) {
-            this.locationSelectors.destroy();
-            this.locationSelectors = null;
-        }
     }
 
     bindEvents() {
@@ -61,7 +59,6 @@ class CanvasesController {
         let hasPerm = false;
         if (window.APP_CONFIG && window.APP_CONFIG.permissions) {
             const p = window.APP_CONFIG.permissions;
-            // Evaluamos permisos amplios (administrador global o manager de lienzos)
             hasPerm = p.includes('manage_canvases') || 
                       p.includes('access_admin_panel') || 
                       p.includes('canvases.manage_official') || 
@@ -69,21 +66,18 @@ class CanvasesController {
         }
 
         const scopeSection = document.querySelector('[data-ref="scope-section"]');
-        const scopeDivider = document.querySelector('[data-ref="scope-divider"]');
+        const scopeDivider = document.querySelector('[data-ref="scope-divider-main"]');
 
         if (scopeSection) {
             if (hasPerm) {
-                scopeSection.style.display = 'flex';
                 scopeSection.classList.remove('disabled');
-                if (scopeDivider) scopeDivider.style.display = 'block';
-
-                // Inicializar selectores dinámicos
-                this.locationSelectors = new LocationSelectors();
-                this.locationSelectors.init();
+                if (scopeDivider) scopeDivider.classList.remove('disabled');
+                
+                // Inicializar visualmente en personal por defecto
+                this.handleScopeTypeChange('personal');
             } else {
-                scopeSection.style.display = 'none';
                 scopeSection.classList.add('disabled');
-                if (scopeDivider) scopeDivider.style.display = 'none';
+                if (scopeDivider) scopeDivider.classList.add('disabled');
             }
         }
     }
@@ -109,7 +103,7 @@ class CanvasesController {
         const palettes = getAllPalettes();
         container.innerHTML = '';
 
-        let activePaletteName = 'Paleta';
+        let activePaletteName = window.__ ? window.__('lbl_loading') : '...';
 
         palettes.forEach(palette => {
             const isActive = this.formState.palette_id === palette.id;
@@ -187,6 +181,151 @@ class CanvasesController {
         }
     }
 
+    // ==========================================
+    // INICIO: LÓGICA ABSORBIDA DE LOCATIONS
+    // ==========================================
+    handleScopeTypeChange(type) {
+        this.formState.scope_type = type;
+        
+        const refsToHide = [
+            'scope-divider-country', 'scope-section-country',
+            'scope-divider-state', 'scope-section-state',
+            'scope-divider-city', 'scope-section-city',
+            'scope-divider-org', 'scope-section-org'
+        ];
+        
+        refsToHide.forEach(ref => {
+            const el = document.querySelector(`[data-ref="${ref}"]`);
+            if (el) el.classList.add('disabled');
+        });
+
+        if (type === 'organization') {
+            document.querySelector('[data-ref="scope-divider-org"]')?.classList.remove('disabled');
+            document.querySelector('[data-ref="scope-section-org"]')?.classList.remove('disabled');
+        } else if (['country', 'state', 'municipality'].includes(type)) {
+            document.querySelector('[data-ref="scope-divider-country"]')?.classList.remove('disabled');
+            document.querySelector('[data-ref="scope-section-country"]')?.classList.remove('disabled');
+            
+            this.loadCountries();
+
+            if (['state', 'municipality'].includes(type)) {
+                document.querySelector('[data-ref="scope-divider-state"]')?.classList.remove('disabled');
+                document.querySelector('[data-ref="scope-section-state"]')?.classList.remove('disabled');
+            }
+            if (type === 'municipality') {
+                document.querySelector('[data-ref="scope-divider-city"]')?.classList.remove('disabled');
+                document.querySelector('[data-ref="scope-section-city"]')?.classList.remove('disabled');
+            }
+        }
+    }
+
+    async loadCountries() {
+        if (this.countriesLoaded) return;
+        
+        const listContainer = document.querySelector('[data-ref="list-scope-country"]');
+        if (!listContainer) return;
+        
+        try {
+            listContainer.innerHTML = `<div class="component-menu-link disabled"><div class="component-menu-link-text"><span>${window.__('lbl_loading')}</span></div></div>`;
+            
+            const result = await this.api.post(ApiRoutes.Locations.GetCountries, {}, this.abortController.signal);
+            if (result && result.success) {
+                listContainer.innerHTML = ''; 
+                result.data.forEach(country => {
+                    const html = `
+                        <div class="component-menu-link" data-action="selectValue" data-type="scope_country" data-value="${country.id}" data-label="${country.name}" data-icon="flag">
+                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">flag</span></div>
+                            <div class="component-menu-link-text"><span>${country.name}</span></div>
+                        </div>
+                    `;
+                    listContainer.insertAdjacentHTML('beforeend', html);
+                });
+                this.countriesLoaded = true;
+            } else {
+                listContainer.innerHTML = `<div class="component-menu-link disabled"><div class="component-menu-link-text"><span>${window.__('err_default')}</span></div></div>`;
+            }
+        } catch (error) {
+            if (error.name !== 'AbortError') {} // Silenciado por arquitectura logger
+        }
+    }
+
+    async handleCountryChange(countryId) {
+        this.formState.scope_country = countryId;
+        this.formState.scope_state = null;
+        this.formState.scope_city = null;
+        
+        const stateText = document.querySelector('[data-ref="text-scope-state"]');
+        if (stateText) stateText.textContent = window.__('canvas_scope_state_placeholder');
+        
+        const cityText = document.querySelector('[data-ref="text-scope-city"]');
+        if (cityText) cityText.textContent = window.__('canvas_scope_city_placeholder');
+        
+        const listState = document.querySelector('[data-ref="list-scope-state"]');
+        const listCity = document.querySelector('[data-ref="list-scope-city"]');
+        
+        if (listCity) listCity.innerHTML = `<div class="component-menu-link disabled"><div class="component-menu-link-text"><span>${window.__('lbl_loading')}</span></div></div>`;
+
+        if (!countryId || !listState) return;
+
+        try {
+            listState.innerHTML = `<div class="component-menu-link disabled"><div class="component-menu-link-text"><span>${window.__('lbl_loading')}</span></div></div>`;
+            
+            const result = await this.api.post(ApiRoutes.Locations.GetStates, { id: countryId }, this.abortController.signal);
+            if (result && result.success) {
+                listState.innerHTML = '';
+                result.data.forEach(state => {
+                    const html = `
+                        <div class="component-menu-link" data-action="selectValue" data-type="scope_state" data-value="${state.id}" data-label="${state.name}" data-icon="map">
+                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">map</span></div>
+                            <div class="component-menu-link-text"><span>${state.name}</span></div>
+                        </div>
+                    `;
+                    listState.insertAdjacentHTML('beforeend', html);
+                });
+            } else {
+                listState.innerHTML = `<div class="component-menu-link disabled"><div class="component-menu-link-text"><span>${window.__('err_default')}</span></div></div>`;
+            }
+        } catch (error) {
+            if (error.name !== 'AbortError') {}
+        }
+    }
+
+    async handleStateChange(stateId) {
+        this.formState.scope_state = stateId;
+        this.formState.scope_city = null;
+        
+        const cityText = document.querySelector('[data-ref="text-scope-city"]');
+        if (cityText) cityText.textContent = window.__('canvas_scope_city_placeholder');
+        
+        const listCity = document.querySelector('[data-ref="list-scope-city"]');
+        if (!stateId || !listCity) return;
+
+        try {
+            listCity.innerHTML = `<div class="component-menu-link disabled"><div class="component-menu-link-text"><span>${window.__('lbl_loading')}</span></div></div>`;
+            
+            const result = await this.api.post(ApiRoutes.Locations.GetCities, { id: stateId }, this.abortController.signal);
+            if (result && result.success) {
+                listCity.innerHTML = '';
+                result.data.forEach(city => {
+                    const html = `
+                        <div class="component-menu-link" data-action="selectValue" data-type="scope_city" data-value="${city.id}" data-label="${city.name}" data-icon="location_city">
+                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">location_city</span></div>
+                            <div class="component-menu-link-text"><span>${city.name}</span></div>
+                        </div>
+                    `;
+                    listCity.insertAdjacentHTML('beforeend', html);
+                });
+            } else {
+                listCity.innerHTML = `<div class="component-menu-link disabled"><div class="component-menu-link-text"><span>${window.__('err_default')}</span></div></div>`;
+            }
+        } catch (error) {
+            if (error.name !== 'AbortError') {}
+        }
+    }
+    // ==========================================
+    // FIN: LÓGICA ABSORBIDA DE LOCATIONS
+    // ==========================================
+
     viewCanvasSnapshots(btn) {
         const uuid = btn.getAttribute('data-uuid');
         if (uuid) {
@@ -212,15 +351,15 @@ class CanvasesController {
             const url = `${window.location.origin}${this.basePath}/design/${uuid}`;
             try {
                 await navigator.clipboard.writeText(url);
-                showMessage(window.__ ? __('msg_link_copied') || 'Enlace copiado al portapapeles' : 'Enlace copiado al portapapeles', 'success');
+                showMessage(window.__('msg_link_copied'), 'success');
                 this.closeDropdowns();
             } catch (err) {
-                showMessage(window.__ ? __('msg_copy_error') || 'Error al copiar el enlace' : 'Error al copiar el enlace', 'error');
+                showMessage(window.__('err_default'), 'error');
             }
         }
     }
 
-   async deleteCanvas(btn) {
+    async deleteCanvas(btn) {
         const id = btn.getAttribute('data-id');
         const uuid = btn.getAttribute('data-uuid');
         if (!uuid) return;
@@ -230,8 +369,6 @@ class CanvasesController {
         if (window.dialogSystem) {
             const confirm = await window.dialogSystem.show('confirmDeleteCanvas', { uuid: uuid });
             if (!confirm.confirmed) return;
-        } else if (!confirm('¿Estás seguro de que deseas eliminar este lienzo permanentemente?')) {
-            return;
         }
 
         const res = await this.api.post(ApiRoutes.Canvases.Delete, { uuid: uuid }, this.abortController.signal);
@@ -239,11 +376,11 @@ class CanvasesController {
         if (res.aborted) return;
 
         if (res.success) {
-            showMessage(window.__ ? __('msg_canvas_deleted') || 'Lienzo eliminado exitosamente' : 'Lienzo eliminado exitosamente', 'success');
+            showMessage(window.__('msg_canvas_deleted'), 'success');
             const card = document.querySelector(`.component-snapshot-card[data-card-id="${id}"]`);
             if (card) card.remove();
         } else {
-            showMessage(res.message || 'Error al eliminar el lienzo', 'error');
+            showMessage(res.message, 'error');
         }
     }
 
@@ -257,8 +394,6 @@ class CanvasesController {
         if (window.dialogSystem) {
             const confirm = await window.dialogSystem.show('confirmLeaveCanvas', { uuid: uuid });
             if (!confirm.confirmed) return;
-        } else if (!confirm('¿Estás seguro de que deseas salir de este lienzo? Perderás el acceso.')) {
-            return;
         }
 
         const res = await this.api.post(ApiRoutes.Canvases.Leave, { uuid: uuid }, this.abortController.signal);
@@ -266,11 +401,11 @@ class CanvasesController {
         if (res.aborted) return;
 
         if (res.success) {
-            showMessage(window.__ ? __('msg_canvas_left') || 'Has abandonado el lienzo exitosamente' : 'Has abandonado el lienzo exitosamente', 'success');
+            showMessage(window.__('msg_canvas_left'), 'success');
             const card = document.querySelector(`.component-snapshot-card[data-card-id="${id}"]`);
             if (card) card.remove();
         } else {
-            showMessage(res.message || 'Error al salir del lienzo', 'error');
+            showMessage(res.message, 'error');
         }
     }
 
@@ -335,6 +470,15 @@ class CanvasesController {
 
         this.formState[type] = value;
 
+        // Disparar side-effects para los scopes absorbidos
+        if (type === 'scope_type') {
+            this.handleScopeTypeChange(value);
+        } else if (type === 'scope_country') {
+            this.handleCountryChange(value);
+        } else if (type === 'scope_state') {
+            this.handleStateChange(value);
+        }
+
         const menu = optionBtn.closest('.component-menu-list');
         if (menu) {
             menu.querySelectorAll('.component-menu-link').forEach(el => el.classList.remove('active'));
@@ -344,7 +488,11 @@ class CanvasesController {
         const dropdownWrapper = optionBtn.closest('.component-dropdown-wrapper');
         if (dropdownWrapper) {
             const triggerText = dropdownWrapper.querySelector('.component-dropdown-text');
-            if (triggerText) triggerText.textContent = __(label);
+            if (triggerText) {
+                // Traducción estricta obligatoria (Regla 9)
+                const isDirectText = type.startsWith('scope_') && type !== 'scope_type';
+                triggerText.textContent = isDirectText ? label : window.__(label);
+            }
 
             if (icon) {
                 const triggerIcon = dropdownWrapper.querySelector('.component-dropdown-trigger .material-symbols-rounded:first-child');
@@ -436,7 +584,6 @@ class CanvasesController {
     }
 
     async submitCanvas(btn) {
-        // Formateo clásico
         const inputName = document.querySelector('[data-ref="input-canvasname"]');
         if (inputName) {
             this.formState.name = inputName.value.trim();
@@ -455,27 +602,21 @@ class CanvasesController {
             this.formState.cooldown_seconds = parseInt(inputSec.getAttribute('data-val'), 10) || 10;
         }
 
-        // RECOLECCIÓN DE DATOS DE ALCANCE CORREGIDA
+        // Extracción correcta basada en los valores guardados internamente del Dropdown, 
+        // ya no de los <select> nativos (pues se eliminaron).
         const scopeSection = document.querySelector('[data-ref="scope-section"]');
-        if (scopeSection && scopeSection.style.display !== 'none') {
-            const scopeTypeEl = document.querySelector('[data-ref="select-scope-type"]');
-            const scopeType = scopeTypeEl ? scopeTypeEl.value : 'personal';
-            
-            this.formState.scope_type = scopeType;
-
-            const countryEl = document.querySelector('[data-ref="select-scope-country"]');
-            const stateEl = document.querySelector('[data-ref="select-scope-state"]');
-            const cityEl = document.querySelector('[data-ref="select-scope-city"]');
-            const orgEl = document.querySelector('[data-ref="input-scope-organization"]');
+        if (scopeSection && !scopeSection.classList.contains('disabled')) {
+            const scopeType = this.formState.scope_type;
 
             if (scopeType === 'organization') {
+                const orgEl = document.querySelector('[data-ref="input-scope-organization"]');
                 this.formState.scope_ref_1 = orgEl ? orgEl.value.trim() : null;
                 this.formState.scope_ref_2 = null;
                 this.formState.scope_ref_3 = null;
             } else if (scopeType !== 'personal' && scopeType !== 'global') {
-                this.formState.scope_ref_1 = countryEl ? countryEl.value : null;
-                this.formState.scope_ref_2 = stateEl ? stateEl.value : null;
-                this.formState.scope_ref_3 = cityEl ? cityEl.value : null;
+                this.formState.scope_ref_1 = this.formState.scope_country || null;
+                this.formState.scope_ref_2 = this.formState.scope_state || null;
+                this.formState.scope_ref_3 = this.formState.scope_city || null;
             } else {
                 this.formState.scope_ref_1 = null;
                 this.formState.scope_ref_2 = null;
@@ -496,7 +637,7 @@ class CanvasesController {
         restoreButton(btn);
 
         if (res.success) {
-            showMessage(__('msg_canvas_created'), 'success');
+            showMessage(window.__('msg_canvas_created'), 'success');
             if (window.spaRouter) {
                 window.spaRouter.navigate(`${this.basePath}/design/${res.data.uuid}`);
             }
