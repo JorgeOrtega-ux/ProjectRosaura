@@ -6,13 +6,19 @@ use PDO;
 use Exception;
 use App\Core\Interfaces\CanvasRepositoryInterface;
 use App\Config\DatabaseManager;
+use App\Config\TypesenseManager;
+use App\Core\System\Logger;
 use App\Core\System\DatabaseConstants as DB;
 
 class CanvasRepository implements CanvasRepositoryInterface {
     private $db;
+    private TypesenseManager $typesenseManager;
+    private Logger $logger;
 
-    public function __construct(DatabaseManager $databaseManager) {
+    public function __construct(DatabaseManager $databaseManager, TypesenseManager $typesenseManager, Logger $logger) {
         $this->db = $databaseManager->getConnection(DB::CONN_CANVASES);
+        $this->typesenseManager = $typesenseManager;
+        $this->logger = $logger;
     }
 
     private function appendSnapshotUrl(array $canvas): array {
@@ -57,7 +63,25 @@ class CanvasRepository implements CanvasRepositoryInterface {
             ':scope_ref_3'           => $canvasData['scope_ref_3'] ?? null
         ]);
 
-        return (int)$this->db->lastInsertId();
+        $id = (int)$this->db->lastInsertId();
+
+        // --- INTEGRACIÓN TYPESENSE: CREATE ---
+        try {
+            $document = [
+                'id'         => (string)$id,
+                'uuid'       => $canvasData['uuid'],
+                'name'       => $canvasData['name'],
+                'owner_id'   => (int)$canvasData['owner_id'],
+                'privacy'    => $canvasData['privacy'],
+                'scope_type' => $canvasData['scope_type'] ?? 'personal',
+                'created_at' => time()
+            ];
+            $this->typesenseManager->getClient()->collections['canvases']->documents->create($document);
+        } catch (Exception $e) {
+            $this->logger->error("Typesense Create Error (Canvas ID {$id}): " . $e->getMessage());
+        }
+
+        return $id;
     }
 
     public function addMember(int $canvasId, int $userId, string $role): bool {
@@ -170,7 +194,20 @@ class CanvasRepository implements CanvasRepositoryInterface {
         $stmt = $this->db->prepare($sql);
         
         $params = array_merge($canvasIds, [$ownerId]);
-        return $stmt->execute($params);
+        $success = $stmt->execute($params);
+
+        // --- INTEGRACIÓN TYPESENSE: DELETE MÚLTIPLE ---
+        if ($success) {
+            foreach ($canvasIds as $id) {
+                try {
+                    $this->typesenseManager->getClient()->collections['canvases']->documents[(string)$id]->delete();
+                } catch (Exception $e) {
+                    $this->logger->error("Typesense Delete Error (Canvas {$id}): " . $e->getMessage());
+                }
+            }
+        }
+
+        return $success;
     }
 
     // --- MÉTODOS PARA EDICIÓN (EDIT) ---
@@ -217,7 +254,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
                 WHERE id = :id";
         
         $stmt = $this->db->prepare($sql);
-        return $stmt->execute([
+        $success = $stmt->execute([
             ':name'                  => $data['name'],
             ':description'           => $data['description'],
             ':privacy'               => $data['privacy'],
@@ -228,6 +265,21 @@ class CanvasRepository implements CanvasRepositoryInterface {
             ':cooldown_seconds'      => $data['cooldown_seconds'],
             ':id'                    => $id
         ]);
+
+        // --- INTEGRACIÓN TYPESENSE: UPDATE ---
+        if ($success) {
+            try {
+                $document = [
+                    'name'    => $data['name'],
+                    'privacy' => $data['privacy']
+                ];
+                $this->typesenseManager->getClient()->collections['canvases']->documents[(string)$id]->update($document);
+            } catch (Exception $e) {
+                $this->logger->error("Typesense Update Error (Canvas ID {$id}): " . $e->getMessage());
+            }
+        }
+
+        return $success;
     }
 
     // --- MÉTODOS PARA APROBACIONES DE ACCESO ---
@@ -336,9 +388,22 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function deleteCanvasByUuid(string $uuid): bool {
+        $canvas = $this->getCanvasByUuid($uuid); 
+
         $sql = "DELETE FROM " . DB::TBL_CANVASES . " WHERE uuid = :uuid";
         $stmt = $this->db->prepare($sql);
-        return $stmt->execute([':uuid' => $uuid]);
+        $success = $stmt->execute([':uuid' => $uuid]);
+
+        // --- INTEGRACIÓN TYPESENSE: DELETE POR UUID ---
+        if ($success && $canvas) {
+            try {
+                $this->typesenseManager->getClient()->collections['canvases']->documents[(string)$canvas['id']]->delete();
+            } catch (Exception $e) {
+                $this->logger->error("Typesense Delete UUID Error (Canvas ID {$canvas['id']}): " . $e->getMessage());
+            }
+        }
+
+        return $success;
     }
 
     public function removeMember(int $canvasId, int $userId): bool {

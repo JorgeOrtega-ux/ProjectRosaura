@@ -91,7 +91,7 @@ export const ApiRoutes = {
         Delete: 'canvases.delete',
         Leave: 'canvases.leave', 
         
-        ToggleFavorite: 'canvases.toggle_favorite', // NUEVA RUTA
+        ToggleFavorite: 'canvases.toggle_favorite',
         
         RequestAccess: 'canvases.request_access',
         ApproveRequest: 'canvases.approve_request',
@@ -110,6 +110,10 @@ export const ApiRoutes = {
 
         CreateLiveShare: 'canvases.create_live_share',
         JoinLiveShare: 'canvases.join_live_share'
+    },
+    // NUEVA RUTA
+    Search: {
+        Query: 'search.query'
     },
     Locations: {
         GetCountries: 'locations.get_countries',

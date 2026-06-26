@@ -4,37 +4,45 @@ import { SpaRouter } from './core/router/SpaRouter.js';
 import { DialogSystem } from './core/components/DialogSystem.js';
 import { TooltipSystem } from './core/components/TooltipSystem.js';
 import { TelemetryTracker } from './core/telemetry/TelemetryTracker.js';
-// Importamos nuestro Mapa de Rutas
 import { RouteModulesMap } from './core/router/RouteModulesMap.js';
 
 document.addEventListener('DOMContentLoaded', () => {
-    // NOTA DE IMPLEMENTACIÓN: Inicialización de la variable global de Suscripción
     window.appUserTier = window.APP_USER ? window.APP_USER.subscription_tier : 0;
 
-    // 1. Instanciamos lógica UI base (Global)
     const app = new MainController();
     app.init();
     window.appInstance = app; 
 
-    // 2. Instanciamos el Sistema de Diálogos global
     window.dialogSystem = new DialogSystem();
 
-    // 3. Instanciamos e inicializamos el Sistema de Tooltips
     window.tooltipSystem = new TooltipSystem();
     window.tooltipSystem.init();
 
-    // 4. Instanciamos el Router SPA
     window.spaRouter = new SpaRouter({
         outlet: '[data-ref="app-router-outlet"]'
     });
 
-    // 5. Instanciamos el Tracker de Telemetría
     const allowTelemetry = window.AppUserPrefs && window.AppUserPrefs.allow_telemetry !== undefined 
                            ? parseInt(window.AppUserPrefs.allow_telemetry) === 1 
                            : true;
     window.telemetryTracker = new TelemetryTracker({ allowTelemetry });
     
     window.telemetryTracker.init();
+
+    // ========================================================
+    // DELEGACIÓN GLOBAL: EVENTO DEL BUSCADOR DEL HEADER
+    // ========================================================
+    document.body.addEventListener('keydown', (e) => {
+        if (e.target.matches('#globalSearchInput')) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const query = e.target.value.trim();
+                if (query) {
+                    window.spaRouter.navigate('/search?q=' + encodeURIComponent(query));
+                }
+            }
+        }
+    });
 
     // ========================================================
     // MOTOR DE CARGA DIFERIDA (LAZY LOADING) REFORZADO CON CICLO DE VIDA
@@ -44,14 +52,12 @@ document.addEventListener('DOMContentLoaded', () => {
     window.importLocks = {}; 
     window.activeControllerInstance = null;
     
-    // Bandera para no solicitar el JSON de admin en cada clic
     window.adminLangLoaded = false;
 
     window.addEventListener('viewLoaded', async (e) => {
         const cleanUrl = e.detail.cleanUrl; 
         const loadTimeMs = e.detail.loadTimeMs || 0; 
         
-        // Registrar la vista en la Telemetría
         if (window.telemetryTracker) {
             window.telemetryTracker.trackPageview(cleanUrl, loadTimeMs);
         }
@@ -63,8 +69,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (relativePath === '') relativePath = '/';
 
-        // --- CORRECCIÓN VITAL PARA RUTAS DINÁMICAS ---
-        // Diferenciamos explícitamente entre la Galería de Snapshots y el Editor de Lienzo
         if (relativePath.startsWith('/design/s/')) {
             relativePath = '/design/s/:uuid';
         } else if (relativePath.startsWith('/snapshot/view/')) {
@@ -72,17 +76,13 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (relativePath.startsWith('/design/')) {
             relativePath = '/design';
         }
-        // ---------------------------------------------
 
         const moduleConfig = RouteModulesMap[relativePath];
 
         if (moduleConfig) {
-            
-            // --- LÓGICA DE TRADUCCIONES DIFERIDAS (ADMIN) ---
             if (moduleConfig.requiresAdminLang && !window.adminLangLoaded) {
                 try {
                     const reqUrl = (window.AppBasePath || '') + '/api/index.php';
-                    
                     const csrfMeta = document.querySelector('meta[name="csrf-token"]');
                     const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
 
@@ -106,7 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         window.adminLangLoaded = true;
                     }
                 } catch (error) {
-                    // Silenciado
+                    // Errores de API silenciados por instrucciones directas.
                 }
             }
 
@@ -144,7 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
             } catch (error) {
-                console.error("Error cargando el módulo JS:", error); // Añadido para debugging
+                // Errores de Lazy Loading silenciados por instrucciones directas.
             } finally {
                 delete window.importLocks[className];
             }
@@ -156,9 +156,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // ========================================================
-    // AUTO-ARRANQUE DE LAZY LOADING PARA LA CARGA INICIAL (F5)
-    // ========================================================
     let currentPath = window.location.pathname;
     let initialCleanUrl = currentPath.split('?')[0].split('#')[0];
     

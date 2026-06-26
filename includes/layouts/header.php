@@ -9,7 +9,6 @@ $isDegraded = defined('SYSTEM_DEGRADED') && SYSTEM_DEGRADED === true;
 $activeAccountId = $_SESSION['active_account'] ?? null;
 $linkedAccounts = $_SESSION['accounts'] ?? [];
 
-// Extracción de la suscripción para mostrar badge en UI
 $subscriptionTier = 0;
 if ($activeAccountId !== null && isset($linkedAccounts[$activeAccountId])) {
     $subscriptionTier = (int)($linkedAccounts[$activeAccountId]['subscription_tier'] ?? 0);
@@ -29,7 +28,6 @@ global $serverConfig;
 $isMaintenanceActive = isset($serverConfig['maintenance_mode']) && $serverConfig['maintenance_mode'] == 1;
 $isPrivileged = in_array('access_admin_panel', $userPermissions);
 
-// Permisos de Lienzos
 $canCreateCanvas = in_array('create_canvas', $userPermissions);
 $canManageCanvases = in_array('manage_canvases', $userPermissions);
 $canJoinCanvas = in_array('join_canvas', $userPermissions);
@@ -92,7 +90,6 @@ if ($isLoggedIn) {
     .sk-hydrate.is-loaded::after { display: none; }
     .sk-hydrate.is-loaded img { opacity: 1; }
 
-    /* Estilos para el badge premium en el header */
     .premium-badge {
         position: absolute;
         bottom: -4px;
@@ -129,7 +126,7 @@ if ($isLoggedIn) {
                 <span class="material-symbols-rounded">search</span>
             </div>
             <div class="component-search-input">
-                <input type="text" placeholder="<?php echo __('search_placeholder'); ?>">
+                <input type="text" id="globalSearchInput" placeholder="<?php echo __('search_placeholder'); ?>">
             </div>
         </div>
     </div>

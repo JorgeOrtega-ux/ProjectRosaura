@@ -18,11 +18,9 @@ $systemMessageType = null;
 $serverConfig = $serverConfig ?? [];
 $isLoggedIn = $isLoggedIn ?? false;
 
-// Utilizamos los permisos RBAC directamente de la sesión hidratada por bootstrap.php
 $userPermissions = $_SESSION['user_permissions'] ?? [];
 $isMaintenanceActive = isset($serverConfig['maintenance_mode']) && $serverConfig['maintenance_mode'] == 1;
 
-// "Privilegiado" significa estrictamente alguien con permiso para ver el panel de administración
 $isPrivileged = in_array('access_admin_panel', $userPermissions);
 
 if ($isMaintenanceActive && !$isPrivileged) {
@@ -37,19 +35,14 @@ if ($isMaintenanceActive && !$isPrivileged) {
         $systemMessageType = 'deleted';
     }
 
-    // ==========================================
-    // MODIFICACIÓN MULTI-SESIÓN: RUTAS GUEST
-    // ==========================================
     if (!empty($routeData['guest_only']) && $isLoggedIn) {
         
         $linkedAccounts = $_SESSION['accounts'] ?? [];
         $isAuthView = (strpos($currentView, 'auth/') === 0);
         
-        // EXCEPCIÓN: Si intenta acceder a login/register y tiene espacio en su pool de sesiones (<3)
         if ($isAuthView && count($linkedAccounts) < 3) {
-            // Se le permite el acceso (actuará como "Añadir Cuenta")
+            
         } else {
-            // Comportamiento normal: expulsa a los que ya están full logueados o en rutas incorrectas
             if ($currentView === 'settings/guest.php') {
                 $currentView = 'settings/your-profile.php';
                 $redirectUrl = APP_URL . '/settings/your-profile';
@@ -69,7 +62,6 @@ if ($isMaintenanceActive && !$isPrivileged) {
         }
     }
 
-    // Validación estricta de permisos RBAC para proteger las rutas
     if (!empty($routeData['permissions']) && $isLoggedIn) {
         $hasAccess = false;
         foreach ($routeData['permissions'] as $requiredPermission) {

@@ -1,15 +1,13 @@
 // public/assets/js/core/router/RouteModulesMap.js
 
-/**
- * Mapeo de Rutas a Módulos JS (Lazy Loading)
- * Las llaves son las rutas limpias (sin dominio, sin basePath y sin parámetros ?id=1)
- * Los paths de importación son relativos a la ubicación de AppInit.js
- */
 export const RouteModulesMap = {
     // ---- MÓDULOS PÚBLICOS / HOME ----
     '/': { path: './modules/app/HomeController.js', className: 'HomeController', skeletonType: 'layout-dashboard' },
     '/home': { path: './modules/app/HomeController.js', className: 'HomeController', skeletonType: 'layout-dashboard' },
     '/explore': { path: './modules/app/HomeController.js', className: 'HomeController', skeletonType: 'layout-dashboard' },
+    
+    // ---- NUEVO MÓDULO DE BÚSQUEDA SPA ----
+    '/search': { path: './modules/app/SearchController.js', className: 'SearchController', skeletonType: 'layout-dashboard' },
     
     '/design': { path: './modules/app/DesignController.js', className: 'DesignController', skeletonType: 'layout-full' },
     

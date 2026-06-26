@@ -3,6 +3,7 @@
 return [
     '/' => ['view' => 'app/home.php'],
     '/explore' => ['view' => 'app/explore.php'],
+    '/search' => ['view' => 'app/search.php'], // <-- NUEVA RUTA DE BÚSQUEDA SPA
     '/premium' => ['view' => 'app/premium.php'], // <-- NUEVA RUTA PREMIUM
     
     '/login' => ['view' => 'auth/login.php', 'guest_only' => true],

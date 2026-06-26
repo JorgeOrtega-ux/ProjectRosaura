@@ -371,6 +371,13 @@ return [
         'action' => 'toggle_favorite',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_toggle_fav', 'max' => 20, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
+
+    // --- NUEVA RUTA PARA BÚSQUEDA TYPESENSE ---
+    'search.query' => [
+        'controller' => 'App\Api\Controllers\SearchController',
+        'action' => 'search',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'search_query', 'max' => 60, 'time' => RL::TIME_1, 'identifier' => RL::ID_IP]]
+    ],
     
     // --- NUEVAS RUTAS DE MODERACIÓN DE MIEMBROS ---
     'canvases.change_member_role' => [
