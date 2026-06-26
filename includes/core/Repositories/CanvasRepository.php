@@ -13,12 +13,11 @@ use App\Core\System\DatabaseConstants as DB;
 class CanvasRepository implements CanvasRepositoryInterface {
     private $db;
     private TypesenseManager $typesenseManager;
-    private Logger $logger;
 
-    public function __construct(DatabaseManager $databaseManager, TypesenseManager $typesenseManager, Logger $logger) {
+    // ELIMINADO EL LOGGER DEL CONSTRUCTOR PARA EVITAR ERROR DEL CONTENEDOR DI
+    public function __construct(DatabaseManager $databaseManager, TypesenseManager $typesenseManager) {
         $this->db = $databaseManager->getConnection(DB::CONN_CANVASES);
         $this->typesenseManager = $typesenseManager;
-        $this->logger = $logger;
     }
 
     private function appendSnapshotUrl(array $canvas): array {
@@ -65,20 +64,23 @@ class CanvasRepository implements CanvasRepositoryInterface {
 
         $id = (int)$this->db->lastInsertId();
 
-        // --- INTEGRACIÓN TYPESENSE: CREATE ---
+        // --- INTEGRACIÓN TYPESENSE CON TOLERANCIA A FALLOS ---
         try {
-            $document = [
-                'id'         => (string)$id,
-                'uuid'       => $canvasData['uuid'],
-                'name'       => $canvasData['name'],
-                'owner_id'   => (int)$canvasData['owner_id'],
-                'privacy'    => $canvasData['privacy'],
-                'scope_type' => $canvasData['scope_type'] ?? 'personal',
-                'created_at' => time()
-            ];
-            $this->typesenseManager->getClient()->collections['canvases']->documents->create($document);
+            $client = $this->typesenseManager->getClient();
+            if ($client) {
+                $document = [
+                    'id'         => (string)$id,
+                    'uuid'       => $canvasData['uuid'],
+                    'name'       => $canvasData['name'],
+                    'owner_id'   => (int)$canvasData['owner_id'],
+                    'privacy'    => $canvasData['privacy'],
+                    'scope_type' => $canvasData['scope_type'] ?? 'personal',
+                    'created_at' => time()
+                ];
+                $client->collections['canvases']->documents->create($document);
+            }
         } catch (Exception $e) {
-            $this->logger->error("Typesense Create Error (Canvas ID {$id}): " . $e->getMessage());
+            Logger::error("Typesense Create Error (Canvas ID {$id}): " . $e->getMessage());
         }
 
         return $id;
@@ -99,8 +101,6 @@ class CanvasRepository implements CanvasRepositoryInterface {
         ]);
     }
 
-    // --- MÉTODOS PARA HOME / EXPLORA ---
-
     public function getPublicCanvases(int $limit = 20, ?int $currentUserId = null): array {
         $sql = "SELECT c.id, c.uuid, c.name, c.owner_id, c.scope_type, 
                        CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite
@@ -117,7 +117,6 @@ class CanvasRepository implements CanvasRepositoryInterface {
         
         $results = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         
-        // Convertimos explícitamente a booleano para el frontend
         $results = array_map(function($canvas) {
             $canvas['is_favorite'] = (bool)$canvas['is_favorite'];
             return $canvas;
@@ -140,7 +139,6 @@ class CanvasRepository implements CanvasRepositoryInterface {
         
         $results = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         
-        // Convertimos explícitamente a booleano para el frontend
         $results = array_map(function($canvas) {
             $canvas['is_favorite'] = (bool)$canvas['is_favorite'];
             return $canvas;
@@ -148,8 +146,6 @@ class CanvasRepository implements CanvasRepositoryInterface {
 
         return array_map([$this, 'appendSnapshotUrl'], $results);
     }
-
-    // --- MÉTODOS PARA GESTIÓN (MANAGE) ---
 
     public function getUserCanvasesPaginated(int $ownerId, int $limit, int $offset): array {
         $sql = "SELECT c.id, c.uuid, c.name, c.description, c.privacy, c.requires_approval, c.size, c.palette_id, c.max_participants, c.cooldown_pixels_batch, c.cooldown_seconds, c.created_at, c.scope_type,
@@ -196,21 +192,22 @@ class CanvasRepository implements CanvasRepositoryInterface {
         $params = array_merge($canvasIds, [$ownerId]);
         $success = $stmt->execute($params);
 
-        // --- INTEGRACIÓN TYPESENSE: DELETE MÚLTIPLE ---
+        // --- INTEGRACIÓN TYPESENSE CON TOLERANCIA ---
         if ($success) {
-            foreach ($canvasIds as $id) {
-                try {
-                    $this->typesenseManager->getClient()->collections['canvases']->documents[(string)$id]->delete();
-                } catch (Exception $e) {
-                    $this->logger->error("Typesense Delete Error (Canvas {$id}): " . $e->getMessage());
+            $client = $this->typesenseManager->getClient();
+            if ($client) {
+                foreach ($canvasIds as $id) {
+                    try {
+                        $client->collections['canvases']->documents[(string)$id]->delete();
+                    } catch (Exception $e) {
+                        Logger::error("Typesense Delete Error (Canvas {$id}): " . $e->getMessage());
+                    }
                 }
             }
         }
 
         return $success;
     }
-
-    // --- MÉTODOS PARA EDICIÓN (EDIT) ---
 
     public function getByIdAndOwner(int $id, int $ownerId): ?array {
         $sql = "SELECT * FROM " . DB::TBL_CANVASES . " WHERE id = :id AND owner_id = :owner_id LIMIT 1";
@@ -266,23 +263,24 @@ class CanvasRepository implements CanvasRepositoryInterface {
             ':id'                    => $id
         ]);
 
-        // --- INTEGRACIÓN TYPESENSE: UPDATE ---
+        // --- INTEGRACIÓN TYPESENSE CON TOLERANCIA ---
         if ($success) {
-            try {
-                $document = [
-                    'name'    => $data['name'],
-                    'privacy' => $data['privacy']
-                ];
-                $this->typesenseManager->getClient()->collections['canvases']->documents[(string)$id]->update($document);
-            } catch (Exception $e) {
-                $this->logger->error("Typesense Update Error (Canvas ID {$id}): " . $e->getMessage());
+            $client = $this->typesenseManager->getClient();
+            if ($client) {
+                try {
+                    $document = [
+                        'name'    => $data['name'],
+                        'privacy' => $data['privacy']
+                    ];
+                    $client->collections['canvases']->documents[(string)$id]->update($document);
+                } catch (Exception $e) {
+                    Logger::error("Typesense Update Error (Canvas ID {$id}): " . $e->getMessage());
+                }
             }
         }
 
         return $success;
     }
-
-    // --- MÉTODOS PARA APROBACIONES DE ACCESO ---
 
     public function createAccessRequest(int $canvasId, int $userId): bool {
         $sql = "INSERT INTO canvas_access_requests (canvas_id, user_id, status) 
@@ -342,8 +340,6 @@ class CanvasRepository implements CanvasRepositoryInterface {
         ]);
     }
 
-    // --- NUEVOS MÉTODOS PARA LIMITES DE PLANES PREMIUM ---
-
     public function countCanvasMembers(int $canvasId): int {
         $sql = "SELECT COUNT(*) FROM " . DB::TBL_CANVAS_MEMBERS . " WHERE canvas_id = :canvas_id";
         $stmt = $this->db->prepare($sql);
@@ -377,8 +373,6 @@ class CanvasRepository implements CanvasRepositoryInterface {
         return (int)$stmt->fetchColumn();
     }
 
-    // --- NUEVOS MÉTODOS PARA ELIMINAR / SALIR DE LIENZO ÚNICO ---
-
     public function getCanvasByUuid(string $uuid): ?array {
         $sql = "SELECT * FROM " . DB::TBL_CANVASES . " WHERE uuid = :uuid LIMIT 1";
         $stmt = $this->db->prepare($sql);
@@ -394,12 +388,15 @@ class CanvasRepository implements CanvasRepositoryInterface {
         $stmt = $this->db->prepare($sql);
         $success = $stmt->execute([':uuid' => $uuid]);
 
-        // --- INTEGRACIÓN TYPESENSE: DELETE POR UUID ---
+        // --- INTEGRACIÓN TYPESENSE CON TOLERANCIA ---
         if ($success && $canvas) {
-            try {
-                $this->typesenseManager->getClient()->collections['canvases']->documents[(string)$canvas['id']]->delete();
-            } catch (Exception $e) {
-                $this->logger->error("Typesense Delete UUID Error (Canvas ID {$canvas['id']}): " . $e->getMessage());
+            $client = $this->typesenseManager->getClient();
+            if ($client) {
+                try {
+                    $client->collections['canvases']->documents[(string)$canvas['id']]->delete();
+                } catch (Exception $e) {
+                    Logger::error("Typesense Delete UUID Error (Canvas ID {$canvas['id']}): " . $e->getMessage());
+                }
             }
         }
 
@@ -411,10 +408,6 @@ class CanvasRepository implements CanvasRepositoryInterface {
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([':canvas_id' => $canvasId, ':user_id' => $userId]);
     }
-
-    // ==========================================
-    // PERSISTENCIA DE LIENZOS (BLOB / SNAPSHOTS)
-    // ==========================================
 
     public function getSnapshot(int $canvasId): ?string {
         $sql = "SELECT snapshot_data FROM canvas_snapshots WHERE canvas_id = :canvas_id LIMIT 1";
@@ -445,10 +438,6 @@ class CanvasRepository implements CanvasRepositoryInterface {
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([':canvas_id' => $canvasId]);
     }
-
-    // ==========================================
-    // REINICIOS PROGRAMADOS
-    // ==========================================
 
     public function getResetSettings(int $canvasId): ?array {
         $sql = "SELECT * FROM canvas_reset_settings WHERE canvas_id = :canvas_id LIMIT 1";
@@ -485,10 +474,6 @@ class CanvasRepository implements CanvasRepositoryInterface {
         ]);
     }
 
-    // ==========================================
-    // NUEVOS MÉTODOS PARA GALERÍA HISTÓRICA Y VISUALIZADOR
-    // ==========================================
-
     public function getSnapshotByUuid(string $uuid): ?array {
         $sql = "SELECT h.*, c.name as canvas_name, c.uuid as original_canvas_uuid, c.size, c.palette_id
                 FROM " . DB::TBL_CANVAS_SNAPSHOTS_HISTORY . " h
@@ -521,10 +506,6 @@ class CanvasRepository implements CanvasRepositoryInterface {
         
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
-
-    // ==========================================
-    // LIBRERÍA DE PLANTILLAS DE USUARIO
-    // ==========================================
 
     public function saveTemplateMetadata(int $userId, string $filePath): int {
         $sql = "INSERT INTO user_templates (user_id, file_path) 
@@ -561,10 +542,6 @@ class CanvasRepository implements CanvasRepositoryInterface {
             ':user_id' => $userId
         ]);
     }
-
-    // ==========================================
-    // NUEVA LÓGICA DE FAVORITOS (Transacción Atómica)
-    // ==========================================
 
     public function toggleFavorite(int $userId, int $canvasId): array {
         try {

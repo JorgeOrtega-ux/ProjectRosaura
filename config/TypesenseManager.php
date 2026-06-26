@@ -6,14 +6,12 @@ namespace App\Config;
 use Typesense\Client;
 use App\Core\Helpers\EnvLoader;
 use App\Core\System\Logger;
-use Exception;
+use Throwable;
 
 class TypesenseManager {
-    private Client $client;
-    private Logger $logger;
+    private ?Client $client = null;
 
-    public function __construct(Logger $logger) {
-        $this->logger = $logger;
+    public function __construct() {
         $this->initClient();
     }
 
@@ -25,30 +23,34 @@ class TypesenseManager {
             $apiKey = EnvLoader::get('TYPESENSE_API_KEY', '');
 
             if (empty($apiKey)) {
-                throw new Exception("La clave API de Typesense (TYPESENSE_API_KEY) no está configurada en el entorno.");
+                throw new \Exception("La clave API de Typesense no está configurada en el entorno.");
             }
 
-            $this->client = new Client([
-                'nodes' => [
-                    [
-                        'host'     => $host,
-                        'port'     => $port,
-                        'protocol' => $protocol,
-                    ]
-                ],
-                'api_key'                    => $apiKey,
-                'connection_timeout_seconds' => 3,
-            ]);
+            // BLINDAJE: Verificamos que Composer haya instalado la librería antes de instanciarla
+            if (class_exists('Typesense\Client')) {
+                $this->client = new Client([
+                    'nodes' => [
+                        [
+                            'host'     => $host,
+                            'port'     => $port,
+                            'protocol' => $protocol,
+                        ]
+                    ],
+                    'api_key'                    => $apiKey,
+                    'connection_timeout_seconds' => 3,
+                ]);
+            } else {
+                Logger::error("La clase Typesense\Client no existe. El SDK no está instalado.");
+            }
 
-        } catch (Exception $e) {
-            // Se utiliza estrictamente el Logger personalizado del sistema
-            $this->logger->error("Error al inicializar el cliente de Typesense: " . $e->getMessage(), [
+        } catch (\Throwable $e) {
+            Logger::error("Error al inicializar el cliente de Typesense: " . $e->getMessage(), [
                 'exception' => $e
             ]);
         }
     }
 
-    public function getClient(): Client {
+    public function getClient(): ?Client {
         return $this->client;
     }
 }

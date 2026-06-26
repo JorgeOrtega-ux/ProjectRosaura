@@ -7,7 +7,8 @@
         "psr/log": "^1.1 || ^2.0 || ^3.0",
         "predis/predis": "^3.4",
         "geoip2/geoip2": "^3.0",
-        "typesense/typesense-php": "^4.9"
+        "typesense/typesense-php": "^4.9",
+        "symfony/http-client": "^7.4"
     },
    "autoload": {
         "psr-4": {
@@ -15,6 +16,11 @@
             "App\\Config\\": "config/", 
             "App\\Api\\Services\\": "api/services/",
             "App\\Api\\Controllers\\": "api/controllers/"
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "php-http/discovery": true
         }
     }
 }

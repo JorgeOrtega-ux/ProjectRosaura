@@ -1,8 +1,8 @@
 // public/assets/js/modules/app/SearchController.js
 
-import { ApiRoutes } from '../core/api/ApiRoutes.js';
-import { CardTemplates } from '../core/components/CardTemplates.js';
-import { CanvasCardInteractions } from '../core/components/CanvasCardInteractions.js';
+import { ApiRoutes } from '../../core/api/ApiRoutes.js';
+import { CardTemplates } from '../../core/components/CardTemplates.js';
+import { CanvasCardInteractions } from '../../core/components/CanvasCardInteractions.js';
 
 export class SearchController {
     constructor() {
@@ -26,12 +26,17 @@ export class SearchController {
             const csrfMeta = document.querySelector('meta[name="csrf-token"]');
             const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
 
-            const response = await fetch(`${reqUrl}?route=${ApiRoutes.Search.Query}&q=${encodeURIComponent(query)}`, {
-                method: 'GET',
+            // CORRECCIÓN: Petición POST con el payload en formato JSON 
+            const response = await fetch(reqUrl, {
+                method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-Token': csrfToken
-                }
+                },
+                body: JSON.stringify({
+                    route: ApiRoutes.Search.Query,
+                    q: query
+                })
             });
 
             const resData = await response.json();
@@ -58,7 +63,6 @@ export class SearchController {
                             this.grid.insertAdjacentHTML('beforeend', cardHTML);
                         });
                         
-                        // Reconecta los menús desplegables de acciones y botones de favoritos
                         if (typeof CanvasCardInteractions !== 'undefined' && CanvasCardInteractions.init) {
                             CanvasCardInteractions.init();
                         }
@@ -68,7 +72,6 @@ export class SearchController {
                 if (this.title) this.title.textContent = 'Error interno en la búsqueda.';
             }
         } catch (e) {
-            // El silencio de excepciones de red es intencional por reglas de seguridad de UI.
             if (this.title) this.title.textContent = 'Hubo un problema al procesar la búsqueda.';
         }
     }
@@ -82,6 +85,5 @@ export class SearchController {
     }
 
     destroy() {
-        // En caso de que se necesite limpiar un intervalo o listener aislado más adelante.
     }
 }

@@ -5,23 +5,22 @@ namespace App\Api\Services;
 
 use App\Config\TypesenseManager;
 use App\Core\System\Logger;
-use Exception;
 
 class SearchServices {
     private TypesenseManager $typesenseManager;
-    private Logger $logger;
 
-    public function __construct(TypesenseManager $typesenseManager, Logger $logger) {
+    public function __construct(TypesenseManager $typesenseManager) {
         $this->typesenseManager = $typesenseManager;
-        $this->logger = $logger;
     }
 
     public function searchCanvases(string $query, ?int $currentUserId): array {
         try {
             $client = $this->typesenseManager->getClient();
             
-            // Garantizar que solo los lienzos públicos, o los del usuario en curso sean visualizados.
-            // Excluimos lienzos que no sean personales (p.ej. los templates del sistema)
+            if (!$client) {
+                return [];
+            }
+            
             $filter = "(privacy:=public) && scope_type:=personal";
             
             if ($currentUserId) {
@@ -44,7 +43,6 @@ class SearchServices {
                 foreach ($result['hits'] as $hit) {
                     $doc = $hit['document'];
                     
-                    // Asegurar la estructura correcta para el render de tarjetas
                     $canvases[] = [
                         'id'           => (int)$doc['id'], 
                         'uuid'         => $doc['uuid'],
@@ -52,7 +50,7 @@ class SearchServices {
                         'owner_id'     => $doc['owner_id'] ?? null,
                         'privacy'      => $doc['privacy'],
                         'scope_type'   => $doc['scope_type'],
-                        'is_favorite'  => false, // Se resolverá desde frontend al sincronizar el store 
+                        'is_favorite'  => false, 
                         'snapshot_url' => $this->getSnapshotUrl((int)$doc['id'])
                     ];
                 }
@@ -60,8 +58,8 @@ class SearchServices {
 
             return $canvases;
 
-        } catch (Exception $e) {
-            $this->logger->error("Error al consultar la colección de Typesense: " . $e->getMessage(), ['exception' => $e]);
+        } catch (\Throwable $e) {
+            Logger::error("Error al consultar la colección de Typesense: " . $e->getMessage(), ['exception' => $e]);
             return [];
         }
     }
