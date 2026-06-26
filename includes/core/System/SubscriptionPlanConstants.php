@@ -50,7 +50,7 @@ class SubscriptionPlanConstants {
                     'name' => 'Basic',
                     'max_canvases' => 1,
                     'max_snapshots_per_canvas' => 1,
-                    'max_storage_mb' => 10, // 10MB
+                    'max_storage_mb' => 1,
                     'max_members_per_canvas' => 1,
                     'advanced_roles' => false,
                     'live_templates' => false,

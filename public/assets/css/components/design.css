@@ -1,13 +1,15 @@
 /* =========================================
    SISTEMA DE DISEÑO R/PLACE (DESIGN CANVAS)
    ========================================= */
-.component-wrapper[data-ref="design-wrapper"] {
+.component-wrapper[data-ref="design-wrapper"],
+.component-wrapper[data-ref="snapshot-wrapper"] {
     display: flex;
     flex-direction: column;
     height: 100%;
 }
 
-.component-wrapper[data-ref="design-wrapper"] .component-bottom {
+.component-wrapper[data-ref="design-wrapper"] .component-bottom,
+.component-wrapper[data-ref="snapshot-wrapper"] .component-bottom {
     flex: 1;
     overflow: hidden;
     position: relative;
@@ -65,19 +67,84 @@
 }
 
 /* -----------------------------------------
+   NUEVAS CLASES PADRE Y ESPACIADOS FLEX
+   ----------------------------------------- */
+.component-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.component-divider-vertical {
+    width: 1px;
+    height: 24px;
+    background-color: var(--border-color);
+    margin: 0 4px;
+}
+
+.component-divider-vertical.disabled {
+    display: none !important;
+}
+
+.component-menu-section-parent {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.hidden-input {
+    display: none !important;
+}
+
+.component-loader-center--compact {
+    min-height: 100px;
+    padding: 20px;
+}
+
+.component-empty-state-content {
+    text-align: center;
+    opacity: 0.5;
+    width: 100%;
+}
+
+.component-menu-top--gapped {
+    gap: 8px;
+}
+
+.component-viewport--padded {
+    padding-right: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.component-empty-text--grid {
+    grid-column: 1 / -1;
+    text-align: center;
+    opacity: 0.5;
+    font-size: 0.8rem;
+    padding: 10px 0;
+}
+
+.component-divider--spaced {
+    border-color: var(--border-color); 
+    margin: 0; 
+}
+
+/* -----------------------------------------
    PALETA DE COLORES EN CUADRÍCULA
    ----------------------------------------- */
 .component-color-grid {
     display: grid;
     grid-template-columns: repeat(6, 1fr);
-    gap: 8px; /* Separación exacta de 8px en todas direcciones */
+    gap: 8px; 
     padding: 12px 4px;
     justify-items: center;
 }
 
 .component-color-btn {
-    width: 100%; /* 100% del espacio disponible de la columna */
-    aspect-ratio: 1 / 1; /* Garantiza que siempre sea un círculo perfecto */
+    width: 100%; 
+    aspect-ratio: 1 / 1;
     border-radius: 50%;
     border: none;
     background-color: var(--color-val);
@@ -88,7 +155,6 @@
     padding: 0;
 }
 
-/* Efecto Hover / Active: Se hace más pequeño (presionado) y revela el borde */
 .component-color-btn:hover,
 .component-color-btn.active {
     box-shadow: 0 0 0 2px var(--bg-surface), 0 0 0 4px var(--color-val), inset 0 0 0 1px rgba(0,0,0,0.15);
@@ -100,74 +166,148 @@
 }
 
 /* -----------------------------------------
-   SISTEMA DE PLANTILLAS
+   GRILLA DE MI LIBRERÍA Y ESTADO ACTIVO
    ----------------------------------------- */
-.component-template-grid {
+.component-library-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 8px;
     width: 100%;
 }
 
-.component-template-card {
+.component-library-card {
     position: relative;
-    aspect-ratio: 1;
-    border: 2px solid transparent;
     border-radius: 8px;
     overflow: hidden;
     cursor: pointer;
+    border: 2px solid transparent;
+    aspect-ratio: 1 / 1;
     background-color: var(--bg-surface-alt);
-    box-shadow: inset 0 0 0 1px var(--border-color);
-    transition: border-color 0.2s ease, transform 0.2s ease;
+    transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
-.component-template-card:hover {
+.component-library-card:hover {
     border-color: var(--border-color-hover);
 }
 
-.component-template-card.active {
-    border-color: var(--action-primary);
+/* EFECTO DE SELECCIÓN ACTIVA IDÉNTICO AL DEL GRID DE COLORES */
+.component-library-card.active {
+    box-shadow: 0 0 0 2px var(--bg-surface), 0 0 0 4px var(--action-primary), inset 0 0 0 1px rgba(0,0,0,0.15);
+    transform: scale(0.82); 
+    border-color: transparent;
 }
 
-.component-template-card img {
+.component-library-card__image {
     width: 100%;
     height: 100%;
     object-fit: cover;
     display: block;
 }
 
-.component-template-actions {
+.component-library-card__delete {
     position: absolute;
     top: 4px;
     right: 4px;
+    width: 20px !important;
+    height: 20px !important;
+    min-height: 20px !important;
+    padding: 0;
+}
+
+.component-library-card__delete .material-symbols-rounded {
+    font-size: 12px;
+}
+
+/* -----------------------------------------
+   MODO EN VIVO (LIVE SHARE)
+   ----------------------------------------- */
+.live-share-panel {
     display: flex;
+    flex-direction: column;
+}
+
+.live-share-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+    background-color: var(--bg-surface-alt);
+    padding: 12px;
+    border-radius: 8px;
+}
+
+.live-share-controls.disabled {
+    display: none !important;
+}
+
+.live-share-code-display {
+    padding: 8px;
+    background: rgba(0, 255, 128, 0.1);
+    color: #00ff80;
+    text-align: center;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 1.2rem;
+    letter-spacing: 2px;
+    font-weight: bold;
+}
+
+.live-share-inputs-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.live-share-input-group {
+    display: flex;
+    flex-direction: column;
     gap: 4px;
 }
 
-.component-template-action-btn {
-    width: 28px;
-    height: 28px;
-    border-radius: 6px;
-    background-color: rgba(0, 0, 0, 0.6);
-    color: #ffffff;
-    border: none;
+.live-share-label {
+    font-size: 10px;
+    opacity: 0.7;
+}
+
+.live-share-label--flex {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: background-color 0.2s ease, transform 0.1s ease;
+    justify-content: space-between;
 }
 
-.component-template-action-btn:hover {
-    background-color: rgba(0, 0, 0, 0.9);
+.live-share-range {
+    width: 100%;
+    margin: 4px 0;
 }
 
-.component-template-action-btn:active {
-    transform: scale(0.9);
+.live-share-stop-btn {
+    margin-top: 8px;
 }
 
-.component-template-action-btn .material-symbols-rounded {
-    font-size: 16px;
+.live-share-spectator {
+    margin-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.live-share-label--spectator {
+    font-size: 0.8rem;
+    opacity: 0.8;
+    display: block;
+}
+
+.live-share-join-input {
+    width: 100%;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 14px;
+    color: var(--text-primary);
+    text-transform: uppercase;
+}
+
+.live-share-join-btn {
+    margin-top: 8px;
 }
 
 /* -----------------------------------------
@@ -262,4 +402,33 @@
 
 @keyframes spin {
     100% { transform: rotate(360deg); }
+}
+
+/* ==========================================================================
+   BOTÓN DE FAVORITOS ACTIVO - VARIANTE SUTIL / ICONO ROJO RELLENO
+   ========================================================================== */
+.component-button.btn-favorite {
+    transition: color 0.2s ease, transform 0.1s ease;
+}
+
+.component-button.btn-favorite.is-favorite {
+    color: #ff3b30 !important; 
+    background-color: var(--surface-hover) !important; 
+    border-color: transparent !important;
+}
+
+.component-button.btn-favorite.is-favorite .material-symbols-rounded {
+    font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 20;
+    animation: favoriteBeat 0.3s ease-in-out; 
+}
+
+.component-button.btn-favorite.is-favorite:not(.disabled-interactive):hover {
+    transform: scale(1.1);
+    background-color: var(--surface-hover) !important;
+}
+
+@keyframes favoriteBeat {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.25); }
+    100% { transform: scale(1); }
 }

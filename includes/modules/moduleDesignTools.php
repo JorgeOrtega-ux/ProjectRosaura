@@ -1,57 +1,78 @@
 <?php
 // includes/modules/moduleDesignTools.php
+
+use App\Core\System\SubscriptionPlanConstants;
+
+// Obtenemos el nivel desde la sesión (exactamente como lo hace tu SessionManager)
+$userTier = $_SESSION['subscription_tier'] ?? SubscriptionPlanConstants::TIER_BASIC;
+
+// Consideramos Premium a cualquier plan PRO o superior
+$isPremium = $userTier >= SubscriptionPlanConstants::TIER_PRO;
 ?>
 <div class="component-module component-module--sidebar component-module--sidebar-responsive disabled" data-module="moduleDesignTools">
     
     <div class="component-menu component-menu--w265 component-menu--h-full component-menu--no-padding disabled" data-ref="menu-colors">
         <div class="pill-container"><div class="drag-handle"></div></div>
+        
         <div class="component-menu-header">
             <div class="component-menu-header-box">
-                <span class="component-menu-header-title">Paleta de colores</span>
+                <span class="material-symbols-rounded">palette</span>
+                <span class="component-menu-header-title">Seleccionar color</span>
             </div>
         </div>
-        <div class="component-menu-top">
-            <div class="component-menu-list">
-                
+        
+        <div class="component-menu-section-parent">
+            <div class="component-menu-top">
+                <div class="component-menu-header-box">
+                    <span class="component-menu-header-title">Colores predeterminados</span>
+                </div>
+            </div>
+            
+            <div class="component-menu-bottom">
                <div class="component-color-grid" data-ref="color-palette-grid">
-                    <div style="padding: 20px; text-align: center; width: 100%; opacity: 0.5;">
-                        <span class="material-symbols-rounded" style="animation: spin 1s linear infinite;">palette</span><br>
-                        Cargando...
+                    <div class="component-loader-center component-loader-center--compact">
+                        <div class="component-empty-state-content">
+                            <span class="material-symbols-rounded icon-spin-slow">palette</span><br>
+                            Cargando...
+                        </div>
                     </div>
                 </div>
-
             </div>
         </div>
     </div>
 
     <div class="component-menu component-menu--w265 component-menu--h-full component-menu--no-padding disabled" data-ref="menu-templates">
         <div class="pill-container"><div class="drag-handle"></div></div>
+        
         <div class="component-menu-header">
             <div class="component-menu-header-box">
                 <span class="component-menu-header-title">Plantillas</span>
             </div>
         </div>
-        <div class="component-menu-top" style="display: flex; flex-direction: column; height: calc(100% - 60px);">
-            
-            <div style="padding-bottom: 16px;">
-                <input type="file" accept="image/jpeg, image/png, image/webp" style="display: none;" data-ref="template-file-input">
+        
+        <div class="component-menu-top h-full-flex component-menu-top--gapped">
+            <div class="component-template-upload-section">
+                <input type="file" accept="image/jpeg, image/png, image/webp" class="hidden-input" data-ref="template-file-input">
                 <button class="component-button component-button--full component-button--dark component-button--h40" data-action="triggerTemplateUpload">
                     <span class="material-symbols-rounded">cloud_upload</span>
                     Subir a mi librería
                 </button>
             </div>
 
-            <div style="flex: 1; overflow-y: auto; padding-right: 4px;">
-                <h4 style="font-size: 0.8rem; text-transform: uppercase; opacity: 0.5; margin: 0 0 12px 0; font-weight: 600;">Mi Librería</h4>
-                <div data-ref="user-templates-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 24px;">
+            <div class="component-viewport component-viewport--padded">
+                <div class="component-menu-header-box component-menu-header-box--section">
+                    <span class="component-menu-header-title">Mi Librería</span>
+                </div>
+                
+                <div class="component-library-grid" data-ref="user-templates-grid">
                 </div>
 
-                <h4 style="font-size: 0.8rem; text-transform: uppercase; opacity: 0.5; margin: 0 0 12px 0; font-weight: 600;">En el Lienzo</h4>
-                <div class="component-template-grid" data-ref="template-list">
+                <?php if ($isPremium): ?>
+                <hr class="component-divider component-divider--spaced">
+                
+                <div class="component-menu-header-box component-menu-header-box--section">
+                    <span class="component-menu-header-title">Modo En Vivo (Sync)</span>
                 </div>
-
-                <hr style="border-color: rgba(255,255,255,0.1); margin: 20px 0 16px 0;">
-                <h4 style="font-size: 0.8rem; text-transform: uppercase; opacity: 0.5; margin: 0 0 12px 0; font-weight: 600;">Modo En Vivo (Sync)</h4>
                 
                 <div class="live-share-panel" data-ref="live-share-panel">
                     
@@ -60,42 +81,53 @@
                             <span class="material-symbols-rounded">sensors</span> Compartir Activa
                         </button>
                         
-                        <div data-ref="live-controls" style="display:none; margin-top: 12px; gap: 8px; flex-direction: column; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px;">
-                            <div style="padding: 8px; background: rgba(0,255,128,0.1); color: #00ff80; text-align: center; border-radius: 4px; font-family: monospace; font-size: 1.2rem; letter-spacing: 2px; font-weight: bold;" data-ref="live-share-code">...</div>
+                        <div class="live-share-controls disabled" data-ref="live-controls">
+                            <div class="live-share-code-display" data-ref="live-share-code">...</div>
                             
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                                <div>
-                                    <label style="font-size: 10px; opacity: 0.7;">Posición X</label>
-                                    <input type="number" data-ref="live-input-x" class="component-input" style="width:100%; padding: 4px;">
+                            <div class="live-share-inputs-grid">
+                                <div class="live-share-input-group">
+                                    <label class="live-share-label">Posición X</label>
+                                    <div class="component-input-group component-input-group--h34">
+                                        <input type="number" data-ref="live-input-x" class="component-input-field component-input-field--simple">
+                                    </div>
                                 </div>
-                                <div>
-                                    <label style="font-size: 10px; opacity: 0.7;">Posición Y</label>
-                                    <input type="number" data-ref="live-input-y" class="component-input" style="width:100%; padding: 4px;">
+                                <div class="live-share-input-group">
+                                    <label class="live-share-label">Posición Y</label>
+                                    <div class="component-input-group component-input-group--h34">
+                                        <input type="number" data-ref="live-input-y" class="component-input-field component-input-field--simple">
+                                    </div>
                                 </div>
                             </div>
                             
-                            <div>
-                                <label style="font-size: 10px; opacity: 0.7; display: flex; justify-content: space-between;">Opacidad <span data-ref="live-opacity-val">100%</span></label>
-                                <input type="range" data-ref="live-input-opacity" min="0" max="1" step="0.05" value="1" style="width:100%">
+                            <div class="live-share-input-group">
+                                <label class="live-share-label live-share-label--flex">Opacidad <span data-ref="live-opacity-val">100%</span></label>
+                                <input type="range" data-ref="live-input-opacity" min="0" max="1" step="0.05" value="1" class="live-share-range">
                             </div>
                             
-                            <button class="component-button component-button--full component-button--danger component-button--h40" data-action="stopLiveShare" style="margin-top: 8px;">
+                            <button class="component-button component-button--full component-button--danger component-button--h40 live-share-stop-btn" data-action="stopLiveShare">
                                 Detener Transmisión
                             </button>
                         </div>
                     </div>
 
-                    <div class="live-share-spectator" style="margin-top: 16px;">
-                        <label style="font-size: 0.8rem; opacity: 0.8;">Unirse a sesión (Código)</label>
-                        <div style="display: flex; gap: 8px; margin-top: 4px;">
-                            <input type="text" data-ref="live-join-code" class="component-input" placeholder="Ej. SHR-123" style="flex: 1; text-transform: uppercase;">
-                            <button class="component-button component-button--dark" data-action="joinLiveShare">Unirse</button>
+                    <div class="live-share-spectator">
+                        <label class="live-share-label live-share-label--spectator">Unirse a sesión (Código)</label>
+                        
+                        <div class="component-search component-search--full component-search--h36">
+                            <div class="component-search-icon">
+                                <span class="material-symbols-rounded">search</span>
+                            </div>
+                            <div class="component-search-input">
+                                <input type="text" data-ref="live-join-code" class="live-share-join-input" placeholder="Ej. SHR-123">
+                            </div>
                         </div>
+
+                        <button class="component-button component-button--full component-button--dark component-button--h40 live-share-join-btn" data-action="joinLiveShare">Unirse</button>
                     </div>
 
                 </div>
-                </div>
-
+                <?php endif; ?>
+            </div>
         </div>
     </div>
 

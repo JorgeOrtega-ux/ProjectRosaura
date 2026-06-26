@@ -21,39 +21,27 @@ export const DesignTemplates = {
 
         container.innerHTML = '';
         if (templates.length === 0) {
-            container.innerHTML = '<p class="component-empty-text" style="grid-column: span 2; text-align: center; opacity: 0.5; font-size: 0.8rem; padding: 10px 0;">No tienes plantillas en tu nube.</p>';
+            container.innerHTML = '<p class="component-empty-text component-empty-text--grid">No tienes plantillas en tu nube.</p>';
+            this.updateTemplateUI();
             return;
         }
 
         templates.forEach(tpl => {
             const card = document.createElement('div');
             card.className = 'component-library-card';
-            card.style.position = 'relative';
-            card.style.borderRadius = '8px';
-            card.style.overflow = 'hidden';
-            card.style.cursor = 'pointer';
-            card.style.border = '2px solid transparent';
             
             const img = document.createElement('img');
             img.src = tpl.file_path;
             img.alt = 'Plantilla guardada';
-            img.style.width = '100%';
-            img.style.height = '70px';
-            img.style.objectFit = 'cover';
-            img.style.display = 'block';
+            img.className = 'component-library-card__image';
+            
+            // Reutilizamos el endpoint pero ahora usamos la URL como identificador
             img.setAttribute('data-action', 'addTemplateToCanvas');
             img.setAttribute('data-url', tpl.file_path);
 
             const btnDel = document.createElement('button');
-            btnDel.className = 'component-button component-button--icon component-button--danger';
-            btnDel.style.position = 'absolute';
-            btnDel.style.top = '4px';
-            btnDel.style.right = '4px';
-            btnDel.style.width = '24px';
-            btnDel.style.height = '24px';
-            btnDel.style.minHeight = '24px';
-            btnDel.style.padding = '0';
-            btnDel.innerHTML = '<span class="material-symbols-rounded" style="font-size: 14px;">delete</span>';
+            btnDel.className = 'component-button component-button--icon component-button--danger component-library-card__delete';
+            btnDel.innerHTML = '<span class="material-symbols-rounded">delete</span>';
             btnDel.setAttribute('data-action', 'deleteServerTemplate');
             btnDel.setAttribute('data-id', tpl.id);
 
@@ -61,6 +49,8 @@ export const DesignTemplates = {
             card.appendChild(btnDel);
             container.appendChild(card);
         });
+
+        this.updateTemplateUI();
     },
 
     async handleFileUpload(e) {
@@ -99,9 +89,16 @@ export const DesignTemplates = {
     },
 
     addTemplateFromLibrary(url) {
+        // Si ya está en el lienzo, simplemente lo seleccionamos/deseleccionamos
+        const existing = this.templates.find(t => t.id === url);
+        if (existing) {
+            this.toggleTemplate(url);
+            return;
+        }
+
         const img = new Image();
         img.onload = () => {
-            const id = 'tpl_' + Date.now();
+            const id = url; // Usamos la URL como ID único para el lienzo
             const targetW = this.boardWidth * 0.5;
             const targetH = this.boardHeight * 0.5;
             const scale = Math.min(targetW / img.width, targetH / img.height);
@@ -120,7 +117,6 @@ export const DesignTemplates = {
                 opacity: 0.5 
             });
 
-            this.renderTemplateList(); 
             this.toggleTemplate(id); 
             showMessage('Plantilla agregada al lienzo.', 'success');
         };
@@ -150,76 +146,67 @@ export const DesignTemplates = {
         }
     },
 
-    renderTemplateList() {
-        const container = document.querySelector('[data-ref="template-list"]');
-        if (!container) return;
-
-        container.innerHTML = '';
-        this.templates.forEach(tpl => {
-            const card = document.createElement('div');
-            card.className = `component-template-card ${this.activeTemplateId === tpl.id ? 'active' : ''}`;
-            card.setAttribute('data-action', 'selectTemplate');
-            card.setAttribute('data-id', tpl.id);
-
-            const img = document.createElement('img');
-            img.src = tpl.src;
-            img.alt = __('alt_template');
-            card.appendChild(img);
-
-            const actions = document.createElement('div');
-            actions.className = 'component-template-actions';
-
-            const btnLock = document.createElement('button');
-            btnLock.className = 'component-template-action-btn';
-            btnLock.setAttribute('data-action', 'toggleTemplateLock');
-            btnLock.setAttribute('title', tpl.locked ? __('title_unlock_move') : __('title_lock_paint'));
-
-            const iconLock = document.createElement('span');
-            iconLock.className = 'material-symbols-rounded';
-            iconLock.textContent = tpl.locked ? 'lock' : 'lock_open';
-            btnLock.appendChild(iconLock);
-
-            const btnDel = document.createElement('button');
-            btnDel.className = 'component-template-action-btn';
-            btnDel.setAttribute('data-action', 'deleteTemplate');
-            btnDel.setAttribute('title', __('title_delete'));
-
-            const iconDel = document.createElement('span');
-            iconDel.className = 'material-symbols-rounded';
-            iconDel.textContent = 'delete';
-            btnDel.appendChild(iconDel);
-
-            actions.appendChild(btnLock);
-            actions.appendChild(btnDel);
-
-            card.appendChild(actions);
-            container.appendChild(card);
+    updateTemplateUI() {
+        // 1. Actualiza el estilo activo en la grilla de la librería
+        const cards = document.querySelectorAll('.component-library-card');
+        cards.forEach(card => {
+            const img = card.querySelector('img');
+            if (img && img.getAttribute('data-url') === this.activeTemplateId) {
+                card.classList.add('active');
+            } else {
+                card.classList.remove('active');
+            }
         });
+
+        // 2. Muestra/Oculta los botones en la barra de acciones principal
+        const btnLock = document.querySelector('[data-ref="btn-template-lock"]');
+        const btnDel = document.querySelector('[data-ref="btn-template-delete"]');
+        const divider = document.querySelector('[data-ref="template-actions-divider"]');
+
+        if (this.activeTemplateId) {
+            const tpl = this.templates.find(t => t.id === this.activeTemplateId);
+            if (btnLock && btnDel && divider && tpl) {
+                btnLock.classList.remove('disabled');
+                btnDel.classList.remove('disabled');
+                divider.classList.remove('disabled');
+                
+                const iconLock = btnLock.querySelector('.material-symbols-rounded');
+                if (iconLock) {
+                    iconLock.textContent = tpl.locked ? 'lock' : 'lock_open';
+                }
+            }
+        } else {
+            if (btnLock) btnLock.classList.add('disabled');
+            if (btnDel) btnDel.classList.add('disabled');
+            if (divider) divider.classList.add('disabled');
+        }
     },
 
     toggleTemplate(id) {
         if (this.activeTemplateId === id) {
-            this.activeTemplateId = null;
+            this.activeTemplateId = null; // Deseleccionar
         } else {
-            this.activeTemplateId = id;
+            this.activeTemplateId = id; // Seleccionar
         }
-        this.renderTemplateList();
+        this.updateTemplateUI();
         this.requestRender();
     },
 
-    toggleLockTemplate(id) {
-        const tpl = this.templates.find(t => t.id === id);
+    toggleTemplateLock() {
+        if (!this.activeTemplateId) return;
+        const tpl = this.templates.find(t => t.id === this.activeTemplateId);
         if (tpl) {
             tpl.locked = !tpl.locked;
-            this.renderTemplateList();
+            this.updateTemplateUI();
             this.requestRender();
         }
     },
 
-    deleteTemplate(id) {
-        this.templates = this.templates.filter(t => t.id !== id);
-        if (this.activeTemplateId === id) this.activeTemplateId = null;
-        this.renderTemplateList();
+    deleteTemplate() {
+        if (!this.activeTemplateId) return;
+        this.templates = this.templates.filter(t => t.id !== this.activeTemplateId);
+        this.activeTemplateId = null;
+        this.updateTemplateUI();
         this.requestRender();
     },
 

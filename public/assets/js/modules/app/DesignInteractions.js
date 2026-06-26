@@ -111,6 +111,7 @@ export const DesignInteractions = {
             return;
         }
 
+        // Selección de plantilla en la galería
         const cardTemplate = e.target.closest('[data-action="selectTemplate"]');
         if (cardTemplate && !e.target.closest('.component-template-action-btn')) {
             const id = cardTemplate.getAttribute('data-id');
@@ -123,19 +124,21 @@ export const DesignInteractions = {
             return;
         }
 
+        // Botón de Bloquear en la barra superior
         const btnLock = e.target.closest('[data-action="toggleTemplateLock"]');
         if (btnLock) {
+            e.preventDefault();
             e.stopPropagation();
-            const id = btnLock.closest('.component-template-card').getAttribute('data-id');
-            this.toggleLockTemplate(id);
+            this.toggleTemplateLock();
             return;
         }
 
+        // Botón de Eliminar en la barra superior
         const btnDelete = e.target.closest('[data-action="deleteTemplate"]');
         if (btnDelete) {
+            e.preventDefault();
             e.stopPropagation();
-            const id = btnDelete.closest('.component-template-card').getAttribute('data-id');
-            this.deleteTemplate(id);
+            this.deleteTemplate();
             return;
         }
 

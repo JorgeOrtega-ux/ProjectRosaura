@@ -150,6 +150,14 @@ if (!empty($canvasUuid)) {
                 </div>
 
                 <div class="component-actions active" data-ref="design-tools-actions">
+                    <button class="component-button component-button--icon component-button--h40 disabled" data-action="toggleTemplateLock" data-ref="btn-template-lock" data-tooltip="Bloquear / Desbloquear Plantilla" data-position="bottom">
+                        <span class="material-symbols-rounded">lock_open</span>
+                    </button>
+                    <button class="component-button component-button--icon component-button--h40 component-button--danger disabled" data-action="deleteTemplate" data-ref="btn-template-delete" data-tooltip="Quitar Plantilla" data-position="bottom">
+                        <span class="material-symbols-rounded">delete</span>
+                    </button>
+                    <div class="component-divider-vertical disabled" data-ref="template-actions-divider"></div>
+                    
                     <button class="component-button component-button--icon component-button--h40 component-color-indicator" style="--active-color: #000000;" data-ref="btn-color-palette" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-colors" data-tooltip="Paleta de colores" data-position="bottom">
                         <span class="material-symbols-rounded">palette</span>
                     </button>
