@@ -347,22 +347,41 @@ class CanvasRepository implements CanvasRepositoryInterface {
         return (int)$stmt->fetchColumn();
     }
 
-    public function getUserStorageUsed(int $userId): float {
+ public function getUserStorageUsed(int $userId): float {
         $sql = "SELECT file_path FROM user_templates WHERE user_id = :user_id";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':user_id' => $userId]);
         $paths = $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
         
         $totalBytes = 0;
-        $baseDir = dirname(__DIR__, 3) . '/'; 
+        
+        // CORRECCIÓN: Calcular el directorio base real apuntando a la raíz del proyecto.
+        // Si este archivo está en: includes/core/Repositories/CanvasRepository.php
+        // __DIR__ es "includes/core/Repositories"
+        // dirname(__DIR__, 3) debería apuntar a la raíz del proyecto.
+        $baseDir = dirname(__DIR__, 3); 
         
         foreach ($paths as $path) {
-            $physicalPath = $baseDir . str_replace('public/storage/', 'storage/public/', ltrim($path, '/'));
-            if (file_exists($physicalPath)) {
-                $totalBytes += filesize($physicalPath);
+            // Limpiamos la ruta que viene de la BD (ej. "public/storage/templates/...")
+            $cleanPath = ltrim($path, '/');
+            
+            // CORRECCIÓN: En el código original reemplazabas 'public/storage/' por 'storage/public/'
+            // Asegurémonos de que la ruta física final sea correcta. 
+            // La estructura real es: ROOT/storage/public/templates/
+            $relativePath = str_replace('public/storage/', 'storage/public/', $cleanPath);
+            
+            $physicalPath = $baseDir . DIRECTORY_SEPARATOR . $relativePath;
+            
+            // DEBUG (Opcional, puedes quitarlo después): Si falla, registra por qué
+            if (!file_exists($physicalPath)) {
+                Logger::error("getUserStorageUsed: Archivo no encontrado en la ruta física.", ['path_intentado' => $physicalPath]);
+                continue;
             }
+
+            $totalBytes += filesize($physicalPath);
         }
         
+        // Retornar en Megabytes
         return $totalBytes / (1024 * 1024); 
     }
 

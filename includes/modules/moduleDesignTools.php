@@ -3,11 +3,13 @@
 
 use App\Core\System\SubscriptionPlanConstants;
 
-// Obtenemos el nivel desde la sesión (exactamente como lo hace tu SessionManager)
-$userTier = $_SESSION['subscription_tier'] ?? SubscriptionPlanConstants::TIER_BASIC;
+// 1. Obtenemos el nivel desde la sesión asegurando que sea un número entero (int).
+// Añadimos un par de "fallbacks" por si la columna en la base de datos se llama distinto.
+$userTier = (int) ($_SESSION['subscription_tier'] ?? $_SESSION['tier'] ?? $_SESSION['user_tier'] ?? SubscriptionPlanConstants::TIER_BASIC);
 
-// Consideramos Premium a cualquier plan PRO o superior
-$isPremium = $userTier >= SubscriptionPlanConstants::TIER_PRO;
+// 2. En lugar de hacer una validación manual (>=), usamos tu método oficial hasFeature.
+// Esto garantiza que si en un futuro cambias los permisos de 'live_templates', se refleje automáticamente.
+$hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates');
 ?>
 <div class="component-module component-module--sidebar component-module--sidebar-responsive disabled" data-module="moduleDesignTools">
     
@@ -67,7 +69,7 @@ $isPremium = $userTier >= SubscriptionPlanConstants::TIER_PRO;
                 <div class="component-library-grid" data-ref="user-templates-grid">
                 </div>
 
-                <?php if ($isPremium): ?>
+                <?php if ($hasLiveSync): ?>
                 <hr class="component-divider component-divider--spaced">
                 
                 <div class="component-menu-header-box component-menu-header-box--section">
