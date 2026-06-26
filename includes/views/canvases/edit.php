@@ -1,6 +1,9 @@
 <?php 
 // includes/views/canvases/edit.php 
 use \App\Core\System\SubscriptionPlanConstants;
+use App\Config\DatabaseManager;
+
+if (session_status() === PHP_SESSION_NONE) session_start();
 
 $activeAccountId = $_SESSION['active_account'] ?? null;
 $linkedAccounts = $_SESSION['accounts'] ?? [];
@@ -10,8 +13,28 @@ if ($activeAccountId && isset($linkedAccounts[$activeAccountId])) {
 }
 $planLimits = SubscriptionPlanConstants::getTierLimits($tier);
 $maxMembers = $planLimits['max_members_per_canvas'] === -1 ? 50000 : $planLimits['max_members_per_canvas'];
+
+$canvasUuid = $_GET['uuid'] ?? null;
+$canvasId = null;
+
+if ($canvasUuid) {
+    try {
+        $db = new DatabaseManager();
+        $pdo = $db->getConnection(defined('App\Core\System\DatabaseConstants::CONN_CANVASES') ? App\Core\System\DatabaseConstants::CONN_CANVASES : 'canvases');
+        $stmt = $pdo->prepare("SELECT id FROM canvases WHERE uuid = :uuid LIMIT 1");
+        $stmt->execute(['uuid' => $canvasUuid]);
+        $canvasId = (int)$stmt->fetchColumn();
+    } catch (\Exception $e) {
+        // Silenciado por seguridad
+    }
+}
+
+if (!$canvasId) {
+    echo "<div class='view-content'><p>".__('err_invalid_canvas_id')."</p></div>";
+    return;
+}
 ?>
-<div class="view-content" data-ref="canvas-edit-wrapper">
+<div class="view-content" data-ref="canvas-edit-wrapper" data-canvas-id="<?php echo htmlspecialchars($canvasId); ?>">
     
     <div class="component-top">
         <div class="component-top-left">

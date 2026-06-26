@@ -2,6 +2,8 @@
 // includes/views/canvases/requests.php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
+use App\Config\DatabaseManager;
+
 $userId = $_SESSION['active_account_id'] ?? $_SESSION['user_id'] ?? null;
 
 if (!$userId) {
@@ -9,10 +11,23 @@ if (!$userId) {
     return;
 }
 
-$canvasId = $_GET['id'] ?? null;
+$canvasUuid = $_GET['uuid'] ?? null;
+$canvasId = null;
+
+if ($canvasUuid) {
+    try {
+        $db = new DatabaseManager();
+        $pdo = $db->getConnection(defined('App\Core\System\DatabaseConstants::CONN_CANVASES') ? App\Core\System\DatabaseConstants::CONN_CANVASES : 'canvases');
+        $stmt = $pdo->prepare("SELECT id FROM canvases WHERE uuid = :uuid LIMIT 1");
+        $stmt->execute(['uuid' => $canvasUuid]);
+        $canvasId = (int)$stmt->fetchColumn();
+    } catch (\Exception $e) {
+        // Silenciar y atrapar error por si la base de datos o tabla no existe
+    }
+}
 
 if (!$canvasId) {
-    echo "<div class='view-content'><p>ID de lienzo no proporcionado.</p></div>";
+    echo "<div class='view-content'><p>".__('err_invalid_canvas_id')."</p></div>";
     return;
 }
 

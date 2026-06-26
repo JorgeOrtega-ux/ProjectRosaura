@@ -4,10 +4,6 @@ import { ApiRoutes } from '../../core/api/ApiRoutes.js';
 import { ApiService } from '../../core/api/ApiServices.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../core/utils/uiUtils.js';
 
-/**
- * Función helper local para obtener todas las paletas en formato Array.
- * Lee desde la variable global inyectada por PHP.
- */
 function getAllPalettes() {
     if (!window.APP_PALETTES) return [];
     return Object.values(window.APP_PALETTES);
@@ -18,9 +14,7 @@ class CanvasEditController {
         this.api = new ApiService();
         this.abortController = null;
         this.container = null;
-        
-        const urlParams = new URLSearchParams(window.location.search);
-        this.canvasId = urlParams.get('id');
+        this.canvasId = null;
 
         this.state = {
             name: '',
@@ -38,6 +32,9 @@ class CanvasEditController {
     init() {
         this.container = document.querySelector('[data-ref="canvas-edit-wrapper"]');
         if (!this.container) return;
+
+        // EXTRAER EL ID INTERNO DESDE EL HTML (Inyectado por PHP)
+        this.canvasId = this.container.getAttribute('data-canvas-id');
 
         this.abortController = new AbortController();
         
@@ -386,7 +383,7 @@ class CanvasEditController {
         }
 
         const payload = {
-            id: this.canvasId,
+            id: this.canvasId, // USAMOS EL ID INTERNO CAPTURADO DEL HTML
             name: this.state.name,
             description: this.state.description,
             privacy: this.state.privacy,

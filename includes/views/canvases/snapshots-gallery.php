@@ -10,13 +10,7 @@
             </div>
             
             <div class="component-top-right">
-                <div class="component-actions active">
-                    <button class="component-button component-button--secondary" data-action="goBack">
-                        <span class="material-symbols-rounded component-button-icon">arrow_back</span>
-                        <?php echo __('btn_back') ?: 'Regresar'; ?>
-                    </button>
                 </div>
-            </div>
         </div>
 
         <div class="component-bottom">

@@ -74,7 +74,6 @@ class CanvasesManageController {
         const deleteCanvasesBtn = e.target.closest('[data-action="deleteSelectedCanvases"]');
         const viewRequestsBtn = e.target.closest('[data-action="viewCanvasRequests"]');
         
-        // NOTA DE IMPLEMENTACIÓN: Manejo de creación
         const createCanvasBtn = e.target.closest('[data-action="createCanvas"]');
 
         if (searchBtn) this.toggleSearchToolbar();
@@ -103,9 +102,7 @@ class CanvasesManageController {
         }
     }
 
-    // NOTA DE IMPLEMENTACIÓN: Lógica para Crear el Lienzo y atrapar el error 403
     async createCanvas(btn) {
-        // Recolectar datos del DOM (create.php)
         const nameInput = document.querySelector('[data-ref="input-canvasname"]');
         const descInput = document.querySelector('[data-ref="input-canvas-desc"]');
         
@@ -118,9 +115,7 @@ class CanvasesManageController {
         const limitVal = document.querySelector('[data-ref="val_limit"]');
         
         const scopeTypeText = document.querySelector('[data-ref="text-scope-type"]');
-        const scopeCountryText = document.querySelector('[data-ref="text-scope-country"]');
         
-        // Conversión a valores para la API (Se simulan los ids por el texto UI que tengas configurado)
         const payload = {
             name: nameInput ? nameInput.value : 'Nuevo Lienzo',
             description: descInput ? descInput.value : '',
@@ -128,7 +123,7 @@ class CanvasesManageController {
             requires_approval: (approvalText && approvalText.textContent.toLowerCase().includes('verdadero')),
             size: sizeText ? sizeText.textContent.split('x')[0] : '64',
             limit: limitVal ? parseInt(limitVal.textContent) : 10,
-            palette_id: 'default', // Aquí mapearías si tienes un ID en el dropdown
+            palette_id: 'default', 
             cooldown_pixels_batch: cooldownBatchVal ? parseInt(cooldownBatchVal.textContent) : 5,
             cooldown_seconds: cooldownSecVal ? parseInt(cooldownSecVal.textContent) : 10,
             scope_type: (scopeTypeText && !scopeTypeText.textContent.includes('Personal')) ? 'global' : 'personal'
@@ -149,14 +144,13 @@ class CanvasesManageController {
                 else window.location.href = `${this.basePath}/canvases/manage`;
             }, 1000);
         } else {
-            // ATRApar Error de Límite (403 / UPGRADE_REQUIRED)
             if (result.error_code === 'UPGRADE_REQUIRED' || result.http_code === 403) {
                 const banner = document.querySelector('[data-ref="limit-reached-banner"]');
                 if (banner) {
                     banner.style.display = 'flex';
                     banner.classList.remove('disabled');
                 }
-                btn.classList.add('disabled-interactive'); // Bloqueamos el botón temporalmente
+                btn.classList.add('disabled-interactive');
             } else {
                 showMessage(result.message, 'error');
             }
@@ -242,25 +236,23 @@ class CanvasesManageController {
         }
     }
 
+    // --- ENLACES ACTUALIZADOS AL FORMATO :uuid ---
     editSelectedCanvas() {
-        if (this.selectedCanvasIds.size !== 1) return;
-        const id = Array.from(this.selectedCanvasIds)[0];
-        if (window.spaRouter) window.spaRouter.navigate(`${this.basePath}/canvases/edit?id=${id}`);
-        else window.location.href = `${this.basePath}/canvases/edit?id=${id}`;
+        if (this.selectedCanvasIds.size !== 1 || !this.selectedCanvasUuid) return;
+        if (window.spaRouter) window.spaRouter.navigate(`${this.basePath}/canvases/edit/${this.selectedCanvasUuid}`);
+        else window.location.href = `${this.basePath}/canvases/edit/${this.selectedCanvasUuid}`;
     }
 
     manageCanvasMembers() {
-        if (this.selectedCanvasIds.size !== 1) return;
-        const id = Array.from(this.selectedCanvasIds)[0];
-        if (window.spaRouter) window.spaRouter.navigate(`${this.basePath}/canvases/members?id=${id}`);
-        else window.location.href = `${this.basePath}/canvases/members?id=${id}`;
+        if (this.selectedCanvasIds.size !== 1 || !this.selectedCanvasUuid) return;
+        if (window.spaRouter) window.spaRouter.navigate(`${this.basePath}/canvases/members/${this.selectedCanvasUuid}`);
+        else window.location.href = `${this.basePath}/canvases/members/${this.selectedCanvasUuid}`;
     }
 
     manageCanvasResets() {
-        if (this.selectedCanvasIds.size !== 1) return;
-        const id = Array.from(this.selectedCanvasIds)[0];
-        if (window.spaRouter) window.spaRouter.navigate(`${this.basePath}/canvases/manage/resets?id=${id}`);
-        else window.location.href = `${this.basePath}/canvases/manage/resets?id=${id}`;
+        if (this.selectedCanvasIds.size !== 1 || !this.selectedCanvasUuid) return;
+        if (window.spaRouter) window.spaRouter.navigate(`${this.basePath}/canvases/manage/resets/${this.selectedCanvasUuid}`);
+        else window.location.href = `${this.basePath}/canvases/manage/resets/${this.selectedCanvasUuid}`;
     }
 
     viewCanvasSnapshots() {
@@ -270,14 +262,14 @@ class CanvasesManageController {
     }
 
     viewCanvasRequests() {
-        if (this.selectedCanvasIds.size !== 1) return;
-        const canvasId = Array.from(this.selectedCanvasIds)[0];
+        if (this.selectedCanvasIds.size !== 1 || !this.selectedCanvasUuid) return;
         if (window.spaRouter) {
-            window.spaRouter.navigate(`${this.basePath}/canvases/manage/requests?id=${canvasId}`);
+            window.spaRouter.navigate(`${this.basePath}/canvases/manage/requests/${this.selectedCanvasUuid}`);
         } else {
-            window.location.href = `${this.basePath}/canvases/manage/requests?id=${canvasId}`;
+            window.location.href = `${this.basePath}/canvases/manage/requests/${this.selectedCanvasUuid}`;
         }
     }
+    // ---------------------------------------------
 
     async deleteSelectedCanvases(btn) {
         if (this.selectedCanvasIds.size === 0) return;

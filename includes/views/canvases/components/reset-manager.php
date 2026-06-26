@@ -2,7 +2,23 @@
 // includes/views/canvases/components/reset-manager.php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
-$canvasId = isset($_GET['id']) ? (int)$_GET['id'] : null;
+use App\Config\DatabaseManager;
+
+$canvasUuid = isset($_GET['uuid']) ? $_GET['uuid'] : null;
+$canvasId = null;
+
+if ($canvasUuid) {
+    try {
+        $db = new DatabaseManager();
+        $pdo = $db->getConnection(defined('App\Core\System\DatabaseConstants::CONN_CANVASES') ? App\Core\System\DatabaseConstants::CONN_CANVASES : 'canvases');
+        $stmt = $pdo->prepare("SELECT id FROM canvases WHERE uuid = :uuid LIMIT 1");
+        $stmt->execute(['uuid' => $canvasUuid]);
+        $canvasId = (int)$stmt->fetchColumn();
+    } catch (\Exception $e) {
+        // Silenciar y atrapar error por si la base de datos o tabla no existe
+    }
+}
+
 if (!$canvasId) {
     echo "<div class='view-content'><p>" . __('err_invalid_canvas_id') . "</p></div>";
     return;
@@ -13,9 +29,6 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
     
     <div class="component-top">
         <div class="component-top-left" style="display: flex; align-items: center; gap: 16px;">
-            <a href="<?php echo $appUrl; ?>/canvases/manage" class="component-button component-button--icon component-button--h40" data-nav>
-                <span class="material-symbols-rounded">arrow_back</span>
-            </a>
             <div>
                 <h1 class="component-top-title"><?php echo __('canvas_resets_title'); ?></h1>
             </div>
@@ -194,7 +207,7 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                 </div>
             </div>
 
-            <div class="component-card--grouped" style="margin-top: 24px;">
+            <div class="component-card--grouped">
                 <div class="component-group-item component-group-item--wrap">
                     <div class="component-card__content">
                         <div class="component-card__text">

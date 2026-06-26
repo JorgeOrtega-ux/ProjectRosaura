@@ -6,7 +6,6 @@ export const RouteModulesMap = {
     '/home': { path: './modules/app/HomeController.js', className: 'HomeController', skeletonType: 'layout-dashboard' },
     '/explore': { path: './modules/app/HomeController.js', className: 'HomeController', skeletonType: 'layout-dashboard' },
     
-    // ---- NUEVO MÓDULO DE BÚSQUEDA SPA ----
     '/search': { path: './modules/app/SearchController.js', className: 'SearchController', skeletonType: 'layout-dashboard' },
     
     '/design': { path: './modules/app/DesignController.js', className: 'DesignController', skeletonType: 'layout-full' },
@@ -72,11 +71,14 @@ export const RouteModulesMap = {
     // ---- MÓDULOS DE GESTIÓN DE LIENZOS ----
     '/canvases/create': { path: './modules/canvases/CanvasesController.js', className: 'CanvasesController', skeletonType: 'layout-dashboard' },
     '/canvases/manage': { path: './modules/canvases/CanvasesManageController.js', className: 'CanvasesManageController', skeletonType: 'layout-dashboard' },
-    '/canvases/manage/requests': { path: './modules/canvases/CanvasRequestsController.js', className: 'CanvasRequestsController', skeletonType: 'layout-dashboard' },
-    '/canvases/manage/resets': { path: './modules/canvases/CanvasResetController.js', className: 'CanvasResetController', skeletonType: 'layout-settings-generic' },
+    
+    // RUTAS ACTUALIZADAS PARA RECONOCER :uuid
+    '/canvases/manage/requests/:uuid': { path: './modules/canvases/CanvasRequestsController.js', className: 'CanvasRequestsController', skeletonType: 'layout-dashboard' },
+    '/canvases/manage/resets/:uuid': { path: './modules/canvases/CanvasResetController.js', className: 'CanvasResetController', skeletonType: 'layout-settings-generic' },
+    '/canvases/edit/:uuid': { path: './modules/canvases/CanvasEditController.js', className: 'CanvasEditController', skeletonType: 'layout-dashboard' },
+    '/canvases/members/:uuid': { path: './modules/canvases/CanvasMembersController.js', className: 'CanvasMembersController', skeletonType: 'layout-dashboard' },
+    
     '/canvases/join': { path: './modules/canvases/CanvasesController.js', className: 'CanvasesController', skeletonType: 'layout-dashboard' },
-    '/canvases/edit': { path: './modules/canvases/CanvasEditController.js', className: 'CanvasEditController', skeletonType: 'layout-dashboard' },
-    '/canvases/members': { path: './modules/canvases/CanvasMembersController.js', className: 'CanvasMembersController', skeletonType: 'layout-dashboard' },
     
     // ---- NUEVO MÓDULO GALERÍA PÚBLICA DE SNAPSHOTS ----
     '/design/s/:uuid': { path: './modules/canvases/CanvasSnapshotsGalleryController.js', className: 'CanvasSnapshotsGalleryController', skeletonType: 'layout-dashboard' },

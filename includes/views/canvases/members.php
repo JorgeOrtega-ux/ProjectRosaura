@@ -8,8 +8,31 @@ use PDO;
 
 // Obtenemos el ID del usuario en sesión
 $userId = $_SESSION['active_account_id'] ?? $_SESSION['user_id'] ?? null;
-// Obtenemos el ID del lienzo por GET
-$canvasId = isset($_GET['id']) ? (int)$_GET['id'] : null;
+// Obtenemos el UUID del lienzo por GET
+$canvasUuid = isset($_GET['uuid']) ? $_GET['uuid'] : null;
+
+$db = new DatabaseManager();
+$connNameCanvases = defined('App\Core\System\DatabaseConstants::CONN_CANVASES') ? App\Core\System\DatabaseConstants::CONN_CANVASES : 'canvases';
+$connNameIdentity = defined('App\Core\System\DatabaseConstants::CONN_IDENTITY') ? App\Core\System\DatabaseConstants::CONN_IDENTITY : 'identity';
+
+$canvasId = null;
+$canvasOwnerId = null;
+
+if ($canvasUuid) {
+    try {
+        $pdoCanvases = $db->getConnection($connNameCanvases);
+        // Consultamos también el owner_id por si queremos resaltarlo después
+        $stmt = $pdoCanvases->prepare("SELECT id, owner_id FROM canvases WHERE uuid = :uuid LIMIT 1");
+        $stmt->execute(['uuid' => $canvasUuid]);
+        $canvasData = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($canvasData) {
+            $canvasId = (int)$canvasData['id'];
+            $canvasOwnerId = (int)$canvasData['owner_id'];
+        }
+    } catch (\Exception $e) {
+        // Silenciado por seguridad
+    }
+}
 
 if (!$userId || !$canvasId) {
     echo "<div class='view-content'><p>".__('err_unauthorized_or_missing_id')."</p></div>";
@@ -21,24 +44,21 @@ $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 if ($page < 1) $page = 1;
 $offset = ($page - 1) * $limit;
 
-$db = new DatabaseManager();
-$connName = defined('App\Core\System\DatabaseConstants::CONN_CANVASES') ? App\Core\System\DatabaseConstants::CONN_CANVASES : 'canvases';
-$pdo = $db->getConnection($connName); 
-
-// OJO: Se asume que existe una tabla 'canvas_members' o similar. Ajusta el nombre si es distinto.
 $tblMembers = 'canvas_members'; 
 
 $members = [];
 $totalMembers = 0;
+$userDetails = [];
 
+// BLOQUE 1: Obtener la membresía del lienzo
 try {
     // Calcular total para paginación
-    $stmtCount = $pdo->prepare("SELECT COUNT(*) FROM {$tblMembers} WHERE canvas_id = :cid");
+    $stmtCount = $pdoCanvases->prepare("SELECT COUNT(*) FROM {$tblMembers} WHERE canvas_id = :cid");
     $stmtCount->execute(['cid' => $canvasId]);
     $totalMembers = (int)$stmtCount->fetchColumn();
 
-    // Consulta de miembros (Corregido: Eliminada la columna 'id' inexistente, ahora solo trae user_id)
-    $stmt = $pdo->prepare("
+    // Consulta de miembros
+    $stmt = $pdoCanvases->prepare("
         SELECT user_id, role, joined_at 
         FROM {$tblMembers} 
         WHERE canvas_id = :cid 
@@ -47,9 +67,28 @@ try {
     ");
     $stmt->execute(['cid' => $canvasId]);
     $members = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
 } catch (\Exception $e) {
-    // Si la tabla aún no existe o hay error, evitamos que la página colapse
     $members = [];
+}
+
+// BLOQUE 2: Obtener perfiles de la DB Identity
+if (!empty($members)) {
+    try {
+        $userIds = array_column($members, 'user_id');
+        $pdoIdentity = $db->getConnection($connNameIdentity);
+        
+        $inQuery = implode(',', array_fill(0, count($userIds), '?'));
+        // Extraemos la foto de perfil real (profile_picture)
+        $stmtUsers = $pdoIdentity->prepare("SELECT id, username, profile_picture FROM users WHERE id IN ($inQuery)");
+        $stmtUsers->execute($userIds);
+        
+        while ($row = $stmtUsers->fetch(PDO::FETCH_ASSOC)) {
+            $userDetails[$row['id']] = $row;
+        }
+    } catch (\Exception $e) {
+        // Fallback en caso de error en la BD de usuarios
+    }
 }
 
 $totalPages = ceil($totalMembers / $limit);
@@ -60,18 +99,16 @@ if ($page > $totalPages) {
 }
 
 $appUrl = defined('APP_URL') ? APP_URL : '';
-$prevPageUrl = $page > 1 ? $appUrl . '/canvases/members?id=' . $canvasId . '&page=' . ($page - 1) : '#';
-$nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/members?id=' . $canvasId . '&page=' . ($page + 1) : '#';
+// Paginación adaptada al UUID
+$prevPageUrl = $page > 1 ? $appUrl . '/canvases/members/' . $canvasUuid . '?page=' . ($page - 1) : '#';
+$nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/members/' . $canvasUuid . '?page=' . ($page + 1) : '#';
 ?>
 
 <div class="view-content" style="position: relative;">
-    <div class="component-wrapper component-wrapper--full no-padding h-full-flex" data-ref="manage-members-wrapper">
+    <div class="component-wrapper component-wrapper--full no-padding h-full-flex" data-ref="manage-members-wrapper" data-canvas-id="<?php echo htmlspecialchars($canvasId); ?>">
         
         <div class="component-top">
             <div class="component-top-left">
-                <a href="<?php echo $appUrl; ?>/canvases/manage" class="component-button component-button--icon component-button--h40" data-nav="<?php echo $appUrl; ?>/canvases/manage" style="margin-right: 12px;">
-                    <span class="material-symbols-rounded">arrow_back</span>
-                </a>
                 <h1 class="component-top-title"><?php echo __('canvases_members_title') ?: 'Miembros del Lienzo'; ?></h1>
             </div>
             
@@ -93,7 +130,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/members?id=' . $canvas
                 
                 <div class="component-actions active" data-ref="header-default-actions">
                     
-                    <button class="component-button component-button--icon component-button--h40" data-action="viewCanvasRequests" data-id="<?php echo $canvasId; ?>" data-tooltip="<?php echo __('tooltip_view_requests') ?: 'Solicitudes de acceso'; ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-nav="<?php echo $appUrl; ?>/canvases/manage/requests/<?php echo htmlspecialchars($canvasUuid); ?>" data-tooltip="<?php echo __('tooltip_view_requests') ?: 'Solicitudes de acceso'; ?>" data-position="bottom">
                         <span class="material-symbols-rounded">front_hand</span>
                     </button>
 
@@ -144,12 +181,26 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/members?id=' . $canvas
                     <tbody>
                         <?php if ($members): ?>
                             <?php foreach ($members as $member): ?>
+                                <?php 
+                                    $uInfo = $userDetails[$member['user_id']] ?? [];
+                                    $username = !empty($uInfo['username']) ? $uInfo['username'] : 'Usuario #' . $member['user_id'];
+                                    $avatar = !empty($uInfo['profile_picture']) ? $uInfo['profile_picture'] : $appUrl . '/public/assets/img/fallbacks/avatar-default.png';
+                                    
+                                    // Identificar si es Admin
+                                    $roleColor = $member['role'] === 'admin' ? '#dc3545' : '#6b7280';
+                                ?>
                                 <tr class="component-table-row" data-action="selectMember" data-member-id="<?php echo htmlspecialchars($member['user_id']); ?>">
                                     <td>
                                         <div class="td-user-info">
-                                            <div class="component-avatar component-avatar--sm" style="background-image: url('<?php echo $appUrl; ?>/public/assets/img/fallbacks/avatar-default.png'); margin-right: 12px;"></div>
-                                            <div class="component-badge component-badge--sm" style="background: transparent; border: none; padding: 0;">
-                                                <span class="search-target font-medium">Usuario #<?php echo htmlspecialchars($member['user_id']); ?></span>
+                                            <div class="component-button--profile role-dynamic component-avatar--static-sm" style="--active-role-bg: <?php echo $roleColor; ?>;">
+                                                <img src="<?php echo htmlspecialchars($avatar); ?>" alt="alt_avatar">
+                                            </div>
+                                            <div class="component-badge component-badge--sm">
+                                                <span class="material-symbols-rounded">person</span>
+                                                <span class="search-target font-medium"><?php echo htmlspecialchars($username); ?></span>
+                                                <?php if ($member['user_id'] == $canvasOwnerId): ?>
+                                                    <span class="material-symbols-rounded" style="font-size: 14px; color: #f59e0b; margin-left: 4px;" title="Creador">star</span>
+                                                <?php endif; ?>
                                             </div>
                                         </div>
                                     </td>

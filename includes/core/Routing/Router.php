@@ -33,37 +33,74 @@ class Router {
         }
 
         // --- MANEJO DE RUTAS DE DISEÑO ---
-        // 1. Redirigir si acceden a /design sin UUID al home
         if ($relativePath === '/design') {
             header("Location: " . $this->basePath . "/");
             exit;
         }
 
-        // 2. Manejar rutas dinámicas para /design/s/{uuid} (Galería de Snapshots)
-        // DEBE IR ANTES de la regla del lienzo normal para evitar conflictos
         if (preg_match('#^/design/s/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
-            // Guardamos el uuid por si lo necesitas directo en $_GET
             $_GET['uuid'] = $matches[1];
             return ['view' => 'canvases/snapshots-gallery.php'];
         }
 
-        // NUEVO: Manejar rutas dinámicas para /snapshot/view/{uuid} (Visor Individual)
         if (preg_match('#^/snapshot/view/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
-            // Guardamos el id del snapshot en $_GET para que lo lea snapshot-viewer.php
             $_GET['id'] = $matches[1];
             return ['view' => 'canvases/snapshot-viewer.php'];
         }
 
-        // 3. Manejar rutas dinámicas para /design/{uuid} (Lienzo Normal)
         if (preg_match('#^/design/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
-            // Guardamos el uuid por si el backend (PHP) lo requiere
-            $_GET['id'] = $matches[1];
+            $_GET['id'] = $matches[1]; // Opcionalmente cambiar a uuid si el backend lo requiere
             return ['view' => 'app/design.php'];
+        }
+        
+        // --- MANEJO DE RUTAS DE PANEL DE CONTROL (CON UUID) ---
+        
+        // Resets
+        if (preg_match('#^/canvases/manage/resets/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
+            $_GET['uuid'] = $matches[1];
+            return $this->routes['/canvases/manage/resets/:uuid'] ?? [
+                'view' => 'canvases/components/reset-manager.php',
+                'auth' => true,
+                'permissions' => ['manage_canvases'],
+                'requires_2fa' => false
+            ];
+        }
+
+        // Members
+        if (preg_match('#^/canvases/members/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
+            $_GET['uuid'] = $matches[1];
+            return $this->routes['/canvases/members/:uuid'] ?? [
+                'view' => 'canvases/members.php',
+                'auth' => true,
+                'permissions' => ['manage_canvases'],
+                'requires_2fa' => false
+            ];
+        }
+
+        // Requests
+        if (preg_match('#^/canvases/manage/requests/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
+            $_GET['uuid'] = $matches[1];
+            return $this->routes['/canvases/manage/requests/:uuid'] ?? [
+                'view' => 'canvases/requests.php',
+                'auth' => true,
+                'permissions' => ['manage_canvases'],
+                'requires_2fa' => false
+            ];
+        }
+
+        // Edit
+        if (preg_match('#^/canvases/edit/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
+            $_GET['uuid'] = $matches[1];
+            return $this->routes['/canvases/edit/:uuid'] ?? [
+                'view' => 'canvases/edit.php',
+                'auth' => true,
+                'permissions' => ['manage_canvases'],
+                'requires_2fa' => false
+            ];
         }
         // ---------------------------------
 
         if (!array_key_exists($relativePath, $this->routes)) {
-            // Auditoría: Detección de posibles bots escaneando rutas o enlaces rotos
             Logger::warning("Route not found (404)", [
                 'uri' => $requestUri, 
                 'ip' => Utils::getIpAddress(),

@@ -1,10 +1,11 @@
 <?php
+// config/routes.php
 
 return [
     '/' => ['view' => 'app/home.php'],
     '/explore' => ['view' => 'app/explore.php'],
-    '/search' => ['view' => 'app/search.php'], // <-- NUEVA RUTA DE BÚSQUEDA SPA
-    '/premium' => ['view' => 'app/premium.php'], // <-- NUEVA RUTA PREMIUM
+    '/search' => ['view' => 'app/search.php'], 
+    '/premium' => ['view' => 'app/premium.php'], 
     
     '/login' => ['view' => 'auth/login.php', 'guest_only' => true],
     '/login/two-factor' => ['view' => 'auth/login.php', 'guest_only' => true],
@@ -42,11 +43,14 @@ return [
     // --- RUTAS DE LIENZOS ---
     '/canvases/create' => ['view' => 'canvases/create.php', 'auth' => true, 'permissions' => ['create_canvas'], 'requires_2fa' => false],
     '/canvases/manage' => ['view' => 'canvases/manage.php', 'auth' => true, 'permissions' => ['manage_canvases'], 'requires_2fa' => false],
-    '/canvases/manage/requests' => ['view' => 'canvases/requests.php', 'auth' => true, 'permissions' => ['manage_canvases'], 'requires_2fa' => false],
-    '/canvases/manage/resets' => ['view' => 'canvases/components/reset-manager.php', 'auth' => true, 'permissions' => ['manage_canvases'], 'requires_2fa' => false],
+    
+    // AHORA TODAS ESTAS RUTAS USAN :uuid EN LUGAR DE QUERY PARAMS
+    '/canvases/manage/requests/:uuid' => ['view' => 'canvases/requests.php', 'auth' => true, 'permissions' => ['manage_canvases'], 'requires_2fa' => false],
+    '/canvases/manage/resets/:uuid' => ['view' => 'canvases/components/reset-manager.php', 'auth' => true, 'permissions' => ['manage_canvases'], 'requires_2fa' => false],
+    '/canvases/edit/:uuid' => ['view' => 'canvases/edit.php', 'auth' => true, 'permissions' => ['manage_canvases'], 'requires_2fa' => false],
+    '/canvases/members/:uuid' => ['view' => 'canvases/members.php', 'auth' => true, 'permissions' => ['manage_canvases'], 'requires_2fa' => false],
+    
     '/canvases/join' => ['view' => 'canvases/join.php', 'auth' => true, 'permissions' => ['join_canvas'], 'requires_2fa' => false],
-    '/canvases/edit' => ['view' => 'canvases/edit.php', 'auth' => true, 'permissions' => ['manage_canvases'], 'requires_2fa' => false],
-    '/canvases/members' => ['view' => 'canvases/members.php', 'auth' => true, 'permissions' => ['manage_canvases'], 'requires_2fa' => false],
 
     // --- NUEVA RUTA PÚBLICA DE GALERÍA DE SNAPSHOTS ---
     '/design/s/:uuid' => ['view' => 'canvases/snapshots-gallery.php'],

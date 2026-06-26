@@ -30,7 +30,6 @@ export class SpaRouter {
     }
 
     handlePopState(e) {
-        // Añadido window.location.search para no perder parámetros como ?id=1 al retroceder/avanzar
         const url = window.location.pathname + window.location.search;
         this.loadRoute(url);
     }
@@ -74,7 +73,6 @@ export class SpaRouter {
     navigate(url) {
         let targetPath = url;
         try {
-            // Limpiar origin si se mandó URL completa para que la validación no rebote y recargue ciegamente
             if (url.startsWith('http')) {
                 targetPath = new URL(url).pathname;
             }
@@ -82,7 +80,6 @@ export class SpaRouter {
         
         let currentPath = window.location.pathname;
         
-        // Quitar parámetros extra solo por seguridad durante la validación
         targetPath = targetPath.split('?')[0].split('#')[0];
         currentPath = currentPath.split('?')[0].split('#')[0];
         
@@ -105,7 +102,7 @@ export class SpaRouter {
 
         if (this.outlet) {
             this.outlet.innerHTML = '';
-            this.outlet.scrollTop = 0; // RESET DE SCROLL PARA EL SKELETON
+            this.outlet.scrollTop = 0;
             
             let cleanUrlForLoader = url;
             try {
@@ -115,7 +112,6 @@ export class SpaRouter {
             } catch(e) {}
             cleanUrlForLoader = cleanUrlForLoader.split('?')[0].split('#')[0];
             
-            // NORMALIZACIÓN VITAL: Quitar el basePath para emparejar bien en RouteModulesMap
             if (this.basePath && cleanUrlForLoader.startsWith(this.basePath)) {
                 cleanUrlForLoader = cleanUrlForLoader.slice(this.basePath.length);
             }
@@ -126,7 +122,6 @@ export class SpaRouter {
                 cleanUrlForLoader = cleanUrlForLoader.slice(0, -1);
             }
 
-            // REDIRECCIÓN FRONTEND: Si intentan entrar a /design sin ID, los mandamos a home
             if (cleanUrlForLoader === '/design') {
                 this.navigate(this.basePath + '/');
                 return;
@@ -135,7 +130,7 @@ export class SpaRouter {
             this._showLoaderInOutlet(cleanUrlForLoader);
         }
 
-        const startTime = performance.now(); // Iniciamos cronómetro de latencia + renderizado
+        const startTime = performance.now();
 
         try {
             const fetchPromise = fetch(url, {
@@ -164,9 +159,7 @@ export class SpaRouter {
                 this.updateDocumentTitle(url);
 
                 const isAuthRoute = url.includes('/login') || url.includes('/register') || url.includes('/forgot-password') || url.includes('/reset-password') || url.includes('/account-suspended') || url.includes('/account-deleted');
-                
                 const isMaintenanceRoute = response.status === 500 || html.includes('component-message-icon');
-                
                 const topBar = document.querySelector('.general-content-top');
 
                 if (topBar) {
@@ -191,29 +184,37 @@ export class SpaRouter {
                     cleanUrl = cleanUrl.slice(0, -1);
                 }
 
-                // Normalizar moduleUrl para que el viewLoaded event sepa qué módulo JS cargar dinámicamente
                 let moduleUrl = cleanUrl;
                 if (this.basePath && moduleUrl.startsWith(this.basePath)) {
                     moduleUrl = moduleUrl.slice(this.basePath.length);
                 }
                 
-                // MODIFICACIÓN CRÍTICA: Diferenciar entre Snapshot Gallery, Visor de Snapshot y Lienzo Normal
+                // --- MAPEO DE RUTAS DINÁMICAS PARA QUE CARGUE EL JS CORRECTO ---
                 if (moduleUrl.startsWith('/design/s/')) {
                     moduleUrl = '/design/s/:uuid';
                 } else if (moduleUrl.startsWith('/snapshot/view/')) {
                     moduleUrl = '/snapshot/view/:id';
                 } else if (moduleUrl.startsWith('/design/')) {
                     moduleUrl = '/design'; 
+                } else if (moduleUrl.startsWith('/canvases/manage/requests/')) {
+                    moduleUrl = '/canvases/manage/requests/:uuid';
+                } else if (moduleUrl.startsWith('/canvases/manage/resets/')) {
+                    moduleUrl = '/canvases/manage/resets/:uuid';
+                } else if (moduleUrl.startsWith('/canvases/edit/')) {
+                    moduleUrl = '/canvases/edit/:uuid';
+                } else if (moduleUrl.startsWith('/canvases/members/')) {
+                    moduleUrl = '/canvases/members/:uuid';
                 }
+                // -------------------------------------------------------------
 
-                const loadTimeMs = Math.round(performance.now() - startTime); // Terminamos de medir
+                const loadTimeMs = Math.round(performance.now() - startTime);
 
                 window.dispatchEvent(new CustomEvent('viewLoaded', { 
                     detail: { 
                         url: url,
-                        cleanUrl: moduleUrl, // Mapeado a la ruta estática para módulos
-                        originalUrl: cleanUrl, // Ruta original
-                        loadTimeMs: loadTimeMs // Reporte expuesto
+                        cleanUrl: moduleUrl, 
+                        originalUrl: cleanUrl, 
+                        loadTimeMs: loadTimeMs
                     } 
                 }));
             } else {
@@ -259,10 +260,8 @@ export class SpaRouter {
         const path = window.location.pathname;
         let normalizedPath = path.endsWith('/') && path.length > 1 ? path.slice(0, -1) : path;
 
-        // Limpiar completamente todos los items activos previos
         document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
 
-        // Evaluar los paths correctamente, asegurándonos de extraer la ruta local si hay links con URL completas en data-nav.
         document.querySelectorAll('.nav-item').forEach(el => {
             let navUrl = el.getAttribute('data-nav');
             if (navUrl) {
@@ -280,11 +279,10 @@ export class SpaRouter {
             }
         });
 
-        // RECONOCIMIENTO DE PANELES DEL SIDEBAR
         const mainMenu = document.querySelector('[data-ref="sidebar-menu-main"]');
         const settingsMenu = document.querySelector('[data-ref="sidebar-menu-settings"]');
         const adminMenu = document.querySelector('[data-ref="sidebar-menu-admin"]');
-        const sitePolicyMenu = document.querySelector('[data-ref="sidebar-menu-site-policy"]'); // NUEVO PANEL
+        const sitePolicyMenu = document.querySelector('[data-ref="sidebar-menu-site-policy"]'); 
         
         if (mainMenu && settingsMenu) {
             if (normalizedPath.includes('/admin') && adminMenu) {
@@ -298,7 +296,6 @@ export class SpaRouter {
                 if (sitePolicyMenu) { sitePolicyMenu.classList.remove('active'); sitePolicyMenu.classList.add('disabled'); }
                 settingsMenu.classList.remove('disabled'); settingsMenu.classList.add('active');
             } else if (normalizedPath.includes('/site-policy') && sitePolicyMenu) {
-                // LÓGICA NUEVA: Activar menú de Site Policy
                 mainMenu.classList.remove('active'); mainMenu.classList.add('disabled');
                 settingsMenu.classList.remove('active'); settingsMenu.classList.add('disabled');
                 if (adminMenu) { adminMenu.classList.remove('active'); adminMenu.classList.add('disabled'); }
@@ -360,14 +357,23 @@ export class SpaRouter {
     _showLoaderInOutlet(cleanUrl) {
         let mapKey = cleanUrl;
         
-        // MODIFICACIÓN CRÍTICA: Diferenciar Skeletons de Galería vs Lienzo vs Visor
+        // --- MAPEO DE RUTAS DINÁMICAS PARA QUE CARGUE EL SKELETON CORRECTO ---
         if (cleanUrl.startsWith('/design/s/')) {
             mapKey = '/design/s/:uuid';
         } else if (cleanUrl.startsWith('/snapshot/view/')) {
             mapKey = '/snapshot/view/:id';
         } else if (cleanUrl.startsWith('/design/')) {
             mapKey = '/design';
+        } else if (cleanUrl.startsWith('/canvases/manage/requests/')) {
+            mapKey = '/canvases/manage/requests/:uuid';
+        } else if (cleanUrl.startsWith('/canvases/manage/resets/')) {
+            mapKey = '/canvases/manage/resets/:uuid';
+        } else if (cleanUrl.startsWith('/canvases/edit/')) {
+            mapKey = '/canvases/edit/:uuid';
+        } else if (cleanUrl.startsWith('/canvases/members/')) {
+            mapKey = '/canvases/members/:uuid';
         }
+        // -------------------------------------------------------------
 
         const routeConfig = RouteModulesMap[mapKey];
         const skeletonType = routeConfig && routeConfig.skeletonType ? routeConfig.skeletonType : 'generic';

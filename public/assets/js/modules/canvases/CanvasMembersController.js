@@ -174,8 +174,9 @@ class CanvasMembersController {
         if (this.selectedMemberIds.size !== 1) return;
         
         const targetUserId = Array.from(this.selectedMemberIds)[0];
-        const urlParams = new URLSearchParams(window.location.search);
-        const canvasId = urlParams.get('id');
+        // MODIFICADO: Extraer el canvas_id del HTML en lugar de urlParams
+        const wrapper = document.querySelector('[data-ref="manage-members-wrapper"]');
+        const canvasId = wrapper ? wrapper.getAttribute('data-canvas-id') : null;
 
         if (!canvasId) {
             showMessage("No se ha detectado el identificador del lienzo.", "error");
@@ -212,8 +213,9 @@ class CanvasMembersController {
     async removeMember() {
         if (this.selectedMemberIds.size === 0) return;
         
-        const urlParams = new URLSearchParams(window.location.search);
-        const canvasId = urlParams.get('id');
+        // MODIFICADO: Extraer el canvas_id del HTML en lugar de urlParams
+        const wrapper = document.querySelector('[data-ref="manage-members-wrapper"]');
+        const canvasId = wrapper ? wrapper.getAttribute('data-canvas-id') : null;
 
         if (!canvasId) {
             showMessage("No se ha detectado el identificador del lienzo.", "error");
