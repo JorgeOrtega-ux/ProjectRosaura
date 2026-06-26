@@ -26,6 +26,12 @@ export class SearchController {
             const csrfMeta = document.querySelector('meta[name="csrf-token"]');
             const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
 
+            // ---------------------------------------------------------
+            // LOG 1: Verificamos qué vamos a mandar a PHP
+            // ---------------------------------------------------------
+            console.log("🔍 [SearchController] Iniciando búsqueda para:", query);
+            console.log("📨 [SearchController] Payload que se enviará a PHP:", { route: ApiRoutes.Search.Query, q: query });
+
             // CORRECCIÓN: Petición POST con el payload en formato JSON 
             const response = await fetch(reqUrl, {
                 method: 'POST',
@@ -39,12 +45,27 @@ export class SearchController {
                 })
             });
 
+            // ---------------------------------------------------------
+            // LOG 2: Revisamos si el servidor respondió con error 500 o 404
+            // ---------------------------------------------------------
+            console.log("📡 [SearchController] Status de respuesta HTTP:", response.status, response.ok ? "(OK)" : "(Error)");
+
             const resData = await response.json();
+
+            // ---------------------------------------------------------
+            // LOG 3: EL LOG MÁS IMPORTANTE. ¿Qué trajo PHP?
+            // ---------------------------------------------------------
+            console.log("📥 [SearchController] Respuesta CRUDA desde PHP:", resData);
 
             if (resData && resData.success) {
                 const results = resData.data || [];
                 const count = results.length;
                 
+                // ---------------------------------------------------------
+                // LOG 4: Conteo final que detectó el frontend
+                // ---------------------------------------------------------
+                console.log(`✅ [SearchController] Resultados procesados: ${count}`, results);
+
                 if (this.title) {
                     this.title.textContent = `Resultados encontrados: ${count} para "${query}"`;
                 }
@@ -53,6 +74,7 @@ export class SearchController {
                     this.grid.innerHTML = '';
                     
                     if (count === 0) {
+                        console.warn("⚠️ [SearchController] El array 'data' llegó vacío desde PHP.");
                         this.grid.innerHTML = '<p class="component-empty-msg" style="padding: 20px;">No se encontraron lienzos que coincidan con tu búsqueda.</p>';
                     } else {
                         results.forEach(canvas => {
@@ -69,9 +91,17 @@ export class SearchController {
                     }
                 }
             } else {
+                // ---------------------------------------------------------
+                // LOG 5: PHP devolvió un success = false 
+                // ---------------------------------------------------------
+                console.error("❌ [SearchController] PHP devolvió success: false o una estructura inválida:", resData);
                 if (this.title) this.title.textContent = 'Error interno en la búsqueda.';
             }
         } catch (e) {
+            // ---------------------------------------------------------
+            // LOG 6: La petición falló por completo (el JSON está roto o no hay red)
+            // ---------------------------------------------------------
+            console.error("🔥 [SearchController] Excepción catastrófica en fetch():", e);
             if (this.title) this.title.textContent = 'Hubo un problema al procesar la búsqueda.';
         }
     }
