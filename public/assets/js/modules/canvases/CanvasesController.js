@@ -76,7 +76,6 @@ class CanvasesController {
                 scopeSection.classList.remove('disabled');
                 if (scopeDivider) scopeDivider.classList.remove('disabled');
                 
-                // Inicializar visualmente en personal por defecto
                 this.handleScopeTypeChange('personal');
             } else {
                 scopeSection.classList.add('disabled');
@@ -107,16 +106,28 @@ class CanvasesController {
         container.innerHTML = '';
 
         let activePaletteName = window.__ ? window.__('lbl_loading') : '...';
+        
+        // Verificamos si el usuario tiene permiso para paletas premium
+        const canUseCustomPalettes = window.APP_LIMITS && window.APP_LIMITS.custom_palettes === true;
 
         palettes.forEach(palette => {
+            const isDefault = palette.id === 'default';
+            // Si no tiene el feature y no es la paleta por defecto, se bloquea la interacción
+            const isLocked = !canUseCustomPalettes && !isDefault;
+            
             const isActive = this.formState.palette_id === palette.id;
             if (isActive) activePaletteName = palette.name;
 
             const btn = document.createElement('div');
-            btn.className = `component-menu-link ${isActive ? 'active' : ''}`;
-            btn.setAttribute('data-action', 'selectPalette');
+            btn.className = `component-menu-link ${isActive ? 'active' : ''} ${isLocked ? 'disabled-interactive' : ''}`;
+            btn.setAttribute('data-action', isLocked ? '' : 'selectPalette');
             btn.setAttribute('data-palette-id', palette.id);
             btn.setAttribute('data-palette-name', palette.name);
+            
+            if (isLocked) {
+                btn.style.opacity = '0.6';
+                btn.title = "Mejora tu plan para usar esta paleta.";
+            }
 
             let colorsHtml = '';
             const totalColors = palette.colors.length;
@@ -130,10 +141,16 @@ class CanvasesController {
                 const remaining = totalColors - 4;
                 colorsHtml += `<span style="display:inline-flex; align-items:center; justify-content:center; padding: 0 4px; min-width:16px; height:16px; border-radius:10px; background-color:var(--surface-hover); border:1px solid var(--border-color); font-size:10px; font-weight:600; color:var(--text-primary); margin-left: 4px; position:relative; z-index:0; box-sizing: border-box;">+${remaining}</span>`;
             }
+            
+            // Si está bloqueada, añadimos un ícono de candado junto al nombre
+            const lockHtml = isLocked ? `<span class="material-symbols-rounded" style="font-size: 14px; margin-left: 6px; color: #ff8c00;">lock</span>` : '';
 
             btn.innerHTML = `
                 <div class="component-menu-link-icon"><span class="material-symbols-rounded">palette</span></div>
-                <div class="component-menu-link-text"><span>${palette.name}</span></div>
+                <div class="component-menu-link-text" style="display:flex; align-items:center;">
+                    <span>${palette.name}</span>
+                    ${lockHtml}
+                </div>
                 <div class="component-menu-link-icon" style="width: auto; display: flex; align-items: center; margin-left: auto;">
                     ${colorsHtml}
                 </div>
@@ -154,7 +171,6 @@ class CanvasesController {
 
         const action = actionBtn.getAttribute('data-action');
 
-        // Delegar interacciones de las tarjetas al helper de manera limpia
         if (this.cardInteractions && this.cardInteractions.handleAction(action, actionBtn)) {
             return;
         }
@@ -179,9 +195,6 @@ class CanvasesController {
         }
     }
 
-    // ==========================================
-    // INICIO: LÓGICA ABSORBIDA DE LOCATIONS
-    // ==========================================
     handleScopeTypeChange(type) {
         this.formState.scope_type = type;
         
@@ -243,7 +256,7 @@ class CanvasesController {
                 listContainer.innerHTML = `<div class="component-menu-link disabled"><div class="component-menu-link-text"><span>${window.__('err_default')}</span></div></div>`;
             }
         } catch (error) {
-            if (error.name !== 'AbortError') {} // Silenciado por arquitectura logger
+            if (error.name !== 'AbortError') {} 
         }
     }
 
@@ -320,9 +333,6 @@ class CanvasesController {
             if (error.name !== 'AbortError') {}
         }
     }
-    // ==========================================
-    // FIN: LÓGICA ABSORBIDA DE LOCATIONS
-    // ==========================================
 
     saveCanvasName(btn) {
         const container = btn.closest('.component-group-item--stateful');
@@ -378,7 +388,6 @@ class CanvasesController {
 
         this.formState[type] = value;
 
-        // Disparar side-effects para los scopes absorbidos
         if (type === 'scope_type') {
             this.handleScopeTypeChange(value);
         } else if (type === 'scope_country') {
@@ -397,7 +406,6 @@ class CanvasesController {
         if (dropdownWrapper) {
             const triggerText = dropdownWrapper.querySelector('.component-dropdown-text');
             if (triggerText) {
-                // Traducción estricta obligatoria (Regla 9)
                 const isDirectText = type.startsWith('scope_') && type !== 'scope_type';
                 triggerText.textContent = isDirectText ? label : window.__(label);
             }
@@ -441,7 +449,10 @@ class CanvasesController {
     adjustParticipantLimit(btn) {
         const step = parseInt(btn.getAttribute('data-step'), 10);
         const min = parseInt(btn.getAttribute('data-min'), 10) || 10;
-        const max = parseInt(btn.getAttribute('data-max'), 10) || 50000;
+        
+        // Lee el máximo primero desde la variable global de límites para prevenir overrides maliciosos en DOM, o como fallback del HTML
+        const fallbackMax = (window.APP_LIMITS && window.APP_LIMITS.max_members_per_canvas !== -1) ? window.APP_LIMITS.max_members_per_canvas : 50000;
+        const max = parseInt(btn.getAttribute('data-max'), 10) || fallbackMax;
         
         const centerElement = document.querySelector('[data-ref="val_limit"]');
         if (!centerElement) return;
@@ -510,7 +521,6 @@ class CanvasesController {
             this.formState.cooldown_seconds = parseInt(inputSec.getAttribute('data-val'), 10) || 10;
         }
 
-        // Extracción correcta basada en los valores guardados internamente del Dropdown
         const scopeSection = document.querySelector('[data-ref="scope-section"]');
         if (scopeSection && !scopeSection.classList.contains('disabled')) {
             const scopeType = this.formState.scope_type;

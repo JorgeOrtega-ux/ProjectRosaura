@@ -22,19 +22,17 @@ DB_NAME = os.getenv("DB_CANVASES_NAME", "db_canvases")
 # NOTA DE IMPLEMENTACIÓN: Necesitamos acceso cruzado a db_identity
 DB_IDENTITY_NAME = os.getenv("DB_IDENTITY_NAME", "db_identity")
 
-# Configuración Worker (RUTAS FÍSICAS A LA CARPETA PÚBLICA Y PRIVADA)
+# Configuración Worker
 SYNC_INTERVAL = int(os.getenv("WORKER_SNAPSHOTS_SYNC_INTERVAL", 10))
 SNAPSHOTS_DIR = os.getenv("SNAPSHOTS_DIR", "/app/storage/public/snapshots")
 ARCHIVE_DIR = os.getenv("SNAPSHOTS_ARCHIVE_DIR", "/app/storage/public/snapshots_archive")
 TIMELAPSE_DIR = os.getenv("TIMELAPSE_DIR", "/app/storage/private/canvases/timelapses")
 SCALE_FACTOR = int(os.getenv("SNAPSHOT_SCALE_FACTOR", 10)) 
 
-# Ruta a la fuente única de la verdad
 PALETTES_FILE_PATH = os.getenv("PALETTES_FILE_PATH", "/app/public/assets/data/palettes.json")
 APP_PALETTES = {}
 
 def load_palettes():
-    """Carga las paletas dinámicamente desde el JSON centralizado"""
     global APP_PALETTES
     try:
         if os.path.exists(PALETTES_FILE_PATH):
@@ -47,7 +45,6 @@ def load_palettes():
             raise FileNotFoundError("El archivo JSON no existe en la ruta.")
     except Exception as e:
         print(f"[!] Error cargando paletas desde {PALETTES_FILE_PATH}: {e}")
-        # Fallback de emergencia por si el volumen falla
         APP_PALETTES['default'] = [
             '#000000', '#1A1A1A', '#333333', '#4D4D4D', '#666666', '#808080', '#999999', '#B3B3B3', '#CCCCCC', '#E6E6E6', '#F2F2F2', '#FFFFFF',
             '#FF0000', '#FF8000', '#FFFF00', '#80FF00', '#00FF00', '#00FF80', '#00FFFF', '#0080FF', '#0000FF', '#8000FF', '#FF00FF', '#FF0080',
@@ -55,14 +52,12 @@ def load_palettes():
         ]
 
 def hex_to_rgba(hex_color):
-    """Convierte un color Hexadecimal (#FF0000) a tupla RGBA para la librería PIL"""
     hex_color = hex_color.lstrip('#')
     return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4)) + (255,)
 
 def get_color(palette_id, index):
-    """Obtiene el color en formato RGBA basado en la paleta del lienzo y el índice del píxel"""
     if index == 255:
-        return (255, 255, 255, 255) # Blanco sólido 
+        return (255, 255, 255, 255) 
         
     palette = APP_PALETTES.get(palette_id, APP_PALETTES.get('default', []))
     
@@ -92,7 +87,14 @@ def parse_size(size_str):
     except:
         return 64, 64
 
-# NOTA DE IMPLEMENTACIÓN: Se añadió owner_tier como parámetro (0=Basic, 1=Pro, 2=Advanced)
+def get_max_snapshots_per_tier(tier):
+    if tier == 0:
+        return 1
+    elif tier == 1:
+        return 5
+    else:
+        return -1 # Advanced (Ilimitado)
+
 def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palette_id, owner_tier):
     try:
         raw_bytes = decompress(compressed_data)
@@ -118,22 +120,34 @@ def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palet
         final_height = height * SCALE_FACTOR
         img_scaled = img.resize((final_width, final_height), Image.NEAREST)
 
-        # Sobrescribimos el archivo base físicamente (Siempre se hace para mostrar el thumbnail actual)
+        # Thumbnail general, este siempre se pisa (No consume espacio extra en galería)
         img_scaled.save(filepath, "PNG", optimize=True)
         
-        # ==========================================
-        # INTERCONEXIÓN CON REINICIOS PROGRAMADOS Y LIMITES
-        # ==========================================
+        # Validar lógica de persistencia histórica según tier de SubscriptionPlanConstants
         if r.exists(f"canvas:{canvas_id}:reset_lock"):
             
-            # NOTA DE IMPLEMENTACIÓN: Si es Plan Básico (0), solo pisamos el thumbnail y purganos el timelapse, SIN hacer historiales.
-            if owner_tier == 0:
-                print(f"[-] Lienzo {canvas_id} pertenece a un plan Básico. Purgando el historial de reinicio.")
+            max_snapshots = get_max_snapshots_per_tier(owner_tier)
+            can_save_history = True
+            
+            if max_snapshots != -1:
+                try:
+                    cursor = db_conn.cursor()
+                    cursor.execute("SELECT COUNT(*) FROM canvas_snapshots_history WHERE canvas_id = %s", (canvas_id,))
+                    current_count = cursor.fetchone()[0]
+                    cursor.close()
+                    
+                    if current_count >= max_snapshots:
+                        can_save_history = False
+                except Exception as e:
+                    print(f"[!] Error verificando cuota de snapshots para lienzo {canvas_id}: {e}")
+                    can_save_history = False 
+            
+            if not can_save_history:
+                print(f"[-] Lienzo {canvas_id} superó su límite de snapshots históricos ({max_snapshots}). Purgando timelapse en disco.")
                 timelapse_src = os.path.join(TIMELAPSE_DIR, f"live_canvas_{canvas_id}.jsonl")
                 if os.path.exists(timelapse_src):
                     os.remove(timelapse_src)
             else:
-                # Si es Pro(1) o Advanced(2) o un lienzo oficial(2 por default), guardamos todo
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 archive_filename = f"canvas_{canvas_id}_{timestamp}.png"
                 archive_filepath = os.path.join(ARCHIVE_DIR, archive_filename)
@@ -172,7 +186,6 @@ def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palet
                 except Exception as e:
                     print(f"[!] Error guardando historial en DB: {e}")
 
-            # Avisamos al worker de reinicios que ya puede vaciar el lienzo
             r.setex(f"canvas:{canvas_id}:snapshot_done", 60, "1")
             
         return True
@@ -181,7 +194,7 @@ def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palet
         return False
 
 def main():
-    print("[*] Iniciando Worker de Snapshots (Imágenes PNG Alta Calidad)...")
+    print("[*] Iniciando Worker de Snapshots (Lógica Tiering Injectada)...")
     
     os.makedirs(SNAPSHOTS_DIR, exist_ok=True)
     os.makedirs(ARCHIVE_DIR, exist_ok=True)
@@ -213,7 +226,6 @@ def main():
                     cursor = db_conn.cursor()
                     
                     for canvas_id in pending_canvases:
-                        # NOTA DE IMPLEMENTACIÓN: JOIN cruzado a la BD identity para extraer el tier. Si es null (Oficial) asume tier 2 (Premium Ilimitado)
                         query = f"""
                             SELECT s.snapshot_data, c.size, c.palette_id, IFNULL(u.subscription_tier, 2) as tier
                             FROM canvas_snapshots s

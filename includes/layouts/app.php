@@ -1,6 +1,8 @@
 <?php
 // includes/layouts/app.php
 
+use \App\Core\System\SubscriptionPlanConstants;
+
 // --- INICIALIZADORES DE SEGURIDAD (Fallback) ---
 $isLoggedIn = $isLoggedIn ?? false;
 $currentView = $currentView ?? 'system/message.php';
@@ -76,13 +78,15 @@ if (file_exists($palettesPath)) {
     $palettesJson = file_get_contents($palettesPath);
 }
 
-// NOTA DE IMPLEMENTACIÓN: Extracción del Tier para el Frontend
+// NOTA DE IMPLEMENTACIÓN: Extracción del Tier para el Frontend y Generación de Límites
 $activeAccountId = $_SESSION['active_account'] ?? null;
 $linkedAccounts = $_SESSION['accounts'] ?? [];
 $subscriptionTier = 0;
 if ($activeAccountId && isset($linkedAccounts[$activeAccountId])) {
     $subscriptionTier = (int)($linkedAccounts[$activeAccountId]['subscription_tier'] ?? 0);
 }
+
+$planLimits = SubscriptionPlanConstants::getTierLimits($subscriptionTier);
 // ---------------------------------------------------------------
 ?>
 <!DOCTYPE html>
@@ -116,10 +120,11 @@ if ($activeAccountId && isset($linkedAccounts[$activeAccountId])) {
         window.APP_PALETTES = <?php echo $palettesJson; ?>;
         window.activeUserId = <?php echo isset($_SESSION['active_account']) ? json_encode((string)$_SESSION['active_account']) : 'null'; ?>;
         
-        // NOTA DE IMPLEMENTACIÓN: Inyección de la variable APP_USER con el tier
+        // Inyección de la variable APP_USER con el tier y límites exactos de PHP
         window.APP_USER = {
             subscription_tier: <?php echo $subscriptionTier; ?>
         };
+        window.APP_LIMITS = <?php echo json_encode($planLimits); ?>;
 
         // --- CONFIGURACIÓN GLOBAL (INCLUYENDO WEBSOCKETS Y PERMISOS) ---
         window.APP_CONFIG = {

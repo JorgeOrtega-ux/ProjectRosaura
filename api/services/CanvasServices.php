@@ -10,7 +10,7 @@ use App\Core\Helpers\Utils;
 use App\Core\System\Logger;
 use App\Core\System\DatabaseConstants as DB;
 use App\Core\System\CacheConstants;
-use App\Core\System\SubscriptionPlanConstants; // NOTA DE IMPLEMENTACIÓN: Se importa el archivo de limites
+use App\Core\System\SubscriptionPlanConstants; 
 use App\Config\RedisCache;
 use App\Config\DatabaseManager;
 use PDO;
@@ -249,12 +249,10 @@ class CanvasServices {
         bool $canManageOfficial = false
     ): array {
         try {
-            // Validar alcance oficial y permisos
             if ($scopeType !== 'personal' && !$canManageOfficial) {
                 return ['success' => false, 'message' => 'No tienes permisos para crear lienzos oficiales.'];
             }
 
-            // Validar colisiones lógicas en base de datos para prevenir duplicados oficiales
             if ($scopeType !== 'personal') {
                 $hash = md5($scopeType . '_' . ($scopeRef1 ?? '') . '_' . ($scopeRef2 ?? '') . '_' . ($scopeRef3 ?? ''));
                 $existing = $this->canvasRepository->getByScopeHash($hash);
@@ -263,13 +261,11 @@ class CanvasServices {
                 }
             }
 
-            // NOTA DE IMPLEMENTACIÓN: Se aplican los límites del nivel de suscripción para lienzos personales
             if ($scopeType === 'personal') {
                 $user = $this->userRepository->findById($userId);
                 $tier = $user['subscription_tier'] ?? 0;
                 $planLimits = SubscriptionPlanConstants::getTierLimits($tier);
 
-                // 1. Limitar cantidad de lienzos creados (Requiere que agregues el método countUserCanvases a tu CanvasRepository pronto)
                 if (method_exists($this->canvasRepository, 'countUserCanvases')) {
                     $currentCanvasCount = $this->canvasRepository->countUserCanvases($userId);
                     if ($planLimits['max_canvases'] !== -1 && $currentCanvasCount >= $planLimits['max_canvases']) {
@@ -277,9 +273,12 @@ class CanvasServices {
                     }
                 }
 
-                // 2. Limitar cantidad máxima de participantes al crear
                 if ($planLimits['max_members_per_canvas'] !== -1 && $limit > $planLimits['max_members_per_canvas']) {
-                    $limit = $planLimits['max_members_per_canvas']; // Ajustar silenciosamente al límite máximo permitido o podrías retornar un error
+                    $limit = $planLimits['max_members_per_canvas']; 
+                }
+
+                if ($paletteId !== 'default' && !SubscriptionPlanConstants::hasFeature($tier, 'custom_palettes')) {
+                    $paletteId = 'default';
                 }
             }
 
@@ -366,6 +365,14 @@ class CanvasServices {
             $validPalettes = $this->getValidPalettes();
             if (!isset($data['palette_id']) || !in_array($data['palette_id'], $validPalettes)) {
                 $data['palette_id'] = $canvas['palette_id'] ?? 'default';
+            }
+
+            if ($data['palette_id'] !== 'default' && $canvas['owner_id'] !== null) {
+                $owner = $this->userRepository->findById($canvas['owner_id']);
+                $tier = $owner['subscription_tier'] ?? 0;
+                if (!SubscriptionPlanConstants::hasFeature($tier, 'custom_palettes')) {
+                    $data['palette_id'] = 'default';
+                }
             }
 
             $data['requires_approval'] = isset($data['requires_approval']) && $data['requires_approval'] ? 1 : 0;
@@ -505,6 +512,14 @@ class CanvasServices {
                 return ['success' => false, 'message' => 'Rol inválido.'];
             }
 
+            if ($newRole !== 'viewer' && $canvas['owner_id'] !== null) {
+                $owner = $this->userRepository->findById($canvas['owner_id']);
+                $tier = $owner['subscription_tier'] ?? 0;
+                if (!SubscriptionPlanConstants::hasFeature($tier, 'advanced_roles')) {
+                    return ['success' => false, 'message' => 'El plan actual del dueño del lienzo no permite asignar roles avanzados.'];
+                }
+            }
+
             $updated = $this->canvasRepository->updateMemberRole($canvasId, $targetUserId, $newRole);
             if ($updated) return ['success' => true, 'message' => 'Rol actualizado correctamente.'];
             
@@ -633,7 +648,21 @@ class CanvasServices {
             }
 
             $isActive = filter_var($data['is_active'] ?? false, FILTER_VALIDATE_BOOLEAN);
+            $takeSnapshot = filter_var($data['take_snapshot'] ?? true, FILTER_VALIDATE_BOOLEAN);
             $nextResetAt = null;
+
+            if ($isActive && $takeSnapshot && $canvas['owner_id'] !== null) {
+                $owner = $this->userRepository->findById($canvas['owner_id']);
+                $tier = $owner['subscription_tier'] ?? 0;
+                $planLimits = SubscriptionPlanConstants::getTierLimits($tier);
+
+                if ($planLimits['max_snapshots_per_canvas'] !== -1) {
+                    $currentSnapshots = $this->canvasRepository->countCanvasSnapshots($canvasId);
+                    if ($currentSnapshots >= $planLimits['max_snapshots_per_canvas']) {
+                        return ['success' => false, 'message' => 'Este lienzo ha alcanzado el límite máximo de snapshots permitidos por tu plan. Desactiva la captura de snapshots o actualiza tu suscripción.'];
+                    }
+                }
+            }
             
             if ($isActive) {
                 if (empty($data['next_reset_at'])) {
@@ -650,7 +679,7 @@ class CanvasServices {
             $settings = [
                 'is_active' => $isActive ? 1 : 0,
                 'next_reset_at' => $nextResetAt,
-                'take_snapshot' => filter_var($data['take_snapshot'] ?? true, FILTER_VALIDATE_BOOLEAN) ? 1 : 0,
+                'take_snapshot' => $takeSnapshot ? 1 : 0,
                 'timer_action' => in_array($data['timer_action'] ?? 'restart', ['stop', 'none', 'restart']) ? $data['timer_action'] : 'restart'
             ];
 
@@ -729,7 +758,19 @@ class CanvasServices {
             }
 
             if (!$canvas['requires_approval']) {
-                // NOTA DE IMPLEMENTACIÓN: Aquí también deberías limitar los miembros según la suscripción (tarea de Repository)
+                if ($canvas['owner_id'] !== null) {
+                    $owner = $this->userRepository->findById($canvas['owner_id']);
+                    $tier = $owner['subscription_tier'] ?? 0;
+                    $planLimits = SubscriptionPlanConstants::getTierLimits($tier);
+
+                    if ($planLimits['max_members_per_canvas'] !== -1) {
+                        $currentMembers = $this->canvasRepository->countCanvasMembers($canvasId);
+                        if ($currentMembers >= $planLimits['max_members_per_canvas']) {
+                            return ['success' => false, 'message' => 'Este lienzo ha alcanzado el límite máximo de participantes permitidos.'];
+                        }
+                    }
+                }
+
                 $this->canvasRepository->addMember($canvasId, $userId, 'editor');
                 return ['success' => true, 'message' => __('msg_joined_success') ?? 'Te has unido al lienzo.'];
             }
@@ -756,6 +797,19 @@ class CanvasServices {
             $canvas = $this->canvasRepository->getById($request['canvas_id']);
             $isOwner = ($canvas['owner_id'] === $ownerId) || ($canvas['owner_id'] === null && $canManageOfficial);
             if (!$canvas || !$isOwner) return ['success' => false, 'message' => __('err_unauthorized')];
+
+            if ($canvas['owner_id'] !== null) {
+                $owner = $this->userRepository->findById($canvas['owner_id']);
+                $tier = $owner['subscription_tier'] ?? 0;
+                $planLimits = SubscriptionPlanConstants::getTierLimits($tier);
+
+                if ($planLimits['max_members_per_canvas'] !== -1) {
+                    $currentMembers = $this->canvasRepository->countCanvasMembers($canvas['id']);
+                    if ($currentMembers >= $planLimits['max_members_per_canvas']) {
+                        return ['success' => false, 'message' => 'Has alcanzado el límite máximo de participantes en este lienzo de tu plan.'];
+                    }
+                }
+            }
 
             $this->canvasRepository->updateRequestStatus($requestId, 'approved');
             $this->canvasRepository->addMember($request['canvas_id'], $request['user_id'], 'editor');
@@ -1009,6 +1063,19 @@ class CanvasServices {
                 return ['success' => false, 'message' => 'Formato de imagen no permitido. Usa JPG, PNG o WEBP.'];
             }
 
+            $user = $this->userRepository->findById($userId);
+            $tier = $user['subscription_tier'] ?? 0;
+            $planLimits = SubscriptionPlanConstants::getTierLimits($tier);
+            
+            if ($planLimits['max_storage_mb'] !== -1) {
+                $currentStorageMB = $this->canvasRepository->getUserStorageUsed($userId);
+                $newFileMB = $fileInfo['size'] / (1024 * 1024);
+                
+                if (($currentStorageMB + $newFileMB) > $planLimits['max_storage_mb']) {
+                    return ['success' => false, 'message' => 'Has superado el límite de almacenamiento de tu plan (' . $planLimits['max_storage_mb'] . ' MB). Libera espacio o actualiza tu plan.'];
+                }
+            }
+
             $uploadDir = dirname(__DIR__, 2) . '/storage/public/templates/';
             if (!is_dir($uploadDir)) {
                 mkdir($uploadDir, 0755, true);
@@ -1083,7 +1150,6 @@ class CanvasServices {
 
     public function createLiveShare(int $userId, int $canvasId, string $imgUrl, float $x, float $y, float $w, float $h, float $opacity, bool $canManageOfficial = false): array {
         try {
-            // NOTA DE IMPLEMENTACIÓN: Validación de límite de plantillas en vivo del nivel de suscripción
             $user = $this->userRepository->findById($userId);
             $tier = $user['subscription_tier'] ?? 0;
             

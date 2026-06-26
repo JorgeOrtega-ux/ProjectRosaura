@@ -1,4 +1,16 @@
-<?php // includes/views/canvases/create.php ?>
+<?php 
+// includes/views/canvases/create.php 
+use \App\Core\System\SubscriptionPlanConstants;
+
+$activeAccountId = $_SESSION['active_account'] ?? null;
+$linkedAccounts = $_SESSION['accounts'] ?? [];
+$tier = 0;
+if ($activeAccountId && isset($linkedAccounts[$activeAccountId])) {
+    $tier = (int)($linkedAccounts[$activeAccountId]['subscription_tier'] ?? 0);
+}
+$planLimits = SubscriptionPlanConstants::getTierLimits($tier);
+$maxMembers = $planLimits['max_members_per_canvas'] === -1 ? 50000 : $planLimits['max_members_per_canvas'];
+?>
 <div class="view-content" data-ref="canvas-create-wrapper">
     
     <div class="component-top">
@@ -451,10 +463,10 @@
                                 </div>
                                 <div class="component-inline-control__center" data-ref="val_limit" data-val="10">10</div>
                                 <div class="component-inline-control__group">
-                                    <button type="button" class="component-inline-control__btn" data-action="adjustLimit" data-step="10" data-max="50000">
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustLimit" data-step="10" data-max="<?php echo $maxMembers; ?>">
                                         <span class="material-symbols-rounded">chevron_right</span>
                                     </button>
-                                    <button type="button" class="component-inline-control__btn" data-action="adjustLimit" data-step="50" data-max="50000">
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustLimit" data-step="50" data-max="<?php echo $maxMembers; ?>">
                                         <span class="material-symbols-rounded">keyboard_double_arrow_right</span>
                                     </button>
                                 </div>

@@ -77,8 +77,6 @@ class CanvasRepository implements CanvasRepositoryInterface {
 
     // --- MÉTODOS PARA HOME / EXPLORA ---
 
-// --- MÉTODOS PARA HOME / EXPLORA ---
-
     public function getPublicCanvases(int $limit = 20, ?int $currentUserId = null): array {
         $sql = "SELECT c.id, c.uuid, c.name, c.owner_id, c.scope_type, 
                        CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite
@@ -129,7 +127,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
 
     // --- MÉTODOS PARA GESTIÓN (MANAGE) ---
 
-public function getUserCanvasesPaginated(int $ownerId, int $limit, int $offset): array {
+    public function getUserCanvasesPaginated(int $ownerId, int $limit, int $offset): array {
         $sql = "SELECT c.id, c.uuid, c.name, c.description, c.privacy, c.requires_approval, c.size, c.palette_id, c.max_participants, c.cooldown_pixels_batch, c.cooldown_seconds, c.created_at, c.scope_type,
                        CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite 
                 FROM " . DB::TBL_CANVASES . " c
@@ -153,6 +151,7 @@ public function getUserCanvasesPaginated(int $ownerId, int $limit, int $offset):
 
         return array_map([$this, 'appendSnapshotUrl'], $results);
     }
+
     public function countUserCanvases(int $ownerId): int {
         $sql = "SELECT COUNT(*) FROM " . DB::TBL_CANVASES . " WHERE owner_id = :oid";
         $stmt = $this->db->prepare($sql);
@@ -289,6 +288,41 @@ public function getUserCanvasesPaginated(int $ownerId, int $limit, int $offset):
             ':canvas_id' => $canvasId,
             ':user_id' => $userId
         ]);
+    }
+
+    // --- NUEVOS MÉTODOS PARA LIMITES DE PLANES PREMIUM ---
+
+    public function countCanvasMembers(int $canvasId): int {
+        $sql = "SELECT COUNT(*) FROM " . DB::TBL_CANVAS_MEMBERS . " WHERE canvas_id = :canvas_id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':canvas_id' => $canvasId]);
+        return (int)$stmt->fetchColumn();
+    }
+
+    public function getUserStorageUsed(int $userId): float {
+        $sql = "SELECT file_path FROM user_templates WHERE user_id = :user_id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':user_id' => $userId]);
+        $paths = $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
+        
+        $totalBytes = 0;
+        $baseDir = dirname(__DIR__, 3) . '/'; 
+        
+        foreach ($paths as $path) {
+            $physicalPath = $baseDir . str_replace('public/storage/', 'storage/public/', ltrim($path, '/'));
+            if (file_exists($physicalPath)) {
+                $totalBytes += filesize($physicalPath);
+            }
+        }
+        
+        return $totalBytes / (1024 * 1024); 
+    }
+
+    public function countCanvasSnapshots(int $canvasId): int {
+        $sql = "SELECT COUNT(*) FROM " . DB::TBL_CANVAS_SNAPSHOTS_HISTORY . " WHERE canvas_id = :canvas_id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':canvas_id' => $canvasId]);
+        return (int)$stmt->fetchColumn();
     }
 
     // --- NUEVOS MÉTODOS PARA ELIMINAR / SALIR DE LIENZO ÚNICO ---
@@ -469,42 +503,34 @@ public function getUserCanvasesPaginated(int $ownerId, int $limit, int $offset):
 
     public function toggleFavorite(int $userId, int $canvasId): array {
         try {
-            // Iniciamos la transacción
             $this->db->beginTransaction();
 
-            // 1. Verificar el estado actual
             $stmt = $this->db->prepare("SELECT 1 FROM canvas_favorites WHERE user_id = :user_id AND canvas_id = :canvas_id LIMIT 1");
             $stmt->execute([':user_id' => $userId, ':canvas_id' => $canvasId]);
             $isFavorite = $stmt->fetchColumn();
 
             if ($isFavorite) {
-                // Eliminar el favorito
                 $delStmt = $this->db->prepare("DELETE FROM canvas_favorites WHERE user_id = :user_id AND canvas_id = :canvas_id");
                 $delStmt->execute([':user_id' => $userId, ':canvas_id' => $canvasId]);
 
-                // Decrementar el contador evitando números negativos
                 $updStmt = $this->db->prepare("UPDATE " . DB::TBL_CANVASES . " SET favorites_count = GREATEST(0, favorites_count - 1) WHERE id = :canvas_id");
                 $updStmt->execute([':canvas_id' => $canvasId]);
 
                 $action = 'removed';
             } else {
-                // Añadir el favorito
                 $insStmt = $this->db->prepare("INSERT INTO canvas_favorites (user_id, canvas_id) VALUES (:user_id, :canvas_id)");
                 $insStmt->execute([':user_id' => $userId, ':canvas_id' => $canvasId]);
 
-                // Incrementar el contador
                 $updStmt = $this->db->prepare("UPDATE " . DB::TBL_CANVASES . " SET favorites_count = favorites_count + 1 WHERE id = :canvas_id");
                 $updStmt->execute([':canvas_id' => $canvasId]);
 
                 $action = 'added';
             }
 
-            // Recuperar el valor actualizado del contador
             $countStmt = $this->db->prepare("SELECT favorites_count FROM " . DB::TBL_CANVASES . " WHERE id = :canvas_id");
             $countStmt->execute([':canvas_id' => $canvasId]);
             $newCount = (int)$countStmt->fetchColumn();
 
-            // Guardar todo de forma permanente
             $this->db->commit();
 
             return [
@@ -513,7 +539,6 @@ public function getUserCanvasesPaginated(int $ownerId, int $limit, int $offset):
             ];
 
         } catch (Exception $e) {
-            // Si algo falla, revertimos absolutamente todo
             if ($this->db->inTransaction()) {
                 $this->db->rollBack();
             }

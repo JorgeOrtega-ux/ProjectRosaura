@@ -20,8 +20,6 @@ DB_PASS = os.getenv("DB_PASS", "secret")
 DB_NAME = os.getenv("DB_CANVASES_NAME", "db_canvases")
 
 SYNC_INTERVAL = int(os.getenv("WORKER_RESETS_SYNC_INTERVAL", 10))
-
-# Directorio donde se guardan las miniaturas de los lienzos (ajustable por entorno Docker)
 SNAPSHOTS_DIR = os.getenv("SNAPSHOTS_DIR", "/var/www/html/storage/public/snapshots")
 
 def get_db_connection():
@@ -101,20 +99,14 @@ def process_canvas_reset(r, db_conn, row):
         """
         cursor.execute(wipe_query, (canvas_id, compressed_empty, compressed_empty))
         
-        # [MODIFICADO] Si el reinicio provino del cron (is_active = 1), apagamos la configuración programada.
-        # Si fue un reinicio forzado manual (is_active = 0 enviado desde el bucle), preservamos el cron futuro.
         if is_active:
             off_query = "UPDATE canvas_reset_settings SET is_active = 0 WHERE canvas_id = %s"
             cursor.execute(off_query, (canvas_id,))
             r.delete(f"canvas:next_reset:{canvas_id}")
             
         db_conn.commit()
-        
         r.set(state_key, empty_state) 
         
-        # =========================================================================
-        # NUEVO: ELIMINAR LA FOTO (SNAPSHOT) FÍSICA PARA QUE NO SALGA EN HOME.PHP
-        # =========================================================================
         snapshot_path = os.path.join(SNAPSHOTS_DIR, f"canvas_{canvas_id}.png")
         if os.path.exists(snapshot_path):
             try:
@@ -122,7 +114,6 @@ def process_canvas_reset(r, db_conn, row):
                 print(f"[INFO] Imagen pública eliminada correctamente para el lienzo ID {canvas_id}.")
             except Exception as e:
                 print(f"[ERROR] No se pudo eliminar la imagen pública del lienzo ID {canvas_id}: {e}")
-        # =========================================================================
         
         print(f"[INFO] Reset operation completed. Unlocking canvas ID {canvas_id}.")
         r.delete(lock_key)
@@ -163,9 +154,6 @@ def main():
             if db_conn:
                 cursor = db_conn.cursor()
                 
-                # ----------------------------------------------------
-                # 1. PROCESAR REINICIOS PROGRAMADOS (Lógica original)
-                # ----------------------------------------------------
                 query = """
                     SELECT r.canvas_id, r.is_active, r.next_reset_at, r.take_snapshot, r.timer_action, c.size 
                     FROM canvas_reset_settings r
@@ -179,38 +167,30 @@ def main():
                 for row in pending_resets:
                     process_canvas_reset(r, db_conn, row)
                     
-                # ----------------------------------------------------
-                # 2. PROCESAR REINICIOS FORZADOS DESDE BOTÓN MANUAL
-                # ----------------------------------------------------
                 force_resets = r.smembers("canvases:force_resets")
                 if force_resets:
                     for b_canvas_id in force_resets:
                         try:
                             canvas_id = int(b_canvas_id)
-                            # Consultar el tamaño del lienzo
                             cursor.execute("SELECT size FROM canvases WHERE id = %s", (canvas_id,))
                             res = cursor.fetchone()
                             canvas_size = res[0] if res else "64"
                             
-                            # Generamos una fila simulada para pasársela a 'process_canvas_reset'
-                            # Estructura requerida: (canvas_id, is_active, next_reset_at, take_snapshot, timer_action, canvas_size)
-                            # is_active = 0 para no borrar cron, take_snapshot = 1 para forzar la foto
                             mock_row = (canvas_id, 0, None, 1, 'none', canvas_size)
                             
                             print(f"[INFO] Procesando reinicio FORZADO INMEDIATO para lienzo ID {canvas_id}.")
                             process_canvas_reset(r, db_conn, mock_row)
                             
-                            # Remueve la tarea una vez terminada
                             r.srem("canvases:force_resets", canvas_id)
                         except Exception as inner_e:
                             print(f"[ERROR] Error procesando reseteo forzado para el lienzo {b_canvas_id}: {inner_e}")
-                            r.srem("canvases:force_resets", b_canvas_id) # Eliminar también si hubo error crítico
+                            r.srem("canvases:force_resets", b_canvas_id)
 
                 cursor.close()
                 db_conn.close()
                 
         except Exception as e:
-            pass # Suppressing outer loop traceback to keep enterprise standard logging clean
+            pass 
 
         time.sleep(SYNC_INTERVAL)
 

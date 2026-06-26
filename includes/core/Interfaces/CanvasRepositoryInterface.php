@@ -6,7 +6,7 @@ interface CanvasRepositoryInterface {
     public function create(array $canvasData): int;
     public function addMember(int $canvasId, int $userId, string $role): bool;
     
-    // Métodos para Home / Explora (CORRECCIÓN: Actualizados para aceptar $currentUserId)
+    // Métodos para Home / Explora
     public function getPublicCanvases(int $limit = 20, ?int $currentUserId = null): array;
     public function getOfficialCanvases(?int $currentUserId = null): array;
 
@@ -19,7 +19,7 @@ interface CanvasRepositoryInterface {
     public function getByIdAndOwner(int $id, int $ownerId): ?array;
     public function updateCanvasData(int $id, array $data): bool;
 
-    // Nuevos Métodos para Solicitudes de Acceso
+    // Métodos para Solicitudes de Acceso
     public function createAccessRequest(int $canvasId, int $userId): bool;
     public function getAccessRequest(int $canvasId, int $userId): ?array;
     public function getRequestById(int $requestId): ?array;
@@ -31,6 +31,11 @@ interface CanvasRepositoryInterface {
     public function getByScopeHash(string $hash): ?array;
     public function getMemberRole(int $canvasId, int $userId): ?string;
     public function updateMemberRole(int $canvasId, int $userId, string $role): bool;
+
+    // --- NUEVOS MÉTODOS PARA LIMITES DE PLANES PREMIUM ---
+    public function countCanvasMembers(int $canvasId): int;
+    public function getUserStorageUsed(int $userId): float;
+    public function countCanvasSnapshots(int $canvasId): int;
 
     // --- NUEVOS MÉTODOS PARA ELIMINAR / SALIR DE LIENZO ÚNICO ---
     public function getCanvasByUuid(string $uuid): ?array;
@@ -69,7 +74,6 @@ interface CanvasRepositoryInterface {
     // ==========================================
     public function toggleFavorite(int $userId, int $canvasId): array;
 
-    // CORRECCIÓN: Firma requerida para validar favoritos desde el CanvasServices
     public function isFavorite(int $userId, int $canvasId): bool;
 }
 ?>
