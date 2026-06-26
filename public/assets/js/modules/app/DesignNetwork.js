@@ -33,9 +33,7 @@ export const DesignNetwork = {
     },
 
     async initWebSocket() {
-        console.log('[DEBUG DesignNetwork] initWebSocket() llamado. CanvasIntId:', this.canvasIntId);
         if (!this.canvasIntId) {
-            console.warn('[DEBUG DesignNetwork] initWebSocket abortado: no hay canvasIntId.');
             return;
         }
 
@@ -71,7 +69,6 @@ export const DesignNetwork = {
             this.wsManager = new WebSocketManager();
             
             this.wsManager.on('open', () => {
-                console.log(`[DEBUG DesignNetwork] Evento 'open' detectado. Enviando init con userId: ${uid}`);
                 this.wsManager.send({ type: 'init', userId: uid });
             });
 
@@ -98,7 +95,6 @@ export const DesignNetwork = {
                     this.requestRender();
                 } 
                 else if (data.type === 'init_cooldown' || data.type === 'pixel_confirm' || data.type === 'cooldown_error') {
-                    console.log(`[DEBUG DesignNetwork] Disparando handleCooldownSync por evento tipo: ${data.type}`);
                     this.handleCooldownSync(data);
                 }
                 else if (data.type === 'canvas_locked') {
@@ -123,7 +119,6 @@ export const DesignNetwork = {
             this.wsManager.handleReconnect = async () => {
                 if (this.wsManager.reconnectAttempts < this.wsManager.maxReconnectAttempts) {
                     const delay = this.wsManager.baseDelay * Math.pow(2, this.wsManager.reconnectAttempts);
-                    console.warn(`[DEBUG WS] Reintentando conexión en ${delay}ms obteniendo nuevo ticket...`);
                     
                     setTimeout(async () => {
                         this.wsManager.reconnectAttempts++;
@@ -143,12 +138,12 @@ export const DesignNetwork = {
                         }
                     }, delay);
                 } else {
-                    console.error('[DEBUG WS] Máximos intentos de reconexión alcanzados.');
+                    showMessage('Desconectado del servidor tras múltiples intentos.', 'error');
                 }
             };
 
         } catch (error) {
-            console.error('[DEBUG DesignNetwork] Error al inicializar WS con Ticket:', error);
+            showMessage('Fallo de conexión al inicializar WebSocket.', 'error');
         }
     },
 
@@ -231,7 +226,12 @@ export const DesignNetwork = {
 
         try {
             const route = ApiRoutes.Canvases?.JoinLiveShare || 'canvases.join_live_share';
-            const response = await this.api.post(route, { code: code });
+            
+            // CORRECCIÓN: Se envía explícitamente el canvas actual en el que se intenta proyectar
+            const response = await this.api.post(route, { 
+                code: code,
+                canvas_id: this.canvasIntId 
+            });
 
             if (response.success && response.data) {
                 this.liveShareStatus = 'spectator';
@@ -276,7 +276,6 @@ export const DesignNetwork = {
                 showMessage(response.message || 'Código inválido o sesión terminada.', 'error');
             }
         } catch (error) {
-            console.error('[LiveShare Join Error]:', error);
             showMessage('Error al unirse a la sesión.', 'error');
         } finally {
             if (btn) restoreButton(btn);
@@ -330,20 +329,16 @@ export const DesignNetwork = {
     // -----------------------------
 
     handleCooldownSync(data) {
-        // [NUEVO] Guardia estricta: Si es espectador, no sincronizamos ni encendemos UI
+        // Guardia estricta: Si es espectador, no sincronizamos ni encendemos UI
         if (this.isSpectator) {
-            console.log(`[DEBUG DesignNetwork] Ignorando sync de cooldown porque el usuario es espectador.`);
             return;
         }
 
-        console.log(`[DEBUG DesignNetwork] handleCooldownSync ejecutado. Data entrante:`, data);
         this.cooldownBalance = data.balance;
         this.cooldownMax = data.max_batch;
         this.cooldownSec = data.cooldown_sec;
         this.cooldownNextIn = data.next_replenish_in;
         this.lastSyncTime = Date.now();
-        
-        console.log(`[DEBUG DesignNetwork] Estado interno actualizado -> Balance: ${this.cooldownBalance}/${this.cooldownMax}, Sig. recarga en: ${this.cooldownNextIn}s`);
         
         if (data.type === 'cooldown_error') {
             showMessage('Error de sincronización o límite alcanzado. Estado revertido.', 'warning');
@@ -420,7 +415,6 @@ export const DesignNetwork = {
         const specControls = document.querySelector('[data-ref="spectator-controls"]');
         const designTools = document.querySelector('[data-ref="design-tools-actions"]');
         
-        // [NUEVO] Seleccionamos el contenedor flotante entero de la UI de píxeles
         const actionPill = document.querySelector('.component-action-pill'); 
         
         const btnJoin = document.querySelector('[data-ref="btn-join-direct"]');
@@ -440,10 +434,10 @@ export const DesignNetwork = {
             }
             if (designTools) {
                 designTools.classList.replace('active', 'disabled');
-                designTools.style.display = 'none'; // [NUEVO] Ocultado físico completo
+                designTools.style.display = 'none'; 
             }
             if (actionPill) {
-                actionPill.style.display = 'none'; // [NUEVO] Ocultamos el botón principal de colocar
+                actionPill.style.display = 'none'; 
             }
             
             if (this.canvasApproval) {
@@ -462,10 +456,10 @@ export const DesignNetwork = {
             }
             if (designTools) {
                 designTools.classList.replace('disabled', 'active');
-                designTools.style.display = 'flex'; // [NUEVO] Se muestran las herramientas (Paleta/Plantillas)
+                designTools.style.display = 'flex'; 
             }
             if (actionPill) {
-                actionPill.style.display = 'block'; // [NUEVO] Mostramos el botón principal de colocar
+                actionPill.style.display = 'block'; 
             }
         }
     },
@@ -531,7 +525,6 @@ export const DesignNetwork = {
                         const event = JSON.parse(line);
                         this._drawTimelapsePixel(event);
                     } catch (e) {
-                        console.warn("Error parseando línea del timelapse:", e);
                     }
                 }
                 
@@ -551,7 +544,6 @@ export const DesignNetwork = {
 
         } catch (err) {
             if (err.name !== 'AbortError') {
-                console.error("Error reproduciendo el timelapse:", err);
                 showMessage('Error reproduciendo el timelapse.', 'error');
                 this.checkCanvasAccess();
             }

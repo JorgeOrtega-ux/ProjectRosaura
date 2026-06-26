@@ -1205,7 +1205,7 @@ class CanvasServices {
         }
     }
 
-    public function joinLiveShare(string $code): array {
+    public function joinLiveShare(string $code, int $targetCanvasId): array {
         try {
             if (class_exists(RedisCache::class)) {
                 $redisInstance = new RedisCache();
@@ -1216,6 +1216,12 @@ class CanvasServices {
                     
                     if ($dataRaw) {
                         $data = json_decode($dataRaw, true);
+                        
+                        // CORRECCIÓN: Validar que la transmisión pertenezca al lienzo actual
+                        if (isset($data['canvas_id']) && (int)$data['canvas_id'] !== $targetCanvasId) {
+                            return ['success' => false, 'message' => 'Este código de transmisión pertenece a un lienzo diferente.'];
+                        }
+                        
                         return ['success' => true, 'data' => $data];
                     }
                 }

@@ -639,6 +639,8 @@ class CanvasController extends BaseController {
     public function join_live_share($input) {
         try {
             $code = $input['code'] ?? $input['id'] ?? null;
+            // CORRECCIÓN: Capturamos el canvas_id enviado desde el frontend
+            $canvasId = $input['canvas_id'] ?? null;
 
             if (!$code) {
                 $uriParts = explode('/', trim($_SERVER['REQUEST_URI'] ?? '', '/'));
@@ -649,7 +651,8 @@ class CanvasController extends BaseController {
                 return $this->respond(['success' => false, 'message' => 'Código de sesión inválido.']);
             }
 
-            $result = $this->canvasServices->joinLiveShare(strtoupper($code));
+            // CORRECCIÓN: Se envía el $canvasId como parámetro extra al servicio
+            $result = $this->canvasServices->joinLiveShare(strtoupper($code), (int)$canvasId);
             return $this->respond($result);
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);

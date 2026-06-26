@@ -240,7 +240,12 @@ export const DesignInteractions = {
                 this.selectedPixels.delete(key);
             } else {
                 this.selectionMode = 'add';
-                this.selectedPixels.add(key);
+                // Validación para no exceder los píxeles disponibles
+                if (this.selectedPixels.size < Math.floor(this.cooldownBalance)) {
+                    this.selectedPixels.add(key);
+                } else {
+                    showMessage(`Límite alcanzado: máximo ${Math.floor(this.cooldownBalance)} píxeles.`, 'warning');
+                }
             }
             this.isSelecting = true;
             this.updateSelectionUI();
@@ -339,7 +344,10 @@ export const DesignInteractions = {
                 const sizeBefore = this.selectedPixels.size;
                 
                 if (this.selectionMode === 'add') {
-                    this.selectedPixels.add(key);
+                    // Validación continua al arrastrar
+                    if (this.selectedPixels.size < Math.floor(this.cooldownBalance)) {
+                        this.selectedPixels.add(key);
+                    }
                 } else {
                     this.selectedPixels.delete(key);
                 }
