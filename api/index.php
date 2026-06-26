@@ -244,37 +244,20 @@ if (array_key_exists($route, $routes)) {
         } else {
             Logger::security("Action not found in controller: {$action} in {$controllerName}", 'error');
             http_response_code(500);
-            echo json_encode([
-                'success' => false, 
-                'message_key' => 'error.internal_server_error',
-                'debug_message' => "La acción $action no existe en el controlador."
-            ]);
+            echo json_encode(['success' => false, 'message_key' => 'error.internal_server_error']);
         }
     } catch (\PDOException $e) {
         Logger::database("Database Exception in route {$route}: " . $e->getMessage(), 'error', ['trace' => $e->getTraceAsString()]);
         http_response_code(500);
-        echo json_encode([
-            'success' => false, 
-            'message_key' => 'error.internal_server_error',
-            'debug_message' => "ERROR BD: " . $e->getMessage()
-        ]);
+        echo json_encode(['success' => false, 'message_key' => 'error.internal_server_error']);
     } catch (\Exception $e) {
         Logger::security("General Exception in route {$route}: " . $e->getMessage(), 'error', ['trace' => $e->getTraceAsString()]);
         http_response_code(500);
-        // AQUI ESTA LA MAGIA: Forzamos el debug_message hacia el frontend
-        echo json_encode([
-            'success' => false, 
-            'message_key' => 'error.internal_server_error',
-            'debug_message' => "ERROR FATAL DE PHP: " . $e->getMessage()
-        ]);
+        echo json_encode(['success' => false, 'message_key' => 'error.internal_server_error']);
     } catch (\Error $e) {
         Logger::security("Fatal Error in route {$route}: " . $e->getMessage(), 'error', ['trace' => $e->getTraceAsString()]);
         http_response_code(500);
-        echo json_encode([
-            'success' => false, 
-            'message_key' => 'error.internal_server_error',
-            'debug_message' => "ERROR CRÍTICO: " . $e->getMessage()
-        ]);
+        echo json_encode(['success' => false, 'message_key' => 'error.internal_server_error']);
     }
 } else {
     Logger::security("Attempted access to non-existent route: {$route}", 'warning', ['ip' => Utils::getIpAddress()]);
