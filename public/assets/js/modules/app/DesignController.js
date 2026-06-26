@@ -79,6 +79,10 @@ class DesignController {
         this.uiCooldownCounter = null;
         this.uiCooldownTimer = null;
         this.uiCooldownBadge = null;
+        
+        // Elementos de Bloqueos (Reset y Privacidad)
+        this.uiResetLockedBadge = null; 
+        this.uiPrivateLockedBadge = null;
 
         // --- SISTEMA DE LIVE SHARE (NUEVO) ---
         this.liveShareStatus = 'none'; // 'none' | 'owner' | 'spectator'
@@ -118,6 +122,9 @@ class DesignController {
         this.uiCooldownCounter = document.querySelector('[data-ref="cooldown-counter"]');
         this.uiCooldownTimer = document.querySelector('[data-ref="cooldown-timer"]');
         this.uiCooldownBadge = document.querySelector('[data-ref="cooldown-badge"]');
+        
+        this.uiResetLockedBadge = document.querySelector('[data-ref="reset-locked-badge"]');
+        this.uiPrivateLockedBadge = document.querySelector('[data-ref="private-locked-badge"]'); 
 
         // Mapeo UI Modo En Vivo
         this.uiLiveControls = document.querySelector('[data-ref="live-controls"]');
@@ -130,6 +137,7 @@ class DesignController {
         if (this.canvas) {
             this.ctx = this.canvas.getContext('2d', { alpha: false });
             this.canvas.style.imageRendering = 'pixelated';
+            this.canvas.style.transition = 'filter 0.4s ease, opacity 0.4s ease'; // Transición suave para el blur
         }
 
         const wrapper = document.querySelector('[data-ref="design-wrapper"]');
@@ -140,7 +148,7 @@ class DesignController {
         }
 
         this.bindEvents();
-        this.applyPremiumLocks(); // NOTA DE IMPLEMENTACIÓN: Bloqueo de UI
+        this.applyPremiumLocks(); 
         
         if (this.isSnapshotMode) {
             this.loadCanvasConfigForSnapshot();
@@ -148,7 +156,6 @@ class DesignController {
             this.loadCanvasConfig();
             this.checkCanvasAccess();
             
-            // CORRECCIÓN: Solo cargar plantillas si el usuario está logueado
             const uid = window.activeUserId || document.querySelector('meta[name="user-id"]')?.content || null;
             if (uid) {
                 this.loadUserLibrary();
@@ -158,19 +165,17 @@ class DesignController {
         }
     }
 
-    // NOTA DE IMPLEMENTACIÓN: Aplica visualmente bloqueos Premium basados en el tier
     applyPremiumLocks() {
         const tier = (window.APP_USER && window.APP_USER.subscription_tier !== undefined) 
             ? window.APP_USER.subscription_tier 
             : 0;
 
         if (tier < 1) { // Básico
-            const liveShareMenuBtn = document.querySelector('[data-menu-target="tool-liveshare-menu"]'); // o similar según tu HTML de tools
+            const liveShareMenuBtn = document.querySelector('[data-menu-target="tool-liveshare-menu"]');
             if (liveShareMenuBtn) {
                 liveShareMenuBtn.classList.add('disabled-interactive');
                 liveShareMenuBtn.style.opacity = '0.5';
                 liveShareMenuBtn.setAttribute('data-tooltip', 'Compartir en vivo requiere plan Pro o Advanced 🔒');
-                // Icono de candadito sobre el botón
                 if (!liveShareMenuBtn.querySelector('.icon-lock')) {
                     const lock = document.createElement('span');
                     lock.className = 'material-symbols-rounded icon-lock';
@@ -241,7 +246,6 @@ class DesignController {
             this.fileInput.removeEventListener('change', this.handleFileUploadBound);
         }
 
-        // Remover listeners de live share
         if (this.uiLiveInputX) this.uiLiveInputX.removeEventListener('change', this.handleLiveInputBound);
         if (this.uiLiveInputY) this.uiLiveInputY.removeEventListener('change', this.handleLiveInputBound);
         if (this.uiLiveInputOpacity) this.uiLiveInputOpacity.removeEventListener('input', this.handleLiveInputBound);

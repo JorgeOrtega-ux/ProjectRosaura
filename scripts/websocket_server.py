@@ -286,6 +286,11 @@ async def handler(websocket):
                     is_locked = await r.exists(lock_key)
                     if is_locked:
                         print(f"[DEBUG PY] Lienzo bloqueado. Ignorando pixel.")
+                        # Notificar al cliente que detenga sus intentos
+                        error_msg = json.dumps({
+                            "type": "canvas_locked_error"
+                        })
+                        await websocket.send(error_msg)
                         continue 
                     
                     x = int(data.get("x", 0))

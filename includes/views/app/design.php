@@ -70,35 +70,6 @@ if (!empty($canvasUuid)) {
     <div id="cf-turnstile-wrapper" style="display: none;" data-sitekey="<?php echo htmlspecialchars($turnstileSiteKey); ?>"></div>
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" defer></script>
 
-    <div class="component-fullscreen-overlay disabled" data-ref="private-blocked-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1000; background-color: var(--surface-primary); display: flex; align-items: center; justify-content: center; flex-direction: column;">
-        <div class="component-empty-state">
-            <span class="material-symbols-rounded component-empty-state-icon" style="font-size: 64px;">lock</span>
-            <h2 style="margin-top: 16px; font-size: 1.5rem; font-weight: 600;"><?php echo __('canvas_private_title') ?? 'Lienzo Privado'; ?></h2>
-            <p class="component-empty-state-text" style="max-width: 400px; text-align: center; margin-top: 8px;">
-                <?php echo __('canvas_private_desc') ?? 'Este lienzo es privado y requiere aprobación para entrar. Solicita acceso al propietario para poder visualizarlo y participar.'; ?>
-            </p>
-            <div style="margin-top: 24px; display: flex; gap: 12px;">
-                <button class="component-button component-button--dark component-button--h45" data-action="requestAccessFromOverlay">
-                    <span class="material-symbols-rounded">front_hand</span>
-                    <?php echo __('btn_request_access') ?? 'Solicitar Acceso'; ?>
-                </button>
-                <a href="/explore" class="component-button component-button--h45">
-                    <?php echo __('btn_go_explore') ?? 'Volver a Explorar'; ?>
-                </a>
-            </div>
-        </div>
-    </div>
-
-    <div class="component-fullscreen-overlay disabled component-overlay-reset" data-ref="reset-locked-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1001; display: flex; align-items: center; justify-content: center; flex-direction: column;">
-        <div class="component-empty-state" style="background: var(--bg-surface); padding: 48px; border-radius: 16px; box-shadow: var(--shadow-xl); border: 2px solid var(--action-danger);">
-            <span class="material-symbols-rounded component-empty-state-icon" style="font-size: 64px; color: var(--action-danger); animation: pulse 2s infinite;">auto_delete</span>
-            <h2 style="margin-top: 16px; font-size: 1.5rem; font-weight: 600;">Lienzo en Reinicio</h2>
-            <p class="component-empty-state-text" style="max-width: 400px; text-align: center; margin-top: 8px;">
-                El servidor está guardando la fotografía histórica final y limpiando la cuadrícula. Por favor espera unos segundos, el lienzo se desbloqueará automáticamente.
-            </p>
-        </div>
-    </div>
-
     <div class="component-wrapper component-wrapper--full no-padding" 
          data-ref="design-wrapper" 
          data-canvas-id="<?php echo htmlspecialchars($canvasIntId); ?>"
@@ -134,9 +105,15 @@ if (!empty($canvasUuid)) {
                 
                 <?php if (!$isSnapshot): ?>
                 <div class="component-actions disabled" data-ref="spectator-controls" style="display: none; align-items: center; gap: 12px; margin-right: 16px; padding-right: 16px; border-right: 1px solid var(--border-color);">
-                    <div class="component-badge component-badge--warning" style="margin: 0;" data-tooltip="<?php echo __('tooltip_spectator') ?? 'Solo puedes observar'; ?>" data-position="bottom">
+                    
+                    <div class="component-badge component-badge--warning" data-ref="spectator-status-badge" style="margin: 0; display: none;" data-tooltip="<?php echo __('tooltip_spectator') ?? 'Solo puedes observar'; ?>" data-position="bottom">
                         <span class="material-symbols-rounded">visibility</span>
                         <span><?php echo __('lbl_spectator') ?? 'Modo Espectador'; ?></span>
+                    </div>
+
+                    <div class="component-badge component-badge--danger" data-ref="private-status-badge" style="margin: 0; display: none;" data-tooltip="No eres miembro" data-position="bottom">
+                        <span class="material-symbols-rounded">lock</span>
+                        <span>Lienzo Privado</span>
                     </div>
                     
                     <button class="component-button component-button--h34" data-action="joinCanvasDirectly" data-ref="btn-join-direct" style="display: none;">
@@ -174,6 +151,16 @@ if (!empty($canvasUuid)) {
             <div class="component-badge component-badge--absolute-tl">
                 <span class="material-symbols-rounded">my_location</span>
                 <span data-ref="coords-text">- , -</span>
+            </div>
+
+            <div class="component-badge component-badge--absolute-tl disabled" data-ref="private-locked-badge" style="top: 48px; background: var(--surface-primary); border-color: var(--border-color); color: var(--text-primary); z-index: 50;">
+                <span class="material-symbols-rounded" style="color: var(--action-danger); font-size: 16px; margin-right: 4px;">lock</span>
+                <span>Requiere ser miembro</span>
+            </div>
+
+            <div class="component-badge component-badge--absolute-tl disabled" data-ref="reset-locked-badge" style="top: 90px; background: var(--action-danger); color: #fff; border-color: var(--action-danger); z-index: 50;">
+                <span class="material-symbols-rounded icon-spin-slow" style="font-size: 16px; margin-right: 4px;">auto_delete</span>
+                <span>En Reinicio...</span>
             </div>
 
             <div class="component-reset-timer disabled" data-ref="reset-timer-badge">

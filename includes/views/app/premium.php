@@ -2,7 +2,7 @@
 // includes/views/app/premium.php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
-// NOTA DE IMPLEMENTACIÓN: Lógica de UI para identificar el plan actual y cambiar botones
+// Lógica de UI para identificar el plan actual y cambiar botones
 $activeAccountId = $_SESSION['active_account'] ?? null;
 $linkedAccounts = $_SESSION['accounts'] ?? [];
 $tier = 0;
@@ -109,6 +109,19 @@ if ($activeAccountId && isset($linkedAccounts[$activeAccountId])) {
     box-shadow: var(--shadow-card);
 }
 
+/* Estilo especial para el plan Advanced */
+.pricing-card.advanced {
+    border: 2px solid #FFA500;
+    background: linear-gradient(145deg, #1f1f1f, #2a1b00);
+    transform: scale(1.05);
+    z-index: 10;
+    box-shadow: 0 10px 30px rgba(255, 165, 0, 0.15);
+}
+
+.pricing-card.advanced:hover {
+    border-color: #FFC04D;
+}
+
 .featured-badge {
     position: absolute;
     top: -12px;
@@ -125,11 +138,22 @@ if ($activeAccountId && isset($linkedAccounts[$activeAccountId])) {
     white-space: nowrap;
 }
 
+.advanced-badge {
+    background-color: #FFA500;
+    color: #000;
+}
+
 .plan-name {
     font-size: 20px;
     font-weight: 700;
     color: var(--text-primary);
     margin-bottom: 8px;
+}
+
+.pricing-card.advanced .plan-name,
+.pricing-card.advanced .plan-currency,
+.pricing-card.advanced .plan-price {
+    color: #FFA500;
 }
 
 .plan-price-wrapper {
@@ -170,6 +194,11 @@ if ($activeAccountId && isset($linkedAccounts[$activeAccountId])) {
     line-height: 1.4;
 }
 
+.pricing-card.advanced .plan-desc {
+    border-bottom-color: rgba(255, 165, 0, 0.2);
+    color: #ddd;
+}
+
 .plan-features {
     list-style: none;
     padding: 0;
@@ -186,9 +215,17 @@ if ($activeAccountId && isset($linkedAccounts[$activeAccountId])) {
     color: var(--text-primary);
 }
 
+.pricing-card.advanced .plan-features li {
+    color: #eee;
+}
+
 .feature-icon-check {
     color: var(--color-success);
     font-size: 18px !important;
+}
+
+.pricing-card.advanced .feature-icon-check {
+    color: #FFA500;
 }
 
 .feature-icon-cross {
@@ -196,11 +233,10 @@ if ($activeAccountId && isset($linkedAccounts[$activeAccountId])) {
     font-size: 18px !important;
 }
 
-/* Tabla Comparativa restringida al ancho de las tarjetas */
+/* Tabla Comparativa */
 .comparison-wrapper {
     margin: 32px auto 0 auto;
     width: 100%;
-    /* 320px * 3 tarjetas + 24px * 2 gaps = 1008px exactos */
     max-width: 1008px; 
 }
 
@@ -211,14 +247,24 @@ if ($activeAccountId && isset($linkedAccounts[$activeAccountId])) {
     color: var(--text-primary);
     margin-bottom: 24px;
 }
+
+.btn-advanced {
+    background-color: #FFA500;
+    color: #000;
+    border: none;
+    font-weight: bold;
+}
+.btn-advanced:hover {
+    background-color: #FFC04D;
+}
 </style>
 
 <div class="view-content">
     <div class="component-wrapper component-wrapper--full" style="max-width: 1050px;">
         
         <div style="text-align: center; padding: 24px 0;">
-            <h1 class="component-page-title">Lleva tus ideas al siguiente nivel</h1>
-            <p class="component-page-description" style="max-width: 600px; margin: 0 auto;">Elige el plan ideal para tus proyectos creativos en Project Rosaura. Escala junto a tu equipo sin límites y cancela cuando lo decidas.</p>
+            <h1 class="component-page-title">Mejora tu experiencia en ProjectRosaura</h1>
+            <p class="component-page-description" style="max-width: 600px; margin: 0 auto;">Lleva tus diseños al siguiente nivel con límites expandidos, almacenamiento masivo y herramientas de colaboración en tiempo real.</p>
         </div>
 
         <div class="billing-toggle-container" id="premiumBillingToggle">
@@ -234,7 +280,7 @@ if ($activeAccountId && isset($linkedAccounts[$activeAccountId])) {
         <div class="pricing-grid">
             
             <div class="pricing-card">
-                <div class="plan-name">Basic</div>
+                <div class="plan-name">Básico</div>
                 <div class="plan-price-wrapper">
                     <span class="plan-currency">$</span>
                     <span class="plan-price" data-monthly="0" data-yearly="0">0</span>
@@ -243,10 +289,10 @@ if ($activeAccountId && isset($linkedAccounts[$activeAccountId])) {
                 <p class="plan-desc">Perfecto para empezar a explorar la plataforma de forma individual.</p>
                 
                 <ul class="plan-features">
-                    <li><span class="material-symbols-rounded feature-icon-check">check_circle</span> 1 Lienzo de diseño activo</li>
-                    <li><span class="material-symbols-rounded feature-icon-check">check_circle</span> Herramientas gráficas base</li>
-                    <li><span class="material-symbols-rounded feature-icon-check">check_circle</span> Exportación en formato JPG</li>
-                    <li><span class="material-symbols-rounded feature-icon-cross">cancel</span> Historial de cambios</li>
+                    <li><span class="material-symbols-rounded feature-icon-check">check_circle</span> Almacenamiento total: <b>1 MB</b></li>
+                    <li><span class="material-symbols-rounded feature-icon-check">check_circle</span> 1 Lienzo y 1 Snapshot</li>
+                    <li><span class="material-symbols-rounded feature-icon-cross">cancel</span> Participantes máximos: 1</li>
+                    <li><span class="material-symbols-rounded feature-icon-cross">cancel</span> Sin Compartir en Vivo</li>
                 </ul>
                 <?php if ($tier === 0): ?>
                     <a href="#" class="component-button component-button--full component-button--h45 disabled">Tu Plan Actual</a>
@@ -263,13 +309,13 @@ if ($activeAccountId && isset($linkedAccounts[$activeAccountId])) {
                     <span class="plan-price" data-monthly="15" data-yearly="144">15</span>
                     <span class="plan-period" data-period-monthly="/ mes" data-period-yearly="/ año">/ mes</span>
                 </div>
-                <p class="plan-desc">Para profesionales que necesitan más potencia y herramientas de colaboración.</p>
+                <p class="plan-desc">Para profesionales que necesitan más potencia y colaboración en equipo.</p>
                 
                 <ul class="plan-features">
-                    <li><span class="material-symbols-rounded feature-icon-check">check_circle</span> Lienzos ilimitados</li>
-                    <li><span class="material-symbols-rounded feature-icon-check">check_circle</span> Colaboradores (Hasta 5)</li>
-                    <li><span class="material-symbols-rounded feature-icon-check">check_circle</span> Exportación PNG/SVG de alta calidad</li>
-                    <li><span class="material-symbols-rounded feature-icon-check">check_circle</span> Recuperación de Snapshots</li>
+                    <li><span class="material-symbols-rounded feature-icon-check">check_circle</span> Almacenamiento: <b>500 MB</b></li>
+                    <li><span class="material-symbols-rounded feature-icon-check">check_circle</span> 5 Lienzos y 5 Participantes</li>
+                    <li><span class="material-symbols-rounded feature-icon-check">check_circle</span> <b>Compartir en Vivo (Sync)</b></li>
+                    <li><span class="material-symbols-rounded feature-icon-check">check_circle</span> Herramientas Premium y Paletas</li>
                 </ul>
                 <?php if ($tier === 1): ?>
                     <a href="#" class="component-button component-button--dark component-button--full component-button--h45 disabled">Tu Plan Actual</a>
@@ -280,25 +326,26 @@ if ($activeAccountId && isset($linkedAccounts[$activeAccountId])) {
                 <?php endif; ?>
             </div>
 
-            <div class="pricing-card">
+            <div class="pricing-card advanced">
+                <div class="featured-badge advanced-badge">Nivel Máximo</div>
                 <div class="plan-name">Advanced</div>
                 <div class="plan-price-wrapper">
                     <span class="plan-currency">$</span>
                     <span class="plan-price" data-monthly="35" data-yearly="336">35</span>
                     <span class="plan-period" data-period-monthly="/ mes" data-period-yearly="/ año">/ mes</span>
                 </div>
-                <p class="plan-desc">Solución definitiva para equipos y diseños complejos de alta escala.</p>
+                <p class="plan-desc">Solución definitiva con herramientas ilimitadas y límites expansivos.</p>
                 
                 <ul class="plan-features">
-                    <li><span class="material-symbols-rounded feature-icon-check">check_circle</span> Todo lo del plan Pro</li>
-                    <li><span class="material-symbols-rounded feature-icon-check">check_circle</span> Colaboradores Ilimitados</li>
-                    <li><span class="material-symbols-rounded feature-icon-check">check_circle</span> Retención total de Historial</li>
-                    <li><span class="material-symbols-rounded feature-icon-check">check_circle</span> Soporte técnico 24/7 VIP</li>
+                    <li><span class="material-symbols-rounded feature-icon-check">check_circle</span> Almacenamiento masivo: <b>5 GB</b></li>
+                    <li><span class="material-symbols-rounded feature-icon-check">check_circle</span> Lienzos y Snapshots <b>Ilimitados</b></li>
+                    <li><span class="material-symbols-rounded feature-icon-check">check_circle</span> Hasta <b>50 Participantes</b> por lienzo</li>
+                    <li><span class="material-symbols-rounded feature-icon-check">check_circle</span> Gestión de Roles Avanzados</li>
                 </ul>
                 <?php if ($tier === 2): ?>
                     <a href="#" class="component-button component-button--full component-button--h45 disabled">Tu Plan Actual</a>
                 <?php else: ?>
-                    <a href="#" class="component-button component-button--full component-button--h45" style="background-color: var(--action-primary); color: white; border-color: var(--action-primary);">Elegir Advanced</a>
+                    <a href="#" class="component-button component-button--full component-button--h45 btn-advanced">Elegir Advanced</a>
                 <?php endif; ?>
             </div>
 
@@ -311,47 +358,59 @@ if ($activeAccountId && isset($linkedAccounts[$activeAccountId])) {
                     <thead>
                         <tr>
                             <th>Características</th>
-                            <th>Basic</th>
+                            <th>Básico</th>
                             <th>Pro</th>
                             <th>Advanced</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr class="component-table-row">
-                            <td style="font-weight: 600;">Lienzos activos</td>
-                            <td>Máximo 1</td>
-                            <td>Máximo 5</td>
+                            <td style="font-weight: 600;">Límite de Almacenamiento</td>
+                            <td>1 MB</td>
+                            <td>500 MB</td>
+                            <td><span style="color: #FFA500; font-weight: bold;">5 GB (5120 MB)</span></td>
+                        </tr>
+                        <tr class="component-table-row">
+                            <td style="font-weight: 600;">Lienzos Activos Permitidos</td>
+                            <td>1</td>
+                            <td>5</td>
                             <td>Ilimitados</td>
                         </tr>
                         <tr class="component-table-row">
-                            <td style="font-weight: 600;">Colaboradores por lienzo</td>
-                            <td>0 (Solo lectura)</td>
-                            <td>Hasta 5 editores</td>
-                            <td>Ilimitados</td>
-                        </tr>
-                        <tr class="component-table-row">
-                            <td style="font-weight: 600;">Exportación SVG / Transparencia</td>
-                            <td><span class="material-symbols-rounded feature-icon-cross">remove</span></td>
-                            <td><span class="material-symbols-rounded feature-icon-check">check</span></td>
-                            <td><span class="material-symbols-rounded feature-icon-check">check</span></td>
+                            <td style="font-weight: 600;">Participantes por Lienzo</td>
+                            <td>1 (Individual)</td>
+                            <td>Hasta 5</td>
+                            <td>Hasta 50</td>
                         </tr>
                         <tr class="component-table-row">
                             <td style="font-weight: 600;">Snapshots (Historial de Versiones)</td>
-                            <td><span class="material-symbols-rounded feature-icon-cross">remove</span></td>
+                            <td>1 Entrada</td>
                             <td>5 Entradas</td>
-                            <td>Ilimitado</td>
+                            <td>Ilimitados</td>
                         </tr>
                         <tr class="component-table-row">
-                            <td style="font-weight: 600;">Gestión avanzada de Permisos</td>
+                            <td style="font-weight: 600;">Compartir en Vivo (Transmisión Sync)</td>
                             <td><span class="material-symbols-rounded feature-icon-cross">remove</span></td>
-                            <td>Básica</td>
-                            <td>Avanzada (Roles Custom)</td>
+                            <td><span class="material-symbols-rounded feature-icon-check">check</span></td>
+                            <td><span class="material-symbols-rounded feature-icon-check" style="color:#FFA500;">check</span></td>
                         </tr>
                         <tr class="component-table-row">
-                            <td style="font-weight: 600;">Soporte Técnico</td>
-                            <td>Comunidad</td>
-                            <td>Email (Respuesta 24h)</td>
-                            <td>Prioritario Dedicado</td>
+                            <td style="font-weight: 600;">Herramientas Premium / Paletas Custom</td>
+                            <td><span class="material-symbols-rounded feature-icon-cross">remove</span></td>
+                            <td><span class="material-symbols-rounded feature-icon-check">check</span></td>
+                            <td><span class="material-symbols-rounded feature-icon-check" style="color:#FFA500;">check</span></td>
+                        </tr>
+                        <tr class="component-table-row">
+                            <td style="font-weight: 600;">Exportación Alta Resolución</td>
+                            <td><span class="material-symbols-rounded feature-icon-cross">remove</span></td>
+                            <td><span class="material-symbols-rounded feature-icon-check">check</span></td>
+                            <td><span class="material-symbols-rounded feature-icon-check" style="color:#FFA500;">check</span></td>
+                        </tr>
+                        <tr class="component-table-row">
+                            <td style="font-weight: 600;">Gestión de Roles Avanzados</td>
+                            <td><span class="material-symbols-rounded feature-icon-cross">remove</span></td>
+                            <td><span class="material-symbols-rounded feature-icon-cross">remove</span></td>
+                            <td><span class="material-symbols-rounded feature-icon-check" style="color:#FFA500;">check</span></td>
                         </tr>
                     </tbody>
                 </table>

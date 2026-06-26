@@ -24,7 +24,7 @@ export const DesignInteractions = {
 
     // Maneja los inputs manuales del panel "En Vivo"
     handleLiveInput(e) {
-        if (this.liveShareStatus !== 'owner' || !this.activeTemplateId) return;
+        if (this.isResetLocked || this.liveShareStatus !== 'owner' || !this.activeTemplateId) return;
         const tpl = this.templates.find(t => t.id === this.activeTemplateId);
         if (!tpl) return;
 
@@ -37,11 +37,10 @@ export const DesignInteractions = {
         }
         
         this.requestRender();
-        this.emitLiveImageUpdate(); // Se emite la actualización en cuanto cambia el input
+        this.emitLiveImageUpdate(); 
     },
 
     handleClick(e) {
-        // --- EVENTOS LIVE SHARE ---
         const btnStartLive = e.target.closest('[data-action="startLiveShare"]');
         if (btnStartLive) {
             e.preventDefault();
@@ -66,7 +65,6 @@ export const DesignInteractions = {
             }
             return;
         }
-        // --------------------------
 
         const btnPlayTimelapse = e.target.closest('[data-action="playTimelapse"]');
         if (btnPlayTimelapse) {
@@ -77,17 +75,20 @@ export const DesignInteractions = {
 
         const btnJoin = e.target.closest('[data-action="joinCanvasDirectly"]');
         const btnReqAccess = e.target.closest('[data-action="requestCanvasAccess"]');
-        const btnReqOverlay = e.target.closest('[data-action="requestAccessFromOverlay"]');
 
-        if (btnJoin || btnReqAccess || btnReqOverlay) {
+        if (btnJoin || btnReqAccess) {
             e.preventDefault();
-            this.handleAccessRequest(btnJoin || btnReqAccess || btnReqOverlay);
+            this.handleAccessRequest(btnJoin || btnReqAccess);
             return;
         }
 
         const imgAdd = e.target.closest('[data-action="addTemplateToCanvas"]');
         if (imgAdd) {
             e.preventDefault();
+            if (this.isResetLocked) {
+                showMessage('El lienzo está bloqueado por reinicio. Espera unos segundos.', 'warning');
+                return;
+            }
             const url = imgAdd.getAttribute('data-url');
             this.addTemplateFromLibrary(url);
             return;
@@ -124,7 +125,6 @@ export const DesignInteractions = {
             return;
         }
 
-        // Botón de Bloquear en la barra superior
         const btnLock = e.target.closest('[data-action="toggleTemplateLock"]');
         if (btnLock) {
             e.preventDefault();
@@ -133,7 +133,6 @@ export const DesignInteractions = {
             return;
         }
 
-        // Botón de Eliminar en la barra superior
         const btnDelete = e.target.closest('[data-action="deleteTemplate"]');
         if (btnDelete) {
             e.preventDefault();
@@ -167,6 +166,8 @@ export const DesignInteractions = {
     },
 
     handleKeyDown(e) {
+        if (this.isResetLocked) return;
+
         if (e.key === 'Escape' && this.selectedPixels.size > 0) {
             this.selectedPixels.clear();
             this.updateSelectionUI();
@@ -215,7 +216,6 @@ export const DesignInteractions = {
         if (exact) {
             const hit = this.checkTemplateHit(exact.x, exact.y);
             if (hit) {
-                // Prevenir mover si somos espectadores en vivo de esta plantilla
                 if (this.liveShareStatus === 'spectator' && this.liveTemplateId === this.activeTemplateId) {
                     showMessage('Solo el dueño puede mover la imagen en vivo', 'warning');
                     return;
@@ -243,7 +243,6 @@ export const DesignInteractions = {
                 this.selectedPixels.delete(key);
             } else {
                 this.selectionMode = 'add';
-                // Validación para no exceder los píxeles disponibles
                 if (this.selectedPixels.size < Math.floor(this.cooldownBalance)) {
                     this.selectedPixels.add(key);
                 } else {
@@ -330,7 +329,6 @@ export const DesignInteractions = {
                 }
             }
             
-            // Actualizar UI de coords en vivo si es el dueño
             if (this.liveShareStatus === 'owner' && this.activeTemplateId === this.liveTemplateId) {
                 if (this.uiLiveInputX) this.uiLiveInputX.value = tpl.x;
                 if (this.uiLiveInputY) this.uiLiveInputY.value = tpl.y;
@@ -347,7 +345,6 @@ export const DesignInteractions = {
                 const sizeBefore = this.selectedPixels.size;
                 
                 if (this.selectionMode === 'add') {
-                    // Validación continua al arrastrar
                     if (this.selectedPixels.size < Math.floor(this.cooldownBalance)) {
                         this.selectedPixels.add(key);
                     }
@@ -371,7 +368,6 @@ export const DesignInteractions = {
             }
             
             if (hit) {
-                // Ocultar cursor si es espectador de la plantilla
                 if (this.liveShareStatus === 'spectator' && this.liveTemplateId === this.activeTemplateId) {
                     this.canvas.style.cursor = 'default';
                 } else {
@@ -403,7 +399,6 @@ export const DesignInteractions = {
             this.templateInteraction = null;
             this.requestRender();
             
-            // OPTIMIZACIÓN: Solo emitir el evento cuando termine el drag o resize
             if (this.liveShareStatus === 'owner' && this.activeTemplateId === this.liveTemplateId) {
                 this.emitLiveImageUpdate();
             }
@@ -521,7 +516,6 @@ export const DesignInteractions = {
             }
         });
 
-        // Actualización optimista de interfaz
         this.cooldownBalance -= this.selectedPixels.size;
         if (this.cooldownBalance < this.cooldownMax && this.cooldownNextIn <= 0) {
             this.cooldownNextIn = this.cooldownSec;

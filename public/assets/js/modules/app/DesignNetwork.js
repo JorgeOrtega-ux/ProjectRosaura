@@ -5,7 +5,6 @@ import { WebSocketManager } from '../../core/api/WebSocketManager.js';
 import { getPaletteById } from './DesignPaletteUtils.js';
 
 export const DesignNetwork = {
-    // --- LÓGICA DE TICKETS Y WEBSOCKET ---
     async getTurnstileToken() {
         return new Promise((resolve, reject) => {
             const wrapper = document.getElementById('cf-turnstile-wrapper');
@@ -20,7 +19,7 @@ export const DesignNetwork = {
                     sitekey: sitekey,
                     callback: function(token) {
                         resolve(token);
-                        setTimeout(() => window.turnstile.reset(wrapper), 1000); // Resetear por si se requiere después
+                        setTimeout(() => window.turnstile.reset(wrapper), 1000); 
                     },
                     'error-callback': function() {
                         reject(new Error('Fallo en validación Turnstile.'));
@@ -40,7 +39,6 @@ export const DesignNetwork = {
         const uid = window.activeUserId || document.querySelector('meta[name="user-id"]')?.content || null;
         let turnstileToken = null;
 
-        // Si es invitado, obtener validación de Turnstile primero
         if (!uid) {
             try {
                 turnstileToken = await this.getTurnstileToken();
@@ -51,7 +49,6 @@ export const DesignNetwork = {
         }
 
         try {
-            // Reclamar el Ticket HTTP
             const route = ApiRoutes.Canvases?.GetWsTicket || 'canvases.get_ws_ticket';
             const payload = { canvas_id: this.canvasIntId };
             if (turnstileToken) {
@@ -103,7 +100,9 @@ export const DesignNetwork = {
                 else if (data.type === 'canvas_cleared') {
                     this.handleCanvasCleared(data);
                 }
-                // --- LISTENERS LIVE SHARE ---
+                else if (data.type === 'canvas_locked_error') {
+                    showMessage('El lienzo está en proceso de reinicio. Espera.', 'warning');
+                }
                 else if (data.type === 'live_image_updated') {
                     this.handleLiveImageUpdate(data);
                 }
@@ -112,10 +111,8 @@ export const DesignNetwork = {
                 }
             });
 
-            // Conectar enviando el ticket
             this.wsManager.connect(this.canvasIntId, wsTicket);
 
-            // Reemplazar lógica de reconexión para forzar la petición de un NUEVO ticket
             this.wsManager.handleReconnect = async () => {
                 if (this.wsManager.reconnectAttempts < this.wsManager.maxReconnectAttempts) {
                     const delay = this.wsManager.baseDelay * Math.pow(2, this.wsManager.reconnectAttempts);
@@ -147,8 +144,6 @@ export const DesignNetwork = {
         }
     },
 
-    // --- MÉTODOS DE LIVE SHARE ---
-    
     async startLiveShare() {
         if (!this.activeTemplateId) {
             showMessage('Selecciona una plantilla primero', 'warning');
@@ -227,7 +222,6 @@ export const DesignNetwork = {
         try {
             const route = ApiRoutes.Canvases?.JoinLiveShare || 'canvases.join_live_share';
             
-            // CORRECCIÓN: Se envía explícitamente el canvas actual en el que se intenta proyectar
             const response = await this.api.post(route, { 
                 code: code,
                 canvas_id: this.canvasIntId 
@@ -326,10 +320,8 @@ export const DesignNetwork = {
             this.requestRender();
         }
     },
-    // -----------------------------
 
     handleCooldownSync(data) {
-        // Guardia estricta: Si es espectador, no sincronizamos ni encendemos UI
         if (this.isSpectator) {
             return;
         }
@@ -349,8 +341,10 @@ export const DesignNetwork = {
 
     handleCanvasLocked(data) {
         this.isResetLocked = true;
-        const overlay = document.querySelector('[data-ref="reset-locked-overlay"]');
-        if (overlay) overlay.classList.remove('disabled');
+        
+        if (this.uiResetLockedBadge) {
+            this.uiResetLockedBadge.classList.remove('disabled');
+        }
         
         this.selectedPixels.clear();
         this.updateSelectionUI();
@@ -362,8 +356,10 @@ export const DesignNetwork = {
         this.requestRender();
         
         this.isResetLocked = false;
-        const overlay = document.querySelector('[data-ref="reset-locked-overlay"]');
-        if (overlay) overlay.classList.add('disabled');
+        
+        if (this.uiResetLockedBadge) {
+            this.uiResetLockedBadge.classList.add('disabled');
+        }
         
         showMessage('El lienzo ha sido limpiado en este momento.', 'info');
         
@@ -411,55 +407,94 @@ export const DesignNetwork = {
     },
 
     setRoleUI(role, data = null) {
-        const overlayBlocked = document.querySelector('[data-ref="private-blocked-overlay"]');
         const specControls = document.querySelector('[data-ref="spectator-controls"]');
         const designTools = document.querySelector('[data-ref="design-tools-actions"]');
-        
         const actionPill = document.querySelector('.component-action-pill'); 
         
         const btnJoin = document.querySelector('[data-ref="btn-join-direct"]');
         const btnRequest = document.querySelector('[data-ref="btn-request-access"]');
+        
+        const specBadge = document.querySelector('[data-ref="spectator-status-badge"]');
+        const privBadge = document.querySelector('[data-ref="private-status-badge"]');
 
         if (role === 'blocked') {
-            if (overlayBlocked) overlayBlocked.classList.remove('disabled');
-        } else {
-            if (overlayBlocked) overlayBlocked.classList.add('disabled');
-        }
+            // Aplicar el Blur suave al lienzo y bloquear interacciones
+            if (this.canvas) {
+                this.canvas.style.filter = 'blur(12px)';
+                this.canvas.style.opacity = '0.3';
+                this.canvas.style.pointerEvents = 'none';
+            }
+            if (this.uiPrivateLockedBadge) this.uiPrivateLockedBadge.classList.remove('disabled');
 
-        if (role === 'spectator') {
+            // Habilitar la caja superior derecha
             if (specControls) {
                 specControls.classList.remove('disabled');
                 specControls.classList.add('active');
                 specControls.style.display = 'flex';
             }
+            
+            // Ocultar caja de herramientas inferior
             if (designTools) {
                 designTools.classList.replace('active', 'disabled');
                 designTools.style.display = 'none'; 
             }
-            if (actionPill) {
-                actionPill.style.display = 'none'; 
-            }
-            
+            if (actionPill) actionPill.style.display = 'none'; 
+
+            // Alternar Badges en el panel Top
+            if (specBadge) specBadge.style.display = 'none';
+            if (privBadge) privBadge.style.display = 'flex';
+
+            // Mostrar botón de solicitud si aplica
             if (this.canvasApproval) {
                 if (btnJoin) btnJoin.style.display = 'none';
-                if (btnRequest) btnRequest.style.display = 'block';
+                if (btnRequest) btnRequest.style.display = 'flex';
             } else {
-                if (btnJoin) btnJoin.style.display = 'block';
+                if (btnJoin) btnJoin.style.display = 'flex';
                 if (btnRequest) btnRequest.style.display = 'none';
             }
-        } 
-        else if (role === 'editor' || role === 'admin') {
-            if (specControls) {
-                specControls.classList.add('disabled');
-                specControls.classList.remove('active');
-                specControls.style.display = 'none';
+        } else {
+            // Remover el Blur
+            if (this.canvas) {
+                this.canvas.style.filter = 'none';
+                this.canvas.style.opacity = '1';
+                this.canvas.style.pointerEvents = 'auto';
             }
-            if (designTools) {
-                designTools.classList.replace('disabled', 'active');
-                designTools.style.display = 'flex'; 
-            }
-            if (actionPill) {
-                actionPill.style.display = 'block'; 
+            if (this.uiPrivateLockedBadge) this.uiPrivateLockedBadge.classList.add('disabled');
+
+            if (role === 'spectator') {
+                if (specControls) {
+                    specControls.classList.remove('disabled');
+                    specControls.classList.add('active');
+                    specControls.style.display = 'flex';
+                }
+                if (designTools) {
+                    designTools.classList.replace('active', 'disabled');
+                    designTools.style.display = 'none'; 
+                }
+                if (actionPill) actionPill.style.display = 'none'; 
+                
+                if (specBadge) specBadge.style.display = 'flex';
+                if (privBadge) privBadge.style.display = 'none';
+
+                if (this.canvasApproval) {
+                    if (btnJoin) btnJoin.style.display = 'none';
+                    if (btnRequest) btnRequest.style.display = 'flex';
+                } else {
+                    if (btnJoin) btnJoin.style.display = 'flex';
+                    if (btnRequest) btnRequest.style.display = 'none';
+                }
+            } 
+            else if (role === 'editor' || role === 'admin') {
+                if (specControls) {
+                    specControls.classList.add('disabled');
+                    specControls.classList.remove('active');
+                    specControls.style.display = 'none';
+                }
+                if (designTools) {
+                    designTools.classList.replace('disabled', 'active');
+                    designTools.style.display = 'flex'; 
+                }
+                if (actionPill) actionPill.style.display = 'block'; 
             }
         }
     },
