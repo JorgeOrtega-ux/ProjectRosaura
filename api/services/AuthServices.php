@@ -210,7 +210,8 @@ class AuthServices {
             'user_pic' => $user['profile_picture'],
             'user_prefs' => $userPrefs,
             'user_2fa' => $user['two_factor_enabled'] ?? 0,
-            'user_asn' => $asn
+            'user_asn' => $asn,
+            'subscription_tier' => (int)($user['subscription_tier'] ?? 0) // <--- AÑADIDO: Guardar tier
         ];
 
         return $this->sessionManager->addAccount($user['id'], $userData);

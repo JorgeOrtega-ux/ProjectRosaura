@@ -160,7 +160,10 @@ class DesignController {
 
     // NOTA DE IMPLEMENTACIÓN: Aplica visualmente bloqueos Premium basados en el tier
     applyPremiumLocks() {
-        const tier = window.appUserTier || 0;
+        const tier = (window.APP_USER && window.APP_USER.subscription_tier !== undefined) 
+            ? window.APP_USER.subscription_tier 
+            : 0;
+
         if (tier < 1) { // Básico
             const liveShareMenuBtn = document.querySelector('[data-menu-target="tool-liveshare-menu"]'); // o similar según tu HTML de tools
             if (liveShareMenuBtn) {

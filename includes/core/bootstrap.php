@@ -159,11 +159,21 @@ try {
             
             // Refrescar permisos RBAC en tiempo real para la cuenta ACTIVA
             $permissions = !empty($liveUser['permissions']) ? explode(',', $liveUser['permissions']) : [];
-            $sessionManager->set('user_role_id', $liveUser['role_id']);
-            $sessionManager->set('user_role_name', $liveUser['role_name'] ?? 'User');
-            $sessionManager->set('user_role_color', $liveUser['role_color'] ?? '#808080');
-            $sessionManager->set('user_permissions', $permissions);
-            $sessionManager->set('user_pic', $liveUser['profile_picture']);
+            
+            // CORRECCIÓN PROFUNDA: Actualizamos el "Pool" multi-cuenta en lugar de la raíz para evitar desajustes
+            $accounts = $sessionManager->get(\App\Core\System\SessionConstants::KEY_LINKED_ACCOUNTS, []);
+            if (isset($accounts[$activeId])) {
+                $accounts[$activeId]['user_role_id'] = $liveUser['role_id'] ?? null;
+                $accounts[$activeId]['user_role_name'] = $liveUser['role_name'] ?? 'User';
+                $accounts[$activeId]['user_role_color'] = $liveUser['role_color'] ?? '#808080';
+                $accounts[$activeId]['user_permissions'] = $permissions;
+                $accounts[$activeId]['user_pic'] = $liveUser['profile_picture'] ?? null;
+                $accounts[$activeId]['subscription_tier'] = (int)($liveUser['subscription_tier'] ?? 0);
+                
+                // Guardamos la configuración y la enviamos a la raíz en la misma milésima de segundo
+                $sessionManager->set(\App\Core\System\SessionConstants::KEY_LINKED_ACCOUNTS, $accounts);
+                $sessionManager->syncRootState();
+            }
         }
     } elseif (isset($_COOKIE['remember_token']) || isset($_COOKIE['remember_tokens'])) {
         $authService->autoLogin(); 
