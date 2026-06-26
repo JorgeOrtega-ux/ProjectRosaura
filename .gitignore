@@ -51,3 +51,9 @@ storage/private/backups/*.gz
 *.ntvs*
 *.njsproj
 *.sln
+
+
+# Ignorar archivos generados dinámicamente en el storage público
+/storage/public/snapshots/
+/storage/public/snapshots_archive/
+/storage/public/templates/

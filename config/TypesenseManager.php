@@ -40,17 +40,22 @@ class TypesenseManager {
                     'connection_timeout_seconds' => 3,
                 ]);
             } else {
-                Logger::error("La clase Typesense\Client no existe. El SDK no está instalado.");
+                // 🚨 MODIFICACIÓN: Forzamos a que explote si no existe la clase, para que lo atrape el catch.
+                throw new \Exception("La clase Typesense\Client no existe. El SDK de Typesense no está instalado en vendor/.");
             }
 
         } catch (\Throwable $e) {
-            Logger::error("Error al inicializar el cliente de Typesense: " . $e->getMessage(), [
-                'exception' => $e
-            ]);
+            // TEMPORAL: Fuerza que el error suba para que lo veas en la consola
+            throw new \Exception("Fallo al crear TypesenseManager: " . $e->getMessage());
         }
     }
 
     public function getClient(): ?Client {
+        // Refuerzo por si algo más silencia el constructor
+        if ($this->client === null) {
+            throw new \Exception("El cliente de Typesense nunca se inicializó correctamente.");
+        }
+        
         return $this->client;
     }
 }

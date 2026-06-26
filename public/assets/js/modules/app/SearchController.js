@@ -26,13 +26,9 @@ export class SearchController {
             const csrfMeta = document.querySelector('meta[name="csrf-token"]');
             const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
 
-            // ---------------------------------------------------------
-            // LOG 1: Verificamos qué vamos a mandar a PHP
-            // ---------------------------------------------------------
             console.log("🔍 [SearchController] Iniciando búsqueda para:", query);
             console.log("📨 [SearchController] Payload que se enviará a PHP:", { route: ApiRoutes.Search.Query, q: query });
 
-            // CORRECCIÓN: Petición POST con el payload en formato JSON 
             const response = await fetch(reqUrl, {
                 method: 'POST',
                 headers: {
@@ -45,25 +41,25 @@ export class SearchController {
                 })
             });
 
-            // ---------------------------------------------------------
-            // LOG 2: Revisamos si el servidor respondió con error 500 o 404
-            // ---------------------------------------------------------
             console.log("📡 [SearchController] Status de respuesta HTTP:", response.status, response.ok ? "(OK)" : "(Error)");
 
-            const resData = await response.json();
+            // MODIFICACIÓN: Prevenir que la app crashee silenciosamente si PHP arroja HTML puro en vez de JSON
+            let resData;
+            try {
+                resData = await response.json();
+            } catch (jsonErr) {
+                const rawText = await response.text();
+                console.error("💥 [SearchController] EL SERVIDOR NO DEVOLVIÓ JSON. RESPUESTA CRUDA:", rawText);
+                if (this.title) this.title.textContent = 'Error crítico del servidor. Revisa la consola.';
+                return;
+            }
 
-            // ---------------------------------------------------------
-            // LOG 3: EL LOG MÁS IMPORTANTE. ¿Qué trajo PHP?
-            // ---------------------------------------------------------
             console.log("📥 [SearchController] Respuesta CRUDA desde PHP:", resData);
 
             if (resData && resData.success) {
                 const results = resData.data || [];
                 const count = results.length;
                 
-                // ---------------------------------------------------------
-                // LOG 4: Conteo final que detectó el frontend
-                // ---------------------------------------------------------
                 console.log(`✅ [SearchController] Resultados procesados: ${count}`, results);
 
                 if (this.title) {
@@ -91,16 +87,19 @@ export class SearchController {
                     }
                 }
             } else {
-                // ---------------------------------------------------------
-                // LOG 5: PHP devolvió un success = false 
-                // ---------------------------------------------------------
-                console.error("❌ [SearchController] PHP devolvió success: false o una estructura inválida:", resData);
-                if (this.title) this.title.textContent = 'Error interno en la búsqueda.';
+                console.error("❌ [SearchController] PHP devolvió error lógico o excepción:");
+                
+                // MODIFICACIÓN: Interceptar y mostrar los datos de depuración (debug) inyectados desde PHP
+                if (resData && resData.debug_message) {
+                    console.error("🚨 [ERROR REAL DEL SERVIDOR]:", resData.debug_message);
+                    console.error("📁 [UBICACIÓN DEL ERROR]:", resData.debug_file, "en la línea", resData.debug_line);
+                } else {
+                    console.error(resData);
+                }
+
+                if (this.title) this.title.textContent = 'Fallo en la búsqueda. Revisa la consola de desarrollador.';
             }
         } catch (e) {
-            // ---------------------------------------------------------
-            // LOG 6: La petición falló por completo (el JSON está roto o no hay red)
-            // ---------------------------------------------------------
             console.error("🔥 [SearchController] Excepción catastrófica en fetch():", e);
             if (this.title) this.title.textContent = 'Hubo un problema al procesar la búsqueda.';
         }

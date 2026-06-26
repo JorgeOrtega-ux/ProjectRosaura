@@ -21,10 +21,13 @@ class SearchServices {
                 return [];
             }
             
-            $filter = "(privacy:=public) && scope_type:=personal";
-            
+            // FILTROS CORREGIDOS: Typesense es estricto con los paréntesis.
             if ($currentUserId) {
+                // Si está logueado: Ve los públicos + LOS SUYOS
                 $filter = "(privacy:=public || owner_id:={$currentUserId}) && scope_type:=personal";
+            } else {
+                // Si es visitante: Solo ve los públicos (sin paréntesis innecesarios)
+                $filter = "privacy:=public && scope_type:=personal";
             }
 
             $searchParameters = [
@@ -59,8 +62,12 @@ class SearchServices {
             return $canvases;
 
         } catch (\Throwable $e) {
-            Logger::error("Error al consultar la colección de Typesense: " . $e->getMessage(), ['exception' => $e]);
-            return [];
+            // Ya sabemos que funciona, lo devolvemos a los logs internos
+            Logger::error("Error de Typesense: " . $e->getMessage(), ['exception' => $e]);
+            
+            // Como ya expusimos la verdad en BaseController, lanzamos el error
+            // para que no falle silenciosamente si vuelve a ocurrir
+            throw new \Exception("Typesense falló: " . $e->getMessage());
         }
     }
     
