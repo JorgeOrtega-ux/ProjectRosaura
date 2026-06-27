@@ -365,6 +365,13 @@ return [
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_leave', 'max' => RL::MAX_10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
 
+    // NUEVA RUTA PARA EXPANSIÓN EN VIVO
+    'canvases.resize' => [
+        'controller' => 'App\Api\Controllers\CanvasController',
+        'action' => 'resize',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_resize', 'max' => RL::MAX_5, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
+    ],
+
     // NUEVA RUTA: TOGGLE FAVORITOS
     'canvases.toggle_favorite' => [
         'controller' => 'App\Api\Controllers\CanvasController',

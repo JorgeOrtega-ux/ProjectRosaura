@@ -282,6 +282,15 @@ class CanvasRepository implements CanvasRepositoryInterface {
         return $success;
     }
 
+    public function updateSize(int $canvasId, int $newSize): bool {
+        $sql = "UPDATE " . DB::TBL_CANVASES . " SET size = :size WHERE id = :id";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            ':size' => $newSize, 
+            ':id' => $canvasId
+        ]);
+    }
+
     public function createAccessRequest(int $canvasId, int $userId): bool {
         $sql = "INSERT INTO canvas_access_requests (canvas_id, user_id, status) 
                 VALUES (:canvas_id, :user_id, 'pending')
@@ -355,24 +364,13 @@ class CanvasRepository implements CanvasRepositoryInterface {
         
         $totalBytes = 0;
         
-        // CORRECCIÓN: Calcular el directorio base real apuntando a la raíz del proyecto.
-        // Si este archivo está en: includes/core/Repositories/CanvasRepository.php
-        // __DIR__ es "includes/core/Repositories"
-        // dirname(__DIR__, 3) debería apuntar a la raíz del proyecto.
         $baseDir = dirname(__DIR__, 3); 
         
         foreach ($paths as $path) {
-            // Limpiamos la ruta que viene de la BD (ej. "public/storage/templates/...")
             $cleanPath = ltrim($path, '/');
-            
-            // CORRECCIÓN: En el código original reemplazabas 'public/storage/' por 'storage/public/'
-            // Asegurémonos de que la ruta física final sea correcta. 
-            // La estructura real es: ROOT/storage/public/templates/
             $relativePath = str_replace('public/storage/', 'storage/public/', $cleanPath);
-            
             $physicalPath = $baseDir . DIRECTORY_SEPARATOR . $relativePath;
             
-            // DEBUG (Opcional, puedes quitarlo después): Si falla, registra por qué
             if (!file_exists($physicalPath)) {
                 Logger::error("getUserStorageUsed: Archivo no encontrado en la ruta física.", ['path_intentado' => $physicalPath]);
                 continue;
@@ -381,7 +379,6 @@ class CanvasRepository implements CanvasRepositoryInterface {
             $totalBytes += filesize($physicalPath);
         }
         
-        // Retornar en Megabytes
         return $totalBytes / (1024 * 1024); 
     }
 
@@ -407,7 +404,6 @@ class CanvasRepository implements CanvasRepositoryInterface {
         $stmt = $this->db->prepare($sql);
         $success = $stmt->execute([':uuid' => $uuid]);
 
-        // --- INTEGRACIÓN TYPESENSE CON TOLERANCIA ---
         if ($success && $canvas) {
             $client = $this->typesenseManager->getClient();
             if ($client) {

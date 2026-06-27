@@ -31,6 +31,9 @@ interface CanvasRepositoryInterface {
     public function getByScopeHash(string $hash): ?array;
     public function getMemberRole(int $canvasId, int $userId): ?string;
     public function updateMemberRole(int $canvasId, int $userId, string $role): bool;
+    
+    // EXPANSIÓN EN VIVO
+    public function updateSize(int $canvasId, int $newSize): bool;
 
     // --- NUEVOS MÉTODOS PARA LIMITES DE PLANES PREMIUM ---
     public function countCanvasMembers(int $canvasId): int;

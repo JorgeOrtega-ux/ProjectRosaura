@@ -260,8 +260,13 @@ export class ApiService {
     }
 
     // ==========================================
-    // MÉTODO PARA TOGGLE FAVORITOS
+    // EXPANSIÓN EN VIVO DEL LIENZO
     // ==========================================
+    async resizeCanvas(canvasId, newSize) {
+        return await this.post(ApiRoutes.Canvases.Resize, { id: canvasId, size: newSize });
+    }
+    // ==========================================
+
     async toggleFavorite(canvasId) {
         return await this.post(ApiRoutes.Canvases.ToggleFavorite, { id: canvasId });
     }

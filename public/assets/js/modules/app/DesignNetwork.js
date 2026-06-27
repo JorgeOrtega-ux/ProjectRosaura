@@ -103,6 +103,14 @@ export const DesignNetwork = {
                 else if (data.type === 'canvas_locked_error') {
                     showMessage('El lienzo está en proceso de reinicio. Espera.', 'warning');
                 }
+                // --- NUEVOS EVENTOS DE REDIMENSIÓN ---
+                else if (data.type === 'canvas_locked_resize') {
+                    this.handleCanvasLockedResize(data);
+                }
+                else if (data.type === 'canvas_resize_completed') {
+                    this.handleCanvasResizeCompleted(data);
+                }
+                // -------------------------------------
                 else if (data.type === 'live_image_updated') {
                     this.handleLiveImageUpdate(data);
                 }
@@ -143,6 +151,44 @@ export const DesignNetwork = {
             showMessage('Fallo de conexión al inicializar WebSocket.', 'error');
         }
     },
+
+    // ==========================================
+    // MÉTODOS DE REDIMENSIÓN (NUEVOS)
+    // ==========================================
+    handleCanvasLockedResize(data) {
+        this.isResizeLocked = true;
+        
+        // Bloquear UI visualmente
+        if (this.canvas) {
+            this.canvas.style.filter = 'blur(6px)';
+            this.canvas.style.pointerEvents = 'none';
+        }
+
+        // Si tenemos un badge específico para redimensión lo mostramos, si no, usamos un Toast
+        if (this.uiResizeLockedBadge) {
+            this.uiResizeLockedBadge.classList.remove('disabled');
+        } else if (this.uiResetLockedBadge) {
+            // Fallback: reutilizar el badge de reinicio temporalmente si no existe el de resize
+            this.uiResetLockedBadge.querySelector('span:last-child').textContent = 'Expandiendo...';
+            this.uiResetLockedBadge.classList.remove('disabled');
+        }
+        
+        this.selectedPixels.clear();
+        this.updateSelectionUI();
+        this.requestRender();
+        
+        showMessage('Expandiendo lienzo en vivo... Acciones bloqueadas temporalmente.', 'warning');
+    },
+
+    handleCanvasResizeCompleted(data) {
+        showMessage('Expansión completada con éxito. Recargando...', 'success');
+        
+        // Forzamos la recarga de la página para obtener el nuevo tamaño y estado de MySQL/Redis limpio
+        setTimeout(() => {
+            window.location.reload();
+        }, 1500);
+    },
+    // ==========================================
 
     async startLiveShare() {
         if (!this.activeTemplateId) {
@@ -418,7 +464,6 @@ export const DesignNetwork = {
         const privBadge = document.querySelector('[data-ref="private-status-badge"]');
 
         if (role === 'blocked') {
-            // Aplicar el Blur suave al lienzo y bloquear interacciones
             if (this.canvas) {
                 this.canvas.style.filter = 'blur(12px)';
                 this.canvas.style.opacity = '0.3';
@@ -426,25 +471,21 @@ export const DesignNetwork = {
             }
             if (this.uiPrivateLockedBadge) this.uiPrivateLockedBadge.classList.remove('disabled');
 
-            // Habilitar la caja superior derecha
             if (specControls) {
                 specControls.classList.remove('disabled');
                 specControls.classList.add('active');
                 specControls.style.display = 'flex';
             }
             
-            // Ocultar caja de herramientas inferior
             if (designTools) {
                 designTools.classList.replace('active', 'disabled');
                 designTools.style.display = 'none'; 
             }
             if (actionPill) actionPill.style.display = 'none'; 
 
-            // Alternar Badges en el panel Top
             if (specBadge) specBadge.style.display = 'none';
             if (privBadge) privBadge.style.display = 'flex';
 
-            // Mostrar botón de solicitud si aplica
             if (this.canvasApproval) {
                 if (btnJoin) btnJoin.style.display = 'none';
                 if (btnRequest) btnRequest.style.display = 'flex';
@@ -453,7 +494,6 @@ export const DesignNetwork = {
                 if (btnRequest) btnRequest.style.display = 'none';
             }
         } else {
-            // Remover el Blur
             if (this.canvas) {
                 this.canvas.style.filter = 'none';
                 this.canvas.style.opacity = '1';
@@ -521,7 +561,7 @@ export const DesignNetwork = {
     },
 
     async startTimelapse() {
-        if (!this.canvasIntId || this.timelapseActive || this.isResetLocked) return;
+        if (!this.canvasIntId || this.timelapseActive || this.isResetLocked || this.isResizeLocked) return;
         this.timelapseActive = true;
         
         const route = ApiRoutes.Canvases?.GetTimelapse || 'canvas/get_timelapse';
@@ -544,7 +584,7 @@ export const DesignNetwork = {
             let buffer = '';
 
             while (true) {
-                if (this.isResetLocked) break;
+                if (this.isResetLocked || this.isResizeLocked) break;
 
                 const { done, value } = await reader.read();
                 if (done) break;
@@ -567,7 +607,7 @@ export const DesignNetwork = {
                 await new Promise(resolve => requestAnimationFrame(resolve)); 
             }
             
-            if (buffer.trim() && !this.isResetLocked) {
+            if (buffer.trim() && !this.isResetLocked && !this.isResizeLocked) {
                 try {
                     const event = JSON.parse(buffer);
                     this._drawTimelapsePixel(event);
@@ -575,7 +615,7 @@ export const DesignNetwork = {
                 } catch(e) {}
             }
 
-            if (!this.isResetLocked) showMessage('Timelapse finalizado.', 'success');
+            if (!this.isResetLocked && !this.isResizeLocked) showMessage('Timelapse finalizado.', 'success');
 
         } catch (err) {
             if (err.name !== 'AbortError') {

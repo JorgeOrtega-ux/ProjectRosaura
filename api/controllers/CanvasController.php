@@ -358,6 +358,37 @@ class CanvasController extends BaseController {
         }
     }
 
+    // ==========================================
+    // EXPANSIÓN EN VIVO DEL LIENZO
+    // ==========================================
+    public function resize($input) {
+        try {
+            if (!$this->session->isLoggedIn()) {
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized') ?? 'No autorizado.', 'http_code' => 401]);
+            }
+
+            $userId = $this->session->getActiveAccountId();
+            $canvasId = $input['id'] ?? null;
+            $newSize = $input['size'] ?? null;
+            
+            if (!$canvasId || !$newSize) {
+                return $this->respond(['success' => false, 'message' => 'Faltan parámetros de redimensión.']);
+            }
+
+            $validSizes = [64, 128, 264, 512];
+            if (!in_array((int)$newSize, $validSizes)) {
+                return $this->respond(['success' => false, 'message' => 'Tamaño de lienzo inválido.']);
+            }
+
+            $result = $this->canvasServices->resizeCanvas($userId, (int)$canvasId, (int)$newSize, $this->canManageOfficial());
+            return $this->respond($result);
+
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+    // ==========================================
+
     public function change_member_role($input) {
         try {
             if (!$this->session->isLoggedIn()) return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);

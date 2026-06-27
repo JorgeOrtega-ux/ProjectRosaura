@@ -24,7 +24,7 @@ export const DesignInteractions = {
 
     // Maneja los inputs manuales del panel "En Vivo"
     handleLiveInput(e) {
-        if (this.isResetLocked || this.liveShareStatus !== 'owner' || !this.activeTemplateId) return;
+        if (this.isResetLocked || this.isResizeLocked || this.liveShareStatus !== 'owner' || !this.activeTemplateId) return;
         const tpl = this.templates.find(t => t.id === this.activeTemplateId);
         if (!tpl) return;
 
@@ -85,8 +85,8 @@ export const DesignInteractions = {
         const imgAdd = e.target.closest('[data-action="addTemplateToCanvas"]');
         if (imgAdd) {
             e.preventDefault();
-            if (this.isResetLocked) {
-                showMessage('El lienzo está bloqueado por reinicio. Espera unos segundos.', 'warning');
+            if (this.isResetLocked || this.isResizeLocked) {
+                showMessage('El lienzo está bloqueado temporalmente por reinicio/expansión.', 'warning');
                 return;
             }
             const url = imgAdd.getAttribute('data-url');
@@ -103,7 +103,8 @@ export const DesignInteractions = {
             return;
         }
 
-        if (this.isSpectator || this.timelapseActive || this.isResetLocked) return; 
+        // Si el lienzo está bajo redimensión o reset, cortamos interacción total
+        if (this.isSpectator || this.timelapseActive || this.isResetLocked || this.isResizeLocked) return; 
 
         const btnUpload = e.target.closest('[data-action="triggerTemplateUpload"]');
         if (btnUpload && this.fileInput) {
@@ -116,7 +117,6 @@ export const DesignInteractions = {
         const cardTemplate = e.target.closest('[data-action="selectTemplate"]');
         if (cardTemplate && !e.target.closest('.component-template-action-btn')) {
             const id = cardTemplate.getAttribute('data-id');
-            // Bloqueo: Si eres espectador de una sesión en vivo de esta plantilla, no puedes seleccionarla
             if (this.liveShareStatus === 'spectator' && this.liveTemplateId === id) {
                 showMessage('Esta plantilla está siendo controlada en vivo por su dueño.', 'info');
                 return;
@@ -166,7 +166,7 @@ export const DesignInteractions = {
     },
 
     handleKeyDown(e) {
-        if (this.isResetLocked) return;
+        if (this.isResetLocked || this.isResizeLocked) return;
 
         if (e.key === 'Escape' && this.selectedPixels.size > 0) {
             this.selectedPixels.clear();
@@ -180,6 +180,7 @@ export const DesignInteractions = {
         if (!target) return;
         
         e.preventDefault(); 
+        if (this.isResizeLocked) return; // Congelar zoom
         
         const rect = this.canvas.getBoundingClientRect();
         const mouseX = e.clientX - rect.left;
@@ -203,7 +204,7 @@ export const DesignInteractions = {
 
     handleMouseDown(e) {
         const target = e.target.closest('[data-ref="design-canvas"]');
-        if (!target) return;
+        if (!target || this.isResizeLocked) return;
 
         if (e.shiftKey || e.button === 1 || this.isSpectator || this.timelapseActive || this.isResetLocked) {
             this.isDragging = true;
@@ -256,6 +257,8 @@ export const DesignInteractions = {
     },
 
     handleMouseMove(e) {
+        if (this.isResizeLocked) return;
+        
         if (this.isDragging) {
             const dx = e.clientX - this.lastMouse.x;
             const dy = e.clientY - this.lastMouse.y;
@@ -395,6 +398,8 @@ export const DesignInteractions = {
     },
 
     handleMouseUp(e) {
+        if (this.isResizeLocked) return;
+
         if (this.templateInteraction) {
             this.templateInteraction = null;
             this.requestRender();
@@ -483,7 +488,7 @@ export const DesignInteractions = {
     },
 
     placePixels() {
-        if (this.selectedPixels.size === 0 || this.isSpectator || this.timelapseActive || this.isResetLocked) return;
+        if (this.selectedPixels.size === 0 || this.isSpectator || this.timelapseActive || this.isResetLocked || this.isResizeLocked) return;
         
         const balance = Math.floor(this.cooldownBalance);
         if (this.selectedPixels.size > balance) {
@@ -530,6 +535,7 @@ export const DesignInteractions = {
     },
 
     handleResize() {
+        if (this.isResizeLocked) return;
         this.updateCanvasDimensions();
         this.limitBounds();
         this.requestRender();

@@ -184,7 +184,9 @@ async def handler(websocket):
     
     print(f"[+] Cliente ({user_type}) conectado a la sala '{canvas_id}'. Total global: {len(WS_META)}")
 
+    # Bloqueos en Redis para este lienzo
     lock_key = f"canvas:{canvas_id}:reset_lock"
+    resize_lock_key = f"canvas:{canvas_id}:resize_lock"
     config_key = f"canvas:{canvas_id}:config"
 
     try:
@@ -283,10 +285,13 @@ async def handler(websocket):
                 # EVENTO PIXEL - INTENTO DE PINTAR
                 # ==========================================
                 elif data.get("type") == "pixel":
+                    
+                    # Verificación dual de bloqueo (Reinicios y Redimensionamiento)
                     is_locked = await r.exists(lock_key)
-                    if is_locked:
-                        print(f"[DEBUG PY] Lienzo bloqueado. Ignorando pixel.")
-                        # Notificar al cliente que detenga sus intentos
+                    is_resize_locked = await r.exists(resize_lock_key)
+                    
+                    if is_locked or is_resize_locked:
+                        print(f"[DEBUG PY] Lienzo bloqueado por mantenimiento o expansión. Ignorando pixel.")
                         error_msg = json.dumps({
                             "type": "canvas_locked_error"
                         })

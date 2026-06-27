@@ -9,6 +9,7 @@ class CanvasesManageController {
         this.api = new ApiService();
         this.selectedCanvasIds = new Set();
         this.selectedCanvasUuid = null;
+        this.currentCanvasSize = null; // NUEVO ESTADO PARA EL TAMAÑO
         this.basePath = window.AppBasePath || '';
         
         this.abortController = null;
@@ -37,6 +38,7 @@ class CanvasesManageController {
         
         this.selectedCanvasIds.clear();
         this.selectedCanvasUuid = null;
+        this.currentCanvasSize = null;
         this.isInitialized = false;
     }
 
@@ -73,8 +75,14 @@ class CanvasesManageController {
         const viewSnapshotsBtn = e.target.closest('[data-action="viewCanvasSnapshots"]');
         const deleteCanvasesBtn = e.target.closest('[data-action="deleteSelectedCanvases"]');
         const viewRequestsBtn = e.target.closest('[data-action="viewCanvasRequests"]');
-        
         const createCanvasBtn = e.target.closest('[data-action="createCanvas"]');
+        
+        // NUEVOS EVENTOS EXPANSIÓN
+        const openResizeBtn = e.target.closest('[data-action="openResizeModal"]');
+        const closeResizeBtn = e.target.closest('[data-action="closeResizeModal"]');
+        const applyResizeBtn = e.target.closest('[data-action="applyResize"]');
+        const resizeDropdownTrigger = e.target.closest('#resizeModal [data-action="toggleDropdown"]');
+        const resizeDropdownItem = e.target.closest('#resizeModal [data-action="selectValue"]');
 
         if (searchBtn) this.toggleSearchToolbar();
 
@@ -90,8 +98,27 @@ class CanvasesManageController {
         if (viewSnapshotsBtn && !viewSnapshotsBtn.classList.contains('disabled-interactive')) this.viewCanvasSnapshots();
         if (deleteCanvasesBtn && !deleteCanvasesBtn.classList.contains('disabled-interactive')) this.deleteSelectedCanvases(deleteCanvasesBtn);
         if (viewRequestsBtn && !viewRequestsBtn.classList.contains('disabled-interactive')) this.viewCanvasRequests();
-        
         if (createCanvasBtn && !createCanvasBtn.classList.contains('disabled-interactive')) this.createCanvas(createCanvasBtn);
+
+        // LÓGICA MODAL EXPANSIÓN
+        if (openResizeBtn && !openResizeBtn.classList.contains('disabled-interactive')) this.openResizeModal();
+        if (closeResizeBtn) this.closeResizeModal();
+        if (applyResizeBtn) this.applyResize(applyResizeBtn);
+        
+        if (resizeDropdownTrigger) {
+            const module = document.querySelector(`[data-module="${resizeDropdownTrigger.getAttribute('data-target')}"]`);
+            if (module) {
+                if (module.classList.contains('disabled')) {
+                    module.classList.remove('disabled');
+                    module.classList.add('active');
+                } else {
+                    module.classList.remove('active');
+                    module.classList.add('disabled');
+                }
+            }
+        }
+        
+        if (resizeDropdownItem) this.handleResizeSelect(resizeDropdownItem);
 
         const searchToolbar = document.querySelector('[data-ref="search-toolbar"]');
         if (searchToolbar && !searchToolbar.classList.contains('disabled')) {
@@ -101,6 +128,122 @@ class CanvasesManageController {
             }
         }
     }
+
+// ==========================================
+    // LÓGICA DE MODAL DE EXPANSIÓN EN VIVO
+    // ==========================================
+    openResizeModal() {
+        // 1. Verificamos que haya exactamente 1 lienzo seleccionado
+        if (this.selectedCanvasIds.size !== 1 || !this.selectedCanvasUuid) return;
+        
+        const modal = document.getElementById('resizeModal');
+        if (modal) {
+            // 2. Removemos la clase que lo oculta del DOM
+            modal.classList.remove('disabled');
+            
+            // 3. Usamos un micro-retraso para permitir que el display:flex se aplique antes de animar
+            requestAnimationFrame(() => {
+                modal.style.opacity = '1';
+                modal.style.pointerEvents = 'auto';
+                const content = modal.querySelector('.component-modal-content');
+                if (content) content.style.transform = 'translateY(0)';
+            });
+            
+            // Setear el tamaño actual por defecto en el UI
+            const textRef = modal.querySelector('[data-ref="text-size-resize"]');
+            if (textRef && this.currentCanvasSize) {
+                textRef.textContent = `${this.currentCanvasSize}x${this.currentCanvasSize}`;
+            }
+            
+            const warning = modal.querySelector('[data-ref="resize-warning"]');
+            if(warning) warning.style.display = 'none';
+        }
+    }
+
+    closeResizeModal() {
+        const modal = document.getElementById('resizeModal');
+        if (modal) {
+            // 1. Iniciamos la transición de ocultamiento
+            modal.style.opacity = '0';
+            modal.style.pointerEvents = 'none';
+            const content = modal.querySelector('.component-modal-content');
+            if (content) content.style.transform = 'translateY(20px)';
+            
+            // 2. Esperamos a que acabe la transición de 0.3s (300ms) para ocultarlo del DOM
+            setTimeout(() => {
+                modal.classList.add('disabled');
+            }, 300);
+        }
+    }
+
+    handleResizeSelect(btn) {
+        // Cerrar dropdown
+        const dropdown = document.querySelector('[data-module="dropdownSizeResize"]');
+        if (dropdown) {
+            dropdown.classList.remove('active');
+            dropdown.classList.add('disabled');
+        }
+
+        const value = parseInt(btn.getAttribute('data-value'));
+        const label = btn.getAttribute('data-label');
+        const icon = btn.getAttribute('data-icon');
+        
+        const textRef = document.querySelector('[data-ref="text-size-resize"]');
+        const iconRef = document.querySelector('[data-ref="resize-icon"]');
+        
+        if (textRef) textRef.textContent = label;
+        if (iconRef) iconRef.textContent = icon;
+        
+        const links = document.querySelectorAll('#resizeModal .component-menu-link');
+        links.forEach(l => l.classList.remove('active'));
+        btn.classList.add('active');
+
+        // Validación inteligente para advertencia
+        const warning = document.querySelector('[data-ref="resize-warning"]');
+        if (warning && this.currentCanvasSize) {
+            if (value < this.currentCanvasSize) {
+                warning.style.display = 'flex';
+            } else {
+                warning.style.display = 'none';
+            }
+        }
+    }
+
+    async applyResize(btn) {
+        if (this.selectedCanvasIds.size !== 1) return;
+        
+        const textRef = document.querySelector('[data-ref="text-size-resize"]');
+        if (!textRef) return;
+        
+        const newSize = parseInt(textRef.textContent.split('x')[0]);
+        if (isNaN(newSize)) return;
+
+        if (newSize === this.currentCanvasSize) {
+            showMessage("El lienzo ya tiene esta resolución aplicada.", "info");
+            return;
+        }
+
+        const canvasId = Array.from(this.selectedCanvasIds)[0];
+        setButtonLoading(btn);
+
+        const route = ApiRoutes.Canvases && ApiRoutes.Canvases.Resize ? ApiRoutes.Canvases.Resize : 'canvases.resize';
+        const result = await this.api.post(route, { id: canvasId, size: newSize }, this.abortController.signal);
+        
+        if (result.aborted) return;
+        restoreButton(btn);
+
+        if (result.success) {
+            showMessage(result.message || "Proceso de redimensión en vivo completado.", 'success');
+            this.closeResizeModal();
+            setTimeout(() => {
+                if (window.spaRouter) window.spaRouter.navigate(`${this.basePath}/canvases/manage`, { forceReload: true });
+                else window.location.reload();
+            }, 1000);
+        } else {
+            showMessage(result.message || "Error al aplicar la expansión", 'error');
+        }
+    }
+    // ==========================================
 
     async createCanvas(btn) {
         const nameInput = document.querySelector('[data-ref="input-canvasname"]');
@@ -236,7 +379,6 @@ class CanvasesManageController {
         }
     }
 
-    // --- ENLACES ACTUALIZADOS AL FORMATO :uuid ---
     editSelectedCanvas() {
         if (this.selectedCanvasIds.size !== 1 || !this.selectedCanvasUuid) return;
         if (window.spaRouter) window.spaRouter.navigate(`${this.basePath}/canvases/edit/${this.selectedCanvasUuid}`);
@@ -269,7 +411,6 @@ class CanvasesManageController {
             window.location.href = `${this.basePath}/canvases/manage/requests/${this.selectedCanvasUuid}`;
         }
     }
-    // ---------------------------------------------
 
     async deleteSelectedCanvases(btn) {
         if (this.selectedCanvasIds.size === 0) return;
@@ -298,6 +439,7 @@ class CanvasesManageController {
             showMessage(result.message, 'success');
             this.selectedCanvasIds.clear();
             this.selectedCanvasUuid = null;
+            this.currentCanvasSize = null;
 
             setTimeout(() => {
                 if (window.spaRouter) window.spaRouter.navigate(`${this.basePath}/canvases/manage`, { forceReload: true });
@@ -311,14 +453,17 @@ class CanvasesManageController {
     handleCanvasSelection(rowElement) {
         const canvasId = rowElement.getAttribute('data-canvas-id');
         const uuid = rowElement.getAttribute('data-uuid');
+        const size = parseInt(rowElement.getAttribute('data-size')); // Captura el tamaño al clickear fila
         
         if (this.selectedCanvasIds.has(canvasId)) {
             this.selectedCanvasIds.delete(canvasId);
             this.selectedCanvasUuid = null;
+            this.currentCanvasSize = null;
             rowElement.classList.remove('selected');
         } else {
             this.selectedCanvasIds.add(canvasId);
             this.selectedCanvasUuid = uuid;
+            this.currentCanvasSize = size;
             rowElement.classList.add('selected');
         }
 
@@ -328,6 +473,7 @@ class CanvasesManageController {
     deselectCanvas() {
         this.selectedCanvasIds.clear();
         this.selectedCanvasUuid = null;
+        this.currentCanvasSize = null;
         document.querySelectorAll('[data-action="selectCanvas"]').forEach(el => el.classList.remove('selected'));
         this.updateSelectionUI();
     }
@@ -341,17 +487,18 @@ class CanvasesManageController {
         const btnResets = document.querySelector('[data-action="manageCanvasResets"]');
         const btnSnapshots = document.querySelector('[data-action="viewCanvasSnapshots"]');
         const btnRequests = document.querySelector('[data-action="viewCanvasRequests"]');
+        const btnResize = document.querySelector('[data-action="openResizeModal"]');
 
         if (this.selectedCanvasIds.size > 0) {
             if (defaultMode) defaultMode.classList.replace('active', 'disabled');
             if (selectionMode) selectionMode.classList.replace('disabled', 'active');
 
             if (this.selectedCanvasIds.size > 1) {
-                [btnEdit, btnMembers, btnResets, btnSnapshots, btnRequests].forEach(btn => {
+                [btnEdit, btnMembers, btnResets, btnSnapshots, btnRequests, btnResize].forEach(btn => {
                     if (btn) btn.classList.add('disabled-interactive');
                 });
             } else {
-                [btnEdit, btnMembers, btnResets, btnSnapshots, btnRequests].forEach(btn => {
+                [btnEdit, btnMembers, btnResets, btnSnapshots, btnRequests, btnResize].forEach(btn => {
                     if (btn) btn.classList.remove('disabled-interactive');
                 });
             }

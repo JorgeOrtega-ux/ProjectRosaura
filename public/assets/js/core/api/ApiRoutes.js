@@ -91,6 +91,8 @@ export const ApiRoutes = {
         Delete: 'canvases.delete',
         Leave: 'canvases.leave', 
         
+        Resize: 'canvases.resize', // NUEVA RUTA PARA EXPANSIÓN EN VIVO
+        
         ToggleFavorite: 'canvases.toggle_favorite',
         
         RequestAccess: 'canvases.request_access',
@@ -111,7 +113,6 @@ export const ApiRoutes = {
         CreateLiveShare: 'canvases.create_live_share',
         JoinLiveShare: 'canvases.join_live_share'
     },
-    // NUEVA RUTA
     Search: {
         Query: 'search.query'
     },

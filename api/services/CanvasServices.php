@@ -412,6 +412,64 @@ class CanvasServices {
         }
     }
 
+    // ==========================================
+    // EXPANSIÓN EN VIVO DEL LIENZO
+    // ==========================================
+    public function resizeCanvas(int $userId, int $canvasId, int $newSize, bool $canManageOfficial = false): array {
+        try {
+            $canvas = $this->canvasRepository->getById($canvasId);
+            if (!$canvas) {
+                return ['success' => false, 'message' => __('err_canvas_not_found') ?? 'Lienzo no encontrado.'];
+            }
+
+            $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            if (!$isOwner) {
+                $role = $this->canvasRepository->getMemberRole($canvasId, $userId);
+                if ($role !== 'admin') {
+                    return ['success' => false, 'message' => __('err_unauthorized') ?? 'No tienes permisos para redimensionar este lienzo.'];
+                }
+            }
+
+            $oldSize = (int)$canvas['size'];
+            if ($oldSize === $newSize) {
+                return ['success' => false, 'message' => 'El lienzo ya tiene esta resolución.'];
+            }
+
+            if (class_exists(RedisCache::class)) {
+                $redisInstance = new RedisCache();
+                $redis = $redisInstance->getClient();
+                
+                if ($redis) {
+                    $lockKey = "canvas:{$canvasId}:resize_lock";
+                    $redis->setex($lockKey, 60, "1"); // Bloqueo temporal preventivo para el worker
+                    
+                    $task = [
+                        'canvas_id' => $canvasId,
+                        'old_size'  => $oldSize,
+                        'new_size'  => $newSize
+                    ];
+                    
+                    $redis->lpush("canvases:pending_resizes", json_encode($task));
+                    
+                    $redis->publish("admin:canvas_events", json_encode([
+                        'type' => 'canvas_locked_resize',
+                        'canvas_id' => $canvasId,
+                        'new_size' => $newSize
+                    ]));
+
+                    return ['success' => true, 'message' => 'Proceso de expansión iniciado. El lienzo está bloqueado temporalmente.'];
+                }
+            }
+
+            return ['success' => false, 'message' => 'El servicio de colas no está disponible para procesar la expansión.'];
+
+        } catch (Exception $e) {
+            Logger::error('Error en resizeCanvas.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
+            return ['success' => false, 'message' => 'Error interno del servidor.'];
+        }
+    }
+    // ==========================================
+
     public function deleteSingleCanvas(int $userId, string $uuid, bool $canManageOfficial = false): array {
         try {
             $canvas = $this->canvasRepository->getCanvasByUuid($uuid);

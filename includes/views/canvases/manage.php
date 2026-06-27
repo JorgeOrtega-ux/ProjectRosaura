@@ -83,6 +83,11 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
             <div class="component-top-right">
                 
                 <div class="component-actions disabled" data-ref="header-selection-actions">
+                    
+                    <button class="component-button component-button--icon component-button--h40" data-action="openResizeModal" data-tooltip="<?php echo __('tooltip_resize_canvas') ?: 'Expandir / Ajustar'; ?>" data-position="bottom">
+                        <span class="material-symbols-rounded">expand</span>
+                    </button>
+
                     <button class="component-button component-button--icon component-button--h40 disabled-interactive" data-action="viewCanvasSnapshots" data-tooltip="<?php echo __('tooltip_view_snapshots') ?: 'Ver galería de reinicios'; ?>" data-position="bottom">
                         <span class="material-symbols-rounded">collections</span>
                     </button>
@@ -159,7 +164,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                     <tbody>
                         <?php if ($canvases): ?>
                             <?php foreach ($canvases as $canvas): ?>
-                                <tr class="component-table-row" data-action="selectCanvas" data-canvas-id="<?php echo htmlspecialchars($canvas['id']); ?>" data-uuid="<?php echo htmlspecialchars($canvas['uuid']); ?>">
+                                <tr class="component-table-row" data-action="selectCanvas" data-canvas-id="<?php echo htmlspecialchars($canvas['id']); ?>" data-uuid="<?php echo htmlspecialchars($canvas['uuid']); ?>" data-size="<?php echo htmlspecialchars($canvas['size']); ?>">
                                     <td>
                                         <div class="td-user-info">
                                             <div class="component-badge component-badge--sm">
@@ -229,6 +234,73 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                 </table>
             </div>
         </div>
+    </div>
+    
+    <div class="component-modal-overlay disabled" id="resizeModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease;">
+        <div class="component-modal-content" style="background: var(--bg-primary, #1e1e2e); border-radius: 12px; width: 100%; max-width: 480px; border: 1px solid var(--border-color, #333); transform: translateY(20px); transition: transform 0.3s ease; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
+            
+            <div class="component-modal-header" style="display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--border-color, #333);">
+                <h2 style="margin: 0; font-size: 18px; font-weight: 600; color: var(--text-primary, #fff);">Expansión de Lienzo</h2>
+                <button class="component-button component-button--icon component-button--transparent" data-action="closeResizeModal">
+                    <span class="material-symbols-rounded">close</span>
+                </button>
+            </div>
+            
+            <div class="component-modal-body" style="padding: 24px;">
+                <div class="component-group-item component-group-item--stacked">
+                    <div class="component-card__content">
+                        <div class="component-card__text">
+                            <h2 class="component-card__title">Tamaño del Lienzo</h2>
+                            <p class="component-card__description">Ajusta la resolución y los límites de este lienzo en vivo.</p>
+                        </div>
+                    </div>
+                    <div class="component-card__actions component-card__actions--start">
+                        <div class="component-dropdown-wrapper">
+                            <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="dropdownSizeResize">
+                                <span class="material-symbols-rounded" data-ref="resize-icon">crop_square</span>
+                                <span class="component-dropdown-text" data-ref="text-size-resize">64x64</span>
+                                <span class="material-symbols-rounded">expand_more</span>
+                            </div>
+                            <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="dropdownSizeResize">
+                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                                    <div class="pill-container"><div class="drag-handle"></div></div>
+                                    <div class="component-menu-list component-menu-list--scrollable">
+                                        <div class="component-menu-link active" data-action="selectValue" data-type="size" data-value="64" data-label="64x64" data-icon="crop_square">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">crop_square</span></div>
+                                            <div class="component-menu-link-text"><span>64x64</span></div>
+                                        </div>
+                                        <div class="component-menu-link" data-action="selectValue" data-type="size" data-value="128" data-label="128x128" data-icon="aspect_ratio">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">aspect_ratio</span></div>
+                                            <div class="component-menu-link-text"><span>128x128</span></div>
+                                        </div>
+                                        <div class="component-menu-link" data-action="selectValue" data-type="size" data-value="264" data-label="264x264" data-icon="grid_4x4">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">grid_4x4</span></div>
+                                            <div class="component-menu-link-text"><span>264x264</span></div>
+                                        </div>
+                                        <div class="component-menu-link" data-action="selectValue" data-type="size" data-value="512" data-label="512x512" data-icon="grid_on">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">grid_on</span></div>
+                                            <div class="component-menu-link-text"><span>512x512</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
+                <div class="component-alert component-alert--warning" data-ref="resize-warning" style="margin-top: 20px; display: none;">
+                    <span class="material-symbols-rounded">warning</span>
+                    <div class="component-alert-text">
+                        <strong>Atención:</strong> Al reducir el tamaño, se perderá de forma permanente el arte y contenido pintado fuera del nuevo límite.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="component-modal-footer" style="padding: 16px 24px; display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid var(--border-color, #333);">
+                <button class="component-button component-button--secondary" data-action="closeResizeModal">Cancelar</button>
+                <button class="component-button component-button--primary" data-action="applyResize">Expandir / Ajustar</button>
+            </div>
+            
+        </div>
     </div>
 </div>

@@ -66,7 +66,9 @@ class DesignController {
         this.nextResetAt = null;
         this.timerAction = 'restart';
         this.resetTimerInterval = null;
+        
         this.isResetLocked = false; 
+        this.isResizeLocked = false; // NUEVO ESTADO DE EXPANSIÓN
 
         // --- SISTEMA DE COOLDOWN LOCAL ---
         this.cooldownBalance = 5;
@@ -80,11 +82,12 @@ class DesignController {
         this.uiCooldownTimer = null;
         this.uiCooldownBadge = null;
         
-        // Elementos de Bloqueos (Reset y Privacidad)
+        // Elementos de Bloqueos (Reset, Privacidad, Resize)
         this.uiResetLockedBadge = null; 
         this.uiPrivateLockedBadge = null;
+        this.uiResizeLockedBadge = null;
 
-        // --- SISTEMA DE LIVE SHARE (NUEVO) ---
+        // --- SISTEMA DE LIVE SHARE ---
         this.liveShareStatus = 'none'; // 'none' | 'owner' | 'spectator'
         this.liveShareCode = null;
         this.liveTemplateId = null;
@@ -125,6 +128,7 @@ class DesignController {
         
         this.uiResetLockedBadge = document.querySelector('[data-ref="reset-locked-badge"]');
         this.uiPrivateLockedBadge = document.querySelector('[data-ref="private-locked-badge"]'); 
+        this.uiResizeLockedBadge = document.querySelector('[data-ref="resize-locked-badge"]'); // NUEVO
 
         // Mapeo UI Modo En Vivo
         this.uiLiveControls = document.querySelector('[data-ref="live-controls"]');
@@ -192,7 +196,7 @@ class DesignController {
         if (this.cooldownLoopId) cancelAnimationFrame(this.cooldownLoopId);
         
         const tick = () => {
-            if (!this.isSpectator && !this.isSnapshotMode) {
+            if (!this.isSpectator && !this.isSnapshotMode && !this.isResizeLocked) {
                 if (this.cooldownSec > 0 && this.cooldownBalance < this.cooldownMax) {
                     const elapsed = (Date.now() - this.lastSyncTime) / 1000;
                     let remaining = this.cooldownNextIn - elapsed;

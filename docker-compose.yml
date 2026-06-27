@@ -204,6 +204,28 @@ services:
     networks:
       - rosaura_network
 
+  # ✨ NUEVO WORKER DE REDIMENSIÓN / EXPANSIÓN
+  worker_canvas_resize:
+    build:
+      context: .
+      dockerfile: docker/python/Dockerfile.worker
+    container_name: rosaura_worker_canvas_resize
+    restart: always
+    command: python -u scripts/worker_canvas_resize.py
+    volumes:
+      - .:/app
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    env_file:
+      - .env
+    environment:
+      - TZ=${APP_TIMEZONE:-UTC}
+    networks:
+      - rosaura_network
+
   websocket_server:
     build:
       context: .
