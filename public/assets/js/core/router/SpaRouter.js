@@ -43,6 +43,9 @@ export class SpaRouter {
         } else if (moduleUrl.startsWith('/canvases/members/')) {
             moduleUrl = '/canvases/members/:uuid';
             triggerManualLoad = true;
+        } else if (moduleUrl.startsWith('/canvases/resize/')) { // <-- ¡NUEVO!
+            moduleUrl = '/canvases/resize/:uuid';
+            triggerManualLoad = true;
         } else if (moduleUrl.startsWith('/design/s/')) {
             moduleUrl = '/design/s/:uuid';
             triggerManualLoad = true;
@@ -61,7 +64,7 @@ export class SpaRouter {
                         loadTimeMs: 0
                     } 
                 }));
-            }, 100); // Retraso de seguridad asegurando que MainController ya inicializó sus Listeners
+            }, 100); 
         }
         // =================================================================
     }
@@ -267,6 +270,8 @@ export class SpaRouter {
                     moduleUrl = '/canvases/manage/requests/:uuid';
                 } else if (moduleUrl.startsWith('/canvases/manage/resets/')) {
                     moduleUrl = '/canvases/manage/resets/:uuid';
+                } else if (moduleUrl.startsWith('/canvases/resize/')) { // <-- ¡NUEVO!
+                    moduleUrl = '/canvases/resize/:uuid';
                 } else if (moduleUrl.startsWith('/canvases/edit/')) {
                     moduleUrl = '/canvases/edit/:uuid';
                 } else if (moduleUrl.startsWith('/canvases/members/')) {
@@ -435,6 +440,8 @@ export class SpaRouter {
             mapKey = '/canvases/manage/requests/:uuid';
         } else if (cleanUrl.startsWith('/canvases/manage/resets/')) {
             mapKey = '/canvases/manage/resets/:uuid';
+        } else if (cleanUrl.startsWith('/canvases/resize/')) { // <-- ¡NUEVO!
+            mapKey = '/canvases/resize/:uuid';
         } else if (cleanUrl.startsWith('/canvases/edit/')) {
             mapKey = '/canvases/edit/:uuid';
         } else if (cleanUrl.startsWith('/canvases/members/')) {

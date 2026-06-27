@@ -72,11 +72,11 @@ export const RouteModulesMap = {
     '/canvases/create': { path: './modules/canvases/CanvasesController.js', className: 'CanvasesController', skeletonType: 'layout-dashboard' },
     '/canvases/manage': { path: './modules/canvases/CanvasesManageController.js', className: 'CanvasesManageController', skeletonType: 'layout-dashboard' },
     
-    // RUTAS ACTUALIZADAS PARA RECONOCER :uuid
     '/canvases/manage/requests/:uuid': { path: './modules/canvases/CanvasRequestsController.js', className: 'CanvasRequestsController', skeletonType: 'layout-dashboard' },
     '/canvases/manage/resets/:uuid': { path: './modules/canvases/CanvasResetController.js', className: 'CanvasResetController', skeletonType: 'layout-settings-generic' },
     '/canvases/edit/:uuid': { path: './modules/canvases/CanvasEditController.js', className: 'CanvasEditController', skeletonType: 'layout-dashboard' },
     '/canvases/members/:uuid': { path: './modules/canvases/CanvasMembersController.js', className: 'CanvasMembersController', skeletonType: 'layout-dashboard' },
+    '/canvases/resize/:uuid': { path: './modules/canvases/CanvasResizeController.js', className: 'CanvasResizeController', skeletonType: 'layout-settings-generic' },
     
     '/canvases/join': { path: './modules/canvases/CanvasesController.js', className: 'CanvasesController', skeletonType: 'layout-dashboard' },
     

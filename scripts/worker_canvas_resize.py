@@ -5,6 +5,7 @@ import time
 import zlib
 import pymysql
 import redis
+import traceback # AGREGADO PARA LOGS PROFUNDOS
 
 def get_redis_client():
     return redis.Redis(
@@ -15,55 +16,65 @@ def get_redis_client():
     )
 
 def get_db_connection():
+    # Alineado exactamente con la arquitectura de tu .env
     return pymysql.connect(
-        host=os.getenv("DB_HOST", "mysql"),
+        host=os.getenv("DB_HOST", "db"),
         port=int(os.getenv("DB_PORT", 3306)),
-        user=os.getenv("DB_USER", "root"),
-        password=os.getenv("DB_PASS", "root_password"),
-        database=os.getenv("DB_NAME", "canvases_db"),
+        user=os.getenv("DB_USER", "system_web_executor"),
+        password=os.getenv("DB_PASS", ""),
+        database=os.getenv("DB_CANVASES_NAME", "db_canvases"), # <-- AQUÍ ESTABA EL ERROR
         cursorclass=pymysql.cursors.DictCursor
     )
 
 def process_resize_task(r, db, task_data):
     try:
+        print(f"\n==============================================")
+        print(f"[WORKER LOG] === NUEVA TAREA RECIBIDA ===")
+        print(f"[WORKER LOG] Payload recibido: {task_data}")
+        
         canvas_id = int(task_data.get('canvas_id'))
         old_size = int(task_data.get('old_size'))
         new_size = int(task_data.get('new_size'))
 
-        print(f"[*] Iniciando redimensión del lienzo {canvas_id}. {old_size}x{old_size} -> {new_size}x{new_size}")
+        print(f"[WORKER LOG] Preparando lienzo {canvas_id}. {old_size}x{old_size} -> {new_size}x{new_size}")
 
         state_key = f"canvas:{canvas_id}:state"
+        print(f"[WORKER LOG] Buscando estado en Redis: {state_key}")
         old_state = r.get(state_key)
 
         if not old_state:
-            print(f"[!] No se encontró el estado binario para el lienzo {canvas_id} en Redis.")
-            return
+            raise ValueError(f"No se encontró el estado binario para el lienzo {canvas_id} en Redis.")
+
+        print(f"[WORKER LOG] Estado obtenido. Bytes recibidos: {len(old_state)}. Esperados: {old_size * old_size}")
+        
+        # Validamos que el estado antiguo no esté corrupto para evitar IndexError
+        expected_size = old_size * old_size
+        if len(old_state) < expected_size:
+            raise ValueError(f"El estado en Redis está corrupto. Tamaño esperado: {expected_size}, actual: {len(old_state)}.")
 
         # 1. Transformación Matemática Binaria
-        # Inicializamos un nuevo buffer del tamaño correcto, relleno completamente de 255 (vacío/transparente)
+        print(f"[WORKER LOG] Iniciando mapeo matemático de pixeles...")
         new_state = bytearray([255] * (new_size * new_size))
-        
-        # Iteramos en el menor de los rangos para mapear los pixeles y evitar desbordamientos
         limit = min(old_size, new_size)
         
         for y in range(limit):
             for x in range(limit):
                 old_idx = (y * old_size) + x
                 new_idx = (y * new_size) + x
-                # Transferimos el color
                 new_state[new_idx] = old_state[old_idx]
 
         new_state_bytes = bytes(new_state)
+        print(f"[WORKER LOG] Mapeo finalizado. Nuevo tamaño de matriz: {len(new_state_bytes)} bytes")
 
         # 2. Reemplazamos en Redis
+        print(f"[WORKER LOG] Guardando nueva matriz en Redis...")
         r.set(state_key, new_state_bytes)
 
         # 3. Guardamos en MySQL
-        # a) Actualizamos configuración del tamaño en la tabla principal
+        print(f"[WORKER LOG] Comprimiendo matriz con Zlib y guardando en MySQL...")
         with db.cursor() as cursor:
             cursor.execute("UPDATE canvases SET size = %s WHERE id = %s", (new_size, canvas_id))
             
-            # b) Actualizamos el snapshot base del lienzo comprimido
             compressed_state = zlib.compress(new_state_bytes)
             cursor.execute("""
                 INSERT INTO canvas_snapshots (canvas_id, snapshot_data) 
@@ -72,8 +83,9 @@ def process_resize_task(r, db, task_data):
             """, (canvas_id, compressed_state, compressed_state))
             
             db.commit()
+            print(f"[WORKER LOG] MySQL actualizado exitosamente.")
 
-        # 4. Limpiamos Bloqueos y Emitimos Evento de Completado a las Salas WS
+        # 4. Limpiamos Bloqueos y Emitimos Evento
         lock_key = f"canvas:{canvas_id}:resize_lock"
         r.delete(lock_key)
 
@@ -83,31 +95,38 @@ def process_resize_task(r, db, task_data):
             "new_size": new_size
         })
         
+        print(f"[WORKER LOG] Emitiendo señal a WebSockets (PubSub: admin:canvas_events)...")
         r.publish("admin:canvas_events", completed_msg.encode('utf-8'))
-        print(f"[+] Redimensión de lienzo {canvas_id} completada exitosamente.")
+        print(f"[WORKER LOG] === REDIMENSIÓN FINALIZADA OK ===")
+        print(f"==============================================\n")
 
     except Exception as e:
-        print(f"[!] Error procesando redimensión: {e}")
-        # En caso de error severo, siempre nos aseguramos de liberar el cerrojo
+        print(f"\n[!!! ERROR CRÍTICO EN WORKER DE REDIMENSIÓN !!!]")
+        print(f"Tipo de error: {type(e).__name__}")
+        print(f"Mensaje: {str(e)}")
+        print(f"Traceback detallado:")
+        traceback.print_exc()
+        
+        # En caso de error severo, intentamos notificar al frontend
         if 'canvas_id' in locals():
             try:
+                print(f"[WORKER LOG] Intentando liberar frontend de la pantalla de carga infinita...")
                 r.delete(f"canvas:{canvas_id}:resize_lock")
                 
-                # Emitimos un evento de error para desbloquear la UI (quitar el blur infinito)
                 error_msg = json.dumps({
                     "type": "canvas_resize_error",
                     "canvas_id": canvas_id,
-                    "error": "Error interno al expandir el lienzo."
+                    "error": f"Error del Servidor: {type(e).__name__} - {str(e)}"
                 })
                 r.publish("admin:canvas_events", error_msg.encode('utf-8'))
-                print(f"[!] Evento de error enviado para liberar el frontend.")
+                print(f"[WORKER LOG] Evento de error enviado a PubSub.")
             except Exception as cleanup_error:
-                print(f"[!] Fallo al limpiar cerrojos: {cleanup_error}")
+                print(f"[!!!] Fallo catastrófico al intentar limpiar cerrojos: {cleanup_error}")
+        print(f"==============================================\n")
 
 def main():
-    print("[*] Iniciando Worker de Expansión/Redimensión de Lienzos...")
+    print("[*] Iniciando Worker de Expansión/Redimensión de Lienzos con LOGS DETALLADOS...")
     
-    # Inicialización de dependencias con tolerancia a fallos
     while True:
         try:
             r = get_redis_client()
@@ -125,16 +144,13 @@ def main():
 
     while True:
         try:
-            # Revalidamos la conexión MySQL (evita el "MySQL has gone away" en inactividad prolongada)
             db.ping(reconnect=True)
             
             # Bloqueamos (BLPOP) hasta que exista una tarea
-            # Retorna una tupla: (nombre_de_lista, valor)
             result = r.blpop(queue_key, timeout=30)
             
             if result:
                 _, task_json = result
-                # Decode en caso de que venga como bytes
                 if isinstance(task_json, bytes):
                     task_json = task_json.decode('utf-8')
                     
@@ -142,7 +158,8 @@ def main():
                 process_resize_task(r, db, task_data)
 
         except Exception as e:
-            print(f"[!] Error en el bucle principal del Worker: {e}")
+            print(f"[!] Error en el bucle principal del Worker (BLPOP fallido): {e}")
+            traceback.print_exc()
             time.sleep(5)
 
 if __name__ == "__main__":

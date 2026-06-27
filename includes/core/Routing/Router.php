@@ -98,6 +98,17 @@ class Router {
                 'requires_2fa' => false
             ];
         }
+        
+        // Resize (¡NUEVO!)
+        if (preg_match('#^/canvases/resize/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
+            $_GET['uuid'] = $matches[1];
+            return $this->routes['/canvases/resize/:uuid'] ?? [
+                'view' => 'canvases/resize.php',
+                'auth' => true,
+                'permissions' => ['manage_canvases'],
+                'requires_2fa' => false
+            ];
+        }
         // ---------------------------------
 
         if (!array_key_exists($relativePath, $this->routes)) {

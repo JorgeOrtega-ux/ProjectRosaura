@@ -66,14 +66,21 @@ export const DesignNetwork = {
             this.wsManager = new WebSocketManager();
             
             this.wsManager.on('open', () => {
+                console.log('[WS DEBUG] Conexión abierta. Enviando init...');
                 this.wsManager.send({ type: 'init', userId: uid });
             });
 
             this.wsManager.on('qos_evicted', (reason) => {
+                console.warn('[WS DEBUG] Expulsado por QoS:', reason);
                 showMessage(reason || 'Servidor lleno. Se ha dado prioridad a usuarios registrados.', 'warning');
             });
 
             this.wsManager.on('message', (data) => {
+                // LOG GLOBAL: Muestra cualquier cosa que envíe el servidor WebSocket
+                if (data.type !== 'pixel' && data.type !== 'pixel_confirm') { // Ignoramos pixeles para no saturar la consola
+                    console.log(`[WS DEBUG] Mensaje recibido del servidor:`, data);
+                }
+
                 if (data.type === 'pixel') {
                     const pX = parseInt(data.x, 10);
                     const pY = parseInt(data.y, 10);
@@ -103,12 +110,15 @@ export const DesignNetwork = {
                 else if (data.type === 'canvas_locked_error') {
                     showMessage('El lienzo está en proceso de reinicio. Espera.', 'warning');
                 }
-                // --- NUEVOS EVENTOS DE REDIMENSIÓN ---
+                // --- EVENTOS DE REDIMENSIÓN ---
                 else if (data.type === 'canvas_locked_resize') {
                     this.handleCanvasLockedResize(data);
                 }
                 else if (data.type === 'canvas_resize_completed') {
                     this.handleCanvasResizeCompleted(data);
+                }
+                else if (data.type === 'canvas_resize_error') {
+                    this.handleCanvasResizeError(data);
                 }
                 // -------------------------------------
                 else if (data.type === 'live_image_updated') {
@@ -122,6 +132,7 @@ export const DesignNetwork = {
             this.wsManager.connect(this.canvasIntId, wsTicket);
 
             this.wsManager.handleReconnect = async () => {
+                console.log('[WS DEBUG] Intentando reconectar...');
                 if (this.wsManager.reconnectAttempts < this.wsManager.maxReconnectAttempts) {
                     const delay = this.wsManager.baseDelay * Math.pow(2, this.wsManager.reconnectAttempts);
                     
@@ -137,38 +148,39 @@ export const DesignNetwork = {
 
                         const res = await this.api.post(route, p);
                         if (res.success && res.data?.ticket) {
+                            console.log('[WS DEBUG] Reconexión exitosa. Nuevo ticket:', res.data.ticket);
                             this.wsManager.connect(this.canvasIntId, res.data.ticket);
                         } else {
                             this.wsManager.handleReconnect();
                         }
                     }, delay);
                 } else {
+                    console.error('[WS DEBUG] Máximo de intentos de reconexión alcanzado.');
                     showMessage('Desconectado del servidor tras múltiples intentos.', 'error');
                 }
             };
 
         } catch (error) {
+            console.error('[WS DEBUG] Error inicializando WebSocket:', error);
             showMessage('Fallo de conexión al inicializar WebSocket.', 'error');
         }
     },
 
     // ==========================================
-    // MÉTODOS DE REDIMENSIÓN (NUEVOS)
+    // MÉTODOS DE REDIMENSIÓN (LOGS AGREGADOS + TIMEOUT)
     // ==========================================
     handleCanvasLockedResize(data) {
+        console.log('[FRONTEND LOG] Bloqueando lienzo para redimensión...', data);
         this.isResizeLocked = true;
         
-        // Bloquear UI visualmente
         if (this.canvas) {
             this.canvas.style.filter = 'blur(6px)';
             this.canvas.style.pointerEvents = 'none';
         }
 
-        // Si tenemos un badge específico para redimensión lo mostramos, si no, usamos un Toast
         if (this.uiResizeLockedBadge) {
             this.uiResizeLockedBadge.classList.remove('disabled');
         } else if (this.uiResetLockedBadge) {
-            // Fallback: reutilizar el badge de reinicio temporalmente si no existe el de resize
             this.uiResetLockedBadge.querySelector('span:last-child').textContent = 'Expandiendo...';
             this.uiResetLockedBadge.classList.remove('disabled');
         }
@@ -178,15 +190,53 @@ export const DesignNetwork = {
         this.requestRender();
         
         showMessage('Expandiendo lienzo en vivo... Acciones bloqueadas temporalmente.', 'warning');
+
+        // SEGURIDAD / LOGS: Timeout para no quedarse infinitamente congelado
+        if (this.resizeTimeout) clearTimeout(this.resizeTimeout);
+        this.resizeTimeout = setTimeout(() => {
+            if (this.isResizeLocked) {
+                console.error('[FRONTEND LOG] TIMEOUT EXCEDIDO: El servidor nunca respondió a la redimensión tras 45s.');
+                this.isResizeLocked = false;
+                if (this.canvas) {
+                    this.canvas.style.filter = 'none';
+                    this.canvas.style.pointerEvents = 'auto';
+                }
+                if (this.uiResizeLockedBadge) this.uiResizeLockedBadge.classList.add('disabled');
+                else if (this.uiResetLockedBadge) this.uiResetLockedBadge.classList.add('disabled');
+                
+                showMessage('El servidor tardó demasiado. Revisa los logs del backend.', 'error');
+            }
+        }, 45000); 
     },
 
     handleCanvasResizeCompleted(data) {
+        console.log('[FRONTEND LOG] Redimensión EXITOSA reportada por servidor. Recargando...', data);
+        if (this.resizeTimeout) clearTimeout(this.resizeTimeout);
+
         showMessage('Expansión completada con éxito. Recargando...', 'success');
-        
-        // Forzamos la recarga de la página para obtener el nuevo tamaño y estado de MySQL/Redis limpio
         setTimeout(() => {
             window.location.reload();
         }, 1500);
+    },
+
+    handleCanvasResizeError(data) {
+        console.error('[FRONTEND LOG] El Worker de Python reportó un ERROR de redimensión:', data);
+        if (this.resizeTimeout) clearTimeout(this.resizeTimeout);
+
+        this.isResizeLocked = false;
+        
+        if (this.canvas) {
+            this.canvas.style.filter = 'none';
+            this.canvas.style.pointerEvents = 'auto';
+        }
+
+        if (this.uiResizeLockedBadge) {
+            this.uiResizeLockedBadge.classList.add('disabled');
+        } else if (this.uiResetLockedBadge) {
+            this.uiResetLockedBadge.classList.add('disabled');
+        }
+        
+        showMessage(data.error || 'Error interno al expandir el lienzo.', 'error');
     },
     // ==========================================
 
