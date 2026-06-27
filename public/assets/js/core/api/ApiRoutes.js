@@ -91,7 +91,9 @@ export const ApiRoutes = {
         Delete: 'canvases.delete',
         Leave: 'canvases.leave', 
         
-        Resize: 'canvases.resize', // NUEVA RUTA PARA EXPANSIÓN EN VIVO
+        Resize: 'canvases.resize',
+        GetResizeSettings: 'canvases.get_resize_settings',
+        UpdateResizeSettings: 'canvases.update_resize_settings',
         
         ToggleFavorite: 'canvases.toggle_favorite',
         

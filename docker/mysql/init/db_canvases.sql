@@ -82,7 +82,7 @@ CREATE TABLE IF NOT EXISTS `canvas_snapshots` (
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 -- ==========================================
--- TABLA NUEVA PARA CONFIGURACIÓN DE REINICIOS
+-- TABLA PARA CONFIGURACIÓN DE REINICIOS
 -- ==========================================
 
 CREATE TABLE IF NOT EXISTS `canvas_reset_settings` (
@@ -98,7 +98,23 @@ CREATE TABLE IF NOT EXISTS `canvas_reset_settings` (
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 -- ==========================================
--- TABLA NUEVA PARA HISTORIAL DE REINICIOS (SNAPSHOTS)
+-- TABLA NUEVA PARA CONFIGURACIÓN DE EXPANSIONES/REDUCCIONES
+-- ==========================================
+
+CREATE TABLE IF NOT EXISTS `canvas_resize_settings` (
+  `canvas_id` int(11) NOT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT 0,
+  `next_resize_at` datetime DEFAULT NULL COMMENT 'Almacenado estrictamente en UTC',
+  `target_size` varchar(20) NOT NULL DEFAULT '64',
+  `timer_action` enum('restart', 'stop', 'none') DEFAULT 'restart',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`canvas_id`),
+  CONSTRAINT `fk_resize_settings_canvas` FOREIGN KEY (`canvas_id`) REFERENCES `canvases` (`id`) ON DELETE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
+
+-- ==========================================
+-- TABLA PARA HISTORIAL DE REINICIOS (SNAPSHOTS)
 -- ==========================================
 
 CREATE TABLE IF NOT EXISTS `canvas_snapshots_history` (
@@ -114,7 +130,7 @@ CREATE TABLE IF NOT EXISTS `canvas_snapshots_history` (
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 -- ==========================================
--- TABLA NUEVA PARA LIBRERÍA DE PLANTILLAS DE USUARIO
+-- TABLA PARA LIBRERÍA DE PLANTILLAS DE USUARIO
 -- ==========================================
 
 CREATE TABLE IF NOT EXISTS `user_templates` (

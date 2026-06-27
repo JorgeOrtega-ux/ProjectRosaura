@@ -165,11 +165,27 @@ class CanvasServices {
             $canvas['height'] = $canvas['size'];
             $canvas['requires_approval'] = (bool)$canvas['requires_approval'];
 
+            // OBTENER ESTADO DE REINICIO
             $resetSettings = $this->canvasRepository->getResetSettings($canvasId);
             if ($resetSettings && $resetSettings['is_active']) {
                 $canvas['next_reset_at'] = $resetSettings['next_reset_at'];
             } else {
                 $canvas['next_reset_at'] = null;
+            }
+
+            // OBTENER ESTADO DE EXPANSIÓN PROGRAMADA
+            if (method_exists($this->canvasRepository, 'getResizeSettings')) {
+                $resizeSettings = $this->canvasRepository->getResizeSettings($canvasId);
+                if ($resizeSettings && $resizeSettings['is_active']) {
+                    $canvas['next_resize_at'] = $resizeSettings['next_resize_at'];
+                    $canvas['target_size'] = $resizeSettings['target_size'];
+                } else {
+                    $canvas['next_resize_at'] = null;
+                    $canvas['target_size'] = null;
+                }
+            } else {
+                $canvas['next_resize_at'] = null;
+                $canvas['target_size'] = null;
             }
 
             $redisKey = "canvas:{$canvasId}:state";
@@ -413,7 +429,7 @@ class CanvasServices {
     }
 
     // ==========================================
-    // EXPANSIÓN EN VIVO DEL LIENZO
+    // EXPANSIÓN EN VIVO DEL LIENZO Y PROGRAMACIÓN
     // ==========================================
     public function resizeCanvas(int $userId, int $canvasId, int $newSize, bool $canManageOfficial = false): array {
         try {
@@ -468,6 +484,96 @@ class CanvasServices {
             return ['success' => false, 'message' => 'Error interno del servidor.'];
         }
     }
+
+    public function getResizeSettings(int $userId, int $canvasId, bool $canManageOfficial = false): array {
+        try {
+            $canvas = $this->canvasRepository->getById($canvasId);
+            $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            
+            if (!$canvas || !$isOwner) {
+                return ['success' => false, 'message' => __('err_unauthorized') ?? 'No tienes permisos para ver la configuración de este lienzo.'];
+            }
+
+            $settings = $this->canvasRepository->getResizeSettings($canvasId);
+            if (!$settings) {
+                $settings = [
+                    'is_active' => false,
+                    'next_resize_at' => null,
+                    'target_size' => '64',
+                    'timer_action' => 'restart'
+                ];
+            } else {
+                $settings['is_active'] = (bool)$settings['is_active'];
+            }
+
+            return ['success' => true, 'data' => $settings];
+        } catch (Exception $e) {
+            Logger::error('Error getting resize settings.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database')];
+        }
+    }
+
+    public function updateResizeSettings(int $userId, int $canvasId, array $data, bool $canManageOfficial = false): array {
+        try {
+            $canvas = $this->canvasRepository->getById($canvasId);
+            $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+
+            if (!$canvas || !$isOwner) {
+                return ['success' => false, 'message' => __('err_unauthorized') ?? 'No tienes permisos para modificar este lienzo.'];
+            }
+
+            $isActive = filter_var($data['is_active'] ?? false, FILTER_VALIDATE_BOOLEAN);
+            $nextResizeAt = null;
+            $targetSize = in_array($data['target_size'] ?? '64', ['64', '128', '264', '512']) ? $data['target_size'] : '64';
+            
+            if ($isActive) {
+                if (empty($data['next_resize_at'])) {
+                    return ['success' => false, 'message' => 'La fecha de redimensión es obligatoria si la opción está activada.'];
+                }
+                
+                $date = DateTime::createFromFormat('Y-m-d H:i:s', $data['next_resize_at']);
+                if (!$date || $date->format('Y-m-d H:i:s') !== $data['next_resize_at']) {
+                    return ['success' => false, 'message' => 'Formato de fecha inválido (Debe ser UTC Y-m-d H:i:s).'];
+                }
+                $nextResizeAt = $data['next_resize_at'];
+            }
+
+            $settings = [
+                'is_active' => $isActive ? 1 : 0,
+                'next_resize_at' => $nextResizeAt,
+                'target_size' => $targetSize,
+                'timer_action' => in_array($data['timer_action'] ?? 'restart', ['stop', 'none', 'restart']) ? $data['timer_action'] : 'restart'
+            ];
+
+            $this->canvasRepository->updateResizeSettings($canvasId, $settings);
+
+            try {
+                if (class_exists(RedisCache::class)) {
+                    $redisInstance = new RedisCache();
+                    $redis = $redisInstance->getClient();
+                    if ($redis) {
+                        $redisKey = CacheConstants::PREFIX_CANVAS_NEXT_RESIZE . $canvasId;
+                        if ($isActive && $nextResizeAt) {
+                            $payload = json_encode([
+                                'next_resize_at' => $nextResizeAt,
+                                'target_size' => $targetSize
+                            ]);
+                            $redis->set($redisKey, $payload);
+                        } else {
+                            $redis->del($redisKey);
+                        }
+                    }
+                }
+            } catch (Exception $e) {
+                Logger::error('Error actualizando Redis para resize settings.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
+            }
+
+            return ['success' => true, 'message' => 'Configuración de expansión programada actualizada correctamente.'];
+        } catch (Exception $e) {
+            Logger::error('Error updating resize settings.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database')];
+        }
+    }
     // ==========================================
 
     public function deleteSingleCanvas(int $userId, string $uuid, bool $canManageOfficial = false): array {
@@ -502,6 +608,7 @@ class CanvasServices {
                             $redis->del("canvas:{$canvas['id']}:state");
                             $redis->del("canvas:{$canvas['id']}:config");
                             $redis->del(CacheConstants::PREFIX_CANVAS_NEXT_RESET . $canvas['id']);
+                            $redis->del(CacheConstants::PREFIX_CANVAS_NEXT_RESIZE . $canvas['id']); // Agregado por seguridad
                             
                             if ($canvas['owner_id'] === null) {
                                 $redis->del(CacheConstants::KEY_OFFICIAL_CANVASES);
@@ -652,6 +759,7 @@ class CanvasServices {
                                 $redis->del("canvas:{$id}:state");
                                 $redis->del("canvas:{$id}:config");
                                 $redis->del(CacheConstants::PREFIX_CANVAS_NEXT_RESET . $id);
+                                $redis->del(CacheConstants::PREFIX_CANVAS_NEXT_RESIZE . $id);
                             }
                         }
                     }

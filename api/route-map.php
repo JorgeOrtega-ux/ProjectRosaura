@@ -371,6 +371,18 @@ return [
         'action' => 'resize',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_resize', 'max' => RL::MAX_5, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
+    
+    // NUEVAS RUTAS DE PROGRAMACIÓN DE REDIMENSIONES (RESIZES)
+    'canvases.get_resize_settings' => [
+        'controller' => 'App\Api\Controllers\CanvasController',
+        'action' => 'get_resize_settings',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_get_resize', 'max' => RL::MAX_20, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
+    ],
+    'canvases.update_resize_settings' => [
+        'controller' => 'App\Api\Controllers\CanvasController',
+        'action' => 'update_resize_settings',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_upd_resize', 'max' => RL::MAX_10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
+    ],
 
     // NUEVA RUTA: TOGGLE FAVORITOS
     'canvases.toggle_favorite' => [

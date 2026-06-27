@@ -359,7 +359,7 @@ class CanvasController extends BaseController {
     }
 
     // ==========================================
-    // EXPANSIÓN EN VIVO DEL LIENZO
+    // EXPANSIÓN EN VIVO DEL LIENZO Y PROGRAMACIÓN
     // ==========================================
     public function resize($input) {
         try {
@@ -383,6 +383,49 @@ class CanvasController extends BaseController {
             $result = $this->canvasServices->resizeCanvas($userId, (int)$canvasId, (int)$newSize, $this->canManageOfficial());
             return $this->respond($result);
 
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
+    public function get_resize_settings($input) {
+        try {
+            if (!$this->session->isLoggedIn()) {
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+            }
+
+            $userId = $this->session->getActiveAccountId();
+            $canvasId = $input['id'] ?? null;
+            if (!$canvasId) {
+                return $this->respond(['success' => false, 'message' => 'Lienzo no proporcionado.']);
+            }
+            
+            return $this->respond($this->canvasServices->getResizeSettings($userId, (int)$canvasId, $this->canManageOfficial()));
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
+    public function update_resize_settings($input) {
+        try {
+            if (!$this->session->isLoggedIn()) {
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+            }
+
+            $userId = $this->session->getActiveAccountId();
+            $canvasId = $input['id'] ?? null;
+            if (!$canvasId) {
+                return $this->respond(['success' => false, 'message' => 'Lienzo no proporcionado.']);
+            }
+            
+            $data = [
+                'is_active' => filter_var($input['is_active'] ?? false, FILTER_VALIDATE_BOOLEAN),
+                'next_resize_at' => $input['next_resize_at'] ?? null,
+                'target_size' => $input['target_size'] ?? '64',
+                'timer_action' => $input['timer_action'] ?? 'restart'
+            ];
+            
+            return $this->respond($this->canvasServices->updateResizeSettings($userId, (int)$canvasId, $data, $this->canManageOfficial()));
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);
         }

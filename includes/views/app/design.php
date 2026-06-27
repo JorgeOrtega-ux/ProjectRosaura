@@ -17,10 +17,16 @@ $canvasApproval = '0';
 $canvasCooldownBatch = '5';
 $canvasCooldownSeconds = '10';
 
-// Nuevas variables para reinicios
+// Variables para reinicios
 $resetActive = '0';
 $nextResetAt = '';
 $timerAction = 'restart';
+
+// Variables para expansiones (resize)
+$resizeActive = '0';
+$nextResizeAt = '';
+$resizeTargetSize = '64';
+$resizeTimerAction = 'restart';
 
 $canvasUuid = $_GET['id'] ?? '';
 $isSnapshot = isset($_GET['snapshot']); // Bandera para saber si es historial
@@ -33,12 +39,14 @@ if (!empty($canvasUuid)) {
         $dbManager = new DatabaseManager();
         $db = $dbManager->getConnection(DB::CONN_CANVASES);
 
-        // Traemos también la info de canvas_reset_settings y la configuración de Cooldown
+        // Traemos información de reinicios y redimensiones
         $sql = "SELECT c.id, c.name, c.size, c.palette_id, c.privacy, c.requires_approval, 
                        c.cooldown_pixels_batch, c.cooldown_seconds,
-                       r.is_active, r.next_reset_at, r.timer_action 
+                       r.is_active as reset_active, r.next_reset_at, r.timer_action as reset_timer_action,
+                       rs.is_active as resize_active, rs.next_resize_at, rs.target_size, rs.timer_action as resize_timer_action
                 FROM " . DB::TBL_CANVASES . " c
                 LEFT JOIN canvas_reset_settings r ON c.id = r.canvas_id
+                LEFT JOIN canvas_resize_settings rs ON c.id = rs.canvas_id
                 WHERE c.uuid = :uuid LIMIT 1";
         
         $stmt = $db->prepare($sql);
@@ -56,9 +64,14 @@ if (!empty($canvasUuid)) {
             $canvasCooldownBatch = $canvas['cooldown_pixels_batch'] ?? '5';
             $canvasCooldownSeconds = $canvas['cooldown_seconds'] ?? '10';
 
-            $resetActive = $canvas['is_active'] ?? '0';
+            $resetActive = $canvas['reset_active'] ?? '0';
             $nextResetAt = $canvas['next_reset_at'] ?? '';
-            $timerAction = $canvas['timer_action'] ?? 'restart';
+            $timerAction = $canvas['reset_timer_action'] ?? 'restart';
+
+            $resizeActive = $canvas['resize_active'] ?? '0';
+            $nextResizeAt = $canvas['next_resize_at'] ?? '';
+            $resizeTargetSize = $canvas['target_size'] ?? '64';
+            $resizeTimerAction = $canvas['resize_timer_action'] ?? 'restart';
         }
     } catch (\Exception $e) {
         error_log("Error al cargar el lienzo en la vista de diseño: " . $e->getMessage());
@@ -81,7 +94,11 @@ if (!empty($canvasUuid)) {
          data-cooldown-seconds="<?php echo htmlspecialchars($canvasCooldownSeconds); ?>"
          data-reset-active="<?php echo htmlspecialchars($resetActive); ?>"
          data-reset-at="<?php echo htmlspecialchars($nextResetAt); ?>"
-         data-timer-action="<?php echo htmlspecialchars($timerAction); ?>">
+         data-timer-action="<?php echo htmlspecialchars($timerAction); ?>"
+         data-resize-active="<?php echo htmlspecialchars($resizeActive); ?>"
+         data-resize-at="<?php echo htmlspecialchars($nextResizeAt); ?>"
+         data-resize-target="<?php echo htmlspecialchars($resizeTargetSize); ?>"
+         data-resize-timer-action="<?php echo htmlspecialchars($resizeTimerAction); ?>">
          
         <div class="component-top">
             <div class="component-top-left" style="display: flex; align-items: center; gap: 12px;">
@@ -162,10 +179,20 @@ if (!empty($canvasUuid)) {
                 <span class="material-symbols-rounded icon-spin-slow" style="font-size: 16px; margin-right: 4px;">auto_delete</span>
                 <span>En Reinicio...</span>
             </div>
+            
+            <div class="component-badge component-badge--absolute-tl disabled" data-ref="resize-locked-badge" style="top: 132px; background: var(--action-primary); color: #fff; border-color: var(--action-primary); z-index: 50;">
+                <span class="material-symbols-rounded icon-spin-slow" style="font-size: 16px; margin-right: 4px;">aspect_ratio</span>
+                <span>Expandiendo...</span>
+            </div>
 
             <div class="component-reset-timer disabled" data-ref="reset-timer-badge">
                 <span class="material-symbols-rounded icon-spin-slow">autorenew</span>
                 <span data-ref="reset-timer-text">00:00:00</span>
+            </div>
+
+            <div class="component-reset-timer disabled" data-ref="resize-timer-badge" style="top: 80px; background: rgba(37, 99, 235, 0.85);">
+                <span class="material-symbols-rounded" style="animation: pulse 2s infinite;">aspect_ratio</span>
+                <span data-ref="resize-timer-text">00:00:00</span>
             </div>
             
             <?php if (!$isSnapshot): ?>

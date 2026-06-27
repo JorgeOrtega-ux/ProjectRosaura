@@ -489,6 +489,41 @@ class CanvasRepository implements CanvasRepositoryInterface {
         ]);
     }
 
+    public function getResizeSettings(int $canvasId): ?array {
+        $sql = "SELECT * FROM canvas_resize_settings WHERE canvas_id = :canvas_id LIMIT 1";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':canvas_id' => $canvasId]);
+        
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result ?: null;
+    }
+
+    public function updateResizeSettings(int $canvasId, array $settings): bool {
+        $sql = "INSERT INTO canvas_resize_settings 
+                (canvas_id, is_active, next_resize_at, target_size, timer_action)
+                VALUES 
+                (:canvas_id, :is_active, :next_resize_at, :target_size, :timer_action)
+                ON DUPLICATE KEY UPDATE 
+                is_active = :upd_is_active,
+                next_resize_at = :upd_next_resize_at,
+                target_size = :upd_target_size,
+                timer_action = :upd_timer_action";
+        
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            ':canvas_id'         => $canvasId,
+            ':is_active'         => $settings['is_active'],
+            ':next_resize_at'    => $settings['next_resize_at'],
+            ':target_size'       => $settings['target_size'],
+            ':timer_action'      => $settings['timer_action'],
+            
+            ':upd_is_active'     => $settings['is_active'],
+            ':upd_next_resize_at'=> $settings['next_resize_at'],
+            ':upd_target_size'   => $settings['target_size'],
+            ':upd_timer_action'  => $settings['timer_action']
+        ]);
+    }
+
     public function getSnapshotByUuid(string $uuid): ?array {
         $sql = "SELECT h.*, c.name as canvas_name, c.uuid as original_canvas_uuid, c.size, c.palette_id
                 FROM " . DB::TBL_CANVAS_SNAPSHOTS_HISTORY . " h

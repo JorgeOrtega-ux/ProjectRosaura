@@ -59,6 +59,12 @@ interface CanvasRepositoryInterface {
     public function updateResetSettings(int $canvasId, array $settings): bool;
 
     // ==========================================
+    // NUEVOS MÉTODOS DE EXPANSIONES PROGRAMADAS
+    // ==========================================
+    public function getResizeSettings(int $canvasId): ?array;
+    public function updateResizeSettings(int $canvasId, array $settings): bool;
+
+    // ==========================================
     // NUEVO MÉTODO PARA GALERÍA HISTÓRICA Y VISUALIZADOR
     // ==========================================
     public function getSnapshotByUuid(string $uuid): ?array;

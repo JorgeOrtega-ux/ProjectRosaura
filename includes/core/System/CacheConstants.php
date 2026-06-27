@@ -34,6 +34,7 @@ class CacheConstants {
     public const PENDING_SNAPSHOTS_SET = 'canvases:pending_snapshots';
     public const PREFIX_CANVAS_NEXT_RESET = 'canvas:next_reset:';
     public const PREFIX_CANVAS_RESET_LOCK = 'canvas:reset_lock:';
+    public const PREFIX_CANVAS_NEXT_RESIZE = 'canvas:next_resize:';
     
     // --- NUEVO: PREFIJO PARA LIVE SHARE ---
     public const PREFIX_LIVE_SHARE = 'live_share:';

@@ -51,6 +51,12 @@ export const DesignSetup = {
             this.nextResetAt = wrapper.getAttribute('data-reset-at');
             this.timerAction = wrapper.getAttribute('data-timer-action') || 'restart';
 
+            // Nuevas variables para el resize
+            this.resizeActive = wrapper.getAttribute('data-resize-active') === '1';
+            this.nextResizeAt = wrapper.getAttribute('data-resize-at');
+            this.resizeTargetSize = wrapper.getAttribute('data-resize-target') || '64';
+            this.resizeTimerAction = wrapper.getAttribute('data-resize-timer-action') || 'restart';
+
             const sizeStr = wrapper.getAttribute('data-size');
             if (sizeStr) {
                 this.boardWidth = parseInt(sizeStr, 10);
@@ -65,6 +71,11 @@ export const DesignSetup = {
 
             if (this.resetActive && this.nextResetAt) {
                 this.startResetTimer();
+            }
+
+            // Iniciar timer de expansión si está activo
+            if (this.resizeActive && this.nextResizeAt) {
+                this.startResizeTimer();
             }
 
             this.initWebSocket();
@@ -120,6 +131,52 @@ export const DesignSetup = {
         
         updateTimer();
         this.resetTimerInterval = setInterval(updateTimer, 1000);
+    },
+
+    startResizeTimer() {
+        if (this.resizeTimerInterval) clearInterval(this.resizeTimerInterval);
+        
+        const badge = document.querySelector('[data-ref="resize-timer-badge"]');
+        const text = document.querySelector('[data-ref="resize-timer-text"]');
+        if (!badge || !text) return;
+        
+        if (this.resizeTimerAction === 'none') {
+            badge.classList.add('disabled');
+            return;
+        }
+        
+        badge.classList.remove('disabled');
+        
+        const targetMs = new Date(this.nextResizeAt.replace(' ', 'T') + 'Z').getTime();
+        
+        const updateTimer = () => {
+            const nowMs = Date.now();
+            const diffMs = targetMs - nowMs;
+            
+            if (diffMs <= 0) {
+                text.textContent = 'Expandiendo...';
+                if (this.resizeTimerAction === 'stop') {
+                    clearInterval(this.resizeTimerInterval);
+                    setTimeout(() => badge.classList.add('disabled'), 5000);
+                }
+                return;
+            }
+            
+            const totalSecs = Math.floor(diffMs / 1000);
+            const days = Math.floor(totalSecs / 86400);
+            const hours = String(Math.floor((totalSecs % 86400) / 3600)).padStart(2, '0');
+            const mins = String(Math.floor((totalSecs % 3600) / 60)).padStart(2, '0');
+            const secs = String(totalSecs % 60).padStart(2, '0');
+            
+            if (days > 0) {
+                text.textContent = `${days}d ${hours}:${mins}:${secs}`;
+            } else {
+                text.textContent = `${hours}:${mins}:${secs}`;
+            }
+        };
+        
+        updateTimer();
+        this.resizeTimerInterval = setInterval(updateTimer, 1000);
     },
 
     hydrateCanvasState(base64String) {
