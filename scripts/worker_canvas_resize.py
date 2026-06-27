@@ -92,8 +92,17 @@ def process_resize_task(r, db, task_data):
         if 'canvas_id' in locals():
             try:
                 r.delete(f"canvas:{canvas_id}:resize_lock")
-            except:
-                pass
+                
+                # Emitimos un evento de error para desbloquear la UI (quitar el blur infinito)
+                error_msg = json.dumps({
+                    "type": "canvas_resize_error",
+                    "canvas_id": canvas_id,
+                    "error": "Error interno al expandir el lienzo."
+                })
+                r.publish("admin:canvas_events", error_msg.encode('utf-8'))
+                print(f"[!] Evento de error enviado para liberar el frontend.")
+            except Exception as cleanup_error:
+                print(f"[!] Fallo al limpiar cerrojos: {cleanup_error}")
 
 def main():
     print("[*] Iniciando Worker de Expansión/Redimensión de Lienzos...")
