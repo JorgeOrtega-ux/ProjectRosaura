@@ -19,6 +19,51 @@ export class SpaRouter {
         window.addEventListener('popstate', this.handlePopState);
         document.body.addEventListener('click', this.handleBodyClick);
         this.highlightCurrentRoute();
+
+        // === PARCHE: SOLUCIÓN A CARGA DE JS EN RUTAS DINÁMICAS NATIVAS ===
+        // Si el usuario refresca o ingresa directamente (nivel servidor), 
+        // disparamos viewLoaded con el path mapeado para que MainController cargue el JS.
+        let currentPath = window.location.pathname;
+        let moduleUrl = currentPath;
+        if (this.basePath && moduleUrl.startsWith(this.basePath)) {
+            moduleUrl = moduleUrl.slice(this.basePath.length);
+        }
+        
+        let triggerManualLoad = false;
+        
+        if (moduleUrl.startsWith('/canvases/edit/')) {
+            moduleUrl = '/canvases/edit/:uuid';
+            triggerManualLoad = true;
+        } else if (moduleUrl.startsWith('/canvases/manage/requests/')) {
+            moduleUrl = '/canvases/manage/requests/:uuid';
+            triggerManualLoad = true;
+        } else if (moduleUrl.startsWith('/canvases/manage/resets/')) {
+            moduleUrl = '/canvases/manage/resets/:uuid';
+            triggerManualLoad = true;
+        } else if (moduleUrl.startsWith('/canvases/members/')) {
+            moduleUrl = '/canvases/members/:uuid';
+            triggerManualLoad = true;
+        } else if (moduleUrl.startsWith('/design/s/')) {
+            moduleUrl = '/design/s/:uuid';
+            triggerManualLoad = true;
+        } else if (moduleUrl.startsWith('/snapshot/view/')) {
+            moduleUrl = '/snapshot/view/:id';
+            triggerManualLoad = true;
+        }
+
+        if (triggerManualLoad) {
+            setTimeout(() => {
+                window.dispatchEvent(new CustomEvent('viewLoaded', { 
+                    detail: { 
+                        url: window.location.href,
+                        cleanUrl: moduleUrl, 
+                        originalUrl: currentPath, 
+                        loadTimeMs: 0
+                    } 
+                }));
+            }, 100); // Retraso de seguridad asegurando que MainController ya inicializó sus Listeners
+        }
+        // =================================================================
     }
 
     destroy() {
@@ -50,6 +95,14 @@ export class SpaRouter {
             }
 
             const url = navTarget.dataset.nav;
+
+            // === PARCHE: FORZAR NAVEGACIÓN A NIVEL SERVIDOR PARA EVITAR PARPADEOS ===
+            if (url.includes('/canvases/edit/') || url.includes('/canvases/manage/requests/')) {
+                window.location.href = url;
+                return;
+            }
+            // ========================================================================
+
             this.navigate(url);
             return;
         }
@@ -78,6 +131,13 @@ export class SpaRouter {
             }
         } catch(e) {}
         
+        // === PARCHE: SEGURO ADICIONAL PARA NAVEGACIÓN PROGRAMÁTICA ===
+        if (targetPath.includes('/canvases/edit/') || targetPath.includes('/canvases/manage/requests/')) {
+            window.location.href = url;
+            return;
+        }
+        // ============================================================
+
         let currentPath = window.location.pathname;
         
         targetPath = targetPath.split('?')[0].split('#')[0];
@@ -121,6 +181,13 @@ export class SpaRouter {
             if (cleanUrlForLoader !== '/' && cleanUrlForLoader.endsWith('/')) {
                 cleanUrlForLoader = cleanUrlForLoader.slice(0, -1);
             }
+
+            // === PARCHE: INTERCEPTACIÓN DIRECTA EN EL LOADER ===
+            if (cleanUrlForLoader.includes('/canvases/edit/') || cleanUrlForLoader.includes('/canvases/manage/requests/')) {
+                window.location.href = url;
+                return;
+            }
+            // ==================================================
 
             if (cleanUrlForLoader === '/design') {
                 this.navigate(this.basePath + '/');

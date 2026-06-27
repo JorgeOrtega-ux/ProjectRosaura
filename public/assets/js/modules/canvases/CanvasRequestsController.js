@@ -31,7 +31,10 @@ class CanvasRequestsController {
         }
 
         this.bindEvents();
-        this.loadRequests();
+        
+        // === NUEVO: OMITIMOS LA LLAMADA INICIAL A LA API (SSR) ===
+        // Al quitar this.loadRequests() respetamos el HTML (con las solicitudes o el estado vacío) 
+        // que PHP ya se encargó de consultar y renderizar directamente.
     }
 
     destroy() {
@@ -46,9 +49,11 @@ class CanvasRequestsController {
     }
 
     handleGlobalClick(e) {
-        const selectTargetRow = e.target.closest('[data-action="selectRequest"]');
-        const deselectBtn = e.target.closest('[data-action="deselectRequest"]');
+        // === NUEVO: RECONOCE FILAS TANTO RENDERIZADAS POR PHP COMO POR JS ===
+        // PHP no imprimió data-action="selectRequest", por lo que respaldamos detectando tr[data-request-id]
+        const selectTargetRow = e.target.closest('[data-action="selectRequest"]') || e.target.closest('tr[data-request-id]');
         
+        const deselectBtn = e.target.closest('[data-action="deselectRequest"]');
         const approveBtn = e.target.closest('[data-action="approveSelectedRequests"]');
         const rejectBtn = e.target.closest('[data-action="rejectSelectedRequests"]');
         const refreshBtn = e.target.closest('[data-action="refreshRequests"]');
@@ -61,17 +66,17 @@ class CanvasRequestsController {
         
         if (approveBtn && !approveBtn.classList.contains('disabled-interactive')) this.processSelectedRequests('approve', approveBtn);
         if (rejectBtn && !rejectBtn.classList.contains('disabled-interactive')) this.processSelectedRequests('reject', rejectBtn);
-        if (refreshBtn) this.loadRequests();
+        
+        // Si tienes un botón manual de actualizar, esto volverá a inyectar la tabla por API (está perfecto)
+        if (refreshBtn) this.loadRequests(); 
     }
 
     async loadRequests() {
         if (!this.canvasId) return;
 
         const tbody = document.querySelector('[data-ref="requests-table-body"]');
-        const emptyState = document.querySelector('[data-ref="empty-requests-table"]');
         
         if (tbody) {
-            // Mostrar skeleton
             this.deselectRequest();
             tbody.innerHTML = this.getSkeletonHTML();
         }
@@ -169,8 +174,6 @@ class CanvasRequestsController {
             this.selectedRequestIds.delete(requestId);
             rowElement.classList.remove('selected');
         } else {
-            // Descomentar si se desea selección única
-            // this.deselectRequest();
             this.selectedRequestIds.add(requestId);
             rowElement.classList.add('selected');
         }
@@ -180,7 +183,10 @@ class CanvasRequestsController {
 
     deselectRequest() {
         this.selectedRequestIds.clear();
-        document.querySelectorAll('[data-action="selectRequest"]').forEach(el => el.classList.remove('selected'));
+        
+        // Quita la selección tanto de las filas JS como de las filas PHP
+        document.querySelectorAll('[data-action="selectRequest"], tr[data-request-id]').forEach(el => el.classList.remove('selected'));
+        
         this.updateSelectionUI();
     }
 
@@ -208,9 +214,9 @@ class CanvasRequestsController {
         for (const requestId of this.selectedRequestIds) {
             let response;
             if (actionType === 'approve') {
-                response = await this.api.approveCanvasRequest(requestId);
+                response = await this.api.approveCanvasRequest(requestId); // Asume que tienes este método en ApiServices
             } else {
-                response = await this.api.rejectCanvasRequest(requestId);
+                response = await this.api.rejectCanvasRequest(requestId); // Asume que tienes este método en ApiServices
             }
 
             if (response && response.success) {
@@ -225,6 +231,8 @@ class CanvasRequestsController {
         if (successCount > 0) {
             const actionText = actionType === 'approve' ? 'aprobadas' : 'rechazadas';
             showMessage(`${successCount} solicitudes ${actionText} con éxito.`, 'success');
+            
+            // Si el usuario procesó las peticiones, recargamos la tabla (aquí SÍ usamos la API)
             this.loadRequests(); 
         } else if (errorCount > 0) {
             showMessage(`Ocurrió un error al procesar las solicitudes.`, 'error');

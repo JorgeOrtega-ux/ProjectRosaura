@@ -13,14 +13,23 @@ if (!$userId) {
 
 $canvasUuid = $_GET['uuid'] ?? null;
 $canvasId = null;
+$pendingRequests = [];
 
 if ($canvasUuid) {
     try {
         $db = new DatabaseManager();
         $pdo = $db->getConnection(defined('App\Core\System\DatabaseConstants::CONN_CANVASES') ? App\Core\System\DatabaseConstants::CONN_CANVASES : 'canvases');
+        
         $stmt = $pdo->prepare("SELECT id FROM canvases WHERE uuid = :uuid LIMIT 1");
         $stmt->execute(['uuid' => $canvasUuid]);
         $canvasId = (int)$stmt->fetchColumn();
+
+        // Consulta a nivel de servidor de las peticiones pendientes
+        if ($canvasId) {
+            $stmtReq = $pdo->prepare("SELECT id, user_id, status, created_at FROM canvas_access_requests WHERE canvas_id = :cid AND status = 'pending' ORDER BY created_at ASC");
+            $stmtReq->execute(['cid' => $canvasId]);
+            $pendingRequests = $stmtReq->fetchAll(\PDO::FETCH_ASSOC);
+        }
     } catch (\Exception $e) {
         // Silenciar y atrapar error por si la base de datos o tabla no existe
     }
@@ -74,14 +83,37 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                         </tr>
                     </thead>
                     <tbody data-ref="requests-table-body">
-                        <tr class="disabled" data-ref="empty-requests-table">
-                            <td colspan="3" class="component-empty-table-cell">
-                                <div class="component-empty-state component-empty-state--table">
-                                    <span class="material-symbols-rounded component-empty-state-icon">hourglass_empty</span>
-                                    <p class="component-empty-state-text" data-ref="empty-state-text"><?php echo __('lbl_loading') ?: 'Cargando solicitudes...'; ?></p>
-                                </div>
-                            </td>
-                        </tr>
+                        <?php if (empty($pendingRequests)): ?>
+                            <tr class="disabled" data-ref="empty-requests-table" style="display: table-row;">
+                                <td colspan="3" class="component-empty-table-cell">
+                                    <div class="component-empty-state component-empty-state--table">
+                                        <span class="material-symbols-rounded component-empty-state-icon">inbox</span>
+                                        <p class="component-empty-state-text" data-ref="empty-state-text"><?php echo __('canvases_requests_empty') ?: 'No hay solicitudes pendientes en este momento.'; ?></p>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php else: ?>
+                            <?php foreach ($pendingRequests as $req): ?>
+                                <tr data-request-id="<?php echo htmlspecialchars($req['id']); ?>">
+                                    <td>
+                                        <div style="display: flex; align-items: center; gap: 10px;">
+                                            <span data-user-id="<?php echo htmlspecialchars($req['user_id']); ?>">
+                                                Usuario #<?php echo htmlspecialchars($req['user_id']); ?>
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td><?php echo htmlspecialchars(date('Y-m-d H:i', strtotime($req['created_at']))); ?></td>
+                                    <td>
+                                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                                            <span class="status-badge" style="background-color: var(--warning-bg, rgba(245,158,11,0.1)); color: var(--warning-color, #f59e0b); padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500;">
+                                                <?php echo __('status_pending') ?: 'Pendiente'; ?>
+                                            </span>
+                                            <input type="checkbox" class="request-checkbox" value="<?php echo htmlspecialchars($req['id']); ?>" style="margin-left: 10px; cursor: pointer;">
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>

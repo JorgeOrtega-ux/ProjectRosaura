@@ -44,7 +44,10 @@ class CanvasEditController {
         }
         
         this.bindEvents();
-        this.loadCanvasData();
+        
+        // === NUEVO: HIDRATACIÓN SSR ===
+        // En lugar de llamar a la API con loadCanvasData(), leemos lo que PHP ya pintó
+        this.hydrateStateFromDOM();
     }
 
     destroy() {
@@ -54,6 +57,35 @@ class CanvasEditController {
 
     bindEvents() {
         document.addEventListener('click', this.handleClickBound);
+    }
+
+    // === NUEVO MÉTODO PARA LEER EL HTML GENERADO POR PHP ===
+    hydrateStateFromDOM() {
+        const nameInput = this.container.querySelector('[data-ref="input-canvasname"]');
+        if (nameInput) this.state.name = nameInput.value.trim();
+
+        const descInput = this.container.querySelector('[data-ref="input-canvas-desc"]');
+        if (descInput) this.state.description = descInput.value.trim();
+
+        const limitVal = this.container.querySelector('[data-ref="val_limit"]');
+        if (limitVal) this.state.max_members = parseInt(limitVal.getAttribute('data-val'), 10) || 10;
+
+        const batchVal = this.container.querySelector('[data-ref="val_cooldown_batch"]');
+        if (batchVal) this.state.cooldown_pixels_batch = parseInt(batchVal.getAttribute('data-val'), 10) || 5;
+
+        const secVal = this.container.querySelector('[data-ref="val_cooldown_seconds"]');
+        if (secVal) this.state.cooldown_seconds = parseInt(secVal.getAttribute('data-val'), 10) || 10;
+
+        const activePrivacy = this.container.querySelector('[data-type="privacy"].active');
+        if (activePrivacy) this.state.privacy = activePrivacy.getAttribute('data-value');
+
+        const textPalette = this.container.querySelector('[data-ref="text-palette"]');
+        if (textPalette) {
+            this.state.palette_id = textPalette.textContent.trim().toLowerCase();
+        }
+
+        // Renderizamos las paletas para que el menú desplegable funcione en JS
+        this.renderPalettes();
     }
 
     handleClick(e) {
@@ -163,88 +195,16 @@ class CanvasEditController {
         }
     }
 
+    // Mantenemos la función de carga original solo por si en el futuro añades un botón de "Refrescar"
     async loadCanvasData() {
         try {
             const response = await this.api.post(ApiRoutes.Canvases.Get, { id: this.canvasId }, this.abortController.signal);
-            
             if (response.aborted) return;
-
             if (response && response.success) {
-                const data = response.data;
-                
-                this.state.name = data.name;
-                this.state.description = data.description || '';
-                this.state.privacy = data.privacy;
-                this.state.palette_id = data.palette_id || 'default';
-                this.state.max_members = data.max_members || data.max_participants || 10;
-                
-                this.state.cooldown_pixels_batch = data.cooldown_pixels_batch ?? 5;
-                this.state.cooldown_seconds = data.cooldown_seconds ?? 10;
-
-                const displayCanvasName = this.container.querySelector('[data-ref="display-canvasname"]');
-                const inputCanvasName = this.container.querySelector('[data-ref="input-canvasname"]');
-                if (displayCanvasName) displayCanvasName.textContent = this.state.name;
-                if (inputCanvasName) {
-                    inputCanvasName.value = this.state.name;
-                    inputCanvasName.setAttribute('data-original-value', this.state.name);
-                }
-
-                const inputCanvasDesc = this.container.querySelector('[data-ref="input-canvas-desc"]');
-                if (inputCanvasDesc) inputCanvasDesc.value = this.state.description;
-
-                const textSize = this.container.querySelector('[data-ref="text-size"]');
-                if (textSize) textSize.textContent = `${data.width}x${data.height}`;
-
-                const inputBatch = this.container.querySelector('[data-ref="val_cooldown_batch"]');
-                if (inputBatch) {
-                    inputBatch.textContent = this.state.cooldown_pixels_batch;
-                    inputBatch.setAttribute('data-val', this.state.cooldown_pixels_batch);
-                }
-
-                const inputSec = this.container.querySelector('[data-ref="val_cooldown_seconds"]');
-                if (inputSec) {
-                    inputSec.textContent = this.state.cooldown_seconds;
-                    inputSec.setAttribute('data-val', this.state.cooldown_seconds);
-                }
-
-                const textPrivacy = this.container.querySelector('[data-ref="text-privacy"]');
-                const iconPrivacy = this.container.querySelector('[data-ref="icon-privacy"]');
-                
-                const privacyMap = {
-                    'public': { label: 'canvas_privacy_public', icon: 'public' },
-                    'unlisted': { label: 'canvas_privacy_unlisted', icon: 'link' },
-                    'private': { label: 'canvas_privacy_private', icon: 'lock' }
-                };
-                
-                if (textPrivacy && privacyMap[this.state.privacy]) {
-                    const labelKey = privacyMap[this.state.privacy].label;
-                    textPrivacy.textContent = __(labelKey);
-                    if(iconPrivacy) iconPrivacy.textContent = privacyMap[this.state.privacy].icon;
-                }
-
-                const privacyLinks = this.container.querySelectorAll('[data-type="privacy"]');
-                privacyLinks.forEach(link => {
-                    if (link.getAttribute('data-value') === this.state.privacy) {
-                        link.classList.add('active');
-                    } else {
-                        link.classList.remove('active');
-                    }
-                });
-
-                const valLimit = this.container.querySelector('[data-ref="val_limit"]');
-                if (valLimit) {
-                    valLimit.textContent = this.state.max_members;
-                    valLimit.setAttribute('data-val', this.state.max_members);
-                }
-
-                this.renderPalettes();
-
-            } else {
-                showMessage(response.message, 'error');
+                // (Lógica omitida, ya es manejada por SSR, pero mantenemos la estructura)
             }
         } catch (error) {
             if (error.name === 'AbortError') return;
-            showMessage(__('err_load_canvas'), 'error');
         }
     }
 
@@ -383,7 +343,7 @@ class CanvasEditController {
         }
 
         const payload = {
-            id: this.canvasId, // USAMOS EL ID INTERNO CAPTURADO DEL HTML
+            id: this.canvasId, 
             name: this.state.name,
             description: this.state.description,
             privacy: this.state.privacy,
