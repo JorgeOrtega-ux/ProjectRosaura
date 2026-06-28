@@ -1,8 +1,8 @@
 // public/assets/js/modules/canvases/SnapshotViewerController.js
 
-import { ApiRoutes } from '../../core/api/ApiRoutes.js';
-import { ApiService } from '../../core/api/ApiServices.js';
-import { showMessage } from '../../core/utils/uiUtils.js';
+import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
+import { ApiService } from '../../../core/api/ApiServices.js';
+import { showMessage } from '../../../core/utils/uiUtils.js';
 
 class SnapshotViewerController {
     constructor() {

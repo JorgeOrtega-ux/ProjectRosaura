@@ -1,6 +1,6 @@
 // public/assets/js/modules/app/DesignTemplates.js
-import { ApiRoutes } from '../../core/api/ApiRoutes.js';
-import { showMessage } from '../../core/utils/uiUtils.js';
+import { ApiRoutes } from '../../../../core/api/ApiRoutes.js';
+import { showMessage } from '../../../../core/utils/uiUtils.js';
 
 export const DesignTemplates = {
     async loadUserLibrary() {

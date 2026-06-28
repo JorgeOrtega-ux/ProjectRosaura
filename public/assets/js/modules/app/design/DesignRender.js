@@ -1,5 +1,5 @@
 // public/assets/js/modules/app/DesignRender.js
-import { getPaletteById } from './DesignPaletteUtils.js';
+import { getPaletteById } from './utils/DesignPaletteUtils.js';
 
 export const DesignRender = {
     renderColorPalette(paletteId) {

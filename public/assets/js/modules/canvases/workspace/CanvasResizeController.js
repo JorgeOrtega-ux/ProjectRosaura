@@ -1,9 +1,9 @@
 // public/assets/js/modules/canvases/CanvasResizeController.js
 
-import { ApiRoutes } from '../../core/api/ApiRoutes.js';
-import { ApiService } from '../../core/api/ApiServices.js';
-import { showMessage, setButtonLoading, restoreButton } from '../../core/utils/uiUtils.js';
-import { CalendarSystem } from '../../core/components/CalendarSystem.js';
+import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
+import { ApiService } from '../../../core/api/ApiServices.js';
+import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
+import { CalendarSystem } from '../../../core/components/CalendarSystem.js';
 
 class CanvasResizeController {
     constructor() {

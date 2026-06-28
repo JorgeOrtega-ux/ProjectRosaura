@@ -1,10 +1,10 @@
 // public/assets/js/modules/app/DesignController.js
-import { ApiService } from '../../core/api/ApiServices.js';
+import { ApiService } from '../../../core/api/ApiServices.js';
 
 // Importar Mixins
 import { DesignSetup } from './DesignSetup.js';
 import { DesignNetwork } from './DesignNetwork.js';
-import { DesignTemplates } from './DesignTemplates.js';
+import { DesignTemplates } from './templates/DesignTemplates.js';
 import { DesignInteractions } from './DesignInteractions.js';
 import { DesignRender } from './DesignRender.js';
 

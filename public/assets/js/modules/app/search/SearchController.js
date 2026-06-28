@@ -1,8 +1,8 @@
 // public/assets/js/modules/app/SearchController.js
 
-import { ApiRoutes } from '../../core/api/ApiRoutes.js';
-import { CardTemplates } from '../../core/components/CardTemplates.js';
-import { CanvasCardInteractions } from '../../core/components/CanvasCardInteractions.js';
+import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
+import { CardTemplates } from '../../../core/components/CardTemplates.js';
+import { CanvasCardInteractions } from '../../../core/components/CanvasCardInteractions.js';
 
 export class SearchController {
     constructor() {

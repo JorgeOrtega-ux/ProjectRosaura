@@ -2,13 +2,13 @@
 
 export const RouteModulesMap = {
     // ---- MÓDULOS PÚBLICOS / HOME ----
-    '/': { path: './modules/app/HomeController.js', className: 'HomeController', skeletonType: 'layout-dashboard' },
-    '/home': { path: './modules/app/HomeController.js', className: 'HomeController', skeletonType: 'layout-dashboard' },
-    '/explore': { path: './modules/app/HomeController.js', className: 'HomeController', skeletonType: 'layout-dashboard' },
+    '/': { path: './modules/app/home/HomeController.js', className: 'HomeController', skeletonType: 'layout-dashboard' },
+    '/home': { path: './modules/app/home/HomeController.js', className: 'HomeController', skeletonType: 'layout-dashboard' },
+    '/explore': { path: './modules/app/home/HomeController.js', className: 'HomeController', skeletonType: 'layout-dashboard' },
     
-    '/search': { path: './modules/app/SearchController.js', className: 'SearchController', skeletonType: 'layout-dashboard' },
+    '/search': { path: './modules/app/search/SearchController.js', className: 'SearchController', skeletonType: 'layout-dashboard' },
     
-    '/design': { path: './modules/app/DesignController.js', className: 'DesignController', skeletonType: 'layout-full' },
+    '/design': { path: './modules/app/design/DesignController.js', className: 'DesignController', skeletonType: 'layout-full' },
     
     // ---- MÓDULOS DE AUTENTICACIÓN ----
     '/login': { path: './modules/auth/AuthController.js', className: 'AuthController', skeletonType: 'layout-auth' },
@@ -69,20 +69,20 @@ export const RouteModulesMap = {
     '/admin/logs/viewer': { path: './modules/admin/logs/AdminLogsViewerController.js', className: 'AdminLogsViewerController', requiresAdminLang: true, skeletonType: 'layout-list' },
 
     // ---- MÓDULOS DE GESTIÓN DE LIENZOS ----
-    '/canvases/create': { path: './modules/canvases/CanvasesController.js', className: 'CanvasesController', skeletonType: 'layout-dashboard' },
-    '/canvases/manage': { path: './modules/canvases/CanvasesManageController.js', className: 'CanvasesManageController', skeletonType: 'layout-dashboard' },
+    '/canvases/create': { path: './modules/canvases/core/CanvasesController.js', className: 'CanvasesController', skeletonType: 'layout-dashboard' },
+    '/canvases/manage': { path: './modules/canvases/core/CanvasesManageController.js', className: 'CanvasesManageController', skeletonType: 'layout-dashboard' },
     
-    '/canvases/manage/requests/:uuid': { path: './modules/canvases/CanvasRequestsController.js', className: 'CanvasRequestsController', skeletonType: 'layout-dashboard' },
-    '/canvases/manage/resets/:uuid': { path: './modules/canvases/CanvasResetController.js', className: 'CanvasResetController', skeletonType: 'layout-settings-generic' },
-    '/canvases/edit/:uuid': { path: './modules/canvases/CanvasEditController.js', className: 'CanvasEditController', skeletonType: 'layout-dashboard' },
-    '/canvases/members/:uuid': { path: './modules/canvases/CanvasMembersController.js', className: 'CanvasMembersController', skeletonType: 'layout-dashboard' },
-    '/canvases/resize/:uuid': { path: './modules/canvases/CanvasResizeController.js', className: 'CanvasResizeController', skeletonType: 'layout-settings-generic' },
+    '/canvases/manage/requests/:uuid': { path: './modules/canvases/team/CanvasRequestsController.js', className: 'CanvasRequestsController', skeletonType: 'layout-dashboard' },
+    '/canvases/manage/resets/:uuid': { path: './modules/canvases/workspace/CanvasResetController.js', className: 'CanvasResetController', skeletonType: 'layout-settings-generic' },
+    '/canvases/edit/:uuid': { path: './modules/canvases/workspace/CanvasEditController.js', className: 'CanvasEditController', skeletonType: 'layout-dashboard' },
+    '/canvases/members/:uuid': { path: './modules/canvases/team/CanvasMembersController.js', className: 'CanvasMembersController', skeletonType: 'layout-dashboard' },
+    '/canvases/resize/:uuid': { path: './modules/canvases/workspace/CanvasResizeController.js', className: 'CanvasResizeController', skeletonType: 'layout-settings-generic' },
     
-    '/canvases/join': { path: './modules/canvases/CanvasesController.js', className: 'CanvasesController', skeletonType: 'layout-dashboard' },
+    '/canvases/join': { path: './modules/canvases/core/CanvasesController.js', className: 'CanvasesController', skeletonType: 'layout-dashboard' },
     
     // ---- NUEVO MÓDULO GALERÍA PÚBLICA DE SNAPSHOTS ----
-    '/design/s/:uuid': { path: './modules/canvases/CanvasSnapshotsGalleryController.js', className: 'CanvasSnapshotsGalleryController', skeletonType: 'layout-dashboard' },
+    '/design/s/:uuid': { path: './modules/canvases/history/CanvasSnapshotsGalleryController.js', className: 'CanvasSnapshotsGalleryController', skeletonType: 'layout-dashboard' },
 
     // ---- NUEVO VISOR INDIVIDUAL DE SNAPSHOT ----
-    '/snapshot/view/:id': { path: './modules/canvases/SnapshotViewerController.js', className: 'SnapshotViewerController', skeletonType: 'layout-full' }
+    '/snapshot/view/:id': { path: './modules/canvases/history/SnapshotViewerController.js', className: 'SnapshotViewerController', skeletonType: 'layout-full' }
 };

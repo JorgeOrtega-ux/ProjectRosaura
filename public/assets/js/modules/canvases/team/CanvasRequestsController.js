@@ -1,7 +1,7 @@
 // public/assets/js/modules/canvases/CanvasRequestsController.js
 
-import { ApiService } from '../../core/api/ApiServices.js';
-import { showMessage, setButtonLoading, restoreButton } from '../../core/utils/uiUtils.js';
+import { ApiService } from '../../../core/api/ApiServices.js';
+import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
 
 class CanvasRequestsController {
     constructor() {

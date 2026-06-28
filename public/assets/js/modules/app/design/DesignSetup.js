@@ -1,6 +1,6 @@
 // public/assets/js/modules/app/DesignSetup.js
-import { getPaletteById } from './DesignPaletteUtils.js';
-import { showMessage } from '../../core/utils/uiUtils.js';
+import { getPaletteById } from './utils/DesignPaletteUtils.js';
+import { showMessage } from '../../../core/utils/uiUtils.js';
 
 export const DesignSetup = {
     loadCanvasConfigForSnapshot() {

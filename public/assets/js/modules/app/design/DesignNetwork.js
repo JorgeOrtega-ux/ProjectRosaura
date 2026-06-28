@@ -1,8 +1,8 @@
 // public/assets/js/modules/app/DesignNetwork.js
-import { ApiRoutes } from '../../core/api/ApiRoutes.js';
-import { showMessage, setButtonLoading, restoreButton } from '../../core/utils/uiUtils.js';
-import { WebSocketManager } from '../../core/api/WebSocketManager.js';
-import { getPaletteById } from './DesignPaletteUtils.js';
+import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
+import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
+import { WebSocketManager } from '../../../core/api/WebSocketManager.js';
+import { getPaletteById } from './utils/DesignPaletteUtils.js';
 
 export const DesignNetwork = {
     async getTurnstileToken() {

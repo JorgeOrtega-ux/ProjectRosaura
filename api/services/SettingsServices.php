@@ -16,6 +16,7 @@ use App\Core\Interfaces\ProfileLogRepositoryInterface;
 use App\Core\Interfaces\ServerConfigRepositoryInterface; 
 use App\Core\System\DatabaseConstants as DB;
 use App\Core\System\RateLimitConstants;
+use App\Core\System\SessionConstants;
 
 class SettingsServices
 {
@@ -85,6 +86,13 @@ class SettingsServices
             if ($this->userRepository->updateAvatar($userId, $newRelPath)) {
                 $this->logProfileChange($userId, DB::LOG_CHANGE_AVATAR, json_encode(['avatar' => $oldPic]), json_encode(['avatar' => $newRelPath]));
                 $this->sessionManager->set('user_pic', $newRelPath);
+                
+                $accounts = $this->sessionManager->getLinkedAccounts();
+                if (isset($accounts[$userId])) {
+                    $accounts[$userId]['user_pic'] = $newRelPath;
+                    $this->sessionManager->set(SessionConstants::KEY_LINKED_ACCOUNTS, $accounts);
+                }
+
                 return ['success' => true, 'message' => __('settings.avatar_updated'), 'new_avatar' => APP_URL . '/' . ltrim($newRelPath, '/')];
             }
         } else {
@@ -111,6 +119,13 @@ class SettingsServices
         if ($this->userRepository->updateAvatar($userId, $newRelPath)) {
             $this->logProfileChange($userId, DB::LOG_CHANGE_AVATAR, json_encode(['avatar' => $oldPic]), json_encode(['avatar' => $newRelPath]));
             $this->sessionManager->set('user_pic', $newRelPath);
+
+            $accounts = $this->sessionManager->getLinkedAccounts();
+            if (isset($accounts[$userId])) {
+                $accounts[$userId]['user_pic'] = $newRelPath;
+                $this->sessionManager->set(SessionConstants::KEY_LINKED_ACCOUNTS, $accounts);
+            }
+
             return ['success' => true, 'message' => __('settings.avatar_deleted'), 'new_avatar' => APP_URL . '/' . ltrim($newRelPath, '/')];
         }
         
@@ -147,6 +162,13 @@ class SettingsServices
         if ($this->userRepository->updateUsername($userId, $username)) {
             $this->logProfileChange($userId, DB::LOG_CHANGE_USERNAME, json_encode(['username' => $oldUsername]), json_encode(['username' => $username]));
             $this->sessionManager->set('user_name', $username);
+
+            $accounts = $this->sessionManager->getLinkedAccounts();
+            if (isset($accounts[$userId])) {
+                $accounts[$userId]['user_name'] = $username;
+                $this->sessionManager->set(SessionConstants::KEY_LINKED_ACCOUNTS, $accounts);
+            }
+
             return ['success' => true, 'message' => __('settings.username_updated'), 'new_username' => $username];
         }
         
@@ -289,6 +311,13 @@ class SettingsServices
             $this->logProfileChange($userId, DB::LOG_CHANGE_EMAIL, json_encode(['email' => $oldEmail]), json_encode(['email' => $email]));
             $this->sessionManager->set('user_email', $email);
             $this->sessionManager->remove('can_update_email_expires');
+
+            $accounts = $this->sessionManager->getLinkedAccounts();
+            if (isset($accounts[$userId])) {
+                $accounts[$userId]['user_email'] = $email;
+                $this->sessionManager->set(SessionConstants::KEY_LINKED_ACCOUNTS, $accounts);
+            }
+
             return ['success' => true, 'message' => __('settings.email_updated'), 'new_email' => $email];
         }
         
@@ -328,6 +357,12 @@ class SettingsServices
             $userPrefs = $this->sessionManager->get('user_prefs', []);
             $userPrefs[$key] = $value;
             $this->sessionManager->set('user_prefs', $userPrefs);
+
+            $accounts = $this->sessionManager->getLinkedAccounts();
+            if (isset($accounts[$userId])) {
+                $accounts[$userId]['user_prefs'][$key] = $value;
+                $this->sessionManager->set(SessionConstants::KEY_LINKED_ACCOUNTS, $accounts);
+            }
 
             return ['success' => true, 'message' => __('settings.preference_updated')];
         }
@@ -489,6 +524,12 @@ class SettingsServices
                 $this->sessionManager->remove('2fa_setup_secret');
                 $this->rateLimiter->clear(RateLimitConstants::KEY_2FA_ENABLE . "_{$userId}"); 
 
+                $accounts = $this->sessionManager->getLinkedAccounts();
+                if (isset($accounts[$userId])) {
+                    $accounts[$userId]['user_2fa'] = 1;
+                    $this->sessionManager->set(SessionConstants::KEY_LINKED_ACCOUNTS, $accounts);
+                }
+
                 $this->logProfileChange($userId, DB::LOG_CHANGE_2FA, json_encode(['status' => 'disabled']), json_encode(['status' => 'enabled']));
                 
                 $mailer = new Mailer();
@@ -522,6 +563,12 @@ class SettingsServices
             if ($this->userRepository->update2FA($userId, null, 0, null)) {
                 $this->sessionManager->set('user_2fa', 0);
                 $this->rateLimiter->clear(RateLimitConstants::KEY_2FA_DISABLE . "_{$userId}");
+
+                $accounts = $this->sessionManager->getLinkedAccounts();
+                if (isset($accounts[$userId])) {
+                    $accounts[$userId]['user_2fa'] = 0;
+                    $this->sessionManager->set(SessionConstants::KEY_LINKED_ACCOUNTS, $accounts);
+                }
 
                 $this->logProfileChange($userId, DB::LOG_CHANGE_2FA, json_encode(['status' => 'enabled']), json_encode(['status' => 'disabled']));
                 

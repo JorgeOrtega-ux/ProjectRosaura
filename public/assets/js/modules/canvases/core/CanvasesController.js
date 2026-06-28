@@ -1,9 +1,9 @@
 // public/assets/js/modules/canvases/CanvasesController.js
 
-import { ApiRoutes } from '../../core/api/ApiRoutes.js';
-import { ApiService } from '../../core/api/ApiServices.js';
-import { showMessage, setButtonLoading, restoreButton } from '../../core/utils/uiUtils.js';
-import { CanvasCardInteractions } from '../../core/components/CanvasCardInteractions.js';
+import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
+import { ApiService } from '../../../core/api/ApiServices.js';
+import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
+import { CanvasCardInteractions } from '../../../core/components/CanvasCardInteractions.js';
 
 /**
  * Función helper local para obtener todas las paletas en formato Array.

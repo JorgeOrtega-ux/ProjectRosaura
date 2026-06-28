@@ -1,10 +1,10 @@
 // public/assets/js/modules/app/HomeController.js
 
-import { ApiRoutes } from '../../core/api/ApiRoutes.js';
-import { ApiService } from '../../core/api/ApiServices.js';
-import { renderSkeleton } from '../../core/utils/uiUtils.js';
-import { CardTemplates } from '../../core/components/CardTemplates.js';
-import { CanvasCardInteractions } from '../../core/components/CanvasCardInteractions.js';
+import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
+import { ApiService } from '../../../core/api/ApiServices.js';
+import { renderSkeleton } from '../../../core/utils/uiUtils.js';
+import { CardTemplates } from '../../../core/components/CardTemplates.js';
+import { CanvasCardInteractions } from '../../../core/components/CanvasCardInteractions.js';
 
 class HomeController {
     constructor() {
