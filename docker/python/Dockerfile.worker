@@ -4,8 +4,8 @@ RUN apt-get update && apt-get install -y default-mysql-client tzdata && rm -rf /
 
 WORKDIR /app
 
-# Se ha añadido pymysql a la lista de instalación
-RUN pip install --no-cache-dir cryptography mysql-connector-python pymysql redis python-dotenv requests websockets Pillow numpy
+# Se ha añadido typesense al final de esta lista
+RUN pip install --no-cache-dir cryptography mysql-connector-python pymysql redis python-dotenv requests websockets Pillow numpy typesense
 
 # Comando por defecto para ejecutar el worker
 CMD ["python", "-u", "scripts/worker_backups.py"]

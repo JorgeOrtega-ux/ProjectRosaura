@@ -1,4 +1,9 @@
+version: '3.8'
+
 services:
+  # ==========================================
+  # SERVICIOS BASE (APP, MYSQL, REDIS, TYPESENSE)
+  # ==========================================
   app:
     build:
       context: .
@@ -13,8 +18,9 @@ services:
       db:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
       typesense:
+        # Cambiado a service_started para evitar el bloqueo por falta de healthcheck
         condition: service_started
     env_file:
       - .env
@@ -61,6 +67,11 @@ services:
       - redis_data:/data
     networks:
       - rosaura_network
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASS\" ping | grep PONG || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   typesense:
     image: typesense/typesense:26.0
@@ -75,7 +86,36 @@ services:
       - typesense_data:/data
     networks:
       - rosaura_network
+    # Healthcheck eliminado intencionalmente porque Typesense no incluye wget
 
+  # ==========================================
+  # SERVIDOR WEBSOCKET
+  # ==========================================
+  websocket_server:
+    build:
+      context: .
+      dockerfile: docker/python/Dockerfile.worker
+    container_name: rosaura_websocket_server
+    restart: always
+    command: python -u scripts/websocket_server.py
+    volumes:
+      - .:/app
+    ports:
+      - "${WS_PORT:-8765}:${WS_PORT:-8765}"
+    depends_on:
+      redis:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      - TZ=${APP_TIMEZONE:-UTC}
+    networks:
+      - rosaura_network
+
+  # ==========================================
+  # WORKERS DE PYTHON 
+  # ==========================================
+  
   worker_backups:
     build:
       context: .
@@ -89,7 +129,7 @@ services:
       db:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
     env_file:
       - .env
     environment:
@@ -110,7 +150,7 @@ services:
       db:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
     env_file:
       - .env
     environment:
@@ -131,7 +171,7 @@ services:
       db:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
     env_file:
       - .env
     environment:
@@ -153,7 +193,7 @@ services:
       db:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
     env_file:
       - .env
     environment:
@@ -174,7 +214,7 @@ services:
       db:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
     env_file:
       - .env
     environment:
@@ -183,20 +223,20 @@ services:
     networks:
       - rosaura_network
 
-  worker_canvas_resets:
+  worker_canvas_operations:
     build:
       context: .
       dockerfile: docker/python/Dockerfile.worker
-    container_name: rosaura_worker_canvas_resets
+    container_name: rosaura_worker_canvas_operations
     restart: always
-    command: python -u scripts/worker_canvas_resets.py
+    command: python -u scripts/worker_canvas_operations.py
     volumes:
       - .:/app
     depends_on:
       db:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
     env_file:
       - .env
     environment:
@@ -204,61 +244,20 @@ services:
     networks:
       - rosaura_network
 
-  worker_canvas_scheduled_resizes:
+  worker_typesense_sync:
     build:
       context: .
       dockerfile: docker/python/Dockerfile.worker
-    container_name: rosaura_worker_canvas_scheduled_resizes
+    container_name: rosaura_worker_typesense_sync
     restart: always
-    command: python -u scripts/worker_canvas_scheduled_resizes.py
+    command: python -u scripts/worker_typesense_sync.py
     volumes:
       - .:/app
     depends_on:
       db:
         condition: service_healthy
-      redis:
-        condition: service_started
-    env_file:
-      - .env
-    environment:
-      - TZ=${APP_TIMEZONE:-UTC}
-    networks:
-      - rosaura_network
-
-  worker_canvas_resize:
-    build:
-      context: .
-      dockerfile: docker/python/Dockerfile.worker
-    container_name: rosaura_worker_canvas_resize
-    restart: always
-    command: python -u scripts/worker_canvas_resize.py
-    volumes:
-      - .:/app
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_started
-    env_file:
-      - .env
-    environment:
-      - TZ=${APP_TIMEZONE:-UTC}
-    networks:
-      - rosaura_network
-
-  websocket_server:
-    build:
-      context: .
-      dockerfile: docker/python/Dockerfile.worker
-    container_name: rosaura_websocket_server
-    restart: always
-    command: python -u scripts/websocket_server.py
-    volumes:
-      - .:/app
-    ports:
-      - "${WS_PORT:-8765}:${WS_PORT:-8765}"
-    depends_on:
-      redis:
+      typesense:
+        # Cambiado a service_started
         condition: service_started
     env_file:
       - .env
