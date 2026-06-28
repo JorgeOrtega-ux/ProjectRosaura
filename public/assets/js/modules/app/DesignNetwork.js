@@ -175,7 +175,6 @@ export const DesignNetwork = {
 
     // ==========================================
     // MÉTODOS PARA ACTUALIZAR LOS RELOJES EN VIVO
-    // (AÑADIR JUSTO DEBAJO DE initWebSocket)
     // ==========================================
     handleResizeSettingsUpdated(data) {
         console.log('[FRONTEND LOG] Configuración de expansión actualizada en vivo:', data);
@@ -185,7 +184,6 @@ export const DesignNetwork = {
             this.resizeTimerAction = data.timer_action;
             this.resizeTargetSize = data.target_size;
             
-            // Invocamos el método existente en DesignSetup.js para prender el reloj en pantalla
             if (typeof this.startResizeTimer === 'function') {
                 this.startResizeTimer();
             }
@@ -193,15 +191,12 @@ export const DesignNetwork = {
             this.resizeActive = false;
             this.nextResizeAt = null;
             
-            // Si hay un intervalo corriendo, lo detenemos
             if (this.resizeTimerInterval) {
                 clearInterval(this.resizeTimerInterval);
                 this.resizeTimerInterval = null;
             }
             
-            // Ocultamos el badge
-            const badge = document.querySelector('[data-ref="resize-timer-badge"]');
-            if (badge) badge.classList.add('disabled');
+            this.removeCanvasBadge('resize-timer', 'right'); // Usando sistema dinámico
         }
     },
 
@@ -212,7 +207,6 @@ export const DesignNetwork = {
             this.nextResetAt = data.next_reset_at;
             this.timerAction = data.timer_action;
             
-            // Invocamos el método existente en DesignSetup.js para prender el reloj en pantalla
             if (typeof this.startResetTimer === 'function') {
                 this.startResetTimer();
             }
@@ -220,20 +214,17 @@ export const DesignNetwork = {
             this.resetActive = false;
             this.nextResetAt = null;
             
-            // Si hay un intervalo corriendo, lo detenemos
             if (this.resetTimerInterval) {
                 clearInterval(this.resetTimerInterval);
                 this.resetTimerInterval = null;
             }
             
-            // Ocultamos el badge
-            const badge = document.querySelector('[data-ref="reset-timer-badge"]');
-            if (badge) badge.classList.add('disabled');
+            this.removeCanvasBadge('reset-timer', 'right'); // Usando sistema dinámico
         }
     },
 
     // ==========================================
-    // MÉTODOS DE REDIMENSIÓN (LOGS AGREGADOS + TIMEOUT)
+    // MÉTODOS DE REDIMENSIÓN "EN CALIENTE" (SIN RECARGAR LA WEB)
     // ==========================================
     handleCanvasLockedResize(data) {
         console.log('[FRONTEND LOG] Bloqueando lienzo para redimensión...', data);
@@ -244,12 +235,7 @@ export const DesignNetwork = {
             this.canvas.style.pointerEvents = 'none';
         }
 
-        if (this.uiResizeLockedBadge) {
-            this.uiResizeLockedBadge.classList.remove('disabled');
-        } else if (this.uiResetLockedBadge) {
-            this.uiResetLockedBadge.querySelector('span:last-child').textContent = 'Expandiendo...';
-            this.uiResetLockedBadge.classList.remove('disabled');
-        }
+        this.updateLockBadges(); // Usando sistema dinámico
         
         this.selectedPixels.clear();
         this.updateSelectionUI();
@@ -257,36 +243,73 @@ export const DesignNetwork = {
         
         showMessage('Expandiendo lienzo en vivo... Acciones bloqueadas temporalmente.', 'warning');
 
-        // SEGURIDAD / LOGS: Timeout para no quedarse infinitamente congelado
         if (this.resizeTimeout) clearTimeout(this.resizeTimeout);
         this.resizeTimeout = setTimeout(() => {
             if (this.isResizeLocked) {
-                console.error('[FRONTEND LOG] TIMEOUT EXCEDIDO: El servidor nunca respondió a la redimensión tras 45s.');
+                console.error('[FRONTEND LOG] TIMEOUT EXCEDIDO: El servidor nunca respondió.');
                 this.isResizeLocked = false;
                 if (this.canvas) {
                     this.canvas.style.filter = 'none';
                     this.canvas.style.pointerEvents = 'auto';
                 }
-                if (this.uiResizeLockedBadge) this.uiResizeLockedBadge.classList.add('disabled');
-                else if (this.uiResetLockedBadge) this.uiResetLockedBadge.classList.add('disabled');
-                
+                this.updateLockBadges();
                 showMessage('El servidor tardó demasiado. Revisa los logs del backend.', 'error');
             }
         }, 45000); 
     },
 
-    handleCanvasResizeCompleted(data) {
-        console.log('[FRONTEND LOG] Redimensión EXITOSA reportada por servidor. Recargando...', data);
+  async handleCanvasResizeCompleted(data) {
+        console.log('[FRONTEND LOG] Redimensión EXITOSA. Aplicando "En Caliente"...', data);
         if (this.resizeTimeout) clearTimeout(this.resizeTimeout);
 
-        showMessage('Expansión completada con éxito. Recargando...', 'success');
-        setTimeout(() => {
-            window.location.reload();
-        }, 1500);
+        try {
+            // 1. Descargar la nueva imagen del servidor MIENTRAS mantenemos la imagen vieja (con blur) visible.
+            // Esto evita el parpadeo negro porque no destruimos el canvas hasta tener los datos en la mano.
+            const response = await this.api.post(ApiRoutes.Canvases.Get, { id: this.canvasIntId });
+
+            if (response.success && response.data) {
+                // 2. Ahora que ya tenemos la imagen lista en memoria, actualizamos las dimensiones instantáneamente.
+                this.boardWidth = data.new_size;
+                this.boardHeight = data.new_size;
+                
+                const wrapper = document.querySelector('[data-ref="design-wrapper"]');
+                if (wrapper) wrapper.setAttribute('data-size', data.new_size);
+
+                // 3. Recreamos los lienzos ocultos y centramos la cámara
+                this.setupCanvas();
+                this.centerBoard();
+
+                // 4. Sincronizamos roles por seguridad
+                this.isPrivateBlocked = false;
+                const role = response.data.role || 'spectator';
+                this.isSpectator = !(role === 'admin' || role === 'editor');
+                this.setRoleUI(role, response.data);
+
+                // 5. Inyectamos la imagen expandida al canvas
+                if (response.data.state_base64) {
+                    this.hydrateCanvasState(response.data.state_base64);
+                }
+            }
+        } catch (error) {
+            console.error('[FRONTEND LOG] Error descargando lienzo post-expansión:', error);
+        }
+
+        // 6. Finalmente, liberamos la interfaz y quitamos el blur (efecto de levantar el telón de golpe)
+        this.isResizeLocked = false;
+        
+        if (this.canvas && !this.isPrivateBlocked) {
+            this.canvas.style.filter = 'none';
+            this.canvas.style.pointerEvents = 'auto';
+        }
+        
+        this.updateLockBadges();
+        this.requestRender();
+
+        showMessage('¡Expansión aplicada con éxito!', 'success');
     },
 
     handleCanvasResizeError(data) {
-        console.error('[FRONTEND LOG] El Worker de Python reportó un ERROR de redimensión:', data);
+        console.error('[FRONTEND LOG] El Worker reportó un ERROR de redimensión:', data);
         if (this.resizeTimeout) clearTimeout(this.resizeTimeout);
 
         this.isResizeLocked = false;
@@ -296,16 +319,13 @@ export const DesignNetwork = {
             this.canvas.style.pointerEvents = 'auto';
         }
 
-        if (this.uiResizeLockedBadge) {
-            this.uiResizeLockedBadge.classList.add('disabled');
-        } else if (this.uiResetLockedBadge) {
-            this.uiResetLockedBadge.classList.add('disabled');
-        }
-        
+        this.updateLockBadges(); // Usando sistema dinámico
         showMessage(data.error || 'Error interno al expandir el lienzo.', 'error');
     },
-    // ==========================================
 
+    // ==========================================
+    // RESTO DE MÉTODOS DE LIVE SHARE Y COOLDOWN
+    // ==========================================
     async startLiveShare() {
         if (!this.activeTemplateId) {
             showMessage('Selecciona una plantilla primero', 'warning');
@@ -501,12 +521,12 @@ export const DesignNetwork = {
         this.updateSelectionUI();
     },
 
+    // ==========================================
+    // MÉTODOS DE REINICIO
+    // ==========================================
     handleCanvasLocked(data) {
         this.isResetLocked = true;
-        
-        if (this.uiResetLockedBadge) {
-            this.uiResetLockedBadge.classList.remove('disabled');
-        }
+        this.updateLockBadges(); // Usando sistema dinámico
         
         this.selectedPixels.clear();
         this.updateSelectionUI();
@@ -518,10 +538,7 @@ export const DesignNetwork = {
         this.requestRender();
         
         this.isResetLocked = false;
-        
-        if (this.uiResetLockedBadge) {
-            this.uiResetLockedBadge.classList.add('disabled');
-        }
+        this.updateLockBadges(); // Usando sistema dinámico
         
         showMessage('El lienzo ha sido limpiado en este momento.', 'info');
         
@@ -579,13 +596,14 @@ export const DesignNetwork = {
         const specBadge = document.querySelector('[data-ref="spectator-status-badge"]');
         const privBadge = document.querySelector('[data-ref="private-status-badge"]');
 
+        this.updateLockBadges(); // Sincroniza badges dinámicos (UI Privacidad/Bloqueos)
+
         if (role === 'blocked') {
             if (this.canvas) {
                 this.canvas.style.filter = 'blur(12px)';
                 this.canvas.style.opacity = '0.3';
                 this.canvas.style.pointerEvents = 'none';
             }
-            if (this.uiPrivateLockedBadge) this.uiPrivateLockedBadge.classList.remove('disabled');
 
             if (specControls) {
                 specControls.classList.remove('disabled');
@@ -615,7 +633,6 @@ export const DesignNetwork = {
                 this.canvas.style.opacity = '1';
                 this.canvas.style.pointerEvents = 'auto';
             }
-            if (this.uiPrivateLockedBadge) this.uiPrivateLockedBadge.classList.add('disabled');
 
             if (role === 'spectator') {
                 if (specControls) {

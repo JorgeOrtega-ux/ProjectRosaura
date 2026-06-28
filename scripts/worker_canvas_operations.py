@@ -8,6 +8,7 @@ import redis
 import threading
 import traceback
 import logging
+import math
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(threadName)s] %(levelname)s: %(message)s')
 
@@ -22,7 +23,6 @@ REDIS_HOST = os.getenv("REDIS_HOST", "redis")
 REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
 REDIS_PASS = os.getenv("REDIS_PASS", None)
 
-# Corregido el path para que coincida con el volumen de Docker (/app en lugar de /var/www/html)
 SNAPSHOTS_DIR = os.getenv("SNAPSHOTS_DIR", "/app/storage/public/snapshots")
 SYNC_INTERVAL = int(os.getenv("WORKER_RESETS_SYNC_INTERVAL", 10))
 
@@ -41,10 +41,10 @@ def get_db_connection():
 def process_resize_task(r, db, task_data):
     try:
         canvas_id = int(task_data.get('canvas_id'))
-        old_size = int(task_data.get('old_size'))
+        old_size_meta = int(task_data.get('old_size'))
         new_size = int(task_data.get('new_size'))
 
-        logging.info(f"Redimensionando lienzo {canvas_id}: {old_size}x{old_size} -> {new_size}x{new_size}")
+        logging.info(f"Redimensionando lienzo {canvas_id} hacia {new_size}x{new_size}")
 
         state_key = f"canvas:{canvas_id}:state"
         old_state = r.get(state_key)
@@ -52,9 +52,17 @@ def process_resize_task(r, db, task_data):
         if not old_state:
             raise ValueError(f"Estado binario no encontrado para lienzo {canvas_id}.")
 
-        expected_size = old_size * old_size
-        if len(old_state) < expected_size:
-            raise ValueError(f"Estado corrupto. Esperado: {expected_size}, Actual: {len(old_state)}")
+        actual_len = len(old_state)
+        expected_size = old_size_meta * old_size_meta
+
+        # AUTO-CORRECCIÓN SI HAY DESINCRONIZACIÓN ENTRE DB Y REDIS
+        if actual_len != expected_size:
+            logging.warning(f"Desincronización detectada. Metadata esperaba {expected_size} bytes, Redis tiene {actual_len} bytes.")
+            real_old_size = int(math.sqrt(actual_len))
+            logging.warning(f"Auto-corrigiendo tamaño base a {real_old_size}x{real_old_size} para procesar correctamente.")
+            old_size = real_old_size
+        else:
+            old_size = old_size_meta
 
         # Transformación Matemática Binaria
         new_state = bytearray([255] * (new_size * new_size))
@@ -94,20 +102,33 @@ def process_resize_task(r, db, task_data):
             }))
 
 def resize_listener_thread():
-    r = get_redis_client()
-    db = get_db_connection()
     logging.info("Iniciando Hilo Listener de Resizes...")
+    r = None
+    db = None
     
     while True:
         try:
-            db.ping(reconnect=True)
+            # Inicialización Lazy
+            if r is None: r = get_redis_client()
+            if db is None: db = get_db_connection()
+            
+            # Reconexión manual (Fix de PyMySQL Deprecation)
+            try:
+                db.ping(reconnect=False)
+            except Exception:
+                db = get_db_connection()
+            
             result = r.blpop("canvases:pending_resizes", timeout=30)
+            
             if result:
                 _, task_json = result
                 task_data = json.loads(task_json.decode('utf-8') if isinstance(task_json, bytes) else task_json)
                 process_resize_task(r, db, task_data)
+                
         except Exception as e:
             logging.error(f"Fallo en bucle de Resize Listener: {e}")
+            db = None
+            r = None
             time.sleep(5)
 
 # ==========================================
@@ -181,33 +202,53 @@ def process_reset_task(r, db, task_data):
         r.delete(f"canvas:{canvas_id}:reset_lock")
 
 def reset_listener_thread():
-    r = get_redis_client()
-    db = get_db_connection()
     logging.info("Iniciando Hilo Listener de Resets...")
+    r = None
+    db = None
     
     while True:
         try:
-            db.ping(reconnect=True)
+            if r is None: r = get_redis_client()
+            if db is None: db = get_db_connection()
+            
+            # Reconexión manual (Fix de PyMySQL Deprecation)
+            try:
+                db.ping(reconnect=False)
+            except Exception:
+                db = get_db_connection()
+            
             result = r.blpop("canvases:pending_resets", timeout=30)
+            
             if result:
                 _, task_json = result
                 task_data = json.loads(task_json.decode('utf-8') if isinstance(task_json, bytes) else task_json)
                 process_reset_task(r, db, task_data)
+                
         except Exception as e:
             logging.error(f"Fallo en bucle de Reset Listener: {e}")
+            db = None
+            r = None
             time.sleep(5)
 
 # ==========================================
 # 3. PROGRAMADOR MAESTRO (SCHEDULER)
 # ==========================================
 def scheduler_thread():
-    r = get_redis_client()
-    db = get_db_connection()
     logging.info("Iniciando Hilo Scheduler Maestro (Cron)...")
+    r = None
+    db = None
     
     while True:
         try:
-            db.ping(reconnect=True)
+            if r is None: r = get_redis_client()
+            if db is None: db = get_db_connection()
+            
+            # Reconexión manual (Fix de PyMySQL Deprecation)
+            try:
+                db.ping(reconnect=False)
+            except Exception:
+                db = get_db_connection()
+            
             with db.cursor() as cursor:
                 # A) Procesar Resizes Programados
                 cursor.execute("""
@@ -267,7 +308,11 @@ def scheduler_thread():
                 
         except Exception as e:
             logging.error(f"Fallo en Hilo Scheduler Maestro: {e}")
-            db.rollback()
+            if db is not None:
+                try: db.rollback() 
+                except: pass
+            db = None
+            r = None
             
         time.sleep(SYNC_INTERVAL)
 
