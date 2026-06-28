@@ -14,7 +14,9 @@ export const DesignSetup = {
         }
         this.setupCanvas();
         this.centerBoard();
+        this.setCanvasBadge('coords', 'my_location', '- , -', 'left');
         this.blockToolsForSnapshot();
+        this.updateLockBadges();
         this.drawImageOnCanvas(this.snapshotImg);
     },
 
@@ -67,6 +69,7 @@ export const DesignSetup = {
             
             this.setupCanvas();
             this.centerBoard();
+            this.setCanvasBadge('coords', 'my_location', '- , -', 'left');
             this.renderColorPalette(this.canvasPaletteId);
 
             if (this.resetActive && this.nextResetAt) {
@@ -78,27 +81,44 @@ export const DesignSetup = {
                 this.startResizeTimer();
             }
 
+            this.updateLockBadges();
             this.initWebSocket();
         } else {
             this.setupCanvas();
             this.centerBoard();
+            this.setCanvasBadge('coords', 'my_location', '- , -', 'left');
             this.renderColorPalette('default');
+            this.updateLockBadges();
+        }
+    },
+
+    updateLockBadges() {
+        if (this.isResetLocked) {
+            this.setCanvasBadge('lock-reset', 'auto_delete icon-spin-slow', 'En Reinicio...', 'left');
+        } else {
+            this.removeCanvasBadge('lock-reset', 'left');
+        }
+
+        if (this.isResizeLocked) {
+            this.setCanvasBadge('lock-resize', 'aspect_ratio icon-spin-slow', 'Expandiendo...', 'left');
+        } else {
+            this.removeCanvasBadge('lock-resize', 'left');
+        }
+
+        if (this.isPrivateBlocked) {
+            this.setCanvasBadge('lock-private', 'lock', 'Requiere ser miembro', 'left');
+        } else {
+            this.removeCanvasBadge('lock-private', 'left');
         }
     },
 
     startResetTimer() {
         if (this.resetTimerInterval) clearInterval(this.resetTimerInterval);
         
-        const badge = document.querySelector('[data-ref="reset-timer-badge"]');
-        const text = document.querySelector('[data-ref="reset-timer-text"]');
-        if (!badge || !text) return;
-        
         if (this.timerAction === 'none') {
-            badge.classList.add('disabled');
+            this.removeCanvasBadge('reset-timer', 'right');
             return;
         }
-        
-        badge.classList.remove('disabled');
         
         const targetMs = new Date(this.nextResetAt.replace(' ', 'T') + 'Z').getTime();
         
@@ -107,10 +127,10 @@ export const DesignSetup = {
             const diffMs = targetMs - nowMs;
             
             if (diffMs <= 0) {
-                text.textContent = '00:00:00';
-                badge.classList.remove('danger');
+                this.setCanvasBadge('reset-timer', 'autorenew icon-spin-slow', '00:00:00', 'right');
                 if (this.timerAction === 'stop') {
                     clearInterval(this.resetTimerInterval);
+                    setTimeout(() => this.removeCanvasBadge('reset-timer', 'right'), 2000);
                 }
                 return;
             }
@@ -120,13 +140,7 @@ export const DesignSetup = {
             const mins = String(Math.floor((totalSecs % 3600) / 60)).padStart(2, '0');
             const secs = String(totalSecs % 60).padStart(2, '0');
             
-            text.textContent = `${hours}:${mins}:${secs}`;
-            
-            if (totalSecs <= 60) {
-                badge.classList.add('danger');
-            } else {
-                badge.classList.remove('danger');
-            }
+            this.setCanvasBadge('reset-timer', 'autorenew', `${hours}:${mins}:${secs}`, 'right');
         };
         
         updateTimer();
@@ -136,16 +150,10 @@ export const DesignSetup = {
     startResizeTimer() {
         if (this.resizeTimerInterval) clearInterval(this.resizeTimerInterval);
         
-        const badge = document.querySelector('[data-ref="resize-timer-badge"]');
-        const text = document.querySelector('[data-ref="resize-timer-text"]');
-        if (!badge || !text) return;
-        
         if (this.resizeTimerAction === 'none') {
-            badge.classList.add('disabled');
+            this.removeCanvasBadge('resize-timer', 'right');
             return;
         }
-        
-        badge.classList.remove('disabled');
         
         const targetMs = new Date(this.nextResizeAt.replace(' ', 'T') + 'Z').getTime();
         
@@ -154,10 +162,10 @@ export const DesignSetup = {
             const diffMs = targetMs - nowMs;
             
             if (diffMs <= 0) {
-                text.textContent = 'Expandiendo...';
+                this.setCanvasBadge('resize-timer', 'aspect_ratio icon-spin-slow', 'Expandiendo...', 'right');
                 if (this.resizeTimerAction === 'stop') {
                     clearInterval(this.resizeTimerInterval);
-                    setTimeout(() => badge.classList.add('disabled'), 5000);
+                    setTimeout(() => this.removeCanvasBadge('resize-timer', 'right'), 5000);
                 }
                 return;
             }
@@ -168,11 +176,9 @@ export const DesignSetup = {
             const mins = String(Math.floor((totalSecs % 3600) / 60)).padStart(2, '0');
             const secs = String(totalSecs % 60).padStart(2, '0');
             
-            if (days > 0) {
-                text.textContent = `${days}d ${hours}:${mins}:${secs}`;
-            } else {
-                text.textContent = `${hours}:${mins}:${secs}`;
-            }
+            let timeStr = days > 0 ? `${days}d ${hours}:${mins}:${secs}` : `${hours}:${mins}:${secs}`;
+            
+            this.setCanvasBadge('resize-timer', 'aspect_ratio', timeStr, 'right');
         };
         
         updateTimer();

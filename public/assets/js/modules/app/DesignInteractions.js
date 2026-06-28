@@ -381,7 +381,7 @@ export const DesignInteractions = {
                 
                 if (this.hoveredPixel !== null) {
                     this.hoveredPixel = null;
-                    if (this.coordsText) this.coordsText.textContent = '- , -';
+                    this.setCanvasBadge('coords', 'my_location', '- , -', 'left');
                     this.requestRender();
                 }
                 return;
@@ -392,7 +392,7 @@ export const DesignInteractions = {
             this.calculateHoverPixel(e.clientX, e.clientY);
         } else if (this.hoveredPixel !== null) {
             this.hoveredPixel = null;
-            if (this.coordsText) this.coordsText.textContent = '- , -';
+            this.setCanvasBadge('coords', 'my_location', '- , -', 'left');
             this.requestRender();
         }
     },
@@ -460,12 +460,10 @@ export const DesignInteractions = {
             this.requestRender();
         }
 
-        if (this.coordsText) {
-            if (newHover) {
-                this.coordsText.textContent = `${newHover.x} , ${newHover.y}`;
-            } else {
-                this.coordsText.textContent = '- , -';
-            }
+        if (newHover) {
+            this.setCanvasBadge('coords', 'my_location', `${newHover.x} , ${newHover.y}`, 'left');
+        } else {
+            this.setCanvasBadge('coords', 'my_location', '- , -', 'left');
         }
     },
 

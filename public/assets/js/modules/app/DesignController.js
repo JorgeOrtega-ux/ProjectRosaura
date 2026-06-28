@@ -39,7 +39,6 @@ class DesignController {
         this.btnPlacePixels = null;
         this.txtPlacePixels = null;
         
-        this.coordsText = null;
         this.btnColorPalette = null;
         this.fileInput = null;
 
@@ -68,7 +67,7 @@ class DesignController {
         this.resetTimerInterval = null;
         
         this.isResetLocked = false; 
-        this.isResizeLocked = false; // NUEVO ESTADO DE EXPANSIÓN
+        this.isResizeLocked = false;
 
         // --- SISTEMA DE COOLDOWN LOCAL ---
         this.cooldownBalance = 5;
@@ -81,11 +80,6 @@ class DesignController {
         this.uiCooldownCounter = null;
         this.uiCooldownTimer = null;
         this.uiCooldownBadge = null;
-        
-        // Elementos de Bloqueos (Reset, Privacidad, Resize)
-        this.uiResetLockedBadge = null; 
-        this.uiPrivateLockedBadge = null;
-        this.uiResizeLockedBadge = null;
 
         // --- SISTEMA DE LIVE SHARE ---
         this.liveShareStatus = 'none'; // 'none' | 'owner' | 'spectator'
@@ -112,23 +106,49 @@ class DesignController {
         this.renderBound = this.render.bind(this);
     }
 
+    setCanvasBadge(id, icon, text, position = 'left') {
+        const container = document.querySelector(`[data-ref="badges-${position}"]`);
+        if (!container) return;
+
+        let badge = container.querySelector(`[data-badge-id="${id}"]`);
+        if (!badge) {
+            badge = document.createElement('div');
+            badge.className = 'component-badge';
+            badge.setAttribute('data-badge-id', id);
+            container.appendChild(badge);
+        }
+
+        const iconClass = icon.includes('spin') ? 'icon-spin-slow' : '';
+        const iconName = icon.replace('icon-spin-slow', '').trim();
+
+        badge.innerHTML = `
+            <span class="material-symbols-rounded ${iconClass}">${iconName}</span>
+            <span>${text}</span>
+        `;
+    }
+
+    removeCanvasBadge(id, position = 'left') {
+        const container = document.querySelector(`[data-ref="badges-${position}"]`);
+        if (!container) return;
+        
+        const badge = container.querySelector(`[data-badge-id="${id}"]`);
+        if (badge) {
+            badge.remove();
+        }
+    }
+
     init() {
         this.abortController = new AbortController();
         
         this.canvas = document.querySelector('[data-ref="design-canvas"]');
         this.btnPlacePixels = document.querySelector('[data-ref="pixel-action-btn"]');
         this.txtPlacePixels = document.querySelector('[data-ref="pixel-action-text"]');
-        this.coordsText = document.querySelector('[data-ref="coords-text"]');
         this.btnColorPalette = document.querySelector('[data-ref="btn-color-palette"]');
         this.fileInput = document.querySelector('[data-ref="template-file-input"]');
         
         this.uiCooldownCounter = document.querySelector('[data-ref="cooldown-counter"]');
         this.uiCooldownTimer = document.querySelector('[data-ref="cooldown-timer"]');
         this.uiCooldownBadge = document.querySelector('[data-ref="cooldown-badge"]');
-        
-        this.uiResetLockedBadge = document.querySelector('[data-ref="reset-locked-badge"]');
-        this.uiPrivateLockedBadge = document.querySelector('[data-ref="private-locked-badge"]'); 
-        this.uiResizeLockedBadge = document.querySelector('[data-ref="resize-locked-badge"]'); // NUEVO
 
         // Mapeo UI Modo En Vivo
         this.uiLiveControls = document.querySelector('[data-ref="live-controls"]');

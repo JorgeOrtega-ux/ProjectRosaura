@@ -190,7 +190,6 @@
     border-color: var(--border-color-hover);
 }
 
-/* EFECTO DE SELECCIÓN ACTIVA IDÉNTICO AL DEL GRID DE COLORES */
 .component-library-card.active {
     box-shadow: 0 0 0 2px var(--bg-surface), 0 0 0 4px var(--action-primary), inset 0 0 0 1px rgba(0,0,0,0.15);
     transform: scale(0.82); 
@@ -358,46 +357,42 @@
 /* -----------------------------------------
    BADGES Y TEMPORIZADORES EN EL LIENZO
    ----------------------------------------- */
-.component-reset-timer {
+.canvas-badges-left {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 50;
+    pointer-events: none;
+}
+
+.canvas-badges-right {
     position: absolute;
     top: 16px;
     right: 16px;
-    z-index: 90;
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    align-items: flex-end;
     gap: 8px;
-    padding: 8px 16px;
-    background-color: var(--bg-surface);
-    border: 1px solid var(--border-color);
-    border-radius: 20px;
-    box-shadow: var(--shadow-md);
-    font-family: 'Inter', monospace, sans-serif;
-    font-weight: 600;
-    color: var(--text-primary);
-    transition: opacity 0.3s ease, background-color 0.3s ease, color 0.3s ease;
-}
-
-.component-reset-timer.disabled {
-    opacity: 0;
+    z-index: 50;
     pointer-events: none;
-    visibility: hidden;
 }
 
-.component-reset-timer.danger {
-    background-color: var(--action-danger);
-    color: #ffffff;
-    border-color: var(--action-danger);
-    animation: pulse-danger 1s infinite;
+.canvas-badges-left .component-badge,
+.canvas-badges-right .component-badge {
+    background-color: var(--bg-surface);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+    font-family: var(--sl-font-mono, monospace);
+    box-shadow: var(--shadow-card);
+    margin: 0;
+    pointer-events: auto; /* Permite hover o clicks si alguna vez agregamos tooltips */
 }
 
 .icon-spin-slow {
     animation: spin 3s linear infinite;
-}
-
-@keyframes pulse-danger {
-    0% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.05); opacity: 0.9; }
-    100% { transform: scale(1); opacity: 1; }
 }
 
 @keyframes spin {

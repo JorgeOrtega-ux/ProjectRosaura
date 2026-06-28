@@ -78,7 +78,7 @@ if (!empty($canvasUuid)) {
     }
 }
 ?>
-<div class="view-content" style="position: relative;">
+<div class="view-content">
     
     <div id="cf-turnstile-wrapper" style="display: none;" data-sitekey="<?php echo htmlspecialchars($turnstileSiteKey); ?>"></div>
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" defer></script>
@@ -165,35 +165,8 @@ if (!empty($canvasUuid)) {
         <div class="component-bottom">
             <canvas data-ref="design-canvas" class="component-canvas-surface"></canvas>
             
-            <div class="component-badge component-badge--absolute-tl">
-                <span class="material-symbols-rounded">my_location</span>
-                <span data-ref="coords-text">- , -</span>
-            </div>
-
-            <div class="component-badge component-badge--absolute-tl disabled" data-ref="private-locked-badge" style="top: 48px; background: var(--surface-primary); border-color: var(--border-color); color: var(--text-primary); z-index: 50;">
-                <span class="material-symbols-rounded" style="color: var(--action-danger); font-size: 16px; margin-right: 4px;">lock</span>
-                <span>Requiere ser miembro</span>
-            </div>
-
-            <div class="component-badge component-badge--absolute-tl disabled" data-ref="reset-locked-badge" style="top: 90px; background: var(--action-danger); color: #fff; border-color: var(--action-danger); z-index: 50;">
-                <span class="material-symbols-rounded icon-spin-slow" style="font-size: 16px; margin-right: 4px;">auto_delete</span>
-                <span>En Reinicio...</span>
-            </div>
-            
-            <div class="component-badge component-badge--absolute-tl disabled" data-ref="resize-locked-badge" style="top: 132px; background: var(--action-primary); color: #fff; border-color: var(--action-primary); z-index: 50;">
-                <span class="material-symbols-rounded icon-spin-slow" style="font-size: 16px; margin-right: 4px;">aspect_ratio</span>
-                <span>Expandiendo...</span>
-            </div>
-
-            <div class="component-reset-timer disabled" data-ref="reset-timer-badge">
-                <span class="material-symbols-rounded icon-spin-slow">autorenew</span>
-                <span data-ref="reset-timer-text">00:00:00</span>
-            </div>
-
-            <div class="component-reset-timer disabled" data-ref="resize-timer-badge" style="top: 80px; background: rgba(37, 99, 235, 0.85);">
-                <span class="material-symbols-rounded" style="animation: pulse 2s infinite;">aspect_ratio</span>
-                <span data-ref="resize-timer-text">00:00:00</span>
-            </div>
+            <div class="canvas-badges-left" data-ref="badges-left"></div>
+            <div class="canvas-badges-right" data-ref="badges-right"></div>
             
             <?php if (!$isSnapshot): ?>
             <div class="component-action-pill">
