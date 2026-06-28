@@ -31,7 +31,7 @@ export const DesignNetwork = {
         });
     },
 
-    async initWebSocket() {
+   async initWebSocket() {
         if (!this.canvasIntId) {
             return;
         }
@@ -120,6 +120,13 @@ export const DesignNetwork = {
                 else if (data.type === 'canvas_resize_error') {
                     this.handleCanvasResizeError(data);
                 }
+                // --- EVENTOS NUEVOS DE PROGRAMACIÓN EN VIVO (RELOJES) ---
+                else if (data.type === 'canvas_resize_settings_updated') {
+                    this.handleResizeSettingsUpdated(data);
+                }
+                else if (data.type === 'canvas_reset_settings_updated') {
+                    this.handleResetSettingsUpdated(data);
+                }
                 // -------------------------------------
                 else if (data.type === 'live_image_updated') {
                     this.handleLiveImageUpdate(data);
@@ -163,6 +170,65 @@ export const DesignNetwork = {
         } catch (error) {
             console.error('[WS DEBUG] Error inicializando WebSocket:', error);
             showMessage('Fallo de conexión al inicializar WebSocket.', 'error');
+        }
+    },
+
+    // ==========================================
+    // MÉTODOS PARA ACTUALIZAR LOS RELOJES EN VIVO
+    // (AÑADIR JUSTO DEBAJO DE initWebSocket)
+    // ==========================================
+    handleResizeSettingsUpdated(data) {
+        console.log('[FRONTEND LOG] Configuración de expansión actualizada en vivo:', data);
+        if (data.is_active) {
+            this.resizeActive = true;
+            this.nextResizeAt = data.next_resize_at;
+            this.resizeTimerAction = data.timer_action;
+            this.resizeTargetSize = data.target_size;
+            
+            // Invocamos el método existente en DesignSetup.js para prender el reloj en pantalla
+            if (typeof this.startResizeTimer === 'function') {
+                this.startResizeTimer();
+            }
+        } else {
+            this.resizeActive = false;
+            this.nextResizeAt = null;
+            
+            // Si hay un intervalo corriendo, lo detenemos
+            if (this.resizeTimerInterval) {
+                clearInterval(this.resizeTimerInterval);
+                this.resizeTimerInterval = null;
+            }
+            
+            // Ocultamos el badge
+            const badge = document.querySelector('[data-ref="resize-timer-badge"]');
+            if (badge) badge.classList.add('disabled');
+        }
+    },
+
+    handleResetSettingsUpdated(data) {
+        console.log('[FRONTEND LOG] Configuración de reinicio actualizada en vivo:', data);
+        if (data.is_active) {
+            this.resetActive = true;
+            this.nextResetAt = data.next_reset_at;
+            this.timerAction = data.timer_action;
+            
+            // Invocamos el método existente en DesignSetup.js para prender el reloj en pantalla
+            if (typeof this.startResetTimer === 'function') {
+                this.startResetTimer();
+            }
+        } else {
+            this.resetActive = false;
+            this.nextResetAt = null;
+            
+            // Si hay un intervalo corriendo, lo detenemos
+            if (this.resetTimerInterval) {
+                clearInterval(this.resetTimerInterval);
+                this.resetTimerInterval = null;
+            }
+            
+            // Ocultamos el badge
+            const badge = document.querySelector('[data-ref="reset-timer-badge"]');
+            if (badge) badge.classList.add('disabled');
         }
     },
 

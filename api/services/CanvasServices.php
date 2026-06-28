@@ -513,7 +513,7 @@ class CanvasServices {
         }
     }
 
-    public function updateResizeSettings(int $userId, int $canvasId, array $data, bool $canManageOfficial = false): array {
+   public function updateResizeSettings(int $userId, int $canvasId, array $data, bool $canManageOfficial = false): array {
         try {
             $canvas = $this->canvasRepository->getById($canvasId);
             $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
@@ -562,6 +562,16 @@ class CanvasServices {
                         } else {
                             $redis->del($redisKey);
                         }
+
+                        // 🔥 NOTIFICACIÓN EN VIVO (WEBSOCKETS)
+                        $redis->publish("admin:canvas_events", json_encode([
+                            'type' => 'canvas_resize_settings_updated',
+                            'canvas_id' => $canvasId,
+                            'is_active' => $isActive,
+                            'next_resize_at' => $nextResizeAt,
+                            'target_size' => $targetSize,
+                            'timer_action' => $settings['timer_action']
+                        ]));
                     }
                 }
             } catch (Exception $e) {
@@ -862,6 +872,16 @@ class CanvasServices {
                         } else {
                             $redis->del($redisKey);
                         }
+
+                        // 🔥 NOTIFICACIÓN EN VIVO (WEBSOCKETS)
+                        $redis->publish("admin:canvas_events", json_encode([
+                            'type' => 'canvas_reset_settings_updated',
+                            'canvas_id' => $canvasId,
+                            'is_active' => $isActive,
+                            'next_reset_at' => $nextResetAt,
+                            'take_snapshot' => $takeSnapshot,
+                            'timer_action' => $settings['timer_action']
+                        ]));
                     }
                 }
             } catch (Exception $e) {
