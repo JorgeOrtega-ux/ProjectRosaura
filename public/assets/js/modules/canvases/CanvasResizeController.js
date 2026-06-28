@@ -66,14 +66,22 @@ class CanvasResizeController {
     }
 
     initCalendar() {
-        // En lugar de buscar un ID, buscamos el contenedor generado por el módulo PHP
-        const wrapper = document.querySelector('[data-module="moduleCalendarDateResize"]');
-        if (wrapper) {
-            this.calendar = new CalendarSystem(wrapper, {
-                minDate: new Date(),
-                placeholder: 'Selecciona fecha y hora'
-            });
-        }
+        // Inicializamos pasándole el selector como texto, igual que en CanvasResetController
+        this.calendar = new CalendarSystem('[data-module="moduleCalendarDateResize"]');
+        this.calendar.init();
+
+        const inputDateTime = document.querySelector('[data-ref="next_resize_at"]');
+        
+        // Configuramos el calendario con callbacks
+        this.calendar.setup(null, (isoString, displayString) => {
+            if (inputDateTime) inputDateTime.value = isoString;
+            const textRef = document.querySelector('[data-ref="resize-date-text"]');
+            if (textRef) textRef.textContent = displayString;
+        }, () => {
+            if (inputDateTime) inputDateTime.value = '';
+            const textRef = document.querySelector('[data-ref="resize-date-text"]');
+            if (textRef) textRef.textContent = 'Seleccionar fecha';
+        });
     }
 
     bindEvents() {
@@ -103,6 +111,36 @@ class CanvasResizeController {
         }
     }
 
+    // --- Utilidades para zonas horarias ---
+    utcStringToLocalInputFormat(utcString) {
+        if (!utcString) return '';
+        const dateObj = new Date(utcString.replace(' ', 'T') + 'Z');
+        if (isNaN(dateObj.getTime())) return '';
+
+        const yyyy = dateObj.getFullYear();
+        const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const dd = String(dateObj.getDate()).padStart(2, '0');
+        const hh = String(dateObj.getHours()).padStart(2, '0');
+        const min = String(dateObj.getMinutes()).padStart(2, '0');
+
+        return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
+    }
+
+    localInputFormatToUtcString(localString) {
+        if (!localString) return null;
+        const dateObj = new Date(localString);
+        if (isNaN(dateObj.getTime())) return null;
+
+        const yyyy = dateObj.getUTCFullYear();
+        const mm = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
+        const dd = String(dateObj.getUTCDate()).padStart(2, '0');
+        const hh = String(dateObj.getUTCHours()).padStart(2, '0');
+        const min = String(dateObj.getUTCMinutes()).padStart(2, '0');
+        const ss = '00';
+
+        return `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
+    }
+
     async loadSettings() {
         const route = ApiRoutes.Canvases && ApiRoutes.Canvases.GetResizeSettings ? ApiRoutes.Canvases.GetResizeSettings : 'canvases.get_resize_settings';
         const result = await this.api.post(route, { id: this.canvasId }, this.abortController.signal);
@@ -125,14 +163,31 @@ class CanvasResizeController {
 
             // Set Date
             if (data.next_resize_at && this.calendar) {
-                const utcDate = new Date(data.next_resize_at.replace(' ', 'T') + 'Z');
-                this.calendar.setDate(utcDate);
+                const localStr = this.utcStringToLocalInputFormat(data.next_resize_at);
+                const inputDateTime = document.querySelector('[data-ref="next_resize_at"]');
+                if (inputDateTime) inputDateTime.value = localStr;
                 
-                // Actualizar texto del Trigger
+                // Actualizar calendario para que inicie en la fecha guardada
+                this.calendar.setup(localStr, (isoString, displayString) => {
+                    if (inputDateTime) inputDateTime.value = isoString;
+                    const textRef = document.querySelector('[data-ref="resize-date-text"]');
+                    if (textRef) textRef.textContent = displayString;
+                }, () => {
+                    if (inputDateTime) inputDateTime.value = '';
+                    const textRef = document.querySelector('[data-ref="resize-date-text"]');
+                    if (textRef) textRef.textContent = 'Seleccionar fecha';
+                });
+                
+                // Actualizar texto visual del trigger inmediatamente
                 const textRef = document.querySelector('[data-ref="resize-date-text"]');
                 if (textRef) {
-                    const d = utcDate;
-                    textRef.textContent = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth()+1).toString().padStart(2, '0')}/${d.getFullYear()} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+                    const dateObj = new Date(localStr);
+                    if (!isNaN(dateObj.getTime())) {
+                        const mStr = this.calendar.monthsShortStr[dateObj.getMonth()];
+                        const h = String(dateObj.getHours()).padStart(2, '0');
+                        const min = String(dateObj.getMinutes()).padStart(2, '0');
+                        textRef.textContent = `${dateObj.getDate()} de ${mStr} ${dateObj.getFullYear()}, ${h}:${min}`;
+                    }
                 }
             }
 
@@ -150,48 +205,21 @@ class CanvasResizeController {
         const applyNowBtn = e.target.closest('[data-action="applyResizeNow"]');
         const saveScheduledBtn = e.target.closest('[data-action="saveScheduledResize"]');
         
-        // Botones internos del calendario (asegurando que pertenezcan a ESTE calendario)
-        const calendarConfirmBtn = e.target.closest('[data-action="calendarConfirm"]');
-        const calendarCancelBtn = e.target.closest('[data-action="calendarCancel"]');
-
         if (dropdownTrigger) {
             const module = document.querySelector(`[data-module="${dropdownTrigger.getAttribute('data-target')}"]`);
             if (module) {
                 if (module.classList.contains('disabled')) {
+                    // Cerrar todos antes de abrir uno nuevo (opcional, mejora usabilidad)
+                    document.querySelectorAll('.component-module--dropdown.active').forEach(d => {
+                        d.classList.remove('active');
+                        d.classList.add('disabled');
+                    });
                     module.classList.remove('disabled');
                     module.classList.add('active');
                 } else {
                     module.classList.remove('active');
                     module.classList.add('disabled');
                 }
-            }
-        }
-
-        // Clic en Confirmar Calendario
-        if (calendarConfirmBtn && calendarConfirmBtn.closest('[data-module="moduleCalendarDateResize"]')) {
-            if (this.calendar) {
-                const selectedDate = this.calendar.getDate();
-                if (selectedDate) {
-                    const textRef = document.querySelector('[data-ref="resize-date-text"]');
-                    if (textRef) {
-                        const d = selectedDate;
-                        textRef.textContent = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth()+1).toString().padStart(2, '0')}/${d.getFullYear()} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
-                    }
-                }
-            }
-            const dropdown = document.querySelector('[data-module="moduleCalendarDateResize"]');
-            if (dropdown) {
-                dropdown.classList.remove('active');
-                dropdown.classList.add('disabled');
-            }
-        }
-
-        // Clic en Cancelar Calendario
-        if (calendarCancelBtn && calendarCancelBtn.closest('[data-module="moduleCalendarDateResize"]')) {
-            const dropdown = document.querySelector('[data-module="moduleCalendarDateResize"]');
-            if (dropdown) {
-                dropdown.classList.remove('active');
-                dropdown.classList.add('disabled');
             }
         }
 
@@ -212,7 +240,7 @@ class CanvasResizeController {
         }
         
         // Cierre general de dropdowns si se clickea fuera
-        if (!dropdownTrigger && !e.target.closest('.component-menu')) {
+        if (!dropdownTrigger && !e.target.closest('.component-menu') && !e.target.closest('.component-calendar')) {
             const activeDropdowns = document.querySelectorAll('.component-module--dropdown.active');
             activeDropdowns.forEach(dropdown => {
                 dropdown.classList.remove('active');
@@ -321,19 +349,25 @@ class CanvasResizeController {
         const targetSize = textRef ? parseInt(textRef.textContent.split('x')[0]) : 64;
 
         let nextResizeAt = null;
+        
+        // Leemos el valor del input oculto, alimentado por el calendario
         if (isActive) {
-            const date = this.calendar ? this.calendar.getDate() : null;
-            if (!date) {
+            const inputDateTime = document.querySelector('[data-ref="next_resize_at"]');
+            const localTimeStr = inputDateTime ? inputDateTime.value : '';
+            
+            if (!localTimeStr) {
                 showMessage("Debes seleccionar una fecha y hora para la expansión.", "error");
                 return;
             }
 
+            const date = new Date(localTimeStr);
             if (date <= new Date()) {
                 showMessage("La fecha debe ser en el futuro.", "error");
                 return;
             }
 
-            nextResizeAt = date.toISOString().slice(0, 19).replace('T', ' ');
+            // Transformamos el valor del input (Local) a UTC para el servidor
+            nextResizeAt = this.localInputFormatToUtcString(localTimeStr);
         }
 
         const actionLink = document.querySelector('.component-menu-link[data-type="timer_action"].active');
