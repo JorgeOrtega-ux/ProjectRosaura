@@ -80,8 +80,7 @@ if (!empty($canvasUuid)) {
 ?>
 <div class="view-content">
     
-    <div id="cf-turnstile-wrapper" style="display: none;" data-sitekey="<?php echo htmlspecialchars($turnstileSiteKey); ?>"></div>
-    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" defer></script>
+    <div id="cf-turnstile-wrapper" data-sitekey="<?php echo htmlspecialchars($turnstileSiteKey); ?>"></div>
 
     <div class="component-wrapper component-wrapper--full no-padding" 
          data-ref="design-wrapper" 
@@ -101,44 +100,43 @@ if (!empty($canvasUuid)) {
          data-resize-timer-action="<?php echo htmlspecialchars($resizeTimerAction); ?>">
          
         <div class="component-top">
-            <div class="component-top-left" style="display: flex; align-items: center; gap: 12px;">
+            <div class="component-top-left">
                 <h1 class="component-top-title"><?php echo __('lbl_design_title'); ?></h1>
                 
                 <?php if (!empty($canvasName)): ?>
-                    <span style="opacity: 0.3; font-size: 1.5rem; font-weight: 300; user-select: none;">/</span>
-                    <h1 class="component-top-title" style="opacity: 0.7; font-weight: 400;">
+                    <h1 class="component-top-title">
                         <?php echo htmlspecialchars($canvasName); ?>
                     </h1>
                 <?php endif; ?>
 
                 <?php if ($isSnapshot): ?>
-                    <span class="component-badge component-badge--warning" style="margin-left: 12px;">
+                    <span class="component-badge component-badge--warning">
                         <span class="material-symbols-rounded">history</span> Modo Histórico
                     </span>
                 <?php endif; ?>
             </div>
             
-            <div class="component-top-right" style="display: flex; align-items: center;">
+            <div class="component-top-right">
                 
                 <?php if (!$isSnapshot): ?>
-                <div class="component-actions disabled" data-ref="spectator-controls" style="display: none; align-items: center; gap: 12px; margin-right: 16px; padding-right: 16px; border-right: 1px solid var(--border-color);">
+                <div class="component-actions disabled" data-ref="spectator-controls">
                     
-                    <div class="component-badge component-badge--warning" data-ref="spectator-status-badge" style="margin: 0; display: none;" data-tooltip="<?php echo __('tooltip_spectator') ?? 'Solo puedes observar'; ?>" data-position="bottom">
+                    <div class="component-badge component-badge--warning" data-ref="spectator-status-badge" data-tooltip="<?php echo __('tooltip_spectator') ?? 'Solo puedes observar'; ?>" data-position="bottom">
                         <span class="material-symbols-rounded">visibility</span>
                         <span><?php echo __('lbl_spectator') ?? 'Modo Espectador'; ?></span>
                     </div>
 
-                    <div class="component-badge component-badge--danger" data-ref="private-status-badge" style="margin: 0; display: none;" data-tooltip="No eres miembro" data-position="bottom">
+                    <div class="component-badge component-badge--danger" data-ref="private-status-badge" data-tooltip="No eres miembro" data-position="bottom">
                         <span class="material-symbols-rounded">lock</span>
                         <span>Lienzo Privado</span>
                     </div>
                     
-                    <button class="component-button component-button--h34" data-action="joinCanvasDirectly" data-ref="btn-join-direct" style="display: none;">
+                    <button class="component-button component-button--h34" data-action="joinCanvasDirectly" data-ref="btn-join-direct">
                         <?php echo __('btn_join') ?? 'Unirse'; ?>
                     </button>
                     
-                    <button class="component-button component-button--h34 component-button--dark" data-action="requestCanvasAccess" data-ref="btn-request-access" style="display: none;">
-                        <span class="material-symbols-rounded" style="font-size: 18px;">front_hand</span>
+                    <button class="component-button component-button--h34 component-button--dark" data-action="requestCanvasAccess" data-ref="btn-request-access">
+                        <span class="material-symbols-rounded">front_hand</span>
                         <?php echo __('btn_request_access') ?? 'Solicitar Acceso'; ?>
                     </button>
                 </div>
@@ -152,7 +150,7 @@ if (!empty($canvasUuid)) {
                     </button>
                     <div class="component-divider-vertical disabled" data-ref="template-actions-divider"></div>
                     
-                    <button class="component-button component-button--icon component-button--h40 component-color-indicator" style="--active-color: #000000;" data-ref="btn-color-palette" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-colors" data-tooltip="Paleta de colores" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40 component-color-indicator" data-ref="btn-color-palette" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-colors" data-tooltip="Paleta de colores" data-position="bottom">
                         <span class="material-symbols-rounded">palette</span>
                     </button>
                     <button class="component-button component-button--icon component-button--h40" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-templates" data-tooltip="Plantillas" data-position="bottom">
@@ -165,20 +163,32 @@ if (!empty($canvasUuid)) {
         <div class="component-bottom">
             <canvas data-ref="design-canvas" class="component-canvas-surface"></canvas>
             
-            <div class="canvas-badges-left" data-ref="badges-left"></div>
+            <div class="canvas-badges-left" data-ref="badges-left">
+                <div class="component-badge" data-badge-id="coords">
+                    <span class="material-symbols-rounded">my_location</span>
+                    <span>- , -</span>
+                </div>
+
+                <?php if (!$isSnapshot): ?>
+                <div class="component-badge" data-ref="cooldown-badge">
+                    <span class="material-symbols-rounded">bolt</span>
+                    <span data-ref="cooldown-counter">--/--</span>
+                    
+                    <span>|</span>
+                    
+                    <span class="material-symbols-rounded">timer</span>
+                    <span data-ref="cooldown-timer">0s</span>
+                </div>
+                <?php endif; ?>
+            </div>
+            
             <div class="canvas-badges-right" data-ref="badges-right"></div>
             
             <?php if (!$isSnapshot): ?>
             <div class="component-action-pill">
-                <button class="component-button component-button--dark component-button--h45 disabled-interactive" data-action="placePixels" data-ref="pixel-action-btn" style="padding-right: 8px;">
+                <button class="component-button component-button--dark component-button--h45 disabled-interactive" data-action="placePixels" data-ref="pixel-action-btn">
                     <span class="material-symbols-rounded">touch_app</span>
-                    <span data-ref="pixel-action-text" style="margin-right: 4px;"><?php echo __('btn_select_pixels'); ?></span>
-                    
-                    <div class="component-cooldown-badge" data-ref="cooldown-badge" style="display: flex; align-items: center; gap: 4px; background: rgba(255,255,255,0.15); padding: 4px 8px; border-radius: 6px; font-size: 0.85rem; margin-left: 8px; font-variant-numeric: tabular-nums; min-width: max-content;">
-                        <span data-ref="cooldown-counter">--/--</span>
-                        <span class="material-symbols-rounded" style="font-size: 14px; opacity: 0.7;">timer</span>
-                        <span data-ref="cooldown-timer">0s</span>
-                    </div>
+                    <span data-ref="pixel-action-text"><?php echo __('btn_select_pixels'); ?></span>
                 </button>
             </div>
             <?php endif; ?>
