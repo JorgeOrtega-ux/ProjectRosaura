@@ -6,12 +6,13 @@ export const DesignTemplates = {
     async loadUserLibrary() {
         if (this.isSpectator || this.isSnapshotMode) return;
         try {
-            const response = await this.api.post(ApiRoutes.Canvases.GetTemplates, {});
+            const response = await this.api.post(ApiRoutes.Canvases.GetTemplates, {}, this.abortController.signal);
+            if (response.aborted) return;
+
             if (response.success && response.data) {
                 this.renderUserLibraryDOM(response.data);
             }
         } catch (error) {
-            console.error("Error al cargar la librería de plantillas:", error);
         }
     },
 
@@ -21,7 +22,7 @@ export const DesignTemplates = {
 
         container.innerHTML = '';
         if (templates.length === 0) {
-            container.innerHTML = '<p class="component-empty-text component-empty-text--grid">No tienes plantillas en tu nube.</p>';
+            container.innerHTML = `<p class="component-empty-text component-empty-text--grid">${__('txt_no_templates')}</p>`;
             this.updateTemplateUI();
             return;
         }
@@ -32,10 +33,9 @@ export const DesignTemplates = {
             
             const img = document.createElement('img');
             img.src = tpl.file_path;
-            img.alt = 'Plantilla guardada';
+            img.alt = __('alt_saved_template');
             img.className = 'component-library-card__image';
             
-            // Reutilizamos el endpoint pero ahora usamos la URL como identificador
             img.setAttribute('data-action', 'addTemplateToCanvas');
             img.setAttribute('data-url', tpl.file_path);
 
@@ -61,35 +61,34 @@ export const DesignTemplates = {
         const btnUpload = document.querySelector('[data-action="triggerTemplateUpload"]');
         if (btnUpload) {
             btnUpload.classList.add('disabled-interactive');
-            btnUpload.innerHTML = '<span class="material-symbols-rounded icon-spin-slow">autorenew</span> Subiendo...';
+            btnUpload.innerHTML = `<span class="material-symbols-rounded icon-spin-slow">autorenew</span> ${__('btn_uploading')}`;
         }
 
         const formData = new FormData();
         formData.append('file', file);
 
         try {
-            const response = await this.api.postForm(ApiRoutes.Canvases.UploadTemplate, formData);
+            const response = await this.api.postForm(ApiRoutes.Canvases.UploadTemplate, formData, this.abortController.signal);
+            if (response.aborted) return;
 
             if (response.success) {
-                showMessage('Plantilla subida a la nube exitosamente.', 'success');
+                showMessage(__('msg_template_uploaded'), 'success');
                 await this.loadUserLibrary();
             } else {
-                showMessage(response.message || 'Error al subir la plantilla.', 'error');
+                showMessage(response.message, 'error');
             }
         } catch (error) {
-            console.error("Error en ApiService:", error);
-            showMessage('Error de red al intentar subir la plantilla.', 'error');
+            showMessage(__('err_network_upload'), 'error');
         } finally {
             this.fileInput.value = '';
             if (btnUpload) {
                 btnUpload.classList.remove('disabled-interactive');
-                btnUpload.innerHTML = '<span class="material-symbols-rounded">cloud_upload</span> Subir a mi librería';
+                btnUpload.innerHTML = `<span class="material-symbols-rounded">cloud_upload</span> ${__('btn_upload_library')}`;
             }
         }
     },
 
     addTemplateFromLibrary(url) {
-        // Si ya está en el lienzo, simplemente lo seleccionamos/deseleccionamos
         const existing = this.templates.find(t => t.id === url);
         if (existing) {
             this.toggleTemplate(url);
@@ -98,7 +97,7 @@ export const DesignTemplates = {
 
         const img = new Image();
         img.onload = () => {
-            const id = url; // Usamos la URL como ID único para el lienzo
+            const id = url; 
             const targetW = this.boardWidth * 0.5;
             const targetH = this.boardHeight * 0.5;
             const scale = Math.min(targetW / img.width, targetH / img.height);
@@ -118,10 +117,10 @@ export const DesignTemplates = {
             });
 
             this.toggleTemplate(id); 
-            showMessage('Plantilla agregada al lienzo.', 'success');
+            showMessage(__('msg_template_added'), 'success');
         };
         img.onerror = () => {
-            showMessage('Error al descargar la imagen de la librería.', 'error');
+            showMessage(__('err_download_library_image'), 'error');
         };
         img.src = url;
     },
@@ -131,23 +130,23 @@ export const DesignTemplates = {
         if (btn) btn.classList.add('disabled-interactive');
 
         try {
-            const response = await this.api.post(ApiRoutes.Canvases.DeleteTemplate, { id: id });
+            const response = await this.api.post(ApiRoutes.Canvases.DeleteTemplate, { id: id }, this.abortController.signal);
+            if (response.aborted) return;
+            
             if (response.success) {
                 showMessage(response.message, 'success');
                 await this.loadUserLibrary();
             } else {
-                showMessage(response.message || 'Error al eliminar', 'error');
+                showMessage(response.message, 'error');
                 if (btn) btn.classList.remove('disabled-interactive');
             }
         } catch (error) {
-            console.error(error);
-            showMessage('Error de conexión', 'error');
+            showMessage(__('err_connection'), 'error');
             if (btn) btn.classList.remove('disabled-interactive');
         }
     },
 
     updateTemplateUI() {
-        // 1. Actualiza el estilo activo en la grilla de la librería
         const cards = document.querySelectorAll('.component-library-card');
         cards.forEach(card => {
             const img = card.querySelector('img');
@@ -158,7 +157,6 @@ export const DesignTemplates = {
             }
         });
 
-        // 2. Muestra/Oculta los botones en la barra de acciones principal
         const btnLock = document.querySelector('[data-ref="btn-template-lock"]');
         const btnDel = document.querySelector('[data-ref="btn-template-delete"]');
         const divider = document.querySelector('[data-ref="template-actions-divider"]');
@@ -184,9 +182,9 @@ export const DesignTemplates = {
 
     toggleTemplate(id) {
         if (this.activeTemplateId === id) {
-            this.activeTemplateId = null; // Deseleccionar
+            this.activeTemplateId = null; 
         } else {
-            this.activeTemplateId = id; // Seleccionar
+            this.activeTemplateId = id; 
         }
         this.updateTemplateUI();
         this.requestRender();

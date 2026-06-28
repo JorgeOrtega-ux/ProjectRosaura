@@ -33,7 +33,6 @@ class CanvasEditController {
         this.container = document.querySelector('[data-ref="canvas-edit-wrapper"]');
         if (!this.container) return;
 
-        // EXTRAER EL ID INTERNO DESDE EL HTML (Inyectado por PHP)
         this.canvasId = this.container.getAttribute('data-canvas-id');
 
         this.abortController = new AbortController();
@@ -44,9 +43,6 @@ class CanvasEditController {
         }
         
         this.bindEvents();
-        
-        // === NUEVO: HIDRATACIÓN SSR ===
-        // En lugar de llamar a la API con loadCanvasData(), leemos lo que PHP ya pintó
         this.hydrateStateFromDOM();
     }
 
@@ -59,7 +55,6 @@ class CanvasEditController {
         document.addEventListener('click', this.handleClickBound);
     }
 
-    // === NUEVO MÉTODO PARA LEER EL HTML GENERADO POR PHP ===
     hydrateStateFromDOM() {
         const nameInput = this.container.querySelector('[data-ref="input-canvasname"]');
         if (nameInput) this.state.name = nameInput.value.trim();
@@ -84,7 +79,6 @@ class CanvasEditController {
             this.state.palette_id = textPalette.textContent.trim().toLowerCase();
         }
 
-        // Renderizamos las paletas para que el menú desplegable funcione en JS
         this.renderPalettes();
     }
 
@@ -130,7 +124,7 @@ class CanvasEditController {
         const palettes = getAllPalettes();
         container.innerHTML = '';
 
-        let activePaletteName = 'Paleta';
+        let activePaletteName = __('lbl_palette');
 
         palettes.forEach(palette => {
             const isActive = this.state.palette_id === palette.id;
@@ -195,13 +189,11 @@ class CanvasEditController {
         }
     }
 
-    // Mantenemos la función de carga original solo por si en el futuro añades un botón de "Refrescar"
     async loadCanvasData() {
         try {
             const response = await this.api.post(ApiRoutes.Canvases.Get, { id: this.canvasId }, this.abortController.signal);
             if (response.aborted) return;
             if (response && response.success) {
-                // (Lógica omitida, ya es manejada por SSR, pero mantenemos la estructura)
             }
         } catch (error) {
             if (error.name === 'AbortError') return;
@@ -241,7 +233,7 @@ class CanvasEditController {
                 const textRef = dropdownWrapper.querySelector('[data-ref="text-privacy"]');
                 const iconRef = dropdownWrapper.querySelector('[data-ref="icon-privacy"]');
                 
-                if(textRef) textRef.textContent = __(label);
+                if(textRef) textRef.textContent = window.__(label);
                 if(iconRef) iconRef.textContent = icon;
                 
                 const menu = btn.closest('.component-menu-list');

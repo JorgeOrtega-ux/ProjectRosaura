@@ -130,16 +130,16 @@ class CanvasesManageController {
         const scopeTypeText = document.querySelector('[data-ref="text-scope-type"]');
         
         const payload = {
-            name: nameInput ? nameInput.value : 'Nuevo Lienzo',
+            name: nameInput ? nameInput.value : __('default_canvas_name_new'),
             description: descInput ? descInput.value : '',
-            privacy: (privacyText && privacyText.textContent.toLowerCase().includes('público')) ? 'public' : 'private',
-            requires_approval: (approvalText && approvalText.textContent.toLowerCase().includes('verdadero')),
+            privacy: (privacyText && privacyText.textContent.toLowerCase().includes(__('lbl_public').toLowerCase())) ? 'public' : 'private',
+            requires_approval: (approvalText && approvalText.textContent.toLowerCase().includes(__('lbl_true').toLowerCase())),
             size: sizeText ? sizeText.textContent.split('x')[0] : '64',
             limit: limitVal ? parseInt(limitVal.textContent) : 10,
             palette_id: 'default', 
             cooldown_pixels_batch: cooldownBatchVal ? parseInt(cooldownBatchVal.textContent) : 5,
             cooldown_seconds: cooldownSecVal ? parseInt(cooldownSecVal.textContent) : 10,
-            scope_type: (scopeTypeText && !scopeTypeText.textContent.includes('Personal')) ? 'global' : 'personal'
+            scope_type: (scopeTypeText && !scopeTypeText.textContent.toLowerCase().includes(__('lbl_personal').toLowerCase())) ? 'global' : 'personal'
         };
 
         setButtonLoading(btn);

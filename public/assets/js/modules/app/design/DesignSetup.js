@@ -24,8 +24,8 @@ export const DesignSetup = {
         this.isSpectator = true;
         this.isResetLocked = true; 
         
-        if (this.btnPlacePixels) this.btnPlacePixels.style.display = 'none';
-        if (this.btnColorPalette) this.btnColorPalette.style.display = 'none';
+        if (this.btnPlacePixels) this.btnPlacePixels.classList.add('disabled');
+        if (this.btnColorPalette) this.btnColorPalette.classList.add('disabled');
     },
 
     drawImageOnCanvas(url) {
@@ -36,7 +36,7 @@ export const DesignSetup = {
             this.requestRender();
         };
         img.onerror = () => {
-            showMessage('El archivo de imagen histórico no está disponible.', 'error');
+            showMessage(__('err_history_image_missing'), 'error');
         };
         img.src = url;
     },
@@ -53,7 +53,6 @@ export const DesignSetup = {
             this.nextResetAt = wrapper.getAttribute('data-reset-at');
             this.timerAction = wrapper.getAttribute('data-timer-action') || 'restart';
 
-            // Nuevas variables para el resize
             this.resizeActive = wrapper.getAttribute('data-resize-active') === '1';
             this.nextResizeAt = wrapper.getAttribute('data-resize-at');
             this.resizeTargetSize = wrapper.getAttribute('data-resize-target') || '64';
@@ -76,7 +75,6 @@ export const DesignSetup = {
                 this.startResetTimer();
             }
 
-            // Iniciar timer de expansión si está activo
             if (this.resizeActive && this.nextResizeAt) {
                 this.startResizeTimer();
             }
@@ -94,19 +92,19 @@ export const DesignSetup = {
 
     updateLockBadges() {
         if (this.isResetLocked) {
-            this.setCanvasBadge('lock-reset', 'auto_delete icon-spin-slow', 'En Reinicio...', 'left');
+            this.setCanvasBadge('lock-reset', 'auto_delete icon-spin-slow', __('badge_resetting'), 'left');
         } else {
             this.removeCanvasBadge('lock-reset', 'left');
         }
 
         if (this.isResizeLocked) {
-            this.setCanvasBadge('lock-resize', 'aspect_ratio icon-spin-slow', 'Expandiendo...', 'left');
+            this.setCanvasBadge('lock-resize', 'aspect_ratio icon-spin-slow', __('badge_expanding'), 'left');
         } else {
             this.removeCanvasBadge('lock-resize', 'left');
         }
 
         if (this.isPrivateBlocked) {
-            this.setCanvasBadge('lock-private', 'lock', 'Requiere ser miembro', 'left');
+            this.setCanvasBadge('lock-private', 'lock', __('badge_member_required'), 'left');
         } else {
             this.removeCanvasBadge('lock-private', 'left');
         }
@@ -162,7 +160,7 @@ export const DesignSetup = {
             const diffMs = targetMs - nowMs;
             
             if (diffMs <= 0) {
-                this.setCanvasBadge('resize-timer', 'aspect_ratio icon-spin-slow', 'Expandiendo...', 'right');
+                this.setCanvasBadge('resize-timer', 'aspect_ratio icon-spin-slow', __('badge_expanding'), 'right');
                 if (this.resizeTimerAction === 'stop') {
                     clearInterval(this.resizeTimerInterval);
                     setTimeout(() => this.removeCanvasBadge('resize-timer', 'right'), 5000);
@@ -223,7 +221,6 @@ export const DesignSetup = {
             this.requestRender();
 
         } catch (e) {
-            console.error("Error hidratando el canvas base64", e);
         }
     },
 

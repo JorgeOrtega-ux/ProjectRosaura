@@ -27,12 +27,11 @@ class SnapshotViewerController {
         this.needsRender = false;
         this.animationFrameId = null;
 
-        // --- ESTADO DEL REPRODUCTOR TIMELAPSE ---
         this.hasTimelapse = false;
         this.timelapseData = null;
         this.isPlaying = false;
         this.currentFrame = 0;
-        this.playbackSpeed = 5; // Velocidad 5x mantenida por defecto
+        this.playbackSpeed = 5; 
         this.paletteColors = [];
         this.playAnimationFrameId = null;
         this.originalImageUrl = null;
@@ -59,7 +58,7 @@ class SnapshotViewerController {
         
         if (this.canvas) {
             this.ctx = this.canvas.getContext('2d', { alpha: false });
-            this.canvas.style.imageRendering = 'pixelated';
+            this.canvas.classList.add('component-pixelated');
         }
 
         this.bindEvents();
@@ -97,7 +96,6 @@ class SnapshotViewerController {
                 
                 this.hasTimelapse = response.data.has_timelapse || false;
                 
-                // Cargar paleta de colores para decodificar JSONL
                 await this.loadPalette(response.data.palette_id || 'default');
 
                 this.setupCanvas();
@@ -108,13 +106,12 @@ class SnapshotViewerController {
                     this.initTimelapseUI();
                 }
             } else {
-                showMessage(response.message || 'Error al cargar el snapshot', 'error');
+                showMessage(response.message || __('err_load_snapshot'), 'error');
                 this.setupCanvas();
                 this.centerBoard();
             }
         } catch (error) {
-            console.error("Error fetching snapshot data:", error);
-            showMessage('Error de conexión', 'error');
+            showMessage(__('err_connection'), 'error');
             this.setupCanvas();
             this.centerBoard();
         }
@@ -128,22 +125,16 @@ class SnapshotViewerController {
                 this.paletteColors = data[paletteId]?.colors || data['default']?.colors || [];
             }
         } catch(e) {
-            console.error("Error loading palette JSON", e);
         }
     }
-
-    // ==========================================
-    // LÓGICA DEL REPRODUCTOR TIMELAPSE
-    // ==========================================
 
     initTimelapseUI() {
         const btnPlay = document.getElementById('tl-btn-play');
         if (!btnPlay) return;
         
-        btnPlay.style.display = 'flex'; // Mostramos el botón ya que hay timelapse
+        btnPlay.style.display = 'flex'; 
 
         btnPlay.addEventListener('click', async () => {
-            // Si es la primera vez que damos play, descargamos el archivo JSONL
             if (!this.timelapseData) {
                 btnPlay.innerHTML = '<span class="material-symbols-rounded" style="animation: spin 1s linear infinite;">sync</span>';
                 const loaded = await this.fetchTimelapseData();
@@ -159,7 +150,6 @@ class SnapshotViewerController {
                 : '<span class="material-symbols-rounded">play_circle</span>';
 
             if (this.isPlaying) {
-                // Si estaba al 100%, reiniciar desde cero
                 if (this.currentFrame >= this.timelapseData.length) {
                     this.resetCanvasToBlank();
                     this.currentFrame = 0;
@@ -177,7 +167,7 @@ class SnapshotViewerController {
             const response = await this.api.downloadText(endpoint, { id: this.snapshotId });
 
             if (!response.success) {
-                showMessage(response.message || "Error al descargar el archivo de timelapse.", "error");
+                showMessage(response.message || __('err_download_timelapse'), "error");
                 return false;
             }
 
@@ -191,14 +181,12 @@ class SnapshotViewerController {
             return true;
 
         } catch(e) {
-            console.error(e);
-            showMessage("Error cargando el archivo de Timelapse", "error");
+            showMessage(__('err_load_timelapse'), "error");
             return false;
         }
     }
 
     resetCanvasToBlank() {
-        // Lienzo totalmente blanco puro
         this.offscreenCtx.fillStyle = '#FFFFFF';
         this.offscreenCtx.fillRect(0, 0, this.boardWidth, this.boardHeight);
         this.requestRender();
@@ -216,7 +204,7 @@ class SnapshotViewerController {
             pixelsToDraw--;
         }
 
-        this.requestRender(); // Forzamos repintado del canvas principal
+        this.requestRender(); 
 
         if (this.currentFrame < this.timelapseData.length) {
             this.playAnimationFrameId = requestAnimationFrame(() => this.playLoop());
@@ -232,7 +220,6 @@ class SnapshotViewerController {
     drawSinglePixel(pixel) {
         if (!pixel) return;
         
-        // Interpretar si es borrado (c: 255) o color normal
         const colorIndex = parseInt(pixel.c, 10);
         let colorHex = '#FFFFFF';
         
@@ -243,10 +230,6 @@ class SnapshotViewerController {
         this.offscreenCtx.fillStyle = colorHex;
         this.offscreenCtx.fillRect(parseInt(pixel.x, 10), parseInt(pixel.y, 10), 1, 1);
     }
-
-    // ==========================================
-    // RENDERIZADO DEL VISOR PRINCIPAL
-    // ==========================================
 
     setupCanvas() {
         this.updateCanvasDimensions();
@@ -265,7 +248,7 @@ class SnapshotViewerController {
             this.requestRender();
         };
         img.onerror = () => {
-            showMessage('La imagen del snapshot no está disponible.', 'error');
+            showMessage(__('err_snapshot_image_unavailable'), 'error');
         };
         img.src = url;
     }
@@ -345,7 +328,7 @@ class SnapshotViewerController {
 
         this.isDragging = true;
         this.lastMouse = { x: e.clientX, y: e.clientY };
-        this.canvas.classList.add('cursor-grabbing');
+        this.canvas.classList.add('component-cursor-grabbing');
     }
 
     handleMouseMove(e) {
@@ -364,7 +347,7 @@ class SnapshotViewerController {
 
         const target = e.target.closest('[data-ref="snapshot-canvas"]');
         if (target) {
-            this.canvas.style.cursor = 'grab';
+            this.canvas.classList.add('component-cursor-grab');
             this.calculateHoverPixel(e.clientX, e.clientY);
         } else if (this.hoveredPixel !== null) {
             this.hoveredPixel = null;
@@ -376,7 +359,7 @@ class SnapshotViewerController {
     handleMouseUp(e) {
         if (this.isDragging) {
             this.isDragging = false;
-            this.canvas.classList.remove('cursor-grabbing');
+            this.canvas.classList.remove('component-cursor-grabbing');
         }
         this.calculateHoverPixel(e.clientX, e.clientY);
         this.requestRender();

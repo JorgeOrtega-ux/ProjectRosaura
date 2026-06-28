@@ -17,7 +17,6 @@ class CanvasResetController {
         this.inputDateTime = null;
         this.checkSnapshot = null;
         
-        // Elementos del Dropdown Personalizado
         this.inputTimer = null;
         this.textTimer = null;
         this.iconTimer = null;
@@ -55,7 +54,7 @@ class CanvasResetController {
         }, () => {
             if (this.inputDateTime) this.inputDateTime.value = '';
             const textRef = this.wrapper.querySelector('[data-ref="reset-date-text"]');
-            if (textRef) textRef.textContent = __('lbl_select_date') || 'Seleccionar fecha';
+            if (textRef) textRef.textContent = __('lbl_select_date');
         });
 
         this.bindEvents();
@@ -198,7 +197,6 @@ class CanvasResetController {
         const canvasId = this.wrapper.getAttribute('data-canvas-id');
         if (!canvasId) return;
 
-        // SE ENVÍA { id: canvasId } PARA QUE COINCIDA CON PHP
         const result = await this.api.post(ApiRoutes.Canvases.GetResetSettings, { id: canvasId }, this.abortController.signal);
 
         if (result.aborted) return;
@@ -215,7 +213,6 @@ class CanvasResetController {
                 const localStr = this.utcStringToLocalInputFormat(data.next_reset_at);
                 this.inputDateTime.value = localStr;
                 
-                // Actualizar calendario y texto principal
                 this.calendar.setup(localStr, (isoString, displayString) => {
                     if (this.inputDateTime) this.inputDateTime.value = isoString;
                     const textRef = this.wrapper.querySelector('[data-ref="reset-date-text"]');
@@ -223,10 +220,9 @@ class CanvasResetController {
                 }, () => {
                     if (this.inputDateTime) this.inputDateTime.value = '';
                     const textRef = this.wrapper.querySelector('[data-ref="reset-date-text"]');
-                    if (textRef) textRef.textContent = __('lbl_select_date') || 'Seleccionar fecha';
+                    if (textRef) textRef.textContent = __('lbl_select_date');
                 });
 
-                // Setear el texto inicial visible del dropdown de la fecha
                 const textRef = this.wrapper.querySelector('[data-ref="reset-date-text"]');
                 if (textRef) {
                     const dateObj = new Date(localStr);
@@ -256,7 +252,7 @@ class CanvasResetController {
         const localTimeStr = this.inputDateTime ? this.inputDateTime.value : '';
 
         if (isActive && !localTimeStr) {
-            showMessage(__('err_reset_date_required') || 'La fecha de reinicio es obligatoria', 'warning');
+            showMessage(__('err_reset_date_required'), 'warning');
             return;
         }
 
@@ -285,20 +281,9 @@ class CanvasResetController {
         }
     }
 
-    // --- NUEVO: FLUJO DE REINICIO INMEDIATO ---
-    confirmResetNow(btnResetNow) {
-        const message = __('msg_confirm_reset_now') || '¿Estás seguro de que deseas limpiar este lienzo ahora mismo? Esta acción no se puede deshacer y los usuarios verán el cambio en tiempo real.';
-        
-        if (window.app && window.app.dialogs) {
-            window.app.dialogs.show({
-                title: __('lbl_warning') || 'Advertencia',
-                message: message,
-                confirmText: __('btn_reset_now') || 'Reiniciar Ahora',
-                confirmClass: 'component-button--danger',
-                cancelText: __('btn_cancel') || 'Cancelar',
-                onConfirm: () => this.executeResetNow(btnResetNow)
-            });
-        } else if (confirm(message)) {
+    async confirmResetNow(btnResetNow) {
+        const result = await window.dialogSystem.show('confirmResetNow', {});
+        if (result.confirmed) {
             this.executeResetNow(btnResetNow);
         }
     }
@@ -315,9 +300,9 @@ class CanvasResetController {
         restoreButton(btn);
 
         if (result.success) {
-            showMessage(result.message || __('msg_reset_now_success') || 'El lienzo ha sido limpiado.', 'success');
+            showMessage(result.message || __('msg_reset_now_success'), 'success');
         } else {
-            showMessage(result.message || __('err_reset_now_failed') || 'No se pudo reiniciar el lienzo.', 'error');
+            showMessage(result.message || __('err_reset_now_failed'), 'error');
         }
     }
 }

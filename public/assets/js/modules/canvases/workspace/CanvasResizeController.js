@@ -61,18 +61,16 @@ class CanvasResizeController {
         const indicator = document.getElementById('localTimezoneIndicatorResize');
         if (indicator) {
             const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-            indicator.textContent = `Tu zona: ${tz}`;
+            indicator.textContent = __('lbl_your_timezone') + ': ' + tz;
         }
     }
 
     initCalendar() {
-        // Inicializamos pasándole el selector como texto, igual que en CanvasResetController
         this.calendar = new CalendarSystem('[data-module="moduleCalendarDateResize"]');
         this.calendar.init();
 
         const inputDateTime = document.querySelector('[data-ref="next_resize_at"]');
         
-        // Configuramos el calendario con callbacks
         this.calendar.setup(null, (isoString, displayString) => {
             if (inputDateTime) inputDateTime.value = isoString;
             const textRef = document.querySelector('[data-ref="resize-date-text"]');
@@ -80,7 +78,7 @@ class CanvasResizeController {
         }, () => {
             if (inputDateTime) inputDateTime.value = '';
             const textRef = document.querySelector('[data-ref="resize-date-text"]');
-            if (textRef) textRef.textContent = 'Seleccionar fecha';
+            if (textRef) textRef.textContent = __('lbl_select_date');
         });
     }
 
@@ -111,7 +109,6 @@ class CanvasResizeController {
         }
     }
 
-    // --- Utilidades para zonas horarias ---
     utcStringToLocalInputFormat(utcString) {
         if (!utcString) return '';
         const dateObj = new Date(utcString.replace(' ', 'T') + 'Z');
@@ -150,24 +147,20 @@ class CanvasResizeController {
         if (result.success && result.data) {
             const data = result.data;
             
-            // Set Size
             const sizeLink = document.querySelector(`.component-menu-link[data-type="size"][data-value="${data.target_size}"]`);
             if (sizeLink) this.handleResizeSelect(sizeLink, false);
             
-            // Set Toggle
             const toggle = document.getElementById('toggleScheduledResize');
             if (toggle) {
                 toggle.checked = data.is_active;
                 this.handleToggleChange({ target: toggle });
             }
 
-            // Set Date
             if (data.next_resize_at && this.calendar) {
                 const localStr = this.utcStringToLocalInputFormat(data.next_resize_at);
                 const inputDateTime = document.querySelector('[data-ref="next_resize_at"]');
                 if (inputDateTime) inputDateTime.value = localStr;
                 
-                // Actualizar calendario para que inicie en la fecha guardada
                 this.calendar.setup(localStr, (isoString, displayString) => {
                     if (inputDateTime) inputDateTime.value = isoString;
                     const textRef = document.querySelector('[data-ref="resize-date-text"]');
@@ -175,10 +168,9 @@ class CanvasResizeController {
                 }, () => {
                     if (inputDateTime) inputDateTime.value = '';
                     const textRef = document.querySelector('[data-ref="resize-date-text"]');
-                    if (textRef) textRef.textContent = 'Seleccionar fecha';
+                    if (textRef) textRef.textContent = __('lbl_select_date');
                 });
                 
-                // Actualizar texto visual del trigger inmediatamente
                 const textRef = document.querySelector('[data-ref="resize-date-text"]');
                 if (textRef) {
                     const dateObj = new Date(localStr);
@@ -191,7 +183,6 @@ class CanvasResizeController {
                 }
             }
 
-            // Set Timer Action
             const actionLink = document.querySelector(`.component-menu-link[data-type="timer_action"][data-value="${data.timer_action || 'restart'}"]`);
             if (actionLink) this.handleTimerActionSelect(actionLink);
         }
@@ -209,7 +200,6 @@ class CanvasResizeController {
             const module = document.querySelector(`[data-module="${dropdownTrigger.getAttribute('data-target')}"]`);
             if (module) {
                 if (module.classList.contains('disabled')) {
-                    // Cerrar todos antes de abrir uno nuevo (opcional, mejora usabilidad)
                     document.querySelectorAll('.component-module--dropdown.active').forEach(d => {
                         d.classList.remove('active');
                         d.classList.add('disabled');
@@ -239,7 +229,6 @@ class CanvasResizeController {
             this.saveScheduledResize(saveScheduledBtn);
         }
         
-        // Cierre general de dropdowns si se clickea fuera
         if (!dropdownTrigger && !e.target.closest('.component-menu') && !e.target.closest('.component-calendar')) {
             const activeDropdowns = document.querySelectorAll('.component-module--dropdown.active');
             activeDropdowns.forEach(dropdown => {
@@ -313,7 +302,7 @@ class CanvasResizeController {
         if (isNaN(newSize)) return;
 
         if (newSize === this.currentSize) {
-            showMessage("El lienzo ya tiene esta resolución aplicada.", "info");
+            showMessage(__('info_size_already_applied'), "info");
             return;
         }
 
@@ -326,7 +315,7 @@ class CanvasResizeController {
         restoreButton(btn);
 
         if (result.success) {
-            showMessage(result.message || "Proceso de redimensión iniciado exitosamente.", 'success');
+            showMessage(result.message || __('msg_resize_started'), 'success');
             setTimeout(() => {
                 if (window.spaRouter) {
                     window.spaRouter.navigate(`${this.basePath}/canvases/manage`, { forceReload: true });
@@ -335,7 +324,7 @@ class CanvasResizeController {
                 }
             }, 1000);
         } else {
-            showMessage(result.message || "Error al aplicar la expansión.", 'error');
+            showMessage(result.message || __('err_resize_apply'), 'error');
         }
     }
 
@@ -350,23 +339,21 @@ class CanvasResizeController {
 
         let nextResizeAt = null;
         
-        // Leemos el valor del input oculto, alimentado por el calendario
         if (isActive) {
             const inputDateTime = document.querySelector('[data-ref="next_resize_at"]');
             const localTimeStr = inputDateTime ? inputDateTime.value : '';
             
             if (!localTimeStr) {
-                showMessage("Debes seleccionar una fecha y hora para la expansión.", "error");
+                showMessage(__('err_resize_date_required'), "error");
                 return;
             }
 
             const date = new Date(localTimeStr);
             if (date <= new Date()) {
-                showMessage("La fecha debe ser en el futuro.", "error");
+                showMessage(__('err_date_future'), "error");
                 return;
             }
 
-            // Transformamos el valor del input (Local) a UTC para el servidor
             nextResizeAt = this.localInputFormatToUtcString(localTimeStr);
         }
 
@@ -390,9 +377,9 @@ class CanvasResizeController {
         restoreButton(btn);
 
         if (result.success) {
-            showMessage(result.message || "Programación guardada exitosamente.", "success");
+            showMessage(result.message || __('msg_schedule_saved'), "success");
         } else {
-            showMessage(result.message || "Error al guardar la programación.", "error");
+            showMessage(result.message || __('err_schedule_save'), "error");
         }
     }
 }

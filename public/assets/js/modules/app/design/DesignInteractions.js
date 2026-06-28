@@ -16,13 +16,11 @@ export const DesignInteractions = {
             this.fileInput.addEventListener('change', this.handleFileUploadBound);
         }
 
-        // Vincular inputs del Live Share para actualizar manualmente coordenadas
         if (this.uiLiveInputX) this.uiLiveInputX.addEventListener('change', this.handleLiveInputBound);
         if (this.uiLiveInputY) this.uiLiveInputY.addEventListener('change', this.handleLiveInputBound);
         if (this.uiLiveInputOpacity) this.uiLiveInputOpacity.addEventListener('input', this.handleLiveInputBound);
     },
 
-    // Maneja los inputs manuales del panel "En Vivo"
     handleLiveInput(e) {
         if (this.isResetLocked || this.isResizeLocked || this.liveShareStatus !== 'owner' || !this.activeTemplateId) return;
         const tpl = this.templates.find(t => t.id === this.activeTemplateId);
@@ -61,7 +59,7 @@ export const DesignInteractions = {
             if (this.uiLiveJoinCode && this.uiLiveJoinCode.value.trim() !== '') {
                 this.joinLiveImageSession(this.uiLiveJoinCode.value.trim().toUpperCase());
             } else {
-                showMessage('Ingresa un código válido', 'warning');
+                showMessage(__('err_valid_code'), 'warning');
             }
             return;
         }
@@ -86,7 +84,7 @@ export const DesignInteractions = {
         if (imgAdd) {
             e.preventDefault();
             if (this.isResetLocked || this.isResizeLocked) {
-                showMessage('El lienzo está bloqueado temporalmente por reinicio/expansión.', 'warning');
+                showMessage(__('err_canvas_locked'), 'warning');
                 return;
             }
             const url = imgAdd.getAttribute('data-url');
@@ -103,7 +101,6 @@ export const DesignInteractions = {
             return;
         }
 
-        // Si el lienzo está bajo redimensión o reset, cortamos interacción total
         if (this.isSpectator || this.timelapseActive || this.isResetLocked || this.isResizeLocked) return; 
 
         const btnUpload = e.target.closest('[data-action="triggerTemplateUpload"]');
@@ -113,12 +110,11 @@ export const DesignInteractions = {
             return;
         }
 
-        // Selección de plantilla en la galería
         const cardTemplate = e.target.closest('[data-action="selectTemplate"]');
         if (cardTemplate && !e.target.closest('.component-template-action-btn')) {
             const id = cardTemplate.getAttribute('data-id');
             if (this.liveShareStatus === 'spectator' && this.liveTemplateId === id) {
-                showMessage('Esta plantilla está siendo controlada en vivo por su dueño.', 'info');
+                showMessage(__('info_template_live'), 'info');
                 return;
             }
             this.toggleTemplate(id);
@@ -180,7 +176,7 @@ export const DesignInteractions = {
         if (!target) return;
         
         e.preventDefault(); 
-        if (this.isResizeLocked) return; // Congelar zoom
+        if (this.isResizeLocked) return; 
         
         const rect = this.canvas.getBoundingClientRect();
         const mouseX = e.clientX - rect.left;
@@ -209,7 +205,7 @@ export const DesignInteractions = {
         if (e.shiftKey || e.button === 1 || this.isSpectator || this.timelapseActive || this.isResetLocked) {
             this.isDragging = true;
             this.lastMouse = { x: e.clientX, y: e.clientY };
-            this.canvas.classList.add('cursor-grabbing');
+            this.canvas.classList.add('component-cursor-grabbing');
             return;
         }
 
@@ -218,7 +214,7 @@ export const DesignInteractions = {
             const hit = this.checkTemplateHit(exact.x, exact.y);
             if (hit) {
                 if (this.liveShareStatus === 'spectator' && this.liveTemplateId === this.activeTemplateId) {
-                    showMessage('Solo el dueño puede mover la imagen en vivo', 'warning');
+                    showMessage(__('err_only_owner_moves'), 'warning');
                     return;
                 }
 
@@ -247,7 +243,7 @@ export const DesignInteractions = {
                 if (this.selectedPixels.size < Math.floor(this.cooldownBalance)) {
                     this.selectedPixels.add(key);
                 } else {
-                    showMessage(`Límite alcanzado: máximo ${Math.floor(this.cooldownBalance)} píxeles.`, 'warning');
+                    showMessage(__('err_pixel_limit').replace(':limit', Math.floor(this.cooldownBalance)), 'warning');
                 }
             }
             this.isSelecting = true;
@@ -372,11 +368,12 @@ export const DesignInteractions = {
             
             if (hit) {
                 if (this.liveShareStatus === 'spectator' && this.liveTemplateId === this.activeTemplateId) {
-                    this.canvas.style.cursor = 'default';
+                    this.canvas.classList.remove('component-cursor-move', 'component-cursor-nwse', 'component-cursor-nesw');
                 } else {
-                    if (hit === 'move') this.canvas.style.cursor = 'move';
-                    else if (hit === 'resize-tl' || hit === 'resize-br') this.canvas.style.cursor = 'nwse-resize';
-                    else if (hit === 'resize-tr' || hit === 'resize-bl') this.canvas.style.cursor = 'nesw-resize';
+                    this.canvas.classList.remove('component-cursor-move', 'component-cursor-nwse', 'component-cursor-nesw');
+                    if (hit === 'move') this.canvas.classList.add('component-cursor-move');
+                    else if (hit === 'resize-tl' || hit === 'resize-br') this.canvas.classList.add('component-cursor-nwse');
+                    else if (hit === 'resize-tr' || hit === 'resize-bl') this.canvas.classList.add('component-cursor-nesw');
                 }
                 
                 if (this.hoveredPixel !== null) {
@@ -386,7 +383,12 @@ export const DesignInteractions = {
                 }
                 return;
             } else {
-                this.canvas.style.cursor = this.isDragging ? 'grabbing' : 'default';
+                this.canvas.classList.remove('component-cursor-move', 'component-cursor-nwse', 'component-cursor-nesw');
+                if (this.isDragging) {
+                    this.canvas.classList.add('component-cursor-grabbing');
+                } else {
+                    this.canvas.classList.remove('component-cursor-grabbing');
+                }
             }
             
             this.calculateHoverPixel(e.clientX, e.clientY);
@@ -413,7 +415,7 @@ export const DesignInteractions = {
 
         if (this.isDragging) {
             this.isDragging = false;
-            this.canvas.classList.remove('cursor-grabbing');
+            this.canvas.classList.remove('component-cursor-grabbing');
         }
         
         if (this.isSelecting) {
@@ -474,13 +476,13 @@ export const DesignInteractions = {
 
         if (this.selectedPixels.size > 0 && this.selectedPixels.size <= balance) {
             this.btnPlacePixels.classList.remove('disabled-interactive');
-            this.txtPlacePixels.textContent = window.__ ? window.__('btn_place_pixels') || 'Colocar' : 'Colocar';
+            this.txtPlacePixels.textContent = __('btn_place_pixels');
         } else {
             this.btnPlacePixels.classList.add('disabled-interactive');
             if (this.selectedPixels.size > balance) {
-                this.txtPlacePixels.textContent = `Máx ${balance} px`;
+                this.txtPlacePixels.textContent = __('lbl_max_pixels').replace(':max', balance);
             } else {
-                this.txtPlacePixels.textContent = window.__ ? window.__('btn_select_pixels') || 'Seleccionar Píxeles' : 'Seleccionar Píxeles';
+                this.txtPlacePixels.textContent = __('btn_select_pixels');
             }
         }
     },
@@ -490,7 +492,7 @@ export const DesignInteractions = {
         
         const balance = Math.floor(this.cooldownBalance);
         if (this.selectedPixels.size > balance) {
-            showMessage(`Solo tienes ${balance} píxeles disponibles.`, 'warning');
+            showMessage(__('err_pixel_limit').replace(':limit', balance), 'warning');
             return;
         }
 
@@ -529,7 +531,7 @@ export const DesignInteractions = {
         this.updateSelectionUI();
         this.requestRender();
         
-        showMessage(window.__ ? window.__('msg_pixels_placed') || 'Píxeles colocados' : 'Píxeles colocados', 'success');
+        showMessage(__('msg_pixels_placed'), 'success');
     },
 
     handleResize() {

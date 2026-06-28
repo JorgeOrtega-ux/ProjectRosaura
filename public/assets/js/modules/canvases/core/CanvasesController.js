@@ -5,10 +5,6 @@ import { ApiService } from '../../../core/api/ApiServices.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
 import { CanvasCardInteractions } from '../../../core/components/CanvasCardInteractions.js';
 
-/**
- * Función helper local para obtener todas las paletas en formato Array.
- * Lee desde la variable global inyectada por PHP.
- */
 function getAllPalettes() {
     if (!window.APP_PALETTES) return [];
     return Object.values(window.APP_PALETTES);
@@ -107,12 +103,10 @@ class CanvasesController {
 
         let activePaletteName = window.__ ? window.__('lbl_loading') : '...';
         
-        // Verificamos si el usuario tiene permiso para paletas premium
         const canUseCustomPalettes = window.APP_LIMITS && window.APP_LIMITS.custom_palettes === true;
 
         palettes.forEach(palette => {
             const isDefault = palette.id === 'default';
-            // Si no tiene el feature y no es la paleta por defecto, se bloquea la interacción
             const isLocked = !canUseCustomPalettes && !isDefault;
             
             const isActive = this.formState.palette_id === palette.id;
@@ -126,7 +120,7 @@ class CanvasesController {
             
             if (isLocked) {
                 btn.style.opacity = '0.6';
-                btn.title = "Mejora tu plan para usar esta paleta.";
+                btn.title = __('tooltip_upgrade_palette');
             }
 
             let colorsHtml = '';
@@ -142,7 +136,6 @@ class CanvasesController {
                 colorsHtml += `<span style="display:inline-flex; align-items:center; justify-content:center; padding: 0 4px; min-width:16px; height:16px; border-radius:10px; background-color:var(--surface-hover); border:1px solid var(--border-color); font-size:10px; font-weight:600; color:var(--text-primary); margin-left: 4px; position:relative; z-index:0; box-sizing: border-box;">+${remaining}</span>`;
             }
             
-            // Si está bloqueada, añadimos un ícono de candado junto al nombre
             const lockHtml = isLocked ? `<span class="material-symbols-rounded" style="font-size: 14px; margin-left: 6px; color: #ff8c00;">lock</span>` : '';
 
             btn.innerHTML = `
@@ -450,7 +443,6 @@ class CanvasesController {
         const step = parseInt(btn.getAttribute('data-step'), 10);
         const min = parseInt(btn.getAttribute('data-min'), 10) || 10;
         
-        // Lee el máximo primero desde la variable global de límites para prevenir overrides maliciosos en DOM, o como fallback del HTML
         const fallbackMax = (window.APP_LIMITS && window.APP_LIMITS.max_members_per_canvas !== -1) ? window.APP_LIMITS.max_members_per_canvas : 50000;
         const max = parseInt(btn.getAttribute('data-max'), 10) || fallbackMax;
         
@@ -554,7 +546,7 @@ class CanvasesController {
         restoreButton(btn);
 
         if (res.success) {
-            showMessage(window.__('msg_canvas_created'), 'success');
+            showMessage(__('msg_canvas_created'), 'success');
             if (window.spaRouter) {
                 window.spaRouter.navigate(`${this.basePath}/design/${res.data.uuid}`);
             }

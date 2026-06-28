@@ -31,10 +31,6 @@ class CanvasRequestsController {
         }
 
         this.bindEvents();
-        
-        // === NUEVO: OMITIMOS LA LLAMADA INICIAL A LA API (SSR) ===
-        // Al quitar this.loadRequests() respetamos el HTML (con las solicitudes o el estado vacío) 
-        // que PHP ya se encargó de consultar y renderizar directamente.
     }
 
     destroy() {
@@ -49,8 +45,6 @@ class CanvasRequestsController {
     }
 
     handleGlobalClick(e) {
-        // === NUEVO: RECONOCE FILAS TANTO RENDERIZADAS POR PHP COMO POR JS ===
-        // PHP no imprimió data-action="selectRequest", por lo que respaldamos detectando tr[data-request-id]
         const selectTargetRow = e.target.closest('[data-action="selectRequest"]') || e.target.closest('tr[data-request-id]');
         
         const deselectBtn = e.target.closest('[data-action="deselectRequest"]');
@@ -67,7 +61,6 @@ class CanvasRequestsController {
         if (approveBtn && !approveBtn.classList.contains('disabled-interactive')) this.processSelectedRequests('approve', approveBtn);
         if (rejectBtn && !rejectBtn.classList.contains('disabled-interactive')) this.processSelectedRequests('reject', rejectBtn);
         
-        // Si tienes un botón manual de actualizar, esto volverá a inyectar la tabla por API (está perfecto)
         if (refreshBtn) this.loadRequests(); 
     }
 
@@ -87,10 +80,10 @@ class CanvasRequestsController {
             if (response.success && response.data) {
                 this.renderRequestsList(response.data);
             } else {
-                this.showEmptyState(response.message || 'Error al cargar solicitudes', 'error');
+                this.showEmptyState(response.message || __('err_load_requests'), 'error');
             }
         } catch (error) {
-            this.showEmptyState('Error de conexión', 'error');
+            this.showEmptyState(__('err_connection'), 'error');
         }
     }
 
@@ -99,13 +92,13 @@ class CanvasRequestsController {
         if (!tbody) return;
 
         if (requests.length === 0) {
-            this.showEmptyState('No hay solicitudes pendientes.', 'done_all');
+            this.showEmptyState(__('txt_no_pending_requests'), 'done_all');
             return;
         }
 
         let html = '';
         requests.forEach(req => {
-            const requestDate = req.created_at ? new Date(req.created_at).toLocaleDateString() : 'Reciente';
+            const requestDate = req.created_at ? new Date(req.created_at).toLocaleDateString() : __('lbl_recent');
             
             html += `
                 <tr class="component-table-row" data-action="selectRequest" data-request-id="${req.id}">
@@ -113,7 +106,7 @@ class CanvasRequestsController {
                         <div class="td-user-info">
                             <div class="component-badge component-badge--sm">
                                 <span class="material-symbols-rounded">person</span>
-                                <span class="font-medium">${req.username || `Usuario ID: ${req.user_id}`}</span>
+                                <span class="font-medium">${req.username || `${__('lbl_user_id')}: ${req.user_id}`}</span>
                             </div>
                         </div>
                     </td>
@@ -126,7 +119,7 @@ class CanvasRequestsController {
                     <td>
                         <div class="component-badge component-badge--sm" style="background-color: rgba(245, 158, 11, 0.1); color: #d97706;">
                             <span class="material-symbols-rounded">pending</span>
-                            <span>Pendiente</span>
+                            <span>${__('lbl_pending')}</span>
                         </div>
                     </td>
                 </tr>
@@ -184,7 +177,6 @@ class CanvasRequestsController {
     deselectRequest() {
         this.selectedRequestIds.clear();
         
-        // Quita la selección tanto de las filas JS como de las filas PHP
         document.querySelectorAll('[data-action="selectRequest"], tr[data-request-id]').forEach(el => el.classList.remove('selected'));
         
         this.updateSelectionUI();
@@ -214,9 +206,9 @@ class CanvasRequestsController {
         for (const requestId of this.selectedRequestIds) {
             let response;
             if (actionType === 'approve') {
-                response = await this.api.approveCanvasRequest(requestId); // Asume que tienes este método en ApiServices
+                response = await this.api.approveCanvasRequest(requestId); 
             } else {
-                response = await this.api.rejectCanvasRequest(requestId); // Asume que tienes este método en ApiServices
+                response = await this.api.rejectCanvasRequest(requestId); 
             }
 
             if (response && response.success) {
@@ -229,13 +221,12 @@ class CanvasRequestsController {
         restoreButton(btn);
 
         if (successCount > 0) {
-            const actionText = actionType === 'approve' ? 'aprobadas' : 'rechazadas';
-            showMessage(`${successCount} solicitudes ${actionText} con éxito.`, 'success');
+            const actionText = actionType === 'approve' ? __('lbl_approved_plural') : __('lbl_rejected_plural');
+            showMessage(__('msg_requests_processed').replace(':count', successCount).replace(':action', actionText), 'success');
             
-            // Si el usuario procesó las peticiones, recargamos la tabla (aquí SÍ usamos la API)
             this.loadRequests(); 
         } else if (errorCount > 0) {
-            showMessage(`Ocurrió un error al procesar las solicitudes.`, 'error');
+            showMessage(__('err_process_requests'), 'error');
         }
     }
 }

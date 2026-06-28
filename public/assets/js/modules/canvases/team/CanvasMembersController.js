@@ -51,7 +51,6 @@ class CanvasMembersController {
         const isPaginationLink = url.includes('page=') || target.closest('[class*="pagin"]') || target.closest('[data-ref="pagination-container"]') || target.hasAttribute('data-action', 'paginate');
 
         if (isPaginationLink && url !== '#' && !url.includes('javascript:')) {
-            // Evitamos interceptar links que sean de navegación "Atrás" a /manage
             if(url.includes('/canvases/manage')) return;
 
             e.preventDefault();
@@ -167,28 +166,28 @@ class CanvasMembersController {
             }
         }
     }
-
-    // --- ACCIONES REALES COMUNICÁNDOSE CON LA API ---
     
     async changeMemberRole() {
         if (this.selectedMemberIds.size !== 1) return;
         
         const targetUserId = Array.from(this.selectedMemberIds)[0];
-        // MODIFICADO: Extraer el canvas_id del HTML en lugar de urlParams
         const wrapper = document.querySelector('[data-ref="manage-members-wrapper"]');
         const canvasId = wrapper ? wrapper.getAttribute('data-canvas-id') : null;
 
         if (!canvasId) {
-            showMessage("No se ha detectado el identificador del lienzo.", "error");
+            showMessage(__('err_missing_canvas_id'), "error");
             return;
         }
 
-        const newRole = prompt("Ingresa el nuevo rol (viewer, editor, admin):", "viewer");
-        if (!newRole) return; // Canceló el prompt
+        const resultDialog = await window.dialogSystem.show('promptChangeRole', {});
+        if (!resultDialog.confirmed) return;
+        
+        const newRole = resultDialog.data['modal_change_role'];
+        if (!newRole) return;
         
         const normalizedRole = newRole.toLowerCase().trim();
         if (!['viewer', 'editor', 'admin'].includes(normalizedRole)) {
-            showMessage("Debes ingresar un rol válido (viewer, editor o admin).", "error");
+            showMessage(__('err_invalid_role'), "error");
             return;
         }
 
@@ -201,36 +200,33 @@ class CanvasMembersController {
 
             if (response.success) {
                 showMessage(response.message, "success");
-                this.handlePagination(window.location.href); // Recargamos para ver reflejado el cambio
+                this.handlePagination(window.location.href); 
             } else {
                 showMessage(response.message, "error");
             }
         } catch (error) {
-            showMessage("Error de conexión al intentar cambiar el rol.", "error");
+            showMessage(__('err_connection_role'), "error");
         }
     }
 
     async removeMember() {
         if (this.selectedMemberIds.size === 0) return;
         
-        // MODIFICADO: Extraer el canvas_id del HTML en lugar de urlParams
         const wrapper = document.querySelector('[data-ref="manage-members-wrapper"]');
         const canvasId = wrapper ? wrapper.getAttribute('data-canvas-id') : null;
 
         if (!canvasId) {
-            showMessage("No se ha detectado el identificador del lienzo.", "error");
+            showMessage(__('err_missing_canvas_id'), "error");
             return;
         }
 
-        if (!confirm(`¿Estás seguro de que deseas expulsar a ${this.selectedMemberIds.size} miembro(s)?`)) {
-            return;
-        }
+        const resultDialog = await window.dialogSystem.show('confirmRemoveMembers', { count: this.selectedMemberIds.size });
+        if (!resultDialog.confirmed) return;
 
         try {
             let successCount = 0;
             let failCount = 0;
 
-            // Procesamos la expulsión uno por uno.
             for (const targetUserId of this.selectedMemberIds) {
                 const response = await this.api.post('canvases.remove_member', {
                     canvas_id: canvasId,
@@ -245,20 +241,18 @@ class CanvasMembersController {
             }
 
             if (successCount > 0) {
-                showMessage(`Se han expulsado ${successCount} miembro(s) exitosamente.`, "success");
+                showMessage(__('msg_members_removed').replace(':count', successCount), "success");
                 this.selectedMemberIds.clear();
                 this.handlePagination(window.location.href); 
             }
             if (failCount > 0) {
-                showMessage(`No se pudo expulsar a ${failCount} miembro(s). Verifica si tienen permisos de creador.`, "warning");
+                showMessage(__('err_members_remove_failed').replace(':count', failCount), "warning");
             }
             
         } catch (error) {
-            showMessage("Error de conexión al intentar expulsar a los miembros.", "error");
+            showMessage(__('err_connection_remove'), "error");
         }
     }
-
-    // ---------------------------------
 
     handleMemberSelection(rowElement) {
         const memberId = rowElement.getAttribute('data-member-id');
@@ -293,7 +287,7 @@ class CanvasMembersController {
 
             if (this.selectedMemberIds.size > 1) {
                 if (btnChangeRole) btnChangeRole.classList.add('disabled-interactive');
-                if (btnRemove) btnRemove.classList.remove('disabled-interactive'); // Permitimos borrado masivo
+                if (btnRemove) btnRemove.classList.remove('disabled-interactive'); 
             } else {
                 if (btnChangeRole) btnChangeRole.classList.remove('disabled-interactive');
                 if (btnRemove) btnRemove.classList.remove('disabled-interactive');

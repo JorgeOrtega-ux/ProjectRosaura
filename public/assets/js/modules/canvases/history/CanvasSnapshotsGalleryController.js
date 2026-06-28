@@ -23,7 +23,7 @@ class CanvasSnapshotsGalleryController {
         if (this.uuid) {
             this.fetchSnapshots();
         } else {
-            showMessage('UUID de lienzo no válido.', 'error');
+            showMessage(__('err_invalid_uuid'), 'error');
         }
     }
 
@@ -65,15 +65,13 @@ class CanvasSnapshotsGalleryController {
             if (result.success) {
                 this.renderGallery(result.data.canvas_name, result.data.snapshots);
             } else {
-                showMessage(result.message || 'Error al obtener la galería.', 'error');
-                console.error("Backend Error Response:", result);
+                showMessage(result.message || __('err_gallery_fetch'), 'error');
                 this.showEmptyState();
             }
 
         } catch (error) {
             if (error.name === 'AbortError') return;
-            console.error("Fetch Gallery JavaScript/Network Error:", error);
-            showMessage('Ocurrió un error al cargar la galería.', 'error');
+            showMessage(__('err_gallery_load'), 'error');
             this.showEmptyState();
         }
     }
@@ -83,7 +81,7 @@ class CanvasSnapshotsGalleryController {
         const gridEl = document.querySelector('[data-ref="gallery-grid"]');
         
         if (titleEl) {
-            titleEl.textContent = `Reinicios: ${canvasName}`;
+            titleEl.textContent = __('lbl_resets_title') + ': ' + canvasName;
         }
 
         if (!gridEl) return;
@@ -98,13 +96,11 @@ class CanvasSnapshotsGalleryController {
 
         snapshots.forEach(snapshot => {
             const tempDiv = document.createElement('div');
-            // Usamos la fábrica central para crear el HTML
             tempDiv.innerHTML = CardTemplates.snapshotCard(snapshot, {
                 canvasName: canvasName,
                 basePath: this.basePath
             });
             
-            // Extraemos solo el hijo (el div real de la tarjeta) y lo agregamos al fragmento
             if (tempDiv.firstElementChild) {
                 fragment.appendChild(tempDiv.firstElementChild);
             }

@@ -22,7 +22,7 @@ export const DesignNetwork = {
                         setTimeout(() => window.turnstile.reset(wrapper), 1000); 
                     },
                     'error-callback': function() {
-                        reject(new Error('Fallo en validación Turnstile.'));
+                        reject(new Error(__('err_turnstile_failed')));
                     }
                 });
             } catch (e) {
@@ -43,7 +43,7 @@ export const DesignNetwork = {
             try {
                 turnstileToken = await this.getTurnstileToken();
             } catch (e) {
-                showMessage('Validación de seguridad fallida. Recarga la página.', 'error');
+                showMessage(__('err_security_validation'), 'error');
                 return;
             }
         }
@@ -55,9 +55,11 @@ export const DesignNetwork = {
                 payload['cf-turnstile-response'] = turnstileToken;
             }
 
-            const response = await this.api.post(route, payload);
+            const response = await this.api.post(route, payload, this.abortController.signal);
+            if (response.aborted) return;
+            
             if (!response.success || !response.data?.ticket) {
-                showMessage(response.message || 'No se pudo obtener acceso en vivo.', 'error');
+                showMessage(response.message, 'error');
                 return;
             }
 
@@ -66,21 +68,14 @@ export const DesignNetwork = {
             this.wsManager = new WebSocketManager();
             
             this.wsManager.on('open', () => {
-                console.log('[WS DEBUG] Conexión abierta. Enviando init...');
                 this.wsManager.send({ type: 'init', userId: uid });
             });
 
             this.wsManager.on('qos_evicted', (reason) => {
-                console.warn('[WS DEBUG] Expulsado por QoS:', reason);
-                showMessage(reason || 'Servidor lleno. Se ha dado prioridad a usuarios registrados.', 'warning');
+                showMessage(reason, 'warning');
             });
 
             this.wsManager.on('message', (data) => {
-                // LOG GLOBAL: Muestra cualquier cosa que envíe el servidor WebSocket
-                if (data.type !== 'pixel' && data.type !== 'pixel_confirm') { // Ignoramos pixeles para no saturar la consola
-                    console.log(`[WS DEBUG] Mensaje recibido del servidor:`, data);
-                }
-
                 if (data.type === 'pixel') {
                     const pX = parseInt(data.x, 10);
                     const pY = parseInt(data.y, 10);
@@ -108,9 +103,8 @@ export const DesignNetwork = {
                     this.handleCanvasCleared(data);
                 }
                 else if (data.type === 'canvas_locked_error') {
-                    showMessage('El lienzo está en proceso de reinicio. Espera.', 'warning');
+                    showMessage(__('err_canvas_resetting'), 'warning');
                 }
-                // --- EVENTOS DE REDIMENSIÓN ---
                 else if (data.type === 'canvas_locked_resize') {
                     this.handleCanvasLockedResize(data);
                 }
@@ -120,14 +114,12 @@ export const DesignNetwork = {
                 else if (data.type === 'canvas_resize_error') {
                     this.handleCanvasResizeError(data);
                 }
-                // --- EVENTOS NUEVOS DE PROGRAMACIÓN EN VIVO (RELOJES) ---
                 else if (data.type === 'canvas_resize_settings_updated') {
                     this.handleResizeSettingsUpdated(data);
                 }
                 else if (data.type === 'canvas_reset_settings_updated') {
                     this.handleResetSettingsUpdated(data);
                 }
-                // -------------------------------------
                 else if (data.type === 'live_image_updated') {
                     this.handleLiveImageUpdate(data);
                 }
@@ -139,7 +131,6 @@ export const DesignNetwork = {
             this.wsManager.connect(this.canvasIntId, wsTicket);
 
             this.wsManager.handleReconnect = async () => {
-                console.log('[WS DEBUG] Intentando reconectar...');
                 if (this.wsManager.reconnectAttempts < this.wsManager.maxReconnectAttempts) {
                     const delay = this.wsManager.baseDelay * Math.pow(2, this.wsManager.reconnectAttempts);
                     
@@ -153,31 +144,26 @@ export const DesignNetwork = {
                         const p = { canvas_id: this.canvasIntId };
                         if (newToken) p['cf-turnstile-response'] = newToken;
 
-                        const res = await this.api.post(route, p);
+                        const res = await this.api.post(route, p, this.abortController.signal);
+                        if (res.aborted) return;
+                        
                         if (res.success && res.data?.ticket) {
-                            console.log('[WS DEBUG] Reconexión exitosa. Nuevo ticket:', res.data.ticket);
                             this.wsManager.connect(this.canvasIntId, res.data.ticket);
                         } else {
                             this.wsManager.handleReconnect();
                         }
                     }, delay);
                 } else {
-                    console.error('[WS DEBUG] Máximo de intentos de reconexión alcanzado.');
-                    showMessage('Desconectado del servidor tras múltiples intentos.', 'error');
+                    showMessage(__('err_disconnected_retries'), 'error');
                 }
             };
 
         } catch (error) {
-            console.error('[WS DEBUG] Error inicializando WebSocket:', error);
-            showMessage('Fallo de conexión al inicializar WebSocket.', 'error');
+            showMessage(__('err_ws_init'), 'error');
         }
     },
 
-    // ==========================================
-    // MÉTODOS PARA ACTUALIZAR LOS RELOJES EN VIVO
-    // ==========================================
     handleResizeSettingsUpdated(data) {
-        console.log('[FRONTEND LOG] Configuración de expansión actualizada en vivo:', data);
         if (data.is_active) {
             this.resizeActive = true;
             this.nextResizeAt = data.next_resize_at;
@@ -196,12 +182,11 @@ export const DesignNetwork = {
                 this.resizeTimerInterval = null;
             }
             
-            this.removeCanvasBadge('resize-timer', 'right'); // Usando sistema dinámico
+            this.removeCanvasBadge('resize-timer', 'right'); 
         }
     },
 
     handleResetSettingsUpdated(data) {
-        console.log('[FRONTEND LOG] Configuración de reinicio actualizada en vivo:', data);
         if (data.is_active) {
             this.resetActive = true;
             this.nextResetAt = data.next_reset_at;
@@ -219,116 +204,99 @@ export const DesignNetwork = {
                 this.resetTimerInterval = null;
             }
             
-            this.removeCanvasBadge('reset-timer', 'right'); // Usando sistema dinámico
+            this.removeCanvasBadge('reset-timer', 'right'); 
         }
     },
 
-    // ==========================================
-    // MÉTODOS DE REDIMENSIÓN "EN CALIENTE" (SIN RECARGAR LA WEB)
-    // ==========================================
     handleCanvasLockedResize(data) {
-        console.log('[FRONTEND LOG] Bloqueando lienzo para redimensión...', data);
         this.isResizeLocked = true;
         
         if (this.canvas) {
-            this.canvas.style.filter = 'blur(6px)';
-            this.canvas.style.pointerEvents = 'none';
+            this.canvas.classList.add('component-canvas-blur');
+            this.canvas.classList.add('disabled-interactive');
         }
 
-        this.updateLockBadges(); // Usando sistema dinámico
+        this.updateLockBadges(); 
         
         this.selectedPixels.clear();
         this.updateSelectionUI();
         this.requestRender();
         
-        showMessage('Expandiendo lienzo en vivo... Acciones bloqueadas temporalmente.', 'warning');
+        showMessage(__('info_expanding_canvas'), 'warning');
 
         if (this.resizeTimeout) clearTimeout(this.resizeTimeout);
         this.resizeTimeout = setTimeout(() => {
             if (this.isResizeLocked) {
-                console.error('[FRONTEND LOG] TIMEOUT EXCEDIDO: El servidor nunca respondió.');
                 this.isResizeLocked = false;
                 if (this.canvas) {
-                    this.canvas.style.filter = 'none';
-                    this.canvas.style.pointerEvents = 'auto';
+                    this.canvas.classList.remove('component-canvas-blur');
+                    this.canvas.classList.remove('disabled-interactive');
                 }
                 this.updateLockBadges();
-                showMessage('El servidor tardó demasiado. Revisa los logs del backend.', 'error');
+                showMessage(__('err_server_timeout'), 'error');
             }
         }, 45000); 
     },
 
   async handleCanvasResizeCompleted(data) {
-        console.log('[FRONTEND LOG] Redimensión EXITOSA. Aplicando "En Caliente"...', data);
         if (this.resizeTimeout) clearTimeout(this.resizeTimeout);
 
         try {
-            // 1. Descargar la nueva imagen del servidor MIENTRAS mantenemos la imagen vieja (con blur) visible.
-            // Esto evita el parpadeo negro porque no destruimos el canvas hasta tener los datos en la mano.
-            const response = await this.api.post(ApiRoutes.Canvases.Get, { id: this.canvasIntId });
+            const response = await this.api.post(ApiRoutes.Canvases.Get, { id: this.canvasIntId }, this.abortController.signal);
+            if (response.aborted) return;
 
             if (response.success && response.data) {
-                // 2. Ahora que ya tenemos la imagen lista en memoria, actualizamos las dimensiones instantáneamente.
                 this.boardWidth = data.new_size;
                 this.boardHeight = data.new_size;
                 
                 const wrapper = document.querySelector('[data-ref="design-wrapper"]');
                 if (wrapper) wrapper.setAttribute('data-size', data.new_size);
 
-                // 3. Recreamos los lienzos ocultos y centramos la cámara
                 this.setupCanvas();
                 this.centerBoard();
 
-                // 4. Sincronizamos roles por seguridad
                 this.isPrivateBlocked = false;
                 const role = response.data.role || 'spectator';
                 this.isSpectator = !(role === 'admin' || role === 'editor');
                 this.setRoleUI(role, response.data);
 
-                // 5. Inyectamos la imagen expandida al canvas
                 if (response.data.state_base64) {
                     this.hydrateCanvasState(response.data.state_base64);
                 }
             }
         } catch (error) {
-            console.error('[FRONTEND LOG] Error descargando lienzo post-expansión:', error);
         }
 
-        // 6. Finalmente, liberamos la interfaz y quitamos el blur (efecto de levantar el telón de golpe)
         this.isResizeLocked = false;
         
         if (this.canvas && !this.isPrivateBlocked) {
-            this.canvas.style.filter = 'none';
-            this.canvas.style.pointerEvents = 'auto';
+            this.canvas.classList.remove('component-canvas-blur');
+            this.canvas.classList.remove('disabled-interactive');
         }
         
         this.updateLockBadges();
         this.requestRender();
 
-        showMessage('¡Expansión aplicada con éxito!', 'success');
+        showMessage(__('msg_expansion_success'), 'success');
     },
 
     handleCanvasResizeError(data) {
-        console.error('[FRONTEND LOG] El Worker reportó un ERROR de redimensión:', data);
         if (this.resizeTimeout) clearTimeout(this.resizeTimeout);
 
         this.isResizeLocked = false;
         
         if (this.canvas) {
-            this.canvas.style.filter = 'none';
-            this.canvas.style.pointerEvents = 'auto';
+            this.canvas.classList.remove('component-canvas-blur');
+            this.canvas.classList.remove('disabled-interactive');
         }
 
-        this.updateLockBadges(); // Usando sistema dinámico
-        showMessage(data.error || 'Error interno al expandir el lienzo.', 'error');
+        this.updateLockBadges(); 
+        showMessage(data.error, 'error');
     },
 
-    // ==========================================
-    // RESTO DE MÉTODOS DE LIVE SHARE Y COOLDOWN
-    // ==========================================
     async startLiveShare() {
         if (!this.activeTemplateId) {
-            showMessage('Selecciona una plantilla primero', 'warning');
+            showMessage(__('err_select_template'), 'warning');
             return;
         }
 
@@ -347,7 +315,9 @@ export const DesignNetwork = {
                 w: tpl.w,
                 h: tpl.h,
                 opacity: tpl.opacity || 1
-            });
+            }, this.abortController.signal);
+            
+            if (response.aborted) return;
 
             if (response.success && response.data?.code) {
                 this.liveShareStatus = 'owner';
@@ -358,20 +328,20 @@ export const DesignNetwork = {
                     this.wsManager.send({ type: 'join_live_share', code: this.liveShareCode });
                 }
 
-                if (btn) btn.style.display = 'none';
-                if (this.uiLiveControls) this.uiLiveControls.style.display = 'flex';
+                if (btn) btn.classList.add('disabled');
+                if (this.uiLiveControls) this.uiLiveControls.classList.remove('disabled');
                 if (this.uiLiveCode) this.uiLiveCode.textContent = this.liveShareCode;
                 
                 if (this.uiLiveInputX) this.uiLiveInputX.value = tpl.x;
                 if (this.uiLiveInputY) this.uiLiveInputY.value = tpl.y;
                 if (this.uiLiveInputOpacity) this.uiLiveInputOpacity.value = tpl.opacity || 1;
 
-                showMessage(`Transmitiendo plantilla: ${this.liveShareCode}`, 'success');
+                showMessage(__('msg_broadcasting').replace(':code', this.liveShareCode), 'success');
             } else {
-                showMessage('Error al generar código en vivo.', 'error');
+                showMessage(__('err_live_code_gen'), 'error');
             }
         } catch (error) {
-            showMessage('Error de servidor al iniciar transmisión.', 'error');
+            showMessage(__('err_server_live_start'), 'error');
         } finally {
             if (btn) restoreButton(btn);
         }
@@ -389,10 +359,10 @@ export const DesignNetwork = {
         this.liveTemplateId = null;
 
         const btn = document.querySelector('[data-action="startLiveShare"]');
-        if (btn) btn.style.display = 'block';
-        if (this.uiLiveControls) this.uiLiveControls.style.display = 'none';
+        if (btn) btn.classList.remove('disabled');
+        if (this.uiLiveControls) this.uiLiveControls.classList.add('disabled');
 
-        showMessage('Transmisión detenida.', 'info');
+        showMessage(__('msg_broadcast_stopped'), 'info');
     },
 
     async joinLiveImageSession(code) {
@@ -407,7 +377,9 @@ export const DesignNetwork = {
             const response = await this.api.post(route, { 
                 code: code,
                 canvas_id: this.canvasIntId 
-            });
+            }, this.abortController.signal);
+            
+            if (response.aborted) return;
 
             if (response.success && response.data) {
                 this.liveShareStatus = 'spectator';
@@ -445,14 +417,14 @@ export const DesignNetwork = {
                     this.wsManager.send({ type: 'join_live_share', code: this.liveShareCode });
                 }
 
-                showMessage(`Unido a la transmisión: ${code}`, 'success');
+                showMessage(__('msg_joined_broadcast').replace(':code', code), 'success');
                 this.requestRender();
 
             } else {
-                showMessage(response.message || 'Código inválido o sesión terminada.', 'error');
+                showMessage(response.message, 'error');
             }
         } catch (error) {
-            showMessage('Error al unirse a la sesión.', 'error');
+            showMessage(__('err_join_session'), 'error');
         } finally {
             if (btn) restoreButton(btn);
         }
@@ -491,7 +463,7 @@ export const DesignNetwork = {
 
     handleLiveSessionEnded(data) {
         if (this.liveShareStatus === 'spectator' && this.liveShareCode === data.code) {
-            showMessage('La sesión en vivo ha sido finalizada por el dueño.', 'info');
+            showMessage(__('info_live_ended'), 'info');
             this.liveShareStatus = 'none';
             this.liveShareCode = null;
             
@@ -515,18 +487,15 @@ export const DesignNetwork = {
         this.lastSyncTime = Date.now();
         
         if (data.type === 'cooldown_error') {
-            showMessage('Error de sincronización o límite alcanzado. Estado revertido.', 'warning');
+            showMessage(__('err_sync_limit'), 'warning');
         }
         
         this.updateSelectionUI();
     },
 
-    // ==========================================
-    // MÉTODOS DE REINICIO
-    // ==========================================
     handleCanvasLocked(data) {
         this.isResetLocked = true;
-        this.updateLockBadges(); // Usando sistema dinámico
+        this.updateLockBadges(); 
         
         this.selectedPixels.clear();
         this.updateSelectionUI();
@@ -538,9 +507,9 @@ export const DesignNetwork = {
         this.requestRender();
         
         this.isResetLocked = false;
-        this.updateLockBadges(); // Usando sistema dinámico
+        this.updateLockBadges(); 
         
-        showMessage('El lienzo ha sido limpiado en este momento.', 'info');
+        showMessage(__('info_canvas_cleared'), 'info');
         
         if (data.next_reset_at) {
             this.nextResetAt = data.next_reset_at;
@@ -552,7 +521,8 @@ export const DesignNetwork = {
         if (!this.canvasIntId || this.canvasIntId === '0') return;
 
         try {
-            const response = await this.api.post(ApiRoutes.Canvases.Get, { id: this.canvasIntId });
+            const response = await this.api.post(ApiRoutes.Canvases.Get, { id: this.canvasIntId }, this.abortController.signal);
+            if (response.aborted) return;
             
             if (response.success && response.data) {
                 this.isPrivateBlocked = false;
@@ -596,78 +566,70 @@ export const DesignNetwork = {
         const specBadge = document.querySelector('[data-ref="spectator-status-badge"]');
         const privBadge = document.querySelector('[data-ref="private-status-badge"]');
 
-        this.updateLockBadges(); // Sincroniza badges dinámicos (UI Privacidad/Bloqueos)
+        this.updateLockBadges(); 
 
         if (role === 'blocked') {
             if (this.canvas) {
-                this.canvas.style.filter = 'blur(12px)';
-                this.canvas.style.opacity = '0.3';
-                this.canvas.style.pointerEvents = 'none';
+                this.canvas.classList.add('component-canvas-blocked');
+                this.canvas.classList.add('disabled-interactive');
             }
 
             if (specControls) {
                 specControls.classList.remove('disabled');
                 specControls.classList.add('active');
-                specControls.style.display = 'flex';
             }
             
             if (designTools) {
                 designTools.classList.replace('active', 'disabled');
-                designTools.style.display = 'none'; 
             }
-            if (actionPill) actionPill.style.display = 'none'; 
+            if (actionPill) actionPill.classList.add('disabled');
 
-            if (specBadge) specBadge.style.display = 'none';
-            if (privBadge) privBadge.style.display = 'flex';
+            if (specBadge) specBadge.classList.add('disabled');
+            if (privBadge) privBadge.classList.remove('disabled');
 
             if (this.canvasApproval) {
-                if (btnJoin) btnJoin.style.display = 'none';
-                if (btnRequest) btnRequest.style.display = 'flex';
+                if (btnJoin) btnJoin.classList.add('disabled');
+                if (btnRequest) btnRequest.classList.remove('disabled');
             } else {
-                if (btnJoin) btnJoin.style.display = 'flex';
-                if (btnRequest) btnRequest.style.display = 'none';
+                if (btnJoin) btnJoin.classList.remove('disabled');
+                if (btnRequest) btnRequest.classList.add('disabled');
             }
         } else {
             if (this.canvas) {
-                this.canvas.style.filter = 'none';
-                this.canvas.style.opacity = '1';
-                this.canvas.style.pointerEvents = 'auto';
+                this.canvas.classList.remove('component-canvas-blocked');
+                this.canvas.classList.remove('disabled-interactive');
             }
 
             if (role === 'spectator') {
                 if (specControls) {
                     specControls.classList.remove('disabled');
                     specControls.classList.add('active');
-                    specControls.style.display = 'flex';
                 }
                 if (designTools) {
                     designTools.classList.replace('active', 'disabled');
-                    designTools.style.display = 'none'; 
                 }
-                if (actionPill) actionPill.style.display = 'none'; 
+                if (actionPill) actionPill.classList.add('disabled');
                 
-                if (specBadge) specBadge.style.display = 'flex';
-                if (privBadge) privBadge.style.display = 'none';
+                if (specBadge) specBadge.classList.remove('disabled');
+                if (privBadge) privBadge.classList.add('disabled');
 
                 if (this.canvasApproval) {
-                    if (btnJoin) btnJoin.style.display = 'none';
-                    if (btnRequest) btnRequest.style.display = 'flex';
+                    if (btnJoin) btnJoin.classList.add('disabled');
+                    if (btnRequest) btnRequest.classList.remove('disabled');
                 } else {
-                    if (btnJoin) btnJoin.style.display = 'flex';
-                    if (btnRequest) btnRequest.style.display = 'none';
+                    if (btnJoin) btnJoin.classList.remove('disabled');
+                    if (btnRequest) btnRequest.classList.add('disabled');
                 }
             } 
             else if (role === 'editor' || role === 'admin') {
                 if (specControls) {
                     specControls.classList.add('disabled');
                     specControls.classList.remove('active');
-                    specControls.style.display = 'none';
                 }
                 if (designTools) {
                     designTools.classList.replace('disabled', 'active');
-                    designTools.style.display = 'flex'; 
                 }
-                if (actionPill) actionPill.style.display = 'block'; 
+                if (actionPill) actionPill.classList.remove('disabled');
             }
         }
     },
@@ -676,7 +638,9 @@ export const DesignNetwork = {
         if (!this.canvasIntId) return;
         setButtonLoading(btn);
 
-        const response = await this.api.post(ApiRoutes.Canvases.RequestAccess, { canvas_id: this.canvasIntId });
+        const response = await this.api.post(ApiRoutes.Canvases.RequestAccess, { canvas_id: this.canvasIntId }, this.abortController.signal);
+        if (response.aborted) return;
+        
         restoreButton(btn);
 
         if (response.success) {
@@ -686,7 +650,7 @@ export const DesignNetwork = {
                 setTimeout(() => window.location.reload(), 1000);
             } else {
                 btn.classList.add('disabled-interactive');
-                btn.innerHTML = '<span class="material-symbols-rounded">hourglass_empty</span> Pendiente';
+                btn.innerHTML = `<span class="material-symbols-rounded">hourglass_empty</span> ${__('btn_pending')}`;
             }
         } else {
             showMessage(response.message, 'error');
@@ -704,9 +668,10 @@ export const DesignNetwork = {
 
         try {
             const response = await this.api.stream(route, { id: this.canvasIntId }, this.abortController.signal);
+            if (response.aborted) return;
             
             if (!response.success) {
-                showMessage(response.message || 'Error al cargar timelapse.', 'error');
+                showMessage(response.message, 'error');
                 this.timelapseActive = false;
                 this.checkCanvasAccess(); 
                 return;
@@ -748,11 +713,11 @@ export const DesignNetwork = {
                 } catch(e) {}
             }
 
-            if (!this.isResetLocked && !this.isResizeLocked) showMessage('Timelapse finalizado.', 'success');
+            if (!this.isResetLocked && !this.isResizeLocked) showMessage(__('msg_timelapse_ended'), 'success');
 
         } catch (err) {
             if (err.name !== 'AbortError') {
-                showMessage('Error reproduciendo el timelapse.', 'error');
+                showMessage(__('err_timelapse_play'), 'error');
                 this.checkCanvasAccess();
             }
         } finally {

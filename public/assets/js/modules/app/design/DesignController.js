@@ -1,7 +1,6 @@
 // public/assets/js/modules/app/DesignController.js
 import { ApiService } from '../../../core/api/ApiServices.js';
-
-// Importar Mixins
+import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
 import { DesignSetup } from './DesignSetup.js';
 import { DesignNetwork } from './DesignNetwork.js';
 import { DesignTemplates } from './templates/DesignTemplates.js';
@@ -69,7 +68,6 @@ class DesignController {
         this.isResetLocked = false; 
         this.isResizeLocked = false;
 
-        // --- SISTEMA DE COOLDOWN LOCAL ---
         this.cooldownBalance = 5;
         this.cooldownMax = 5;
         this.cooldownSec = 10;
@@ -81,8 +79,7 @@ class DesignController {
         this.uiCooldownTimer = null;
         this.uiCooldownBadge = null;
 
-        // --- SISTEMA DE LIVE SHARE ---
-        this.liveShareStatus = 'none'; // 'none' | 'owner' | 'spectator'
+        this.liveShareStatus = 'none';
         this.liveShareCode = null;
         this.liveTemplateId = null;
         this.uiLiveControls = null;
@@ -93,8 +90,6 @@ class DesignController {
         this.uiLiveJoinCode = null;
         
         this.handleLiveInputBound = this.handleLiveInput.bind(this);
-        // ------------------------------------
-
         this.handleWheelBound = this.handleWheel.bind(this);
         this.handleMouseDownBound = this.handleMouseDown.bind(this);
         this.handleMouseMoveBound = this.handleMouseMove.bind(this);
@@ -150,7 +145,6 @@ class DesignController {
         this.uiCooldownTimer = document.querySelector('[data-ref="cooldown-timer"]');
         this.uiCooldownBadge = document.querySelector('[data-ref="cooldown-badge"]');
 
-        // Mapeo UI Modo En Vivo
         this.uiLiveControls = document.querySelector('[data-ref="live-controls"]');
         this.uiLiveCode = document.querySelector('[data-ref="live-share-code"]');
         this.uiLiveInputX = document.querySelector('[data-ref="live-input-x"]');
@@ -160,8 +154,8 @@ class DesignController {
 
         if (this.canvas) {
             this.ctx = this.canvas.getContext('2d', { alpha: false });
-            this.canvas.style.imageRendering = 'pixelated';
-            this.canvas.style.transition = 'filter 0.4s ease, opacity 0.4s ease'; // Transición suave para el blur
+            this.canvas.classList.add('component-pixelated');
+            this.canvas.classList.add('component-canvas-transition');
         }
 
         const wrapper = document.querySelector('[data-ref="design-wrapper"]');
@@ -194,19 +188,18 @@ class DesignController {
             ? window.APP_USER.subscription_tier 
             : 0;
 
-        if (tier < 1) { // Básico
+        if (tier < 1) { 
             const liveShareMenuBtn = document.querySelector('[data-menu-target="tool-liveshare-menu"]');
             if (liveShareMenuBtn) {
                 liveShareMenuBtn.classList.add('disabled-interactive');
-                liveShareMenuBtn.style.opacity = '0.5';
-                liveShareMenuBtn.setAttribute('data-tooltip', 'Compartir en vivo requiere plan Pro o Advanced 🔒');
+                liveShareMenuBtn.classList.add('component-opacity-half');
+                liveShareMenuBtn.setAttribute('data-tooltip', __('tooltip_pro_required'));
                 if (!liveShareMenuBtn.querySelector('.icon-lock')) {
                     const lock = document.createElement('span');
-                    lock.className = 'material-symbols-rounded icon-lock';
+                    lock.className = 'material-symbols-rounded icon-lock component-lock-icon-premium';
                     lock.textContent = 'lock';
-                    lock.style.cssText = 'position: absolute; bottom: 0; right: 0; font-size: 12px; color: #FFA500; background: #222; border-radius: 50%; padding: 2px;';
                     liveShareMenuBtn.appendChild(lock);
-                    liveShareMenuBtn.style.position = 'relative';
+                    liveShareMenuBtn.classList.add('component-relative-pos');
                 }
             }
         }
@@ -288,7 +281,6 @@ class DesignController {
     }
 }
 
-// Inyección de los sub-módulos en el prototipo principal
 Object.assign(
     DesignController.prototype,
     DesignSetup,
