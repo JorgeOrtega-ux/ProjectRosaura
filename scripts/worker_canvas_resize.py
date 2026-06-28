@@ -127,13 +127,17 @@ def process_resize_task(r, db, task_data):
 def main():
     print("[*] Iniciando Worker de Expansión/Redimensión de Lienzos con LOGS DETALLADOS...")
     
+    r = None
+    db = None
+    
+    # 1. Bucle de conexión inicial
     while True:
         try:
             r = get_redis_client()
             r.ping()
             
             db = get_db_connection()
-            db.ping(reconnect=True)
+            db.ping(reconnect=False) # Eliminamos el reconnect=True
             print("[+] Conectado a Redis y MySQL correctamente.")
             break
         except Exception as e:
@@ -142,9 +146,15 @@ def main():
 
     queue_key = "canvases:pending_resizes"
 
+    # 2. Bucle principal del worker
     while True:
         try:
-            db.ping(reconnect=True)
+            # Reconexión manual en caso de que se haya caído (Ping lanza error si falla)
+            try:
+                db.ping(reconnect=False)
+            except Exception:
+                print("[!] Conexión MySQL perdida en el worker de redimensión. Reconectando...")
+                db = get_db_connection()
             
             # Bloqueamos (BLPOP) hasta que exista una tarea
             result = r.blpop(queue_key, timeout=30)
