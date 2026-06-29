@@ -11,21 +11,25 @@ export const DesignRender = {
 
         container.innerHTML = '';
 
-        this.currentColor = palette.colors[0];
+        this.currentColor = palette.colors[0].hex;
         if (this.btnColorPalette) {
             this.btnColorPalette.style.setProperty('--active-color', this.currentColor);
         }
 
-        palette.colors.forEach((hex, index) => {
+        palette.colors.forEach((colorObj, index) => {
+            const hex = colorObj.hex;
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.className = `component-color-btn ${index === 0 ? 'active' : ''}`;
             btn.setAttribute('data-action', 'selectColor');
             btn.setAttribute('data-color', hex);
             
+            // Asignación de tooltip utilizando tu sistema de internacionalización
+            const colorName = typeof __ === 'function' ? __(colorObj.name_key) : colorObj.name_key;
+            btn.setAttribute('data-tooltip', `${colorName} - ${hex.toUpperCase()}`);
+            
             btn.style.backgroundColor = hex;
             btn.style.setProperty('--color-val', hex); 
-            btn.title = hex;
 
             container.appendChild(btn);
         });

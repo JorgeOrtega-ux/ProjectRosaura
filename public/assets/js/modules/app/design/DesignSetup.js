@@ -206,7 +206,8 @@ export const DesignSetup = {
                     imageData.data[dataIdx + 2] = 0; 
                     imageData.data[dataIdx + 3] = 0; 
                 } else {
-                    const hex = paletteColors[colorIndex] || '#FFFFFF'; 
+                    const colorObj = paletteColors[colorIndex];
+                    const hex = (colorObj && colorObj.hex) ? colorObj.hex : '#FFFFFF';
                     
                     const r = parseInt(hex.slice(1, 3), 16);
                     const g = parseInt(hex.slice(3, 5), 16);

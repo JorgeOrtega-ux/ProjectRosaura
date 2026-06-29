@@ -499,7 +499,7 @@ export const DesignInteractions = {
         const paletteObj = getPaletteById(this.canvasPaletteId);
         let colorIndex = 0;
         if (paletteObj && paletteObj.colors) {
-            const idx = paletteObj.colors.indexOf(this.currentColor);
+            const idx = paletteObj.colors.findIndex(c => c.hex.toLowerCase() === this.currentColor.toLowerCase());
             if (idx !== -1) colorIndex = idx;
         }
 
