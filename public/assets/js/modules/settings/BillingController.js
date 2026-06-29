@@ -1,6 +1,6 @@
 // public/assets/js/modules/settings/BillingController.js
 
-import { CardTemplates } from '../../../core/components/CardTemplates.js';
+import { CardTemplates } from '../../core/components/CardTemplates.js';
 
 export class BillingController {
     constructor() {
