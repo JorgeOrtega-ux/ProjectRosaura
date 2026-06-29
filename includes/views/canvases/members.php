@@ -79,8 +79,8 @@ if (!empty($members)) {
         $pdoIdentity = $db->getConnection($connNameIdentity);
         
         $inQuery = implode(',', array_fill(0, count($userIds), '?'));
-        // Extraemos la foto de perfil real (profile_picture)
-        $stmtUsers = $pdoIdentity->prepare("SELECT id, username, profile_picture FROM users WHERE id IN ($inQuery)");
+        // Extraemos la foto de perfil real (profile_picture) y el campo uuid solicitado
+        $stmtUsers = $pdoIdentity->prepare("SELECT id, uuid, username, profile_picture FROM users WHERE id IN ($inQuery)");
         $stmtUsers->execute($userIds);
         
         while ($row = $stmtUsers->fetch(PDO::FETCH_ASSOC)) {
@@ -144,7 +144,6 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/members/' . $canvasUui
                                 <span class="material-symbols-rounded">chevron_left</span>
                             </button>
                         </div>
-                        <div class="component-inline-control__center"><?php echo $page; ?></div>
                         <div class="component-inline-control__group">
                             <button class="component-inline-control__btn <?php echo $page >= $totalPages ? 'disabled-interactive' : ''; ?>" <?php echo $page < $totalPages ? 'data-nav="'.$nextPageUrl.'"' : ''; ?>>
                                 <span class="material-symbols-rounded">chevron_right</span>
@@ -185,11 +184,12 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/members/' . $canvasUui
                                     $uInfo = $userDetails[$member['user_id']] ?? [];
                                     $username = !empty($uInfo['username']) ? $uInfo['username'] : 'Usuario #' . $member['user_id'];
                                     $avatar = !empty($uInfo['profile_picture']) ? $uInfo['profile_picture'] : $appUrl . '/public/assets/img/fallbacks/avatar-default.png';
+                                    $userUuidStr = !empty($uInfo['uuid']) ? $uInfo['uuid'] : '';
                                     
                                     // Identificar si es Admin
                                     $roleColor = $member['role'] === 'admin' ? '#dc3545' : '#6b7280';
                                 ?>
-                                <tr class="component-table-row" data-action="selectMember" data-member-id="<?php echo htmlspecialchars($member['user_id']); ?>">
+                                <tr class="component-table-row" data-action="selectMember" data-member-id="<?php echo htmlspecialchars($member['user_id']); ?>" data-member-uuid="<?php echo htmlspecialchars($userUuidStr); ?>">
                                     <td>
                                         <div class="td-user-info">
                                             <div class="component-button--profile role-dynamic component-avatar--static-sm" style="--active-role-bg: <?php echo $roleColor; ?>;">

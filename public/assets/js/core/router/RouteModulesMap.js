@@ -72,10 +72,16 @@ export const RouteModulesMap = {
     '/canvases/create': { path: './modules/canvases/core/CanvasesController.js', className: 'CanvasesController', skeletonType: 'layout-dashboard' },
     '/canvases/manage': { path: './modules/canvases/core/CanvasesManageController.js', className: 'CanvasesManageController', skeletonType: 'layout-dashboard' },
     
+    // 🚨 MUY IMPORTANTE: La ruta que tiene "/role/:id" DEBE IR ARRIBA de la general
+    '/canvases/members/:uuid/role/:id': { path: './modules/canvases/team/CanvasMemberRoleController.js', className: 'CanvasMemberRoleController', skeletonType: 'layout-settings-generic' },
+    
     '/canvases/manage/requests/:uuid': { path: './modules/canvases/team/CanvasRequestsController.js', className: 'CanvasRequestsController', skeletonType: 'layout-dashboard' },
     '/canvases/manage/resets/:uuid': { path: './modules/canvases/workspace/CanvasResetController.js', className: 'CanvasResetController', skeletonType: 'layout-settings-generic' },
     '/canvases/edit/:uuid': { path: './modules/canvases/workspace/CanvasEditController.js', className: 'CanvasEditController', skeletonType: 'layout-dashboard' },
+    
+    // 👇 La ruta general de members se evalúa DESPUÉS
     '/canvases/members/:uuid': { path: './modules/canvases/team/CanvasMembersController.js', className: 'CanvasMembersController', skeletonType: 'layout-dashboard' },
+    
     '/canvases/resize/:uuid': { path: './modules/canvases/workspace/CanvasResizeController.js', className: 'CanvasResizeController', skeletonType: 'layout-settings-generic' },
     
     '/canvases/join': { path: './modules/canvases/core/CanvasesController.js', className: 'CanvasesController', skeletonType: 'layout-dashboard' },

@@ -167,45 +167,37 @@ class CanvasMembersController {
         }
     }
     
-    async changeMemberRole() {
+    changeMemberRole() {
         if (this.selectedMemberIds.size !== 1) return;
         
         const targetUserId = Array.from(this.selectedMemberIds)[0];
-        const wrapper = document.querySelector('[data-ref="manage-members-wrapper"]');
-        const canvasId = wrapper ? wrapper.getAttribute('data-canvas-id') : null;
+        const selectedRow = document.querySelector(`[data-member-id="${targetUserId}"]`);
+        
+        // Obtenemos el UUID en lugar del ID numérico para la URL
+        const targetUserUuid = selectedRow ? selectedRow.getAttribute('data-member-uuid') : null;
 
-        if (!canvasId) {
+        if (!targetUserUuid) {
+            showMessage("Error: No se pudo obtener el identificador del usuario.", "error");
+            return;
+        }
+        
+        const pathParts = window.location.pathname.split('/');
+        let uuid = pathParts[pathParts.length - 1];
+        if (uuid.includes('?')) {
+            uuid = uuid.split('?')[0];
+        }
+
+        if (!uuid) {
             showMessage(__('err_missing_canvas_id'), "error");
             return;
         }
 
-        const resultDialog = await window.dialogSystem.show('promptChangeRole', {});
-        if (!resultDialog.confirmed) return;
-        
-        const newRole = resultDialog.data['modal_change_role'];
-        if (!newRole) return;
-        
-        const normalizedRole = newRole.toLowerCase().trim();
-        if (!['viewer', 'editor', 'admin'].includes(normalizedRole)) {
-            showMessage(__('err_invalid_role'), "error");
-            return;
-        }
-
-        try {
-            const response = await this.api.post('canvases.change_member_role', {
-                canvas_id: canvasId,
-                target_user_id: targetUserId,
-                role: normalizedRole
-            });
-
-            if (response.success) {
-                showMessage(response.message, "success");
-                this.handlePagination(window.location.href); 
-            } else {
-                showMessage(response.message, "error");
-            }
-        } catch (error) {
-            showMessage(__('err_connection_role'), "error");
+        // Redirección utilizando el UUID del usuario
+        const routeUrl = `${this.basePath}/canvases/members/${uuid}/role/${targetUserUuid}`;
+        if (window.spaRouter) {
+            window.spaRouter.navigate(routeUrl);
+        } else {
+            window.location.href = routeUrl;
         }
     }
 

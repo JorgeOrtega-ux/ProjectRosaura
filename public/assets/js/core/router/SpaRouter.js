@@ -40,10 +40,17 @@ export class SpaRouter {
         } else if (moduleUrl.startsWith('/canvases/manage/resets/')) {
             moduleUrl = '/canvases/manage/resets/:uuid';
             triggerManualLoad = true;
+        
+        // ¡NUEVO BLOQUE! (Debe ir ANTES que el de members normal)
+        } else if (moduleUrl.startsWith('/canvases/members/') && moduleUrl.includes('/role/')) {
+            moduleUrl = '/canvases/members/:uuid/role/:id';
+            triggerManualLoad = true;
+            
         } else if (moduleUrl.startsWith('/canvases/members/')) {
             moduleUrl = '/canvases/members/:uuid';
             triggerManualLoad = true;
-        } else if (moduleUrl.startsWith('/canvases/resize/')) { // <-- ¡NUEVO!
+            
+        } else if (moduleUrl.startsWith('/canvases/resize/')) { 
             moduleUrl = '/canvases/resize/:uuid';
             triggerManualLoad = true;
         } else if (moduleUrl.startsWith('/design/s/')) {
@@ -270,10 +277,15 @@ export class SpaRouter {
                     moduleUrl = '/canvases/manage/requests/:uuid';
                 } else if (moduleUrl.startsWith('/canvases/manage/resets/')) {
                     moduleUrl = '/canvases/manage/resets/:uuid';
-                } else if (moduleUrl.startsWith('/canvases/resize/')) { // <-- ¡NUEVO!
+                } else if (moduleUrl.startsWith('/canvases/resize/')) { 
                     moduleUrl = '/canvases/resize/:uuid';
                 } else if (moduleUrl.startsWith('/canvases/edit/')) {
                     moduleUrl = '/canvases/edit/:uuid';
+                    
+                // ¡NUEVO BLOQUE INTERCEPTOR PARA CARGA DINÁMICA!
+                } else if (moduleUrl.startsWith('/canvases/members/') && moduleUrl.includes('/role/')) {
+                    moduleUrl = '/canvases/members/:uuid/role/:id';
+                    
                 } else if (moduleUrl.startsWith('/canvases/members/')) {
                     moduleUrl = '/canvases/members/:uuid';
                 }
@@ -440,10 +452,15 @@ export class SpaRouter {
             mapKey = '/canvases/manage/requests/:uuid';
         } else if (cleanUrl.startsWith('/canvases/manage/resets/')) {
             mapKey = '/canvases/manage/resets/:uuid';
-        } else if (cleanUrl.startsWith('/canvases/resize/')) { // <-- ¡NUEVO!
+        } else if (cleanUrl.startsWith('/canvases/resize/')) { 
             mapKey = '/canvases/resize/:uuid';
         } else if (cleanUrl.startsWith('/canvases/edit/')) {
             mapKey = '/canvases/edit/:uuid';
+            
+        // ¡NUEVO BLOQUE PARA SKELETON!
+        } else if (cleanUrl.startsWith('/canvases/members/') && cleanUrl.includes('/role/')) {
+            mapKey = '/canvases/members/:uuid/role/:id';
+            
         } else if (cleanUrl.startsWith('/canvases/members/')) {
             mapKey = '/canvases/members/:uuid';
         }

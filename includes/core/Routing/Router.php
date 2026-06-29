@@ -66,6 +66,18 @@ class Router {
             ];
         }
 
+        // Change Member Role (¡NUEVO BLOQUE PARA 2 PARÁMETROS!)
+        if (preg_match('#^/canvases/members/([a-zA-Z0-9\-]+)/role/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
+            $_GET['uuid'] = $matches[1];
+            $_GET['user_uuid'] = $matches[2];
+            return $this->routes['/canvases/members/:uuid/role/:user_uuid'] ?? [
+                'view' => 'canvases/change-role.php',
+                'auth' => true,
+                'permissions' => ['manage_canvases'],
+                'requires_2fa' => false
+            ];
+        }
+
         // Members
         if (preg_match('#^/canvases/members/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
             $_GET['uuid'] = $matches[1];
@@ -99,7 +111,7 @@ class Router {
             ];
         }
         
-        // Resize (¡NUEVO!)
+        // Resize
         if (preg_match('#^/canvases/resize/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
             $_GET['uuid'] = $matches[1];
             return $this->routes['/canvases/resize/:uuid'] ?? [
