@@ -38,10 +38,32 @@ class CanvasController extends BaseController {
             $perms = [];
         }
 
-        // Validar si tiene un rol de administración o manejo de lienzos
-        return in_array('manage_canvases', $perms) || 
-               in_array('access_admin_panel', $perms) || 
-               in_array('canvases.manage_official', $perms) || 
+        // Validar si tiene un rol de administración o manejo de lienzos oficiales
+        return in_array('access_admin_panel', $perms) || 
+               in_array('canvases.manage_official', $perms);
+    }
+
+    /**
+     * Función auxiliar estricta para verificar si el usuario tiene el permiso de CREAR lienzos oficiales.
+     */
+    private function canCreateOfficial(): bool {
+        $perms = [];
+        
+        if (method_exists($this->session, 'getPermissions')) {
+            $perms = $this->session->getPermissions();
+        }
+        
+        if (empty($perms) && isset($_SESSION['user_permissions'])) {
+            $perms = $_SESSION['user_permissions'];
+        } elseif (empty($perms) && isset($_SESSION['permissions'])) {
+            $perms = $_SESSION['permissions'];
+        }
+        
+        if (!is_array($perms)) {
+            $perms = [];
+        }
+
+        return in_array('access_admin_panel', $perms) || 
                in_array('canvases.create_official', $perms);
     }
 
@@ -251,7 +273,7 @@ class CanvasController extends BaseController {
             $result = $this->canvasServices->createCanvas(
                 $userId, $name, $description, $privacy, $requiresApproval, 
                 $size, (int)$limit, $paletteId, (int)$cooldownBatch, (int)$cooldownSeconds,
-                $scopeType, $scopeRef1, $scopeRef2, $scopeRef3, $this->canManageOfficial()
+                $scopeType, $scopeRef1, $scopeRef2, $scopeRef3, $this->canCreateOfficial()
             );
 
             // NOTA DE IMPLEMENTACIÓN: Capturar explícitamente el error de límites

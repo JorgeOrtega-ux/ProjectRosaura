@@ -58,26 +58,21 @@ class CanvasesController {
         let hasPerm = false;
         if (window.APP_CONFIG && window.APP_CONFIG.permissions) {
             const p = window.APP_CONFIG.permissions;
-            hasPerm = p.includes('manage_canvases') || 
-                      p.includes('access_admin_panel') || 
-                      p.includes('canvases.manage_official') || 
-                      p.includes('canvases.create_official');
+            // Solo evalúa permisos oficiales/administrativos, NO manage_canvases.
+            hasPerm = p.includes('canvases.create_official') || p.includes('access_admin_panel');
         }
 
-        const scopeSection = document.querySelector('[data-ref="scope-section"]');
-        const scopeDivider = document.querySelector('[data-ref="scope-divider-main"]');
-
-        if (scopeSection) {
+        const scopeTrigger = document.querySelector('[data-target="dropdownScopeType"]');
+        if (scopeTrigger) {
             if (hasPerm) {
-                scopeSection.classList.remove('disabled');
-                if (scopeDivider) scopeDivider.classList.remove('disabled');
-                
-                this.handleScopeTypeChange('personal');
+                scopeTrigger.classList.remove('disabled-interactive');
             } else {
-                scopeSection.classList.add('disabled');
-                if (scopeDivider) scopeDivider.classList.add('disabled');
+                scopeTrigger.classList.add('disabled-interactive');
             }
         }
+        
+        // Siempre forzamos a que inicie con personal
+        this.handleScopeTypeChange('personal');
     }
 
     setupDefaultValues() {
@@ -352,6 +347,8 @@ class CanvasesController {
     }
 
     toggleDropdown(triggerBtn) {
+        if (triggerBtn.classList.contains('disabled-interactive')) return;
+        
         const targetId = triggerBtn.getAttribute('data-target');
         const targetDropdown = document.querySelector(`[data-module="${targetId}"]`);
         

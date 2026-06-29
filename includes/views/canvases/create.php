@@ -10,6 +10,9 @@ if ($activeAccountId && isset($linkedAccounts[$activeAccountId])) {
 }
 $planLimits = SubscriptionPlanConstants::getTierLimits($tier);
 $maxMembers = $planLimits['max_members_per_canvas'] === -1 ? 50000 : $planLimits['max_members_per_canvas'];
+
+$userPerms = $_SESSION['user_permissions'] ?? [];
+$canCreateOfficial = in_array('access_admin_panel', $userPerms) || in_array('canvases.create_official', $userPerms);
 ?>
 <div class="view-content" data-ref="canvas-create-wrapper">
     
@@ -38,7 +41,7 @@ $maxMembers = $planLimits['max_members_per_canvas'] === -1 ? 50000 : $planLimits
                 
                 <div class="component-card--grouped">
 
-                    <div class="component-group-item component-group-item--stacked disabled" data-ref="scope-section">
+                    <div class="component-group-item component-group-item--stacked" data-ref="scope-section">
                         <div class="component-card__content">
                             <div class="component-card__text">
                                 <h2 class="component-card__title"><?php echo __('canvas_scope_title'); ?></h2>
@@ -47,47 +50,55 @@ $maxMembers = $planLimits['max_members_per_canvas'] === -1 ? 50000 : $planLimits
                         </div>
                         <div class="component-card__actions component-card__actions--start">
                             <div class="component-dropdown-wrapper">
-                                <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="dropdownScopeType">
-                                    <span class="material-symbols-rounded">admin_panel_settings</span>
+                                <div class="component-dropdown-trigger <?php echo !$canCreateOfficial ? 'disabled-interactive' : ''; ?>" <?php echo $canCreateOfficial ? 'data-action="toggleDropdown" data-target="dropdownScopeType"' : ''; ?>>
+                                    <span class="material-symbols-rounded"><?php echo $canCreateOfficial ? 'admin_panel_settings' : 'person'; ?></span>
                                     <span class="component-dropdown-text" data-ref="text-scope-type"><?php echo __('canvas_scope_type_personal'); ?></span>
-                                    <span class="material-symbols-rounded">expand_more</span>
+                                    <?php if ($canCreateOfficial): ?>
+                                        <span class="material-symbols-rounded">expand_more</span>
+                                    <?php endif; ?>
                                 </div>
-                                <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="dropdownScopeType">
-                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
-                                        <div class="pill-container"><div class="drag-handle"></div></div>
-                                        <div class="component-menu-list component-menu-list--scrollable">
-                                            <div class="component-menu-link active" data-action="selectValue" data-type="scope_type" data-value="personal" data-label="canvas_scope_type_personal" data-icon="person">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">person</span></div>
-                                                <div class="component-menu-link-text"><span><?php echo __('canvas_scope_type_personal'); ?></span></div>
-                                            </div>
-                                            <div class="component-menu-link" data-action="selectValue" data-type="scope_type" data-value="global" data-label="canvas_scope_type_global" data-icon="public">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">public</span></div>
-                                                <div class="component-menu-link-text"><span><?php echo __('canvas_scope_type_global'); ?></span></div>
-                                            </div>
-                                            <div class="component-menu-link" data-action="selectValue" data-type="scope_type" data-value="country" data-label="canvas_scope_type_country" data-icon="flag">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">flag</span></div>
-                                                <div class="component-menu-link-text"><span><?php echo __('canvas_scope_type_country'); ?></span></div>
-                                            </div>
-                                            <div class="component-menu-link" data-action="selectValue" data-type="scope_type" data-value="state" data-label="canvas_scope_type_state" data-icon="map">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">map</span></div>
-                                                <div class="component-menu-link-text"><span><?php echo __('canvas_scope_type_state'); ?></span></div>
-                                            </div>
-                                            <div class="component-menu-link" data-action="selectValue" data-type="scope_type" data-value="municipality" data-label="canvas_scope_type_municipality" data-icon="location_city">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">location_city</span></div>
-                                                <div class="component-menu-link-text"><span><?php echo __('canvas_scope_type_municipality'); ?></span></div>
-                                            </div>
-                                            <div class="component-menu-link" data-action="selectValue" data-type="scope_type" data-value="organization" data-label="canvas_scope_type_organization" data-icon="domain">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">domain</span></div>
-                                                <div class="component-menu-link-text"><span><?php echo __('canvas_scope_type_organization'); ?></span></div>
+                                
+                                <?php if ($canCreateOfficial): ?>
+                                    <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="dropdownScopeType">
+                                        <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                                            <div class="pill-container"><div class="drag-handle"></div></div>
+                                            <div class="component-menu-list component-menu-list--scrollable">
+                                                <div class="component-menu-link active" data-action="selectValue" data-type="scope_type" data-value="personal" data-label="canvas_scope_type_personal" data-icon="person">
+                                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">person</span></div>
+                                                    <div class="component-menu-link-text"><span><?php echo __('canvas_scope_type_personal'); ?></span></div>
+                                                </div>
+                                                <div class="component-menu-link" data-action="selectValue" data-type="scope_type" data-value="global" data-label="canvas_scope_type_global" data-icon="public">
+                                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">public</span></div>
+                                                    <div class="component-menu-link-text"><span><?php echo __('canvas_scope_type_global'); ?></span></div>
+                                                </div>
+                                                <div class="component-menu-link" data-action="selectValue" data-type="scope_type" data-value="country" data-label="canvas_scope_type_country" data-icon="flag">
+                                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">flag</span></div>
+                                                    <div class="component-menu-link-text"><span><?php echo __('canvas_scope_type_country'); ?></span></div>
+                                                </div>
+                                                <div class="component-menu-link" data-action="selectValue" data-type="scope_type" data-value="state" data-label="canvas_scope_type_state" data-icon="map">
+                                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">map</span></div>
+                                                    <div class="component-menu-link-text"><span><?php echo __('canvas_scope_type_state'); ?></span></div>
+                                                </div>
+                                                <div class="component-menu-link" data-action="selectValue" data-type="scope_type" data-value="municipality" data-label="canvas_scope_type_municipality" data-icon="location_city">
+                                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">location_city</span></div>
+                                                    <div class="component-menu-link-text"><span><?php echo __('canvas_scope_type_municipality'); ?></span></div>
+                                                </div>
+                                                <div class="component-menu-link" data-action="selectValue" data-type="scope_type" data-value="organization" data-label="canvas_scope_type_organization" data-icon="domain">
+                                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">domain</span></div>
+                                                    <div class="component-menu-link-text"><span><?php echo __('canvas_scope_type_organization'); ?></span></div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
+                                <?php else: ?>
+                                    <input type="hidden" name="scope_type" value="personal">
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
 
-                    <hr class="component-divider disabled" data-ref="scope-divider-country">
+                    <hr class="component-divider" data-ref="scope-divider-main">
+
                     <div class="component-group-item component-group-item--stacked disabled" data-ref="scope-section-country">
                         <div class="component-card__content">
                             <div class="component-card__text">
@@ -188,8 +199,6 @@ $maxMembers = $planLimits['max_members_per_canvas'] === -1 ? 50000 : $planLimits
                             </div>
                         </div>
                     </div>
-
-                    <hr class="component-divider disabled" data-ref="scope-divider-main">
                     
                     <div class="component-group-item component-group-item--stateful">
                         <div class="active component-state-box" data-state="canvasname-view">
