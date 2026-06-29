@@ -1,4 +1,4 @@
-// public/assets/js/modules/app/HomeController.js
+// public/assets/js/modules/app/home/HomeController.js
 
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
@@ -12,7 +12,7 @@ class HomeController {
         this.basePath = window.AppBasePath || '';
         this.abortController = null;
         
-        this.containerAll = null;
+        this.contentArea = null;
         this.cardInteractions = null;
         
         this.handleGlobalClickBound = this.handleGlobalClick.bind(this);
@@ -24,9 +24,13 @@ class HomeController {
         
         this.bindEvents();
         
-        this.containerAll = document.querySelector('[data-ref="home-all-canvases"]');
+        this.contentArea = document.querySelector('[data-ref="dynamic-content-area"]');
         
-        if (this.containerAll) renderSkeleton(this.containerAll, 'homeCanvasGrid');
+        if (this.contentArea) {
+            // Inicializa un grid temporal para el skeleton
+            this.contentArea.innerHTML = '<div class="component-grid" data-ref="home-all-canvases"></div>';
+            renderSkeleton(this.contentArea.querySelector('.component-grid'), 'homeCanvasGrid');
+        }
         
         this.loadCanvases();
     }
@@ -85,14 +89,15 @@ class HomeController {
             isError = true;
         }
 
-        // Corrección de la lógica de error y estado vacío
+        const msgEmpty = window.__ ? window.__('empty_home_gallery') : 'Aún no hay lienzos disponibles para explorar.';
+
+        // Lógica de inyección dinámica mutua
         if (allCanvases.length > 0) {
-            this.renderCanvases(this.containerAll, allCanvases, 'Aún no hay lienzos disponibles.');
+            this.renderCanvases(this.contentArea, allCanvases);
         } else if (isError) {
-            this.showError(this.containerAll, window.__ ? __('err_load_public_canvases') : 'Error al cargar lienzos. El servidor no responde.');
+            this.showError(this.contentArea, window.__ ? window.__('err_load_public_canvases') : 'Error al cargar lienzos. El servidor no responde.');
         } else {
-            // Succeeded pero la base de datos está vacía (0 lienzos)
-            this.renderCanvases(this.containerAll, [], 'Aún no hay lienzos disponibles para explorar.');
+            this.contentArea.innerHTML = CardTemplates.emptyState(msgEmpty, 'collections');
         }
 
         this.reinitializeUI();
@@ -100,28 +105,26 @@ class HomeController {
 
     showError(container, message) {
         if (container) {
-            container.innerHTML = CardTemplates.emptyState(message);
+            container.innerHTML = CardTemplates.emptyState(message, 'error');
         }
     }
 
-    renderCanvases(container, canvases, emptyMessage) {
+    renderCanvases(container, canvases) {
         if (!container) return;
-
-        if (!canvases || canvases.length === 0) {
-            container.innerHTML = CardTemplates.emptyState(emptyMessage);
-            return;
-        }
-
-        const html = canvases.map(canvas => CardTemplates.canvasCard(canvas, { basePath: this.basePath })).join('');
-        container.innerHTML = html;
+        const cardsHtml = canvases.map(canvas => CardTemplates.canvasCard(canvas, { basePath: this.basePath })).join('');
+        // Se reemplaza todo el HTML por el GRID puro
+        container.innerHTML = `<div class="component-grid" data-ref="home-all-canvases">${cardsHtml}</div>`;
     }
 
     reinitializeUI() {
-        if (!this.containerAll) return;
-        if (window.app && typeof window.app.initModules === 'function') window.app.initModules(this.containerAll);
-        else if (window.uiUtils && typeof window.uiUtils.initDropdowns === 'function') window.uiUtils.initDropdowns(this.containerAll);
+        if (!this.contentArea) return;
+        const grid = this.contentArea.querySelector('.component-grid');
+        if (!grid) return; // Si no hay grid (estado vacío), omitimos.
         
-        if (window.router && typeof window.router.bindLinks === 'function') window.router.bindLinks(this.containerAll);
+        if (window.app && typeof window.app.initModules === 'function') window.app.initModules(grid);
+        else if (window.uiUtils && typeof window.uiUtils.initDropdowns === 'function') window.uiUtils.initDropdowns(grid);
+        
+        if (window.router && typeof window.router.bindLinks === 'function') window.router.bindLinks(grid);
     }
 }
 

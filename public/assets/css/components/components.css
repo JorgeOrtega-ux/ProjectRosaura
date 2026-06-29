@@ -25,6 +25,7 @@
 
 .component-wrapper {
     width: 100%;
+    height: 100%; /* NUEVO: Para que herede el alto completo del view-content */
     max-width: 625px;
     margin: 0 auto;
     padding: 24px;
@@ -290,9 +291,15 @@ html.dark-theme .component-top.shadow {
 .component-empty-state {
     text-align: center;
     padding: 40px;
-    background: var(--bg-surface);
-    border-radius: 12px;
-    border: 1px solid var(--border-color);
+    background: transparent; /* Ajustado para que se integre al fondo */
+    border: none; /* NUEVO: Sin bordes */
+    border-radius: 0; /* NUEVO: Sin radius */
+    height: 100%; /* NUEVO: Ocupa todo el component-bottom */
+    flex: 1; /* NUEVO: Apoyo al flexbox para estirarse */
+    display: flex; /* NUEVO: Convierte el contenedor en flex */
+    flex-direction: column; /* NUEVO */
+    justify-content: center; /* NUEVO: Centra el icono y el texto verticalmente */
+    align-items: center; /* NUEVO: Centra horizontalmente */
 }
 
 .component-empty-state-icon {

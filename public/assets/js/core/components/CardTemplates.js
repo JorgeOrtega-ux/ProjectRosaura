@@ -106,9 +106,14 @@ export const CardTemplates = {
     },
 
     /**
-     * Estado vacío genérico para listados de tarjetas
+     * Devuelve el bloque HTML completo de un estado vacío.
      */
-    emptyState: (message) => {
-        return `<p style="color: var(--text-secondary); width: 100%; grid-column: 1 / -1; text-align: center;">${escapeHTML(message)}</p>`;
+    emptyState: (message, icon = 'collections') => {
+        return `
+            <div class="component-empty-state" data-ref="empty-state-rendered">
+                <span class="material-symbols-rounded component-empty-state-icon">${icon}</span>
+                <p class="component-empty-state-text">${escapeHTML(message)}</p>
+            </div>
+        `;
     }
 };

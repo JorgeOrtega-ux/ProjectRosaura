@@ -15,9 +15,8 @@
             </div>
         </div>
 
-        <div class="component-bottom" style="padding: 0;">
-            <div class="component-grid" data-ref="home-all-canvases">
-                </div>
+        <div class="component-bottom" style="padding: 0;" data-ref="dynamic-content-area">
+            <!-- JS inyectará el component-grid o el component-empty-state aquí -->
         </div>
 
     </div>

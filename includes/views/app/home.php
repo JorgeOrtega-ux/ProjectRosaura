@@ -1,3 +1,6 @@
+<?php
+// includes/views/app/home.php
+?>
 <div class="view-content">
     <div class="component-wrapper component-wrapper--full no-padding" data-ref="purchase-history-wrapper">
         
@@ -12,12 +15,8 @@
             </div>
         </div>
 
-        <div class="component-bottom" style="padding: 0;">
-            
-            <!-- CONTENEDOR ÚNICO DE LIENZOS -->
-            <div class="component-grid" data-ref="home-all-canvases">
-            </div>
-
+        <div class="component-bottom" style="padding: 0;" data-ref="dynamic-content-area">
+            <!-- JS inyectará el component-grid o el component-empty-state aquí -->
         </div>
 
     </div>

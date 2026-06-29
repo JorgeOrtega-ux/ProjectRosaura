@@ -1,4 +1,4 @@
-// public/assets/js/modules/canvases/CanvasSnapshotsGalleryController.js
+// public/assets/js/modules/canvases/history/CanvasSnapshotsGalleryController.js
 
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
@@ -12,6 +12,8 @@ class CanvasSnapshotsGalleryController {
         this.basePath = window.AppBasePath || '';
         this.uuid = null;
         
+        this.contentArea = document.querySelector('[data-ref="dynamic-content-area"]');
+        
         this.handleGlobalClickBound = this.handleGlobalClick.bind(this);
     }
 
@@ -23,7 +25,7 @@ class CanvasSnapshotsGalleryController {
         if (this.uuid) {
             this.fetchSnapshots();
         } else {
-            showMessage(__('err_invalid_uuid'), 'error');
+            showMessage(typeof window.__ === 'function' ? window.__('err_invalid_uuid') : 'UUID Inválido', 'error');
         }
     }
 
@@ -65,56 +67,45 @@ class CanvasSnapshotsGalleryController {
             if (result.success) {
                 this.renderGallery(result.data.canvas_name, result.data.snapshots);
             } else {
-                showMessage(result.message || __('err_gallery_fetch'), 'error');
+                showMessage(result.message || (typeof window.__ === 'function' ? window.__('err_gallery_fetch') : 'Error'), 'error');
                 this.showEmptyState();
             }
 
         } catch (error) {
             if (error.name === 'AbortError') return;
-            showMessage(__('err_gallery_load'), 'error');
+            showMessage(typeof window.__ === 'function' ? window.__('err_gallery_load') : 'Error al cargar la galería', 'error');
             this.showEmptyState();
         }
     }
 
     renderGallery(canvasName, snapshots) {
         const titleEl = document.querySelector('[data-ref="gallery-title"]');
-        const gridEl = document.querySelector('[data-ref="gallery-grid"]');
-        
         if (titleEl) {
-            titleEl.textContent = __('lbl_resets_title') + ': ' + canvasName;
+            titleEl.textContent = (typeof window.__ === 'function' ? window.__('lbl_resets_title') : 'Reinicios') + ': ' + canvasName;
         }
 
-        if (!gridEl) return;
-        gridEl.innerHTML = '';
+        if (!this.contentArea) return;
 
         if (!snapshots || snapshots.length === 0) {
             this.showEmptyState();
             return;
         }
 
-        const fragment = document.createDocumentFragment();
-
+        let cardsHtml = '';
         snapshots.forEach(snapshot => {
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = CardTemplates.snapshotCard(snapshot, {
+            cardsHtml += CardTemplates.snapshotCard(snapshot, {
                 canvasName: canvasName,
                 basePath: this.basePath
             });
-            
-            if (tempDiv.firstElementChild) {
-                fragment.appendChild(tempDiv.firstElementChild);
-            }
         });
 
-        gridEl.appendChild(fragment);
+        this.contentArea.innerHTML = `<div class="component-grid" data-ref="gallery-grid">${cardsHtml}</div>`;
     }
 
     showEmptyState() {
-        const gridEl = document.querySelector('[data-ref="gallery-grid"]');
-        const emptyState = document.querySelector('[data-ref="gallery-empty-state"]');
-        
-        if (gridEl) gridEl.innerHTML = '';
-        if (emptyState) emptyState.classList.remove('disabled');
+        if (!this.contentArea) return;
+        const msg = window.__ ? window.__('empty_snapshots_gallery') : 'Aún no hay reinicios registrados para este lienzo.';
+        this.contentArea.innerHTML = CardTemplates.emptyState(msg, 'collections');
     }
 }
 

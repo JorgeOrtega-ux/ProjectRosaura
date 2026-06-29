@@ -152,7 +152,7 @@ REGLA 7: Prevención de Promesas Huérfanas (AbortController en INIT)
 -----------------------------------------------------------------------------
 REGLA 8: Navegación Programática Correcta (SpaRouter)
 -----------------------------------------------------------------------------
-- Usa EXCLUSIVAMENTE el método `Maps()` para redirigir tras acciones.
+- Usa EXCLUSIVAMENTE el método `navigate()` para redirigir tras acciones.
 - ESTRICTAMENTE PROHIBIDO usar `window.spaRouter.loadRoute(url)` directamente.
 - USO CORRECTO: `if (window.spaRouter) window.spaRouter.navigate(this.basePath + '/nueva/ruta');`
 
@@ -358,13 +358,21 @@ REGLA 22: Prohibición Absoluta del Atributo Nativo `disabled`
 - ESTRICTAMENTE PROHIBIDO utilizar el atributo HTML nativo `disabled` en inputs, botones o cualquier elemento interactivo.
 - En su lugar, debes utilizar EXCLUSIVAMENTE las clases CSS `.disabled-interactive` y/o `.disabled` para manejar el estado visual y deshabilitar los eventos (pointer-events) desde CSS/JS.
 
+-----------------------------------------------------------------------------
+REGLA 23: Arquitectura Mutuamente Excluyente para Estados Vacíos (Empty States)
+-----------------------------------------------------------------------------
+- ESTRICTAMENTE PROHIBIDO inyectar mensajes de "estado vacío" (ej. "no hay datos") directamente como texto o párrafos dentro de los contenedores de cuadrícula (como `.component-grid`).
+- ESTRICTAMENTE PROHIBIDO usar el atributo o la clase `disabled` para ocultar bloques estructurales enteros.
+- ESTRUCTURA HTML OBLIGATORIA: Debes crear un contenedor "wrapper" dinámico (ej. `<div data-ref="dynamic-content-area">`) que actúe como área de inyección. Dentro de este, NUNCA deben coexistir visualmente un grid de datos y un estado vacío.
+- LÓGICA JAVASCRIPT OBLIGATORIA: El controlador JS debe evaluar los datos. Si hay información, debe renderizar/inyectar EXCLUSIVAMENTE el contenedor de cuadrícula (`.component-grid`) dentro del wrapper. Si no hay información, el wrapper debe ser vaciado (`innerHTML = ''`) y reemplazado ÚNICAMENTE por la estructura del estado vacío (`.component-empty-state`). Alternativamente, puedes usar clases de ocultamiento como `.component-hidden` o `.d-none` para alternar la visibilidad asegurando que solo UNO sea visible y el contenedor oculto esté vacío en el DOM.
+
 
 =============================================================================
 PARTE 4: BACKEND (PYTHON WORKERS / SCRIPTS)
 =============================================================================
 
 -----------------------------------------------------------------------------
-REGLA 23: Logs en Inglés, Estructurados y Nivel Enterprise (Cero Emojis)
+REGLA 24: Logs en Inglés, Estructurados y Nivel Enterprise (Cero Emojis)
 -----------------------------------------------------------------------------
 - Dado que Python no puede utilizar el sistema de traducciones dinámico de la web de la misma forma, TODOS los logs, salidas de consola y mensajes generados por los scripts de Python deben estar estrictamente en INGLÉS.
 - CERO EMOJIS. Los logs deben ser estructurados, serios y de nivel "enterprise" (ej. `[INFO] Telemetry worker started successfully.`, `[ERROR] Failed to connect to Redis instance.`).
@@ -372,7 +380,7 @@ REGLA 23: Logs en Inglés, Estructurados y Nivel Enterprise (Cero Emojis)
   Mantén el código y la generación de logs de forma limpia y directa.
 
 -----------------------------------------------------------------------------
-REGLA 24: Prohibición de Exposición de Errores (Zero Data Leakage)
+REGLA 25: Prohibición de Exposición de Errores (Zero Data Leakage)
 -----------------------------------------------------------------------------
 - ESTRICTAMENTE PROHIBIDO enviar, imprimir o exponer mensajes de error técnicos (PHP, sentencias SQL, trazas de Redis, fallos de conexión o excepciones del servidor) hacia el frontend.
 - ESTRICTAMENTE PROHIBIDO dejar `console.log()`, `console.error()` o similares en el código de producción que revelen el funcionamiento interno.

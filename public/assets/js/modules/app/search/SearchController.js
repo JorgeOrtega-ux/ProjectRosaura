@@ -1,4 +1,4 @@
-// public/assets/js/modules/app/SearchController.js
+// public/assets/js/modules/app/search/SearchController.js
 
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { CardTemplates } from '../../../core/components/CardTemplates.js';
@@ -6,7 +6,7 @@ import { CanvasCardInteractions } from '../../../core/components/CanvasCardInter
 
 export class SearchController {
     constructor() {
-        this.grid = document.querySelector('[data-ref="home-all-canvases"]');
+        this.contentArea = document.querySelector('[data-ref="dynamic-content-area"]');
         this.title = document.querySelector('[data-ref="search-title"]');
     }
 
@@ -16,6 +16,9 @@ export class SearchController {
         
         if (!query.trim()) {
             if (this.title) this.title.textContent = 'Por favor, ingresa un término de búsqueda.';
+            if (this.contentArea) {
+                this.contentArea.innerHTML = CardTemplates.emptyState('No se ha proporcionado ningún término de búsqueda.', 'search_off');
+            }
             return;
         }
 
@@ -25,9 +28,6 @@ export class SearchController {
             const reqUrl = (window.AppBasePath || '') + '/api/index.php';
             const csrfMeta = document.querySelector('meta[name="csrf-token"]');
             const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
-
-            console.log("🔍 [SearchController] Iniciando búsqueda para:", query);
-            console.log("📨 [SearchController] Payload que se enviará a PHP:", { route: ApiRoutes.Search.Query, q: query });
 
             const response = await fetch(reqUrl, {
                 method: 'POST',
@@ -41,45 +41,37 @@ export class SearchController {
                 })
             });
 
-            console.log("📡 [SearchController] Status de respuesta HTTP:", response.status, response.ok ? "(OK)" : "(Error)");
-
-            // MODIFICACIÓN: Prevenir que la app crashee silenciosamente si PHP arroja HTML puro en vez de JSON
             let resData;
             try {
                 resData = await response.json();
             } catch (jsonErr) {
-                const rawText = await response.text();
-                console.error("💥 [SearchController] EL SERVIDOR NO DEVOLVIÓ JSON. RESPUESTA CRUDA:", rawText);
                 if (this.title) this.title.textContent = 'Error crítico del servidor. Revisa la consola.';
+                if (this.contentArea) {
+                    this.contentArea.innerHTML = CardTemplates.emptyState('Error de respuesta del servidor.', 'error');
+                }
                 return;
             }
-
-            console.log("📥 [SearchController] Respuesta CRUDA desde PHP:", resData);
 
             if (resData && resData.success) {
                 const results = resData.data || [];
                 const count = results.length;
                 
-                console.log(`✅ [SearchController] Resultados procesados: ${count}`, results);
-
                 if (this.title) {
                     this.title.textContent = `Resultados encontrados: ${count} para "${query}"`;
                 }
 
-                if (this.grid) {
-                    this.grid.innerHTML = '';
-                    
+                if (this.contentArea) {
                     if (count === 0) {
-                        console.warn("⚠️ [SearchController] El array 'data' llegó vacío desde PHP.");
-                        this.grid.innerHTML = '<p class="component-empty-msg" style="padding: 20px;">No se encontraron lienzos que coincidan con tu búsqueda.</p>';
+                        this.contentArea.innerHTML = CardTemplates.emptyState('No se encontraron lienzos que coincidan con tu búsqueda.', 'search_off');
                     } else {
+                        let cardsHtml = '';
                         results.forEach(canvas => {
-                            const cardHTML = typeof CardTemplates.generateCanvasCard === 'function' 
+                            cardsHtml += typeof CardTemplates.generateCanvasCard === 'function' 
                                            ? CardTemplates.generateCanvasCard(canvas) 
                                            : this.buildFallbackCard(canvas);
-                                           
-                            this.grid.insertAdjacentHTML('beforeend', cardHTML);
                         });
+                        
+                        this.contentArea.innerHTML = `<div class="component-grid" data-ref="home-all-canvases">${cardsHtml}</div>`;
                         
                         if (typeof CanvasCardInteractions !== 'undefined' && CanvasCardInteractions.init) {
                             CanvasCardInteractions.init();
@@ -87,21 +79,16 @@ export class SearchController {
                     }
                 }
             } else {
-                console.error("❌ [SearchController] PHP devolvió error lógico o excepción:");
-                
-                // MODIFICACIÓN: Interceptar y mostrar los datos de depuración (debug) inyectados desde PHP
-                if (resData && resData.debug_message) {
-                    console.error("🚨 [ERROR REAL DEL SERVIDOR]:", resData.debug_message);
-                    console.error("📁 [UBICACIÓN DEL ERROR]:", resData.debug_file, "en la línea", resData.debug_line);
-                } else {
-                    console.error(resData);
+                if (this.title) this.title.textContent = 'Fallo en la búsqueda.';
+                if (this.contentArea) {
+                    this.contentArea.innerHTML = CardTemplates.emptyState('Ocurrió un problema procesando la búsqueda.', 'error');
                 }
-
-                if (this.title) this.title.textContent = 'Fallo en la búsqueda. Revisa la consola de desarrollador.';
             }
         } catch (e) {
-            console.error("🔥 [SearchController] Excepción catastrófica en fetch():", e);
             if (this.title) this.title.textContent = 'Hubo un problema al procesar la búsqueda.';
+            if (this.contentArea) {
+                this.contentArea.innerHTML = CardTemplates.emptyState('Error de red o conexión al buscar.', 'wifi_off');
+            }
         }
     }
 
