@@ -8,8 +8,9 @@ export const DesignSetup = {
         if (wrapper) {
             const sizeStr = wrapper.getAttribute('data-size');
             if (sizeStr) {
-                this.boardWidth = parseInt(sizeStr, 10);
-                this.boardHeight = parseInt(sizeStr, 10);
+                const parts = sizeStr.toLowerCase().split('x');
+                this.boardWidth = parseInt(parts[0], 10);
+                this.boardHeight = parts.length > 1 ? parseInt(parts[1], 10) : this.boardWidth;
             }
         }
         this.setupCanvas();
@@ -55,13 +56,14 @@ export const DesignSetup = {
 
             this.resizeActive = wrapper.getAttribute('data-resize-active') === '1';
             this.nextResizeAt = wrapper.getAttribute('data-resize-at');
-            this.resizeTargetSize = wrapper.getAttribute('data-resize-target') || '64';
+            this.resizeTargetSize = wrapper.getAttribute('data-resize-target') || '64x64';
             this.resizeTimerAction = wrapper.getAttribute('data-resize-timer-action') || 'restart';
 
             const sizeStr = wrapper.getAttribute('data-size');
             if (sizeStr) {
-                this.boardWidth = parseInt(sizeStr, 10);
-                this.boardHeight = parseInt(sizeStr, 10);
+                const parts = sizeStr.toLowerCase().split('x');
+                this.boardWidth = parseInt(parts[0], 10);
+                this.boardHeight = parts.length > 1 ? parseInt(parts[1], 10) : this.boardWidth;
             }
             
             this.canvasPaletteId = wrapper.getAttribute('data-palette') || 'default';

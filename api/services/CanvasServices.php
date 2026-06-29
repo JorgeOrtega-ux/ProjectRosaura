@@ -160,9 +160,22 @@ class CanvasServices {
                 $canvas['role'] = $role ?: 'spectator'; 
             }
 
+            // ====================================================
+            // Lógica ajustada para tamaño Ancho x Alto
+            // ====================================================
+            $sizeStr = strtolower($canvas['size'] ?? '64x64');
+            if (strpos($sizeStr, 'x') !== false) {
+                $parts = explode('x', $sizeStr);
+                $width = (int)$parts[0];
+                $height = isset($parts[1]) ? (int)$parts[1] : $width;
+            } else {
+                $width = (int)$sizeStr;
+                $height = $width;
+            }
+            
             $canvas['max_members'] = $canvas['max_participants'];
-            $canvas['width'] = $canvas['size'];
-            $canvas['height'] = $canvas['size'];
+            $canvas['width'] = $width;
+            $canvas['height'] = $height;
             $canvas['requires_approval'] = (bool)$canvas['requires_approval'];
 
             // OBTENER ESTADO DE REINICIO
@@ -223,8 +236,7 @@ class CanvasServices {
             }
 
             if (!$stateRaw) {
-                $size = (int)$canvas['size'];
-                $totalPixels = $size * $size;
+                $totalPixels = $width * $height;
                 $stateRaw = str_repeat(chr(255), $totalPixels); 
                 
                 if ($redis) {
@@ -253,7 +265,7 @@ class CanvasServices {
         ?string $description, 
         string $privacy, 
         bool $requiresApproval = false, 
-        string $size = '64', 
+        string $size = '64x64', 
         int $limit = 10, 
         string $paletteId = 'default', 
         int $cooldownBatch = 5, 
@@ -431,7 +443,7 @@ class CanvasServices {
     // ==========================================
     // EXPANSIÓN EN VIVO DEL LIENZO Y PROGRAMACIÓN
     // ==========================================
-    public function resizeCanvas(int $userId, int $canvasId, int $newSize, bool $canManageOfficial = false): array {
+    public function resizeCanvas(int $userId, int $canvasId, string $newSize, bool $canManageOfficial = false): array {
         try {
             $canvas = $this->canvasRepository->getById($canvasId);
             if (!$canvas) {
@@ -446,7 +458,7 @@ class CanvasServices {
                 }
             }
 
-            $oldSize = (int)$canvas['size'];
+            $oldSize = $canvas['size'];
             if ($oldSize === $newSize) {
                 return ['success' => false, 'message' => 'El lienzo ya tiene esta resolución.'];
             }
@@ -499,7 +511,7 @@ class CanvasServices {
                 $settings = [
                     'is_active' => false,
                     'next_resize_at' => null,
-                    'target_size' => '64',
+                    'target_size' => '64x64',
                     'timer_action' => 'restart'
                 ];
             } else {
@@ -524,7 +536,9 @@ class CanvasServices {
 
             $isActive = filter_var($data['is_active'] ?? false, FILTER_VALIDATE_BOOLEAN);
             $nextResizeAt = null;
-            $targetSize = in_array($data['target_size'] ?? '64', ['64', '128', '264', '512']) ? $data['target_size'] : '64';
+            
+            $validSizes = ['64x64', '128x128', '256x256', '512x512', '1024x1024', '128x64', '256x128', '512x256', '1024x512', '2048x1024'];
+            $targetSize = in_array($data['target_size'] ?? '64x64', $validSizes) ? $data['target_size'] : '64x64';
             
             if ($isActive) {
                 if (empty($data['next_resize_at'])) {
@@ -1106,12 +1120,25 @@ class CanvasServices {
 
             $hasTimelapse = !empty($data['timelapse_file_path']);
 
+            // ====================================================
+            // Lógica ajustada para tamaño Ancho x Alto
+            // ====================================================
+            $sizeStr = strtolower($data['size'] ?? '64x64');
+            if (strpos($sizeStr, 'x') !== false) {
+                $parts = explode('x', $sizeStr);
+                $width = (int)$parts[0];
+                $height = isset($parts[1]) ? (int)$parts[1] : $width;
+            } else {
+                $width = (int)$sizeStr;
+                $height = $width;
+            }
+
             return [
                 'success' => true,
                 'data' => [
                     'image_url' => $imageUrl,
-                    'width' => (int)$data['size'],
-                    'height' => (int)$data['size'],
+                    'width' => $width,
+                    'height' => $height,
                     'has_timelapse' => $hasTimelapse,
                     'palette_id' => $data['palette_id'] ?? 'default'
                 ]

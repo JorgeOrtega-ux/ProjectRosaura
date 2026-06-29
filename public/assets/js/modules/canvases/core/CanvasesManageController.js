@@ -134,7 +134,7 @@ class CanvasesManageController {
             description: descInput ? descInput.value : '',
             privacy: (privacyText && privacyText.textContent.toLowerCase().includes(__('lbl_public').toLowerCase())) ? 'public' : 'private',
             requires_approval: (approvalText && approvalText.textContent.toLowerCase().includes(__('lbl_true').toLowerCase())),
-            size: sizeText ? sizeText.textContent.split('x')[0] : '64',
+            size: sizeText ? sizeText.textContent.trim() : '64x64',
             limit: limitVal ? parseInt(limitVal.textContent) : 10,
             palette_id: 'default', 
             cooldown_pixels_batch: cooldownBatchVal ? parseInt(cooldownBatchVal.textContent) : 5,

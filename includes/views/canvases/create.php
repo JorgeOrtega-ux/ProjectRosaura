@@ -27,14 +27,6 @@ $canCreateOfficial = in_array('access_admin_panel', $userPerms) || in_array('can
         </div>
     </div>
 
-    <div class="component-banner component-banner--warning disabled" data-ref="limit-reached-banner" style="margin: 0 16px 16px 16px; border-radius: 8px; background: rgba(255, 165, 0, 0.1); border: 1px solid rgba(255, 165, 0, 0.3); padding: 16px; display: none; align-items: center; gap: 12px;">
-        <span class="material-symbols-rounded" style="color: #FF8C00;">warning</span>
-        <div style="flex-grow: 1;">
-            <strong style="color: var(--text-primary);">Límite alcanzado</strong>
-            <p style="margin: 4px 0 0 0; color: var(--text-secondary); font-size: 13px;">Has alcanzado el límite de lienzos de tu plan actual. <a href="premium" data-nav="<?php echo APP_URL; ?>/premium" style="color: var(--action-primary); font-weight: bold;">Mejora tu plan para crear más</a>.</p>
-        </div>
-    </div>
-
     <div class="component-viewport">
         <div class="component-wrapper">
             <div class="component-bottom">
@@ -267,21 +259,46 @@ $canCreateOfficial = in_array('access_admin_panel', $userPerms) || in_array('can
                                     <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
                                         <div class="pill-container"><div class="drag-handle"></div></div>
                                         <div class="component-menu-list component-menu-list--scrollable">
-                                            <div class="component-menu-link active" data-action="selectValue" data-type="size" data-value="64" data-label="64x64" data-icon="crop_square">
+                                            <div class="component-menu-link active" data-action="selectValue" data-type="size" data-value="64x64" data-label="64x64" data-icon="crop_square">
                                                 <div class="component-menu-link-icon"><span class="material-symbols-rounded">crop_square</span></div>
                                                 <div class="component-menu-link-text"><span>64x64</span></div>
                                             </div>
-                                            <div class="component-menu-link" data-action="selectValue" data-type="size" data-value="128" data-label="128x128" data-icon="aspect_ratio">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">aspect_ratio</span></div>
+                                            <div class="component-menu-link" data-action="selectValue" data-type="size" data-value="128x128" data-label="128x128" data-icon="crop_square">
+                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">crop_square</span></div>
                                                 <div class="component-menu-link-text"><span>128x128</span></div>
                                             </div>
-                                            <div class="component-menu-link" data-action="selectValue" data-type="size" data-value="264" data-label="264x264" data-icon="grid_4x4">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">grid_4x4</span></div>
-                                                <div class="component-menu-link-text"><span>264x264</span></div>
+                                            <div class="component-menu-link" data-action="selectValue" data-type="size" data-value="256x256" data-label="256x256" data-icon="crop_square">
+                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">crop_square</span></div>
+                                                <div class="component-menu-link-text"><span>256x256</span></div>
                                             </div>
-                                            <div class="component-menu-link" data-action="selectValue" data-type="size" data-value="512" data-label="512x512" data-icon="grid_on">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">grid_on</span></div>
+                                            <div class="component-menu-link" data-action="selectValue" data-type="size" data-value="512x512" data-label="512x512" data-icon="crop_square">
+                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">crop_square</span></div>
                                                 <div class="component-menu-link-text"><span>512x512</span></div>
+                                            </div>
+                                            <div class="component-menu-link" data-action="selectValue" data-type="size" data-value="1024x1024" data-label="1024x1024" data-icon="crop_square">
+                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">crop_square</span></div>
+                                                <div class="component-menu-link-text"><span>1024x1024</span></div>
+                                            </div>
+                                            
+                                            <div class="component-menu-link" data-action="selectValue" data-type="size" data-value="128x64" data-label="128x64" data-icon="aspect_ratio">
+                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">aspect_ratio</span></div>
+                                                <div class="component-menu-link-text"><span>128x64</span></div>
+                                            </div>
+                                            <div class="component-menu-link" data-action="selectValue" data-type="size" data-value="256x128" data-label="256x128" data-icon="aspect_ratio">
+                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">aspect_ratio</span></div>
+                                                <div class="component-menu-link-text"><span>256x128</span></div>
+                                            </div>
+                                            <div class="component-menu-link" data-action="selectValue" data-type="size" data-value="512x256" data-label="512x256" data-icon="aspect_ratio">
+                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">aspect_ratio</span></div>
+                                                <div class="component-menu-link-text"><span>512x256</span></div>
+                                            </div>
+                                            <div class="component-menu-link" data-action="selectValue" data-type="size" data-value="1024x512" data-label="1024x512" data-icon="aspect_ratio">
+                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">aspect_ratio</span></div>
+                                                <div class="component-menu-link-text"><span>1024x512</span></div>
+                                            </div>
+                                            <div class="component-menu-link" data-action="selectValue" data-type="size" data-value="2048x1024" data-label="2048x1024" data-icon="aspect_ratio">
+                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">aspect_ratio</span></div>
+                                                <div class="component-menu-link-text"><span>2048x1024</span></div>
                                             </div>
                                         </div>
                                     </div>

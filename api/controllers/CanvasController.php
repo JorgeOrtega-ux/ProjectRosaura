@@ -237,7 +237,7 @@ class CanvasController extends BaseController {
             $description = $input['description'] ?? null;
             $privacy = $input['privacy'] ?? 'private';
             $requiresApproval = filter_var($input['requires_approval'] ?? false, FILTER_VALIDATE_BOOLEAN);
-            $size = $input['size'] ?? '64';
+            $size = $input['size'] ?? '64x64';
             $limit = $input['limit'] ?? 10;
             $paletteId = $input['palette_id'] ?? 'default';
             $cooldownBatch = $input['cooldown_pixels_batch'] ?? 5;
@@ -397,12 +397,13 @@ class CanvasController extends BaseController {
                 return $this->respond(['success' => false, 'message' => 'Faltan parámetros de redimensión.']);
             }
 
-            $validSizes = [64, 128, 264, 512];
-            if (!in_array((int)$newSize, $validSizes)) {
+            // Nueva validación con strings
+            $validSizes = ['64x64', '128x128', '256x256', '512x512', '1024x1024', '128x64', '256x128', '512x256', '1024x512', '2048x1024'];
+            if (!in_array($newSize, $validSizes)) {
                 return $this->respond(['success' => false, 'message' => 'Tamaño de lienzo inválido.']);
             }
 
-            $result = $this->canvasServices->resizeCanvas($userId, (int)$canvasId, (int)$newSize, $this->canManageOfficial());
+            $result = $this->canvasServices->resizeCanvas($userId, (int)$canvasId, $newSize, $this->canManageOfficial());
             return $this->respond($result);
 
         } catch (\Throwable $e) {
@@ -443,7 +444,7 @@ class CanvasController extends BaseController {
             $data = [
                 'is_active' => filter_var($input['is_active'] ?? false, FILTER_VALIDATE_BOOLEAN),
                 'next_resize_at' => $input['next_resize_at'] ?? null,
-                'target_size' => $input['target_size'] ?? '64',
+                'target_size' => $input['target_size'] ?? '64x64',
                 'timer_action' => $input['timer_action'] ?? 'restart'
             ];
             
