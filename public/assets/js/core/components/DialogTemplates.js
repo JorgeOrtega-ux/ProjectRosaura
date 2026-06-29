@@ -231,6 +231,41 @@ export const DialogTemplates = {
         `
     },
 
+    // --- NUEVOS DIÁLOGOS DE MODERACIÓN DE MIEMBROS ---
+    promptChangeRole: {
+        build: () => `
+            <div class="pill-container"><div class="drag-handle"></div></div>
+            <div class="component-modal-header">
+                <h2 class="component-modal-title">${__('title_change_role')}</h2>
+                <p class="component-modal-desc">${__('desc_change_role')}</p>
+            </div>
+            <div class="component-modal-body">
+                <div class="component-input-group">
+                    <select data-ref="modal_change_role" class="component-input-field">
+                        <option value="viewer">${__('role_viewer')}</option>
+                        <option value="editor">${__('role_editor')}</option>
+                        <option value="admin">${__('role_admin')}</option>
+                    </select>
+                    <label class="component-input-label">${__('lbl_select_role')}</label>
+                </div>
+            </div>
+            <div class="component-modal-actions">
+                <button class="component-button component-button--h45 hide-on-desktop" data-modal-action="cancel">${__('btn_cancel')}</button>
+                <button class="component-button component-button--h45 component-button--dark component-button--full" data-modal-action="confirm">${__('btn_save')}</button>
+            </div>
+        `
+    },
+
+    confirmRemoveMembers: {
+        build: (data) => DialogTemplates.confirmAction.build({
+            titleKey: 'title_remove_member',
+            descHtml: __('desc_remove_member').replace(':count', data.count || 1),
+            confirmClass: 'component-button--danger',
+            confirmKey: 'btn_remove'
+        })
+    },
+    // ------------------------------------------------
+
     confirmCreateCanvas: {
         build: () => DialogTemplates.confirmAction.build({
             titleKey: 'title_confirm_create_canvas',
@@ -340,7 +375,6 @@ export const DialogTemplates = {
         })
     },
 
-    // --- TEMPLATE AÑADIDO PARA LA ELIMINACIÓN DE LIENZOS ---
     verifyPasswordDeleteCanvases: {
         build: (data) => DialogTemplates.verifyPasswordDialog.build({
             titleKey: 'title_verify_delete_canvases',
