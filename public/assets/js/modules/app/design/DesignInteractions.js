@@ -1,4 +1,4 @@
-// public/assets/js/modules/app/DesignInteractions.js
+// public/assets/js/modules/app/design/DesignInteractions.js
 import { getPaletteById } from './utils/DesignPaletteUtils.js';
 import { showMessage } from '../../../core/utils/uiUtils.js';
 
@@ -35,39 +35,22 @@ export const DesignInteractions = {
         }
         
         this.requestRender();
-        this.emitLiveImageUpdate(); 
+        if (typeof this.emitLiveImageUpdate === 'function') {
+            this.emitLiveImageUpdate(); 
+        }
     },
 
     handleClick(e) {
-        const btnStartLive = e.target.closest('[data-action="startLiveShare"]');
-        if (btnStartLive) {
-            e.preventDefault();
-            this.startLiveShare();
-            return;
+        // 1. Delegar los eventos de modales (Live Share/Templates) al módulo correspondiente
+        if (typeof this.handleTemplateModals === 'function' && this.handleTemplateModals(e)) {
+            return; // Si handleTemplateModals devuelve 'true', capturó el evento.
         }
 
-        const btnStopLive = e.target.closest('[data-action="stopLiveShare"]');
-        if (btnStopLive) {
-            e.preventDefault();
-            this.stopLiveShare();
-            return;
-        }
-
-        const btnJoinLive = e.target.closest('[data-action="joinLiveShare"]');
-        if (btnJoinLive) {
-            e.preventDefault();
-            if (this.uiLiveJoinCode && this.uiLiveJoinCode.value.trim() !== '') {
-                this.joinLiveImageSession(this.uiLiveJoinCode.value.trim().toUpperCase());
-            } else {
-                showMessage(__('err_valid_code'), 'warning');
-            }
-            return;
-        }
-
+        // 2. Comportamiento general
         const btnPlayTimelapse = e.target.closest('[data-action="playTimelapse"]');
         if (btnPlayTimelapse) {
             e.preventDefault();
-            this.startTimelapse();
+            if (typeof this.startTimelapse === 'function') this.startTimelapse();
             return;
         }
 
@@ -76,7 +59,9 @@ export const DesignInteractions = {
 
         if (btnJoin || btnReqAccess) {
             e.preventDefault();
-            this.handleAccessRequest(btnJoin || btnReqAccess);
+            if (typeof this.handleAccessRequest === 'function') {
+                this.handleAccessRequest(btnJoin || btnReqAccess);
+            }
             return;
         }
 
@@ -84,11 +69,13 @@ export const DesignInteractions = {
         if (imgAdd) {
             e.preventDefault();
             if (this.isResetLocked || this.isResizeLocked) {
-                showMessage(__('err_canvas_locked'), 'warning');
+                showMessage(__('err_canvas_locked') || 'Lienzo bloqueado', 'warning');
                 return;
             }
             const url = imgAdd.getAttribute('data-url');
-            this.addTemplateFromLibrary(url);
+            if (typeof this.addTemplateFromLibrary === 'function') {
+                this.addTemplateFromLibrary(url);
+            }
             return;
         }
 
@@ -97,7 +84,9 @@ export const DesignInteractions = {
             e.preventDefault();
             e.stopPropagation(); 
             const id = btnDelServer.getAttribute('data-id');
-            this.deleteServerTemplate(id);
+            if (typeof this.deleteServerTemplate === 'function') {
+                this.deleteServerTemplate(id);
+            }
             return;
         }
 
@@ -114,10 +103,12 @@ export const DesignInteractions = {
         if (cardTemplate && !e.target.closest('.component-template-action-btn')) {
             const id = cardTemplate.getAttribute('data-id');
             if (this.liveShareStatus === 'spectator' && this.liveTemplateId === id) {
-                showMessage(__('info_template_live'), 'info');
+                showMessage(__('info_template_live') || 'Plantilla en vivo', 'info');
                 return;
             }
-            this.toggleTemplate(id);
+            if (typeof this.toggleTemplate === 'function') {
+                this.toggleTemplate(id);
+            }
             return;
         }
 
@@ -125,7 +116,9 @@ export const DesignInteractions = {
         if (btnLock) {
             e.preventDefault();
             e.stopPropagation();
-            this.toggleTemplateLock();
+            if (typeof this.toggleTemplateLock === 'function') {
+                this.toggleTemplateLock();
+            }
             return;
         }
 
@@ -133,7 +126,9 @@ export const DesignInteractions = {
         if (btnDelete) {
             e.preventDefault();
             e.stopPropagation();
-            this.deleteTemplate();
+            if (typeof this.deleteTemplate === 'function') {
+                this.deleteTemplate();
+            }
             return;
         }
 
@@ -193,7 +188,7 @@ export const DesignInteractions = {
         this.transform.y = mouseY - (mouseY - this.transform.y) * (newScale / this.transform.scale);
         this.transform.scale = newScale;
 
-        this.limitBounds();
+        if (typeof this.limitBounds === 'function') this.limitBounds();
         this.calculateHoverPixel(e.clientX, e.clientY);
         this.requestRender();
     },
@@ -211,10 +206,14 @@ export const DesignInteractions = {
 
         const exact = this.getExactBoardCoords(e.clientX, e.clientY);
         if (exact) {
-            const hit = this.checkTemplateHit(exact.x, exact.y);
+            let hit = null;
+            if (typeof this.checkTemplateHit === 'function') {
+                hit = this.checkTemplateHit(exact.x, exact.y);
+            }
+            
             if (hit) {
                 if (this.liveShareStatus === 'spectator' && this.liveTemplateId === this.activeTemplateId) {
-                    showMessage(__('err_only_owner_moves'), 'warning');
+                    showMessage(__('err_only_owner_moves') || 'Solo el creador puede moverla', 'warning');
                     return;
                 }
 
@@ -243,7 +242,7 @@ export const DesignInteractions = {
                 if (this.selectedPixels.size < Math.floor(this.cooldownBalance)) {
                     this.selectedPixels.add(key);
                 } else {
-                    showMessage(__('err_pixel_limit').replace(':limit', Math.floor(this.cooldownBalance)), 'warning');
+                    showMessage(__('err_pixel_limit')?.replace(':limit', Math.floor(this.cooldownBalance)) || 'Límite alcanzado', 'warning');
                 }
             }
             this.isSelecting = true;
@@ -262,7 +261,7 @@ export const DesignInteractions = {
             this.transform.y += dy;
             this.lastMouse = { x: e.clientX, y: e.clientY };
             
-            this.limitBounds();
+            if (typeof this.limitBounds === 'function') this.limitBounds();
             this.calculateHoverPixel(e.clientX, e.clientY);
             this.requestRender();
             return;
@@ -363,7 +362,9 @@ export const DesignInteractions = {
             const exact = this.getExactBoardCoords(e.clientX, e.clientY);
             let hit = null;
             if (exact && !this.isSpectator && !this.timelapseActive && !this.isResetLocked) {
-                hit = this.checkTemplateHit(exact.x, exact.y);
+                if (typeof this.checkTemplateHit === 'function') {
+                    hit = this.checkTemplateHit(exact.x, exact.y);
+                }
             }
             
             if (hit) {
@@ -407,7 +408,9 @@ export const DesignInteractions = {
             this.requestRender();
             
             if (this.liveShareStatus === 'owner' && this.activeTemplateId === this.liveTemplateId) {
-                this.emitLiveImageUpdate();
+                if (typeof this.emitLiveImageUpdate === 'function') {
+                    this.emitLiveImageUpdate();
+                }
             }
 
             return;
@@ -476,13 +479,13 @@ export const DesignInteractions = {
 
         if (this.selectedPixels.size > 0 && this.selectedPixels.size <= balance) {
             this.btnPlacePixels.classList.remove('disabled-interactive');
-            this.txtPlacePixels.textContent = __('btn_place_pixels');
+            this.txtPlacePixels.textContent = __('btn_place_pixels') || 'Colocar';
         } else {
             this.btnPlacePixels.classList.add('disabled-interactive');
             if (this.selectedPixels.size > balance) {
-                this.txtPlacePixels.textContent = __('lbl_max_pixels').replace(':max', balance);
+                this.txtPlacePixels.textContent = (__('lbl_max_pixels') || ':max máximo').replace(':max', balance);
             } else {
-                this.txtPlacePixels.textContent = __('btn_select_pixels');
+                this.txtPlacePixels.textContent = __('btn_select_pixels') || 'Seleccionar Pixeles';
             }
         }
     },
@@ -492,7 +495,7 @@ export const DesignInteractions = {
         
         const balance = Math.floor(this.cooldownBalance);
         if (this.selectedPixels.size > balance) {
-            showMessage(__('err_pixel_limit').replace(':limit', balance), 'warning');
+            showMessage(__('err_pixel_limit')?.replace(':limit', balance) || 'Límite', 'warning');
             return;
         }
 
@@ -531,13 +534,13 @@ export const DesignInteractions = {
         this.updateSelectionUI();
         this.requestRender();
         
-        showMessage(__('msg_pixels_placed'), 'success');
+        showMessage(__('msg_pixels_placed') || 'Pixeles colocados', 'success');
     },
 
     handleResize() {
         if (this.isResizeLocked) return;
-        this.updateCanvasDimensions();
-        this.limitBounds();
+        if (typeof this.updateCanvasDimensions === 'function') this.updateCanvasDimensions();
+        if (typeof this.limitBounds === 'function') this.limitBounds();
         this.requestRender();
     }
 };

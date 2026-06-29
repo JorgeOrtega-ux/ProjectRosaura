@@ -142,6 +142,15 @@ if (!empty($canvasUuid)) {
                 </div>
 
                 <div class="component-actions active" data-ref="design-tools-actions">
+                    <button class="component-button component-button--icon component-button--h40" data-action="openJoinLiveModal" data-tooltip="Unirse a sesión en vivo" data-position="bottom">
+                        <span class="material-symbols-rounded">sensors</span>
+                    </button>
+                    
+                    <div class="component-divider-vertical" data-ref="main-actions-divider"></div>
+
+                    <button class="component-button component-button--icon component-button--h40 disabled" data-action="openStartLiveModal" data-ref="btn-start-live" data-tooltip="Transmitir Plantilla en Vivo" data-position="bottom">
+                        <span class="material-symbols-rounded">podcast</span>
+                    </button>
                     <button class="component-button component-button--icon component-button--h40 disabled" data-action="toggleTemplateLock" data-ref="btn-template-lock" data-tooltip="Bloquear / Desbloquear Plantilla" data-position="bottom">
                         <span class="material-symbols-rounded">lock_open</span>
                     </button>
@@ -150,7 +159,7 @@ if (!empty($canvasUuid)) {
                     </button>
                     <div class="component-divider-vertical disabled" data-ref="template-actions-divider"></div>
                     
-                    <button class="component-button component-button--icon component-button--h40 component-color-indicator" data-ref="btn-color-palette" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-colors" data-tooltip="Paleta de colores" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40 component-color-indicator" data-ref="btn-color-palette" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-colors" data-tooltip="Paleta de colores" data-position="bottom" style="--active-color: #000000;">
                         <span class="material-symbols-rounded">palette</span>
                     </button>
                     <button class="component-button component-button--icon component-button--h40" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-templates" data-tooltip="Plantillas" data-position="bottom">

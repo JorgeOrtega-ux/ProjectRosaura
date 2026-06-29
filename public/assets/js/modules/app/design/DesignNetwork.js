@@ -1,4 +1,4 @@
-// public/assets/js/modules/app/DesignNetwork.js
+// public/assets/js/modules/app/design/DesignNetwork.js
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
 import { WebSocketManager } from '../../../core/api/WebSocketManager.js';
@@ -297,10 +297,10 @@ export const DesignNetwork = {
     async startLiveShare() {
         if (!this.activeTemplateId) {
             showMessage(__('err_select_template'), 'warning');
-            return;
+            return false;
         }
 
-        const btn = document.querySelector('[data-action="startLiveShare"]');
+        const btn = document.querySelector('[data-action="startLive"]');
         if (btn) setButtonLoading(btn);
 
         try {
@@ -317,7 +317,7 @@ export const DesignNetwork = {
                 opacity: tpl.opacity || 1
             }, this.abortController.signal);
             
-            if (response.aborted) return;
+            if (response.aborted) return false;
 
             if (response.success && response.data?.code) {
                 this.liveShareStatus = 'owner';
@@ -328,8 +328,6 @@ export const DesignNetwork = {
                     this.wsManager.send({ type: 'join_live_share', code: this.liveShareCode });
                 }
 
-                if (btn) btn.classList.add('disabled');
-                if (this.uiLiveControls) this.uiLiveControls.classList.remove('disabled');
                 if (this.uiLiveCode) this.uiLiveCode.textContent = this.liveShareCode;
                 
                 if (this.uiLiveInputX) this.uiLiveInputX.value = tpl.x;
@@ -337,18 +335,21 @@ export const DesignNetwork = {
                 if (this.uiLiveInputOpacity) this.uiLiveInputOpacity.value = tpl.opacity || 1;
 
                 showMessage(__('msg_broadcasting').replace(':code', this.liveShareCode), 'success');
+                return true;
             } else {
                 showMessage(__('err_live_code_gen'), 'error');
+                return false;
             }
         } catch (error) {
             showMessage(__('err_server_live_start'), 'error');
+            return false;
         } finally {
             if (btn) restoreButton(btn);
         }
     },
 
     stopLiveShare() {
-        if (this.liveShareStatus !== 'owner') return;
+        if (this.liveShareStatus !== 'owner') return false;
         
         if (this.wsManager && this.liveShareCode) {
             this.wsManager.send({ type: 'end_live_share', code: this.liveShareCode });
@@ -358,17 +359,14 @@ export const DesignNetwork = {
         this.liveShareCode = null;
         this.liveTemplateId = null;
 
-        const btn = document.querySelector('[data-action="startLiveShare"]');
-        if (btn) btn.classList.remove('disabled');
-        if (this.uiLiveControls) this.uiLiveControls.classList.add('disabled');
-
         showMessage(__('msg_broadcast_stopped'), 'info');
+        return true;
     },
 
     async joinLiveImageSession(code) {
-        if (!code) return;
+        if (!code) return false;
         
-        const btn = document.querySelector('[data-action="joinLiveShare"]');
+        const btn = document.querySelector('[data-action="submitJoinLive"]');
         if (btn) setButtonLoading(btn);
 
         try {
@@ -379,7 +377,7 @@ export const DesignNetwork = {
                 canvas_id: this.canvasIntId 
             }, this.abortController.signal);
             
-            if (response.aborted) return;
+            if (response.aborted) return false;
 
             if (response.success && response.data) {
                 this.liveShareStatus = 'spectator';
@@ -419,12 +417,15 @@ export const DesignNetwork = {
 
                 showMessage(__('msg_joined_broadcast').replace(':code', code), 'success');
                 this.requestRender();
+                return true;
 
             } else {
                 showMessage(response.message, 'error');
+                return false;
             }
         } catch (error) {
             showMessage(__('err_join_session'), 'error');
+            return false;
         } finally {
             if (btn) restoreButton(btn);
         }

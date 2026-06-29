@@ -231,7 +231,6 @@ export const DialogTemplates = {
         `
     },
 
-    // --- NUEVOS DIÁLOGOS DE MODERACIÓN DE MIEMBROS ---
     promptChangeRole: {
         build: () => `
             <div class="pill-container"><div class="drag-handle"></div></div>
@@ -264,7 +263,6 @@ export const DialogTemplates = {
             confirmKey: 'btn_remove'
         })
     },
-    // ------------------------------------------------
 
     confirmCreateCanvas: {
         build: () => DialogTemplates.confirmAction.build({
@@ -421,5 +419,79 @@ export const DialogTemplates = {
             descKey: 'msg_confirm_restore_password',
             confirmKey: 'btn_confirm_restore'
         })
+    },
+
+    // ==========================================
+    // DIÁLOGOS DE CANVASES (LIVE SHARE)
+    // ==========================================
+    joinLiveShare: {
+        build: () => `
+            <div class="pill-container"><div class="drag-handle"></div></div>
+            <div class="component-modal-header component-modal-header--with-icon">
+                <span class="material-symbols-rounded">sensors</span>
+                <div class="component-modal-header-text">
+                    <h3 class="component-modal-title">Unirse a sesión en vivo</h3>
+                </div>
+            </div>
+            <div class="component-modal-body">
+                <div class="component-form-box component-form-box--full" style="max-width: 100%;">
+                    <div class="component-input-group">
+                        <input type="text" data-ref="live-join-code-modal" class="component-input-field" placeholder="Ej. SHR-123" />
+                        <label class="component-input-label">Código de sesión</label>
+                    </div>
+                </div>
+            </div>
+            <div class="component-modal-actions">
+                <button class="component-button component-button--h45 hide-on-desktop" data-modal-action="cancel">Cancelar</button>
+                <button class="component-button component-button--dark component-button--h45 component-button--full" data-action="submitJoinLive">Unirse</button>
+            </div>
+        `
+    },
+
+    startLiveShare: {
+        build: (data) => `
+            <div class="pill-container"><div class="drag-handle"></div></div>
+            <div class="component-modal-header component-modal-header--with-icon">
+                <span class="material-symbols-rounded">podcast</span>
+                <div class="component-modal-header-text">
+                    <h3 class="component-modal-title">Transmitir Plantilla en Vivo</h3>
+                    <p class="component-modal-desc">Comparte tu plantilla con otros usuarios.</p>
+                </div>
+            </div>
+            <div class="component-modal-body" data-ref="live-share-modal-body">
+                <div class="live-share-owner-content">
+                    <div class="component-alert-success ${data.isActive ? 'active' : ''}" style="margin-bottom: 12px; display: ${data.isActive ? 'block' : 'none'};" data-ref="live-share-active-alert">
+                        Transmisión activa
+                    </div>
+                    
+                    <div class="live-share-code-display" data-ref="live-share-code">${data.code || '...'}</div>
+                    
+                    <div class="live-share-inputs-grid" style="margin-top: 12px;">
+                        <div class="live-share-input-group">
+                            <label class="live-share-label">Posición X</label>
+                            <div class="component-input-group component-input-group--h34">
+                                <input type="number" data-ref="live-input-x" value="${data.x || 0}" class="component-input-field component-input-field--simple">
+                            </div>
+                        </div>
+                        <div class="live-share-input-group">
+                            <label class="live-share-label">Posición Y</label>
+                            <div class="component-input-group component-input-group--h34">
+                                <input type="number" data-ref="live-input-y" value="${data.y || 0}" class="component-input-field component-input-field--simple">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="live-share-input-group" style="margin-top: 12px;">
+                        <label class="live-share-label live-share-label--flex">Opacidad <span data-ref="live-opacity-val">${Math.round((data.opacity || 1) * 100)}%</span></label>
+                        <input type="range" data-ref="live-input-opacity" min="0" max="1" step="0.05" value="${data.opacity || 1}" class="live-share-range">
+                    </div>
+                </div>
+            </div>
+            <div class="component-modal-actions" style="margin-top: 8px;">
+                <button class="component-button component-button--h45 hide-on-desktop" data-modal-action="cancel">Cerrar</button>
+                <button class="component-button component-button--danger component-button--h45 component-button--full" data-action="stopLive" style="display: ${data.isActive ? 'flex' : 'none'};">Detener</button>
+                <button class="component-button component-button--dark component-button--h45 component-button--full" data-action="startLive" style="display: ${data.isActive ? 'none' : 'flex'};">Iniciar</button>
+            </div>
+        `
     }
 };

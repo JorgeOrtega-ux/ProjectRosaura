@@ -107,41 +107,24 @@
     width: 100%;
 }
 
-.component-menu-top--gapped {
-    gap: 8px;
-}
-
-.component-viewport--padded {
-    padding-right: 4px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.component-empty-text--grid {
-    grid-column: 1 / -1;
-    text-align: center;
-    opacity: 0.5;
-    font-size: 0.8rem;
-    padding: 10px 0;
-}
-
-.component-divider--spaced {
-    border-color: var(--border-color); 
-    margin: 0; 
-}
-
 /* -----------------------------------------
-   PALETA DE COLORES EN CUADRÍCULA
+   GRILLAS GENÉRICAS PARA MENÚS
    ----------------------------------------- */
-.component-color-grid {
+.component-items-grid {
     display: grid;
     grid-template-columns: repeat(6, 1fr);
     gap: 8px; 
-    padding: 12px 4px;
     justify-items: center;
+    width: 100%;
 }
 
+.component-items-grid--5 {
+    grid-template-columns: repeat(5, 1fr);
+}
+
+/* -----------------------------------------
+   ELEMENTOS DE LA GRILLA
+   ----------------------------------------- */
 .component-color-btn {
     width: 100%; 
     aspect-ratio: 1 / 1;
@@ -163,16 +146,6 @@
 
 .component-color-btn:active {
     transform: scale(0.75); 
-}
-
-/* -----------------------------------------
-   GRILLA DE MI LIBRERÍA Y ESTADO ACTIVO
-   ----------------------------------------- */
-.component-library-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-    width: 100%;
 }
 
 .component-library-card {
@@ -220,25 +193,6 @@
 /* -----------------------------------------
    MODO EN VIVO (LIVE SHARE)
    ----------------------------------------- */
-.live-share-panel {
-    display: flex;
-    flex-direction: column;
-}
-
-.live-share-controls {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-top: 12px;
-    background-color: var(--bg-surface-alt);
-    padding: 12px;
-    border-radius: 8px;
-}
-
-.live-share-controls.disabled {
-    display: none !important;
-}
-
 .live-share-code-display {
     padding: 8px;
     background: rgba(0, 255, 128, 0.1);
@@ -276,37 +230,6 @@
 .live-share-range {
     width: 100%;
     margin: 4px 0;
-}
-
-.live-share-stop-btn {
-    margin-top: 8px;
-}
-
-.live-share-spectator {
-    margin-top: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.live-share-label--spectator {
-    font-size: 0.8rem;
-    opacity: 0.8;
-    display: block;
-}
-
-.live-share-join-input {
-    width: 100%;
-    border: none;
-    outline: none;
-    background: transparent;
-    font-size: 14px;
-    color: var(--text-primary);
-    text-transform: uppercase;
-}
-
-.live-share-join-btn {
-    margin-top: 8px;
 }
 
 /* -----------------------------------------
@@ -363,7 +286,7 @@
     left: 16px;
     display: flex;
     flex-direction: column;
-    align-items: flex-start; /* Evita que el contenedor estire el ancho al 100% de los elementos hijos */
+    align-items: flex-start;
     gap: 8px;
     z-index: 50;
     pointer-events: none;
@@ -375,7 +298,7 @@
     right: 16px;
     display: flex;
     flex-direction: column;
-    align-items: flex-end; /* Alinea los temporizadores de reinicio/expansión a la derecha natural */
+    align-items: flex-end;
     gap: 8px;
     z-index: 50;
     pointer-events: none;
@@ -391,10 +314,9 @@
     margin: 0;
     pointer-events: auto; 
     
-    /* Reglas para el contenido interno y ancho inteligente */
     display: flex; 
     align-items: center;
-    width: max-content; /* Protección extra: Solo mide el contenido interno (auto-width) */
+    width: max-content;
 }
 
 .icon-spin-slow {

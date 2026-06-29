@@ -4,11 +4,9 @@
 use App\Core\System\SubscriptionPlanConstants;
 
 // 1. Obtenemos el nivel desde la sesión asegurando que sea un número entero (int).
-// Añadimos un par de "fallbacks" por si la columna en la base de datos se llama distinto.
 $userTier = (int) ($_SESSION['subscription_tier'] ?? $_SESSION['tier'] ?? $_SESSION['user_tier'] ?? SubscriptionPlanConstants::TIER_BASIC);
 
 // 2. En lugar de hacer una validación manual (>=), usamos tu método oficial hasFeature.
-// Esto garantiza que si en un futuro cambias los permisos de 'live_templates', se refleje automáticamente.
 $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates');
 ?>
 <div class="component-module component-module--sidebar component-module--sidebar-responsive disabled" data-module="moduleDesignTools">
@@ -26,12 +24,13 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
         <div class="component-menu-section-parent">
             <div class="component-menu-top">
                 <div class="component-menu-header-box">
+                    <span class="material-symbols-rounded">color_lens</span>
                     <span class="component-menu-header-title">Colores predeterminados</span>
                 </div>
             </div>
             
             <div class="component-menu-bottom">
-               <div class="component-color-grid" data-ref="color-palette-grid">
+               <div class="component-items-grid" data-ref="color-palette-grid">
                     <div class="component-loader-center component-loader-center--compact">
                         <div class="component-empty-state-content">
                             <span class="material-symbols-rounded icon-spin-slow">palette</span><br>
@@ -48,87 +47,30 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
         
         <div class="component-menu-header">
             <div class="component-menu-header-box">
+                <span class="material-symbols-rounded">photo_library</span>
                 <span class="component-menu-header-title">Plantillas</span>
             </div>
         </div>
         
-        <div class="component-menu-top h-full-flex component-menu-top--gapped">
-            <div class="component-template-upload-section">
-                <input type="file" accept="image/jpeg, image/png, image/webp" class="hidden-input" data-ref="template-file-input">
-                <button class="component-button component-button--full component-button--dark component-button--h40" data-action="triggerTemplateUpload">
-                    <span class="material-symbols-rounded">cloud_upload</span>
-                    Subir a mi librería
-                </button>
+        <div class="component-menu-section-parent">
+            <div class="component-menu-top">
+                <div class="component-template-upload-section">
+                    <input type="file" accept="image/jpeg, image/png, image/webp" class="hidden-input" data-ref="template-file-input">
+                    <button class="component-button component-button--full component-button--dark component-button--h40" data-action="triggerTemplateUpload">
+                        <span class="material-symbols-rounded">cloud_upload</span>
+                        Subir a mi librería
+                    </button>
+                </div>
             </div>
 
-            <div class="component-viewport component-viewport--padded">
-                <div class="component-menu-header-box component-menu-header-box--section">
+            <div class="component-menu-bottom">
+                <div class="component-menu-header-box component-menu-header-box--section" style="margin-bottom: 8px;">
+                    <span class="material-symbols-rounded">collections_bookmark</span>
                     <span class="component-menu-header-title">Mi Librería</span>
                 </div>
                 
-                <div class="component-library-grid" data-ref="user-templates-grid">
+                <div class="component-items-grid component-items-grid--5" data-ref="user-templates-grid">
                 </div>
-
-                <?php if ($hasLiveSync): ?>
-                <hr class="component-divider component-divider--spaced">
-                
-                <div class="component-menu-header-box component-menu-header-box--section">
-                    <span class="component-menu-header-title">Modo En Vivo (Sync)</span>
-                </div>
-                
-                <div class="live-share-panel" data-ref="live-share-panel">
-                    
-                    <div class="live-share-owner">
-                        <button class="component-button component-button--full component-button--dark component-button--h40" data-action="startLiveShare">
-                            <span class="material-symbols-rounded">sensors</span> Compartir Activa
-                        </button>
-                        
-                        <div class="live-share-controls disabled" data-ref="live-controls">
-                            <div class="live-share-code-display" data-ref="live-share-code">...</div>
-                            
-                            <div class="live-share-inputs-grid">
-                                <div class="live-share-input-group">
-                                    <label class="live-share-label">Posición X</label>
-                                    <div class="component-input-group component-input-group--h34">
-                                        <input type="number" data-ref="live-input-x" class="component-input-field component-input-field--simple">
-                                    </div>
-                                </div>
-                                <div class="live-share-input-group">
-                                    <label class="live-share-label">Posición Y</label>
-                                    <div class="component-input-group component-input-group--h34">
-                                        <input type="number" data-ref="live-input-y" class="component-input-field component-input-field--simple">
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="live-share-input-group">
-                                <label class="live-share-label live-share-label--flex">Opacidad <span data-ref="live-opacity-val">100%</span></label>
-                                <input type="range" data-ref="live-input-opacity" min="0" max="1" step="0.05" value="1" class="live-share-range">
-                            </div>
-                            
-                            <button class="component-button component-button--full component-button--danger component-button--h40 live-share-stop-btn" data-action="stopLiveShare">
-                                Detener Transmisión
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="live-share-spectator">
-                        <label class="live-share-label live-share-label--spectator">Unirse a sesión (Código)</label>
-                        
-                        <div class="component-search component-search--full component-search--h36">
-                            <div class="component-search-icon">
-                                <span class="material-symbols-rounded">search</span>
-                            </div>
-                            <div class="component-search-input">
-                                <input type="text" data-ref="live-join-code" class="live-share-join-input" placeholder="Ej. SHR-123">
-                            </div>
-                        </div>
-
-                        <button class="component-button component-button--full component-button--dark component-button--h40 live-share-join-btn" data-action="joinLiveShare">Unirse</button>
-                    </div>
-
-                </div>
-                <?php endif; ?>
             </div>
         </div>
     </div>

@@ -1,4 +1,4 @@
-// public/assets/js/modules/app/DesignController.js
+// public/assets/js/modules/app/design/DesignController.js
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
 import { DesignSetup } from './DesignSetup.js';
@@ -82,12 +82,11 @@ class DesignController {
         this.liveShareStatus = 'none';
         this.liveShareCode = null;
         this.liveTemplateId = null;
-        this.uiLiveControls = null;
-        this.uiLiveCode = null;
+        
+        // Punteros a los inputs del Modal (se asignan cuando el modal se abre)
         this.uiLiveInputX = null;
         this.uiLiveInputY = null;
         this.uiLiveInputOpacity = null;
-        this.uiLiveJoinCode = null;
         
         this.handleLiveInputBound = this.handleLiveInput.bind(this);
         this.handleWheelBound = this.handleWheel.bind(this);
@@ -145,13 +144,6 @@ class DesignController {
         this.uiCooldownTimer = document.querySelector('[data-ref="cooldown-timer"]');
         this.uiCooldownBadge = document.querySelector('[data-ref="cooldown-badge"]');
 
-        this.uiLiveControls = document.querySelector('[data-ref="live-controls"]');
-        this.uiLiveCode = document.querySelector('[data-ref="live-share-code"]');
-        this.uiLiveInputX = document.querySelector('[data-ref="live-input-x"]');
-        this.uiLiveInputY = document.querySelector('[data-ref="live-input-y"]');
-        this.uiLiveInputOpacity = document.querySelector('[data-ref="live-input-opacity"]');
-        this.uiLiveJoinCode = document.querySelector('[data-ref="live-join-code"]');
-
         if (this.canvas) {
             this.ctx = this.canvas.getContext('2d', { alpha: false });
             this.canvas.classList.add('component-pixelated');
@@ -189,11 +181,11 @@ class DesignController {
             : 0;
 
         if (tier < 1) { 
-            const liveShareMenuBtn = document.querySelector('[data-menu-target="tool-liveshare-menu"]');
+            const liveShareMenuBtn = document.querySelector('[data-action="openStartLiveModal"]');
             if (liveShareMenuBtn) {
                 liveShareMenuBtn.classList.add('disabled-interactive');
                 liveShareMenuBtn.classList.add('component-opacity-half');
-                liveShareMenuBtn.setAttribute('data-tooltip', __('tooltip_pro_required'));
+                liveShareMenuBtn.setAttribute('data-tooltip', __('tooltip_pro_required') || 'Requiere plan PRO');
                 if (!liveShareMenuBtn.querySelector('.icon-lock')) {
                     const lock = document.createElement('span');
                     lock.className = 'material-symbols-rounded icon-lock component-lock-icon-premium';

@@ -1,8 +1,166 @@
-// public/assets/js/modules/app/DesignTemplates.js
+// public/assets/js/modules/app/design/templates/DesignTemplates.js
 import { ApiRoutes } from '../../../../core/api/ApiRoutes.js';
 import { showMessage } from '../../../../core/utils/uiUtils.js';
 
 export const DesignTemplates = {
+    
+    // ==========================================
+    // CONTROL DE MODALES VÍA DIALOGSYSTEM
+    // ==========================================
+    handleTemplateModals(e) {
+        
+        // 1. Abrir Modal de Unirse
+        const btnOpenJoinLive = e.target.closest('[data-action="openJoinLiveModal"]');
+        if (btnOpenJoinLive) {
+            e.preventDefault();
+            if (window.dialogSystem) {
+                window.dialogSystem.show('joinLiveShare');
+            }
+            return true;
+        }
+
+        // 2. Abrir Modal de Transmitir
+        const btnOpenStartLive = e.target.closest('[data-action="openStartLiveModal"]');
+        if (btnOpenStartLive) {
+            e.preventDefault();
+            if (window.dialogSystem && this.activeTemplateId) {
+                const tpl = this.templates.find(t => t.id === this.activeTemplateId);
+                const data = {
+                    isActive: this.liveShareStatus === 'owner',
+                    code: this.liveShareCode || '...',
+                    x: tpl.x,
+                    y: tpl.y,
+                    opacity: tpl.opacity
+                };
+                
+                window.dialogSystem.show('startLiveShare', data).then(res => {
+                    // Limpieza de eventos SOLO cuando el modal se cierra por completo (botón Cerrar / Fondo / Escape)
+                    if (this.uiLiveInputX) this.uiLiveInputX.removeEventListener('change', this.handleLiveInputBound);
+                    if (this.uiLiveInputY) this.uiLiveInputY.removeEventListener('change', this.handleLiveInputBound);
+                    if (this.uiLiveInputOpacity) this.uiLiveInputOpacity.removeEventListener('input', this.handleLiveInputBound);
+                    this.uiLiveInputX = null;
+                    this.uiLiveInputY = null;
+                    this.uiLiveInputOpacity = null;
+                });
+
+                // Attach de listeners a los nuevos inputs creados por DialogSystem
+                setTimeout(() => {
+                    this.uiLiveInputX = document.querySelector('[data-ref="live-input-x"]');
+                    this.uiLiveInputY = document.querySelector('[data-ref="live-input-y"]');
+                    this.uiLiveInputOpacity = document.querySelector('[data-ref="live-input-opacity"]');
+                    
+                    if (this.uiLiveInputX) this.uiLiveInputX.addEventListener('change', this.handleLiveInputBound);
+                    if (this.uiLiveInputY) this.uiLiveInputY.addEventListener('change', this.handleLiveInputBound);
+                    if (this.uiLiveInputOpacity) this.uiLiveInputOpacity.addEventListener('input', this.handleLiveInputBound);
+                }, 100);
+            }
+            return true;
+        }
+
+        // 3. Procesar clic en el Botón "Unirse" sin que el Modal se cierre automáticamente
+        const btnSubmitJoinLive = e.target.closest('[data-action="submitJoinLive"]');
+        if (btnSubmitJoinLive) {
+            e.preventDefault();
+            const input = document.querySelector('[data-ref="live-join-code-modal"]');
+            
+            if (input && input.value.trim() !== '') {
+                const code = input.value.trim().toUpperCase();
+                
+                // Mostrar estado de carga en el botón
+                const originalText = btnSubmitJoinLive.innerHTML;
+                btnSubmitJoinLive.innerHTML = '<span class="component-spinner component-spinner--small" style="width:16px;height:16px;border-width:2px;margin-right:8px;"></span> Uniendo...';
+                btnSubmitJoinLive.classList.add('disabled-interactive');
+                
+                const attemptJoin = async () => {
+                    try {
+                        let success = false;
+                        if (typeof this.joinLiveImageSession === 'function') {
+                            success = await this.joinLiveImageSession(code);
+                        }
+                        
+                        if (success) {
+                            // Cierra el modal solo si logró unirse exitosamente
+                            if (window.dialogSystem) window.dialogSystem.closeCurrent(true);
+                        } else {
+                            // Falló, restaura el botón y deja el modal abierto
+                            btnSubmitJoinLive.innerHTML = originalText;
+                            btnSubmitJoinLive.classList.remove('disabled-interactive');
+                        }
+                    } catch (error) {
+                        showMessage(error.message || 'Error al unirse', 'error');
+                        btnSubmitJoinLive.innerHTML = originalText;
+                        btnSubmitJoinLive.classList.remove('disabled-interactive');
+                    }
+                };
+                
+                attemptJoin();
+                
+            } else {
+                showMessage(__('err_valid_code') || 'Código inválido', 'warning');
+            }
+            return true;
+        }
+
+        // 4. Iniciar Transmisión desde dentro del Modal
+        const btnStartLive = e.target.closest('[data-action="startLive"]');
+        if (btnStartLive) {
+            e.preventDefault();
+            if (typeof this.startLiveShare === 'function') {
+                const originalText = btnStartLive.innerHTML;
+                btnStartLive.innerHTML = '<span class="component-spinner component-spinner--small" style="width:16px;height:16px;border-width:2px;margin-right:8px;"></span> Iniciando...';
+                btnStartLive.classList.add('disabled-interactive');
+
+                const attemptStart = async () => {
+                    const success = await this.startLiveShare();
+                    
+                    if (success) {
+                        const alert = document.querySelector('[data-ref="live-share-active-alert"]');
+                        const codeDisplay = document.querySelector('[data-ref="live-share-code"]');
+                        const btnStop = document.querySelector('[data-action="stopLive"]');
+                        
+                        if (alert) { alert.style.display = 'block'; alert.classList.add('active'); }
+                        if (codeDisplay) codeDisplay.textContent = this.liveShareCode;
+                        
+                        btnStartLive.style.display = 'none';
+                        if (btnStop) btnStop.style.display = 'flex';
+                    }
+                    
+                    btnStartLive.innerHTML = originalText;
+                    btnStartLive.classList.remove('disabled-interactive');
+                };
+                
+                attemptStart();
+            }
+            return true;
+        }
+
+        // 5. Detener Transmisión desde dentro del Modal
+        const btnStopLive = e.target.closest('[data-action="stopLive"]');
+        if (btnStopLive) {
+            e.preventDefault();
+            if (typeof this.stopLiveShare === 'function') {
+                this.stopLiveShare();
+                
+                // Actualizar la interfaz del modal sin cerrarlo
+                const alert = document.querySelector('[data-ref="live-share-active-alert"]');
+                const codeDisplay = document.querySelector('[data-ref="live-share-code"]');
+                const btnStart = document.querySelector('[data-action="startLive"]');
+                
+                if (alert) { alert.style.display = 'none'; alert.classList.remove('active'); }
+                if (codeDisplay) codeDisplay.textContent = '...';
+                
+                btnStopLive.style.display = 'none';
+                if (btnStart) btnStart.style.display = 'flex';
+            }
+            return true;
+        }
+
+        return false;
+    },
+
+    // ==========================================
+    // LÓGICA DE PLANTILLAS Y LIBRERÍA
+    // ==========================================
     async loadUserLibrary() {
         if (this.isSpectator || this.isSnapshotMode) return;
         try {
@@ -22,7 +180,7 @@ export const DesignTemplates = {
 
         container.innerHTML = '';
         if (templates.length === 0) {
-            container.innerHTML = `<p class="component-empty-text component-empty-text--grid">${__('txt_no_templates')}</p>`;
+            container.innerHTML = `<p class="component-empty-text component-empty-text--grid">${__('txt_no_templates') || 'No hay plantillas'}</p>`;
             this.updateTemplateUI();
             return;
         }
@@ -33,7 +191,7 @@ export const DesignTemplates = {
             
             const img = document.createElement('img');
             img.src = tpl.file_path;
-            img.alt = __('alt_saved_template');
+            img.alt = __('alt_saved_template') || 'Plantilla';
             img.className = 'component-library-card__image';
             
             img.setAttribute('data-action', 'addTemplateToCanvas');
@@ -61,7 +219,7 @@ export const DesignTemplates = {
         const btnUpload = document.querySelector('[data-action="triggerTemplateUpload"]');
         if (btnUpload) {
             btnUpload.classList.add('disabled-interactive');
-            btnUpload.innerHTML = `<span class="material-symbols-rounded icon-spin-slow">autorenew</span> ${__('btn_uploading')}`;
+            btnUpload.innerHTML = `<span class="material-symbols-rounded icon-spin-slow">autorenew</span> Subiendo...`;
         }
 
         const formData = new FormData();
@@ -72,18 +230,18 @@ export const DesignTemplates = {
             if (response.aborted) return;
 
             if (response.success) {
-                showMessage(__('msg_template_uploaded'), 'success');
+                showMessage(__('msg_template_uploaded') || 'Plantilla subida', 'success');
                 await this.loadUserLibrary();
             } else {
                 showMessage(response.message, 'error');
             }
         } catch (error) {
-            showMessage(__('err_network_upload'), 'error');
+            showMessage(__('err_network_upload') || 'Error de red', 'error');
         } finally {
             this.fileInput.value = '';
             if (btnUpload) {
                 btnUpload.classList.remove('disabled-interactive');
-                btnUpload.innerHTML = `<span class="material-symbols-rounded">cloud_upload</span> ${__('btn_upload_library')}`;
+                btnUpload.innerHTML = `<span class="material-symbols-rounded">cloud_upload</span> Subir a mi librería`;
             }
         }
     },
@@ -117,10 +275,10 @@ export const DesignTemplates = {
             });
 
             this.toggleTemplate(id); 
-            showMessage(__('msg_template_added'), 'success');
+            showMessage(__('msg_template_added') || 'Plantilla agregada', 'success');
         };
         img.onerror = () => {
-            showMessage(__('err_download_library_image'), 'error');
+            showMessage(__('err_download_library_image') || 'Error al descargar imagen', 'error');
         };
         img.src = url;
     },
@@ -141,7 +299,7 @@ export const DesignTemplates = {
                 if (btn) btn.classList.remove('disabled-interactive');
             }
         } catch (error) {
-            showMessage(__('err_connection'), 'error');
+            showMessage(__('err_connection') || 'Error de conexión', 'error');
             if (btn) btn.classList.remove('disabled-interactive');
         }
     },
@@ -159,13 +317,15 @@ export const DesignTemplates = {
 
         const btnLock = document.querySelector('[data-ref="btn-template-lock"]');
         const btnDel = document.querySelector('[data-ref="btn-template-delete"]');
+        const btnLive = document.querySelector('[data-ref="btn-start-live"]');
         const divider = document.querySelector('[data-ref="template-actions-divider"]');
 
         if (this.activeTemplateId) {
             const tpl = this.templates.find(t => t.id === this.activeTemplateId);
-            if (btnLock && btnDel && divider && tpl) {
+            if (btnLock && btnDel && divider && btnLive && tpl) {
                 btnLock.classList.remove('disabled');
                 btnDel.classList.remove('disabled');
+                btnLive.classList.remove('disabled');
                 divider.classList.remove('disabled');
                 
                 const iconLock = btnLock.querySelector('.material-symbols-rounded');
@@ -176,6 +336,7 @@ export const DesignTemplates = {
         } else {
             if (btnLock) btnLock.classList.add('disabled');
             if (btnDel) btnDel.classList.add('disabled');
+            if (btnLive) btnLive.classList.add('disabled');
             if (divider) divider.classList.add('disabled');
         }
     },
