@@ -1,6 +1,7 @@
 <?php 
 // includes/views/canvases/create.php 
 use \App\Core\System\SubscriptionPlanConstants;
+use \App\Core\Helpers\Utils;
 
 $activeAccountId = $_SESSION['active_account'] ?? null;
 $linkedAccounts = $_SESSION['accounts'] ?? [];
@@ -13,6 +14,12 @@ $maxMembers = $planLimits['max_members_per_canvas'] === -1 ? 50000 : $planLimits
 
 $userPerms = $_SESSION['user_permissions'] ?? [];
 $canCreateOfficial = in_array('access_admin_panel', $userPerms) || in_array('canvases.create_official', $userPerms);
+
+// Cargar la lista oficial de tamaños desde el SSOT
+$canvasSizesList = Utils::getCanvasSizes();
+$defaultSizeKey = '64x64';
+$defaultSizeData = $canvasSizesList[$defaultSizeKey] ?? reset($canvasSizesList);
+$defaultSizeKey = $defaultSizeData ? key($canvasSizesList) : '64x64';
 ?>
 <div class="view-content" data-ref="canvas-create-wrapper">
     
@@ -251,55 +258,20 @@ $canCreateOfficial = in_array('access_admin_panel', $userPerms) || in_array('can
                         <div class="component-card__actions component-card__actions--start">
                             <div class="component-dropdown-wrapper">
                                 <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="dropdownSize">
-                                    <span class="material-symbols-rounded">crop_square</span>
-                                    <span class="component-dropdown-text" data-ref="text-size">64x64</span>
+                                    <span class="material-symbols-rounded"><?php echo htmlspecialchars($defaultSizeData['icon']); ?></span>
+                                    <span class="component-dropdown-text" data-ref="text-size"><?php echo htmlspecialchars($defaultSizeData['label']); ?></span>
                                     <span class="material-symbols-rounded">expand_more</span>
                                 </div>
                                 <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="dropdownSize">
                                     <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
                                         <div class="pill-container"><div class="drag-handle"></div></div>
                                         <div class="component-menu-list component-menu-list--scrollable">
-                                            <div class="component-menu-link active" data-action="selectValue" data-type="size" data-value="64x64" data-label="64x64" data-icon="crop_square">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">crop_square</span></div>
-                                                <div class="component-menu-link-text"><span>64x64</span></div>
+                                            <?php foreach ($canvasSizesList as $val => $data): ?>
+                                            <div class="component-menu-link <?php echo ($val === $defaultSizeKey) ? 'active' : ''; ?>" data-action="selectValue" data-type="size" data-value="<?php echo htmlspecialchars($val); ?>" data-label="<?php echo htmlspecialchars($data['label']); ?>" data-icon="<?php echo htmlspecialchars($data['icon']); ?>">
+                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded"><?php echo htmlspecialchars($data['icon']); ?></span></div>
+                                                <div class="component-menu-link-text"><span><?php echo htmlspecialchars($data['label']); ?></span></div>
                                             </div>
-                                            <div class="component-menu-link" data-action="selectValue" data-type="size" data-value="128x128" data-label="128x128" data-icon="crop_square">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">crop_square</span></div>
-                                                <div class="component-menu-link-text"><span>128x128</span></div>
-                                            </div>
-                                            <div class="component-menu-link" data-action="selectValue" data-type="size" data-value="256x256" data-label="256x256" data-icon="crop_square">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">crop_square</span></div>
-                                                <div class="component-menu-link-text"><span>256x256</span></div>
-                                            </div>
-                                            <div class="component-menu-link" data-action="selectValue" data-type="size" data-value="512x512" data-label="512x512" data-icon="crop_square">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">crop_square</span></div>
-                                                <div class="component-menu-link-text"><span>512x512</span></div>
-                                            </div>
-                                            <div class="component-menu-link" data-action="selectValue" data-type="size" data-value="1024x1024" data-label="1024x1024" data-icon="crop_square">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">crop_square</span></div>
-                                                <div class="component-menu-link-text"><span>1024x1024</span></div>
-                                            </div>
-                                            
-                                            <div class="component-menu-link" data-action="selectValue" data-type="size" data-value="128x64" data-label="128x64" data-icon="aspect_ratio">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">aspect_ratio</span></div>
-                                                <div class="component-menu-link-text"><span>128x64</span></div>
-                                            </div>
-                                            <div class="component-menu-link" data-action="selectValue" data-type="size" data-value="256x128" data-label="256x128" data-icon="aspect_ratio">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">aspect_ratio</span></div>
-                                                <div class="component-menu-link-text"><span>256x128</span></div>
-                                            </div>
-                                            <div class="component-menu-link" data-action="selectValue" data-type="size" data-value="512x256" data-label="512x256" data-icon="aspect_ratio">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">aspect_ratio</span></div>
-                                                <div class="component-menu-link-text"><span>512x256</span></div>
-                                            </div>
-                                            <div class="component-menu-link" data-action="selectValue" data-type="size" data-value="1024x512" data-label="1024x512" data-icon="aspect_ratio">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">aspect_ratio</span></div>
-                                                <div class="component-menu-link-text"><span>1024x512</span></div>
-                                            </div>
-                                            <div class="component-menu-link" data-action="selectValue" data-type="size" data-value="2048x1024" data-label="2048x1024" data-icon="aspect_ratio">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">aspect_ratio</span></div>
-                                                <div class="component-menu-link-text"><span>2048x1024</span></div>
-                                            </div>
+                                            <?php endforeach; ?>
                                         </div>
                                     </div>
                                 </div>

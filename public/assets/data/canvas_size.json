@@ -1,0 +1,16 @@
+{
+    "16x16": { "label": "16x16", "icon": "crop_square" },
+    "32x32": { "label": "32x32", "icon": "crop_square" },
+    "64x64": { "label": "64x64", "icon": "crop_square" },
+    "128x128": { "label": "128x128", "icon": "aspect_ratio" },
+    "256x256": { "label": "256x256", "icon": "grid_4x4" },
+    "512x512": { "label": "512x512", "icon": "grid_on" },
+    "1024x1024": { "label": "1024x1024", "icon": "grid_on" },
+    "2048x2048": { "label": "2048x2048", "icon": "grid_on" },
+    "4096x4096": { "label": "4096x4096", "icon": "grid_on" },
+    "128x64": { "label": "128x64", "icon": "aspect_ratio" },
+    "256x128": { "label": "256x128", "icon": "aspect_ratio" },
+    "512x256": { "label": "512x256", "icon": "aspect_ratio" },
+    "1024x512": { "label": "1024x512", "icon": "aspect_ratio" },
+    "2048x1024": { "label": "2048x1024", "icon": "aspect_ratio" }
+}

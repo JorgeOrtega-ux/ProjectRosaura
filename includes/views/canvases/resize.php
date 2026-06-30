@@ -3,6 +3,7 @@
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 use App\Config\DatabaseManager;
+use App\Core\Helpers\Utils;
 use PDO;
 
 $userId = $_SESSION['active_account_id'] ?? $_SESSION['user_id'] ?? null;
@@ -47,30 +48,22 @@ if (!$canvas) {
     return;
 }
 
-$currentSizeRaw = $canvas['size'];
-$isCustomFormat = strpos((string)$currentSizeRaw, 'x') !== false;
-$displaySize = $isCustomFormat ? $currentSizeRaw : $currentSizeRaw . 'x' . $currentSizeRaw;
+// Lógica basada en el Single Source of Truth
+$sizesList = Utils::getCanvasSizes();
+$currentSizeRaw = (string)$canvas['size'];
 
-$icon = 'crop_square';
-if (intval($currentSizeRaw) == 128) $icon = 'aspect_ratio';
-if (intval($currentSizeRaw) == 256 || intval($currentSizeRaw) == 264) $icon = 'grid_4x4';
-if (intval($currentSizeRaw) >= 512) $icon = 'grid_on';
-
-$sizesList = [
-    "16"   => ['label' => '16x16',     'icon' => 'crop_square'],
-    "32"   => ['label' => '32x32',     'icon' => 'crop_square'],
-    "64"   => ['label' => '64x64',     'icon' => 'crop_square'],
-    "128"  => ['label' => '128x128',   'icon' => 'aspect_ratio'],
-    "256"  => ['label' => '256x256',   'icon' => 'grid_4x4'],
-    "512"  => ['label' => '512x512',   'icon' => 'grid_on'],
-    "1024" => ['label' => '1024x1024', 'icon' => 'grid_on'],
-    "2048" => ['label' => '2048x2048', 'icon' => 'grid_on'],
-    "4096" => ['label' => '4096x4096', 'icon' => 'grid_on']
-];
-
-if (!isset($sizesList[(string)$currentSizeRaw])) {
-    $sizesList[(string)$currentSizeRaw] = ['label' => $displaySize, 'icon' => $icon];
+// Si por alguna razón la DB tiene un tamaño que ya no existe (Legacy o "16" en lugar de "16x16")
+// lo mapeamos dinámicamente o lo incluimos como opción fallback
+if (!str_contains($currentSizeRaw, 'x') && is_numeric($currentSizeRaw)) {
+    $currentSizeRaw = $currentSizeRaw . 'x' . $currentSizeRaw;
 }
+
+if (!isset($sizesList[$currentSizeRaw])) {
+    $sizesList[$currentSizeRaw] = ['label' => $currentSizeRaw, 'icon' => 'crop_square'];
+}
+
+$displaySize = $sizesList[$currentSizeRaw]['label'];
+$icon = $sizesList[$currentSizeRaw]['icon'];
 
 $appUrl = defined('APP_URL') ? APP_URL : '';
 ?>
@@ -140,7 +133,7 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                                         <div class="pill-container"><div class="drag-handle"></div></div>
                                         <div class="component-menu-list component-menu-list--scrollable">
                                             <?php foreach ($sizesList as $val => $data): ?>
-                                            <div class="component-menu-link <?php echo (string)$currentSizeRaw === (string)$val ? 'active' : ''; ?>" 
+                                            <div class="component-menu-link <?php echo $currentSizeRaw === (string)$val ? 'active' : ''; ?>" 
                                                  data-action="selectValue" 
                                                  data-type="size" 
                                                  data-value="<?php echo htmlspecialchars($val); ?>" 

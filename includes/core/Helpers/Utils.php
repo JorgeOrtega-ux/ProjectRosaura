@@ -3,6 +3,32 @@ namespace App\Core\Helpers;
 use App\Core\Interfaces\SessionManagerInterface;
 
 class Utils {
+    
+    // Propiedad estática para el caché en memoria de los tamaños de lienzo
+    private static $canvasSizes = null;
+
+    public static function getCanvasSizes(): array {
+        if (self::$canvasSizes !== null) {
+            return self::$canvasSizes;
+        }
+
+        $path = dirname(__DIR__, 3) . '/public/assets/data/canvas_sizes.json';
+        if (file_exists($path)) {
+            $json = file_get_contents($path);
+            $data = json_decode($json, true);
+            if (is_array($data)) {
+                self::$canvasSizes = $data;
+                return self::$canvasSizes;
+            }
+        }
+        
+        // Fallback de emergencia si el archivo falla o no se encuentra
+        self::$canvasSizes = [
+            '64x64' => ['label' => '64x64', 'icon' => 'crop_square']
+        ];
+        return self::$canvasSizes;
+    }
+
     public static function generateUUID() {
         $data = random_bytes(16);
         $data[6] = chr(ord($data[6]) & 0x0f | 0x40);

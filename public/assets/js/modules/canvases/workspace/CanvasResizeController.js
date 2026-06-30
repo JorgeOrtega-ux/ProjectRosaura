@@ -285,16 +285,15 @@ class CanvasResizeController {
         let newSize;
         
         if (activeLink) {
+            // Obtenemos el valor crudo en String (Ej: "256x128" o "64x64")
             newSize = activeLink.getAttribute('data-value');
-            if (/^\d+$/.test(newSize)) newSize = parseInt(newSize);
         } else {
             const textRef = this.wrapper.querySelector('[data-ref="text-size-resize"]');
             if (!textRef) return;
-            newSize = textRef.textContent.includes('x') ? textRef.textContent.split('x')[0] : textRef.textContent;
-            newSize = parseInt(newSize);
+            newSize = textRef.textContent.trim();
         }
 
-        if (newSize.toString() === this.currentSize.toString()) {
+        if (newSize === this.currentSize) {
             showMessage(__('err_size_already_applied'), "info");
             return;
         }
@@ -325,14 +324,14 @@ class CanvasResizeController {
         const isActive = toggle ? toggle.checked : false;
 
         const activeLink = this.wrapper.querySelector('.component-menu-link[data-type="size"].active');
-        let targetSize = 64;
+        let targetSize = "64x64";
         
         if (activeLink) {
             targetSize = activeLink.getAttribute('data-value');
         } else {
             const textRef = this.wrapper.querySelector('[data-ref="text-size-resize"]');
             if (textRef) {
-                targetSize = textRef.textContent.includes('x') ? textRef.textContent.split('x')[0] : textRef.textContent;
+                targetSize = textRef.textContent.trim();
             }
         }
 
@@ -363,7 +362,7 @@ class CanvasResizeController {
             id: this.canvasId,
             is_active: isActive,
             next_resize_at: nextResizeAt,
-            target_size: targetSize.toString(),
+            target_size: targetSize, // Se envía limpio en String respetando el SSOT
             timer_action: timerAction
         };
 

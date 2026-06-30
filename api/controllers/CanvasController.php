@@ -222,7 +222,7 @@ class CanvasController extends BaseController {
         }
     }
 
-    public function create($input) {
+   public function create($input) {
         try {
             if (!$this->session->isLoggedIn()) {
                 return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
@@ -238,6 +238,13 @@ class CanvasController extends BaseController {
             $privacy = $input['privacy'] ?? 'private';
             $requiresApproval = filter_var($input['requires_approval'] ?? false, FILTER_VALIDATE_BOOLEAN);
             $size = $input['size'] ?? '64x64';
+            
+            // NUEVA VALIDACIÓN: Prevenir inyección de tamaños no oficiales
+            $validSizes = array_keys(\App\Core\Helpers\Utils::getCanvasSizes());
+            if (!in_array($size, $validSizes)) {
+                $size = '64x64'; // Fallback de seguridad
+            }
+
             $limit = $input['limit'] ?? 10;
             $paletteId = $input['palette_id'] ?? 'default';
             $cooldownBatch = $input['cooldown_pixels_batch'] ?? 5;
@@ -383,7 +390,7 @@ class CanvasController extends BaseController {
     // ==========================================
     // EXPANSIÓN EN VIVO DEL LIENZO Y PROGRAMACIÓN
     // ==========================================
-    public function resize($input) {
+ public function resize($input) {
         try {
             if (!$this->session->isLoggedIn()) {
                 return $this->respond(['success' => false, 'message' => __('err_unauthorized') ?? 'No autorizado.', 'http_code' => 401]);
@@ -397,8 +404,8 @@ class CanvasController extends BaseController {
                 return $this->respond(['success' => false, 'message' => 'Faltan parámetros de redimensión.']);
             }
 
-            // Nueva validación con strings
-            $validSizes = ['64x64', '128x128', '256x256', '512x512', '1024x1024', '128x64', '256x128', '512x256', '1024x512', '2048x1024'];
+            // NUEVA VALIDACIÓN: Usando el Single Source of Truth
+            $validSizes = array_keys(\App\Core\Helpers\Utils::getCanvasSizes());
             if (!in_array($newSize, $validSizes)) {
                 return $this->respond(['success' => false, 'message' => 'Tamaño de lienzo inválido.']);
             }

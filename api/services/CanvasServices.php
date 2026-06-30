@@ -525,7 +525,7 @@ class CanvasServices {
         }
     }
 
-   public function updateResizeSettings(int $userId, int $canvasId, array $data, bool $canManageOfficial = false): array {
+  public function updateResizeSettings(int $userId, int $canvasId, array $data, bool $canManageOfficial = false): array {
         try {
             $canvas = $this->canvasRepository->getById($canvasId);
             $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
@@ -537,7 +537,8 @@ class CanvasServices {
             $isActive = filter_var($data['is_active'] ?? false, FILTER_VALIDATE_BOOLEAN);
             $nextResizeAt = null;
             
-            $validSizes = ['64x64', '128x128', '256x256', '512x512', '1024x1024', '128x64', '256x128', '512x256', '1024x512', '2048x1024'];
+            // NUEVA VALIDACIÓN: Usando el Single Source of Truth
+            $validSizes = array_keys(\App\Core\Helpers\Utils::getCanvasSizes());
             $targetSize = in_array($data['target_size'] ?? '64x64', $validSizes) ? $data['target_size'] : '64x64';
             
             if ($isActive) {
