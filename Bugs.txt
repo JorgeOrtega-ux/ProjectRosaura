@@ -1,0 +1,18 @@
+1-En edit.php falla al cargar la paleta de colores   (resuelto)
+2-En resize falla ya que no carga la nueva lista de tamaños disponibles
+3-falta agregar fallback de imagen en las cards de lienzos
+4-eliminar el tag de el nivel se suscripcion del header
+5-Crear la seccion de /join
+6-crear expandibles en seccion de create / join
+7-en el modulo de create/edit de paleta de colores el ultimo no es uncolor ademas de que es ancho, no es circulo
+8-resolver en conjunto a problema 7 que en ese modulo solo se muestran los primeros 5 colores por ende todos se ven negros/grises
+9-remplazar el btn de crear lienzo por uno con texto
+10-en la seccion de manage canvases eliminar el btn de <button class="component-button component-button--icon component-button--h40" data-action="deselectCanvas" data-tooltip="tooltip_cancel_selection" data-position="bottom">
+                        <span class="material-symbols-rounded">close</span>
+                    </button>
+11-que la seccion de http://localhost/design/s/43d697ca-a174-4bfe-89f0-5fbe3afe86ca cargue a nivel servidor, 
+12-que las secciones de http://localhost/canvases/resize/43d697ca-a174-4bfe-89f0-5fbe3afe86ca y la de reinicios sean exactamente igual  
+13-que en http://localhost/design/s/43d697ca-a174-4bfe-89f0-5fbe3afe86ca si no hay nada, y entramos desde el btn quedara solo el skeleton pero no el div de empty hasta que recarguemos
+16-corregir la seccion de http://localhost/canvases/members/43d697ca-a174-4bfe-89f0-5fbe3afe86ca/role/fa2d1bcf-d605-4fdb-b8d7-7e43ae0d7330 ya que tiene diseño anticuado
+17-el btn de http://localhost/canvases/members/43d697ca-a174-4bfe-89f0-5fbe3afe86ca de peticiones no usa data nav
+18-la seccion http://localhost/canvases/manage/requests/43d697ca-a174-4bfe-89f0-5fbe3afe86ca si no hay nada, no esta mostrando el mensaje en la tabla de empty
