@@ -58,7 +58,6 @@ class CanvasesController {
         let hasPerm = false;
         if (window.APP_CONFIG && window.APP_CONFIG.permissions) {
             const p = window.APP_CONFIG.permissions;
-            // Solo evalúa permisos oficiales/administrativos, NO manage_canvases.
             hasPerm = p.includes('canvases.create_official') || p.includes('access_admin_panel');
         }
 
@@ -71,7 +70,6 @@ class CanvasesController {
             }
         }
         
-        // Siempre forzamos a que inicie con personal
         this.handleScopeTypeChange('personal');
     }
 
@@ -104,18 +102,20 @@ class CanvasesController {
             const isDefault = palette.id === 'default';
             const isLocked = !canUseCustomPalettes && !isDefault;
             
+            const translatedName = window.__ ? window.__(palette.name_key) : palette.id;
+
             const isActive = this.formState.palette_id === palette.id;
-            if (isActive) activePaletteName = palette.name;
+            if (isActive) activePaletteName = translatedName;
 
             const btn = document.createElement('div');
             btn.className = `component-menu-link ${isActive ? 'active' : ''} ${isLocked ? 'disabled-interactive' : ''}`;
             btn.setAttribute('data-action', isLocked ? '' : 'selectPalette');
             btn.setAttribute('data-palette-id', palette.id);
-            btn.setAttribute('data-palette-name', palette.name);
+            btn.setAttribute('data-palette-name', translatedName);
             
             if (isLocked) {
                 btn.style.opacity = '0.6';
-                btn.title = __('tooltip_upgrade_palette');
+                btn.title = window.__ ? window.__('tooltip_upgrade_palette') : 'Upgrade needed';
             }
 
             let colorsHtml = '';
@@ -123,7 +123,8 @@ class CanvasesController {
             const colorsToShow = Math.min(totalColors, 4);
 
             for (let i = 0; i < colorsToShow; i++) {
-                colorsHtml += `<span style="display:inline-block; width:16px; height:16px; border-radius:50%; background-color:${palette.colors[i]}; border:1px solid rgba(0,0,0,0.1); margin-right: -6px; position:relative; z-index:${10 - i};"></span>`;
+                // CORRECCIÓN: palette.colors[i].hex
+                colorsHtml += `<span style="display:inline-block; width:16px; height:16px; border-radius:50%; background-color:${palette.colors[i].hex}; border:1px solid rgba(0,0,0,0.1); margin-right: -6px; position:relative; z-index:${10 - i};"></span>`;
             }
 
             if (totalColors > 4) {
@@ -136,7 +137,7 @@ class CanvasesController {
             btn.innerHTML = `
                 <div class="component-menu-link-icon"><span class="material-symbols-rounded">palette</span></div>
                 <div class="component-menu-link-text" style="display:flex; align-items:center;">
-                    <span>${palette.name}</span>
+                    <span>${translatedName}</span>
                     ${lockHtml}
                 </div>
                 <div class="component-menu-link-icon" style="width: auto; display: flex; align-items: center; margin-left: auto;">
@@ -543,7 +544,7 @@ class CanvasesController {
         restoreButton(btn);
 
         if (res.success) {
-            showMessage(__('msg_canvas_created'), 'success');
+            showMessage(window.__ ? window.__('msg_canvas_created') : 'Created', 'success');
             if (window.spaRouter) {
                 window.spaRouter.navigate(`${this.basePath}/design/${res.data.uuid}`);
             }

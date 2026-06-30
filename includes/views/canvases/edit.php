@@ -231,14 +231,14 @@ if (!$canvasId) {
                             <div class="component-dropdown-wrapper">
                                 <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="dropdownPalette">
                                     <span class="material-symbols-rounded" data-ref="icon-palette">palette</span>
-                                    <span class="component-dropdown-text" data-ref="text-palette"><?php echo ucfirst($cPalette); ?></span>
+                                    <span class="component-dropdown-text" data-ref="text-palette" data-current-palette="<?php echo htmlspecialchars($cPalette); ?>"><?php echo ucfirst($cPalette); ?></span>
                                     <span class="material-symbols-rounded">expand_more</span>
                                 </div>
                                 <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="dropdownPalette">
                                     <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
                                         <div class="pill-container"><div class="drag-handle"></div></div>
                                         <div class="component-menu-list component-menu-list--scrollable" data-ref="palette-selector-container">
-                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

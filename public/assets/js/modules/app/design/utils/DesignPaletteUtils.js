@@ -2,7 +2,8 @@
 
 export function getPaletteById(paletteId) {
     if (!window.APP_PALETTES) {
-        return { colors: ['#000000'] }; 
+        // CORRECCIÓN: Estructura compatible con hex y name_key
+        return { colors: [{ hex: '#000000', name_key: 'color_black' }] }; 
     }
     return window.APP_PALETTES[paletteId] || window.APP_PALETTES['default'];
 }

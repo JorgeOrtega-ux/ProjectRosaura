@@ -38,7 +38,7 @@ class CanvasEditController {
         this.abortController = new AbortController();
         
         if (!this.canvasId) {
-            showMessage(__('err_invalid_canvas_id'), 'error');
+            showMessage(window.__ ? window.__('err_invalid_canvas_id') : 'Invalid Canvas ID', 'error');
             return;
         }
         
@@ -74,9 +74,10 @@ class CanvasEditController {
         const activePrivacy = this.container.querySelector('[data-type="privacy"].active');
         if (activePrivacy) this.state.privacy = activePrivacy.getAttribute('data-value');
 
+        // CORRECCIÓN: Leemos el data-current-palette en lugar del texto
         const textPalette = this.container.querySelector('[data-ref="text-palette"]');
         if (textPalette) {
-            this.state.palette_id = textPalette.textContent.trim().toLowerCase();
+            this.state.palette_id = textPalette.getAttribute('data-current-palette') || 'default';
         }
 
         this.renderPalettes();
@@ -124,24 +125,27 @@ class CanvasEditController {
         const palettes = getAllPalettes();
         container.innerHTML = '';
 
-        let activePaletteName = __('lbl_palette');
+        let activePaletteName = window.__ ? window.__('lbl_palette') : 'Palette';
 
         palettes.forEach(palette => {
+            const translatedName = window.__ ? window.__(palette.name_key) : palette.id;
+
             const isActive = this.state.palette_id === palette.id;
-            if (isActive) activePaletteName = palette.name;
+            if (isActive) activePaletteName = translatedName;
 
             const btn = document.createElement('div');
             btn.className = `component-menu-link ${isActive ? 'active' : ''}`;
             btn.setAttribute('data-action', 'selectPalette');
             btn.setAttribute('data-palette-id', palette.id);
-            btn.setAttribute('data-palette-name', palette.name);
+            btn.setAttribute('data-palette-name', translatedName);
 
             let colorsHtml = '';
             const totalColors = palette.colors.length;
             const colorsToShow = Math.min(totalColors, 4);
 
             for (let i = 0; i < colorsToShow; i++) {
-                colorsHtml += `<span style="display:inline-block; width:16px; height:16px; border-radius:50%; background-color:${palette.colors[i]}; border:1px solid rgba(0,0,0,0.1); margin-right: -6px; position:relative; z-index:${10 - i};"></span>`;
+                // CORRECCIÓN: palette.colors[i].hex
+                colorsHtml += `<span style="display:inline-block; width:16px; height:16px; border-radius:50%; background-color:${palette.colors[i].hex}; border:1px solid rgba(0,0,0,0.1); margin-right: -6px; position:relative; z-index:${10 - i};"></span>`;
             }
 
             if (totalColors > 4) {
@@ -151,7 +155,7 @@ class CanvasEditController {
 
             btn.innerHTML = `
                 <div class="component-menu-link-icon"><span class="material-symbols-rounded">palette</span></div>
-                <div class="component-menu-link-text"><span>${palette.name}</span></div>
+                <div class="component-menu-link-text"><span>${translatedName}</span></div>
                 <div class="component-menu-link-icon" style="width: auto; display: flex; align-items: center; margin-left: auto;">
                     ${colorsHtml}
                 </div>
@@ -162,7 +166,10 @@ class CanvasEditController {
         const triggerWrapper = container.closest('.component-dropdown-wrapper');
         if (triggerWrapper) {
             const textRef = triggerWrapper.querySelector('[data-ref="text-palette"]');
-            if (textRef) textRef.textContent = activePaletteName;
+            if (textRef) {
+                textRef.textContent = activePaletteName;
+                textRef.setAttribute('data-current-palette', this.state.palette_id);
+            }
         }
     }
 
@@ -179,7 +186,10 @@ class CanvasEditController {
         const dropdownWrapper = btn.closest('.component-dropdown-wrapper');
         if (dropdownWrapper) {
             const triggerText = dropdownWrapper.querySelector('[data-ref="text-palette"]');
-            if (triggerText) triggerText.textContent = paletteName;
+            if (triggerText) {
+                triggerText.textContent = paletteName;
+                triggerText.setAttribute('data-current-palette', this.state.palette_id);
+            }
 
             const dropdownModule = dropdownWrapper.querySelector('.component-module--dropdown');
             if(dropdownModule) {
@@ -330,7 +340,7 @@ class CanvasEditController {
         }
 
         if (!this.state.name) {
-            showMessage(__('err_field_required'), 'warning');
+            showMessage(window.__ ? window.__('err_field_required') : 'Required', 'warning');
             return;
         }
 
@@ -353,13 +363,13 @@ class CanvasEditController {
             if (response.aborted) return;
 
             if (response && response.success) {
-                showMessage(__('canvas_update_success'), 'success');
+                showMessage(window.__ ? window.__('canvas_update_success') : 'Success', 'success');
             } else {
                 showMessage(response.message, 'error');
             }
         } catch (error) {
             if (error.name === 'AbortError') return;
-            showMessage(__('err_update_canvas'), 'error');
+            showMessage(window.__ ? window.__('err_update_canvas') : 'Error', 'error');
         } finally {
             restoreButton(btn);
         }
