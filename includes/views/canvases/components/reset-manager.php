@@ -15,7 +15,7 @@ if ($canvasUuid) {
         $stmt->execute(['uuid' => $canvasUuid]);
         $canvasId = (int)$stmt->fetchColumn();
     } catch (\Exception $e) {
-        // Silenciar y atrapar error por si la base de datos o tabla no existe
+        // Silenciar y atrapar error
     }
 }
 
@@ -28,7 +28,7 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
 <div class="view-content" data-ref="canvas-resets-wrapper" data-canvas-id="<?php echo $canvasId; ?>">
     
     <div class="component-top">
-        <div class="component-top-left" style="display: flex; align-items: center; gap: 16px;">
+        <div class="component-top-left">
             <div>
                 <h1 class="component-top-title"><?php echo __('canvas_resets_title'); ?></h1>
             </div>
@@ -50,7 +50,7 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
             </div>
 
             <div class="component-card--grouped">
-                <div class="component-group-item component-group-item--wrap">
+                <div class="component-group-item">
                     <div class="component-card__content">
                         <div class="component-card__text">
                             <h2 class="component-card__title"><?php echo __('canvas_reset_active_title'); ?></h2>
@@ -66,7 +66,7 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                 </div>
             </div>
 
-            <div data-ref="reset_options_container" class="disabled-interactive" style="transition: opacity 0.3s ease; opacity: 0.4;">
+            <div data-ref="reset_options_container" class="disabled-interactive">
                 <div class="component-card--grouped">
                     
                     <div class="component-group-item component-group-item--stacked">
@@ -81,7 +81,7 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                             <div class="component-dropdown-wrapper">
                                 <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="moduleCalendarDate">
                                     <span class="material-symbols-rounded">calendar_month</span>
-                                    <span class="component-dropdown-text" data-ref="reset-date-text"><?php echo __('lbl_select_date') ?? 'Seleccionar fecha'; ?></span>
+                                    <span class="component-dropdown-text" data-ref="reset-date-text"><?php echo __('lbl_select_date'); ?></span>
                                     <span class="material-symbols-rounded">expand_more</span>
                                 </div>
                                 
@@ -96,31 +96,31 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                                                 <button type="button" class="component-button component-button--icon component-button--h30" data-action="calendarPrevMonth">
                                                     <span class="material-symbols-rounded">chevron_left</span>
                                                 </button>
-                                                <div class="component-calendar-title" data-ref="calendar-title">...</div>
+                                                <div class="component-calendar-title" data-ref="calendar-title"></div>
                                                 <button type="button" class="component-button component-button--icon component-button--h30" data-action="calendarNextMonth">
                                                     <span class="material-symbols-rounded">chevron_right</span>
                                                 </button>
                                             </div>
 
                                             <div class="component-calendar-weekdays">
-                                                <span><?php echo __('cal_su') ?? 'Do'; ?></span>
-                                                <span><?php echo __('cal_mo') ?? 'Lu'; ?></span>
-                                                <span><?php echo __('cal_tu') ?? 'Ma'; ?></span>
-                                                <span><?php echo __('cal_we') ?? 'Mi'; ?></span>
-                                                <span><?php echo __('cal_th') ?? 'Ju'; ?></span>
-                                                <span><?php echo __('cal_fr') ?? 'Vi'; ?></span>
-                                                <span><?php echo __('cal_sa') ?? 'Sa'; ?></span>
+                                                <span><?php echo __('cal_su'); ?></span>
+                                                <span><?php echo __('cal_mo'); ?></span>
+                                                <span><?php echo __('cal_tu'); ?></span>
+                                                <span><?php echo __('cal_we'); ?></span>
+                                                <span><?php echo __('cal_th'); ?></span>
+                                                <span><?php echo __('cal_fr'); ?></span>
+                                                <span><?php echo __('cal_sa'); ?></span>
                                             </div>
 
                                             <div class="component-calendar-days" data-ref="calendar-days"></div>
 
                                             <div class="component-calendar-time">
                                                 <div class="component-input-group component-input-group--h34">
-                                                    <input type="number" data-ref="calendar-hours" class="component-input-field component-input-field--simple" placeholder="<?php echo __('cal_placeholder_hh') ?? 'HH'; ?>" min="0" max="23" value="00">
+                                                    <input type="number" data-ref="calendar-hours" class="component-input-field component-input-field--simple" placeholder="<?php echo __('cal_placeholder_hh'); ?>" min="0" max="23" value="00">
                                                 </div>
                                                 <span>:</span>
                                                 <div class="component-input-group component-input-group--h34">
-                                                    <input type="number" data-ref="calendar-minutes" class="component-input-field component-input-field--simple" placeholder="<?php echo __('cal_placeholder_mm') ?? 'MM'; ?>" min="0" max="59" value="00">
+                                                    <input type="number" data-ref="calendar-minutes" class="component-input-field component-input-field--simple" placeholder="<?php echo __('cal_placeholder_mm'); ?>" min="0" max="59" value="00">
                                                 </div>
                                             </div>
 
@@ -170,7 +170,7 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                             <div class="component-dropdown-wrapper">
                                 <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="moduleTimerAction">
                                     <span class="material-symbols-rounded" data-ref="icon-timer">timer</span>
-                                    <span class="component-dropdown-text" data-ref="text-timer"><?php echo __('canvas_reset_timer_restart'); ?></span>
+                                    <span class="component-dropdown-text" data-ref="text-timer"><?php echo __('timer_action_restart'); ?></span>
                                     <span class="material-symbols-rounded">expand_more</span>
                                 </div>
                                 
@@ -181,19 +181,19 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                                         <div class="pill-container"><div class="drag-handle"></div></div>
                                         <div class="component-menu-list component-menu-list--scrollable">
                                             
-                                            <div class="component-menu-link active" data-action="selectTimerAction" data-value="restart" data-label="<?php echo __('canvas_reset_timer_restart'); ?>" data-icon="timer">
+                                            <div class="component-menu-link active" data-action="selectTimerAction" data-value="restart" data-label="<?php echo __('timer_action_restart'); ?>" data-icon="timer">
                                                 <div class="component-menu-link-icon"><span class="material-symbols-rounded">timer</span></div>
-                                                <div class="component-menu-link-text"><span><?php echo __('canvas_reset_timer_restart'); ?></span></div>
+                                                <div class="component-menu-link-text"><span><?php echo __('timer_action_restart'); ?></span></div>
                                             </div>
                                             
-                                            <div class="component-menu-link" data-action="selectTimerAction" data-value="stop" data-label="<?php echo __('canvas_reset_timer_stop'); ?>" data-icon="stop_circle">
+                                            <div class="component-menu-link" data-action="selectTimerAction" data-value="stop" data-label="<?php echo __('timer_action_stop'); ?>" data-icon="stop_circle">
                                                 <div class="component-menu-link-icon"><span class="material-symbols-rounded">stop_circle</span></div>
-                                                <div class="component-menu-link-text"><span><?php echo __('canvas_reset_timer_stop'); ?></span></div>
+                                                <div class="component-menu-link-text"><span><?php echo __('timer_action_stop'); ?></span></div>
                                             </div>
                                             
-                                            <div class="component-menu-link" data-action="selectTimerAction" data-value="none" data-label="<?php echo __('canvas_reset_timer_hide'); ?>" data-icon="visibility_off">
+                                            <div class="component-menu-link" data-action="selectTimerAction" data-value="none" data-label="<?php echo __('timer_action_none'); ?>" data-icon="visibility_off">
                                                 <div class="component-menu-link-icon"><span class="material-symbols-rounded">visibility_off</span></div>
-                                                <div class="component-menu-link-text"><span><?php echo __('canvas_reset_timer_hide'); ?></span></div>
+                                                <div class="component-menu-link-text"><span><?php echo __('timer_action_none'); ?></span></div>
                                             </div>
 
                                         </div>
@@ -211,14 +211,14 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                 <div class="component-group-item component-group-item--wrap">
                     <div class="component-card__content">
                         <div class="component-card__text">
-                            <h2 class="component-card__title" style="color: var(--color-danger);"><?php echo __('canvas_reset_now_title') ?? 'Reinicio Inmediato'; ?></h2>
-                            <p class="component-card__description"><?php echo __('canvas_reset_now_desc') ?? 'Limpia todos los píxeles del lienzo en este momento. Esta acción no se puede deshacer y los usuarios conectados verán el cambio en tiempo real.'; ?></p>
+                            <h2 class="component-card__title text-danger"><?php echo __('canvas_reset_now_title'); ?></h2>
+                            <p class="component-card__description"><?php echo __('canvas_reset_now_desc'); ?></p>
                         </div>
                     </div>
                     <div class="component-card__actions component-card__actions--end">
                         <button type="button" class="component-button component-button--danger component-button--h40" data-action="resetNow">
                             <span class="material-symbols-rounded">delete_forever</span>
-                            <?php echo __('btn_reset_now') ?? 'Reiniciar Ahora'; ?>
+                            <?php echo __('btn_reset_now'); ?>
                         </button>
                     </div>
                 </div>

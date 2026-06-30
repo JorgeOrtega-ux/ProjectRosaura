@@ -1,4 +1,4 @@
-// public/assets/js/modules/canvases/CanvasResizeController.js
+// public/assets/js/modules/canvases/workspace/CanvasResizeController.js
 
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
@@ -12,6 +12,8 @@ class CanvasResizeController {
         this.abortController = null;
         this.isInitialized = false;
         
+        this.wrapper = null;
+        this.optionsContainer = null;
         this.currentSize = null;
         this.canvasId = null;
         this.calendar = null;
@@ -25,14 +27,13 @@ class CanvasResizeController {
         this.isInitialized = true;
         this.abortController = new AbortController();
         
-        const container = document.getElementById('resizeCanvasContainer');
-        if (container) {
-            // Se mantiene como String nativo para preservar formatos personalizados como "2048x1024"
-            this.currentSize = container.getAttribute('data-current-size');
-            this.canvasId = container.getAttribute('data-canvas-id');
-        }
+        this.wrapper = document.querySelector('[data-ref="canvas-resize-wrapper"]');
+        if (!this.wrapper) return;
 
-        this.detectTimezone();
+        this.optionsContainer = this.wrapper.querySelector('[data-ref="resize_options_container"]');
+        this.currentSize = this.wrapper.getAttribute('data-current-size');
+        this.canvasId = this.wrapper.getAttribute('data-canvas-id');
+
         this.initCalendar();
         this.bindEvents();
         
@@ -44,69 +45,56 @@ class CanvasResizeController {
     destroy() {
         if (this.abortController) this.abortController.abort();
         document.removeEventListener('click', this.handleGlobalClickBound);
-        
-        const toggle = document.getElementById('toggleScheduledResize');
-        if (toggle) toggle.removeEventListener('change', this.handleToggleChangeBound);
+        document.removeEventListener('change', this.handleToggleChangeBound);
 
         if (this.calendar) {
             this.calendar.destroy();
             this.calendar = null;
         }
         
+        this.wrapper = null;
+        this.optionsContainer = null;
         this.currentSize = null;
         this.canvasId = null;
         this.isInitialized = false;
-    }
-
-    detectTimezone() {
-        const indicator = document.getElementById('localTimezoneIndicatorResize');
-        if (indicator) {
-            const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-            indicator.textContent = __('lbl_your_timezone') + ': ' + tz;
-        }
     }
 
     initCalendar() {
         this.calendar = new CalendarSystem('[data-module="moduleCalendarDateResize"]');
         this.calendar.init();
 
-        const inputDateTime = document.querySelector('[data-ref="next_resize_at"]');
+        const inputDateTime = this.wrapper.querySelector('[data-ref="next_resize_at"]');
         
         this.calendar.setup(null, (isoString, displayString) => {
             if (inputDateTime) inputDateTime.value = isoString;
-            const textRef = document.querySelector('[data-ref="resize-date-text"]');
+            const textRef = this.wrapper.querySelector('[data-ref="resize-date-text"]');
             if (textRef) textRef.textContent = displayString;
         }, () => {
             if (inputDateTime) inputDateTime.value = '';
-            const textRef = document.querySelector('[data-ref="resize-date-text"]');
+            const textRef = this.wrapper.querySelector('[data-ref="resize-date-text"]');
             if (textRef) textRef.textContent = __('lbl_select_date');
         });
     }
 
     bindEvents() {
         document.addEventListener('click', this.handleGlobalClickBound);
-        
-        const toggle = document.getElementById('toggleScheduledResize');
-        if (toggle) {
-            toggle.addEventListener('change', this.handleToggleChangeBound);
-        }
+        document.addEventListener('change', this.handleToggleChangeBound);
     }
 
     handleToggleChange(e) {
-        const isActive = e.target.checked;
-        const dateBlock = document.getElementById('scheduledResizeDateBlock');
-        const timerBlock = document.getElementById('scheduledResizeTimerBlock');
+        const toggleBtn = e.target.closest('[data-ref="toggleScheduledResize"]');
+        if (toggleBtn) {
+            this.updateOptionsContainerState(toggleBtn.checked);
+        }
+    }
 
+    updateOptionsContainerState(isActive) {
+        if (!this.optionsContainer) return;
+        
         if (isActive) {
-            dateBlock.style.opacity = '1';
-            dateBlock.classList.remove('disabled-interactive');
-            timerBlock.style.opacity = '1';
-            timerBlock.classList.remove('disabled-interactive');
+            this.optionsContainer.classList.remove('disabled-interactive');
         } else {
-            dateBlock.style.opacity = '0.4';
-            dateBlock.classList.add('disabled-interactive');
-            timerBlock.style.opacity = '0.4';
-            timerBlock.classList.add('disabled-interactive');
+            this.optionsContainer.classList.add('disabled-interactive');
         }
     }
 
@@ -140,51 +128,38 @@ class CanvasResizeController {
     }
 
     async loadSettings() {
-        const route = ApiRoutes.Canvases && ApiRoutes.Canvases.GetResizeSettings ? ApiRoutes.Canvases.GetResizeSettings : 'canvases.get_resize_settings';
-        const result = await this.api.post(route, { id: this.canvasId }, this.abortController.signal);
+        const result = await this.api.post(ApiRoutes.Canvases.GetResizeSettings, { id: this.canvasId }, this.abortController.signal);
         
         if (result.aborted) return;
 
         if (result.success && result.data) {
             const data = result.data;
             
-            const sizeLink = document.querySelector(`.component-menu-link[data-type="size"][data-value="${data.target_size}"]`);
+            const sizeLink = this.wrapper.querySelector(`.component-menu-link[data-type="size"][data-value="${data.target_size}"]`);
             if (sizeLink) this.handleResizeSelect(sizeLink, false);
             
-            const toggle = document.getElementById('toggleScheduledResize');
+            const toggle = this.wrapper.querySelector('[data-ref="toggleScheduledResize"]');
             if (toggle) {
                 toggle.checked = data.is_active;
-                this.handleToggleChange({ target: toggle });
+                this.updateOptionsContainerState(data.is_active);
             }
 
             if (data.next_resize_at && this.calendar) {
                 const localStr = this.utcStringToLocalInputFormat(data.next_resize_at);
-                const inputDateTime = document.querySelector('[data-ref="next_resize_at"]');
-                if (inputDateTime) inputDateTime.value = localStr;
+                const inputDateTime = this.wrapper.querySelector('[data-ref="next_resize_at"]');
                 
                 this.calendar.setup(localStr, (isoString, displayString) => {
                     if (inputDateTime) inputDateTime.value = isoString;
-                    const textRef = document.querySelector('[data-ref="resize-date-text"]');
+                    const textRef = this.wrapper.querySelector('[data-ref="resize-date-text"]');
                     if (textRef) textRef.textContent = displayString;
                 }, () => {
                     if (inputDateTime) inputDateTime.value = '';
-                    const textRef = document.querySelector('[data-ref="resize-date-text"]');
+                    const textRef = this.wrapper.querySelector('[data-ref="resize-date-text"]');
                     if (textRef) textRef.textContent = __('lbl_select_date');
                 });
-                
-                const textRef = document.querySelector('[data-ref="resize-date-text"]');
-                if (textRef) {
-                    const dateObj = new Date(localStr);
-                    if (!isNaN(dateObj.getTime())) {
-                        const mStr = this.calendar.monthsShortStr[dateObj.getMonth()];
-                        const h = String(dateObj.getHours()).padStart(2, '0');
-                        const min = String(dateObj.getMinutes()).padStart(2, '0');
-                        textRef.textContent = `${dateObj.getDate()} de ${mStr} ${dateObj.getFullYear()}, ${h}:${min}`;
-                    }
-                }
             }
 
-            const actionLink = document.querySelector(`.component-menu-link[data-type="timer_action"][data-value="${data.timer_action || 'restart'}"]`);
+            const actionLink = this.wrapper.querySelector(`.component-menu-link[data-type="timer_action"][data-value="${data.timer_action || 'restart'}"]`);
             if (actionLink) this.handleTimerActionSelect(actionLink);
         }
     }
@@ -198,40 +173,47 @@ class CanvasResizeController {
         const saveScheduledBtn = e.target.closest('[data-action="saveScheduledResize"]');
         
         if (dropdownTrigger) {
-            const module = document.querySelector(`[data-module="${dropdownTrigger.getAttribute('data-target')}"]`);
+            e.preventDefault();
+            const targetId = dropdownTrigger.getAttribute('data-target');
+            const module = this.wrapper.querySelector(`[data-module="${targetId}"]`);
             if (module) {
-                if (module.classList.contains('disabled')) {
-                    document.querySelectorAll('.component-module--dropdown.active').forEach(d => {
-                        d.classList.remove('active');
-                        d.classList.add('disabled');
-                    });
+                const isActive = module.classList.contains('active');
+                
+                this.wrapper.querySelectorAll('.component-module--dropdown').forEach(d => {
+                    d.classList.remove('active');
+                    d.classList.add('disabled');
+                });
+                
+                if (!isActive) {
                     module.classList.remove('disabled');
                     module.classList.add('active');
-                } else {
-                    module.classList.remove('active');
-                    module.classList.add('disabled');
                 }
             }
+            return;
         }
 
         if (resizeDropdownItem) {
+            e.preventDefault();
             this.handleResizeSelect(resizeDropdownItem, true);
         }
 
         if (timerActionItem) {
+            e.preventDefault();
             this.handleTimerActionSelect(timerActionItem);
         }
 
         if (applyNowBtn && !applyNowBtn.classList.contains('disabled-interactive')) {
+            e.preventDefault();
             this.applyResizeNow(applyNowBtn);
         }
 
         if (saveScheduledBtn && !saveScheduledBtn.classList.contains('disabled-interactive')) {
+            e.preventDefault();
             this.saveScheduledResize(saveScheduledBtn);
         }
         
         if (!dropdownTrigger && !e.target.closest('.component-menu') && !e.target.closest('.component-calendar')) {
-            const activeDropdowns = document.querySelectorAll('.component-module--dropdown.active');
+            const activeDropdowns = this.wrapper.querySelectorAll('.component-module--dropdown.active');
             activeDropdowns.forEach(dropdown => {
                 dropdown.classList.remove('active');
                 dropdown.classList.add('disabled');
@@ -240,43 +222,43 @@ class CanvasResizeController {
     }
 
     handleResizeSelect(btn, updateWarning = true) {
-        const dropdown = document.querySelector('[data-module="dropdownSizeResize"]');
+        const dropdown = this.wrapper.querySelector('[data-module="dropdownSizeResize"]');
         if (dropdown) {
             dropdown.classList.remove('active');
             dropdown.classList.add('disabled');
         }
 
-        const value = btn.getAttribute('data-value'); // Tomar valor directo sin parseInt, preservando Strings complejos
+        const value = btn.getAttribute('data-value');
         const label = btn.getAttribute('data-label');
         const icon = btn.getAttribute('data-icon');
         
-        const textRef = document.querySelector('[data-ref="text-size-resize"]');
-        const iconRef = document.querySelector('[data-ref="resize-icon"]');
+        const textRef = this.wrapper.querySelector('[data-ref="text-size-resize"]');
+        const iconRef = this.wrapper.querySelector('[data-ref="resize-icon"]');
         
         if (textRef) textRef.textContent = label;
         if (iconRef) iconRef.textContent = icon;
         
-        const links = document.querySelectorAll('.component-menu-link[data-type="size"]');
+        const links = this.wrapper.querySelectorAll('.component-menu-link[data-type="size"]');
         links.forEach(l => l.classList.remove('active'));
         btn.classList.add('active');
 
         if (updateWarning) {
-            const warning = document.querySelector('[data-ref="resize-warning"]');
+            const warning = this.wrapper.querySelector('[data-ref="resize-warning"]');
             if (warning && this.currentSize) {
                 const currWidth = parseInt(this.currentSize.toString().split('x')[0]);
                 const nextWidth = parseInt(value.toString().split('x')[0]);
                 
                 if (nextWidth < currWidth) {
-                    warning.style.display = 'flex';
+                    warning.classList.remove('d-none');
                 } else {
-                    warning.style.display = 'none';
+                    warning.classList.add('d-none');
                 }
             }
         }
     }
 
     handleTimerActionSelect(btn) {
-        const dropdown = document.querySelector('[data-module="dropdownResizeTimerAction"]');
+        const dropdown = this.wrapper.querySelector('[data-module="dropdownResizeTimerAction"]');
         if (dropdown) {
             dropdown.classList.remove('active');
             dropdown.classList.add('disabled');
@@ -285,13 +267,13 @@ class CanvasResizeController {
         const label = btn.getAttribute('data-label');
         const icon = btn.getAttribute('data-icon');
         
-        const textRef = document.querySelector('[data-ref="text-resize-timer-action"]');
-        const iconRef = document.querySelector('[data-ref="resize-timer-icon"]');
+        const textRef = this.wrapper.querySelector('[data-ref="text-resize-timer-action"]');
+        const iconRef = this.wrapper.querySelector('[data-ref="resize-timer-icon"]');
         
         if (textRef) textRef.textContent = label;
         if (iconRef) iconRef.textContent = icon;
         
-        const links = document.querySelectorAll('.component-menu-link[data-type="timer_action"]');
+        const links = this.wrapper.querySelectorAll('.component-menu-link[data-type="timer_action"]');
         links.forEach(l => l.classList.remove('active'));
         btn.classList.add('active');
     }
@@ -299,60 +281,56 @@ class CanvasResizeController {
     async applyResizeNow(btn) {
         if (!this.canvasId) return;
         
-        const activeLink = document.querySelector('.component-menu-link[data-type="size"].active');
+        const activeLink = this.wrapper.querySelector('.component-menu-link[data-type="size"].active');
         let newSize;
         
         if (activeLink) {
             newSize = activeLink.getAttribute('data-value');
-            if (/^\d+$/.test(newSize)) newSize = parseInt(newSize); // Castear a Entero si es puramente numérico (cuadrado)
+            if (/^\d+$/.test(newSize)) newSize = parseInt(newSize);
         } else {
-            const textRef = document.querySelector('[data-ref="text-size-resize"]');
+            const textRef = this.wrapper.querySelector('[data-ref="text-size-resize"]');
             if (!textRef) return;
-            // Fallback robusto
             newSize = textRef.textContent.includes('x') ? textRef.textContent.split('x')[0] : textRef.textContent;
             newSize = parseInt(newSize);
         }
 
         if (newSize.toString() === this.currentSize.toString()) {
-            showMessage(__('info_size_already_applied'), "info");
+            showMessage(__('err_size_already_applied'), "info");
             return;
         }
 
         setButtonLoading(btn);
 
-        const route = ApiRoutes.Canvases && ApiRoutes.Canvases.Resize ? ApiRoutes.Canvases.Resize : 'canvases.resize';
-        const result = await this.api.post(route, { id: this.canvasId, size: newSize }, this.abortController.signal);
+        const result = await this.api.post(ApiRoutes.Canvases.Resize, { id: this.canvasId, size: newSize }, this.abortController.signal);
         
         if (result.aborted) return;
         restoreButton(btn);
 
         if (result.success) {
-            showMessage(result.message || __('msg_resize_started'), 'success');
+            showMessage(result.message, 'success');
             setTimeout(() => {
                 if (window.spaRouter) {
                     window.spaRouter.navigate(`${this.basePath}/canvases/manage`, { forceReload: true });
-                } else {
-                    window.location.href = `${this.basePath}/canvases/manage`;
                 }
             }, 1000);
         } else {
-            showMessage(result.message || __('err_resize_apply'), 'error');
+            showMessage(result.message, 'error');
         }
     }
 
     async saveScheduledResize(btn) {
         if (!this.canvasId) return;
 
-        const toggle = document.getElementById('toggleScheduledResize');
+        const toggle = this.wrapper.querySelector('[data-ref="toggleScheduledResize"]');
         const isActive = toggle ? toggle.checked : false;
 
-        const activeLink = document.querySelector('.component-menu-link[data-type="size"].active');
+        const activeLink = this.wrapper.querySelector('.component-menu-link[data-type="size"].active');
         let targetSize = 64;
         
         if (activeLink) {
             targetSize = activeLink.getAttribute('data-value');
         } else {
-            const textRef = document.querySelector('[data-ref="text-size-resize"]');
+            const textRef = this.wrapper.querySelector('[data-ref="text-size-resize"]');
             if (textRef) {
                 targetSize = textRef.textContent.includes('x') ? textRef.textContent.split('x')[0] : textRef.textContent;
             }
@@ -361,7 +339,7 @@ class CanvasResizeController {
         let nextResizeAt = null;
         
         if (isActive) {
-            const inputDateTime = document.querySelector('[data-ref="next_resize_at"]');
+            const inputDateTime = this.wrapper.querySelector('[data-ref="next_resize_at"]');
             const localTimeStr = inputDateTime ? inputDateTime.value : '';
             
             if (!localTimeStr) {
@@ -378,7 +356,7 @@ class CanvasResizeController {
             nextResizeAt = this.localInputFormatToUtcString(localTimeStr);
         }
 
-        const actionLink = document.querySelector('.component-menu-link[data-type="timer_action"].active');
+        const actionLink = this.wrapper.querySelector('.component-menu-link[data-type="timer_action"].active');
         const timerAction = actionLink ? actionLink.getAttribute('data-value') : 'restart';
 
         const payload = {
@@ -391,16 +369,15 @@ class CanvasResizeController {
 
         setButtonLoading(btn);
         
-        const route = ApiRoutes.Canvases && ApiRoutes.Canvases.UpdateResizeSettings ? ApiRoutes.Canvases.UpdateResizeSettings : 'canvases.update_resize_settings';
-        const result = await this.api.post(route, payload, this.abortController.signal);
+        const result = await this.api.post(ApiRoutes.Canvases.UpdateResizeSettings, payload, this.abortController.signal);
         
         if (result.aborted) return;
         restoreButton(btn);
 
         if (result.success) {
-            showMessage(result.message || __('msg_schedule_saved'), "success");
+            showMessage(result.message, "success");
         } else {
-            showMessage(result.message || __('err_schedule_save'), "error");
+            showMessage(result.message, "error");
         }
     }
 }

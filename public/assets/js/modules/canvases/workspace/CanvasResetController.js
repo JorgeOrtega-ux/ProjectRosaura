@@ -1,4 +1,4 @@
-// public/assets/js/modules/canvases/CanvasResetController.js
+// public/assets/js/modules/canvases/workspace/CanvasResetController.js
 
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
@@ -97,7 +97,10 @@ class CanvasResetController {
             this.selectTimerValue(dropdownItem);
             
             const module = dropdownItem.closest('.component-module--dropdown');
-            if (module) module.classList.add('disabled');
+            if (module) {
+                module.classList.remove('active');
+                module.classList.add('disabled');
+            }
         }
 
         const btnDropdown = e.target.closest('[data-action="toggleDropdown"]');
@@ -105,6 +108,14 @@ class CanvasResetController {
             e.preventDefault();
             this.toggleDropdown(btnDropdown);
             return;
+        }
+
+        if (!btnDropdown && !e.target.closest('.component-menu') && !e.target.closest('.component-calendar')) {
+            const activeDropdowns = this.wrapper.querySelectorAll('.component-module--dropdown.active');
+            activeDropdowns.forEach(dropdown => {
+                dropdown.classList.remove('active');
+                dropdown.classList.add('disabled');
+            });
         }
     }
 
@@ -157,10 +168,8 @@ class CanvasResetController {
         
         if (isActive) {
             this.optionsContainer.classList.remove('disabled-interactive');
-            this.optionsContainer.style.opacity = '1';
         } else {
             this.optionsContainer.classList.add('disabled-interactive');
-            this.optionsContainer.style.opacity = '0.4';
         }
     }
 
@@ -211,7 +220,6 @@ class CanvasResetController {
 
             if (data.next_reset_at && this.inputDateTime) {
                 const localStr = this.utcStringToLocalInputFormat(data.next_reset_at);
-                this.inputDateTime.value = localStr;
                 
                 this.calendar.setup(localStr, (isoString, displayString) => {
                     if (this.inputDateTime) this.inputDateTime.value = isoString;
@@ -222,17 +230,6 @@ class CanvasResetController {
                     const textRef = this.wrapper.querySelector('[data-ref="reset-date-text"]');
                     if (textRef) textRef.textContent = __('lbl_select_date');
                 });
-
-                const textRef = this.wrapper.querySelector('[data-ref="reset-date-text"]');
-                if (textRef) {
-                    const dateObj = new Date(localStr);
-                    if (!isNaN(dateObj.getTime())) {
-                        const mStr = this.calendar.monthsShortStr[dateObj.getMonth()];
-                        const h = String(dateObj.getHours()).padStart(2, '0');
-                        const min = String(dateObj.getMinutes()).padStart(2, '0');
-                        textRef.textContent = `${dateObj.getDate()} de ${mStr} ${dateObj.getFullYear()}, ${h}:${min}`;
-                    }
-                }
             }
 
             if (this.checkSnapshot) {
@@ -275,9 +272,9 @@ class CanvasResetController {
         restoreButton(btnSave);
 
         if (result.success) {
-            showMessage(result.message || __('msg_save_success'), 'success');
+            showMessage(result.message, 'success');
         } else {
-            showMessage(result.message || __('err_save_failed'), 'error');
+            showMessage(result.message, 'error');
         }
     }
 
@@ -300,9 +297,9 @@ class CanvasResetController {
         restoreButton(btn);
 
         if (result.success) {
-            showMessage(result.message || __('msg_reset_now_success'), 'success');
+            showMessage(result.message, 'success');
         } else {
-            showMessage(result.message || __('err_reset_now_failed'), 'error');
+            showMessage(result.message, 'error');
         }
     }
 }
