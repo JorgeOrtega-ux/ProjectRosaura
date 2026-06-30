@@ -27,7 +27,8 @@ class CanvasResizeController {
         
         const container = document.getElementById('resizeCanvasContainer');
         if (container) {
-            this.currentSize = parseInt(container.getAttribute('data-current-size'));
+            // Se mantiene como String nativo para preservar formatos personalizados como "2048x1024"
+            this.currentSize = container.getAttribute('data-current-size');
             this.canvasId = container.getAttribute('data-canvas-id');
         }
 
@@ -245,7 +246,7 @@ class CanvasResizeController {
             dropdown.classList.add('disabled');
         }
 
-        const value = parseInt(btn.getAttribute('data-value'));
+        const value = btn.getAttribute('data-value'); // Tomar valor directo sin parseInt, preservando Strings complejos
         const label = btn.getAttribute('data-label');
         const icon = btn.getAttribute('data-icon');
         
@@ -262,7 +263,10 @@ class CanvasResizeController {
         if (updateWarning) {
             const warning = document.querySelector('[data-ref="resize-warning"]');
             if (warning && this.currentSize) {
-                if (value < this.currentSize) {
+                const currWidth = parseInt(this.currentSize.toString().split('x')[0]);
+                const nextWidth = parseInt(value.toString().split('x')[0]);
+                
+                if (nextWidth < currWidth) {
                     warning.style.display = 'flex';
                 } else {
                     warning.style.display = 'none';
@@ -295,13 +299,21 @@ class CanvasResizeController {
     async applyResizeNow(btn) {
         if (!this.canvasId) return;
         
-        const textRef = document.querySelector('[data-ref="text-size-resize"]');
-        if (!textRef) return;
+        const activeLink = document.querySelector('.component-menu-link[data-type="size"].active');
+        let newSize;
         
-        const newSize = parseInt(textRef.textContent.split('x')[0]);
-        if (isNaN(newSize)) return;
+        if (activeLink) {
+            newSize = activeLink.getAttribute('data-value');
+            if (/^\d+$/.test(newSize)) newSize = parseInt(newSize); // Castear a Entero si es puramente numérico (cuadrado)
+        } else {
+            const textRef = document.querySelector('[data-ref="text-size-resize"]');
+            if (!textRef) return;
+            // Fallback robusto
+            newSize = textRef.textContent.includes('x') ? textRef.textContent.split('x')[0] : textRef.textContent;
+            newSize = parseInt(newSize);
+        }
 
-        if (newSize === this.currentSize) {
+        if (newSize.toString() === this.currentSize.toString()) {
             showMessage(__('info_size_already_applied'), "info");
             return;
         }
@@ -334,8 +346,17 @@ class CanvasResizeController {
         const toggle = document.getElementById('toggleScheduledResize');
         const isActive = toggle ? toggle.checked : false;
 
-        const textRef = document.querySelector('[data-ref="text-size-resize"]');
-        const targetSize = textRef ? parseInt(textRef.textContent.split('x')[0]) : 64;
+        const activeLink = document.querySelector('.component-menu-link[data-type="size"].active');
+        let targetSize = 64;
+        
+        if (activeLink) {
+            targetSize = activeLink.getAttribute('data-value');
+        } else {
+            const textRef = document.querySelector('[data-ref="text-size-resize"]');
+            if (textRef) {
+                targetSize = textRef.textContent.includes('x') ? textRef.textContent.split('x')[0] : textRef.textContent;
+            }
+        }
 
         let nextResizeAt = null;
         

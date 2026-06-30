@@ -50,7 +50,37 @@ if (!$canvas) {
     return;
 }
 
-$currentSize = $canvas['size'];
+// -------------------------------------------------------------
+// CORRECCIÓN DEL BUG DE RESOLUCIONES "2048x1024x2048x1024"
+// -------------------------------------------------------------
+$currentSizeRaw = $canvas['size'];
+$isCustomFormat = strpos((string)$currentSizeRaw, 'x') !== false;
+$displaySize = $isCustomFormat ? $currentSizeRaw : $currentSizeRaw . 'x' . $currentSizeRaw;
+
+// Determinamos el icono dependiendo del tamaño base
+$icon = 'crop_square';
+if (intval($currentSizeRaw) == 128) $icon = 'aspect_ratio';
+if (intval($currentSizeRaw) == 256 || intval($currentSizeRaw) == 264) $icon = 'grid_4x4';
+if (intval($currentSizeRaw) >= 512) $icon = 'grid_on';
+
+// Generar una lista estandarizada y dinámica (Cubriendo hasta 4096)
+$sizesList = [
+    "16"   => ['label' => '16x16',     'icon' => 'crop_square'],
+    "32"   => ['label' => '32x32',     'icon' => 'crop_square'],
+    "64"   => ['label' => '64x64',     'icon' => 'crop_square'],
+    "128"  => ['label' => '128x128',   'icon' => 'aspect_ratio'],
+    "256"  => ['label' => '256x256',   'icon' => 'grid_4x4'],
+    "512"  => ['label' => '512x512',   'icon' => 'grid_on'],
+    "1024" => ['label' => '1024x1024', 'icon' => 'grid_on'],
+    "2048" => ['label' => '2048x2048', 'icon' => 'grid_on'],
+    "4096" => ['label' => '4096x4096', 'icon' => 'grid_on']
+];
+
+// Si la base de datos trae un tamaño raro que no está en la lista, lo inyectamos temporalmente
+if (!isset($sizesList[(string)$currentSizeRaw])) {
+    $sizesList[(string)$currentSizeRaw] = ['label' => $displaySize, 'icon' => $icon];
+}
+
 $appUrl = defined('APP_URL') ? APP_URL : '';
 ?>
 
@@ -85,7 +115,7 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                 <p class="component-page-description">Modifica el tamaño en vivo del lienzo <strong><?php echo htmlspecialchars($canvas['name']); ?></strong> o programa una expansión automática.</p>
             </div>
 
-            <div class="component-card--grouped" id="resizeCanvasContainer" data-canvas-id="<?php echo htmlspecialchars($canvas['id']); ?>" data-current-size="<?php echo htmlspecialchars($currentSize); ?>">
+            <div class="component-card--grouped" id="resizeCanvasContainer" data-canvas-id="<?php echo htmlspecialchars($canvas['id']); ?>" data-current-size="<?php echo htmlspecialchars($currentSizeRaw); ?>">
                 
                 <div class="component-group-item component-group-item--wrap">
                     <div class="component-card__content">
@@ -113,14 +143,8 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                         
                         <div class="component-dropdown-wrapper">
                             <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="dropdownSizeResize">
-                                <?php 
-                                    $icon = 'crop_square';
-                                    if ($currentSize == 128) $icon = 'aspect_ratio';
-                                    if ($currentSize == 264) $icon = 'grid_4x4';
-                                    if ($currentSize == 512) $icon = 'grid_on';
-                                ?>
-                                <span class="material-symbols-rounded" data-ref="resize-icon"><?php echo $icon; ?></span>
-                                <span class="component-dropdown-text" data-ref="text-size-resize"><?php echo $currentSize; ?>x<?php echo $currentSize; ?></span>
+                                <span class="material-symbols-rounded" data-ref="resize-icon"><?php echo htmlspecialchars($icon); ?></span>
+                                <span class="component-dropdown-text" data-ref="text-size-resize"><?php echo htmlspecialchars($displaySize); ?></span>
                                 <span class="material-symbols-rounded">expand_more</span>
                             </div>
                             
@@ -128,22 +152,17 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                                 <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
                                     <div class="pill-container"><div class="drag-handle"></div></div>
                                     <div class="component-menu-list component-menu-list--scrollable">
-                                        <div class="component-menu-link <?php echo $currentSize == 64 ? 'active' : ''; ?>" data-action="selectValue" data-type="size" data-value="64" data-label="64x64" data-icon="crop_square">
-                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">crop_square</span></div>
-                                            <div class="component-menu-link-text"><span>64x64</span></div>
+                                        <?php foreach ($sizesList as $val => $data): ?>
+                                        <div class="component-menu-link <?php echo (string)$currentSizeRaw === (string)$val ? 'active' : ''; ?>" 
+                                             data-action="selectValue" 
+                                             data-type="size" 
+                                             data-value="<?php echo htmlspecialchars($val); ?>" 
+                                             data-label="<?php echo htmlspecialchars($data['label']); ?>" 
+                                             data-icon="<?php echo htmlspecialchars($data['icon']); ?>">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded"><?php echo htmlspecialchars($data['icon']); ?></span></div>
+                                            <div class="component-menu-link-text"><span><?php echo htmlspecialchars($data['label']); ?></span></div>
                                         </div>
-                                        <div class="component-menu-link <?php echo $currentSize == 128 ? 'active' : ''; ?>" data-action="selectValue" data-type="size" data-value="128" data-label="128x128" data-icon="aspect_ratio">
-                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">aspect_ratio</span></div>
-                                            <div class="component-menu-link-text"><span>128x128</span></div>
-                                        </div>
-                                        <div class="component-menu-link <?php echo $currentSize == 264 ? 'active' : ''; ?>" data-action="selectValue" data-type="size" data-value="264" data-label="264x264" data-icon="grid_4x4">
-                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">grid_4x4</span></div>
-                                            <div class="component-menu-link-text"><span>264x264</span></div>
-                                        </div>
-                                        <div class="component-menu-link <?php echo $currentSize == 512 ? 'active' : ''; ?>" data-action="selectValue" data-type="size" data-value="512" data-label="512x512" data-icon="grid_on">
-                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">grid_on</span></div>
-                                            <div class="component-menu-link-text"><span>512x512</span></div>
-                                        </div>
+                                        <?php endforeach; ?>
                                     </div>
                                 </div>
                             </div>
