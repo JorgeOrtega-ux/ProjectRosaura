@@ -15,8 +15,10 @@ export const CardTemplates = {
         const isFavoriteClass = canvas.is_favorite ? 'is-favorite' : '';
         
         // Bloque de imagen
+        // NOTA: Se añadió loading="lazy" y decoding="async" para evitar cuellos de botella 
+        // en el Main Thread durante el hover y repintado de CSS.
         const imgHtml = canvas.snapshot_url 
-            ? `<img src="${escapeHTML(canvas.snapshot_url)}" alt="${name}" class="component-snapshot-card__image">` 
+            ? `<img src="${escapeHTML(canvas.snapshot_url)}" alt="${name}" class="component-snapshot-card__image" loading="lazy" decoding="async">` 
             : ``;
 
         // Botón de acción condicional en el dropdown (basado en lógica de negocio devuelta por API)
@@ -93,7 +95,7 @@ export const CardTemplates = {
 
         return `
             <div class="component-snapshot-card">
-                <img src="${escapeHTML(imageUrl)}" alt="${canvasName}" class="component-snapshot-card__image">
+                <img src="${escapeHTML(imageUrl)}" alt="${canvasName}" class="component-snapshot-card__image" loading="lazy" decoding="async">
                 <div class="component-snapshot-badge">
                     <span class="material-symbols-rounded">history</span>
                     ${date}

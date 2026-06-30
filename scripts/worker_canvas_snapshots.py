@@ -29,6 +29,10 @@ ARCHIVE_DIR = os.getenv("SNAPSHOTS_ARCHIVE_DIR", "/app/storage/public/snapshots_
 TIMELAPSE_DIR = os.getenv("TIMELAPSE_DIR", "/app/storage/private/canvases/timelapses")
 SCALE_FACTOR = int(os.getenv("SNAPSHOT_SCALE_FACTOR", 10)) 
 
+# Límites de seguridad añadidos para evitar Freezes en Frontend y OOM en Backend
+THUMBNAIL_MAX_SIZE = int(os.getenv("THUMBNAIL_MAX_SIZE", 512)) # Max píxeles para tarjetas web
+ARCHIVE_MAX_SIZE = int(os.getenv("ARCHIVE_MAX_SIZE", 4096))    # Max píxeles para históricos
+
 PALETTES_FILE_PATH = os.getenv("PALETTES_FILE_PATH", "/app/public/assets/data/palettes.json")
 APP_PALETTES = {}
 
@@ -39,7 +43,9 @@ def load_palettes():
             with open(PALETTES_FILE_PATH, 'r', encoding='utf-8') as f:
                 data = json.load(f)
                 for pal_id, pal_data in data.items():
-                    APP_PALETTES[pal_id] = pal_data.get('colors', [])
+                    raw_colors = pal_data.get('colors', [])
+                    # CORRECCIÓN: Extraemos el valor 'hex' de cada diccionario
+                    APP_PALETTES[pal_id] = [c.get('hex', '#000000') if isinstance(c, dict) else c for c in raw_colors]
             print(f"[+] Paletas cargadas exitosamente desde {PALETTES_FILE_PATH}")
         else:
             raise FileNotFoundError("El archivo JSON no existe en la ruta.")
@@ -114,15 +120,27 @@ def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palet
             y = i // width
             pixels[x, y] = get_color(palette_id, byte_val)
             
-        filepath = os.path.join(SNAPSHOTS_DIR, f"canvas_{canvas_id}.png")
+        # =========================================================
+        # 1. THUMBNAIL GENERAL PARA LA WEB (Ligero y optimizado)
+        # =========================================================
+        # Calculamos la escala respetando el límite máximo para evitar 
+        # render-blocking en el DOM, pero sin exceder el SCALE_FACTOR original
+        scale_w = THUMBNAIL_MAX_SIZE / width
+        scale_h = THUMBNAIL_MAX_SIZE / height
+        thumb_scale = min(scale_w, scale_h, SCALE_FACTOR)
         
-        final_width = width * SCALE_FACTOR
-        final_height = height * SCALE_FACTOR
-        img_scaled = img.resize((final_width, final_height), Image.NEAREST)
+        thumb_width = max(1, int(width * thumb_scale))
+        thumb_height = max(1, int(height * thumb_scale))
 
-        # Thumbnail general, este siempre se pisa (No consume espacio extra en galería)
-        img_scaled.save(filepath, "PNG", optimize=True)
+        img_thumb = img.resize((thumb_width, thumb_height), Image.NEAREST)
         
+        filepath = os.path.join(SNAPSHOTS_DIR, f"canvas_{canvas_id}.png")
+        # Este siempre se pisa (No consume espacio extra en galería)
+        img_thumb.save(filepath, "PNG", optimize=True)
+        
+        # =========================================================
+        # 2. HISTÓRICO / ARCHIVO (Alta resolución con límite seguro)
+        # =========================================================
         # Validar lógica de persistencia histórica según tier de SubscriptionPlanConstants
         if r.exists(f"canvas:{canvas_id}:reset_lock"):
             
@@ -148,11 +166,22 @@ def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palet
                 if os.path.exists(timelapse_src):
                     os.remove(timelapse_src)
             else:
+                # Calculamos el tamaño para el histórico gigante, limitándolo a ARCHIVE_MAX_SIZE
+                scale_arch_w = ARCHIVE_MAX_SIZE / width
+                scale_arch_h = ARCHIVE_MAX_SIZE / height
+                arch_scale = min(scale_arch_w, scale_arch_h, SCALE_FACTOR)
+                
+                arch_width = max(1, int(width * arch_scale))
+                arch_height = max(1, int(height * arch_scale))
+                
+                img_archive = img.resize((arch_width, arch_height), Image.NEAREST)
+
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 archive_filename = f"canvas_{canvas_id}_{timestamp}.png"
                 archive_filepath = os.path.join(ARCHIVE_DIR, archive_filename)
-                img_scaled.save(archive_filepath, "PNG", optimize=True)
-                print(f"[+] Archivo histórico guardado exitosamente: {archive_filepath}")
+                
+                img_archive.save(archive_filepath, "PNG", optimize=True)
+                print(f"[+] Archivo histórico guardado exitosamente ({arch_width}x{arch_height}): {archive_filepath}")
 
                 snapshot_uuid = str(uuid.uuid4())
                 public_filepath = f"public/storage/snapshots_archive/{archive_filename}"
@@ -245,7 +274,7 @@ def main():
                             success = process_canvas_image(r, db_conn, canvas_id, snapshot_data, size_str, palette_id, owner_tier)
                             if success:
                                 r.srem("canvases:pending_snapshots", canvas_id)
-                                print(f"[+] Snapshot HQ procesado: canvas_{canvas_id}.png")
+                                print(f"[+] Snapshot procesado: canvas_{canvas_id}.png")
                         else:
                             r.srem("canvases:pending_snapshots", canvas_id)
                             
