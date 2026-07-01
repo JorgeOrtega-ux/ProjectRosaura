@@ -105,14 +105,6 @@ export class SpaRouter {
             }
 
             const url = navTarget.dataset.nav;
-
-            // === PARCHE: FORZAR NAVEGACIÓN A NIVEL SERVIDOR PARA EVITAR PARPADEOS ===
-            if (url.includes('/canvases/edit/') || url.includes('/canvases/manage/requests/')) {
-                window.location.href = url;
-                return;
-            }
-            // ========================================================================
-
             this.navigate(url);
             return;
         }
@@ -141,13 +133,6 @@ export class SpaRouter {
             }
         } catch(e) {}
         
-        // === PARCHE: SEGURO ADICIONAL PARA NAVEGACIÓN PROGRAMÁTICA ===
-        if (targetPath.includes('/canvases/edit/') || targetPath.includes('/canvases/manage/requests/')) {
-            window.location.href = url;
-            return;
-        }
-        // ============================================================
-
         let currentPath = window.location.pathname;
         
         targetPath = targetPath.split('?')[0].split('#')[0];
@@ -191,13 +176,6 @@ export class SpaRouter {
             if (cleanUrlForLoader !== '/' && cleanUrlForLoader.endsWith('/')) {
                 cleanUrlForLoader = cleanUrlForLoader.slice(0, -1);
             }
-
-            // === PARCHE: INTERCEPTACIÓN DIRECTA EN EL LOADER ===
-            if (cleanUrlForLoader.includes('/canvases/edit/') || cleanUrlForLoader.includes('/canvases/manage/requests/')) {
-                window.location.href = url;
-                return;
-            }
-            // ==================================================
 
             if (cleanUrlForLoader === '/design') {
                 this.navigate(this.basePath + '/');

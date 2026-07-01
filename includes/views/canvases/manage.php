@@ -84,23 +84,23 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                 
                 <div class="component-actions disabled" data-ref="header-selection-actions">
                     
-                    <button class="component-button component-button--icon component-button--h40" data-action="goToResizeCanvas" data-tooltip="<?php echo __('tooltip_resize_canvas') ?: 'Expandir / Ajustar'; ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-ref="btn-nav-resize" data-nav="" data-tooltip="<?php echo __('tooltip_resize_canvas') ?: 'Expandir / Ajustar'; ?>" data-position="bottom">
                         <span class="material-symbols-rounded">expand</span>
                     </button>
 
-                    <button class="component-button component-button--icon component-button--h40 disabled-interactive" data-action="viewCanvasSnapshots" data-tooltip="<?php echo __('tooltip_view_snapshots') ?: 'Ver galería de reinicios'; ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40 disabled-interactive" data-ref="btn-nav-snapshots" data-nav="" data-tooltip="<?php echo __('tooltip_view_snapshots') ?: 'Ver galería de reinicios'; ?>" data-position="bottom">
                         <span class="material-symbols-rounded">collections</span>
                     </button>
 
-                    <button class="component-button component-button--icon component-button--h40" data-action="manageCanvasResets" data-tooltip="<?php echo __('tooltip_manage_resets') ?: 'Programar reinicios'; ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-ref="btn-nav-resets" data-nav="" data-tooltip="<?php echo __('tooltip_manage_resets') ?: 'Programar reinicios'; ?>" data-position="bottom">
                         <span class="material-symbols-rounded">update</span>
                     </button>
 
-                    <button class="component-button component-button--icon component-button--h40" data-action="editSelectedCanvas" data-tooltip="<?php echo __('tooltip_edit_canvas') ?: 'Editar configuración'; ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-ref="btn-nav-edit" data-nav="" data-tooltip="<?php echo __('tooltip_edit_canvas') ?: 'Editar configuración'; ?>" data-position="bottom">
                         <span class="material-symbols-rounded">edit</span>
                     </button>
 
-                    <button class="component-button component-button--icon component-button--h40" data-action="manageCanvasMembers" data-tooltip="<?php echo __('tooltip_manage_members') ?: 'Gestionar miembros'; ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-ref="btn-nav-members" data-nav="" data-tooltip="<?php echo __('tooltip_manage_members') ?: 'Gestionar miembros'; ?>" data-position="bottom">
                         <span class="material-symbols-rounded">group</span>
                     </button>
 

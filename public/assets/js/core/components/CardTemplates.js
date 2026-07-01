@@ -14,12 +14,18 @@ export const CardTemplates = {
         const basePath = config.basePath || '';
         const isFavoriteClass = canvas.is_favorite ? 'is-favorite' : '';
         
-        // Bloque de imagen
-        // NOTA: Se añadió loading="lazy" y decoding="async" para evitar cuellos de botella 
-        // en el Main Thread durante el hover y repintado de CSS.
-        const imgHtml = canvas.snapshot_url 
-            ? `<img src="${escapeHTML(canvas.snapshot_url)}" alt="${name}" class="component-snapshot-card__image" loading="lazy" decoding="async">` 
-            : ``;
+        // Determinar URL de fallback para la imagen
+        const fallbackImg = `${basePath}/assets/img/fallbacks/canvas-default.png`;
+        const srcUrl = canvas.snapshot_url ? escapeHTML(canvas.snapshot_url) : fallbackImg;
+        
+        // Bloque de imagen con onerror por si la ruta devuelta falla
+        const imgHtml = `
+            <img src="${srcUrl}" 
+                 alt="${name}" 
+                 class="component-snapshot-card__image" 
+                 loading="lazy" 
+                 decoding="async" 
+                 onerror="this.src='${fallbackImg}'">`;
 
         // Botón de acción condicional en el dropdown (basado en lógica de negocio devuelta por API)
         const actionButtonHtml = canvas.is_owner 
@@ -65,7 +71,7 @@ export const CardTemplates = {
                                     <div class="component-menu-link-text"><span>Copiar el enlace</span></div>
                                 </button>
                                 
-                                <button type="button" class="component-menu-link" data-action="viewCanvasSnapshots" data-uuid="${uuid}">
+                                <button type="button" class="component-menu-link" data-nav="${basePath}/design/s/${uuid}">
                                     <div class="component-menu-link-icon"><span class="material-symbols-rounded">collections</span></div>
                                     <div class="component-menu-link-text"><span>Ver galería de reinicios</span></div>
                                 </button>
@@ -90,12 +96,18 @@ export const CardTemplates = {
         const snapshotUuid = escapeHTML(snapshot.snapshot_uuid);
         const date = escapeHTML(snapshot.date);
         
+        const fallbackImg = `${basePath}/assets/img/fallbacks/canvas-default.png`;
         const viewUrl = `${basePath}/snapshot/view/${snapshotUuid}`;
-        const imageUrl = snapshot.url.startsWith('/') ? snapshot.url : `/${snapshot.url}`;
+        const imageUrl = snapshot.url ? (snapshot.url.startsWith('/') ? snapshot.url : `/${snapshot.url}`) : fallbackImg;
 
         return `
             <div class="component-snapshot-card">
-                <img src="${escapeHTML(imageUrl)}" alt="${canvasName}" class="component-snapshot-card__image" loading="lazy" decoding="async">
+                <img src="${escapeHTML(imageUrl)}" 
+                     alt="${canvasName}" 
+                     class="component-snapshot-card__image" 
+                     loading="lazy" 
+                     decoding="async"
+                     onerror="this.src='${fallbackImg}'">
                 <div class="component-snapshot-badge">
                     <span class="material-symbols-rounded">history</span>
                     ${date}

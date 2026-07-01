@@ -3,7 +3,7 @@
 
 use App\Config\DatabaseManager;
 use App\Core\System\DatabaseConstants as DB;
-use App\Core\Helpers\EnvLoader;
+use App\Core\Helpers\Utils;
 use PDO;
 
 $canvasIntId = 0; 
@@ -30,9 +30,6 @@ $resizeTimerAction = 'restart';
 
 $canvasUuid = $_GET['id'] ?? '';
 $isSnapshot = isset($_GET['snapshot']); // Bandera para saber si es historial
-
-// Cargar la clave pública de Turnstile para invitados
-$turnstileSiteKey = EnvLoader::get('TURNSTILE_SITE_KEY', '');
 
 if (!empty($canvasUuid)) {
     try {
@@ -80,7 +77,10 @@ if (!empty($canvasUuid)) {
 ?>
 <div class="view-content">
     
-    <div id="cf-turnstile-wrapper" data-sitekey="<?php echo htmlspecialchars($turnstileSiteKey); ?>"></div>
+    <?php 
+    // Utilizamos el render seguro de Utils para no tener un div con ID hardcodeado que de error de doble init.
+    echo Utils::renderTurnstile('canvas_design'); 
+    ?>
 
     <div class="component-wrapper component-wrapper--full no-padding" 
          data-ref="design-wrapper" 
