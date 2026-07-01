@@ -28,18 +28,18 @@ $defaultSizeKey = $defaultSizeData ? key($canvasSizesList) : '64x64';
             <h1 class="component-top-title"><?php echo __('canvas_create_title'); ?></h1>
         </div>
         <div class="component-top-right">
-            <button type="button" class="component-button component-button--icon component-button--h40" data-action="createCanvas" data-ref="btn-create-canvas" data-tooltip="<?php echo __('btn_create_canvas'); ?>" data-position="bottom">
+            <button type="button" class="component-button component-button--h40" data-action="createCanvas" data-ref="btn-create-canvas">
                 <span class="material-symbols-rounded">add_box</span>
+                <span><?php echo __('btn_create_experience'); ?></span>
             </button>
         </div>
     </div>
 
     <div class="component-viewport">
         <div class="component-wrapper">
-            <div class="component-bottom">
+            <div class="component-bottom" style="display: flex; flex-direction: column; gap: 16px;">
                 
                 <div class="component-card--grouped">
-
                     <div class="component-group-item component-group-item--stacked" data-ref="scope-section">
                         <div class="component-card__content">
                             <div class="component-card__text">
@@ -245,9 +245,9 @@ $defaultSizeKey = $defaultSizeData ? key($canvasSizesList) : '64x64';
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <hr class="component-divider">
-
+                <div class="component-card--grouped">
                     <div class="component-group-item component-group-item--stacked">
                         <div class="component-card__content">
                             <div class="component-card__text">
@@ -375,9 +375,9 @@ $defaultSizeKey = $defaultSizeData ? key($canvasSizesList) : '64x64';
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <hr class="component-divider">
-
+                <div class="component-card--grouped">
                     <div class="component-group-item component-group-item--stacked">
                         <div class="component-card__content">
                             <div class="component-card__text">

@@ -65,18 +65,18 @@ if (!$canvasId) {
             <h1 class="component-top-title"><?php echo __('canvas_edit_title'); ?></h1>
         </div>
         <div class="component-top-right">
-            <button type="button" class="component-button component-button--icon component-button--h40" data-action="updateCanvas" data-tooltip="<?php echo __('btn_save_changes'); ?>" data-position="bottom">
+            <button type="button" class="component-button component-button--h40" data-action="updateCanvas">
                 <span class="material-symbols-rounded">save</span>
+                <span><?php echo __('btn_save_changes'); ?></span>
             </button>
         </div>
     </div>
 
     <div class="component-viewport">
         <div class="component-wrapper">
-            <div class="component-bottom">
+            <div class="component-bottom" style="display: flex; flex-direction: column; gap: 16px;">
                 
                 <div class="component-card--grouped">
-
                     <div class="component-group-item component-group-item--stateful">
                         
                         <div class="active component-state-box" data-state="canvasname-view">
@@ -124,9 +124,9 @@ if (!$canvasId) {
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <hr class="component-divider">
-
+                <div class="component-card--grouped">
                     <div class="component-group-item component-group-item--stacked" style="opacity: 0.7;" data-tooltip="<?php echo __('canvas_size_locked_tooltip'); ?>" data-position="top">
                         <div class="component-card__content">
                             <div class="component-card__text">
@@ -188,28 +188,28 @@ if (!$canvasId) {
                     <div class="component-group-item component-group-item--stacked">
                         <div class="component-card__content">
                             <div class="component-card__text">
-                                <h2 class="component-card__title"><?php echo __('canvas_approval_title') ?? 'Aprobación de acceso'; ?></h2>
-                                <p class="component-card__description"><?php echo __('canvas_approval_desc') ?? 'Si se activa, los usuarios deberán enviar una solicitud que tú aprobarás antes de que puedan unirse y pintar.'; ?></p>
+                                <h2 class="component-card__title"><?php echo __('canvas_approval_title'); ?></h2>
+                                <p class="component-card__description"><?php echo __('canvas_approval_desc'); ?></p>
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--start">
                             <div class="component-dropdown-wrapper">
                                 <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="dropdownApproval">
                                     <span class="material-symbols-rounded" data-ref="icon-approval"><?php echo $cApproval ? 'front_hand' : 'no_accounts'; ?></span>
-                                    <span class="component-dropdown-text" data-ref="text-approval"><?php echo $cApproval ? (__('canvas_approval_true') ?? 'Requiere aprobación') : (__('canvas_approval_false') ?? 'No requiere aprobación'); ?></span>
+                                    <span class="component-dropdown-text" data-ref="text-approval"><?php echo $cApproval ? __('canvas_approval_true') : __('canvas_approval_false'); ?></span>
                                     <span class="material-symbols-rounded">expand_more</span>
                                 </div>
                                 <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="dropdownApproval">
                                     <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
                                         <div class="pill-container"><div class="drag-handle"></div></div>
                                         <div class="component-menu-list component-menu-list--scrollable">
-                                            <div class="component-menu-link <?php echo $cApproval == 0 ? 'active' : ''; ?>" data-action="selectValue" data-type="requires_approval" data-value="false" data-label="No requiere aprobación" data-icon="no_accounts">
+                                            <div class="component-menu-link <?php echo $cApproval == 0 ? 'active' : ''; ?>" data-action="selectValue" data-type="requires_approval" data-value="false" data-label="canvas_approval_false" data-icon="no_accounts">
                                                 <div class="component-menu-link-icon"><span class="material-symbols-rounded">no_accounts</span></div>
-                                                <div class="component-menu-link-text"><span><?php echo __('canvas_approval_false') ?? 'No requiere aprobación'; ?></span></div>
+                                                <div class="component-menu-link-text"><span><?php echo __('canvas_approval_false'); ?></span></div>
                                             </div>
-                                            <div class="component-menu-link <?php echo $cApproval == 1 ? 'active' : ''; ?>" data-action="selectValue" data-type="requires_approval" data-value="true" data-label="Requiere aprobación" data-icon="front_hand">
+                                            <div class="component-menu-link <?php echo $cApproval == 1 ? 'active' : ''; ?>" data-action="selectValue" data-type="requires_approval" data-value="true" data-label="canvas_approval_true" data-icon="front_hand">
                                                 <div class="component-menu-link-icon"><span class="material-symbols-rounded">front_hand</span></div>
-                                                <div class="component-menu-link-text"><span><?php echo __('canvas_approval_true') ?? 'Requiere aprobación'; ?></span></div>
+                                                <div class="component-menu-link-text"><span><?php echo __('canvas_approval_true'); ?></span></div>
                                             </div>
                                         </div>
                                     </div>
@@ -223,8 +223,8 @@ if (!$canvasId) {
                     <div class="component-group-item component-group-item--stacked">
                         <div class="component-card__content">
                             <div class="component-card__text">
-                                <h2 class="component-card__title"><?php echo __('canvas_palette_title') ?? 'Paleta de Colores'; ?></h2>
-                                <p class="component-card__description"><?php echo __('canvas_palette_desc') ?? 'Elige la paleta de colores disponible para este lienzo.'; ?></p>
+                                <h2 class="component-card__title"><?php echo __('canvas_palette_title'); ?></h2>
+                                <p class="component-card__description"><?php echo __('canvas_palette_desc'); ?></p>
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--start">
@@ -244,14 +244,14 @@ if (!$canvasId) {
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <hr class="component-divider">
-
+                <div class="component-card--grouped">
                     <div class="component-group-item component-group-item--stacked">
                         <div class="component-card__content">
                             <div class="component-card__text">
-                                <h2 class="component-card__title"><?php echo __('canvas_cooldown_batch_title') ?? 'Píxeles por lote (Capacidad)'; ?></h2>
-                                <p class="component-card__description"><?php echo __('canvas_cooldown_batch_desc') ?? 'Cantidad máxima de píxeles que un usuario puede acumular para colocar sin tener que esperar.'; ?></p>
+                                <h2 class="component-card__title"><?php echo __('canvas_cooldown_batch_title'); ?></h2>
+                                <p class="component-card__description"><?php echo __('canvas_cooldown_batch_desc'); ?></p>
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--start">
@@ -282,8 +282,8 @@ if (!$canvasId) {
                     <div class="component-group-item component-group-item--stacked">
                         <div class="component-card__content">
                             <div class="component-card__text">
-                                <h2 class="component-card__title"><?php echo __('canvas_cooldown_seconds_title') ?? 'Tiempo de recarga (Segundos)'; ?></h2>
-                                <p class="component-card__description"><?php echo __('canvas_cooldown_seconds_desc') ?? 'Segundos que debe esperar el usuario para regenerar 1 píxel gastado (Pon 0 para infinito).'; ?></p>
+                                <h2 class="component-card__title"><?php echo __('canvas_cooldown_seconds_title'); ?></h2>
+                                <p class="component-card__description"><?php echo __('canvas_cooldown_seconds_desc'); ?></p>
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--start">

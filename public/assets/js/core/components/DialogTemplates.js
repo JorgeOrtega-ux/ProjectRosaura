@@ -430,20 +430,21 @@ export const DialogTemplates = {
             <div class="component-modal-header component-modal-header--with-icon">
                 <span class="material-symbols-rounded">sensors</span>
                 <div class="component-modal-header-text">
-                    <h3 class="component-modal-title">Unirse a sesión en vivo</h3>
+                    <h3 class="component-modal-title">${__('title_join_live_share')}</h3>
+                    <p class="component-modal-desc">${__('desc_join_live_share')}</p>
                 </div>
             </div>
             <div class="component-modal-body">
                 <div class="component-form-box component-form-box--full" style="max-width: 100%;">
                     <div class="component-input-group">
-                        <input type="text" data-ref="live-join-code-modal" class="component-input-field" placeholder="Ej. SHR-123" />
-                        <label class="component-input-label">Código de sesión</label>
+                        <input type="text" data-ref="live-join-code-modal" class="component-input-field" placeholder="${__('ph_live_share_code')}">
+                        <label class="component-input-label">${__('lbl_live_share_code')}</label>
                     </div>
                 </div>
             </div>
             <div class="component-modal-actions">
-                <button class="component-button component-button--h45 hide-on-desktop" data-modal-action="cancel">Cancelar</button>
-                <button class="component-button component-button--dark component-button--h45 component-button--full" data-action="submitJoinLive">Unirse</button>
+                <button class="component-button component-button--h45 hide-on-desktop" data-modal-action="cancel">${__('btn_cancel')}</button>
+                <button class="component-button component-button--dark component-button--h45 component-button--full" data-action="submitJoinLive">${__('btn_join')}</button>
             </div>
         `
     },
@@ -452,45 +453,71 @@ export const DialogTemplates = {
         build: (data) => `
             <div class="pill-container"><div class="drag-handle"></div></div>
             <div class="component-modal-header component-modal-header--with-icon">
-                <span class="material-symbols-rounded">podcast</span>
+                <span class="material-symbols-rounded">stream</span>
                 <div class="component-modal-header-text">
-                    <h3 class="component-modal-title">Transmitir Plantilla en Vivo</h3>
-                    <p class="component-modal-desc">Comparte tu plantilla con otros usuarios.</p>
+                    <h3 class="component-modal-title">${__('title_start_live_share')}</h3>
+                    <p class="component-modal-desc">${__('desc_start_live_share')}</p>
                 </div>
             </div>
             <div class="component-modal-body" data-ref="live-share-modal-body">
                 <div class="live-share-owner-content">
                     <div class="component-alert-success ${data.isActive ? 'active' : ''}" style="margin-bottom: 12px; display: ${data.isActive ? 'block' : 'none'};" data-ref="live-share-active-alert">
-                        Transmisión activa
+                        ${__('txt_live_active')}
                     </div>
                     
                     <div class="live-share-code-display" data-ref="live-share-code">${data.code || '...'}</div>
                     
                     <div class="live-share-inputs-grid" style="margin-top: 12px;">
                         <div class="live-share-input-group">
-                            <label class="live-share-label">Posición X</label>
-                            <div class="component-input-group component-input-group--h34">
-                                <input type="number" data-ref="live-input-x" value="${data.x || 0}" class="component-input-field component-input-field--simple">
+                            <label class="live-share-label">${__('lbl_position_x')}</label>
+                            <div class="component-inline-control component-inline-control--fixed">
+                                <div class="component-inline-control__group">
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustLivePosition" data-axis="x" data-step="-10"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustLivePosition" data-axis="x" data-step="-1"><span class="material-symbols-rounded">chevron_left</span></button>
+                                </div>
+                                <div class="component-inline-control__center" data-ref="live-input-x" data-val="${data.x || 0}">${data.x || 0}</div>
+                                <div class="component-inline-control__group">
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustLivePosition" data-axis="x" data-step="1"><span class="material-symbols-rounded">chevron_right</span></button>
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustLivePosition" data-axis="x" data-step="10"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
+                                </div>
                             </div>
                         </div>
                         <div class="live-share-input-group">
-                            <label class="live-share-label">Posición Y</label>
-                            <div class="component-input-group component-input-group--h34">
-                                <input type="number" data-ref="live-input-y" value="${data.y || 0}" class="component-input-field component-input-field--simple">
+                            <label class="live-share-label">${__('lbl_position_y')}</label>
+                            <div class="component-inline-control component-inline-control--fixed">
+                                <div class="component-inline-control__group">
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustLivePosition" data-axis="y" data-step="-10"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustLivePosition" data-axis="y" data-step="-1"><span class="material-symbols-rounded">chevron_left</span></button>
+                                </div>
+                                <div class="component-inline-control__center" data-ref="live-input-y" data-val="${data.y || 0}">${data.y || 0}</div>
+                                <div class="component-inline-control__group">
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustLivePosition" data-axis="y" data-step="1"><span class="material-symbols-rounded">chevron_right</span></button>
+                                    <button type="button" class="component-inline-control__btn" data-action="adjustLivePosition" data-axis="y" data-step="10"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
+                                </div>
                             </div>
                         </div>
                     </div>
                     
                     <div class="live-share-input-group" style="margin-top: 12px;">
-                        <label class="live-share-label live-share-label--flex">Opacidad <span data-ref="live-opacity-val">${Math.round((data.opacity || 1) * 100)}%</span></label>
-                        <input type="range" data-ref="live-input-opacity" min="0" max="1" step="0.05" value="${data.opacity || 1}" class="live-share-range">
+                        <label class="live-share-label live-share-label--flex">${__('lbl_opacity')}</label>
+                        <div class="component-inline-control component-inline-control--fixed">
+                            <div class="component-inline-control__group">
+                                <button type="button" class="component-inline-control__btn" data-action="adjustLiveOpacity" data-step="-0.10" data-min="0"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
+                                <button type="button" class="component-inline-control__btn" data-action="adjustLiveOpacity" data-step="-0.05" data-min="0"><span class="material-symbols-rounded">chevron_left</span></button>
+                            </div>
+                            <div class="component-inline-control__center" data-ref="live-input-opacity" data-val="${data.opacity !== undefined ? data.opacity : 1}">${Math.round((data.opacity !== undefined ? data.opacity : 1) * 100)}%</div>
+                            <div class="component-inline-control__group">
+                                <button type="button" class="component-inline-control__btn" data-action="adjustLiveOpacity" data-step="0.05" data-max="1"><span class="material-symbols-rounded">chevron_right</span></button>
+                                <button type="button" class="component-inline-control__btn" data-action="adjustLiveOpacity" data-step="0.10" data-max="1"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
             <div class="component-modal-actions" style="margin-top: 8px;">
-                <button class="component-button component-button--h45 hide-on-desktop" data-modal-action="cancel">Cerrar</button>
-                <button class="component-button component-button--danger component-button--h45 component-button--full" data-action="stopLive" style="display: ${data.isActive ? 'flex' : 'none'};">Detener</button>
-                <button class="component-button component-button--dark component-button--h45 component-button--full" data-action="startLive" style="display: ${data.isActive ? 'none' : 'flex'};">Iniciar</button>
+                <button class="component-button component-button--h45 hide-on-desktop" data-modal-action="cancel">${__('btn_close')}</button>
+                <button class="component-button component-button--danger component-button--h45 component-button--full" data-action="stopLive" style="display: ${data.isActive ? 'flex' : 'none'};">${__('btn_stop_live')}</button>
+                <button class="component-button component-button--dark component-button--h45 component-button--full" data-action="startLive" style="display: ${data.isActive ? 'none' : 'flex'};">${__('btn_start_live')}</button>
             </div>
         `
     }
