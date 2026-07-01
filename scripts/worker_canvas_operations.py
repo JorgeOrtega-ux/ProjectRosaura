@@ -35,16 +35,30 @@ def get_db_connection():
         cursorclass=pymysql.cursors.DictCursor
     )
 
+def parse_size(size_val):
+    size_str = str(size_val).lower().strip()
+    if 'x' in size_str:
+        parts = size_str.split('x')
+        w = int(parts[0])
+        h = int(parts[1]) if len(parts) > 1 else w
+        return w, h
+    else:
+        v = int(size_str)
+        return v, v
+
 # ==========================================
 # 1. EJECUTOR DE REDIMENSIONES (RESIZE)
 # ==========================================
 def process_resize_task(r, db, task_data):
     try:
         canvas_id = int(task_data.get('canvas_id'))
-        old_size_meta = int(task_data.get('old_size'))
-        new_size = int(task_data.get('new_size'))
+        old_size_meta_raw = task_data.get('old_size', '64x64')
+        new_size_raw = task_data.get('new_size', '64x64')
+        
+        old_w, old_h = parse_size(old_size_meta_raw)
+        new_w, new_h = parse_size(new_size_raw)
 
-        logging.info(f"Redimensionando lienzo {canvas_id} hacia {new_size}x{new_size}")
+        logging.info(f"Redimensionando lienzo {canvas_id} de {old_w}x{old_h} hacia {new_w}x{new_h}")
 
         state_key = f"canvas:{canvas_id}:state"
         old_state = r.get(state_key)
@@ -53,32 +67,35 @@ def process_resize_task(r, db, task_data):
             raise ValueError(f"Estado binario no encontrado para lienzo {canvas_id}.")
 
         actual_len = len(old_state)
-        expected_size = old_size_meta * old_size_meta
+        expected_size = old_w * old_h
 
         # AUTO-CORRECCIÓN SI HAY DESINCRONIZACIÓN ENTRE DB Y REDIS
         if actual_len != expected_size:
             logging.warning(f"Desincronización detectada. Metadata esperaba {expected_size} bytes, Redis tiene {actual_len} bytes.")
+            # Si el tamaño real no coincide con w*h, asumimos que es cuadrado como fallback
             real_old_size = int(math.sqrt(actual_len))
             logging.warning(f"Auto-corrigiendo tamaño base a {real_old_size}x{real_old_size} para procesar correctamente.")
-            old_size = real_old_size
-        else:
-            old_size = old_size_meta
+            old_w, old_h = real_old_size, real_old_size
 
-        # Transformación Matemática Binaria
-        new_state = bytearray([255] * (new_size * new_size))
-        limit = min(old_size, new_size)
+        # Transformación Matemática Binaria para resoluciones asimétricas
+        new_state = bytearray([255] * (new_w * new_h))
+        limit_x = min(old_w, new_w)
+        limit_y = min(old_h, new_h)
         
-        for y in range(limit):
-            for x in range(limit):
-                old_idx = (y * old_size) + x
-                new_idx = (y * new_size) + x
+        for y in range(limit_y):
+            for x in range(limit_x):
+                old_idx = (y * old_w) + x
+                new_idx = (y * new_w) + x
                 new_state[new_idx] = old_state[old_idx]
 
         new_state_bytes = bytes(new_state)
         r.set(state_key, new_state_bytes)
 
+        # Guardar en base de datos como NxM (ej. 2048x1024)
+        new_size_db_str = f"{new_w}x{new_h}"
+
         with db.cursor() as cursor:
-            cursor.execute("UPDATE canvases SET size = %s WHERE id = %s", (new_size, canvas_id))
+            cursor.execute("UPDATE canvases SET size = %s WHERE id = %s", (new_size_db_str, canvas_id))
             compressed_state = zlib.compress(new_state_bytes)
             cursor.execute("""
                 INSERT INTO canvas_snapshots (canvas_id, snapshot_data) 
@@ -89,7 +106,7 @@ def process_resize_task(r, db, task_data):
         # Limpiar y notificar
         r.delete(f"canvas:{canvas_id}:resize_lock")
         r.publish("admin:canvas_events", json.dumps({
-            "type": "canvas_resize_completed", "canvas_id": canvas_id, "new_size": new_size
+            "type": "canvas_resize_completed", "canvas_id": canvas_id, "new_size": new_size_db_str
         }))
         logging.info(f"Redimensión de lienzo {canvas_id} completada exitosamente.")
 
@@ -137,7 +154,7 @@ def resize_listener_thread():
 def process_reset_task(r, db, task_data):
     canvas_id = task_data['canvas_id']
     take_snapshot = task_data.get('take_snapshot', 1)
-    canvas_size = task_data.get('canvas_size', 64)
+    canvas_size = task_data.get('canvas_size', '64x64')
     
     logging.info(f"Iniciando reseteo para lienzo ID {canvas_id}.")
 
@@ -169,8 +186,8 @@ def process_reset_task(r, db, task_data):
                 logging.warning(f"Timeout esperando snapshot HQ del lienzo {canvas_id}.")
 
         # Crear matriz en blanco
-        size_int = int(str(canvas_size).split('x')[0]) if 'x' in str(canvas_size) else int(canvas_size)
-        empty_state = bytes([255] * (size_int * size_int))
+        size_w, size_h = parse_size(canvas_size)
+        empty_state = bytes([255] * (size_w * size_h))
         compressed_empty = zlib.compress(empty_state)
         
         # Limpiar DB y Redis
@@ -261,11 +278,11 @@ def scheduler_thread():
                     logging.info(f"Programador: Disparando Resize para lienzo {canvas_id}")
                     
                     r.lpush("canvases:pending_resizes", json.dumps({
-                        'canvas_id': canvas_id, 'old_size': int(pr['old_size']), 'new_size': int(pr['target_size'])
+                        'canvas_id': canvas_id, 'old_size': str(pr['old_size']), 'new_size': str(pr['target_size'])
                     }))
                     r.setex(f"canvas:{canvas_id}:resize_lock", 60, "1")
                     r.publish("admin:canvas_events", json.dumps({
-                        'type': 'canvas_locked_resize', 'canvas_id': canvas_id, 'new_size': int(pr['target_size'])
+                        'type': 'canvas_locked_resize', 'canvas_id': canvas_id, 'new_size': pr['target_size']
                     }))
                     cursor.execute("UPDATE canvas_resize_settings SET is_active = 0 WHERE canvas_id = %s", (canvas_id,))
                     if pr['timer_action'] in ['stop', 'none']:
@@ -282,7 +299,7 @@ def scheduler_thread():
                     logging.info(f"Programador: Disparando Reset para lienzo {canvas_id}")
                     
                     r.lpush("canvases:pending_resets", json.dumps({
-                        'canvas_id': canvas_id, 'take_snapshot': pr['take_snapshot'], 'canvas_size': pr['canvas_size']
+                        'canvas_id': canvas_id, 'take_snapshot': pr['take_snapshot'], 'canvas_size': str(pr['canvas_size'])
                     }))
                     r.setex(f"canvas:{canvas_id}:reset_lock", 300, "1")
                     r.publish("admin:canvas_events", json.dumps({"type": "canvas_locked", "canvas_id": canvas_id}))
@@ -298,7 +315,7 @@ def scheduler_thread():
                     res = cursor.fetchone()
                     
                     r.lpush("canvases:pending_resets", json.dumps({
-                        'canvas_id': canvas_id, 'take_snapshot': 1, 'canvas_size': res['size'] if res else 64
+                        'canvas_id': canvas_id, 'take_snapshot': 1, 'canvas_size': str(res['size']) if res else '64x64'
                     }))
                     r.setex(f"canvas:{canvas_id}:reset_lock", 300, "1")
                     r.publish("admin:canvas_events", json.dumps({"type": "canvas_locked", "canvas_id": canvas_id}))

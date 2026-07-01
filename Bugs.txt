@@ -1,4 +1,3 @@
-2-En resize falla ya que no carga la nueva lista de tamaños disponibles
 3-falta agregar fallback de imagen en las cards de lienzos
 4-eliminar el tag de el nivel se suscripcion del header
 5-Crear la seccion de /join
