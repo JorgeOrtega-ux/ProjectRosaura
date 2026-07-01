@@ -5,7 +5,7 @@ import { showMessage } from '../../../../core/utils/uiUtils.js';
 export const DesignTemplates = {
     
     // ==========================================
-    // CONTROL DE MODALES VÍA DIALOGSYSTEM
+    // CONTROL DE MODALES VÍA DIALOGSYSTEM Y MENÚS
     // ==========================================
     handleTemplateModals(e) {
         
@@ -19,45 +19,72 @@ export const DesignTemplates = {
             return true;
         }
 
-        // 2. Abrir Modal de Transmitir
-        const btnOpenStartLive = e.target.closest('[data-action="openStartLiveModal"]');
-        if (btnOpenStartLive) {
-            e.preventDefault();
-            if (window.dialogSystem && this.activeTemplateId) {
+        // 2. Interceptar el toggle del nuevo menú y setear valores
+        const btnToggleLiveMenu = e.target.closest('[data-menu-target="menu-live"]');
+        if (btnToggleLiveMenu) {
+            if (this.activeTemplateId) {
                 const tpl = this.templates.find(t => t.id === this.activeTemplateId);
-                const data = {
-                    isActive: this.liveShareStatus === 'owner',
-                    code: this.liveShareCode || '...',
-                    x: tpl.x,
-                    y: tpl.y,
-                    opacity: tpl.opacity
-                };
-                
-                window.dialogSystem.show('startLiveShare', data).then(res => {
-                    // Limpieza de eventos SOLO cuando el modal se cierra por completo (botón Cerrar / Fondo / Escape)
-                    if (this.uiLiveInputX) this.uiLiveInputX.removeEventListener('change', this.handleLiveInputBound);
-                    if (this.uiLiveInputY) this.uiLiveInputY.removeEventListener('change', this.handleLiveInputBound);
-                    if (this.uiLiveInputOpacity) this.uiLiveInputOpacity.removeEventListener('input', this.handleLiveInputBound);
-                    this.uiLiveInputX = null;
-                    this.uiLiveInputY = null;
-                    this.uiLiveInputOpacity = null;
-                });
+                if (!this.uiLiveInputX) {
+                    this.uiLiveInputX = document.querySelector('[data-ref="val_live_x"]');
+                    this.uiLiveInputY = document.querySelector('[data-ref="val_live_y"]');
+                    this.uiLiveInputOpacity = document.querySelector('[data-ref="val_live_opacity"]');
+                }
 
-                // Attach de listeners a los nuevos inputs creados por DialogSystem
-                setTimeout(() => {
-                    this.uiLiveInputX = document.querySelector('[data-ref="live-input-x"]');
-                    this.uiLiveInputY = document.querySelector('[data-ref="live-input-y"]');
-                    this.uiLiveInputOpacity = document.querySelector('[data-ref="live-input-opacity"]');
+                if (this.uiLiveInputX && tpl) {
+                    this.uiLiveInputX.setAttribute('data-val', tpl.x);
+                    this.uiLiveInputX.textContent = tpl.x;
                     
-                    if (this.uiLiveInputX) this.uiLiveInputX.addEventListener('change', this.handleLiveInputBound);
-                    if (this.uiLiveInputY) this.uiLiveInputY.addEventListener('change', this.handleLiveInputBound);
-                    if (this.uiLiveInputOpacity) this.uiLiveInputOpacity.addEventListener('input', this.handleLiveInputBound);
-                }, 100);
+                    this.uiLiveInputY.setAttribute('data-val', tpl.y);
+                    this.uiLiveInputY.textContent = tpl.y;
+                    
+                    this.uiLiveInputOpacity.setAttribute('data-val', tpl.opacity);
+                    this.uiLiveInputOpacity.textContent = `${Math.round(tpl.opacity * 100)}%`;
+                }
+            }
+            // Retornamos falso para permitir que ModuleMainOptions o quien maneje el menu lo despliegue visualmente
+        }
+        
+        // 3. Interceptar click en los botones del inline-control de Live Template
+        const btnAdjustLive = e.target.closest('[data-action="adjustLiveTemplate"]');
+        if (btnAdjustLive && this.activeTemplateId) {
+            e.preventDefault();
+            const field = btnAdjustLive.getAttribute('data-field');
+            let step = parseFloat(btnAdjustLive.getAttribute('data-step'));
+            const min = btnAdjustLive.hasAttribute('data-min') ? parseFloat(btnAdjustLive.getAttribute('data-min')) : -Infinity;
+            const max = btnAdjustLive.hasAttribute('data-max') ? parseFloat(btnAdjustLive.getAttribute('data-max')) : Infinity;
+            
+            const valRef = document.querySelector(`[data-ref="val_${field}"]`);
+            if (valRef) {
+                let currentVal = parseFloat(valRef.getAttribute('data-val'));
+                let newVal = currentVal + step;
+                if (newVal < min) newVal = min;
+                if (newVal > max) newVal = max;
+                
+                if (field === 'live_opacity') {
+                    newVal = Math.round(newVal * 10) / 10;
+                } else {
+                    newVal = Math.round(newVal);
+                }
+                
+                valRef.setAttribute('data-val', newVal);
+                valRef.textContent = field === 'live_opacity' ? `${Math.round(newVal * 100)}%` : newVal;
+                
+                const tpl = this.templates.find(t => t.id === this.activeTemplateId);
+                if (tpl) {
+                    if (field === 'live_x') tpl.x = newVal;
+                    if (field === 'live_y') tpl.y = newVal;
+                    if (field === 'live_opacity') tpl.opacity = newVal;
+                    
+                    this.requestRender();
+                    if (this.liveShareStatus === 'owner' && typeof this.emitLiveImageUpdate === 'function') {
+                        this.emitLiveImageUpdate();
+                    }
+                }
             }
             return true;
         }
 
-        // 3. Procesar clic en el Botón "Unirse" sin que el Modal se cierre automáticamente
+        // 4. Procesar clic en el Botón "Unirse" sin que el Modal se cierre automáticamente
         const btnSubmitJoinLive = e.target.closest('[data-action="submitJoinLive"]');
         if (btnSubmitJoinLive) {
             e.preventDefault();
@@ -66,9 +93,8 @@ export const DesignTemplates = {
             if (input && input.value.trim() !== '') {
                 const code = input.value.trim().toUpperCase();
                 
-                // Mostrar estado de carga en el botón
                 const originalText = btnSubmitJoinLive.innerHTML;
-                btnSubmitJoinLive.innerHTML = '<span class="component-spinner component-spinner--small" style="width:16px;height:16px;border-width:2px;margin-right:8px;"></span> Uniendo...';
+                btnSubmitJoinLive.innerHTML = '<span class="component-spinner component-spinner--small"></span> Uniendo...';
                 btnSubmitJoinLive.classList.add('disabled-interactive');
                 
                 const attemptJoin = async () => {
@@ -79,10 +105,8 @@ export const DesignTemplates = {
                         }
                         
                         if (success) {
-                            // Cierra el modal solo si logró unirse exitosamente
                             if (window.dialogSystem) window.dialogSystem.closeCurrent(true);
                         } else {
-                            // Falló, restaura el botón y deja el modal abierto
                             btnSubmitJoinLive.innerHTML = originalText;
                             btnSubmitJoinLive.classList.remove('disabled-interactive');
                         }
@@ -101,13 +125,13 @@ export const DesignTemplates = {
             return true;
         }
 
-        // 4. Iniciar Transmisión desde dentro del Modal
+        // 5. Iniciar Transmisión desde menú
         const btnStartLive = e.target.closest('[data-action="startLive"]');
         if (btnStartLive) {
             e.preventDefault();
             if (typeof this.startLiveShare === 'function') {
                 const originalText = btnStartLive.innerHTML;
-                btnStartLive.innerHTML = '<span class="component-spinner component-spinner--small" style="width:16px;height:16px;border-width:2px;margin-right:8px;"></span> Iniciando...';
+                btnStartLive.innerHTML = '<span class="component-spinner component-spinner--small"></span> Iniciando...';
                 btnStartLive.classList.add('disabled-interactive');
 
                 const attemptStart = async () => {
@@ -118,11 +142,11 @@ export const DesignTemplates = {
                         const codeDisplay = document.querySelector('[data-ref="live-share-code"]');
                         const btnStop = document.querySelector('[data-action="stopLive"]');
                         
-                        if (alert) { alert.style.display = 'block'; alert.classList.add('active'); }
+                        if (alert) { alert.classList.remove('disabled'); alert.classList.add('active'); }
                         if (codeDisplay) codeDisplay.textContent = this.liveShareCode;
                         
-                        btnStartLive.style.display = 'none';
-                        if (btnStop) btnStop.style.display = 'flex';
+                        btnStartLive.classList.add('disabled');
+                        if (btnStop) btnStop.classList.remove('disabled');
                     }
                     
                     btnStartLive.innerHTML = originalText;
@@ -134,23 +158,22 @@ export const DesignTemplates = {
             return true;
         }
 
-        // 5. Detener Transmisión desde dentro del Modal
+        // 6. Detener Transmisión desde menú
         const btnStopLive = e.target.closest('[data-action="stopLive"]');
         if (btnStopLive) {
             e.preventDefault();
             if (typeof this.stopLiveShare === 'function') {
                 this.stopLiveShare();
                 
-                // Actualizar la interfaz del modal sin cerrarlo
                 const alert = document.querySelector('[data-ref="live-share-active-alert"]');
                 const codeDisplay = document.querySelector('[data-ref="live-share-code"]');
                 const btnStart = document.querySelector('[data-action="startLive"]');
                 
-                if (alert) { alert.style.display = 'none'; alert.classList.remove('active'); }
+                if (alert) { alert.classList.add('disabled'); alert.classList.remove('active'); }
                 if (codeDisplay) codeDisplay.textContent = '...';
                 
-                btnStopLive.style.display = 'none';
-                if (btnStart) btnStart.style.display = 'flex';
+                btnStopLive.classList.add('disabled');
+                if (btnStart) btnStart.classList.remove('disabled');
             }
             return true;
         }

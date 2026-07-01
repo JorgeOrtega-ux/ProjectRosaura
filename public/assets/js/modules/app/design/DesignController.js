@@ -83,12 +83,11 @@ class DesignController {
         this.liveShareCode = null;
         this.liveTemplateId = null;
         
-        // Punteros a los inputs del Modal (se asignan cuando el modal se abre)
+        // Punteros a los componentes div (inline-controls)
         this.uiLiveInputX = null;
         this.uiLiveInputY = null;
         this.uiLiveInputOpacity = null;
         
-        this.handleLiveInputBound = this.handleLiveInput.bind(this);
         this.handleWheelBound = this.handleWheel.bind(this);
         this.handleMouseDownBound = this.handleMouseDown.bind(this);
         this.handleMouseMoveBound = this.handleMouseMove.bind(this);
@@ -181,7 +180,7 @@ class DesignController {
             : 0;
 
         if (tier < 1) { 
-            const liveShareMenuBtn = document.querySelector('[data-action="openStartLiveModal"]');
+            const liveShareMenuBtn = document.querySelector('[data-module-target="moduleDesignTools"][data-menu-target="menu-live"]');
             if (liveShareMenuBtn) {
                 liveShareMenuBtn.classList.add('disabled-interactive');
                 liveShareMenuBtn.classList.add('component-opacity-half');
@@ -254,10 +253,6 @@ class DesignController {
         if (this.fileInput) {
             this.fileInput.removeEventListener('change', this.handleFileUploadBound);
         }
-
-        if (this.uiLiveInputX) this.uiLiveInputX.removeEventListener('change', this.handleLiveInputBound);
-        if (this.uiLiveInputY) this.uiLiveInputY.removeEventListener('change', this.handleLiveInputBound);
-        if (this.uiLiveInputOpacity) this.uiLiveInputOpacity.removeEventListener('input', this.handleLiveInputBound);
 
         if (this.animationFrameId) {
             cancelAnimationFrame(this.animationFrameId);

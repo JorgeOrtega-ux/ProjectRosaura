@@ -193,7 +193,10 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                                     <td>
                                         <div class="component-badge component-badge--sm">
                                             <span class="material-symbols-rounded">aspect_ratio</span>
-                                            <span class="search-target"><?php echo htmlspecialchars($canvas['size'] . 'x' . $canvas['size']); ?></span>
+                                            <span class="search-target"><?php 
+                                                $sizeVal = $canvas['size'] ?? '0';
+                                                echo htmlspecialchars(strpos($sizeVal, 'x') !== false ? $sizeVal : $sizeVal . 'x' . $sizeVal); 
+                                            ?></span>
                                         </div>
                                     </td>
                                     <td>

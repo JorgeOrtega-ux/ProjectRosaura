@@ -15,29 +15,6 @@ export const DesignInteractions = {
         if (this.fileInput) {
             this.fileInput.addEventListener('change', this.handleFileUploadBound);
         }
-
-        if (this.uiLiveInputX) this.uiLiveInputX.addEventListener('change', this.handleLiveInputBound);
-        if (this.uiLiveInputY) this.uiLiveInputY.addEventListener('change', this.handleLiveInputBound);
-        if (this.uiLiveInputOpacity) this.uiLiveInputOpacity.addEventListener('input', this.handleLiveInputBound);
-    },
-
-    handleLiveInput(e) {
-        if (this.isResetLocked || this.isResizeLocked || this.liveShareStatus !== 'owner' || !this.activeTemplateId) return;
-        const tpl = this.templates.find(t => t.id === this.activeTemplateId);
-        if (!tpl) return;
-
-        if (e.target === this.uiLiveInputX) tpl.x = parseInt(e.target.value) || 0;
-        if (e.target === this.uiLiveInputY) tpl.y = parseInt(e.target.value) || 0;
-        if (e.target === this.uiLiveInputOpacity) {
-            tpl.opacity = parseFloat(e.target.value) || 1;
-            const lbl = document.querySelector('[data-ref="live-opacity-val"]');
-            if (lbl) lbl.textContent = `${Math.round(tpl.opacity * 100)}%`;
-        }
-        
-        this.requestRender();
-        if (typeof this.emitLiveImageUpdate === 'function') {
-            this.emitLiveImageUpdate(); 
-        }
     },
 
     handleClick(e) {
@@ -327,9 +304,16 @@ export const DesignInteractions = {
                 }
             }
             
+            // Actualizar interfaz lateral (inline-controls) de manera dinámica si es el owner
             if (this.liveShareStatus === 'owner' && this.activeTemplateId === this.liveTemplateId) {
-                if (this.uiLiveInputX) this.uiLiveInputX.value = tpl.x;
-                if (this.uiLiveInputY) this.uiLiveInputY.value = tpl.y;
+                if (this.uiLiveInputX) {
+                    this.uiLiveInputX.setAttribute('data-val', tpl.x);
+                    this.uiLiveInputX.textContent = tpl.x;
+                }
+                if (this.uiLiveInputY) {
+                    this.uiLiveInputY.setAttribute('data-val', tpl.y);
+                    this.uiLiveInputY.textContent = tpl.y;
+                }
             }
 
             this.requestRender();

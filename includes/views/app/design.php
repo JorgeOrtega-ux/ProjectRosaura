@@ -148,8 +148,8 @@ if (!empty($canvasUuid)) {
                     
                     <div class="component-divider-vertical" data-ref="main-actions-divider"></div>
 
-                    <button class="component-button component-button--icon component-button--h40 disabled" data-action="openStartLiveModal" data-ref="btn-start-live" data-tooltip="Transmitir Plantilla en Vivo" data-position="bottom">
-                        <span class="material-symbols-rounded">podcast</span>
+                    <button class="component-button component-button--icon component-button--h40 disabled" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-live" data-ref="btn-start-live" data-tooltip="Transmitir Plantilla en Vivo" data-position="bottom">
+                        <span class="material-symbols-rounded">stream</span>
                     </button>
                     <button class="component-button component-button--icon component-button--h40 disabled" data-action="toggleTemplateLock" data-ref="btn-template-lock" data-tooltip="Bloquear / Desbloquear Plantilla" data-position="bottom">
                         <span class="material-symbols-rounded">lock_open</span>
