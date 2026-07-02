@@ -1,10 +1,8 @@
-3-falta agregar fallback de imagen en las cards de lienzos
-4-eliminar el tag de el nivel se suscripcion del header
+
 5-Crear la seccion de /join
 6-crear expandibles en seccion de create / join
 7-en el modulo de create/edit de paleta de colores el ultimo no es uncolor ademas de que es ancho, no es circulo
 8-resolver en conjunto a problema 7 que en ese modulo solo se muestran los primeros 5 colores por ende todos se ven negros/grises
-9-remplazar el btn de crear lienzo por uno con texto
 10-en la seccion de manage canvases eliminar el btn de <button class="component-button component-button--icon component-button--h40" data-action="deselectCanvas" data-tooltip="tooltip_cancel_selection" data-position="bottom">
                         <span class="material-symbols-rounded">close</span>
                     </button>
