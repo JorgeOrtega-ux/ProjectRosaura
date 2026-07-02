@@ -82,7 +82,7 @@ export const RouteModulesMap = {
     // 👇 La ruta general de members se evalúa DESPUÉS
     '/canvases/members/:uuid': { path: './modules/canvases/team/CanvasMembersController.js', className: 'CanvasMembersController', skeletonType: 'layout-dashboard' },
     
-    '/canvases/resize/:uuid': { path: './modules/canvases/workspace/CanvasResizeController.js', className: 'CanvasResizeController', skeletonType: 'layout-settings-generic' },
+    '/canvases/manage/resize/:uuid': { path: './modules/canvases/workspace/CanvasResizeController.js', className: 'CanvasResizeController', skeletonType: 'layout-settings-generic' },
     
     '/canvases/join': { path: './modules/canvases/core/CanvasesController.js', className: 'CanvasesController', skeletonType: 'layout-dashboard' },
     

@@ -84,7 +84,7 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                     </thead>
                     <tbody data-ref="requests-table-body">
                         <?php if (empty($pendingRequests)): ?>
-                            <tr class="disabled" data-ref="empty-requests-table" style="display: table-row;">
+                            <tr data-ref="empty-requests-table">
                                 <td colspan="3" class="component-empty-table-cell">
                                     <div class="component-empty-state component-empty-state--table">
                                         <span class="material-symbols-rounded component-empty-state-icon">inbox</span>

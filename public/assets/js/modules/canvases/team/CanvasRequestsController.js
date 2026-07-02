@@ -92,7 +92,7 @@ class CanvasRequestsController {
         if (!tbody) return;
 
         if (requests.length === 0) {
-            this.showEmptyState(__('txt_no_pending_requests'), 'done_all');
+            this.showEmptyState(__('canvases_requests_empty') || 'No hay solicitudes pendientes en este momento.', 'inbox');
             return;
         }
 
@@ -129,11 +129,11 @@ class CanvasRequestsController {
         tbody.innerHTML = html;
     }
 
-    showEmptyState(message, icon = 'hourglass_empty') {
+    showEmptyState(message, icon = 'inbox') {
         const tbody = document.querySelector('[data-ref="requests-table-body"]');
         if (tbody) {
             tbody.innerHTML = `
-                <tr class="disabled">
+                <tr data-ref="empty-requests-table">
                     <td colspan="3" class="component-empty-table-cell">
                         <div class="component-empty-state component-empty-state--table">
                             <span class="material-symbols-rounded component-empty-state-icon">${icon}</span>

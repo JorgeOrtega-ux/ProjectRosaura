@@ -321,7 +321,7 @@ class CanvasesManageController {
                 if (btnMembers) btnMembers.setAttribute('data-nav', `${this.basePath}/canvases/members/${this.selectedCanvasUuid}`);
                 if (btnResets) btnResets.setAttribute('data-nav', `${this.basePath}/canvases/manage/resets/${this.selectedCanvasUuid}`);
                 if (btnSnapshots) btnSnapshots.setAttribute('data-nav', `${this.basePath}/design/s/${this.selectedCanvasUuid}`);
-                if (btnResize) btnResize.setAttribute('data-nav', `${this.basePath}/canvases/resize/${this.selectedCanvasUuid}`);
+                if (btnResize) btnResize.setAttribute('data-nav', `${this.basePath}/canvases/manage/resize/${this.selectedCanvasUuid}`);
             }
         } else {
             if (selectionMode) selectionMode.classList.replace('active', 'disabled');

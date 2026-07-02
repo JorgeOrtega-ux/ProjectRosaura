@@ -28,7 +28,9 @@ class CanvasResetController {
     }
 
     init() {
-        if (this.isInitialized) return;
+        if (this.isInitialized) {
+            this.destroy();
+        }
         
         this.wrapper = document.querySelector('[data-ref="canvas-resets-wrapper"]');
         if (!this.wrapper) return;
@@ -47,19 +49,13 @@ class CanvasResetController {
         this.calendar = new CalendarSystem('.component-module[data-module="moduleCalendarDate"]');
         this.calendar.init();
 
-        this.calendar.setup(null, (isoString, displayString) => {
-            if (this.inputDateTime) this.inputDateTime.value = isoString;
-            const textRef = this.wrapper.querySelector('[data-ref="reset-date-text"]');
-            if (textRef) textRef.textContent = displayString;
-        }, () => {
-            if (this.inputDateTime) this.inputDateTime.value = '';
-            const textRef = this.wrapper.querySelector('[data-ref="reset-date-text"]');
-            if (textRef) textRef.textContent = __('lbl_select_date');
-        });
+        this.setupCalendarCallbacks(this.inputDateTime ? this.inputDateTime.value : '');
+
+        if (this.toggleActive) {
+            this.updateOptionsContainerState(this.toggleActive.checked);
+        }
 
         this.bindEvents();
-        this.loadCurrentSettings();
-
         this.isInitialized = true;
     }
 
@@ -69,6 +65,18 @@ class CanvasResetController {
         document.removeEventListener('click', this.handleGlobalClickBound);
         document.removeEventListener('change', this.handleToggleChangeBound);
         this.isInitialized = false;
+    }
+
+    setupCalendarCallbacks(initialDateStr) {
+        this.calendar.setup(initialDateStr, (isoString, displayString) => {
+            if (this.inputDateTime) this.inputDateTime.value = isoString;
+            const textRef = this.wrapper.querySelector('[data-ref="reset-date-text"]');
+            if (textRef) textRef.textContent = displayString;
+        }, () => {
+            if (this.inputDateTime) this.inputDateTime.value = '';
+            const textRef = this.wrapper.querySelector('[data-ref="reset-date-text"]');
+            if (textRef) textRef.textContent = __('lbl_select_date');
+        });
     }
 
     bindEvents() {
@@ -173,20 +181,6 @@ class CanvasResetController {
         }
     }
 
-    utcStringToLocalInputFormat(utcString) {
-        if (!utcString) return '';
-        const dateObj = new Date(utcString.replace(' ', 'T') + 'Z');
-        if (isNaN(dateObj.getTime())) return '';
-
-        const yyyy = dateObj.getFullYear();
-        const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
-        const dd = String(dateObj.getDate()).padStart(2, '0');
-        const hh = String(dateObj.getHours()).padStart(2, '0');
-        const min = String(dateObj.getMinutes()).padStart(2, '0');
-
-        return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
-    }
-
     localInputFormatToUtcString(localString) {
         if (!localString) return null;
         const dateObj = new Date(localString);
@@ -200,47 +194,6 @@ class CanvasResetController {
         const ss = '00';
 
         return `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
-    }
-
-    async loadCurrentSettings() {
-        const canvasId = this.wrapper.getAttribute('data-canvas-id');
-        if (!canvasId) return;
-
-        const result = await this.api.post(ApiRoutes.Canvases.GetResetSettings, { id: canvasId }, this.abortController.signal);
-
-        if (result.aborted) return;
-
-        if (result.success && result.data) {
-            const data = result.data;
-            
-            if (this.toggleActive) {
-                this.toggleActive.checked = data.is_active;
-                this.updateOptionsContainerState(data.is_active);
-            }
-
-            if (data.next_reset_at && this.inputDateTime) {
-                const localStr = this.utcStringToLocalInputFormat(data.next_reset_at);
-                
-                this.calendar.setup(localStr, (isoString, displayString) => {
-                    if (this.inputDateTime) this.inputDateTime.value = isoString;
-                    const textRef = this.wrapper.querySelector('[data-ref="reset-date-text"]');
-                    if (textRef) textRef.textContent = displayString;
-                }, () => {
-                    if (this.inputDateTime) this.inputDateTime.value = '';
-                    const textRef = this.wrapper.querySelector('[data-ref="reset-date-text"]');
-                    if (textRef) textRef.textContent = __('lbl_select_date');
-                });
-            }
-
-            if (this.checkSnapshot) {
-                this.checkSnapshot.checked = data.take_snapshot;
-            }
-            
-            if (data.timer_action) {
-                const item = this.wrapper.querySelector(`[data-action="selectTimerAction"][data-value="${data.timer_action}"]`);
-                if (item) this.selectTimerValue(item);
-            }
-        }
     }
 
     async saveSettings(btnSave) {

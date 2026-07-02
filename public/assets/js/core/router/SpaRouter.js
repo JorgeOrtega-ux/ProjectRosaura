@@ -50,8 +50,10 @@ export class SpaRouter {
             moduleUrl = '/canvases/members/:uuid';
             triggerManualLoad = true;
             
-        } else if (moduleUrl.startsWith('/canvases/resize/')) { 
-            moduleUrl = '/canvases/resize/:uuid';
+        } else if (moduleUrl.startsWith('/canvases/manage/resize/')) { 
+            moduleUrl = '/canvases/manage/resize/:uuid';
+        } else if (moduleUrl.startsWith('/canvases/resize/')) {
+            moduleUrl = '/canvases/manage/resize/:uuid';
             triggerManualLoad = true;
         } else if (moduleUrl.startsWith('/design/s/')) {
             moduleUrl = '/design/s/:uuid';
@@ -255,8 +257,10 @@ export class SpaRouter {
                     moduleUrl = '/canvases/manage/requests/:uuid';
                 } else if (moduleUrl.startsWith('/canvases/manage/resets/')) {
                     moduleUrl = '/canvases/manage/resets/:uuid';
+                } else if (moduleUrl.startsWith('/canvases/manage/resize/')) {
+                    moduleUrl = '/canvases/manage/resize/:uuid';
                 } else if (moduleUrl.startsWith('/canvases/resize/')) { 
-                    moduleUrl = '/canvases/resize/:uuid';
+                    moduleUrl = '/canvases/manage/resize/:uuid';
                 } else if (moduleUrl.startsWith('/canvases/edit/')) {
                     moduleUrl = '/canvases/edit/:uuid';
                     
@@ -430,8 +434,10 @@ export class SpaRouter {
             mapKey = '/canvases/manage/requests/:uuid';
         } else if (cleanUrl.startsWith('/canvases/manage/resets/')) {
             mapKey = '/canvases/manage/resets/:uuid';
+        } else if (cleanUrl.startsWith('/canvases/manage/resize/')) {
+            mapKey = '/canvases/manage/resize/:uuid';
         } else if (cleanUrl.startsWith('/canvases/resize/')) { 
-            mapKey = '/canvases/resize/:uuid';
+            mapKey = '/canvases/manage/resize/:uuid';
         } else if (cleanUrl.startsWith('/canvases/edit/')) {
             mapKey = '/canvases/edit/:uuid';
             

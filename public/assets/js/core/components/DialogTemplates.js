@@ -291,6 +291,27 @@ export const DialogTemplates = {
         })
     },
 
+    confirmResetNow: {
+        build: () => DialogTemplates.confirmAction.build({
+            titleKey: 'title_confirm_reset_now',
+            descKey: 'desc_confirm_reset_now',
+            confirmClass: 'component-button--danger',
+            confirmKey: 'btn_reset_now'
+        })
+    },
+
+    confirmResizeNow: {
+        build: (data) => DialogTemplates.confirmAction.build({
+            titleKey: 'title_confirm_resize_now',
+            descKey: 'desc_confirm_resize_now',
+            descHtml: data?.sizeLabel
+                ? __('desc_confirm_resize_now').replace(':size', `<b>${data.sizeLabel}</b>`)
+                : __('desc_confirm_resize_now').replace(':size', ''),
+            confirmClass: 'component-button--danger',
+            confirmKey: 'btn_apply_now'
+        })
+    },
+
     dynamicFormDialog: {
         build: (data) => {
             let fieldsHtml = '';

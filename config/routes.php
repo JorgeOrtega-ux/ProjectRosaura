@@ -49,7 +49,7 @@ return [
     '/canvases/edit/:uuid' => ['view' => 'canvases/edit.php', 'auth' => true, 'permissions' => ['manage_canvases'], 'requires_2fa' => false],
     '/canvases/members/:uuid' => ['view' => 'canvases/members.php', 'auth' => true, 'permissions' => ['manage_canvases'], 'requires_2fa' => false],
     '/canvases/members/:uuid/role/:user_uuid' => ['view' => 'canvases/change-role.php', 'auth' => true, 'permissions' => ['manage_canvases'], 'requires_2fa' => false],
-    '/canvases/resize/:uuid' => ['view' => 'canvases/resize.php', 'auth' => true, 'permissions' => ['manage_canvases'], 'requires_2fa' => false],
+    '/canvases/manage/resize/:uuid' => ['view' => 'canvases/resize.php', 'auth' => true, 'permissions' => ['manage_canvases'], 'requires_2fa' => false],
     
     '/canvases/join' => ['view' => 'canvases/join.php', 'auth' => true, 'permissions' => ['join_canvas'], 'requires_2fa' => false],
 

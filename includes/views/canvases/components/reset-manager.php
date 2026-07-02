@@ -3,19 +3,54 @@
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 use App\Config\DatabaseManager;
+use App\Core\System\DatabaseConstants as DB;
+use PDO;
 
-$canvasUuid = isset($_GET['uuid']) ? $_GET['uuid'] : null;
+$canvasUuid = $_GET['uuid'] ?? null;
 $canvasId = null;
+$resetSettings = [
+    'is_active' => false,
+    'next_reset_at' => null,
+    'take_snapshot' => true,
+    'timer_action' => 'restart',
+];
 
-if ($canvasUuid) {
+$userId = $_SESSION['active_account_id'] ?? $_SESSION['user_id'] ?? null;
+$userPermissions = $_SESSION['user_permissions'] ?? [];
+$canManageOfficial = in_array('manage_canvases', $userPermissions)
+    || in_array('access_admin_panel', $userPermissions)
+    || in_array('canvases.manage_official', $userPermissions);
+
+if ($canvasUuid && $userId) {
     try {
         $db = new DatabaseManager();
-        $pdo = $db->getConnection(defined('App\Core\System\DatabaseConstants::CONN_CANVASES') ? App\Core\System\DatabaseConstants::CONN_CANVASES : 'canvases');
-        $stmt = $pdo->prepare("SELECT id FROM canvases WHERE uuid = :uuid LIMIT 1");
+        $pdo = $db->getConnection(DB::CONN_CANVASES);
+
+        $stmt = $pdo->prepare('SELECT id, owner_id FROM ' . DB::TBL_CANVASES . ' WHERE uuid = :uuid LIMIT 1');
         $stmt->execute(['uuid' => $canvasUuid]);
-        $canvasId = (int)$stmt->fetchColumn();
+        $canvas = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($canvas) {
+            $isOwner = ((int)$canvas['owner_id'] === (int)$userId)
+                || ($canvas['owner_id'] === null && $canManageOfficial);
+
+            if ($isOwner) {
+                $canvasId = (int)$canvas['id'];
+
+                $stmtSettings = $pdo->prepare('SELECT is_active, next_reset_at, take_snapshot, timer_action FROM canvas_reset_settings WHERE canvas_id = :cid LIMIT 1');
+                $stmtSettings->execute(['cid' => $canvasId]);
+                $row = $stmtSettings->fetch(PDO::FETCH_ASSOC);
+
+                if ($row) {
+                    $resetSettings['is_active'] = (bool)$row['is_active'];
+                    $resetSettings['next_reset_at'] = $row['next_reset_at'];
+                    $resetSettings['take_snapshot'] = (bool)$row['take_snapshot'];
+                    $resetSettings['timer_action'] = $row['timer_action'] ?: 'restart';
+                }
+            }
+        }
     } catch (\Exception $e) {
-        // Silenciar y atrapar error
+        // Silenciar error de carga
     }
 }
 
@@ -23,8 +58,39 @@ if (!$canvasId) {
     echo "<div class='view-content'><p>" . __('err_invalid_canvas_id') . "</p></div>";
     return;
 }
-$appUrl = defined('APP_URL') ? APP_URL : '';
+
+$monthShort = [
+    __('month_jan'), __('month_feb'), __('month_mar'), __('month_apr'),
+    __('month_may'), __('month_jun'), __('month_jul'), __('month_aug'),
+    __('month_sep'), __('month_oct'), __('month_nov'), __('month_dec'),
+];
+
+$resetDateLocal = '';
+$resetDateDisplay = __('lbl_select_date');
+
+if (!empty($resetSettings['next_reset_at'])) {
+    try {
+        $dt = new DateTime($resetSettings['next_reset_at'], new DateTimeZone('UTC'));
+        $dt->setTimezone(new DateTimeZone(date_default_timezone_get()));
+        $resetDateLocal = $dt->format('Y-m-d\TH:i');
+        $resetDateDisplay = $dt->format('j') . ' de ' . $monthShort[(int)$dt->format('n') - 1] . ' ' . $dt->format('Y') . ', ' . $dt->format('H:i');
+    } catch (\Exception $e) {
+        $resetDateLocal = '';
+    }
+}
+
+$isResetActive = $resetSettings['is_active'];
+$timerActions = [
+    'restart' => ['label' => __('timer_action_restart'), 'icon' => 'timer'],
+    'stop'    => ['label' => __('timer_action_stop'), 'icon' => 'stop_circle'],
+    'none'    => ['label' => __('timer_action_none'), 'icon' => 'visibility_off'],
+];
+$activeTimer = $resetSettings['timer_action'];
+if (!isset($timerActions[$activeTimer])) {
+    $activeTimer = 'restart';
+}
 ?>
+
 <div class="view-content" data-ref="canvas-resets-wrapper" data-canvas-id="<?php echo $canvasId; ?>">
     
     <div class="component-top">
@@ -59,14 +125,14 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                     </div>
                     <div class="component-card__actions component-card__actions--end">
                         <label class="component-toggle-switch">
-                            <input type="checkbox" data-ref="reset_is_active" data-action="toggleActive">
+                            <input type="checkbox" data-ref="reset_is_active" data-action="toggleActive" <?php echo $isResetActive ? 'checked' : ''; ?>>
                             <span class="component-toggle-slider"></span>
                         </label>
                     </div>
                 </div>
             </div>
 
-            <div data-ref="reset_options_container" class="disabled-interactive">
+            <div data-ref="reset_options_container" class="<?php echo $isResetActive ? '' : 'disabled-interactive'; ?>">
                 <div class="component-card--grouped">
                     
                     <div class="component-group-item component-group-item--stacked">
@@ -77,15 +143,14 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--start">
-                            
                             <div class="component-dropdown-wrapper">
                                 <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="moduleCalendarDate">
                                     <span class="material-symbols-rounded">calendar_month</span>
-                                    <span class="component-dropdown-text" data-ref="reset-date-text"><?php echo __('lbl_select_date'); ?></span>
+                                    <span class="component-dropdown-text" data-ref="reset-date-text"><?php echo htmlspecialchars($resetDateDisplay); ?></span>
                                     <span class="material-symbols-rounded">expand_more</span>
                                 </div>
                                 
-                                <input type="hidden" data-ref="next_reset_at" value="">
+                                <input type="hidden" data-ref="next_reset_at" value="<?php echo htmlspecialchars($resetDateLocal); ?>">
 
                                 <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="moduleCalendarDate">
                                     <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding">
@@ -135,7 +200,6 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                                     </div>
                                 </div>
                             </div>
-                            
                         </div>
                     </div>
 
@@ -150,7 +214,7 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                         </div>
                         <div class="component-card__actions component-card__actions--end">
                             <label class="component-toggle-switch">
-                                <input type="checkbox" data-ref="take_snapshot" checked>
+                                <input type="checkbox" data-ref="take_snapshot" <?php echo $resetSettings['take_snapshot'] ? 'checked' : ''; ?>>
                                 <span class="component-toggle-slider"></span>
                             </label>
                         </div>
@@ -166,41 +230,29 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--start">
-                            
                             <div class="component-dropdown-wrapper">
                                 <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="moduleTimerAction">
-                                    <span class="material-symbols-rounded" data-ref="icon-timer">timer</span>
-                                    <span class="component-dropdown-text" data-ref="text-timer"><?php echo __('timer_action_restart'); ?></span>
+                                    <span class="material-symbols-rounded" data-ref="icon-timer"><?php echo htmlspecialchars($timerActions[$activeTimer]['icon']); ?></span>
+                                    <span class="component-dropdown-text" data-ref="text-timer"><?php echo htmlspecialchars($timerActions[$activeTimer]['label']); ?></span>
                                     <span class="material-symbols-rounded">expand_more</span>
                                 </div>
                                 
-                                <input type="hidden" data-ref="timer_action" value="restart">
+                                <input type="hidden" data-ref="timer_action" value="<?php echo htmlspecialchars($activeTimer); ?>">
 
                                 <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="moduleTimerAction">
                                     <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
                                         <div class="pill-container"><div class="drag-handle"></div></div>
                                         <div class="component-menu-list component-menu-list--scrollable">
-                                            
-                                            <div class="component-menu-link active" data-action="selectTimerAction" data-value="restart" data-label="<?php echo __('timer_action_restart'); ?>" data-icon="timer">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">timer</span></div>
-                                                <div class="component-menu-link-text"><span><?php echo __('timer_action_restart'); ?></span></div>
+                                            <?php foreach ($timerActions as $value => $meta): ?>
+                                            <div class="component-menu-link <?php echo $activeTimer === $value ? 'active' : ''; ?>" data-action="selectTimerAction" data-value="<?php echo $value; ?>" data-label="<?php echo htmlspecialchars($meta['label']); ?>" data-icon="<?php echo htmlspecialchars($meta['icon']); ?>">
+                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded"><?php echo htmlspecialchars($meta['icon']); ?></span></div>
+                                                <div class="component-menu-link-text"><span><?php echo htmlspecialchars($meta['label']); ?></span></div>
                                             </div>
-                                            
-                                            <div class="component-menu-link" data-action="selectTimerAction" data-value="stop" data-label="<?php echo __('timer_action_stop'); ?>" data-icon="stop_circle">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">stop_circle</span></div>
-                                                <div class="component-menu-link-text"><span><?php echo __('timer_action_stop'); ?></span></div>
-                                            </div>
-                                            
-                                            <div class="component-menu-link" data-action="selectTimerAction" data-value="none" data-label="<?php echo __('timer_action_none'); ?>" data-icon="visibility_off">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">visibility_off</span></div>
-                                                <div class="component-menu-link-text"><span><?php echo __('timer_action_none'); ?></span></div>
-                                            </div>
-
+                                            <?php endforeach; ?>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-
                         </div>
                     </div>
 
