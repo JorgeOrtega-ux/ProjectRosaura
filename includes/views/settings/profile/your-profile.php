@@ -1,5 +1,7 @@
 <?php
 // includes/views/settings/your-profile.php
+use App\Core\System\SubscriptionPlanConstants;
+
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 global $serverConfig;
@@ -63,6 +65,20 @@ $prefTelemetry = isset($userPrefs['allow_telemetry']) ? (int)$userPrefs['allow_t
 
 $languages = \App\Core\System\Translator::getAvailableLanguages();
 $currentLangText = $languages[$prefLang] ?? __('default_language_text');
+
+$activeAccountId = $_SESSION['active_account'] ?? null;
+$linkedAccounts = $_SESSION['accounts'] ?? [];
+$subscriptionTier = 0;
+if ($activeAccountId !== null && isset($linkedAccounts[$activeAccountId])) {
+    $subscriptionTier = (int)($linkedAccounts[$activeAccountId]['subscription_tier'] ?? 0);
+} else {
+    $subscriptionTier = (int)($_SESSION['subscription_tier'] ?? 0);
+}
+$subscriptionPlanLabel = match ($subscriptionTier) {
+    SubscriptionPlanConstants::TIER_PRO => __('tier_pro'),
+    SubscriptionPlanConstants::TIER_ADVANCED => __('tier_advanced'),
+    default => __('tier_basic'),
+};
 ?>
 
 <div class="view-content">
@@ -167,6 +183,22 @@ $currentLangText = $languages[$prefLang] ?? __('default_language_text');
                         </div>
                     </div>
 
+                </div>
+
+                <hr class="component-divider">
+
+                <div class="component-group-item component-group-item--stateful">
+                    <div class="active component-state-box" data-state="subscription-view">
+                        <div class="component-card__content">
+                            <div class="component-card__text">
+                                <h2 class="component-card__title"><?php echo __('lbl_subscription_plan'); ?></h2>
+                                <span class="component-display-value" data-ref="display-subscription"><?php echo htmlspecialchars($subscriptionPlanLabel); ?></span>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--stretch">
+                            <button type="button" class="component-button component-button--h34" data-nav="<?php echo APP_URL; ?>/premium"><?php echo __('btn_update_plan'); ?></button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
