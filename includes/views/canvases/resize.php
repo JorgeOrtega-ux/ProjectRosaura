@@ -118,6 +118,9 @@ if (!isset($timerActions[$activeTimer])) {
 $currWidth = (int)explode('x', $currentSizeRaw)[0];
 $instantWidth = (int)explode('x', $instantSize)[0];
 $showShrinkWarning = $instantWidth < $currWidth;
+
+$scheduledWidth = (int)explode('x', $scheduledSize)[0];
+$showScheduledShrinkWarning = $scheduledWidth < $currWidth;
 ?>
 
 <div class="view-content" data-ref="canvas-resize-wrapper" data-canvas-id="<?php echo htmlspecialchars((string)$canvasId); ?>" data-current-size="<?php echo htmlspecialchars($currentSizeRaw); ?>">
@@ -171,7 +174,7 @@ $showShrinkWarning = $instantWidth < $currWidth;
                                 <p class="component-card__description"><?php echo __('canvas_resize_size_scheduled_desc'); ?></p>
                             </div>
                         </div>
-                        <div class="component-card__actions component-card__actions--start">
+                        <div class="component-card__actions component-card__actions--start component-card__actions--column">
                             <div class="component-dropdown-wrapper">
                                 <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="dropdownSizeScheduled">
                                     <span class="material-symbols-rounded" data-ref="scheduled-resize-icon"><?php echo htmlspecialchars($scheduledMeta['icon']); ?></span>
@@ -197,6 +200,9 @@ $showShrinkWarning = $instantWidth < $currWidth;
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="component-alert-error<?php echo $showScheduledShrinkWarning ? ' active' : ''; ?>" data-ref="resize-scheduled-shrink-warning">
+                                <?php echo __('canvas_resize_warning_desc'); ?>
                             </div>
                         </div>
                     </div>
@@ -314,17 +320,19 @@ $showShrinkWarning = $instantWidth < $currWidth;
             </div>
 
             <div class="component-card--grouped">
-                <div class="component-group-item component-group-item--stacked">
+                <div class="component-group-item component-group-item--wrap">
                     <div class="component-card__content">
                         <div class="component-card__text">
                             <h2 class="component-card__title text-danger"><?php echo __('canvas_resize_now_title'); ?></h2>
                             <p class="component-card__description"><?php echo __('canvas_resize_now_desc'); ?></p>
                         </div>
                     </div>
-                </div>
-
-                <div class="component-alert-error<?php echo $showShrinkWarning ? ' active' : ''; ?>" data-ref="resize-shrink-warning">
-                    <?php echo __('canvas_resize_warning_desc'); ?>
+                    <div class="component-card__actions component-card__actions--end">
+                        <button type="button" class="component-button component-button--danger component-button--h40" data-action="applyResizeNow">
+                            <span class="material-symbols-rounded">flash_on</span>
+                            <?php echo __('btn_apply_now'); ?>
+                        </button>
+                    </div>
                 </div>
 
                 <hr class="component-divider">
@@ -336,7 +344,7 @@ $showShrinkWarning = $instantWidth < $currWidth;
                             <p class="component-card__description"><?php echo __('canvas_resize_instant_size_desc'); ?></p>
                         </div>
                     </div>
-                    <div class="component-card__actions component-card__actions--start">
+                    <div class="component-card__actions component-card__actions--start component-card__actions--column">
                         <div class="component-dropdown-wrapper">
                             <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="dropdownSizeInstant">
                                 <span class="material-symbols-rounded" data-ref="instant-resize-icon"><?php echo htmlspecialchars($instantMeta['icon']); ?></span>
@@ -363,18 +371,9 @@ $showShrinkWarning = $instantWidth < $currWidth;
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
-
-                <hr class="component-divider">
-
-                <div class="component-group-item component-group-item--wrap">
-                    <div class="component-card__content"></div>
-                    <div class="component-card__actions component-card__actions--end">
-                        <button type="button" class="component-button component-button--danger component-button--h40" data-action="applyResizeNow">
-                            <span class="material-symbols-rounded">flash_on</span>
-                            <?php echo __('btn_apply_now'); ?>
-                        </button>
+                        <div class="component-alert-error<?php echo $showShrinkWarning ? ' active' : ''; ?>" data-ref="resize-shrink-warning">
+                            <?php echo __('canvas_resize_warning_desc'); ?>
+                        </div>
                     </div>
                 </div>
             </div>

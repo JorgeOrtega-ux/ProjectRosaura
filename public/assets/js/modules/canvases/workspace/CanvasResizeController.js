@@ -210,13 +210,12 @@ class CanvasResizeController {
         links.forEach(l => l.classList.remove('active'));
         btn.classList.add('active');
 
-        if (context === 'instant') {
-            this.updateShrinkWarning(value);
-        }
+        this.updateShrinkWarning(value, context);
     }
 
-    updateShrinkWarning(newSize) {
-        const warning = this.wrapper.querySelector('[data-ref="resize-shrink-warning"]');
+    updateShrinkWarning(newSize, context) {
+        const ref = context === 'scheduled' ? '[data-ref="resize-scheduled-shrink-warning"]' : '[data-ref="resize-shrink-warning"]';
+        const warning = this.wrapper.querySelector(ref);
         if (!warning || !this.currentSize) return;
 
         const currWidth = parseInt(this.currentSize.toString().split('x')[0], 10);
