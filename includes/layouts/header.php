@@ -16,6 +16,15 @@ if ($activeAccountId !== null && isset($linkedAccounts[$activeAccountId])) {
 }
 
 $isLoggedIn = $activeAccountId !== null && !empty($linkedAccounts) && !$isDegraded;
+
+$subscriptionTier = 0;
+if ($activeAccountId !== null && isset($linkedAccounts[$activeAccountId])) {
+    $subscriptionTier = (int)($linkedAccounts[$activeAccountId]['subscription_tier'] ?? 0);
+} else {
+    $subscriptionTier = (int)($_SESSION['subscription_tier'] ?? 0);
+}
+$isPremium = $subscriptionTier > 0;
+
 $userPermissions = $_SESSION['user_permissions'] ?? [];
 $userRoleColorRaw = $_SESSION['user_role_color'] ?? '{"type":"solid","colors":[{"hex":"var(--text-muted)"}]}';
 
@@ -114,6 +123,13 @@ if ($isLoggedIn) {
             <button class="component-button component-button--icon component-button--h40 mobile-search-btn" data-action="toggleMobileSearch" data-tooltip="<?php echo __('tooltip_search'); ?>" data-position="bottom">
                 <span class="material-symbols-rounded">search</span>
             </button>
+
+            <?php if ($isLoggedIn && !$isPremium): ?>
+                <button class="component-button component-button--h40" data-nav="<?php echo APP_URL; ?>/premium" style="gap: 6px; background-color: rgba(255, 140, 0, 0.1); color: #ff8c00; border-color: rgba(255, 140, 0, 0.2); padding: 0 12px;">
+                    <span class="material-symbols-rounded" style="font-size: 18px;">workspace_premium</span>
+                    <span style="font-weight: 600; font-size: 13px;">Premium</span>
+                </button>
+            <?php endif; ?>
 
             <?php if ($isMaintenanceActive && $isPrivileged): ?>
                 <button class="component-button component-button--icon component-button--h40" data-tooltip="<?php echo __('tooltip_maintenance'); ?>" data-position="bottom">
