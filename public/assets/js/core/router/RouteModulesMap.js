@@ -8,6 +8,8 @@ export const RouteModulesMap = {
     
     '/search': { path: './modules/app/search/SearchController.js', className: 'SearchController', skeletonType: 'layout-dashboard' },
     
+    '/premium': { path: './modules/app/premium/PremiumController.js', className: 'PremiumController', skeletonType: 'layout-dashboard' },
+
     '/design': { path: './modules/app/design/DesignController.js', className: 'DesignController', skeletonType: 'layout-full' },
     
     // ---- MÓDULOS DE AUTENTICACIÓN ----

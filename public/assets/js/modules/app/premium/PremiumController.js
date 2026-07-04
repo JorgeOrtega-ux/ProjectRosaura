@@ -1,0 +1,128 @@
+// public/assets/js/modules/app/premium/PremiumController.js
+
+import { ApiService } from '../../core/api/ApiServices.js';
+import { ApiRoutes } from '../../core/api/ApiRoutes.js';
+import { showMessage } from '../../core/utils/uiUtils.js';
+
+export class PremiumController {
+
+    constructor() {
+        this.api = new ApiService();
+        this._boundHandleClick = this._handleSubscribeClick.bind(this);
+        this._boundHandleParams = this._handleUrlParams.bind(this);
+    }
+
+    init() {
+        // Delegar clicks en botones de suscripción
+        document.body.addEventListener('click', this._boundHandleClick);
+
+        // Verificar parámetros de URL (retorno de Stripe)
+        this._handleUrlParams();
+    }
+
+    destroy() {
+        document.body.removeEventListener('click', this._boundHandleClick);
+    }
+
+    /**
+     * Verifica los query params al volver de Stripe Checkout.
+     */
+    _handleUrlParams() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const status = urlParams.get('status');
+        const sessionId = urlParams.get('session_id');
+
+        if (status === 'success' && sessionId) {
+            showMessage('¡Pago completado con éxito! Tu suscripción se activará en breve.', 'success');
+
+            // Limpiar los params de la URL sin recargar
+            const cleanUrl = window.location.pathname;
+            window.history.replaceState({}, document.title, cleanUrl);
+
+            // Hacer polling breve para actualizar el tier en la sesión
+            this._pollSubscriptionStatus(3);
+        } else if (status === 'cancel') {
+            showMessage('El pago fue cancelado. Puedes intentarlo de nuevo cuando quieras.', 'warning');
+            
+            const cleanUrl = window.location.pathname;
+            window.history.replaceState({}, document.title, cleanUrl);
+        }
+    }
+
+    /**
+     * Polling breve para detectar cuándo el webhook ya procesó el pago.
+     */
+    async _pollSubscriptionStatus(maxAttempts) {
+        for (let i = 0; i < maxAttempts; i++) {
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            try {
+                const result = await this.api.post(ApiRoutes.Stripe.GetSubscriptionStatus);
+                if (result.success && result.data && result.data.status === 'active') {
+                    showMessage('¡Tu plan ha sido actualizado exitosamente! Recarga la página para ver los cambios.', 'success');
+                    
+                    // Actualizar el tier visual sin recargar
+                    setTimeout(() => { window.location.reload(); }, 1500);
+                    return;
+                }
+            } catch (e) {
+                // Silenciar errores de polling
+            }
+        }
+    }
+
+    /**
+     * Maneja el click en los botones de suscripción.
+     */
+    async _handleSubscribeClick(e) {
+        const btn = e.target.closest('[data-action="subscribe"]');
+        if (!btn) return;
+
+        e.preventDefault();
+
+        // Verificar si el usuario está logueado
+        if (!window.APP_USER) {
+            window.spaRouter.navigate('/login');
+            return;
+        }
+
+        const tier = parseInt(btn.dataset.tier, 10);
+        const billingPeriod = window.isYearlyPremium ? 'yearly' : 'monthly';
+
+        if (!tier || (tier !== 1 && tier !== 2)) {
+            showMessage('Plan inválido.', 'error');
+            return;
+        }
+
+        // Deshabilitar el botón y mostrar loading
+        const originalText = btn.textContent;
+        btn.disabled = true;
+        btn.classList.add('disabled');
+        btn.innerHTML = '<span class="material-symbols-rounded" style="animation: spin 1s linear infinite; font-size: 18px;">progress_activity</span> Procesando...';
+
+        try {
+            const result = await this.api.post(ApiRoutes.Stripe.CreateCheckout, {
+                tier: tier,
+                billing_period: billingPeriod
+            });
+
+            if (result.success && result.checkout_url) {
+                // Redirigir a Stripe Checkout
+                window.location.href = result.checkout_url;
+            } else {
+                // Restaurar botón
+                btn.disabled = false;
+                btn.classList.remove('disabled');
+                btn.textContent = originalText;
+
+                const msg = result.message || (typeof window.__ === 'function' ? window.__('stripe_checkout_error') : 'Error al crear la sesión de pago');
+                showMessage(msg, 'error');
+            }
+        } catch (error) {
+            btn.disabled = false;
+            btn.classList.remove('disabled');
+            btn.textContent = originalText;
+            showMessage('Error de conexión. Intenta de nuevo.', 'error');
+        }
+    }
+}

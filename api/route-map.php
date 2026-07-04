@@ -534,5 +534,22 @@ return [
         'action' => 'collect',
         'middleware' => [] 
     ],
+
+    // --- RUTAS DE STRIPE / PAGOS ---
+    'stripe.create_checkout' => [
+        'controller' => 'App\Api\Controllers\StripeController',
+        'action' => 'create_checkout',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'stripe_checkout', 'max' => RL::MAX_5, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
+    ],
+    'stripe.get_payment_history' => [
+        'controller' => 'App\Api\Controllers\StripeController',
+        'action' => 'get_payment_history',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'stripe_history', 'max' => RL::MAX_20, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
+    ],
+    'stripe.get_subscription_status' => [
+        'controller' => 'App\Api\Controllers\StripeController',
+        'action' => 'get_subscription_status',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'stripe_status', 'max' => RL::MAX_20, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
+    ],
 ];
 ?>

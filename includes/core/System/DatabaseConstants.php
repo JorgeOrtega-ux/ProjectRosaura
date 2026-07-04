@@ -38,6 +38,10 @@ class DatabaseConstants {
     public const TBL_CANVAS_MEMBERS             = 'canvas_members';
     public const TBL_CANVAS_SNAPSHOTS_HISTORY   = 'canvas_snapshots_history'; // NUEVA TABLA
 
+    // Tablas de Suscripciones y Pagos (Stripe)
+    public const TBL_SUBSCRIPTIONS              = 'subscriptions';
+    public const TBL_PAYMENT_HISTORY            = 'payment_history';
+
     // ==========================================
     // 3. VALORES ENUM / ESTADOS FIJOS
     // ==========================================

@@ -8,7 +8,8 @@
         "predis/predis": "^3.4",
         "geoip2/geoip2": "^3.0",
         "typesense/typesense-php": "^4.9",
-        "symfony/http-client": "^7.4"
+        "symfony/http-client": "^7.4",
+        "stripe/stripe-php": "^20.3"
     },
    "autoload": {
         "psr-4": {

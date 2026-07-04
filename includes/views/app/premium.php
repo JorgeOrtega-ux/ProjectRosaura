@@ -279,7 +279,7 @@ if ($activeAccountId && isset($linkedAccounts[$activeAccountId])) {
 
         <div class="pricing-grid">
             
-            <div class="pricing-card">
+            <div class="pricing-card" data-tier="0">
                 <div class="plan-name">Básico</div>
                 <div class="plan-price-wrapper">
                     <span class="plan-currency">$</span>
@@ -297,11 +297,11 @@ if ($activeAccountId && isset($linkedAccounts[$activeAccountId])) {
                 <?php if ($tier === 0): ?>
                     <a href="#" class="component-button component-button--full component-button--h45 disabled">Tu Plan Actual</a>
                 <?php else: ?>
-                    <a href="#" class="component-button component-button--full component-button--h45">Volver al Básico</a>
+                    <a href="#" class="component-button component-button--full component-button--h45" data-action="subscribe" data-tier="0">Volver al Básico</a>
                 <?php endif; ?>
             </div>
 
-            <div class="pricing-card featured">
+            <div class="pricing-card featured" data-tier="1">
                 <div class="featured-badge">Más Elegido</div>
                 <div class="plan-name">Pro</div>
                 <div class="plan-price-wrapper">
@@ -320,13 +320,13 @@ if ($activeAccountId && isset($linkedAccounts[$activeAccountId])) {
                 <?php if ($tier === 1): ?>
                     <a href="#" class="component-button component-button--dark component-button--full component-button--h45 disabled">Tu Plan Actual</a>
                 <?php elseif ($tier > 1): ?>
-                    <a href="#" class="component-button component-button--dark component-button--full component-button--h45">Bajar a Pro</a>
+                    <a href="#" class="component-button component-button--dark component-button--full component-button--h45" data-action="subscribe" data-tier="1">Bajar a Pro</a>
                 <?php else: ?>
-                    <a href="#" class="component-button component-button--dark component-button--full component-button--h45">Mejorar a Pro</a>
+                    <a href="#" class="component-button component-button--dark component-button--full component-button--h45" data-action="subscribe" data-tier="1">Mejorar a Pro</a>
                 <?php endif; ?>
             </div>
 
-            <div class="pricing-card advanced">
+            <div class="pricing-card advanced" data-tier="2">
                 <div class="featured-badge advanced-badge">Nivel Máximo</div>
                 <div class="plan-name">Advanced</div>
                 <div class="plan-price-wrapper">
@@ -345,7 +345,7 @@ if ($activeAccountId && isset($linkedAccounts[$activeAccountId])) {
                 <?php if ($tier === 2): ?>
                     <a href="#" class="component-button component-button--full component-button--h45 disabled">Tu Plan Actual</a>
                 <?php else: ?>
-                    <a href="#" class="component-button component-button--full component-button--h45 btn-advanced">Elegir Advanced</a>
+                    <a href="#" class="component-button component-button--full component-button--h45 btn-advanced" data-action="subscribe" data-tier="2">Elegir Advanced</a>
                 <?php endif; ?>
             </div>
 

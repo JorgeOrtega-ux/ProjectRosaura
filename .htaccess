@@ -10,6 +10,9 @@
     # 1. Enrutar archivos estáticos (JS, CSS)
     RewriteRule ^assets/(.*)$ public/assets/$1 [L]
 
+    # 1.5. Enrutar webhook de Stripe directamente (sin pasar por el SPA)
+    RewriteRule ^stripe/webhook$ stripe/webhook.php [L]
+
     # =========================================================================
     # 2. MAGIA DE APACHE: TRADUCTOR VIRTUAL DE STORAGE (Evita el bug de Docker)
     # =========================================================================

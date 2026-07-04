@@ -122,5 +122,10 @@ export const ApiRoutes = {
         GetCountries: 'locations.get_countries',
         GetStates: 'locations.get_states',
         GetCities: 'locations.get_cities'
+    },
+    Stripe: {
+        CreateCheckout: 'stripe.create_checkout',
+        GetPaymentHistory: 'stripe.get_payment_history',
+        GetSubscriptionStatus: 'stripe.get_subscription_status'
     }
 };

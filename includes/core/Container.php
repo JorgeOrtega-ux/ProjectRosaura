@@ -39,6 +39,10 @@ use App\Core\Repositories\CanvasRepository;
 use App\Core\Interfaces\LocationRepositoryInterface;
 use App\Core\Repositories\LocationRepository;
 
+// BINDINGS DE SUSCRIPCIONES (STRIPE)
+use App\Core\Interfaces\SubscriptionRepositoryInterface;
+use App\Core\Repositories\SubscriptionRepository;
+
 class Container implements ContainerInterface {
     private $instances = [];
     private $bindings = [];
@@ -72,6 +76,9 @@ class Container implements ContainerInterface {
 
         // BINDING DE REPOSITORIO DE UBICACIONES (NUEVO)
         $this->bindings[LocationRepositoryInterface::class] = LocationRepository::class;
+
+        // BINDING DE REPOSITORIO DE SUSCRIPCIONES (STRIPE)
+        $this->bindings[SubscriptionRepositoryInterface::class] = SubscriptionRepository::class;
     }
 
     public function get(string $id) {
