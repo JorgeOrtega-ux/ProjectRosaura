@@ -129,5 +129,30 @@ export const CardTemplates = {
                 <p class="component-empty-state-text">${escapeHTML(message)}</p>
             </div>
         `;
+    },
+
+    /**
+     * Construye una tarjeta para un método de pago.
+     */
+    paymentMethodCard: (card) => {
+        const brand = escapeHTML(card.brand).toUpperCase();
+        const last4 = escapeHTML(card.last4);
+        const expMonth = String(card.exp_month).padStart(2, '0');
+        const expYear = String(card.exp_year).slice(-2);
+        
+        // Se puede usar un ícono distinto según la marca (visa, mastercard, etc)
+        // Por simplicidad usaremos 'credit_card'
+        
+        return `
+            <div class="component-setting-box">
+                <div class="component-setting-box-icon">
+                    <span class="material-symbols-rounded">credit_card</span>
+                </div>
+                <div class="component-setting-box-content">
+                    <h3 class="component-setting-box-title">${brand} **** ${last4}</h3>
+                    <p class="component-setting-box-text">Expira en ${expMonth}/${expYear}</p>
+                </div>
+            </div>
+        `;
     }
 };

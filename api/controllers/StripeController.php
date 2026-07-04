@@ -27,5 +27,15 @@ class StripeController extends BaseController {
         try { return $this->respond($this->stripeServices->getSubscriptionStatus($input)); }
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
+
+    public function create_setup_session($input) {
+        try { return $this->respond($this->stripeServices->createSetupSession($input)); }
+        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
+
+    public function get_payment_methods($input) {
+        try { return $this->respond($this->stripeServices->getPaymentMethods($input)); }
+        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
 }
 ?>

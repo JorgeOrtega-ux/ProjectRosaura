@@ -178,9 +178,6 @@ class StripeServices {
         }
     }
 
-    /**
-     * Obtiene el historial de pagos del usuario actual.
-     */
     public function getPaymentHistory(array $input): array {
         if (!$this->sessionManager->isLoggedIn()) {
             http_response_code(401);
@@ -188,10 +185,40 @@ class StripeServices {
         }
 
         $userId = $this->sessionManager->getActiveAccountId();
-        $limit = isset($input['limit']) ? min((int) $input['limit'], 50) : 20;
-        $offset = isset($input['offset']) ? (int) $input['offset'] : 0;
-
-        $history = $this->subscriptionRepo->getPaymentHistory($userId, $limit, $offset);
+        
+        // Intentamos consultar a Stripe directamente para no depender del Webhook en localhost
+        $stripeCustomerId = $this->subscriptionRepo->getStripeCustomerIdByUserId($userId);
+        $history = [];
+        
+        if ($stripeCustomerId) {
+            try {
+                \Stripe\Stripe::setApiKey($_ENV['STRIPE_SECRET_KEY']);
+                $charges = \Stripe\Charge::all([
+                    'customer' => $stripeCustomerId,
+                    'limit' => 20
+                ]);
+                
+                foreach ($charges->data as $charge) {
+                    $history[] = [
+                        'id' => $charge->id,
+                        'created_at' => date('Y-m-d H:i:s', $charge->created),
+                        'description' => $charge->description ?: 'Suscripción',
+                        'amount_cents' => $charge->amount,
+                        'currency' => $charge->currency,
+                        'status' => $charge->status // 'succeeded', 'pending', 'failed'
+                    ];
+                }
+            } catch (\Exception $e) {
+                // Fallback a base de datos local si Stripe falla
+                $limit = isset($input['limit']) ? min((int) $input['limit'], 50) : 20;
+                $offset = isset($input['offset']) ? (int) $input['offset'] : 0;
+                $history = $this->subscriptionRepo->getPaymentHistory($userId, $limit, $offset);
+            }
+        } else {
+            $limit = isset($input['limit']) ? min((int) $input['limit'], 50) : 20;
+            $offset = isset($input['offset']) ? (int) $input['offset'] : 0;
+            $history = $this->subscriptionRepo->getPaymentHistory($userId, $limit, $offset);
+        }
 
         return [
             'success' => true,
@@ -215,6 +242,146 @@ class StripeServices {
             'success' => true,
             'data' => $subscription
         ];
+    }
+
+    /**
+     * Crea una Setup Session en Stripe para agregar un nuevo método de pago sin cobrar.
+     */
+    public function createSetupSession(array $input): array {
+        if (!$this->sessionManager->isLoggedIn()) {
+            http_response_code(401);
+            return ['success' => false, 'message_key' => 'error.unauthorized'];
+        }
+
+        $userId = $this->sessionManager->getActiveAccountId();
+        $user = $this->userRepo->findById($userId);
+        if (!$user) {
+            return ['success' => false, 'message_key' => 'error.user_not_found'];
+        }
+
+        // Configurar Stripe
+        \Stripe\Stripe::setApiKey($_ENV['STRIPE_SECRET_KEY']);
+
+        $stripeCustomerId = $this->subscriptionRepo->getStripeCustomerIdByUserId($userId);
+
+        try {
+            if ($stripeCustomerId) {
+                // Verificar que el customer existe en Stripe
+                try {
+                    $stripeCustomer = \Stripe\Customer::retrieve($stripeCustomerId);
+                    if (!empty($stripeCustomer->deleted)) {
+                        $stripeCustomerId = null;
+                    }
+                } catch (\Exception $e) {
+                    $stripeCustomerId = null;
+                }
+            }
+
+            if (!$stripeCustomerId) {
+                $stripeCustomer = \Stripe\Customer::create([
+                    'email' => $user['email'],
+                    'name' => $user['username'],
+                    'metadata' => ['user_id' => $userId]
+                ]);
+                $stripeCustomerId = $stripeCustomer->id;
+                $this->subscriptionRepo->updateUserStripeCustomerId($userId, $stripeCustomerId);
+            }
+
+            // Crear Setup Session
+            $session = \Stripe\Checkout\Session::create([
+                'payment_method_types' => ['card'],
+                'mode' => 'setup',
+                'customer' => $stripeCustomerId,
+                'success_url' => APP_URL . '/settings/billing?status=success',
+                'cancel_url' => APP_URL . '/settings/billing?status=cancel',
+                'metadata' => [
+                    'user_id' => (string) $userId
+                ]
+            ]);
+
+            Logger::info("Stripe Setup Session created", [
+                'user_id' => $userId,
+                'session_id' => $session->id
+            ]);
+
+            return [
+                'success' => true,
+                'checkout_url' => $session->url
+            ];
+
+        } catch (\Stripe\Exception\ApiErrorException $e) {
+            Logger::error("Stripe API Error creating setup session", [
+                'user_id' => $userId,
+                'error' => $e->getMessage()
+            ]);
+            return ['success' => false, 'message_key' => 'stripe.api_error'];
+        }
+    }
+
+    /**
+     * Obtiene los métodos de pago guardados del usuario actual.
+     */
+    public function getPaymentMethods(array $input): array {
+        if (!$this->sessionManager->isLoggedIn()) {
+            http_response_code(401);
+            return ['success' => false, 'message_key' => 'error.unauthorized'];
+        }
+
+        $userId = $this->sessionManager->getActiveAccountId();
+        $stripeCustomerId = $this->subscriptionRepo->getStripeCustomerIdByUserId($userId);
+
+        if (!$stripeCustomerId) {
+            return [
+                'success' => true,
+                'data' => []
+            ];
+        }
+
+        try {
+            \Stripe\Stripe::setApiKey($_ENV['STRIPE_SECRET_KEY']);
+            
+            $paymentMethods = \Stripe\PaymentMethod::all([
+                'customer' => $stripeCustomerId,
+                'type' => 'card',
+            ]);
+
+            $cards = [];
+            foreach ($paymentMethods->data as $pm) {
+                $cards[] = [
+                    'id' => $pm->id,
+                    'brand' => $pm->card->brand,
+                    'last4' => $pm->card->last4,
+                    'exp_month' => $pm->card->exp_month,
+                    'exp_year' => $pm->card->exp_year,
+                    'is_default' => false // Stripe API no marca un default general para Cards si no es a nivel de Customer, pero por ahora false
+                ];
+            }
+            
+            // Si queremos obtener la default del customer:
+            try {
+                $customer = \Stripe\Customer::retrieve($stripeCustomerId);
+                if (isset($customer->invoice_settings->default_payment_method)) {
+                    $defaultPmId = $customer->invoice_settings->default_payment_method;
+                    foreach ($cards as &$c) {
+                        if ($c['id'] === $defaultPmId) {
+                            $c['is_default'] = true;
+                        }
+                    }
+                }
+            } catch (\Exception $e) {}
+
+            return [
+                'success' => true,
+                'data' => $cards
+            ];
+            
+        } catch (\Stripe\Exception\ApiErrorException $e) {
+            Logger::error("Stripe API Error getting payment methods", [
+                'user_id' => $userId,
+                'error' => $e->getMessage()
+            ]);
+            return ['success' => false, 'message_key' => 'stripe.api_error'];
+        }
     }
 }
 ?>

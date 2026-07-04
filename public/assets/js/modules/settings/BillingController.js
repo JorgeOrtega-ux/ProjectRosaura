@@ -1,9 +1,13 @@
 // public/assets/js/modules/settings/BillingController.js
 
 import { CardTemplates } from '../../core/components/CardTemplates.js';
+import { ApiRoutes } from '../../core/api/ApiRoutes.js';
+import { ApiService } from '../../core/api/ApiServices.js';
+import { showMessage, setButtonLoading, restoreButton } from '../../core/utils/uiUtils.js';
 
 export class BillingController {
     constructor() {
+        this.api = new ApiService();
         this.abortController = null;
         this.contentArea = null;
         
@@ -32,29 +36,52 @@ export class BillingController {
         
         const action = btn.dataset.action;
         if (action === 'addNewCard') {
-            this.handleAddNewCard();
+            this.handleAddNewCard(btn);
         }
     }
 
     async loadPaymentMethods() {
         if (!this.contentArea) return;
 
-        // Por ahora simulamos que el array de tarjetas viene vacío desde la API
-        const paymentMethods = []; 
-
-        // Regla 23: Inyección excluyente de Estado Vacío
-        if (paymentMethods.length > 0) {
-            // Aquí iría el renderizado de la cuadrícula de métodos de pago
-            // this.contentArea.innerHTML = `<div class="component-grid">...</div>`;
-        } else {
-            // Regla 9: Cero wrappers de traducción y CERO fallback de texto duro
-            const emptyMsg = window.__('empty_billing_methods');
-            this.contentArea.innerHTML = CardTemplates.emptyState(emptyMsg, 'credit_card_off');
+        try {
+            const response = await this.api.post('stripe.get_payment_methods', {}, this.abortController.signal);
+            
+            if (response.success && response.data && response.data.length > 0) {
+                let html = '<div class="component-grid">';
+                response.data.forEach(card => {
+                    html += CardTemplates.paymentMethodCard(card);
+                });
+                html += '</div>';
+                this.contentArea.innerHTML = html;
+            } else {
+                const emptyMsg = window.__('empty_billing_methods') || 'No tienes métodos de pago guardados.';
+                this.contentArea.innerHTML = CardTemplates.emptyState(emptyMsg, 'credit_card_off');
+            }
+        } catch (error) {
+            if (error.name !== 'AbortError') {
+                console.error('Error fetching payment methods:', error);
+                const emptyMsg = window.__('error_fetching_payment_methods') || 'Error al cargar métodos de pago.';
+                this.contentArea.innerHTML = CardTemplates.emptyState(emptyMsg, 'error');
+            }
         }
     }
 
-    handleAddNewCard() {
-        // Aquí se levantará el diálogo usando window.dialogSystem
+    async handleAddNewCard(btn) {
+        setButtonLoading(btn);
+        try {
+            const response = await this.api.post('stripe.create_setup_session', {}, this.abortController.signal);
+            if (response.success && response.checkout_url) {
+                window.location.href = response.checkout_url;
+            } else {
+                showMessage('error', response.message_key || 'Error creating setup session');
+                restoreButton(btn);
+            }
+        } catch (error) {
+            if (error.name !== 'AbortError') {
+                showMessage('error', 'Network or unexpected error');
+                restoreButton(btn);
+            }
+        }
     }
 
     destroy() {
