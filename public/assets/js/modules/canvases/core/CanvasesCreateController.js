@@ -10,7 +10,7 @@ function getAllPalettes() {
     return Object.values(window.APP_PALETTES);
 }
 
-class CanvasesController {
+class CanvasesCreateController {
     constructor() {
         this.api = new ApiService();
         this.basePath = window.AppBasePath || '';
@@ -552,4 +552,4 @@ class CanvasesController {
     }
 }
 
-export { CanvasesController };
+export { CanvasesCreateController };

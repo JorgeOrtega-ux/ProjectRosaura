@@ -71,7 +71,7 @@ export const RouteModulesMap = {
     '/admin/logs/viewer': { path: './modules/admin/logs/AdminLogsViewerController.js', className: 'AdminLogsViewerController', requiresAdminLang: true, skeletonType: 'layout-list' },
 
     // ---- MÓDULOS DE GESTIÓN DE LIENZOS ----
-    '/canvases/create': { path: './modules/canvases/core/CanvasesController.js', className: 'CanvasesController', skeletonType: 'layout-dashboard' },
+    '/canvases/create': { path: './modules/canvases/core/CanvasesCreateController.js', className: 'CanvasesCreateController', skeletonType: 'layout-dashboard' },
     '/canvases/manage': { path: './modules/canvases/core/CanvasesManageController.js', className: 'CanvasesManageController', skeletonType: 'layout-dashboard' },
     
     // 🚨 MUY IMPORTANTE: La ruta que tiene "/role/:id" DEBE IR ARRIBA de la general
@@ -86,7 +86,7 @@ export const RouteModulesMap = {
     
     '/canvases/manage/resize/:uuid': { path: './modules/canvases/workspace/CanvasResizeController.js', className: 'CanvasResizeController', skeletonType: 'layout-settings-generic' },
     
-    '/canvases/join': { path: './modules/canvases/core/CanvasesController.js', className: 'CanvasesController', skeletonType: 'layout-dashboard' },
+    '/canvases/join': { path: './modules/canvases/core/CanvasesJoinController.js', className: 'CanvasesJoinController', skeletonType: 'layout-dashboard' },
     
     // ---- NUEVO MÓDULO GALERÍA PÚBLICA DE SNAPSHOTS ----
     '/design/s/:uuid': { path: './modules/canvases/history/CanvasSnapshotsGalleryController.js', className: 'CanvasSnapshotsGalleryController', skeletonType: 'layout-dashboard' },
