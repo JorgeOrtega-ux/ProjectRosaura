@@ -18,8 +18,6 @@ export class PurchaseHistoryController {
         this.container = document.querySelector('.view-content');
         this.tbody = document.querySelector('.component-table tbody');
         this.bindEvents();
-        
-        await this.loadHistory();
     }
 
     bindEvents() {
