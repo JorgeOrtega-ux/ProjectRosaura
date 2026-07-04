@@ -14,6 +14,21 @@ export class SpaRouter {
         this.init();
     }
 
+    // --- NUEVO MÉTODO DE REFACTORIZACIÓN (DRY) ---
+    _getRoutePattern(url) {
+        if (url.startsWith('/design/s/')) return '/design/s/:uuid';
+        if (url.startsWith('/snapshot/view/')) return '/snapshot/view/:id';
+        if (url.startsWith('/design/')) return '/design';
+        if (url.startsWith('/canvases/manage/requests/')) return '/canvases/manage/requests/:uuid';
+        if (url.startsWith('/canvases/manage/resets/')) return '/canvases/manage/resets/:uuid';
+        if (url.startsWith('/canvases/manage/resize/') || url.startsWith('/canvases/resize/')) return '/canvases/manage/resize/:uuid';
+        if (url.startsWith('/canvases/edit/')) return '/canvases/edit/:uuid';
+        if (url.startsWith('/canvases/members/') && url.includes('/role/')) return '/canvases/members/:uuid/role/:id';
+        if (url.startsWith('/canvases/members/')) return '/canvases/members/:uuid';
+        
+        return url;
+    }
+
     init() {
         this.updateDocumentTitle(window.location.pathname);
         window.addEventListener('popstate', this.handlePopState);
@@ -31,35 +46,10 @@ export class SpaRouter {
         
         let triggerManualLoad = false;
         
-        if (moduleUrl.startsWith('/canvases/edit/')) {
-            moduleUrl = '/canvases/edit/:uuid';
-            triggerManualLoad = true;
-        } else if (moduleUrl.startsWith('/canvases/manage/requests/')) {
-            moduleUrl = '/canvases/manage/requests/:uuid';
-            triggerManualLoad = true;
-        } else if (moduleUrl.startsWith('/canvases/manage/resets/')) {
-            moduleUrl = '/canvases/manage/resets/:uuid';
-            triggerManualLoad = true;
-        
-        // ¡NUEVO BLOQUE! (Debe ir ANTES que el de members normal)
-        } else if (moduleUrl.startsWith('/canvases/members/') && moduleUrl.includes('/role/')) {
-            moduleUrl = '/canvases/members/:uuid/role/:id';
-            triggerManualLoad = true;
-            
-        } else if (moduleUrl.startsWith('/canvases/members/')) {
-            moduleUrl = '/canvases/members/:uuid';
-            triggerManualLoad = true;
-            
-        } else if (moduleUrl.startsWith('/canvases/manage/resize/')) { 
-            moduleUrl = '/canvases/manage/resize/:uuid';
-        } else if (moduleUrl.startsWith('/canvases/resize/')) {
-            moduleUrl = '/canvases/manage/resize/:uuid';
-            triggerManualLoad = true;
-        } else if (moduleUrl.startsWith('/design/s/')) {
-            moduleUrl = '/design/s/:uuid';
-            triggerManualLoad = true;
-        } else if (moduleUrl.startsWith('/snapshot/view/')) {
-            moduleUrl = '/snapshot/view/:id';
+        // Uso del método refactorizado
+        let mappedUrl = this._getRoutePattern(moduleUrl);
+        if (mappedUrl !== moduleUrl) {
+            moduleUrl = mappedUrl;
             triggerManualLoad = true;
         }
 
@@ -246,32 +236,8 @@ export class SpaRouter {
                     moduleUrl = moduleUrl.slice(this.basePath.length);
                 }
                 
-                // --- MAPEO DE RUTAS DINÁMICAS PARA QUE CARGUE EL JS CORRECTO ---
-                if (moduleUrl.startsWith('/design/s/')) {
-                    moduleUrl = '/design/s/:uuid';
-                } else if (moduleUrl.startsWith('/snapshot/view/')) {
-                    moduleUrl = '/snapshot/view/:id';
-                } else if (moduleUrl.startsWith('/design/')) {
-                    moduleUrl = '/design'; 
-                } else if (moduleUrl.startsWith('/canvases/manage/requests/')) {
-                    moduleUrl = '/canvases/manage/requests/:uuid';
-                } else if (moduleUrl.startsWith('/canvases/manage/resets/')) {
-                    moduleUrl = '/canvases/manage/resets/:uuid';
-                } else if (moduleUrl.startsWith('/canvases/manage/resize/')) {
-                    moduleUrl = '/canvases/manage/resize/:uuid';
-                } else if (moduleUrl.startsWith('/canvases/resize/')) { 
-                    moduleUrl = '/canvases/manage/resize/:uuid';
-                } else if (moduleUrl.startsWith('/canvases/edit/')) {
-                    moduleUrl = '/canvases/edit/:uuid';
-                    
-                // ¡NUEVO BLOQUE INTERCEPTOR PARA CARGA DINÁMICA!
-                } else if (moduleUrl.startsWith('/canvases/members/') && moduleUrl.includes('/role/')) {
-                    moduleUrl = '/canvases/members/:uuid/role/:id';
-                    
-                } else if (moduleUrl.startsWith('/canvases/members/')) {
-                    moduleUrl = '/canvases/members/:uuid';
-                }
-                // -------------------------------------------------------------
+                // Uso del método refactorizado
+                moduleUrl = this._getRoutePattern(moduleUrl);
 
                 const loadTimeMs = Math.round(performance.now() - startTime);
 
@@ -421,34 +387,8 @@ export class SpaRouter {
     }
 
     _showLoaderInOutlet(cleanUrl) {
-        let mapKey = cleanUrl;
-        
-        // --- MAPEO DE RUTAS DINÁMICAS PARA QUE CARGUE EL SKELETON CORRECTO ---
-        if (cleanUrl.startsWith('/design/s/')) {
-            mapKey = '/design/s/:uuid';
-        } else if (cleanUrl.startsWith('/snapshot/view/')) {
-            mapKey = '/snapshot/view/:id';
-        } else if (cleanUrl.startsWith('/design/')) {
-            mapKey = '/design';
-        } else if (cleanUrl.startsWith('/canvases/manage/requests/')) {
-            mapKey = '/canvases/manage/requests/:uuid';
-        } else if (cleanUrl.startsWith('/canvases/manage/resets/')) {
-            mapKey = '/canvases/manage/resets/:uuid';
-        } else if (cleanUrl.startsWith('/canvases/manage/resize/')) {
-            mapKey = '/canvases/manage/resize/:uuid';
-        } else if (cleanUrl.startsWith('/canvases/resize/')) { 
-            mapKey = '/canvases/manage/resize/:uuid';
-        } else if (cleanUrl.startsWith('/canvases/edit/')) {
-            mapKey = '/canvases/edit/:uuid';
-            
-        // ¡NUEVO BLOQUE PARA SKELETON!
-        } else if (cleanUrl.startsWith('/canvases/members/') && cleanUrl.includes('/role/')) {
-            mapKey = '/canvases/members/:uuid/role/:id';
-            
-        } else if (cleanUrl.startsWith('/canvases/members/')) {
-            mapKey = '/canvases/members/:uuid';
-        }
-        // -------------------------------------------------------------
+        // Uso del método refactorizado
+        let mapKey = this._getRoutePattern(cleanUrl);
 
         const routeConfig = RouteModulesMap[mapKey];
         const skeletonType = routeConfig && routeConfig.skeletonType ? routeConfig.skeletonType : 'generic';
