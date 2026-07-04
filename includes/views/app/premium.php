@@ -421,7 +421,7 @@ if ($activeAccountId && isset($linkedAccounts[$activeAccountId])) {
 </div>
 
 <script>
-    let isYearlyPremium = false;
+    window.isYearlyPremium = false;
 
     function toggleBilling() {
         isYearlyPremium = !isYearlyPremium;

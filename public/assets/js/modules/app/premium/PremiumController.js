@@ -1,8 +1,8 @@
 // public/assets/js/modules/app/premium/PremiumController.js
 
-import { ApiService } from '../../core/api/ApiServices.js';
-import { ApiRoutes } from '../../core/api/ApiRoutes.js';
-import { showMessage } from '../../core/utils/uiUtils.js';
+import { ApiService } from '../../../core/api/ApiServices.js';
+import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
+import { showMessage } from '../../../core/utils/uiUtils.js';
 
 export class PremiumController {
 
@@ -81,13 +81,13 @@ export class PremiumController {
         e.preventDefault();
 
         // Verificar si el usuario está logueado
-        if (!window.APP_USER) {
+        if (!window.activeUserId) {
             window.spaRouter.navigate('/login');
             return;
         }
 
         const tier = parseInt(btn.dataset.tier, 10);
-        const billingPeriod = window.isYearlyPremium ? 'yearly' : 'monthly';
+        const billingPeriod = (window.isYearlyPremium === true) ? 'yearly' : 'monthly';
 
         if (!tier || (tier !== 1 && tier !== 2)) {
             showMessage('Plan inválido.', 'error');
