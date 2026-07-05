@@ -19,14 +19,13 @@ class SubscriptionPlanConstants {
             case self::TIER_ADVANCED:
                 return [
                     'name' => 'Advanced',
-                    'max_canvases' => -1, // -1 significa ilimitado
+                    'max_canvases' => 10,
                     'max_snapshots_per_canvas' => -1, // Ilimitado
-                    'max_storage_mb' => 5120, // 5GB
-                    'max_members_per_canvas' => 50,
+                    'max_storage_mb' => 500,
+                    'max_members_per_canvas' => 10000,
                     'advanced_roles' => true,
                     'live_templates' => true,
-                    'premium_tools' => true,
-                    'high_res_export' => true,
+                    'extended_palettes' => true,
                     'custom_palettes' => true
                 ];
 
@@ -34,14 +33,13 @@ class SubscriptionPlanConstants {
                 return [
                     'name' => 'Pro',
                     'max_canvases' => 5,
-                    'max_snapshots_per_canvas' => 5,
-                    'max_storage_mb' => 500, // 500MB
-                    'max_members_per_canvas' => 5,
+                    'max_snapshots_per_canvas' => 100,
+                    'max_storage_mb' => 100,
+                    'max_members_per_canvas' => 1000,
                     'advanced_roles' => false,
                     'live_templates' => true,
-                    'premium_tools' => true,
-                    'high_res_export' => true,
-                    'custom_palettes' => true
+                    'extended_palettes' => true,
+                    'custom_palettes' => false
                 ];
 
             case self::TIER_BASIC:
@@ -49,13 +47,12 @@ class SubscriptionPlanConstants {
                 return [
                     'name' => 'Basic',
                     'max_canvases' => 1,
-                    'max_snapshots_per_canvas' => 1,
+                    'max_snapshots_per_canvas' => 0,
                     'max_storage_mb' => 1,
-                    'max_members_per_canvas' => 1,
+                    'max_members_per_canvas' => 10,
                     'advanced_roles' => false,
                     'live_templates' => false,
-                    'premium_tools' => false,
-                    'high_res_export' => false,
+                    'extended_palettes' => false,
                     'custom_palettes' => false
                 ];
         }

@@ -2,13 +2,190 @@
 // includes/views/app/premium.php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
-// Lógica de UI para identificar el plan actual y cambiar botones
+use App\Core\System\SubscriptionPlanConstants;
+
+// ── Datos de sesión ──
 $activeAccountId = $_SESSION['active_account'] ?? null;
 $linkedAccounts = $_SESSION['accounts'] ?? [];
 $tier = 0;
 if ($activeAccountId && isset($linkedAccounts[$activeAccountId])) {
     $tier = (int)($linkedAccounts[$activeAccountId]['subscription_tier'] ?? 0);
 }
+
+// ── Cargar los límites de cada nivel directamente desde la fuente única (SSOT) ──
+$tierBasic    = SubscriptionPlanConstants::getTierLimits(SubscriptionPlanConstants::TIER_BASIC);
+$tierPro      = SubscriptionPlanConstants::getTierLimits(SubscriptionPlanConstants::TIER_PRO);
+$tierAdvanced = SubscriptionPlanConstants::getTierLimits(SubscriptionPlanConstants::TIER_ADVANCED);
+
+// ── Helpers de formato ──
+function formatStoragePremium(int $mb): string {
+    if ($mb >= 1024) return number_format($mb / 1024) . ' GB';
+    return $mb . ' MB';
+}
+
+function formatLimitPremium(int $val): string {
+    if ($val === -1) return __('premium_val_unlimited');
+    if ($val === 0) return __('premium_val_unavailable');
+    return number_format($val);
+}
+
+// ── Construir las features de cada tarjeta dinámicamente ──
+function buildCardFeatures(array $limits): array {
+    $features = [];
+
+    // 1. Almacenamiento
+    $features[] = [
+        'icon' => 'check',
+        'text' => __('premium_card_storage', ['value' => formatStoragePremium($limits['max_storage_mb'])])
+    ];
+
+    // 2. Lienzos
+    if ($limits['max_canvases'] === -1) {
+        $features[] = ['icon' => 'check', 'text' => __('premium_card_canvases_unlimited'), 'bold' => true];
+    } else {
+        $features[] = ['icon' => 'check', 'text' => __('premium_card_canvases', ['value' => $limits['max_canvases']])];
+    }
+
+    // 3. Miembros
+    $features[] = [
+        'icon' => 'check',
+        'text' => __('premium_card_members', ['value' => number_format($limits['max_members_per_canvas'])])
+    ];
+
+    // 4. Snapshots
+    if ($limits['max_snapshots_per_canvas'] === 0) {
+        $features[] = ['icon' => 'cross', 'text' => __('premium_card_no_snapshots')];
+    } elseif ($limits['max_snapshots_per_canvas'] === -1) {
+        $features[] = ['icon' => 'check', 'text' => __('premium_card_snapshots_unlimited'), 'bold' => true];
+    } else {
+        $features[] = ['icon' => 'check', 'text' => __('premium_card_snapshots', ['value' => $limits['max_snapshots_per_canvas']])];
+    }
+
+    // 5. Compartir en Vivo
+    if ($limits['live_templates']) {
+        $features[] = ['icon' => 'check', 'text' => __('premium_card_live_share'), 'bold' => true];
+    } else {
+        $features[] = ['icon' => 'cross', 'text' => __('premium_card_no_live_share')];
+    }
+
+    // 6. Paletas
+    if ($limits['custom_palettes']) {
+        $features[] = ['icon' => 'check', 'text' => __('premium_card_palettes_custom')];
+    } elseif ($limits['extended_palettes']) {
+        $features[] = ['icon' => 'check', 'text' => __('premium_card_palettes_extended')];
+    } else {
+        $features[] = ['icon' => 'check', 'text' => __('premium_card_palettes_basic')];
+    }
+
+    // 7. Roles avanzados
+    if ($limits['advanced_roles']) {
+        $features[] = ['icon' => 'check', 'text' => __('premium_card_advanced_roles'), 'bold' => true];
+    }
+
+    return $features;
+}
+
+$cardFeaturesBasic    = buildCardFeatures($tierBasic);
+$cardFeaturesPro      = buildCardFeatures($tierPro);
+$cardFeaturesAdvanced = buildCardFeatures($tierAdvanced);
+
+// ── Definir las filas de la tabla comparativa dinámicamente ──
+$canvasSizeLabels = [
+    __('premium_sizes_basic'),
+    __('premium_sizes_pro'),
+    __('premium_sizes_advanced'),
+];
+
+$paletteLabels = [
+    __('premium_palettes_basic'),
+    __('premium_palettes_extended'),
+    __('premium_palettes_extended_custom'),
+];
+
+// Cada fila: 'label' => clave traducción, 'type' => numeric|boolean|text, 'values' => [basic, pro, advanced]
+$comparisonRows = [
+    [
+        'label' => __('premium_cmp_canvases'),
+        'values' => [
+            formatLimitPremium($tierBasic['max_canvases']),
+            formatLimitPremium($tierPro['max_canvases']),
+            formatLimitPremium($tierAdvanced['max_canvases']),
+        ],
+        'type' => 'text'
+    ],
+    [
+        'label' => __('premium_cmp_canvas_sizes'),
+        'values' => [
+            $canvasSizeLabels[0],
+            $canvasSizeLabels[1],
+            $canvasSizeLabels[2],
+        ],
+        'type' => 'text'
+    ],
+    [
+        'label' => __('premium_cmp_storage'),
+        'values' => [
+            formatStoragePremium($tierBasic['max_storage_mb']),
+            formatStoragePremium($tierPro['max_storage_mb']),
+            formatStoragePremium($tierAdvanced['max_storage_mb']),
+        ],
+        'type' => 'text'
+    ],
+    [
+        'label' => __('premium_cmp_members'),
+        'values' => [
+            number_format($tierBasic['max_members_per_canvas']),
+            number_format($tierPro['max_members_per_canvas']),
+            number_format($tierAdvanced['max_members_per_canvas']),
+        ],
+        'type' => 'text'
+    ],
+    [
+        'label' => __('premium_cmp_live'),
+        'values' => [
+            $tierBasic['live_templates'],
+            $tierPro['live_templates'],
+            $tierAdvanced['live_templates'],
+        ],
+        'type' => 'boolean'
+    ],
+    [
+        'label' => __('premium_cmp_palettes'),
+        'values' => [
+            $paletteLabels[0],
+            $paletteLabels[1],
+            $paletteLabels[2],
+        ],
+        'type' => 'text'
+    ],
+    [
+        'label' => __('premium_cmp_custom_palettes'),
+        'values' => [
+            $tierBasic['custom_palettes'],
+            $tierPro['custom_palettes'],
+            $tierAdvanced['custom_palettes'],
+        ],
+        'type' => 'boolean'
+    ],
+    [
+        'label' => __('premium_cmp_snapshots'),
+        'values' => [
+            formatLimitPremium($tierBasic['max_snapshots_per_canvas']),
+            formatLimitPremium($tierPro['max_snapshots_per_canvas']),
+            formatLimitPremium($tierAdvanced['max_snapshots_per_canvas']),
+        ],
+        'type' => 'text'
+    ],
+    [
+        'label' => __('premium_cmp_advanced_roles'),
+        'values' => [
+            $tierBasic['advanced_roles'],
+            $tierPro['advanced_roles'],
+            $tierAdvanced['advanced_roles'],
+        ],
+        'type' => 'boolean'
+    ],
+];
 ?>
 <style>
 /* CSS Exclusivo para Premium adaptado a components.css */
@@ -109,19 +286,6 @@ if ($activeAccountId && isset($linkedAccounts[$activeAccountId])) {
     box-shadow: var(--shadow-card);
 }
 
-/* Estilo especial para el plan Advanced */
-.pricing-card.advanced {
-    border: 2px solid #FFA500;
-    background: linear-gradient(145deg, #1f1f1f, #2a1b00);
-    transform: scale(1.05);
-    z-index: 10;
-    box-shadow: 0 10px 30px rgba(255, 165, 0, 0.15);
-}
-
-.pricing-card.advanced:hover {
-    border-color: #FFC04D;
-}
-
 .featured-badge {
     position: absolute;
     top: -12px;
@@ -138,22 +302,11 @@ if ($activeAccountId && isset($linkedAccounts[$activeAccountId])) {
     white-space: nowrap;
 }
 
-.advanced-badge {
-    background-color: #FFA500;
-    color: #000;
-}
-
 .plan-name {
     font-size: 20px;
     font-weight: 700;
     color: var(--text-primary);
     margin-bottom: 8px;
-}
-
-.pricing-card.advanced .plan-name,
-.pricing-card.advanced .plan-currency,
-.pricing-card.advanced .plan-price {
-    color: #FFA500;
 }
 
 .plan-price-wrapper {
@@ -194,11 +347,6 @@ if ($activeAccountId && isset($linkedAccounts[$activeAccountId])) {
     line-height: 1.4;
 }
 
-.pricing-card.advanced .plan-desc {
-    border-bottom-color: rgba(255, 165, 0, 0.2);
-    color: #ddd;
-}
-
 .plan-features {
     list-style: none;
     padding: 0;
@@ -215,17 +363,9 @@ if ($activeAccountId && isset($linkedAccounts[$activeAccountId])) {
     color: var(--text-primary);
 }
 
-.pricing-card.advanced .plan-features li {
-    color: #eee;
-}
-
 .feature-icon-check {
     color: var(--color-success);
     font-size: 18px !important;
-}
-
-.pricing-card.advanced .feature-icon-check {
-    color: #FFA500;
 }
 
 .feature-icon-cross {
@@ -247,173 +387,148 @@ if ($activeAccountId && isset($linkedAccounts[$activeAccountId])) {
     color: var(--text-primary);
     margin-bottom: 24px;
 }
-
-.btn-advanced {
-    background-color: #FFA500;
-    color: #000;
-    border: none;
-    font-weight: bold;
-}
-.btn-advanced:hover {
-    background-color: #FFC04D;
-}
 </style>
 
 <div class="view-content">
     <div class="component-wrapper component-wrapper--full" style="max-width: 1050px;">
         
         <div style="text-align: center; padding: 24px 0;">
-            <h1 class="component-page-title">Mejora tu experiencia en ProjectRosaura</h1>
-            <p class="component-page-description" style="max-width: 600px; margin: 0 auto;">Lleva tus diseños al siguiente nivel con límites expandidos, almacenamiento masivo y herramientas de colaboración en tiempo real.</p>
+            <h1 class="component-page-title"><?php echo __('premium_page_title'); ?></h1>
+            <p class="component-page-description" style="max-width: 600px; margin: 0 auto;"><?php echo __('premium_page_desc'); ?></p>
         </div>
 
         <div class="billing-toggle-container" id="premiumBillingToggle">
-            <span class="billing-label active" id="lblMonthly" onclick="setBilling('monthly')">Mensual</span>
-            <div class="toggle-switch" onclick="toggleBilling()">
+            <span class="billing-label active" id="lblMonthly"><?php echo __('premium_billing_monthly'); ?></span>
+            <div class="toggle-switch">
                 <div class="toggle-knob"></div>
             </div>
-            <span class="billing-label" id="lblYearly" onclick="setBilling('yearly')">
-                Anual <span class="billing-discount">Ahorra 20%</span>
+            <span class="billing-label" id="lblYearly">
+                <?php echo __('premium_billing_yearly'); ?> <span class="billing-discount"><?php echo __('premium_billing_save'); ?></span>
             </span>
         </div>
         
-        <p style="text-align: center; font-size: 13px; color: var(--text-secondary); margin-top: -16px; margin-bottom: 32px;">Todos los precios mostrados están en dólares estadounidenses (USD).</p>
+        <p style="text-align: center; font-size: 13px; color: var(--text-secondary); margin-top: -16px; margin-bottom: 32px;"><?php echo __('premium_billing_currency_note'); ?></p>
 
         <div class="pricing-grid">
             
-            <div class="pricing-card" data-tier="0">
-                <div class="plan-name">Básico</div>
-                <div class="plan-price-wrapper">
-                    <span class="plan-currency">$</span>
-                    <span class="plan-price" data-monthly="0" data-yearly="0">0</span>
-                    <span class="plan-period" data-period-monthly="/ mes" data-period-yearly="/ año">/ mes</span>
-                </div>
-                <p class="plan-desc">Perfecto para empezar a explorar la plataforma de forma individual.</p>
-                
-                <ul class="plan-features">
-                    <li><span class="material-symbols-rounded feature-icon-check">check_circle</span> Almacenamiento total: <b>1 MB</b></li>
-                    <li><span class="material-symbols-rounded feature-icon-check">check_circle</span> 1 Lienzo y 1 Snapshot</li>
-                    <li><span class="material-symbols-rounded feature-icon-cross">cancel</span> Participantes máximos: 1</li>
-                    <li><span class="material-symbols-rounded feature-icon-cross">cancel</span> Sin Compartir en Vivo</li>
-                </ul>
-                <?php if ($tier === 0): ?>
-                    <a href="#" class="component-button component-button--full component-button--h45 disabled">Tu Plan Actual</a>
-                <?php else: ?>
-                    <a href="#" class="component-button component-button--full component-button--h45" data-action="subscribe" data-tier="0">Volver al Básico</a>
-                <?php endif; ?>
-            </div>
+            <?php
+            // ── Definición de las tarjetas ──
+            $plans = [
+                [
+                    'tier'       => 0,
+                    'name_key'   => 'premium_plan_basic',
+                    'desc_key'   => 'premium_desc_basic',
+                    'css_class'  => '',
+                    'badge'      => null,
+                    'monthly'    => 0,
+                    'yearly'     => 0,
+                    'features'   => $cardFeaturesBasic,
+                    'btn_class'  => 'component-button component-button--full component-button--h45',
+                    'btn_adv'    => false,
+                ],
+                [
+                    'tier'       => 1,
+                    'name_key'   => 'premium_plan_pro',
+                    'desc_key'   => 'premium_desc_pro',
+                    'css_class'  => 'featured',
+                    'badge'      => ['key' => 'premium_badge_popular', 'class' => 'featured-badge'],
+                    'monthly'    => 15,
+                    'yearly'     => 144,
+                    'features'   => $cardFeaturesPro,
+                    'btn_class'  => 'component-button component-button--dark component-button--full component-button--h45',
+                    'btn_adv'    => false,
+                ],
+                [
+                    'tier'       => 2,
+                    'name_key'   => 'premium_plan_advanced',
+                    'desc_key'   => 'premium_desc_advanced',
+                    'css_class'  => '',
+                    'badge'      => ['key' => 'premium_badge_top', 'class' => 'featured-badge'],
+                    'monthly'    => 35,
+                    'yearly'     => 336,
+                    'features'   => $cardFeaturesAdvanced,
+                    'btn_class'  => 'component-button component-button--dark component-button--full component-button--h45',
+                    'btn_adv'    => false,
+                ],
+            ];
 
-            <div class="pricing-card featured" data-tier="1">
-                <div class="featured-badge">Más Elegido</div>
-                <div class="plan-name">Pro</div>
+            foreach ($plans as $plan):
+                $planTier = $plan['tier'];
+            ?>
+            <div class="pricing-card <?php echo $plan['css_class']; ?>" data-tier="<?php echo $planTier; ?>">
+                <?php if ($plan['badge']): ?>
+                    <div class="<?php echo $plan['badge']['class']; ?>"><?php echo __($plan['badge']['key']); ?></div>
+                <?php endif; ?>
+                
+                <div class="plan-name"><?php echo __($plan['name_key']); ?></div>
                 <div class="plan-price-wrapper">
                     <span class="plan-currency">$</span>
-                    <span class="plan-price" data-monthly="15" data-yearly="144">15</span>
-                    <span class="plan-period" data-period-monthly="/ mes" data-period-yearly="/ año">/ mes</span>
+                    <span class="plan-price" data-monthly="<?php echo $plan['monthly']; ?>" data-yearly="<?php echo $plan['yearly']; ?>"><?php echo $plan['monthly']; ?></span>
+                    <span class="plan-period" data-period-monthly="<?php echo __('premium_period_month'); ?>" data-period-yearly="<?php echo __('premium_period_year'); ?>"><?php echo __('premium_period_month'); ?></span>
                 </div>
-                <p class="plan-desc">Para profesionales que necesitan más potencia y colaboración en equipo.</p>
+                <p class="plan-desc"><?php echo __($plan['desc_key']); ?></p>
                 
                 <ul class="plan-features">
-                    <li><span class="material-symbols-rounded feature-icon-check">check_circle</span> Almacenamiento: <b>500 MB</b></li>
-                    <li><span class="material-symbols-rounded feature-icon-check">check_circle</span> 5 Lienzos y 5 Participantes</li>
-                    <li><span class="material-symbols-rounded feature-icon-check">check_circle</span> <b>Compartir en Vivo (Sync)</b></li>
-                    <li><span class="material-symbols-rounded feature-icon-check">check_circle</span> Herramientas Premium y Paletas</li>
+                    <?php foreach ($plan['features'] as $feat): 
+                        $iconClass = $feat['icon'] === 'check' ? 'feature-icon-check' : 'feature-icon-cross';
+                        $iconName  = $feat['icon'] === 'check' ? 'check_circle' : 'cancel';
+                        $isBold    = !empty($feat['bold']);
+                    ?>
+                    <li>
+                        <span class="material-symbols-rounded <?php echo $iconClass; ?>"><?php echo $iconName; ?></span>
+                        <?php echo $isBold ? '<b>' . $feat['text'] . '</b>' : $feat['text']; ?>
+                    </li>
+                    <?php endforeach; ?>
                 </ul>
-                <?php if ($tier === 1): ?>
-                    <a href="#" class="component-button component-button--dark component-button--full component-button--h45 disabled">Tu Plan Actual</a>
-                <?php elseif ($tier > 1): ?>
-                    <a href="#" class="component-button component-button--dark component-button--full component-button--h45" data-action="subscribe" data-tier="1">Bajar a Pro</a>
-                <?php else: ?>
-                    <a href="#" class="component-button component-button--dark component-button--full component-button--h45" data-action="subscribe" data-tier="1">Mejorar a Pro</a>
-                <?php endif; ?>
-            </div>
 
-            <div class="pricing-card advanced" data-tier="2">
-                <div class="featured-badge advanced-badge">Nivel Máximo</div>
-                <div class="plan-name">Advanced</div>
-                <div class="plan-price-wrapper">
-                    <span class="plan-currency">$</span>
-                    <span class="plan-price" data-monthly="35" data-yearly="336">35</span>
-                    <span class="plan-period" data-period-monthly="/ mes" data-period-yearly="/ año">/ mes</span>
-                </div>
-                <p class="plan-desc">Solución definitiva con herramientas ilimitadas y límites expansivos.</p>
-                
-                <ul class="plan-features">
-                    <li><span class="material-symbols-rounded feature-icon-check">check_circle</span> Almacenamiento masivo: <b>5 GB</b></li>
-                    <li><span class="material-symbols-rounded feature-icon-check">check_circle</span> Lienzos y Snapshots <b>Ilimitados</b></li>
-                    <li><span class="material-symbols-rounded feature-icon-check">check_circle</span> Hasta <b>50 Participantes</b> por lienzo</li>
-                    <li><span class="material-symbols-rounded feature-icon-check">check_circle</span> Gestión de Roles Avanzados</li>
-                </ul>
-                <?php if ($tier === 2): ?>
-                    <a href="#" class="component-button component-button--full component-button--h45 disabled">Tu Plan Actual</a>
-                <?php else: ?>
-                    <a href="#" class="component-button component-button--full component-button--h45 btn-advanced" data-action="subscribe" data-tier="2">Elegir Advanced</a>
+                <?php if ($tier === $planTier): ?>
+                    <a href="#" class="<?php echo $plan['btn_class']; ?> disabled"><?php echo __('premium_btn_current'); ?></a>
+                <?php elseif ($planTier === 0): ?>
+                    <a href="#" class="component-button component-button--full component-button--h45" data-action="subscribe" data-tier="0"><?php echo __('premium_btn_downgrade_basic'); ?></a>
+                <?php elseif ($planTier === 1 && $tier > 1): ?>
+                    <a href="#" class="<?php echo $plan['btn_class']; ?>" data-action="subscribe" data-tier="1"><?php echo __('premium_btn_downgrade_pro'); ?></a>
+                <?php elseif ($planTier === 1): ?>
+                    <a href="#" class="<?php echo $plan['btn_class']; ?>" data-action="subscribe" data-tier="1"><?php echo __('premium_btn_upgrade_pro'); ?></a>
+                <?php elseif ($planTier === 2): ?>
+                    <a href="#" class="<?php echo $plan['btn_class']; ?>" data-action="subscribe" data-tier="2"><?php echo __('premium_btn_upgrade_advanced'); ?></a>
                 <?php endif; ?>
             </div>
+            <?php endforeach; ?>
 
         </div>
 
+        <!-- ── Tabla Comparativa Dinámica ── -->
         <div class="comparison-wrapper">
-            <h2 class="comparison-title">Compara las características al detalle</h2>
+            <h2 class="comparison-title"><?php echo __('premium_cmp_title'); ?></h2>
             <div class="component-table-wrapper">
                 <table class="component-table">
                     <thead>
                         <tr>
-                            <th>Características</th>
-                            <th>Básico</th>
-                            <th>Pro</th>
-                            <th>Advanced</th>
+                            <th><?php echo __('premium_cmp_features'); ?></th>
+                            <th><?php echo __('premium_plan_basic'); ?></th>
+                            <th><?php echo __('premium_plan_pro'); ?></th>
+                            <th><?php echo __('premium_plan_advanced'); ?></th>
                         </tr>
                     </thead>
                     <tbody>
+                        <?php foreach ($comparisonRows as $row): ?>
                         <tr class="component-table-row">
-                            <td style="font-weight: 600;">Límite de Almacenamiento</td>
-                            <td>1 MB</td>
-                            <td>500 MB</td>
-                            <td><span style="color: #FFA500; font-weight: bold;">5 GB (5120 MB)</span></td>
+                            <td style="font-weight: 600;"><?php echo $row['label']; ?></td>
+                            <?php foreach ($row['values'] as $i => $val): ?>
+                                <td>
+                                    <?php if ($row['type'] === 'boolean'): ?>
+                                        <?php if ($val): ?>
+                                            <span class="material-symbols-rounded feature-icon-check">check</span>
+                                        <?php else: ?>
+                                            <span class="material-symbols-rounded feature-icon-cross">remove</span>
+                                        <?php endif; ?>
+                                    <?php else: ?>
+                                        <?php echo $val; ?>
+                                    <?php endif; ?>
+                                </td>
+                            <?php endforeach; ?>
                         </tr>
-                        <tr class="component-table-row">
-                            <td style="font-weight: 600;">Lienzos Activos Permitidos</td>
-                            <td>1</td>
-                            <td>5</td>
-                            <td>Ilimitados</td>
-                        </tr>
-                        <tr class="component-table-row">
-                            <td style="font-weight: 600;">Participantes por Lienzo</td>
-                            <td>1 (Individual)</td>
-                            <td>Hasta 5</td>
-                            <td>Hasta 50</td>
-                        </tr>
-                        <tr class="component-table-row">
-                            <td style="font-weight: 600;">Snapshots (Historial de Versiones)</td>
-                            <td>1 Entrada</td>
-                            <td>5 Entradas</td>
-                            <td>Ilimitados</td>
-                        </tr>
-                        <tr class="component-table-row">
-                            <td style="font-weight: 600;">Compartir en Vivo (Transmisión Sync)</td>
-                            <td><span class="material-symbols-rounded feature-icon-cross">remove</span></td>
-                            <td><span class="material-symbols-rounded feature-icon-check">check</span></td>
-                            <td><span class="material-symbols-rounded feature-icon-check" style="color:#FFA500;">check</span></td>
-                        </tr>
-                        <tr class="component-table-row">
-                            <td style="font-weight: 600;">Herramientas Premium / Paletas Custom</td>
-                            <td><span class="material-symbols-rounded feature-icon-cross">remove</span></td>
-                            <td><span class="material-symbols-rounded feature-icon-check">check</span></td>
-                            <td><span class="material-symbols-rounded feature-icon-check" style="color:#FFA500;">check</span></td>
-                        </tr>
-                        <tr class="component-table-row">
-                            <td style="font-weight: 600;">Exportación Alta Resolución</td>
-                            <td><span class="material-symbols-rounded feature-icon-cross">remove</span></td>
-                            <td><span class="material-symbols-rounded feature-icon-check">check</span></td>
-                            <td><span class="material-symbols-rounded feature-icon-check" style="color:#FFA500;">check</span></td>
-                        </tr>
-                        <tr class="component-table-row">
-                            <td style="font-weight: 600;">Gestión de Roles Avanzados</td>
-                            <td><span class="material-symbols-rounded feature-icon-cross">remove</span></td>
-                            <td><span class="material-symbols-rounded feature-icon-cross">remove</span></td>
-                            <td><span class="material-symbols-rounded feature-icon-check" style="color:#FFA500;">check</span></td>
-                        </tr>
+                        <?php endforeach; ?>
                     </tbody>
                 </table>
             </div>
@@ -421,62 +536,3 @@ if ($activeAccountId && isset($linkedAccounts[$activeAccountId])) {
 
     </div>
 </div>
-
-<script>
-    window.isYearlyPremium = false;
-
-    function toggleBilling() {
-        isYearlyPremium = !isYearlyPremium;
-        updateUIBilling();
-    }
-
-    function setBilling(type) {
-        if (type === 'yearly' && !isYearlyPremium) {
-            isYearlyPremium = true;
-            updateUIBilling();
-        } else if (type === 'monthly' && isYearlyPremium) {
-            isYearlyPremium = false;
-            updateUIBilling();
-        }
-    }
-
-    function updateUIBilling() {
-        const toggleContainer = document.getElementById('premiumBillingToggle');
-        const lblMonthly = document.getElementById('lblMonthly');
-        const lblYearly = document.getElementById('lblYearly');
-        const cards = document.querySelectorAll('.pricing-card');
-
-        if (isYearlyPremium) {
-            toggleContainer.classList.add('billing-yearly-active');
-            lblYearly.classList.add('active');
-            lblMonthly.classList.remove('active');
-        } else {
-            toggleContainer.classList.remove('billing-yearly-active');
-            lblMonthly.classList.add('active');
-            lblYearly.classList.remove('active');
-        }
-
-        cards.forEach(card => {
-            const priceEl = card.querySelector('.plan-price');
-            const periodEl = card.querySelector('.plan-period');
-            
-            if (priceEl && periodEl) {
-                priceEl.style.opacity = '0';
-                periodEl.style.opacity = '0';
-                
-                setTimeout(() => {
-                    priceEl.textContent = isYearlyPremium 
-                        ? priceEl.getAttribute('data-yearly') 
-                        : priceEl.getAttribute('data-monthly');
-                        
-                    periodEl.textContent = isYearlyPremium 
-                        ? periodEl.getAttribute('data-period-yearly') 
-                        : periodEl.getAttribute('data-period-monthly');
-                        
-                    priceEl.style.opacity = '1';
-                    periodEl.style.opacity = '1';
-                }, 150);
-            }
-        });
-    }
-</script>

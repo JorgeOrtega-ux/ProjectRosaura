@@ -8,12 +8,15 @@ export class PremiumController {
 
     constructor() {
         this.api = new ApiService();
-        this._boundHandleClick = this._handleSubscribeClick.bind(this);
+        this._boundHandleClick = this._handleClick.bind(this);
         this._boundHandleParams = this._handleUrlParams.bind(this);
     }
 
     init() {
-        // Delegar clicks en botones de suscripción
+        // Estado inicial del toggle de facturación
+        window.isYearlyPremium = false;
+
+        // Delegar todos los clicks (suscripción + billing toggle)
         document.body.addEventListener('click', this._boundHandleClick);
 
         // Verificar parámetros de URL (retorno de Stripe)
@@ -23,6 +26,92 @@ export class PremiumController {
     destroy() {
         document.body.removeEventListener('click', this._boundHandleClick);
     }
+
+    // ── Billing Toggle ──
+
+    _handleClick(e) {
+        // Toggle switch
+        const toggleSwitch = e.target.closest('.toggle-switch');
+        if (toggleSwitch) {
+            this._toggleBilling();
+            return;
+        }
+
+        // Billing labels
+        const billingLabel = e.target.closest('.billing-label');
+        if (billingLabel) {
+            const id = billingLabel.id;
+            if (id === 'lblMonthly') this._setBilling('monthly');
+            else if (id === 'lblYearly') this._setBilling('yearly');
+            return;
+        }
+
+        // Subscribe buttons
+        const subscribeBtn = e.target.closest('[data-action="subscribe"]');
+        if (subscribeBtn) {
+            this._handleSubscribeClick(e);
+            return;
+        }
+    }
+
+    _toggleBilling() {
+        window.isYearlyPremium = !window.isYearlyPremium;
+        this._updateUIBilling();
+    }
+
+    _setBilling(type) {
+        if (type === 'yearly' && !window.isYearlyPremium) {
+            window.isYearlyPremium = true;
+            this._updateUIBilling();
+        } else if (type === 'monthly' && window.isYearlyPremium) {
+            window.isYearlyPremium = false;
+            this._updateUIBilling();
+        }
+    }
+
+    _updateUIBilling() {
+        const toggleContainer = document.getElementById('premiumBillingToggle');
+        const lblMonthly = document.getElementById('lblMonthly');
+        const lblYearly = document.getElementById('lblYearly');
+        const cards = document.querySelectorAll('.pricing-card');
+
+        if (!toggleContainer) return;
+
+        if (window.isYearlyPremium) {
+            toggleContainer.classList.add('billing-yearly-active');
+            lblYearly.classList.add('active');
+            lblMonthly.classList.remove('active');
+        } else {
+            toggleContainer.classList.remove('billing-yearly-active');
+            lblMonthly.classList.add('active');
+            lblYearly.classList.remove('active');
+        }
+
+        cards.forEach(card => {
+            const priceEl = card.querySelector('.plan-price');
+            const periodEl = card.querySelector('.plan-period');
+            
+            if (priceEl && periodEl) {
+                priceEl.style.opacity = '0';
+                periodEl.style.opacity = '0';
+                
+                setTimeout(() => {
+                    priceEl.textContent = window.isYearlyPremium 
+                        ? priceEl.getAttribute('data-yearly') 
+                        : priceEl.getAttribute('data-monthly');
+                        
+                    periodEl.textContent = window.isYearlyPremium 
+                        ? periodEl.getAttribute('data-period-yearly') 
+                        : periodEl.getAttribute('data-period-monthly');
+                        
+                    priceEl.style.opacity = '1';
+                    periodEl.style.opacity = '1';
+                }, 150);
+            }
+        });
+    }
+
+    // ── URL Params (retorno de Stripe) ──
 
     /**
      * Verifica los query params al volver de Stripe Checkout.
@@ -70,6 +159,8 @@ export class PremiumController {
             }
         }
     }
+
+    // ── Suscripción ──
 
     /**
      * Maneja el click en los botones de suscripción.
