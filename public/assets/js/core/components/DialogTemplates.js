@@ -1,6 +1,48 @@
 // public/assets/js/core/components/DialogTemplates.js
 
 export const DialogTemplates = {
+    welcomePremiumModal: {
+        build: (data) => {
+            const tierName = data.tier == 1 ? 'Premium' : (data.tier == 2 ? 'Pro' : 'Max');
+            let endDate = '';
+            if (data.current_period_end) {
+                const dt = new Date(data.current_period_end * 1000);
+                endDate = dt.toLocaleDateString();
+            } else {
+                endDate = 'N/A';
+            }
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header component-modal-content--centered">
+                    <div class="component-card__icon-container" style="color: var(--accent-primary);">
+                        <span class="material-symbols-rounded" style="font-size: 64px;">stars</span>
+                    </div>
+                    <h2 class="component-modal-title" style="font-size: 24px; font-weight: 600;">¡Bienvenido a ${tierName}!</h2>
+                    <p class="component-modal-desc" style="color: var(--text-secondary); line-height: 1.6;">
+                        Tu suscripción se ha activado correctamente. Ahora tienes acceso a todas las herramientas exclusivas de tu plan.
+                    </p>
+                </div>
+                <div class="component-modal-body">
+                    <div style="background: var(--bg-surface); padding: 15px; border-radius: 12px; border: 1px solid var(--border-color);">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                            <span style="color: var(--text-secondary);">Nivel actual</span>
+                            <strong style="color: var(--accent-primary);">${tierName}</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--text-secondary);">Próxima renovación</span>
+                            <strong>${endDate}</strong>
+                        </div>
+                    </div>
+                </div>
+                <div class="component-modal-actions">
+                    <button class="component-button component-button--h45 component-button--dark component-button--full" onclick="window.location.reload()">
+                        ¡Empezar a explorar!
+                    </button>
+                </div>
+            `;
+        }
+    },
+
     activate2FADialog: {
         build: () => `
             <div class="pill-container"><div class="drag-handle"></div></div>

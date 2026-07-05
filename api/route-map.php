@@ -588,6 +588,11 @@ return [
         'controller' => 'App\Api\Controllers\StripeController',
         'action' => 'get_payment_methods',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'stripe_methods', 'max' => RL::MAX_20, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
+    ],
+    'stripe.toggle_auto_renewal' => [
+        'controller' => 'App\Api\Controllers\StripeController',
+        'action' => 'toggle_auto_renewal',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'stripe_toggle_renewal', 'max' => RL::MAX_5, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ]
 ];
 ?>

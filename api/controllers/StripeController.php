@@ -42,5 +42,10 @@ class StripeController extends BaseController {
         try { return $this->respond($this->stripeServices->getPaymentMethods($input)); }
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
+
+    public function toggle_auto_renewal($input) {
+        try { return $this->respond($this->stripeServices->toggleAutoRenewal($input)); }
+        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
 }
 ?>

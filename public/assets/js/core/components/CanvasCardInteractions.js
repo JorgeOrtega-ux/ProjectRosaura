@@ -46,6 +46,14 @@ export class CanvasCardInteractions {
         const canvasId = btn.getAttribute('data-id');
         if (!canvasId) return;
 
+        // Optimistic update
+        const wasFavorite = btn.classList.contains('is-favorite');
+        if (wasFavorite) {
+            btn.classList.remove('is-favorite');
+        } else {
+            btn.classList.add('is-favorite');
+        }
+
         btn.classList.add('disabled-interactive');
 
         const res = await this.api.toggleFavorite(canvasId);
@@ -53,13 +61,19 @@ export class CanvasCardInteractions {
         btn.classList.remove('disabled-interactive');
 
         if (res && res.success) {
-            // Solo manejamos el estado visual de la clase
+            // Sync with actual server state just in case
             if (res.data.action === 'added') {
                 btn.classList.add('is-favorite');
             } else {
                 btn.classList.remove('is-favorite');
             }
         } else {
+            // Revert on failure
+            if (wasFavorite) {
+                btn.classList.add('is-favorite');
+            } else {
+                btn.classList.remove('is-favorite');
+            }
             showMessage(res.message || (window.__ ? window.__('err_default') : 'Error'), 'error');
         }
     }

@@ -131,7 +131,7 @@ class StripeServices {
                     'price' => $priceId,
                     'quantity' => 1
                 ]],
-                'success_url' => APP_URL . '/premium?session_id={CHECKOUT_SESSION_ID}&status=success',
+                'success_url' => APP_URL . '/?checkout=success&session_id={CHECKOUT_SESSION_ID}',
                 'cancel_url' => APP_URL . '/premium?status=cancel',
                 'metadata' => [
                     'user_id' => (string) $userId,
@@ -174,7 +174,7 @@ class StripeServices {
                 'user_id' => $userId,
                 'error' => $e->getMessage()
             ]);
-            return ['success' => false, 'message_key' => 'stripe.api_error'];
+            return ['success' => false, 'message_key' => 'stripe.api_error', 'message' => 'Stripe Error: ' . $e->getMessage()];
         }
     }
 
@@ -257,11 +257,21 @@ class StripeServices {
             ];
 
         } catch (\Stripe\Exception\ApiErrorException $e) {
+            $msg = $e->getMessage();
             Logger::error("Stripe API Error updating subscription", [
                 'user_id' => $userId,
-                'error' => $e->getMessage()
+                'error' => $msg
             ]);
-            return ['success' => false, 'message_key' => 'stripe.api_error'];
+            
+            if (strpos(strtolower($msg), 'no attached payment source') !== false || strpos(strtolower($msg), 'default payment method') !== false) {
+                return [
+                    'success' => false, 
+                    'message_key' => 'stripe.no_payment_method', 
+                    'message' => 'No tienes un método de pago registrado. Por favor, añade una tarjeta en Configuración > Facturación antes de mejorar tu plan.'
+                ];
+            }
+            
+            return ['success' => false, 'message_key' => 'stripe.api_error', 'message' => 'Stripe Error: ' . $msg];
         }
     }
 
@@ -325,10 +335,70 @@ class StripeServices {
         $userId = $this->sessionManager->getActiveAccountId();
         $subscription = $this->subscriptionRepo->findActiveByUserId($userId);
 
+        if ($subscription && !empty($subscription['stripe_subscription_id'])) {
+            try {
+                \Stripe\Stripe::setApiKey($_ENV['STRIPE_SECRET_KEY']);
+                $stripeSub = \Stripe\Subscription::retrieve($subscription['stripe_subscription_id']);
+                
+                // Mezclamos los datos locales con los reales de Stripe
+                $subscription['cancel_at_period_end'] = $stripeSub->cancel_at_period_end;
+                $subscription['current_period_end'] = $stripeSub->current_period_end;
+                $subscription['status'] = $stripeSub->status;
+            } catch (\Exception $e) {
+                Logger::error("Stripe API Error fetching subscription status", [
+                    'user_id' => $userId,
+                    'error' => $e->getMessage()
+                ]);
+            }
+        }
+
         return [
             'success' => true,
             'data' => $subscription
         ];
+    }
+
+    /**
+     * Alterna la renovación automática de una suscripción activa (cancelar/reactivar al final del periodo).
+     */
+    public function toggleAutoRenewal(array $input): array {
+        if (!$this->sessionManager->isLoggedIn()) {
+            http_response_code(401);
+            return ['success' => false, 'message_key' => 'error.unauthorized'];
+        }
+
+        $userId = $this->sessionManager->getActiveAccountId();
+        $cancelAtPeriodEnd = isset($input['cancel_at_period_end']) ? filter_var($input['cancel_at_period_end'], FILTER_VALIDATE_BOOLEAN) : false;
+
+        $activeLocalSub = $this->subscriptionRepo->findActiveByUserId($userId);
+        if (!$activeLocalSub || empty($activeLocalSub['stripe_subscription_id'])) {
+            return ['success' => false, 'message_key' => 'stripe.no_active_subscription'];
+        }
+
+        \Stripe\Stripe::setApiKey($_ENV['STRIPE_SECRET_KEY']);
+
+        try {
+            $updatedSub = \Stripe\Subscription::update($activeLocalSub['stripe_subscription_id'], [
+                'cancel_at_period_end' => $cancelAtPeriodEnd
+            ]);
+
+            Logger::info("Stripe Subscription auto-renewal toggled", [
+                'user_id' => $userId,
+                'subscription_id' => $updatedSub->id,
+                'cancel_at_period_end' => $cancelAtPeriodEnd
+            ]);
+
+            return [
+                'success' => true,
+                'cancel_at_period_end' => $updatedSub->cancel_at_period_end
+            ];
+        } catch (\Exception $e) {
+            Logger::error("Stripe API Error toggling auto-renewal", [
+                'user_id' => $userId,
+                'error' => $e->getMessage()
+            ]);
+            return ['success' => false, 'message_key' => 'stripe.api_error', 'message' => 'Stripe Error: ' . $e->getMessage()];
+        }
     }
 
     /**
@@ -433,7 +503,19 @@ class StripeServices {
             ]);
 
             $cards = [];
+            $seenFingerprints = [];
             foreach ($paymentMethods->data as $pm) {
+                // Prevenir tarjetas duplicadas usando el fingerprint de Stripe
+                $fingerprint = $pm->card->fingerprint;
+                if (in_array($fingerprint, $seenFingerprints)) {
+                    // Si ya vimos esta tarjeta, la eliminamos (detach) para mantener limpio el customer
+                    try {
+                        $pm->detach();
+                    } catch (\Exception $e) {}
+                    continue;
+                }
+                $seenFingerprints[] = $fingerprint;
+
                 $cards[] = [
                     'id' => $pm->id,
                     'brand' => $pm->card->brand,

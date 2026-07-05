@@ -22,6 +22,15 @@ class SessionManager implements SessionManagerInterface {
     public function start(): void {
         try {
             if (session_status() === PHP_SESSION_NONE) {
+                $cookieParams = session_get_cookie_params();
+                session_set_cookie_params([
+                    'lifetime' => $cookieParams['lifetime'],
+                    'path' => '/',
+                    'domain' => $cookieParams['domain'],
+                    'secure' => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on',
+                    'httponly' => true,
+                    'samesite' => 'Lax'
+                ]);
                 session_start();
             }
             $this->getCsrfToken();
@@ -57,6 +66,15 @@ class SessionManager implements SessionManagerInterface {
     public function destroy(): void {
         try {
             if (session_status() === PHP_SESSION_NONE) {
+                $cookieParams = session_get_cookie_params();
+                session_set_cookie_params([
+                    'lifetime' => $cookieParams['lifetime'],
+                    'path' => '/',
+                    'domain' => $cookieParams['domain'],
+                    'secure' => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on',
+                    'httponly' => true,
+                    'samesite' => 'Lax'
+                ]);
                 session_start();
             }
             session_unset();

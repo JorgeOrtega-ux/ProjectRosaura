@@ -33,6 +33,7 @@ class HomeController {
         }
         
         this.loadCanvases();
+        this.checkCheckoutSuccess();
     }
 
     destroy() {
@@ -125,6 +126,29 @@ class HomeController {
         else if (window.uiUtils && typeof window.uiUtils.initDropdowns === 'function') window.uiUtils.initDropdowns(grid);
         
         if (window.router && typeof window.router.bindLinks === 'function') window.router.bindLinks(grid);
+    }
+
+    async checkCheckoutSuccess() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('checkout') === 'success' && urlParams.get('session_id')) {
+            const newUrl = window.location.pathname;
+            window.history.replaceState({}, document.title, newUrl);
+
+            for (let i = 0; i < 5; i++) {
+                try {
+                    const result = await this.api.post(ApiRoutes.Stripe.GetSubscriptionStatus, {}, this.abortController.signal);
+                    if (result && result.success && result.data && result.data.status === 'active') {
+                        if (window.dialogSystem) {
+                            window.dialogSystem.show('welcomePremiumModal', result.data);
+                        }
+                        break;
+                    }
+                } catch (e) {
+                    // Silenciar errores
+                }
+                await new Promise(resolve => setTimeout(resolve, 2000));
+            }
+        }
     }
 }
 

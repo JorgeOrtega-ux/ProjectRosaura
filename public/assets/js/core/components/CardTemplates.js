@@ -180,5 +180,65 @@ export const CardTemplates = {
                 </div>
             </div>
         `;
+    },
+
+    /**
+     * Construye una tarjeta para la suscripción actual.
+     */
+    subscriptionCard: (data) => {
+        const tierName = data.tier === 2 ? 'Advanced' : (data.tier === 1 ? 'Pro' : 'Free');
+        const status = escapeHTML(data.status || 'inactive');
+        const cancelAtEnd = data.cancel_at_period_end;
+        let dateLabel = cancelAtEnd ? 'Finaliza el:' : 'Próxima renovación:';
+        
+        let dateVal = '-';
+        if (data.current_period_end) {
+            const dateObj = new Date(data.current_period_end * 1000);
+            dateVal = dateObj.toLocaleDateString();
+        }
+
+        let statusClass = 'component-text-notice--success';
+        let statusText = 'Activa';
+        
+        if (status !== 'active') {
+            statusClass = 'component-text-notice--error';
+            statusText = status === 'incomplete' ? 'Incompleta' : 'Inactiva';
+        } else if (cancelAtEnd) {
+            statusClass = 'component-text-notice--warning';
+            statusText = 'Se cancelará pronto';
+        }
+
+        const actionText = cancelAtEnd ? (window.__ ? window.__('btn_reactivate_sub') || 'Reactivar Suscripción' : 'Reactivar Suscripción') : (window.__ ? window.__('btn_cancel_renew') || 'Cancelar Renovación' : 'Cancelar Renovación');
+        const actionIcon = cancelAtEnd ? 'autorenew' : 'cancel';
+        const btnClass = cancelAtEnd ? 'component-button--brand' : 'component-button--dark';
+        const changePlanText = window.__ ? window.__('btn_change_plan') || 'Cambiar Plan' : 'Cambiar Plan';
+        
+        return `
+            <div style="padding: 24px; display: flex; flex-direction: column; gap: 16px; border: 1px solid var(--border-color); border-radius: 12px; background: var(--bg-secondary);">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
+                    <div>
+                        <h3 style="margin: 0; font-size: 1.25rem; font-weight: 600; color: var(--text-primary);">Plan ${tierName}</h3>
+                        <p style="margin: 4px 0 0; color: var(--text-secondary); font-size: 0.9rem;">
+                            Estado: <span class="${statusClass}" style="font-weight: 500;">${statusText}</span>
+                        </p>
+                    </div>
+                    <div style="text-align: right;">
+                        <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary);">${dateLabel}</p>
+                        <p style="margin: 4px 0 0; font-weight: 600; font-size: 1.1rem; color: var(--text-primary);">${dateVal}</p>
+                    </div>
+                </div>
+                
+                <div style="display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid var(--border-color); padding-top: 16px; margin-top: auto;">
+                    <button type="button" class="component-button component-button--dark component-button--h40" data-nav="/premium">
+                        <span class="material-symbols-rounded">upgrade</span>
+                        ${changePlanText}
+                    </button>
+                    <button type="button" class="component-button ${btnClass} component-button--h40" data-action="toggleAutoRenew" data-cancel-state="${!cancelAtEnd}">
+                        <span class="material-symbols-rounded">${actionIcon}</span>
+                        ${actionText}
+                    </button>
+                </div>
+            </div>
+        `;
     }
 };
