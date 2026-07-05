@@ -271,6 +271,18 @@ class CanvasServices {
             }
             $canvas['permissions'] = $permissions;
 
+            // Compatibilidad hacia atrás para el frontend (DesignNetwork.js espera 'role')
+            if ($isOwner) {
+                $canvas['role'] = 'admin';
+            } elseif (in_array('manage_settings', $permissions) || in_array('manage_roles', $permissions)) {
+                $canvas['role'] = 'admin';
+            } elseif (in_array('place_pixels', $permissions)) {
+                $canvas['role'] = 'editor';
+            } else {
+                $canvas['role'] = 'spectator';
+            }
+
+
             // ====================================================
             // Lógica de Bloqueo por Plan Expirado
             // ====================================================

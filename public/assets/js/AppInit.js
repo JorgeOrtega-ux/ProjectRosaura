@@ -69,12 +69,16 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (relativePath === '') relativePath = '/';
 
-        if (relativePath.startsWith('/design/s/')) {
-            relativePath = '/design/s/:uuid';
-        } else if (relativePath.startsWith('/snapshot/view/')) {
-            relativePath = '/snapshot/view/:id';
-        } else if (relativePath.startsWith('/design/')) {
-            relativePath = '/design';
+        if (window.spaRouter && typeof window.spaRouter._getRoutePattern === 'function') {
+            relativePath = window.spaRouter._getRoutePattern(relativePath);
+        } else {
+            if (relativePath.startsWith('/design/s/')) {
+                relativePath = '/design/s/:uuid';
+            } else if (relativePath.startsWith('/snapshot/view/')) {
+                relativePath = '/snapshot/view/:id';
+            } else if (relativePath.startsWith('/design/')) {
+                relativePath = '/design';
+            }
         }
 
         const moduleConfig = RouteModulesMap[relativePath];

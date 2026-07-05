@@ -37,38 +37,6 @@ export class SpaRouter {
         window.addEventListener('popstate', this.handlePopState);
         document.body.addEventListener('click', this.handleBodyClick);
         this.highlightCurrentRoute();
-
-        // === PARCHE: SOLUCIÓN A CARGA DE JS EN RUTAS DINÁMICAS NATIVAS ===
-        // Si el usuario refresca o ingresa directamente (nivel servidor), 
-        // disparamos viewLoaded con el path mapeado para que MainController cargue el JS.
-        let currentPath = window.location.pathname;
-        let moduleUrl = currentPath;
-        if (this.basePath && moduleUrl.startsWith(this.basePath)) {
-            moduleUrl = moduleUrl.slice(this.basePath.length);
-        }
-        
-        let triggerManualLoad = false;
-        
-        // Uso del método refactorizado
-        let mappedUrl = this._getRoutePattern(moduleUrl);
-        if (mappedUrl !== moduleUrl) {
-            moduleUrl = mappedUrl;
-            triggerManualLoad = true;
-        }
-
-        if (triggerManualLoad) {
-            setTimeout(() => {
-                window.dispatchEvent(new CustomEvent('viewLoaded', { 
-                    detail: { 
-                        url: window.location.href,
-                        cleanUrl: moduleUrl, 
-                        originalUrl: currentPath, 
-                        loadTimeMs: 0
-                    } 
-                }));
-            }, 100); 
-        }
-        // =================================================================
     }
 
     destroy() {
