@@ -125,9 +125,9 @@ if ($isLoggedIn) {
             </button>
 
             <?php if ($isLoggedIn && !$isPremium): ?>
-                <button class="component-button component-button--h40" data-nav="<?php echo APP_URL; ?>/premium" style="gap: 6px; background-color: rgba(255, 140, 0, 0.1); color: #ff8c00; border-color: rgba(255, 140, 0, 0.2); padding: 0 12px;">
-                    <span class="material-symbols-rounded" style="font-size: 18px;">workspace_premium</span>
-                    <span style="font-weight: 600; font-size: 13px;">Premium</span>
+                <button class="component-button component-button--h40" data-nav="<?php echo APP_URL; ?>/premium">
+                    <span class="material-symbols-rounded">workspace_premium</span>
+                    <span>Premium</span>
                 </button>
             <?php endif; ?>
 

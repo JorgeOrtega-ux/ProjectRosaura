@@ -144,21 +144,16 @@ export const CardTemplates = {
         return `
             <div class="component-credit-card component-credit-card--${escapeHTML(brandRaw)}">
                 <div class="component-credit-card__top">
-                    <div class="component-credit-card__chip"></div>
                     <div class="component-credit-card__contactless">
                         <span class="material-symbols-rounded">contactless</span>
                     </div>
-                </div>
-                <div class="component-credit-card__number">
-                    <span>****</span><span>****</span><span>****</span><span>${last4}</span>
-                </div>
-                <div class="component-credit-card__bottom">
-                    <div class="component-credit-card__info">
-                        <span class="component-credit-card__label">EXPIRES</span>
-                        <span class="component-credit-card__value">${expMonth}/${expYear}</span>
-                    </div>
                     <div class="component-credit-card__brand">
                         ${brand}
+                    </div>
+                </div>
+                <div class="component-credit-card__bottom">
+                    <div class="component-credit-card__number">
+                        <span>••••</span> <span>••••</span> <span>••••</span> <span>${last4}</span>
                     </div>
                 </div>
             </div>
