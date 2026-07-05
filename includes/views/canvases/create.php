@@ -381,15 +381,17 @@ $defaultSizeKey = $defaultSizeData ? key($canvasSizesList) : '64x64';
                                             <div class="pill-container"><div class="drag-handle"></div></div>
                                             <div class="component-menu-list component-menu-list--scrollable" data-ref="palette-selector-container">
                                             </div>
+                                            <?php if (SubscriptionPlanConstants::hasFeature($tier, 'custom_palettes')): ?>
+                                                <div style="padding: 8px; border-top: 1px solid var(--border-color);">
+                                                    <button type="button" class="component-button component-button--text component-button--h34" style="width: 100%; justify-content: flex-start;" data-action="openCustomPaletteCreator">
+                                                        <span class="material-symbols-rounded" style="font-size:18px">add_circle</span>
+                                                        <span>Crear paleta personalizada</span>
+                                                    </button>
+                                                </div>
+                                            <?php endif; ?>
                                         </div>
                                     </div>
                                 </div>
-                                <?php if (SubscriptionPlanConstants::hasFeature($tier, 'custom_palettes') || $canCreateOfficial): ?>
-                                    <button type="button" class="component-button component-button--text component-button--h34" style="align-self: flex-start; margin-top:4px;" data-action="openCustomPaletteCreator">
-                                        <span class="material-symbols-rounded" style="font-size:18px">add_circle</span>
-                                        <span>Crear paleta personalizada</span>
-                                    </button>
-                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
