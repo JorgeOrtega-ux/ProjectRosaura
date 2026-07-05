@@ -326,6 +326,23 @@ return [
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_ws_ticket', 'max' => 10, 'time' => RL::TIME_5, 'identifier' => RL::ID_IP]]
     ],
 
+    // NUEVAS RUTAS DE PALETAS PERSONALIZADAS
+    'canvases.get_custom_palettes' => [
+        'controller' => 'App\Api\Controllers\CanvasController',
+        'action' => 'get_custom_palettes',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_get_c_palettes', 'max' => 30, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
+    ],
+    'canvases.create_custom_palette' => [
+        'controller' => 'App\Api\Controllers\CanvasController',
+        'action' => 'create_custom_palette',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_create_c_palette', 'max' => 10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
+    ],
+    'canvases.delete_custom_palette' => [
+        'controller' => 'App\Api\Controllers\CanvasController',
+        'action' => 'delete_custom_palette',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_del_c_palette', 'max' => 10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
+    ],
+
     'canvases.get_public' => [
         'controller' => 'App\Api\Controllers\CanvasController',
         'action' => 'get_public',

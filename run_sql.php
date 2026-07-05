@@ -7,12 +7,12 @@ use App\Core\System\DatabaseConstants as DB;
 
 try {
     $db = new DatabaseManager();
-    $pdo = $db->getConnection(DB::CONN_CANVASES);
+    $pdo = $db->getConnection(DB::CONN_IDENTITY);
     
-    $sql = file_get_contents(__DIR__ . '/scripts/create_canvas_invites.sql');
+    $sql = file_get_contents(__DIR__ . '/docker/mysql/init/db_custom_palettes.sql');
     $pdo->exec($sql);
     
-    echo "Table canvas_invites created successfully.\n";
+    echo "Table custom_palettes created successfully.\n";
 } catch (Exception $e) {
     echo "Error: " . $e->getMessage() . "\n";
 }

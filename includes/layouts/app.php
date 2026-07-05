@@ -87,6 +87,22 @@ if ($activeAccountId && isset($linkedAccounts[$activeAccountId])) {
 }
 
 $planLimits = SubscriptionPlanConstants::getTierLimits($subscriptionTier);
+
+// --- LECTURA DE PALETAS PERSONALIZADAS ---
+$customPalettesJson = '[]';
+if ($activeAccountId && SubscriptionPlanConstants::hasFeature($subscriptionTier, 'custom_palettes')) {
+    try {
+        $db = new \App\Config\DatabaseManager();
+        $pdo = $db->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
+        $stmt = $pdo->prepare("SELECT palette_key, name, colors FROM custom_palettes WHERE user_id = :user_id");
+        $stmt->execute([':user_id' => $activeAccountId]);
+        $customPalettes = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        foreach ($customPalettes as &$p) {
+            $p['colors'] = json_decode($p['colors'], true);
+        }
+        $customPalettesJson = json_encode($customPalettes);
+    } catch (\Exception $e) { }
+}
 // ---------------------------------------------------------------
 ?>
 <!DOCTYPE html>
@@ -118,6 +134,7 @@ $planLimits = SubscriptionPlanConstants::getTierLimits($subscriptionTier);
         window.AppTurnstileSiteKey = "<?php echo \App\Core\Helpers\EnvLoader::get('TURNSTILE_SITE_KEY', ''); ?>";
         window.AppTranslations = <?php echo json_encode(\App\Core\System\Translator::getAll()); ?>;
         window.APP_PALETTES = <?php echo $palettesJson; ?>;
+        window.APP_CUSTOM_PALETTES = <?php echo $customPalettesJson; ?>;
         window.activeUserId = <?php echo isset($_SESSION['active_account']) ? json_encode((string)$_SESSION['active_account']) : 'null'; ?>;
         
         // Inyección de la variable APP_USER con el tier y límites exactos de PHP

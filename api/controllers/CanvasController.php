@@ -878,5 +878,62 @@ class CanvasController extends BaseController {
             return $this->handleException($e, __FUNCTION__);
         }
     }
+
+    // ==========================================
+    // ENDPOINTS DE PALETAS PERSONALIZADAS
+    // ==========================================
+
+    public function get_custom_palettes($input) {
+        try {
+            if (!$this->session->isLoggedIn()) {
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized') ?? 'No autorizado.', 'http_code' => 401]);
+            }
+            $userId = $this->session->getActiveAccountId();
+            $result = $this->canvasServices->getCustomPalettes($userId);
+            return $this->respond($result);
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
+    public function create_custom_palette($input) {
+        try {
+            if (!$this->session->isLoggedIn()) {
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized') ?? 'No autorizado.', 'http_code' => 401]);
+            }
+            $userId = $this->session->getActiveAccountId();
+            
+            $name = $input['name'] ?? null;
+            $colors = $input['colors'] ?? null;
+
+            if (empty(trim($name)) || !is_array($colors) || count($colors) < 4) {
+                return $this->respond(['success' => false, 'message' => 'Nombre y al menos 4 colores son requeridos.']);
+            }
+
+            $result = $this->canvasServices->createCustomPalette($userId, trim($name), $colors);
+            return $this->respond($result);
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
+    public function delete_custom_palette($input) {
+        try {
+            if (!$this->session->isLoggedIn()) {
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized') ?? 'No autorizado.', 'http_code' => 401]);
+            }
+            $userId = $this->session->getActiveAccountId();
+            $paletteId = $input['id'] ?? $input['palette_key'] ?? null;
+
+            if (!$paletteId) {
+                return $this->respond(['success' => false, 'message' => 'ID de paleta no proporcionado.']);
+            }
+
+            $result = $this->canvasServices->deleteCustomPalette($userId, $paletteId);
+            return $this->respond($result);
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
 }
 ?>

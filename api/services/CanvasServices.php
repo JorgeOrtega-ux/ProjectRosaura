@@ -1671,5 +1671,96 @@ class CanvasServices {
             return ['success' => false, 'message' => 'Error interno al procesar la invitación.'];
         }
     }
+
+    // ==========================================
+    // CUSTOM PALETTES
+    // ==========================================
+    public function getCustomPalettes(int $userId): array {
+        try {
+            $db = new DatabaseManager();
+            $pdo = $db->getConnection(DB::CONN_IDENTITY);
+
+            $stmt = $pdo->prepare("SELECT id, palette_key, name, colors FROM custom_palettes WHERE user_id = :user_id");
+            $stmt->execute([':user_id' => $userId]);
+            
+            $palettes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            foreach ($palettes as &$p) {
+                $p['colors'] = json_decode($p['colors'], true);
+            }
+
+            return ['success' => true, 'data' => $palettes];
+        } catch (Exception $e) {
+            Logger::error('Error getCustomPalettes.', ['user_id' => $userId, 'error' => $e->getMessage()]);
+            return ['success' => false, 'message' => 'Error al obtener paletas personalizadas.'];
+        }
+    }
+
+    public function createCustomPalette(int $userId, string $name, array $colors): array {
+        try {
+            $user = $this->userRepository->findById($userId);
+            $tier = $user['subscription_tier'] ?? 0;
+            if (!SubscriptionPlanConstants::hasFeature($tier, 'custom_palettes')) {
+                return ['success' => false, 'message' => 'Tu plan actual no permite crear paletas personalizadas.'];
+            }
+
+            $validColors = [];
+            foreach ($colors as $c) {
+                if (preg_match('/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/', $c)) {
+                    $validColors[] = strtoupper($c);
+                }
+            }
+            if (count($validColors) < 4) {
+                return ['success' => false, 'message' => 'Debes proporcionar al menos 4 colores válidos.'];
+            }
+            $validColors = array_slice($validColors, 0, 36);
+
+            $db = new DatabaseManager();
+            $pdo = $db->getConnection(DB::CONN_IDENTITY);
+
+            $stmt = $pdo->prepare("SELECT COUNT(*) FROM custom_palettes WHERE user_id = :user_id");
+            $stmt->execute([':user_id' => $userId]);
+            $count = (int)$stmt->fetchColumn();
+
+            if ($count >= 5) {
+                return ['success' => false, 'message' => 'Has alcanzado el límite máximo de paletas personalizadas (5).'];
+            }
+
+            $paletteKey = 'custom_' . $userId . '_' . Utils::generateUUID();
+
+            $stmt = $pdo->prepare("INSERT INTO custom_palettes (user_id, palette_key, name, colors) VALUES (:user_id, :palette_key, :name, :colors)");
+            $stmt->execute([
+                ':user_id' => $userId,
+                ':palette_key' => $paletteKey,
+                ':name' => $name,
+                ':colors' => json_encode($validColors)
+            ]);
+
+            return ['success' => true, 'message' => 'Paleta creada exitosamente.', 'data' => ['palette_key' => $paletteKey]];
+        } catch (Exception $e) {
+            Logger::error('Error createCustomPalette.', ['user_id' => $userId, 'error' => $e->getMessage()]);
+            return ['success' => false, 'message' => 'Error al crear la paleta.'];
+        }
+    }
+
+    public function deleteCustomPalette(int $userId, string $paletteKey): array {
+        try {
+            $db = new DatabaseManager();
+            $pdo = $db->getConnection(DB::CONN_IDENTITY);
+
+            $stmt = $pdo->prepare("DELETE FROM custom_palettes WHERE user_id = :user_id AND palette_key = :palette_key");
+            $stmt->execute([
+                ':user_id' => $userId,
+                ':palette_key' => $paletteKey
+            ]);
+
+            if ($stmt->rowCount() > 0) {
+                return ['success' => true, 'message' => 'Paleta eliminada exitosamente.'];
+            }
+            return ['success' => false, 'message' => 'Paleta no encontrada o no autorizada.'];
+        } catch (Exception $e) {
+            Logger::error('Error deleteCustomPalette.', ['user_id' => $userId, 'error' => $e->getMessage()]);
+            return ['success' => false, 'message' => 'Error al eliminar la paleta.'];
+        }
+    }
 }
 ?>
