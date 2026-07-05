@@ -276,6 +276,8 @@ if ($activeAccountId && isset($linkedAccounts[$activeAccountId])) {
                 Anual <span class="billing-discount">Ahorra 20%</span>
             </span>
         </div>
+        
+        <p style="text-align: center; font-size: 13px; color: var(--text-secondary); margin-top: -16px; margin-bottom: 32px;">Todos los precios mostrados están en dólares estadounidenses (USD).</p>
 
         <div class="pricing-grid">
             

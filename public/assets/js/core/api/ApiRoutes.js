@@ -125,6 +125,7 @@ export const ApiRoutes = {
     },
     Stripe: {
         CreateCheckout: 'stripe.create_checkout',
+        UpdateSubscription: 'stripe.update_subscription',
         GetPaymentHistory: 'stripe.get_payment_history',
         GetSubscriptionStatus: 'stripe.get_subscription_status',
         CreateSetupSession: 'stripe.create_setup_session',

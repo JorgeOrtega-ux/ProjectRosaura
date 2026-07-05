@@ -101,22 +101,54 @@ export class PremiumController {
         btn.innerHTML = '<span class="material-symbols-rounded" style="animation: spin 1s linear infinite; font-size: 18px;">progress_activity</span> Procesando...';
 
         try {
-            const result = await this.api.post(ApiRoutes.Stripe.CreateCheckout, {
-                tier: tier,
-                billing_period: billingPeriod
-            });
+            // Primero, verificar si ya tiene una suscripción activa
+            const subStatusResult = await this.api.post(ApiRoutes.Stripe.GetSubscriptionStatus);
+            let hasActiveStripeSub = false;
 
-            if (result.success && result.checkout_url) {
-                // Redirigir a Stripe Checkout
-                window.location.href = result.checkout_url;
+            if (subStatusResult.success && subStatusResult.data) {
+                const sub = subStatusResult.data;
+                if (sub.stripe_subscription_id && (sub.status === 'active' || sub.status === 'past_due')) {
+                    hasActiveStripeSub = true;
+                }
+            }
+
+            if (hasActiveStripeSub) {
+                // Actualizar suscripción existente (Downgrade/Upgrade)
+                const result = await this.api.post(ApiRoutes.Stripe.UpdateSubscription, {
+                    tier: tier,
+                    billing_period: billingPeriod
+                });
+
+                if (result.success && result.updated) {
+                    showMessage('¡Tu suscripción se ha actualizado correctamente!', 'success');
+                    setTimeout(() => { window.location.reload(); }, 1500);
+                } else {
+                    btn.disabled = false;
+                    btn.classList.remove('disabled');
+                    btn.textContent = originalText;
+                    const msg = result.message || 'Error al actualizar la suscripción';
+                    showMessage(msg, 'error');
+                }
+
             } else {
-                // Restaurar botón
-                btn.disabled = false;
-                btn.classList.remove('disabled');
-                btn.textContent = originalText;
+                // Crear nuevo Checkout Session para usuarios sin suscripción
+                const result = await this.api.post(ApiRoutes.Stripe.CreateCheckout, {
+                    tier: tier,
+                    billing_period: billingPeriod
+                });
 
-                const msg = result.message || (typeof window.__ === 'function' ? window.__('stripe_checkout_error') : 'Error al crear la sesión de pago');
-                showMessage(msg, 'error');
+                if (result.success && result.checkout_url) {
+                    // Redirigir a Stripe Checkout
+                    window.location.href = result.checkout_url;
+                } else {
+                    // Restaurar botón
+                    btn.disabled = false;
+                    btn.classList.remove('disabled');
+                    btn.textContent = originalText;
+
+                    const msg = result.message || (typeof window.__ === 'function' ? window.__('stripe_checkout_error') : 'Error al crear la sesión de pago');
+                    showMessage(msg, 'error');
+                }
             }
         } catch (error) {
             btn.disabled = false;

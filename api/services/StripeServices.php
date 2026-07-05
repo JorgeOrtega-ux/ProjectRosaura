@@ -178,6 +178,93 @@ class StripeServices {
         }
     }
 
+    public function updateSubscription(array $input): array {
+        if (!$this->sessionManager->isLoggedIn()) {
+            http_response_code(401);
+            return ['success' => false, 'message_key' => 'error.unauthorized'];
+        }
+
+        $userId = $this->sessionManager->getActiveAccountId();
+        $tier = isset($input['tier']) ? (int) $input['tier'] : 0;
+        $billingPeriod = $input['billing_period'] ?? 'monthly';
+
+        // Validaciones
+        if (!in_array($tier, [SubscriptionPlanConstants::TIER_PRO, SubscriptionPlanConstants::TIER_ADVANCED])) {
+            return ['success' => false, 'message_key' => 'stripe.invalid_tier'];
+        }
+
+        if (!in_array($billingPeriod, ['monthly', 'yearly'])) {
+            return ['success' => false, 'message_key' => 'stripe.invalid_billing_period'];
+        }
+
+        $currentTier = $this->sessionManager->getSubscriptionTier();
+        if ($currentTier === $tier) {
+            return ['success' => false, 'message_key' => 'stripe.already_on_plan'];
+        }
+
+        $activeLocalSub = $this->subscriptionRepo->findActiveByUserId($userId);
+        if (!$activeLocalSub || empty($activeLocalSub['stripe_subscription_id'])) {
+            return ['success' => false, 'message_key' => 'stripe.no_active_subscription'];
+        }
+
+        // Obtener Price ID de Stripe
+        $envKey = self::PRICE_MAP[$tier][$billingPeriod] ?? null;
+        if (!$envKey || empty($_ENV[$envKey])) {
+            Logger::error("Stripe Price ID not configured", ['env_key' => $envKey]);
+            return ['success' => false, 'message_key' => 'stripe.price_not_configured'];
+        }
+        $newPriceId = $_ENV[$envKey];
+
+        // Configurar Stripe
+        \Stripe\Stripe::setApiKey($_ENV['STRIPE_SECRET_KEY']);
+
+        try {
+            $subscription = \Stripe\Subscription::retrieve($activeLocalSub['stripe_subscription_id']);
+            
+            // Actualizar la suscripción en Stripe
+            \Stripe\Subscription::update($subscription->id, [
+                'items' => [
+                    [
+                        'id' => $subscription->items->data[0]->id,
+                        'price' => $newPriceId,
+                    ],
+                ],
+                'proration_behavior' => 'always_invoice',
+                'metadata' => [
+                    'user_id' => (string) $userId,
+                    'tier' => (string) $tier,
+                    'billing_period' => $billingPeriod
+                ]
+            ]);
+
+            // Actualizar DB local (opcionalmente esperar al webhook, pero podemos hacerlo de inmediato para mayor respuesta visual)
+            $this->subscriptionRepo->updateUserTier($userId, $tier);
+            $this->subscriptionRepo->updateByStripeSubscriptionId($subscription->id, [
+                'tier' => $tier,
+                'billing_period' => $billingPeriod
+            ]);
+
+            Logger::info("Stripe Subscription updated", [
+                'user_id' => $userId,
+                'subscription_id' => $subscription->id,
+                'tier' => $tier,
+                'period' => $billingPeriod
+            ]);
+
+            return [
+                'success' => true,
+                'updated' => true
+            ];
+
+        } catch (\Stripe\Exception\ApiErrorException $e) {
+            Logger::error("Stripe API Error updating subscription", [
+                'user_id' => $userId,
+                'error' => $e->getMessage()
+            ]);
+            return ['success' => false, 'message_key' => 'stripe.api_error'];
+        }
+    }
+
     public function getPaymentHistory(array $input): array {
         if (!$this->sessionManager->isLoggedIn()) {
             http_response_code(401);

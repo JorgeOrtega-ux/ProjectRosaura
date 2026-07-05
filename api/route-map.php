@@ -541,6 +541,11 @@ return [
         'action' => 'create_checkout',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'stripe_checkout', 'max' => RL::MAX_5, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
+    'stripe.update_subscription' => [
+        'controller' => 'App\Api\Controllers\StripeController',
+        'action' => 'update_subscription',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'stripe_update_sub', 'max' => RL::MAX_5, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
+    ],
     'stripe.get_payment_history' => [
         'controller' => 'App\Api\Controllers\StripeController',
         'action' => 'get_payment_history',
