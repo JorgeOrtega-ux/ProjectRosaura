@@ -98,15 +98,7 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
     
     <div class="component-top">
         <div class="component-top-left">
-            <div style="display: flex; align-items: center; gap: 15px;">
-                <div class="component-avatar component-avatar--md">
-                    <img src="<?php echo htmlspecialchars($targetAvatar); ?>" alt="avatar">
-                </div>
-                <div>
-                    <h1 class="component-top-title" style="margin: 0;"><?php echo htmlspecialchars($targetUsername); ?></h1>
-                    <span style="font-size: 13px; color: var(--text-secondary);"><?php echo __('lbl_current_role') ?: 'Rol actual:'; ?> <strong><?php echo htmlspecialchars(ucfirst($targetCurrentRole)); ?></strong></span>
-                </div>
-            </div>
+            <h1 class="component-top-title">Gestionar Rol: <?php echo htmlspecialchars($targetUsername); ?></h1>
         </div>
         <div class="component-top-right">
             <button class="component-button component-button--icon component-button--h40" data-action="cancelRole" data-tooltip="<?php echo __('btn_cancel') ?: 'Cancelar'; ?>" data-position="bottom">
@@ -150,7 +142,7 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                                 <div class="component-card__text">
                                     <h2 class="component-card__title" style="display: flex; align-items: center; gap: 8px;">
                                         <?php echo __('role_admin') ?: 'Administrador'; ?>
-                                        <span class="material-symbols-rounded" style="font-size: 16px; color: #dc3545;" title="Control Total">shield</span>
+                                        <span class="material-symbols-rounded" style="font-size: 16px; color: var(--text-color-muted);" title="Control Total">shield</span>
                                     </h2>
                                     <p class="component-card__description"><?php echo __('desc_role_admin') ?: 'Control total. Puede editar, gestionar miembros, roles y configuraciones críticas.'; ?></p>
                                 </div>
@@ -170,7 +162,7 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                                 <div class="component-card__text">
                                     <h2 class="component-card__title" style="display: flex; align-items: center; gap: 8px;">
                                         <?php echo __('role_editor') ?: 'Editor'; ?>
-                                        <span class="material-symbols-rounded" style="font-size: 16px; color: #3b82f6;" title="Puede Editar">edit</span>
+                                        <span class="material-symbols-rounded" style="font-size: 16px; color: var(--text-color-muted);" title="Puede Editar">edit</span>
                                     </h2>
                                     <p class="component-card__description"><?php echo __('desc_role_editor') ?: 'Puede editar el contenido del lienzo, pero no puede administrar miembros ni configuraciones.'; ?></p>
                                 </div>
