@@ -427,10 +427,37 @@ return [
     ],
     
     // --- NUEVAS RUTAS DE MODERACIÓN DE MIEMBROS ---
-    'canvases.change_member_role' => [
+    'canvases.assign_member_role' => [
         'controller' => 'App\Api\Controllers\CanvasController',
-        'action' => 'change_member_role',
-        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_change_role', 'max' => 10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
+        'action' => 'assign_member_role',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_assign_role', 'max' => 10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
+    ],
+    
+    // --- NUEVAS RUTAS DE GESTION DE ROLES DEL LIENZO ---
+    'canvases.get_roles' => [
+        'controller' => 'App\Api\Controllers\CanvasController',
+        'action' => 'get_roles',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_get_roles', 'max' => 20, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
+    ],
+    'canvases.get_permissions' => [
+        'controller' => 'App\Api\Controllers\CanvasController',
+        'action' => 'get_permissions',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_get_perms', 'max' => 20, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
+    ],
+    'canvases.create_role' => [
+        'controller' => 'App\Api\Controllers\CanvasController',
+        'action' => 'create_role',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_create_role', 'max' => 10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
+    ],
+    'canvases.update_role' => [
+        'controller' => 'App\Api\Controllers\CanvasController',
+        'action' => 'update_role',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_update_role', 'max' => 10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
+    ],
+    'canvases.delete_role' => [
+        'controller' => 'App\Api\Controllers\CanvasController',
+        'action' => 'delete_role',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_delete_role', 'max' => 10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
     'canvases.remove_member' => [
         'controller' => 'App\Api\Controllers\CanvasController',

@@ -104,6 +104,10 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                         <span class="material-symbols-rounded">group</span>
                     </button>
 
+                    <button class="component-button component-button--icon component-button--h40" data-ref="btn-nav-roles" data-nav="" data-tooltip="<?php echo __('tooltip_manage_roles') ?: 'Gestionar roles'; ?>" data-position="bottom">
+                        <span class="material-symbols-rounded">shield_person</span>
+                    </button>
+
                     <button class="component-button component-button--icon component-button--h40" data-ref="btn-nav-invites" data-nav="" data-tooltip="<?php echo __('tooltip_manage_invites') ?: 'Gestionar invitaciones'; ?>" data-position="bottom">
                         <span class="material-symbols-rounded">link</span>
                     </button>

@@ -47,10 +47,13 @@ return [
     '/canvases/manage/requests/:uuid' => ['view' => 'canvases/requests.php', 'auth' => true, 'permissions' => ['manage_canvases'], 'requires_2fa' => false],
     '/canvases/manage/resets/:uuid' => ['view' => 'canvases/components/reset-manager.php', 'auth' => true, 'permissions' => ['manage_canvases'], 'requires_2fa' => false],
     '/canvases/edit/:uuid' => ['view' => 'canvases/edit.php', 'auth' => true, 'permissions' => ['manage_canvases'], 'requires_2fa' => false],
+    '/fix-roles' => ['view' => 'system/fix-roles.php', 'auth' => false, 'requires_2fa' => false],
     '/canvases/members/:uuid' => ['view' => 'canvases/members.php', 'auth' => true, 'permissions' => ['manage_canvases'], 'requires_2fa' => false],
     '/canvases/members/:uuid/role/:user_uuid' => ['view' => 'canvases/change-role.php', 'auth' => true, 'permissions' => ['manage_canvases'], 'requires_2fa' => false],
     '/canvases/manage/resize/:uuid' => ['view' => 'canvases/resize.php', 'auth' => true, 'permissions' => ['manage_canvases'], 'requires_2fa' => false],
     '/canvases/manage/invites/:uuid' => ['view' => 'canvases/invites.php', 'auth' => true, 'permissions' => ['manage_canvases'], 'requires_2fa' => false],
+    '/canvases/manage/roles/:uuid' => ['view' => 'canvases/roles.php', 'auth' => true, 'permissions' => ['manage_canvases'], 'requires_2fa' => false],
+    '/canvases/manage/role-builder/:uuid' => ['view' => 'canvases/role-builder.php', 'auth' => true, 'permissions' => ['manage_canvases'], 'requires_2fa' => false],
     
     '/canvases/join' => ['view' => 'canvases/join.php', 'auth' => true, 'permissions' => ['join_canvas'], 'requires_2fa' => false],
     '/canvases/palettes/create' => ['view' => 'canvases/custom-palette-create.php', 'auth' => true, 'requires_2fa' => false],

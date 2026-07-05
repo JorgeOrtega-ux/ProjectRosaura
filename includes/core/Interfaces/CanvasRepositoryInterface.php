@@ -4,7 +4,7 @@ namespace App\Core\Interfaces;
 
 interface CanvasRepositoryInterface {
     public function create(array $canvasData): int;
-    public function addMember(int $canvasId, int $userId, string $role): bool;
+    public function addMember(int $canvasId, int $userId, int $roleId = 1): bool;
     
     // Métodos para Home / Explora
     public function getPublicCanvases(int $limit = 20, ?int $currentUserId = null, string $sort = 'newest'): array;
@@ -31,8 +31,17 @@ interface CanvasRepositoryInterface {
     // Utilidades
     public function getById(int $id): ?array;
     public function getByScopeHash(string $hash): ?array;
-    public function getMemberRole(int $canvasId, int $userId): ?string;
-    public function updateMemberRole(int $canvasId, int $userId, string $role): bool;
+    public function getMemberRoles(int $canvasId, int $userId): array;
+    public function hasCanvasPermission(int $canvasId, int $userId, string $permission): bool;
+    public function assignMemberRole(int $canvasId, int $userId, int $roleId): bool;
+    public function removeMemberRole(int $canvasId, int $userId, int $roleId): bool;
+    
+    // --- NUEVOS MÉTODOS PARA ROLES PERSONALIZADOS ---
+    public function getCanvasRoles(?int $canvasId = null): array;
+    public function getCanvasPermissions(): array;
+    public function createCanvasRole(int $canvasId, string $name, array $permissions): int;
+    public function updateCanvasRole(int $roleId, int $canvasId, string $name, array $permissions): bool;
+    public function deleteCanvasRole(int $roleId, int $canvasId): bool;
     
     // EXPANSIÓN EN VIVO
     public function updateSize(int $canvasId, string $newSize): bool;
@@ -91,7 +100,7 @@ interface CanvasRepositoryInterface {
     // ==========================================
     // NUEVOS MÉTODOS PARA INVITACIONES
     // ==========================================
-    public function createInvite(int $canvasId, string $code, string $role, ?int $maxUses, ?string $expiresAt, int $createdBy): int;
+    public function createInvite(int $canvasId, string $code, int $roleId, ?int $maxUses, ?string $expiresAt, int $createdBy): int;
     public function getInvites(int $canvasId): array;
     public function getInviteByCode(string $code): ?array;
     public function incrementInviteUses(int $inviteId): bool;

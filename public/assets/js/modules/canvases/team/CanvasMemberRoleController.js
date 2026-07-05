@@ -56,21 +56,21 @@ class CanvasMemberRoleController {
             return;
         }
 
-        const selectedRoleInput = document.querySelector('input[name="new_member_role"]:checked');
-        if (!selectedRoleInput) {
-            showMessage(__('err_select_role') || 'Por favor, selecciona un rol.', 'warning');
+        const selectedRoleInputs = document.querySelectorAll('input[name="new_member_roles[]"]:checked');
+        if (selectedRoleInputs.length === 0) {
+            showMessage(__('err_select_role') || 'Por favor, selecciona al menos un rol.', 'warning');
             return;
         }
 
-        const newRole = selectedRoleInput.value;
+        const selectedRoles = Array.from(selectedRoleInputs).map(input => input.value);
 
         setButtonLoading(btn);
 
         try {
-            const response = await this.api.post('canvases.change_member_role', {
+            const response = await this.api.post('canvases.assign_member_role', {
                 canvas_id: this.canvasId,
                 target_user_id: this.targetUserId,
-                role: newRole
+                roles: selectedRoles
             });
 
             if (response.success) {

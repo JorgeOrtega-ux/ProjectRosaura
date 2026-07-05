@@ -133,6 +133,28 @@ class Router {
             ];
         }
 
+        // Roles
+        if (preg_match('#^/canvases/manage/roles/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
+            $_GET['uuid'] = $matches[1];
+            return $this->routes['/canvases/manage/roles/:uuid'] ?? [
+                'view' => 'canvases/roles.php',
+                'auth' => true,
+                'permissions' => ['manage_canvases'],
+                'requires_2fa' => false
+            ];
+        }
+
+        // Role Builder
+        if (preg_match('#^/canvases/manage/role-builder/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
+            $_GET['uuid'] = $matches[1];
+            return $this->routes['/canvases/manage/role-builder/:uuid'] ?? [
+                'view' => 'canvases/role-builder.php',
+                'auth' => true,
+                'permissions' => ['manage_canvases'],
+                'requires_2fa' => false
+            ];
+        }
+
         // Compatibilidad: redirigir ruta antigua de resize
         if (preg_match('#^/canvases/resize/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
             header('Location: ' . $this->basePath . '/canvases/manage/resize/' . $matches[1]);

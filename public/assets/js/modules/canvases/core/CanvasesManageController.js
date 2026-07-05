@@ -296,6 +296,7 @@ class CanvasesManageController {
 
         const btnEdit = document.querySelector('[data-ref="btn-nav-edit"]');
         const btnMembers = document.querySelector('[data-ref="btn-nav-members"]');
+        const btnRoles = document.querySelector('[data-ref="btn-nav-roles"]');
         const btnInvites = document.querySelector('[data-ref="btn-nav-invites"]');
         const btnResets = document.querySelector('[data-ref="btn-nav-resets"]');
         const btnSnapshots = document.querySelector('[data-ref="btn-nav-snapshots"]');
@@ -306,20 +307,21 @@ class CanvasesManageController {
             if (selectionMode) selectionMode.classList.replace('disabled', 'active');
 
             if (this.selectedCanvasIds.size > 1) {
-                [btnEdit, btnMembers, btnInvites, btnResets, btnSnapshots, btnResize].forEach(btn => {
+                [btnEdit, btnMembers, btnRoles, btnInvites, btnResets, btnSnapshots, btnResize].forEach(btn => {
                     if (btn) {
                         btn.classList.add('disabled-interactive');
                         btn.setAttribute('data-nav', '');
                     }
                 });
             } else {
-                [btnEdit, btnMembers, btnInvites, btnResets, btnSnapshots, btnResize].forEach(btn => {
+                [btnEdit, btnMembers, btnRoles, btnInvites, btnResets, btnSnapshots, btnResize].forEach(btn => {
                     if (btn) btn.classList.remove('disabled-interactive');
                 });
 
                 // Asignar los atributos data-nav de manera dinámica utilizando el UUID
                 if (btnEdit) btnEdit.setAttribute('data-nav', `${this.basePath}/canvases/edit/${this.selectedCanvasUuid}`);
                 if (btnMembers) btnMembers.setAttribute('data-nav', `${this.basePath}/canvases/members/${this.selectedCanvasUuid}`);
+                if (btnRoles) btnRoles.setAttribute('data-nav', `${this.basePath}/canvases/manage/roles/${this.selectedCanvasUuid}`);
                 if (btnInvites) btnInvites.setAttribute('data-nav', `${this.basePath}/canvases/manage/invites/${this.selectedCanvasUuid}`);
                 if (btnResets) btnResets.setAttribute('data-nav', `${this.basePath}/canvases/manage/resets/${this.selectedCanvasUuid}`);
                 if (btnSnapshots) btnSnapshots.setAttribute('data-nav', `${this.basePath}/design/s/${this.selectedCanvasUuid}`);
@@ -329,7 +331,7 @@ class CanvasesManageController {
             if (selectionMode) selectionMode.classList.replace('active', 'disabled');
             if (defaultMode) defaultMode.classList.replace('disabled', 'active');
             
-            [btnEdit, btnMembers, btnInvites, btnResets, btnSnapshots, btnResize].forEach(btn => {
+            [btnEdit, btnMembers, btnRoles, btnInvites, btnResets, btnSnapshots, btnResize].forEach(btn => {
                 if (btn) btn.setAttribute('data-nav', '');
             });
         }

@@ -506,20 +506,23 @@ class CanvasController extends BaseController {
     }
     // ==========================================
 
-    public function change_member_role($input) {
+    public function assign_member_role($input) {
         try {
             if (!$this->session->isLoggedIn()) return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
             $userId = $this->session->getActiveAccountId();
             
             $canvasId = $input['canvas_id'] ?? null;
             $targetUserId = $input['target_user_id'] ?? null;
-            $newRole = $input['role'] ?? null;
-
-            if (!$canvasId || !$targetUserId || !$newRole) {
-                return $this->respond(['success' => false, 'message' => 'Datos incompletos para cambiar el rol.']);
+            $roles = $input['roles'] ?? [];
+            if (!is_array($roles) && isset($input['role'])) {
+                $roles = [$input['role']];
             }
 
-            $result = $this->canvasServices->changeMemberRole($userId, (int)$canvasId, (int)$targetUserId, $newRole, $this->canManageOfficial());
+            if (!$canvasId || !$targetUserId || empty($roles)) {
+                return $this->respond(['success' => false, 'message' => 'Datos incompletos para cambiar los roles.']);
+            }
+
+            $result = $this->canvasServices->assignMemberRoles($userId, (int)$canvasId, (int)$targetUserId, $roles, $this->canManageOfficial());
             return $this->respond($result);
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);
@@ -987,6 +990,70 @@ class CanvasController extends BaseController {
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);
         }
+    }
+
+    public function get_roles($request) {
+        if (!$this->session->isLoggedIn()) return ['success' => false, 'message' => __('err_unauthorized')];
+        $userId = $this->session->getActiveAccountId();
+        $canvasId = $request['canvas_id'] ?? null;
+        if (!$canvasId) return ['success' => false, 'message' => 'Lienzo no especificado.'];
+        
+        $result = $this->canvasServices->getCanvasRoles($userId, (int)$canvasId, $this->canManageOfficial());
+        return $result;
+    }
+
+    public function get_permissions($request) {
+        if (!$this->session->isLoggedIn()) return ['success' => false, 'message' => __('err_unauthorized')];
+        $userId = $this->session->getActiveAccountId();
+        $canvasId = $request['canvas_id'] ?? null;
+        if (!$canvasId) return ['success' => false, 'message' => 'Lienzo no especificado.'];
+        
+        $result = $this->canvasServices->getCanvasPermissions($userId, (int)$canvasId, $this->canManageOfficial());
+        return $result;
+    }
+
+    public function create_role($request) {
+        if (!$this->session->isLoggedIn()) return ['success' => false, 'message' => __('err_unauthorized')];
+        $userId = $this->session->getActiveAccountId();
+        
+        $canvasId = $request['canvas_id'] ?? null;
+        $name = $request['name'] ?? null;
+        $permissions = $request['permissions'] ?? [];
+        $weight = isset($request['weight']) ? (int)$request['weight'] : 10;
+        
+        if (!$canvasId || !$name) return ['success' => false, 'message' => 'Faltan parámetros obligatorios.'];
+        
+        $result = $this->canvasServices->createCanvasRole($userId, (int)$canvasId, $name, $permissions, $weight, $this->canManageOfficial());
+        return $result;
+    }
+
+    public function update_role($request) {
+        if (!$this->session->isLoggedIn()) return ['success' => false, 'message' => __('err_unauthorized')];
+        $userId = $this->session->getActiveAccountId();
+        
+        $roleId = $request['role_id'] ?? null;
+        $canvasId = $request['canvas_id'] ?? null;
+        $name = $request['name'] ?? null;
+        $permissions = $request['permissions'] ?? [];
+        $weight = isset($request['weight']) ? (int)$request['weight'] : 10;
+        
+        if (!$roleId || !$canvasId || !$name) return ['success' => false, 'message' => 'Faltan parámetros obligatorios.'];
+        
+        $result = $this->canvasServices->updateCanvasRole($userId, (int)$roleId, (int)$canvasId, $name, $permissions, $weight, $this->canManageOfficial());
+        return $result;
+    }
+
+    public function delete_role($request) {
+        if (!$this->session->isLoggedIn()) return ['success' => false, 'message' => __('err_unauthorized')];
+        $userId = $this->session->getActiveAccountId();
+        
+        $roleId = $request['role_id'] ?? null;
+        $canvasId = $request['canvas_id'] ?? null;
+        
+        if (!$roleId || !$canvasId) return ['success' => false, 'message' => 'Faltan parámetros obligatorios.'];
+        
+        $result = $this->canvasServices->deleteCanvasRole($userId, (int)$roleId, (int)$canvasId, $this->canManageOfficial());
+        return $result;
     }
 }
 ?>

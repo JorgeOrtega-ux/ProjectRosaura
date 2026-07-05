@@ -231,10 +231,10 @@ class CanvasServices {
                 return ['success' => false, 'message' => __('err_canvas_not_found') ?? 'Lienzo no encontrado.'];
             }
             
-            $role = null;
+            $roles = [];
             
             if ($userId !== null) {
-                $role = $this->canvasRepository->getMemberRole($canvasId, $userId);
+                $roles = $this->canvasRepository->getMemberRoles($canvasId, $userId);
                 
                 if (method_exists($this->canvasRepository, 'isFavorite')) {
                     $canvas['is_favorite'] = $this->canvasRepository->isFavorite($userId, $canvasId);
@@ -247,15 +247,29 @@ class CanvasServices {
             
             $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
 
-            if ($canvas['privacy'] === DB::PRIVACY_PRIVATE && !$role && !$isOwner) {
+            if ($canvas['privacy'] === DB::PRIVACY_PRIVATE && empty($roles) && !$isOwner) {
                 return ['success' => false, 'message' => __('err_unauthorized') ?? 'No tienes permisos para ver este lienzo.'];
             }
             
+            // Assign roles and check permissions
+            $canvas['roles'] = $isOwner ? [['id' => 4, 'name' => 'SuperAdministrator', 'weight' => 100, 'is_system' => 1]] : $roles;
+            // Provide a flat list of permissions for the frontend
+            $permissions = [];
             if ($isOwner) {
-                $canvas['role'] = 'admin'; 
+                $permissions = ['place_pixels', 'manage_settings', 'manage_members', 'manage_roles', 'assign_roles', 'view_history', 'manage_resets'];
             } else {
-                $canvas['role'] = $role ?: 'spectator'; 
+                foreach ($roles as $r) {
+                    if ($this->canvasRepository->hasCanvasPermission($canvasId, $userId, 'place_pixels')) $permissions[] = 'place_pixels';
+                    if ($this->canvasRepository->hasCanvasPermission($canvasId, $userId, 'manage_settings')) $permissions[] = 'manage_settings';
+                    if ($this->canvasRepository->hasCanvasPermission($canvasId, $userId, 'manage_members')) $permissions[] = 'manage_members';
+                    if ($this->canvasRepository->hasCanvasPermission($canvasId, $userId, 'manage_roles')) $permissions[] = 'manage_roles';
+                    if ($this->canvasRepository->hasCanvasPermission($canvasId, $userId, 'assign_roles')) $permissions[] = 'assign_roles';
+                    if ($this->canvasRepository->hasCanvasPermission($canvasId, $userId, 'view_history')) $permissions[] = 'view_history';
+                    if ($this->canvasRepository->hasCanvasPermission($canvasId, $userId, 'manage_resets')) $permissions[] = 'manage_resets';
+                }
+                $permissions = array_unique($permissions);
             }
+            $canvas['permissions'] = $permissions;
 
             // ====================================================
             // Lógica de Bloqueo por Plan Expirado
@@ -490,7 +504,7 @@ class CanvasServices {
             $canvasId = $this->canvasRepository->create($canvasData);
 
             if ($scopeType === 'personal') {
-                $this->canvasRepository->addMember($canvasId, $userId, 'admin');
+                $this->canvasRepository->addMember($canvasId, $userId, 4); // 4 = SuperAdministrator
             }
 
             try {
@@ -604,8 +618,7 @@ class CanvasServices {
 
             $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
             if (!$isOwner) {
-                $role = $this->canvasRepository->getMemberRole($canvasId, $userId);
-                if ($role !== 'admin') {
+                if (!$this->canvasRepository->hasCanvasPermission($canvasId, $userId, 'manage_settings')) {
                     return ['success' => false, 'message' => __('err_unauthorized') ?? 'No tienes permisos para redimensionar este lienzo.'];
                 }
             }
@@ -973,8 +986,7 @@ class CanvasServices {
                 return ['success' => false, 'message' => 'Como dueño, no puedes salir del lienzo personal. Debes eliminarlo.'];
             }
 
-            $role = $this->canvasRepository->getMemberRole($canvas['id'], $userId);
-            if (!$role) {
+            $roles = $this->canvasRepository->getMemberRoles($canvas['id'], $userId); if (empty($roles)) {
                 return ['success' => false, 'message' => 'No eres miembro de este lienzo.'];
             }
 
@@ -990,42 +1002,26 @@ class CanvasServices {
         }
     }
 
-    public function changeMemberRole(int $requesterId, int $canvasId, int $targetUserId, string $newRole, bool $canManageOfficial = false): array {
+    public function assignMemberRoles(int $requesterId, int $canvasId, int $targetUserId, array $roles, bool $canManageOfficial = false): array {
         try {
             $canvas = $this->canvasRepository->getById($canvasId);
             if (!$canvas) return ['success' => false, 'message' => __('err_canvas_not_found') ?? 'Lienzo no encontrado.'];
-
-            $requesterRole = $this->canvasRepository->getMemberRole($canvasId, $requesterId);
+            
             $isOwner = ($canvas['owner_id'] === $requesterId) || ($canvas['owner_id'] === null && $canManageOfficial);
-            if ($isOwner) $requesterRole = 'admin';
-
-            if ($requesterRole !== 'admin') {
-                return ['success' => false, 'message' => __('err_unauthorized') ?? 'No tienes permisos de administrador en este lienzo.'];
+            if (!$isOwner && !$this->canvasRepository->hasCanvasPermission($canvasId, $requesterId, 'manage_roles')) {
+                return ['success' => false, 'message' => __('err_unauthorized') ?? 'No tienes permisos para gestionar roles.'];
             }
 
             if ($canvas['owner_id'] === $targetUserId) {
-                return ['success' => false, 'message' => 'No puedes cambiar el rol del creador original del lienzo.'];
+                return ['success' => false, 'message' => 'No puedes cambiar los roles del creador original del lienzo.'];
             }
 
-            $validRoles = ['viewer', 'editor', 'admin'];
-            if (!in_array($newRole, $validRoles)) {
-                return ['success' => false, 'message' => 'Rol inválido.'];
-            }
-
-            if ($newRole !== 'viewer' && $canvas['owner_id'] !== null) {
-                $owner = $this->userRepository->findById($canvas['owner_id']);
-                $tier = $owner['subscription_tier'] ?? 0;
-                if (!SubscriptionPlanConstants::hasFeature($tier, 'advanced_roles')) {
-                    return ['success' => false, 'message' => 'El plan actual del dueño del lienzo no permite asignar roles avanzados.'];
-                }
-            }
-
-            $updated = $this->canvasRepository->updateMemberRole($canvasId, $targetUserId, $newRole);
-            if ($updated) return ['success' => true, 'message' => 'Rol actualizado correctamente.'];
+            $success = $this->canvasRepository->syncUserRoles($canvasId, $targetUserId, $roles);
+            if ($success) return ['success' => true, 'message' => 'Roles actualizados correctamente.'];
             
-            return ['success' => false, 'message' => 'No se pudo actualizar el rol.'];
+            return ['success' => false, 'message' => 'No se pudieron actualizar los roles.'];
         } catch (Exception $e) {
-            Logger::error('Error changing member role.', ['error' => $e->getMessage()]);
+            Logger::error('Error changing member roles.', ['error' => $e->getMessage()]);
             return ['success' => false, 'message' => __('err_database') ?? 'Error interno del servidor.'];
         }
     }
@@ -1231,8 +1227,7 @@ class CanvasServices {
             $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
 
             if (!$isOwner) {
-                $role = $this->canvasRepository->getMemberRole($canvasId, $userId);
-                if ($role !== 'admin') {
+                if (!$this->canvasRepository->hasCanvasPermission($canvasId, $userId, 'manage_settings')) {
                     return ['success' => false, 'message' => __('err_unauthorized') ?? 'No tienes permisos para reiniciar este lienzo.'];
                 }
             }
@@ -1795,9 +1790,7 @@ class CanvasServices {
             if (!$canvas) return ['success' => false, 'message' => 'Lienzo no encontrado.'];
 
             $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
-            $requesterRole = $isOwner ? 'admin' : $this->canvasRepository->getMemberRole($canvasId, $userId);
-
-            if ($requesterRole !== 'admin') {
+            if (!$isOwner) {
                 return ['success' => false, 'message' => 'No tienes permisos de administrador para generar invitaciones.'];
             }
 
@@ -1830,9 +1823,7 @@ class CanvasServices {
             if (!$canvas) return ['success' => false, 'message' => 'Lienzo no encontrado.'];
 
             $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
-            $requesterRole = $isOwner ? 'admin' : $this->canvasRepository->getMemberRole($canvasId, $userId);
-
-            if ($requesterRole !== 'admin') {
+            if (!$isOwner) {
                 return ['success' => false, 'message' => 'No tienes permisos para ver las invitaciones.'];
             }
 
@@ -1850,9 +1841,7 @@ class CanvasServices {
             if (!$canvas) return ['success' => false, 'message' => 'Lienzo no encontrado.'];
 
             $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
-            $requesterRole = $isOwner ? 'admin' : $this->canvasRepository->getMemberRole($canvasId, $userId);
-
-            if ($requesterRole !== 'admin') {
+            if (!$isOwner) {
                 return ['success' => false, 'message' => 'No tienes permisos para revocar invitaciones.'];
             }
 
@@ -1909,7 +1898,7 @@ class CanvasServices {
             }
 
             // Agregar al usuario y sumar uso a la invitación
-            $added = $this->canvasRepository->addMember($canvasId, $userId, $invite['role']);
+            $added = $this->canvasRepository->addMember($canvasId, $userId, (int)$invite['role']);
             if ($added) {
                 $this->canvasRepository->incrementInviteUses($invite['id']);
                 return ['success' => true, 'message' => 'Te has unido al lienzo exitosamente.', 'data' => ['uuid' => $canvas['uuid']]];
@@ -2010,6 +1999,148 @@ class CanvasServices {
         } catch (Exception $e) {
             Logger::error('Error deleteCustomPalette.', ['user_id' => $userId, 'error' => $e->getMessage()]);
             return ['success' => false, 'message' => 'Error al eliminar la paleta.'];
+        }
+    }
+
+    public function getCanvasRoles(int $userId, int $canvasId, bool $canManageOfficial = false): array {
+        try {
+            $canvas = $this->canvasRepository->getById($canvasId);
+            if (!$canvas) return ['success' => false, 'message' => __('err_canvas_not_found') ?? 'Lienzo no encontrado.'];
+
+            $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            if (!$isOwner && !$this->canvasRepository->hasCanvasPermission($canvasId, $userId, 'manage_roles')) {
+                return ['success' => false, 'message' => __('err_unauthorized') ?? 'No tienes permisos para gestionar roles.'];
+            }
+
+            $roles = $this->canvasRepository->getCanvasRoles($canvasId);
+            return ['success' => true, 'data' => $roles];
+        } catch (Exception $e) {
+            Logger::error('Error getting canvas roles.', ['error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database') ?? 'Error interno del servidor.'];
+        }
+    }
+
+    public function getCanvasPermissions(int $userId, int $canvasId, bool $canManageOfficial = false): array {
+        try {
+            $canvas = $this->canvasRepository->getById($canvasId);
+            if (!$canvas) return ['success' => false, 'message' => __('err_canvas_not_found') ?? 'Lienzo no encontrado.'];
+
+            $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            if (!$isOwner && !$this->canvasRepository->hasCanvasPermission($canvasId, $userId, 'manage_roles')) {
+                return ['success' => false, 'message' => __('err_unauthorized') ?? 'No tienes permisos para ver los permisos.'];
+            }
+
+            $permissions = $this->canvasRepository->getCanvasPermissions();
+            return ['success' => true, 'data' => $permissions];
+        } catch (Exception $e) {
+            Logger::error('Error getting canvas permissions.', ['error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database') ?? 'Error interno del servidor.'];
+        }
+    }
+
+    public function createCanvasRole(int $userId, int $canvasId, string $name, array $permissions, int $weight = 10, bool $canManageOfficial = false): array {
+        try {
+            $canvas = $this->canvasRepository->getById($canvasId);
+            if (!$canvas) return ['success' => false, 'message' => __('err_canvas_not_found') ?? 'Lienzo no encontrado.'];
+
+            $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            if (!$isOwner && !$this->canvasRepository->hasCanvasPermission($canvasId, $userId, 'manage_roles')) {
+                return ['success' => false, 'message' => __('err_unauthorized') ?? 'No tienes permisos para crear roles.'];
+            }
+
+            if (!$isOwner) {
+                $requesterWeight = 0;
+                $stmtRole = $this->canvasRepository->pdo->prepare("SELECT r.weight FROM canvas_roles r JOIN canvas_user_roles ur ON r.id = ur.role_id WHERE ur.canvas_id = :cid AND ur.user_id = :uid ORDER BY r.weight DESC LIMIT 1");
+                $stmtRole->execute(['cid' => $canvasId, 'uid' => $userId]);
+                $w = $stmtRole->fetchColumn();
+                if ($w !== false) $requesterWeight = (int)$w;
+                
+                if ($weight >= $requesterWeight) {
+                    return ['success' => false, 'message' => 'No puedes crear un rol con peso igual o mayor al tuyo.'];
+                }
+            }
+
+            if ($canvas['owner_id'] !== null) {
+                $owner = $this->userRepository->findById($canvas['owner_id']);
+                $tier = $owner['subscription_tier'] ?? 0;
+                if ($tier < 2) { 
+                    return ['success' => false, 'message' => 'El plan actual del dueño del lienzo no permite usar roles personalizados.'];
+                }
+            }
+
+            $roleId = $this->canvasRepository->createCanvasRole($canvasId, $name, $permissions, $weight);
+            return ['success' => true, 'message' => 'Rol creado correctamente.', 'data' => ['id' => $roleId]];
+        } catch (Exception $e) {
+            Logger::error('Error creating canvas role.', ['error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database') ?? 'Error interno del servidor.'];
+        }
+    }
+
+    public function updateCanvasRole(int $userId, int $roleId, int $canvasId, string $name, array $permissions, int $weight = 10, bool $canManageOfficial = false): array {
+        try {
+            $canvas = $this->canvasRepository->getById($canvasId);
+            if (!$canvas) return ['success' => false, 'message' => __('err_canvas_not_found') ?? 'Lienzo no encontrado.'];
+
+            $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            if (!$isOwner && !$this->canvasRepository->hasCanvasPermission($canvasId, $userId, 'manage_roles')) {
+                return ['success' => false, 'message' => __('err_unauthorized') ?? 'No tienes permisos para editar roles.'];
+            }
+
+            if (!$isOwner) {
+                $requesterWeight = 0;
+                $stmtRole = $this->canvasRepository->pdo->prepare("SELECT r.weight FROM canvas_roles r JOIN canvas_user_roles ur ON r.id = ur.role_id WHERE ur.canvas_id = :cid AND ur.user_id = :uid ORDER BY r.weight DESC LIMIT 1");
+                $stmtRole->execute(['cid' => $canvasId, 'uid' => $userId]);
+                $w = $stmtRole->fetchColumn();
+                if ($w !== false) $requesterWeight = (int)$w;
+                
+                if ($weight >= $requesterWeight) {
+                    return ['success' => false, 'message' => 'No puedes asignar a un rol un peso igual o mayor al tuyo.'];
+                }
+            }
+
+            if ($canvas['owner_id'] !== null) {
+                $owner = $this->userRepository->findById($canvas['owner_id']);
+                $tier = $owner['subscription_tier'] ?? 0;
+                if ($tier < 2) { 
+                    return ['success' => false, 'message' => 'El plan actual del dueño del lienzo no permite usar roles personalizados.'];
+                }
+            }
+
+            $success = $this->canvasRepository->updateCanvasRole($roleId, $canvasId, $name, $permissions, $weight);
+            if ($success) return ['success' => true, 'message' => 'Rol actualizado correctamente.'];
+            
+            return ['success' => false, 'message' => 'El rol no se pudo editar.'];
+        } catch (Exception $e) {
+            Logger::error('Error updating canvas role.', ['error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database') ?? 'Error interno del servidor.'];
+        }
+    }
+
+    public function deleteCanvasRole(int $userId, int $roleId, int $canvasId, bool $canManageOfficial = false): array {
+        try {
+            $canvas = $this->canvasRepository->getById($canvasId);
+            if (!$canvas) return ['success' => false, 'message' => __('err_canvas_not_found') ?? 'Lienzo no encontrado.'];
+
+            $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            if (!$isOwner && !$this->canvasRepository->hasCanvasPermission($canvasId, $userId, 'manage_roles')) {
+                return ['success' => false, 'message' => __('err_unauthorized') ?? 'No tienes permisos para eliminar roles.'];
+            }
+
+            if ($canvas['owner_id'] !== null) {
+                $owner = $this->userRepository->findById($canvas['owner_id']);
+                $tier = $owner['subscription_tier'] ?? 0;
+                if ($tier < 2) { 
+                    return ['success' => false, 'message' => 'El plan actual del dueño del lienzo no permite usar roles personalizados.'];
+                }
+            }
+
+            $success = $this->canvasRepository->deleteCanvasRole($roleId, $canvasId);
+            if ($success) return ['success' => true, 'message' => 'Rol eliminado correctamente.'];
+            
+            return ['success' => false, 'message' => 'El rol no se pudo eliminar o es de sistema.'];
+        } catch (Exception $e) {
+            Logger::error('Error deleting canvas role.', ['error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database') ?? 'Error interno del servidor.'];
         }
     }
 }

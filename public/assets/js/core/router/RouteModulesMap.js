@@ -81,6 +81,9 @@ export const RouteModulesMap = {
     '/canvases/manage/resets/:uuid': { path: './modules/canvases/workspace/CanvasResetController.js', className: 'CanvasResetController', skeletonType: 'layout-settings-generic' },
     '/canvases/edit/:uuid': { path: './modules/canvases/workspace/CanvasEditController.js', className: 'CanvasEditController', skeletonType: 'layout-dashboard' },
     
+    '/canvases/manage/roles/:uuid': { path: './modules/canvases/team/CanvasRolesController.js', className: 'CanvasRolesController', skeletonType: 'layout-dashboard' },
+    '/canvases/manage/role-builder/:uuid': { path: './modules/canvases/team/CanvasRoleBuilderController.js', className: 'CanvasRoleBuilderController', skeletonType: 'layout-form-full' },
+    
     // 👇 La ruta general de members se evalúa DESPUÉS
     '/canvases/members/:uuid': { path: './modules/canvases/team/CanvasMembersController.js', className: 'CanvasMembersController', skeletonType: 'layout-dashboard' },
     

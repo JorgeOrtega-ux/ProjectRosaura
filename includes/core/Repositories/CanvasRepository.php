@@ -86,19 +86,32 @@ class CanvasRepository implements CanvasRepositoryInterface {
         return $id;
     }
 
-    public function addMember(int $canvasId, int $userId, string $role): bool {
-        $sql = "INSERT INTO " . DB::TBL_CANVAS_MEMBERS . " 
-                (canvas_id, user_id, role) 
-                VALUES (:canvas_id, :user_id, :role)
-                ON DUPLICATE KEY UPDATE role = :update_role";
-        
-        $stmt = $this->db->prepare($sql);
-        return $stmt->execute([
-            ':canvas_id'   => $canvasId,
-            ':user_id'     => $userId,
-            ':role'        => $role,
-            ':update_role' => $role
-        ]);
+    public function addMember(int $canvasId, int $userId, int $roleId = 1): bool {
+        try {
+            $this->db->beginTransaction();
+            
+            // Insert into canvas_members
+            $sql1 = "INSERT IGNORE INTO " . DB::TBL_CANVAS_MEMBERS . " 
+                    (canvas_id, user_id) 
+                    VALUES (:canvas_id, :user_id)";
+            $stmt1 = $this->db->prepare($sql1);
+            $stmt1->execute([
+                ':canvas_id' => $canvasId,
+                ':user_id'   => $userId
+            ]);
+
+            // Assign role
+            $this->assignMemberRole($canvasId, $userId, $roleId);
+
+            $this->db->commit();
+            return true;
+        } catch (Exception $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            Logger::error("addMember Error: " . $e->getMessage());
+            return false;
+        }
     }
 
     public function getPublicCanvases(int $limit = 20, ?int $currentUserId = null, string $sort = 'newest'): array {
@@ -389,27 +402,200 @@ class CanvasRepository implements CanvasRepositoryInterface {
 
     public function getPendingRequests(int $canvasId): array {
         $sql = "SELECT * FROM canvas_access_requests WHERE canvas_id = :canvas_id AND status = 'pending' ORDER BY created_at ASC";
-        $stmt = $this->db->prepare($sql);
+            $stmt = $this->db->prepare($sql);
         $stmt->execute([':canvas_id' => $canvasId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
-    public function getMemberRole(int $canvasId, int $userId): ?string {
-        $sql = "SELECT role FROM " . DB::TBL_CANVAS_MEMBERS . " WHERE canvas_id = :canvas_id AND user_id = :user_id LIMIT 1";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([':canvas_id' => $canvasId, ':user_id' => $userId]);
-        $result = $stmt->fetchColumn();
-        return $result ?: null;
+    public function syncUserRoles(int $canvasId, int $userId, array $roleIds): bool {
+        try {
+            $this->pdo->beginTransaction();
+
+            $stmtDelete = $this->pdo->prepare("DELETE FROM canvas_user_roles WHERE canvas_id = :cid AND user_id = :uid");
+            $stmtDelete->execute(['cid' => $canvasId, 'uid' => $userId]);
+
+            if (!empty($roleIds)) {
+                $stmtInsert = $this->pdo->prepare("INSERT IGNORE INTO canvas_user_roles (canvas_id, user_id, role_id) VALUES (:cid, :uid, :rid)");
+                foreach ($roleIds as $roleId) {
+                    $stmtInsert->execute(['cid' => $canvasId, 'uid' => $userId, 'rid' => $roleId]);
+                }
+            }
+
+            $this->pdo->commit();
+            return true;
+        } catch (\Exception $e) {
+            $this->pdo->rollBack();
+            Logger::error('Error in syncUserRoles.', ['error' => $e->getMessage()]);
+            return false;
+        }
     }
 
-    public function updateMemberRole(int $canvasId, int $userId, string $role): bool {
-        $sql = "UPDATE " . DB::TBL_CANVAS_MEMBERS . " SET role = :role WHERE canvas_id = :canvas_id AND user_id = :user_id";
+    public function getMemberRoles(int $canvasId, int $userId): array {
+        $sql = "SELECT r.* 
+                FROM canvas_user_roles cur
+                INNER JOIN canvas_roles r ON cur.role_id = r.id
+                WHERE cur.canvas_id = :canvas_id AND cur.user_id = :user_id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':canvas_id' => $canvasId, ':user_id' => $userId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    public function hasCanvasPermission(int $canvasId, int $userId, string $permission): bool {
+        $sql = "SELECT 1 
+                FROM canvas_user_roles cur
+                INNER JOIN canvas_roles r ON cur.role_id = r.id
+                INNER JOIN canvas_role_permissions crp ON r.id = crp.role_id
+                INNER JOIN canvas_permissions p ON crp.permission_id = p.id
+                WHERE cur.canvas_id = :canvas_id 
+                  AND cur.user_id = :user_id 
+                  AND p.name = :permission
+                LIMIT 1";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            ':canvas_id' => $canvasId, 
+            ':user_id' => $userId,
+            ':permission' => $permission
+        ]);
+        return (bool)$stmt->fetchColumn();
+    }
+
+    public function assignMemberRole(int $canvasId, int $userId, int $roleId): bool {
+        $sql = "INSERT IGNORE INTO canvas_user_roles (canvas_id, user_id, role_id) 
+                VALUES (:canvas_id, :user_id, :role_id)";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([
-            ':role' => $role,
             ':canvas_id' => $canvasId,
-            ':user_id' => $userId
+            ':user_id' => $userId,
+            ':role_id' => $roleId
         ]);
+    }
+
+    public function removeMemberRole(int $canvasId, int $userId, int $roleId): bool {
+        $sql = "DELETE FROM canvas_user_roles 
+                WHERE canvas_id = :canvas_id AND user_id = :user_id AND role_id = :role_id";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            ':canvas_id' => $canvasId,
+            ':user_id' => $userId,
+            ':role_id' => $roleId
+        ]);
+    }
+
+    public function getCanvasRoles(?int $canvasId = null): array {
+        $sql = "SELECT * FROM canvas_roles WHERE canvas_id IS NULL OR canvas_id = :canvas_id ORDER BY weight DESC";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':canvas_id' => $canvasId]);
+        
+        $roles = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        
+        // Fetch permissions for each role
+        foreach ($roles as &$role) {
+            $sqlPerms = "SELECT p.name 
+                         FROM canvas_role_permissions crp
+                         INNER JOIN canvas_permissions p ON crp.permission_id = p.id
+                         WHERE crp.role_id = :role_id";
+            $stmtPerms = $this->db->prepare($sqlPerms);
+            $stmtPerms->execute([':role_id' => $role['id']]);
+            $role['permissions'] = $stmtPerms->fetchAll(PDO::FETCH_COLUMN) ?: [];
+        }
+        
+        return $roles;
+    }
+
+    public function getCanvasPermissions(): array {
+        $sql = "SELECT * FROM canvas_permissions ORDER BY id ASC";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    public function createCanvasRole(int $canvasId, string $name, array $permissions, int $weight = 10, int $isSystem = 0): int {
+        try {
+            $this->db->beginTransaction();
+            
+            $sql = "INSERT INTO canvas_roles (canvas_id, name, weight, is_system) 
+                    VALUES (:canvas_id, :name, :weight, :is_system)";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([
+                ':canvas_id' => $canvasId,
+                ':name' => $name,
+                ':weight' => $weight,
+                ':is_system' => $isSystem
+            ]);
+            $roleId = (int)$this->db->lastInsertId();
+            
+            if (!empty($permissions)) {
+                $this->syncRolePermissions($roleId, $permissions);
+            }
+            
+            $this->db->commit();
+            return $roleId;
+        } catch (Exception $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            Logger::error("createCanvasRole Error: " . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    public function updateCanvasRole(int $roleId, int $canvasId, string $name, array $permissions, int $weight = 10): bool {
+        try {
+            $this->db->beginTransaction();
+            
+            $sql = "UPDATE canvas_roles SET name = :name, weight = :weight WHERE id = :id AND canvas_id = :canvas_id AND is_system = 0";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([
+                ':name' => $name,
+                ':weight' => $weight,
+                ':id' => $roleId,
+                ':canvas_id' => $canvasId
+            ]);
+            
+            $this->syncRolePermissions($roleId, $permissions);
+            
+            $this->db->commit();
+            return true;
+        } catch (Exception $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            Logger::error("updateCanvasRole Error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function deleteCanvasRole(int $roleId, int $canvasId): bool {
+        $sql = "DELETE FROM canvas_roles WHERE id = :id AND canvas_id = :canvas_id AND is_system = 0";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            ':id' => $roleId,
+            ':canvas_id' => $canvasId
+        ]);
+    }
+
+    private function syncRolePermissions(int $roleId, array $permissions) {
+        // Delete old
+        $delSql = "DELETE FROM canvas_role_permissions WHERE role_id = :role_id";
+        $delStmt = $this->db->prepare($delSql);
+        $delStmt->execute([':role_id' => $roleId]);
+        
+        if (empty($permissions)) return;
+        
+        // Find permission IDs by name
+        $placeholders = implode(',', array_fill(0, count($permissions), '?'));
+        $permSql = "SELECT id FROM canvas_permissions WHERE name IN ($placeholders)";
+        $permStmt = $this->db->prepare($permSql);
+        $permStmt->execute($permissions);
+        $permIds = $permStmt->fetchAll(PDO::FETCH_COLUMN);
+        
+        if (empty($permIds)) return;
+        
+        $insertSql = "INSERT INTO canvas_role_permissions (role_id, permission_id) VALUES (?, ?)";
+        $insertStmt = $this->db->prepare($insertSql);
+        foreach ($permIds as $pid) {
+            $insertStmt->execute([$roleId, $pid]);
+        }
     }
 
     public function countCanvasMembers(int $canvasId): int {
@@ -730,14 +916,14 @@ class CanvasRepository implements CanvasRepositoryInterface {
     // ==========================================
     // NUEVOS MÉTODOS PARA INVITACIONES
     // ==========================================
-    public function createInvite(int $canvasId, string $code, string $role, ?int $maxUses, ?string $expiresAt, int $createdBy): int {
+    public function createInvite(int $canvasId, string $code, int $roleId, ?int $maxUses, ?string $expiresAt, int $createdBy): int {
         $sql = "INSERT INTO canvas_invites (canvas_id, code, role, max_uses, expires_at, created_by) 
-                VALUES (:canvas_id, :code, :role, :max_uses, :expires_at, :created_by)";
+                VALUES (:canvas_id, :code, :role_id, :max_uses, :expires_at, :created_by)";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([
             ':canvas_id' => $canvasId,
             ':code' => $code,
-            ':role' => $role,
+            ':role_id' => (string)$roleId, // storing role ID as string in existing column for now
             ':max_uses' => $maxUses,
             ':expires_at' => $expiresAt,
             ':created_by' => $createdBy

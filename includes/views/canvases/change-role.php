@@ -64,16 +64,17 @@ try {
             $isOwner = true;
         }
 
-        // Obtener rol actual del miembro objetivo
-        $stmtMember = $pdoCanvases->prepare("SELECT role FROM canvas_members WHERE canvas_id = :cid AND user_id = :uid LIMIT 1");
+        // Obtener roles actuales del miembro objetivo
+        $stmtMember = $pdoCanvases->prepare("SELECT role_id FROM canvas_user_roles WHERE canvas_id = :cid AND user_id = :uid");
         $stmtMember->execute(['cid' => $canvasId, 'uid' => $targetUserId]);
-        $memberData = $stmtMember->fetch(PDO::FETCH_ASSOC);
+        $memberRoles = $stmtMember->fetchAll(PDO::FETCH_COLUMN);
         
-        if ($memberData) {
-            $targetCurrentRole = $memberData['role'];
+        if (!empty($memberRoles)) {
+            $targetCurrentRoles = array_map('intval', $memberRoles);
         } else {
             if ($isOwner) {
-                $targetCurrentRole = 'admin';
+                // Owner might not be in user_roles explicitly, or they have a max weight role
+                $targetCurrentRoles = [-1]; // Special indicator
             } else {
                 echo "<div class='view-content'><p>El usuario especificado no pertenece a este lienzo.</p></div>";
                 return;
@@ -87,6 +88,14 @@ try {
     echo "<div class='view-content'><p>Error interno al procesar los datos de membresía.</p></div>";
     return;
 }
+
+// Fetch all available roles for this canvas
+$availableRoles = [];
+try {
+    $stmt = $pdoCanvases->prepare("SELECT * FROM canvas_roles WHERE canvas_id IS NULL OR canvas_id = :cid ORDER BY weight DESC");
+    $stmt->execute(['cid' => $canvasId]);
+    $availableRoles = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (\Exception $e) {}
 
 $appUrl = defined('APP_URL') ? APP_URL : '';
 ?>
@@ -137,63 +146,40 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
 
                         <hr class="component-divider">
 
+                        <?php foreach ($availableRoles as $role): 
+                            $rawName = $role['name'];
+                            $isSystemFlag = $role['is_system'] ?? 0;
+                            if ($isSystemFlag) {
+                                $roleKey = 'role.' . preg_replace('/[\s\W_]+/', '_', strtolower(trim($rawName)));
+                                $translatedName = __($roleKey);
+                                if ($translatedName === $roleKey) $translatedName = $rawName;
+                                $desc = __('desc_role_' . strtolower(trim($rawName))) ?: 'Rol del sistema';
+                            } else {
+                                $translatedName = htmlspecialchars($rawName);
+                                $desc = 'Rol personalizado (Peso: ' . $role['weight'] . ')';
+                            }
+                            
+                            $isChecked = in_array((int)$role['id'], $targetCurrentRoles ?? []) ? 'checked' : '';
+                        ?>
                         <div class="component-group-item component-group-item--wrap">
                             <div class="component-card__content">
                                 <div class="component-card__text">
                                     <h2 class="component-card__title" style="display: flex; align-items: center; gap: 8px;">
-                                        <?php echo __('role_admin') ?: 'Administrador'; ?>
-                                        <span class="material-symbols-rounded" style="font-size: 16px; color: var(--text-color-muted);" title="Control Total">shield</span>
+                                        <?php echo $translatedName; ?>
+                                        <span class="material-symbols-rounded" style="font-size: 16px; color: var(--text-color-muted);" title="Hierarchy: <?php echo $role['weight']; ?>"><?php echo $isSystemFlag ? 'shield' : 'person'; ?></span>
                                     </h2>
-                                    <p class="component-card__description"><?php echo __('desc_role_admin') ?: 'Control total. Puede editar, gestionar miembros, roles y configuraciones críticas.'; ?></p>
+                                    <p class="component-card__description"><?php echo htmlspecialchars($desc); ?></p>
                                 </div>
                             </div>
                             <div class="component-card__actions component-card__actions--end">
                                 <label class="component-toggle-switch">
-                                    <input type="radio" name="new_member_role" value="admin" <?php echo $targetCurrentRole === 'admin' ? 'checked' : ''; ?> class="admin-role-checkbox">
+                                    <input type="checkbox" name="new_member_roles[]" value="<?php echo $role['id']; ?>" <?php echo $isChecked; ?> class="admin-role-checkbox">
                                     <span class="component-toggle-slider"></span>
                                 </label>
                             </div>
                         </div>
-
                         <hr class="component-divider">
-
-                        <div class="component-group-item component-group-item--wrap">
-                            <div class="component-card__content">
-                                <div class="component-card__text">
-                                    <h2 class="component-card__title" style="display: flex; align-items: center; gap: 8px;">
-                                        <?php echo __('role_editor') ?: 'Editor'; ?>
-                                        <span class="material-symbols-rounded" style="font-size: 16px; color: var(--text-color-muted);" title="Puede Editar">edit</span>
-                                    </h2>
-                                    <p class="component-card__description"><?php echo __('desc_role_editor') ?: 'Puede editar el contenido del lienzo, pero no puede administrar miembros ni configuraciones.'; ?></p>
-                                </div>
-                            </div>
-                            <div class="component-card__actions component-card__actions--end">
-                                <label class="component-toggle-switch">
-                                    <input type="radio" name="new_member_role" value="editor" <?php echo $targetCurrentRole === 'editor' ? 'checked' : ''; ?> class="admin-role-checkbox">
-                                    <span class="component-toggle-slider"></span>
-                                </label>
-                            </div>
-                        </div>
-
-                        <hr class="component-divider">
-
-                        <div class="component-group-item component-group-item--wrap">
-                            <div class="component-card__content">
-                                <div class="component-card__text">
-                                    <h2 class="component-card__title" style="display: flex; align-items: center; gap: 8px;">
-                                        <?php echo __('role_viewer') ?: 'Lector (Viewer)'; ?>
-                                        <span class="component-badge component-badge--default" style="font-size: 11px; padding: 2px 6px; border-radius: 4px; background: var(--bg-level-2);"><?php echo __('lbl_base_role') ?: 'Rol Base'; ?></span>
-                                    </h2>
-                                    <p class="component-card__description"><?php echo __('desc_role_viewer') ?: 'Solo puede ver el lienzo. No puede hacer ediciones ni invitar a otros.'; ?></p>
-                                </div>
-                            </div>
-                            <div class="component-card__actions component-card__actions--end">
-                                <label class="component-toggle-switch">
-                                    <input type="radio" name="new_member_role" value="viewer" <?php echo $targetCurrentRole === 'viewer' ? 'checked' : ''; ?> class="admin-role-checkbox">
-                                    <span class="component-toggle-slider"></span>
-                                </label>
-                            </div>
-                        </div>
+                        <?php endforeach; ?>
 
                     </div>
                 </div>
