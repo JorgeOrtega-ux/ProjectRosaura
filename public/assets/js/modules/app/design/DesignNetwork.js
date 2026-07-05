@@ -637,9 +637,18 @@ export const DesignNetwork = {
 
     async handleAccessRequest(btn) {
         if (!this.canvasIntId) return;
+
+        if (window.dialogSystem) {
+            const res = await window.dialogSystem.show('joinCanvasTerms');
+            if (!res.confirmed || !res.data.modal_join_terms) {
+                if (res.confirmed) showMessage('Debes aceptar los términos para continuar.', 'warning');
+                return;
+            }
+        }
+
         setButtonLoading(btn);
 
-        const response = await this.api.post(ApiRoutes.Canvases.RequestAccess, { canvas_id: this.canvasIntId }, this.abortController.signal);
+        const response = await this.api.post(ApiRoutes.Canvases.RequestAccess, { canvas_id: this.canvasIntId, terms_accepted: true }, this.abortController.signal);
         if (response.aborted) return;
         
         restoreButton(btn);

@@ -583,5 +583,40 @@ export const DialogTemplates = {
                 <button class="component-button component-button--dark component-button--h45 component-button--full" data-action="startLive" style="display: ${data.isActive ? 'none' : 'flex'};">${__('btn_start_live')}</button>
             </div>
         `
+    },
+
+    joinCanvasTerms: {
+        build: () => `
+            <div class="pill-container"><div class="drag-handle"></div></div>
+            <div class="component-modal-header component-modal-header--with-icon">
+                <span class="material-symbols-rounded">gavel</span>
+                <div class="component-modal-header-text">
+                    <h3 class="component-modal-title">Términos y condiciones</h3>
+                    <p class="component-modal-desc">Por favor acepta las normas antes de unirte.</p>
+                </div>
+            </div>
+            <div class="component-modal-body">
+                <div class="component-card--grouped">
+                    <div class="component-group-item component-group-item--wrap">
+                        <div class="component-card__content">
+                            <div class="component-card__text">
+                                <h2 class="component-card__title">Aceptar normas de la comunidad</h2>
+                                <p class="component-card__description">Reconozco que la web no tiene control sobre lo que ocurre dentro de este lienzo privado y me comprometo a no romper las reglas.</p>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--end">
+                            <label class="component-toggle-switch">
+                                <input type="checkbox" data-ref="modal_join_terms">
+                                <span class="component-toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="component-modal-actions">
+                <button class="component-button component-button--h45 hide-on-desktop" data-modal-action="cancel">${__('btn_cancel') || 'Cancelar'}</button>
+                <button class="component-button component-button--dark component-button--h45 component-button--full" data-modal-action="confirm">Unirme al lienzo</button>
+            </div>
+        `
     }
 };

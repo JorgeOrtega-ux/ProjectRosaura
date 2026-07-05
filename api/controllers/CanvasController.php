@@ -582,7 +582,10 @@ class CanvasController extends BaseController {
             if (!$this->session->isLoggedIn()) return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
             $userId = $this->session->getActiveAccountId();
             $canvasId = $input['canvas_id'] ?? null;
+            $termsAccepted = filter_var($input['terms_accepted'] ?? false, FILTER_VALIDATE_BOOLEAN);
+
             if (!$canvasId) return $this->respond(['success' => false, 'message' => 'Lienzo no proporcionado.']);
+            if (!$termsAccepted) return $this->respond(['success' => false, 'message' => 'Debes aceptar las normas de la comunidad para unirte al lienzo.']);
             
             return $this->respond($this->canvasServices->requestAccess($userId, (int)$canvasId));
         } catch (\Throwable $e) {
@@ -882,9 +885,14 @@ class CanvasController extends BaseController {
             }
             $userId = $this->session->getActiveAccountId();
             $code = $input['code'] ?? null;
+            $termsAccepted = filter_var($input['terms_accepted'] ?? false, FILTER_VALIDATE_BOOLEAN);
 
             if (!$code) {
                 return $this->respond(['success' => false, 'message' => 'Falta el código de invitación.']);
+            }
+
+            if (!$termsAccepted) {
+                return $this->respond(['success' => false, 'message' => 'Debes aceptar los términos y condiciones para unirte al lienzo.']);
             }
 
             $result = $this->canvasServices->joinViaInvite($userId, strtoupper(trim($code)));

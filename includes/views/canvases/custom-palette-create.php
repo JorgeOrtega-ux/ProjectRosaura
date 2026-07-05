@@ -14,9 +14,6 @@ $translatedName = __('canvas_palette_new', 'Mi Nueva Paleta');
     
     <div class="component-top">
         <div class="component-top-left">
-            <button class="component-button component-button--icon-only component-button--h40" data-action="goBack" style="margin-right:12px;">
-                <span class="material-symbols-rounded">arrow_back</span>
-            </button>
             <h1 class="component-top-title"><?php echo __('canvas_create_custom_palette', 'Crear Paleta Personalizada'); ?></h1>
         </div>
         <div class="component-top-right">

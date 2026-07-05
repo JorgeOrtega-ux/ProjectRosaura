@@ -32,6 +32,22 @@
                         </div>
                     </form>
                 </div>
+                <div class="component-card--grouped">
+                    <div class="component-group-item component-group-item--wrap">
+                        <div class="component-card__content">
+                            <div class="component-card__text">
+                                <h2 class="component-card__title">Términos y condiciones</h2>
+                                <p class="component-card__description">Acepto que la plataforma no controla el contenido del lienzo y prometo no infringir las normas de la comunidad.</p>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--end">
+                            <label class="component-toggle-switch">
+                                <input type="checkbox" id="join-terms-checkbox" name="terms_accepted" required form="form-join-canvas">
+                                <span class="component-toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

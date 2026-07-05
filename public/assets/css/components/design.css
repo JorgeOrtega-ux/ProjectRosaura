@@ -251,6 +251,12 @@
     pointer-events: none;
 }
 
+.component-canvas-blocked,
+.component-canvas-blur {
+    filter: blur(8px);
+    transition: filter 0.3s ease;
+}
+
 .component-overlay-reset {
     background-color: rgba(0, 0, 0, 0.6);
 }

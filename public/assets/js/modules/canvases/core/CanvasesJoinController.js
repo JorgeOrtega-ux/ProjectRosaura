@@ -54,6 +54,18 @@ class CanvasesJoinController {
     async handleSubmit(e) {
         e.preventDefault();
 
+        const form = e.target;
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+
+        const termsCheckbox = document.getElementById('join-terms-checkbox');
+        if (termsCheckbox && !termsCheckbox.checked) {
+            showMessage('Debes aceptar los términos y condiciones para continuar.', 'warning');
+            return;
+        }
+
         const code = this.input.value.trim();
         if (code.length < 5) {
             showMessage('Por favor, ingresa un código válido.', 'error');
@@ -67,8 +79,10 @@ class CanvasesJoinController {
         btn.innerHTML = '<span class="material-symbols-rounded" style="animation: spin 1s linear infinite;">autorenew</span> Validando...';
         btn.disabled = true;
 
+        const termsAccepted = termsCheckbox ? termsCheckbox.checked : false;
+
         try {
-            const response = await this.api.post('canvases.join_via_invite', { code: code });
+            const response = await this.api.post('canvases.join_via_invite', { code: code, terms_accepted: termsAccepted });
             
             if (response && response.success) {
                 showMessage(response.message || '¡Te has unido exitosamente!', 'success');
