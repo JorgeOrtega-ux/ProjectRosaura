@@ -57,6 +57,37 @@ class HomeController {
             return;
         }
 
+        if (action === 'openFilterSubMenu') {
+            this.openFilterSubMenu(actionBtn);
+            return;
+        }
+
+        if (action === 'backToMainFilters') {
+            this.backToMainFilters(actionBtn);
+            return;
+        }
+
+        if (action === 'changeHomeFilter' || action === 'changeExploreSort') {
+            // For radio inputs, the browser handles unchecking others. 
+            // If they are checkboxes simulating radios:
+            if (actionBtn.tagName.toLowerCase() === 'input' && actionBtn.type === 'checkbox') {
+                const name = actionBtn.getAttribute('name');
+                document.querySelectorAll(`input[name="${name}"]`).forEach(cb => {
+                    if (cb !== actionBtn) cb.checked = false;
+                });
+            }
+
+            this.updateFilterDot();
+            
+            // Optionally close the dropdown:
+            const dropdownModule = actionBtn.closest('.component-module');
+            if (dropdownModule) {
+                // dropdownModule.classList.remove('active');
+            }
+            this.loadCanvases();
+            return;
+        }
+
         // Delegar interacciones de las tarjetas al helper
         if (this.cardInteractions && this.cardInteractions.handleAction(action, actionBtn)) {
             return;
@@ -91,8 +122,12 @@ class HomeController {
         let isError = false;
 
         if (isHome && isLoggedIn) {
+            // Get selected filter
+            const filterRadio = document.querySelector('input[name="home_filter"]:checked');
+            const filter = filterRadio ? filterRadio.value : 'all';
+
             // HOME CON SESIÓN: Cargar "Mis Lienzos" (Propios y unidos)
-            const res = await this.api.post(ApiRoutes.Canvases.GetMine, { limit: 50 }, this.abortController.signal).catch(() => null);
+            const res = await this.api.post(ApiRoutes.Canvases.GetMine, { limit: 50, filter: filter }, this.abortController.signal).catch(() => null);
             if (this.abortController.signal.aborted) return;
             
             if (res && res.success) {
@@ -124,10 +159,14 @@ class HomeController {
                 this.contentArea.innerHTML = emptyHtml;
             }
         } else {
+            // Get selected sort
+            const sortRadio = document.querySelector('input[name="explore_sort"]:checked');
+            const sort = sortRadio ? sortRadio.value : 'newest';
+
             // EXPLORE (O Home que por alguna razón llegó acá)
             const [publicRes, officialRes] = await Promise.all([
-                this.api.post(ApiRoutes.Canvases.GetPublic, { limit: 50 }, this.abortController.signal).catch(() => null),
-                this.api.post(ApiRoutes.Canvases.GetOfficial, {}, this.abortController.signal).catch(() => null)
+                this.api.post(ApiRoutes.Canvases.GetPublic, { limit: 50, sort: sort }, this.abortController.signal).catch(() => null),
+                this.api.post(ApiRoutes.Canvases.GetOfficial, { sort: sort }, this.abortController.signal).catch(() => null)
             ]);
             
             if (this.abortController.signal.aborted) return;
@@ -146,6 +185,22 @@ class HomeController {
                 allCanvases = allCanvases.concat(newPublics);
             } else if (!publicRes) {
                 isError = true;
+            }
+
+            // Client-side sort to ensure the combined list is properly ordered
+            if (allCanvases.length > 0) {
+                allCanvases.sort((a, b) => {
+                    if (sort === 'oldest') {
+                        return new Date(a.created_at) - new Date(b.created_at);
+                    } else if (sort === 'members') {
+                        if (b.members_count !== a.members_count) {
+                            return b.members_count - a.members_count;
+                        }
+                        return new Date(b.created_at) - new Date(a.created_at);
+                    } else { // newest
+                        return new Date(b.created_at) - new Date(a.created_at);
+                    }
+                });
             }
 
             if (allCanvases.length > 0) {
@@ -204,6 +259,61 @@ class HomeController {
                     // Silenciar errores
                 }
                 await new Promise(resolve => setTimeout(resolve, 2000));
+            }
+        }
+    }
+
+    openFilterSubMenu(btn) {
+        const targetId = btn.getAttribute('data-target');
+        const dropdown = btn.closest('.component-module');
+        if (!dropdown) return;
+
+        const targetMenu = dropdown.querySelector(`[data-ref="${targetId}"]`);
+        const mainFilters = dropdown.querySelector('[data-ref="menuMainFilters"]');
+        
+        if (targetMenu && mainFilters) {
+            mainFilters.classList.add('disabled');
+            mainFilters.classList.remove('active');
+            targetMenu.classList.remove('disabled');
+            targetMenu.classList.add('active');
+        }
+    }
+
+    backToMainFilters(btn) {
+        const activeModule = btn.closest('.component-module');
+        if (!activeModule) return;
+        
+        const mainFilters = activeModule.querySelector('[data-ref="menuMainFilters"]');
+        const subMenus = activeModule.querySelectorAll('.component-menu:not([data-ref="menuMainFilters"])');
+        
+        if (mainFilters) {
+            subMenus.forEach(menu => {
+                menu.classList.add('disabled');
+                menu.classList.remove('active');
+            });
+            mainFilters.classList.remove('disabled');
+            mainFilters.classList.add('active');
+        }
+    }
+
+    updateFilterDot() {
+        const homeFiltersBtn = document.querySelector('[data-target="moduleHomeFilters"]');
+        if (homeFiltersBtn) {
+            const isDefault = document.querySelector('input[name="home_filter"][value="all"]')?.checked;
+            if (isDefault) {
+                homeFiltersBtn.classList.remove('has-active-filter');
+            } else {
+                homeFiltersBtn.classList.add('has-active-filter');
+            }
+        }
+
+        const exploreFiltersBtn = document.querySelector('[data-target="moduleExploreFilters"]');
+        if (exploreFiltersBtn) {
+            const isDefault = document.querySelector('input[name="explore_sort"][value="newest"]')?.checked;
+            if (isDefault) {
+                exploreFiltersBtn.classList.remove('has-active-filter');
+            } else {
+                exploreFiltersBtn.classList.add('has-active-filter');
             }
         }
     }

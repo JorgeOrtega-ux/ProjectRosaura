@@ -101,14 +101,21 @@ class CanvasRepository implements CanvasRepositoryInterface {
         ]);
     }
 
-    public function getPublicCanvases(int $limit = 20, ?int $currentUserId = null): array {
+    public function getPublicCanvases(int $limit = 20, ?int $currentUserId = null, string $sort = 'newest'): array {
+        $orderClause = "ORDER BY c.created_at DESC";
+        if ($sort === 'oldest') {
+            $orderClause = "ORDER BY c.created_at ASC";
+        } elseif ($sort === 'members') {
+            $orderClause = "ORDER BY members_count DESC, c.created_at DESC";
+        }
+
         $sql = "SELECT c.id, c.uuid, c.name, c.owner_id, c.scope_type, 
                        CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
                        (SELECT COUNT(*) FROM " . DB::TBL_CANVAS_MEMBERS . " WHERE canvas_id = c.id) as members_count
                 FROM " . DB::TBL_CANVASES . " c
                 LEFT JOIN canvas_favorites f ON c.id = f.canvas_id AND f.user_id = :current_user_id
                 WHERE c.privacy = 'public' AND c.scope_type = 'personal'
-                ORDER BY c.created_at DESC 
+                $orderClause 
                 LIMIT :limit";
         
         $stmt = $this->db->prepare($sql);
@@ -126,14 +133,21 @@ class CanvasRepository implements CanvasRepositoryInterface {
         return array_map([$this, 'appendSnapshotUrl'], $results);
     }
 
-    public function getOfficialCanvases(?int $currentUserId = null): array {
+    public function getOfficialCanvases(?int $currentUserId = null, string $sort = 'newest'): array {
+        $orderClause = "ORDER BY c.created_at DESC";
+        if ($sort === 'oldest') {
+            $orderClause = "ORDER BY c.created_at ASC";
+        } elseif ($sort === 'members') {
+            $orderClause = "ORDER BY members_count DESC, c.created_at DESC";
+        }
+
         $sql = "SELECT c.id, c.uuid, c.name, c.description, c.size, c.palette_id, c.scope_type, c.scope_ref_1, c.scope_ref_2, c.scope_ref_3,
                        CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
                        (SELECT COUNT(*) FROM " . DB::TBL_CANVAS_MEMBERS . " WHERE canvas_id = c.id) as members_count
                 FROM " . DB::TBL_CANVASES . " c
                 LEFT JOIN canvas_favorites f ON c.id = f.canvas_id AND f.user_id = :current_user_id
                 WHERE c.owner_id IS NULL AND c.scope_type != 'personal'
-                ORDER BY c.created_at DESC";
+                $orderClause";
                 
         $stmt = $this->db->prepare($sql);
         $stmt->bindValue(':current_user_id', $currentUserId ?? 0, PDO::PARAM_INT);
@@ -149,15 +163,23 @@ class CanvasRepository implements CanvasRepositoryInterface {
         return array_map([$this, 'appendSnapshotUrl'], $results);
     }
 
-    public function getUserAndJoinedCanvases(int $userId, int $limit = 50): array {
+    public function getUserAndJoinedCanvases(int $userId, int $limit = 50, string $filter = 'all'): array {
+        $whereClause = "WHERE (c.owner_id = :uid3 OR EXISTS (SELECT 1 FROM " . DB::TBL_CANVAS_MEMBERS . " cm WHERE cm.canvas_id = c.id AND cm.user_id = :uid4))";
+        if ($filter === 'mine') {
+            $whereClause = "WHERE c.owner_id = :uid3";
+        } elseif ($filter === 'joined') {
+            $whereClause = "WHERE c.owner_id != :uid3 AND EXISTS (SELECT 1 FROM " . DB::TBL_CANVAS_MEMBERS . " cm WHERE cm.canvas_id = c.id AND cm.user_id = :uid4)";
+        } elseif ($filter === 'favorites') {
+            $whereClause .= " AND f.canvas_id IS NOT NULL";
+        }
+
         $sql = "SELECT c.id, c.uuid, c.name, c.description, c.privacy, c.requires_approval, c.size, c.palette_id, c.max_participants, c.cooldown_pixels_batch, c.cooldown_seconds, c.created_at, c.scope_type, c.owner_id,
                        CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
                        (SELECT COUNT(*) FROM " . DB::TBL_CANVAS_MEMBERS . " WHERE canvas_id = c.id) as members_count,
                        CASE WHEN c.owner_id = :uid1 THEN 1 ELSE 0 END as is_owner
                 FROM " . DB::TBL_CANVASES . " c
                 LEFT JOIN canvas_favorites f ON c.id = f.canvas_id AND f.user_id = :uid2
-                WHERE c.owner_id = :uid3 
-                   OR EXISTS (SELECT 1 FROM " . DB::TBL_CANVAS_MEMBERS . " cm WHERE cm.canvas_id = c.id AND cm.user_id = :uid4)
+                $whereClause
                 ORDER BY c.id DESC 
                 LIMIT :limit";
         

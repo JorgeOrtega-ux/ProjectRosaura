@@ -7,9 +7,9 @@ interface CanvasRepositoryInterface {
     public function addMember(int $canvasId, int $userId, string $role): bool;
     
     // Métodos para Home / Explora
-    public function getPublicCanvases(int $limit = 20, ?int $currentUserId = null): array;
-    public function getOfficialCanvases(?int $currentUserId = null): array;
-    public function getUserAndJoinedCanvases(int $userId, int $limit = 50): array;
+    public function getPublicCanvases(int $limit = 20, ?int $currentUserId = null, string $sort = 'newest'): array;
+    public function getOfficialCanvases(?int $currentUserId = null, string $sort = 'newest'): array;
+    public function getUserAndJoinedCanvases(int $userId, int $limit = 50, string $filter = 'all'): array;
 
     // Métodos para Manage
     public function getUserCanvasesPaginated(int $ownerId, int $limit, int $offset): array;

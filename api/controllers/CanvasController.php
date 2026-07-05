@@ -117,8 +117,9 @@ class CanvasController extends BaseController {
         try {
             $userId = $this->session->isLoggedIn() ? $this->session->getActiveAccountId() : null;
             $limit = $input['limit'] ?? 20;
+            $sort = $input['sort'] ?? 'newest';
 
-            $result = $this->canvasServices->getPublicCanvases($userId, (int)$limit);
+            $result = $this->canvasServices->getPublicCanvases($userId, (int)$limit, $sort);
             
             return $this->respond($result);
         } catch (\Throwable $e) {
@@ -130,8 +131,9 @@ class CanvasController extends BaseController {
         try {
             $userId = $this->session->isLoggedIn() ? $this->session->getActiveAccountId() : null;
             $limit = isset($input['limit']) ? (int)$input['limit'] : 50;
+            $filter = $input['filter'] ?? 'all';
             
-            $result = $this->canvasServices->getMine($userId, $limit);
+            $result = $this->canvasServices->getMine($userId, $limit, $filter);
             return $this->respond($result);
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);
@@ -778,8 +780,9 @@ class CanvasController extends BaseController {
     public function get_official($input) {
         try {
             $userId = $this->session->isLoggedIn() ? $this->session->getActiveAccountId() : null;
+            $sort = $input['sort'] ?? 'newest';
             
-            $result = $this->canvasServices->getOfficialCanvases($userId);
+            $result = $this->canvasServices->getOfficialCanvases($userId, $sort);
             return $this->respond($result);
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);

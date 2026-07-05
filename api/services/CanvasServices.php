@@ -71,9 +71,9 @@ class CanvasServices {
         }
     }
 
-    public function getPublicCanvases(?int $currentUserId, int $limit = 20): array {
+    public function getPublicCanvases(?int $currentUserId, int $limit = 20, string $sort = 'newest'): array {
         try {
-            $canvases = $this->canvasRepository->getPublicCanvases($limit, $currentUserId);
+            $canvases = $this->canvasRepository->getPublicCanvases($limit, $currentUserId, $sort);
             
             $onlineCounts = [];
             try {
@@ -111,9 +111,9 @@ class CanvasServices {
         }
     }
 
-    public function getOfficialCanvases(?int $currentUserId = null): array {
+    public function getOfficialCanvases(?int $currentUserId = null, string $sort = 'newest'): array {
         try {
-            $canvases = $this->canvasRepository->getOfficialCanvases($currentUserId);
+            $canvases = $this->canvasRepository->getOfficialCanvases($currentUserId, $sort);
             
             $onlineCounts = [];
             try {
@@ -152,10 +152,10 @@ class CanvasServices {
         }
     }
 
-    public function getMine(?int $userId, int $limit = 50): array {
+    public function getMine(?int $userId, int $limit = 50, string $filter = 'all'): array {
         if (!$userId) return ['success' => false, 'message' => __('err_unauthorized')];
         try {
-            $canvases = $this->canvasRepository->getUserAndJoinedCanvases($userId, $limit);
+            $canvases = $this->canvasRepository->getUserAndJoinedCanvases($userId, $limit, $filter);
             
             // Format canvases similar to getPublicCanvases
             $formattedCanvases = array_map(function($canvas) use ($userId) {
