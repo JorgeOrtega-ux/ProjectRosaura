@@ -75,7 +75,17 @@ class CanvasServices {
         try {
             $canvases = $this->canvasRepository->getPublicCanvases($limit, $currentUserId);
             
-            $formattedCanvases = array_map(function($canvas) use ($currentUserId) {
+            $onlineCounts = [];
+            try {
+                if (class_exists(RedisCache::class)) {
+                    $redis = (new RedisCache())->getClient();
+                    if ($redis) {
+                        $onlineCounts = $redis->hGetAll("canvas:online_counts") ?: [];
+                    }
+                }
+            } catch (Exception $e) {}
+            
+            $formattedCanvases = array_map(function($canvas) use ($currentUserId, $onlineCounts) {
                 $canvas['is_owner'] = ($canvas['owner_id'] === $currentUserId && $canvas['owner_id'] !== null);
                 
                 $snapshotPath = "public/storage/snapshots/canvas_" . $canvas['id'] . ".png";
@@ -88,6 +98,9 @@ class CanvasServices {
                 }
                 
                 $canvas['snapshot_url'] = $snapshotUrl;
+                $canvas['online_players'] = isset($onlineCounts[$canvas['id']]) ? (int)$onlineCounts[$canvas['id']] : 0;
+                $canvas['members_count'] = isset($canvas['members_count']) ? (int)$canvas['members_count'] : 0;
+                
                 return $canvas;
             }, $canvases);
             
@@ -102,7 +115,17 @@ class CanvasServices {
         try {
             $canvases = $this->canvasRepository->getOfficialCanvases($currentUserId);
             
-            $formattedCanvases = array_map(function($canvas) {
+            $onlineCounts = [];
+            try {
+                if (class_exists(RedisCache::class)) {
+                    $redis = (new RedisCache())->getClient();
+                    if ($redis) {
+                        $onlineCounts = $redis->hGetAll("canvas:online_counts") ?: [];
+                    }
+                }
+            } catch (Exception $e) {}
+            
+            $formattedCanvases = array_map(function($canvas) use ($onlineCounts) {
                 $canvas['is_owner'] = false; 
                 $canvas['privacy'] = 'public'; 
                 
@@ -116,6 +139,9 @@ class CanvasServices {
                 }
                 
                 $canvas['snapshot_url'] = $snapshotUrl;
+                $canvas['online_players'] = isset($onlineCounts[$canvas['id']]) ? (int)$onlineCounts[$canvas['id']] : 0;
+                $canvas['members_count'] = isset($canvas['members_count']) ? (int)$canvas['members_count'] : 0;
+                
                 return $canvas;
             }, $canvases);
             

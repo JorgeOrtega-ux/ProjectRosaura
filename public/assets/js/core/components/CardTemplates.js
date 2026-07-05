@@ -37,10 +37,34 @@ export const CardTemplates = {
                     <div class="component-menu-link-icon"><span class="material-symbols-rounded">logout</span></div>
                     <div class="component-menu-link-text"><span>Salir del lienzo</span></div>
                </button>`;
+        const onlinePlayers = parseInt(canvas.online_players || 0, 10);
+        const membersCount = parseInt(canvas.members_count || 0, 10);
+        const isOfficial = canvas.scope_type && canvas.scope_type !== 'personal';
+
+        let badgeHtml = '';
+        if (isOfficial) {
+            badgeHtml = `
+                <div class="component-snapshot-badge">
+                    <span class="material-symbols-rounded" style="color: ${onlinePlayers > 0 ? '#10b981' : 'inherit'}">person</span>
+                    ${onlinePlayers} Online
+                </div>
+            `;
+        } else {
+            badgeHtml = `
+                <div class="component-snapshot-badge" style="display: flex; align-items: center; gap: 4px;">
+                    <span class="material-symbols-rounded" style="color: ${onlinePlayers > 0 ? '#10b981' : 'inherit'}; font-size: 16px;">person</span>
+                    <span>${onlinePlayers} Online</span> 
+                    <span style="margin: 0 2px; opacity: 0.5;">|</span>
+                    <span class="material-symbols-rounded" style="font-size: 16px;">group</span>
+                    <span>${membersCount}</span>
+                </div>
+            `;
+        }
 
         return `
             <div class="component-snapshot-card" data-card-id="${canvas.id}">
                 ${imgHtml}
+                ${badgeHtml}
 
                 <div data-nav="${basePath}/design/${uuid}" class="component-snapshot-link" style="cursor: pointer;">
                     <h3 class="component-snapshot-title">${name}</h3>

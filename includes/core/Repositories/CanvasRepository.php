@@ -103,7 +103,8 @@ class CanvasRepository implements CanvasRepositoryInterface {
 
     public function getPublicCanvases(int $limit = 20, ?int $currentUserId = null): array {
         $sql = "SELECT c.id, c.uuid, c.name, c.owner_id, c.scope_type, 
-                       CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite
+                       CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
+                       (SELECT COUNT(*) FROM " . DB::TBL_CANVAS_MEMBERS . " WHERE canvas_id = c.id) as members_count
                 FROM " . DB::TBL_CANVASES . " c
                 LEFT JOIN canvas_favorites f ON c.id = f.canvas_id AND f.user_id = :current_user_id
                 WHERE c.privacy = 'public' AND c.scope_type = 'personal'
@@ -127,7 +128,8 @@ class CanvasRepository implements CanvasRepositoryInterface {
 
     public function getOfficialCanvases(?int $currentUserId = null): array {
         $sql = "SELECT c.id, c.uuid, c.name, c.description, c.size, c.palette_id, c.scope_type, c.scope_ref_1, c.scope_ref_2, c.scope_ref_3,
-                       CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite
+                       CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
+                       (SELECT COUNT(*) FROM " . DB::TBL_CANVAS_MEMBERS . " WHERE canvas_id = c.id) as members_count
                 FROM " . DB::TBL_CANVASES . " c
                 LEFT JOIN canvas_favorites f ON c.id = f.canvas_id AND f.user_id = :current_user_id
                 WHERE c.owner_id IS NULL AND c.scope_type != 'personal'
@@ -149,7 +151,8 @@ class CanvasRepository implements CanvasRepositoryInterface {
 
     public function getUserCanvasesPaginated(int $ownerId, int $limit, int $offset): array {
         $sql = "SELECT c.id, c.uuid, c.name, c.description, c.privacy, c.requires_approval, c.size, c.palette_id, c.max_participants, c.cooldown_pixels_batch, c.cooldown_seconds, c.created_at, c.scope_type,
-                       CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite 
+                       CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
+                       (SELECT COUNT(*) FROM " . DB::TBL_CANVAS_MEMBERS . " WHERE canvas_id = c.id) as members_count
                 FROM " . DB::TBL_CANVASES . " c
                 LEFT JOIN canvas_favorites f ON c.id = f.canvas_id AND f.user_id = :oid
                 WHERE c.owner_id = :oid 

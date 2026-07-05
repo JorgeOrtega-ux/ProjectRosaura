@@ -96,6 +96,23 @@ async def admin_events_listener():
     except Exception as e:
         print(f"[!] Error fatal en el listener de Pub/Sub: {e}")
 
+async def sync_online_counts():
+    r = await get_redis_client()
+    print("[*] WS Server iniciando sincronización de contadores de jugadores en vivo hacia Redis.")
+    while True:
+        try:
+            counts = {str(c_id): len(conns) for c_id, conns in ROOMS.items() if len(conns) > 0}
+            
+            pipe = r.pipeline()
+            pipe.delete("canvas:online_counts")
+            if counts:
+                pipe.hset("canvas:online_counts", mapping=counts)
+            await pipe.execute()
+        except Exception as e:
+            print(f"[!] Error sincronizando contadores online: {e}")
+        
+        await asyncio.sleep(5)
+
 async def handler(websocket):
     path = websocket.request.path
     parsed_path = urlparse(path)
@@ -434,6 +451,7 @@ async def main():
     print(f"Iniciando servidor WebSocket en ws://{host}:{port}")
     
     asyncio.create_task(admin_events_listener())
+    asyncio.create_task(sync_online_counts())
     
     async with websockets.serve(handler, host, port):
         await asyncio.Future()
