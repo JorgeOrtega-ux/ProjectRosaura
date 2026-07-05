@@ -60,7 +60,9 @@ class CanvasesJoinController {
             return;
         }
 
-        const btn = this.form.querySelector('button[type="submit"]');
+        const btn = document.getElementById('btn-join-canvas') || this.form.querySelector('button[type="submit"]');
+        if (!btn) return;
+        
         const originalText = btn.innerHTML;
         btn.innerHTML = '<span class="material-symbols-rounded" style="animation: spin 1s linear infinite;">autorenew</span> Validando...';
         btn.disabled = true;
