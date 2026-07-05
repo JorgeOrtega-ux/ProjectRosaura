@@ -1509,5 +1509,141 @@ class CanvasServices {
             return ['success' => false, 'message' => __('err_database') ?? 'Error interno al procesar la solicitud.'];
         }
     }
+
+    // ==========================================
+    // NUEVOS MÉTODOS PARA INVITACIONES
+    // ==========================================
+    public function generateInvite(int $userId, int $canvasId, string $role, ?int $maxUses, ?string $expiresAt, bool $canManageOfficial = false): array {
+        try {
+            $canvas = $this->canvasRepository->getById($canvasId);
+            if (!$canvas) return ['success' => false, 'message' => 'Lienzo no encontrado.'];
+
+            $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            $requesterRole = $isOwner ? 'admin' : $this->canvasRepository->getMemberRole($canvasId, $userId);
+
+            if ($requesterRole !== 'admin') {
+                return ['success' => false, 'message' => 'No tienes permisos de administrador para generar invitaciones.'];
+            }
+
+            if (!in_array($role, ['viewer', 'editor', 'admin'])) {
+                return ['success' => false, 'message' => 'Rol inválido.'];
+            }
+
+            if ($expiresAt) {
+                $date = DateTime::createFromFormat('Y-m-d H:i:s', $expiresAt);
+                if (!$date || $date->format('Y-m-d H:i:s') !== $expiresAt || $date->getTimestamp() <= time()) {
+                    return ['success' => false, 'message' => 'La fecha de expiración debe ser válida y en el futuro.'];
+                }
+            }
+
+            // Generar un código único
+            $code = strtoupper(substr(Utils::generateUUID(), 0, 4) . '-' . substr(Utils::generateUUID(), 4, 4));
+
+            $inviteId = $this->canvasRepository->createInvite($canvasId, $code, $role, $maxUses, $expiresAt, $userId);
+
+            return ['success' => true, 'message' => 'Invitación generada exitosamente.', 'data' => ['code' => $code]];
+        } catch (Exception $e) {
+            Logger::error('Error generating invite.', ['error' => $e->getMessage()]);
+            return ['success' => false, 'message' => 'Error al generar la invitación.'];
+        }
+    }
+
+    public function listInvites(int $userId, int $canvasId, bool $canManageOfficial = false): array {
+        try {
+            $canvas = $this->canvasRepository->getById($canvasId);
+            if (!$canvas) return ['success' => false, 'message' => 'Lienzo no encontrado.'];
+
+            $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            $requesterRole = $isOwner ? 'admin' : $this->canvasRepository->getMemberRole($canvasId, $userId);
+
+            if ($requesterRole !== 'admin') {
+                return ['success' => false, 'message' => 'No tienes permisos para ver las invitaciones.'];
+            }
+
+            $invites = $this->canvasRepository->getInvites($canvasId);
+            return ['success' => true, 'data' => $invites];
+        } catch (Exception $e) {
+            Logger::error('Error listing invites.', ['error' => $e->getMessage()]);
+            return ['success' => false, 'message' => 'Error al obtener las invitaciones.'];
+        }
+    }
+
+    public function revokeInvite(int $userId, int $canvasId, int $inviteId, bool $canManageOfficial = false): array {
+        try {
+            $canvas = $this->canvasRepository->getById($canvasId);
+            if (!$canvas) return ['success' => false, 'message' => 'Lienzo no encontrado.'];
+
+            $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            $requesterRole = $isOwner ? 'admin' : $this->canvasRepository->getMemberRole($canvasId, $userId);
+
+            if ($requesterRole !== 'admin') {
+                return ['success' => false, 'message' => 'No tienes permisos para revocar invitaciones.'];
+            }
+
+            $revoked = $this->canvasRepository->revokeInvite($inviteId, $canvasId);
+            if ($revoked) {
+                return ['success' => true, 'message' => 'Invitación revocada correctamente.'];
+            }
+            return ['success' => false, 'message' => 'No se pudo revocar la invitación.'];
+        } catch (Exception $e) {
+            Logger::error('Error revoking invite.', ['error' => $e->getMessage()]);
+            return ['success' => false, 'message' => 'Error al revocar la invitación.'];
+        }
+    }
+
+    public function joinViaInvite(int $userId, string $code): array {
+        try {
+            $invite = $this->canvasRepository->getInviteByCode($code);
+            if (!$invite) {
+                return ['success' => false, 'message' => 'El código de invitación no existe o es inválido.'];
+            }
+
+            // Validar expiración
+            if ($invite['expires_at'] && strtotime($invite['expires_at']) <= time()) {
+                return ['success' => false, 'message' => 'Esta invitación ha expirado.'];
+            }
+
+            // Validar límite de usos
+            if ($invite['max_uses'] !== null && $invite['uses_count'] >= $invite['max_uses']) {
+                return ['success' => false, 'message' => 'Esta invitación ha alcanzado su límite de usos.'];
+            }
+
+            $canvasId = $invite['canvas_id'];
+            $canvas = $this->canvasRepository->getById($canvasId);
+            if (!$canvas) return ['success' => false, 'message' => 'El lienzo asociado ya no existe.'];
+
+            // Verificar si el usuario ya es miembro
+            $existingRole = $this->canvasRepository->getMemberRole($canvasId, $userId);
+            if ($existingRole) {
+                return ['success' => true, 'message' => 'Ya eres miembro de este lienzo.', 'data' => ['uuid' => $canvas['uuid']]];
+            }
+
+            // Validar límite de miembros del plan
+            if ($canvas['owner_id'] !== null) {
+                $owner = $this->userRepository->findById($canvas['owner_id']);
+                $tier = $owner['subscription_tier'] ?? 0;
+                $planLimits = SubscriptionPlanConstants::getTierLimits($tier);
+
+                if ($planLimits['max_members_per_canvas'] !== -1) {
+                    $currentMembers = $this->canvasRepository->countCanvasMembers($canvasId);
+                    if ($currentMembers >= $planLimits['max_members_per_canvas']) {
+                        return ['success' => false, 'message' => 'Este lienzo ha alcanzado el límite máximo de participantes permitidos por el plan de su creador.'];
+                    }
+                }
+            }
+
+            // Agregar al usuario y sumar uso a la invitación
+            $added = $this->canvasRepository->addMember($canvasId, $userId, $invite['role']);
+            if ($added) {
+                $this->canvasRepository->incrementInviteUses($invite['id']);
+                return ['success' => true, 'message' => 'Te has unido al lienzo exitosamente.', 'data' => ['uuid' => $canvas['uuid']]];
+            }
+
+            return ['success' => false, 'message' => 'Error al unirse al lienzo.'];
+        } catch (Exception $e) {
+            Logger::error('Error joining via invite.', ['error' => $e->getMessage()]);
+            return ['success' => false, 'message' => 'Error interno al procesar la invitación.'];
+        }
+    }
 }
 ?>

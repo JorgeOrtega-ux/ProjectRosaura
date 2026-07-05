@@ -643,5 +643,54 @@ class CanvasRepository implements CanvasRepositoryInterface {
         $stmt->execute([':user_id' => $userId, ':canvas_id' => $canvasId]);
         return (bool)$stmt->fetchColumn();
     }
+
+    // ==========================================
+    // NUEVOS MÉTODOS PARA INVITACIONES
+    // ==========================================
+    public function createInvite(int $canvasId, string $code, string $role, ?int $maxUses, ?string $expiresAt, int $createdBy): int {
+        $sql = "INSERT INTO canvas_invites (canvas_id, code, role, max_uses, expires_at, created_by) 
+                VALUES (:canvas_id, :code, :role, :max_uses, :expires_at, :created_by)";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            ':canvas_id' => $canvasId,
+            ':code' => $code,
+            ':role' => $role,
+            ':max_uses' => $maxUses,
+            ':expires_at' => $expiresAt,
+            ':created_by' => $createdBy
+        ]);
+        return (int)$this->db->lastInsertId();
+    }
+
+    public function getInvites(int $canvasId): array {
+        $sql = "SELECT i.*, u.username as creator_name 
+                FROM canvas_invites i
+                LEFT JOIN users u ON i.created_by = u.id
+                WHERE i.canvas_id = :canvas_id
+                ORDER BY i.created_at DESC";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':canvas_id' => $canvasId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    public function getInviteByCode(string $code): ?array {
+        $sql = "SELECT * FROM canvas_invites WHERE code = :code LIMIT 1";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':code' => $code]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result ?: null;
+    }
+
+    public function incrementInviteUses(int $inviteId): bool {
+        $sql = "UPDATE canvas_invites SET uses_count = uses_count + 1 WHERE id = :id";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([':id' => $inviteId]);
+    }
+
+    public function revokeInvite(int $inviteId, int $canvasId): bool {
+        $sql = "DELETE FROM canvas_invites WHERE id = :id AND canvas_id = :canvas_id";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([':id' => $inviteId, ':canvas_id' => $canvasId]);
+    }
 }
 ?>

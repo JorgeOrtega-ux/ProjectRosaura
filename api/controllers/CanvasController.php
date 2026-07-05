@@ -794,5 +794,89 @@ class CanvasController extends BaseController {
             return $this->handleException($e, __FUNCTION__);
         }
     }
+
+    // ==========================================
+    // ENDPOINTS INVITACIONES
+    // ==========================================
+
+    public function generate_invite($input) {
+        try {
+            if (!$this->session->isLoggedIn()) {
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized') ?? 'No autorizado.', 'http_code' => 401]);
+            }
+            $userId = $this->session->getActiveAccountId();
+            $canvasId = $input['canvas_id'] ?? null;
+            $role = $input['role'] ?? 'viewer';
+            $maxUses = isset($input['max_uses']) && $input['max_uses'] !== '' ? (int)$input['max_uses'] : null;
+            $expiresAt = $input['expires_at'] ?? null;
+
+            if (!$canvasId) {
+                return $this->respond(['success' => false, 'message' => 'Falta el ID del lienzo.']);
+            }
+
+            $result = $this->canvasServices->generateInvite($userId, (int)$canvasId, $role, $maxUses, $expiresAt, $this->canManageOfficial());
+            return $this->respond($result);
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
+    public function list_invites($input) {
+        try {
+            if (!$this->session->isLoggedIn()) {
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized') ?? 'No autorizado.', 'http_code' => 401]);
+            }
+            $userId = $this->session->getActiveAccountId();
+            $canvasId = $input['canvas_id'] ?? null;
+
+            if (!$canvasId) {
+                return $this->respond(['success' => false, 'message' => 'Falta el ID del lienzo.']);
+            }
+
+            $result = $this->canvasServices->listInvites($userId, (int)$canvasId, $this->canManageOfficial());
+            return $this->respond($result);
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
+    public function revoke_invite($input) {
+        try {
+            if (!$this->session->isLoggedIn()) {
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized') ?? 'No autorizado.', 'http_code' => 401]);
+            }
+            $userId = $this->session->getActiveAccountId();
+            $canvasId = $input['canvas_id'] ?? null;
+            $inviteId = $input['invite_id'] ?? null;
+
+            if (!$canvasId || !$inviteId) {
+                return $this->respond(['success' => false, 'message' => 'Faltan parámetros.']);
+            }
+
+            $result = $this->canvasServices->revokeInvite($userId, (int)$canvasId, (int)$inviteId, $this->canManageOfficial());
+            return $this->respond($result);
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
+    public function join_via_invite($input) {
+        try {
+            if (!$this->session->isLoggedIn()) {
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized') ?? 'Debes iniciar sesión para unirte.', 'http_code' => 401]);
+            }
+            $userId = $this->session->getActiveAccountId();
+            $code = $input['code'] ?? null;
+
+            if (!$code) {
+                return $this->respond(['success' => false, 'message' => 'Falta el código de invitación.']);
+            }
+
+            $result = $this->canvasServices->joinViaInvite($userId, strtoupper(trim($code)));
+            return $this->respond($result);
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
 }
 ?>

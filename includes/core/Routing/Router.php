@@ -122,6 +122,17 @@ class Router {
             ];
         }
 
+        // Invites
+        if (preg_match('#^/canvases/manage/invites/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
+            $_GET['uuid'] = $matches[1];
+            return $this->routes['/canvases/manage/invites/:uuid'] ?? [
+                'view' => 'canvases/invites.php',
+                'auth' => true,
+                'permissions' => ['manage_canvases'],
+                'requires_2fa' => false
+            ];
+        }
+
         // Compatibilidad: redirigir ruta antigua de resize
         if (preg_match('#^/canvases/resize/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
             header('Location: ' . $this->basePath . '/canvases/manage/resize/' . $matches[1]);

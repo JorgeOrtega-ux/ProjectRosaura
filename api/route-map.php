@@ -409,6 +409,29 @@ return [
         'action' => 'remove_member',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_remove_member', 'max' => 10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
+    
+    // --- NUEVAS RUTAS DE INVITACIONES ---
+    'canvases.generate_invite' => [
+        'controller' => 'App\Api\Controllers\CanvasController',
+        'action' => 'generate_invite',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_gen_invite', 'max' => 20, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
+    ],
+    'canvases.list_invites' => [
+        'controller' => 'App\Api\Controllers\CanvasController',
+        'action' => 'list_invites',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_list_invites', 'max' => 30, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
+    ],
+    'canvases.revoke_invite' => [
+        'controller' => 'App\Api\Controllers\CanvasController',
+        'action' => 'revoke_invite',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_revoke_invite', 'max' => 20, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
+    ],
+    'canvases.join_via_invite' => [
+        'controller' => 'App\Api\Controllers\CanvasController',
+        'action' => 'join_via_invite',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_join_invite', 'max' => 20, 'time' => RL::TIME_5, 'identifier' => RL::ID_IP]]
+    ],
+
 
     // --- RUTAS DE CONFIGURACIÓN DE REINICIOS ---
     'canvases.get_reset_settings' => [

@@ -21,6 +21,7 @@ export class SpaRouter {
         if (url.startsWith('/design/')) return '/design';
         if (url.startsWith('/canvases/manage/requests/')) return '/canvases/manage/requests/:uuid';
         if (url.startsWith('/canvases/manage/resets/')) return '/canvases/manage/resets/:uuid';
+        if (url.startsWith('/canvases/manage/invites/')) return '/canvases/manage/invites/:uuid';
         if (url.startsWith('/canvases/manage/resize/') || url.startsWith('/canvases/resize/')) return '/canvases/manage/resize/:uuid';
         if (url.startsWith('/canvases/edit/')) return '/canvases/edit/:uuid';
         if (url.startsWith('/canvases/members/') && url.includes('/role/')) return '/canvases/members/:uuid/role/:id';

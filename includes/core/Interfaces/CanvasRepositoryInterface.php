@@ -84,5 +84,14 @@ interface CanvasRepositoryInterface {
     public function toggleFavorite(int $userId, int $canvasId): array;
 
     public function isFavorite(int $userId, int $canvasId): bool;
+
+    // ==========================================
+    // NUEVOS MÉTODOS PARA INVITACIONES
+    // ==========================================
+    public function createInvite(int $canvasId, string $code, string $role, ?int $maxUses, ?string $expiresAt, int $createdBy): int;
+    public function getInvites(int $canvasId): array;
+    public function getInviteByCode(string $code): ?array;
+    public function incrementInviteUses(int $inviteId): bool;
+    public function revokeInvite(int $inviteId, int $canvasId): bool;
 }
 ?>
