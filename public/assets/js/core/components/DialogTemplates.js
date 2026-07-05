@@ -273,6 +273,26 @@ export const DialogTemplates = {
         `
     },
 
+    confirmActionModal: {
+        build: (data) => `
+            <div class="pill-container"><div class="drag-handle"></div></div>
+            <div class="component-modal-header">
+                <h2 class="component-modal-title">${data.title || __('title_confirm_action')}</h2>
+                <p class="component-modal-desc">${data.message || __('desc_confirm_action')}</p>
+            </div>
+            <div class="component-modal-body">
+                <div class="component-input-group">
+                    <input type="text" data-ref="confirm_input" class="component-input-field" placeholder=" " autocomplete="off">
+                    <label class="component-input-label">${data.inputPlaceholder || __('ph_confirm_action')}</label>
+                </div>
+            </div>
+            <div class="component-modal-actions">
+                <button class="component-button component-button--h45 hide-on-desktop" data-modal-action="cancel">${__('btn_cancel')}</button>
+                <button class="component-button component-button--h45 ${data.confirmClass || 'component-button--danger'} component-button--full" data-modal-action="confirm">${data.confirmKey ? __(data.confirmKey) : __('btn_confirm')}</button>
+            </div>
+        `
+    },
+
     promptChangeRole: {
         build: () => `
             <div class="pill-container"><div class="drag-handle"></div></div>

@@ -189,7 +189,15 @@ export class CanvasCardInteractions {
                     inputPlaceholder: 'CONFIRMAR',
                     expectedInput: 'CONFIRMAR'
                 });
-                if (confirmRes && confirmRes.confirmed) confirmed = true;
+                
+                if (confirmRes && confirmRes.confirmed) {
+                    const userInput = confirmRes.data && confirmRes.data.confirm_input ? confirmRes.data.confirm_input.trim().toUpperCase() : '';
+                    if (userInput === 'CONFIRMAR') {
+                        confirmed = true;
+                    } else {
+                        showMessage('Debes escribir CONFIRMAR exactamente', 'error');
+                    }
+                }
             } catch(e) {
                 // Modal failed or not found, fallback to prompt
                 const ans = prompt("Escribe CONFIRMAR para degradar el lienzo a básico. Esta acción es IRREVERSIBLE.");

@@ -233,6 +233,53 @@ class CanvasesCreateController {
                 document.querySelector('[data-ref="scope-section-city"]')?.classList.remove('disabled');
             }
         }
+
+        this.updateSizesAvailability(type);
+    }
+
+    updateSizesAvailability(scopeType) {
+        const wrapper = document.querySelector('[data-ref="canvas-create-wrapper"]');
+        if (!wrapper) return;
+        
+        const userTier = parseInt(wrapper.getAttribute('data-user-tier') || '0', 10);
+        const sizeLinks = document.querySelectorAll('.component-menu-link[data-type="size"]');
+        
+        sizeLinks.forEach(link => {
+            const requiredTier = parseInt(link.getAttribute('data-tier') || '0', 10);
+            const isAllowed = (scopeType !== 'personal') || (userTier >= requiredTier);
+            
+            if (isAllowed) {
+                link.classList.remove('disabled-interactive');
+                link.setAttribute('data-action', 'selectValue');
+                link.removeAttribute('title');
+                link.style.opacity = '1';
+                const lockIcon = link.querySelector('[data-ref="lock-icon"]');
+                if (lockIcon) lockIcon.style.display = 'none';
+            } else {
+                link.classList.add('disabled-interactive');
+                link.setAttribute('data-action', '');
+                link.setAttribute('title', window.__('tooltip_upgrade_required') || 'Mejora requerida');
+                link.style.opacity = '0.6';
+                
+                let lockIcon = link.querySelector('[data-ref="lock-icon"]');
+                if (!lockIcon) {
+                    const textContainer = link.querySelector('.component-menu-link-text');
+                    if (textContainer) {
+                        textContainer.insertAdjacentHTML('beforeend', '<span class="material-symbols-rounded" data-ref="lock-icon" style="font-size: 14px; margin-left: 6px; color: #ff8c00;">lock</span>');
+                    }
+                } else {
+                    lockIcon.style.display = 'inline-block';
+                }
+            }
+        });
+
+        const activeSize = document.querySelector('.component-menu-link[data-type="size"].active');
+        if (activeSize && activeSize.classList.contains('disabled-interactive')) {
+            const firstAllowed = document.querySelector('.component-menu-link[data-type="size"]:not(.disabled-interactive)');
+            if (firstAllowed) {
+                this.selectDropdownValue(firstAllowed);
+            }
+        }
     }
 
     async loadCountries() {

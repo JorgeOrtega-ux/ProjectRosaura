@@ -21,7 +21,7 @@ $defaultSizeKey = '64x64';
 $defaultSizeData = $canvasSizesList[$defaultSizeKey] ?? reset($canvasSizesList);
 $defaultSizeKey = $defaultSizeData ? key($canvasSizesList) : '64x64';
 ?>
-<div class="view-content" data-ref="canvas-create-wrapper">
+<div class="view-content" data-ref="canvas-create-wrapper" data-user-tier="<?php echo $tier; ?>">
     
     <div class="component-top">
         <div class="component-top-left">
@@ -268,13 +268,13 @@ $defaultSizeKey = $defaultSizeData ? key($canvasSizesList) : '64x64';
                                         <div class="component-menu-list component-menu-list--scrollable">
                                             <?php foreach ($canvasSizesList as $val => $data): 
                                                 $requiredTier = $data['tier'] ?? 0;
-                                                $isAllowed = $canCreateOfficial || ($tier >= $requiredTier);
+                                                $isAllowed = ($tier >= $requiredTier);
                                                 $disabledClass = $isAllowed ? '' : 'disabled-interactive';
                                                 $action = $isAllowed ? 'selectValue' : '';
-                                                $lockIcon = $isAllowed ? '' : '<span class="material-symbols-rounded" style="font-size: 14px; margin-left: 6px; color: #ff8c00;">lock</span>';
+                                                $lockIcon = $isAllowed ? '' : '<span class="material-symbols-rounded" style="font-size: 14px; margin-left: 6px; color: #ff8c00;" data-ref="lock-icon">lock</span>';
                                                 $activeClass = ($val === $defaultSizeKey && $isAllowed) ? 'active' : '';
                                             ?>
-                                            <div class="component-menu-link <?php echo $activeClass; ?> <?php echo $disabledClass; ?>" data-action="<?php echo $action; ?>" data-type="size" data-value="<?php echo htmlspecialchars($val); ?>" data-label="<?php echo htmlspecialchars($data['label']); ?>" data-icon="<?php echo htmlspecialchars($data['icon']); ?>" <?php if(!$isAllowed) echo 'title="' . __('tooltip_upgrade_required') . '" style="opacity: 0.6;"'; ?>>
+                                            <div class="component-menu-link <?php echo $activeClass; ?> <?php echo $disabledClass; ?>" data-action="<?php echo $action; ?>" data-type="size" data-value="<?php echo htmlspecialchars($val); ?>" data-tier="<?php echo $requiredTier; ?>" data-label="<?php echo htmlspecialchars($data['label']); ?>" data-icon="<?php echo htmlspecialchars($data['icon']); ?>" <?php if(!$isAllowed) echo 'title="' . __('tooltip_upgrade_required') . '" style="opacity: 0.6;"'; ?>>
                                                 <div class="component-menu-link-icon"><span class="material-symbols-rounded"><?php echo htmlspecialchars($data['icon']); ?></span></div>
                                                 <div class="component-menu-link-text" style="display:flex; align-items:center;">
                                                     <span><?php echo htmlspecialchars($data['label']); ?></span>

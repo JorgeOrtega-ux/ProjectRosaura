@@ -35,7 +35,7 @@ interface CanvasRepositoryInterface {
     public function updateMemberRole(int $canvasId, int $userId, string $role): bool;
     
     // EXPANSIÓN EN VIVO
-    public function updateSize(int $canvasId, int $newSize): bool;
+    public function updateSize(int $canvasId, string $newSize): bool;
 
     // --- NUEVOS MÉTODOS PARA LIMITES DE PLANES PREMIUM ---
     public function countCanvasMembers(int $canvasId): int;

@@ -345,7 +345,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
         return $success;
     }
 
-    public function updateSize(int $canvasId, int $newSize): bool {
+    public function updateSize(int $canvasId, string $newSize): bool {
         $sql = "UPDATE " . DB::TBL_CANVASES . " SET size = :size WHERE id = :id";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([

@@ -904,7 +904,7 @@ class CanvasServices {
             }
 
             return ['success' => true, 'message' => 'Lienzo degradado al plan básico exitosamente.'];
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             Logger::error('Error downgrading canvas to basic.', ['user_id' => $userId, 'uuid' => $uuid, 'error' => $e->getMessage()]);
             return ['success' => false, 'message' => __('err_database')];
         }
