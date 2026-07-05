@@ -126,6 +126,18 @@ class CanvasController extends BaseController {
         }
     }
 
+    public function get_mine($input) {
+        try {
+            $userId = $this->session->isLoggedIn() ? $this->session->getActiveAccountId() : null;
+            $limit = isset($input['limit']) ? (int)$input['limit'] : 50;
+            
+            $result = $this->canvasServices->getMine($userId, $limit);
+            return $this->respond($result);
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
     public function get($input) {
         try {
             $userId = $this->session->isLoggedIn() ? $this->session->getActiveAccountId() : null;

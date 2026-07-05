@@ -149,6 +149,37 @@ class CanvasRepository implements CanvasRepositoryInterface {
         return array_map([$this, 'appendSnapshotUrl'], $results);
     }
 
+    public function getUserAndJoinedCanvases(int $userId, int $limit = 50): array {
+        $sql = "SELECT c.id, c.uuid, c.name, c.description, c.privacy, c.requires_approval, c.size, c.palette_id, c.max_participants, c.cooldown_pixels_batch, c.cooldown_seconds, c.created_at, c.scope_type, c.owner_id,
+                       CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
+                       (SELECT COUNT(*) FROM " . DB::TBL_CANVAS_MEMBERS . " WHERE canvas_id = c.id) as members_count,
+                       CASE WHEN c.owner_id = :uid1 THEN 1 ELSE 0 END as is_owner
+                FROM " . DB::TBL_CANVASES . " c
+                LEFT JOIN canvas_favorites f ON c.id = f.canvas_id AND f.user_id = :uid2
+                WHERE c.owner_id = :uid3 
+                   OR EXISTS (SELECT 1 FROM " . DB::TBL_CANVAS_MEMBERS . " cm WHERE cm.canvas_id = c.id AND cm.user_id = :uid4)
+                ORDER BY c.id DESC 
+                LIMIT :limit";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(':uid1', $userId, PDO::PARAM_INT);
+        $stmt->bindValue(':uid2', $userId, PDO::PARAM_INT);
+        $stmt->bindValue(':uid3', $userId, PDO::PARAM_INT);
+        $stmt->bindValue(':uid4', $userId, PDO::PARAM_INT);
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        
+        $results = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        
+        $results = array_map(function($canvas) {
+            $canvas['is_favorite'] = (bool)$canvas['is_favorite'];
+            $canvas['is_owner'] = (bool)$canvas['is_owner'];
+            return $canvas;
+        }, $results);
+
+        return array_map([$this, 'appendSnapshotUrl'], $results);
+    }
+
     public function getUserCanvasesPaginated(int $ownerId, int $limit, int $offset): array {
         $sql = "SELECT c.id, c.uuid, c.name, c.description, c.privacy, c.requires_approval, c.size, c.palette_id, c.max_participants, c.cooldown_pixels_batch, c.cooldown_seconds, c.created_at, c.scope_type,
                        CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,

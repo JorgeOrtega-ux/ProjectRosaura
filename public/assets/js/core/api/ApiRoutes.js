@@ -85,6 +85,7 @@ export const ApiRoutes = {
     Canvases: {
         GetPublic: 'canvases.get_public',
         GetOfficial: 'canvases.get_official',
+        GetMine: 'canvases.get_mine',
         Get: 'canvases.get',
         Create: 'canvases.create',
         Update: 'canvases.update',

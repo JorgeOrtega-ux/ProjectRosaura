@@ -349,6 +349,12 @@ return [
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_get_public', 'max' => 30, 'time' => RL::TIME_1, 'identifier' => RL::ID_IP]]
     ],
 
+    'canvases.get_mine' => [
+        'controller' => 'App\Api\Controllers\CanvasController',
+        'action' => 'get_mine',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_get_mine', 'max' => 30, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
+    ],
+
     // NUEVA RUTA OFICIAL
     'canvases.get_official' => [
         'controller' => 'App\Api\Controllers\CanvasController',

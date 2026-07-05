@@ -152,6 +152,38 @@ class CanvasServices {
         }
     }
 
+    public function getMine(?int $userId, int $limit = 50): array {
+        if (!$userId) return ['success' => false, 'message' => __('err_unauthorized')];
+        try {
+            $canvases = $this->canvasRepository->getUserAndJoinedCanvases($userId, $limit);
+            
+            // Format canvases similar to getPublicCanvases
+            $formattedCanvases = array_map(function($canvas) use ($userId) {
+                return [
+                    'id' => $canvas['id'],
+                    'uuid' => $canvas['uuid'],
+                    'name' => $canvas['name'],
+                    'description' => $canvas['description'],
+                    'privacy' => $canvas['privacy'],
+                    'size' => $canvas['size'],
+                    'max_participants' => $canvas['max_participants'],
+                    'created_at' => $canvas['created_at'],
+                    'scope_type' => $canvas['scope_type'],
+                    'is_favorite' => $canvas['is_favorite'],
+                    'is_owner' => $canvas['is_owner'],
+                    'online_players' => 0, 
+                    'members_count' => $canvas['members_count'],
+                    'snapshot_url' => $canvas['snapshot_url'] ?? null
+                ];
+            }, $canvases);
+            
+            return ['success' => true, 'data' => $formattedCanvases];
+        } catch (\Exception $e) {
+            Logger::error('Error getting user canvases.', ['error' => $e->getMessage()]);
+            return ['success' => false, 'message' => $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine()];
+        }
+    }
+
     public function getCanvas(?int $userId, int $canvasId, bool $canManageOfficial = false): array {
         try {
             $canvas = $this->canvasRepository->getById($canvasId);

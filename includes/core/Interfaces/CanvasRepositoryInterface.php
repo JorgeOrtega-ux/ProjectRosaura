@@ -9,6 +9,7 @@ interface CanvasRepositoryInterface {
     // Métodos para Home / Explora
     public function getPublicCanvases(int $limit = 20, ?int $currentUserId = null): array;
     public function getOfficialCanvases(?int $currentUserId = null): array;
+    public function getUserAndJoinedCanvases(int $userId, int $limit = 50): array;
 
     // Métodos para Manage
     public function getUserCanvasesPaginated(int $ownerId, int $limit, int $offset): array;

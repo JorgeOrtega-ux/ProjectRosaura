@@ -64,41 +64,98 @@ class HomeController {
     }
 
     async loadCanvases() {
-        const [publicRes, officialRes] = await Promise.all([
-            this.api.post(ApiRoutes.Canvases.GetPublic, { limit: 50 }, this.abortController.signal).catch(() => null),
-            this.api.post(ApiRoutes.Canvases.GetOfficial, {}, this.abortController.signal).catch(() => null)
-        ]);
-        
-        if (this.abortController.signal.aborted) return;
-        
+        const isExplore = window.location.pathname.includes('/explore');
+        const isHome = !isExplore && (window.location.pathname === '/' || window.location.pathname.includes('/home'));
+        const isLoggedIn = window.activeUserId !== null;
+
+        // HOME SIN SESIÓN
+        if (isHome && !isLoggedIn) {
+            const msgEmpty = window.__ ? window.__('msg_home_guest') || '¡Explora los increíbles lienzos que la comunidad ha creado!' : '¡Explora los increíbles lienzos que la comunidad ha creado!';
+            const emptyHtml = `
+                <div class="component-empty-state" data-ref="empty-state-rendered" style="padding: 40px 20px;">
+                    <span class="material-symbols-rounded component-empty-state-icon">explore</span>
+                    <p class="component-empty-state-text" style="font-size: 1.1rem;">${msgEmpty}</p>
+                    <div style="margin-top: 24px;">
+                        <a href="${this.basePath}/explore" class="component-button component-button--brand" data-nav="${this.basePath}/explore">
+                            <span class="material-symbols-rounded">rocket_launch</span> Explorar Ahora
+                        </a>
+                    </div>
+                </div>
+            `;
+            this.contentArea.innerHTML = emptyHtml;
+            this.reinitializeUI();
+            return;
+        }
+
         let allCanvases = [];
         let isError = false;
 
-        // Integrar los oficiales
-        if (officialRes && officialRes.success) {
-            allCanvases = allCanvases.concat(officialRes.data || []);
-        } else if (!officialRes) {
-            isError = true;
-        }
+        if (isHome && isLoggedIn) {
+            // HOME CON SESIÓN: Cargar "Mis Lienzos" (Propios y unidos)
+            const res = await this.api.post(ApiRoutes.Canvases.GetMine, { limit: 50 }, this.abortController.signal).catch(() => null);
+            if (this.abortController.signal.aborted) return;
+            
+            if (res && res.success) {
+                allCanvases = res.data || [];
+            } else {
+                isError = true;
+            }
 
-        // Integrar los públicos, evitando duplicados
-        if (publicRes && publicRes.success) {
-            const existingIds = new Set(allCanvases.map(c => c.id));
-            const newPublics = (publicRes.data || []).filter(c => !existingIds.has(c.id));
-            allCanvases = allCanvases.concat(newPublics);
-        } else if (!publicRes) {
-            isError = true;
-        }
-
-        const msgEmpty = window.__ ? window.__('empty_home_gallery') : 'Aún no hay lienzos disponibles para explorar.';
-
-        // Lógica de inyección dinámica mutua
-        if (allCanvases.length > 0) {
-            this.renderCanvases(this.contentArea, allCanvases);
-        } else if (isError) {
-            this.showError(this.contentArea, window.__ ? window.__('err_load_public_canvases') : 'Error al cargar lienzos. El servidor no responde.');
+            if (allCanvases.length > 0) {
+                this.renderCanvases(this.contentArea, allCanvases);
+            } else if (isError) {
+                this.showError(this.contentArea, (res && res.message) ? res.message : (window.__ ? window.__('err_load_canvases') || 'Error al cargar lienzos.' : 'Error al cargar lienzos.'));
+            } else {
+                const msgEmpty = window.__ ? window.__('msg_home_empty') || 'Cuando crees un lienzo o te unas a uno, aparecerá aquí.' : 'Cuando crees un lienzo o te unas a uno, aparecerá aquí.';
+                const emptyHtml = `
+                    <div class="component-empty-state" data-ref="empty-state-rendered" style="padding: 40px 20px;">
+                        <span class="material-symbols-rounded component-empty-state-icon">dashboard_customize</span>
+                        <p class="component-empty-state-text" style="font-size: 1.1rem; max-width: 400px; margin: 0 auto;">${msgEmpty}</p>
+                        <div style="margin-top: 24px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+                            <a href="${this.basePath}/canvases/manage" class="component-button component-button--brand" data-nav="${this.basePath}/canvases/manage">
+                                <span class="material-symbols-rounded">add</span> Crear
+                            </a>
+                            <a href="${this.basePath}/explore" class="component-button component-button--dark" data-nav="${this.basePath}/explore">
+                                <span class="material-symbols-rounded">explore</span> Explorar
+                            </a>
+                        </div>
+                    </div>
+                `;
+                this.contentArea.innerHTML = emptyHtml;
+            }
         } else {
-            this.contentArea.innerHTML = CardTemplates.emptyState(msgEmpty, 'collections');
+            // EXPLORE (O Home que por alguna razón llegó acá)
+            const [publicRes, officialRes] = await Promise.all([
+                this.api.post(ApiRoutes.Canvases.GetPublic, { limit: 50 }, this.abortController.signal).catch(() => null),
+                this.api.post(ApiRoutes.Canvases.GetOfficial, {}, this.abortController.signal).catch(() => null)
+            ]);
+            
+            if (this.abortController.signal.aborted) return;
+
+            // Integrar los oficiales
+            if (officialRes && officialRes.success) {
+                allCanvases = allCanvases.concat(officialRes.data || []);
+            } else if (!officialRes) {
+                isError = true;
+            }
+
+            // Integrar los públicos, evitando duplicados
+            if (publicRes && publicRes.success) {
+                const existingIds = new Set(allCanvases.map(c => c.id));
+                const newPublics = (publicRes.data || []).filter(c => !existingIds.has(c.id));
+                allCanvases = allCanvases.concat(newPublics);
+            } else if (!publicRes) {
+                isError = true;
+            }
+
+            if (allCanvases.length > 0) {
+                this.renderCanvases(this.contentArea, allCanvases);
+            } else if (isError) {
+                this.showError(this.contentArea, window.__ ? window.__('err_load_public_canvases') || 'Error al cargar lienzos. El servidor no responde.' : 'Error al cargar lienzos. El servidor no responde.');
+            } else {
+                const msgEmpty = window.__ ? window.__('empty_home_gallery') || 'Aún no hay lienzos disponibles para explorar.' : 'Aún no hay lienzos disponibles para explorar.';
+                this.contentArea.innerHTML = CardTemplates.emptyState(msgEmpty, 'collections');
+            }
         }
 
         this.reinitializeUI();
