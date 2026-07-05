@@ -21,11 +21,6 @@ if (session_status() === PHP_SESSION_NONE) session_start();
             </div>
         </div>
 
-        <!-- Contenedor para la Suscripción -->
-        <div class="component-bottom" style="padding: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 24px; margin-bottom: 24px;" data-ref="subscription-content-area">
-            <!-- JS inyectará la tarjeta de suscripción aquí -->
-        </div>
-
         <!-- Se aplica la caja dinámica como contenedor exclusivo -->
         <div class="component-bottom" style="padding: 0;" data-ref="dynamic-content-area">
             <!-- JS inyectará el grid de tarjetas o el component-empty-state aquí -->

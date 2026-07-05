@@ -34,6 +34,7 @@ export const RouteModulesMap = {
     '/settings/your-profile': { path: './modules/settings/ProfileController.js', className: 'ProfileController', skeletonType: 'layout-settings-profile' },
     '/settings/security': { path: './modules/settings/SecurityController.js', className: 'SecurityController', skeletonType: 'layout-settings-generic' },
     '/settings/change-password': { path: './modules/settings/SecurityController.js', className: 'SecurityController', skeletonType: 'layout-form-constrained' },
+    '/settings/subscription': { path: './modules/settings/SubscriptionController.js', className: 'SubscriptionController', skeletonType: 'layout-dashboard' },
     '/settings/billing': { path: './modules/settings/BillingController.js', className: 'BillingController', skeletonType: 'layout-dashboard' },
     '/settings/purchase-history': { path: './modules/settings/PurchaseHistoryController.js', className: 'PurchaseHistoryController', skeletonType: 'layout-table' },
     '/settings/2fa': { path: './modules/settings/TwoFactorController.js', className: 'TwoFactorController', skeletonType: 'layout-settings-generic' },

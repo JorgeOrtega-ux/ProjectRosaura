@@ -219,52 +219,67 @@ export const CardTemplates = {
         const tierName = data.tier === 2 ? 'Advanced' : (data.tier === 1 ? 'Pro' : 'Free');
         const status = escapeHTML(data.status || 'inactive');
         const cancelAtEnd = data.cancel_at_period_end;
-        let dateLabel = cancelAtEnd ? 'Finaliza el:' : 'Próxima renovación:';
+        let dateLabel = cancelAtEnd ? 'Finaliza el:' : 'Próximo cobro:';
         
         let dateVal = '-';
         if (data.current_period_end) {
-            const dateObj = new Date(data.current_period_end * 1000);
-            dateVal = dateObj.toLocaleDateString();
+            let dateObj;
+            if (typeof data.current_period_end === 'string' && isNaN(Number(data.current_period_end))) {
+                dateObj = new Date(data.current_period_end.replace(' ', 'T'));
+            } else {
+                dateObj = new Date(Number(data.current_period_end) * 1000);
+            }
+            
+            if (!isNaN(dateObj.getTime())) {
+                dateVal = dateObj.toLocaleDateString();
+            }
         }
 
-        let statusClass = 'component-text-notice--success';
-        let statusText = 'Activa';
-        
+        let statusText = 'Activo';
         if (status !== 'active') {
-            statusClass = 'component-text-notice--error';
-            statusText = status === 'incomplete' ? 'Incompleta' : 'Inactiva';
+            statusText = status === 'incomplete' ? 'Incompleto' : 'Inactivo';
         } else if (cancelAtEnd) {
-            statusClass = 'component-text-notice--warning';
             statusText = 'Se cancelará pronto';
         }
 
-        const actionText = cancelAtEnd ? (window.__ ? window.__('btn_reactivate_sub') || 'Reactivar Suscripción' : 'Reactivar Suscripción') : (window.__ ? window.__('btn_cancel_renew') || 'Cancelar Renovación' : 'Cancelar Renovación');
-        const actionIcon = cancelAtEnd ? 'autorenew' : 'cancel';
+        const actionText = cancelAtEnd ? (window.__ ? window.__('btn_reactivate_sub') || 'Reactivar renovación' : 'Reactivar renovación') : (window.__ ? window.__('btn_cancel_renew') || 'Cancelar renovación' : 'Cancelar renovación');
         const btnClass = cancelAtEnd ? 'component-button--brand' : 'component-button--dark';
-        const changePlanText = window.__ ? window.__('btn_change_plan') || 'Cambiar Plan' : 'Cambiar Plan';
+        const changePlanText = window.__ ? window.__('btn_change_plan') || 'Cambiar plan' : 'Cambiar plan';
+        
+        let renewText = cancelAtEnd ? 'Cancelada' : 'Activa';
         
         return `
-            <div style="padding: 24px; display: flex; flex-direction: column; gap: 16px; border: 1px solid var(--border-color); border-radius: 12px; background: var(--bg-secondary);">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
-                    <div>
-                        <h3 style="margin: 0; font-size: 1.25rem; font-weight: 600; color: var(--text-primary);">Plan ${tierName}</h3>
-                        <p style="margin: 4px 0 0; color: var(--text-secondary); font-size: 0.9rem;">
-                            Estado: <span class="${statusClass}" style="font-weight: 500;">${statusText}</span>
-                        </p>
+            <div class="component-group-item component-group-item--wrap">
+                <div class="component-card__content">
+                    <div class="component-card__icon-container component-card__icon-container--bordered">
+                        <span class="material-symbols-rounded">stars</span>
                     </div>
-                    <div style="text-align: right;">
-                        <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary);">${dateLabel}</p>
-                        <p style="margin: 4px 0 0; font-weight: 600; font-size: 1.1rem; color: var(--text-primary);">${dateVal}</p>
+                    <div class="component-card__text">
+                        <h2 class="component-card__title">Plan actual</h2>
+                        <p class="component-card__description">${tierName} (${statusText})</p>
                     </div>
                 </div>
-                
-                <div style="display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid var(--border-color); padding-top: 16px; margin-top: auto;">
-                    <button type="button" class="component-button component-button--dark component-button--h40" data-nav="/premium">
-                        <span class="material-symbols-rounded">upgrade</span>
+                <div class="component-card__actions component-card__actions--end">
+                    <button type="button" class="component-button component-button--h36" data-nav="/premium">
                         ${changePlanText}
                     </button>
-                    <button type="button" class="component-button ${btnClass} component-button--h40" data-action="toggleAutoRenew" data-cancel-state="${!cancelAtEnd}">
-                        <span class="material-symbols-rounded">${actionIcon}</span>
+                </div>
+            </div>
+
+            <hr class="component-divider">
+
+            <div class="component-group-item component-group-item--wrap">
+                <div class="component-card__content">
+                    <div class="component-card__icon-container component-card__icon-container--bordered">
+                        <span class="material-symbols-rounded">event_repeat</span>
+                    </div>
+                    <div class="component-card__text">
+                        <h2 class="component-card__title">Renovación automática</h2>
+                        <p class="component-card__description">${renewText} (${dateLabel} ${dateVal})</p>
+                    </div>
+                </div>
+                <div class="component-card__actions component-card__actions--end">
+                    <button type="button" class="component-button component-button--h36 ${btnClass}" data-action="toggleAutoRenew" data-cancel-state="${!cancelAtEnd}">
                         ${actionText}
                     </button>
                 </div>

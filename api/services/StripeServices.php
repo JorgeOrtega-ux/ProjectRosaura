@@ -352,6 +352,13 @@ class StripeServices {
             }
         }
 
+        // Fallback local: Si no hay fecha de fin (ej. webhook no configurado en entorno de desarrollo)
+        if ($subscription && empty($subscription['current_period_end'])) {
+            $createdAt = strtotime($subscription['created_at'] ?? 'now');
+            $period = (isset($subscription['billing_period']) && $subscription['billing_period'] === 'yearly') ? '+1 year' : '+1 month';
+            $subscription['current_period_end'] = date('Y-m-d H:i:s', strtotime($period, $createdAt));
+        }
+
         return [
             'success' => true,
             'data' => $subscription

@@ -158,6 +158,14 @@ $isMainArea = !$isAdminArea && !$isSettingsArea && !$isSitePolicyArea;
         <?php if ($isLoggedIn): ?>
         <div class="component-menu-bottom">
             <div class="component-menu-list">
+                <div class="component-menu-link nav-item" data-nav="/settings/subscription">
+                    <div class="component-menu-link-icon">
+                        <span class="material-symbols-rounded">stars</span>
+                    </div>
+                    <div class="component-menu-link-text">
+                        <span><?php echo __('menu_subscription'); ?></span>
+                    </div>
+                </div>
                 <div class="component-menu-link nav-item" data-nav="/settings/billing">
                     <div class="component-menu-link-icon">
                         <span class="material-symbols-rounded">credit_card</span>
