@@ -308,6 +308,15 @@ class CanvasServices {
                 if ($paletteId !== 'default' && !SubscriptionPlanConstants::hasFeature($tier, 'custom_palettes')) {
                     $paletteId = 'default';
                 }
+
+                $allSizes = \App\Core\Helpers\Utils::getCanvasSizes();
+                if (!isset($allSizes[$size])) {
+                    $size = '64x64';
+                }
+                $requiredTier = $allSizes[$size]['tier'] ?? 0;
+                if ($tier < $requiredTier) {
+                    return ['success' => false, 'message' => 'Tu nivel de suscripción actual no permite crear lienzos de este tamaño. Mejora tu plan.'];
+                }
             }
 
             $uuid = Utils::generateUUID();
@@ -463,6 +472,21 @@ class CanvasServices {
                 return ['success' => false, 'message' => 'El lienzo ya tiene esta resolución.'];
             }
 
+            $allSizes = \App\Core\Helpers\Utils::getCanvasSizes();
+            if (!isset($allSizes[$newSize])) {
+                return ['success' => false, 'message' => 'Tamaño de lienzo no válido.'];
+            }
+
+            if ($canvas['owner_id'] !== null) {
+                $owner = $this->userRepository->findById($canvas['owner_id']);
+                $tier = $owner['subscription_tier'] ?? 0;
+                $requiredTier = $allSizes[$newSize]['tier'] ?? 0;
+                
+                if ($tier < $requiredTier) {
+                    return ['success' => false, 'message' => 'El nivel de suscripción del propietario actual no permite expandir el lienzo a ese tamaño.'];
+                }
+            }
+
             if (class_exists(RedisCache::class)) {
                 $redisInstance = new RedisCache();
                 $redis = $redisInstance->getClient();
@@ -538,8 +562,18 @@ class CanvasServices {
             $nextResizeAt = null;
             
             // NUEVA VALIDACIÓN: Usando el Single Source of Truth
-            $validSizes = array_keys(\App\Core\Helpers\Utils::getCanvasSizes());
-            $targetSize = in_array($data['target_size'] ?? '64x64', $validSizes) ? $data['target_size'] : '64x64';
+            $allSizes = \App\Core\Helpers\Utils::getCanvasSizes();
+            $targetSize = isset($allSizes[$data['target_size'] ?? '']) ? $data['target_size'] : '64x64';
+            
+            if ($canvas['owner_id'] !== null) {
+                $owner = $this->userRepository->findById($canvas['owner_id']);
+                $tier = $owner['subscription_tier'] ?? 0;
+                $requiredTier = $allSizes[$targetSize]['tier'] ?? 0;
+                
+                if ($tier < $requiredTier) {
+                    return ['success' => false, 'message' => 'El nivel de suscripción del propietario actual no permite expandir el lienzo a ese tamaño.'];
+                }
+            }
             
             if ($isActive) {
                 if (empty($data['next_resize_at'])) {

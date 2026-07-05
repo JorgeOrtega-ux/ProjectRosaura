@@ -63,6 +63,16 @@ if ($row) {
     $resizeSettings['timer_action'] = $row['timer_action'] ?: 'restart';
 }
 
+$ownerTier = 0;
+if ($canvas['owner_id'] !== null) {
+    $stmtTier = $pdo->prepare('SELECT subscription_tier FROM ' . DB::TBL_USERS . ' WHERE id = :uid LIMIT 1');
+    $stmtTier->execute(['uid' => $canvas['owner_id']]);
+    $uRow = $stmtTier->fetch(PDO::FETCH_ASSOC);
+    if ($uRow) {
+        $ownerTier = (int)$uRow['subscription_tier'];
+    }
+}
+
 $sizesList = Utils::getCanvasSizes();
 $currentSizeRaw = (string)$canvas['size'];
 
@@ -186,15 +196,26 @@ $showScheduledShrinkWarning = $scheduledWidth < $currWidth;
                                     <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
                                         <div class="pill-container"><div class="drag-handle"></div></div>
                                         <div class="component-menu-list component-menu-list--scrollable">
-                                            <?php foreach ($sizesList as $val => $data): ?>
-                                            <div class="component-menu-link <?php echo (string)$scheduledSize === (string)$val ? 'active' : ''; ?>"
-                                                 data-action="selectValue"
+                                            <?php foreach ($sizesList as $val => $data): 
+                                                $requiredTier = $data['tier'] ?? 0;
+                                                $isAllowed = $canManageOfficial || ($ownerTier >= $requiredTier);
+                                                $disabledClass = $isAllowed ? '' : 'disabled-interactive';
+                                                $action = $isAllowed ? 'selectValue' : '';
+                                                $lockIcon = $isAllowed ? '' : '<span class="material-symbols-rounded" style="font-size: 14px; margin-left: 6px; color: #ff8c00;">lock</span>';
+                                                $activeClass = ((string)$scheduledSize === (string)$val && $isAllowed) ? 'active' : '';
+                                            ?>
+                                            <div class="component-menu-link <?php echo $activeClass; ?> <?php echo $disabledClass; ?>"
+                                                 data-action="<?php echo $action; ?>"
                                                  data-type="size_scheduled"
                                                  data-value="<?php echo htmlspecialchars((string)$val); ?>"
                                                  data-label="<?php echo htmlspecialchars($data['label']); ?>"
-                                                 data-icon="<?php echo htmlspecialchars($data['icon']); ?>">
+                                                 data-icon="<?php echo htmlspecialchars($data['icon']); ?>"
+                                                 <?php if(!$isAllowed) echo 'title="' . __('tooltip_upgrade_required') . '" style="opacity: 0.6;"'; ?>>
                                                 <div class="component-menu-link-icon"><span class="material-symbols-rounded"><?php echo htmlspecialchars($data['icon']); ?></span></div>
-                                                <div class="component-menu-link-text"><span><?php echo htmlspecialchars($data['label']); ?></span></div>
+                                                <div class="component-menu-link-text" style="display:flex; align-items:center;">
+                                                    <span><?php echo htmlspecialchars($data['label']); ?></span>
+                                                    <?php echo $lockIcon; ?>
+                                                </div>
                                             </div>
                                             <?php endforeach; ?>
                                         </div>
@@ -356,15 +377,26 @@ $showScheduledShrinkWarning = $scheduledWidth < $currWidth;
                                 <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
                                     <div class="pill-container"><div class="drag-handle"></div></div>
                                     <div class="component-menu-list component-menu-list--scrollable">
-                                        <?php foreach ($sizesList as $val => $data): ?>
-                                        <div class="component-menu-link <?php echo (string)$instantSize === (string)$val ? 'active' : ''; ?>"
-                                             data-action="selectValue"
+                                        <?php foreach ($sizesList as $val => $data): 
+                                            $requiredTier = $data['tier'] ?? 0;
+                                            $isAllowed = $canManageOfficial || ($ownerTier >= $requiredTier);
+                                            $disabledClass = $isAllowed ? '' : 'disabled-interactive';
+                                            $action = $isAllowed ? 'selectValue' : '';
+                                            $lockIcon = $isAllowed ? '' : '<span class="material-symbols-rounded" style="font-size: 14px; margin-left: 6px; color: #ff8c00;">lock</span>';
+                                            $activeClass = ((string)$instantSize === (string)$val && $isAllowed) ? 'active' : '';
+                                        ?>
+                                        <div class="component-menu-link <?php echo $activeClass; ?> <?php echo $disabledClass; ?>"
+                                             data-action="<?php echo $action; ?>"
                                              data-type="size_instant"
                                              data-value="<?php echo htmlspecialchars((string)$val); ?>"
                                              data-label="<?php echo htmlspecialchars($data['label']); ?>"
-                                             data-icon="<?php echo htmlspecialchars($data['icon']); ?>">
+                                             data-icon="<?php echo htmlspecialchars($data['icon']); ?>"
+                                             <?php if(!$isAllowed) echo 'title="' . __('tooltip_upgrade_required') . '" style="opacity: 0.6;"'; ?>>
                                             <div class="component-menu-link-icon"><span class="material-symbols-rounded"><?php echo htmlspecialchars($data['icon']); ?></span></div>
-                                            <div class="component-menu-link-text"><span><?php echo htmlspecialchars($data['label']); ?></span></div>
+                                            <div class="component-menu-link-text" style="display:flex; align-items:center;">
+                                                <span><?php echo htmlspecialchars($data['label']); ?></span>
+                                                <?php echo $lockIcon; ?>
+                                            </div>
                                         </div>
                                         <?php endforeach; ?>
                                     </div>
