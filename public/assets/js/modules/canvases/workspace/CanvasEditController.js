@@ -343,110 +343,11 @@ class CanvasEditController {
         }
     }
 
-    openCustomPaletteCreator() {
-        const creatorEl = this.container.querySelector('[data-ref="custom-palette-creator"]');
-        if (creatorEl) {
-            creatorEl.classList.remove('disabled');
-            const colorsContainer = this.container.querySelector('[data-ref="custom-palette-colors"]');
-            if (colorsContainer) colorsContainer.innerHTML = '';
-            for (let i = 0; i < 4; i++) this.addCustomPaletteColor();
-            const inputName = this.container.querySelector('[data-ref="input-custom-palette-name"]');
-            if (inputName) inputName.value = '';
-        }
-    }
-
-    closeCustomPaletteCreator() {
-        const creatorEl = this.container.querySelector('[data-ref="custom-palette-creator"]');
-        if (creatorEl) creatorEl.classList.add('disabled');
-    }
-
-    addCustomPaletteColor() {
-        const colorsContainer = this.container.querySelector('[data-ref="custom-palette-colors"]');
-        if (!colorsContainer) return;
-        if (colorsContainer.children.length >= 36) {
-            showMessage(window.__ ? window.__('msg_max_colors') || 'Máximo 36 colores permitidos.' : 'Máximo 36 colores permitidos.', 'error');
-            return;
-        }
-        
-        const div = document.createElement('div');
-        div.className = 'custom-palette-color-item component-input-group component-input-group--h34';
-        div.style.width = 'calc(50% - 4px)';
-        div.style.display = 'flex';
-        div.style.alignItems = 'center';
-        
-        div.innerHTML = `
-            <input type="color" class="component-input-field" style="width:40px; padding:0; border:none; cursor:pointer;" value="#000000">
-            <input type="text" class="component-input-field" style="flex:1; border-left:none; border-right:none;" value="#000000" maxlength="7">
-            <button type="button" class="component-button component-button--icon" data-action="removeCustomPaletteColor">
-                <span class="material-symbols-rounded">close</span>
-            </button>
-        `;
-        
-        const colorInput = div.querySelector('input[type="color"]');
-        const textInput = div.querySelector('input[type="text"]');
-        
-        colorInput.addEventListener('input', (e) => { textInput.value = e.target.value.toUpperCase(); });
-        textInput.addEventListener('input', (e) => { 
-            let val = e.target.value;
-            if (val && !val.startsWith('#')) val = '#' + val;
-            e.target.value = val.toUpperCase();
-            if (/^#[0-9A-F]{6}$/i.test(val)) colorInput.value = val;
-        });
-        
-        colorsContainer.appendChild(div);
-    }
-
-    removeCustomPaletteColor(btn) {
-        const container = btn.closest('.custom-palette-color-item');
-        if (container) container.remove();
-    }
-
-    async saveCustomPalette(btn) {
-        const inputName = this.container.querySelector('[data-ref="input-custom-palette-name"]');
-        const colorsContainer = this.container.querySelector('[data-ref="custom-palette-colors"]');
-        
-        const name = inputName ? inputName.value.trim() : '';
-        if (!name) {
-            showMessage(window.__ ? window.__('msg_palette_name_required') || 'El nombre de la paleta es requerido.' : 'El nombre de la paleta es requerido.', 'error');
-            return;
-        }
-        
-        const colorInputs = colorsContainer ? colorsContainer.querySelectorAll('input[type="text"]') : [];
-        const colors = [];
-        colorInputs.forEach(input => {
-            const val = input.value.trim();
-            if (/^#[0-9A-F]{3,6}$/i.test(val)) colors.push(val);
-        });
-        
-        if (colors.length < 4) {
-            showMessage(window.__ ? window.__('msg_palette_min_colors') || 'Se requieren al menos 4 colores válidos.' : 'Se requieren al menos 4 colores válidos.', 'error');
-            return;
-        }
-        
-        setButtonLoading(btn);
-        
-        const res = await this.api.post(ApiRoutes.Canvases.CreateCustomPalette, { name, colors }, this.abortController.signal);
-        
-        restoreButton(btn);
-        
-        if (res && res.success) {
-            showMessage(window.__ ? window.__('msg_palette_created') || 'Paleta creada exitosamente.' : 'Paleta creada exitosamente.', 'success');
-            
-            if (!window.APP_CUSTOM_PALETTES) window.APP_CUSTOM_PALETTES = [];
-            window.APP_CUSTOM_PALETTES.push({
-                palette_key: res.data.palette_key,
-                name: name,
-                colors: colors
-            });
-            
-            this.renderPalettes();
-            
-            const paletteBtn = this.container.querySelector(`[data-palette-id="${res.data.palette_key}"]`);
-            if (paletteBtn) this.selectPalette(paletteBtn);
-            
-            this.closeCustomPaletteCreator();
+    navigateCustomPalette() {
+        if (window.spaRouter) {
+            window.spaRouter.navigate(`${this.basePath}/canvases/palettes/create`);
         } else {
-            showMessage(res ? res.message : (window.__ ? window.__('err_default') : 'Error al crear la paleta.'), 'error');
+            window.location.href = `${this.basePath}/canvases/palettes/create`;
         }
     }
 

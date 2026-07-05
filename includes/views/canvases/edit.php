@@ -242,7 +242,7 @@ if (!$canvasId) {
                                             </div>
                                             <?php if (SubscriptionPlanConstants::hasFeature($tier, 'custom_palettes')): ?>
                                                 <div style="padding: 8px; border-top: 1px solid var(--border-color);">
-                                                    <button type="button" class="component-button component-button--text component-button--h34" style="width: 100%; justify-content: flex-start;" data-action="openCustomPaletteCreator">
+                                                    <button type="button" class="component-button component-button--text component-button--h34" style="width: 100%; justify-content: flex-start;" data-action="navigateCustomPalette">
                                                         <span class="material-symbols-rounded" style="font-size:18px">add_circle</span>
                                                         <span>Crear paleta personalizada</span>
                                                     </button>
@@ -255,28 +255,7 @@ if (!$canvasId) {
                         </div>
                     </div>
 
-                    <div class="component-group-item component-group-item--stacked disabled" data-ref="custom-palette-creator">
-                        <div class="component-card__content">
-                            <div class="component-card__text">
-                                <h2 class="component-card__title">Nueva Paleta Personalizada</h2>
-                                <p class="component-card__description">Añade entre 4 y 36 colores en formato hexadecimal.</p>
-                                <div class="component-edit-row" style="margin-top:12px;">
-                                    <div class="component-input-group component-input-group--h34">
-                                        <input type="text" data-ref="input-custom-palette-name" class="component-input-field component-input-field--simple" placeholder="Nombre de la paleta (ej. Mi Paleta)">
-                                    </div>
-                                </div>
-                                <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:12px;" data-ref="custom-palette-colors">
-                                </div>
-                                <button type="button" class="component-button component-button--text component-button--h34" style="margin-top:8px;" data-action="addCustomPaletteColor">
-                                    <span class="material-symbols-rounded">add</span> Agregar Color
-                                </button>
-                            </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--stretch" style="margin-top:16px;">
-                            <button type="button" class="component-button component-button--h34" data-action="closeCustomPaletteCreator"><?php echo __('btn_cancel'); ?></button>
-                            <button type="button" class="component-button component-button--h34 component-button--dark" data-action="saveCustomPalette"><?php echo __('btn_save'); ?></button>
-                        </div>
-                    </div>
+
                 </div>
 
                 <div class="component-card--grouped">
