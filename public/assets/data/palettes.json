@@ -2,6 +2,7 @@
     "default": {
         "id": "default",
         "name_key": "palette_classic",
+        "tier": 0,
         "colors": [
             { "hex": "#000000", "name_key": "color_black" },
             { "hex": "#1A1A1A", "name_key": "color_dark_gray_1" },
@@ -44,6 +45,7 @@
     "neon": {
         "id": "neon",
         "name_key": "palette_neon",
+        "tier": 1,
         "colors": [
             { "hex": "#000000", "name_key": "color_black" },
             { "hex": "#111111", "name_key": "color_neon_dark_1" },
@@ -66,6 +68,7 @@
     "pastel": {
         "id": "pastel",
         "name_key": "palette_pastel",
+        "tier": 1,
         "colors": [
             { "hex": "#4A4A4A", "name_key": "color_pastel_dark_gray" },
             { "hex": "#878787", "name_key": "color_pastel_gray" },
@@ -83,6 +86,52 @@
             { "hex": "#C7CEEA", "name_key": "color_pastel_periwinkle" },
             { "hex": "#F1CBFF", "name_key": "color_pastel_lavender" },
             { "hex": "#FFDAC1", "name_key": "color_pastel_peach" }
+        ]
+    },
+    "earth": {
+        "id": "earth",
+        "name_key": "palette_earth",
+        "tier": 1,
+        "colors": [
+            { "hex": "#2C1810", "name_key": "color_earth_dark_brown" },
+            { "hex": "#4A3728", "name_key": "color_earth_espresso" },
+            { "hex": "#6B4423", "name_key": "color_earth_sienna" },
+            { "hex": "#8B6914", "name_key": "color_earth_dark_gold" },
+            { "hex": "#A0522D", "name_key": "color_earth_sienna_raw" },
+            { "hex": "#B8860B", "name_key": "color_earth_dark_goldenrod" },
+            { "hex": "#CD853F", "name_key": "color_earth_peru" },
+            { "hex": "#D2B48C", "name_key": "color_earth_tan" },
+            { "hex": "#DEB887", "name_key": "color_earth_burlywood" },
+            { "hex": "#F5DEB3", "name_key": "color_earth_wheat" },
+            { "hex": "#FAEBD7", "name_key": "color_earth_antique_white" },
+            { "hex": "#556B2F", "name_key": "color_earth_dark_olive_green" },
+            { "hex": "#6B8E23", "name_key": "color_earth_olive_drab" },
+            { "hex": "#8FBC8F", "name_key": "color_earth_dark_sea_green" },
+            { "hex": "#C08040", "name_key": "color_earth_terracotta" },
+            { "hex": "#E8D5B7", "name_key": "color_earth_sand" }
+        ]
+    },
+    "ocean": {
+        "id": "ocean",
+        "name_key": "palette_ocean",
+        "tier": 1,
+        "colors": [
+            { "hex": "#001F3F", "name_key": "color_ocean_midnight" },
+            { "hex": "#003366", "name_key": "color_ocean_deep_navy" },
+            { "hex": "#005B96", "name_key": "color_ocean_dark_blue" },
+            { "hex": "#0077B6", "name_key": "color_ocean_sapphire" },
+            { "hex": "#0096C7", "name_key": "color_ocean_cerulean" },
+            { "hex": "#00B4D8", "name_key": "color_ocean_sky_blue" },
+            { "hex": "#48CAE4", "name_key": "color_ocean_light_blue" },
+            { "hex": "#90E0EF", "name_key": "color_ocean_powder" },
+            { "hex": "#ADE8F4", "name_key": "color_ocean_ice" },
+            { "hex": "#CAF0F8", "name_key": "color_ocean_foam" },
+            { "hex": "#20B2AA", "name_key": "color_ocean_light_sea_green" },
+            { "hex": "#40E0D0", "name_key": "color_ocean_turquoise" },
+            { "hex": "#7FFFD4", "name_key": "color_ocean_aquamarine" },
+            { "hex": "#FF6B6B", "name_key": "color_ocean_coral" },
+            { "hex": "#FF8C69", "name_key": "color_ocean_salmon" },
+            { "hex": "#F0F8FF", "name_key": "color_ocean_alice_blue" }
         ]
     }
 }

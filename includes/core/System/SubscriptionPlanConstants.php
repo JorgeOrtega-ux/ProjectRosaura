@@ -20,13 +20,14 @@ class SubscriptionPlanConstants {
                 return [
                     'name' => 'Advanced',
                     'max_canvases' => 10,
-                    'max_snapshots_per_canvas' => -1, // Ilimitado
+                    'max_snapshots_per_canvas' => -1,
                     'max_storage_mb' => 500,
                     'max_members_per_canvas' => 10000,
                     'advanced_roles' => true,
                     'live_templates' => true,
                     'extended_palettes' => true,
-                    'custom_palettes' => true
+                    'custom_palettes' => true,
+                    'max_custom_palettes' => 5
                 ];
 
             case self::TIER_PRO:
@@ -39,7 +40,8 @@ class SubscriptionPlanConstants {
                     'advanced_roles' => false,
                     'live_templates' => true,
                     'extended_palettes' => true,
-                    'custom_palettes' => false
+                    'custom_palettes' => false,
+                    'max_custom_palettes' => 0
                 ];
 
             case self::TIER_BASIC:
@@ -53,7 +55,8 @@ class SubscriptionPlanConstants {
                     'advanced_roles' => false,
                     'live_templates' => false,
                     'extended_palettes' => false,
-                    'custom_palettes' => false
+                    'custom_palettes' => false,
+                    'max_custom_palettes' => 0
                 ];
         }
     }

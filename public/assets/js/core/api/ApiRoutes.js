@@ -113,7 +113,11 @@ export const ApiRoutes = {
         DeleteTemplate: 'canvases.delete_template',
 
         CreateLiveShare: 'canvases.create_live_share',
-        JoinLiveShare: 'canvases.join_live_share'
+        JoinLiveShare: 'canvases.join_live_share',
+
+        GetCustomPalettes: 'canvases.get_custom_palettes',
+        CreateCustomPalette: 'canvases.create_custom_palette',
+        DeleteCustomPalette: 'canvases.delete_custom_palette'
     },
     Search: {
         Query: 'search.query'
