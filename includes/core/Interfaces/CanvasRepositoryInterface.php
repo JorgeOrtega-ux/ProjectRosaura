@@ -14,6 +14,7 @@ interface CanvasRepositoryInterface {
     // Métodos para Manage
     public function getUserCanvasesPaginated(int $ownerId, int $limit, int $offset): array;
     public function countUserCanvases(int $ownerId): int;
+    public function countOlderCanvases(int $canvasId, int $ownerId, string $createdAt): int;
     public function deleteCanvases(array $canvasIds, int $ownerId): bool;
 
     // Métodos para Edit
@@ -45,6 +46,7 @@ interface CanvasRepositoryInterface {
     public function getCanvasByUuid(string $uuid): ?array;
     public function deleteCanvasByUuid(string $uuid): bool;
     public function removeMember(int $canvasId, int $userId): bool;
+    public function trimMembersToLimit(int $canvasId, int $limit): bool;
 
     // ==========================================
     // NUEVOS MÉTODOS DE PERSISTENCIA (SNAPSHOTS)

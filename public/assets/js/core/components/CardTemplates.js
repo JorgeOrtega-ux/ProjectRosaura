@@ -60,13 +60,41 @@ export const CardTemplates = {
                 </div>
             `;
         }
+        
+        let warningOverlay = '';
+        let warningMenuOption = '';
+        
+        if (canvas.locked_requires_downgrade) {
+            warningOverlay = `
+                <div style="position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.6); z-index: 5; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(2px);">
+                    <div style="text-align: center; color: white;">
+                        <span class="material-symbols-rounded" style="font-size: 32px; color: var(--color-warning); margin-bottom: 8px;">warning</span>
+                        <div style="font-weight: 600; font-size: 14px;">Plan Premium Expirado</div>
+                        <div style="font-size: 11px; opacity: 0.9; margin-top: 4px; padding: 0 10px;">El lienzo excede los límites básicos</div>
+                    </div>
+                </div>
+            `;
+            
+            if (canvas.is_owner) {
+                warningMenuOption = `
+                    <button type="button" class="component-menu-link component-menu-link--bordered component-text-notice--warning" data-action="downgradeCanvas" data-id="${canvas.id}" data-uuid="${uuid}">
+                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">build_circle</span></div>
+                        <div class="component-menu-link-text"><span>Convertir a Básico</span></div>
+                    </button>
+                `;
+            }
+        }
+
+        const navAction = canvas.locked_requires_downgrade ? '' : `data-nav="${basePath}/design/${uuid}"`;
+        const linkStyle = canvas.locked_requires_downgrade ? 'cursor: not-allowed; opacity: 0.6;' : 'cursor: pointer;';
 
         return `
-            <div class="component-snapshot-card" data-card-id="${canvas.id}">
+            <div class="component-snapshot-card" data-card-id="${canvas.id}" style="position: relative;">
+                ${warningOverlay}
                 ${imgHtml}
                 ${badgeHtml}
 
-                <div data-nav="${basePath}/design/${uuid}" class="component-snapshot-link" style="cursor: pointer;">
+                <div ${navAction} class="component-snapshot-link" style="${linkStyle}">
                     <h3 class="component-snapshot-title">${name}</h3>
                 </div>
 
@@ -99,6 +127,8 @@ export const CardTemplates = {
                                     <div class="component-menu-link-icon"><span class="material-symbols-rounded">collections</span></div>
                                     <div class="component-menu-link-text"><span>Ver galería de reinicios</span></div>
                                 </button>
+                                
+                                ${warningMenuOption}
 
                                 ${actionButtonHtml}
                             </div>

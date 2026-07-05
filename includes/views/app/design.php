@@ -38,7 +38,7 @@ if (!empty($canvasUuid)) {
 
         // Traemos información de reinicios y redimensiones
         $sql = "SELECT c.id, c.name, c.size, c.palette_id, c.privacy, c.requires_approval, 
-                       c.cooldown_pixels_batch, c.cooldown_seconds,
+                       c.cooldown_pixels_batch, c.cooldown_seconds, c.owner_id,
                        r.is_active as reset_active, r.next_reset_at, r.timer_action as reset_timer_action,
                        rs.is_active as resize_active, rs.next_resize_at, rs.target_size, rs.timer_action as resize_timer_action
                 FROM " . DB::TBL_CANVASES . " c
@@ -73,6 +73,7 @@ if (!empty($canvasUuid)) {
             // Comprobar rol real del usuario para la UI inicial (evita el parpadeo "Lienzo Privado")
             $isMember = false;
             $userRole = 'spectator';
+            $userId = null;
             global $sessionManager; // o tomarlo del scope actual
             $session = $sessionManager ?? null;
             if ($session && method_exists($session, 'isLoggedIn') && $session->isLoggedIn()) {
@@ -97,6 +98,47 @@ if (!empty($canvasUuid)) {
             }
             $isBlockedInit = ($canvasPrivacy === 'private' && !$isMember);
             $isSpectatorInit = ($userRole === 'spectator');
+            // CHECK PREMIUM EXPIRED STATE
+            $isPremiumBlockedInit = false;
+            try {
+                if (isset($canvas['owner_id']) && $canvas['owner_id']) {
+                    $uStmt = $db->prepare("SELECT subscription_tier FROM users WHERE id = :uid LIMIT 1");
+                    $uStmt->execute([':uid' => $canvas['owner_id']]);
+                    $ownerTier = $uStmt->fetchColumn();
+                    if ($ownerTier === false) $ownerTier = 0;
+                    
+                    $planLimits = \App\Core\System\SubscriptionPlanConstants::getTierLimits((int)$ownerTier);
+                    $allSizes = \App\Core\Helpers\Utils::getCanvasSizes();
+                    
+                    // Check max canvases
+                    if ($planLimits['max_canvases'] !== -1) {
+                        $olderStmt = $db->prepare("SELECT COUNT(*) FROM canvases WHERE owner_id = :uid AND id < :cid");
+                        $olderStmt->execute([':uid' => $canvas['owner_id'], ':cid' => $canvasIntId]);
+                        $olderCount = (int)$olderStmt->fetchColumn();
+                        
+                        if ($olderCount >= $planLimits['max_canvases']) {
+                            $isPremiumBlockedInit = true;
+                        }
+                    }
+                    
+                    // Check palette
+                    if (!$isPremiumBlockedInit && $canvasPalette !== 'default' && empty($planLimits['custom_palettes'])) {
+                        $isPremiumBlockedInit = true;
+                    }
+                    
+                    // Check size
+                    if (!$isPremiumBlockedInit) {
+                        $requiredTier = $allSizes[$canvasSize]['tier'] ?? 0;
+                        if ($ownerTier < $requiredTier) {
+                            $isPremiumBlockedInit = true;
+                        }
+                    }
+                    
+                    if ($isPremiumBlockedInit) {
+                        $isBlockedInit = true; // Forzar bloqueo de interacciones
+                    }
+                }
+            } catch (\Throwable $e) {}
         }
     } catch (\Exception $e) {
         error_log("Error al cargar el lienzo en la vista de diseño: " . $e->getMessage());
@@ -117,6 +159,7 @@ if (!empty($canvasUuid)) {
          data-palette="<?php echo htmlspecialchars($canvasPalette); ?>"
          data-privacy="<?php echo htmlspecialchars($canvasPrivacy); ?>"
          data-is-blocked="<?php echo isset($isBlockedInit) && $isBlockedInit ? '1' : '0'; ?>"
+         data-premium-blocked="<?php echo isset($isPremiumBlockedInit) && $isPremiumBlockedInit ? '1' : '0'; ?>"
          data-is-spectator="<?php echo isset($isSpectatorInit) && $isSpectatorInit ? '1' : '0'; ?>"
          data-approval="<?php echo htmlspecialchars($canvasApproval); ?>"
          data-cooldown-batch="<?php echo htmlspecialchars($canvasCooldownBatch); ?>"
@@ -159,24 +202,31 @@ if (!empty($canvasUuid)) {
                 ?>
                 <div class="component-actions <?php echo $showSpectatorControls ? 'active' : 'disabled'; ?>" data-ref="spectator-controls">
                     
-                    <div class="component-badge component-badge--warning <?php echo $isBlockedInit ? 'disabled' : ''; ?>" data-ref="spectator-status-badge" data-tooltip="<?php echo __('tooltip_spectator') ?? 'Solo puedes observar'; ?>" data-position="bottom">
+                    <div class="component-badge component-badge--warning <?php echo $isBlockedInit && !isset($isPremiumBlockedInit) ? 'disabled' : ''; ?>" data-ref="spectator-status-badge" data-tooltip="<?php echo __('tooltip_spectator') ?? 'Solo puedes observar'; ?>" data-position="bottom">
                         <span class="material-symbols-rounded">visibility</span>
                         <span><?php echo __('lbl_spectator') ?? 'Modo Espectador'; ?></span>
                     </div>
 
-                    <div class="component-badge component-badge--danger <?php echo !$isBlockedInit ? 'disabled' : ''; ?>" data-ref="private-status-badge" data-tooltip="No eres miembro" data-position="bottom">
+                    <?php if (isset($isPremiumBlockedInit) && $isPremiumBlockedInit): ?>
+                    <div class="component-badge component-badge--danger" data-position="bottom">
+                        <span class="material-symbols-rounded">warning</span>
+                        <span>Requiere atención Premium</span>
+                    </div>
+                    <?php else: ?>
+                    <div class="component-badge component-badge--danger <?php echo (!$isBlockedInit || (isset($isPremiumBlockedInit) && $isPremiumBlockedInit)) ? 'disabled' : ''; ?>" data-ref="private-status-badge" data-tooltip="No eres miembro" data-position="bottom">
                         <span class="material-symbols-rounded">lock</span>
                         <span>Lienzo Privado</span>
                     </div>
                     
-                    <button class="component-button component-button--h34 <?php echo ($isBlockedInit && $canvasApproval == '1') ? 'disabled' : ''; ?>" data-action="joinCanvasDirectly" data-ref="btn-join-direct">
+                    <button class="component-button component-button--h34 <?php echo ($canvasPrivacy === 'private' && $canvasApproval) || (isset($isPremiumBlockedInit) && $isPremiumBlockedInit) ? 'disabled' : ''; ?>" data-action="joinCanvasDirectly" data-ref="btn-join-direct">
                         <?php echo __('btn_join') ?? 'Unirse'; ?>
                     </button>
                     
-                    <button class="component-button component-button--h34 component-button--dark <?php echo ($isBlockedInit && $canvasApproval != '1') ? 'disabled' : ''; ?>" data-action="requestCanvasAccess" data-ref="btn-request-access">
+                    <button class="component-button component-button--h34 component-button--dark <?php echo ($canvasPrivacy === 'private' && !$canvasApproval) || (isset($isPremiumBlockedInit) && $isPremiumBlockedInit) ? 'disabled' : ''; ?>" data-action="requestCanvasAccess" data-ref="btn-request-access">
                         <span class="material-symbols-rounded">front_hand</span>
                         <?php echo __('btn_request_access') ?? 'Solicitar Acceso'; ?>
                     </button>
+                    <?php endif; ?>
                 </div>
 
                 <div class="component-actions <?php echo $showDesignTools ? 'active' : 'disabled'; ?>" data-ref="design-tools-actions">
@@ -216,7 +266,12 @@ if (!empty($canvasUuid)) {
                     <span>- , -</span>
                 </div>
 
-                <?php if (isset($isBlockedInit) && $isBlockedInit): ?>
+                <?php if (isset($isPremiumBlockedInit) && $isPremiumBlockedInit): ?>
+                <div class="component-badge" data-badge-id="lock-premium">
+                    <span class="material-symbols-rounded" style="color:var(--color-warning);">warning</span>
+                    <span>Requiere atención (Premium Expirado)</span>
+                </div>
+                <?php elseif (isset($isBlockedInit) && $isBlockedInit): ?>
                 <div class="component-badge" data-badge-id="lock-private">
                     <span class="material-symbols-rounded">lock</span>
                     <span><?php echo __('badge_member_required') ?? 'Requiere ser miembro'; ?></span>

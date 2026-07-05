@@ -157,9 +157,46 @@ class CanvasServices {
         try {
             $canvases = $this->canvasRepository->getUserAndJoinedCanvases($userId, $limit, $filter);
             
+            $user = $this->userRepository->findById($userId);
+            $tier = $user['subscription_tier'] ?? 0;
+            $planLimits = SubscriptionPlanConstants::getTierLimits($tier);
+            $allSizes = \App\Core\Helpers\Utils::getCanvasSizes();
+            
+            $totalOwned = method_exists($this->canvasRepository, 'countUserCanvases') ? $this->canvasRepository->countUserCanvases($userId) : 0;
+            $toLockCount = ($planLimits['max_canvases'] !== -1) ? max(0, $totalOwned - $planLimits['max_canvases']) : 0;
+            
             // Format canvases similar to getPublicCanvases
-            $formattedCanvases = array_map(function($canvas) use ($userId) {
-                return [
+            $formattedCanvases = [];
+            foreach ($canvases as $canvas) {
+                $isLocked = false;
+                $lockedReasons = [];
+                
+                if ($canvas['is_owner']) {
+                    if ($toLockCount > 0) {
+                        $isLocked = true;
+                        $lockedReasons[] = 'max_canvases';
+                        $toLockCount--;
+                    }
+                    
+                    $sizeStr = $canvas['size'] ?? '64x64';
+                    $requiredTier = $allSizes[$sizeStr]['tier'] ?? 0;
+                    if ($tier < $requiredTier) {
+                        $isLocked = true;
+                        $lockedReasons[] = 'size';
+                    }
+                    
+                    if (isset($canvas['palette_id']) && $canvas['palette_id'] !== 'default' && empty($planLimits['custom_palettes'])) {
+                        $isLocked = true;
+                        $lockedReasons[] = 'palette';
+                    }
+                    
+                    if ($planLimits['max_members_per_canvas'] !== -1 && $canvas['max_participants'] > $planLimits['max_members_per_canvas']) {
+                        $isLocked = true;
+                        $lockedReasons[] = 'members';
+                    }
+                }
+                
+                $formattedCanvases[] = [
                     'id' => $canvas['id'],
                     'uuid' => $canvas['uuid'],
                     'name' => $canvas['name'],
@@ -173,9 +210,11 @@ class CanvasServices {
                     'is_owner' => $canvas['is_owner'],
                     'online_players' => 0, 
                     'members_count' => $canvas['members_count'],
-                    'snapshot_url' => $canvas['snapshot_url'] ?? null
+                    'snapshot_url' => $canvas['snapshot_url'] ?? null,
+                    'locked_requires_downgrade' => $isLocked,
+                    'locked_reasons' => $lockedReasons
                 ];
-            }, $canvases);
+            }
             
             return ['success' => true, 'data' => $formattedCanvases];
         } catch (\Exception $e) {
@@ -216,6 +255,52 @@ class CanvasServices {
                 $canvas['role'] = 'admin'; 
             } else {
                 $canvas['role'] = $role ?: 'spectator'; 
+            }
+
+            // ====================================================
+            // Lógica de Bloqueo por Plan Expirado
+            // ====================================================
+            $ownerTier = 0;
+            if ($canvas['owner_id'] !== null) {
+                $owner = $this->userRepository->findById($canvas['owner_id']);
+                $ownerTier = $owner['subscription_tier'] ?? 0;
+            }
+            $planLimits = SubscriptionPlanConstants::getTierLimits($ownerTier);
+            $allSizes = \App\Core\Helpers\Utils::getCanvasSizes();
+            
+            $isLocked = false;
+            $lockedReasons = [];
+
+            if ($canvas['owner_id'] !== null) {
+                if ($planLimits['max_canvases'] !== -1) {
+                    $olderCount = method_exists($this->canvasRepository, 'countOlderCanvases') ? 
+                        $this->canvasRepository->countOlderCanvases($canvasId, $canvas['owner_id'], $canvas['created_at']) : 0;
+                    if ($olderCount >= $planLimits['max_canvases']) {
+                        $isLocked = true;
+                        $lockedReasons[] = 'max_canvases';
+                    }
+                }
+                
+                $sizeStr = $canvas['size'] ?? '64x64';
+                $requiredTier = $allSizes[$sizeStr]['tier'] ?? 0;
+                if ($ownerTier < $requiredTier) {
+                    $isLocked = true;
+                    $lockedReasons[] = 'size';
+                }
+                
+                if (isset($canvas['palette_id']) && $canvas['palette_id'] !== 'default' && empty($planLimits['custom_palettes'])) {
+                    $isLocked = true;
+                    $lockedReasons[] = 'palette';
+                }
+                
+                if ($planLimits['max_members_per_canvas'] !== -1 && $canvas['max_participants'] > $planLimits['max_members_per_canvas']) {
+                    $isLocked = true;
+                    $lockedReasons[] = 'members';
+                }
+            }
+
+            if ($isLocked) {
+                return ['success' => false, 'message' => 'Este lienzo requiere ser convertido a Básico debido a que el plan Premium del dueño expiró.', 'locked_requires_downgrade' => true, 'locked_reasons' => $lockedReasons];
             }
 
             // ====================================================
@@ -692,8 +777,141 @@ class CanvasServices {
         }
     }
     // ==========================================
+    // DEGRADACIÓN A PLAN BÁSICO
+    // ==========================================
+    public function downgradeCanvasToBasic(int $userId, string $uuid, bool $canManageOfficial = false): array {
+        try {
+            $canvas = $this->canvasRepository->getCanvasByUuid($uuid);
+            if (!$canvas) {
+                return ['success' => false, 'message' => __('err_canvas_not_found') ?? 'Lienzo no encontrado.'];
+            }
+            
+            $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            if (!$isOwner) {
+                return ['success' => false, 'message' => __('err_unauthorized') ?? 'Solo el dueño puede realizar esta acción.'];
+            }
 
-    public function deleteSingleCanvas(int $userId, string $uuid, bool $canManageOfficial = false): array {
+            // Obtain current limits of the owner
+            $ownerTier = 0;
+            if ($canvas['owner_id'] !== null) {
+                $owner = $this->userRepository->findById($canvas['owner_id']);
+                $ownerTier = $owner['subscription_tier'] ?? 0;
+            }
+            $planLimits = SubscriptionPlanConstants::getTierLimits($ownerTier);
+            $allSizes = \App\Core\Helpers\Utils::getCanvasSizes();
+
+            $canvasId = $canvas['id'];
+
+            // 1. Reducción de Miembros (Trimming)
+            if ($planLimits['max_members_per_canvas'] !== -1) {
+                $sql = "SELECT user_id FROM " . DB::TBL_CANVAS_MEMBERS . " 
+                        WHERE canvas_id = :cid ORDER BY joined_at ASC";
+                if (method_exists($this->canvasRepository, 'db')) {
+                    // Si no tenemos acceso directo, podemos usar PDO del repositorio asumiendo getters o hacerlo en repo
+                }
+                // Como necesitamos acceso a DB, crearemos un método en el repositorio
+                if (method_exists($this->canvasRepository, 'trimMembersToLimit')) {
+                    $this->canvasRepository->trimMembersToLimit($canvasId, $planLimits['max_members_per_canvas']);
+                }
+            }
+            
+            // 2. Restablecer Paleta y Límites
+            $updateData = [
+                'name' => $canvas['name'],
+                'description' => $canvas['description'],
+                'privacy' => $canvas['privacy'],
+                'requires_approval' => $canvas['requires_approval'],
+                'palette_id' => 'default',
+                'max_participants' => ($planLimits['max_members_per_canvas'] !== -1) ? $planLimits['max_members_per_canvas'] : $canvas['max_participants'],
+                'cooldown_pixels_batch' => $canvas['cooldown_pixels_batch'],
+                'cooldown_seconds' => $canvas['cooldown_seconds']
+            ];
+            
+            $this->canvasRepository->updateCanvasData($canvasId, $updateData);
+
+            // 3. Reducción de Tamaño (Cropping)
+            $currentSizeStr = $canvas['size'];
+            
+            // ¿Es válido para el plan?
+            $maxAllowedSize = '64x64'; // Default safe fallback
+            $maxAllowedArea = 0;
+            foreach ($allSizes as $sizeKey => $sizeConfig) {
+                if ($ownerTier >= $sizeConfig['tier']) {
+                    $parts = explode('x', strtolower($sizeKey));
+                    $area = ((int)$parts[0]) * ((int)($parts[1] ?? $parts[0]));
+                    if ($area > $maxAllowedArea) {
+                        $maxAllowedArea = $area;
+                        $maxAllowedSize = $sizeKey;
+                    }
+                }
+            }
+
+            $reqTierForCurrent = $allSizes[$currentSizeStr]['tier'] ?? 0;
+            
+            if ($ownerTier < $reqTierForCurrent) {
+                // Resize and crop
+                $this->canvasRepository->updateSize($canvasId, $maxAllowedSize);
+
+                // Recortar la imagen en binario de BD
+                $stateRaw = $this->canvasRepository->getSnapshot($canvasId);
+                if ($stateRaw) {
+                    $oldParts = explode('x', strtolower($currentSizeStr));
+                    $oldW = (int)$oldParts[0];
+                    $oldH = isset($oldParts[1]) ? (int)$oldParts[1] : $oldW;
+
+                    $newParts = explode('x', strtolower($maxAllowedSize));
+                    $newW = (int)$newParts[0];
+                    $newH = isset($newParts[1]) ? (int)$newParts[1] : $newW;
+
+                    $newTotal = $newW * $newH;
+                    $newStateRaw = str_repeat(chr(255), $newTotal); // Rellenar con blanco por si acaso
+
+                    if (strlen($stateRaw) == ($oldW * $oldH)) {
+                        for ($y = 0; $y < min($oldH, $newH); $y++) {
+                            for ($x = 0; $x < min($oldW, $newW); $x++) {
+                                $oldIdx = ($y * $oldW) + $x;
+                                $newIdx = ($y * $newW) + $x;
+                                $newStateRaw[$newIdx] = $stateRaw[$oldIdx];
+                            }
+                        }
+                    } else {
+                        // Mal formato, reiniciar a blanco
+                        $newStateRaw = str_repeat(chr(255), $newTotal);
+                    }
+
+                    $this->canvasRepository->saveSnapshot($canvasId, $newStateRaw);
+                    
+                    // Actualizar Redis
+                    try {
+                        if (class_exists(RedisCache::class)) {
+                            $redisInstance = new RedisCache();
+                            $redis = $redisInstance->getClient();
+                            if ($redis) {
+                                $redis->set("canvas:{$canvasId}:state", $newStateRaw);
+                            }
+                        }
+                    } catch (Exception $e) {}
+                }
+
+                // Generar nuevo snapshot físico de la imagen
+                if (method_exists($this->canvasRepository, 'generateSnapshotImage')) {
+                     // Asumiendo que el worker o un helper puede generarlo, o lo borramos para que se genere solo
+                     $physicalPath = dirname(__DIR__, 2) . '/storage/public/snapshots/canvas_' . $canvasId . '.png';
+                     if (file_exists($physicalPath)) {
+                         unlink($physicalPath);
+                     }
+                }
+            }
+
+            return ['success' => true, 'message' => 'Lienzo degradado al plan básico exitosamente.'];
+        } catch (Exception $e) {
+            Logger::error('Error downgrading canvas to basic.', ['user_id' => $userId, 'uuid' => $uuid, 'error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database')];
+        }
+    }
+
+    // ==========================================
+    public function deleteCanvas(?int $userId, string $uuid, bool $canManageOfficial = false): array {
         try {
             $canvas = $this->canvasRepository->getCanvasByUuid($uuid);
             if (!$canvas) {

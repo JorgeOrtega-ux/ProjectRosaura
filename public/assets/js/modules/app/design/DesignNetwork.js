@@ -526,6 +526,14 @@ export const DesignNetwork = {
             if (response.aborted) return;
             
             if (response.success && response.data) {
+                if (response.data.locked_requires_downgrade) {
+                    this.isPremiumBlocked = true;
+                    this.isPrivateBlocked = true;
+                    this.setRoleUI('blocked');
+                    return;
+                }
+                
+                this.isPremiumBlocked = false;
                 this.isPrivateBlocked = false;
                 const role = response.data.role || 'spectator';
                 
@@ -586,14 +594,20 @@ export const DesignNetwork = {
             if (actionPill) actionPill.classList.add('disabled');
 
             if (specBadge) specBadge.classList.add('disabled');
-            if (privBadge) privBadge.classList.remove('disabled');
-
-            if (this.canvasApproval) {
+            if (this.isPremiumBlocked) {
+                if (privBadge) privBadge.classList.add('disabled');
                 if (btnJoin) btnJoin.classList.add('disabled');
-                if (btnRequest) btnRequest.classList.remove('disabled');
-            } else {
-                if (btnJoin) btnJoin.classList.remove('disabled');
                 if (btnRequest) btnRequest.classList.add('disabled');
+            } else {
+                if (privBadge) privBadge.classList.remove('disabled');
+                
+                if (this.canvasApproval) {
+                    if (btnJoin) btnJoin.classList.add('disabled');
+                    if (btnRequest) btnRequest.classList.remove('disabled');
+                } else {
+                    if (btnJoin) btnJoin.classList.remove('disabled');
+                    if (btnRequest) btnRequest.classList.add('disabled');
+                }
             }
         } else {
             if (this.canvas) {

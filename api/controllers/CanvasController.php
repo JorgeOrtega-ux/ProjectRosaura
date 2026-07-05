@@ -380,6 +380,36 @@ class CanvasController extends BaseController {
         }
     }
 
+    public function downgrade($input) {
+        try {
+            if (!$this->session->isLoggedIn()) {
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+            }
+
+            $userId = $this->session->getActiveAccountId();
+            if (!$userId) {
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+            }
+
+            $uuid = $input['id'] ?? $input['uuid'] ?? null;
+            if (!$uuid) {
+                return $this->respond(['success' => false, 'message' => 'Lienzo no proporcionado.']);
+            }
+
+            // Confirmación estricta de seguridad
+            $confirmWord = $input['confirm_word'] ?? '';
+            if (trim(strtoupper($confirmWord)) !== 'CONFIRMAR') {
+                return $this->respond(['success' => false, 'message' => 'Debes escribir CONFIRMAR para proceder con esta acción destructiva.']);
+            }
+
+            $result = $this->canvasServices->downgradeCanvasToBasic($userId, $uuid, $this->canManageOfficial());
+            return $this->respond($result);
+
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
     public function leave($input) {
         try {
             if (!$this->session->isLoggedIn()) {

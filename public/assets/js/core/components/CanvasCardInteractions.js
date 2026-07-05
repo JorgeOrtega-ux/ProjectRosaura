@@ -33,6 +33,9 @@ export class CanvasCardInteractions {
         } else if (action === 'toggleFavorite') {
             this.toggleFavorite(btn);
             return true;
+        } else if (action === 'downgradeCanvas') {
+            this.downgradeCanvas(btn);
+            return true;
         }
         return false;
     }
@@ -162,6 +165,52 @@ export class CanvasCardInteractions {
             showMessage(window.__('msg_canvas_left'), 'success');
             const card = document.querySelector(`.component-snapshot-card[data-card-id="${id}"]`);
             if (card) card.remove();
+        } else {
+            showMessage(res.message, 'error');
+        }
+    }
+
+    async downgradeCanvas(btn) {
+        const id = btn.getAttribute('data-id');
+        const uuid = btn.getAttribute('data-uuid');
+        if (!uuid) return;
+
+        this.closeDropdowns();
+
+        // Use standard window.prompt or a custom dialog system if available
+        let confirmed = false;
+        if (window.dialogSystem && window.dialogSystem.show) {
+            // If you have a specific modal for this, use it, else fallback to generic or prompt
+            try {
+                // Since this is a new action, we can use a basic prompt if a modal doesn't exist
+                const confirmRes = await window.dialogSystem.show('confirmActionModal', {
+                    title: 'Convertir a Básico',
+                    message: 'Esta acción es IRREVERSIBLE. Se recortará tu lienzo a 64x64 desde la esquina superior izquierda, se perderán los miembros excedentes, y la paleta se restablecerá a la original. Escribe CONFIRMAR para proceder.',
+                    inputPlaceholder: 'CONFIRMAR',
+                    expectedInput: 'CONFIRMAR'
+                });
+                if (confirmRes && confirmRes.confirmed) confirmed = true;
+            } catch(e) {
+                // Modal failed or not found, fallback to prompt
+                const ans = prompt("Escribe CONFIRMAR para degradar el lienzo a básico. Esta acción es IRREVERSIBLE.");
+                if (ans === 'CONFIRMAR') confirmed = true;
+            }
+        } else {
+            const ans = prompt("Escribe CONFIRMAR para degradar el lienzo a básico. Esta acción es IRREVERSIBLE. Se perderán datos que superen el plan básico (tamaño, miembros extras, paletas).");
+            if (ans === 'CONFIRMAR') confirmed = true;
+        }
+
+        if (!confirmed) return;
+
+        const res = await this.api.post(ApiRoutes.Canvases.Downgrade, { uuid: uuid, confirm_word: 'CONFIRMAR' }, this.abortController.signal);
+        
+        if (res.aborted) return;
+
+        if (res.success) {
+            showMessage(res.message, 'success');
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
         } else {
             showMessage(res.message, 'error');
         }

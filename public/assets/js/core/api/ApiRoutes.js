@@ -90,6 +90,7 @@ export const ApiRoutes = {
         Create: 'canvases.create',
         Update: 'canvases.update',
         Delete: 'canvases.delete',
+        Downgrade: 'canvases.downgrade',
         Leave: 'canvases.leave', 
         
         Resize: 'canvases.resize',

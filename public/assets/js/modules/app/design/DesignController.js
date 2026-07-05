@@ -55,6 +55,7 @@ class DesignController {
         
         this.isSpectator = false;
         this.isPrivateBlocked = false;
+        this.isPremiumBlocked = false;
         this.canvasIntId = null;
         this.canvasPrivacy = 'private';
         this.canvasApproval = false;

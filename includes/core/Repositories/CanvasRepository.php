@@ -235,6 +235,13 @@ class CanvasRepository implements CanvasRepositoryInterface {
         return (int)$stmt->fetchColumn();
     }
 
+    public function countOlderCanvases(int $canvasId, int $ownerId, string $createdAt): int {
+        $sql = "SELECT COUNT(*) FROM " . DB::TBL_CANVASES . " WHERE owner_id = :oid AND (created_at < :ca OR (created_at = :ca2 AND id < :id))";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':oid' => $ownerId, ':ca' => $createdAt, ':ca2' => $createdAt, ':id' => $canvasId]);
+        return (int)$stmt->fetchColumn();
+    }
+
     public function deleteCanvases(array $canvasIds, int $ownerId): bool {
         if (empty($canvasIds)) {
             return false;
@@ -478,6 +485,26 @@ class CanvasRepository implements CanvasRepositoryInterface {
         $sql = "DELETE FROM " . DB::TBL_CANVAS_MEMBERS . " WHERE canvas_id = :canvas_id AND user_id = :user_id";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([':canvas_id' => $canvasId, ':user_id' => $userId]);
+    }
+
+    public function trimMembersToLimit(int $canvasId, int $limit): bool {
+        // Keep the first $limit members ordered by joined_at ASC, delete the rest.
+        // MySQL doesn't support LIMIT in subqueries directly for IN, but we can do it with a join or temporary table
+        $sql = "DELETE FROM " . DB::TBL_CANVAS_MEMBERS . "
+                WHERE canvas_id = :canvas_id 
+                AND user_id NOT IN (
+                    SELECT user_id FROM (
+                        SELECT user_id FROM " . DB::TBL_CANVAS_MEMBERS . " 
+                        WHERE canvas_id = :canvas_id2 
+                        ORDER BY joined_at ASC 
+                        LIMIT :limit
+                    ) AS tmp
+                )";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(':canvas_id', $canvasId, PDO::PARAM_INT);
+        $stmt->bindValue(':canvas_id2', $canvasId, PDO::PARAM_INT);
+        $stmt->bindValue(':limit', max(1, $limit), PDO::PARAM_INT);
+        return $stmt->execute();
     }
 
     public function getSnapshot(int $canvasId): ?string {

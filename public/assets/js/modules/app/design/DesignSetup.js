@@ -49,6 +49,7 @@ export const DesignSetup = {
             this.canvasIntId = wrapper.getAttribute('data-canvas-id');
             this.canvasPrivacy = wrapper.getAttribute('data-privacy') || 'private';
             this.isPrivateBlocked = wrapper.getAttribute('data-is-blocked') === '1';
+            this.isPremiumBlocked = wrapper.getAttribute('data-premium-blocked') === '1';
             this.isSpectator = wrapper.getAttribute('data-is-spectator') === '1';
             this.canvasApproval = wrapper.getAttribute('data-approval') === '1';
 
@@ -107,10 +108,15 @@ export const DesignSetup = {
             this.removeCanvasBadge('lock-resize', 'left');
         }
 
-        if (this.isPrivateBlocked) {
+        if (this.isPremiumBlocked) {
+            this.setCanvasBadge('lock-premium', 'warning', __('badge_premium_expired') || 'Requiere atención', 'left');
+            this.removeCanvasBadge('lock-private', 'left');
+        } else if (this.isPrivateBlocked) {
             this.setCanvasBadge('lock-private', 'lock', __('badge_member_required'), 'left');
+            this.removeCanvasBadge('lock-premium', 'left');
         } else {
             this.removeCanvasBadge('lock-private', 'left');
+            this.removeCanvasBadge('lock-premium', 'left');
         }
     },
 

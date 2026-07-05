@@ -382,6 +382,11 @@ return [
         'action' => 'delete',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_delete', 'max' => RL::MAX_10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
+    'canvases.downgrade' => [
+        'controller' => 'App\Api\Controllers\CanvasController',
+        'action' => 'downgrade',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_downgrade', 'max' => RL::MAX_5, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
+    ],
     'canvases.leave' => [
         'controller' => 'App\Api\Controllers\CanvasController',
         'action' => 'leave',
