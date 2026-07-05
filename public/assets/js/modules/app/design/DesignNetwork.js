@@ -656,7 +656,7 @@ export const DesignNetwork = {
         if (response.success) {
             showMessage(response.message, 'success');
             
-            if (response.message.toLowerCase().includes('unido')) {
+            if (response.joined || response.message.toLowerCase().includes('unido')) {
                 setTimeout(() => window.location.reload(), 1000);
             } else {
                 btn.classList.add('disabled-interactive');

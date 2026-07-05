@@ -48,6 +48,8 @@ export const DesignSetup = {
         if (wrapper) {
             this.canvasIntId = wrapper.getAttribute('data-canvas-id');
             this.canvasPrivacy = wrapper.getAttribute('data-privacy') || 'private';
+            this.isPrivateBlocked = wrapper.getAttribute('data-is-blocked') === '1';
+            this.isSpectator = wrapper.getAttribute('data-is-spectator') === '1';
             this.canvasApproval = wrapper.getAttribute('data-approval') === '1';
 
             this.resetActive = wrapper.getAttribute('data-reset-active') === '1';

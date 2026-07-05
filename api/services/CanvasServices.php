@@ -1047,7 +1047,7 @@ class CanvasServices {
 
             $memberRole = $this->canvasRepository->getMemberRole($canvasId, $userId);
             if ($memberRole === 'editor' || $memberRole === 'admin') {
-                return ['success' => true, 'message' => __('msg_already_member') ?? 'Ya eres miembro de este lienzo.'];
+                return ['success' => true, 'joined' => true, 'message' => __('msg_already_member') ?? 'Ya eres miembro de este lienzo.'];
             }
 
             if (!$canvas['requires_approval']) {
@@ -1065,7 +1065,7 @@ class CanvasServices {
                 }
 
                 $this->canvasRepository->addMember($canvasId, $userId, 'editor');
-                return ['success' => true, 'message' => __('msg_joined_success') ?? 'Te has unido al lienzo.'];
+                return ['success' => true, 'joined' => true, 'message' => __('msg_joined_success') ?? 'Te has unido al lienzo.'];
             }
 
             $existingReq = $this->canvasRepository->getAccessRequest($canvasId, $userId);
@@ -1074,7 +1074,7 @@ class CanvasServices {
             }
 
             $this->canvasRepository->createAccessRequest($canvasId, $userId);
-            return ['success' => true, 'message' => __('msg_request_sent') ?? 'Solicitud de acceso enviada.'];
+            return ['success' => true, 'joined' => false, 'message' => __('msg_request_sent') ?? 'Solicitud de acceso enviada.'];
 
         } catch (Exception $e) {
             Logger::error('Error requesting access.', ['user_id' => $userId, 'canvas_id' => $canvasId, 'error' => $e->getMessage()]);
