@@ -525,14 +525,15 @@ export const DesignNetwork = {
             const response = await this.api.post(ApiRoutes.Canvases.Get, { id: this.canvasIntId }, this.abortController.signal);
             if (response.aborted) return;
             
+            const isPremiumLocked = response.locked_requires_downgrade || (response.data && response.data.locked_requires_downgrade);
+            if (isPremiumLocked) {
+                this.isPremiumBlocked = true;
+                this.isPrivateBlocked = true;
+                this.setRoleUI('blocked');
+                return;
+            }
+
             if (response.success && response.data) {
-                if (response.data.locked_requires_downgrade) {
-                    this.isPremiumBlocked = true;
-                    this.isPrivateBlocked = true;
-                    this.setRoleUI('blocked');
-                    return;
-                }
-                
                 this.isPremiumBlocked = false;
                 this.isPrivateBlocked = false;
                 const role = response.data.role || 'spectator';
@@ -574,6 +575,7 @@ export const DesignNetwork = {
         
         const specBadge = document.querySelector('[data-ref="spectator-status-badge"]');
         const privBadge = document.querySelector('[data-ref="private-status-badge"]');
+        const premBadge = document.querySelector('[data-ref="premium-status-badge"]');
 
         this.updateLockBadges(); 
 
@@ -596,9 +598,11 @@ export const DesignNetwork = {
             if (specBadge) specBadge.classList.add('disabled');
             if (this.isPremiumBlocked) {
                 if (privBadge) privBadge.classList.add('disabled');
+                if (premBadge) premBadge.classList.remove('disabled');
                 if (btnJoin) btnJoin.classList.add('disabled');
                 if (btnRequest) btnRequest.classList.add('disabled');
             } else {
+                if (premBadge) premBadge.classList.add('disabled');
                 if (privBadge) privBadge.classList.remove('disabled');
                 
                 if (this.canvasApproval) {
@@ -627,6 +631,7 @@ export const DesignNetwork = {
                 
                 if (specBadge) specBadge.classList.remove('disabled');
                 if (privBadge) privBadge.classList.add('disabled');
+                if (premBadge) premBadge.classList.add('disabled');
 
                 if (this.canvasApproval) {
                     if (btnJoin) btnJoin.classList.add('disabled');

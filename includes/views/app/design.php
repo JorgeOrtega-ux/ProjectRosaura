@@ -38,7 +38,7 @@ if (!empty($canvasUuid)) {
 
         // Traemos información de reinicios y redimensiones
         $sql = "SELECT c.id, c.name, c.size, c.palette_id, c.privacy, c.requires_approval, 
-                       c.cooldown_pixels_batch, c.cooldown_seconds, c.owner_id,
+                       c.cooldown_pixels_batch, c.cooldown_seconds, c.owner_id, c.created_at, c.max_participants,
                        r.is_active as reset_active, r.next_reset_at, r.timer_action as reset_timer_action,
                        rs.is_active as resize_active, rs.next_resize_at, rs.target_size, rs.timer_action as resize_timer_action
                 FROM " . DB::TBL_CANVASES . " c
@@ -53,7 +53,7 @@ if (!empty($canvasUuid)) {
         if ($canvas) {
             $canvasIntId = (int)$canvas['id'];
             $canvasName = $canvas['name'];
-            $canvasSize = $canvas['size'] ?? '64';
+            $canvasSize = strtolower($canvas['size'] ?? '64');
             $canvasPalette = $canvas['palette_id'] ?? 'default';
             $canvasPrivacy = $canvas['privacy'] ?? 'private';
             $canvasApproval = $canvas['requires_approval'] ?? '0';
@@ -104,16 +104,20 @@ if (!empty($canvasUuid)) {
                 if (isset($canvas['owner_id']) && $canvas['owner_id']) {
                     $uStmt = $db->prepare("SELECT subscription_tier FROM users WHERE id = :uid LIMIT 1");
                     $uStmt->execute([':uid' => $canvas['owner_id']]);
-                    $ownerTier = $uStmt->fetchColumn();
-                    if ($ownerTier === false) $ownerTier = 0;
+                    $ownerTier = (int)($uStmt->fetchColumn() ?: 0);
                     
-                    $planLimits = \App\Core\System\SubscriptionPlanConstants::getTierLimits((int)$ownerTier);
+                    $planLimits = \App\Core\System\SubscriptionPlanConstants::getTierLimits($ownerTier);
                     $allSizes = \App\Core\Helpers\Utils::getCanvasSizes();
                     
                     // Check max canvases
                     if ($planLimits['max_canvases'] !== -1) {
-                        $olderStmt = $db->prepare("SELECT COUNT(*) FROM canvases WHERE owner_id = :uid AND id < :cid");
-                        $olderStmt->execute([':uid' => $canvas['owner_id'], ':cid' => $canvasIntId]);
+                        $olderStmt = $db->prepare("SELECT COUNT(*) FROM canvases WHERE owner_id = :uid AND (created_at < :ca OR (created_at = :ca2 AND id < :id))");
+                        $olderStmt->execute([
+                            ':uid' => $canvas['owner_id'], 
+                            ':ca' => $canvas['created_at'], 
+                            ':ca2' => $canvas['created_at'], 
+                            ':id' => $canvasIntId
+                        ]);
                         $olderCount = (int)$olderStmt->fetchColumn();
                         
                         if ($olderCount >= $planLimits['max_canvases']) {
@@ -130,6 +134,13 @@ if (!empty($canvasUuid)) {
                     if (!$isPremiumBlockedInit) {
                         $requiredTier = $allSizes[$canvasSize]['tier'] ?? 0;
                         if ($ownerTier < $requiredTier) {
+                            $isPremiumBlockedInit = true;
+                        }
+                    }
+
+                    // Check members
+                    if (!$isPremiumBlockedInit) {
+                        if ($planLimits['max_members_per_canvas'] !== -1 && isset($canvas['max_participants']) && $canvas['max_participants'] > $planLimits['max_members_per_canvas']) {
                             $isPremiumBlockedInit = true;
                         }
                     }
@@ -207,12 +218,11 @@ if (!empty($canvasUuid)) {
                         <span><?php echo __('lbl_spectator') ?? 'Modo Espectador'; ?></span>
                     </div>
 
-                    <?php if (isset($isPremiumBlockedInit) && $isPremiumBlockedInit): ?>
-                    <div class="component-badge component-badge--danger" data-position="bottom">
+                    <div class="component-badge component-badge--danger <?php echo (isset($isPremiumBlockedInit) && $isPremiumBlockedInit) ? '' : 'disabled'; ?>" data-ref="premium-status-badge" data-position="bottom">
                         <span class="material-symbols-rounded">warning</span>
                         <span>Requiere atención Premium</span>
                     </div>
-                    <?php else: ?>
+                    
                     <div class="component-badge component-badge--danger <?php echo (!$isBlockedInit || (isset($isPremiumBlockedInit) && $isPremiumBlockedInit)) ? 'disabled' : ''; ?>" data-ref="private-status-badge" data-tooltip="No eres miembro" data-position="bottom">
                         <span class="material-symbols-rounded">lock</span>
                         <span>Lienzo Privado</span>
@@ -226,7 +236,6 @@ if (!empty($canvasUuid)) {
                         <span class="material-symbols-rounded">front_hand</span>
                         <?php echo __('btn_request_access') ?? 'Solicitar Acceso'; ?>
                     </button>
-                    <?php endif; ?>
                 </div>
 
                 <div class="component-actions <?php echo $showDesignTools ? 'active' : 'disabled'; ?>" data-ref="design-tools-actions">
