@@ -202,8 +202,9 @@ export const DesignTemplates = {
         if (!container) return;
 
         container.innerHTML = '';
+        this.updateTemplateCount(templates.length);
+
         if (templates.length === 0) {
-            container.innerHTML = `<p class="component-empty-text component-empty-text--grid">${__('txt_no_templates') || 'No hay plantillas'}</p>`;
             this.updateTemplateUI();
             return;
         }
@@ -362,6 +363,11 @@ export const DesignTemplates = {
             if (btnLive) btnLive.classList.add('disabled');
             if (divider) divider.classList.add('disabled');
         }
+    },
+
+    updateTemplateCount(count) {
+        const countEl = document.querySelector('[data-ref="template-count"]');
+        if (countEl) countEl.textContent = count;
     },
 
     toggleTemplate(id) {

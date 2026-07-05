@@ -24,7 +24,10 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
         <div class="component-menu-section-parent">
             <div class="component-menu-top">
                 <div class="component-form-group">
-                    <label class="component-label">Posición X</label>
+                    <div class="component-menu-header-box">
+                        <span class="material-symbols-rounded">swap_horiz</span>
+                        <span class="component-menu-header-title">Posición X</span>
+                    </div>
                     <div class="component-inline-control component-inline-control--fixed">
                         <div class="component-inline-control__group">
                             <button type="button" class="component-inline-control__btn" data-action="adjustLiveTemplate" data-field="live_x" data-step="-10"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
@@ -39,7 +42,10 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
                 </div>
                 
                 <div class="component-form-group">
-                    <label class="component-label">Posición Y</label>
+                    <div class="component-menu-header-box">
+                        <span class="material-symbols-rounded">swap_vert</span>
+                        <span class="component-menu-header-title">Posición Y</span>
+                    </div>
                     <div class="component-inline-control component-inline-control--fixed">
                         <div class="component-inline-control__group">
                             <button type="button" class="component-inline-control__btn" data-action="adjustLiveTemplate" data-field="live_y" data-step="-10"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
@@ -54,7 +60,10 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
                 </div>
                 
                 <div class="component-form-group">
-                    <label class="component-label">Opacidad</label>
+                    <div class="component-menu-header-box">
+                        <span class="material-symbols-rounded">opacity</span>
+                        <span class="component-menu-header-title">Opacidad</span>
+                    </div>
                     <div class="component-inline-control component-inline-control--fixed">
                         <div class="component-inline-control__group">
                             <button type="button" class="component-inline-control__btn" data-action="adjustLiveTemplate" data-field="live_opacity" data-step="-0.5" data-min="0.1" data-max="1"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
@@ -142,7 +151,7 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
             <div class="component-menu-bottom">
                 <div class="component-menu-header-box component-menu-header-box--section">
                     <span class="material-symbols-rounded">collections_bookmark</span>
-                    <span class="component-menu-header-title">Mi Librería</span>
+                    <span class="component-menu-header-title">Mi Librería (<span data-ref="template-count">0</span>)</span>
                 </div>
                 
                 <div class="component-items-grid component-items-grid--5" data-ref="user-templates-grid">

@@ -122,6 +122,10 @@
     grid-template-columns: repeat(5, 1fr);
 }
 
+.component-menu-header-box--section {
+    margin-bottom: 8px;
+}
+
 /* -----------------------------------------
    ELEMENTOS DE LA GRILLA
    ----------------------------------------- */
