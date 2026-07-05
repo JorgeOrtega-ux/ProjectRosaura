@@ -59,7 +59,7 @@ try {
 
     // Consulta de miembros
     $stmt = $pdoCanvases->prepare("
-        SELECT user_id, role, joined_at 
+        SELECT user_id, joined_at 
         FROM {$tblMembers} 
         WHERE canvas_id = :cid 
         ORDER BY joined_at DESC 
@@ -68,8 +68,30 @@ try {
     $stmt->execute(['cid' => $canvasId]);
     $members = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+    // Obtener roles de los miembros
+    $memberRoles = [];
+    if (!empty($members)) {
+        $userIds = array_column($members, 'user_id');
+        $inQuery = implode(',', array_fill(0, count($userIds), '?'));
+        
+        $stmtRoles = $pdoCanvases->prepare("
+            SELECT cur.user_id, r.name, r.is_system, r.weight
+            FROM canvas_user_roles cur
+            JOIN canvas_roles r ON cur.role_id = r.id
+            WHERE cur.canvas_id = ? AND cur.user_id IN ($inQuery)
+            ORDER BY r.weight DESC, r.name ASC
+        ");
+        $params = array_merge([$canvasId], $userIds);
+        $stmtRoles->execute($params);
+        
+        while ($row = $stmtRoles->fetch(PDO::FETCH_ASSOC)) {
+            $memberRoles[$row['user_id']][] = $row;
+        }
+    }
+
 } catch (\Exception $e) {
     $members = [];
+    $memberRoles = [];
 }
 
 // BLOQUE 2: Obtener perfiles de la DB Identity
@@ -185,9 +207,10 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/members/' . $canvasUui
                                     $username = !empty($uInfo['username']) ? $uInfo['username'] : 'Usuario #' . $member['user_id'];
                                     $avatar = !empty($uInfo['profile_picture']) ? $uInfo['profile_picture'] : $appUrl . '/public/assets/img/fallbacks/avatar-default.png';
                                     $userUuidStr = !empty($uInfo['uuid']) ? $uInfo['uuid'] : '';
-                                    
-                                    // Identificar si es Admin
-                                    $roleColor = $member['role'] === 'admin' ? '#dc3545' : '#6b7280';
+                                    // Identificar si tiene un rol dominante (para el color del borde del avatar)
+                                    $mRoles = $memberRoles[$member['user_id']] ?? [];
+                                    $primaryRoleName = !empty($mRoles) ? $mRoles[0]['name'] : '';
+                                    $roleColor = ($primaryRoleName === 'SuperAdministrator' || $primaryRoleName === 'Administrator') ? '#dc3545' : '#6b7280';
                                 ?>
                                 <tr class="component-table-row" data-action="selectMember" data-member-id="<?php echo htmlspecialchars($member['user_id']); ?>" data-member-uuid="<?php echo htmlspecialchars($userUuidStr); ?>">
                                     <td>
@@ -205,10 +228,52 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/members/' . $canvasUui
                                         </div>
                                     </td>
                                     <td>
-                                        <div class="component-badge component-badge--sm">
-                                            <span class="material-symbols-rounded"><?php echo $member['role'] === 'admin' ? 'shield' : 'person'; ?></span>
-                                            <span class="search-target"><?php echo htmlspecialchars(ucfirst($member['role'])); ?></span>
+                                        <?php 
+                                            $mRoles = $memberRoles[$member['user_id']] ?? [];
+                                            if (empty($mRoles)):
+                                        ?>
+                                            <div class="component-badge component-badge--sm">
+                                                <span class="material-symbols-rounded">person_off</span>
+                                                <span class="search-target">Sin rol</span>
+                                            </div>
+                                        <?php else:
+                                            $primaryRole = $mRoles[0];
+                                            $icon = 'person';
+                                            if ($primaryRole['is_system']) {
+                                                if ($primaryRole['name'] === 'SuperAdministrator' || $primaryRole['name'] === 'Administrator') $icon = 'shield_person';
+                                                elseif ($primaryRole['name'] === 'Moderator') $icon = 'local_police';
+                                            } else {
+                                                $icon = 'star';
+                                            }
+                                            
+                                            $primaryName = $primaryRole['is_system'] ? (__('role_' . strtolower($primaryRole['name'])) ?: ucfirst($primaryRole['name'])) : htmlspecialchars($primaryRole['name']);
+                                        ?>
+                                        <div style="display: flex; flex-direction: row; gap: 4px; align-items: center;">
+                                            <div class="component-badge component-badge--sm">
+                                                <span class="material-symbols-rounded"><?php echo $icon; ?></span>
+                                                <span class="search-target font-bold" data-role-original-name="<?php echo htmlspecialchars($primaryRole['name']); ?>"><?php echo $primaryName; ?></span>
+                                            </div>
+                                            
+                                            <?php if (count($mRoles) > 1): 
+                                                $otherRolesNames = [];
+                                                foreach (array_slice($mRoles, 1) as $r) {
+                                                    $rName = $r['is_system'] ? (__('role_' . strtolower($r['name'])) ?: ucfirst($r['name'])) : htmlspecialchars($r['name']);
+                                                    $otherRolesNames[] = $rName;
+                                                }
+                                                $tooltipText = implode(', ', $otherRolesNames);
+                                            ?>
+                                                <div class="component-badge component-badge--sm" data-tooltip="<?php echo htmlspecialchars($tooltipText); ?>" data-position="bottom">
+                                                    <span class="font-bold">+<?php echo count($mRoles) - 1; ?></span>
+                                                </div>
+                                                
+                                                <?php foreach (array_slice($mRoles, 1) as $r): 
+                                                    $rName = $r['is_system'] ? (__('role_' . strtolower($r['name'])) ?: ucfirst($r['name'])) : htmlspecialchars($r['name']);
+                                                ?>
+                                                    <span class="search-target" style="display:none;" data-role-original-name="<?php echo htmlspecialchars($r['name']); ?>"><?php echo $rName; ?></span>
+                                                <?php endforeach; ?>
+                                            <?php endif; ?>
                                         </div>
+                                        <?php endif; ?>
                                     </td>
                                     <td>
                                         <div class="component-badge component-badge--sm">
