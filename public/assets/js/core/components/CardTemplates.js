@@ -29,11 +29,11 @@ export const CardTemplates = {
 
         // Botón de acción condicional en el dropdown (basado en lógica de negocio devuelta por API)
         const actionButtonHtml = canvas.is_owner 
-            ? `<button type="button" class="component-menu-link component-text-notice--error" data-action="deleteCanvas" data-id="${canvas.id}" data-uuid="${uuid}">
+            ? `<button type="button" class="component-menu-link component-menu-link--bordered component-text-notice--error" data-action="deleteCanvas" data-id="${canvas.id}" data-uuid="${uuid}">
                     <div class="component-menu-link-icon"><span class="material-symbols-rounded">delete</span></div>
                     <div class="component-menu-link-text"><span>Eliminar lienzo</span></div>
                </button>`
-            : `<button type="button" class="component-menu-link component-text-notice--error" data-action="leaveCanvas" data-id="${canvas.id}" data-uuid="${uuid}">
+            : `<button type="button" class="component-menu-link component-menu-link--bordered component-text-notice--error" data-action="leaveCanvas" data-id="${canvas.id}" data-uuid="${uuid}">
                     <div class="component-menu-link-icon"><span class="material-symbols-rounded">logout</span></div>
                     <div class="component-menu-link-text"><span>Salir del lienzo</span></div>
                </button>`;
@@ -75,8 +75,6 @@ export const CardTemplates = {
                                     <div class="component-menu-link-icon"><span class="material-symbols-rounded">collections</span></div>
                                     <div class="component-menu-link-text"><span>Ver galería de reinicios</span></div>
                                 </button>
-
-                                <div class="component-menu-divider"></div>
 
                                 ${actionButtonHtml}
                             </div>

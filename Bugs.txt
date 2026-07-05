@@ -1,10 +1,15 @@
+1-Que no se puedan agregar tarjetas repetidas en http://localhost/settings/billing (No se si asi sea el estandar web)
+2-Al hacer hover en alguna card de un lienzo hay un icono de corazon que si lo clickamos se agrega el lienzo como a nuestros favoritos, si funciona pero al clickar el btn tenemos que esperara que el servidor devuelva exito par que se le agregue la clase que activa el rojo del corazon, eso es fastidioso ya que deberia ser instantaneo aunque el servidor todavia no responda y ya si falla pues quitar la clase o asi
+3-En el modulo que sale si clickamos el btn de morevert de algun lienzo ya vez que hay 2 botones el de eliminar lienzo o salir del lienzo segun el caso si eres el dueño o no, bueno a ese link debes agregarle component-menu-link component-menu-link--bordered
+4-En ese mismo modulo ya vez que hay una separacion <hr>, eliminala.
+5-Cuando un usuario compre una suscripcion premium, al volver a inicio debes mostrarle un modal de los que ya usamos en la web diciendole que se yo, de bienvenido a premium o cosas asi.
+6-En http://localhost/canvases/join falta agregar un placeholder al input
+7-Ahi mismo en http://localhost/canvases/join al equivocarte de codigo debe salir un toast de error, no hacer que tiemple el item
 
-5-Crear la seccion de /join
-6-crear expandibles en seccion de create / join
-7-en el modulo de create/edit de paleta de colores el ultimo no es uncolor ademas de que es ancho, no es circulo
-8-resolver en conjunto a problema 7 que en ese modulo solo se muestran los primeros 5 colores por ende todos se ven negros/grises
-10-en la seccion de manage canvases eliminar el btn de <button class="component-button component-button--icon component-button--h40" data-action="deselectCanvas" data-tooltip="tooltip_cancel_selection" data-position="bottom">
-                        <span class="material-symbols-rounded">close</span>
-                    </button>
-13-que en http://localhost/design/s/43d697ca-a174-4bfe-89f0-5fbe3afe86ca si no hay nada, y entramos desde el btn quedara solo el skeleton pero no el div de empty hasta que recarguemos
-18-la seccion http://localhost/canvases/manage/requests/43d697ca-a174-4bfe-89f0-5fbe3afe86ca si no hay nada, no esta mostrando el mensaje en la tabla de empty
+
+10-(Global) - Que al unirte o tratar de unirte a un lienzo haya una alerta diciendote que aceptes las normas y cosas asi
+
+
+1-Implementar 5 paletas de colores en total
+2-Implementar un creador de paletas de colores personalizado para suscripciones premium nivel 2 (advanced)
+3-Implementar un cotador de jugadores online en cada card de lienzos

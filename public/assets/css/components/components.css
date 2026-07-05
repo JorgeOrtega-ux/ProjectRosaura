@@ -613,7 +613,6 @@ html.dark-theme .component-top.shadow {
     outline: none;
     background-color: transparent;
     padding: 16px 12px 4px 12px;
-    font-size: 15px;
     color: var(--text-primary);
     font-family: inherit;
 }
@@ -622,12 +621,17 @@ html.dark-theme .component-top.shadow {
     padding: 0 12px !important;
 }
 
-.component-input-field--with-icon {
-    padding-right: 44px;
-}
-
 .component-input-field::placeholder {
     color: transparent;
+}
+
+.component-input-field--simple::placeholder {
+    color: var(--text-secondary) !important;
+    opacity: 1 !important;
+}
+
+.component-input-field--with-icon {
+    padding-right: 44px;
 }
 
 .component-input-label {

@@ -26,7 +26,7 @@
                             </div>
                             <div class="component-card__actions component-card__actions--start">
                                 <div class="component-input-group component-input-group--h34">
-                                    <input type="text" name="code" id="join-code-input" class="component-input-field component-input-field--simple" placeholder="Ej: A9X-2B4" required autocomplete="off">
+                                    <input type="text" name="code" id="join-code-input" class="component-input-field component-input-field--simple" placeholder="Ingresa tu código aquí" required autocomplete="off">
                                 </div>
                             </div>
                         </div>

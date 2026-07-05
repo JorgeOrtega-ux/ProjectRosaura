@@ -88,10 +88,6 @@ class CanvasesJoinController {
                 btn.innerHTML = originalText;
                 btn.disabled = false;
                 showMessage(response?.message || 'Error al validar el código.', 'error');
-                
-                this.form.style.animation = 'none';
-                this.form.offsetHeight; 
-                this.form.style.animation = 'shake 0.5s';
             }
         } catch (error) {
             console.error('Error joining canvas:', error);
