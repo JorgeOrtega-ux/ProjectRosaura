@@ -196,6 +196,15 @@ class CanvasServices {
                     }
                 }
                 
+                $snapshotPath = "public/storage/snapshots/canvas_" . $canvas['id'] . ".png";
+                $physicalPath = dirname(__DIR__, 2) . '/storage/public/snapshots/canvas_' . $canvas['id'] . '.png';
+                $snapshotUrl = null;
+                
+                if (file_exists($physicalPath)) {
+                    $timestamp = filemtime($physicalPath);
+                    $snapshotUrl = "/" . $snapshotPath . "?v=" . $timestamp;
+                }
+                
                 $formattedCanvases[] = [
                     'id' => $canvas['id'],
                     'uuid' => $canvas['uuid'],
@@ -210,7 +219,7 @@ class CanvasServices {
                     'is_owner' => $canvas['is_owner'],
                     'online_players' => 0, 
                     'members_count' => $canvas['members_count'],
-                    'snapshot_url' => $canvas['snapshot_url'] ?? null,
+                    'snapshot_url' => $snapshotUrl,
                     'locked_requires_downgrade' => $isLocked,
                     'locked_reasons' => $lockedReasons
                 ];
