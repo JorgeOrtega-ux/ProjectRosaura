@@ -119,29 +119,30 @@ if (!empty($canvasUuid)) {
             <div class="component-top-right">
                 
                 <?php if (!$isSnapshot): ?>
-                <div class="component-actions disabled" data-ref="spectator-controls">
+                <?php $isPrivate = ($canvasPrivacy === 'private'); ?>
+                <div class="component-actions <?php echo $isPrivate ? 'active' : 'disabled'; ?>" data-ref="spectator-controls">
                     
-                    <div class="component-badge component-badge--warning" data-ref="spectator-status-badge" data-tooltip="<?php echo __('tooltip_spectator') ?? 'Solo puedes observar'; ?>" data-position="bottom">
+                    <div class="component-badge component-badge--warning <?php echo $isPrivate ? 'disabled' : ''; ?>" data-ref="spectator-status-badge" data-tooltip="<?php echo __('tooltip_spectator') ?? 'Solo puedes observar'; ?>" data-position="bottom">
                         <span class="material-symbols-rounded">visibility</span>
                         <span><?php echo __('lbl_spectator') ?? 'Modo Espectador'; ?></span>
                     </div>
 
-                    <div class="component-badge component-badge--danger" data-ref="private-status-badge" data-tooltip="No eres miembro" data-position="bottom">
+                    <div class="component-badge component-badge--danger <?php echo !$isPrivate ? 'disabled' : ''; ?>" data-ref="private-status-badge" data-tooltip="No eres miembro" data-position="bottom">
                         <span class="material-symbols-rounded">lock</span>
                         <span>Lienzo Privado</span>
                     </div>
                     
-                    <button class="component-button component-button--h34" data-action="joinCanvasDirectly" data-ref="btn-join-direct">
+                    <button class="component-button component-button--h34 <?php echo ($isPrivate && $canvasApproval == '1') ? 'disabled' : ''; ?>" data-action="joinCanvasDirectly" data-ref="btn-join-direct">
                         <?php echo __('btn_join') ?? 'Unirse'; ?>
                     </button>
                     
-                    <button class="component-button component-button--h34 component-button--dark" data-action="requestCanvasAccess" data-ref="btn-request-access">
+                    <button class="component-button component-button--h34 component-button--dark <?php echo ($isPrivate && $canvasApproval != '1') ? 'disabled' : ''; ?>" data-action="requestCanvasAccess" data-ref="btn-request-access">
                         <span class="material-symbols-rounded">front_hand</span>
                         <?php echo __('btn_request_access') ?? 'Solicitar Acceso'; ?>
                     </button>
                 </div>
 
-                <div class="component-actions active" data-ref="design-tools-actions">
+                <div class="component-actions <?php echo $isPrivate ? 'disabled' : 'active'; ?>" data-ref="design-tools-actions">
                     <button class="component-button component-button--icon component-button--h40" data-action="openJoinLiveModal" data-tooltip="Unirse a sesión en vivo" data-position="bottom">
                         <span class="material-symbols-rounded">sensors</span>
                     </button>
@@ -194,7 +195,7 @@ if (!empty($canvasUuid)) {
             <div class="canvas-badges-right" data-ref="badges-right"></div>
             
             <?php if (!$isSnapshot): ?>
-            <div class="component-action-pill">
+            <div class="component-action-pill <?php echo isset($isPrivate) && $isPrivate ? 'disabled' : ''; ?>">
                 <button class="component-button component-button--dark component-button--h45 disabled-interactive" data-action="placePixels" data-ref="pixel-action-btn">
                     <span class="material-symbols-rounded">touch_app</span>
                     <span data-ref="pixel-action-text"><?php echo __('btn_select_pixels'); ?></span>
