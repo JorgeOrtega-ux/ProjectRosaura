@@ -225,10 +225,11 @@ export const DesignInteractions = {
                 this.selectedPixels.delete(key);
             } else {
                 this.selectionMode = 'add';
-                if (this.selectedPixels.size < Math.floor(this.cooldownBalance)) {
+                const maxBalance = this.perkNoCooldown ? Infinity : Math.floor(this.cooldownBalance);
+                if (this.selectedPixels.size < maxBalance) {
                     this.selectedPixels.add(key);
                 } else {
-                    showMessage(__('err_pixel_limit')?.replace(':limit', Math.floor(this.cooldownBalance)) || 'Límite alcanzado', 'warning');
+                    showMessage(__('err_pixel_limit')?.replace(':limit', maxBalance === Infinity ? '∞' : maxBalance) || 'Límite alcanzado', 'warning');
                 }
             }
             this.isSelecting = true;
@@ -336,7 +337,8 @@ export const DesignInteractions = {
                 const sizeBefore = this.selectedPixels.size;
                 
                 if (this.selectionMode === 'add') {
-                    if (this.selectedPixels.size < Math.floor(this.cooldownBalance)) {
+                    const maxBalance = this.perkNoCooldown ? Infinity : Math.floor(this.cooldownBalance);
+                    if (this.selectedPixels.size < maxBalance) {
                         this.selectedPixels.add(key);
                     }
                 } else {
@@ -468,15 +470,15 @@ export const DesignInteractions = {
     updateSelectionUI() {
         if (!this.btnPlacePixels || !this.txtPlacePixels) return;
 
-        const balance = Math.floor(this.cooldownBalance);
+        const maxBalance = this.perkNoCooldown ? Infinity : Math.floor(this.cooldownBalance);
 
-        if (this.selectedPixels.size > 0 && this.selectedPixels.size <= balance) {
+        if (this.selectedPixels.size > 0 && this.selectedPixels.size <= maxBalance) {
             this.btnPlacePixels.classList.remove('disabled-interactive');
             this.txtPlacePixels.textContent = __('btn_place_pixels') || 'Colocar';
         } else {
             this.btnPlacePixels.classList.add('disabled-interactive');
-            if (this.selectedPixels.size > balance) {
-                this.txtPlacePixels.textContent = (__('lbl_max_pixels') || ':max máximo').replace(':max', balance);
+            if (this.selectedPixels.size > maxBalance) {
+                this.txtPlacePixels.textContent = (__('lbl_max_pixels') || ':max máximo').replace(':max', maxBalance === Infinity ? '∞' : maxBalance);
             } else {
                 this.txtPlacePixels.textContent = __('btn_select_pixels') || 'Seleccionar Pixeles';
             }
@@ -486,9 +488,9 @@ export const DesignInteractions = {
     placePixels() {
         if (this.selectedPixels.size === 0 || this.isSpectator || this.timelapseActive || this.isResetLocked || this.isResizeLocked) return;
         
-        const balance = Math.floor(this.cooldownBalance);
-        if (this.selectedPixels.size > balance) {
-            showMessage(__('err_pixel_limit')?.replace(':limit', balance) || 'Límite', 'warning');
+        const maxBalance = this.perkNoCooldown ? Infinity : Math.floor(this.cooldownBalance);
+        if (this.selectedPixels.size > maxBalance) {
+            showMessage(__('err_pixel_limit')?.replace(':limit', maxBalance === Infinity ? '∞' : maxBalance) || 'Límite', 'warning');
             return;
         }
 
@@ -517,7 +519,10 @@ export const DesignInteractions = {
             }
         });
 
-        this.cooldownBalance -= this.selectedPixels.size;
+        if (!this.perkNoCooldown) {
+            this.cooldownBalance -= this.selectedPixels.size;
+        }
+        
         if (this.cooldownBalance < this.cooldownMax && this.cooldownNextIn <= 0) {
             this.cooldownNextIn = this.cooldownSec;
             this.lastSyncTime = Date.now();
@@ -586,6 +591,24 @@ export const DesignInteractions = {
             
             if (result && result.success) {
                 if (typeof showMessage === 'function') showMessage('Ventaja activada exitosamente', 'success');
+                
+                // Activar localmente
+                if (result.perk_id === 'no_cooldown_10s') {
+                    this.perkNoCooldown = true;
+                    if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+                    this.updateSelectionUI();
+                    
+                    // Quitar localmente después de 10 segundos
+                    setTimeout(() => {
+                        this.perkNoCooldown = false;
+                        if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+                        this.updateSelectionUI();
+                    }, 10000);
+                } else if (result.perk_id === 'pixel_protection_25') {
+                    this.perkProtectionLeft = (this.perkProtectionLeft || 0) + 25;
+                    if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+                }
+
                 this.loadUserPerks(); // Recargar lista
             } else {
                 if (typeof showMessage === 'function') showMessage(result?.message_key || 'Error al activar ventaja', 'error');
@@ -594,6 +617,39 @@ export const DesignInteractions = {
             if (btn) btn.classList.remove('loading');
             console.error('Error activating perk', error);
             if (typeof showMessage === 'function') showMessage('Error al conectar con el servidor', 'error');
+        }
+    },
+    
+    updatePerkBadges() {
+        const badgesLeft = document.querySelector('[data-ref="badges-left"]');
+        if (!badgesLeft) return;
+
+        // Badge Sin Cooldown
+        let noCdBadge = badgesLeft.querySelector('[data-badge-id="perk-no-cooldown"]');
+        if (this.perkNoCooldown) {
+            if (!noCdBadge) {
+                noCdBadge = document.createElement('div');
+                noCdBadge.className = 'component-badge';
+                noCdBadge.setAttribute('data-badge-id', 'perk-no-cooldown');
+                noCdBadge.innerHTML = `<span class="material-symbols-rounded" style="color:var(--color-primary);">bolt</span><span>Sin Cooldown</span>`;
+                badgesLeft.appendChild(noCdBadge);
+            }
+        } else if (noCdBadge) {
+            noCdBadge.remove();
+        }
+
+        // Badge Protección
+        let protBadge = badgesLeft.querySelector('[data-badge-id="perk-protection"]');
+        if (this.perkProtectionLeft > 0) {
+            if (!protBadge) {
+                protBadge = document.createElement('div');
+                protBadge.className = 'component-badge';
+                protBadge.setAttribute('data-badge-id', 'perk-protection');
+                badgesLeft.appendChild(protBadge);
+            }
+            protBadge.innerHTML = `<span class="material-symbols-rounded" style="color:var(--color-success);">shield</span><span>Protección: ${this.perkProtectionLeft}</span>`;
+        } else if (protBadge) {
+            protBadge.remove();
         }
     }
 };

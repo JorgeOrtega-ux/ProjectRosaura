@@ -227,17 +227,24 @@ async def handler(websocket):
                     if user_id:
                         balance, last_t, _, now = await get_user_cooldown(r, canvas_id, user_id, config_batch, config_sec)
                         next_in = round(config_sec - (now - last_t), 2) if config_sec > 0 and balance < config_batch else 0
+                        is_no_cooldown = await r.exists(f"user:{user_id}:perk:no_cooldown")
+                        protection_left = await r.get(f"user:{user_id}:perk:protection")
+                        protection_left = int(protection_left) if protection_left else 0
                     else:
                         print(f"[DEBUG PY] Usuario no identificado, devolviendo max batch por defecto.")
                         balance = config_batch
                         next_in = 0
+                        is_no_cooldown = 0
+                        protection_left = 0
                         
                     init_msg = json.dumps({
                         "type": "init_cooldown",
                         "balance": int(balance),
                         "max_batch": config_batch,
                         "cooldown_sec": config_sec,
-                        "next_replenish_in": next_in
+                        "next_replenish_in": next_in,
+                        "perk_no_cooldown": bool(is_no_cooldown),
+                        "perk_protection_left": protection_left
                     })
                     print(f"[DEBUG PY] Enviando respuesta de INIT al front: {init_msg}")
                     await websocket.send(init_msg)
@@ -353,9 +360,16 @@ async def handler(websocket):
                         
                         if protected_by and protected_by.decode('utf-8') != str(user_id):
                             print(f"[DEBUG PY] Pixel {x},{y} protegido por el usuario {protected_by.decode('utf-8')}")
+                            redis_state_key = f"canvas:{canvas_id}:state"
+                            orig_color = await r.getrange(redis_state_key, offset, offset)
+                            orig_c_index = orig_color[0] if orig_color else 255
+                            
                             error_msg = json.dumps({
                                 "type": "pixel_protected_error",
-                                "message": "Este píxel está protegido"
+                                "message": "Este píxel está protegido",
+                                "x": x,
+                                "y": y,
+                                "color": orig_c_index
                             })
                             await websocket.send(error_msg)
                             continue
@@ -365,6 +379,10 @@ async def handler(websocket):
                         
                         user_no_cooldown_key = f"user:{user_id}:perk:no_cooldown"
                         is_no_cooldown = await r.exists(user_no_cooldown_key)
+
+                        user_protection_key = f"user:{user_id}:perk:protection"
+                        protection_left = await r.get(user_protection_key)
+                        protection_left = int(protection_left) if protection_left else 0
 
                         if balance >= 1 or is_no_cooldown:
                             if not is_no_cooldown:
@@ -379,19 +397,19 @@ async def handler(websocket):
                                 "balance": int(balance),
                                 "max_batch": config_batch,
                                 "cooldown_sec": config_sec,
-                                "next_replenish_in": round(config_sec - (now - last_t), 2) if config_sec > 0 else 0
+                                "next_replenish_in": round(config_sec - (now - last_t), 2) if config_sec > 0 else 0,
+                                "perk_no_cooldown": bool(is_no_cooldown),
+                                "perk_protection_left": protection_left - 1 if (0 <= color_index <= 255 and protection_left > 0) else protection_left
                             })
                             print(f"[DEBUG PY] Confirmando pixel. Msg: {confirm_msg}")
                             await websocket.send(confirm_msg)
 
                             if 0 <= color_index <= 255:
                                 # 3. Aplicar protección si el usuario tiene el perk de protección
-                                user_protection_key = f"user:{user_id}:perk:protection"
-                                protection_left = await r.get(user_protection_key)
-                                if protection_left and int(protection_left) > 0:
+                                if protection_left > 0:
                                     await r.decr(user_protection_key)
                                     await r.setex(protected_key, 86400, str(user_id)) # 24 horas de protección
-                                    print(f"[DEBUG PY] Pixel {x},{y} protegido por {user_id} por 24h. Le quedan {int(protection_left)-1} pixeles protegidos.")
+                                    print(f"[DEBUG PY] Pixel {x},{y} protegido por {user_id} por 24h. Le quedan {protection_left-1} pixeles protegidos.")
 
                                 redis_state_key = f"canvas:{canvas_id}:state"
                                 await r.setrange(redis_state_key, offset, bytes([color_index]))
@@ -416,12 +434,21 @@ async def handler(websocket):
 
                         else:
                             print(f"[DEBUG PY] Cooldown activo. Pixeles insuficientes para {user_id}.")
+                            user_no_cooldown_key = f"user:{user_id}:perk:no_cooldown"
+                            is_no_cooldown = await r.exists(user_no_cooldown_key)
+
+                            user_protection_key = f"user:{user_id}:perk:protection"
+                            protection_left = await r.get(user_protection_key)
+                            protection_left = int(protection_left) if protection_left else 0
+                            
                             error_msg = json.dumps({
                                 "type": "cooldown_error",
                                 "balance": 0,
                                 "max_batch": config_batch,
                                 "cooldown_sec": config_sec,
-                                "next_replenish_in": round(config_sec - (now - last_t), 2) if config_sec > 0 else 0
+                                "next_replenish_in": round(config_sec - (now - last_t), 2) if config_sec > 0 else 0,
+                                "perk_no_cooldown": bool(is_no_cooldown),
+                                "perk_protection_left": protection_left
                             })
                             await websocket.send(error_msg)
 

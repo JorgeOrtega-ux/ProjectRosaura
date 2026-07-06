@@ -121,6 +121,24 @@ export const DesignNetwork = {
                 }
                 else if (data.type === 'pixel_protected_error') {
                     showMessage(data.message || 'Este píxel está protegido', 'warning');
+                    
+                    if (data.x !== undefined && data.y !== undefined && data.color !== undefined) {
+                        const pX = parseInt(data.x, 10);
+                        const pY = parseInt(data.y, 10);
+                        const cIdx = parseInt(data.color, 10);
+                        
+                        if (cIdx === 255) {
+                            this.offscreenCtx.clearRect(pX, pY, 1, 1);
+                        } else {
+                            const paletteObj = getPaletteById(this.canvasPaletteId);
+                            const hexColor = (paletteObj && paletteObj.colors[cIdx]) ? paletteObj.colors[cIdx] : '#000000';
+                            
+                            this.offscreenCtx.fillStyle = hexColor;
+                            this.offscreenCtx.clearRect(pX, pY, 1, 1);
+                            this.offscreenCtx.fillRect(pX, pY, 1, 1);
+                        }
+                        this.requestRender();
+                    }
                 }
                 else if (data.type === 'canvas_locked_error') {
                     showMessage(__('err_canvas_resetting'), 'warning');
@@ -507,11 +525,18 @@ export const DesignNetwork = {
         this.cooldownNextIn = data.next_replenish_in;
         this.lastSyncTime = Date.now();
         
+        // Soporte para ventajas (perks)
+        this.perkNoCooldown = data.perk_no_cooldown || false;
+        this.perkProtectionLeft = data.perk_protection_left || 0;
+
         if (data.type === 'cooldown_error') {
             showMessage(__('err_sync_limit'), 'warning');
         }
         
         this.updateSelectionUI();
+        if (typeof this.updatePerkBadges === 'function') {
+            this.updatePerkBadges();
+        }
     },
 
     handleCanvasLocked(data) {

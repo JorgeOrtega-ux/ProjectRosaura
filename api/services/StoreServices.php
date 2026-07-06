@@ -108,6 +108,24 @@ class StoreServices {
             return ['success' => false, 'message_key' => 'store.invalid_perk'];
         }
 
+        try {
+            $redis = \App\Config\RedisManager::getInstance()->getConnection();
+            
+            if ($perkId === 'no_cooldown_10s') {
+                $key = "user:{$userId}:perk:no_cooldown";
+                if ($redis->exists($key)) {
+                    return ['success' => false, 'message_key' => 'Esta ventaja ya se encuentra activa.'];
+                }
+            } elseif ($perkId === 'pixel_protection_25') {
+                $key = "user:{$userId}:perk:protection";
+                if ($redis->exists($key) && (int)$redis->get($key) > 0) {
+                    return ['success' => false, 'message_key' => 'Esta ventaja ya se encuentra activa.'];
+                }
+            }
+        } catch (\Throwable $e) {
+            Logger::error("Redis Error en activatePerk (Check): " . $e->getMessage());
+        }
+
         // Marcar perk como usado en MySQL
         if (!$this->storeRepo->markPerkAsUsed($userId, $perkId)) {
             return ['success' => false, 'message_key' => 'store.perk_not_owned'];
@@ -115,19 +133,17 @@ class StoreServices {
 
         // Actualizar estado en Redis para el WebSocket Python
         try {
-            $redis = \App\Config\RedisManager::getInstance()->getConnection();
-            
-            if ($perkId === 'no_cooldown_10s') {
-                $key = "user:{$userId}:perk:no_cooldown";
-                $redis->setex($key, 10, "1"); 
-            } elseif ($perkId === 'pixel_protection_25') {
-                $key = "user:{$userId}:perk:protection";
-                // Sumamos por si tiene proteccion anterior no consumida, o simplemente asignamos
-                $current = (int)$redis->get($key);
-                $redis->setex($key, 86400, (string)($current + 25)); // 86400 = 24h
+            if (isset($redis)) {
+                if ($perkId === 'no_cooldown_10s') {
+                    $key = "user:{$userId}:perk:no_cooldown";
+                    $redis->setex($key, 10, "1"); 
+                } elseif ($perkId === 'pixel_protection_25') {
+                    $key = "user:{$userId}:perk:protection";
+                    $redis->setex($key, 86400, "25"); // 86400 = 24h
+                }
             }
         } catch (\Throwable $e) {
-            Logger::error("Redis Error en activatePerk: " . $e->getMessage());
+            Logger::error("Redis Error en activatePerk (Set): " . $e->getMessage());
         }
 
         Logger::info("User activated perk", [
@@ -137,7 +153,8 @@ class StoreServices {
 
         return [
             'success' => true,
-            'message_key' => 'store.perk_activated'
+            'message_key' => 'store.perk_activated',
+            'perk_id' => $perkId
         ];
     }
 }
