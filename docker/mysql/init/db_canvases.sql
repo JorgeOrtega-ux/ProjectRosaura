@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS `canvases` (
   `description` text DEFAULT NULL,
   `privacy` enum('public', 'private') DEFAULT 'private',
   `requires_approval` tinyint(1) NOT NULL DEFAULT 0,
+  `allow_purchases` tinyint(1) NOT NULL DEFAULT 1,
   `size` varchar(20) NOT NULL DEFAULT '64',
   `palette_id` varchar(50) NOT NULL DEFAULT 'default',
   `max_participants` int(11) NOT NULL DEFAULT 10,
