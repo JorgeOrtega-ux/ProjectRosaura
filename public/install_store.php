@@ -46,6 +46,8 @@ try {
             user_id INT NOT NULL,
             perk_id VARCHAR(50) NOT NULL,
             coins_spent INT NOT NULL DEFAULT 0,
+            is_used TINYINT(1) NOT NULL DEFAULT 0,
+            used_at TIMESTAMP NULL DEFAULT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             INDEX (user_id)
         )

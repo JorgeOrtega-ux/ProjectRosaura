@@ -6,26 +6,43 @@ import { getPaletteById } from './utils/DesignPaletteUtils.js';
 
 export const DesignNetwork = {
     async getTurnstileToken() {
-        return new Promise((resolve, reject) => {
-            const wrapper = document.getElementById('cf-turnstile-wrapper');
+        return new Promise(async (resolve, reject) => {
+            const wrapper = document.querySelector('[data-ref="turnstile-container"]');
             const sitekey = wrapper ? wrapper.dataset.sitekey : null;
             
-            if (!sitekey || !window.turnstile) {
+            if (!sitekey) {
+                return resolve(null);
+            }
+
+            let attempts = 0;
+            while (typeof turnstile === 'undefined' && attempts < 30) {
+                await new Promise(r => setTimeout(r, 100));
+                attempts++;
+            }
+
+            if (typeof turnstile === 'undefined') {
+                console.warn("[Turnstile] Script not loaded");
                 return resolve(null);
             }
 
             try {
-                window.turnstile.render(wrapper, {
+                // Si el widget ya tiene un iframe, es que se inicializó antes. Limpiamos.
+                if (wrapper.hasChildNodes()) {
+                    wrapper.innerHTML = '';
+                }
+
+                turnstile.render(wrapper, {
                     sitekey: sitekey,
                     callback: function(token) {
                         resolve(token);
-                        setTimeout(() => window.turnstile.reset(wrapper), 1000); 
+                        setTimeout(() => turnstile.reset(wrapper), 1000); 
                     },
                     'error-callback': function() {
                         reject(new Error(__('err_turnstile_failed')));
                     }
                 });
             } catch (e) {
+                console.error("[Turnstile] Render error:", e);
                 resolve(null);
             }
         });

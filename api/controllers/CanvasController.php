@@ -84,7 +84,7 @@ class CanvasController extends BaseController {
 
             // Si es un invitado, exigimos validación de Cloudflare Turnstile
             if (!$isLoggedIn) {
-                $token = $input['cf-turnstile-response'] ?? clone $input['turnstile_token'] ?? null;
+                $token = $input['cf-turnstile-response'] ?? $input['turnstile_token'] ?? null;
                 
                 if (!$token) {
                     return $this->respond(['success' => false, 'message' => 'Validación de seguridad (Turnstile) requerida para espectadores.', 'http_code' => 403]);
