@@ -87,6 +87,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `email` varchar(100) NOT NULL,
   `password` varchar(255) NOT NULL,
   `subscription_tier` tinyint(1) DEFAULT 0, -- NOTA DE IMPLEMENTACIÓN: Nuevo campo para el nivel de suscripción (0=Básico, 1=Pro, 2=Advanced)
+  `stripe_customer_id` varchar(255) DEFAULT NULL,
   `two_factor_secret` varchar(64) DEFAULT NULL,
   `two_factor_enabled` tinyint(1) DEFAULT 0,
   `two_factor_recovery_codes` text DEFAULT NULL,
@@ -106,6 +107,54 @@ CREATE TABLE IF NOT EXISTS `user_roles` (
   CONSTRAINT `fk_ur_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_ur_role` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
+
+CREATE TABLE IF NOT EXISTS `subscriptions` (
+  `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+  `user_id` INT(11) NOT NULL,
+  `stripe_customer_id` VARCHAR(255) DEFAULT NULL,
+  `stripe_subscription_id` VARCHAR(255) DEFAULT NULL,
+  `stripe_checkout_session_id` VARCHAR(255) DEFAULT NULL,
+  `tier` TINYINT(1) NOT NULL DEFAULT 0,
+  `billing_period` ENUM('monthly', 'yearly') NOT NULL DEFAULT 'monthly',
+  `status` ENUM('active', 'canceled', 'past_due', 'incomplete', 'trialing') NOT NULL DEFAULT 'incomplete',
+  `current_period_start` DATETIME DEFAULT NULL,
+  `current_period_end` DATETIME DEFAULT NULL,
+  `canceled_at` DATETIME DEFAULT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_sub_user_id (`user_id`),
+  INDEX idx_sub_stripe_customer (`stripe_customer_id`),
+  INDEX idx_sub_stripe_subscription (`stripe_subscription_id`),
+  INDEX idx_sub_checkout_session (`stripe_checkout_session_id`),
+  CONSTRAINT fk_sub_user FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `payment_history` (
+  `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+  `user_id` INT(11) NOT NULL,
+  `stripe_payment_intent_id` VARCHAR(255) DEFAULT NULL,
+  `stripe_invoice_id` VARCHAR(255) DEFAULT NULL,
+  `amount_cents` INT NOT NULL,
+  `currency` VARCHAR(3) NOT NULL DEFAULT 'usd',
+  `description` VARCHAR(255) DEFAULT NULL,
+  `status` ENUM('succeeded', 'pending', 'failed', 'refunded') NOT NULL DEFAULT 'pending',
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_ph_user (`user_id`),
+  CONSTRAINT fk_ph_user FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `custom_palettes` (
+    `id` int(11) NOT NULL AUTO_INCREMENT,
+    `user_id` int(11) NOT NULL,
+    `palette_key` varchar(50) NOT NULL,
+    `name` varchar(60) NOT NULL,
+    `colors` JSON NOT NULL,
+    `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `unique_palette_key` (`palette_key`),
+    KEY `idx_user_id` (`user_id`),
+    CONSTRAINT `fk_custom_palettes_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS user_restrictions (
   user_id INT(11) NOT NULL PRIMARY KEY,

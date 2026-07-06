@@ -213,6 +213,23 @@ CREATE TABLE IF NOT EXISTS `user_templates` (
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 -- ==========================================
+-- TABLA PARA INVITACIONES DE LIENZOS
+-- ==========================================
+
+CREATE TABLE IF NOT EXISTS `canvas_invites` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `canvas_id` INT(11) NOT NULL,
+  `code` VARCHAR(10) NOT NULL UNIQUE,
+  `role` VARCHAR(50) NOT NULL,
+  `max_uses` INT NULL,
+  `uses_count` INT DEFAULT 0,
+  `expires_at` DATETIME NULL,
+  `created_by` INT(11) NOT NULL,
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`canvas_id`) REFERENCES `canvases`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ==========================================
 -- ASIGNACIÓN DE PERMISOS AL USUARIO DE LA API
 -- ==========================================
 GRANT ALL PRIVILEGES ON db_canvases.* TO 'system_web_executor'@'%';
