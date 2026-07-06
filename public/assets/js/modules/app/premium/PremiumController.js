@@ -2,7 +2,7 @@
 
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
-import { showMessage } from '../../../core/utils/uiUtils.js';
+import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
 
 export class PremiumController {
 
@@ -186,10 +186,7 @@ export class PremiumController {
         }
 
         // Deshabilitar el botón y mostrar loading
-        const originalText = btn.textContent;
-        btn.disabled = true;
-        btn.classList.add('disabled');
-        btn.innerHTML = '<span class="material-symbols-rounded" style="animation: spin 1s linear infinite; font-size: 18px;">progress_activity</span> Procesando...';
+        setButtonLoading(btn);
 
         try {
             // Primero, verificar si ya tiene una suscripción activa
@@ -214,9 +211,7 @@ export class PremiumController {
                     showMessage('¡Tu suscripción se ha actualizado correctamente!', 'success');
                     setTimeout(() => { window.location.reload(); }, 1500);
                 } else {
-                    btn.disabled = false;
-                    btn.classList.remove('disabled');
-                    btn.textContent = originalText;
+                    restoreButton(btn);
                     const msg = result.message || 'Error al actualizar la suscripción';
                     showMessage(msg, 'error');
                 }
@@ -233,18 +228,14 @@ export class PremiumController {
                     window.location.href = result.checkout_url;
                 } else {
                     // Restaurar botón
-                    btn.disabled = false;
-                    btn.classList.remove('disabled');
-                    btn.textContent = originalText;
+                    restoreButton(btn);
 
                     const msg = result.message || (typeof window.__ === 'function' ? window.__('stripe_checkout_error') : 'Error al crear la sesión de pago');
                     showMessage(msg, 'error');
                 }
             }
         } catch (error) {
-            btn.disabled = false;
-            btn.classList.remove('disabled');
-            btn.textContent = originalText;
+            restoreButton(btn);
             showMessage('Error de conexión. Intenta de nuevo.', 'error');
         }
     }
