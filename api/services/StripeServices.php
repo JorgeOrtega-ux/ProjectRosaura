@@ -189,7 +189,7 @@ class StripeServices {
         $billingPeriod = $input['billing_period'] ?? 'monthly';
 
         // Validaciones
-        if (!in_array($tier, [SubscriptionPlanConstants::TIER_PRO, SubscriptionPlanConstants::TIER_ADVANCED])) {
+        if (!in_array($tier, [SubscriptionPlanConstants::TIER_BASIC, SubscriptionPlanConstants::TIER_PRO, SubscriptionPlanConstants::TIER_ADVANCED])) {
             return ['success' => false, 'message_key' => 'stripe.invalid_tier'];
         }
 
@@ -205,6 +205,29 @@ class StripeServices {
         $activeLocalSub = $this->subscriptionRepo->findActiveByUserId($userId);
         if (!$activeLocalSub || empty($activeLocalSub['stripe_subscription_id'])) {
             return ['success' => false, 'message_key' => 'stripe.no_active_subscription'];
+        }
+
+        // Manejar downgrade a plan Básico (Cancelación)
+        if ($tier === SubscriptionPlanConstants::TIER_BASIC) {
+            \Stripe\Stripe::setApiKey($_ENV['STRIPE_SECRET_KEY']);
+            try {
+                $subscription = \Stripe\Subscription::retrieve($activeLocalSub['stripe_subscription_id']);
+                $subscription->cancel();
+                
+                $this->subscriptionRepo->updateUserTier($userId, SubscriptionPlanConstants::TIER_BASIC);
+                $this->subscriptionRepo->updateByStripeSubscriptionId($subscription->id, [
+                    'status' => 'canceled',
+                    'canceled_at' => date('Y-m-d H:i:s')
+                ]);
+                Logger::info("Stripe Subscription canceled (downgraded to basic)", [
+                    'user_id' => $userId,
+                    'subscription_id' => $subscription->id
+                ]);
+                return ['success' => true, 'updated' => true];
+            } catch (\Exception $e) {
+                Logger::error("Stripe API Error canceling subscription", ['error' => $e->getMessage()]);
+                return ['success' => false, 'message' => $e->getMessage()];
+            }
         }
 
         // Obtener Price ID de Stripe

@@ -482,15 +482,15 @@ $comparisonRows = [
                 </ul>
 
                 <?php if ($tier === $planTier): ?>
-                    <a href="#" class="<?php echo $plan['btn_class']; ?> disabled"><?php echo __('premium_btn_current'); ?></a>
+                    <div class="<?php echo $plan['btn_class']; ?> disabled" style="cursor: pointer; text-align: center; display: flex; align-items: center; justify-content: center;"><?php echo __('premium_btn_current'); ?></div>
                 <?php elseif ($planTier === 0): ?>
-                    <a href="#" class="component-button component-button--full component-button--h45" data-action="subscribe" data-tier="0"><?php echo __('premium_btn_downgrade_basic'); ?></a>
+                    <div class="component-button component-button--full component-button--h45" data-action="subscribe" data-tier="0" style="cursor: pointer; text-align: center; display: flex; align-items: center; justify-content: center;"><?php echo __('premium_btn_downgrade_basic'); ?></div>
                 <?php elseif ($planTier === 1 && $tier > 1): ?>
-                    <a href="#" class="<?php echo $plan['btn_class']; ?>" data-action="subscribe" data-tier="1"><?php echo __('premium_btn_downgrade_pro'); ?></a>
+                    <div class="<?php echo $plan['btn_class']; ?>" data-action="subscribe" data-tier="1" style="cursor: pointer; text-align: center; display: flex; align-items: center; justify-content: center;"><?php echo __('premium_btn_downgrade_pro'); ?></div>
                 <?php elseif ($planTier === 1): ?>
-                    <a href="#" class="<?php echo $plan['btn_class']; ?>" data-action="subscribe" data-tier="1"><?php echo __('premium_btn_upgrade_pro'); ?></a>
+                    <div class="<?php echo $plan['btn_class']; ?>" data-action="subscribe" data-tier="1" style="cursor: pointer; text-align: center; display: flex; align-items: center; justify-content: center;"><?php echo __('premium_btn_upgrade_pro'); ?></div>
                 <?php elseif ($planTier === 2): ?>
-                    <a href="#" class="<?php echo $plan['btn_class']; ?>" data-action="subscribe" data-tier="2"><?php echo __('premium_btn_upgrade_advanced'); ?></a>
+                    <div class="<?php echo $plan['btn_class']; ?>" data-action="subscribe" data-tier="2" style="cursor: pointer; text-align: center; display: flex; align-items: center; justify-content: center;"><?php echo __('premium_btn_upgrade_advanced'); ?></div>
                 <?php endif; ?>
             </div>
             <?php endforeach; ?>

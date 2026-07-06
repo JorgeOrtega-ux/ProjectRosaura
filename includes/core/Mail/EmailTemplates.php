@@ -163,6 +163,18 @@ class EmailTemplates {
                 ";
                 break;
 
+            case 'subscription_confirmation':
+                $title = Translator::getForLang($lang, 'email_subscription_subject');
+                $p1 = Translator::getForLang($lang, 'email_subscription_p1', ['username' => $username ?? '', 'tierName' => $tierName ?? '', 'billingPeriod' => $billingPeriod ?? '']);
+                $p2 = Translator::getForLang($lang, 'email_subscription_p2');
+
+                $content = "
+                    <h2 style='color: #111111; margin-top: 0;'>{$title}</h2>
+                    <p style='color: #666666; font-size: 15px; line-height: 1.5;'>{$p1}</p>
+                    <p style='color: #666666; font-size: 15px; line-height: 1.5;'>{$p2}</p>
+                ";
+                break;
+
             default:
                 $content = "<p style='color: #111;'>" . Translator::getForLang($lang, 'email_template_not_found') . "</p>";
                 break;

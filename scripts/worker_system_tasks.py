@@ -5,6 +5,9 @@ import threading
 import inspect
 import mysql.connector
 import redis
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from datetime import datetime
 import random
 import urllib.parse
@@ -71,6 +74,13 @@ REDIS_PASS = os.getenv('REDIS_PASS', None)
 APP_ROOT_PATH = os.getenv('APP_ROOT_PATH', '/app')
 QUEUE_ACCOUNT_DELETION = 'queue:account_deletion'
 QUEUE_EMAILS = 'queue:emails'
+
+SMTP_HOST = os.getenv('SMTP_HOST', '')
+SMTP_PORT = int(os.getenv('SMTP_PORT', 587))
+SMTP_USER = os.getenv('SMTP_USER', '')
+SMTP_PASS = os.getenv('SMTP_PASS', '')
+SMTP_FROM_EMAIL = os.getenv('SMTP_FROM_EMAIL', '')
+SMTP_FROM_NAME = os.getenv('SMTP_FROM_NAME', 'Project Rosaura')
 
 def get_db_connection():
     return mysql.connector.connect(
@@ -272,6 +282,126 @@ def cleanup_old_telemetry():
             cursor.close()
             conn.close()
 
+def process_email(payload):
+    email_type = payload.get('type')
+    user_id = payload.get('user_id')
+    
+    if email_type == 'subscription_confirmation':
+        tier_name = payload.get('tierName', 'Premium')
+        billing_period = payload.get('billingPeriod', 'Mensual')
+        
+        conn = None
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor(dictionary=True)
+            cursor.execute("SELECT email, username FROM users WHERE id = %s", (user_id,))
+            user_data = cursor.fetchone()
+            
+            if user_data:
+                user_email = user_data['email']
+                username = user_data['username']
+                
+                if not SMTP_HOST or not SMTP_USER:
+                    Logger.error("SMTP configuration is missing. Cannot send email.")
+                    return
+
+                msg = MIMEMultipart('alternative')
+                msg['Subject'] = "¡Gracias por tu suscripción!"
+                msg['From'] = f"{SMTP_FROM_NAME} <{SMTP_FROM_EMAIL}>"
+                msg['To'] = user_email
+                
+                html = f"""
+                <!DOCTYPE html>
+                <html>
+                <body style='margin: 0; padding: 0; background-color: #f5f5fa; font-family: Arial, sans-serif;'>
+                    <div style='padding: 20px; background-color: #f5f5fa; color: #111;'>
+                        <div style='max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 8px; border: 1px solid #00000020;'>
+                            <h2 style='color: #111111; margin-top: 0;'>¡Gracias por tu suscripción!</h2>
+                            <p style='color: #666666; font-size: 15px; line-height: 1.5;'>Hola {username}, hemos procesado exitosamente tu pago y tu suscripción a {tier_name} ({billing_period}) está activa.</p>
+                            <p style='color: #666666; font-size: 15px; line-height: 1.5;'>Puedes empezar a disfrutar de tus nuevos beneficios de inmediato.</p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+                """
+                msg.attach(MIMEText(html, 'html'))
+                
+                server = smtplib.SMTP(SMTP_HOST, SMTP_PORT)
+                server.starttls()
+                server.login(SMTP_USER, SMTP_PASS)
+                server.sendmail(SMTP_FROM_EMAIL, user_email, msg.as_string())
+                server.quit()
+                Logger.info(f"Subscription confirmation email sent to {user_email}")
+            else:
+                Logger.error(f"User {user_id} not found for email dispatch")
+        except Exception as e:
+            Logger.error(f"Failed to process subscription email: {e}")
+        finally:
+            if conn and conn.is_connected():
+                cursor.close()
+                conn.close()
+                
+    elif email_type == 'upcoming_renewal':
+        tier_name = payload.get('tierName', 'Premium')
+        billing_period = payload.get('billingPeriod', 'monthly')
+        renewal_date = payload.get('renewalDate', '')
+        
+        billing_period_es = 'Anual' if billing_period == 'yearly' else 'Mensual'
+        
+        conn = None
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor(dictionary=True)
+            cursor.execute("SELECT email, username FROM users WHERE id = %s", (user_id,))
+            user_data = cursor.fetchone()
+            
+            if user_data:
+                user_email = user_data['email']
+                username = user_data['username']
+                
+                if not SMTP_HOST or not SMTP_USER:
+                    Logger.error("SMTP configuration is missing. Cannot send renewal email.")
+                    return
+
+                msg = MIMEMultipart('alternative')
+                msg['Subject'] = "Recordatorio: Tu suscripción está por renovarse"
+                msg['From'] = f"{SMTP_FROM_NAME} <{SMTP_FROM_EMAIL}>"
+                msg['To'] = user_email
+                
+                html = f"""
+                <!DOCTYPE html>
+                <html>
+                <body style='margin: 0; padding: 0; background-color: #f5f5fa; font-family: Arial, sans-serif;'>
+                    <div style='padding: 20px; background-color: #f5f5fa; color: #111;'>
+                        <div style='max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 8px; border: 1px solid #00000020;'>
+                            <h2 style='color: #111111; margin-top: 0;'>Recordatorio de renovación</h2>
+                            <p style='color: #666666; font-size: 15px; line-height: 1.5;'>Hola {username},</p>
+                            <p style='color: #666666; font-size: 15px; line-height: 1.5;'>Te recordamos que tu suscripción a <strong>{tier_name} ({billing_period_es})</strong> se renovará automáticamente el próximo <strong>{renewal_date}</strong>.</p>
+                            <p style='color: #666666; font-size: 15px; line-height: 1.5;'>Si deseas continuar disfrutando de tus beneficios, no necesitas hacer nada. Si prefieres cancelar, puedes hacerlo desde la configuración de tu cuenta antes de esta fecha.</p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+                """
+                msg.attach(MIMEText(html, 'html'))
+                
+                server = smtplib.SMTP(SMTP_HOST, SMTP_PORT)
+                server.starttls()
+                server.login(SMTP_USER, SMTP_PASS)
+                server.sendmail(SMTP_FROM_EMAIL, user_email, msg.as_string())
+                server.quit()
+                Logger.info(f"Renewal reminder email sent to {user_email}")
+            else:
+                Logger.error(f"User {user_id} not found for renewal email dispatch")
+        except Exception as e:
+            Logger.error(f"Failed to process renewal email: {e}")
+        finally:
+            if conn and conn.is_connected():
+                cursor.close()
+                conn.close()
+    else:
+        Logger.warning(f"Unknown email type: {email_type}")
+
 def future_maintenance_tasks():
     pass
 
@@ -296,6 +426,9 @@ def worker_loop():
                 if queue_name == QUEUE_ACCOUNT_DELETION:
                     if payload and 'user_id' in payload:
                         process_deletion(payload)
+                elif queue_name == QUEUE_EMAILS:
+                    if payload:
+                        process_email(payload)
                 
         except redis.RedisError as re:
             Logger.error(f"Redis pipeline interrupt or socket timeout on primary thread: {re}")
@@ -310,8 +443,10 @@ def scheduler_loop():
     r = get_redis_connection()
     last_deletion_check = 0
     last_maintenance_check = 0
+    last_renewal_check = 0
     DELETION_INTERVAL = 3600
     MAINTENANCE_INTERVAL = 86400
+    RENEWAL_CHECK_INTERVAL = 86400
     
     while True:
         current_time = time.time()
@@ -337,6 +472,48 @@ def scheduler_loop():
                 last_deletion_check = time.time()
             except Exception as e:
                 Logger.error(f"Scheduler fault during entity termination evaluation: {e}")
+            finally:
+                if conn and conn.is_connected():
+                    cursor.close()
+                    conn.close()
+
+        if current_time - last_renewal_check >= RENEWAL_CHECK_INTERVAL:
+            Logger.info("Scheduler evaluating upcoming subscription renewals.")
+            conn = None
+            try:
+                conn = get_db_connection()
+                cursor = conn.cursor(dictionary=True)
+                # Check for renewals between 6 and 8 days from now
+                cursor.execute("""
+                    SELECT id, user_id, tier, billing_period, current_period_end 
+                    FROM subscriptions 
+                    WHERE status = 'active' 
+                    AND current_period_end BETWEEN NOW() + INTERVAL 6 DAY AND NOW() + INTERVAL 8 DAY
+                """)
+                upcoming_subs = cursor.fetchall()
+                
+                for sub in upcoming_subs:
+                    if not r:
+                        r = get_redis_connection()
+                    if r:
+                        renewal_date = sub['current_period_end'].strftime('%Y-%m-%d')
+                        redis_key = f"notified:renewal:{sub['id']}:{renewal_date}"
+                        if not r.exists(redis_key):
+                            tier_name = 'Premium' if sub['tier'] == 2 else ('Básico' if sub['tier'] == 0 else 'Pro')
+                            payload = json.dumps({
+                                'type': 'upcoming_renewal',
+                                'user_id': sub['user_id'],
+                                'tierName': tier_name,
+                                'billingPeriod': sub['billing_period'],
+                                'renewalDate': renewal_date
+                            })
+                            r.rpush(QUEUE_EMAILS, payload)
+                            r.set(redis_key, "1", ex=30*86400) # expire in 30 days
+                            Logger.info(f"Scheduler dispatched renewal reminder for User ID {sub['user_id']} (Sub ID: {sub['id']})")
+                
+                last_renewal_check = time.time()
+            except Exception as e:
+                Logger.error(f"Scheduler fault during renewal evaluation: {e}")
             finally:
                 if conn and conn.is_connected():
                     cursor.close()

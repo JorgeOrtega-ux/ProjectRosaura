@@ -180,7 +180,7 @@ export class PremiumController {
         const tier = parseInt(btn.dataset.tier, 10);
         const billingPeriod = (window.isYearlyPremium === true) ? 'yearly' : 'monthly';
 
-        if (!tier || (tier !== 1 && tier !== 2)) {
+        if (isNaN(tier) || tier < 0 || tier > 2) {
             showMessage('Plan inválido.', 'error');
             return;
         }

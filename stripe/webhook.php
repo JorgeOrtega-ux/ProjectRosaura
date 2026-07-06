@@ -15,6 +15,7 @@ use App\Config\DatabaseManager;
 use App\Core\Repositories\SubscriptionRepository;
 use App\Core\System\Logger;
 use App\Core\System\SubscriptionPlanConstants;
+use App\Config\RedisCache;
 
 // 1. Leer el payload crudo y la firma
 $payload = @file_get_contents('php://input');
@@ -100,6 +101,23 @@ try {
                 'description' => "Suscripción {$tierName} ({$periodLabel})",
                 'status' => 'succeeded'
             ]);
+
+            // Enqueue confirmation email
+            try {
+                $redisCache = new RedisCache();
+                $redisClient = $redisCache->getClient();
+                if ($redisClient) {
+                    $redisClient->rpush('queue:emails', json_encode([
+                        'type' => 'subscription_confirmation',
+                        'user_id' => $userId,
+                        'tierName' => $tierName,
+                        'billingPeriod' => $billingPeriod
+                    ]));
+                    Logger::info("Enqueued subscription_confirmation email for user", ['user_id' => $userId]);
+                }
+            } catch (\Exception $e) {
+                Logger::error("Failed to enqueue email for user", ['user_id' => $userId, 'error' => $e->getMessage()]);
+            }
 
             Logger::info("Stripe webhook: checkout.session.completed processed", [
                 'user_id' => $userId,

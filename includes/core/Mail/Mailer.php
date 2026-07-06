@@ -268,5 +268,33 @@ class Mailer {
             return false;
         }
     }
+
+    public function sendSubscriptionConfirmation($toEmail, $username, $tierName, $billingPeriod) {
+        try {
+            $lang = $this->getTargetLanguage($toEmail);
+            $this->mail->clearAddresses();
+            $this->mail->addAddress($toEmail, $username);
+
+            $this->mail->isHTML(true);
+            $this->mail->Subject = Translator::getForLang($lang, 'email_subscription_subject');
+            
+            $this->mail->Body = EmailTemplates::get('subscription_confirmation', [
+                'username' => $username,
+                'tierName' => $tierName,
+                'billingPeriod' => $billingPeriod
+            ], $lang);
+            
+            $this->mail->AltBody = Translator::getForLang($lang, 'email_subscription_alt', [
+                'username' => $username,
+                'tierName' => $tierName,
+                'billingPeriod' => $billingPeriod
+            ]);
+
+            return $this->mail->send();
+        } catch (PHPMailerException $e) {
+            Logger::error("Failed to send subscription confirmation email", ['to_email' => $toEmail, 'smtp_error' => $this->mail->ErrorInfo, 'exception' => $e]);
+            return false;
+        }
+    }
 }
 ?>
