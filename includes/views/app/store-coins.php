@@ -1,5 +1,16 @@
 <?php
 // includes/views/app/store-coins.php
+use App\Core\System\StorePackagesConfig;
+
+$coinPackages = [];
+if (class_exists(StorePackagesConfig::class) && method_exists(StorePackagesConfig::class, 'getCoinPackages')) {
+    try {
+        $coinPackages = StorePackagesConfig::getCoinPackages();
+        if (!is_array($coinPackages)) $coinPackages = [];
+    } catch (\Throwable $e) {
+        $coinPackages = [];
+    }
+}
 ?>
 <style>
 .store-card {
@@ -77,7 +88,8 @@
 </style>
 
 <div class="view-content" data-ref="store-coins-wrapper">
-    <div class="component-top">
+    <div class="component-wrapper component-wrapper--full no-padding">
+        <div class="component-top">
         <div class="component-top-left">
             <h1 class="component-top-title">Tienda de Monedas</h1>
         </div>
@@ -89,70 +101,34 @@
     </div>
 
     <div class="component-bottom">
-        <div class="component-grid" data-ref="" style="padding: 24px;">
-            <!-- Card 1 -->
-            <div class="store-card">
-                <div class="store-card-icon"><span class="material-symbols-rounded">monetization_on</span></div>
-                <div class="store-card-title">1,000 Monedas</div>
-                <div class="store-card-desc">Paquete básico de monedas.</div>
-                
-                <div style="display: flex; gap: 8px; margin-top: auto; margin-bottom: 16px; flex-wrap: wrap;">
-                    <div class="component-badge">
-                        <span class="material-symbols-rounded">payments</span> $0.99 USD
-                    </div>
-                </div>
-                
-                <div data-action="buyCoins" data-amount="1000" class="btn-buy-coins component-button component-button--full component-button--h45" style="text-align: center; justify-content: center; cursor: pointer;">Comprar</div>
-            </div>
-            
-            <!-- Card 2 -->
-            <div class="store-card featured">
-                <div class="featured-badge">BONUS +750</div>
-                <div class="store-card-icon"><span class="material-symbols-rounded">monetization_on</span></div>
-                <div class="store-card-title">2,750 Monedas</div>
-                <div class="store-card-desc">2,000 + 750 de bonificación</div>
-                
-                <div style="display: flex; gap: 8px; margin-top: auto; margin-bottom: 16px; flex-wrap: wrap;">
-                    <div class="component-badge">
-                        <span class="material-symbols-rounded">payments</span> $2.49 USD
-                    </div>
-                </div>
-                
-                <div data-action="buyCoins" data-amount="2750" class="btn-buy-coins component-button component-button--dark component-button--full component-button--h45" style="text-align: center; justify-content: center; cursor: pointer;">Comprar</div>
-            </div>
-            
-            <!-- Card 3 -->
-            <div class="store-card featured">
-                <div class="featured-badge" style="background-color: var(--color-success);">BONUS +1,250</div>
-                <div class="store-card-icon"><span class="material-symbols-rounded">diamond</span></div>
-                <div class="store-card-title">5,750 Monedas</div>
-                <div class="store-card-desc">4,500 + 1,250 de bonificación</div>
-                
-                <div style="display: flex; gap: 8px; margin-top: auto; margin-bottom: 16px; flex-wrap: wrap;">
-                    <div class="component-badge">
-                        <span class="material-symbols-rounded">payments</span> $4.99 USD
-                    </div>
-                </div>
-                
-                <div data-action="buyCoins" data-amount="5750" class="btn-buy-coins component-button component-button--dark component-button--full component-button--h45" style="text-align: center; justify-content: center; cursor: pointer;">Comprar</div>
-            </div>
-            
-            <!-- Card 4 -->
-            <div class="store-card featured" style="border-color: #8b5cf6;">
-                <div class="featured-badge" style="background-color: #8b5cf6;">BONUS +3,250</div>
-                <div class="store-card-icon"><span class="material-symbols-rounded" style="color: #8b5cf6;">workspace_premium</span></div>
-                <div class="store-card-title">13,250 Monedas</div>
-                <div class="store-card-desc">10,000 + 3,250 de bonificación</div>
-                
-                <div style="display: flex; gap: 8px; margin-top: auto; margin-bottom: 16px; flex-wrap: wrap;">
-                    <div class="component-badge">
-                        <span class="material-symbols-rounded">payments</span> $9.99 USD
-                    </div>
-                </div>
-                
-                <div data-action="buyCoins" data-amount="13250" class="btn-buy-coins component-button component-button--dark component-button--full component-button--h45" style="text-align: center; justify-content: center; cursor: pointer;">Comprar</div>
-            </div>
+        <?php if (empty($coinPackages)): ?>
+        <div class="component-empty-state" data-ref="empty-state-rendered" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px 20px; text-align: center; height: 100%;">
+            <span class="material-symbols-rounded component-empty-state-icon" style="font-size: 48px; color: var(--text-secondary); margin-bottom: 16px;">search_off</span>
+            <p class="component-empty-state-text" style="color: var(--text-secondary); font-size: 16px; font-weight: 500;">No hay paquetes de monedas disponibles en este momento. Vuelve más tarde.</p>
         </div>
+        <?php else: ?>
+        <div class="component-grid" data-ref="" style="padding: 24px;">
+            <?php foreach ($coinPackages as $pkg): ?>
+            <div class="store-card <?= $pkg['is_featured'] ? 'featured' : '' ?>" <?= $pkg['border_color'] ? 'style="border-color: '.$pkg['border_color'].';"' : '' ?>>
+                <?php if ($pkg['bonus_text']): ?>
+                <div class="featured-badge" <?= $pkg['badge_color'] ? 'style="background-color: '.$pkg['badge_color'].';"' : '' ?>><?= $pkg['bonus_text'] ?></div>
+                <?php endif; ?>
+                <div class="store-card-icon"><span class="material-symbols-rounded" <?= $pkg['icon_color'] ? 'style="color: '.$pkg['icon_color'].';"' : '' ?>><?= $pkg['icon'] ?></span></div>
+                <div class="store-card-title"><?= $pkg['name'] ?></div>
+                <div class="store-card-desc"><?= $pkg['description'] ?></div>
+                
+                <div style="display: flex; gap: 8px; margin-top: auto; margin-bottom: 16px; flex-wrap: wrap;">
+                    <div class="component-badge">
+                        <span class="material-symbols-rounded">payments</span> $<?= number_format($pkg['price_usd'], 2) ?> USD
+                    </div>
+                </div>
+                
+                <div data-action="buyCoins" data-amount="<?= $pkg['amount'] ?>" class="btn-buy-coins component-button <?= $pkg['is_featured'] ? 'component-button--dark' : '' ?> component-button--full component-button--h45" style="text-align: center; justify-content: center; cursor: pointer;">Comprar</div>
+            </div>
+            <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
+    </div>
     </div>
 </div>
 

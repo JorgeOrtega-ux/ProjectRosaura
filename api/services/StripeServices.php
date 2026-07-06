@@ -28,12 +28,21 @@ class StripeServices {
     ];
 
     private function getCoinPrices(): array {
-        return [
-            1000 => $_ENV['STRIPE_PRICE_COINS_1000'] ?? 'price_1Tq2JyE4dfTcnyKKhgS3IK9l',
-            2750 => $_ENV['STRIPE_PRICE_COINS_2750'] ?? 'price_1Tq2KME4dfTcnyKK8LBoUUWT',
-            5750 => $_ENV['STRIPE_PRICE_COINS_5750'] ?? 'price_1Tq2KdE4dfTcnyKKY9DebxeP',
-            13250 => $_ENV['STRIPE_PRICE_COINS_13250'] ?? 'price_1Tq2L5E4dfTcnyKKa5FoxTj4'
-        ];
+        $packages = [];
+        if (class_exists(\App\Core\System\StorePackagesConfig::class) && method_exists(\App\Core\System\StorePackagesConfig::class, 'getCoinPackages')) {
+            try {
+                $packages = \App\Core\System\StorePackagesConfig::getCoinPackages();
+                if (!is_array($packages)) $packages = [];
+            } catch (\Throwable $e) {
+                $packages = [];
+            }
+        }
+
+        $prices = [];
+        foreach ($packages as $amount => $pkg) {
+            $prices[$amount] = $_ENV[$pkg['stripe_env_key']] ?? $pkg['default_price_id'];
+        }
+        return $prices;
     }
 
     // Mapeo inverso: Price ID → tier

@@ -1,5 +1,16 @@
 <?php
 // includes/views/app/store-content.php
+use App\Core\System\StorePackagesConfig;
+
+$contentPackages = [];
+if (class_exists(StorePackagesConfig::class) && method_exists(StorePackagesConfig::class, 'getContentPackages')) {
+    try {
+        $contentPackages = StorePackagesConfig::getContentPackages();
+        if (!is_array($contentPackages)) $contentPackages = [];
+    } catch (\Throwable $e) {
+        $contentPackages = [];
+    }
+}
 ?>
 <style>
 .store-card {
@@ -60,7 +71,8 @@
 </style>
 
 <div class="view-content" data-ref="store-content-wrapper">
-    <div class="component-top">
+    <div class="component-wrapper component-wrapper--full no-padding">
+        <div class="component-top">
         <div class="component-top-left">
             <h1 class="component-top-title">Tienda de Contenido</h1>
         </div>
@@ -72,43 +84,36 @@
     </div>
 
     <div class="component-bottom">
-        <div class="component-grid" data-ref="" style="padding: 24px;">
-            <!-- Perk 1 -->
-            <div class="store-card">
-                <div class="store-card-icon"><span class="material-symbols-rounded">timer_off</span></div>
-                <div class="store-card-title">Sin Cooldown (10s)</div>
-                <div class="store-card-desc">Elimina tu tiempo de espera por 10 segundos en un lienzo oficial. Una vez activo, el tiempo no podrá pausarse.</div>
-                
-                <div style="display: flex; gap: 8px; margin-top: auto; margin-bottom: 16px; flex-wrap: wrap;">
-                    <div class="component-badge">
-                        <span class="material-symbols-rounded">toll</span> 1,500 Monedas
-                    </div>
-                    <div class="component-badge component-badge--warning">
-                        <span class="material-symbols-rounded">info</span> Un solo uso
-                    </div>
-                </div>
-                
-                <div data-action="buyPerk" data-perkid="no_cooldown_10s" class="btn-buy-perk component-button component-button--full component-button--h45" style="text-align: center; justify-content: center; cursor: pointer;">Comprar</div>
-            </div>
-            
-            <!-- Perk 2 -->
-            <div class="store-card">
-                <div class="store-card-icon"><span class="material-symbols-rounded">security</span></div>
-                <div class="store-card-title">Protección de Píxel</div>
-                <div class="store-card-desc">Otorga protección contra sobrescritura para un máximo de 25 píxeles en un lienzo oficial.</div>
-                
-                <div style="display: flex; gap: 8px; margin-top: auto; margin-bottom: 16px; flex-wrap: wrap;">
-                    <div class="component-badge">
-                        <span class="material-symbols-rounded">toll</span> 3,000 Monedas
-                    </div>
-                    <div class="component-badge component-badge--warning">
-                        <span class="material-symbols-rounded">info</span> Un solo uso
-                    </div>
-                </div>
-                
-                <div data-action="buyPerk" data-perkid="pixel_protection_25" class="btn-buy-perk component-button component-button--full component-button--h45" style="text-align: center; justify-content: center; cursor: pointer;">Comprar</div>
-            </div>
+        <?php if (empty($contentPackages)): ?>
+        <div class="component-empty-state" data-ref="empty-state-rendered" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px 20px; text-align: center; height: 100%;">
+            <span class="material-symbols-rounded component-empty-state-icon" style="font-size: 48px; color: var(--text-secondary); margin-bottom: 16px;">search_off</span>
+            <p class="component-empty-state-text" style="color: var(--text-secondary); font-size: 16px; font-weight: 500;">No hay paquetes de contenido disponibles en este momento. Vuelve más tarde.</p>
         </div>
+        <?php else: ?>
+        <div class="component-grid" data-ref="" style="padding: 24px;">
+            <?php foreach ($contentPackages as $pkg): ?>
+            <div class="store-card">
+                <div class="store-card-icon"><span class="material-symbols-rounded"><?= $pkg['icon'] ?></span></div>
+                <div class="store-card-title"><?= $pkg['name'] ?></div>
+                <div class="store-card-desc"><?= $pkg['description'] ?></div>
+                
+                <div style="display: flex; gap: 8px; margin-top: auto; margin-bottom: 16px; flex-wrap: wrap;">
+                    <div class="component-badge">
+                        <span class="material-symbols-rounded">toll</span> <?= number_format($pkg['price_coins']) ?> Monedas
+                    </div>
+                    <?php if ($pkg['is_single_use']): ?>
+                    <div class="component-badge component-badge--warning">
+                        <span class="material-symbols-rounded">info</span> Un solo uso
+                    </div>
+                    <?php endif; ?>
+                </div>
+                
+                <div data-action="buyPerk" data-perkid="<?= $pkg['id'] ?>" class="btn-buy-perk component-button component-button--full component-button--h45" style="text-align: center; justify-content: center; cursor: pointer;">Comprar</div>
+            </div>
+            <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
+    </div>
     </div>
 </div>
 
