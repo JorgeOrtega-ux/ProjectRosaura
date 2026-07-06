@@ -274,6 +274,24 @@ class StripeServices {
                 'period' => $billingPeriod
             ]);
 
+            // Enqueue confirmation email for upgrades
+            try {
+                $redisCache = new \App\Config\RedisCache();
+                $redisClient = $redisCache->getClient();
+                if ($redisClient) {
+                    $tierName = SubscriptionPlanConstants::getTierLimits($tier)['name'];
+                    $redisClient->rpush('queue:emails', json_encode([
+                        'type' => 'subscription_confirmation',
+                        'user_id' => $userId,
+                        'tierName' => $tierName,
+                        'billingPeriod' => $billingPeriod
+                    ]));
+                    Logger::info("Enqueued subscription_confirmation email for user after upgrade", ['user_id' => $userId]);
+                }
+            } catch (\Exception $e) {
+                Logger::error("Failed to enqueue email for user after upgrade", ['user_id' => $userId, 'error' => $e->getMessage()]);
+            }
+
             return [
                 'success' => true,
                 'updated' => true
