@@ -1,6 +1,7 @@
 // public/assets/js/MainController.js
 import { ApiService } from './core/api/ApiServices.js';
 import { ApiRoutes } from './core/api/ApiRoutes.js';
+import { showMessage, setButtonLoading, restoreButton } from './core/utils/uiUtils.js';
 
 export class MainController {
     constructor() {
@@ -287,8 +288,6 @@ export class MainController {
             else if (action === 'submitLogout') { e.preventDefault(); this.handleLogout(btn); }
             else if (action === 'switchAccount') { e.preventDefault(); this.handleSwitchAccount(btn.getAttribute('data-id'), btn); }
             else if (action === 'logoutAll') { e.preventDefault(); this.handleLogoutAll(btn); }
-            else if (action === 'buyPerk') { e.preventDefault(); this.handleBuyPerk(btn); }
-            else if (action === 'buyCoins') { e.preventDefault(); this.handleBuyCoins(btn); }
             
             else if (action === 'showSubMenu') {
                 e.preventDefault();
@@ -624,66 +623,6 @@ export class MainController {
         } else {
             spinnerDiv.remove();
             logoutBtn.dataset.loading = 'false';
-        }
-    }
-
-    async handleBuyPerk(btn) {
-        if (btn.dataset.loading === 'true') return;
-        const perkId = btn.getAttribute('data-perkid');
-        if (!perkId) return;
-
-        const originalText = btn.innerText;
-        btn.dataset.loading = 'true';
-        btn.innerText = 'Cargando...';
-        btn.classList.add('disabled');
-        
-        try {
-            const result = await this.api.post(ApiRoutes.Store.BuyPerk, { perk_id: perkId });
-            if (result && result.success) {
-                alert('Ventaja comprada con éxito. Tu nuevo saldo es de: ' + result.new_balance + ' monedas.');
-                this.updateCoinsDisplay();
-            } else if (result) {
-                if (result.message_key === 'store.insufficient_coins') {
-                    alert('No tienes suficientes monedas para comprar esta ventaja.');
-                } else {
-                    alert(result.message_key || 'Error al procesar la compra');
-                }
-            }
-        } catch (err) {
-            alert('Error de red');
-        } finally {
-            btn.dataset.loading = 'false';
-            btn.innerText = originalText;
-            btn.classList.remove('disabled');
-        }
-    }
-
-    async handleBuyCoins(btn) {
-        if (btn.dataset.loading === 'true') return;
-        const amount = parseInt(btn.getAttribute('data-amount'));
-        if (!amount) return;
-        
-        const originalText = btn.innerText;
-        btn.dataset.loading = 'true';
-        btn.innerText = 'Cargando...';
-        btn.classList.add('disabled');
-        
-        try {
-            const result = await this.api.post(ApiRoutes.Stripe.CreateCoinCheckout, { 
-                amount: amount,
-                return_url: (window.AppBasePath || window.location.origin) + '/store/coins'
-            });
-            if (result && result.success && result.checkout_url) {
-                window.location.href = result.checkout_url;
-            } else if (result) {
-                alert(result.message_key || 'Error al procesar el pago');
-            }
-        } catch (err) {
-            alert('Error de red');
-        } finally {
-            btn.dataset.loading = 'false';
-            btn.innerText = originalText;
-            btn.classList.remove('disabled');
         }
     }
 }

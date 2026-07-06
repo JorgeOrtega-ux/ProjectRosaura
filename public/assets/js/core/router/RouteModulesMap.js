@@ -12,6 +12,10 @@ export const RouteModulesMap = {
 
     '/design': { path: './modules/app/design/DesignController.js', className: 'DesignController', skeletonType: 'layout-full' },
     
+    // ---- MÓDULOS DE TIENDA ----
+    '/store/coins': { path: './modules/store/StoreController.js', className: 'StoreController', skeletonType: 'layout-dashboard' },
+    '/store/content': { path: './modules/store/StoreController.js', className: 'StoreController', skeletonType: 'layout-dashboard' },
+    
     // ---- MÓDULOS DE AUTENTICACIÓN ----
     '/login': { path: './modules/auth/AuthController.js', className: 'AuthController', skeletonType: 'layout-auth' },
     '/login/two-factor': { path: './modules/auth/AuthController.js', className: 'AuthController', skeletonType: 'layout-auth' },
