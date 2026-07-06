@@ -2,19 +2,14 @@
 // includes/views/app/store-content.php
 ?>
 <style>
-.store-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 24px;
-    padding-bottom: 16px;
-}
 .store-card {
     background-color: var(--bg-surface);
-    border: var(--border-dynamic);
+    border: 1px solid #00000020;
     border-radius: 12px;
     padding: 24px;
     display: flex;
     flex-direction: column;
+    align-items: flex-start;
     position: relative;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
@@ -22,50 +17,35 @@
     border-color: var(--border-color-hover);
 }
 .store-card-icon {
-    font-size: 40px;
+    font-size: 28px;
     color: var(--text-primary);
     margin-bottom: 16px;
-    text-align: center;
+    border: 1px solid #00000020;
+    border-radius: 10px;
+    padding: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 .store-card-icon span {
-    font-size: 48px !important;
+    font-size: 28px !important;
 }
 .store-card-title {
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 700;
     color: var(--text-primary);
-    text-align: center;
+    text-align: left;
     margin-bottom: 8px;
 }
 .store-card-desc {
     font-size: 14px;
     color: var(--text-secondary);
-    text-align: center;
+    text-align: left;
     margin-bottom: 24px;
     line-height: 1.5;
     flex-grow: 1;
 }
-.store-card-note {
-    font-size: 12px;
-    color: var(--color-warning);
-    text-align: center;
-    margin-top: -12px;
-    margin-bottom: 24px;
-    font-weight: 600;
-}
-.store-card-price {
-    font-size: 24px;
-    font-weight: 700;
-    color: var(--text-primary);
-    text-align: center;
-    margin-bottom: 16px;
-    margin-top: auto;
-}
-.store-card-price span {
-    font-size: 14px;
-    color: var(--text-secondary);
-    font-weight: 400;
-}
+
 .store-coins-balance {
     background: var(--bg-surface);
     border: var(--border-dynamic);
@@ -92,14 +72,22 @@
     </div>
 
     <div class="component-bottom">
-        <div class="store-grid">
+        <div class="component-grid" data-ref="" style="padding: 24px;">
             <!-- Perk 1 -->
             <div class="store-card">
                 <div class="store-card-icon"><span class="material-symbols-rounded">timer_off</span></div>
                 <div class="store-card-title">Sin Cooldown (10s)</div>
                 <div class="store-card-desc">Elimina tu tiempo de espera por 10 segundos en un lienzo oficial. Una vez activo, el tiempo no podrá pausarse.</div>
-                <div class="store-card-note">Un solo uso por compra</div>
-                <div class="store-card-price">🪙 1,500</div>
+                
+                <div style="display: flex; gap: 8px; margin-top: auto; margin-bottom: 16px; flex-wrap: wrap;">
+                    <div class="component-badge">
+                        <span class="material-symbols-rounded">toll</span> 1,500 Monedas
+                    </div>
+                    <div class="component-badge component-badge--warning">
+                        <span class="material-symbols-rounded">info</span> Un solo uso
+                    </div>
+                </div>
+                
                 <div data-action="buyPerk" data-perkid="no_cooldown_10s" class="btn-buy-perk component-button component-button--full component-button--h45" style="text-align: center; justify-content: center; cursor: pointer;">Comprar</div>
             </div>
             
@@ -108,8 +96,16 @@
                 <div class="store-card-icon"><span class="material-symbols-rounded">security</span></div>
                 <div class="store-card-title">Protección de Píxel</div>
                 <div class="store-card-desc">Otorga protección contra sobrescritura para un máximo de 25 píxeles en un lienzo oficial.</div>
-                <div class="store-card-note">Un solo uso por compra</div>
-                <div class="store-card-price">🪙 3,000</div>
+                
+                <div style="display: flex; gap: 8px; margin-top: auto; margin-bottom: 16px; flex-wrap: wrap;">
+                    <div class="component-badge">
+                        <span class="material-symbols-rounded">toll</span> 3,000 Monedas
+                    </div>
+                    <div class="component-badge component-badge--warning">
+                        <span class="material-symbols-rounded">info</span> Un solo uso
+                    </div>
+                </div>
+                
                 <div data-action="buyPerk" data-perkid="pixel_protection_25" class="btn-buy-perk component-button component-button--full component-button--h45" style="text-align: center; justify-content: center; cursor: pointer;">Comprar</div>
             </div>
         </div>
