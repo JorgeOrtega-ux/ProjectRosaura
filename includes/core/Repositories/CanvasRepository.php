@@ -440,30 +440,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
-    public function getMemberRole(int $canvasId, int $userId): ?string {
-        $sqlOwner = "SELECT owner_id FROM canvases WHERE id = :canvas_id LIMIT 1";
-        $stmtOwner = $this->db->prepare($sqlOwner);
-        $stmtOwner->execute([':canvas_id' => $canvasId]);
-        if ($stmtOwner->fetchColumn() == $userId) {
-            return 'admin';
-        }
 
-        $roles = $this->getMemberRoles($canvasId, $userId);
-        if (empty($roles)) {
-            return null;
-        }
-
-        if ($this->hasCanvasPermission($canvasId, $userId, 'manage_settings') || 
-            $this->hasCanvasPermission($canvasId, $userId, 'manage_roles')) {
-            return 'admin';
-        }
-
-        if ($this->hasCanvasPermission($canvasId, $userId, 'place_pixels')) {
-            return 'editor';
-        }
-
-        return 'spectator';
-    }
 
     public function hasCanvasPermission(int $canvasId, int $userId, string $permission): bool {
         $sql = "SELECT 1 

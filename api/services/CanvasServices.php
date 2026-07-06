@@ -1054,11 +1054,10 @@ class CanvasServices {
             $canvas = $this->canvasRepository->getById($canvasId);
             if (!$canvas) return ['success' => false, 'message' => __('err_canvas_not_found') ?? 'Lienzo no encontrado.'];
 
-            $requesterRole = $this->canvasRepository->getMemberRole($canvasId, $requesterId);
             $isOwner = ($canvas['owner_id'] === $requesterId) || ($canvas['owner_id'] === null && $canManageOfficial);
-            if ($isOwner) $requesterRole = 'admin';
+            $isAdmin = $isOwner || $this->canvasRepository->hasCanvasPermission($canvasId, $requesterId, 'manage_roles') || $this->canvasRepository->hasCanvasPermission($canvasId, $requesterId, 'manage_settings');
 
-            if ($requesterRole !== 'admin') {
+            if (!$isAdmin) {
                 return ['success' => false, 'message' => __('err_unauthorized') ?? 'No tienes permisos de administrador en este lienzo.'];
             }
 
@@ -1281,8 +1280,8 @@ class CanvasServices {
             $canvas = $this->canvasRepository->getById($canvasId);
             if (!$canvas) return ['success' => false, 'message' => __('err_canvas_not_found') ?? 'Lienzo no encontrado.'];
 
-            $memberRole = $this->canvasRepository->getMemberRole($canvasId, $userId);
-            if ($memberRole === 'editor' || $memberRole === 'admin') {
+            $memberRoles = $this->canvasRepository->getMemberRoles($canvasId, $userId);
+            if (!empty($memberRoles) || $canvas['owner_id'] === $userId) {
                 return ['success' => true, 'joined' => true, 'message' => __('msg_already_member') ?? 'Ya eres miembro de este lienzo.'];
             }
 
@@ -1300,7 +1299,7 @@ class CanvasServices {
                     }
                 }
 
-                $this->canvasRepository->addMember($canvasId, $userId, 'editor');
+                $this->canvasRepository->addMember($canvasId, $userId, 1);
                 return ['success' => true, 'joined' => true, 'message' => __('msg_joined_success') ?? 'Te has unido al lienzo.'];
             }
 
@@ -1341,7 +1340,7 @@ class CanvasServices {
             }
 
             $this->canvasRepository->updateRequestStatus($requestId, 'approved');
-            $this->canvasRepository->addMember($request['canvas_id'], $request['user_id'], 'editor');
+            $this->canvasRepository->addMember($request['canvas_id'], $request['user_id'], 1);
 
             return ['success' => true, 'message' => 'Acceso aprobado.'];
         } catch (Exception $e) {
@@ -1386,14 +1385,15 @@ class CanvasServices {
                 return ['success' => false, 'message' => __('err_canvas_not_found') ?? 'Lienzo no encontrado.'];
             }
 
-            $role = null;
+            $hasRole = false;
             if ($userId !== null) {
-                $role = $this->canvasRepository->getMemberRole($canvasId, $userId);
+                $roles = $this->canvasRepository->getMemberRoles($canvasId, $userId);
+                $hasRole = !empty($roles);
             }
             
             $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
 
-            if ($canvas['privacy'] === DB::PRIVACY_PRIVATE && !$role && !$isOwner) {
+            if ($canvas['privacy'] === DB::PRIVACY_PRIVATE && !$hasRole && !$isOwner) {
                 return ['success' => false, 'message' => __('err_unauthorized') ?? 'No tienes permisos para ver el timelapse de este lienzo.', 'http_code' => 403];
             }
 
@@ -1431,14 +1431,15 @@ class CanvasServices {
                 return ['success' => false, 'message' => __('err_snapshot_not_found') ?? 'Snapshot no encontrado.'];
             }
 
-            $role = null;
+            $hasRole = false;
             if ($userId !== null) {
-                $role = $this->canvasRepository->getMemberRole($data['canvas_id'], $userId);
+                $roles = $this->canvasRepository->getMemberRoles($data['canvas_id'], $userId);
+                $hasRole = !empty($roles);
             }
 
             $isOwner = ($data['owner_id'] === $userId) || ($data['owner_id'] === null && $canManageOfficial);
 
-            if ($data['privacy'] === DB::PRIVACY_PRIVATE && !$role && !$isOwner) {
+            if ($data['privacy'] === DB::PRIVACY_PRIVATE && !$hasRole && !$isOwner) {
                 return ['success' => false, 'message' => __('err_unauthorized') ?? 'Este lienzo es privado.'];
             }
 
@@ -1498,14 +1499,15 @@ class CanvasServices {
                 return ['success' => false, 'message' => 'Snapshot no encontrado.', 'http_code' => 404];
             }
 
-            $role = null;
+            $hasRole = false;
             if ($userId !== null) {
-                $role = $this->canvasRepository->getMemberRole($data['canvas_id'], $userId);
+                $roles = $this->canvasRepository->getMemberRoles($data['canvas_id'], $userId);
+                $hasRole = !empty($roles);
             }
 
             $isOwner = ($data['owner_id'] === $userId) || ($data['owner_id'] === null && $canManageOfficial);
 
-            if ($data['privacy'] === DB::PRIVACY_PRIVATE && !$role && !$isOwner) {
+            if ($data['privacy'] === DB::PRIVACY_PRIVATE && !$hasRole && !$isOwner) {
                 return ['success' => false, 'message' => 'No tienes permisos para ver este timelapse.', 'http_code' => 403];
             }
 
@@ -1541,14 +1543,15 @@ class CanvasServices {
                 return ['success' => false, 'message' => __('err_canvas_not_found') ?? 'Lienzo no encontrado.'];
             }
             
-            $role = null;
+            $hasRole = false;
             if ($userId !== null) {
-                $role = $this->canvasRepository->getMemberRole($canvas['id'], $userId);
+                $roles = $this->canvasRepository->getMemberRoles($canvas['id'], $userId);
+                $hasRole = !empty($roles);
             }
 
             $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
 
-            if ($canvas['privacy'] === DB::PRIVACY_PRIVATE && !$role && !$isOwner) {
+            if ($canvas['privacy'] === DB::PRIVACY_PRIVATE && !$hasRole && !$isOwner) {
                 return ['success' => false, 'message' => __('err_unauthorized') ?? 'Este lienzo es privado.'];
             }
 
@@ -1708,8 +1711,8 @@ class CanvasServices {
             $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
 
             if (!$isOwner) {
-                $role = $this->canvasRepository->getMemberRole($canvasId, $userId);
-                if (!in_array($role, ['editor', 'admin'])) {
+                $hasPermission = $this->canvasRepository->hasCanvasPermission($canvasId, $userId, 'place_pixels');
+                if (!$hasPermission && !$this->canvasRepository->hasCanvasPermission($canvasId, $userId, 'manage_settings')) {
                     return ['success' => false, 'message' => 'No tienes permisos para transmitir en este lienzo.'];
                 }
             }
@@ -1916,8 +1919,8 @@ class CanvasServices {
             if (!$canvas) return ['success' => false, 'message' => 'El lienzo asociado ya no existe.'];
 
             // Verificar si el usuario ya es miembro
-            $existingRole = $this->canvasRepository->getMemberRole($canvasId, $userId);
-            if ($existingRole) {
+            $memberRoles = $this->canvasRepository->getMemberRoles($canvasId, $userId);
+            if (!empty($memberRoles) || $canvas['owner_id'] === $userId) {
                 return ['success' => true, 'message' => 'Ya eres miembro de este lienzo.', 'data' => ['uuid' => $canvas['uuid']]];
             }
 
