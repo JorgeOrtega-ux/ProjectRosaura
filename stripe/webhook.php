@@ -13,6 +13,7 @@ define('ROOT_PATH', dirname(__DIR__));
 
 use App\Config\DatabaseManager;
 use App\Core\Repositories\SubscriptionRepository;
+use App\Core\Repositories\StoreRepository;
 use App\Core\System\Logger;
 use App\Core\System\SubscriptionPlanConstants;
 use App\Config\RedisCache;
@@ -49,6 +50,7 @@ try {
 // 3. Procesar el evento
 $db = new DatabaseManager();
 $subRepo = new SubscriptionRepository($db);
+$storeRepo = new StoreRepository($db);
 
 try {
     switch ($event->type) {
@@ -59,6 +61,39 @@ try {
         case 'checkout.session.completed':
             $session = $event->data->object;
             $metadata = $session->metadata;
+
+            // Revisar si es compra de tienda (monedas)
+            if (isset($metadata->type) && $metadata->type === 'coins') {
+                $userId = isset($metadata->user_id) ? (int) $metadata->user_id : 0;
+                $amountCoins = isset($metadata->amount) ? (int) $metadata->amount : 0;
+
+                if ($userId > 0 && $amountCoins > 0) {
+                    $storeRepo->addCoins($userId, $amountCoins);
+                    $storeRepo->createStorePurchaseRecord([
+                        'user_id' => $userId,
+                        'stripe_payment_intent_id' => $session->payment_intent ?? null,
+                        'stripe_checkout_session_id' => $session->id,
+                        'item_type' => 'coins',
+                        'item_amount' => $amountCoins,
+                        'amount_cents' => $session->amount_total ?? 0,
+                        'currency' => strtolower($session->currency ?? 'usd'),
+                        'status' => 'succeeded'
+                    ]);
+
+                    $subRepo->createPaymentRecord([
+                        'user_id' => $userId,
+                        'stripe_payment_intent_id' => $session->payment_intent ?? null,
+                        'stripe_invoice_id' => null,
+                        'amount_cents' => $session->amount_total ?? 0,
+                        'currency' => strtolower($session->currency ?? 'usd'),
+                        'description' => "Compra de {$amountCoins} monedas",
+                        'status' => 'succeeded'
+                    ]);
+
+                    Logger::info("Stripe webhook: coins purchased", ['user_id' => $userId, 'coins' => $amountCoins]);
+                }
+                break;
+            }
             
             $userId = isset($metadata->user_id) ? (int) $metadata->user_id : 0;
             $tier = isset($metadata->tier) ? (int) $metadata->tier : 0;

@@ -27,6 +27,15 @@ class StripeServices {
         ]
     ];
 
+    private function getCoinPrices(): array {
+        return [
+            1000 => $_ENV['STRIPE_PRICE_COINS_1000'] ?? 'price_1Tq2JyE4dfTcnyKKhgS3IK9l',
+            2750 => $_ENV['STRIPE_PRICE_COINS_2750'] ?? 'price_1Tq2KME4dfTcnyKK8LBoUUWT',
+            5750 => $_ENV['STRIPE_PRICE_COINS_5750'] ?? 'price_1Tq2KdE4dfTcnyKKY9DebxeP',
+            13250 => $_ENV['STRIPE_PRICE_COINS_13250'] ?? 'price_1Tq2L5E4dfTcnyKKa5FoxTj4'
+        ];
+    }
+
     // Mapeo inverso: Price ID → tier
     private function getPriceToTierMap(): array {
         $map = [];
@@ -171,6 +180,98 @@ class StripeServices {
 
         } catch (\Stripe\Exception\ApiErrorException $e) {
             Logger::error("Stripe API Error creating checkout session", [
+                'user_id' => $userId,
+                'error' => $e->getMessage()
+            ]);
+            return ['success' => false, 'message_key' => 'stripe.api_error', 'message' => 'Stripe Error: ' . $e->getMessage()];
+        }
+    }
+
+    public function createCoinCheckoutSession(array $input): array {
+        if (!$this->sessionManager->isLoggedIn()) {
+            http_response_code(401);
+            return ['success' => false, 'message_key' => 'error.unauthorized'];
+        }
+
+        $userId = $this->sessionManager->getActiveAccountId();
+        $coinsAmount = isset($input['amount']) ? (int) $input['amount'] : 0;
+
+        $coinPrices = $this->getCoinPrices();
+        if (!isset($coinPrices[$coinsAmount])) {
+            return ['success' => false, 'message_key' => 'stripe.invalid_coin_amount'];
+        }
+
+        $priceId = $coinPrices[$coinsAmount];
+        \Stripe\Stripe::setApiKey($_ENV['STRIPE_SECRET_KEY']);
+
+        $user = $this->userRepo->findById($userId);
+        if (!$user) {
+            return ['success' => false, 'message_key' => 'error.user_not_found'];
+        }
+
+        $stripeCustomerId = $this->subscriptionRepo->getStripeCustomerIdByUserId($userId);
+
+        try {
+            if ($stripeCustomerId) {
+                try {
+                    $stripeCustomer = \Stripe\Customer::retrieve($stripeCustomerId);
+                    if (!empty($stripeCustomer->deleted)) {
+                        $stripeCustomerId = null;
+                    }
+                } catch (\Exception $e) {
+                    $stripeCustomerId = null;
+                }
+            }
+
+            if (!$stripeCustomerId) {
+                $stripeCustomer = \Stripe\Customer::create([
+                    'email' => $user['email'],
+                    'name' => $user['username'],
+                    'metadata' => ['user_id' => $userId]
+                ]);
+                $stripeCustomerId = $stripeCustomer->id;
+                $this->subscriptionRepo->updateUserStripeCustomerId($userId, $stripeCustomerId);
+            }
+
+            $returnUrl = isset($input['return_url']) ? rtrim($input['return_url'], '/') : APP_URL . '/store';
+
+            $session = \Stripe\Checkout\Session::create([
+                'customer' => $stripeCustomerId,
+                'mode' => 'payment',
+                'line_items' => [[
+                    'price' => $priceId,
+                    'quantity' => 1
+                ]],
+                'success_url' => $returnUrl . '?checkout=success&session_id={CHECKOUT_SESSION_ID}',
+                'cancel_url' => $returnUrl . '?status=cancel',
+                'metadata' => [
+                    'type' => 'coins',
+                    'user_id' => (string) $userId,
+                    'amount' => (string) $coinsAmount
+                ],
+                'payment_intent_data' => [
+                    'description' => "Compra de {$coinsAmount} monedas",
+                    'metadata' => [
+                        'type' => 'coins',
+                        'user_id' => (string) $userId,
+                        'amount' => (string) $coinsAmount
+                    ]
+                ]
+            ]);
+
+            Logger::info("Stripe Coin Checkout Session created", [
+                'user_id' => $userId,
+                'session_id' => $session->id,
+                'amount' => $coinsAmount
+            ]);
+
+            return [
+                'success' => true,
+                'checkout_url' => $session->url
+            ];
+
+        } catch (\Stripe\Exception\ApiErrorException $e) {
+            Logger::error("Stripe API Error creating coin checkout session", [
                 'user_id' => $userId,
                 'error' => $e->getMessage()
             ]);
@@ -337,10 +438,14 @@ class StripeServices {
                 ]);
                 
                 foreach ($charges->data as $charge) {
+                    $desc = $charge->description;
+                    if (empty($desc) && isset($charge->metadata->type) && $charge->metadata->type === 'coins') {
+                        $desc = "Compra de " . ($charge->metadata->amount ?? '') . " monedas";
+                    }
                     $history[] = [
                         'id' => $charge->id,
                         'created_at' => date('Y-m-d H:i:s', $charge->created),
-                        'description' => $charge->description ?: 'Suscripción',
+                        'description' => $desc ?: 'Suscripción',
                         'amount_cents' => $charge->amount,
                         'currency' => $charge->currency,
                         'status' => $charge->status // 'succeeded', 'pending', 'failed'

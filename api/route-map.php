@@ -648,6 +648,23 @@ return [
         'controller' => 'App\Api\Controllers\StripeController',
         'action' => 'toggle_auto_renewal',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'stripe_toggle_renewal', 'max' => RL::MAX_5, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
+    ],
+    
+    // --- RUTAS DE TIENDA (MONEDAS Y VENTAJAS) ---
+    'stripe.create_coin_checkout' => [
+        'controller' => 'App\Api\Controllers\StripeController',
+        'action' => 'create_coin_checkout',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'stripe_coin_checkout', 'max' => RL::MAX_5, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
+    ],
+    'store.buy_perk' => [
+        'controller' => 'App\Api\Controllers\StoreController',
+        'action' => 'buy_perk',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'store_buy_perk', 'max' => 10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
+    ],
+    'store.get_balance' => [
+        'controller' => 'App\Api\Controllers\StoreController',
+        'action' => 'get_balance',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'store_get_balance', 'max' => 20, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
     ]
 ];
 ?>

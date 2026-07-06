@@ -43,6 +43,10 @@ use App\Core\Repositories\LocationRepository;
 use App\Core\Interfaces\SubscriptionRepositoryInterface;
 use App\Core\Repositories\SubscriptionRepository;
 
+// BINDINGS DE TIENDA
+use App\Core\Interfaces\StoreRepositoryInterface;
+use App\Core\Repositories\StoreRepository;
+
 class Container implements ContainerInterface {
     private $instances = [];
     private $bindings = [];
@@ -79,6 +83,9 @@ class Container implements ContainerInterface {
 
         // BINDING DE REPOSITORIO DE SUSCRIPCIONES (STRIPE)
         $this->bindings[SubscriptionRepositoryInterface::class] = SubscriptionRepository::class;
+
+        // BINDING DE REPOSITORIO DE TIENDA
+        $this->bindings[StoreRepositoryInterface::class] = StoreRepository::class;
     }
 
     public function get(string $id) {

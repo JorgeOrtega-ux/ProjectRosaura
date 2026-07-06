@@ -87,6 +87,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `email` varchar(100) NOT NULL,
   `password` varchar(255) NOT NULL,
   `subscription_tier` tinyint(1) DEFAULT 0, -- NOTA DE IMPLEMENTACIÓN: Nuevo campo para el nivel de suscripción (0=Básico, 1=Pro, 2=Advanced)
+  `coins` int(11) NOT NULL DEFAULT 0,
   `stripe_customer_id` varchar(255) DEFAULT NULL,
   `two_factor_secret` varchar(64) DEFAULT NULL,
   `two_factor_enabled` tinyint(1) DEFAULT 0,
@@ -300,3 +301,30 @@ CREATE TABLE IF NOT EXISTS server_config (
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 INSERT INTO server_config (id) SELECT 1 WHERE NOT EXISTS (SELECT * FROM server_config);
+
+CREATE TABLE IF NOT EXISTS `store_purchases` (
+  `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+  `user_id` INT(11) NOT NULL,
+  `stripe_payment_intent_id` VARCHAR(255) DEFAULT NULL,
+  `stripe_checkout_session_id` VARCHAR(255) DEFAULT NULL,
+  `item_type` VARCHAR(50) NOT NULL, -- e.g., 'coins'
+  `item_amount` INT NOT NULL, -- e.g., 1000
+  `amount_cents` INT NOT NULL,
+  `currency` VARCHAR(3) NOT NULL DEFAULT 'usd',
+  `status` ENUM('succeeded', 'pending', 'failed', 'refunded') NOT NULL DEFAULT 'pending',
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_store_purchases_user (`user_id`),
+  CONSTRAINT fk_store_purchases_user FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `user_perks` (
+  `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+  `user_id` INT(11) NOT NULL,
+  `perk_id` VARCHAR(100) NOT NULL,
+  `coins_spent` INT NOT NULL DEFAULT 0,
+  `is_used` TINYINT(1) NOT NULL DEFAULT 0,
+  `used_at` DATETIME DEFAULT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_user_perks_user (`user_id`),
+  CONSTRAINT fk_user_perks_user FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

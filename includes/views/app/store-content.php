@@ -86,7 +86,7 @@
                 <div class="store-card-desc">Elimina tu tiempo de espera por 10 segundos en un lienzo oficial. Una vez activo, el tiempo no podrá pausarse.</div>
                 <div class="store-card-note">Un solo uso por compra</div>
                 <div class="store-card-price">🪙 1,500</div>
-                <div class="component-button component-button--full component-button--h45 disabled" style="text-align: center; justify-content: center;">Próximamente</div>
+                <div class="btn-buy-perk component-button component-button--full component-button--h45" data-perkid="no_cooldown_10s" style="text-align: center; justify-content: center; cursor: pointer;">Comprar</div>
             </div>
             
             <!-- Perk 2 -->
@@ -96,8 +96,49 @@
                 <div class="store-card-desc">Otorga protección contra sobrescritura para un máximo de 25 píxeles en un lienzo oficial.</div>
                 <div class="store-card-note">Un solo uso por compra</div>
                 <div class="store-card-price">🪙 3,000</div>
-                <div class="component-button component-button--full component-button--h45 disabled" style="text-align: center; justify-content: center;">Próximamente</div>
+                <div class="btn-buy-perk component-button component-button--full component-button--h45" data-perkid="pixel_protection_25" style="text-align: center; justify-content: center; cursor: pointer;">Comprar</div>
             </div>
         </div>
     </div>
 </div>
+<script>
+    document.querySelectorAll('.btn-buy-perk').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            const perkId = e.currentTarget.dataset.perkid;
+            const originalText = e.currentTarget.innerText;
+            e.currentTarget.innerText = 'Cargando...';
+            e.currentTarget.classList.add('disabled');
+            
+            try {
+                const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+                const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+                const apiUrl = (window.AppBasePath || '') + '/api/index.php';
+                
+                const res = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': csrfToken
+                    },
+                    body: JSON.stringify({ route: 'store.buy_perk', perk_id: perkId })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert('Ventaja comprada con éxito. Tu nuevo saldo es de: ' + data.new_balance + ' monedas.');
+                } else {
+                    if (data.message_key === 'store.insufficient_coins') {
+                        alert('No tienes suficientes monedas para comprar esta ventaja.');
+                    } else {
+                        alert(data.message_key || 'Error al procesar la compra');
+                    }
+                }
+                e.currentTarget.innerText = originalText;
+                e.currentTarget.classList.remove('disabled');
+            } catch (err) {
+                alert('Error de red');
+                e.currentTarget.innerText = originalText;
+                e.currentTarget.classList.remove('disabled');
+            }
+        });
+    });
+</script>
