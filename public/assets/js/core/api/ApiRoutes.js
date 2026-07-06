@@ -136,5 +136,9 @@ export const ApiRoutes = {
         GetSubscriptionStatus: 'stripe.get_subscription_status',
         CreateSetupSession: 'stripe.create_setup_session',
         GetPaymentMethods: 'stripe.get_payment_methods'
+    },
+    Store: {
+        GetBalance: 'store.get_balance',
+        BuyPerk: 'store.buy_perk'
     }
 };

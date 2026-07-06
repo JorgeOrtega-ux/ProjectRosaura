@@ -75,6 +75,17 @@
     color: var(--text-secondary);
     font-weight: 400;
 }
+.store-coins-balance {
+    background: var(--bg-surface);
+    border: var(--border-dynamic);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
 </style>
 
 <div class="view-content" data-ref="store-coins-wrapper">
@@ -83,6 +94,9 @@
             <h1 class="component-top-title">Tienda de Monedas</h1>
         </div>
         <div class="component-top-right">
+            <div class="store-coins-balance">
+                🪙 <span data-ref="user-coins-balance">...</span>
+            </div>
         </div>
     </div>
 
@@ -94,7 +108,7 @@
                 <div class="store-card-title">🪙 1,000</div>
                 <div class="store-card-desc">Paquete básico de monedas.</div>
                 <div class="store-card-price">$0.99 <span>USD</span></div>
-                <div class="btn-buy-coins component-button component-button--full component-button--h45" data-amount="1000" style="text-align: center; justify-content: center; cursor: pointer;">Comprar</div>
+                <div data-action="buyCoins" data-amount="1000" class="btn-buy-coins component-button component-button--full component-button--h45" style="text-align: center; justify-content: center; cursor: pointer;">Comprar</div>
             </div>
             
             <!-- Card 2 -->
@@ -104,7 +118,7 @@
                 <div class="store-card-title">🪙 2,750</div>
                 <div class="store-card-desc">2,000 + 750 de bonificación</div>
                 <div class="store-card-price">$2.49 <span>USD</span></div>
-                <div class="btn-buy-coins component-button component-button--dark component-button--full component-button--h45" data-amount="2750" style="text-align: center; justify-content: center; cursor: pointer;">Comprar</div>
+                <div data-action="buyCoins" data-amount="2750" class="btn-buy-coins component-button component-button--dark component-button--full component-button--h45" style="text-align: center; justify-content: center; cursor: pointer;">Comprar</div>
             </div>
             
             <!-- Card 3 -->
@@ -114,7 +128,7 @@
                 <div class="store-card-title">🪙 5,750</div>
                 <div class="store-card-desc">4,500 + 1,250 de bonificación</div>
                 <div class="store-card-price">$4.99 <span>USD</span></div>
-                <div class="btn-buy-coins component-button component-button--dark component-button--full component-button--h45" data-amount="5750" style="text-align: center; justify-content: center; cursor: pointer;">Comprar</div>
+                <div data-action="buyCoins" data-amount="5750" class="btn-buy-coins component-button component-button--dark component-button--full component-button--h45" style="text-align: center; justify-content: center; cursor: pointer;">Comprar</div>
             </div>
             
             <!-- Card 4 -->
@@ -124,49 +138,9 @@
                 <div class="store-card-title">🪙 13,250</div>
                 <div class="store-card-desc">10,000 + 3,250 de bonificación</div>
                 <div class="store-card-price">$9.99 <span>USD</span></div>
-                <div class="btn-buy-coins component-button component-button--dark component-button--full component-button--h45" data-amount="13250" style="text-align: center; justify-content: center; cursor: pointer;">Comprar</div>
+                <div data-action="buyCoins" data-amount="13250" class="btn-buy-coins component-button component-button--dark component-button--full component-button--h45" style="text-align: center; justify-content: center; cursor: pointer;">Comprar</div>
             </div>
         </div>
     </div>
 </div>
-<script>
-    document.querySelectorAll('.btn-buy-coins').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
-            const amount = parseInt(e.currentTarget.dataset.amount);
-            const originalText = e.currentTarget.innerText;
-            e.currentTarget.innerText = 'Cargando...';
-            e.currentTarget.classList.add('disabled');
-            
-            try {
-                const csrfMeta = document.querySelector('meta[name="csrf-token"]');
-                const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
-                const apiUrl = (window.AppBasePath || '') + '/api/index.php';
-                
-                const res = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'X-CSRF-Token': csrfToken
-                    },
-                    body: JSON.stringify({ 
-                        route: 'stripe.create_coin_checkout', 
-                        amount: amount,
-                        return_url: (window.AppBasePath || window.location.origin) + '/store/coins'
-                    })
-                });
-                const data = await res.json();
-                if (data.success && data.checkout_url) {
-                    window.location.href = data.checkout_url;
-                } else {
-                    alert(data.message_key || 'Error al procesar el pago');
-                    e.currentTarget.innerText = originalText;
-                    e.currentTarget.classList.remove('disabled');
-                }
-            } catch (err) {
-                alert('Error de red');
-                e.currentTarget.innerText = originalText;
-                e.currentTarget.classList.remove('disabled');
-            }
-        });
-    });
-</script>
+

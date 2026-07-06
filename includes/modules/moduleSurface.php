@@ -31,9 +31,11 @@ $isMainArea = !$isAdminArea && !$isSettingsArea && !$isSitePolicyArea;
                         <span><?php echo __('menu_explore'); ?></span>
                     </div>
                 </div>
-                
-                <div class="component-menu-divider"></div>
-                
+            </div>
+        </div>
+
+        <div class="component-menu-bottom">
+            <div class="component-menu-list">
                 <div class="component-menu-link nav-item" data-nav="/store/coins">
                     <div class="component-menu-link-icon">
                         <span class="material-symbols-rounded">monetization_on</span>
