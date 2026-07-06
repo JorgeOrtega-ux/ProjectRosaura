@@ -452,7 +452,8 @@ class CanvasServices {
         ?string $scopeRef1 = null,
         ?string $scopeRef2 = null,
         ?string $scopeRef3 = null,
-        bool $canManageOfficial = false
+        bool $canManageOfficial = false,
+        int $allowPurchases = 1
     ): array {
         try {
             if ($scopeType !== 'personal' && !$canManageOfficial) {
@@ -519,7 +520,8 @@ class CanvasServices {
                 'scope_type'            => $scopeType,
                 'scope_ref_1'           => $scopeRef1,
                 'scope_ref_2'           => $scopeRef2,
-                'scope_ref_3'           => $scopeRef3
+                'scope_ref_3'           => $scopeRef3,
+                'allow_purchases'       => $allowPurchases
             ];
 
             $canvasId = $this->canvasRepository->create($canvasData);

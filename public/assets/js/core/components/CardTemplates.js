@@ -44,14 +44,20 @@ export const CardTemplates = {
         let badgeHtml = '';
         if (isOfficial) {
             badgeHtml = `
-                <div class="component-snapshot-badge">
-                    <span class="material-symbols-rounded" style="color: ${onlinePlayers > 0 ? '#10b981' : 'inherit'}">person</span>
-                    ${onlinePlayers} Online
+                <div style="position: absolute; top: 12px; right: 12px; display: flex; flex-direction: column; gap: 6px; align-items: flex-end; z-index: 10;">
+                    <div class="component-snapshot-badge" style="position: relative; top: auto; right: auto; background: var(--accent-primary, #3b82f6); color: white; display: flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
+                        <span class="material-symbols-rounded" style="font-size: 14px;">verified</span>
+                        Oficial
+                    </div>
+                    <div class="component-snapshot-badge" style="position: relative; top: auto; right: auto; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
+                        <span class="material-symbols-rounded" style="color: ${onlinePlayers > 0 ? '#10b981' : 'inherit'}">person</span>
+                        ${onlinePlayers} Online
+                    </div>
                 </div>
             `;
         } else {
             badgeHtml = `
-                <div class="component-snapshot-badge" style="display: flex; align-items: center; gap: 4px;">
+                <div class="component-snapshot-badge" style="display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
                     <span class="material-symbols-rounded" style="color: ${onlinePlayers > 0 ? '#10b981' : 'inherit'}; font-size: 16px;">person</span>
                     <span>${onlinePlayers} Online</span> 
                     <span style="margin: 0 2px; opacity: 0.5;">|</span>

@@ -576,6 +576,11 @@ class CanvasesCreateController {
             this.formState.cooldown_seconds = parseInt(inputSec.getAttribute('data-val'), 10) || 10;
         }
 
+        const inputPurchases = document.querySelector('[data-ref="val_allow_purchases"]');
+        if (inputPurchases) {
+            this.formState.allow_purchases = inputPurchases.checked ? 1 : 0;
+        }
+
         const scopeSection = document.querySelector('[data-ref="scope-section"]');
         if (scopeSection && !scopeSection.classList.contains('disabled')) {
             const scopeType = this.formState.scope_type;

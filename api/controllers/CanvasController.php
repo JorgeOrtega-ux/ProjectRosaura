@@ -291,10 +291,13 @@ class CanvasController extends BaseController {
                 return $this->respond(['success' => false, 'message' => 'Para un lienzo de organización, debes especificar el nombre de la misma.']);
             }
 
+            $allowPurchases = isset($input['allow_purchases']) ? (int)$input['allow_purchases'] : 1;
+
             $result = $this->canvasServices->createCanvas(
                 $userId, $name, $description, $privacy, $requiresApproval, 
                 $size, (int)$limit, $paletteId, (int)$cooldownBatch, (int)$cooldownSeconds,
-                $scopeType, $scopeRef1, $scopeRef2, $scopeRef3, $this->canCreateOfficial()
+                $scopeType, $scopeRef1, $scopeRef2, $scopeRef3, $this->canCreateOfficial(),
+                $allowPurchases
             );
 
             // NOTA DE IMPLEMENTACIÓN: Capturar explícitamente el error de límites

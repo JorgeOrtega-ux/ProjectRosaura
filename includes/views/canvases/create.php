@@ -494,6 +494,23 @@ $defaultSizeKey = $defaultSizeData ? key($canvasSizesList) : '64x64';
                         </div>
                     </div>
 
+                    <hr class="component-divider">
+
+                    <div class="component-group-item component-group-item--wrap">
+                        <div class="component-card__content">
+                            <div class="component-card__text">
+                                <h2 class="component-card__title">Permitir utilizar compras</h2>
+                                <p class="component-card__description">Permite que se utilicen ventajas y objetos adquiridos en la tienda dentro de este lienzo.</p>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--end">
+                            <label class="component-toggle-switch">
+                                <input type="checkbox" data-ref="val_allow_purchases" checked="">
+                                <span class="component-toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
                 </div>
 
             </div>
