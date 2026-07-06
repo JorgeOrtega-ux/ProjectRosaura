@@ -160,4 +160,35 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
         </div>
     </div>
 
+    <div class="component-menu component-menu--w265 component-menu--h-full component-menu--no-padding disabled" data-ref="menu-advantages">
+        <div class="pill-container"><div class="drag-handle"></div></div>
+        
+        <div class="component-menu-header">
+            <div class="component-menu-header-box">
+                <span class="material-symbols-rounded">stars</span>
+                <span class="component-menu-header-title">Ventajas Activas</span>
+            </div>
+        </div>
+        
+        <div class="component-menu-section-parent">
+            <div class="component-menu-top">
+                <div class="component-menu-header-box component-menu-header-box--section">
+                    <span class="material-symbols-rounded">inventory_2</span>
+                    <span class="component-menu-header-title">Mis Ventajas</span>
+                </div>
+            </div>
+
+            <div class="component-menu-bottom">
+                <div class="component-items-list" data-ref="user-advantages-list">
+                    <div class="component-loader-center component-loader-center--compact">
+                        <div class="component-empty-state-content">
+                            <span class="material-symbols-rounded icon-spin-slow">stars</span><br>
+                            Cargando...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>

@@ -79,4 +79,65 @@ class StoreServices {
             'coins' => $coins
         ];
     }
+
+    public function getMyPerks(array $input): array {
+        if (!$this->sessionManager->isLoggedIn()) {
+            http_response_code(401);
+            return ['success' => false, 'message_key' => 'error.unauthorized'];
+        }
+
+        $userId = $this->sessionManager->getActiveAccountId();
+        $perks = $this->storeRepo->getUnusedPerks($userId);
+
+        return [
+            'success' => true,
+            'data' => $perks
+        ];
+    }
+
+    public function activatePerk(array $input): array {
+        if (!$this->sessionManager->isLoggedIn()) {
+            http_response_code(401);
+            return ['success' => false, 'message_key' => 'error.unauthorized'];
+        }
+
+        $userId = $this->sessionManager->getActiveAccountId();
+        $perkId = $input['perk_id'] ?? '';
+        
+        if (empty($perkId) || !isset(self::PERK_PRICES[$perkId])) {
+            return ['success' => false, 'message_key' => 'store.invalid_perk'];
+        }
+
+        // Marcar perk como usado en MySQL
+        if (!$this->storeRepo->markPerkAsUsed($userId, $perkId)) {
+            return ['success' => false, 'message_key' => 'store.perk_not_owned'];
+        }
+
+        // Actualizar estado en Redis para el WebSocket Python
+        try {
+            $redis = \App\Config\RedisManager::getInstance()->getConnection();
+            
+            if ($perkId === 'no_cooldown_10s') {
+                $key = "user:{$userId}:perk:no_cooldown";
+                $redis->setex($key, 10, "1"); 
+            } elseif ($perkId === 'pixel_protection_25') {
+                $key = "user:{$userId}:perk:protection";
+                // Sumamos por si tiene proteccion anterior no consumida, o simplemente asignamos
+                $current = (int)$redis->get($key);
+                $redis->setex($key, 86400, (string)($current + 25)); // 86400 = 24h
+            }
+        } catch (\Throwable $e) {
+            Logger::error("Redis Error en activatePerk: " . $e->getMessage());
+        }
+
+        Logger::info("User activated perk", [
+            'user_id' => $userId,
+            'perk_id' => $perkId
+        ]);
+
+        return [
+            'success' => true,
+            'message_key' => 'store.perk_activated'
+        ];
+    }
 }

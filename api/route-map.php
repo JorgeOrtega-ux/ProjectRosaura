@@ -665,6 +665,16 @@ return [
         'controller' => 'App\Api\Controllers\StoreController',
         'action' => 'get_balance',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'store_get_balance', 'max' => 20, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
+    ],
+    'store.get_my_perks' => [
+        'controller' => 'App\Api\Controllers\StoreController',
+        'action' => 'get_my_perks',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'store_get_perks', 'max' => 20, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
+    ],
+    'store.activate_perk' => [
+        'controller' => 'App\Api\Controllers\StoreController',
+        'action' => 'activate_perk',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'store_activate_perk', 'max' => 10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ]
 ];
 ?>

@@ -262,6 +262,10 @@ if (!empty($canvasUuid)) {
                     <button class="component-button component-button--icon component-button--h40" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-templates" data-tooltip="Plantillas" data-position="bottom">
                         <span class="material-symbols-rounded">photo_library</span>
                     </button>
+                    <div class="component-divider-vertical" data-ref="advantages-actions-divider"></div>
+                    <button class="component-button component-button--icon component-button--h40" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-advantages" data-tooltip="Ventajas Activas" data-position="bottom">
+                        <span class="material-symbols-rounded">stars</span>
+                    </button>
                 </div>
                 <?php endif; ?>
             </div>

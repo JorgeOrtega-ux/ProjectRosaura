@@ -24,6 +24,15 @@ export const DesignInteractions = {
         }
 
         // 2. Comportamiento general
+        const btnActivatePerk = e.target.closest('[data-action="activatePerk"]');
+        if (btnActivatePerk) {
+            e.preventDefault();
+            if (typeof this.activatePerk === 'function') {
+                this.activatePerk(btnActivatePerk.getAttribute('data-perk-id'), btnActivatePerk);
+            }
+            return;
+        }
+
         const btnPlayTimelapse = e.target.closest('[data-action="playTimelapse"]');
         if (btnPlayTimelapse) {
             e.preventDefault();
@@ -526,5 +535,65 @@ export const DesignInteractions = {
         if (typeof this.updateCanvasDimensions === 'function') this.updateCanvasDimensions();
         if (typeof this.limitBounds === 'function') this.limitBounds();
         this.requestRender();
+    },
+
+    async loadUserPerks() {
+        const list = document.querySelector('[data-ref="user-advantages-list"]');
+        if (!list) return;
+
+        try {
+            const result = await this.api.post('store.get_my_perks', {});
+            if (result && result.success) {
+                list.innerHTML = '';
+                if (result.data.length === 0) {
+                    list.innerHTML = `<div class="component-empty-state-content">No tienes ventajas disponibles.</div>`;
+                    return;
+                }
+
+                result.data.forEach(p => {
+                    const el = document.createElement('div');
+                    el.className = 'component-item-card component-item-card--row';
+                    const title = p.perk_id === 'no_cooldown_10s' ? 'Sin Enfriamiento (10s)' : 'Protección de Píxel (25)';
+                    const icon = p.perk_id === 'no_cooldown_10s' ? 'bolt' : 'shield';
+                    
+                    el.innerHTML = `
+                        <div class="component-item-card-icon"><span class="material-symbols-rounded">${icon}</span></div>
+                        <div class="component-item-card-content">
+                            <div class="component-item-card-title">${title}</div>
+                            <div class="component-item-card-subtitle">Disponibles: ${p.amount}</div>
+                        </div>
+                        <div class="component-item-card-actions">
+                            <button class="component-button component-button--primary component-button--sm" data-action="activatePerk" data-perk-id="${p.perk_id}">Usar</button>
+                        </div>
+                    `;
+                    list.appendChild(el);
+                });
+            } else {
+                list.innerHTML = `<div class="component-empty-state-content">${result?.message || 'Error al cargar ventajas.'}</div>`;
+            }
+        } catch (error) {
+            console.error('Error loading perks', error);
+            list.innerHTML = `<div class="component-empty-state-content">Error al cargar ventajas.</div>`;
+        }
+    },
+
+    async activatePerk(perkId, btn) {
+        if (!perkId) return;
+        try {
+            if (btn) btn.classList.add('loading');
+            const result = await this.api.post('store.activate_perk', { perk_id: perkId });
+            if (btn) btn.classList.remove('loading');
+            
+            if (result && result.success) {
+                if (typeof showMessage === 'function') showMessage('Ventaja activada exitosamente', 'success');
+                this.loadUserPerks(); // Recargar lista
+            } else {
+                if (typeof showMessage === 'function') showMessage(result?.message_key || 'Error al activar ventaja', 'error');
+            }
+        } catch (error) {
+            if (btn) btn.classList.remove('loading');
+            console.error('Error activating perk', error);
+            if (typeof showMessage === 'function') showMessage('Error al conectar con el servidor', 'error');
+        }
     }
 };

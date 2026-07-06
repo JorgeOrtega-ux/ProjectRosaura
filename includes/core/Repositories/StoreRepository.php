@@ -62,4 +62,36 @@ class StoreRepository implements StoreRepositoryInterface {
         $stmt->execute([$userId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    public function getUnusedPerks(int $userId): array {
+        $stmt = $this->db->prepare("
+            SELECT perk_id, COUNT(*) as amount 
+            FROM user_perks 
+            WHERE user_id = ? AND is_used = 0 
+            GROUP BY perk_id
+        ");
+        $stmt->execute([$userId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function markPerkAsUsed(int $userId, string $perkId): bool {
+        // Obtenemos el ID del primer perk sin usar de ese tipo
+        $stmt = $this->db->prepare("
+            SELECT id FROM user_perks 
+            WHERE user_id = ? AND perk_id = ? AND is_used = 0 
+            ORDER BY created_at ASC LIMIT 1
+        ");
+        $stmt->execute([$userId, $perkId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($row) {
+            $updateStmt = $this->db->prepare("
+                UPDATE user_perks 
+                SET is_used = 1, used_at = NOW() 
+                WHERE id = ?
+            ");
+            return $updateStmt->execute([$row['id']]);
+        }
+        return false;
+    }
 }

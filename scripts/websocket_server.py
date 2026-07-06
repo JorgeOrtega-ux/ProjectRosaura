@@ -346,13 +346,33 @@ async def handler(websocket):
                         USER_LOCKS[user_id] = asyncio.Lock()
 
                     async with USER_LOCKS[user_id]:
+                        # 1. Verificar si el píxel está protegido
+                        offset = (y * width) + x
+                        protected_key = f"canvas:{canvas_id}:protected_pixels:{offset}"
+                        protected_by = await r.get(protected_key)
+                        
+                        if protected_by and protected_by.decode('utf-8') != str(user_id):
+                            print(f"[DEBUG PY] Pixel {x},{y} protegido por el usuario {protected_by.decode('utf-8')}")
+                            error_msg = json.dumps({
+                                "type": "pixel_protected_error",
+                                "message": "Este píxel está protegido"
+                            })
+                            await websocket.send(error_msg)
+                            continue
+
+                        # 2. Verificar cooldown
                         balance, last_t, user_key, now = await get_user_cooldown(r, canvas_id, user_id, config_batch, config_sec)
                         
-                        if balance >= 1:
-                            balance -= 1
-                            print(f"[DEBUG PY] Descontando 1 pixel. Balance restante: {balance}")
-                            
-                            await r.hset(user_key, mapping={b'b': str(balance).encode(), b't': str(last_t).encode()})
+                        user_no_cooldown_key = f"user:{user_id}:perk:no_cooldown"
+                        is_no_cooldown = await r.exists(user_no_cooldown_key)
+
+                        if balance >= 1 or is_no_cooldown:
+                            if not is_no_cooldown:
+                                balance -= 1
+                                print(f"[DEBUG PY] Descontando 1 pixel. Balance restante: {balance}")
+                                await r.hset(user_key, mapping={b'b': str(balance).encode(), b't': str(last_t).encode()})
+                            else:
+                                print(f"[DEBUG PY] Perk no_cooldown_10s activo para {user_id}. No se descuenta balance.")
                             
                             confirm_msg = json.dumps({
                                 "type": "pixel_confirm",
@@ -365,7 +385,14 @@ async def handler(websocket):
                             await websocket.send(confirm_msg)
 
                             if 0 <= color_index <= 255:
-                                offset = (y * width) + x
+                                # 3. Aplicar protección si el usuario tiene el perk de protección
+                                user_protection_key = f"user:{user_id}:perk:protection"
+                                protection_left = await r.get(user_protection_key)
+                                if protection_left and int(protection_left) > 0:
+                                    await r.decr(user_protection_key)
+                                    await r.setex(protected_key, 86400, str(user_id)) # 24 horas de protección
+                                    print(f"[DEBUG PY] Pixel {x},{y} protegido por {user_id} por 24h. Le quedan {int(protection_left)-1} pixeles protegidos.")
+
                                 redis_state_key = f"canvas:{canvas_id}:state"
                                 await r.setrange(redis_state_key, offset, bytes([color_index]))
                                 

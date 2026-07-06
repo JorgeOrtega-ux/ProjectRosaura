@@ -169,6 +169,9 @@ class DesignController {
             const uid = window.activeUserId || document.querySelector('meta[name="user-id"]')?.content || null;
             if (uid) {
                 this.loadUserLibrary();
+                if (typeof this.loadUserPerks === 'function') {
+                    this.loadUserPerks();
+                }
             }
             
             this.startCooldownLoop();

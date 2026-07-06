@@ -273,6 +273,6 @@ if (array_key_exists($route, $routes)) {
 } else {
     Logger::security("Attempted access to non-existent route: {$route}", 'warning', ['ip' => Utils::getIpAddress()]);
     http_response_code(404);
-    echo json_encode(['success' => false, 'message_key' => 'error.route_not_found']);
+    echo json_encode(['success' => false, 'message_key' => 'error.route_not_found', 'debug_route' => $route]);
 }
 ?>

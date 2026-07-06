@@ -102,6 +102,9 @@ export const DesignNetwork = {
                 else if (data.type === 'canvas_cleared') {
                     this.handleCanvasCleared(data);
                 }
+                else if (data.type === 'pixel_protected_error') {
+                    showMessage(data.message || 'Este píxel está protegido', 'warning');
+                }
                 else if (data.type === 'canvas_locked_error') {
                     showMessage(__('err_canvas_resetting'), 'warning');
                 }
