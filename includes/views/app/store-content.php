@@ -53,6 +53,19 @@
     margin-bottom: 24px;
     font-weight: 600;
 }
+.store-card-price {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-align: center;
+    margin-bottom: 16px;
+    margin-top: auto;
+}
+.store-card-price span {
+    font-size: 14px;
+    color: var(--text-secondary);
+    font-weight: 400;
+}
 </style>
 
 <div class="view-content" data-ref="store-content-wrapper">
@@ -72,7 +85,8 @@
                 <div class="store-card-title">Sin Cooldown (10s)</div>
                 <div class="store-card-desc">Elimina tu tiempo de espera por 10 segundos en un lienzo oficial. Una vez activo, el tiempo no podrá pausarse.</div>
                 <div class="store-card-note">Un solo uso por compra</div>
-                <div class="component-button component-button--full component-button--h45 disabled" style="margin-top: auto; text-align: center; justify-content: center;">Próximamente</div>
+                <div class="store-card-price">🪙 1,500</div>
+                <div class="component-button component-button--full component-button--h45 disabled" style="text-align: center; justify-content: center;">Próximamente</div>
             </div>
             
             <!-- Perk 2 -->
@@ -81,7 +95,8 @@
                 <div class="store-card-title">Protección de Píxel</div>
                 <div class="store-card-desc">Otorga protección contra sobrescritura para un máximo de 25 píxeles en un lienzo oficial.</div>
                 <div class="store-card-note">Un solo uso por compra</div>
-                <div class="component-button component-button--full component-button--h45 disabled" style="margin-top: auto; text-align: center; justify-content: center;">Próximamente</div>
+                <div class="store-card-price">🪙 3,000</div>
+                <div class="component-button component-button--full component-button--h45 disabled" style="text-align: center; justify-content: center;">Próximamente</div>
             </div>
         </div>
     </div>

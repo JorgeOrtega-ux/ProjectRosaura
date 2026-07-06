@@ -60,8 +60,20 @@
     border-radius: 12px;
     font-size: 11px;
     font-weight: 700;
-    white-space: nowrap;
     text-transform: uppercase;
+}
+.store-card-price {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-align: center;
+    margin-bottom: 16px;
+    margin-top: auto;
+}
+.store-card-price span {
+    font-size: 14px;
+    color: var(--text-secondary);
+    font-weight: 400;
 }
 </style>
 
@@ -81,7 +93,8 @@
                 <div class="store-card-icon"><span class="material-symbols-rounded">monetization_on</span></div>
                 <div class="store-card-title">🪙 1,000</div>
                 <div class="store-card-desc">Paquete básico de monedas.</div>
-                <div class="component-button component-button--full component-button--h45 disabled" style="margin-top: auto; text-align: center; justify-content: center;">Próximamente</div>
+                <div class="store-card-price">$0.99 <span>USD</span></div>
+                <div class="component-button component-button--full component-button--h45 disabled" style="text-align: center; justify-content: center;">Próximamente</div>
             </div>
             
             <!-- Card 2 -->
@@ -90,7 +103,8 @@
                 <div class="store-card-icon"><span class="material-symbols-rounded">monetization_on</span></div>
                 <div class="store-card-title">🪙 2,750</div>
                 <div class="store-card-desc">2,000 + 750 de bonificación</div>
-                <div class="component-button component-button--dark component-button--full component-button--h45 disabled" style="margin-top: auto; text-align: center; justify-content: center;">Próximamente</div>
+                <div class="store-card-price">$2.49 <span>USD</span></div>
+                <div class="component-button component-button--dark component-button--full component-button--h45 disabled" style="text-align: center; justify-content: center;">Próximamente</div>
             </div>
             
             <!-- Card 3 -->
@@ -99,7 +113,8 @@
                 <div class="store-card-icon"><span class="material-symbols-rounded">diamond</span></div>
                 <div class="store-card-title">🪙 5,750</div>
                 <div class="store-card-desc">4,500 + 1,250 de bonificación</div>
-                <div class="component-button component-button--dark component-button--full component-button--h45 disabled" style="margin-top: auto; text-align: center; justify-content: center;">Próximamente</div>
+                <div class="store-card-price">$4.99 <span>USD</span></div>
+                <div class="component-button component-button--dark component-button--full component-button--h45 disabled" style="text-align: center; justify-content: center;">Próximamente</div>
             </div>
             
             <!-- Card 4 -->
@@ -108,7 +123,8 @@
                 <div class="store-card-icon"><span class="material-symbols-rounded" style="color: #8b5cf6;">workspace_premium</span></div>
                 <div class="store-card-title">🪙 13,250</div>
                 <div class="store-card-desc">10,000 + 3,250 de bonificación</div>
-                <div class="component-button component-button--dark component-button--full component-button--h45 disabled" style="margin-top: auto; text-align: center; justify-content: center;">Próximamente</div>
+                <div class="store-card-price">$9.99 <span>USD</span></div>
+                <div class="component-button component-button--dark component-button--full component-button--h45 disabled" style="text-align: center; justify-content: center;">Próximamente</div>
             </div>
         </div>
     </div>
