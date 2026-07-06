@@ -75,6 +75,5 @@
         <div class="component-bottom" style="padding: 0;" data-ref="dynamic-content-area">
             <!-- JS inyectará el component-grid o el component-empty-state aquí -->
         </div>
-
     </div>
 </div>

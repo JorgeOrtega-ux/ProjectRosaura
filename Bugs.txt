@@ -1,6 +1,0 @@
-
-
-3-Cuando un usuario compre una suscripcion premium, al volver a inicio debes mostrarle un modal de los que ya usamos en la web diciendole que se yo, de bienvenido a premium o cosas asi.
-
-
-4-Implementar una seccion que muestre tu nivel de suscripcion y un btn de cancelar renovacion automatica y asi

@@ -7,6 +7,9 @@ return [
     '/search' => ['view' => 'app/search.php'], 
     '/premium' => ['view' => 'app/premium.php'], 
     
+    '/store/coins' => ['view' => 'app/store-coins.php'],
+    '/store/content' => ['view' => 'app/store-content.php'],
+    
     '/login' => ['view' => 'auth/login.php', 'guest_only' => true],
     '/login/two-factor' => ['view' => 'auth/login.php', 'guest_only' => true],
     '/register' => ['view' => 'auth/register.php', 'guest_only' => true],
