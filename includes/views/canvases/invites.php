@@ -37,11 +37,10 @@ if (!$userId || !$canvasId) {
 $invites = [];
 try {
     $stmt = $pdoCanvases->prepare("
-        SELECT i.*, u.username as creator_name 
-        FROM canvas_invites i
-        LEFT JOIN users u ON i.created_by = u.id
-        WHERE i.canvas_id = :cid 
-        ORDER BY i.created_at DESC
+        SELECT * 
+        FROM canvas_invites 
+        WHERE canvas_id = :cid 
+        ORDER BY created_at DESC
     ");
     $stmt->execute(['cid' => $canvasId]);
     $invites = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -60,6 +59,18 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
             </div>
             
             <div class="component-top-right">
+                <div class="component-actions disabled" data-ref="header-selection-actions">
+                    <button class="component-button component-button--icon component-button--h40" data-action="copySelectedInvite" data-tooltip="Copiar código" data-position="bottom">
+                        <span class="material-symbols-rounded">content_copy</span>
+                    </button>
+                    <button class="component-button component-button--icon component-button--h40 component-button--danger" data-action="revokeSelectedInvites" data-tooltip="Revocar selección" data-position="bottom">
+                        <span class="material-symbols-rounded">delete_forever</span>
+                    </button>
+                    <button class="component-button component-button--icon component-button--h40" data-action="deselectInvite" data-tooltip="Cancelar selección" data-position="bottom">
+                        <span class="material-symbols-rounded">close</span>
+                    </button>
+                </div>
+                
                 <div class="component-actions active" data-ref="header-default-actions">
                     <button data-nav="<?php echo htmlspecialchars($appUrl); ?>/canvases/manage/invites/generate/<?php echo htmlspecialchars($canvasUuid); ?>" class="component-button component-button--icon component-button--h40 component-button--primary" data-tooltip="Generar Invitación" data-position="bottom">
                         <span class="material-symbols-rounded">add_link</span>
@@ -77,7 +88,6 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                             <th>Rol</th>
                             <th>Usos</th>
                             <th>Expiración</th>
-                            <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -88,7 +98,7 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                                     $isMaxed = $invite['max_uses'] !== null && $invite['uses_count'] >= $invite['max_uses'];
                                     $statusClass = ($isExpired || $isMaxed) ? 'text-gray-500' : 'text-green-500';
                                 ?>
-                                <tr class="component-table-row <?php echo ($isExpired || $isMaxed) ? 'opacity-50' : ''; ?>">
+                                <tr class="component-table-row <?php echo ($isExpired || $isMaxed) ? 'opacity-50' : ''; ?>" data-action="selectInvite" data-invite-id="<?php echo htmlspecialchars($invite['id']); ?>" data-invite-code="<?php echo htmlspecialchars($invite['code']); ?>">
                                     <td>
                                         <div class="component-badge component-badge--sm">
                                             <span class="material-symbols-rounded">key</span>
@@ -113,19 +123,11 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                                             <span><?php echo $invite['expires_at'] ? date('d/m/Y H:i', strtotime($invite['expires_at'])) : 'Nunca'; ?></span>
                                         </div>
                                     </td>
-                                    <td>
-                                        <button class="component-button component-button--icon component-button--h40" data-action="copyInviteCode" data-code="<?php echo htmlspecialchars($invite['code']); ?>" data-tooltip="Copiar código" data-position="bottom">
-                                            <span class="material-symbols-rounded">content_copy</span>
-                                        </button>
-                                        <button class="component-button component-button--icon component-button--h40 component-button--danger" data-action="revokeInvite" data-id="<?php echo htmlspecialchars($invite['id']); ?>" data-tooltip="Revocar" data-position="bottom">
-                                            <span class="material-symbols-rounded">delete_forever</span>
-                                        </button>
-                                    </td>
                                 </tr>
                             <?php endforeach; ?>
                         <?php else: ?>
                             <tr>
-                                <td colspan="5" class="component-empty-table-cell">
+                                <td colspan="4" class="component-empty-table-cell">
                                     <div class="component-empty-state component-empty-state--table">
                                         <span class="material-symbols-rounded component-empty-state-icon">link_off</span>
                                         <p class="component-empty-state-text">No hay invitaciones activas para este lienzo.</p>
