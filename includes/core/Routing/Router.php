@@ -133,6 +133,17 @@ class Router {
             ];
         }
 
+        // Generate Invites
+        if (preg_match('#^/canvases/manage/invites/generate/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
+            $_GET['uuid'] = $matches[1];
+            return $this->routes['/canvases/manage/invites/generate/:uuid'] ?? [
+                'view' => 'canvases/invites-generate.php',
+                'auth' => true,
+                'permissions' => ['manage_canvases'],
+                'requires_2fa' => false
+            ];
+        }
+
         // Roles
         if (preg_match('#^/canvases/manage/roles/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
             $_GET['uuid'] = $matches[1];

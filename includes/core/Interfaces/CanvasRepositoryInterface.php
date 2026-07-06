@@ -100,7 +100,7 @@ interface CanvasRepositoryInterface {
     // ==========================================
     // NUEVOS MÉTODOS PARA INVITACIONES
     // ==========================================
-    public function createInvite(int $canvasId, string $code, int $roleId, ?int $maxUses, ?string $expiresAt, int $createdBy): int;
+    public function createInvite(int $canvasId, string $code, string $roleId, ?int $maxUses, ?string $expiresAt, int $createdBy): int;
     public function getInvites(int $canvasId): array;
     public function getInviteByCode(string $code): ?array;
     public function incrementInviteUses(int $inviteId): bool;

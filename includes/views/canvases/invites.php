@@ -61,9 +61,8 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
             
             <div class="component-top-right">
                 <div class="component-actions active" data-ref="header-default-actions">
-                    <button class="component-button component-button--primary" data-action="openGenerateInviteModal">
+                    <button data-nav="<?php echo htmlspecialchars($appUrl); ?>/canvases/manage/invites/generate/<?php echo htmlspecialchars($canvasUuid); ?>" class="component-button component-button--icon component-button--h40 component-button--primary" data-tooltip="Generar Invitación" data-position="bottom">
                         <span class="material-symbols-rounded">add_link</span>
-                        Generar Invitación
                     </button>
                 </div>
             </div>
@@ -142,48 +141,4 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
     </div>
 </div>
 
-<!-- Modal para generar invitación -->
-<div class="component-modal disabled" data-ref="modal-generate-invite">
-    <div class="component-modal-content" style="max-width: 500px;">
-        <div class="component-modal-header">
-            <h2 class="component-modal-title">Generar nueva invitación</h2>
-            <button class="component-button component-button--icon" data-action="closeModal">
-                <span class="material-symbols-rounded">close</span>
-            </button>
-        </div>
-        <div class="component-modal-body">
-            <form id="form-generate-invite" class="component-form">
-                <div class="component-form-group">
-                    <label class="component-label">Rol a otorgar</label>
-                    <div class="component-input-container">
-                        <select name="role" class="component-input" required>
-                            <option value="viewer">Visualizador (Viewer)</option>
-                            <option value="editor">Editor (Editor)</option>
-                            <option value="admin">Administrador (Admin)</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <div class="component-form-group">
-                    <label class="component-label">Límite de usos (Opcional)</label>
-                    <div class="component-input-container">
-                        <span class="material-symbols-rounded component-input-icon">group</span>
-                        <input type="number" name="max_uses" class="component-input component-input--with-icon" placeholder="Ej: 5 (Dejar vacío para ilimitado)" min="1">
-                    </div>
-                </div>
-                
-                <div class="component-form-group">
-                    <label class="component-label">Fecha de expiración (Opcional)</label>
-                    <div class="component-input-container">
-                        <span class="material-symbols-rounded component-input-icon">event</span>
-                        <input type="datetime-local" name="expires_at" class="component-input component-input--with-icon">
-                    </div>
-                </div>
-            </form>
-        </div>
-        <div class="component-modal-footer" style="display: flex; justify-content: flex-end; gap: 12px; padding-top: 16px;">
-            <button class="component-button" data-action="closeModal">Cancelar</button>
-            <button class="component-button component-button--primary" data-action="submitGenerateInvite">Generar</button>
-        </div>
-    </div>
-</div>
+

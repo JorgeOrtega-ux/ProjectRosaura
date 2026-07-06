@@ -53,6 +53,7 @@ return [
     '/canvases/members/:uuid/role/:user_uuid' => ['view' => 'canvases/change-role.php', 'auth' => true, 'permissions' => ['manage_canvases'], 'requires_2fa' => false],
     '/canvases/manage/resize/:uuid' => ['view' => 'canvases/resize.php', 'auth' => true, 'permissions' => ['manage_canvases'], 'requires_2fa' => false],
     '/canvases/manage/invites/:uuid' => ['view' => 'canvases/invites.php', 'auth' => true, 'permissions' => ['manage_canvases'], 'requires_2fa' => false],
+    '/canvases/manage/invites/generate/:uuid' => ['view' => 'canvases/invites-generate.php', 'auth' => true, 'permissions' => ['manage_canvases'], 'requires_2fa' => false],
     '/canvases/manage/roles/:uuid' => ['view' => 'canvases/roles.php', 'auth' => true, 'permissions' => ['manage_canvases'], 'requires_2fa' => false],
     '/canvases/manage/role-builder/:uuid' => ['view' => 'canvases/role-builder.php', 'auth' => true, 'permissions' => ['manage_canvases'], 'requires_2fa' => false],
     

@@ -1,8 +1,5 @@
-10-(Global) - Que al unirte o tratar de unirte a un lienzo haya una alerta diciendote que aceptes las normas y cosas asi
 
 
-1-Implementar 5 paletas de colores en total (y distribuirlas segun el nivel de suscripcion) (Basico solo se queda con la paleta default)
-2-Implementar un creador de paletas de colores personalizado para suscripciones premium nivel 2 (advanced)
 3-Cuando un usuario compre una suscripcion premium, al volver a inicio debes mostrarle un modal de los que ya usamos en la web diciendole que se yo, de bienvenido a premium o cosas asi.
 
 

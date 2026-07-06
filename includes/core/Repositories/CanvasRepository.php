@@ -916,7 +916,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
     // ==========================================
     // NUEVOS MÉTODOS PARA INVITACIONES
     // ==========================================
-    public function createInvite(int $canvasId, string $code, int $roleId, ?int $maxUses, ?string $expiresAt, int $createdBy): int {
+    public function createInvite(int $canvasId, string $code, string $roleId, ?int $maxUses, ?string $expiresAt, int $createdBy): int {
         $sql = "INSERT INTO canvas_invites (canvas_id, code, role, max_uses, expires_at, created_by) 
                 VALUES (:canvas_id, :code, :role_id, :max_uses, :expires_at, :created_by)";
         $stmt = $this->db->prepare($sql);

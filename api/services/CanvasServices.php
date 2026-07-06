@@ -1815,8 +1815,23 @@ class CanvasServices {
                 return ['success' => false, 'message' => 'No tienes permisos de administrador para generar invitaciones.'];
             }
 
-            if (!in_array($role, ['viewer', 'editor', 'admin'])) {
-                return ['success' => false, 'message' => 'Rol inválido.'];
+            $roles = $this->canvasRepository->getCanvasRoles($canvasId);
+            $roleData = null;
+            foreach ($roles as $r) {
+                if ((string)$r['id'] === (string)$role || strtolower($r['name']) === strtolower($role)) {
+                    $roleData = $r;
+                    $role = (string)$r['id']; // normalizar a ID
+                    break;
+                }
+            }
+
+            if (!$roleData) {
+                return ['success' => false, 'message' => 'Rol inválido o no encontrado.'];
+            }
+
+            $nameLower = strtolower(trim($roleData['name']));
+            if (in_array($nameLower, ['owner', 'propietario', 'superadmin', 'superadministrador']) || (isset($roleData['weight']) && (int)$roleData['weight'] >= 100)) {
+                return ['success' => false, 'message' => 'Por seguridad, no se permite generar invitaciones para este rol de alto privilegio.'];
             }
 
             if ($expiresAt) {
