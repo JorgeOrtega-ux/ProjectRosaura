@@ -109,7 +109,8 @@ class StoreServices {
         }
 
         try {
-            $redis = \App\Config\RedisManager::getInstance()->getConnection();
+            $redisInstance = new \App\Config\RedisCache();
+            $redis = $redisInstance->getClient();
             
             if ($perkId === 'no_cooldown_10s') {
                 $key = "user:{$userId}:perk:no_cooldown";
@@ -136,7 +137,7 @@ class StoreServices {
             if (isset($redis)) {
                 if ($perkId === 'no_cooldown_10s') {
                     $key = "user:{$userId}:perk:no_cooldown";
-                    $redis->setex($key, 10, "1"); 
+                    $redis->setex($key, 60, "1"); 
                 } elseif ($perkId === 'pixel_protection_25') {
                     $key = "user:{$userId}:perk:protection";
                     $redis->setex($key, 86400, "25"); // 86400 = 24h

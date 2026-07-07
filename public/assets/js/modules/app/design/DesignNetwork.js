@@ -102,7 +102,7 @@ export const DesignNetwork = {
                         this.offscreenCtx.clearRect(pX, pY, 1, 1);
                     } else {
                         const paletteObj = getPaletteById(this.canvasPaletteId);
-                        const hexColor = (paletteObj && paletteObj.colors[cIdx]) ? paletteObj.colors[cIdx] : '#000000';
+                        const hexColor = (paletteObj && paletteObj.colors[cIdx]) ? paletteObj.colors[cIdx].hex : '#000000';
                         
                         this.offscreenCtx.fillStyle = hexColor;
                         this.offscreenCtx.clearRect(pX, pY, 1, 1);
@@ -131,7 +131,7 @@ export const DesignNetwork = {
                             this.offscreenCtx.clearRect(pX, pY, 1, 1);
                         } else {
                             const paletteObj = getPaletteById(this.canvasPaletteId);
-                            const hexColor = (paletteObj && paletteObj.colors[cIdx]) ? paletteObj.colors[cIdx] : '#000000';
+                            const hexColor = (paletteObj && paletteObj.colors[cIdx]) ? paletteObj.colors[cIdx].hex : '#000000';
                             
                             this.offscreenCtx.fillStyle = hexColor;
                             this.offscreenCtx.clearRect(pX, pY, 1, 1);
@@ -808,7 +808,7 @@ export const DesignNetwork = {
             this.offscreenCtx.clearRect(pX, pY, 1, 1);
         } else {
             const paletteObj = getPaletteById(this.canvasPaletteId);
-            const hexColor = (paletteObj && paletteObj.colors[cIdx]) ? paletteObj.colors[cIdx] : '#000000';
+            const hexColor = (paletteObj && paletteObj.colors[cIdx]) ? paletteObj.colors[cIdx].hex : '#000000';
             
             this.offscreenCtx.fillStyle = hexColor;
             this.offscreenCtx.clearRect(pX, pY, 1, 1);

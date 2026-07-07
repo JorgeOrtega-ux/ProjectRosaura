@@ -216,7 +216,7 @@ async def handler(websocket):
                 # EVENTO INIT - SINCRONIZACIÓN INICIAL
                 # ==========================================
                 if data.get("type") == "init":
-                    user_id = data.get("userId")
+                    user_id = WS_META[websocket].get('user_id')
                     print(f"[DEBUG PY] Procesando petición INIT. UserId: {user_id}")
                     
                     raw_config = await r.hgetall(config_key)
@@ -325,7 +325,7 @@ async def handler(websocket):
                     x = int(data.get("x", 0))
                     y = int(data.get("y", 0))
                     width = int(data.get("width", 64))
-                    user_id = data.get("userId")
+                    user_id = WS_META[websocket].get('user_id')
                     
                     raw_color = data.get("color", 0)
                     try:
