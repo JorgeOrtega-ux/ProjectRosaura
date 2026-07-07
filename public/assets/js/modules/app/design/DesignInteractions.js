@@ -558,8 +558,19 @@ export const DesignInteractions = {
                 result.data.forEach(p => {
                     const el = document.createElement('div');
                     el.className = 'component-item-card component-item-card--row';
-                    const title = p.perk_id === 'no_cooldown_10s' ? 'Sin Enfriamiento (10s)' : 'Protección de Píxel (25)';
-                    const icon = p.perk_id === 'no_cooldown_10s' ? 'bolt' : 'shield';
+                    const titles = {
+                        'no_cooldown_10s': 'Sin Enfriamiento (10s)',
+                        'pixel_protection_25': 'Protección de Píxel (25)',
+                        'elite_eraser_25': 'Borrador de Élite (25)'
+                    };
+                    const icons = {
+                        'no_cooldown_10s': 'bolt',
+                        'pixel_protection_25': 'shield',
+                        'elite_eraser_25': 'ink_eraser'
+                    };
+                    
+                    const title = titles[p.perk_id] || p.perk_id;
+                    const icon = icons[p.perk_id] || 'stars';
                     
                     el.innerHTML = `
                         <div class="component-item-card-icon"><span class="material-symbols-rounded">${icon}</span></div>
@@ -595,17 +606,14 @@ export const DesignInteractions = {
                 // Activar localmente
                 if (result.perk_id === 'no_cooldown_10s') {
                     this.perkNoCooldown = true;
+                    this.perkNoCooldownExpires = Date.now() + 10000;
                     if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
                     this.updateSelectionUI();
-                    
-                    // Quitar localmente después de 10 segundos
-                    setTimeout(() => {
-                        this.perkNoCooldown = false;
-                        if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
-                        this.updateSelectionUI();
-                    }, 10000);
                 } else if (result.perk_id === 'pixel_protection_25') {
                     this.perkProtectionLeft = (this.perkProtectionLeft || 0) + 25;
+                    if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+                } else if (result.perk_id === 'elite_eraser_25') {
+                    this.perkEraserLeft = (this.perkEraserLeft || 0) + 25;
                     if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
                 }
 
@@ -650,6 +658,20 @@ export const DesignInteractions = {
             protBadge.innerHTML = `<span class="material-symbols-rounded" style="color:var(--color-success);">shield</span><span>Protección: ${this.perkProtectionLeft}</span>`;
         } else if (protBadge) {
             protBadge.remove();
+        }
+
+        // Badge Borrador de Élite
+        let eraserBadge = badgesLeft.querySelector('[data-badge-id="perk-eraser"]');
+        if (this.perkEraserLeft > 0) {
+            if (!eraserBadge) {
+                eraserBadge = document.createElement('div');
+                eraserBadge.className = 'component-badge';
+                eraserBadge.setAttribute('data-badge-id', 'perk-eraser');
+                badgesLeft.appendChild(eraserBadge);
+            }
+            eraserBadge.innerHTML = `<span class="material-symbols-rounded" style="color:var(--color-danger);">ink_eraser</span><span>Borrador: ${this.perkEraserLeft}</span>`;
+        } else if (eraserBadge) {
+            eraserBadge.remove();
         }
     }
 };

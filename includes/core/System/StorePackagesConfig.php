@@ -95,6 +95,14 @@ class StorePackagesConfig {
                 'price_coins' => 3000,
                 'icon' => 'security',
                 'is_single_use' => true,
+            ],
+            'elite_eraser_25' => [
+                'id' => 'elite_eraser_25',
+                'name' => 'Borrador de Élite',
+                'description' => 'Permite sobrescribir y eliminar la protección de hasta 25 píxeles protegidos por otros usuarios.',
+                'price_coins' => 5000,
+                'icon' => 'ink_eraser',
+                'is_single_use' => true,
             ]
         ];
     }

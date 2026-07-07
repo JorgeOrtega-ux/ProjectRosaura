@@ -13,7 +13,8 @@ class StoreServices {
     // Define available perks and their coin prices
     private const PERK_PRICES = [
         'no_cooldown_10s' => 1500,
-        'pixel_protection_25' => 3000
+        'pixel_protection_25' => 3000,
+        'elite_eraser_25' => 5000
     ];
 
     public function __construct(
@@ -122,6 +123,11 @@ class StoreServices {
                 if ($redis->exists($key) && (int)$redis->get($key) > 0) {
                     return ['success' => false, 'message_key' => 'Esta ventaja ya se encuentra activa.'];
                 }
+            } elseif ($perkId === 'elite_eraser_25') {
+                $key = "user:{$userId}:perk:eraser";
+                if ($redis->exists($key) && (int)$redis->get($key) > 0) {
+                    return ['success' => false, 'message_key' => 'Esta ventaja ya se encuentra activa.'];
+                }
             }
         } catch (\Throwable $e) {
             Logger::error("Redis Error en activatePerk (Check): " . $e->getMessage());
@@ -135,12 +141,26 @@ class StoreServices {
         // Actualizar estado en Redis para el WebSocket Python
         try {
             if (isset($redis)) {
+                $perksConfigPath = __DIR__ . '/../../config/perks.json';
+                $perksConfig = [];
+                if (file_exists($perksConfigPath)) {
+                    $perksConfig = json_decode(file_get_contents($perksConfigPath), true) ?: [];
+                }
+
                 if ($perkId === 'no_cooldown_10s') {
+                    $duration = $perksConfig['no_cooldown_10s']['duration_seconds'] ?? 10;
                     $key = "user:{$userId}:perk:no_cooldown";
-                    $redis->setex($key, 60, "1"); 
+                    $redis->setex($key, $duration, "1"); 
                 } elseif ($perkId === 'pixel_protection_25') {
+                    $duration = $perksConfig['pixel_protection_25']['duration_seconds'] ?? 86400;
+                    $amount = $perksConfig['pixel_protection_25']['amount'] ?? 25;
                     $key = "user:{$userId}:perk:protection";
-                    $redis->setex($key, 86400, "25"); // 86400 = 24h
+                    $redis->setex($key, $duration, (string)$amount);
+                } elseif ($perkId === 'elite_eraser_25') {
+                    $duration = $perksConfig['elite_eraser_25']['duration_seconds'] ?? 86400;
+                    $amount = $perksConfig['elite_eraser_25']['amount'] ?? 25;
+                    $key = "user:{$userId}:perk:eraser";
+                    $redis->setex($key, $duration, (string)$amount);
                 }
             }
         } catch (\Throwable $e) {

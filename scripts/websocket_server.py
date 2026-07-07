@@ -17,6 +17,20 @@ USER_LOCKS = {}
 # WS_META[websocket] = { 'canvas_id': string, 'type': 'guest'|'auth', 'user_id': int|None }
 WS_META = {}
 
+PERKS_CONFIG = None
+
+def get_perks_config():
+    global PERKS_CONFIG
+    if PERKS_CONFIG is None:
+        try:
+            config_path = os.path.join(os.path.dirname(__file__), '..', 'config', 'perks.json')
+            with open(config_path, 'r', encoding='utf-8') as f:
+                PERKS_CONFIG = json.load(f)
+        except Exception as e:
+            print(f"[!] Error loading perks.json: {e}")
+            PERKS_CONFIG = {}
+    return PERKS_CONFIG
+
 async def get_redis_client():
     global REDIS_CLIENT
     if REDIS_CLIENT is None:
@@ -359,20 +373,47 @@ async def handler(websocket):
                         protected_by = await r.get(protected_key)
                         
                         if protected_by and protected_by.decode('utf-8') != str(user_id):
-                            print(f"[DEBUG PY] Pixel {x},{y} protegido por el usuario {protected_by.decode('utf-8')}")
-                            redis_state_key = f"canvas:{canvas_id}:state"
-                            orig_color = await r.getrange(redis_state_key, offset, offset)
-                            orig_c_index = orig_color[0] if orig_color else 255
-                            
-                            error_msg = json.dumps({
-                                "type": "pixel_protected_error",
-                                "message": "Este píxel está protegido",
-                                "x": x,
-                                "y": y,
-                                "color": orig_c_index
-                            })
-                            await websocket.send(error_msg)
-                            continue
+                            # Revisar si el usuario tiene borrador de élite
+                            user_eraser_key = f"user:{user_id}:perk:eraser"
+                            eraser_left = await r.get(user_eraser_key)
+                            eraser_left = int(eraser_left) if eraser_left else 0
+
+                            if eraser_left > 0:
+                                # Usar 1 carga de borrador de élite para destruir la protección
+                                await r.decr(user_eraser_key)
+                                await r.delete(protected_key)
+                                eraser_left -= 1
+                                print(f"[DEBUG PY] Usuario {user_id} usó borrador de élite en {x},{y}. Le quedan {eraser_left}")
+                            else:
+                                print(f"[DEBUG PY] Pixel {x},{y} protegido por el usuario {protected_by.decode('utf-8')}")
+                                redis_state_key = f"canvas:{canvas_id}:state"
+                                orig_color = await r.getrange(redis_state_key, offset, offset)
+                                orig_c_index = orig_color[0] if orig_color else 255
+                                
+                                # Obtener cooldown actual para que el cliente sincronice
+                                balance, last_t, user_key, now = await get_user_cooldown(r, canvas_id, user_id, config_batch, config_sec)
+                                user_no_cooldown_key = f"user:{user_id}:perk:no_cooldown"
+                                is_no_cooldown = await r.exists(user_no_cooldown_key)
+                                user_protection_key = f"user:{user_id}:perk:protection"
+                                protection_left = await r.get(user_protection_key)
+                                protection_left = int(protection_left) if protection_left else 0
+                                
+                                error_msg = json.dumps({
+                                    "type": "pixel_protected_error",
+                                    "message": "Este píxel está protegido",
+                                    "x": x,
+                                    "y": y,
+                                    "color": orig_c_index,
+                                    "balance": int(balance),
+                                    "max_batch": config_batch,
+                                    "cooldown_sec": config_sec,
+                                    "next_replenish_in": round(config_sec - (now - last_t), 2) if config_sec > 0 else 0,
+                                    "perk_no_cooldown": bool(is_no_cooldown),
+                                    "perk_protection_left": protection_left,
+                                    "perk_eraser_left": eraser_left
+                                })
+                                await websocket.send(error_msg)
+                                continue
 
                         # 2. Verificar cooldown
                         balance, last_t, user_key, now = await get_user_cooldown(r, canvas_id, user_id, config_batch, config_sec)
@@ -383,6 +424,10 @@ async def handler(websocket):
                         user_protection_key = f"user:{user_id}:perk:protection"
                         protection_left = await r.get(user_protection_key)
                         protection_left = int(protection_left) if protection_left else 0
+
+                        user_eraser_key = f"user:{user_id}:perk:eraser"
+                        eraser_left = await r.get(user_eraser_key)
+                        eraser_left = int(eraser_left) if eraser_left else 0
 
                         if balance >= 1 or is_no_cooldown:
                             if not is_no_cooldown:
@@ -399,7 +444,8 @@ async def handler(websocket):
                                 "cooldown_sec": config_sec,
                                 "next_replenish_in": round(config_sec - (now - last_t), 2) if config_sec > 0 else 0,
                                 "perk_no_cooldown": bool(is_no_cooldown),
-                                "perk_protection_left": protection_left - 1 if (0 <= color_index <= 255 and protection_left > 0) else protection_left
+                                "perk_protection_left": protection_left - 1 if (0 <= color_index <= 255 and protection_left > 0) else protection_left,
+                                "perk_eraser_left": eraser_left
                             })
                             print(f"[DEBUG PY] Confirmando pixel. Msg: {confirm_msg}")
                             await websocket.send(confirm_msg)
@@ -408,8 +454,10 @@ async def handler(websocket):
                                 # 3. Aplicar protección si el usuario tiene el perk de protección
                                 if protection_left > 0:
                                     await r.decr(user_protection_key)
-                                    await r.setex(protected_key, 86400, str(user_id)) # 24 horas de protección
-                                    print(f"[DEBUG PY] Pixel {x},{y} protegido por {user_id} por 24h. Le quedan {protection_left-1} pixeles protegidos.")
+                                    perks_conf = get_perks_config()
+                                    prot_duration = perks_conf.get('pixel_protection_25', {}).get('duration_seconds', 86400)
+                                    await r.setex(protected_key, prot_duration, str(user_id)) # protección configurable
+                                    print(f"[DEBUG PY] Pixel {x},{y} protegido por {user_id} por {prot_duration}s. Le quedan {protection_left-1} pixeles protegidos.")
 
                                 redis_state_key = f"canvas:{canvas_id}:state"
                                 await r.setrange(redis_state_key, offset, bytes([color_index]))

@@ -205,36 +205,60 @@ class DesignController {
         
         const tick = () => {
             if (!this.isSpectator && !this.isSnapshotMode && !this.isResizeLocked) {
-                if (this.cooldownSec > 0 && this.cooldownBalance < this.cooldownMax) {
-                    const elapsed = (Date.now() - this.lastSyncTime) / 1000;
-                    let remaining = this.cooldownNextIn - elapsed;
-                    
-                    if (remaining <= 0) {
-                        let extraTime = Math.abs(remaining);
-                        let recoveredPixels = 1 + Math.floor(extraTime / this.cooldownSec);
-
-                        this.cooldownBalance = Math.min(this.cooldownMax, this.cooldownBalance + recoveredPixels);
-
-                        if (this.cooldownBalance < this.cooldownMax) {
-                            this.cooldownNextIn = this.cooldownSec - (extraTime % this.cooldownSec);
-                            this.lastSyncTime = Date.now();
-                            remaining = this.cooldownNextIn;
-                        } else {
-                            remaining = 0;
-                            this.cooldownNextIn = 0;
-                        }
-                        this.updateSelectionUI();
-                    }
-                    
+                if (this.perkNoCooldown) {
                     if (this.uiCooldownTimer) {
-                        this.uiCooldownTimer.textContent = remaining > 0 ? `${Math.ceil(remaining)}s` : '0s';
+                        this.uiCooldownTimer.innerHTML = '<span class="material-symbols-rounded" style="font-size:16px;">all_inclusive</span>';
                     }
-                } else if (this.uiCooldownTimer) {
-                    this.uiCooldownTimer.textContent = '0s';
-                }
+                    if (this.uiCooldownCounter) {
+                        this.uiCooldownCounter.textContent = `∞/${this.cooldownMax}`;
+                    }
+                    
+                    const badgesLeft = document.querySelector('[data-ref="badges-left"]');
+                    if (badgesLeft) {
+                        let noCdBadge = badgesLeft.querySelector('[data-badge-id="perk-no-cooldown"]');
+                        if (noCdBadge && this.perkNoCooldownExpires) {
+                            const remaining = Math.max(0, Math.ceil((this.perkNoCooldownExpires - Date.now()) / 1000));
+                            if (remaining > 0) {
+                                noCdBadge.innerHTML = `<span class="material-symbols-rounded" style="color:var(--color-primary);">bolt</span><span>Sin Cooldown (${remaining}s)</span>`;
+                            } else {
+                                this.perkNoCooldown = false;
+                                if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+                                this.updateSelectionUI();
+                            }
+                        }
+                    }
+                } else {
+                    if (this.cooldownSec > 0 && this.cooldownBalance < this.cooldownMax) {
+                        const elapsed = (Date.now() - this.lastSyncTime) / 1000;
+                        let remaining = this.cooldownNextIn - elapsed;
+                        
+                        if (remaining <= 0) {
+                            let extraTime = Math.abs(remaining);
+                            let recoveredPixels = 1 + Math.floor(extraTime / this.cooldownSec);
 
-                if (this.uiCooldownCounter) {
-                    this.uiCooldownCounter.textContent = `${Math.floor(this.cooldownBalance)}/${this.cooldownMax}`;
+                            this.cooldownBalance = Math.min(this.cooldownMax, this.cooldownBalance + recoveredPixels);
+
+                            if (this.cooldownBalance < this.cooldownMax) {
+                                this.cooldownNextIn = this.cooldownSec - (extraTime % this.cooldownSec);
+                                this.lastSyncTime = Date.now();
+                                remaining = this.cooldownNextIn;
+                            } else {
+                                remaining = 0;
+                                this.cooldownNextIn = 0;
+                            }
+                            this.updateSelectionUI();
+                        }
+                        
+                        if (this.uiCooldownTimer) {
+                            this.uiCooldownTimer.textContent = remaining > 0 ? `${Math.ceil(remaining)}s` : '0s';
+                        }
+                    } else if (this.uiCooldownTimer) {
+                        this.uiCooldownTimer.textContent = '0s';
+                    }
+
+                    if (this.uiCooldownCounter) {
+                        this.uiCooldownCounter.textContent = `${Math.floor(this.cooldownBalance)}/${this.cooldownMax}`;
+                    }
                 }
             }
             this.cooldownLoopId = requestAnimationFrame(tick);

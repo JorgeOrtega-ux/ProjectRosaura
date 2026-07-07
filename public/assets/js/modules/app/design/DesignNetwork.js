@@ -120,7 +120,17 @@ export const DesignNetwork = {
                     this.handleCanvasCleared(data);
                 }
                 else if (data.type === 'pixel_protected_error') {
-                    showMessage(data.message || 'Este píxel está protegido', 'warning');
+                    // Prevenir spam de toast si se procesan multiples errores en corto tiempo
+                    if (!this.lastProtectedToastTime || (Date.now() - this.lastProtectedToastTime > 2000)) {
+                        showMessage(data.message || 'Este píxel está protegido', 'warning');
+                        this.lastProtectedToastTime = Date.now();
+                    }
+                    
+                    // Restaurar balance y estado de cooldown devuelto por el servidor
+                    if (data.balance !== undefined) {
+                        this.handleCooldownSync(data);
+                    }
+
                     
                     if (data.x !== undefined && data.y !== undefined && data.color !== undefined) {
                         const pX = parseInt(data.x, 10);
@@ -528,6 +538,7 @@ export const DesignNetwork = {
         // Soporte para ventajas (perks)
         this.perkNoCooldown = data.perk_no_cooldown || false;
         this.perkProtectionLeft = data.perk_protection_left || 0;
+        this.perkEraserLeft = data.perk_eraser_left || 0;
 
         if (data.type === 'cooldown_error') {
             showMessage(__('err_sync_limit'), 'warning');
