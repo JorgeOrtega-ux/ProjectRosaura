@@ -35,6 +35,7 @@ class DesignController {
         this.selectedPixels = new Set();
         this.isSelecting = false;
         this.selectionMode = 'add';
+        this.interactionMode = 'normal'; // normal, protecting, erasing
         this.btnPlacePixels = null;
         this.txtPlacePixels = null;
         
@@ -186,16 +187,17 @@ class DesignController {
         if (tier < 1) { 
             const liveShareMenuBtn = document.querySelector('[data-module-target="moduleDesignTools"][data-menu-target="menu-live"]');
             if (liveShareMenuBtn) {
-                liveShareMenuBtn.classList.add('disabled-interactive');
-                liveShareMenuBtn.classList.add('component-opacity-half');
-                liveShareMenuBtn.setAttribute('data-tooltip', __('tooltip_pro_required') || 'Requiere plan PRO');
-                if (!liveShareMenuBtn.querySelector('.icon-lock')) {
-                    const lock = document.createElement('span');
-                    lock.className = 'material-symbols-rounded icon-lock component-lock-icon-premium';
-                    lock.textContent = 'lock';
-                    liveShareMenuBtn.appendChild(lock);
-                    liveShareMenuBtn.classList.add('component-relative-pos');
-                }
+                liveShareMenuBtn.setAttribute('data-requires-premium', 'true');
+                liveShareMenuBtn.removeAttribute('data-action');
+                liveShareMenuBtn.removeAttribute('data-module-target');
+                liveShareMenuBtn.removeAttribute('data-menu-target');
+                
+                // Asegurarse de que el click sobreescriba cualquier otro handler
+                liveShareMenuBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.location.href = (window.AppBasePath || '') + '/premium';
+                }, true); // useCapture para interceptar antes
             }
         }
     }

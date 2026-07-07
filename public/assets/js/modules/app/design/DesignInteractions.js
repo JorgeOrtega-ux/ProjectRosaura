@@ -143,12 +143,23 @@ export const DesignInteractions = {
     },
 
     handleKeyDown(e) {
-        if (this.isResetLocked || this.isResizeLocked) return;
-
-        if (e.key === 'Escape' && this.selectedPixels.size > 0) {
-            this.selectedPixels.clear();
-            this.updateSelectionUI();
-            this.requestRender();
+        if (this.isSpectator || this.timelapseActive || this.isResetLocked || this.isResizeLocked) return;
+        
+        if (e.key === 'Escape') {
+            if (this.interactionMode !== 'normal') {
+                this.cancelInteractionMode();
+            }
+            if (this.isSelecting) {
+                this.isSelecting = false;
+                this.selectedPixels.clear();
+                this.updateSelectionUI();
+                this.requestRender();
+            }
+            if (this.selectedPixels.size > 0) {
+                this.selectedPixels.clear();
+                this.updateSelectionUI();
+                this.requestRender();
+            }
         }
     },
 
@@ -470,15 +481,38 @@ export const DesignInteractions = {
     updateSelectionUI() {
         if (!this.btnPlacePixels || !this.txtPlacePixels) return;
 
-        const maxBalance = this.perkNoCooldown ? Infinity : Math.floor(this.cooldownBalance);
+        let maxBalance = this.perkNoCooldown ? Infinity : Math.floor(this.cooldownBalance);
+        
+        if (this.interactionMode === 'protecting') {
+            maxBalance = this.perkProtectionLeft || 0;
+            this.btnPlacePixels.classList.replace('component-button--primary', 'component-button--success');
+            this.btnPlacePixels.classList.replace('component-button--danger', 'component-button--success');
+        } else if (this.interactionMode === 'erasing') {
+            maxBalance = this.perkEraserLeft || 0;
+            this.btnPlacePixels.classList.replace('component-button--primary', 'component-button--danger');
+            this.btnPlacePixels.classList.replace('component-button--success', 'component-button--danger');
+        } else {
+            this.btnPlacePixels.classList.replace('component-button--success', 'component-button--primary');
+            this.btnPlacePixels.classList.replace('component-button--danger', 'component-button--primary');
+        }
 
         if (this.selectedPixels.size > 0 && this.selectedPixels.size <= maxBalance) {
             this.btnPlacePixels.classList.remove('disabled-interactive');
-            this.txtPlacePixels.textContent = __('btn_place_pixels') || 'Colocar';
+            if (this.interactionMode === 'protecting') {
+                this.txtPlacePixels.textContent = `Proteger (${this.selectedPixels.size})`;
+            } else if (this.interactionMode === 'erasing') {
+                this.txtPlacePixels.textContent = `Borrar (${this.selectedPixels.size})`;
+            } else {
+                this.txtPlacePixels.textContent = __('btn_place_pixels') || 'Colocar';
+            }
         } else {
             this.btnPlacePixels.classList.add('disabled-interactive');
             if (this.selectedPixels.size > maxBalance) {
-                this.txtPlacePixels.textContent = (__('lbl_max_pixels') || ':max máximo').replace(':max', maxBalance === Infinity ? '∞' : maxBalance);
+                if (this.interactionMode === 'protecting' || this.interactionMode === 'erasing') {
+                    this.txtPlacePixels.textContent = `Máx: ${maxBalance} usos`;
+                } else {
+                    this.txtPlacePixels.textContent = (__('lbl_max_pixels') || ':max máximo').replace(':max', maxBalance === Infinity ? '∞' : maxBalance);
+                }
             } else {
                 this.txtPlacePixels.textContent = __('btn_select_pixels') || 'Seleccionar Pixeles';
             }
@@ -488,9 +522,12 @@ export const DesignInteractions = {
     placePixels() {
         if (this.selectedPixels.size === 0 || this.isSpectator || this.timelapseActive || this.isResetLocked || this.isResizeLocked) return;
         
-        const maxBalance = this.perkNoCooldown ? Infinity : Math.floor(this.cooldownBalance);
+        let maxBalance = this.perkNoCooldown ? Infinity : Math.floor(this.cooldownBalance);
+        if (this.interactionMode === 'protecting') maxBalance = this.perkProtectionLeft || 0;
+        if (this.interactionMode === 'erasing') maxBalance = this.perkEraserLeft || 0;
+
         if (this.selectedPixels.size > maxBalance) {
-            showMessage(__('err_pixel_limit')?.replace(':limit', maxBalance === Infinity ? '∞' : maxBalance) || 'Límite', 'warning');
+            showMessage(__('err_pixel_limit')?.replace(':limit', maxBalance === Infinity ? '∞' : maxBalance) || 'Límite superado', 'warning');
             return;
         }
 
@@ -503,13 +540,20 @@ export const DesignInteractions = {
 
         this.selectedPixels.forEach(key => {
             const [x, y] = key.split(',').map(Number);
-            this.offscreenCtx.fillStyle = this.currentColor;
-            this.offscreenCtx.clearRect(x, y, 1, 1);
-            this.offscreenCtx.fillRect(x, y, 1, 1);
+            
+            if (this.interactionMode === 'normal') {
+                this.offscreenCtx.fillStyle = this.currentColor;
+                this.offscreenCtx.clearRect(x, y, 1, 1);
+                this.offscreenCtx.fillRect(x, y, 1, 1);
+            }
             
             if (this.wsManager) {
+                let msgType = 'pixel';
+                if (this.interactionMode === 'protecting') msgType = 'protect_pixel';
+                if (this.interactionMode === 'erasing') msgType = 'erase_pixel';
+
                 this.wsManager.send({
-                    type: 'pixel',
+                    type: msgType,
                     x: x,
                     y: y,
                     color: colorIndex,
@@ -519,20 +563,40 @@ export const DesignInteractions = {
             }
         });
 
-        if (!this.perkNoCooldown) {
-            this.cooldownBalance -= this.selectedPixels.size;
-        }
-        
-        if (this.cooldownBalance < this.cooldownMax && this.cooldownNextIn <= 0) {
-            this.cooldownNextIn = this.cooldownSec;
-            this.lastSyncTime = Date.now();
+        if (this.interactionMode === 'normal') {
+            if (!this.perkNoCooldown) {
+                this.cooldownBalance -= this.selectedPixels.size;
+            }
+            
+            if (this.cooldownBalance < this.cooldownMax && this.cooldownNextIn <= 0) {
+                this.cooldownNextIn = this.cooldownSec;
+                this.lastSyncTime = Date.now();
+            }
+            showMessage(__('msg_pixels_placed') || 'Pixeles colocados', 'success');
+        } else if (this.interactionMode === 'protecting') {
+            this.perkProtectionLeft -= this.selectedPixels.size;
+            showMessage('Protección aplicada', 'success');
+        } else if (this.interactionMode === 'erasing') {
+            this.perkEraserLeft -= this.selectedPixels.size;
+            showMessage('Borrador aplicado', 'success');
         }
 
         this.selectedPixels.clear();
-        this.updateSelectionUI();
-        this.requestRender();
         
-        showMessage(__('msg_pixels_placed') || 'Pixeles colocados', 'success');
+        // Return to normal mode if out of uses
+        if (this.interactionMode === 'protecting' && this.perkProtectionLeft <= 0) this.cancelInteractionMode();
+        if (this.interactionMode === 'erasing' && this.perkEraserLeft <= 0) this.cancelInteractionMode();
+        
+        this.updateSelectionUI();
+        if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+        this.requestRender();
+    },
+
+    cancelInteractionMode() {
+        this.interactionMode = 'normal';
+        this.updateSelectionUI();
+        if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+        showMessage('Modo especial desactivado', 'info');
     },
 
     handleResize() {
@@ -571,12 +635,14 @@ export const DesignInteractions = {
                     
                     const title = titles[p.perk_id] || p.perk_id;
                     const icon = icons[p.perk_id] || 'stars';
+                    const description = p.description || 'Sin descripción';
                     
                     el.innerHTML = `
                         <div class="component-item-card-icon"><span class="material-symbols-rounded">${icon}</span></div>
                         <div class="component-item-card-content">
                             <div class="component-item-card-title">${title}</div>
-                            <div class="component-item-card-subtitle">Disponibles: ${p.amount}</div>
+                            <div class="component-item-card-subtitle" style="white-space: normal; line-height: 1.2;">${description}</div>
+                            <div class="component-item-card-subtitle" style="margin-top: 5px;"><strong>Disponibles: ${p.amount}</strong></div>
                         </div>
                         <div class="component-item-card-actions">
                             <button class="component-button component-button--primary component-button--sm" data-action="activatePerk" data-perk-id="${p.perk_id}">Usar</button>
@@ -611,10 +677,16 @@ export const DesignInteractions = {
                     this.updateSelectionUI();
                 } else if (result.perk_id === 'pixel_protection_25') {
                     this.perkProtectionLeft = (this.perkProtectionLeft || 0) + 25;
+                    this.interactionMode = 'protecting';
                     if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+                    this.updateSelectionUI();
+                    showMessage('Modo Protección activado. Selecciona los píxeles a proteger.', 'info');
                 } else if (result.perk_id === 'elite_eraser_25') {
                     this.perkEraserLeft = (this.perkEraserLeft || 0) + 25;
+                    this.interactionMode = 'erasing';
                     if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+                    this.updateSelectionUI();
+                    showMessage('Borrador de Élite activado. Selecciona los píxeles a desproteger.', 'info');
                 }
 
                 this.loadUserPerks(); // Recargar lista
@@ -653,9 +725,24 @@ export const DesignInteractions = {
                 protBadge = document.createElement('div');
                 protBadge.className = 'component-badge';
                 protBadge.setAttribute('data-badge-id', 'perk-protection');
+                protBadge.style.cursor = 'pointer';
+                protBadge.title = 'Haz clic para alternar Modo Protección';
+                protBadge.addEventListener('click', () => {
+                    this.interactionMode = this.interactionMode === 'protecting' ? 'normal' : 'protecting';
+                    this.updateSelectionUI();
+                    if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+                    if (typeof showMessage === 'function') showMessage(this.interactionMode === 'protecting' ? 'Modo Protección activado' : 'Modo Protección desactivado', 'info');
+                });
                 badgesLeft.appendChild(protBadge);
             }
             protBadge.innerHTML = `<span class="material-symbols-rounded" style="color:var(--color-success);">shield</span><span>Protección: ${this.perkProtectionLeft}</span>`;
+            if (this.interactionMode === 'protecting') {
+                protBadge.style.border = '1px solid var(--color-success)';
+                protBadge.style.backgroundColor = 'rgba(34, 197, 94, 0.1)';
+            } else {
+                protBadge.style.border = '';
+                protBadge.style.backgroundColor = '';
+            }
         } else if (protBadge) {
             protBadge.remove();
         }
@@ -667,9 +754,24 @@ export const DesignInteractions = {
                 eraserBadge = document.createElement('div');
                 eraserBadge.className = 'component-badge';
                 eraserBadge.setAttribute('data-badge-id', 'perk-eraser');
+                eraserBadge.style.cursor = 'pointer';
+                eraserBadge.title = 'Haz clic para alternar Modo Borrador';
+                eraserBadge.addEventListener('click', () => {
+                    this.interactionMode = this.interactionMode === 'erasing' ? 'normal' : 'erasing';
+                    this.updateSelectionUI();
+                    if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+                    if (typeof showMessage === 'function') showMessage(this.interactionMode === 'erasing' ? 'Modo Borrador activado' : 'Modo Borrador desactivado', 'info');
+                });
                 badgesLeft.appendChild(eraserBadge);
             }
             eraserBadge.innerHTML = `<span class="material-symbols-rounded" style="color:var(--color-danger);">ink_eraser</span><span>Borrador: ${this.perkEraserLeft}</span>`;
+            if (this.interactionMode === 'erasing') {
+                eraserBadge.style.border = '1px solid var(--color-danger)';
+                eraserBadge.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+            } else {
+                eraserBadge.style.border = '';
+                eraserBadge.style.backgroundColor = '';
+            }
         } else if (eraserBadge) {
             eraserBadge.remove();
         }

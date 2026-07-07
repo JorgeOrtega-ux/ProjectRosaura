@@ -89,6 +89,16 @@ class StoreServices {
 
         $userId = $this->sessionManager->getActiveAccountId();
         $perks = $this->storeRepo->getUnusedPerks($userId);
+        
+        $contentPackages = \App\Core\System\StorePackagesConfig::getContentPackages();
+        foreach ($perks as &$perk) {
+            $perkId = $perk['perk_id'];
+            if (isset($contentPackages[$perkId])) {
+                $perk['description'] = $contentPackages[$perkId]['description'];
+            } else {
+                $perk['description'] = 'Sin descripción';
+            }
+        }
 
         return [
             'success' => true,

@@ -22,6 +22,13 @@ export const DesignTemplates = {
         // 2. Interceptar el toggle del nuevo menú y setear valores
         const btnToggleLiveMenu = e.target.closest('[data-menu-target="menu-live"]');
         if (btnToggleLiveMenu) {
+            if (btnToggleLiveMenu.getAttribute('data-requires-premium') === 'true') {
+                e.preventDefault();
+                e.stopPropagation();
+                window.location.href = (window.AppBasePath || '') + '/store';
+                return true;
+            }
+
             if (this.activeTemplateId) {
                 const tpl = this.templates.find(t => t.id === this.activeTemplateId);
                 if (!this.uiLiveInputX) {
@@ -106,6 +113,12 @@ export const DesignTemplates = {
                         
                         if (success) {
                             if (window.dialogSystem) window.dialogSystem.closeCurrent(true);
+                            
+                            const btnOpenJoinLive = document.querySelector('[data-action="openJoinLiveModal"]');
+                            if (btnOpenJoinLive) {
+                                btnOpenJoinLive.classList.add('component-color-indicator');
+                                btnOpenJoinLive.style.setProperty('--active-color', 'var(--color-danger, #ef4444)');
+                            }
                         } else {
                             btnSubmitJoinLive.innerHTML = originalText;
                             btnSubmitJoinLive.classList.remove('disabled-interactive');
@@ -147,6 +160,12 @@ export const DesignTemplates = {
                         
                         btnStartLive.classList.add('disabled');
                         if (btnStop) btnStop.classList.remove('disabled');
+                        
+                        const btnToggleLiveMenu = document.querySelector('[data-menu-target="menu-live"]');
+                        if (btnToggleLiveMenu) {
+                            btnToggleLiveMenu.classList.add('component-color-indicator');
+                            btnToggleLiveMenu.style.setProperty('--active-color', 'var(--color-danger, #ef4444)');
+                        }
                     }
                     
                     btnStartLive.innerHTML = originalText;
@@ -174,6 +193,12 @@ export const DesignTemplates = {
                 
                 btnStopLive.classList.add('disabled');
                 if (btnStart) btnStart.classList.remove('disabled');
+
+                const btnToggleLiveMenu = document.querySelector('[data-menu-target="menu-live"]');
+                if (btnToggleLiveMenu) {
+                    btnToggleLiveMenu.classList.remove('component-color-indicator');
+                    btnToggleLiveMenu.style.removeProperty('--active-color');
+                }
             }
             return true;
         }

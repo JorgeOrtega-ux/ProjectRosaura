@@ -521,6 +521,12 @@ export const DesignNetwork = {
             this.liveTemplateId = null;
             
             this.requestRender();
+            
+            const btnOpenJoinLive = document.querySelector('[data-action="openJoinLiveModal"]');
+            if (btnOpenJoinLive) {
+                btnOpenJoinLive.classList.remove('component-color-indicator');
+                btnOpenJoinLive.style.removeProperty('--active-color');
+            }
         }
     },
 
@@ -529,16 +535,18 @@ export const DesignNetwork = {
             return;
         }
 
-        this.cooldownBalance = data.balance;
-        this.cooldownMax = data.max_batch;
-        this.cooldownSec = data.cooldown_sec;
-        this.cooldownNextIn = data.next_replenish_in;
-        this.lastSyncTime = Date.now();
+        if (data.balance !== undefined) this.cooldownBalance = data.balance;
+        if (data.max_batch !== undefined) this.cooldownMax = data.max_batch;
+        if (data.cooldown_sec !== undefined) this.cooldownSec = data.cooldown_sec;
+        if (data.next_replenish_in !== undefined) {
+            this.cooldownNextIn = data.next_replenish_in;
+            this.lastSyncTime = Date.now();
+        }
         
         // Soporte para ventajas (perks)
-        this.perkNoCooldown = data.perk_no_cooldown || false;
-        this.perkProtectionLeft = data.perk_protection_left || 0;
-        this.perkEraserLeft = data.perk_eraser_left || 0;
+        if (data.perk_no_cooldown !== undefined) this.perkNoCooldown = data.perk_no_cooldown;
+        if (data.perk_protection_left !== undefined) this.perkProtectionLeft = data.perk_protection_left;
+        if (data.perk_eraser_left !== undefined) this.perkEraserLeft = data.perk_eraser_left;
 
         if (data.type === 'cooldown_error') {
             showMessage(__('err_sync_limit'), 'warning');
