@@ -119,6 +119,17 @@ export const DesignNetwork = {
                 else if (data.type === 'canvas_cleared') {
                     this.handleCanvasCleared(data);
                 }
+                else if (data.type === 'init_protected_pixels') {
+                    this.protectedPixels = new Set(data.offsets);
+                }
+                else if (data.type === 'pixel_protected_broadcast') {
+                    if (!this.protectedPixels) this.protectedPixels = new Set();
+                    this.protectedPixels.add(data.offset);
+                }
+                else if (data.type === 'pixel_unprotected_broadcast') {
+                    if (!this.protectedPixels) this.protectedPixels = new Set();
+                    this.protectedPixels.delete(data.offset);
+                }
                 else if (data.type === 'pixel_protected_error') {
                     // Prevenir spam de toast si se procesan multiples errores en corto tiempo
                     if (!this.lastProtectedToastTime || (Date.now() - this.lastProtectedToastTime > 2000)) {

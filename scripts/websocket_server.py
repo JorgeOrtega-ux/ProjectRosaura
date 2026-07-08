@@ -267,6 +267,19 @@ async def handler(websocket):
                     print(f"[DEBUG PY] Enviando respuesta de INIT al front: {init_msg}")
                     await websocket.send(init_msg)
 
+                    # Enviar lista de píxeles protegidos actualmente
+                    current_time = int(time.time())
+                    zset_key = f"canvas:{canvas_id}:protected_zset"
+                    await r.zremrangebyscore(zset_key, 0, current_time)
+                    protected_offsets = await r.zrange(zset_key, 0, -1)
+                    if protected_offsets:
+                        protected_offsets_int = [int(o) for o in protected_offsets]
+                        init_prot_msg = json.dumps({
+                            "type": "init_protected_pixels",
+                            "offsets": protected_offsets_int
+                        })
+                        await websocket.send(init_prot_msg)
+
                 # ==========================================
                 # EVENTOS LIVE SHARE
                 # ==========================================
@@ -527,11 +540,28 @@ async def handler(websocket):
                             prot_duration = perks_conf.get('pixel_protection_25', {}).get('duration_seconds', 86400)
                             await r.setex(protected_key, prot_duration, str(user_id))
                             
+                            # Add to zset
+                            zset_key = f"canvas:{canvas_id}:protected_zset"
+                            expire_at = int(time.time()) + prot_duration
+                            await r.zadd(zset_key, {str(offset): expire_at})
+                            
                             confirm_msg = json.dumps({
                                 "type": "pixel_confirm",
                                 "perk_protection_left": protection_left - 1
                             })
                             await websocket.send(confirm_msg)
+                            
+                            # Broadcast to all users
+                            broadcast_msg = json.dumps({
+                                "type": "pixel_protected_broadcast",
+                                "offset": offset,
+                                "x": x,
+                                "y": y
+                            })
+                            clients_in_room = ROOMS.get(canvas_id, set())
+                            if len(clients_in_room) > 0:
+                                tasks = [asyncio.create_task(client.send(broadcast_msg)) for client in clients_in_room]
+                                await asyncio.gather(*tasks)
                         else:
                             error_msg = json.dumps({
                                 "type": "pixel_protected_error",
@@ -596,6 +626,18 @@ async def handler(websocket):
                             })
                             await websocket.send(confirm_msg)
                             
+                            # Broadcast to all users
+                            broadcast_msg = json.dumps({
+                                "type": "pixel_unprotected_broadcast",
+                                "offset": offset,
+                                "x": x,
+                                "y": y
+                            })
+                            clients_in_room = ROOMS.get(canvas_id, set())
+                            if len(clients_in_room) > 0:
+                                tasks = [asyncio.create_task(client.send(broadcast_msg)) for client in clients_in_room]
+                                await asyncio.gather(*tasks)
+
                             clients_in_room = ROOMS.get(canvas_id, set())
                             if len(clients_in_room) > 1:
                                 broadcast_msg = json.dumps({

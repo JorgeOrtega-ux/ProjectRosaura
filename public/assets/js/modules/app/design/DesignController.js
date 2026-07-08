@@ -207,32 +207,12 @@ class DesignController {
         
         const tick = () => {
             if (!this.isSpectator && !this.isSnapshotMode && !this.isResizeLocked) {
-                if (this.perkNoCooldown) {
-                    if (this.uiCooldownTimer) {
-                        this.uiCooldownTimer.innerHTML = '<span class="material-symbols-rounded" style="font-size:16px;">all_inclusive</span>';
-                    }
-                    if (this.uiCooldownCounter) {
-                        this.uiCooldownCounter.textContent = `∞/${this.cooldownMax}`;
-                    }
-                    
-                    const badgesLeft = document.querySelector('[data-ref="badges-left"]');
-                    if (badgesLeft) {
-                        let noCdBadge = badgesLeft.querySelector('[data-badge-id="perk-no-cooldown"]');
-                        if (noCdBadge && this.perkNoCooldownExpires) {
-                            const remaining = Math.max(0, Math.ceil((this.perkNoCooldownExpires - Date.now()) / 1000));
-                            if (remaining > 0) {
-                                noCdBadge.innerHTML = `<span class="material-symbols-rounded" style="color:var(--color-primary);">bolt</span><span>Sin Cooldown (${remaining}s)</span>`;
-                            } else {
-                                this.perkNoCooldown = false;
-                                if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
-                                this.updateSelectionUI();
-                            }
-                        }
-                    }
-                } else {
+                // Actualizar balance y tiempo restante
+                let remaining = 0;
+                if (!this.perkNoCooldown) {
                     if (this.cooldownSec > 0 && this.cooldownBalance < this.cooldownMax) {
                         const elapsed = (Date.now() - this.lastSyncTime) / 1000;
-                        let remaining = this.cooldownNextIn - elapsed;
+                        remaining = this.cooldownNextIn - elapsed;
                         
                         if (remaining <= 0) {
                             let extraTime = Math.abs(remaining);
@@ -250,16 +230,61 @@ class DesignController {
                             }
                             this.updateSelectionUI();
                         }
-                        
-                        if (this.uiCooldownTimer) {
-                            this.uiCooldownTimer.textContent = remaining > 0 ? `${Math.ceil(remaining)}s` : '0s';
+                    }
+                } else {
+                    const badgesLeft = document.querySelector('[data-ref="badges-left"]');
+                    if (badgesLeft) {
+                        let noCdBadge = badgesLeft.querySelector('[data-badge-id="perk-no-cooldown"]');
+                        if (noCdBadge && this.perkNoCooldownExpires) {
+                            const timeRem = Math.max(0, Math.ceil((this.perkNoCooldownExpires - Date.now()) / 1000));
+                            if (timeRem > 0) {
+                                noCdBadge.innerHTML = `<span class="material-symbols-rounded" style="color:var(--color-primary);">bolt</span><span>Sin Cooldown (${timeRem}s)</span>`;
+                            } else {
+                                this.perkNoCooldown = false;
+                                if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+                                this.updateSelectionUI();
+                            }
                         }
-                    } else if (this.uiCooldownTimer) {
-                        this.uiCooldownTimer.textContent = '0s';
+                    }
+                }
+
+                // Generar el HTML completo del badge central
+                if (this.uiCooldownBadge) {
+                    let newHtml = '';
+                    if (this.perkNoCooldown) {
+                        newHtml = `
+                            <span class="material-symbols-rounded">bolt</span>
+                            <span>∞/${this.cooldownMax}</span>
+                            <span>|</span>
+                            <span class="material-symbols-rounded">timer</span>
+                            <span><span class="material-symbols-rounded" style="font-size:16px;">all_inclusive</span></span>
+                        `;
+                    } else if (this.interactionMode === 'protecting') {
+                        const maxProt = Math.ceil(this.perkProtectionLeft / 25) * 25 || 25;
+                        newHtml = `
+                            <span class="material-symbols-rounded">shield</span>
+                            <span>${this.perkProtectionLeft}/${maxProt}</span>
+                        `;
+                    } else if (this.interactionMode === 'erasing') {
+                        const maxEraser = Math.ceil(this.perkEraserLeft / 25) * 25 || 25;
+                        newHtml = `
+                            <span class="material-symbols-rounded">ink_eraser</span>
+                            <span>${this.perkEraserLeft}/${maxEraser}</span>
+                        `;
+                    } else {
+                        const rText = remaining > 0 ? `${Math.ceil(remaining)}s` : '0s';
+                        newHtml = `
+                            <span class="material-symbols-rounded">bolt</span>
+                            <span>${Math.floor(this.cooldownBalance)}/${this.cooldownMax}</span>
+                            <span>|</span>
+                            <span class="material-symbols-rounded">timer</span>
+                            <span>${rText}</span>
+                        `;
                     }
 
-                    if (this.uiCooldownCounter) {
-                        this.uiCooldownCounter.textContent = `${Math.floor(this.cooldownBalance)}/${this.cooldownMax}`;
+                    if (this.lastCooldownHtml !== newHtml) {
+                        this.uiCooldownBadge.innerHTML = newHtml;
+                        this.lastCooldownHtml = newHtml;
                     }
                 }
             }
