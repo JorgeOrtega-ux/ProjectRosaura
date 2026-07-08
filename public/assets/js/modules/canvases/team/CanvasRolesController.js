@@ -45,6 +45,7 @@ class CanvasRolesController {
         const deselectBtn = e.target.closest('[data-action="deselectRole"]');
         const addBtn = e.target.closest('[data-action="addRole"]');
         const editBtn = e.target.closest('[data-action="editRole"]');
+        const permsBtn = e.target.closest('[data-action="editPermissions"]');
         const deleteBtn = e.target.closest('[data-action="deleteRole"]');
 
         if (selectRow && !e.target.closest('button')) {
@@ -54,6 +55,7 @@ class CanvasRolesController {
         if (deselectBtn) this.deselectRole();
         if (addBtn) this.navigateToAddRole();
         if (editBtn && !editBtn.classList.contains('disabled-interactive')) this.navigateToEditRole();
+        if (permsBtn && !permsBtn.classList.contains('disabled-interactive')) this.navigateToEditPermissions();
         if (deleteBtn && !deleteBtn.classList.contains('disabled-interactive')) this.deleteRole(deleteBtn);
     }
 
@@ -88,6 +90,7 @@ class CanvasRolesController {
         const selectionMode = document.querySelector('[data-ref="role-selection-actions"]');
 
         const btnEdit = document.querySelector('[data-action="editRole"]');
+        const btnPerms = document.querySelector('[data-action="editPermissions"]');
         const btnDelete = document.querySelector('[data-action="deleteRole"]');
 
         if (this.selectedRoleId) {
@@ -99,9 +102,17 @@ class CanvasRolesController {
 
             if (canEdit && !isSystem) {
                 if (btnEdit) btnEdit.classList.remove('disabled-interactive');
+                if (btnPerms) btnPerms.classList.remove('disabled-interactive');
                 if (btnDelete) btnDelete.classList.remove('disabled-interactive');
             } else {
                 if (btnEdit) btnEdit.classList.add('disabled-interactive');
+                // Even if it's a system role, can we edit permissions?
+                // Typically system roles have locked permissions or we don't let people change them.
+                // Or maybe only owner can? Let's disable for system roles to match the edit button behavior.
+                if (btnPerms) {
+                    if (canEdit) btnPerms.classList.remove('disabled-interactive');
+                    else btnPerms.classList.add('disabled-interactive');
+                }
                 if (btnDelete) btnDelete.classList.add('disabled-interactive');
             }
             
@@ -123,6 +134,13 @@ class CanvasRolesController {
     navigateToEditRole() {
         if (!this.selectedRoleId) return;
         const url = `${this.basePath}/canvases/manage/role-builder/${this.canvasUuid}?role_id=${this.selectedRoleId}`;
+        if (window.spaRouter) window.spaRouter.navigate(url);
+        else window.location.href = url;
+    }
+
+    navigateToEditPermissions() {
+        if (!this.selectedRoleId) return;
+        const url = `${this.basePath}/canvases/manage/role-permissions/${this.canvasUuid}?role_id=${this.selectedRoleId}`;
         if (window.spaRouter) window.spaRouter.navigate(url);
         else window.location.href = url;
     }

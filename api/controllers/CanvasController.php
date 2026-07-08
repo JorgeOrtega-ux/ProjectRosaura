@@ -232,7 +232,8 @@ class CanvasController extends BaseController {
             exit;
 
         } catch (\Throwable $e) {
-            return $this->handleException($e, __FUNCTION__);
+            echo "ERROR PHP: " . $e->getMessage() . " en " . $e->getFile() . ":" . $e->getLine();
+            exit;
         }
     }
 
@@ -335,7 +336,8 @@ class CanvasController extends BaseController {
                 'palette_id' => $input['palette_id'] ?? null,
                 'max_participants' => $input['max_members'] ?? null,
                 'cooldown_pixels_batch' => $input['cooldown_pixels_batch'] ?? null,
-                'cooldown_seconds' => $input['cooldown_seconds'] ?? null
+                'cooldown_seconds' => $input['cooldown_seconds'] ?? null,
+                'allow_purchases' => isset($input['allow_purchases']) ? (int)$input['allow_purchases'] : null
             ];
 
             $result = $this->canvasServices->updateCanvas($userId, (int)$canvasId, $data, $this->canManageOfficial());
@@ -607,7 +609,9 @@ class CanvasController extends BaseController {
                 return $this->respond(['success' => false, 'message' => 'Lienzo no proporcionado.']);
             }
             
-            return $this->respond($this->canvasServices->resetCanvasNow($userId, (int)$canvasId, $this->canManageOfficial()));
+            $takeSnapshot = filter_var($input['take_snapshot'] ?? false, FILTER_VALIDATE_BOOLEAN);
+            
+            return $this->respond($this->canvasServices->resetCanvasNow($userId, (int)$canvasId, $takeSnapshot, $this->canManageOfficial()));
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);
         }
@@ -1037,12 +1041,28 @@ class CanvasController extends BaseController {
         $roleId = $request['role_id'] ?? null;
         $canvasId = $request['canvas_id'] ?? null;
         $name = $request['name'] ?? null;
-        $permissions = $request['permissions'] ?? [];
+        $permissions = isset($request['permissions']) ? $request['permissions'] : null;
         $weight = isset($request['weight']) ? (int)$request['weight'] : 10;
         
         if (!$roleId || !$canvasId || !$name) return ['success' => false, 'message' => 'Faltan parámetros obligatorios.'];
         
         $result = $this->canvasServices->updateCanvasRole($userId, (int)$roleId, (int)$canvasId, $name, $permissions, $weight, $this->canManageOfficial());
+        return $result;
+    }
+
+    public function update_role_permissions($request) {
+        if (!$this->session->isLoggedIn()) return ['success' => false, 'message' => __('err_unauthorized')];
+        $userId = $this->session->getActiveAccountId();
+        
+        $roleId = $request['role_id'] ?? null;
+        $canvasId = $request['canvas_id'] ?? null;
+        $permissions = $request['permissions'] ?? [];
+        
+        if (!$roleId || !$canvasId) return ['success' => false, 'message' => 'Faltan parámetros obligatorios.'];
+        
+        // We need a specific service method for this, or just reuse updateCanvasRole by fetching the existing name/weight
+        // Let's create a specific method in CanvasServices to avoid race conditions.
+        $result = $this->canvasServices->updateCanvasRolePermissions($userId, (int)$roleId, (int)$canvasId, $permissions, $this->canManageOfficial());
         return $result;
     }
 

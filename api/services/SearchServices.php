@@ -54,7 +54,7 @@ class SearchServices {
                         'privacy'      => $doc['privacy'],
                         'scope_type'   => $doc['scope_type'],
                         'is_favorite'  => false, 
-                        'snapshot_url' => $this->getSnapshotUrl((int)$doc['id'])
+                        'thumbnail_url' => $this->getThumbnailUrl((int)$doc['id'])
                     ];
                 }
             }
@@ -71,12 +71,12 @@ class SearchServices {
         }
     }
     
-    private function getSnapshotUrl(int $id): ?string {
-        $snapshotPath = "/assets/img/snapshots/canvas_" . $id . ".png";
-        $physicalPath = dirname(__DIR__, 3) . '/public' . $snapshotPath;
+    private function getThumbnailUrl(int $id): ?string {
+        $thumbnailPath = "/storage/public/thumbnails/canvas_" . $id . ".png";
+        $physicalPath = dirname(__DIR__, 3) . $thumbnailPath;
         if (file_exists($physicalPath)) {
             $timestamp = filemtime($physicalPath);
-            return $snapshotPath . "?v=" . $timestamp;
+            return $thumbnailPath . "?v=" . $timestamp;
         }
         return null;
     }

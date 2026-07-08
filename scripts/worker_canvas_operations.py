@@ -314,8 +314,15 @@ def scheduler_thread():
                     cursor.execute("SELECT size FROM canvases WHERE id = %s", (canvas_id,))
                     res = cursor.fetchone()
                     
+                    opts_json = r.hget("canvases:force_resets_options", b_canvas_id)
+                    take_snapshot = 1
+                    if opts_json:
+                        opts = json.loads(opts_json)
+                        take_snapshot = int(opts.get('take_snapshot', 1))
+                        r.hdel("canvases:force_resets_options", b_canvas_id)
+                    
                     r.lpush("canvases:pending_resets", json.dumps({
-                        'canvas_id': canvas_id, 'take_snapshot': 1, 'canvas_size': str(res['size']) if res else '64x64'
+                        'canvas_id': canvas_id, 'take_snapshot': take_snapshot, 'canvas_size': str(res['size']) if res else '64x64'
                     }))
                     r.setex(f"canvas:{canvas_id}:reset_lock", 300, "1")
                     r.publish("admin:canvas_events", json.dumps({"type": "canvas_locked", "canvas_id": canvas_id}))

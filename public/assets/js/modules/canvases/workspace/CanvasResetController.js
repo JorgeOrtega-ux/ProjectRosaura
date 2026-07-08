@@ -240,10 +240,12 @@ class CanvasResetController {
 
     async executeResetNow(btn) {
         const canvasId = this.wrapper.getAttribute('data-canvas-id');
+        const checkSnapshotNow = this.wrapper.querySelector('[data-ref="take_snapshot_now"]');
+        const takeSnapshot = checkSnapshotNow ? checkSnapshotNow.checked : false;
         
         setButtonLoading(btn);
 
-        const result = await this.api.post(ApiRoutes.Canvases.ResetNow, { id: canvasId }, this.abortController.signal);
+        const result = await this.api.post(ApiRoutes.Canvases.ResetNow, { id: canvasId, take_snapshot: takeSnapshot }, this.abortController.signal);
 
         if (result.aborted) return;
         

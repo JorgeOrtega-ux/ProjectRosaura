@@ -24,7 +24,7 @@ DB_IDENTITY_NAME = os.getenv("DB_IDENTITY_NAME", "db_identity")
 
 # Configuración Worker
 SYNC_INTERVAL = int(os.getenv("WORKER_SNAPSHOTS_SYNC_INTERVAL", 10))
-SNAPSHOTS_DIR = os.getenv("SNAPSHOTS_DIR", "/app/storage/public/snapshots")
+THUMBNAILS_DIR = os.getenv("THUMBNAILS_DIR", "/app/storage/public/thumbnails")
 ARCHIVE_DIR = os.getenv("SNAPSHOTS_ARCHIVE_DIR", "/app/storage/public/snapshots_archive")
 TIMELAPSE_DIR = os.getenv("TIMELAPSE_DIR", "/app/storage/private/canvases/timelapses")
 SCALE_FACTOR = int(os.getenv("SNAPSHOT_SCALE_FACTOR", 10)) 
@@ -101,7 +101,7 @@ def get_max_snapshots_per_tier(tier):
     else:
         return -1 # Advanced (Ilimitado)
 
-def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palette_id, owner_tier):
+def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palette_id, owner_tier, canvas_uuid):
     try:
         raw_bytes = decompress(compressed_data)
         
@@ -134,7 +134,7 @@ def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palet
 
         img_thumb = img.resize((thumb_width, thumb_height), Image.NEAREST)
         
-        filepath = os.path.join(SNAPSHOTS_DIR, f"canvas_{canvas_id}.png")
+        filepath = os.path.join(THUMBNAILS_DIR, f"canvas_{canvas_id}.png")
         # Este siempre se pisa (No consume espacio extra en galería)
         img_thumb.save(filepath, "PNG", optimize=True)
         
@@ -178,13 +178,18 @@ def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palet
 
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 archive_filename = f"canvas_{canvas_id}_{timestamp}.png"
-                archive_filepath = os.path.join(ARCHIVE_DIR, archive_filename)
+                
+                # Crear la subcarpeta del UUID dentro de ARCHIVE_DIR
+                canvas_archive_dir = os.path.join(ARCHIVE_DIR, str(canvas_uuid))
+                os.makedirs(canvas_archive_dir, exist_ok=True)
+                
+                archive_filepath = os.path.join(canvas_archive_dir, archive_filename)
                 
                 img_archive.save(archive_filepath, "PNG", optimize=True)
                 print(f"[+] Archivo histórico guardado exitosamente ({arch_width}x{arch_height}): {archive_filepath}")
 
                 snapshot_uuid = str(uuid.uuid4())
-                public_filepath = f"public/storage/snapshots_archive/{archive_filename}"
+                public_filepath = f"public/storage/snapshots_archive/{canvas_uuid}/{archive_filename}"
                 
                 timelapse_src = os.path.join(TIMELAPSE_DIR, f"live_canvas_{canvas_id}.jsonl")
                 timelapse_dest_filename = f"snapshot_{snapshot_uuid}.jsonl"
@@ -215,7 +220,7 @@ def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palet
                 except Exception as e:
                     print(f"[!] Error guardando historial en DB: {e}")
 
-            r.setex(f"canvas:{canvas_id}:snapshot_done", 60, "1")
+            r.set(f"canvas:{canvas_id}:snapshot_done", "1", ex=60)
             
         return True
     except Exception as e:
@@ -225,7 +230,7 @@ def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palet
 def main():
     print("[*] Iniciando Worker de Snapshots (Lógica Tiering Injectada)...")
     
-    os.makedirs(SNAPSHOTS_DIR, exist_ok=True)
+    os.makedirs(THUMBNAILS_DIR, exist_ok=True)
     os.makedirs(ARCHIVE_DIR, exist_ok=True)
     os.makedirs(TIMELAPSE_DIR, exist_ok=True)
     
@@ -256,7 +261,7 @@ def main():
                     
                     for canvas_id in pending_canvases:
                         query = f"""
-                            SELECT s.snapshot_data, c.size, c.palette_id, IFNULL(u.subscription_tier, 2) as tier
+                            SELECT s.snapshot_data, c.size, c.palette_id, IFNULL(u.subscription_tier, 2) as tier, c.uuid
                             FROM canvas_snapshots s
                             JOIN canvases c ON s.canvas_id = c.id
                             LEFT JOIN {DB_IDENTITY_NAME}.users u ON c.owner_id = u.id
@@ -270,11 +275,12 @@ def main():
                             size_str = result[1] if result[1] else '64'
                             palette_id = result[2] if result[2] else 'default'
                             owner_tier = result[3]
+                            canvas_uuid = result[4]
                             
-                            success = process_canvas_image(r, db_conn, canvas_id, snapshot_data, size_str, palette_id, owner_tier)
+                            success = process_canvas_image(r, db_conn, canvas_id, snapshot_data, size_str, palette_id, owner_tier, canvas_uuid)
                             if success:
                                 r.srem("canvases:pending_snapshots", canvas_id)
-                                print(f"[+] Snapshot procesado: canvas_{canvas_id}.png")
+                                print(f"[+] Thumbnail/Snapshot procesado: canvas_{canvas_id}.png")
                         else:
                             r.srem("canvases:pending_snapshots", canvas_id)
                             

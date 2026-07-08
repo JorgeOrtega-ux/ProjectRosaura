@@ -40,7 +40,8 @@ interface CanvasRepositoryInterface {
     public function getCanvasRoles(?int $canvasId = null): array;
     public function getCanvasPermissions(): array;
     public function createCanvasRole(int $canvasId, string $name, array $permissions): int;
-    public function updateCanvasRole(int $roleId, int $canvasId, string $name, array $permissions): bool;
+    public function updateCanvasRole(int $roleId, int $canvasId, string $name, ?array $permissions): bool;
+    public function updateCanvasRolePermissions(int $roleId, array $permissions): bool;
     public function deleteCanvasRole(int $roleId, int $canvasId): bool;
     
     // EXPANSIÓN EN VIVO

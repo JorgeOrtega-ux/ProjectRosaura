@@ -1,5 +1,3 @@
-// public/assets/js/modules/canvases/team/CanvasRoleBuilderController.js
-
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
 
@@ -8,6 +6,12 @@ class CanvasRoleBuilderController {
         this.api = new ApiService();
         this.basePath = window.AppBasePath || '';
         this.isInitialized = false;
+        
+        this.roleId = null; 
+        this.isEditing = false;
+        this.isSystemRole = false; 
+        this.currentUserWeight = 0; 
+        
         this.handleGlobalClickBound = this.handleGlobalClick.bind(this);
     }
 
@@ -15,17 +19,33 @@ class CanvasRoleBuilderController {
         if (this.isInitialized) return;
         this.isInitialized = true;
         
-        const wrapper = document.querySelector('[data-ref="canvasRoleBuilderView"]');
-        if (!wrapper) return;
+        const view = document.querySelector('[data-ref="canvasRoleBuilderView"]');
+        if (!view) return;
         
-        this.canvasId = wrapper.getAttribute('data-canvas-id');
-        this.canvasUuid = wrapper.getAttribute('data-canvas-uuid');
-        this.roleId = wrapper.getAttribute('data-role-id');
+        this.canvasId = view.getAttribute('data-canvas-id');
+        this.canvasUuid = view.getAttribute('data-canvas-uuid');
+        
+        const roleIdStr = view.getAttribute('data-role-id');
+        const roleId = parseInt(roleIdStr, 10) || 0;
+        
+        if (roleId > 0) {
+            this.isEditing = true;
+            this.roleId = roleId;
+        } else {
+            this.isEditing = false;
+            this.roleId = null;
+        }
+        
+        const isSystemStr = view.getAttribute('data-is-system');
+        this.isSystemRole = parseInt(isSystemStr, 10) === 1;
+        
+        this.currentUserWeight = parseInt(view.getAttribute('data-user-weight') || 0, 10);
 
         this.bindEvents();
     }
 
     destroy() {
+        if (!this.isInitialized) return;
         document.removeEventListener('click', this.handleGlobalClickBound);
         this.isInitialized = false;
     }
@@ -35,51 +55,91 @@ class CanvasRoleBuilderController {
     }
 
     handleGlobalClick(e) {
-        const saveBtn = e.target.closest('[data-action="saveRole"]');
-
-        if (saveBtn) {
+        if (e.target.closest('[data-action="saveRoleData"]')) {
             e.preventDefault();
-            this.saveRole(saveBtn);
+            this.saveRole(e.target.closest('[data-action="saveRoleData"]'));
         }
+
+        if (e.target.closest('[data-action="applyRoleName"]')) {
+            this.handleApplyRoleName(e.target.closest('[data-action="applyRoleName"]'));
+        }
+
+        const adjustWeightBtn = e.target.closest('[data-action="adjustWeight"]');
+        if (adjustWeightBtn) this.handleAdjustWeight(adjustWeightBtn);
+    }
+
+    handleApplyRoleName(btn) {
+        if (this.isSystemRole) return;
+
+        const input = document.querySelector('[data-ref="roleNameInput"]');
+        const display = document.querySelector('[data-ref="display-role-name"]');
+        if (input && display) display.textContent = input.value.trim() || 'Sin definir';
+
+        const viewState = document.querySelector('[data-state="role-name-view"]');
+        const editState = document.querySelector('[data-state="role-name-edit"]');
+        
+        if (viewState && editState) {
+            editState.classList.remove('active');
+            editState.classList.add('disabled');
+            
+            viewState.classList.remove('disabled');
+            viewState.classList.add('active'); 
+        }
+    }
+
+    handleAdjustWeight(btn) {
+        if (this.isSystemRole) return;
+
+        const step = parseInt(btn.dataset.step, 10);
+        const display = document.querySelector('[data-ref="val_role_weight"]');
+        
+        if (!display) return;
+        
+        const safeWeight = this.currentUserWeight > 0 ? this.currentUserWeight : 100;
+        
+        const min = 1;
+        const dynamicMax = safeWeight === 100 ? 100 : Math.max(1, safeWeight - 1);
+        
+        let currentVal = parseInt(display.dataset.val, 10) || 1;
+        let newVal = currentVal + step;
+
+        if (newVal < min) newVal = min;
+        if (newVal > dynamicMax) newVal = dynamicMax;
+
+        display.dataset.val = newVal;
+        display.textContent = newVal;
     }
 
     async saveRole(btn) {
         if (!this.canvasId) return;
 
-        const nameInput = document.querySelector('input[name="role_name"]');
+        const nameInput = document.querySelector('[data-ref="roleNameInput"]');
+        const weightDisplay = document.querySelector('[data-ref="val_role_weight"]');
+        
         const roleName = nameInput ? nameInput.value.trim() : '';
+        const roleWeight = weightDisplay ? parseInt(weightDisplay.dataset.val, 10) : 1;
 
-        if (!roleName) {
+        if (!roleName && !this.isSystemRole) {
             showMessage('El nombre del rol es obligatorio', 'error');
-            if (nameInput) nameInput.focus();
             return;
         }
-
-        const weightInput = document.querySelector('input[name="role_weight"]');
-        const roleWeight = weightInput ? parseInt(weightInput.value) : 10;
 
         if (isNaN(roleWeight) || roleWeight < 0 || roleWeight > 99) {
             showMessage('El peso debe ser un número entre 0 y 99', 'error');
-            if (weightInput) weightInput.focus();
             return;
         }
 
-        const permissionCheckboxes = document.querySelectorAll('input[name="permissions[]"]:checked');
-        const permissions = Array.from(permissionCheckboxes).map(cb => parseInt(cb.value));
-
         setButtonLoading(btn);
 
-        const isEdit = !!this.roleId;
-        const endpoint = isEdit ? 'canvases.update_role' : 'canvases.create_role';
+        const endpoint = this.isEditing ? 'canvases.update_role' : 'canvases.create_role';
         
         const payload = {
             canvas_id: this.canvasId,
             name: roleName,
-            weight: roleWeight,
-            permissions: permissions
+            weight: roleWeight
         };
 
-        if (isEdit) {
+        if (this.isEditing) {
             payload.role_id = this.roleId;
         }
 

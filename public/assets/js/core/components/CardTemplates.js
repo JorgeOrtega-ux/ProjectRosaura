@@ -15,8 +15,8 @@ export const CardTemplates = {
         const isFavoriteClass = canvas.is_favorite ? 'is-favorite' : '';
         
         // Determinar URL de fallback para la imagen
-        const fallbackImg = `${basePath}/assets/img/fallbacks/canvas-default.png`;
-        const srcUrl = canvas.snapshot_url ? escapeHTML(canvas.snapshot_url) : fallbackImg;
+        const fallbackImg = '/assets/img/misc/placeholder.png';
+        const srcUrl = canvas.thumbnail_url ? escapeHTML(canvas.thumbnail_url) : fallbackImg;
         
         // Bloque de imagen con onerror por si la ruta devuelta falla
         const imgHtml = `

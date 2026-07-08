@@ -47,6 +47,7 @@ if ($canvasUuid) {
             $cBatch = (int)($canvasData['cooldown_pixels_batch'] ?? 5);
             $cCooldown = (int)($canvasData['cooldown_seconds'] ?? 10);
             $cLimit = (int)($canvasData['max_participants'] ?? 10);
+            $cAllowPurchases = (int)($canvasData['allow_purchases'] ?? 1);
         }
     } catch (\Exception $e) {
         // Silenciado por seguridad
@@ -350,6 +351,23 @@ if (!$canvasId) {
                                     </button>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+
+                    <hr class="component-divider">
+
+                    <div class="component-group-item component-group-item--wrap">
+                        <div class="component-card__content">
+                            <div class="component-card__text">
+                                <h2 class="component-card__title">Permitir utilizar compras</h2>
+                                <p class="component-card__description">Permite que se utilicen ventajas y objetos adquiridos en la tienda dentro de este lienzo.</p>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--end">
+                            <label class="component-toggle-switch">
+                                <input type="checkbox" data-ref="val_allow_purchases" <?php echo $cAllowPurchases ? 'checked' : ''; ?>>
+                                <span class="component-toggle-slider"></span>
+                            </label>
                         </div>
                     </div>
 

@@ -25,14 +25,14 @@ class CanvasRepository implements CanvasRepositoryInterface {
             return $canvas;
         }
         
-        $snapshotPath = "/assets/img/snapshots/canvas_" . $canvas['id'] . ".png";
-        $physicalPath = dirname(__DIR__, 3) . '/public' . $snapshotPath;
+        $thumbnailPath = "/storage/public/thumbnails/canvas_" . $canvas['id'] . ".png";
+        $physicalPath = dirname(__DIR__, 3) . $thumbnailPath;
         
         if (file_exists($physicalPath)) {
             $timestamp = filemtime($physicalPath);
-            $canvas['snapshot_url'] = $snapshotPath . "?v=" . $timestamp;
+            $canvas['thumbnail_url'] = $thumbnailPath . "?v=" . $timestamp;
         } else {
-            $canvas['snapshot_url'] = null;
+            $canvas['thumbnail_url'] = null;
         }
         
         return $canvas;
@@ -90,15 +90,6 @@ class CanvasRepository implements CanvasRepositoryInterface {
         try {
             $this->db->beginTransaction();
             
-            // Insert into canvas_members
-            $sql1 = "INSERT IGNORE INTO " . DB::TBL_CANVAS_MEMBERS . " 
-                    (canvas_id, user_id) 
-                    VALUES (:canvas_id, :user_id)";
-            $stmt1 = $this->db->prepare($sql1);
-            $stmt1->execute([
-                ':canvas_id' => $canvasId,
-                ':user_id'   => $userId
-            ]);
 
             // Assign role
             $this->assignMemberRole($canvasId, $userId, $roleId);
@@ -124,7 +115,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
 
         $sql = "SELECT c.id, c.uuid, c.name, c.owner_id, c.scope_type, 
                        CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
-                       (SELECT COUNT(*) FROM " . DB::TBL_CANVAS_MEMBERS . " WHERE canvas_id = c.id) as members_count
+                       (SELECT COUNT(DISTINCT user_id) FROM canvas_user_roles WHERE canvas_id = c.id) as members_count
                 FROM " . DB::TBL_CANVASES . " c
                 LEFT JOIN canvas_favorites f ON c.id = f.canvas_id AND f.user_id = :current_user_id
                 WHERE c.privacy = 'public' AND c.scope_type = 'personal'
@@ -177,18 +168,18 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function getUserAndJoinedCanvases(int $userId, int $limit = 50, string $filter = 'all'): array {
-        $whereClause = "WHERE (c.owner_id = :uid3 OR EXISTS (SELECT 1 FROM " . DB::TBL_CANVAS_MEMBERS . " cm WHERE cm.canvas_id = c.id AND cm.user_id = :uid4))";
+        $whereClause = "WHERE (c.owner_id = :uid3 OR EXISTS (SELECT 1 FROM canvas_user_roles cm WHERE cm.canvas_id = c.id AND cm.user_id = :uid4))";
         if ($filter === 'mine') {
             $whereClause = "WHERE c.owner_id = :uid3";
         } elseif ($filter === 'joined') {
-            $whereClause = "WHERE c.owner_id != :uid3 AND EXISTS (SELECT 1 FROM " . DB::TBL_CANVAS_MEMBERS . " cm WHERE cm.canvas_id = c.id AND cm.user_id = :uid4)";
+            $whereClause = "WHERE c.owner_id != :uid3 AND EXISTS (SELECT 1 FROM canvas_user_roles cm WHERE cm.canvas_id = c.id AND cm.user_id = :uid4)";
         } elseif ($filter === 'favorites') {
             $whereClause .= " AND f.canvas_id IS NOT NULL";
         }
 
         $sql = "SELECT c.id, c.uuid, c.name, c.description, c.privacy, c.requires_approval, c.size, c.palette_id, c.max_participants, c.cooldown_pixels_batch, c.cooldown_seconds, c.created_at, c.scope_type, c.owner_id,
                        CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
-                       (SELECT COUNT(*) FROM " . DB::TBL_CANVAS_MEMBERS . " WHERE canvas_id = c.id) as members_count,
+                       (SELECT COUNT(DISTINCT user_id) FROM canvas_user_roles WHERE canvas_id = c.id) as members_count,
                        CASE WHEN c.owner_id = :uid1 THEN 1 ELSE 0 END as is_owner
                 FROM " . DB::TBL_CANVASES . " c
                 LEFT JOIN canvas_favorites f ON c.id = f.canvas_id AND f.user_id = :uid2
@@ -218,7 +209,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
     public function getUserCanvasesPaginated(int $ownerId, int $limit, int $offset): array {
         $sql = "SELECT c.id, c.uuid, c.name, c.description, c.privacy, c.requires_approval, c.size, c.palette_id, c.max_participants, c.cooldown_pixels_batch, c.cooldown_seconds, c.created_at, c.scope_type,
                        CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
-                       (SELECT COUNT(*) FROM " . DB::TBL_CANVAS_MEMBERS . " WHERE canvas_id = c.id) as members_count
+                       (SELECT COUNT(DISTINCT user_id) FROM canvas_user_roles WHERE canvas_id = c.id) as members_count
                 FROM " . DB::TBL_CANVASES . " c
                 LEFT JOIN canvas_favorites f ON c.id = f.canvas_id AND f.user_id = :oid
                 WHERE c.owner_id = :oid 
@@ -541,7 +532,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
         }
     }
 
-    public function updateCanvasRole(int $roleId, int $canvasId, string $name, array $permissions, int $weight = 10): bool {
+    public function updateCanvasRole(int $roleId, int $canvasId, string $name, ?array $permissions = null, int $weight = 10): bool {
         try {
             $this->db->beginTransaction();
             
@@ -554,7 +545,9 @@ class CanvasRepository implements CanvasRepositoryInterface {
                 ':canvas_id' => $canvasId
             ]);
             
-            $this->syncRolePermissions($roleId, $permissions);
+            if ($permissions !== null) {
+                $this->syncRolePermissions($roleId, $permissions);
+            }
             
             $this->db->commit();
             return true;
@@ -563,6 +556,21 @@ class CanvasRepository implements CanvasRepositoryInterface {
                 $this->db->rollBack();
             }
             Logger::error("updateCanvasRole Error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function updateCanvasRolePermissions(int $roleId, array $permissions): bool {
+        try {
+            $this->db->beginTransaction();
+            $this->syncRolePermissions($roleId, $permissions);
+            $this->db->commit();
+            return true;
+        } catch (Exception $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            Logger::error("updateCanvasRolePermissions Error: " . $e->getMessage());
             return false;
         }
     }
@@ -601,7 +609,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function countCanvasMembers(int $canvasId): int {
-        $sql = "SELECT COUNT(*) FROM " . DB::TBL_CANVAS_MEMBERS . " WHERE canvas_id = :canvas_id";
+        $sql = "SELECT COUNT(DISTINCT user_id) FROM canvas_user_roles WHERE canvas_id = :canvas_id";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':canvas_id' => $canvasId]);
         return (int)$stmt->fetchColumn();
@@ -670,21 +678,24 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function removeMember(int $canvasId, int $userId): bool {
-        $sql = "DELETE FROM " . DB::TBL_CANVAS_MEMBERS . " WHERE canvas_id = :canvas_id AND user_id = :user_id";
+        $sql = "DELETE FROM canvas_user_roles WHERE canvas_id = :canvas_id AND user_id = :user_id";
         $stmt = $this->db->prepare($sql);
-        return $stmt->execute([':canvas_id' => $canvasId, ':user_id' => $userId]);
+        return $stmt->execute([
+            ':canvas_id' => $canvasId,
+            ':user_id'   => $userId
+        ]);
     }
 
     public function trimMembersToLimit(int $canvasId, int $limit): bool {
-        // Keep the first $limit members ordered by joined_at ASC, delete the rest.
+        // Keep the first $limit members ordered by id ASC, delete the rest.
         // MySQL doesn't support LIMIT in subqueries directly for IN, but we can do it with a join or temporary table
-        $sql = "DELETE FROM " . DB::TBL_CANVAS_MEMBERS . "
+        $sql = "DELETE FROM canvas_user_roles
                 WHERE canvas_id = :canvas_id 
                 AND user_id NOT IN (
                     SELECT user_id FROM (
-                        SELECT user_id FROM " . DB::TBL_CANVAS_MEMBERS . " 
+                        SELECT user_id FROM canvas_user_roles 
                         WHERE canvas_id = :canvas_id2 
-                        ORDER BY joined_at ASC 
+                        ORDER BY id ASC 
                         LIMIT :limit
                     ) AS tmp
                 )";

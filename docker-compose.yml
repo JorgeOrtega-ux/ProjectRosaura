@@ -201,13 +201,13 @@ services:
     networks:
       - rosaura_network
 
-  worker_canvas_snapshots:
+  worker_canvas_thumbnails:
     build:
       context: .
       dockerfile: docker/python/Dockerfile.worker
-    container_name: rosaura_worker_canvas_snapshots
+    container_name: rosaura_worker_canvas_thumbnails
     restart: always
-    command: python -u scripts/worker_canvas_snapshots.py
+    command: python -u scripts/worker_canvas_thumbnails.py
     volumes:
       - .:/app
     depends_on:

@@ -4,6 +4,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 
 use App\Config\DatabaseManager;
 use App\Core\System\DatabaseConstants as DB;
+use App\Core\System\SubscriptionPlanConstants;
 use PDO;
 
 $canvasUuid = $_GET['uuid'] ?? null;
@@ -47,6 +48,25 @@ if ($canvasUuid && $userId) {
                     $resetSettings['take_snapshot'] = (bool)$row['take_snapshot'];
                     $resetSettings['timer_action'] = $row['timer_action'] ?: 'restart';
                 }
+                
+                $maxSnapshots = -1;
+                $currentSnapshots = 0;
+                
+                if ($canvas['owner_id'] !== null) {
+                    $dbIdentity = new DatabaseManager();
+                    $pdoIdentity = $dbIdentity->getConnection(DB::CONN_IDENTITY);
+                    $stmtOwner = $pdoIdentity->prepare('SELECT subscription_tier FROM users WHERE id = :id LIMIT 1');
+                    $stmtOwner->execute(['id' => $canvas['owner_id']]);
+                    $ownerTier = (int)$stmtOwner->fetchColumn();
+                    $planLimits = SubscriptionPlanConstants::getTierLimits($ownerTier);
+                    $maxSnapshots = $planLimits['max_snapshots_per_canvas'];
+                }
+                
+                $stmtSnapCount = $pdo->prepare('SELECT COUNT(*) FROM canvas_snapshots_history WHERE canvas_id = :cid');
+                $stmtSnapCount->execute(['cid' => $canvasId]);
+                $currentSnapshots = (int)$stmtSnapCount->fetchColumn();
+                
+                $canTakeSnapshot = ($maxSnapshots === -1 || $currentSnapshots < $maxSnapshots);
             }
         }
     } catch (\Exception $e) {
@@ -210,11 +230,14 @@ if (!isset($timerActions[$activeTimer])) {
                             <div class="component-card__text">
                                 <h2 class="component-card__title"><?php echo __('canvas_reset_snapshot_title'); ?></h2>
                                 <p class="component-card__description"><?php echo __('canvas_reset_snapshot_desc'); ?></p>
+                                <?php if (!$canTakeSnapshot): ?>
+                                    <p class="component-card__description text-danger" style="margin-top: 5px;"><b>Límite de historial alcanzado (<?php echo $currentSnapshots; ?>/<?php echo $maxSnapshots; ?>).</b> Mejora tu plan para guardar más fotos.</p>
+                                <?php endif; ?>
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--end">
                             <label class="component-toggle-switch">
-                                <input type="checkbox" data-ref="take_snapshot" <?php echo $resetSettings['take_snapshot'] ? 'checked' : ''; ?>>
+                                <input type="checkbox" data-ref="take_snapshot" <?php echo $resetSettings['take_snapshot'] && $canTakeSnapshot ? 'checked' : ''; ?> <?php echo !$canTakeSnapshot ? 'disabled' : ''; ?>>
                                 <span class="component-toggle-slider"></span>
                             </label>
                         </div>
@@ -266,6 +289,30 @@ if (!isset($timerActions[$activeTimer])) {
                             <h2 class="component-card__title text-danger"><?php echo __('canvas_reset_now_title'); ?></h2>
                             <p class="component-card__description"><?php echo __('canvas_reset_now_desc'); ?></p>
                         </div>
+                    </div>
+                </div>
+                
+                <div class="component-group-item component-group-item--wrap">
+                    <div class="component-card__content">
+                        <div class="component-card__text">
+                            <h2 class="component-card__title"><?php echo __('canvas_reset_snapshot_title'); ?></h2>
+                            <p class="component-card__description">Tomar una foto del lienzo antes de reiniciarlo de forma instantánea.</p>
+                            <?php if (!$canTakeSnapshot): ?>
+                                <p class="component-card__description text-danger" style="margin-top: 5px;"><b>Límite de historial alcanzado (<?php echo $currentSnapshots; ?>/<?php echo $maxSnapshots; ?>).</b> Mejora tu plan para guardar más fotos.</p>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <div class="component-card__actions component-card__actions--end">
+                        <label class="component-toggle-switch">
+                            <input type="checkbox" data-ref="take_snapshot_now" <?php echo $canTakeSnapshot ? 'checked' : 'disabled'; ?>>
+                            <span class="component-toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="component-group-item component-group-item--wrap">
+                    <div class="component-card__content">
+                        <!-- Espacio extra -->
                     </div>
                     <div class="component-card__actions component-card__actions--end">
                         <button type="button" class="component-button component-button--danger component-button--h40" data-action="resetNow">

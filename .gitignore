@@ -54,6 +54,6 @@ storage/private/backups/*.gz
 
 
 # Ignorar archivos generados dinámicamente en el storage público
-/storage/public/snapshots/
+/storage/public/thumbnails/
 /storage/public/snapshots_archive/
 /storage/public/templates/

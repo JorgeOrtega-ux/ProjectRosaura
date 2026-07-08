@@ -88,16 +88,16 @@ class CanvasServices {
             $formattedCanvases = array_map(function($canvas) use ($currentUserId, $onlineCounts) {
                 $canvas['is_owner'] = ($canvas['owner_id'] === $currentUserId && $canvas['owner_id'] !== null);
                 
-                $snapshotPath = "public/storage/snapshots/canvas_" . $canvas['id'] . ".png";
-                $physicalPath = dirname(__DIR__, 2) . '/storage/public/snapshots/canvas_' . $canvas['id'] . '.png';
-                $snapshotUrl = null;
+                $thumbnailPath = "public/storage/thumbnails/canvas_" . $canvas['id'] . ".png";
+                $physicalPath = dirname(__DIR__, 2) . '/storage/public/thumbnails/canvas_' . $canvas['id'] . '.png';
+                $thumbnailUrl = null;
                 
                 if (file_exists($physicalPath)) {
                     $timestamp = filemtime($physicalPath);
-                    $snapshotUrl = "/" . $snapshotPath . "?v=" . $timestamp;
+                    $thumbnailUrl = "/" . $thumbnailPath . "?v=" . $timestamp;
                 }
                 
-                $canvas['snapshot_url'] = $snapshotUrl;
+                $canvas['thumbnail_url'] = $thumbnailUrl;
                 $canvas['online_players'] = isset($onlineCounts[$canvas['id']]) ? (int)$onlineCounts[$canvas['id']] : 0;
                 $canvas['members_count'] = isset($canvas['members_count']) ? (int)$canvas['members_count'] : 0;
                 
@@ -129,16 +129,16 @@ class CanvasServices {
                 $canvas['is_owner'] = false; 
                 $canvas['privacy'] = 'public'; 
                 
-                $snapshotPath = "public/storage/snapshots/canvas_" . $canvas['id'] . ".png";
-                $physicalPath = dirname(__DIR__, 2) . '/storage/public/snapshots/canvas_' . $canvas['id'] . '.png';
-                $snapshotUrl = null;
+                $thumbnailPath = "public/storage/thumbnails/canvas_" . $canvas['id'] . ".png";
+                $physicalPath = dirname(__DIR__, 2) . '/storage/public/thumbnails/canvas_' . $canvas['id'] . '.png';
+                $thumbnailUrl = null;
                 
                 if (file_exists($physicalPath)) {
                     $timestamp = filemtime($physicalPath);
-                    $snapshotUrl = "/" . $snapshotPath . "?v=" . $timestamp;
+                    $thumbnailUrl = "/" . $thumbnailPath . "?v=" . $timestamp;
                 }
                 
-                $canvas['snapshot_url'] = $snapshotUrl;
+                $canvas['thumbnail_url'] = $thumbnailUrl;
                 $canvas['online_players'] = isset($onlineCounts[$canvas['id']]) ? (int)$onlineCounts[$canvas['id']] : 0;
                 $canvas['members_count'] = isset($canvas['members_count']) ? (int)$canvas['members_count'] : 0;
                 
@@ -196,13 +196,13 @@ class CanvasServices {
                     }
                 }
                 
-                $snapshotPath = "public/storage/snapshots/canvas_" . $canvas['id'] . ".png";
-                $physicalPath = dirname(__DIR__, 2) . '/storage/public/snapshots/canvas_' . $canvas['id'] . '.png';
-                $snapshotUrl = null;
+                $thumbnailPath = "public/storage/thumbnails/canvas_" . $canvas['id'] . ".png";
+                $physicalPath = dirname(__DIR__, 2) . '/storage/public/thumbnails/canvas_' . $canvas['id'] . '.png';
+                $thumbnailUrl = null;
                 
                 if (file_exists($physicalPath)) {
                     $timestamp = filemtime($physicalPath);
-                    $snapshotUrl = "/" . $snapshotPath . "?v=" . $timestamp;
+                    $thumbnailUrl = "/" . $thumbnailPath . "?v=" . $timestamp;
                 }
                 
                 $formattedCanvases[] = [
@@ -219,7 +219,7 @@ class CanvasServices {
                     'is_owner' => $canvas['is_owner'],
                     'online_players' => 0, 
                     'members_count' => $canvas['members_count'],
-                    'snapshot_url' => $snapshotUrl,
+                    'thumbnail_url' => $thumbnailUrl,
                     'locked_requires_downgrade' => $isLocked,
                     'locked_reasons' => $lockedReasons
                 ];
@@ -595,6 +595,10 @@ class CanvasServices {
             $data['requires_approval'] = isset($data['requires_approval']) && $data['requires_approval'] ? 1 : 0;
             $data['cooldown_pixels_batch'] = isset($data['cooldown_pixels_batch']) ? max(1, (int)$data['cooldown_pixels_batch']) : ($canvas['cooldown_pixels_batch'] ?? 5);
             $data['cooldown_seconds'] = isset($data['cooldown_seconds']) ? max(0, (int)$data['cooldown_seconds']) : ($canvas['cooldown_seconds'] ?? 10);
+            
+            if (isset($data['allow_purchases'])) {
+                $data['allow_purchases'] = (int)$data['allow_purchases'];
+            }
 
             $updated = $this->canvasRepository->updateCanvasData($canvasId, $data);
 
@@ -929,14 +933,13 @@ class CanvasServices {
                     } catch (Exception $e) {}
                 }
 
-                // Generar nuevo snapshot físico de la imagen
-                if (method_exists($this->canvasRepository, 'generateSnapshotImage')) {
-                     // Asumiendo que el worker o un helper puede generarlo, o lo borramos para que se genere solo
-                     $physicalPath = dirname(__DIR__, 2) . '/storage/public/snapshots/canvas_' . $canvasId . '.png';
-                     if (file_exists($physicalPath)) {
-                         unlink($physicalPath);
-                     }
-                }
+                // Generar nuevo thumbnail físico de la imagen
+                try {
+                    $physicalPath = dirname(__DIR__, 2) . '/storage/public/thumbnails/canvas_' . $canvasId . '.png';
+                    if (file_exists($physicalPath)) {
+                        unlink($physicalPath);
+                    }
+                } catch (Exception $e) {}
             }
 
             return ['success' => true, 'message' => 'Lienzo degradado al plan básico exitosamente.'];
@@ -963,7 +966,7 @@ class CanvasServices {
 
             if ($deleted) {
                 try {
-                    $physicalPath = dirname(__DIR__, 2) . '/storage/public/snapshots/canvas_' . $canvas['id'] . '.png';
+                    $physicalPath = dirname(__DIR__, 2) . '/storage/public/thumbnails/canvas_' . $canvas['id'] . '.png';
                     if (file_exists($physicalPath)) {
                         unlink($physicalPath);
                     }
@@ -1094,7 +1097,7 @@ class CanvasServices {
             if ($deleted) {
                 try {
                     foreach ($canvasIds as $id) {
-                        $physicalPath = dirname(__DIR__, 2) . '/storage/public/snapshots/canvas_' . $id . '.png';
+                        $physicalPath = dirname(__DIR__, 2) . '/storage/public/thumbnails/canvas_' . $id . '.png';
                         if (file_exists($physicalPath)) {
                             unlink($physicalPath);
                         }
@@ -1238,7 +1241,7 @@ class CanvasServices {
         }
     }
 
-    public function resetCanvasNow(int $userId, int $canvasId, bool $canManageOfficial = false): array {
+    public function resetCanvasNow(int $userId, int $canvasId, bool $takeSnapshot = true, bool $canManageOfficial = false): array {
         try {
             $canvas = $this->canvasRepository->getById($canvasId);
             if (!$canvas) {
@@ -1260,6 +1263,7 @@ class CanvasServices {
                     $redis = $redisInstance->getClient();
                     
                     if ($redis) {
+                        $redis->hset("canvases:force_resets_options", (string)$canvasId, json_encode(['take_snapshot' => $takeSnapshot ? 1 : 0]));
                         $redis->sadd("canvases:force_resets", [$canvasId]);
                     }
                 }
@@ -2117,7 +2121,7 @@ class CanvasServices {
         }
     }
 
-    public function updateCanvasRole(int $userId, int $roleId, int $canvasId, string $name, array $permissions, int $weight = 10, bool $canManageOfficial = false): array {
+    public function updateCanvasRole(int $userId, int $roleId, int $canvasId, string $name, ?array $permissions = null, int $weight = 10, bool $canManageOfficial = false): array {
         try {
             $canvas = $this->canvasRepository->getById($canvasId);
             if (!$canvas) return ['success' => false, 'message' => __('err_canvas_not_found') ?? 'Lienzo no encontrado.'];
@@ -2153,6 +2157,41 @@ class CanvasServices {
             return ['success' => false, 'message' => 'El rol no se pudo editar.'];
         } catch (Exception $e) {
             Logger::error('Error updating canvas role.', ['error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database') ?? 'Error interno del servidor.'];
+        }
+    }
+
+    public function updateCanvasRolePermissions(int $userId, int $roleId, int $canvasId, array $permissions, bool $canManageOfficial = false): array {
+        try {
+            $canvas = $this->canvasRepository->getById($canvasId);
+            if (!$canvas) return ['success' => false, 'message' => __('err_canvas_not_found') ?? 'Lienzo no encontrado.'];
+
+            $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            if (!$isOwner && !$this->canvasRepository->hasCanvasPermission($canvasId, $userId, 'manage_roles')) {
+                return ['success' => false, 'message' => __('err_unauthorized') ?? 'No tienes permisos para editar roles.'];
+            }
+
+            if ($canvas['owner_id'] !== null) {
+                $owner = $this->userRepository->findById($canvas['owner_id']);
+                $tier = $owner['subscription_tier'] ?? 0;
+                if ($tier < 2) { 
+                    return ['success' => false, 'message' => 'El plan actual del dueño del lienzo no permite usar roles personalizados.'];
+                }
+            }
+            
+            // Re-fetch the role to verify ownership and avoid changing name/weight
+            $role = $this->canvasRepository->pdo->prepare("SELECT id FROM canvas_roles WHERE id = ? AND canvas_id = ?");
+            $role->execute([$roleId, $canvasId]);
+            if (!$role->fetch()) {
+                return ['success' => false, 'message' => 'Rol no encontrado en este lienzo.'];
+            }
+
+            $success = $this->canvasRepository->updateCanvasRolePermissions($roleId, $permissions);
+            if ($success) return ['success' => true, 'message' => 'Permisos actualizados correctamente.'];
+            
+            return ['success' => false, 'message' => 'Los permisos no se pudieron editar.'];
+        } catch (\Exception $e) {
+            Logger::error('Error updating canvas role permissions.', ['error' => $e->getMessage()]);
             return ['success' => false, 'message' => __('err_database') ?? 'Error interno del servidor.'];
         }
     }

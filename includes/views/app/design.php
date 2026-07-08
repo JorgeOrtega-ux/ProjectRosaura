@@ -78,12 +78,12 @@ if (!empty($canvasUuid)) {
             $session = $sessionManager ?? null;
             if ($session && method_exists($session, 'isLoggedIn') && $session->isLoggedIn()) {
                 $userId = $session->getActiveAccountId();
-                $memberSql = "SELECT role FROM canvas_members WHERE canvas_id = :cid AND user_id = :uid LIMIT 1";
+                $memberSql = "SELECT r.name as role FROM canvas_user_roles cur JOIN canvas_roles r ON cur.role_id = r.id WHERE cur.canvas_id = :cid AND cur.user_id = :uid LIMIT 1";
                 $mStmt = $db->prepare($memberSql);
                 $mStmt->execute([':cid' => $canvasIntId, ':uid' => $userId]);
                 if ($mRow = $mStmt->fetch(PDO::FETCH_ASSOC)) {
                     $isMember = true;
-                    $userRole = $mRow['role'];
+                    $userRole = 'editor'; // Simplified for UI since actual permissions are checked via API
                 } else {
                     $ownerSql = "SELECT owner_id FROM canvases WHERE id = :cid LIMIT 1";
                     $oStmt = $db->prepare($ownerSql);

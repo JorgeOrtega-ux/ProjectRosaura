@@ -55,9 +55,7 @@ try {
             <div class="component-top-left" style="display: flex; align-items: center; gap: 12px;">
                 <h1 class="component-top-title"><?php echo $title; ?></h1>
                 
-                <span class="component-badge component-badge--warning" style="margin-left: 12px;">
-                    <span class="material-symbols-rounded">history</span> Modo Histórico (Solo Lectura)
-                </span>
+
             </div>
             
             <div class="component-top-right" style="display: flex; align-items: center;">
@@ -75,6 +73,10 @@ try {
             <div class="component-badge component-badge--absolute-tl">
                 <span class="material-symbols-rounded">my_location</span>
                 <span data-ref="coords-text">- , -</span>
+            </div>
+            
+            <div class="component-badge component-badge--warning component-badge--absolute-tl" style="top: 60px;">
+                <span class="material-symbols-rounded">history</span> Modo Histórico (Solo Lectura)
             </div>
         </div>
     </div>
