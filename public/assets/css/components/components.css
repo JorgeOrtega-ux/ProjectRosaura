@@ -717,6 +717,10 @@ textarea.component-input-field::placeholder {
     width: 100%;
 }
 
+.component-search--w-auto {
+    width: auto;
+}
+
 .component-search--h36 {
     height: 36px;
 }
@@ -1220,6 +1224,11 @@ html.dark-theme .component-avatar__overlay {
     left: auto !important;
 }
 
+.component-module--dropdown-right {
+    left: 0 !important;
+    right: auto !important;
+}
+
 .component-module--dropdown-fixed {
     width: max-content;
 }
@@ -1289,6 +1298,10 @@ html.dark-theme .component-avatar__overlay {
     display: flex;
     align-items: center;
     gap: 8px;
+}
+
+.component-menu-header-box .material-symbols-rounded {
+    color: var(--text-primary);
 }
 
 .component-menu-header-title {

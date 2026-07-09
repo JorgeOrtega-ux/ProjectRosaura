@@ -5,7 +5,7 @@ if (!isset($canvasAllowChat) || $canvasAllowChat != '1') {
     return;
 }
 ?>
-<div class="component-module component-module--sidebar component-module--sidebar-right component-module--sidebar-responsive disabled" data-module="moduleLiveChat">
+<div class="component-module component-module--sidebar component-module--sidebar-right component-module--sidebar-responsive disabled" data-module="moduleLiveChat" data-user-id="<?php echo htmlspecialchars((string)($userId ?? '')); ?>">
     
     <div class="component-menu component-menu--w335 component-menu--chat component-menu--h-full component-menu--no-padding disabled" data-ref="menu-chat">
         <div class="pill-container"><div class="drag-handle"></div></div>
@@ -30,11 +30,13 @@ if (!isset($canvasAllowChat) || $canvasAllowChat != '1') {
             
             <!-- Área de input -->
             <div class="component-menu-bottom component-chat-input-area">
-                <div class="component-input-group component-input-group--h40 component-chat-input-wrapper">
-                    <input type="text" data-ref="chat-input-message" class="component-input-field component-input-field--simple" placeholder="Escribe un mensaje..." maxlength="255">
-                    <button class="component-button component-button--icon component-button--h40 component-button--dark" data-action="sendChatMessage" data-ref="chat-btn-send">
-                        <span class="material-symbols-rounded">send</span>
-                    </button>
+                <div class="component-search component-search--w-auto">
+                    <div class="component-search-input">
+                        <input type="text" data-ref="chat-input-message" placeholder="Escribe un mensaje..." maxlength="255" style="padding-left: 12px;">
+                        <button class="component-chat-send-btn" data-action="sendChatMessage" data-ref="chat-btn-send">
+                            <span class="material-symbols-rounded" style="font-size: 16px;">arrow_upward</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

@@ -412,6 +412,27 @@
     gap: 8px;
 }
 
+.component-chat-send-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    background-color: var(--surface-hover);
+    color: var(--text-secondary);
+    transition: all 0.2s ease;
+    margin-right: 6px;
+    flex-shrink: 0;
+}
+.component-chat-send-btn.active {
+    background-color: var(--text-primary);
+    color: var(--bg-surface);
+}
+
 .chat-message {
     display: flex;
     gap: 8px;

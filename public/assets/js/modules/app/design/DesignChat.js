@@ -21,6 +21,7 @@ export class DesignChat {
         this.messages = [];
         this.isChatEnabled = document.querySelector('.component-wrapper')?.dataset.allowChat === '1';
         this.isFirstRenderScrollPending = true;
+        this.currentUserId = document.querySelector('[data-module="moduleLiveChat"]')?.dataset.userId || null;
 
         if (this.isChatEnabled && this.chatContainer) {
             this.init();
@@ -54,6 +55,16 @@ export class DesignChat {
                     this.sendMessage();
                 }
             });
+
+            this.chatInput.addEventListener('input', () => {
+                if (this.btnSend) {
+                    if (this.chatInput.value.trim().length > 0) {
+                        this.btnSend.classList.add('active');
+                    } else {
+                        this.btnSend.classList.remove('active');
+                    }
+                }
+            });
         }
 
         if (this.chatContainer) {
@@ -68,6 +79,34 @@ export class DesignChat {
         document.addEventListener('canvas:chat_message', (e) => {
             const data = e.detail;
             this.appendMessage(data, true); // true = scroll to bottom
+        });
+
+        // Evento global para los menús de chat
+        document.addEventListener('click', (e) => {
+            const toggleBtn = e.target.closest('[data-action="toggleChatDropdown"]');
+            if (toggleBtn) {
+                e.preventDefault();
+                const targetId = toggleBtn.getAttribute('data-target');
+                const dropdown = document.querySelector(`[data-module="${targetId}"]`);
+                
+                if (dropdown) {
+                    // Cierra otros primero
+                    document.querySelectorAll('.chat-dropdown-module').forEach(el => {
+                        if (el !== dropdown) {
+                            el.classList.add('disabled');
+                            el.classList.remove('active');
+                        }
+                    });
+                    
+                    if (dropdown.classList.contains('disabled')) {
+                        dropdown.classList.remove('disabled');
+                        dropdown.classList.add('active');
+                    } else {
+                        dropdown.classList.add('disabled');
+                        dropdown.classList.remove('active');
+                    }
+                }
+            }
         });
     }
 
@@ -138,6 +177,7 @@ export class DesignChat {
         this.chatInput.value = '';
         this.chatInput.disabled = true;
         this.btnSend.disabled = true;
+        this.btnSend.classList.remove('active');
 
         try {
             const response = await this.api.post(ApiRoutes.Chat.Send, {
@@ -180,12 +220,49 @@ export class DesignChat {
             ? `<img src="${avatarUrl}" class="chat-message-avatar-img">`
             : `<div class="chat-message-avatar-placeholder"><span class="material-symbols-rounded">person</span></div>`;
 
+        const isMine = String(msg.user_id) === String(this.currentUserId);
+        const uniqueId = 'msg-menu-' + msg.id;
+
+        const menuBtn = `<div class="component-dropdown-wrapper component-dropdown-wrapper--fit" style="margin-left: auto;">
+            <button class="component-button component-button--icon" style="width: 24px; height: 24px; padding: 0; background: transparent; border: none;" data-action="toggleChatDropdown" data-target="${uniqueId}">
+                <span class="material-symbols-rounded" style="font-size: 18px; color: var(--text-secondary);">more_vert</span>
+            </button>
+            <div class="component-module component-module--dropdown component-module--dropdown-left component-module--dropdown-fixed chat-dropdown-module disabled" data-module="${uniqueId}">
+                <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding active" data-menu="${uniqueId}-options">
+                    <div class="pill-container"><div class="drag-handle"></div></div>
+                    <div class="component-menu-list component-menu-list--scrollable">
+                        <div class="component-menu-link" data-action="chatReportMessage" data-id="${msg.id}">
+                            <div class="component-menu-link-icon">
+                                <span class="material-symbols-rounded">report</span>
+                            </div>
+                            <div class="component-menu-link-text">
+                                <span>Reportar</span>
+                            </div>
+                        </div>
+                        ${isMine ? `
+                        <div class="component-menu-link" data-action="chatDeleteMessage" data-id="${msg.id}">
+                            <div class="component-menu-link-icon">
+                                <span class="material-symbols-rounded" style="color: var(--danger-color);">delete</span>
+                            </div>
+                            <div class="component-menu-link-text">
+                                <span style="color: var(--danger-color);">Eliminar</span>
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+        </div>`;
+
         el.innerHTML = `
             ${avatarStr}
-            <div class="chat-message-bubble">
-                <div class="chat-message-header">
-                    <strong class="chat-message-username">${msg.username}</strong>
-                    <span class="chat-message-time">${time}</span>
+            <div class="chat-message-bubble" style="overflow: visible;">
+                <div class="chat-message-header" style="align-items: center;">
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <strong class="chat-message-username">${msg.username}</strong>
+                        <span class="chat-message-time">${time}</span>
+                    </div>
+                    ${menuBtn}
                 </div>
                 <div class="chat-message-text">${msg.message}</div>
             </div>
