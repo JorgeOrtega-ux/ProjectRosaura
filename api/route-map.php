@@ -319,6 +319,18 @@ return [
 
     // --- RUTAS DE LIENZOS (CANVASES) ---
     
+    // NUEVAS RUTAS DE CHAT EN LÍNEA
+    'chat.history' => [
+        'controller' => 'App\Api\Controllers\ChatController',
+        'action' => 'history',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'chat_history', 'max' => 30, 'time' => RL::TIME_1, 'identifier' => RL::ID_IP]]
+    ],
+    'chat.send' => [
+        'controller' => 'App\Api\Controllers\ChatController',
+        'action' => 'send',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'chat_send', 'max' => 20, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
+    ],
+
     // NUEVA RUTA PARA TICKETS DE WEBSOCKET
     'canvases.get_ws_ticket' => [
         'controller' => 'App\Api\Controllers\CanvasController',

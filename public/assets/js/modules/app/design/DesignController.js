@@ -6,6 +6,7 @@ import { DesignNetwork } from './DesignNetwork.js';
 import { DesignTemplates } from './templates/DesignTemplates.js';
 import { DesignInteractions } from './DesignInteractions.js';
 import { DesignRender } from './DesignRender.js';
+import { DesignChat } from './DesignChat.js';
 
 class DesignController {
     constructor() {
@@ -176,6 +177,9 @@ class DesignController {
             }
             
             this.startCooldownLoop();
+            
+            // Inicializar chat si está disponible
+            this.chat = new DesignChat(this);
         }
     }
 

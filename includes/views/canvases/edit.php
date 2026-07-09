@@ -48,6 +48,7 @@ if ($canvasUuid) {
             $cCooldown = (int)($canvasData['cooldown_seconds'] ?? 10);
             $cLimit = (int)($canvasData['max_participants'] ?? 10);
             $cAllowPurchases = (int)($canvasData['allow_purchases'] ?? 1);
+            $cAllowChat = (int)($canvasData['allow_chat'] ?? 0);
         }
     } catch (\Exception $e) {
         // Silenciado por seguridad
@@ -366,6 +367,29 @@ if (!$canvasId) {
                         <div class="component-card__actions component-card__actions--end">
                             <label class="component-toggle-switch">
                                 <input type="checkbox" data-ref="val_allow_purchases" <?php echo $cAllowPurchases ? 'checked' : ''; ?>>
+                                <span class="component-toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <hr class="component-divider">
+
+                    <?php 
+                    $hasLiveChat = SubscriptionPlanConstants::hasFeature($tier, 'allow_live_chat');
+                    ?>
+                    <div class="component-group-item component-group-item--wrap <?php echo !$hasLiveChat ? 'disabled-interactive' : ''; ?>" <?php if(!$hasLiveChat) echo 'data-tooltip="Requiere Premium Advanced" data-position="top" style="opacity: 0.7;"'; ?>>
+                        <div class="component-card__content">
+                            <div class="component-card__text">
+                                <h2 class="component-card__title">
+                                    Permitir chat en línea
+                                    <?php if(!$hasLiveChat): ?><span class="material-symbols-rounded" style="font-size: 16px; vertical-align: middle; margin-left: 4px; color: #ff8c00;">lock</span><?php endif; ?>
+                                </h2>
+                                <p class="component-card__description">Habilita una sala de chat en tiempo real para todos los participantes del lienzo.</p>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--end">
+                            <label class="component-toggle-switch">
+                                <input type="checkbox" data-ref="val_allow_chat" <?php echo ($cAllowChat && $hasLiveChat) ? 'checked' : ''; ?> <?php echo !$hasLiveChat ? 'disabled' : ''; ?>>
                                 <span class="component-toggle-slider"></span>
                             </label>
                         </div>

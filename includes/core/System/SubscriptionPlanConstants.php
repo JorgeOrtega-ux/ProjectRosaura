@@ -27,7 +27,8 @@ class SubscriptionPlanConstants {
                     'live_templates' => true,
                     'extended_palettes' => true,
                     'custom_palettes' => true,
-                    'max_custom_palettes' => 5
+                    'max_custom_palettes' => 5,
+                    'allow_live_chat' => true
                 ];
 
             case self::TIER_PRO:
@@ -41,7 +42,8 @@ class SubscriptionPlanConstants {
                     'live_templates' => true,
                     'extended_palettes' => true,
                     'custom_palettes' => false,
-                    'max_custom_palettes' => 0
+                    'max_custom_palettes' => 0,
+                    'allow_live_chat' => false
                 ];
 
             case self::TIER_BASIC:
@@ -56,7 +58,8 @@ class SubscriptionPlanConstants {
                     'live_templates' => false,
                     'extended_palettes' => false,
                     'custom_palettes' => false,
-                    'max_custom_palettes' => 0
+                    'max_custom_palettes' => 0,
+                    'allow_live_chat' => false
                 ];
         }
     }

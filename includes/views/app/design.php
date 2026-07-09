@@ -12,6 +12,7 @@ $canvasSize = '64';
 $canvasPalette = 'default'; 
 $canvasPrivacy = 'private'; 
 $canvasApproval = '0'; 
+$canvasAllowChat = '0';
 
 // Variables para el Cooldown
 $canvasCooldownBatch = '5';
@@ -38,7 +39,7 @@ if (!empty($canvasUuid)) {
 
         // Traemos información de reinicios y redimensiones
         $sql = "SELECT c.id, c.name, c.size, c.palette_id, c.privacy, c.requires_approval, 
-                       c.cooldown_pixels_batch, c.cooldown_seconds, c.owner_id, c.created_at, c.max_participants,
+                       c.cooldown_pixels_batch, c.cooldown_seconds, c.owner_id, c.created_at, c.max_participants, c.allow_chat,
                        r.is_active as reset_active, r.next_reset_at, r.timer_action as reset_timer_action,
                        rs.is_active as resize_active, rs.next_resize_at, rs.target_size, rs.timer_action as resize_timer_action
                 FROM " . DB::TBL_CANVASES . " c
@@ -57,6 +58,7 @@ if (!empty($canvasUuid)) {
             $canvasPalette = $canvas['palette_id'] ?? 'default';
             $canvasPrivacy = $canvas['privacy'] ?? 'private';
             $canvasApproval = $canvas['requires_approval'] ?? '0';
+            $canvasAllowChat = $canvas['allow_chat'] ?? '0';
             
             $canvasCooldownBatch = $canvas['cooldown_pixels_batch'] ?? '5';
             $canvasCooldownSeconds = $canvas['cooldown_seconds'] ?? '10';
@@ -173,6 +175,7 @@ if (!empty($canvasUuid)) {
          data-premium-blocked="<?php echo isset($isPremiumBlockedInit) && $isPremiumBlockedInit ? '1' : '0'; ?>"
          data-is-spectator="<?php echo isset($isSpectatorInit) && $isSpectatorInit ? '1' : '0'; ?>"
          data-approval="<?php echo htmlspecialchars($canvasApproval); ?>"
+         data-allow-chat="<?php echo htmlspecialchars($canvasAllowChat); ?>"
          data-cooldown-batch="<?php echo htmlspecialchars($canvasCooldownBatch); ?>"
          data-cooldown-seconds="<?php echo htmlspecialchars($canvasCooldownSeconds); ?>"
          data-reset-active="<?php echo htmlspecialchars($resetActive); ?>"
@@ -266,6 +269,13 @@ if (!empty($canvasUuid)) {
                     <button class="component-button component-button--icon component-button--h40" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-advantages" data-tooltip="Ventajas Activas" data-position="bottom">
                         <span class="material-symbols-rounded">stars</span>
                     </button>
+                    
+                    <?php if ($canvasAllowChat == '1'): ?>
+                    <div class="component-divider-vertical" data-ref="chat-actions-divider"></div>
+                    <button class="component-button component-button--icon component-button--h40" data-action="toggleMenuInModule" data-module-target="moduleLiveChat" data-menu-target="menu-chat" data-tooltip="Chat en Línea" data-position="bottom">
+                        <span class="material-symbols-rounded">chat</span>
+                    </button>
+                    <?php endif; ?>
                 </div>
                 <?php endif; ?>
             </div>
@@ -319,6 +329,9 @@ if (!empty($canvasUuid)) {
 
     <?php if (!$isSnapshot): ?>
         <?php require_once __DIR__ . '/../../modules/moduleDesignTools.php'; ?>
+        <?php if ($canvasAllowChat == '1'): ?>
+            <?php require_once __DIR__ . '/../../modules/moduleLiveChat.php'; ?>
+        <?php endif; ?>
     <?php endif; ?>
 
 </div>

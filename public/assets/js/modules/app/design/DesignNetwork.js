@@ -179,6 +179,9 @@ export const DesignNetwork = {
                 else if (data.type === 'canvas_reset_settings_updated') {
                     this.handleResetSettingsUpdated(data);
                 }
+                else if (data.type === 'chat_message') {
+                    document.dispatchEvent(new CustomEvent('canvas:chat_message', { detail: data.data }));
+                }
                 else if (data.type === 'live_image_updated') {
                     this.handleLiveImageUpdate(data);
                 }
