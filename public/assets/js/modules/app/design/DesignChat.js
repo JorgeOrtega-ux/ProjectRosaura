@@ -163,7 +163,6 @@ export class DesignChat {
     createMessageElement(msg) {
         const el = document.createElement('div');
         el.className = 'chat-message';
-        el.style.cssText = 'display: flex; gap: 8px; margin-bottom: 8px; font-size: 13px;';
         
         const time = new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
         
@@ -178,17 +177,17 @@ export class DesignChat {
         }
         
         const avatarStr = msg.avatar 
-            ? `<img src="${avatarUrl}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">`
-            : `<div style="width: 32px; height: 32px; border-radius: 50%; background: var(--border-color); display: flex; align-items: center; justify-content: center;"><span class="material-symbols-rounded" style="font-size: 18px;">person</span></div>`;
+            ? `<img src="${avatarUrl}" class="chat-message-avatar-img">`
+            : `<div class="chat-message-avatar-placeholder"><span class="material-symbols-rounded">person</span></div>`;
 
         el.innerHTML = `
             ${avatarStr}
-            <div style="flex: 1; background: rgba(0,0,0,0.03); padding: 8px 12px; border-radius: 8px; border-top-left-radius: 0;">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                    <strong style="color: var(--primary-color);">${msg.username}</strong>
-                    <span style="font-size: 11px; opacity: 0.6;">${time}</span>
+            <div class="chat-message-bubble">
+                <div class="chat-message-header">
+                    <strong class="chat-message-username">${msg.username}</strong>
+                    <span class="chat-message-time">${time}</span>
                 </div>
-                <div style="word-break: break-word; line-height: 1.4;">${msg.message}</div>
+                <div class="chat-message-text">${msg.message}</div>
             </div>
         `;
         return el;
