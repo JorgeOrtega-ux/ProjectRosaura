@@ -1,11 +1,12 @@
 import { ApiService } from '../../../core/api/ApiServices.js';
+import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { showMessage } from '../../../core/utils/uiUtils.js';
 
 export class DesignChat {
     constructor(controller) {
         this.controller = controller;
         this.api = new ApiService();
-        this.canvasId = controller.canvasId;
+        this.canvasId = controller.canvasIntId || controller.canvasId;
         
         // Elementos UI
         this.chatContainer = document.querySelector('[data-ref="chat-messages-container"]');
@@ -19,6 +20,7 @@ export class DesignChat {
         this.hasMore = true;
         this.messages = [];
         this.isChatEnabled = document.querySelector('.component-wrapper')?.dataset.allowChat === '1';
+        this.isFirstRenderScrollPending = true;
 
         if (this.isChatEnabled && this.chatContainer) {
             this.init();
@@ -27,6 +29,16 @@ export class DesignChat {
 
     init() {
         this.setupEventListeners();
+        
+        // El chat está oculto por defecto. Cuando se abre, ResizeObserver lo detecta y hacemos el scroll al fondo.
+        this.resizeObserver = new ResizeObserver(() => {
+            if (this.isFirstRenderScrollPending && this.chatContainer.clientHeight > 0) {
+                this.scrollToBottom();
+                this.isFirstRenderScrollPending = false; // Solo la primera vez
+            }
+        });
+        this.resizeObserver.observe(this.chatContainer);
+
         this.loadHistory();
     }
 
@@ -68,14 +80,17 @@ export class DesignChat {
         }
 
         try {
-            const response = await this.api.get(`/api/v1/chat/history?canvas_id=${this.canvasId}&offset=${this.offset}`);
+            const response = await this.api.post(ApiRoutes.Chat.History, {
+                canvas_id: this.canvasId,
+                offset: this.offset
+            });
             
             if (this.offset === 0 && this.loader) {
                 this.loader.style.display = 'none';
                 this.chatContainer.innerHTML = '';
             }
 
-            if (response.status === 'success') {
+            if (response.success || response.status === 'success') {
                 const msgs = response.data.messages;
                 this.hasMore = response.data.has_more;
                 this.offset += msgs.length;
@@ -91,7 +106,13 @@ export class DesignChat {
                 });
 
                 if (isFirstLoad) {
-                    this.scrollToBottom();
+                    if (this.chatContainer.clientHeight > 0) {
+                        this.scrollToBottom();
+                        this.isFirstRenderScrollPending = false;
+                    } else {
+                        // Está oculto, se encargará el ResizeObserver
+                        this.isFirstRenderScrollPending = true;
+                    }
                 } else {
                     // Mantener el scroll
                     const newHeight = this.chatContainer.scrollHeight;
@@ -119,12 +140,12 @@ export class DesignChat {
         this.btnSend.disabled = true;
 
         try {
-            const response = await this.api.post('/api/v1/chat/send', {
+            const response = await this.api.post(ApiRoutes.Chat.Send, {
                 canvas_id: this.canvasId,
                 message: text
             });
 
-            if (response.status !== 'success') {
+            if (response.success === false || response.status === 'error') {
                 showMessage(response.message, 'error');
                 this.chatInput.value = text; // restaurar
             }
@@ -146,8 +167,18 @@ export class DesignChat {
         
         const time = new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
         
+        let avatarUrl = '';
+        if (msg.avatar) {
+            if (msg.avatar.startsWith('http') || msg.avatar.startsWith('data:')) {
+                avatarUrl = msg.avatar;
+            } else {
+                const prefix = msg.avatar.startsWith('/') ? '' : '/';
+                avatarUrl = `${window.AppBasePath || ''}${prefix}${msg.avatar}`;
+            }
+        }
+        
         const avatarStr = msg.avatar 
-            ? `<img src="${window.AppBasePath || ''}/storage/avatars/${msg.avatar}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">`
+            ? `<img src="${avatarUrl}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">`
             : `<div style="width: 32px; height: 32px; border-radius: 50%; background: var(--border-color); display: flex; align-items: center; justify-content: center;"><span class="material-symbols-rounded" style="font-size: 18px;">person</span></div>`;
 
         el.innerHTML = `

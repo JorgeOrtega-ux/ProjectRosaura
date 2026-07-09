@@ -140,5 +140,9 @@ export const ApiRoutes = {
     Store: {
         GetBalance: 'store.get_balance',
         BuyPerk: 'store.buy_perk'
+    },
+    Chat: {
+        History: 'chat.history',
+        Send: 'chat.send'
     }
 };

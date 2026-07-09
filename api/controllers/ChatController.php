@@ -3,26 +3,26 @@ namespace App\Api\Controllers;
 
 use App\Core\System\DatabaseConstants as DB;
 use App\Config\DatabaseManager;
-use App\Config\RedisManager;
-use App\Core\Auth\AuthService;
+use App\Config\RedisCache;
+use App\Core\Interfaces\SessionManagerInterface;
 use Exception;
 use PDO;
 
 class ChatController
 {
     private $pdo;
-    private $auth;
+    private $sessionManager;
     private $redis;
 
-    public function __construct()
+    public function __construct(SessionManagerInterface $sessionManager)
     {
         $dbManager = new DatabaseManager();
         $this->pdo = $dbManager->getConnection(DB::CONN_CANVASES);
         
-        $redisManager = new RedisManager();
-        $this->redis = $redisManager->getConnection();
+        $redisCache = new RedisCache();
+        $this->redis = $redisCache->getClient();
         
-        $this->auth = new AuthService();
+        $this->sessionManager = $sessionManager;
     }
 
     public function history($request)
@@ -47,10 +47,11 @@ class ChatController
         try {
             // Se usa subquery para obtener los últimos $limit mensajes ordenados por ID descendentemente
             // Luego en PHP se invierte si es necesario, o el cliente los acomoda.
+            $identityDb = $_ENV['DB_IDENTITY_NAME'] ?? 'db_identity';
             $stmt = $this->pdo->prepare("
-                SELECT c.id, c.user_id, c.message, c.created_at, u.username, u.avatar 
+                SELECT c.id, c.user_id, c.message, c.created_at, u.username, u.profile_picture as avatar 
                 FROM canvas_chat_messages c
-                JOIN projectrosaura.users u ON c.user_id = u.id
+                JOIN {$identityDb}.users u ON c.user_id = u.id
                 WHERE c.canvas_id = ?
                 ORDER BY c.id DESC
                 LIMIT ? OFFSET ?
@@ -67,7 +68,7 @@ class ChatController
             return [
                 'status' => 'success',
                 'data' => [
-                    'messages' => array_reverse($messages), // Invertimos para que el más viejo quede arriba
+                    'messages' => $messages,
                     'has_more' => count($messages) === $limit
                 ]
             ];
@@ -80,7 +81,7 @@ class ChatController
 
     public function send($request)
     {
-        $userId = $this->auth->getUserId();
+        $userId = $this->sessionManager->getActiveAccountId();
         if (!$userId) {
             return ['status' => 'error', 'message' => 'No autorizado', 'code' => 401];
         }
@@ -112,8 +113,8 @@ class ChatController
 
             // Obtener info del usuario para el broadcast
             $userDbManager = new DatabaseManager();
-            $userPdo = $userDbManager->getConnection(DB::CONN_MAIN);
-            $uStmt = $userPdo->prepare("SELECT username, avatar FROM users WHERE id = ?");
+            $userPdo = $userDbManager->getConnection(DB::CONN_IDENTITY);
+            $uStmt = $userPdo->prepare("SELECT username, profile_picture FROM " . DB::TBL_USERS . " WHERE id = ?");
             $uStmt->execute([$userId]);
             $userInfo = $uStmt->fetch(PDO::FETCH_ASSOC);
 
@@ -121,7 +122,7 @@ class ChatController
                 'id' => $msgId,
                 'user_id' => $userId,
                 'username' => $userInfo['username'] ?? 'Usuario',
-                'avatar' => $userInfo['avatar'] ?? null,
+                'avatar' => $userInfo['profile_picture'] ?? null,
                 'message' => htmlspecialchars($messageText, ENT_QUOTES, 'UTF-8'),
                 'created_at' => date('Y-m-d H:i:s')
             ];
