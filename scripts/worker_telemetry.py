@@ -1,4 +1,4 @@
-﻿import os
+import os
 import json
 import time
 import inspect
@@ -31,7 +31,7 @@ class Logger:
             "source": f"{caller_file}:{caller_line}"
         }
 
-        log_dir = os.path.join(BASE_DIR, 'logs', category)
+        log_dir = os.path.join(BASE_DIR, 'storage', 'private', 'logs', category)
         if not os.path.exists(log_dir):
             os.makedirs(log_dir, exist_ok=True)
             with open(os.path.join(log_dir, '.htaccess'), 'w') as f:
