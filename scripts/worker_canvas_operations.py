@@ -1,5 +1,4 @@
-# scripts/worker_canvas_operations.py
-import os
+﻿import os
 import time
 import json
 import zlib
@@ -12,7 +11,6 @@ import math
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(threadName)s] %(levelname)s: %(message)s')
 
-# Configuraciones Globales
 DB_HOST = os.getenv("DB_HOST", "db")
 DB_PORT = int(os.getenv("DB_PORT", 3306))
 DB_USER = os.getenv("DB_USER", "system_web_executor")
@@ -46,9 +44,6 @@ def parse_size(size_val):
         v = int(size_str)
         return v, v
 
-# ==========================================
-# 1. EJECUTOR DE REDIMENSIONES (RESIZE)
-# ==========================================
 def process_resize_task(r, db, task_data):
     try:
         canvas_id = int(task_data.get('canvas_id'))
@@ -69,15 +64,12 @@ def process_resize_task(r, db, task_data):
         actual_len = len(old_state)
         expected_size = old_w * old_h
 
-        # AUTO-CORRECCIÓN SI HAY DESINCRONIZACIÓN ENTRE DB Y REDIS
         if actual_len != expected_size:
-            logging.warning(f"Desincronización detectada. Metadata esperaba {expected_size} bytes, Redis tiene {actual_len} bytes.")
-            # Si el tamaño real no coincide con w*h, asumimos que es cuadrado como fallback
+            logging.warning(f"DesincronizaciÃ³n detectada. Metadata esperaba {expected_size} bytes, Redis tiene {actual_len} bytes.")
             real_old_size = int(math.sqrt(actual_len))
-            logging.warning(f"Auto-corrigiendo tamaño base a {real_old_size}x{real_old_size} para procesar correctamente.")
+            logging.warning(f"Auto-corrigiendo tamaÃ±o base a {real_old_size}x{real_old_size} para procesar correctamente.")
             old_w, old_h = real_old_size, real_old_size
 
-        # Transformación Matemática Binaria para resoluciones asimétricas
         new_state = bytearray([255] * (new_w * new_h))
         limit_x = min(old_w, new_w)
         limit_y = min(old_h, new_h)
@@ -91,7 +83,6 @@ def process_resize_task(r, db, task_data):
         new_state_bytes = bytes(new_state)
         r.set(state_key, new_state_bytes)
 
-        # Guardar en base de datos como NxM (ej. 2048x1024)
         new_size_db_str = f"{new_w}x{new_h}"
 
         with db.cursor() as cursor:
@@ -103,15 +94,14 @@ def process_resize_task(r, db, task_data):
             """, (canvas_id, compressed_state, compressed_state))
             db.commit()
 
-        # Limpiar y notificar
         r.delete(f"canvas:{canvas_id}:resize_lock")
         r.publish("admin:canvas_events", json.dumps({
             "type": "canvas_resize_completed", "canvas_id": canvas_id, "new_size": new_size_db_str
         }))
-        logging.info(f"Redimensión de lienzo {canvas_id} completada exitosamente.")
+        logging.info(f"RedimensiÃ³n de lienzo {canvas_id} completada exitosamente.")
 
     except Exception as e:
-        logging.error(f"Error crítico en Resize: {str(e)}")
+        logging.error(f"Error crÃ­tico en Resize: {str(e)}")
         if 'canvas_id' in locals():
             r.delete(f"canvas:{canvas_id}:resize_lock")
             r.publish("admin:canvas_events", json.dumps({
@@ -125,11 +115,9 @@ def resize_listener_thread():
     
     while True:
         try:
-            # Inicialización Lazy
             if r is None: r = get_redis_client()
             if db is None: db = get_db_connection()
             
-            # Reconexión manual (Fix de PyMySQL Deprecation)
             try:
                 db.ping(reconnect=False)
             except Exception:
@@ -148,9 +136,6 @@ def resize_listener_thread():
             r = None
             time.sleep(5)
 
-# ==========================================
-# 2. EJECUTOR DE REINICIOS (RESETS)
-# ==========================================
 def process_reset_task(r, db, task_data):
     canvas_id = task_data['canvas_id']
     take_snapshot = task_data.get('take_snapshot', 1)
@@ -159,7 +144,6 @@ def process_reset_task(r, db, task_data):
     logging.info(f"Iniciando reseteo para lienzo ID {canvas_id}.")
 
     try:
-        # Respaldar estado actual
         state_key = f"canvas:{canvas_id}:state"
         current_state = r.get(state_key)
         
@@ -172,7 +156,6 @@ def process_reset_task(r, db, task_data):
                 """, (canvas_id, compressed_state, compressed_state))
                 db.commit()
 
-        # Solicitar Snapshot en Alta Calidad si aplica
         if take_snapshot:
             r.sadd("canvases:pending_snapshots", canvas_id)
             snapshot_done_key = f"canvas:{canvas_id}:snapshot_done"
@@ -185,12 +168,10 @@ def process_reset_task(r, db, task_data):
             else:
                 logging.warning(f"Timeout esperando snapshot HQ del lienzo {canvas_id}.")
 
-        # Crear matriz en blanco
         size_w, size_h = parse_size(canvas_size)
         empty_state = bytes([255] * (size_w * size_h))
         compressed_empty = zlib.compress(empty_state)
         
-        # Limpiar DB y Redis
         with db.cursor() as cursor:
             cursor.execute("""
                 INSERT INTO canvas_snapshots (canvas_id, snapshot_data, last_updated)
@@ -200,16 +181,14 @@ def process_reset_task(r, db, task_data):
             
         r.set(state_key, empty_state) 
         
-        # Eliminar snapshot público
         snapshot_path = os.path.join(SNAPSHOTS_DIR, f"canvas_{canvas_id}.png")
         if os.path.exists(snapshot_path):
             try:
                 os.remove(snapshot_path)
-                logging.info(f"Imagen pública eliminada para lienzo {canvas_id}.")
+                logging.info(f"Imagen pÃºblica eliminada para lienzo {canvas_id}.")
             except Exception as e:
-                logging.error(f"No se pudo eliminar imagen pública {canvas_id}: {e}")
+                logging.error(f"No se pudo eliminar imagen pÃºblica {canvas_id}: {e}")
         
-        # Liberar y notificar
         r.delete(f"canvas:{canvas_id}:reset_lock")
         r.publish("admin:canvas_events", json.dumps({"type": "canvas_cleared", "canvas_id": canvas_id, "next_reset_at": None}))
         logging.info(f"Reseteo de lienzo {canvas_id} completado exitosamente.")
@@ -228,7 +207,6 @@ def reset_listener_thread():
             if r is None: r = get_redis_client()
             if db is None: db = get_db_connection()
             
-            # Reconexión manual (Fix de PyMySQL Deprecation)
             try:
                 db.ping(reconnect=False)
             except Exception:
@@ -247,9 +225,6 @@ def reset_listener_thread():
             r = None
             time.sleep(5)
 
-# ==========================================
-# 3. PROGRAMADOR MAESTRO (SCHEDULER)
-# ==========================================
 def scheduler_thread():
     logging.info("Iniciando Hilo Scheduler Maestro (Cron)...")
     r = None
@@ -260,14 +235,12 @@ def scheduler_thread():
             if r is None: r = get_redis_client()
             if db is None: db = get_db_connection()
             
-            # Reconexión manual (Fix de PyMySQL Deprecation)
             try:
                 db.ping(reconnect=False)
             except Exception:
                 db = get_db_connection()
             
             with db.cursor() as cursor:
-                # A) Procesar Resizes Programados
                 cursor.execute("""
                     SELECT rs.canvas_id, rs.target_size, rs.timer_action, c.size as old_size
                     FROM canvas_resize_settings rs JOIN canvases c ON rs.canvas_id = c.id
@@ -288,7 +261,6 @@ def scheduler_thread():
                     if pr['timer_action'] in ['stop', 'none']:
                         r.delete(f"canvas:next_resize:{canvas_id}")
                 
-                # B) Procesar Resets Programados
                 cursor.execute("""
                     SELECT r.canvas_id, r.take_snapshot, r.timer_action, c.size as canvas_size 
                     FROM canvas_reset_settings r JOIN canvases c ON r.canvas_id = c.id
@@ -306,7 +278,6 @@ def scheduler_thread():
                     cursor.execute("UPDATE canvas_reset_settings SET is_active = 0 WHERE canvas_id = %s", (canvas_id,))
                     r.delete(f"canvas:next_reset:{canvas_id}")
                 
-                # C) Procesar Resets Forzados Manuales (Desde el Panel de Admin)
                 force_resets = r.smembers("canvases:force_resets")
                 for b_canvas_id in force_resets:
                     canvas_id = int(b_canvas_id)
@@ -343,11 +314,9 @@ def scheduler_thread():
 if __name__ == "__main__":
     logging.info("INICIANDO WORKER UNIFICADO DE OPERACIONES DE LIENZO (RESETS & RESIZES)...")
     
-    # Iniciar los hilos como Daemons para que mueran si el proceso principal se apaga
     threading.Thread(target=resize_listener_thread, daemon=True, name="Thread-Resize").start()
     threading.Thread(target=reset_listener_thread, daemon=True, name="Thread-Reset").start()
     threading.Thread(target=scheduler_thread, daemon=True, name="Thread-Scheduler").start()
     
-    # Mantener el proceso principal vivo
     while True:
         time.sleep(1)

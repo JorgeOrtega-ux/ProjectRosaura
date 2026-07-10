@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 use App\Config\DatabaseManager;
@@ -91,20 +91,20 @@ if (!$config) {
 
                             <div class="component-group-item component-group-item--stacked">
                                 <div class="component-card__content component-card__content--full">
-                                    <div class="component-card__text" style="width: 100%;">
+                                    <div class="component-card__text">
                                         <h2 class="component-card__title"><?php echo __('admin_config_allowed_domains_title'); ?></h2>
                                         <p class="component-card__description"><?php echo __('admin_config_allowed_domains_desc'); ?></p>
-                                        <div class="component-card__form-area" style="margin-top: 15px;">
+                                        <div class="component-card__form-area">
                                             <div class="component-dropdown-wrapper">
                                                 <div class="component-dropdown-trigger" data-action="toggleModule" data-target="moduleAllowedDomains">
                                                     <span class="material-symbols-rounded">domain</span>
-                                                    <span class="component-dropdown-text" data-ref="text_allowed_domains">Ninguno</span>
+                                                    <span class="component-dropdown-text" data-ref="text_allowed_domains"><?php echo __('admin_config_none'); ?></span>
                                                     <span class="material-symbols-rounded">expand_more</span>
                                                 </div>
-                                                <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="moduleAllowedDomains" style="width: 100%; max-width: 320px;">
+                                                <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="moduleAllowedDomains">
                                                     <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding">
                                                         <div class="pill-container"><div class="drag-handle"></div></div>
-                                                        <div class="component-menu-list component-menu-list--scrollable component-menu-list--compact" data-ref="list_allowed_domains" style="max-height: 220px;">
+                                                        <div class="component-menu-list component-menu-list--scrollable component-menu-list--compact" data-ref="list_allowed_domains">
                                                             <label class="component-menu-link component-menu-link--bordered">
                                                                 <div class="component-menu-link-icon"><input type="checkbox" class="domain-checkbox" data-action="toggleDomain" value="gmail.com"></div>
                                                                 <div class="component-menu-link-text"><span>gmail.com</span></div>
@@ -122,13 +122,13 @@ if (!$config) {
                                                                 <div class="component-menu-link-text"><span>hotmail.com</span></div>
                                                             </label>
                                                             </div>
-                                                        <div class="component-menu-footer" style="padding: 10px; border-top: 1px solid var(--border-color);">
+                                                        <div class="component-menu-footer">
                                                             <div class="component-search component-search--full component-search--h36">
                                                                 <div class="component-search-icon">
                                                                     <span class="material-symbols-rounded">add</span>
                                                                 </div>
                                                                 <div class="component-search-input">
-                                                                    <input type="text" data-action="addCustomDomain" placeholder="Añadir dominio y presionar Enter">
+                                                                    <input type="text" data-action="addCustomDomain" placeholder="<?php echo __('admin_config_add_domain_placeholder'); ?>">
                                                                 </div>
                                                             </div>
                                                         </div>

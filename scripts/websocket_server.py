@@ -1,20 +1,17 @@
-# scripts/websocket_server.py
-import asyncio
-import websockets
-import os
-import json
-import time
-from urllib.parse import urlparse, parse_qs
-import redis.asyncio as redis
+﻿imfort asyncio
+imfort websockets
+imfort os
+imfort json
+imfort time
+from urllib.parse imfort urlparse, parse_qs
+imfort redis.asyncio as redis
 
 ROOMS = {}
 LIVE_ROOMS = {} # Para las sesiones live share: { code: set(websockets) }
-OWNER_CONNS = {} # Mapeo { websocket: code } para limpiar si el dueño se desconecta de golpe
+OWNER_CONNS = {} # Mapeo { websocket: code } para limpiar si el dueÃ±o se desconecta de golpe
 REDIS_CLIENT = None
 USER_LOCKS = {}
 
-# Mapeo global de metadatos de las conexiones para QoS
-# WS_META[websocket] = { 'canvas_id': string, 'type': 'guest'|'auth', 'user_id': int|None }
 WS_META = {}
 
 PERKS_CONFIG = None
@@ -35,13 +32,13 @@ async def get_redis_client():
     global REDIS_CLIENT
     if REDIS_CLIENT is None:
         redis_host = os.getenv("REDIS_HOST", "redis")
-        redis_port = int(os.getenv("REDIS_PORT", 6379))
+        redis_fort = int(os.getenv("REDIS_PORT", 6379))
         redis_pass = os.getenv("REDIS_PASS", None)
         
-        print(f"[DEBUG REDIS] Conectando a redis en {redis_host}:{redis_port}")
+        print(f"[DEBUG REDIS] Connecting to redis on {redis_host}:{redis_fort}")
         REDIS_CLIENT = redis.Redis(
             host=redis_host, 
-            port=redis_port, 
+            fort=redis_fort, 
             password=redis_pass,
             db=0,
             decode_responses=False 
@@ -52,27 +49,27 @@ async def get_user_cooldown(r, canvas_id, user_id, config_batch, config_sec):
     user_key = f"canvas:{canvas_id}:user:{user_id}:cooldown"
     now = time.time()
     
-    print(f"[DEBUG PY] Consultando key: {user_key}")
+    print(f"[DEBUG PY] Querying key: {user_key}")
     u_state = await r.hgetall(user_key)
     
     if not u_state:
-        print(f"[DEBUG PY] No hay estado previo para {user_id}. Asignando batch máximo: {config_batch}")
+        print(f"[DEBUG PY] No previous state for {user_id}. Assigning max batch: {config_batch}")
         balance = float(config_batch)
         last_t = now
     else:
         try:
             balance = float(u_state.get(b'b', config_batch))
             last_t = float(u_state.get(b't', now))
-            print(f"[DEBUG PY] Estado encontrado en Redis -> b: {balance}, t: {last_t}")
+            print(f"[DEBUG PY] State found in Redis -> b: {balance}, t: {last_t}")
         except (TypeError, ValueError) as e:
-            print(f"[DEBUG PY] Error decodificando estado en Redis para {user_id}. Reiniciando. Detalles: {e}")
+            print(f"[DEBUG PY] Error decoding state in Redis for {user_id}. Resetting. Details: {e}")
             balance = float(config_batch)
             last_t = now
         
     if config_sec > 0:
         elapsed = now - last_t
         replenish = int(elapsed // config_sec)
-        print(f"[DEBUG PY] Calculando regeneración: {elapsed}s transcurridos, regenerando {replenish} pixeles.")
+        print(f"[DEBUG PY] Calculating regeneration: {elapsed}s elapsed, regenerating {replenish} pixels.")
         if replenish > 0:
             balance = min(float(config_batch), balance + replenish)
             last_t = last_t + (replenish * config_sec)
@@ -80,7 +77,7 @@ async def get_user_cooldown(r, canvas_id, user_id, config_batch, config_sec):
     if balance >= float(config_batch):
         last_t = now 
             
-    print(f"[DEBUG PY] Resultado final get_user_cooldown -> balance: {balance}, last_t: {last_t}")
+    print(f"[DEBUG PY] Final result get_user_cooldown -> balance: {balance}, last_t: {last_t}")
     return balance, last_t, user_key, now
 
 async def admin_events_listener():
@@ -88,7 +85,7 @@ async def admin_events_listener():
     pubsub = r.pubsub()
     await pubsub.subscribe("admin:canvas_events")
     
-    print("[*] WS Server escuchando eventos administrativos en 'admin:canvas_events'")
+    print("[*] WS Server listening for administrative events on 'admin:canvas_events'")
     
     try:
         async for message in pubsub.listen():
@@ -106,13 +103,13 @@ async def admin_events_listener():
                         if tasks:
                             await asyncio.gather(*tasks)
                 except Exception as e:
-                    print(f"[!] Error procesando mensaje Pub/Sub: {e}")
+                    print(f"[!] Error processing Pub/Sub message: {e}")
     except Exception as e:
-        print(f"[!] Error fatal en el listener de Pub/Sub: {e}")
+        print(f"[!] Fatal error in Pub/Sub listener: {e}")
 
 async def sync_online_counts():
     r = await get_redis_client()
-    print("[*] WS Server iniciando sincronización de contadores de jugadores en vivo hacia Redis.")
+    print("[*] WS Server starting live player counter synchronization to Redis.")
     while True:
         try:
             counts = {str(c_id): len(conns) for c_id, conns in ROOMS.items() if len(conns) > 0}
@@ -123,7 +120,7 @@ async def sync_online_counts():
                 pipe.hset("canvas:online_counts", mapping=counts)
             await pipe.execute()
         except Exception as e:
-            print(f"[!] Error sincronizando contadores online: {e}")
+            print(f"[!] Error synchronizing online counters: {e}")
         
         await asyncio.sleep(5)
 
@@ -131,7 +128,7 @@ async def handler(websocket):
     origin = websocket.request.headers.get("Origin")
     app_url = os.getenv("APP_URL", "http://localhost").rstrip("/")
     if origin and origin != app_url and origin != app_url.replace("http://", "https://"):
-        print(f"[!] Conexión rechazada por CORS: Origen '{origin}' no coincide con '{app_url}'")
+        print(f"[!] Connection rejected by CORS: Origin '{origin}' does not match '{app_url}'")
         await websocket.close(code=1008, reason="CORS policy violation")
         return
 
@@ -140,76 +137,63 @@ async def handler(websocket):
     path_parts = parsed_path.path.strip("/").split("/")
 
     if len(path_parts) != 2 or path_parts[0] != "canvas":
-        await websocket.close(code=1008, reason="Ruta inválida. Utilice el formato: /canvas/<canvas_id>")
+        await websocket.close(code=1008, reason="Ruta invÃ¡lida. Utilice el formato: /canvas/<canvas_id>")
         return
 
     canvas_id = path_parts[1]
     
-    # ------------------------------------------------------------------
-    # FASE 1: SISTEMA DE TICKETS DE UN SOLO USO
-    # ------------------------------------------------------------------
     query_params = parse_qs(parsed_path.query)
     ticket = query_params.get('ticket', [None])[0]
 
     if not ticket:
-        print("[DEBUG WS] Conexión rechazada: Sin ticket HTTP previo.")
-        await websocket.close(code=1008, reason="Ticket requerido para conexión.")
+        print("[DEBUG WS] Connection rejected: No previous HTTP ticket.")
+        await websocket.close(code=1008, reason="Ticket requerido para conexiÃ³n.")
         return
 
     r = await get_redis_client()
     ticket_key = f"ws:ticket:{ticket}"
     
-    # Extraer el ticket de Redis
     ticket_data_raw = await r.get(ticket_key)
 
     if not ticket_data_raw:
-        print(f"[DEBUG WS] Conexión rechazada: Ticket '{ticket}' inválido o expirado.")
-        await websocket.close(code=1008, reason="Ticket inválido o expirado.")
+        print(f"[DEBUG WS] Connection rejected: Ticket '{ticket}' invalid or expired.")
+        await websocket.close(code=1008, reason="Ticket invalid or expired.")
         return
 
-    # Quemar el ticket instantáneamente
     await r.delete(ticket_key)
     
-    # Decodificar estado del usuario que viene desde PHP
     try:
         decoded_str = ticket_data_raw.decode('utf-8') if isinstance(ticket_data_raw, bytes) else ticket_data_raw
         ticket_data = json.loads(decoded_str)
         user_type = ticket_data.get('type', 'guest')
         ticket_user_id = ticket_data.get('user_id')
     except Exception as e:
-        print(f"[DEBUG WS] Error parseando ticket de Redis: {e}")
+        print(f"[DEBUG WS] Error parsing Redis ticket: {e}")
         await websocket.close(code=1008, reason="Datos de ticket corruptos.")
         return
 
-    # ------------------------------------------------------------------
-    # FASE 2: QUALITY OF SERVICE (QoS) & EVICTION
-    # ------------------------------------------------------------------
     MAX_CONNECTIONS = int(os.getenv("WS_MAX_CONNECTIONS", 10000))
     QOS_THRESHOLD = int(os.getenv("WS_QOS_THRESHOLD", 9000))
 
     if len(WS_META) >= QOS_THRESHOLD:
         if user_type == 'guest':
-            # Si el servidor roza el límite, denegamos la entrada a los mirones (guests)
             if len(WS_META) >= MAX_CONNECTIONS:
-                print(f"[QoS] Servidor lleno. Bloqueando conexión Guest.")
+                print(f"[QoS] Server full. Blocking Guest connection.")
                 await websocket.close(code=4001, reason="Servidor lleno. Prioridad a usuarios registrados.")
                 return
         else:
-            # Si entra un usuario Autenticado y estamos llenos, desalojamos un Guest al azar
             guest_to_evict = next((ws for ws, meta in WS_META.items() if meta['type'] == 'guest'), None)
             if guest_to_evict:
-                print(f"[QoS] Desalojando a un Guest para dar paso a un usuario Registrado (ID: {ticket_user_id})")
+                print(f"[QoS] Evicting a Guest to make way for a Registered user (ID: {ticket_user_id})")
                 try:
-                    await guest_to_evict.close(code=4001, reason="Desalojado por QoS para dar prioridad a usuarios registrados.")
+                    await guest_to_evict.close(code=4001, reason="Desalojado for QoS para dar prioridad a usuarios registrados.")
                 except:
                     pass
             elif len(WS_META) >= MAX_CONNECTIONS:
-                # Caso extremo: Servidor lleno solo de usuarios autenticados
-                print(f"[QoS] Servidor absolutamente saturado con cuentas autenticadas.")
+                print(f"[QoS] Server completely saturated with authenticated accounts.")
                 await websocket.close(code=1013, reason="Servidor absolutamente lleno.")
                 return
 
-    # Si pasó los filtros, se registra la conexión
     if canvas_id not in ROOMS:
         ROOMS[canvas_id] = set()
     
@@ -220,9 +204,8 @@ async def handler(websocket):
         'user_id': ticket_user_id
     }
     
-    print(f"[+] Cliente ({user_type}) conectado a la sala '{canvas_id}'. Total global: {len(WS_META)}")
+    print(f"[+] Client ({user_type}) connected to room '{canvas_id}'. Global total: {len(WS_META)}")
 
-    # Bloqueos en Redis para este lienzo
     lock_key = f"canvas:{canvas_id}:reset_lock"
     resize_lock_key = f"canvas:{canvas_id}:resize_lock"
     config_key = f"canvas:{canvas_id}:config"
@@ -239,25 +222,22 @@ async def handler(websocket):
             
             message_count += 1
             if message_count > 15:
-                print(f"[!] Spam detectado (UserId: {ticket_user_id}). Desconectando WS.")
+                print(f"[!] Spam detected (UserId: {ticket_user_id}). Disconnecting WS.")
                 await websocket.close(code=1008, reason="Rate limit exceeded")
                 return
 
-            print(f"[DEBUG WS-PY] Recibido desde frontend: {message}")
+            print(f"[DEBUG WS-PY] Received from frontend: {message}")
             try:
                 data = json.loads(message)
                 
-                # ==========================================
-                # EVENTO INIT - SINCRONIZACIÓN INICIAL
-                # ==========================================
                 if data.get("type") == "init":
                     user_id = WS_META[websocket].get('user_id')
-                    print(f"[DEBUG PY] Procesando petición INIT. UserId: {user_id}")
+                    print(f"[DEBUG PY] Processing INIT request. UserId: {user_id}")
                     
                     raw_config = await r.hgetall(config_key)
                     config_batch = int(raw_config.get(b'cooldown_batch', 5))
                     config_sec = int(raw_config.get(b'cooldown_seconds', 10))
-                    print(f"[DEBUG PY] Config del lienzo en Redis -> batch: {config_batch}, sec: {config_sec}")
+                    print(f"[DEBUG PY] Canvas config in Redis -> batch: {config_batch}, sec: {config_sec}")
                     
                     if user_id:
                         balance, last_t, _, now = await get_user_cooldown(r, canvas_id, user_id, config_batch, config_sec)
@@ -268,7 +248,7 @@ async def handler(websocket):
                         eraser_left = await r.get(f"user:{user_id}:perk:eraser")
                         eraser_left = int(eraser_left) if eraser_left else 0
                     else:
-                        print(f"[DEBUG PY] Usuario no identificado, devolviendo max batch por defecto.")
+                        print(f"[DEBUG PY] Unidentified user, returning default max batch.")
                         balance = config_batch
                         next_in = 0
                         is_no_cooldown = 0
@@ -285,10 +265,9 @@ async def handler(websocket):
                         "perk_protection_left": protection_left,
                         "perk_eraser_left": eraser_left
                     })
-                    print(f"[DEBUG PY] Enviando respuesta de INIT al front: {init_msg}")
+                    print(f"[DEBUG PY] Sending INIT response to front: {init_msg}")
                     await websocket.send(init_msg)
 
-                    # Enviar lista de píxeles protegidos actualmente
                     current_time = int(time.time())
                     zset_key = f"canvas:{canvas_id}:protected_zset"
                     await r.zremrangebyscore(zset_key, 0, current_time)
@@ -301,9 +280,6 @@ async def handler(websocket):
                         })
                         await websocket.send(init_prot_msg)
 
-                # ==========================================
-                # EVENTOS LIVE SHARE
-                # ==========================================
                 elif data.get("type") == "join_live_share":
                     code = data.get("code")
                     if not code: continue
@@ -312,14 +288,14 @@ async def handler(websocket):
                         LIVE_ROOMS[code] = set()
                     LIVE_ROOMS[code].add(websocket)
                     
-                    print(f"[DEBUG LIVE] WS unido a sesión en vivo: {code}. Total: {len(LIVE_ROOMS[code])}")
+                    print(f"[DEBUG LIVE] WS joined live session: {code}. Total: {len(LIVE_ROOMS[code])}")
                     
                 elif data.get("type") == "update_live_share":
                     code = data.get("code")
                     if code and code in LIVE_ROOMS:
                         if websocket not in OWNER_CONNS:
                             OWNER_CONNS[websocket] = code
-                            print(f"[DEBUG LIVE] WS registrado como dueño de la sesión {code}")
+                            print(f"[DEBUG LIVE] WS registered as owner of session {code}")
                             
                         update_msg = json.dumps({
                             "type": "live_image_updated",
@@ -355,19 +331,15 @@ async def handler(websocket):
                         await r.delete(f"live_share:{code}")
                         if websocket in OWNER_CONNS:
                             del OWNER_CONNS[websocket]
-                        print(f"[DEBUG LIVE] Sala {code} destruida intencionalmente por el dueño.")
+                        print(f"[DEBUG LIVE] Room {code} intentionally destroyed by owner.")
 
-                # ==========================================
-                # EVENTO PIXEL - INTENTO DE PINTAR
-                # ==========================================
                 elif data.get("type") == "pixel":
                     
-                    # Verificación dual de bloqueo (Reinicios y Redimensionamiento)
                     is_locked = await r.exists(lock_key)
                     is_resize_locked = await r.exists(resize_lock_key)
                     
                     if is_locked or is_resize_locked:
-                        print(f"[DEBUG PY] Lienzo bloqueado por mantenimiento o expansión. Ignorando pixel.")
+                        print(f"[DEBUG PY] Canvas blocked for maintenance or expansion. Ignoring pixel.")
                         error_msg = json.dumps({
                             "type": "canvas_locked_error"
                         })
@@ -390,7 +362,7 @@ async def handler(websocket):
                     config_sec = int(raw_config.get(b'cooldown_seconds', 10))
 
                     if not user_id:
-                        print(f"[DEBUG PY] Intento de pintar de usuario no identificado. Denegado.")
+                        print(f"[DEBUG PY] Painting attempt by unidentified user. Denied.")
                         error_msg = json.dumps({
                             "type": "cooldown_error",
                             "balance": 0,
@@ -405,18 +377,16 @@ async def handler(websocket):
                         USER_LOCKS[user_id] = asyncio.Lock()
 
                     async with USER_LOCKS[user_id]:
-                        # 1. Verificar si el píxel está protegido
                         offset = (y * width) + x
                         protected_key = f"canvas:{canvas_id}:protected_pixels:{offset}"
                         protected_by = await r.get(protected_key)
                         
                         if protected_by:
-                            print(f"[DEBUG PY] Pixel {x},{y} protegido por el usuario {protected_by.decode('utf-8')}")
+                            print(f"[DEBUG PY] Pixel {x},{y} protegido for el usuario {protected_by.decode('utf-8')}")
                             redis_state_key = f"canvas:{canvas_id}:state"
                             orig_color = await r.getrange(redis_state_key, offset, offset)
                             orig_c_index = orig_color[0] if orig_color else 255
                             
-                            # Obtener cooldown actual para que el cliente sincronice
                             balance, last_t, user_key, now = await get_user_cooldown(r, canvas_id, user_id, config_batch, config_sec)
                             user_no_cooldown_key = f"user:{user_id}:perk:no_cooldown"
                             is_no_cooldown = await r.exists(user_no_cooldown_key)
@@ -430,7 +400,7 @@ async def handler(websocket):
                             
                             error_msg = json.dumps({
                                 "type": "pixel_protected_error",
-                                "message": "Este píxel está protegido. Usa el Borrador de Élite para sobrescribirlo.",
+                                "message": "Este pÃ­xel estÃ¡ protegido. Usa el Borrador de Ã‰lite para sobrescribirlo.",
                                 "x": x,
                                 "y": y,
                                 "color": orig_c_index,
@@ -445,7 +415,6 @@ async def handler(websocket):
                             await websocket.send(error_msg)
                             continue
 
-                        # 2. Verificar cooldown
                         balance, last_t, user_key, now = await get_user_cooldown(r, canvas_id, user_id, config_batch, config_sec)
                         
                         user_no_cooldown_key = f"user:{user_id}:perk:no_cooldown"
@@ -462,10 +431,10 @@ async def handler(websocket):
                         if balance >= 1 or is_no_cooldown:
                             if not is_no_cooldown:
                                 balance -= 1
-                                print(f"[DEBUG PY] Descontando 1 pixel. Balance restante: {balance}")
+                                print(f"[DEBUG PY] Deducting 1 pixel. Remaining balance: {balance}")
                                 await r.hset(user_key, mapping={b'b': str(balance).encode(), b't': str(last_t).encode()})
                             else:
-                                print(f"[DEBUG PY] Perk no_cooldown_10s activo para {user_id}. No se descuenta balance.")
+                                print(f"[DEBUG PY] no_cooldown_10s Perk active for {user_id}. Balance not deducted.")
                             
                             confirm_msg = json.dumps({
                                 "type": "pixel_confirm",
@@ -477,7 +446,7 @@ async def handler(websocket):
                                 "perk_protection_left": protection_left - 1 if (0 <= color_index <= 255 and protection_left > 0) else protection_left,
                                 "perk_eraser_left": eraser_left
                             })
-                            print(f"[DEBUG PY] Confirmando pixel. Msg: {confirm_msg}")
+                            print(f"[DEBUG PY] Confirming pixel. Msg: {confirm_msg}")
                             await websocket.send(confirm_msg)
 
                             if 0 <= color_index <= 255:
@@ -503,7 +472,7 @@ async def handler(websocket):
                                         await asyncio.gather(*tasks)
 
                         else:
-                            print(f"[DEBUG PY] Cooldown activo. Pixeles insuficientes para {user_id}.")
+                            print(f"[DEBUG PY] Cooldown active. Insufficient pixels for {user_id}.")
                             user_no_cooldown_key = f"user:{user_id}:perk:no_cooldown"
                             is_no_cooldown = await r.exists(user_no_cooldown_key)
 
@@ -522,9 +491,6 @@ async def handler(websocket):
                             })
                             await websocket.send(error_msg)
 
-                # ==========================================
-                # EVENTO PROTECT_PIXEL - PROTECCIÓN MANUAL
-                # ==========================================
                 elif data.get("type") == "protect_pixel":
                     x = int(data.get("x", 0))
                     y = int(data.get("y", 0))
@@ -550,7 +516,7 @@ async def handler(websocket):
                             if protected_by:
                                 error_msg = json.dumps({
                                     "type": "pixel_protected_error",
-                                    "message": "Este píxel ya está protegido",
+                                    "message": "Este pÃ­xel ya estÃ¡ protegido",
                                     "perk_protection_left": protection_left
                                 })
                                 await websocket.send(error_msg)
@@ -561,7 +527,6 @@ async def handler(websocket):
                             prot_duration = perks_conf.get('pixel_protection_25', {}).get('duration_seconds', 86400)
                             await r.setex(protected_key, prot_duration, str(user_id))
                             
-                            # Add to zset
                             zset_key = f"canvas:{canvas_id}:protected_zset"
                             expire_at = int(time.time()) + prot_duration
                             await r.zadd(zset_key, {str(offset): expire_at})
@@ -572,7 +537,6 @@ async def handler(websocket):
                             })
                             await websocket.send(confirm_msg)
                             
-                            # Broadcast to all users
                             broadcast_msg = json.dumps({
                                 "type": "pixel_protected_broadcast",
                                 "offset": offset,
@@ -586,14 +550,11 @@ async def handler(websocket):
                         else:
                             error_msg = json.dumps({
                                 "type": "pixel_protected_error",
-                                "message": "No tienes usos de protección disponibles",
+                                "message": "No tienes uses de protecciÃ³n disponibles",
                                 "perk_protection_left": 0
                             })
                             await websocket.send(error_msg)
 
-                # ==========================================
-                # EVENTO ERASE_PIXEL - BORRADOR MANUAL
-                # ==========================================
                 elif data.get("type") == "erase_pixel":
                     x = int(data.get("x", 0))
                     y = int(data.get("y", 0))
@@ -620,7 +581,7 @@ async def handler(websocket):
                             if not protected_by:
                                 error_msg = json.dumps({
                                     "type": "pixel_protected_error",
-                                    "message": "Este píxel no está protegido. No se gastó tu borrador.",
+                                    "message": "Este pÃ­xel no estÃ¡ protegido. No se gastÃ³ tu borrador.",
                                     "perk_eraser_left": eraser_left
                                 })
                                 await websocket.send(error_msg)
@@ -647,7 +608,6 @@ async def handler(websocket):
                             })
                             await websocket.send(confirm_msg)
                             
-                            # Broadcast to all users
                             broadcast_msg = json.dumps({
                                 "type": "pixel_unprotected_broadcast",
                                 "offset": offset,
@@ -676,18 +636,14 @@ async def handler(websocket):
                         else:
                             error_msg = json.dumps({
                                 "type": "pixel_protected_error",
-                                "message": "No tienes usos de borrador disponibles",
+                                "message": "No tienes uses de borrador disponibles",
                                 "perk_eraser_left": 0
                             })
                             await websocket.send(error_msg)
 
-                # ==========================================
-                # EVENTO CHAT - TYPING INDICATOR
-                # ==========================================
                 elif data.get("type") == "chat_typing":
                     user_id = WS_META[websocket].get('user_id')
                     if user_id:
-                        # Check if user is restricted from chat
                         is_restricted = await r.exists(f"canvas:{canvas_id}:chat_restricted:{user_id}")
                         if is_restricted:
                             continue
@@ -705,27 +661,24 @@ async def handler(websocket):
                                 await asyncio.gather(*tasks)
 
             except Exception as e:
-                print(f"[!] Error procesando mensaje del WS o escritura en Redis: {e}")
+                print(f"[!] Error processing WS message or writing to Redis: {e}")
 
     except websockets.exceptions.ConnectionClosed:
         pass
     except Exception as e:
-        print(f"[!] Error inesperado en la conexión: {e}")
+        print(f"[!] Unexpected error in connection: {e}")
     finally:
-        # Desconexión de Salas del Lienzo
         if canvas_id in ROOMS and websocket in ROOMS[canvas_id]:
             ROOMS[canvas_id].remove(websocket)
             
             if len(ROOMS[canvas_id]) == 0:
                 del ROOMS[canvas_id]
-                print(f"[*] Sala '{canvas_id}' eliminada por inactividad.")
+                print(f"[*] Room '{canvas_id}' deleted due to inactivity.")
 
-        # Desconexión y Limpieza de Salas Live Share
         for code, clients in list(LIVE_ROOMS.items()):
             if websocket in clients:
                 clients.remove(websocket)
                 
-                # Si el que se desconecta era el dueño, destruimos la sesión
                 if websocket in OWNER_CONNS and OWNER_CONNS[websocket] == code:
                     end_msg = json.dumps({"type": "live_session_ended", "code": code})
                     tasks = [
@@ -745,22 +698,22 @@ async def handler(websocket):
         if websocket in OWNER_CONNS:
             del OWNER_CONNS[websocket]
             
-        # Limpieza de QoS Global
         if websocket in WS_META:
             del WS_META[websocket]
-            print(f"[-] Cliente desconectado. Total global restante: {len(WS_META)}")
+            print(f"[-] Client disconnected. Remaining global total: {len(WS_META)}")
 
 async def main():
     host = os.getenv("WS_HOST", "0.0.0.0")
-    port = int(os.getenv("WS_PORT", 8765))
+    fort = int(os.getenv("WS_PORT", 8765))
     
-    print(f"Iniciando servidor WebSocket en ws://{host}:{port}")
+    print(f"Starting WebSocket server on ws://{host}:{fort}")
     
     asyncio.create_task(admin_events_listener())
     asyncio.create_task(sync_online_counts())
     
-    async with websockets.serve(handler, host, port, max_size=4096):
+    async with websockets.serve(handler, host, fort, max_size=4096):
         await asyncio.Future()
 
 if __name__ == "__main__":
     asyncio.run(main())
+

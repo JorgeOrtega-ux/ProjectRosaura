@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 use App\Config\DatabaseManager;
@@ -101,7 +101,7 @@ if (!function_exists('renderColorBlock')) {
                     <div class="component-dropdown-wrapper component-dropdown-wrapper--color" data-ref="dropdownWrapper">
                         <div class="component-dropdown-trigger component-dropdown-trigger--color" data-action="toggleModule" data-target="' . $uniqueId . '">
                             <div class="component-dropdown-trigger__left">
-                                <div class="component-color-swatch" data-ref="triggerPreview" style="background-color: ' . $hex . ';"></div>
+                                <div class="component-color-swatch" data-ref="triggerPreview"></div>
                                 <span class="component-dropdown-text component-text--mono" data-ref="triggerHex">' . $hex . '</span>
                             </div>
                             <span class="material-symbols-rounded">expand_more</span>
@@ -112,15 +112,15 @@ if (!function_exists('renderColorBlock')) {
                                 <div class="pill-container"><div class="drag-handle"></div></div>
                                 
                                 <div class="component-color-picker" data-ref="customColorPicker" data-h="' . $h . '" data-s="' . $s . '" data-v="' . $v . '">
-                                    <div class="component-color-picker__sv-area" data-action="dragSV" style="background-color: ' . $svAreaBg . ';">
+                                    <div class="component-color-picker__sv-area" data-action="dragSV">
                                         <div class="component-color-picker__sv-bg"></div>
-                                        <div class="component-color-picker__sv-thumb" data-ref="svThumb" style="left: ' . $svThumbLeft . '; top: ' . $svThumbTop . ';"></div>
+                                        <div class="component-color-picker__sv-thumb" data-ref="svThumb"></div>
                                     </div>
                                     <div class="component-color-picker__hue-area" data-action="dragHue">
-                                        <div class="component-color-picker__hue-thumb" data-ref="hueThumb" style="left: ' . $hueThumbLeft . ';"></div>
+                                        <div class="component-color-picker__hue-thumb" data-ref="hueThumb"></div>
                                     </div>
                                     <div class="component-input-group component-input-group--h34 component-input-group--color">
-                                        <div class="component-color-swatch" data-ref="hexInputPreview" style="width: 20px; height: 20px; flex-shrink: 0; background-color: ' . $hex . ';"></div>
+                                        <div class="component-color-swatch" data-ref="hexInputPreview"></div>
                                         <input type="text" class="component-input-field component-input-field--mono" data-ref="hexInput" value="' . $hex . '" readonly>
                                     </div>
                                     <div class="component-color-picker__controls ' . $controlsClass . '" data-ref="controlsContainer">
@@ -221,7 +221,7 @@ if (trim($rawName) !== '') {
                 <div class="component-card--grouped">
                     <div class="component-group-item">
                         <div class="component-card__content">
-                            <div class="component-preview-ring" data-ref="roleLivePreviewRing" style="background: <?php echo $previewBackgroundStyle; ?>;">
+                            <div class="component-preview-ring" data-ref="roleLivePreviewRing">
                                 <div class="component-preview-ring__inner">
                                     <span class="material-symbols-rounded">person</span>
                                 </div>

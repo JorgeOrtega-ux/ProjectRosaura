@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 $requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $appUrlPath = parse_url(defined('APP_URL') ? APP_URL : '', PHP_URL_PATH) ?: '';
 $relativePath = $requestUri;

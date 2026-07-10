@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 use App\Config\DatabaseManager;
@@ -243,7 +243,7 @@ $selectedModules = $schemaConfig['_modules'] ?? [
                                                 </div>
                                             </div>
                                             <div class="component-card__actions component-card__actions--end">
-                                                <span class="component-badge component-badge--sm" data-badge="<?php echo $dbName; ?>" style="<?php echo $countSelected > 0 ? 'display: inline-flex;' : 'display: none;'; ?>">
+                                                <span class="component-badge component-badge--sm" data-badge="<?php echo $dbName; ?>">
                                                     <?php echo __('auto_backup_tables_selected', ['selected' => $countSelected, 'total' => $totalTables]); ?>
                                                 </span>
                                                 <div data-action="preventAccordion">

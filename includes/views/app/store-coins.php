@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 use App\Core\System\StorePackagesConfig;
 
 $coinPackages = [];
@@ -111,7 +111,7 @@ $acceptedStoreTerms = !empty($userPrefs['accepted_store_terms']);
     <div class="component-wrapper component-wrapper--full no-padding">
         <div class="component-top">
         <div class="component-top-left">
-            <h1 class="component-top-title">Tienda de Monedas</h1>
+            <h1 class="component-top-title"><?php echo __('store_coins_title'); ?></h1>
         </div>
         <div class="component-top-right">
             <div class="store-coins-balance">
@@ -122,12 +122,12 @@ $acceptedStoreTerms = !empty($userPrefs['accepted_store_terms']);
 
     <div class="component-bottom">
         <?php if (empty($coinPackages)): ?>
-        <div class="component-empty-state" data-ref="empty-state-rendered" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px 20px; text-align: center; height: 100%;">
-            <span class="material-symbols-rounded component-empty-state-icon" style="font-size: 48px; color: var(--text-secondary); margin-bottom: 16px;">search_off</span>
-            <p class="component-empty-state-text" style="color: var(--text-secondary); font-size: 16px; font-weight: 500;">No hay paquetes de monedas disponibles en este momento. Vuelve más tarde.</p>
+        <div class="component-empty-state" data-ref="empty-state-rendered">
+            <span class="material-symbols-rounded component-empty-state-icon">search_off</span>
+            <p class="component-empty-state-text"><?php echo __('store_coins_empty'); ?></p>
         </div>
         <?php else: ?>
-        <div class="component-grid" data-ref="" style="padding: 24px;">
+        <div class="component-grid" data-ref="">
             <?php foreach ($coinPackages as $pkg): ?>
             <div class="store-card">
                 <div class="store-card-header">
@@ -143,7 +143,7 @@ $acceptedStoreTerms = !empty($userPrefs['accepted_store_terms']);
                         <span class="material-symbols-rounded">payments</span> $<?= number_format($pkg['price_usd'], 2) ?> USD
                     </div>
                     <div data-action="buyCoins" data-amount="<?= $pkg['amount'] ?>" class="btn-buy-coins component-badge store-badge-interactive">
-                        <span class="material-symbols-rounded" style="color: inherit;">shopping_cart</span> Comprar
+                        <span class="material-symbols-rounded">shopping_cart</span> <?php echo __('btn_buy'); ?>
                     </div>
                 </div>
             </div>
@@ -154,4 +154,4 @@ $acceptedStoreTerms = !empty($userPrefs['accepted_store_terms']);
     </div>
 </div>
 
-<div id="store-coins-data" data-accepted="<?= $acceptedStoreTerms ? 'true' : 'false' ?>" style="display: none;"></div>
+<div id="store-coins-data" data-accepted="<?= $acceptedStoreTerms ? 'true' : 'false' ?>"></div>

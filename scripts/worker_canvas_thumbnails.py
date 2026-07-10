@@ -9,29 +9,24 @@ from zlib import decompress
 from PIL import Image
 from datetime import datetime
 
-# Configuración Redis
 REDIS_HOST = os.getenv("REDIS_HOST", "redis")
 REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
 REDIS_PASS = os.getenv("REDIS_PASS", None)
 
-# Configuración MySQL
 DB_HOST = os.getenv("DB_HOST", "db")
 DB_USER = os.getenv("DB_USER", "system_web_executor")
 DB_PASS = os.getenv("DB_PASS", "secret")
 DB_NAME = os.getenv("DB_CANVASES_NAME", "db_canvases")
-# NOTA DE IMPLEMENTACIÓN: Necesitamos acceso cruzado a db_identity
 DB_IDENTITY_NAME = os.getenv("DB_IDENTITY_NAME", "db_identity")
 
-# Configuración Worker
 SYNC_INTERVAL = int(os.getenv("WORKER_SNAPSHOTS_SYNC_INTERVAL", 10))
 THUMBNAILS_DIR = os.getenv("THUMBNAILS_DIR", "/app/storage/public/thumbnails")
 ARCHIVE_DIR = os.getenv("SNAPSHOTS_ARCHIVE_DIR", "/app/storage/public/snapshots_archive")
 TIMELAPSE_DIR = os.getenv("TIMELAPSE_DIR", "/app/storage/private/canvases/timelapses")
 SCALE_FACTOR = int(os.getenv("SNAPSHOT_SCALE_FACTOR", 10)) 
 
-# Límites de seguridad añadidos para evitar Freezes en Frontend y OOM en Backend
-THUMBNAIL_MAX_SIZE = int(os.getenv("THUMBNAIL_MAX_SIZE", 512)) # Max píxeles para tarjetas web
-ARCHIVE_MAX_SIZE = int(os.getenv("ARCHIVE_MAX_SIZE", 4096))    # Max píxeles para históricos
+THUMBNAIL_MAX_SIZE = int(os.getenv("THUMBNAIL_MAX_SIZE", 512)) # Max pÃ­xeles para tarjetas web
+ARCHIVE_MAX_SIZE = int(os.getenv("ARCHIVE_MAX_SIZE", 4096))    # Max pÃ­xeles para histÃ³ricos
 
 PALETTES_FILE_PATH = os.getenv("PALETTES_FILE_PATH", "/app/public/assets/data/palettes.json")
 APP_PALETTES = {}
@@ -44,13 +39,12 @@ def load_palettes():
                 data = json.load(f)
                 for pal_id, pal_data in data.items():
                     raw_colors = pal_data.get('colors', [])
-                    # CORRECCIÓN: Extraemos el valor 'hex' de cada diccionario
                     APP_PALETTES[pal_id] = [c.get('hex', '#000000') if isinstance(c, dict) else c for c in raw_colors]
-            print(f"[+] Paletas cargadas exitosamente desde {PALETTES_FILE_PATH}")
+            print(f"[+] Palettes successfully loaded from {PALETTES_FILE_PATH}")
         else:
             raise FileNotFoundError("El archivo JSON no existe en la ruta.")
     except Exception as e:
-        print(f"[!] Error cargando paletas desde {PALETTES_FILE_PATH}: {e}")
+        print(f"[!] Error loading palettes from {PALETTES_FILE_PATH}: {e}")
         APP_PALETTES['default'] = [
             '#000000', '#1A1A1A', '#333333', '#4D4D4D', '#666666', '#808080', '#999999', '#B3B3B3', '#CCCCCC', '#E6E6E6', '#F2F2F2', '#FFFFFF',
             '#FF0000', '#FF8000', '#FFFF00', '#80FF00', '#00FF00', '#00FF80', '#00FFFF', '#0080FF', '#0000FF', '#8000FF', '#FF00FF', '#FF0080',
@@ -81,7 +75,7 @@ def get_db_connection():
             database=DB_NAME
         )
     except Exception as e:
-        print(f"[!] Error conectando a MySQL en Snapshots Worker: {e}")
+        print(f"[!] Error connecting to MySQL in Snapshots Worker: {e}")
         return None
 
 def parse_size(size_str):
@@ -120,11 +114,6 @@ def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palet
             y = i // width
             pixels[x, y] = get_color(palette_id, byte_val)
             
-        # =========================================================
-        # 1. THUMBNAIL GENERAL PARA LA WEB (Ligero y optimizado)
-        # =========================================================
-        # Calculamos la escala respetando el límite máximo para evitar 
-        # render-blocking en el DOM, pero sin exceder el SCALE_FACTOR original
         scale_w = THUMBNAIL_MAX_SIZE / width
         scale_h = THUMBNAIL_MAX_SIZE / height
         thumb_scale = min(scale_w, scale_h, SCALE_FACTOR)
@@ -135,13 +124,8 @@ def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palet
         img_thumb = img.resize((thumb_width, thumb_height), Image.NEAREST)
         
         filepath = os.path.join(THUMBNAILS_DIR, f"canvas_{canvas_id}.png")
-        # Este siempre se pisa (No consume espacio extra en galería)
         img_thumb.save(filepath, "PNG", optimize=True)
         
-        # =========================================================
-        # 2. HISTÓRICO / ARCHIVO (Alta resolución con límite seguro)
-        # =========================================================
-        # Validar lógica de persistencia histórica según tier de SubscriptionPlanConstants
         if r.exists(f"canvas:{canvas_id}:reset_lock"):
             
             max_snapshots = get_max_snapshots_per_tier(owner_tier)
@@ -157,16 +141,15 @@ def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palet
                     if current_count >= max_snapshots:
                         can_save_history = False
                 except Exception as e:
-                    print(f"[!] Error verificando cuota de snapshots para lienzo {canvas_id}: {e}")
+                    print(f"[!] Error verifying snapshot quota for canvas {canvas_id}: {e}")
                     can_save_history = False 
             
             if not can_save_history:
-                print(f"[-] Lienzo {canvas_id} superó su límite de snapshots históricos ({max_snapshots}). Purgando timelapse en disco.")
+                print(f"[-] Canvas {canvas_id} exceeded its historical snapshots limit ({max_snapshots}). Purging the oldest...")
                 timelapse_src = os.path.join(TIMELAPSE_DIR, f"live_canvas_{canvas_id}.jsonl")
                 if os.path.exists(timelapse_src):
                     os.remove(timelapse_src)
             else:
-                # Calculamos el tamaño para el histórico gigante, limitándolo a ARCHIVE_MAX_SIZE
                 scale_arch_w = ARCHIVE_MAX_SIZE / width
                 scale_arch_h = ARCHIVE_MAX_SIZE / height
                 arch_scale = min(scale_arch_w, scale_arch_h, SCALE_FACTOR)
@@ -179,14 +162,13 @@ def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palet
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 archive_filename = f"canvas_{canvas_id}_{timestamp}.png"
                 
-                # Crear la subcarpeta del UUID dentro de ARCHIVE_DIR
                 canvas_archive_dir = os.path.join(ARCHIVE_DIR, str(canvas_uuid))
                 os.makedirs(canvas_archive_dir, exist_ok=True)
                 
                 archive_filepath = os.path.join(canvas_archive_dir, archive_filename)
                 
                 img_archive.save(archive_filepath, "PNG", optimize=True)
-                print(f"[+] Archivo histórico guardado exitosamente ({arch_width}x{arch_height}): {archive_filepath}")
+                print(f"[+] Historical file saved successfully ({arch_width}x{arch_height}): {archive_filepath}")
 
                 snapshot_uuid = str(uuid.uuid4())
                 public_filepath = f"public/storage/snapshots_archive/{canvas_uuid}/{archive_filename}"
@@ -201,11 +183,11 @@ def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palet
                     try:
                         shutil.move(timelapse_src, timelapse_dest)
                         timelapse_db_path = f"private/canvases/timelapses/{timelapse_dest_filename}"
-                        print(f"[+] Timelapse convertido a histórico exitosamente: {timelapse_dest_filename}")
+                        print(f"[+] Timelapse successfully converted to historical: {timelapse_dest_filename}")
                     except Exception as e:
-                        print(f"[!] Error moviendo archivo JSONL de timelapse para el lienzo {canvas_id}: {e}")
+                        print(f"[!] Error moving timelapse JSONL file for canvas {canvas_id}: {e}")
                 else:
-                    print(f"[-] No se encontró archivo 'live_canvas' para el lienzo {canvas_id}. Se guardará snapshot sin timelapse.")
+                    print(f"[-] 'live_canvas' file not found for canvas {canvas_id}. Base snapshot will be saved without timelapse.")
 
                 try:
                     cursor = db_conn.cursor()
@@ -216,19 +198,19 @@ def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palet
                     cursor.execute(insert_query, (canvas_id, snapshot_uuid, public_filepath, timelapse_db_path))
                     db_conn.commit()
                     cursor.close()
-                    print(f"[+] Registro histórico guardado en DB con UUID: {snapshot_uuid}")
+                    print(f"[+] Historical record saved in DB with UUID: {snapshot_uuid}")
                 except Exception as e:
-                    print(f"[!] Error guardando historial en DB: {e}")
+                    print(f"[!] Error saving history to DB: {e}")
 
             r.set(f"canvas:{canvas_id}:snapshot_done", "1", ex=60)
             
         return True
     except Exception as e:
-        print(f"[!] Error procesando imagen PNG para lienzo {canvas_id}: {e}")
+        print(f"[!] Error processing PNG image for canvas {canvas_id}: {e}")
         return False
 
 def main():
-    print("[*] Iniciando Worker de Snapshots (Lógica Tiering Injectada)...")
+    print("[*] Starting Snapshots Worker (Tiering Logic Injected)...")
     
     os.makedirs(THUMBNAILS_DIR, exist_ok=True)
     os.makedirs(ARCHIVE_DIR, exist_ok=True)
@@ -245,9 +227,9 @@ def main():
             decode_responses=True 
         )
         r.ping()
-        print("[+] Conectado a Redis exitosamente.")
+        print("[+] Connected to Redis successfully.")
     except Exception as e:
-        print(f"[!] No se pudo conectar a Redis: {e}")
+        print(f"[!] Could not connect to Redis: {e}")
         return
 
     while True:
@@ -280,14 +262,14 @@ def main():
                             success = process_canvas_image(r, db_conn, canvas_id, snapshot_data, size_str, palette_id, owner_tier, canvas_uuid)
                             if success:
                                 r.srem("canvases:pending_snapshots", canvas_id)
-                                print(f"[+] Thumbnail/Snapshot procesado: canvas_{canvas_id}.png")
+                                print(f"[+] Thumbnail/Snapshot processed: canvas_{canvas_id}.png")
                         else:
                             r.srem("canvases:pending_snapshots", canvas_id)
                             
                     cursor.close()
                     db_conn.close()
         except Exception as e:
-            print(f"[!] Error en el ciclo principal del Snapshot Worker: {e}")
+            print(f"[!] Error in main cycle of Snapshot Worker: {e}")
 
         time.sleep(SYNC_INTERVAL)
 

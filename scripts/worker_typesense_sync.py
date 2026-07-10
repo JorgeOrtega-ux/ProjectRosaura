@@ -1,4 +1,3 @@
-# scripts/worker_typesense_sync.py
 
 import os
 import time
@@ -7,7 +6,6 @@ import typesense
 from dotenv import load_dotenv
 import logging
 
-# Se utiliza el logger nativo de Python para contenedores
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger('TypesenseSync')
 
@@ -23,12 +21,11 @@ DB_USER = os.environ.get('DB_USER', 'root')
 DB_PASS = os.environ.get('DB_PASS', '')
 DB_NAME = os.environ.get('DB_CANVASES_NAME', 'db_canvases')
 
-# Intervalo de sincronización en segundos (ej. 60 segundos)
 SYNC_INTERVAL = int(os.environ.get('TYPESENSE_SYNC_INTERVAL', 60))
 
 def main():
     if not TS_API_KEY:
-        logger.error("TYPESENSE_API_KEY no configurada en .env.")
+        logger.error("TYPESENSE_API_KEY not configured in .env.")
         return
 
     client = typesense.Client({
@@ -54,21 +51,19 @@ def main():
         ]
     }
 
-    # 1. Crear la colección SOLO si no existe (fuera del bucle principal)
     try:
         client.collections['canvases'].retrieve()
-        logger.info("La colección 'canvases' ya existe en Typesense.")
+        logger.info("'canvases' collection already exists in Typesense.")
     except typesense.exceptions.ObjectNotFound:
         try:
             client.collections.create(schema)
-            logger.info("Colección 'canvases' creada con éxito por primera vez.")
+            logger.info("'canvases' collection created successfully for the first time.")
         except Exception as e:
-            logger.error(f"Error crítico al crear esquema Typesense: {e}")
+            logger.error(f"Critical error creating Typesense schema: {e}")
             return
 
-    logger.info(f"Iniciando bucle de sincronización (cada {SYNC_INTERVAL} segundos)...")
+    logger.info(f"Starting sync loop (every {SYNC_INTERVAL} seconds)...")
 
-    # 2. Bucle infinito para mantener vivo el contenedor
     while True:
         try:
             connection = pymysql.connect(
@@ -97,16 +92,14 @@ def main():
                         })
                     
                     if documents:
-                        # IMPORTANTE: Cambiado a 'upsert' para no tener que borrar la colección completa
                         client.collections['canvases'].documents.import_(documents, {'action': 'upsert'})
-                        logger.info(f"Sincronización completada: {len(documents)} lienzos indexados/actualizados.")
+                        logger.info(f"Sync completed: {len(documents)} canvases indexed/updated.")
                     else:
-                        logger.info("No hay lienzos en la base de datos para indexar.")
+                        logger.info("No canvases in database to index.")
                         
         except Exception as e:
-            logger.error(f"Error durante el ciclo de sincronización: {e}")
+            logger.error(f"Error during sync cycle: {e}")
 
-        # 3. Pausar la ejecución antes del siguiente ciclo
         time.sleep(SYNC_INTERVAL)
 
 if __name__ == "__main__":

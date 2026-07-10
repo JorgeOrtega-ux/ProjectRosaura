@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 use App\Config\DatabaseManager;
@@ -119,11 +119,10 @@ $isSuperAdmin = in_array(4, $userRolesArray) ? 1 : 0;
                             data-role-id="<?php echo $role['id']; ?>" 
                             data-role-name="<?php echo htmlspecialchars($translatedName); ?>" 
                             data-is-system="<?php echo $isSystemFlag; ?>" 
-                            data-role-weight="<?php echo (int)$role['weight']; ?>"
-                            style="--active-role-bg: <?php echo $cssColorValue; ?>;">
+                            data-role-weight="<?php echo (int)$role['weight']; ?>">
                             <td>
                                 <div class="td-user-info">
-                                    <div class="component-button--profile role-dynamic component-avatar--static-sm" style="--active-role-bg: <?php echo $cssColorValue; ?>;">
+                                    <div class="component-button--profile role-dynamic component-avatar--static-sm">
                                         <img src="/public/assets/img/fallbacks/avatar-default.png" alt="<?php echo __('alt_role_avatar'); ?>">
                                     </div>
                                     <div class="component-badge component-badge--sm">

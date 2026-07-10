@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 $userPerms = $_SESSION['user_permissions'] ?? [];
@@ -227,9 +227,9 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/backups?page=' . ($page +
                                         </div>
                                     </td>
                                     <td class="hide-mobile">
-                                        <div style="display: flex; gap: 4px;">
-                                            <span class="material-symbols-rounded" style="font-size: 18px; color: var(--text-secondary);" title="<?php echo __('title_database'); ?>">database</span>
-                                            <span class="material-symbols-rounded" style="font-size: 18px; color: var(--text-secondary);" title="<?php echo __('title_physical_files'); ?>">folder_zip</span>
+                                        <div>
+                                            <span class="material-symbols-rounded" title="<?php echo __('title_database'); ?>">database</span>
+                                            <span class="material-symbols-rounded" title="<?php echo __('title_physical_files'); ?>">folder_zip</span>
                                         </div>
                                     </td>
                                     <td>

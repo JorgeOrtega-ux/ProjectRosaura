@@ -1,7 +1,4 @@
-<?php
-// scripts/dispatch_email.php
-// Script designed to be called from a Python worker to dispatch an email via PHP Mailer.
-// Usage: php scripts/dispatch_email.php '{"type":"subscription_confirmation", "user_id": 1, "tierName": "Premium", "billingPeriod": "monthly"}'
+﻿<?php
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
@@ -52,7 +49,6 @@ try {
                 exit(1);
             }
         
-        // Aquí se pueden agregar más tipos de emails en el futuro
         
         default:
             echo "Unknown email type: " . $payload['type'] . "\n";

@@ -185,7 +185,7 @@ if ($initialState['isSuspended'] === '1') {
                                                                 <span class="material-symbols-rounded">search</span>
                                                             </div>
                                                             <div class="component-search-input">
-                                                                <input type="text" data-ref="suspension-reason-search" placeholder="<?php echo __('placeholder_search') ?? 'Buscar...'; ?>">
+                                                                <input type="text" data-ref="suspension-reason-search" placeholder="<?php echo __('placeholder_search'); ?>">
                                                             </div>
                                                         </div>
                                                     </div>
@@ -239,7 +239,7 @@ if ($initialState['isSuspended'] === '1') {
                                                         <div class="component-menu-empty" data-ref="suspension-reason-empty" hidden>
                                                              <div class="component-menu-link disabled-interactive">
                                                                  <div class="component-menu-link-icon"><span class="material-symbols-rounded">search_off</span></div>
-                                                                 <div class="component-menu-link-text"><span class="component-text-notice--muted"><?php echo __('no_results_found') ?? 'No se encontraron resultados'; ?></span></div>
+                                                                 <div class="component-menu-link-text"><span class="component-text-notice--muted"><?php echo __('no_results_found'); ?></span></div>
                                                              </div>
                                                         </div>
                                                     </div>

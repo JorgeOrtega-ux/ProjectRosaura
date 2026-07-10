@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 use App\Config\DatabaseManager;
@@ -268,7 +268,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/manage-users?page=' . ($p
                                 <tr class="component-table-row" data-action="selectUser" data-user-id="<?php echo htmlspecialchars($user['id']); ?>" data-roles-ids="<?php echo htmlspecialchars($roleIds); ?>" data-status="<?php echo htmlspecialchars($dataStatus); ?>">
                                     <td>
                                         <div class="td-user-info">
-                                            <div class="component-button--profile role-dynamic component-avatar--static-sm" style="--active-role-bg: <?php echo htmlspecialchars($roleColorCSS); ?>;">
+                                            <div class="component-button--profile role-dynamic component-avatar--static-sm">
                                                 <img src="<?php echo $appUrl . '/' . htmlspecialchars($validUserPic); ?>" alt="<?php echo __('alt_avatar'); ?>">
                                             </div>
                                             <div class="component-badge component-badge--sm">
@@ -284,7 +284,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/manage-users?page=' . ($p
                                         </div>
                                     </td>
                                     <td>
-                                        <div style="display: flex; flex-direction: row; gap: 4px; align-items: center;">
+                                        <div>
                                             <?php 
                                                 $primaryRoleName = trim($roleNamesArray[0]);
                                                 $pKey = 'role.' . preg_replace('/[\s\W_]+/', '_', strtolower($primaryRoleName));
@@ -316,7 +316,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/manage-users?page=' . ($p
                                                 $eKey = 'role.' . preg_replace('/[\s\W_]+/', '_', strtolower($eName));
                                                 $eTrans = __($eKey);
                                             ?>
-                                                <span class="search-target" style="display:none;" data-role-original-name="<?php echo htmlspecialchars($eName); ?>">
+                                                <span class="search-target" data-role-original-name="<?php echo htmlspecialchars($eName); ?>">
                                                     <?php echo htmlspecialchars($eTrans); ?>
                                                 </span>
                                             <?php endforeach; ?>

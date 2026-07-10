@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 use App\Core\Container;
 use App\Api\Services\CanvasServices;
 use App\Core\Interfaces\SessionManagerInterface;
@@ -43,14 +43,14 @@ $initialCanvasesJson = htmlspecialchars(json_encode($initialCanvases), ENT_QUOTE
         <div class="component-top">
             <div class="component-top-left">
                 <h1 class="component-top-title"><?php echo __('explore_title'); ?></h1>
-                <p class="component-top-subtitle" style="color: var(--text-secondary); margin-top: 4px;"><?php echo __('explore_desc'); ?></p>
+                <p class="component-top-subtitle"><?php echo __('explore_desc'); ?></p>
             </div>
             
             <div class="component-top-right">
                 <div class="component-actions active">
                     
                     <div class="component-dropdown-wrapper component-dropdown-wrapper--fit">
-                        <button class="component-button component-button--icon component-button--h40" data-action="toggleModule" data-target="moduleExploreFilters" data-ref="btn-toggle-filters" data-tooltip="Ordenar" data-position="bottom">
+                        <button class="component-button component-button--icon component-button--h40" data-action="toggleModule" data-target="moduleExploreFilters" data-ref="btn-toggle-filters" data-tooltip="<?php echo __('tooltip_sort'); ?>" data-position="bottom">
                             <span class="material-symbols-rounded">sort</span>
                         </button>
                         
@@ -60,13 +60,13 @@ $initialCanvasesJson = htmlspecialchars(json_encode($initialCanvases), ENT_QUOTE
                                 <div class="pill-container"><div class="drag-handle"></div></div>
                                 <div class="component-menu-header">
                                     <div class="component-menu-header-box">
-                                        <span class="component-menu-header-title">Opciones de visualización</span>
+                                        <span class="component-menu-header-title"><?php echo __('filter_search_title'); ?></span>
                                     </div>
                                 </div>
                                 <div class="component-menu-list component-menu-list--compact">
                                     <div class="component-menu-link component-menu-link--bordered" data-action="openFilterSubMenu" data-target="menuSortExplore">
                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">sort</span></div>
-                                        <div class="component-menu-link-text"><span>Ordenar por</span></div>
+                                        <div class="component-menu-link-text"><span><?php echo __('explore_sort_by'); ?></span></div>
                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">chevron_right</span></div>
                                     </div>
                                 </div>
@@ -79,21 +79,21 @@ $initialCanvasesJson = htmlspecialchars(json_encode($initialCanvases), ENT_QUOTE
                                         <button class="component-button component-button--icon component-button--h30 component-button--back" data-action="backToMainFilters">
                                             <span class="material-symbols-rounded">arrow_back</span>
                                         </button>
-                                        <span class="component-menu-header-title">Ordenar por</span>
+                                        <span class="component-menu-header-title"><?php echo __('explore_sort_by'); ?></span>
                                     </div>
                                 </div>
                                 <div class="component-menu-list component-menu-list--scrollable component-menu-list--compact">
                                     <label class="component-menu-link component-menu-link--bordered">
                                         <div class="component-menu-link-icon"><input type="checkbox" name="explore_sort" class="filter-radio" data-action="changeExploreSort" value="newest" checked></div>
-                                        <div class="component-menu-link-text"><span>Más nuevos primero</span></div>
+                                        <div class="component-menu-link-text"><span><?php echo __('explore_sort_newest'); ?></span></div>
                                     </label>
                                     <label class="component-menu-link component-menu-link--bordered">
                                         <div class="component-menu-link-icon"><input type="checkbox" name="explore_sort" class="filter-radio" data-action="changeExploreSort" value="oldest"></div>
-                                        <div class="component-menu-link-text"><span>Más antiguos primero</span></div>
+                                        <div class="component-menu-link-text"><span><?php echo __('explore_sort_oldest'); ?></span></div>
                                     </label>
                                     <label class="component-menu-link component-menu-link--bordered">
                                         <div class="component-menu-link-icon"><input type="checkbox" name="explore_sort" class="filter-radio" data-action="changeExploreSort" value="members"></div>
-                                        <div class="component-menu-link-text"><span>Más populares (Miembros)</span></div>
+                                        <div class="component-menu-link-text"><span><?php echo __('explore_sort_popular'); ?></span></div>
                                     </label>
                                 </div>
                             </div>
@@ -105,7 +105,7 @@ $initialCanvasesJson = htmlspecialchars(json_encode($initialCanvases), ENT_QUOTE
             </div>
         </div>
 
-        <div class="component-bottom" style="padding: 0;" data-ref="dynamic-content-area" data-initial-canvases="<?php echo $initialCanvasesJson; ?>">
+        <div class="component-bottom" data-ref="dynamic-content-area" data-initial-canvases="<?php echo $initialCanvasesJson; ?>">
                     </div>
 
     </div>

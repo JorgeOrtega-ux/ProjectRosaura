@@ -1,4 +1,4 @@
-import os
+﻿import os
 import sys
 import glob
 import time
@@ -22,7 +22,6 @@ from cryptography.hazmat.backends import default_backend
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ENV_PATH = os.path.join(BASE_DIR, '.env')
 
-# DIRECTORIOS ACTUALIZADOS A LA NUEVA ARQUITECTURA
 BACKUP_DIR = os.path.join(BASE_DIR, 'storage', 'private', 'backups')
 MAINTENANCE_FILE = os.path.join(BASE_DIR, 'storage', 'private', 'system', '.maintenance')
 
@@ -55,7 +54,6 @@ class Logger:
             "source": f"{caller_file}:{caller_line}"
         }
 
-        # LOS LOGS AHORA SE ESCRIBEN EN STORAGE/PRIVATE/LOGS
         log_dir = os.path.join(BASE_DIR, 'storage', 'private', 'logs', category)
         if not os.path.exists(log_dir):
             os.makedirs(log_dir, exist_ok=True)

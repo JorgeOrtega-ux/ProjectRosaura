@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 use App\Config\DatabaseManager;
@@ -115,7 +115,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/user-history?id=' . $targ
                                 <th><?php echo __('table_header_date'); ?></th>
                                 <th><?php echo __('table_header_action'); ?></th>
                                 <th><?php echo __('table_header_details'); ?></th>
-                                <th><?php echo __('table_header_asn') ?? 'Red / Proveedor'; ?></th>
+                                <th><?php echo __('table_header_asn'); ?></th>
                                 <th><?php echo __('table_header_admin'); ?></th>
                             </tr>
                         </thead>
@@ -222,7 +222,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/user-history?id=' . $targ
                                             <?php endif; ?>
                                             
                                             <?php if (empty($log['reason']) && empty($log['end_date'])): ?>
-                                                <span style="color: var(--text-muted);"><?php echo __('lbl_no_details'); ?></span>
+                                                <span><?php echo __('lbl_no_details'); ?></span>
                                             <?php endif; ?>
                                         </div>
                                     </td>
@@ -230,17 +230,17 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/user-history?id=' . $targ
                                         <?php if (!empty($log['asn'])): ?>
                                             <div class="component-badge component-badge--sm component-badge--outline" title="<?php echo htmlspecialchars($log['asn']); ?>">
                                                 <span class="material-symbols-rounded">router</span>
-                                                <span style="max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: inline-block;">
+                                                <span>
                                                     <?php echo htmlspecialchars($log['asn']); ?>
                                                 </span>
                                             </div>
                                         <?php else: ?>
-                                            <span style="color: var(--text-muted); font-size: 0.875rem;"><?php echo __('lbl_na') ?? 'N/A'; ?></span>
+                                            <span><?php echo __('lbl_na'); ?></span>
                                         <?php endif; ?>
                                     </td>
                                     <td>
                                         <div class="td-user-info">
-                                            <div class="component-button--profile role-dynamic component-avatar--static-sm" style="--active-role-bg: <?php echo htmlspecialchars($activeBgCss, ENT_QUOTES, 'UTF-8'); ?>;">
+                                            <div class="component-button--profile role-dynamic component-avatar--static-sm">
                                                 <img src="<?php echo htmlspecialchars($adminPic); ?>" alt="<?php echo __('alt_avatar'); ?>">
                                             </div>
                                             <div class="component-badge component-badge--sm">
@@ -256,7 +256,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/user-history?id=' . $targ
                                     <td colspan="5" class="component-empty-table-cell">
                                         <div class="component-empty-state component-empty-state--table">
                                             <span class="material-symbols-rounded component-empty-state-icon">filter_alt_off</span>
-                                            <p class="component-empty-state-text">No hay registros para las categorías seleccionadas.</p>
+                                            <p class="component-empty-state-text"><?php echo __('admin_history_empty_filtered'); ?></p>
                                         </div>
                                     </td>
                                 </tr>

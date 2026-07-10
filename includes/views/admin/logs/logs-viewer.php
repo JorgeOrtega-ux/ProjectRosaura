@@ -1,7 +1,7 @@
-<?php
+﻿<?php
 if (session_status() === PHP_SESSION_NONE) session_start();
 ?>
-<div class="view-content view-fade-in" style="height: 100%;">
+<div class="view-content view-fade-in">
     <div class="component-wrapper component-wrapper--full no-padding h-full">
         
         <div class="component-top">

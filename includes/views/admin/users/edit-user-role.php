@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 use App\Config\DatabaseManager;
@@ -85,18 +85,18 @@ $isTargetSuperAdmin = in_array(4, $assignedRoleIds);
                         
                         <hr class="component-divider">
 
-                        <div class="component-group-item component-group-item--wrap" style="<?php echo $opacityStyle; ?>">
+                        <div class="component-group-item component-group-item--wrap">
                             <div class="component-card__content">
                                 <div class="component-card__text">
-                                    <h2 class="component-card__title" style="display: flex; align-items: center; gap: 8px;">
+                                    <h2 class="component-card__title">
                                         <?php echo htmlspecialchars($rTrans); ?>
                                         
                                         <?php if($r['id'] == 1): ?> 
-                                            <span class="component-badge component-badge--default" style="font-size: 11px; padding: 2px 6px; border-radius: 4px; background: var(--bg-level-2);"><?php echo __('lbl_base_role'); ?></span> 
+                                            <span class="component-badge component-badge--default"><?php echo __('lbl_base_role'); ?></span> 
                                         <?php endif; ?>
                                         
                                         <?php if ($r['id'] == 4): ?>
-                                            <span class="material-symbols-rounded" style="font-size: 16px; color: var(--text-color-muted);" title="<?php echo __('title_only_db'); ?>">lock</span>
+                                            <span class="material-symbols-rounded" title="<?php echo __('title_only_db'); ?>">lock</span>
                                         <?php endif; ?>
                                     </h2>
                                     <p class="component-card__description"><?php echo htmlspecialchars($rDescTrans); ?></p>

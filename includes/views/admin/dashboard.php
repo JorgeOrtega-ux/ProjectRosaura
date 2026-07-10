@@ -34,7 +34,7 @@ $canViewLogs = in_array('view_logs', $userPermissions);
                         <span class="material-symbols-rounded">person_add</span>
                     </div>
                     <div class="component-stat-card__content">
-                        <span class="component-stat-card__title"><?php echo __('admin_dashboard_new_users', 'Nuevos Registros'); ?></span>
+                        <span class="component-stat-card__title"><?php echo __('admin_dashboard_new_users'); ?></span>
                         <span class="component-stat-card__value" id="stat-new-users">--</span>
                     </div>
                 </div>
@@ -44,7 +44,7 @@ $canViewLogs = in_array('view_logs', $userPermissions);
                         <span class="material-symbols-rounded">login</span>
                     </div>
                     <div class="component-stat-card__content">
-                        <span class="component-stat-card__title"><?php echo __('admin_dashboard_logins', 'Inicios de Sesión'); ?></span>
+                        <span class="component-stat-card__title"><?php echo __('admin_dashboard_logins'); ?></span>
                         <span class="component-stat-card__value" id="stat-logins">--</span>
                     </div>
                 </div>
@@ -54,7 +54,7 @@ $canViewLogs = in_array('view_logs', $userPermissions);
                         <span class="material-symbols-rounded">visibility</span>
                     </div>
                     <div class="component-stat-card__content">
-                        <span class="component-stat-card__title"><?php echo __('admin_dashboard_pageviews', 'Vistas de Página'); ?></span>
+                        <span class="component-stat-card__title"><?php echo __('admin_dashboard_pageviews'); ?></span>
                         <span class="component-stat-card__value" id="stat-pageviews">--</span>
                     </div>
                 </div>

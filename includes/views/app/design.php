@@ -190,7 +190,7 @@ if (!empty($canvasUuid)) {
 
                 <?php if ($isSnapshot): ?>
                     <span class="component-badge component-badge--warning">
-                        <span class="material-symbols-rounded">history</span> Modo Histórico
+                        <span class="material-symbols-rounded">history</span> <?php echo __('lbl_historical_mode'); ?>
                     </span>
                 <?php endif; ?>
             </div>
@@ -208,63 +208,63 @@ if (!empty($canvasUuid)) {
                 ?>
                 <div class="component-actions <?php echo $showSpectatorControls ? 'active' : 'disabled'; ?>" data-ref="spectator-controls">
                     
-                    <div class="component-badge component-badge--warning <?php echo $isBlockedInit && !isset($isPremiumBlockedInit) ? 'disabled' : ''; ?>" data-ref="spectator-status-badge" data-tooltip="<?php echo __('tooltip_spectator') ?? 'Solo puedes observar'; ?>" data-position="bottom">
+                    <div class="component-badge component-badge--warning <?php echo $isBlockedInit && !isset($isPremiumBlockedInit) ? 'disabled' : ''; ?>" data-ref="spectator-status-badge" data-tooltip="<?php echo __('tooltip_spectator'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">visibility</span>
-                        <span><?php echo __('lbl_spectator') ?? 'Modo Espectador'; ?></span>
+                        <span><?php echo __('lbl_spectator'); ?></span>
                     </div>
 
                     <div class="component-badge component-badge--danger <?php echo (isset($isPremiumBlockedInit) && $isPremiumBlockedInit) ? '' : 'disabled'; ?>" data-ref="premium-status-badge" data-position="bottom">
                         <span class="material-symbols-rounded">warning</span>
-                        <span>Requiere atención Premium</span>
+                        <span><?php echo __('lbl_requires_premium'); ?></span>
                     </div>
                     
-                    <div class="component-badge component-badge--danger <?php echo (!$isBlockedInit || (isset($isPremiumBlockedInit) && $isPremiumBlockedInit)) ? 'disabled' : ''; ?>" data-ref="private-status-badge" data-tooltip="No eres miembro" data-position="bottom">
+                    <div class="component-badge component-badge--danger <?php echo (!$isBlockedInit || (isset($isPremiumBlockedInit) && $isPremiumBlockedInit)) ? 'disabled' : ''; ?>" data-ref="private-status-badge" data-tooltip="<?php echo __('tooltip_not_member'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">lock</span>
-                        <span>Lienzo Privado</span>
+                        <span><?php echo __('lbl_private_canvas'); ?></span>
                     </div>
                     
                     <button class="component-button component-button--h34 <?php echo ($canvasApproval || (isset($isPremiumBlockedInit) && $isPremiumBlockedInit)) ? 'disabled' : ''; ?>" data-action="joinCanvasDirectly" data-ref="btn-join-direct">
-                        <?php echo __('btn_join') ?? 'Unirse'; ?>
+                        <?php echo __('btn_join'); ?>
                     </button>
                     
                     <button class="component-button component-button--h34 component-button--dark <?php echo (!$canvasApproval || (isset($isPremiumBlockedInit) && $isPremiumBlockedInit)) ? 'disabled' : ''; ?>" data-action="requestCanvasAccess" data-ref="btn-request-access">
                         <span class="material-symbols-rounded">front_hand</span>
-                        <?php echo __('btn_request_access') ?? 'Solicitar Acceso'; ?>
+                        <?php echo __('btn_request_access'); ?>
                     </button>
                 </div>
 
                 <div class="component-actions <?php echo $showDesignTools ? 'active' : 'disabled'; ?>" data-ref="design-tools-actions">
-                    <button class="component-button component-button--icon component-button--h40" data-action="openJoinLiveModal" data-tooltip="Unirse a sesión en vivo" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-action="openJoinLiveModal" data-tooltip="<?php echo __('tooltip_join_live'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">sensors</span>
                     </button>
                     
                     <div class="component-divider-vertical" data-ref="main-actions-divider"></div>
 
-                    <button class="component-button component-button--icon component-button--h40 disabled" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-live" data-ref="btn-start-live" data-tooltip="Transmitir Plantilla en Vivo" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40 disabled" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-live" data-ref="btn-start-live" data-tooltip="<?php echo __('tooltip_stream_live'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">stream</span>
                     </button>
-                    <button class="component-button component-button--icon component-button--h40 disabled" data-action="toggleTemplateLock" data-ref="btn-template-lock" data-tooltip="Bloquear / Desbloquear Plantilla" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40 disabled" data-action="toggleTemplateLock" data-ref="btn-template-lock" data-tooltip="<?php echo __('tooltip_toggle_lock'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">lock_open</span>
                     </button>
-                    <button class="component-button component-button--icon component-button--h40 component-button--danger disabled" data-action="deleteTemplate" data-ref="btn-template-delete" data-tooltip="Quitar Plantilla" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40 component-button--danger disabled" data-action="deleteTemplate" data-ref="btn-template-delete" data-tooltip="<?php echo __('tooltip_remove_template'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">delete</span>
                     </button>
                     <div class="component-divider-vertical disabled" data-ref="template-actions-divider"></div>
                     
-                    <button class="component-button component-button--icon component-button--h40 component-color-indicator" data-ref="btn-color-palette" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-colors" data-tooltip="Paleta de colores" data-position="bottom" style="--active-color: #000000;">
+                    <button class="component-button component-button--icon component-button--h40 component-color-indicator" data-ref="btn-color-palette" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-colors" data-tooltip="<?php echo __('tooltip_color_palette'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">palette</span>
                     </button>
-                    <button class="component-button component-button--icon component-button--h40" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-templates" data-tooltip="Plantillas" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-templates" data-tooltip="<?php echo __('tooltip_templates'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">photo_library</span>
                     </button>
                     <div class="component-divider-vertical" data-ref="advantages-actions-divider"></div>
-                    <button class="component-button component-button--icon component-button--h40" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-advantages" data-tooltip="Ventajas Activas" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-advantages" data-tooltip="<?php echo __('tooltip_active_advantages'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">stars</span>
                     </button>
                     
                     <?php if ($canvasAllowChat == '1'): ?>
                     <div class="component-divider-vertical" data-ref="chat-actions-divider"></div>
-                    <button class="component-button component-button--icon component-button--h40" data-action="toggleMenuInModule" data-module-target="moduleLiveChat" data-menu-target="menu-chat" data-tooltip="Chat en Línea" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-action="toggleMenuInModule" data-module-target="moduleLiveChat" data-menu-target="menu-chat" data-tooltip="<?php echo __('tooltip_live_chat'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">chat</span>
                     </button>
                     <?php endif; ?>
@@ -283,13 +283,13 @@ if (!empty($canvasUuid)) {
 
                 <?php if (isset($isPremiumBlockedInit) && $isPremiumBlockedInit): ?>
                 <div class="component-badge" data-badge-id="lock-premium">
-                    <span class="material-symbols-rounded" style="color:var(--color-warning);">warning</span>
-                    <span>Requiere atención (Premium Expirado)</span>
+                    <span class="material-symbols-rounded">warning</span>
+                    <span><?php echo __('lbl_premium_expired_attention'); ?></span>
                 </div>
                 <?php elseif (isset($isBlockedInit) && $isBlockedInit): ?>
                 <div class="component-badge" data-badge-id="lock-private">
                     <span class="material-symbols-rounded">lock</span>
-                    <span><?php echo __('badge_member_required') ?? 'Requiere ser miembro'; ?></span>
+                    <span><?php echo __('badge_member_required'); ?></span>
                 </div>
                 <?php endif; ?>
 

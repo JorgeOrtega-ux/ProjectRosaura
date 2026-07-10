@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 if (session_status() === PHP_SESSION_NONE) session_start();
 global $serverConfig;
 
@@ -91,7 +91,7 @@ $themeMap = [
                 <div class="component-card--grouped admin-edit-group">
                     <div class="component-group-item">
                          <div class="component-card__content">
-                            <div class="component-avatar role-dynamic" style="--active-role-bg: <?php echo $activeRoleBg; ?>;" data-ref="admin-profile-avatar-container">
+                            <div class="component-avatar role-dynamic" data-ref="admin-profile-avatar-container">
                                 <img src="<?php echo htmlspecialchars($formattedAvatar); ?>" alt="<?php echo __('alt_avatar'); ?>" data-ref="admin-profile-avatar-img" data-original-src="<?php echo htmlspecialchars($formattedAvatar); ?>" data-is-default="<?php echo $isDefaultAvatar ? 'true' : 'false'; ?>">
                                 <div class="component-avatar__overlay" data-ref="admin-profile-avatar-overlay">
                                     <span class="material-symbols-rounded">photo_camera</span>

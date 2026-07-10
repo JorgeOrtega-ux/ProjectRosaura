@@ -1,4 +1,4 @@
-import os
+﻿import os
 import json
 import time
 import threading
@@ -37,7 +37,6 @@ class Logger:
             "source": f"{caller_file}:{caller_line}"
         }
 
-        # LOGS ACTUALIZADOS A CARPETA PRIVADA
         log_dir = os.path.join(BASE_DIR, 'storage', 'private', 'logs', category)
         if not os.path.exists(log_dir):
             os.makedirs(log_dir, exist_ok=True)
@@ -133,7 +132,6 @@ def process_deletion(payload):
             profile_pic = user_data.get('profile_picture')
             uuid_str = user_data.get('uuid')
             
-            # Traducción de ruta virtual a física para limpieza
             if profile_pic and 'fallbacks/avatar-default.png' not in profile_pic:
                 pic_relative = profile_pic.lstrip('/').replace('public/storage/', 'storage/public/')
                 pic_path = os.path.join(APP_ROOT_PATH, pic_relative)
@@ -232,7 +230,6 @@ def heal_default_avatars():
                 
                 if response.status_code == 200 and 'image' in content_type:
                     file_name = f"{uuid_str}.png"
-                    # Se mantiene la ruta virtual (DB) pero se escribe a la física
                     rel_path = f"public/storage/profilePictures/default/{file_name}"
                     full_path = os.path.join(APP_ROOT_PATH, f"storage/public/profilePictures/default/{file_name}")
                     
@@ -306,7 +303,7 @@ def process_email(payload):
                     return
 
                 msg = MIMEMultipart('alternative')
-                msg['Subject'] = "¡Gracias por tu suscripción!"
+                msg['Subject'] = "Â¡Gracias por tu suscripciÃ³n!"
                 msg['From'] = f"{SMTP_FROM_NAME} <{SMTP_FROM_EMAIL}>"
                 msg['To'] = user_email
                 
@@ -316,8 +313,8 @@ def process_email(payload):
                 <body style='margin: 0; padding: 0; background-color: #f5f5fa; font-family: Arial, sans-serif;'>
                     <div style='padding: 20px; background-color: #f5f5fa; color: #111;'>
                         <div style='max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 8px; border: 1px solid #00000020;'>
-                            <h2 style='color: #111111; margin-top: 0;'>¡Gracias por tu suscripción!</h2>
-                            <p style='color: #666666; font-size: 15px; line-height: 1.5;'>Hola {username}, hemos procesado exitosamente tu pago y tu suscripción a {tier_name} ({billing_period}) está activa.</p>
+                            <h2 style='color: #111111; margin-top: 0;'>Â¡Gracias por tu suscripciÃ³n!</h2>
+                            <p style='color: #666666; font-size: 15px; line-height: 1.5;'>Hola {username}, hemos procesado exitosamente tu pago y tu suscripciÃ³n a {tier_name} ({billing_period}) estÃ¡ activa.</p>
                             <p style='color: #666666; font-size: 15px; line-height: 1.5;'>Puedes empezar a disfrutar de tus nuevos beneficios de inmediato.</p>
                         </div>
                     </div>
@@ -367,7 +364,7 @@ def process_email(payload):
                     return
 
                 msg = MIMEMultipart('alternative')
-                msg['Subject'] = "Recordatorio: Tu suscripción está por renovarse"
+                msg['Subject'] = "Recordatorio: Tu suscripciÃ³n estÃ¡ por renovarse"
                 msg['From'] = f"{SMTP_FROM_NAME} <{SMTP_FROM_EMAIL}>"
                 msg['To'] = user_email
                 
@@ -377,10 +374,10 @@ def process_email(payload):
                 <body style='margin: 0; padding: 0; background-color: #f5f5fa; font-family: Arial, sans-serif;'>
                     <div style='padding: 20px; background-color: #f5f5fa; color: #111;'>
                         <div style='max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 8px; border: 1px solid #00000020;'>
-                            <h2 style='color: #111111; margin-top: 0;'>Recordatorio de renovación</h2>
+                            <h2 style='color: #111111; margin-top: 0;'>Recordatorio de renovaciÃ³n</h2>
                             <p style='color: #666666; font-size: 15px; line-height: 1.5;'>Hola {username},</p>
-                            <p style='color: #666666; font-size: 15px; line-height: 1.5;'>Te recordamos que tu suscripción a <strong>{tier_name} ({billing_period_es})</strong> se renovará automáticamente el próximo <strong>{renewal_date}</strong>.</p>
-                            <p style='color: #666666; font-size: 15px; line-height: 1.5;'>Si deseas continuar disfrutando de tus beneficios, no necesitas hacer nada. Si prefieres cancelar, puedes hacerlo desde la configuración de tu cuenta antes de esta fecha.</p>
+                            <p style='color: #666666; font-size: 15px; line-height: 1.5;'>Te recordamos que tu suscripciÃ³n a <strong>{tier_name} ({billing_period_es})</strong> se renovarÃ¡ automÃ¡ticamente el prÃ³ximo <strong>{renewal_date}</strong>.</p>
+                            <p style='color: #666666; font-size: 15px; line-height: 1.5;'>Si deseas continuar disfrutando de tus beneficios, no necesitas hacer nada. Si prefieres cancelar, puedes hacerlo desde la configuraciÃ³n de tu cuenta antes de esta fecha.</p>
                         </div>
                     </div>
                 </body>
@@ -489,7 +486,6 @@ def scheduler_loop():
             try:
                 conn = get_db_connection()
                 cursor = conn.cursor(dictionary=True)
-                # Check for renewals between 6 and 8 days from now
                 cursor.execute("""
                     SELECT id, user_id, tier, billing_period, current_period_end 
                     FROM subscriptions 
@@ -505,7 +501,7 @@ def scheduler_loop():
                         renewal_date = sub['current_period_end'].strftime('%Y-%m-%d')
                         redis_key = f"notified:renewal:{sub['id']}:{renewal_date}"
                         if not r.exists(redis_key):
-                            tier_name = 'Premium' if sub['tier'] == 2 else ('Básico' if sub['tier'] == 0 else 'Pro')
+                            tier_name = 'Premium' if sub['tier'] == 2 else ('BÃ¡sico' if sub['tier'] == 0 else 'Pro')
                             payload = json.dumps({
                                 'type': 'upcoming_renewal',
                                 'user_id': sub['user_id'],
