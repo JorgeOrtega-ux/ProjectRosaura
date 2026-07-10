@@ -1,5 +1,5 @@
 <?php
-// config/routes.php
+
 
 return [
     '/' => ['view' => 'app/home.php'],
@@ -44,7 +44,7 @@ return [
     '/settings/devices' => ['view' => 'settings/security/devices.php', 'auth' => true],
     '/settings/delete-account' => ['view' => 'settings/profile/delete-account.php', 'auth' => true],
 
-    // --- RUTAS DE LIENZOS ---
+
     '/canvases/create' => ['view' => 'canvases/create.php', 'auth' => true, 'permissions' => ['create_canvas'], 'requires_2fa' => false],
     '/canvases/manage' => ['view' => 'canvases/manage.php', 'auth' => true, 'permissions' => ['manage_canvases'], 'requires_2fa' => false],
     
@@ -65,10 +65,10 @@ return [
     '/canvases/join' => ['view' => 'canvases/join.php', 'auth' => true, 'permissions' => ['join_canvas'], 'requires_2fa' => false],
     '/canvases/palettes/create' => ['view' => 'canvases/custom-palette-create.php', 'auth' => true, 'requires_2fa' => false],
 
-    // --- NUEVA RUTA PÚBLICA DE GALERÍA DE SNAPSHOTS ---
+
     '/design/s/:uuid' => ['view' => 'canvases/snapshots-gallery.php'],
     
-    // --- NUEVA RUTA: VISOR DE SNAPSHOT AISLADO ---
+
     '/snapshot/view/:id' => ['view' => 'canvases/snapshot-viewer.php'],
 
     '/admin' => ['view' => 'admin/dashboard.php', 'auth' => true, 'permissions' => ['access_admin_panel'], 'requires_2fa' => false],
