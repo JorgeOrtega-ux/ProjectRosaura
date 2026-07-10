@@ -13,6 +13,10 @@ export const DesignTemplates = {
         const btnOpenJoinLive = e.target.closest('[data-action="openJoinLiveModal"]');
         if (btnOpenJoinLive) {
             e.preventDefault();
+            if (this.liveShareStatus === 'owner') {
+                showMessage(__('err_cannot_join_while_streaming') || 'No puedes unirte a una transmisión mientras transmites', 'warning');
+                return true;
+            }
             if (window.dialogSystem) {
                 window.dialogSystem.show('joinLiveShare');
             }
@@ -97,6 +101,10 @@ export const DesignTemplates = {
         const btnSubmitJoinLive = e.target.closest('[data-action="submitJoinLive"]');
         if (btnSubmitJoinLive) {
             e.preventDefault();
+            if (this.liveShareStatus === 'owner') {
+                showMessage(__('err_cannot_join_while_streaming') || 'No puedes unirte a una transmisión mientras transmites', 'error');
+                return true;
+            }
             const input = document.querySelector('[data-ref="live-join-code-modal"]');
             
             if (input && input.value.trim() !== '') {
@@ -163,6 +171,12 @@ export const DesignTemplates = {
                         btnStartLive.classList.add('disabled');
                         if (btnStop) btnStop.classList.remove('disabled');
                         
+                        const btnOpenJoinLive = document.querySelector('[data-action="openJoinLiveModal"]');
+                        if (btnOpenJoinLive) {
+                            btnOpenJoinLive.classList.add('disabled-interactive');
+                            btnOpenJoinLive.setAttribute('title', 'No puedes unirte mientras transmites');
+                        }
+                        
                         const btnToggleLiveMenu = document.querySelector('[data-menu-target="menu-live"]');
                         if (btnToggleLiveMenu) {
                             btnToggleLiveMenu.classList.add('component-color-indicator');
@@ -195,6 +209,12 @@ export const DesignTemplates = {
                 
                 btnStopLive.classList.add('disabled');
                 if (btnStart) btnStart.classList.remove('disabled');
+
+                const btnOpenJoinLive = document.querySelector('[data-action="openJoinLiveModal"]');
+                if (btnOpenJoinLive) {
+                    btnOpenJoinLive.classList.remove('disabled-interactive');
+                    btnOpenJoinLive.removeAttribute('title');
+                }
 
                 const btnToggleLiveMenu = document.querySelector('[data-menu-target="menu-live"]');
                 if (btnToggleLiveMenu) {

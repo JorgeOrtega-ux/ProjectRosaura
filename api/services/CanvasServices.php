@@ -1743,6 +1743,12 @@ class CanvasServices {
                     $redis->set($key, json_encode($data));
                     $redis->expire($key, 14400); 
 
+                    // Track the user's active broadcast
+                    $userBroadcastKey = CacheConstants::PREFIX_LIVE_SHARE . 'user_' . $userId;
+                    $redis->set($userBroadcastKey, $code);
+                    $redis->expire($userBroadcastKey, 14400);
+
+
                     return ['success' => true, 'data' => ['code' => $code]];
                 }
             }
@@ -1754,12 +1760,26 @@ class CanvasServices {
         }
     }
 
-    public function joinLiveShare(string $code, int $targetCanvasId): array {
+    public function joinLiveShare(string $code, int $targetCanvasId, ?int $userId = null): array {
         try {
             if (class_exists(RedisCache::class)) {
                 $redisInstance = new RedisCache();
                 $redis = $redisInstance->getClient();
                 if ($redis) {
+                    if ($userId) {
+                        $userBroadcastKey = CacheConstants::PREFIX_LIVE_SHARE . 'user_' . $userId;
+                        $activeCode = $redis->get($userBroadcastKey);
+                        if ($activeCode) {
+                            // Check if the broadcast actually still exists
+                            $activeData = $redis->get(CacheConstants::PREFIX_LIVE_SHARE . $activeCode);
+                            if ($activeData) {
+                                return ['success' => false, 'message' => __('err_cannot_join_while_streaming') ?? 'No puedes unirte a una transmisión mientras transmites.'];
+                            } else {
+                                $redis->del($userBroadcastKey); // Cleanup stale key
+                            }
+                        }
+                    }
+
                     $key = CacheConstants::PREFIX_LIVE_SHARE . $code;
                     $dataRaw = $redis->get($key);
                     

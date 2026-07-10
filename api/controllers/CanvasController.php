@@ -813,7 +813,8 @@ class CanvasController extends BaseController {
             }
 
             // CORRECCIÓN: Se envía el $canvasId como parámetro extra al servicio
-            $result = $this->canvasServices->joinLiveShare(strtoupper($code), (int)$canvasId);
+            $userId = $this->session->isLoggedIn() ? $this->session->getActiveAccountId() : null;
+            $result = $this->canvasServices->joinLiveShare(strtoupper($code), (int)$canvasId, $userId);
             return $this->respond($result);
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);

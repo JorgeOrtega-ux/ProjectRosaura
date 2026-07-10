@@ -11,6 +11,9 @@ if (class_exists(StorePackagesConfig::class) && method_exists(StorePackagesConfi
         $contentPackages = [];
     }
 }
+
+$userPrefs = $_SESSION['user_prefs'] ?? [];
+$acceptedContentTerms = !empty($userPrefs['accepted_content_store_terms']);
 ?>
 <style>
 .store-card {
@@ -42,19 +45,62 @@ if (class_exists(StorePackagesConfig::class) && method_exists(StorePackagesConfi
     font-size: 28px !important;
 }
 .store-card-title {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 700;
     color: var(--text-primary);
     text-align: left;
-    margin-bottom: 8px;
+    margin-bottom: 4px;
 }
 .store-card-desc {
-    font-size: 14px;
+    font-size: 13px;
     color: var(--text-secondary);
     text-align: left;
-    margin-bottom: 24px;
-    line-height: 1.5;
+    margin-bottom: 0;
+    line-height: 1.4;
+}
+.store-card-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 12px;
     flex-grow: 1;
+}
+.store-card-icon {
+    font-size: 28px;
+    color: var(--text-primary);
+    margin-bottom: 0;
+    padding: 8px;
+    border: 1px solid #00000020;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.store-badges-container {
+    display: flex;
+    gap: 8px;
+    margin-top: auto;
+    flex-wrap: wrap;
+    align-items: center;
+    width: 100%;
+}
+.store-badge-interactive {
+    cursor: pointer;
+    background: var(--text-primary);
+    color: var(--bg-surface);
+    font-weight: 600;
+    border-color: transparent;
+}
+.store-badge-fill {
+    flex: 1;
+    justify-content: center;
+    text-align: center;
+}
+.store-badge-full {
+    flex: 1 1 100%;
+    justify-content: center;
+    text-align: center;
 }
 
 .store-coins-balance {
@@ -93,22 +139,27 @@ if (class_exists(StorePackagesConfig::class) && method_exists(StorePackagesConfi
         <div class="component-grid" data-ref="" style="padding: 24px;">
             <?php foreach ($contentPackages as $pkg): ?>
             <div class="store-card">
-                <div class="store-card-icon"><span class="material-symbols-rounded"><?= $pkg['icon'] ?></span></div>
-                <div class="store-card-title"><?= $pkg['name'] ?></div>
-                <div class="store-card-desc"><?= $pkg['description'] ?></div>
+                <div class="store-card-header">
+                    <div class="store-card-icon"><span class="material-symbols-rounded"><?= $pkg['icon'] ?></span></div>
+                    <div class="store-card-text">
+                        <div class="store-card-title"><?= $pkg['name'] ?></div>
+                        <div class="store-card-desc"><?= $pkg['description'] ?></div>
+                    </div>
+                </div>
                 
-                <div style="display: flex; gap: 8px; margin-top: auto; margin-bottom: 16px; flex-wrap: wrap;">
-                    <div class="component-badge">
+                <div class="store-badges-container">
+                    <div class="component-badge store-badge-fill">
                         <span class="material-symbols-rounded">toll</span> <?= number_format($pkg['price_coins']) ?> Monedas
                     </div>
                     <?php if ($pkg['is_single_use']): ?>
-                    <div class="component-badge component-badge--warning">
+                    <div class="component-badge component-badge--warning store-badge-fill">
                         <span class="material-symbols-rounded">info</span> Un solo uso
                     </div>
                     <?php endif; ?>
+                    <div data-action="buyPerk" data-perkid="<?= $pkg['id'] ?>" class="btn-buy-perk component-badge store-badge-interactive store-badge-full">
+                        <span class="material-symbols-rounded" style="color: inherit;">shopping_cart</span> Comprar
+                    </div>
                 </div>
-                
-                <div data-action="buyPerk" data-perkid="<?= $pkg['id'] ?>" class="btn-buy-perk component-button component-button--full component-button--h45" style="text-align: center; justify-content: center; cursor: pointer;">Comprar</div>
             </div>
             <?php endforeach; ?>
         </div>
@@ -117,3 +168,4 @@ if (class_exists(StorePackagesConfig::class) && method_exists(StorePackagesConfi
     </div>
 </div>
 
+<div id="store-content-data" data-accepted="<?= $acceptedContentTerms ? 'true' : 'false' ?>" style="display: none;"></div>

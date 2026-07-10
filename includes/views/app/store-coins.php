@@ -11,6 +11,9 @@ if (class_exists(StorePackagesConfig::class) && method_exists(StorePackagesConfi
         $coinPackages = [];
     }
 }
+
+$userPrefs = $_SESSION['user_prefs'] ?? [];
+$acceptedStoreTerms = !empty($userPrefs['accepted_store_terms']);
 ?>
 <style>
 .store-card {
@@ -27,10 +30,6 @@ if (class_exists(StorePackagesConfig::class) && method_exists(StorePackagesConfi
 .store-card:hover {
     border-color: var(--border-color-hover);
 }
-.store-card.featured {
-    border: 2px solid var(--action-primary);
-    box-shadow: var(--shadow-card);
-}
 .store-card-icon {
     font-size: 28px;
     color: var(--text-primary);
@@ -46,33 +45,55 @@ if (class_exists(StorePackagesConfig::class) && method_exists(StorePackagesConfi
     font-size: 28px !important;
 }
 .store-card-title {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 700;
     color: var(--text-primary);
     text-align: left;
-    margin-bottom: 8px;
+    margin-bottom: 4px;
 }
 .store-card-desc {
-    font-size: 14px;
+    font-size: 13px;
     color: var(--text-secondary);
     text-align: left;
-    margin-bottom: 24px;
-    line-height: 1.5;
+    margin-bottom: 0;
+    line-height: 1.4;
+}
+.store-card-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 12px;
     flex-grow: 1;
 }
-.featured-badge {
-    position: absolute;
-    top: -12px;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: var(--action-primary);
-    color: var(--text-inverse);
-    padding: 4px 12px;
-    border-radius: 12px;
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
+.store-card-icon {
+    font-size: 28px;
+    color: var(--text-primary);
+    margin-bottom: 0;
+    padding: 8px;
+    border: 1px solid #00000020;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
 }
+.store-badges-container {
+    display: flex;
+    gap: 8px;
+    margin-top: auto;
+    flex-wrap: wrap;
+    align-items: center;
+    width: 100%;
+    justify-content: space-between;
+}
+.store-badge-interactive {
+    cursor: pointer;
+    background: var(--text-primary);
+    color: var(--bg-surface);
+    font-weight: 600;
+    border-color: transparent;
+}
+
 
 .store-coins-balance {
     background: var(--bg-surface);
@@ -109,21 +130,23 @@ if (class_exists(StorePackagesConfig::class) && method_exists(StorePackagesConfi
         <?php else: ?>
         <div class="component-grid" data-ref="" style="padding: 24px;">
             <?php foreach ($coinPackages as $pkg): ?>
-            <div class="store-card <?= $pkg['is_featured'] ? 'featured' : '' ?>" <?= $pkg['border_color'] ? 'style="border-color: '.$pkg['border_color'].';"' : '' ?>>
-                <?php if ($pkg['bonus_text']): ?>
-                <div class="featured-badge" <?= $pkg['badge_color'] ? 'style="background-color: '.$pkg['badge_color'].';"' : '' ?>><?= $pkg['bonus_text'] ?></div>
-                <?php endif; ?>
-                <div class="store-card-icon"><span class="material-symbols-rounded" <?= $pkg['icon_color'] ? 'style="color: '.$pkg['icon_color'].';"' : '' ?>><?= $pkg['icon'] ?></span></div>
-                <div class="store-card-title"><?= $pkg['name'] ?></div>
-                <div class="store-card-desc"><?= $pkg['description'] ?></div>
-                
-                <div style="display: flex; gap: 8px; margin-top: auto; margin-bottom: 16px; flex-wrap: wrap;">
-                    <div class="component-badge">
-                        <span class="material-symbols-rounded">payments</span> $<?= number_format($pkg['price_usd'], 2) ?> USD
+            <div class="store-card">
+                <div class="store-card-header">
+                    <div class="store-card-icon"><span class="material-symbols-rounded"><?= $pkg['icon'] ?></span></div>
+                    <div class="store-card-text">
+                        <div class="store-card-title"><?= $pkg['name'] ?></div>
+                        <div class="store-card-desc"><?= $pkg['description'] ?></div>
                     </div>
                 </div>
                 
-                <div data-action="buyCoins" data-amount="<?= $pkg['amount'] ?>" class="btn-buy-coins component-button <?= $pkg['is_featured'] ? 'component-button--dark' : '' ?> component-button--full component-button--h45" style="text-align: center; justify-content: center; cursor: pointer;">Comprar</div>
+                <div class="store-badges-container">
+                    <div class="component-badge">
+                        <span class="material-symbols-rounded">payments</span> $<?= number_format($pkg['price_usd'], 2) ?> USD
+                    </div>
+                    <div data-action="buyCoins" data-amount="<?= $pkg['amount'] ?>" class="btn-buy-coins component-badge store-badge-interactive">
+                        <span class="material-symbols-rounded" style="color: inherit;">shopping_cart</span> Comprar
+                    </div>
+                </div>
             </div>
             <?php endforeach; ?>
         </div>
@@ -132,3 +155,4 @@ if (class_exists(StorePackagesConfig::class) && method_exists(StorePackagesConfi
     </div>
 </div>
 
+<div id="store-coins-data" data-accepted="<?= $acceptedStoreTerms ? 'true' : 'false' ?>" style="display: none;"></div>

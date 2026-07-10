@@ -67,7 +67,7 @@ class DatabaseConstants {
     public const THEME_DARK   = 'dark';
     
     // Opciones permitidas para preferencias 
-    public const ALLOWED_PREF_KEYS = ['language', 'open_links_new_tab', 'theme', 'extended_alerts', 'allow_telemetry'];
+    public const ALLOWED_PREF_KEYS = ['language', 'open_links_new_tab', 'theme', 'extended_alerts', 'allow_telemetry', 'accepted_store_terms', 'accepted_content_store_terms'];
 
     // Tipos de Códigos de Verificación 
     public const VERIFY_TYPE_ACTIVATION = 'account_activation';

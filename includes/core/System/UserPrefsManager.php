@@ -31,7 +31,7 @@ class UserPrefsManager implements UserPrefsManagerInterface {
             $themeSystem = DB::THEME_SYSTEM; // USO DE LA CONSTANTE DE TEMA
             
             // SE INCLUYE allow_telemetry = 1 POR DEFECTO
-            $insPref = $this->pdo->prepare("INSERT INTO {$tblUserPrefs} (user_id, language, open_links_new_tab, theme, extended_alerts, allow_telemetry) VALUES (?, ?, 1, ?, 0, 1)");
+            $insPref = $this->pdo->prepare("INSERT INTO {$tblUserPrefs} (user_id, language, open_links_new_tab, theme, extended_alerts, allow_telemetry, accepted_store_terms, accepted_content_store_terms) VALUES (?, ?, 1, ?, 0, 1, 0, 0)");
             $insPref->execute([$userId, $assignedLang, $themeSystem]);
             
             $stmtPref->execute([$userId]);

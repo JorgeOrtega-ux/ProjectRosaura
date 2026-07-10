@@ -90,6 +90,8 @@ class CanvasRepository implements CanvasRepositoryInterface {
         try {
             $this->db->beginTransaction();
             
+            $stmt = $this->db->prepare("INSERT IGNORE INTO " . DB::TBL_CANVAS_MEMBERS . " (canvas_id, user_id) VALUES (:cid, :uid)");
+            $stmt->execute([':cid' => $canvasId, ':uid' => $userId]);
 
             // Assign role
             $this->assignMemberRole($canvasId, $userId, $roleId);
@@ -147,7 +149,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
 
         $sql = "SELECT c.id, c.uuid, c.name, c.description, c.size, c.palette_id, c.scope_type, c.scope_ref_1, c.scope_ref_2, c.scope_ref_3,
                        CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
-                       (SELECT COUNT(*) FROM " . DB::TBL_CANVAS_MEMBERS . " WHERE canvas_id = c.id) as members_count
+                       (SELECT COUNT(DISTINCT user_id) FROM canvas_user_roles WHERE canvas_id = c.id) as members_count
                 FROM " . DB::TBL_CANVASES . " c
                 LEFT JOIN canvas_favorites f ON c.id = f.canvas_id AND f.user_id = :current_user_id
                 WHERE c.owner_id IS NULL AND c.scope_type != 'personal'
@@ -678,12 +680,32 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function removeMember(int $canvasId, int $userId): bool {
-        $sql = "DELETE FROM canvas_user_roles WHERE canvas_id = :canvas_id AND user_id = :user_id";
-        $stmt = $this->db->prepare($sql);
-        return $stmt->execute([
-            ':canvas_id' => $canvasId,
-            ':user_id'   => $userId
-        ]);
+        try {
+            $this->db->beginTransaction();
+            
+            $sqlRoles = "DELETE FROM canvas_user_roles WHERE canvas_id = :canvas_id AND user_id = :user_id";
+            $stmtRoles = $this->db->prepare($sqlRoles);
+            $stmtRoles->execute([
+                ':canvas_id' => $canvasId,
+                ':user_id'   => $userId
+            ]);
+            
+            $sqlMembers = "DELETE FROM " . DB::TBL_CANVAS_MEMBERS . " WHERE canvas_id = :canvas_id AND user_id = :user_id";
+            $stmtMembers = $this->db->prepare($sqlMembers);
+            $stmtMembers->execute([
+                ':canvas_id' => $canvasId,
+                ':user_id'   => $userId
+            ]);
+            
+            $this->db->commit();
+            return true;
+        } catch (Exception $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            Logger::error("removeMember Error: " . $e->getMessage());
+            return false;
+        }
     }
 
     public function trimMembersToLimit(int $canvasId, int $limit): bool {
@@ -695,7 +717,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
                     SELECT user_id FROM (
                         SELECT user_id FROM canvas_user_roles 
                         WHERE canvas_id = :canvas_id2 
-                        ORDER BY id ASC 
+                        ORDER BY canvas_id ASC 
                         LIMIT :limit
                     ) AS tmp
                 )";
@@ -703,7 +725,20 @@ class CanvasRepository implements CanvasRepositoryInterface {
         $stmt->bindValue(':canvas_id', $canvasId, PDO::PARAM_INT);
         $stmt->bindValue(':canvas_id2', $canvasId, PDO::PARAM_INT);
         $stmt->bindValue(':limit', max(1, $limit), PDO::PARAM_INT);
-        return $stmt->execute();
+        $rolesDeleted = $stmt->execute();
+        
+        // Also cleanup canvas_members that no longer have any roles
+        $sqlClean = "DELETE FROM " . DB::TBL_CANVAS_MEMBERS . " 
+                     WHERE canvas_id = :canvas_id 
+                     AND user_id NOT IN (
+                         SELECT user_id FROM canvas_user_roles WHERE canvas_id = :canvas_id2
+                     )";
+        $stmtClean = $this->db->prepare($sqlClean);
+        $stmtClean->bindValue(':canvas_id', $canvasId, PDO::PARAM_INT);
+        $stmtClean->bindValue(':canvas_id2', $canvasId, PDO::PARAM_INT);
+        $stmtClean->execute();
+        
+        return $rolesDeleted;
     }
 
     public function getSnapshot(int $canvasId): ?string {

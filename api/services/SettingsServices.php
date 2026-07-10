@@ -351,7 +351,9 @@ class SettingsServices
             }
         }
         
-        if ($key === 'open_links_new_tab' || $key === 'extended_alerts' || $key === 'allow_telemetry') $value = ($value == 1) ? 1 : 0;
+        if (in_array($key, ['open_links_new_tab', 'extended_alerts', 'allow_telemetry', 'accepted_store_terms', 'accepted_content_store_terms'])) {
+            $value = ($value == 1) ? 1 : 0;
+        }
 
         if ($this->userRepository->updatePreference($userId, $key, $value)) {
             $userPrefs = $this->sessionManager->get('user_prefs', []);

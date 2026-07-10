@@ -35,12 +35,58 @@ export const DialogTemplates = {
                     </div>
                 </div>
                 <div class="component-modal-actions">
+                </div>
+                <div class="component-modal-actions">
                     <button class="component-button component-button--h45 component-button--dark component-button--full" onclick="window.location.reload()">
                         ¡Empezar a explorar!
                     </button>
                 </div>
             `;
         }
+    },
+
+    modalStoreTerms: {
+        build: () => `
+            <div class="pill-container"><div class="drag-handle"></div></div>
+            <div class="component-modal-header">
+                <h2 class="component-modal-title">Condiciones de Compra</h2>
+                <p class="component-modal-desc">
+                    Antes de continuar, ten en cuenta que todos los precios en la tienda de monedas se muestran en <strong>dólares estadounidenses (USD)</strong>. Adicionalmente, por la naturaleza digital de estos bienes, no ofrecemos reembolsos bajo ninguna circunstancia una vez completada la transacción.
+                </p>
+            </div>
+            <div class="component-modal-body">
+                <label class="component-checkbox" style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer; margin-bottom: 24px;">
+                    <input type="checkbox" id="checkAcceptStoreTerms" style="margin-top: 4px;">
+                    <span style="font-size: 14px; color: var(--text-primary);">He leído y acepto que los precios están en USD y no hay reembolsos.</span>
+                </label>
+            </div>
+            <div class="component-modal-actions">
+                <button class="component-button component-button--h45 hide-on-desktop" data-modal-action="cancel">Cancelar</button>
+                <button class="component-button component-button--h45 component-button--dark component-button--full" data-modal-action="confirm">Confirmar y Continuar</button>
+            </div>
+        `
+    },
+
+    modalContentStoreTerms: {
+        build: () => `
+            <div class="pill-container"><div class="drag-handle"></div></div>
+            <div class="component-modal-header">
+                <h2 class="component-modal-title">Condiciones de Uso</h2>
+                <p class="component-modal-desc">
+                    Ten en cuenta que las ventajas y objetos de la tienda <strong>solo podrán ser utilizadas en lienzos seleccionados</strong>. No todos los lienzos permiten el uso de ventajas y esto depende de la configuración de su administrador.
+                </p>
+            </div>
+            <div class="component-modal-body">
+                <label class="component-checkbox" style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer; margin-bottom: 24px;">
+                    <input type="checkbox" id="checkAcceptContentTerms" style="margin-top: 4px;">
+                    <span style="font-size: 14px; color: var(--text-primary);">Entiendo que las ventajas pueden estar deshabilitadas en algunos lienzos.</span>
+                </label>
+            </div>
+            <div class="component-modal-actions">
+                <button class="component-button component-button--h45 hide-on-desktop" data-modal-action="cancel">Cancelar</button>
+                <button class="component-button component-button--h45 component-button--dark component-button--full" data-modal-action="confirm">Confirmar y Continuar</button>
+            </div>
+        `
     },
 
     activate2FADialog: {
