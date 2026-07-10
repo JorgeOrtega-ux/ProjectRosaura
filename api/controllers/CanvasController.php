@@ -5,6 +5,7 @@ namespace App\Api\Controllers;
 use App\Api\Services\CanvasServices;
 use App\Core\Interfaces\SessionManagerInterface;
 use App\Core\Security\TurnstileValidator;
+use App\Config\RedisCache;
 
 class CanvasController extends BaseController {
     
@@ -97,6 +98,30 @@ class CanvasController extends BaseController {
                     return $this->respond(['success' => false, 'message' => 'Validación de seguridad fallida. Eres un bot sospechoso.', 'http_code' => 403]);
                 }
             }
+
+            // --- RATE LIMITING POR IP ---
+            $remoteIp = $_SERVER['REMOTE_ADDR'] ?? 'unknown_ip';
+            if (class_exists(RedisCache::class)) {
+                $redisInstance = new RedisCache();
+                $redis = $redisInstance->getClient();
+                if ($redis) {
+                    $rateLimitKey = "ws:ticket_ratelimit:{$remoteIp}";
+                    $requests = $redis->incr($rateLimitKey);
+                    
+                    if ($requests == 1) {
+                        $redis->expire($rateLimitKey, 60); // 1 minuto
+                    }
+                    
+                    if ($requests > 20) {
+                        return $this->respond([
+                            'success' => false, 
+                            'message' => 'Estás solicitando tickets demasiado rápido. Por favor, espera un momento.', 
+                            'http_code' => 429
+                        ]);
+                    }
+                }
+            }
+            // -----------------------------
 
             // Si es logueado o pasó Turnstile, se genera el Ticket
             $result = $this->canvasServices->generateWsTicket($userId, (int)$canvasId);

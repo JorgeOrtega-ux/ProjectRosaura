@@ -128,6 +128,13 @@ async def sync_online_counts():
         await asyncio.sleep(5)
 
 async def handler(websocket):
+    origin = websocket.request.headers.get("Origin")
+    app_url = os.getenv("APP_URL", "http://localhost").rstrip("/")
+    if origin and origin != app_url and origin != app_url.replace("http://", "https://"):
+        print(f"[!] Conexión rechazada por CORS: Origen '{origin}' no coincide con '{app_url}'")
+        await websocket.close(code=1008, reason="CORS policy violation")
+        return
+
     path = websocket.request.path
     parsed_path = urlparse(path)
     path_parts = parsed_path.path.strip("/").split("/")
@@ -221,7 +228,21 @@ async def handler(websocket):
     config_key = f"canvas:{canvas_id}:config"
 
     try:
+        last_message_time = time.time()
+        message_count = 0
+
         async for message in websocket:
+            now = time.time()
+            if now - last_message_time > 1.0:
+                last_message_time = now
+                message_count = 0
+            
+            message_count += 1
+            if message_count > 15:
+                print(f"[!] Spam detectado (UserId: {ticket_user_id}). Desconectando WS.")
+                await websocket.close(code=1008, reason="Rate limit exceeded")
+                return
+
             print(f"[DEBUG WS-PY] Recibido desde frontend: {message}")
             try:
                 data = json.loads(message)
@@ -738,7 +759,7 @@ async def main():
     asyncio.create_task(admin_events_listener())
     asyncio.create_task(sync_online_counts())
     
-    async with websockets.serve(handler, host, port):
+    async with websockets.serve(handler, host, port, max_size=4096):
         await asyncio.Future()
 
 if __name__ == "__main__":
