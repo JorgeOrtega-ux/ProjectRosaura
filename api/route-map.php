@@ -330,6 +330,16 @@ return [
         'action' => 'send',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'chat_send', 'max' => 20, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
     ],
+    'chat.delete' => [
+        'controller' => 'App\Api\Controllers\ChatController',
+        'action' => 'delete',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'chat_delete', 'max' => 20, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
+    ],
+    'chat.report' => [
+        'controller' => 'App\Api\Controllers\ChatController',
+        'action' => 'report',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'chat_report', 'max' => 10, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
+    ],
 
     // NUEVA RUTA PARA TICKETS DE WEBSOCKET
     'canvases.get_ws_ticket' => [
@@ -583,6 +593,15 @@ return [
         'controller' => 'App\Api\Controllers\CanvasController',
         'action' => 'delete_template',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_del_tpl', 'max' => 20, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
+    ],
+
+    // ==========================================
+    // CANVASES
+    // ==========================================
+    'canvas.update_chat_restriction' => [
+        'controller' => 'App\Api\Controllers\CanvasChatRestrictionController',
+        'action' => 'updateRestriction',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_update_chat_res', 'max' => 10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
 
     // ==========================================

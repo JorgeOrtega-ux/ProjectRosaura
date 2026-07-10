@@ -60,6 +60,7 @@ return [
     '/canvases/manage/roles/:uuid' => ['view' => 'canvases/roles.php', 'auth' => true, 'permissions' => ['manage_canvases'], 'requires_2fa' => false],
     '/canvases/manage/role-builder/:uuid' => ['view' => 'canvases/role-builder.php', 'auth' => true, 'permissions' => ['manage_canvases'], 'requires_2fa' => false],
     '/canvases/manage/role-permissions/:uuid' => ['view' => 'canvases/role-permissions.php', 'auth' => true, 'permissions' => ['manage_canvases'], 'requires_2fa' => false],
+    '/canvases/manage/chat-restriction/:uuid/:user_uuid' => ['view' => 'canvases/chat-restriction.php', 'auth' => true, 'requires_2fa' => false],
     
     '/canvases/join' => ['view' => 'canvases/join.php', 'auth' => true, 'permissions' => ['join_canvas'], 'requires_2fa' => false],
     '/canvases/palettes/create' => ['view' => 'canvases/custom-palette-create.php', 'auth' => true, 'requires_2fa' => false],

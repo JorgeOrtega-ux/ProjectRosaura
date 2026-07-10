@@ -22,6 +22,28 @@ export class DesignChat {
         this.isChatEnabled = document.querySelector('.component-wrapper')?.dataset.allowChat === '1';
         this.isFirstRenderScrollPending = true;
         this.currentUserId = document.querySelector('[data-module="moduleLiveChat"]')?.dataset.userId || null;
+        this.currentUsername = document.querySelector('[data-module="moduleLiveChat"]')?.dataset.username || 'Usuario';
+        this.canModerateChat = document.querySelector('[data-module="moduleLiveChat"]')?.dataset.canModerate === '1';
+
+        this.typingUsers = new Map();
+        this.lastTypingSent = 0;
+        this.lastIsTyping = false;
+        this.myTypingTimeout = null;
+        
+        // Contenedor para typing indicator
+        this.typingContainer = document.createElement('div');
+        this.typingContainer.className = 'chat-typing-indicator';
+        this.typingContainer.style.display = 'none';
+        this.typingContainer.style.fontSize = '12px';
+        this.typingContainer.style.color = 'var(--text-secondary)';
+        this.typingContainer.style.padding = '4px 16px';
+        this.typingContainer.style.fontStyle = 'italic';
+        this.typingContainer.style.minHeight = '20px';
+        
+        const inputArea = document.querySelector('.component-chat-input-area');
+        if (inputArea && inputArea.parentNode) {
+            inputArea.parentNode.insertBefore(this.typingContainer, inputArea);
+        }
 
         if (this.isChatEnabled && this.chatContainer) {
             this.init();
@@ -39,6 +61,12 @@ export class DesignChat {
             }
         });
         this.resizeObserver.observe(this.chatContainer);
+
+        setInterval(() => {
+            if (this.typingUsers.size > 0) {
+                this.updateTypingUI();
+            }
+        }, 1000);
 
         this.loadHistory();
     }
@@ -64,8 +92,66 @@ export class DesignChat {
                         this.btnSend.classList.remove('active');
                     }
                 }
+                
+                // Emitir typing cada 2 segundos o si cambia de estado
+                const now = Date.now();
+                const isTyping = this.chatInput.value.trim().length > 0;
+                
+                if (this.lastIsTyping !== isTyping || (isTyping && now - this.lastTypingSent > 2000)) {
+                    if (this.controller.wsManager) {
+                        this.controller.wsManager.send({
+                            type: 'chat_typing',
+                            isTyping: isTyping,
+                            username: this.currentUsername
+                        });
+                    }
+                    this.lastTypingSent = now;
+                    this.lastIsTyping = isTyping;
+                }
+
+                // Autoclear typing state after 2 seconds of inactivity
+                if (this.myTypingTimeout) clearTimeout(this.myTypingTimeout);
+                if (isTyping) {
+                    this.myTypingTimeout = setTimeout(() => {
+                        if (this.lastIsTyping && this.controller.wsManager) {
+                            this.controller.wsManager.send({
+                                type: 'chat_typing',
+                                isTyping: false,
+                                username: this.currentUsername
+                            });
+                            this.lastIsTyping = false;
+                        }
+                    }, 2000);
+                }
             });
         }
+
+        // Delegación de eventos para menús de reporte y eliminar
+        this.chatContainer.addEventListener('click', (e) => {
+            const btnDelete = e.target.closest('[data-action="chatDeleteMessage"]');
+            if (btnDelete) {
+                const id = btnDelete.dataset.id;
+                this.deleteMessage(id);
+                const dropdown = btnDelete.closest('.chat-dropdown-module');
+                if (dropdown) { dropdown.classList.remove('active'); dropdown.classList.add('disabled'); }
+            }
+
+            const btnReport = e.target.closest('[data-action="chatReportMessage"]');
+            if (btnReport) {
+                const id = btnReport.dataset.id;
+                this.reportMessage(id);
+                const dropdown = btnReport.closest('.chat-dropdown-module');
+                if (dropdown) { dropdown.classList.remove('active'); dropdown.classList.add('disabled'); }
+            }
+
+            const btnRestrict = e.target.closest('[data-action="chatRestrictUser"]');
+            if (btnRestrict) {
+                const userId = btnRestrict.dataset.userId;
+                window.open((window.AppBasePath || '') + `/canvases/manage/chat-restriction/${this.canvasId}/${userId}`, '_blank');
+                const dropdown = btnRestrict.closest('.chat-dropdown-module');
+                if (dropdown) { dropdown.classList.remove('active'); dropdown.classList.add('disabled'); }
+            }
+        });
 
         if (this.chatContainer) {
             this.chatContainer.addEventListener('scroll', () => {
@@ -79,6 +165,14 @@ export class DesignChat {
         document.addEventListener('canvas:chat_message', (e) => {
             const data = e.detail;
             this.appendMessage(data, true); // true = scroll to bottom
+        });
+
+        document.addEventListener('canvas:chat_typing', (e) => {
+            this.handleTypingEvent(e.detail);
+        });
+
+        document.addEventListener('canvas:chat_message_deleted', (e) => {
+            this.removeMessageElement(e.detail.id);
         });
 
         // Evento global para los menús de chat
@@ -204,12 +298,118 @@ export class DesignChat {
             this.chatInput.disabled = false;
             this.btnSend.disabled = false;
             this.chatInput.focus();
+            
+            // Apagar typing
+            if (this.myTypingTimeout) clearTimeout(this.myTypingTimeout);
+            if (this.controller.wsManager) {
+                this.controller.wsManager.send({
+                    type: 'chat_typing',
+                    isTyping: false,
+                    username: this.currentUsername
+                });
+                this.lastIsTyping = false;
+            }
+        }
+    }
+
+    async deleteMessage(id) {
+        if (!confirm('¿Seguro que deseas eliminar este mensaje?')) return;
+        
+        try {
+            const response = await this.api.post(ApiRoutes.Chat.Delete, {
+                canvas_id: this.canvasId,
+                message_id: id
+            });
+            
+            if (response.success || response.status === 'success') {
+                this.removeMessageElement(id);
+                showMessage(response.message, 'success');
+            } else {
+                showMessage(response.message, 'error');
+            }
+        } catch (error) {
+            console.error("Error deleting message:", error);
+            showMessage('Error al eliminar mensaje', 'error');
+        }
+    }
+
+    async reportMessage(id) {
+        const reason = prompt('Selecciona una opción de reporte:\\n1. Spam o publicidad\\n2. Lenguaje ofensivo\\n3. Acoso o incitación al odio\\n4. Otro');
+        if (!reason) return;
+        
+        let reasonText = reason;
+        if (reason === '1') reasonText = 'Spam o publicidad';
+        if (reason === '2') reasonText = 'Lenguaje ofensivo';
+        if (reason === '3') reasonText = 'Acoso o incitación al odio';
+        if (reason === '4') reasonText = 'Otro';
+
+        try {
+            const response = await this.api.post(ApiRoutes.Chat.Report, {
+                canvas_id: this.canvasId,
+                message_id: id,
+                reason: reasonText
+            });
+            
+            if (response.success || response.status === 'success') {
+                showMessage(response.message, 'success');
+            } else {
+                showMessage(response.message, 'error');
+            }
+        } catch (error) {
+            console.error("Error reporting message:", error);
+            showMessage('Error al reportar mensaje', 'error');
+        }
+    }
+
+    removeMessageElement(id) {
+        const msgEl = this.chatContainer.querySelector(`[data-message-id="${id}"]`);
+        if (msgEl) {
+            msgEl.remove();
+        }
+    }
+
+    handleTypingEvent(data) {
+        if (String(data.user_id) === String(this.currentUserId)) return;
+
+        if (data.isTyping) {
+            this.typingUsers.set(data.user_id, {
+                username: data.username,
+                timestamp: Date.now()
+            });
+        } else {
+            this.typingUsers.delete(data.user_id);
+        }
+
+        this.updateTypingUI();
+    }
+
+    updateTypingUI() {
+        // Limpiar expirados (3 segundos sin recibir updates)
+        const now = Date.now();
+        for (const [uid, info] of this.typingUsers.entries()) {
+            if (now - info.timestamp > 3500) {
+                this.typingUsers.delete(uid);
+            }
+        }
+
+        const count = this.typingUsers.size;
+        if (count === 0) {
+            this.typingContainer.style.display = 'none';
+            this.typingContainer.innerHTML = '';
+        } else if (count === 1) {
+            const username = Array.from(this.typingUsers.values())[0].username;
+            this.typingContainer.innerHTML = `<strong>${username}</strong> está escribiendo...`;
+            this.typingContainer.style.display = 'block';
+        } else {
+            this.typingContainer.innerHTML = `${count} usuarios están escribiendo...`;
+            this.typingContainer.style.display = 'block';
         }
     }
 
     createMessageElement(msg) {
         const el = document.createElement('div');
         el.className = 'chat-message';
+        el.dataset.messageId = msg.id;
         
         const time = new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
         
@@ -246,6 +446,16 @@ export class DesignChat {
                                 <span>Reportar</span>
                             </div>
                         </div>
+                        ${(!isMine && this.canModerateChat) ? `
+                        <div class="component-menu-link" data-action="chatRestrictUser" data-user-id="${msg.user_id}">
+                            <div class="component-menu-link-icon">
+                                <span class="material-symbols-rounded" style="color: var(--warning-color, #f39c12);">block</span>
+                            </div>
+                            <div class="component-menu-link-text">
+                                <span style="color: var(--warning-color, #f39c12);">Restringir chat</span>
+                            </div>
+                        </div>
+                        ` : ''}
                         ${isMine ? `
                         <div class="component-menu-link" data-action="chatDeleteMessage" data-id="${msg.id}">
                             <div class="component-menu-link-icon">

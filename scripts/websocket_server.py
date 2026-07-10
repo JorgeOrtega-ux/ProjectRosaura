@@ -660,6 +660,29 @@ async def handler(websocket):
                             })
                             await websocket.send(error_msg)
 
+                # ==========================================
+                # EVENTO CHAT - TYPING INDICATOR
+                # ==========================================
+                elif data.get("type") == "chat_typing":
+                    user_id = WS_META[websocket].get('user_id')
+                    if user_id:
+                        # Check if user is restricted from chat
+                        is_restricted = await r.exists(f"canvas:{canvas_id}:chat_restricted:{user_id}")
+                        if is_restricted:
+                            continue
+                            
+                        typing_msg = json.dumps({
+                            "type": "chat_typing",
+                            "user_id": user_id,
+                            "username": data.get("username", "Alguien"),
+                            "isTyping": data.get("isTyping", False)
+                        })
+                        clients_in_room = ROOMS.get(canvas_id, set())
+                        if len(clients_in_room) > 1:
+                            tasks = [asyncio.create_task(client.send(typing_msg)) for client in clients_in_room if client != websocket]
+                            if tasks:
+                                await asyncio.gather(*tasks)
+
             except Exception as e:
                 print(f"[!] Error procesando mensaje del WS o escritura en Redis: {e}")
 

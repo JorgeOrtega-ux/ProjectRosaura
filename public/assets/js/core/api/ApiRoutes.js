@@ -92,6 +92,7 @@ export const ApiRoutes = {
         Delete: 'canvases.delete',
         Downgrade: 'canvases.downgrade',
         Leave: 'canvases.leave', 
+        UpdateChatRestriction: 'canvas.update_chat_restriction',
         
         Resize: 'canvases.resize',
         GetResizeSettings: 'canvases.get_resize_settings',
@@ -143,6 +144,8 @@ export const ApiRoutes = {
     },
     Chat: {
         History: 'chat.history',
-        Send: 'chat.send'
+        Send: 'chat.send',
+        Delete: 'chat.delete',
+        Report: 'chat.report'
     }
 };

@@ -152,8 +152,22 @@ if (!empty($canvasUuid)) {
                     }
                 }
             } catch (\Throwable $e) {}
+            // Comprobar si tiene restricción de chat
+            $isChatRestricted = false;
+            $chatRestrictionType = null;
+            $chatRestrictionEnd = null;
+            if ($userId) {
+                $restSql = "SELECT suspension_type, end_date FROM canvas_chat_restrictions WHERE canvas_id = :cid AND user_id = :uid LIMIT 1";
+                $restStmt = $db->prepare($restSql);
+                $restStmt->execute([':cid' => $canvasIntId, ':uid' => $userId]);
+                if ($restRow = $restStmt->fetch(PDO::FETCH_ASSOC)) {
+                    $isChatRestricted = true;
+                    $chatRestrictionType = $restRow['suspension_type'];
+                    $chatRestrictionEnd = $restRow['end_date'];
+                }
+            }
         }
-    } catch (\Exception $e) {
+    } catch (Exception $e) {
         error_log("Error al cargar el lienzo en la vista de diseño: " . $e->getMessage());
     }
 }

@@ -88,6 +88,7 @@ export const RouteModulesMap = {
     
     '/canvases/manage/roles/:uuid': { path: './modules/canvases/team/CanvasRolesController.js', className: 'CanvasRolesController', skeletonType: 'layout-dashboard' },
     '/canvases/manage/role-builder/:uuid': { path: './modules/canvases/team/CanvasRoleBuilderController.js', className: 'CanvasRoleBuilderController', skeletonType: 'layout-form-full' },
+    '/canvases/manage/chat-restriction/:uuid/:user_uuid': { path: './modules/canvases/workspace/CanvasChatRestrictionController.js', className: 'CanvasChatRestrictionController', skeletonType: 'layout-form-full' },
     '/canvases/manage/role-permissions/:uuid': { path: './modules/canvases/team/CanvasRolePermissionsController.js', className: 'CanvasRolePermissionsController', skeletonType: 'layout-form-full' },
     
     // 👇 La ruta general de members se evalúa DESPUÉS

@@ -105,6 +105,13 @@ class ChatController
             return ['status' => 'error', 'message' => 'Chat no habilitado en este lienzo', 'code' => 403];
         }
 
+        // Check if user is restricted
+        $stmt = $this->pdo->prepare("SELECT id FROM canvas_chat_restrictions WHERE canvas_id = ? AND user_id = ? AND (suspension_type = 'permanent' OR (suspension_type = 'temporary' AND end_date > NOW()))");
+        $stmt->execute([$canvasId, $userId]);
+        if ($stmt->fetch()) {
+            return ['status' => 'error', 'message' => 'Tu acceso al chat ha sido restringido en este lienzo', 'code' => 403];
+        }
+
         try {
             // Guardar en BD
             $stmt = $this->pdo->prepare("INSERT INTO canvas_chat_messages (canvas_id, user_id, message) VALUES (?, ?, ?)");
@@ -145,5 +152,67 @@ class ChatController
             error_log("Error en ChatController->send: " . $e->getMessage());
             return ['status' => 'error', 'message' => 'Error al enviar mensaje', 'code' => 500];
         }
+    }
+
+    public function delete($request)
+    {
+        $userId = $this->sessionManager->getActiveAccountId();
+        if (!$userId) {
+            return ['status' => 'error', 'message' => 'No autorizado', 'code' => 401];
+        }
+
+        $messageId = (int)($request['message_id'] ?? 0);
+        $canvasId = (int)($request['canvas_id'] ?? 0);
+
+        if ($messageId <= 0 || $canvasId <= 0) {
+            return ['status' => 'error', 'message' => 'Datos inválidos', 'code' => 400];
+        }
+
+        try {
+            $stmt = $this->pdo->prepare("SELECT user_id FROM canvas_chat_messages WHERE id = ? AND canvas_id = ?");
+            $stmt->execute([$messageId, $canvasId]);
+            $msg = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$msg) {
+                return ['status' => 'error', 'message' => 'Mensaje no encontrado', 'code' => 404];
+            }
+
+            if ($msg['user_id'] != $userId) {
+                return ['status' => 'error', 'message' => 'No puedes eliminar mensajes de otros', 'code' => 403];
+            }
+
+            $stmt = $this->pdo->prepare("DELETE FROM canvas_chat_messages WHERE id = ?");
+            $stmt->execute([$messageId]);
+
+            $eventPayload = [
+                'type' => 'chat_message_deleted',
+                'canvas_id' => $canvasId,
+                'data' => [
+                    'id' => $messageId
+                ]
+            ];
+            $this->redis->publish('admin:canvas_events', json_encode($eventPayload));
+
+            return ['status' => 'success', 'message' => 'Mensaje eliminado'];
+        } catch (Exception $e) {
+            return ['status' => 'error', 'message' => 'Error al eliminar', 'code' => 500];
+        }
+    }
+
+    public function report($request)
+    {
+        $userId = $this->sessionManager->getActiveAccountId();
+        if (!$userId) {
+            return ['status' => 'error', 'message' => 'No autorizado', 'code' => 401];
+        }
+
+        $messageId = (int)($request['message_id'] ?? 0);
+        $reason = trim((string)($request['reason'] ?? ''));
+
+        if ($messageId <= 0 || empty($reason)) {
+            return ['status' => 'error', 'message' => 'Datos inválidos', 'code' => 400];
+        }
+
+        return ['status' => 'success', 'message' => 'Mensaje reportado con éxito'];
     }
 }

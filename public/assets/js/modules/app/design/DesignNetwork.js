@@ -182,6 +182,12 @@ export const DesignNetwork = {
                 else if (data.type === 'chat_message') {
                     document.dispatchEvent(new CustomEvent('canvas:chat_message', { detail: data.data }));
                 }
+                else if (data.type === 'chat_typing') {
+                    document.dispatchEvent(new CustomEvent('canvas:chat_typing', { detail: data }));
+                }
+                else if (data.type === 'chat_message_deleted') {
+                    document.dispatchEvent(new CustomEvent('canvas:chat_message_deleted', { detail: data.data }));
+                }
                 else if (data.type === 'live_image_updated') {
                     this.handleLiveImageUpdate(data);
                 }
