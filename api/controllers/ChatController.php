@@ -32,7 +32,7 @@ class ChatController
         $limit = 50;
 
         if ($canvasId <= 0) {
-            return ['status' => 'error', 'message' => 'Lienzo inválido', 'code' => 400];
+            return ['status' => 'error', 'message' => __('err_invalid_canvas'), 'code' => 400];
         }
 
         // Verificar si el canvas permite chat
@@ -41,7 +41,7 @@ class ChatController
         $canvas = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$canvas || $canvas['allow_chat'] != 1) {
-            return ['status' => 'error', 'message' => 'Chat no habilitado en este lienzo', 'code' => 403];
+            return ['status' => 'error', 'message' => __('err_chat_disabled'), 'code' => 403];
         }
 
         try {
@@ -101,8 +101,8 @@ class ChatController
             ];
 
         } catch (Exception $e) {
-            error_log("Error en ChatController->history: " . $e->getMessage());
-            return ['status' => 'error', 'message' => 'Error al obtener historial', 'code' => 500];
+            \App\Core\System\Logger::error("Error en ChatController->history: " . $e->getMessage());
+            return ['status' => 'error', 'message' => __('err_fetch_history'), 'code' => 500];
         }
     }
 
@@ -110,7 +110,7 @@ class ChatController
     {
         $userId = $this->sessionManager->getActiveAccountId();
         if (!$userId) {
-            return ['status' => 'error', 'message' => 'No autorizado', 'code' => 401];
+            return ['status' => 'error', 'message' => __('err_unauthorized'), 'code' => 401];
         }
 
         $canvasId = (int)($request['canvas_id'] ?? 0);
@@ -119,11 +119,11 @@ class ChatController
         $files = $request['_files']['images'] ?? null;
 
         if ($canvasId <= 0 || (empty($messageText) && empty($files['name'][0]))) {
-            return ['status' => 'error', 'message' => 'Datos inválidos', 'code' => 400];
+            return ['status' => 'error', 'message' => __('err_invalid_data'), 'code' => 400];
         }
 
         if (mb_strlen($messageText) > 255) {
-            return ['status' => 'error', 'message' => 'Mensaje muy largo', 'code' => 400];
+            return ['status' => 'error', 'message' => __('err_message_too_long'), 'code' => 400];
         }
 
         $stmt = $this->pdo->prepare("SELECT allow_chat FROM " . DB::TBL_CANVASES . " WHERE id = ?");
@@ -131,14 +131,14 @@ class ChatController
         $canvas = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$canvas || $canvas['allow_chat'] != 1) {
-            return ['status' => 'error', 'message' => 'Chat no habilitado en este lienzo', 'code' => 403];
+            return ['status' => 'error', 'message' => __('err_chat_disabled'), 'code' => 403];
         }
 
         // Check if user is restricted
         $stmt = $this->pdo->prepare("SELECT id FROM canvas_chat_restrictions WHERE canvas_id = ? AND user_id = ? AND (suspension_type = 'permanent' OR (suspension_type = 'temporary' AND end_date > NOW()))");
         $stmt->execute([$canvasId, $userId]);
         if ($stmt->fetch()) {
-            return ['status' => 'error', 'message' => 'Tu acceso al chat ha sido restringido en este lienzo', 'code' => 403];
+            return ['status' => 'error', 'message' => __('err_chat_restricted'), 'code' => 403];
         }
 
         // Protecciones Anti-spam / Anti-bot
@@ -151,14 +151,14 @@ class ChatController
             $this->redis->expire($redisKeyBurst, 5);
         }
         if ($burstCount > 3) {
-            return ['status' => 'error', 'message' => 'Estás enviando mensajes muy rápido. Por favor, espera unos segundos.', 'code' => 429];
+            return ['status' => 'error', 'message' => __('err_chat_rate_limit'), 'code' => 429];
         }
 
         // Prevención de spam exacto duplicado (últimos 10 segundos)
         if (!empty($messageText)) {
             $lastMsg = $this->redis->get($redisKeyLastMsg);
             if ($lastMsg === $messageText) {
-                return ['status' => 'error', 'message' => 'No puedes enviar exactamente el mismo mensaje de forma repetida.', 'code' => 429];
+                return ['status' => 'error', 'message' => __('err_chat_duplicate'), 'code' => 429];
             }
             $this->redis->setex($redisKeyLastMsg, 10, $messageText);
         }
@@ -170,10 +170,10 @@ class ChatController
                 $totalSize = array_sum($files['size']);
                 // max 25 MB total
                 if ($totalSize > 25 * 1024 * 1024) {
-                    return ['status' => 'error', 'message' => 'El tamaño total de las imágenes no puede superar los 25 MB', 'code' => 400];
+                    return ['status' => 'error', 'message' => __('err_chat_image_size'), 'code' => 400];
                 }
                 if (count($files['name']) > 8) {
-                    return ['status' => 'error', 'message' => 'Máximo 8 imágenes por mensaje', 'code' => 400];
+                    return ['status' => 'error', 'message' => __('err_chat_image_count'), 'code' => 400];
                 }
                 
                 $uploadDir = ROOT_PATH . '/public/storage/canvases/' . $canvasId . '/chat/';
@@ -240,8 +240,8 @@ class ChatController
             ];
 
         } catch (Exception $e) {
-            error_log("Error en ChatController->send: " . $e->getMessage());
-            return ['status' => 'error', 'message' => 'Error al enviar mensaje', 'code' => 500];
+            \App\Core\System\Logger::error("Error en ChatController->send: " . $e->getMessage());
+            return ['status' => 'error', 'message' => __('err_send_message'), 'code' => 500];
         }
     }
 
@@ -249,14 +249,14 @@ class ChatController
     {
         $userId = $this->sessionManager->getActiveAccountId();
         if (!$userId) {
-            return ['status' => 'error', 'message' => 'No autorizado', 'code' => 401];
+            return ['status' => 'error', 'message' => __('err_unauthorized'), 'code' => 401];
         }
 
         $messageId = (int)($request['message_id'] ?? 0);
         $canvasId = (int)($request['canvas_id'] ?? 0);
 
         if ($messageId <= 0 || $canvasId <= 0) {
-            return ['status' => 'error', 'message' => 'Datos inválidos', 'code' => 400];
+            return ['status' => 'error', 'message' => __('err_invalid_data'), 'code' => 400];
         }
 
         try {
@@ -265,11 +265,11 @@ class ChatController
             $msg = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if (!$msg) {
-                return ['status' => 'error', 'message' => 'Mensaje no encontrado', 'code' => 404];
+                return ['status' => 'error', 'message' => __('err_message_not_found'), 'code' => 404];
             }
 
             if ($msg['user_id'] != $userId) {
-                return ['status' => 'error', 'message' => 'No puedes eliminar mensajes de otros', 'code' => 403];
+                return ['status' => 'error', 'message' => __('err_cannot_delete_others_message'), 'code' => 403];
             }
 
             $stmt = $this->pdo->prepare("DELETE FROM canvas_chat_messages WHERE id = ?");
@@ -284,9 +284,10 @@ class ChatController
             ];
             $this->redis->publish('admin:canvas_events', json_encode($eventPayload));
 
-            return ['status' => 'success', 'message' => 'Mensaje eliminado'];
+            return ['status' => 'success', 'message' => __('msg_message_deleted')];
         } catch (Exception $e) {
-            return ['status' => 'error', 'message' => 'Error al eliminar', 'code' => 500];
+            \App\Core\System\Logger::error("Error en ChatController->delete: " . $e->getMessage());
+            return ['status' => 'error', 'message' => __('err_delete_message'), 'code' => 500];
         }
     }
 
@@ -294,16 +295,16 @@ class ChatController
     {
         $userId = $this->sessionManager->getActiveAccountId();
         if (!$userId) {
-            return ['status' => 'error', 'message' => 'No autorizado', 'code' => 401];
+            return ['status' => 'error', 'message' => __('err_unauthorized'), 'code' => 401];
         }
 
         $messageId = (int)($request['message_id'] ?? 0);
         $reason = trim((string)($request['reason'] ?? ''));
 
         if ($messageId <= 0 || empty($reason)) {
-            return ['status' => 'error', 'message' => 'Datos inválidos', 'code' => 400];
+            return ['status' => 'error', 'message' => __('err_invalid_data'), 'code' => 400];
         }
 
-        return ['status' => 'success', 'message' => 'Mensaje reportado con éxito'];
+        return ['status' => 'success', 'message' => __('msg_message_reported')];
     }
 }

@@ -211,7 +211,7 @@ class AuthServices {
             'user_prefs' => $userPrefs,
             'user_2fa' => $user['two_factor_enabled'] ?? 0,
             'user_asn' => $asn,
-            'subscription_tier' => (int)($user['subscription_tier'] ?? 0) // <--- AÑADIDO: Guardar tier
+            'subscription_tier' => (int)($user['subscription_tier'] ?? 0)
         ];
 
         return $this->sessionManager->addAccount($user['id'], $userData);

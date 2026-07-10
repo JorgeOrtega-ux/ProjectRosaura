@@ -19,7 +19,7 @@ class LocationServices {
             return ['success' => true, 'data' => $countries];
         } catch (Exception $e) {
             Logger::error('Error fetching countries', ['error' => $e->getMessage()]);
-            return ['success' => false, 'message' => 'Error al cargar la lista de países.'];
+            return ['success' => false, 'message' => __('err_fetch_countries')];
         }
     }
 
@@ -29,7 +29,7 @@ class LocationServices {
             return ['success' => true, 'data' => $states];
         } catch (Exception $e) {
             Logger::error('Error fetching states', ['country_id' => $countryId, 'error' => $e->getMessage()]);
-            return ['success' => false, 'message' => 'Error al cargar la lista de estados.'];
+            return ['success' => false, 'message' => __('err_fetch_states')];
         }
     }
 
@@ -39,7 +39,7 @@ class LocationServices {
             return ['success' => true, 'data' => $cities];
         } catch (Exception $e) {
             Logger::error('Error fetching cities', ['state_id' => $stateId, 'error' => $e->getMessage()]);
-            return ['success' => false, 'message' => 'Error al cargar la lista de municipios.'];
+            return ['success' => false, 'message' => __('err_fetch_cities')];
         }
     }
 }

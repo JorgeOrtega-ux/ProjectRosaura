@@ -192,7 +192,7 @@ class StripeServices {
                 'user_id' => $userId,
                 'error' => $e->getMessage()
             ]);
-            return ['success' => false, 'message_key' => 'stripe.api_error', 'message' => 'Stripe Error: ' . $e->getMessage()];
+            return ['success' => false, 'message_key' => 'stripe.api_error', 'message' => __('err_stripe_api')];
         }
     }
 
@@ -284,7 +284,7 @@ class StripeServices {
                 'user_id' => $userId,
                 'error' => $e->getMessage()
             ]);
-            return ['success' => false, 'message_key' => 'stripe.api_error', 'message' => 'Stripe Error: ' . $e->getMessage()];
+            return ['success' => false, 'message_key' => 'stripe.api_error', 'message' => __('err_stripe_api')];
         }
     }
 
@@ -336,7 +336,7 @@ class StripeServices {
                 return ['success' => true, 'updated' => true];
             } catch (\Exception $e) {
                 Logger::error("Stripe API Error canceling subscription", ['error' => $e->getMessage()]);
-                return ['success' => false, 'message' => $e->getMessage()];
+                return ['success' => false, 'message' => __('err_stripe_api')];
             }
         }
 
@@ -418,11 +418,11 @@ class StripeServices {
                 return [
                     'success' => false, 
                     'message_key' => 'stripe.no_payment_method', 
-                    'message' => 'No tienes un método de pago registrado. Por favor, añade una tarjeta en Configuración > Facturación antes de mejorar tu plan.'
+                    'message' => __('err_stripe_no_payment_method')
                 ];
             }
             
-            return ['success' => false, 'message_key' => 'stripe.api_error', 'message' => 'Stripe Error: ' . $msg];
+            return ['success' => false, 'message_key' => 'stripe.api_error', 'message' => __('err_stripe_api')];
         }
     }
 
@@ -559,7 +559,7 @@ class StripeServices {
                 'user_id' => $userId,
                 'error' => $e->getMessage()
             ]);
-            return ['success' => false, 'message_key' => 'stripe.api_error', 'message' => 'Stripe Error: ' . $e->getMessage()];
+            return ['success' => false, 'message_key' => 'stripe.api_error', 'message' => __('err_stripe_api')];
         }
     }
 

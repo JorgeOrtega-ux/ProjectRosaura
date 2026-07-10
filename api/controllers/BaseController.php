@@ -15,15 +15,9 @@ class BaseController {
             return ['success' => false, 'message' => __('err_unauthorized')];
         }
         
-        http_response_code(500);
-        
-        // MODIFICACIÓN: Inyectamos el error real para poder verlo en la consola de JS
         return [
             'success' => false, 
-            'message' => __('err_internal_server_error'),
-            'debug_message' => $e->getMessage(),
-            'debug_file' => $e->getFile(),
-            'debug_line' => $e->getLine()
+            'message' => __('err_internal_server_error')
         ];
     }
 

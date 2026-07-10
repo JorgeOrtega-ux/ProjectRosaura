@@ -69,7 +69,7 @@ class SettingsServices
         $file = $files['avatar'];
         
         $maxSizeMb = $this->config['max_avatar_size_mb'];
-        // ESCRITURA FÍSICA A LA VERDADERA CARPETA PÚBLICA
+
         $uploadDir = ROOT_PATH . '/storage/public/profilePictures/uploaded/';
 
         $uploadResult = Utils::uploadAndSanitizeImage($file, $uploadDir, $maxSizeMb);
@@ -80,7 +80,7 @@ class SettingsServices
             
             Utils::deleteOldAvatar($oldPic);
             
-            // La ruta guardada en DB sigue siendo la virtual (Symlink) para que el frontend la lea
+
             $newRelPath = 'public/storage/profilePictures/uploaded/' . $fileName;
 
             if ($this->userRepository->updateAvatar($userId, $newRelPath)) {

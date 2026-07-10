@@ -1,5 +1,5 @@
 <?php
-// api/controllers/CanvasController.php
+
 namespace App\Api\Controllers;
 
 use App\Api\Services\CanvasServices;
@@ -23,12 +23,12 @@ class CanvasController extends BaseController {
     private function canManageOfficial(): bool {
         $perms = [];
         
-        // Extraer de SessionManager si es posible
+
         if (method_exists($this->session, 'getPermissions')) {
             $perms = $this->session->getPermissions();
         }
         
-        // O de la variable global de sesión nativa (Fallbacks)
+
         if (empty($perms) && isset($_SESSION['user_permissions'])) {
             $perms = $_SESSION['user_permissions'];
         } elseif (empty($perms) && isset($_SESSION['permissions'])) {
@@ -39,7 +39,7 @@ class CanvasController extends BaseController {
             $perms = [];
         }
 
-        // Validar si tiene un rol de administración o manejo de lienzos oficiales
+
         return in_array('access_admin_panel', $perms) || 
                in_array('canvases.manage_official', $perms);
     }
@@ -62,44 +62,98 @@ class CanvasController extends BaseController {
         
         if (!is_array($perms)) {
             $perms = [];
+<?php
+
+namespace App\Api\Controllers;
+
+use App\Api\Services\CanvasServices;
+use App\Core\Interfaces\SessionManagerInterface;
+use App\Core\Security\TurnstileValidator;
+use App\Config\RedisCache;
+
+class CanvasController extends BaseController {
+    
+    private $canvasServices;
+    private $session;
+
+    public function __construct(CanvasServices $canvasServices, SessionManagerInterface $session) {
+        $this->canvasServices = $canvasServices;
+        $this->session = $session;
+    }
+
+    private function canManageOfficial(): bool {
+        $perms = [];
+        
+
+        if (method_exists($this->session, 'getPermissions')) {
+            $perms = $this->session->getPermissions();
+        }
+        
+
+        if (empty($perms) && isset($_SESSION['user_permissions'])) {
+            $perms = $_SESSION['user_permissions'];
+        } elseif (empty($perms) && isset($_SESSION['permissions'])) {
+            $perms = $_SESSION['permissions'];
+        }
+        
+        if (!is_array($perms)) {
+            $perms = [];
+        }
+
+
+        return in_array('access_admin_panel', $perms) || 
+               in_array('canvases.manage_official', $perms);
+    }
+
+    private function canCreateOfficial(): bool {
+        $perms = [];
+        
+        if (method_exists($this->session, 'getPermissions')) {
+            $perms = $this->session->getPermissions();
+        }
+        
+        if (empty($perms) && isset($_SESSION['user_permissions'])) {
+            $perms = $_SESSION['user_permissions'];
+        } elseif (empty($perms) && isset($_SESSION['permissions'])) {
+            $perms = $_SESSION['permissions'];
+        }
+        
+        if (!is_array($perms)) {
+            $perms = [];
         }
 
         return in_array('access_admin_panel', $perms) || 
                in_array('canvases.create_official', $perms);
     }
 
-    // ==========================================
-    // MÉTODOS PARA HOME / EXPLORA / WEBSOCKETS
-    // ==========================================
-
     public function get_ws_ticket($input) {
         try {
             $canvasId = $input['canvas_id'] ?? $input['id'] ?? null;
             
             if (!$canvasId) {
-                return $this->respond(['success' => false, 'message' => 'ID de lienzo no proporcionado.', 'http_code' => 400]);
+                return $this->respond(['success' => false, 'message' => __('err_invalid_canvas_id'), 'http_code' => 400]);
             }
 
             $isLoggedIn = $this->session->isLoggedIn();
             $userId = $isLoggedIn ? $this->session->getActiveAccountId() : null;
 
-            // Si es un invitado, exigimos validación de Cloudflare Turnstile
+
             if (!$isLoggedIn) {
                 $token = $input['cf-turnstile-response'] ?? $input['turnstile_token'] ?? null;
                 
                 if (!$token) {
-                    return $this->respond(['success' => false, 'message' => 'Validación de seguridad (Turnstile) requerida para espectadores.', 'http_code' => 403]);
+                    return $this->respond(['success' => false, 'message' => __('err_turnstile_required'), 'http_code' => 403]);
                 }
                 
                 $turnstile = new TurnstileValidator();
                 $remoteIp = $_SERVER['REMOTE_ADDR'] ?? null;
                 
                 if (!$turnstile->isValid($token, $remoteIp)) {
-                    return $this->respond(['success' => false, 'message' => 'Validación de seguridad fallida. Eres un bot sospechoso.', 'http_code' => 403]);
+                    return $this->respond(['success' => false, 'message' => __('err_bot_detected'), 'http_code' => 403]);
                 }
             }
 
-            // --- RATE LIMITING POR IP ---
+
             $remoteIp = $_SERVER['REMOTE_ADDR'] ?? 'unknown_ip';
             if (class_exists(RedisCache::class)) {
                 $redisInstance = new RedisCache();
@@ -109,21 +163,21 @@ class CanvasController extends BaseController {
                     $requests = $redis->incr($rateLimitKey);
                     
                     if ($requests == 1) {
-                        $redis->expire($rateLimitKey, 60); // 1 minuto
+                        $redis->expire($rateLimitKey, 60);
                     }
                     
                     if ($requests > 20) {
                         return $this->respond([
                             'success' => false, 
-                            'message' => 'Estás solicitando tickets demasiado rápido. Por favor, espera un momento.', 
+                            'message' => __('err_too_many_tickets'), 
                             'http_code' => 429
                         ]);
                     }
                 }
             }
-            // -----------------------------
 
-            // Si es logueado o pasó Turnstile, se genera el Ticket
+
+
             $result = $this->canvasServices->generateWsTicket($userId, (int)$canvasId);
             
             if (!$result['success']) {
@@ -171,7 +225,7 @@ class CanvasController extends BaseController {
             $canvasId = $input['id'] ?? null;
 
             if (!$canvasId) {
-                return $this->respond(['success' => false, 'message' => __('err_invalid_canvas_id') ?? 'ID de lienzo no proporcionado.']);
+                return $this->respond(['success' => false, 'message' => __('err_invalid_canvas_id')]);
             }
 
             $result = $this->canvasServices->getCanvas($userId, (int)$canvasId, $this->canManageOfficial());
@@ -189,7 +243,7 @@ class CanvasController extends BaseController {
             $canvasId = $input['id'] ?? null;
 
             if (!$canvasId) {
-                return $this->respond(['success' => false, 'message' => 'ID de lienzo no proporcionado.', 'http_code' => 400]);
+                return $this->respond(['success' => false, 'message' => __('err_invalid_canvas_id'), 'http_code' => 400]);
             }
 
             $result = $this->canvasServices->prepareTimelapseDownload($userId, (int)$canvasId, $this->canManageOfficial());
@@ -228,7 +282,7 @@ class CanvasController extends BaseController {
             $snapshotId = $input['id'] ?? null;
 
             if (!$snapshotId) {
-                return $this->respond(['success' => false, 'message' => 'ID de snapshot no proporcionado.', 'http_code' => 400]);
+                return $this->respond(['success' => false, 'message' => __('err_snapshot_id_missing'), 'http_code' => 400]);
             }
 
             $result = $this->canvasServices->prepareSnapshotTimelapseDownload($userId, $snapshotId, $this->canManageOfficial());
@@ -279,10 +333,10 @@ class CanvasController extends BaseController {
             $requiresApproval = filter_var($input['requires_approval'] ?? false, FILTER_VALIDATE_BOOLEAN);
             $size = $input['size'] ?? '64x64';
             
-            // NUEVA VALIDACIÓN: Prevenir inyección de tamaños no oficiales
+
             $validSizes = array_keys(\App\Core\Helpers\Utils::getCanvasSizes());
             if (!in_array($size, $validSizes)) {
-                $size = '64x64'; // Fallback de seguridad
+                $size = '64x64';
             }
 
             $limit = $input['limit'] ?? 10;
@@ -290,7 +344,7 @@ class CanvasController extends BaseController {
             $cooldownBatch = $input['cooldown_pixels_batch'] ?? 5;
             $cooldownSeconds = $input['cooldown_seconds'] ?? 10;
 
-            // Nuevas variables de Alcance (Scope)
+
             $scopeType = $input['scope_type'] ?? 'personal';
             $scopeRef1 = $input['scope_ref_1'] ?? null;
             $scopeRef2 = $input['scope_ref_2'] ?? null;
@@ -300,21 +354,19 @@ class CanvasController extends BaseController {
                 return $this->respond(['success' => false, 'message' => __('err_canvas_name_required')]);
             }
 
-            // ==========================================
-            // VALIDACIÓN ESTRICTA DEL ALCANCE
-            // ==========================================
+
             if ($scopeType === 'global') {
                 $scopeRef1 = null; 
                 $scopeRef2 = null; 
                 $scopeRef3 = null;
             } elseif ($scopeType === 'country' && empty($scopeRef1)) {
-                return $this->respond(['success' => false, 'message' => 'Para un lienzo de país, debes especificar obligatoriamente el país.']);
+                return $this->respond(['success' => false, 'message' => __('err_country_required')]);
             } elseif ($scopeType === 'state' && (empty($scopeRef1) || empty($scopeRef2))) {
-                return $this->respond(['success' => false, 'message' => 'Para un lienzo estatal, debes especificar país y estado.']);
+                return $this->respond(['success' => false, 'message' => __('err_state_required')]);
             } elseif ($scopeType === 'municipality' && (empty($scopeRef1) || empty($scopeRef2) || empty($scopeRef3))) {
-                return $this->respond(['success' => false, 'message' => 'Para un lienzo municipal, debes especificar país, estado y municipio.']);
+                return $this->respond(['success' => false, 'message' => __('err_city_required')]);
             } elseif ($scopeType === 'organization' && empty($scopeRef1)) {
-                return $this->respond(['success' => false, 'message' => 'Para un lienzo de organización, debes especificar el nombre de la misma.']);
+                return $this->respond(['success' => false, 'message' => __('err_org_required')]);
             }
 
             $allowPurchases = isset($input['allow_purchases']) ? (int)$input['allow_purchases'] : 1;
@@ -326,7 +378,7 @@ class CanvasController extends BaseController {
                 $allowPurchases
             );
 
-            // NOTA DE IMPLEMENTACIÓN: Capturar explícitamente el error de límites
+
             if (!$result['success'] && strpos($result['message'] ?? '', 'límite') !== false) {
                 $result['http_code'] = 403;
                 $result['error_code'] = 'UPGRADE_REQUIRED';
@@ -350,7 +402,7 @@ class CanvasController extends BaseController {
             $canvasId = $input['id'] ?? null;
             
             if (!$userId || !$canvasId) {
-                return $this->respond(['success' => false, 'message' => __('err_unauthorized') ?? 'No autorizado.', 'http_code' => 401]);
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
             }
             
             $data = [
@@ -394,11 +446,11 @@ class CanvasController extends BaseController {
             $password = $input['password'] ?? '';
 
             if (empty($canvasIds)) {
-                return $this->respond(['success' => false, 'message' => __('err_no_canvases_selected') ?? 'Debe seleccionar al menos un lienzo.']);
+                return $this->respond(['success' => false, 'message' => __('err_no_canvases_selected')]);
             }
 
             if (empty(trim($password))) {
-                return $this->respond(['success' => false, 'message' => __('err_password_required') ?? 'Debe introducir su contraseña para confirmar.']);
+                return $this->respond(['success' => false, 'message' => __('err_password_required')]);
             }
 
             $result = $this->canvasServices->deleteUserCanvases($userId, $canvasIds, $password);
@@ -423,13 +475,12 @@ class CanvasController extends BaseController {
 
             $uuid = $input['id'] ?? $input['uuid'] ?? null;
             if (!$uuid) {
-                return $this->respond(['success' => false, 'message' => 'Lienzo no proporcionado.']);
+                return $this->respond(['success' => false, 'message' => __('err_canvas_not_provided')]);
             }
 
-            // Confirmación estricta de seguridad
             $confirmWord = $input['confirm_word'] ?? '';
             if (trim(strtoupper($confirmWord)) !== 'CONFIRMAR') {
-                return $this->respond(['success' => false, 'message' => 'Debes escribir CONFIRMAR para proceder con esta acción destructiva.']);
+                return $this->respond(['success' => false, 'message' => __('err_confirm_word_required')]);
             }
 
             $result = $this->canvasServices->downgradeCanvasToBasic($userId, $uuid, $this->canManageOfficial());
@@ -450,7 +501,7 @@ class CanvasController extends BaseController {
             $uuid = $input['id'] ?? $input['uuid'] ?? null;
             
             if (!$uuid) {
-                return $this->respond(['success' => false, 'message' => 'Lienzo no proporcionado.']);
+                return $this->respond(['success' => false, 'message' => __('err_canvas_not_provided')]);
             }
 
             $result = $this->canvasServices->leaveCanvas($userId, $uuid);
@@ -461,13 +512,10 @@ class CanvasController extends BaseController {
         }
     }
 
-    // ==========================================
-    // EXPANSIÓN EN VIVO DEL LIENZO Y PROGRAMACIÓN
-    // ==========================================
  public function resize($input) {
         try {
             if (!$this->session->isLoggedIn()) {
-                return $this->respond(['success' => false, 'message' => __('err_unauthorized') ?? 'No autorizado.', 'http_code' => 401]);
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
             }
 
             $userId = $this->session->getActiveAccountId();
@@ -475,13 +523,13 @@ class CanvasController extends BaseController {
             $newSize = $input['size'] ?? null;
             
             if (!$canvasId || !$newSize) {
-                return $this->respond(['success' => false, 'message' => 'Faltan parámetros de redimensión.']);
+                return $this->respond(['success' => false, 'message' => __('err_resize_params_missing')]);
             }
 
-            // NUEVA VALIDACIÓN: Usando el Single Source of Truth
+
             $validSizes = array_keys(\App\Core\Helpers\Utils::getCanvasSizes());
             if (!in_array($newSize, $validSizes)) {
-                return $this->respond(['success' => false, 'message' => 'Tamaño de lienzo inválido.']);
+                return $this->respond(['success' => false, 'message' => __('err_invalid_canvas_size')]);
             }
 
             $result = $this->canvasServices->resizeCanvas($userId, (int)$canvasId, $newSize, $this->canManageOfficial());
@@ -501,7 +549,7 @@ class CanvasController extends BaseController {
             $userId = $this->session->getActiveAccountId();
             $canvasId = $input['id'] ?? null;
             if (!$canvasId) {
-                return $this->respond(['success' => false, 'message' => 'Lienzo no proporcionado.']);
+                return $this->respond(['success' => false, 'message' => __('err_canvas_not_provided')]);
             }
             
             return $this->respond($this->canvasServices->getResizeSettings($userId, (int)$canvasId, $this->canManageOfficial()));
@@ -519,7 +567,7 @@ class CanvasController extends BaseController {
             $userId = $this->session->getActiveAccountId();
             $canvasId = $input['id'] ?? null;
             if (!$canvasId) {
-                return $this->respond(['success' => false, 'message' => 'Lienzo no proporcionado.']);
+                return $this->respond(['success' => false, 'message' => __('err_canvas_not_provided')]);
             }
             
             $data = [
@@ -534,7 +582,6 @@ class CanvasController extends BaseController {
             return $this->handleException($e, __FUNCTION__);
         }
     }
-    // ==========================================
 
     public function assign_member_role($input) {
         try {
@@ -549,7 +596,7 @@ class CanvasController extends BaseController {
             }
 
             if (!$canvasId || !$targetUserId || empty($roles)) {
-                return $this->respond(['success' => false, 'message' => 'Datos incompletos para cambiar los roles.']);
+                return $this->respond(['success' => false, 'message' => __('err_incomplete_role_data')]);
             }
 
             $result = $this->canvasServices->assignMemberRoles($userId, (int)$canvasId, (int)$targetUserId, $roles, $this->canManageOfficial());
@@ -568,7 +615,7 @@ class CanvasController extends BaseController {
             $targetUserId = $input['target_user_id'] ?? null;
 
             if (!$canvasId || !$targetUserId) {
-                return $this->respond(['success' => false, 'message' => 'Datos incompletos para expulsar al miembro.']);
+                return $this->respond(['success' => false, 'message' => __('err_incomplete_kick_data')]);
             }
 
             $result = $this->canvasServices->removeMember($userId, (int)$canvasId, (int)$targetUserId, $this->canManageOfficial());
@@ -587,7 +634,7 @@ class CanvasController extends BaseController {
             $userId = $this->session->getActiveAccountId();
             $canvasId = $input['id'] ?? null;
             if (!$canvasId) {
-                return $this->respond(['success' => false, 'message' => 'Lienzo no proporcionado.']);
+                return $this->respond(['success' => false, 'message' => __('err_canvas_not_provided')]);
             }
             
             return $this->respond($this->canvasServices->getResetSettings($userId, (int)$canvasId, $this->canManageOfficial()));
@@ -605,7 +652,7 @@ class CanvasController extends BaseController {
             $userId = $this->session->getActiveAccountId();
             $canvasId = $input['id'] ?? null;
             if (!$canvasId) {
-                return $this->respond(['success' => false, 'message' => 'Lienzo no proporcionado.']);
+                return $this->respond(['success' => false, 'message' => __('err_canvas_not_provided')]);
             }
             
             $data = [
@@ -624,14 +671,14 @@ class CanvasController extends BaseController {
     public function reset_now($input) {
         try {
             if (!$this->session->isLoggedIn()) {
-                return $this->respond(['success' => false, 'message' => __('err_unauthorized') ?? 'No autorizado.', 'http_code' => 401]);
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
             }
 
             $userId = $this->session->getActiveAccountId();
             $canvasId = $input['id'] ?? null;
             
             if (!$canvasId) {
-                return $this->respond(['success' => false, 'message' => 'Lienzo no proporcionado.']);
+                return $this->respond(['success' => false, 'message' => __('err_canvas_not_provided')]);
             }
             
             $takeSnapshot = filter_var($input['take_snapshot'] ?? false, FILTER_VALIDATE_BOOLEAN);
@@ -649,8 +696,8 @@ class CanvasController extends BaseController {
             $canvasId = $input['canvas_id'] ?? null;
             $termsAccepted = filter_var($input['terms_accepted'] ?? false, FILTER_VALIDATE_BOOLEAN);
 
-            if (!$canvasId) return $this->respond(['success' => false, 'message' => 'Lienzo no proporcionado.']);
-            if (!$termsAccepted) return $this->respond(['success' => false, 'message' => 'Debes aceptar las normas de la comunidad para unirte al lienzo.']);
+            if (!$canvasId) return $this->respond(['success' => false, 'message' => __('err_canvas_not_provided')]);
+            if (!$termsAccepted) return $this->respond(['success' => false, 'message' => __('err_accept_rules_required')]);
             
             return $this->respond($this->canvasServices->requestAccess($userId, (int)$canvasId));
         } catch (\Throwable $e) {
@@ -663,7 +710,7 @@ class CanvasController extends BaseController {
             if (!$this->session->isLoggedIn()) return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
             $userId = $this->session->getActiveAccountId();
             $requestId = $input['request_id'] ?? null;
-            if (!$requestId) return $this->respond(['success' => false, 'message' => 'Solicitud no proporcionada.']);
+            if (!$requestId) return $this->respond(['success' => false, 'message' => __('err_request_not_provided')]);
             
             return $this->respond($this->canvasServices->approveRequest($userId, (int)$requestId, $this->canManageOfficial()));
         } catch (\Throwable $e) {
@@ -676,7 +723,7 @@ class CanvasController extends BaseController {
             if (!$this->session->isLoggedIn()) return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
             $userId = $this->session->getActiveAccountId();
             $requestId = $input['request_id'] ?? null;
-            if (!$requestId) return $this->respond(['success' => false, 'message' => 'Solicitud no proporcionada.']);
+            if (!$requestId) return $this->respond(['success' => false, 'message' => __('err_request_not_provided')]);
             
             return $this->respond($this->canvasServices->rejectRequest($userId, (int)$requestId, $this->canManageOfficial()));
         } catch (\Throwable $e) {
@@ -689,7 +736,7 @@ class CanvasController extends BaseController {
             if (!$this->session->isLoggedIn()) return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
             $userId = $this->session->getActiveAccountId();
             $canvasId = $input['canvas_id'] ?? null;
-            if (!$canvasId) return $this->respond(['success' => false, 'message' => 'Lienzo no proporcionado.']);
+            if (!$canvasId) return $this->respond(['success' => false, 'message' => __('err_canvas_not_provided')]);
             
             return $this->respond($this->canvasServices->getPendingRequests($userId, (int)$canvasId, $this->canManageOfficial()));
         } catch (\Throwable $e) {
@@ -701,7 +748,7 @@ class CanvasController extends BaseController {
         try {
             $uuid = $input['uuid'] ?? null;
             if (!$uuid) {
-                return $this->respond(['success' => false, 'message' => 'UUID no proporcionado.']);
+                return $this->respond(['success' => false, 'message' => __('err_uuid_missing')]);
             }
             
             $userId = $this->session->isLoggedIn() ? $this->session->getActiveAccountId() : null;
@@ -718,7 +765,7 @@ class CanvasController extends BaseController {
         try {
             $id = $input['id'] ?? null;
             if (!$id) {
-                return $this->respond(['success' => false, 'message' => 'ID de snapshot no proporcionado.']);
+                return $this->respond(['success' => false, 'message' => __('err_snapshot_id_missing')]);
             }
             
             $userId = $this->session->isLoggedIn() ? $this->session->getActiveAccountId() : null;
@@ -731,20 +778,16 @@ class CanvasController extends BaseController {
         }
     }
 
-    // ==========================================
-    // ENDPOINTS DE PLANTILLAS DE USUARIO
-    // ==========================================
-
     public function upload_template($input) {
         try {
             if (!$this->session->isLoggedIn()) {
-                return $this->respond(['success' => false, 'message' => __('err_unauthorized') ?? 'No autorizado.', 'http_code' => 401]);
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
             }
             
             $userId = $this->session->getActiveAccountId();
             
             if (!isset($_FILES['file'])) {
-                return $this->respond(['success' => false, 'message' => 'No se detectó ningún archivo en la solicitud.']);
+                return $this->respond(['success' => false, 'message' => __('err_no_file_uploaded')]);
             }
 
             $result = $this->canvasServices->uploadTemplate($userId, $_FILES['file']);
@@ -758,7 +801,7 @@ class CanvasController extends BaseController {
     public function get_templates($input) {
         try {
             if (!$this->session->isLoggedIn()) {
-                return $this->respond(['success' => false, 'message' => __('err_unauthorized') ?? 'No autorizado.', 'http_code' => 401]);
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
             }
             
             $userId = $this->session->getActiveAccountId();
@@ -774,14 +817,14 @@ class CanvasController extends BaseController {
     public function delete_template($input) {
         try {
             if (!$this->session->isLoggedIn()) {
-                return $this->respond(['success' => false, 'message' => __('err_unauthorized') ?? 'No autorizado.', 'http_code' => 401]);
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
             }
             
             $userId = $this->session->getActiveAccountId();
             $templateId = $input['id'] ?? null;
             
             if (!$templateId) {
-                return $this->respond(['success' => false, 'message' => 'ID de plantilla no proporcionado.']);
+                return $this->respond(['success' => false, 'message' => __('err_template_id_missing')]);
             }
 
             $result = $this->canvasServices->deleteTemplate($userId, (int)$templateId);
@@ -792,14 +835,10 @@ class CanvasController extends BaseController {
         }
     }
 
-    // ==========================================
-    // ENDPOINTS LIVE SHARE
-    // ==========================================
-
     public function create_live_share($input) {
         try {
             if (!$this->session->isLoggedIn()) {
-                return $this->respond(['success' => false, 'message' => __('err_unauthorized') ?? 'No autorizado.', 'http_code' => 401]);
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
             }
             $userId = $this->session->getActiveAccountId();
             
@@ -812,7 +851,7 @@ class CanvasController extends BaseController {
             $opacity = $input['opacity'] ?? 1;
 
             if (!$canvasId || !$imgUrl) {
-                return $this->respond(['success' => false, 'message' => 'Faltan parámetros requeridos para crear la sesión.']);
+                return $this->respond(['success' => false, 'message' => __('err_missing_live_share_params')]);
             }
 
             $result = $this->canvasServices->createLiveShare($userId, (int)$canvasId, $imgUrl, (float)$x, (float)$y, (float)$w, (float)$h, (float)$opacity, $this->canManageOfficial());
@@ -825,7 +864,7 @@ class CanvasController extends BaseController {
     public function join_live_share($input) {
         try {
             $code = $input['code'] ?? $input['id'] ?? null;
-            // CORRECCIÓN: Capturamos el canvas_id enviado desde el frontend
+
             $canvasId = $input['canvas_id'] ?? null;
 
             if (!$code) {
@@ -834,10 +873,10 @@ class CanvasController extends BaseController {
             }
 
             if (!$code || strlen($code) < 5) {
-                return $this->respond(['success' => false, 'message' => 'Código de sesión inválido.']);
+                return $this->respond(['success' => false, 'message' => __('err_invalid_session_code')]);
             }
 
-            // CORRECCIÓN: Se envía el $canvasId como parámetro extra al servicio
+
             $userId = $this->session->isLoggedIn() ? $this->session->getActiveAccountId() : null;
             $result = $this->canvasServices->joinLiveShare(strtoupper($code), (int)$canvasId, $userId);
             return $this->respond($result);
@@ -846,137 +885,6 @@ class CanvasController extends BaseController {
         }
     }
 
-    public function get_official($input) {
-        try {
-            $userId = $this->session->isLoggedIn() ? $this->session->getActiveAccountId() : null;
-            $sort = $input['sort'] ?? 'newest';
-            
-            $result = $this->canvasServices->getOfficialCanvases($userId, $sort);
-            return $this->respond($result);
-        } catch (\Throwable $e) {
-            return $this->handleException($e, __FUNCTION__);
-        }
-    }
-
-    public function toggle_favorite($input) {
-        try {
-            if (!$this->session->isLoggedIn()) {
-                return $this->respond(['success' => false, 'message' => __('err_unauthorized') ?? 'No autorizado.', 'http_code' => 401]);
-            }
-
-            $userId = $this->session->getActiveAccountId();
-            $canvasId = $input['id'] ?? $input['canvas_id'] ?? null;
-
-            if (!$canvasId) {
-                return $this->respond(['success' => false, 'message' => 'ID de lienzo no proporcionado.']);
-            }
-
-            $result = $this->canvasServices->toggleFavorite($userId, (int)$canvasId);
-            return $this->respond($result);
-
-        } catch (\Throwable $e) {
-            return $this->handleException($e, __FUNCTION__);
-        }
-    }
-
-    // ==========================================
-    // ENDPOINTS INVITACIONES
-    // ==========================================
-
-    public function generate_invite($input) {
-        try {
-            if (!$this->session->isLoggedIn()) {
-                return $this->respond(['success' => false, 'message' => __('err_unauthorized') ?? 'No autorizado.', 'http_code' => 401]);
-            }
-            $userId = $this->session->getActiveAccountId();
-            $canvasId = $input['canvas_id'] ?? null;
-            $role = $input['role'] ?? 'viewer';
-            $maxUses = isset($input['max_uses']) && $input['max_uses'] !== '' ? (int)$input['max_uses'] : null;
-            $expiresAt = $input['expires_at'] ?? null;
-
-            if (!$canvasId) {
-                return $this->respond(['success' => false, 'message' => 'Falta el ID del lienzo.']);
-            }
-
-            $result = $this->canvasServices->generateInvite($userId, (int)$canvasId, $role, $maxUses, $expiresAt, $this->canManageOfficial());
-            return $this->respond($result);
-        } catch (\Throwable $e) {
-            return $this->handleException($e, __FUNCTION__);
-        }
-    }
-
-    public function list_invites($input) {
-        try {
-            if (!$this->session->isLoggedIn()) {
-                return $this->respond(['success' => false, 'message' => __('err_unauthorized') ?? 'No autorizado.', 'http_code' => 401]);
-            }
-            $userId = $this->session->getActiveAccountId();
-            $canvasId = $input['canvas_id'] ?? null;
-
-            if (!$canvasId) {
-                return $this->respond(['success' => false, 'message' => 'Falta el ID del lienzo.']);
-            }
-
-            $result = $this->canvasServices->listInvites($userId, (int)$canvasId, $this->canManageOfficial());
-            return $this->respond($result);
-        } catch (\Throwable $e) {
-            return $this->handleException($e, __FUNCTION__);
-        }
-    }
-
-    public function revoke_invite($input) {
-        try {
-            if (!$this->session->isLoggedIn()) {
-                return $this->respond(['success' => false, 'message' => __('err_unauthorized') ?? 'No autorizado.', 'http_code' => 401]);
-            }
-            $userId = $this->session->getActiveAccountId();
-            $canvasId = $input['canvas_id'] ?? null;
-            $inviteId = $input['invite_id'] ?? null;
-
-            if (!$canvasId || !$inviteId) {
-                return $this->respond(['success' => false, 'message' => 'Faltan parámetros.']);
-            }
-
-            $result = $this->canvasServices->revokeInvite($userId, (int)$canvasId, (int)$inviteId, $this->canManageOfficial());
-            return $this->respond($result);
-        } catch (\Throwable $e) {
-            return $this->handleException($e, __FUNCTION__);
-        }
-    }
-
-    public function join_via_invite($input) {
-        try {
-            if (!$this->session->isLoggedIn()) {
-                return $this->respond(['success' => false, 'message' => __('err_unauthorized') ?? 'Debes iniciar sesión para unirte.', 'http_code' => 401]);
-            }
-            $userId = $this->session->getActiveAccountId();
-            $code = $input['code'] ?? null;
-            $termsAccepted = filter_var($input['terms_accepted'] ?? false, FILTER_VALIDATE_BOOLEAN);
-
-            if (!$code) {
-                return $this->respond(['success' => false, 'message' => 'Falta el código de invitación.']);
-            }
-
-            if (!$termsAccepted) {
-                return $this->respond(['success' => false, 'message' => 'Debes aceptar los términos y condiciones para unirte al lienzo.']);
-            }
-
-            $result = $this->canvasServices->joinViaInvite($userId, strtoupper(trim($code)));
-            return $this->respond($result);
-        } catch (\Throwable $e) {
-            return $this->handleException($e, __FUNCTION__);
-        }
-    }
-
-    // ==========================================
-    // ENDPOINTS DE PALETAS PERSONALIZADAS
-    // ==========================================
-
-    public function get_custom_palettes($input) {
-        try {
-            if (!$this->session->isLoggedIn()) {
-                return $this->respond(['success' => false, 'message' => __('err_unauthorized') ?? 'No autorizado.', 'http_code' => 401]);
-            }
             $userId = $this->session->getActiveAccountId();
             $result = $this->canvasServices->getCustomPalettes($userId);
             return $this->respond($result);
@@ -988,7 +896,7 @@ class CanvasController extends BaseController {
     public function create_custom_palette($input) {
         try {
             if (!$this->session->isLoggedIn()) {
-                return $this->respond(['success' => false, 'message' => __('err_unauthorized') ?? 'No autorizado.', 'http_code' => 401]);
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
             }
             $userId = $this->session->getActiveAccountId();
             
@@ -996,7 +904,7 @@ class CanvasController extends BaseController {
             $colors = $input['colors'] ?? null;
 
             if (empty(trim($name)) || !is_array($colors) || count($colors) < 4) {
-                return $this->respond(['success' => false, 'message' => 'Nombre y al menos 4 colores son requeridos.']);
+                return $this->respond(['success' => false, 'message' => __('err_palette_incomplete')]);
             }
 
             $result = $this->canvasServices->createCustomPalette($userId, trim($name), $colors);
@@ -1009,13 +917,13 @@ class CanvasController extends BaseController {
     public function delete_custom_palette($input) {
         try {
             if (!$this->session->isLoggedIn()) {
-                return $this->respond(['success' => false, 'message' => __('err_unauthorized') ?? 'No autorizado.', 'http_code' => 401]);
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
             }
             $userId = $this->session->getActiveAccountId();
             $paletteId = $input['id'] ?? $input['palette_key'] ?? null;
 
             if (!$paletteId) {
-                return $this->respond(['success' => false, 'message' => 'ID de paleta no proporcionado.']);
+                return $this->respond(['success' => false, 'message' => __('err_palette_id_missing')]);
             }
 
             $result = $this->canvasServices->deleteCustomPalette($userId, $paletteId);
@@ -1029,7 +937,7 @@ class CanvasController extends BaseController {
         if (!$this->session->isLoggedIn()) return ['success' => false, 'message' => __('err_unauthorized')];
         $userId = $this->session->getActiveAccountId();
         $canvasId = $request['canvas_id'] ?? null;
-        if (!$canvasId) return ['success' => false, 'message' => 'Lienzo no especificado.'];
+        if (!$canvasId) return ['success' => false, 'message' => __('err_canvas_not_specified')];
         
         $result = $this->canvasServices->getCanvasRoles($userId, (int)$canvasId, $this->canManageOfficial());
         return $result;
@@ -1039,7 +947,7 @@ class CanvasController extends BaseController {
         if (!$this->session->isLoggedIn()) return ['success' => false, 'message' => __('err_unauthorized')];
         $userId = $this->session->getActiveAccountId();
         $canvasId = $request['canvas_id'] ?? null;
-        if (!$canvasId) return ['success' => false, 'message' => 'Lienzo no especificado.'];
+        if (!$canvasId) return ['success' => false, 'message' => __('err_canvas_not_specified')];
         
         $result = $this->canvasServices->getCanvasPermissions($userId, (int)$canvasId, $this->canManageOfficial());
         return $result;
@@ -1054,7 +962,7 @@ class CanvasController extends BaseController {
         $permissions = $request['permissions'] ?? [];
         $weight = isset($request['weight']) ? (int)$request['weight'] : 10;
         
-        if (!$canvasId || !$name) return ['success' => false, 'message' => 'Faltan parámetros obligatorios.'];
+        if (!$canvasId || !$name) return ['success' => false, 'message' => __('err_missing_required_params')];
         
         $result = $this->canvasServices->createCanvasRole($userId, (int)$canvasId, $name, $permissions, $weight, $this->canManageOfficial());
         return $result;
@@ -1070,7 +978,7 @@ class CanvasController extends BaseController {
         $permissions = isset($request['permissions']) ? $request['permissions'] : null;
         $weight = isset($request['weight']) ? (int)$request['weight'] : 10;
         
-        if (!$roleId || !$canvasId || !$name) return ['success' => false, 'message' => 'Faltan parámetros obligatorios.'];
+        if (!$roleId || !$canvasId || !$name) return ['success' => false, 'message' => __('err_missing_required_params')];
         
         $result = $this->canvasServices->updateCanvasRole($userId, (int)$roleId, (int)$canvasId, $name, $permissions, $weight, $this->canManageOfficial());
         return $result;
@@ -1084,10 +992,9 @@ class CanvasController extends BaseController {
         $canvasId = $request['canvas_id'] ?? null;
         $permissions = $request['permissions'] ?? [];
         
-        if (!$roleId || !$canvasId) return ['success' => false, 'message' => 'Faltan parámetros obligatorios.'];
+        if (!$roleId || !$canvasId) return ['success' => false, 'message' => __('err_missing_required_params')];
         
-        // We need a specific service method for this, or just reuse updateCanvasRole by fetching the existing name/weight
-        // Let's create a specific method in CanvasServices to avoid race conditions.
+
         $result = $this->canvasServices->updateCanvasRolePermissions($userId, (int)$roleId, (int)$canvasId, $permissions, $this->canManageOfficial());
         return $result;
     }
@@ -1099,7 +1006,7 @@ class CanvasController extends BaseController {
         $roleId = $request['role_id'] ?? null;
         $canvasId = $request['canvas_id'] ?? null;
         
-        if (!$roleId || !$canvasId) return ['success' => false, 'message' => 'Faltan parámetros obligatorios.'];
+        if (!$roleId || !$canvasId) return ['success' => false, 'message' => __('err_missing_required_params')];
         
         $result = $this->canvasServices->deleteCanvasRole($userId, (int)$roleId, (int)$canvasId, $this->canManageOfficial());
         return $result;

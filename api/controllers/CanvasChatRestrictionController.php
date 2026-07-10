@@ -4,6 +4,7 @@ namespace App\Api\Controllers;
 
 use \App\Config\DatabaseManager;
 use \App\Core\System\DatabaseConstants;
+use \App\Core\System\Logger;
 
 class CanvasChatRestrictionController {
     private $pdo;
@@ -15,7 +16,7 @@ class CanvasChatRestrictionController {
 
     public function updateRestriction($data) {
         if (!isset($_SESSION['active_account'])) {
-            return ['status' => 'error', 'message' => 'No autorizado'];
+            return ['status' => 'error', 'message' => __('err_unauthorized')];
         }
 
         $userId = $_SESSION['active_account'];
@@ -34,7 +35,7 @@ class CanvasChatRestrictionController {
         $password = $data['password'] ?? '';
         
         if (!$canvasId || !$targetUserId || !$password) {
-            return ['status' => 'error', 'message' => 'Faltan parámetros'];
+            return ['status' => 'error', 'message' => __('err_missing_parameters')];
         }
 
         // Verify password
@@ -43,7 +44,7 @@ class CanvasChatRestrictionController {
         $stmt->execute([$userId]);
         $hash = $stmt->fetchColumn();
         if (!$hash || !password_verify($password, $hash)) {
-            return ['status' => 'error', 'message' => 'Contraseña incorrecta'];
+            return ['status' => 'error', 'message' => __('err_invalid_password')];
         }
 
         // Verify permissions (owner of canvas)
@@ -52,7 +53,7 @@ class CanvasChatRestrictionController {
         $canvas = $stmt->fetch(\PDO::FETCH_ASSOC);
 
         if (!$canvas) {
-            return ['status' => 'error', 'message' => 'Lienzo no encontrado'];
+            return ['status' => 'error', 'message' => __('err_canvas_not_found')];
         }
 
         // Only owner can ban (or implement role logic later)
@@ -69,13 +70,13 @@ class CanvasChatRestrictionController {
                 $canModerate = true;
             }
             if (!$canModerate) {
-                return ['status' => 'error', 'message' => 'No tienes permisos para restringir el chat en este lienzo'];
+                return ['status' => 'error', 'message' => __('err_no_permissions')];
             }
         }
 
         // Also prevent banning the owner
         if ($targetUserId === $canvas['user_id']) {
-            return ['status' => 'error', 'message' => 'No puedes banear al dueño del lienzo'];
+            return ['status' => 'error', 'message' => __('err_cannot_ban_owner')];
         }
 
         try {
@@ -112,7 +113,7 @@ class CanvasChatRestrictionController {
                     $redis->set("canvas:{$canvasId}:chat_restricted:{$targetUserId}", '1');
                 }
 
-                return ['status' => 'success', 'message' => 'Restricción de chat aplicada correctamente'];
+                return ['status' => 'success', 'message' => __('msg_chat_restriction_applied')];
             } else {
                 // Remove restriction
                 $stmt = $this->pdo->prepare("DELETE FROM canvas_chat_restrictions WHERE canvas_id = ? AND user_id = ?");
@@ -121,10 +122,11 @@ class CanvasChatRestrictionController {
                 $redis = (new \App\Config\RedisCache())->getClient();
                 $redis->del("canvas:{$canvasId}:chat_restricted:{$targetUserId}");
                 
-                return ['status' => 'success', 'message' => 'Restricción de chat eliminada correctamente'];
+                return ['status' => 'success', 'message' => __('msg_chat_restriction_removed')];
             }
         } catch (\Exception $e) {
-            return ['status' => 'error', 'message' => 'Error de base de datos: ' . $e->getMessage()];
+            Logger::error("Error de base de datos en updateRestriction: " . $e->getMessage());
+            return ['status' => 'error', 'message' => __('err_internal_server_error')];
         }
     }
 }

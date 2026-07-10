@@ -126,17 +126,17 @@ class StoreServices {
             if ($perkId === 'no_cooldown_10s') {
                 $key = "user:{$userId}:perk:no_cooldown";
                 if ($redis->exists($key)) {
-                    return ['success' => false, 'message_key' => 'Esta ventaja ya se encuentra activa.'];
+                    return ['success' => false, 'message_key' => 'err_perk_already_active'];
                 }
             } elseif ($perkId === 'pixel_protection_25') {
                 $key = "user:{$userId}:perk:protection";
                 if ($redis->exists($key) && (int)$redis->get($key) > 0) {
-                    return ['success' => false, 'message_key' => 'Esta ventaja ya se encuentra activa.'];
+                    return ['success' => false, 'message_key' => 'err_perk_already_active'];
                 }
             } elseif ($perkId === 'elite_eraser_25') {
                 $key = "user:{$userId}:perk:eraser";
                 if ($redis->exists($key) && (int)$redis->get($key) > 0) {
-                    return ['success' => false, 'message_key' => 'Esta ventaja ya se encuentra activa.'];
+                    return ['success' => false, 'message_key' => 'err_perk_already_active'];
                 }
             }
         } catch (\Throwable $e) {

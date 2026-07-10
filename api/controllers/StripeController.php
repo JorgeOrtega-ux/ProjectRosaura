@@ -1,6 +1,4 @@
 <?php
-// api/controllers/StripeController.php
-
 namespace App\Api\Controllers;
 
 use App\Api\Services\StripeServices;
