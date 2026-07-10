@@ -26,6 +26,10 @@ $canModerateChat = (isset($canvas) && isset($userId) && (isset($canvas['owner_id
         <div class="component-menu-section-parent component-menu-section-parent--chat">
             <!-- Área de mensajes -->
             <div class="component-menu-center component-chat-messages" data-ref="chat-messages-container">
+                <div class="component-empty-state" data-ref="empty-state-rendered" style="display: none;">
+                    <span class="material-symbols-rounded component-empty-state-icon">error</span>
+                    <p class="component-empty-state-text">No hay mensajes.</p>
+                </div>
                 <div class="component-loader-center component-loader-center--compact" data-ref="chat-loader">
                     <div class="component-empty-state-content">
                         <span class="material-symbols-rounded icon-spin-slow">sync</span><br>

@@ -340,11 +340,19 @@ export class DesignChat {
             
             if (this.offset === 0 && this.loader) {
                 this.loader.style.display = 'none';
-                this.chatContainer.innerHTML = '';
+                this.chatContainer.querySelectorAll('.chat-message').forEach(el => el.remove());
             }
 
             if (response.success || response.status === 'success') {
                 const msgs = response.data.messages;
+                
+                const emptyState = this.chatContainer.querySelector('[data-ref="empty-state-rendered"]');
+                if (this.offset === 0 && msgs.length === 0) {
+                    if (emptyState) emptyState.style.display = 'flex';
+                } else {
+                    if (emptyState) emptyState.style.display = 'none';
+                }
+
                 this.hasMore = response.data.has_more;
                 this.offset += msgs.length;
 

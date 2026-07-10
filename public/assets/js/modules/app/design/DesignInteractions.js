@@ -647,17 +647,32 @@ export const DesignInteractions = {
         const list = document.querySelector('[data-ref="user-advantages-list"]');
         if (!list) return;
 
+        const emptyState = list.parentNode.querySelector('[data-ref="empty-state-rendered"]');
+        const emptyText = emptyState ? emptyState.querySelector('.component-empty-state-text') : null;
+
+        const showEmpty = (msg) => {
+            list.style.display = 'none';
+            if (emptyState) {
+                emptyState.style.display = 'flex';
+                if (emptyText && msg) emptyText.innerText = msg;
+            }
+        };
+
+        const hideEmpty = () => {
+            if (emptyState) emptyState.style.display = 'none';
+            list.style.display = 'grid'; // Grid is used for perks
+        };
+
         try {
             const result = await this.api.post('store.get_my_perks', {});
             if (result && result.success) {
                 list.innerHTML = '';
                 if (result.data.length === 0) {
-                    list.innerHTML = `<div class="component-empty-state-content">No tienes ventajas disponibles.</div>`;
+                    showEmpty('No tienes ventajas disponibles.');
                     return;
                 }
 
-                // Ensure list displays as a grid if it isn't already for the new vertical cards
-                list.style.display = 'grid';
+                hideEmpty();
                 list.style.gridTemplateColumns = 'repeat(auto-fill, minmax(180px, 1fr))';
                 list.style.gap = '12px';
 
@@ -696,11 +711,11 @@ export const DesignInteractions = {
                     list.appendChild(el);
                 });
             } else {
-                list.innerHTML = `<div class="component-empty-state-content">${result?.message || 'Error al cargar ventajas.'}</div>`;
+                showEmpty(result?.message || 'Error al cargar ventajas.');
             }
         } catch (error) {
-            console.error('Error loading perks', error);
-            list.innerHTML = `<div class="component-empty-state-content">Error al cargar ventajas.</div>`;
+            console.error('Error cargando ventajas:', error);
+            showEmpty('Error al cargar ventajas.');
         }
     },
 

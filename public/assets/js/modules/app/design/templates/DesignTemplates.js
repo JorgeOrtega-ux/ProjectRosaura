@@ -61,31 +61,33 @@ export const DesignTemplates = {
             const max = btnAdjustLive.hasAttribute('data-max') ? parseFloat(btnAdjustLive.getAttribute('data-max')) : Infinity;
             
             const valRef = document.querySelector(`[data-ref="val_${field}"]`);
-            if (valRef) {
+            const tpl = this.templates.find(t => t.id === this.activeTemplateId);
+            
+            if (valRef && tpl) {
                 let currentVal = parseFloat(valRef.getAttribute('data-val'));
                 let newVal = currentVal + step;
-                if (newVal < min) newVal = min;
-                if (newVal > max) newVal = max;
                 
-                if (field === 'live_opacity') {
-                    newVal = Math.round(newVal * 10) / 10;
-                } else {
+                if (field === 'live_x') {
                     newVal = Math.round(newVal);
+                    newVal = Math.max(0, Math.min(newVal, this.boardWidth - tpl.w));
+                    tpl.x = newVal;
+                } else if (field === 'live_y') {
+                    newVal = Math.round(newVal);
+                    newVal = Math.max(0, Math.min(newVal, this.boardHeight - tpl.h));
+                    tpl.y = newVal;
+                } else if (field === 'live_opacity') {
+                    newVal = Math.round(newVal * 10) / 10;
+                    if (newVal < 0.1) newVal = 0.1;
+                    if (newVal > 1) newVal = 1;
+                    tpl.opacity = newVal;
                 }
                 
                 valRef.setAttribute('data-val', newVal);
                 valRef.textContent = field === 'live_opacity' ? `${Math.round(newVal * 100)}%` : newVal;
                 
-                const tpl = this.templates.find(t => t.id === this.activeTemplateId);
-                if (tpl) {
-                    if (field === 'live_x') tpl.x = newVal;
-                    if (field === 'live_y') tpl.y = newVal;
-                    if (field === 'live_opacity') tpl.opacity = newVal;
-                    
-                    this.requestRender();
-                    if (this.liveShareStatus === 'owner' && typeof this.emitLiveImageUpdate === 'function') {
-                        this.emitLiveImageUpdate();
-                    }
+                this.requestRender();
+                if (this.liveShareStatus === 'owner' && typeof this.emitLiveImageUpdate === 'function') {
+                    this.emitLiveImageUpdate();
                 }
             }
             return true;
@@ -226,13 +228,24 @@ export const DesignTemplates = {
         const container = document.querySelector('[data-ref="user-templates-grid"]');
         if (!container) return;
 
+        const emptyState = container.parentNode.querySelector('[data-ref="empty-state-rendered"]');
+
         container.innerHTML = '';
         this.updateTemplateCount(templates.length);
 
         if (templates.length === 0) {
+            container.style.display = 'none';
+            if (emptyState) {
+                emptyState.style.display = 'flex';
+                const emptyText = emptyState.querySelector('.component-empty-state-text');
+                if (emptyText) emptyText.innerText = 'No tienes plantillas guardadas.';
+            }
             this.updateTemplateUI();
             return;
         }
+
+        container.style.display = 'grid';
+        if (emptyState) emptyState.style.display = 'none';
 
         templates.forEach(tpl => {
             const card = document.createElement('div');

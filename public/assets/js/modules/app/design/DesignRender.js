@@ -4,12 +4,24 @@ import { getPaletteById } from './utils/DesignPaletteUtils.js';
 export const DesignRender = {
     renderColorPalette(paletteId) {
         const palette = getPaletteById(paletteId);
-        if (!palette || !palette.colors) return;
-
         let container = document.querySelector('[data-ref="color-palette-grid"]');
         if (!container) return; 
 
+        const emptyState = container.parentNode.querySelector('[data-ref="empty-state-rendered"]');
         container.innerHTML = '';
+
+        if (!palette || !palette.colors || palette.colors.length === 0) {
+            container.style.display = 'none';
+            if (emptyState) {
+                emptyState.style.display = 'flex';
+                const emptyText = emptyState.querySelector('.component-empty-state-text');
+                if (emptyText) emptyText.innerText = 'No hay colores disponibles.';
+            }
+            return;
+        }
+
+        container.style.display = 'grid';
+        if (emptyState) emptyState.style.display = 'none';
 
         this.currentColor = palette.colors[0].hex;
         if (this.btnColorPalette) {

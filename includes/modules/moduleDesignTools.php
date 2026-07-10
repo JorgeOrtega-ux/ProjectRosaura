@@ -21,68 +21,86 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
             </div>
         </div>
         
-        <div class="component-menu-section-parent">
-            <div class="component-menu-top">
-                <div class="component-form-group">
-                    <div class="component-menu-header-box">
-                        <span class="material-symbols-rounded">swap_horiz</span>
-                        <span class="component-menu-header-title">Posición X</span>
-                    </div>
-                    <div class="component-inline-control component-inline-control--fixed">
-                        <div class="component-inline-control__group">
-                            <button type="button" class="component-inline-control__btn" data-action="adjustLiveTemplate" data-field="live_x" data-step="-10"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
-                            <button type="button" class="component-inline-control__btn" data-action="adjustLiveTemplate" data-field="live_x" data-step="-1"><span class="material-symbols-rounded">chevron_left</span></button>
-                        </div>
-                        <div class="component-inline-control__center" data-ref="val_live_x" data-val="0">0</div>
-                        <div class="component-inline-control__group">
-                            <button type="button" class="component-inline-control__btn" data-action="adjustLiveTemplate" data-field="live_x" data-step="1"><span class="material-symbols-rounded">chevron_right</span></button>
-                            <button type="button" class="component-inline-control__btn" data-action="adjustLiveTemplate" data-field="live_x" data-step="10"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
+        <div class="component-menu-section-parent component-menu-section-parent--chat">
+            <div class="component-menu-center" style="display: flex; flex-direction: column; flex: 1; overflow-y: auto;">
+                <div class="component-menu-section-parent component-menu-section-parent--bordered">
+                    <div class="component-menu-top">
+                        <div class="component-menu-header-box">
+                            <span class="material-symbols-rounded">swap_horiz</span>
+                            <span class="component-menu-header-title">Posición X</span>
                         </div>
                     </div>
-                </div>
-                
-                <div class="component-form-group">
-                    <div class="component-menu-header-box">
-                        <span class="material-symbols-rounded">swap_vert</span>
-                        <span class="component-menu-header-title">Posición Y</span>
-                    </div>
-                    <div class="component-inline-control component-inline-control--fixed">
-                        <div class="component-inline-control__group">
-                            <button type="button" class="component-inline-control__btn" data-action="adjustLiveTemplate" data-field="live_y" data-step="-10"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
-                            <button type="button" class="component-inline-control__btn" data-action="adjustLiveTemplate" data-field="live_y" data-step="-1"><span class="material-symbols-rounded">chevron_left</span></button>
-                        </div>
-                        <div class="component-inline-control__center" data-ref="val_live_y" data-val="0">0</div>
-                        <div class="component-inline-control__group">
-                            <button type="button" class="component-inline-control__btn" data-action="adjustLiveTemplate" data-field="live_y" data-step="1"><span class="material-symbols-rounded">chevron_right</span></button>
-                            <button type="button" class="component-inline-control__btn" data-action="adjustLiveTemplate" data-field="live_y" data-step="10"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
+                    <div class="component-menu-bottom">
+                        <div class="component-inline-control component-inline-control--full">
+                            <div class="component-inline-control__group">
+                                <button type="button" class="component-inline-control__btn" data-action="adjustLiveTemplate" data-field="live_x" data-step="-10"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
+                                <button type="button" class="component-inline-control__btn" data-action="adjustLiveTemplate" data-field="live_x" data-step="-1"><span class="material-symbols-rounded">chevron_left</span></button>
+                            </div>
+                            <div class="component-inline-control__center" data-ref="val_live_x" data-val="0">0</div>
+                            <div class="component-inline-control__group">
+                                <button type="button" class="component-inline-control__btn" data-action="adjustLiveTemplate" data-field="live_x" data-step="1"><span class="material-symbols-rounded">chevron_right</span></button>
+                                <button type="button" class="component-inline-control__btn" data-action="adjustLiveTemplate" data-field="live_x" data-step="10"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
+                            </div>
                         </div>
                     </div>
                 </div>
                 
-                <div class="component-form-group">
-                    <div class="component-menu-header-box">
-                        <span class="material-symbols-rounded">opacity</span>
-                        <span class="component-menu-header-title">Opacidad</span>
-                    </div>
-                    <div class="component-inline-control component-inline-control--fixed">
-                        <div class="component-inline-control__group">
-                            <button type="button" class="component-inline-control__btn" data-action="adjustLiveTemplate" data-field="live_opacity" data-step="-0.5" data-min="0.1" data-max="1"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
-                            <button type="button" class="component-inline-control__btn" data-action="adjustLiveTemplate" data-field="live_opacity" data-step="-0.1" data-min="0.1" data-max="1"><span class="material-symbols-rounded">chevron_left</span></button>
+                <div class="component-menu-section-parent component-menu-section-parent--bordered">
+                    <div class="component-menu-top">
+                        <div class="component-menu-header-box">
+                            <span class="material-symbols-rounded">swap_vert</span>
+                            <span class="component-menu-header-title">Posición Y</span>
                         </div>
-                        <div class="component-inline-control__center" data-ref="val_live_opacity" data-val="0.5">50%</div>
-                        <div class="component-inline-control__group">
-                            <button type="button" class="component-inline-control__btn" data-action="adjustLiveTemplate" data-field="live_opacity" data-step="0.1" data-min="0.1" data-max="1"><span class="material-symbols-rounded">chevron_right</span></button>
-                            <button type="button" class="component-inline-control__btn" data-action="adjustLiveTemplate" data-field="live_opacity" data-step="0.5" data-min="0.1" data-max="1"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
+                    </div>
+                    <div class="component-menu-bottom">
+                        <div class="component-inline-control component-inline-control--full">
+                            <div class="component-inline-control__group">
+                                <button type="button" class="component-inline-control__btn" data-action="adjustLiveTemplate" data-field="live_y" data-step="-10"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
+                                <button type="button" class="component-inline-control__btn" data-action="adjustLiveTemplate" data-field="live_y" data-step="-1"><span class="material-symbols-rounded">chevron_left</span></button>
+                            </div>
+                            <div class="component-inline-control__center" data-ref="val_live_y" data-val="0">0</div>
+                            <div class="component-inline-control__group">
+                                <button type="button" class="component-inline-control__btn" data-action="adjustLiveTemplate" data-field="live_y" data-step="1"><span class="material-symbols-rounded">chevron_right</span></button>
+                                <button type="button" class="component-inline-control__btn" data-action="adjustLiveTemplate" data-field="live_y" data-step="10"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
+                            </div>
                         </div>
                     </div>
                 </div>
                 
-                <div data-ref="live-share-active-alert" class="component-alert component-alert--info disabled">
-                    <div class="component-alert-icon"><span class="material-symbols-rounded">info</span></div>
-                    <div class="component-alert-text">Código: <strong data-ref="live-share-code">...</strong></div>
+                <div class="component-menu-section-parent component-menu-section-parent--bordered">
+                    <div class="component-menu-top">
+                        <div class="component-menu-header-box">
+                            <span class="material-symbols-rounded">opacity</span>
+                            <span class="component-menu-header-title">Opacidad</span>
+                        </div>
+                    </div>
+                    <div class="component-menu-bottom">
+                        <div class="component-inline-control component-inline-control--full">
+                            <div class="component-inline-control__group">
+                                <button type="button" class="component-inline-control__btn" data-action="adjustLiveTemplate" data-field="live_opacity" data-step="-0.5" data-min="0.1" data-max="1"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
+                                <button type="button" class="component-inline-control__btn" data-action="adjustLiveTemplate" data-field="live_opacity" data-step="-0.1" data-min="0.1" data-max="1"><span class="material-symbols-rounded">chevron_left</span></button>
+                            </div>
+                            <div class="component-inline-control__center" data-ref="val_live_opacity" data-val="0.5">50%</div>
+                            <div class="component-inline-control__group">
+                                <button type="button" class="component-inline-control__btn" data-action="adjustLiveTemplate" data-field="live_opacity" data-step="0.1" data-min="0.1" data-max="1"><span class="material-symbols-rounded">chevron_right</span></button>
+                                <button type="button" class="component-inline-control__btn" data-action="adjustLiveTemplate" data-field="live_opacity" data-step="0.5" data-min="0.1" data-max="1"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
-                <div class="component-form-group">
+                <div class="component-menu-section-parent">
+                    <div class="component-menu-top">
+                        <div data-ref="live-share-active-alert" class="component-alert component-alert--info disabled">
+                            <div class="component-alert-icon"><span class="material-symbols-rounded">info</span></div>
+                            <div class="component-alert-text">Código: <strong data-ref="live-share-code">...</strong></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="component-menu-bottom">
+                <div class="component-form-group" style="display: flex; flex-direction: column; gap: 8px;">
                     <button class="component-button component-button--full component-button--dark component-button--h40" data-action="startLive">
                         <span class="material-symbols-rounded">play_arrow</span> Iniciar
                     </button>
@@ -91,8 +109,6 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
                     </button>
                 </div>
             </div>
-            
-            <div class="component-menu-bottom"></div>
         </div>
     </div>
 
@@ -123,6 +139,10 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
                         </div>
                     </div>
                 </div>
+                <div class="component-empty-state" data-ref="empty-state-rendered" style="display: none;">
+                    <span class="material-symbols-rounded component-empty-state-icon">error</span>
+                    <p class="component-empty-state-text">Mensaje generico</p>
+                </div>
             </div>
         </div>
     </div>
@@ -137,7 +157,7 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
             </div>
         </div>
         
-        <div class="component-menu-section-parent">
+        <div class="component-menu-section-parent component-menu-section-parent--bordered">
             <div class="component-menu-top">
                 <div class="component-template-upload-section">
                     <input type="file" accept="image/jpeg, image/png, image/webp" class="hidden-input" data-ref="template-file-input">
@@ -147,14 +167,21 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
                     </button>
                 </div>
             </div>
-
-            <div class="component-menu-bottom">
-                <div class="component-menu-header-box component-menu-header-box--section">
+        </div>
+        
+        <div class="component-menu-section-parent">
+            <div class="component-menu-top">
+                <div class="component-menu-header-box">
                     <span class="material-symbols-rounded">collections_bookmark</span>
                     <span class="component-menu-header-title">Mi Librería (<span data-ref="template-count">0</span>)</span>
                 </div>
-                
+            </div>
+            <div class="component-menu-bottom">
                 <div class="component-items-grid component-items-grid--5" data-ref="user-templates-grid">
+                </div>
+                <div class="component-empty-state" data-ref="empty-state-rendered" style="display: none;">
+                    <span class="material-symbols-rounded component-empty-state-icon">error</span>
+                    <p class="component-empty-state-text">Mensaje generico</p>
                 </div>
             </div>
         </div>
@@ -172,7 +199,7 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
         
         <div class="component-menu-section-parent">
             <div class="component-menu-top">
-                <div class="component-menu-header-box component-menu-header-box--section">
+                <div class="component-menu-header-box">
                     <span class="material-symbols-rounded">inventory_2</span>
                     <span class="component-menu-header-title">Mis Ventajas</span>
                 </div>
@@ -186,6 +213,10 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
                             Cargando...
                         </div>
                     </div>
+                </div>
+                <div class="component-empty-state" data-ref="empty-state-rendered" style="display: none;">
+                    <span class="material-symbols-rounded component-empty-state-icon">error</span>
+                    <p class="component-empty-state-text">No tienes ventajas disponibles.</p>
                 </div>
             </div>
         </div>
