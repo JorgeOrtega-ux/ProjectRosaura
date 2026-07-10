@@ -1,5 +1,4 @@
 <?php 
-// includes/views/canvases/edit.php 
 use \App\Core\System\SubscriptionPlanConstants;
 use App\Config\DatabaseManager;
 
@@ -16,8 +15,6 @@ $maxMembers = $planLimits['max_members_per_canvas'] === -1 ? 50000 : $planLimits
 
 $canvasUuid = $_GET['uuid'] ?? null;
 $canvasId = null;
-
-// Valores por defecto
 $cName = '';
 $cDesc = '';
 $cSize = '64';
@@ -51,7 +48,6 @@ if ($canvasUuid) {
             $cAllowChat = (int)($canvasData['allow_chat'] ?? 0);
         }
     } catch (\Exception $e) {
-        // Silenciado por seguridad
     }
 }
 

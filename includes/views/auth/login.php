@@ -1,10 +1,6 @@
 <?php
-// includes/views/auth/login.php
-// Resolvemos la ruta actual para saber qué etapa mostrar
 $requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $appUrlPath = parse_url(defined('APP_URL') ? APP_URL : '', PHP_URL_PATH) ?: '';
-
-// Removemos el subdirectorio (si existe) de la URI para obtener la ruta relativa real
 $relativePath = $requestUri;
 if ($appUrlPath !== '' && $appUrlPath !== '/' && strpos($requestUri, $appUrlPath) === 0) {
     $relativePath = substr($requestUri, strlen($appUrlPath));
@@ -18,10 +14,7 @@ if (strlen($relativePath) > 1 && substr($relativePath, -1) === '/') {
 }
 
 $errorMsg = null;
-
-// Validación de protección de acceso directo al paso del 2FA
 if ($relativePath === '/login/two-factor') {
-    // FIX: Buscar en el array correcto que genera AuthServices.php
     $sessionKey = defined('\App\Core\System\SessionConstants::KEY_PENDING_2FA') 
                   ? \App\Core\System\SessionConstants::KEY_PENDING_2FA 
                   : 'pending_2fa';
@@ -29,11 +22,9 @@ if ($relativePath === '/login/two-factor') {
     $pending2FA = $_SESSION[$sessionKey] ?? [];
     
     if (empty($pending2FA)) {
-        $errorMsg = __('reg_no_data'); // Reutilizamos el mensaje de 'No hay datos previos...'
+        $errorMsg = __('reg_no_data');
     }
 }
-
-// LOGICA MULTI-SESIÓN: Determinar si es un Login normal o "Añadir Cuenta"
 $linkedAccounts = $_SESSION['accounts'] ?? [];
 $isMultiSessionAdd = count($linkedAccounts) > 0;
 ?>

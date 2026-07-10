@@ -1,21 +1,14 @@
 <?php
-// includes/views/app/snapshot-viewer.php
-
-// Forzar a PHP a mostrar cualquier error fatal o advertencia en pantalla
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 try {
-    // Intentamos capturar el ID de forma segura
     $snapshotId = isset($_GET['id']) ? $_GET['id'] : null;
-    
-    // Función de traducción segura por si la global no está cargando en este contexto
     $title = function_exists('__') ? __('lbl_snapshot_viewer_title') : null;
     $title = $title ?: 'Visor de Snapshot';
 
 } catch (\Throwable $e) {
-    // Si algo falla estrepitosamente en la inicialización
     $phpError = $e->getMessage();
 }
 ?>

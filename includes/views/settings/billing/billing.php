@@ -1,5 +1,4 @@
 <?php
-// includes/views/settings/billing.php
 if (session_status() === PHP_SESSION_NONE) session_start();
 ?>
 
@@ -21,10 +20,8 @@ if (session_status() === PHP_SESSION_NONE) session_start();
             </div>
         </div>
 
-        <!-- Se aplica la caja dinámica como contenedor exclusivo -->
-        <div class="component-bottom" style="padding: 0;" data-ref="dynamic-content-area">
-            <!-- JS inyectará el grid de tarjetas o el component-empty-state aquí -->
-        </div>
+                <div class="component-bottom" style="padding: 0;" data-ref="dynamic-content-area">
+                    </div>
 
     </div>
 </div>

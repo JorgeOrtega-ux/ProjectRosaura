@@ -1,10 +1,7 @@
 <?php
-// includes/views/canvases/custom-palette-create.php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 $userPermissions = $_SESSION['user_permissions'] ?? [];
-// No strict permissions required for creating custom palette other than being logged in, 
-// unless tier limit applies. That's checked on backend on save.
 
 $rawName = '';
 $translatedName = __('canvas_palette_new', 'Mi Nueva Paleta');
@@ -101,8 +98,7 @@ $translatedName = __('canvas_palette_new', 'Mi Nueva Paleta');
                     <hr class="component-divider">
 
                     <div data-ref="paletteColorsContainer" class="component-color-list">
-                        <!-- Colors inserted dynamically via JS -->
-                    </div>
+                                            </div>
 
                 </div>
 

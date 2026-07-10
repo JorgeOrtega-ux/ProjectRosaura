@@ -1,5 +1,4 @@
 <?php
-// includes/core/Repositories/UserRepository.php
 
 namespace App\Core\Repositories;
 
@@ -21,18 +20,11 @@ class UserRepository implements UserRepositoryInterface {
         $this->pdo = $db->getConnection(DB::CONN_IDENTITY);
         $this->roleRepository = $roleRepository;
     }
-
-    /**
-     * OPTIMIZADO: Delegamos la hidratación de roles y permisos al RoleRepository 
-     * aprovechando toda la infraestructura de Redis en lugar de consultas SQL nativas.
-     */
     private function getUserWithDetails(string $column, $value): ?array {
         $tblUsers = DB::TBL_USERS;
         $tblUserRestr = DB::TBL_USER_RESTRICTIONS;
 
         try {
-            // 1. Obtener datos base y restricciones (Relación 1 a 1)
-            // NOTA DE IMPLEMENTACIÓN: Se añadió u.subscription_tier
             $stmtUser = $this->pdo->prepare("
                 SELECT 
                     u.id, u.uuid, u.username, u.email, u.password, u.subscription_tier, u.profile_picture, 
@@ -48,8 +40,6 @@ class UserRepository implements UserRepositoryInterface {
             $user = $stmtUser->fetch(PDO::FETCH_ASSOC);
 
             if (!$user) return null;
-
-            // 2. Obtener roles hidratados de forma segura mediante Redis
             $roles = $this->roleRepository->getUserRoles($user['id']);
 
             if (!empty($roles)) {
@@ -64,8 +54,6 @@ class UserRepository implements UserRepositoryInterface {
                 $user['role_weight'] = null;
                 $user['assigned_roles_ids'] = null;
             }
-
-            // 3. Obtener permisos consolidados mediante Redis
             $permissionsArray = $this->roleRepository->getMergedPermissionsForUser($user['id']);
             $user['permissions'] = !empty($permissionsArray) ? implode(',', $permissionsArray) : null;
 
@@ -76,12 +64,6 @@ class UserRepository implements UserRepositoryInterface {
             return null;
         }
     }
-
-    /**
-     * NOTA: Este método se deja con su Eager Loading SQL nativo intencionalmente 
-     * ya que es mejor consultar roles en lotes (IN) para listas en el Panel de Administración 
-     * que realizar decenas de loops individuales hacia Redis.
-     */
     public function getUsersList(int $limit, int $offset): array {
         $tblUsers = DB::TBL_USERS;
         $tblUserRestr = DB::TBL_USER_RESTRICTIONS;
@@ -89,7 +71,6 @@ class UserRepository implements UserRepositoryInterface {
         $tblUserRoles = DB::TBL_USER_ROLES;
 
         try {
-            // NOTA DE IMPLEMENTACIÓN: Se añadió u.subscription_tier
             $stmtUsers = $this->pdo->prepare("
                 SELECT u.id, u.uuid, u.username, u.email, u.subscription_tier, u.profile_picture, u.created_at,
                        ur.is_suspended, ur.suspension_type
@@ -337,8 +318,6 @@ class UserRepository implements UserRepositoryInterface {
             return false;
         }
     }
-
-    // --- NUEVO MÉTODO PARA DASHBOARD METRICS ---
     public function getRegistrationStats(string $startDate, string $endDate): array {
         $tblUsers = DB::TBL_USERS;
         try {

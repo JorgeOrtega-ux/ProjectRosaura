@@ -1,8 +1,5 @@
 <?php
-// includes/views/settings/preferences/guest.php
 $prefLang = $_COOKIE['pr_language'] ?? 'es-419';
-
-// Obtenemos la lista centralizada de idiomas
 $languages = \App\Core\System\Translator::getAvailableLanguages();
 $currentLangText = $languages[$prefLang] ?? __('default_language_text');
 ?>

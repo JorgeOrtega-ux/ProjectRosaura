@@ -1,5 +1,4 @@
 <?php
-// includes/views/settings/billing/subscription.php
 if (session_status() === PHP_SESSION_NONE) session_start();
 ?>
 
@@ -11,10 +10,8 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                 <p class="component-page-description">Gestiona tu plan actual, límites y ciclo de facturación.</p>
             </div>
 
-            <!-- Contenedor para la Suscripción -->
-            <div class="component-card--grouped" data-ref="subscription-content-area">
-                <!-- JS inyectará la tarjeta de suscripción aquí -->
-            </div>
+                        <div class="component-card--grouped" data-ref="subscription-content-area">
+                            </div>
         </div>
     </div>
 </div>

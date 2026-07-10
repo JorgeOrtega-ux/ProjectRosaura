@@ -1,5 +1,4 @@
 <?php
-// includes/modules/moduleLiveChat.php
 
 if (!isset($canvasAllowChat) || $canvasAllowChat != '1') {
     return;
@@ -19,27 +18,25 @@ $canModerateChat = (isset($canvas) && isset($userId) && (isset($canvas['owner_id
         <div class="component-menu-header">
             <div class="component-menu-header-box">
                 <span class="material-symbols-rounded">chat</span>
-                <span class="component-menu-header-title">Chat en Vivo</span>
+                <span class="component-menu-header-title"><?php echo __('chat_live'); ?></span>
             </div>
         </div>
         
         <div class="component-menu-section-parent component-menu-section-parent--chat">
-            <!-- Área de mensajes -->
-            <div class="component-menu-center component-chat-messages" data-ref="chat-messages-container">
+                        <div class="component-menu-center component-chat-messages" data-ref="chat-messages-container">
                 <div class="component-empty-state" data-ref="empty-state-rendered" style="display: none;">
                     <span class="material-symbols-rounded component-empty-state-icon">error</span>
-                    <p class="component-empty-state-text">No hay mensajes.</p>
+                    <p class="component-empty-state-text"><?php echo __('chat_no_messages'); ?></p>
                 </div>
                 <div class="component-loader-center component-loader-center--compact" data-ref="chat-loader">
                     <div class="component-empty-state-content">
                         <span class="material-symbols-rounded icon-spin-slow">sync</span><br>
-                        Cargando mensajes...
+                        <?php echo __('chat_loading_messages'); ?>
                     </div>
                 </div>
             </div>
             
-            <!-- Área de input -->
-            <div class="component-menu-bottom component-chat-input-area" style="flex-direction: column;">
+                        <div class="component-menu-bottom component-chat-input-area" style="flex-direction: column;">
                 <div class="chat-attachments-preview-container" data-ref="chat-attachments-preview" style="display: none;"></div>
                 <div class="component-search component-search--w-auto">
                     <div class="component-search-input <?php echo (isset($isChatRestricted) && $isChatRestricted) ? 'disabled-interaction' : ''; ?>" style="padding-left: 4px;">
@@ -57,7 +54,7 @@ $canModerateChat = (isset($canvas) && isset($userId) && (isset($canvas['owner_id
                                                 <span class="material-symbols-rounded">attach_file</span>
                                             </div>
                                             <div class="component-menu-link-text">
-                                                <span>Adjuntar fotos</span>
+                                                <span><?php echo __('chat_attach_photos'); ?></span>
                                             </div>
                                         </div>
                                         <div class="component-menu-link">
@@ -65,7 +62,7 @@ $canModerateChat = (isset($canvas) && isset($userId) && (isset($canvas['owner_id
                                                 <span class="material-symbols-rounded">share</span>
                                             </div>
                                             <div class="component-menu-link-text">
-                                                <span>Compartir plantilla</span>
+                                                <span><?php echo __('chat_share_template'); ?></span>
                                             </div>
                                         </div>
                                     </div>
@@ -76,12 +73,12 @@ $canModerateChat = (isset($canvas) && isset($userId) && (isset($canvas['owner_id
                         <input type="file" id="chat-file-input" multiple accept="image/jpeg, image/png, image/webp, image/gif" style="display: none;">
 
                         <?php 
-                        $placeholder = "Escribe un mensaje...";
+                        $placeholder = __('chat_placeholder');
                         if (isset($isChatRestricted) && $isChatRestricted) {
                             if ($chatRestrictionType === 'permanent') {
-                                $placeholder = "Restringido permanentemente";
+                                $placeholder = __('chat_restricted_permanent');
                             } else {
-                                $placeholder = "Restringido hasta: " . ($chatRestrictionEnd ? date('d/m/Y H:i', strtotime($chatRestrictionEnd)) : '');
+                                $placeholder = __('chat_restricted_until') . " " . ($chatRestrictionEnd ? date('d/m/Y H:i', strtotime($chatRestrictionEnd)) : '');
                             }
                         }
                         ?>

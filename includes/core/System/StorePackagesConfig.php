@@ -1,14 +1,8 @@
 <?php
-// includes/core/System/StorePackagesConfig.php
 
 namespace App\Core\System;
 
 class StorePackagesConfig {
-    
-    /**
-     * Retorna los paquetes de monedas disponibles en la tienda.
-     * @return array
-     */
     public static function getCoinPackages(): array {
         return [
             1000 => [
@@ -73,11 +67,6 @@ class StorePackagesConfig {
             ]
         ];
     }
-
-    /**
-     * Retorna los paquetes de contenido/perks disponibles en la tienda.
-     * @return array
-     */
     public static function getContentPackages(): array {
         return [
             'no_cooldown_10s' => [

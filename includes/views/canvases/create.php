@@ -1,5 +1,4 @@
 <?php 
-// includes/views/canvases/create.php 
 use \App\Core\System\SubscriptionPlanConstants;
 use \App\Core\Helpers\Utils;
 
@@ -14,8 +13,6 @@ $maxMembers = $planLimits['max_members_per_canvas'] === -1 ? 50000 : $planLimits
 
 $userPerms = $_SESSION['user_permissions'] ?? [];
 $canCreateOfficial = in_array('access_admin_panel', $userPerms) || in_array('canvases.create_official', $userPerms);
-
-// Cargar la lista oficial de tamaños desde el SSOT
 $canvasSizesList = Utils::getCanvasSizes();
 $defaultSizeKey = '64x64';
 $defaultSizeData = $canvasSizesList[$defaultSizeKey] ?? reset($canvasSizesList);

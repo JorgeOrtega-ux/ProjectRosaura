@@ -1,5 +1,4 @@
 <?php
-// includes/views/site-policy/legal-notice.php
 ?>
 <div class="view-content">
     <div class="component-wrapper component-wrapper--full no-padding" data-ref="legal-notice-wrapper">

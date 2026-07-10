@@ -1,15 +1,9 @@
 <?php
-// includes/views/settings/security/devices.php
 if (session_status() === PHP_SESSION_NONE) session_start();
-
-// 1. Instanciar u obtener el servicio usando tu Contenedor de Dependencias
-// (Ajusta la forma de llamar a $container según cómo esté definido en bootstrap.php)
 global $container;
 $settingsServices = $container->get(\App\Api\Services\SettingsServices::class);
 $response = $settingsServices->getDevices();
 $devices = $response['success'] ? $response['devices'] : [];
-
-// 2. Helper local para parsear el User Agent (similar al que tenías en JS)
 function parseUserAgentPHP($ua) {
     $browser = "Browser"; $os = "OS"; $icon = "devices";
     if (!$ua) return ['browser' => $browser, 'os' => $os, 'icon' => $icon];

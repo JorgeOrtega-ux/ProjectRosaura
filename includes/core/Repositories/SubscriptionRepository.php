@@ -1,5 +1,4 @@
 <?php
-// includes/core/Repositories/SubscriptionRepository.php
 
 namespace App\Core\Repositories;
 

@@ -1,5 +1,4 @@
 <?php
-// includes/core/Mail/EmailTemplates.php
 
 namespace App\Core\Mail;
 use App\Core\System\Translator;

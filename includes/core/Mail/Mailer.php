@@ -1,5 +1,4 @@
 <?php
-// includes/core/Mail/Mailer.php
 
 namespace App\Core\Mail;
 
@@ -57,10 +56,6 @@ class Mailer {
         $acceptLang = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '';
         return Utils::getClosestLanguage($acceptLang) ?: 'es-419';
     }
-
-    /**
-     * Obtiene el límite dinámico de expiración desde la base de datos de configuración global.
-     */
     private function getExpirationConfig($type) {
         try {
             $db = new DatabaseManager();

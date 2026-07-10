@@ -1,5 +1,4 @@
 <?php
-// includes/modules/moduleCalendar.php
 $calendarModuleId = $calendarModuleId ?? 'adminModuleCalendar';
 ?>
 <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="<?php echo htmlspecialchars($calendarModuleId); ?>">

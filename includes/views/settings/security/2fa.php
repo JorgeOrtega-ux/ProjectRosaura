@@ -1,5 +1,4 @@
 <?php
-// includes/views/settings/security/2fa.php
 if (session_status() === PHP_SESSION_NONE) session_start();
 $is2FAActive = !empty($_SESSION['user_2fa']);
 $text2FA = $is2FAActive ? __('2fa_status_active') : __('2fa_status_inactive');

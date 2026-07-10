@@ -8,14 +8,12 @@ use PDO;
 
 class TelemetryRepository implements TelemetryRepositoryInterface {
     private PDO $db;
-
-    // 1. SOLUCIÓN DE ARQUITECTURA: Inyectar DatabaseManager en lugar de PDO
     public function __construct(DatabaseManager $dbManager) {
         $this->db = $dbManager->getConnection(DB::CONN_TELEMETRY);
     }
 
     public function getApiLatencyStats(string $startDate, string $endDate): array {
-        $tbl = DB::TBL_TELEMETRY_API_LATENCY; // 2. USO DE CONSTANTES
+        $tbl = DB::TBL_TELEMETRY_API_LATENCY;
         $stmt = $this->db->prepare("
             SELECT endpoint, method, AVG(latency_ms) as avg_latency, COUNT(*) as total_requests 
             FROM {$tbl} 

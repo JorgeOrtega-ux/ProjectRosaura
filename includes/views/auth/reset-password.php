@@ -1,5 +1,4 @@
 <?php
-// includes/views/auth/reset-password.php
 
 use App\Core\Container;
 use App\Core\Interfaces\VerificationCodeRepositoryInterface;
@@ -8,20 +7,14 @@ use App\Core\System\DatabaseConstants;
 $token = $_GET['token'] ?? '';
 $isValid = false;
 $userEmail = '';
-
-// CORRECCIÓN: Usar el repositorio a través del contenedor en lugar de consultar PDO directamente,
-// ya que el sistema utiliza Redis para almacenar los códigos de verificación temporalmente.
 if (!empty($token)) {
     try {
-        // Aseguramos tener acceso al contenedor global inicializado en bootstrap.php
         global $container;
         if (!isset($container)) {
             $container = new Container();
         }
         
         $verificationRepo = $container->get(VerificationCodeRepositoryInterface::class);
-        
-        // Buscamos el token usando el método oficial de la interfaz
         $verification = $verificationRepo->findValidByCodeAndType($token, DatabaseConstants::VERIFY_TYPE_PASSWORD);
         
         if ($verification) {

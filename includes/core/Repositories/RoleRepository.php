@@ -1,5 +1,4 @@
 <?php
-// includes/core/Repositories/RoleRepository.php
 
 namespace App\Core\Repositories;
 
@@ -23,26 +22,19 @@ class RoleRepository implements RoleRepositoryInterface {
         $this->redisClient = $redisCache->getClient();
     }
 
-    // ==========================================
-    // MÉTODOS DE INVALIDACIÓN (ATOMICIDAD & SEÑALES PASIVAS)
-    // ==========================================
-
     public function invalidateGlobalRolesCache(): void {
         if (!$this->redisClient || defined('SYSTEM_DEGRADED')) return;
-        // Solo borramos la lista global, evitamos el over-invalidation de entidades individuales
         $this->redisClient->del([CacheConstants::PREFIX_ROLES_ALL]);
     }
 
     public function invalidateRoleCache(int $roleId): void {
         if (!$this->redisClient || defined('SYSTEM_DEGRADED')) return;
-        
-        // Obtener el rol actual ANTES de borrar para invalidar también por nombre
         $role = $this->findById($roleId);
         
         $keysToDelete = [
             CacheConstants::PREFIX_ROLE_BY_ID . $roleId,
             CacheConstants::PREFIX_ROLE_PERMS . $roleId,
-            CacheConstants::PREFIX_ROLES_ALL // Invalidar la lista global
+            CacheConstants::PREFIX_ROLES_ALL
         ];
 
         if ($role) {
@@ -50,8 +42,6 @@ class RoleRepository implements RoleRepositoryInterface {
         }
 
         $this->redisClient->del($keysToDelete);
-        
-        // Emisión de Señal de Invalidación Pasiva para SessionManager
         $this->redisClient->setex(CacheConstants::PREFIX_FORCE_REAUTH_ROLE . $roleId, CacheConstants::TTL_ONE_DAY, time());
     }
 
@@ -63,8 +53,6 @@ class RoleRepository implements RoleRepositoryInterface {
             CacheConstants::PREFIX_USER_PERMS . $userId,
             CacheConstants::PREFIX_USER_HIGHEST_ROLE . $userId
         ]);
-
-        // Emisión de Señal de Invalidación Pasiva para SessionManager
         $this->redisClient->setex(CacheConstants::PREFIX_FORCE_REAUTH_USER . $userId, CacheConstants::TTL_ONE_DAY, time());
     }
 
@@ -72,10 +60,6 @@ class RoleRepository implements RoleRepositoryInterface {
         if (!$this->redisClient || defined('SYSTEM_DEGRADED')) return;
         $this->redisClient->del([CacheConstants::PREFIX_ALL_PERMISSIONS]);
     }
-
-    // ==========================================
-    // MÉTODOS DE LECTURA (CACHE-ASIDE + STAMPEDE LOCKS)
-    // ==========================================
 
     public function getAll(): array {
         $cacheKey = CacheConstants::PREFIX_ROLES_ALL;
@@ -266,10 +250,6 @@ class RoleRepository implements RoleRepositoryInterface {
         });
     }
 
-    // ==========================================
-    // MÉTODOS DE ESCRITURA (CON INVALIDACIÓN ATÓMICA INTRA-TRANSACCIONAL CORREGIDA)
-    // ==========================================
-
     public function create(string $name, string $colorJson, int $weight = 1): bool {
         try {
             $this->pdo->beginTransaction();
@@ -277,11 +257,7 @@ class RoleRepository implements RoleRepositoryInterface {
             
             $stmt = $this->pdo->prepare("INSERT INTO {$tblRoles} (name, color, weight) VALUES (?, ?, ?)");
             $stmt->execute([$name, $colorJson, $weight]);
-            
-            // Confirmamos en DB primero
             $this->pdo->commit();
-
-            // Invalidar caché DESPUÉS del commit exitoso
             $this->invalidateGlobalRolesCache();
 
             return true;
@@ -312,11 +288,7 @@ class RoleRepository implements RoleRepositoryInterface {
                 $stmt = $this->pdo->prepare("UPDATE {$tblRoles} SET name = ?, color = ?, weight = ? WHERE id = ?");
                 $stmt->execute([$name, $colorJson, $weight, $id]);
             }
-
-            // Confirmamos en DB primero
             $this->pdo->commit();
-            
-            // Invalida caché y dispara enforcePassiveInvalidation en Redis DESPUÉS del commit
             $this->invalidateRoleCache($id);
 
             return true;
@@ -345,11 +317,7 @@ class RoleRepository implements RoleRepositoryInterface {
             $this->pdo->beginTransaction();
             $stmt = $this->pdo->prepare("DELETE FROM {$tblRoles} WHERE id = ?");
             $stmt->execute([$id]);
-
-            // Confirmamos en DB primero
             $this->pdo->commit();
-            
-            // Invalida caché DESPUÉS del commit
             $this->invalidateRoleCache($id);
 
             return true;
@@ -388,11 +356,7 @@ class RoleRepository implements RoleRepositoryInterface {
                 $insertStmt = $this->pdo->prepare("INSERT INTO {$tblRolePerms} (role_id, permission_id) VALUES {$placeholders}");
                 $insertStmt->execute($values);
             }
-            
-            // Confirmamos en DB primero
             $this->pdo->commit();
-
-            // Invalida permisos de rol y genera Trigger a los SessionManagers DESPUÉS del commit
             $this->invalidateRoleCache($roleId);
 
             return true;
@@ -438,11 +402,7 @@ class RoleRepository implements RoleRepositoryInterface {
                 $insStmt = $this->pdo->prepare("INSERT INTO {$tblUserRoles} (user_id, role_id) VALUES {$placeholders}");
                 $insStmt->execute($values);
             }
-
-            // Confirmamos en DB primero
             $this->pdo->commit();
-            
-            // Invalida la jerarquía/permisos del usuario y empuja Trigger a SessionManager DESPUÉS del commit
             $this->invalidateUserCache($userId);
 
             return true;

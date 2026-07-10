@@ -1,5 +1,4 @@
 <?php
-// includes/core/System/SessionManager.php
 
 namespace App\Core\System;
 
@@ -38,8 +37,6 @@ class SessionManager implements SessionManagerInterface {
             if (!$this->has(SessionConstants::KEY_LINKED_ACCOUNTS)) {
                 $this->set(SessionConstants::KEY_LINKED_ACCOUNTS, []);
             }
-            
-            // Garantizamos la lectura pasiva de invalidación en cada ciclo de solicitud
             $this->enforcePassiveInvalidation();
 
         } catch (Exception $e) {
@@ -104,8 +101,6 @@ class SessionManager implements SessionManagerInterface {
     public function getActiveAccountAsn(): ?string {
         return $this->get('user_asn');
     }
-
-    // NOTA DE IMPLEMENTACIÓN: Helper nuevo para obtener el Tier desde la sesión
     public function getSubscriptionTier(): int {
         return (int) $this->get('subscription_tier', 0);
     }

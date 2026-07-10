@@ -1,5 +1,4 @@
 <?php
-// includes/views/site-policy/terms-conditions.php
 ?>
 <div class="view-content">
     <div class="component-wrapper component-wrapper--full no-padding" data-ref="terms-conditions-wrapper">

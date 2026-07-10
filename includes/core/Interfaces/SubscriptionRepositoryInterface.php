@@ -1,5 +1,4 @@
 <?php
-// includes/core/Interfaces/SubscriptionRepositoryInterface.php
 
 namespace App\Core\Interfaces;
 

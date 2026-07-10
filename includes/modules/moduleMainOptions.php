@@ -1,5 +1,4 @@
 <?php 
-// includes/modules/moduleMainOptions.php
 
 $isDegraded = defined('SYSTEM_DEGRADED') && SYSTEM_DEGRADED === true;
 $activeAccountId = $_SESSION['active_account'] ?? null;

@@ -1,5 +1,4 @@
 <?php
-// includes/views/system/fix-roles.php
 use App\Config\DatabaseManager;
 
 try {

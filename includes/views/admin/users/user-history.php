@@ -28,8 +28,6 @@ if (!$user) {
 $limit = 25; 
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 if ($page < 1) $page = 1;
-
-// Obtenemos el total unificado desde el nuevo método SQL
 $totalItems = $modRepo->countUnifiedKardex($targetUserId);
 
 $totalPages = ceil($totalItems / $limit);
@@ -39,8 +37,6 @@ if ($page > $totalPages) {
 }
 
 $offset = ($page - 1) * $limit;
-
-// Obtenemos directamente la página procesada con UNION ALL desde la BD
 $paginatedLogs = $modRepo->getUnifiedKardex($targetUserId, $limit, $offset);
 
 if (!is_array($paginatedLogs)) {
@@ -138,8 +134,6 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/user-history?id=' . $targ
                                     $adminPic = !empty($log['admin_profile_picture']) 
                                         ? $appUrl . '/' . ltrim($log['admin_profile_picture'], '/') 
                                         : $appUrl . '/public/assets/img/fallbacks/avatar-default.png';
-                                    
-                                    // Traducción del 'user_action' generado por SQL
                                     $adminName = !empty($log['admin_username']) 
                                         ? ($log['admin_username'] === 'user_action' ? __('lbl_user_action') : $log['admin_username']) 
                                         : __('lbl_system');
@@ -209,7 +203,6 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/user-history?id=' . $targ
                                         <div class="td-details-content text-sm">
                                             <?php if (!empty($log['reason'])): ?>
                                                 <?php 
-                                                // Procesamiento del String JSON de perfil o String estándar
                                                 $reasonObj = json_decode($log['reason'], true);
                                                 if (json_last_error() === JSON_ERROR_NONE && isset($reasonObj['field'])) {
                                                     $oldVal = ($reasonObj['old'] !== 'null' && $reasonObj['old'] !== '') ? $reasonObj['old'] : __('lbl_na');

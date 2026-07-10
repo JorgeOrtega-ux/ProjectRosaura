@@ -1,5 +1,4 @@
 <?php
-// includes/views/canvases/roles.php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 use App\Config\DatabaseManager;
@@ -41,8 +40,6 @@ try {
     $stmt->execute(['cid' => $canvasId]);
     $roles = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (\Exception $e) {}
-
-// Obtener permisos del usuario en este lienzo para UI restrictions (peso máximo, canManage)
 $userRolesWeight = 0;
 $canManageRoles = ($canvasOwnerId === $userId);
 
@@ -119,7 +116,6 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                         <?php foreach ($roles as $role): 
                             $rawName = $role['name'] ?? '';
                             $isSystemFlag = isset($role['is_system']) ? (int)$role['is_system'] : 0;
-                            // Si es sistema, intentamos traducirlo
                             if ($isSystemFlag) {
                                 $roleKey = 'role.' . preg_replace('/[\s\W_]+/', '_', strtolower(trim($rawName)));
                                 $translatedName = __($roleKey);

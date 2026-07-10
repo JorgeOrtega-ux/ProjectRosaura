@@ -1,5 +1,4 @@
 <?php 
-// includes/modules/moduleCanvases.php
 
 $userPermissions = $_SESSION['user_permissions'] ?? [];
 $canCreateCanvas = in_array('create_canvas', $userPermissions);

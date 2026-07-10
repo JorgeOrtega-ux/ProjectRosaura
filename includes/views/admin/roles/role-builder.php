@@ -1,12 +1,9 @@
 <?php
-// includes/views/admin/roles/role-builder.php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 use App\Config\DatabaseManager;
 use App\Core\System\DatabaseConstants as DB;
 use PDO;
-
-// VALIDACIÓN ESTRICTA A NIVEL SERVIDOR: Verificación de permisos granulares
 $userPermissions = $_SESSION['user_permissions'] ?? [];
 if (!in_array('manage_roles_structure', $userPermissions)) {
     header("Location: " . (defined('APP_URL') ? APP_URL : '') . "/admin/manage-roles");
@@ -38,11 +35,7 @@ if (isset($_GET['id'])) {
         $roleData = $role;
     }
 }
-
-// Determinamos si es un rol de sistema (ID <= 4 o si tienes la columna is_system en tu BD)
 $isSystemRole = ($isEdit && (isset($roleData['is_system']) ? (int)$roleData['is_system'] === 1 : $roleData['id'] <= 4));
-
-// Obtener el peso del administrador actual
 $currentRoleId = isset($_SESSION['user_role_id']) ? (int)$_SESSION['user_role_id'] : 0;
 $currentUserWeight = 0;
 if ($currentRoleId > 0) {
@@ -53,15 +46,13 @@ if ($currentRoleId > 0) {
         $currentUserWeight = (int)$rowW['weight'];
     }
 }
-
-// FUNCIONES HELPER PHP PARA RENDERIZAR COLORES
 if (!function_exists('hexToHsv')) {
     function hexToHsv($hex) {
         $hex = ltrim($hex, '#');
         if (strlen($hex) == 3) {
             $hex = $hex[0].$hex[0].$hex[1].$hex[1].$hex[2].$hex[2];
         }
-        if (strlen($hex) != 6) return ['h' => 0, 's' => 0, 'v' => 50]; // Fallback
+        if (strlen($hex) != 6) return ['h' => 0, 's' => 0, 'v' => 50];
         
         $r = hexdec(substr($hex, 0, 2)) / 255;
         $g = hexdec(substr($hex, 2, 2)) / 255;
@@ -161,8 +152,6 @@ if (!function_exists('renderColorBlock')) {
         ';
     }
 }
-
-// PROCESAMIENTO DE JSON A PHP
 $colorData = json_decode($roleData['color'], true);
 if (!$colorData || !isset($colorData['colors'])) {
     $colorData = ['type' => 'solid', 'angle' => 0, 'colors' => [['hex' => '#808080', 'percentage' => 100]]];
@@ -182,8 +171,6 @@ unset($c);
 if ($colorType === 'gradient' && count($colors) < 2) {
     $colors = [['hex' => '#d32029', 'percentage' => 50], ['hex' => '#206bd3', 'percentage' => 50]];
 }
-
-// CÁLCULO DEL COLOR DEL ANILLO DE PREVISUALIZACIÓN DESDE PHP
 $previewBackgroundStyle = '#808080';
 if ($colorType === 'solid' && !empty($colors[0]['hex'])) {
     $previewBackgroundStyle = $colors[0]['hex'];

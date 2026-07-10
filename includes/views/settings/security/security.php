@@ -1,5 +1,4 @@
 <?php
-// includes/views/settings/security/security.php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 use App\Config\DatabaseManager;
@@ -12,7 +11,6 @@ $text2FA = $is2FAActive ? __('2fa_status_active') : __('2fa_status_inactive');
 if (isset($_SESSION['user_id'])) {
     try {
         $db = new DatabaseManager();
-        // Usamos la conexión 'identity' que definimos en tu nueva arquitectura
         $pdo = $db->getConnection('identity');
         $stmt = $pdo->prepare("SELECT created_at FROM profile_changes_log WHERE user_id = ? AND change_type = 'password' ORDER BY created_at DESC LIMIT 1");
         $stmt->execute([$_SESSION['user_id']]);
@@ -23,7 +21,6 @@ if (isset($_SESSION['user_id'])) {
             $lastUpdateText = $date->format('d/m/Y H:i');
         }
     } catch (\Throwable $e) {
-        // Log en Backend. Al no imprimirse hacia la vista, se permite texto en el backend/Logger
         Logger::error("Fallo al obtener la última actualización de contraseña en la vista security.php", ['user_id' => $_SESSION['user_id'], 'exception' => $e]);
     }
 }

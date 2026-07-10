@@ -30,20 +30,12 @@ use App\Core\Repositories\RoleRepository;
 use App\Core\Interfaces\RoleRepositoryInterface;
 use App\Core\Interfaces\TelemetryRepositoryInterface;
 use App\Core\Repositories\TelemetryRepository;
-
-// BINDINGS DE LIENZOS
 use App\Core\Interfaces\CanvasRepositoryInterface;
 use App\Core\Repositories\CanvasRepository;
-
-// BINDINGS DE UBICACIONES (NUEVO)
 use App\Core\Interfaces\LocationRepositoryInterface;
 use App\Core\Repositories\LocationRepository;
-
-// BINDINGS DE SUSCRIPCIONES (STRIPE)
 use App\Core\Interfaces\SubscriptionRepositoryInterface;
 use App\Core\Repositories\SubscriptionRepository;
-
-// BINDINGS DE TIENDA
 use App\Core\Interfaces\StoreRepositoryInterface;
 use App\Core\Repositories\StoreRepository;
 
@@ -74,17 +66,9 @@ class Container implements ContainerInterface {
         $this->bindings[RoleRepositoryInterface::class] = RoleRepository::class;
         
         $this->bindings[TelemetryRepositoryInterface::class] = TelemetryRepository::class;
-
-        // BINDING DE REPOSITORIO DE LIENZOS
         $this->bindings[CanvasRepositoryInterface::class] = CanvasRepository::class;
-
-        // BINDING DE REPOSITORIO DE UBICACIONES (NUEVO)
         $this->bindings[LocationRepositoryInterface::class] = LocationRepository::class;
-
-        // BINDING DE REPOSITORIO DE SUSCRIPCIONES (STRIPE)
         $this->bindings[SubscriptionRepositoryInterface::class] = SubscriptionRepository::class;
-
-        // BINDING DE REPOSITORIO DE TIENDA
         $this->bindings[StoreRepositoryInterface::class] = StoreRepository::class;
     }
 

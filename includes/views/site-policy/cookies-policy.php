@@ -1,5 +1,4 @@
 <?php
-// includes/views/site-policy/cookies-policy.php
 ?>
 <div class="view-content">
     <div class="component-wrapper component-wrapper--full no-padding" data-ref="cookies-policy-wrapper">

@@ -1,5 +1,4 @@
 <?php
-// includes/views/canvases/invites-generate.php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 use App\Config\DatabaseManager;
@@ -47,7 +46,6 @@ if (!empty($availableRoles)) {
         }
     }
     if (!$defaultRole) {
-        // Fallback to lowest weight role that isn't owner
         $defaultRole = end($availableRoles);
     }
 }
@@ -75,8 +73,7 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                 <div id="form-generate-invite" class="component-form">
                     <div class="component-card--grouped">
                         
-                        <!-- SECCIÓN ROL -->
-                        <div class="component-group-item component-group-item--stacked">
+                                                <div class="component-group-item component-group-item--stacked">
                             <div class="component-card__content">
                                 <div class="component-card__text">
                                     <h2 class="component-card__title">Rol a otorgar</h2>
@@ -114,8 +111,6 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                                                     } else {
                                                         $translatedName = htmlspecialchars($rawName);
                                                     }
-                                                    
-                                                    // Determinar si es un rol alto que debe estar deshabilitado
                                                     $nameLower = strtolower(trim($rawName));
                                                     $isHighRole = in_array($nameLower, ['owner', 'propietario', 'superadmin', 'superadministrador']) || (isset($role['weight']) && (int)$role['weight'] >= 100);
                                                     
@@ -141,8 +136,7 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
 
                         <hr class="component-divider">
 
-                        <!-- SECCIÓN LÍMITE DE USOS -->
-                        <div class="component-group-item component-group-item--stacked">
+                                                <div class="component-group-item component-group-item--stacked">
                             <div class="component-card__content">
                                 <div class="component-card__text">
                                     <h2 class="component-card__title">Límite de usos</h2>
@@ -167,8 +161,7 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
 
                         <hr class="component-divider">
 
-                        <!-- SECCIÓN EXPIRACIÓN -->
-                        <div class="component-group-item component-group-item--stacked">
+                                                <div class="component-group-item component-group-item--stacked">
                             <div class="component-card__content">
                                 <div class="component-card__text">
                                     <h2 class="component-card__title">Fecha de expiración</h2>

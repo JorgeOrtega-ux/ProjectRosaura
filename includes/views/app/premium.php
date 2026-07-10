@@ -1,23 +1,16 @@
 <?php
-// includes/views/app/premium.php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 use App\Core\System\SubscriptionPlanConstants;
-
-// ── Datos de sesión ──
 $activeAccountId = $_SESSION['active_account'] ?? null;
 $linkedAccounts = $_SESSION['accounts'] ?? [];
 $tier = 0;
 if ($activeAccountId && isset($linkedAccounts[$activeAccountId])) {
     $tier = (int)($linkedAccounts[$activeAccountId]['subscription_tier'] ?? 0);
 }
-
-// ── Cargar los límites de cada nivel directamente desde la fuente única (SSOT) ──
 $tierBasic    = SubscriptionPlanConstants::getTierLimits(SubscriptionPlanConstants::TIER_BASIC);
 $tierPro      = SubscriptionPlanConstants::getTierLimits(SubscriptionPlanConstants::TIER_PRO);
 $tierAdvanced = SubscriptionPlanConstants::getTierLimits(SubscriptionPlanConstants::TIER_ADVANCED);
-
-// ── Helpers de formato ──
 function formatStoragePremium(int $mb): string {
     if ($mb >= 1024) return number_format($mb / 1024) . ' GB';
     return $mb . ' MB';
@@ -28,31 +21,21 @@ function formatLimitPremium(int $val): string {
     if ($val === 0) return __('premium_val_unavailable');
     return number_format($val);
 }
-
-// ── Construir las features de cada tarjeta dinámicamente ──
 function buildCardFeatures(array $limits): array {
     $features = [];
-
-    // 1. Almacenamiento
     $features[] = [
         'icon' => 'check',
         'text' => __('premium_card_storage', ['value' => formatStoragePremium($limits['max_storage_mb'])])
     ];
-
-    // 2. Lienzos
     if ($limits['max_canvases'] === -1) {
         $features[] = ['icon' => 'check', 'text' => __('premium_card_canvases_unlimited'), 'bold' => true];
     } else {
         $features[] = ['icon' => 'check', 'text' => __('premium_card_canvases', ['value' => $limits['max_canvases']])];
     }
-
-    // 3. Miembros
     $features[] = [
         'icon' => 'check',
         'text' => __('premium_card_members', ['value' => number_format($limits['max_members_per_canvas'])])
     ];
-
-    // 4. Snapshots
     if ($limits['max_snapshots_per_canvas'] === 0) {
         $features[] = ['icon' => 'cross', 'text' => __('premium_card_no_snapshots')];
     } elseif ($limits['max_snapshots_per_canvas'] === -1) {
@@ -60,15 +43,11 @@ function buildCardFeatures(array $limits): array {
     } else {
         $features[] = ['icon' => 'check', 'text' => __('premium_card_snapshots', ['value' => $limits['max_snapshots_per_canvas']])];
     }
-
-    // 5. Compartir en Vivo
     if ($limits['live_templates']) {
         $features[] = ['icon' => 'check', 'text' => __('premium_card_live_share'), 'bold' => true];
     } else {
         $features[] = ['icon' => 'cross', 'text' => __('premium_card_no_live_share')];
     }
-
-    // 6. Paletas
     if ($limits['custom_palettes']) {
         $features[] = ['icon' => 'check', 'text' => __('premium_card_palettes_custom')];
     } elseif ($limits['extended_palettes']) {
@@ -76,8 +55,6 @@ function buildCardFeatures(array $limits): array {
     } else {
         $features[] = ['icon' => 'check', 'text' => __('premium_card_palettes_basic')];
     }
-
-    // 7. Roles avanzados
     if ($limits['advanced_roles']) {
         $features[] = ['icon' => 'check', 'text' => __('premium_card_advanced_roles'), 'bold' => true];
     }
@@ -88,8 +65,6 @@ function buildCardFeatures(array $limits): array {
 $cardFeaturesBasic    = buildCardFeatures($tierBasic);
 $cardFeaturesPro      = buildCardFeatures($tierPro);
 $cardFeaturesAdvanced = buildCardFeatures($tierAdvanced);
-
-// ── Definir las filas de la tabla comparativa dinámicamente ──
 $canvasSizeLabels = [
     __('premium_sizes_basic'),
     __('premium_sizes_pro'),
@@ -101,8 +76,6 @@ $paletteLabels = [
     __('premium_palettes_extended'),
     __('premium_palettes_extended_custom'),
 ];
-
-// Cada fila: 'label' => clave traducción, 'type' => numeric|boolean|text, 'values' => [basic, pro, advanced]
 $comparisonRows = [
     [
         'label' => __('premium_cmp_canvases'),
@@ -412,7 +385,6 @@ $comparisonRows = [
         <div class="pricing-grid">
             
             <?php
-            // ── Definición de las tarjetas ──
             $plans = [
                 [
                     'tier'       => 0,
@@ -497,8 +469,7 @@ $comparisonRows = [
 
         </div>
 
-        <!-- ── Tabla Comparativa Dinámica ── -->
-        <div class="comparison-wrapper">
+                <div class="comparison-wrapper">
             <h2 class="comparison-title"><?php echo __('premium_cmp_title'); ?></h2>
             <div class="component-table-wrapper">
                 <table class="component-table">

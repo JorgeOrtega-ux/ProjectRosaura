@@ -1,5 +1,4 @@
 <?php
-// includes/views/canvases/resize.php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 use App\Config\DatabaseManager;

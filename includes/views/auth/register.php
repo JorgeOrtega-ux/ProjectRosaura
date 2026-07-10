@@ -1,10 +1,6 @@
 <?php
-// includes/views/auth/register.php
-// Resolvemos la ruta actual para saber qué etapa mostrar
 $requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $appUrlPath = parse_url(defined('APP_URL') ? APP_URL : '', PHP_URL_PATH) ?: '';
-
-// Removemos el subdirectorio (si existe) de la URI para obtener la ruta relativa real
 $relativePath = $requestUri;
 if ($appUrlPath !== '' && $appUrlPath !== '/' && strpos($requestUri, $appUrlPath) === 0) {
     $relativePath = substr($requestUri, strlen($appUrlPath));
@@ -18,18 +14,9 @@ if (strlen($relativePath) > 1 && substr($relativePath, -1) === '/') {
 }
 
 $errorMsg = null;
-
-// Extraemos configuración global para imprimir atributos HTML de forma dinámica
 global $serverConfig;
 $maxUsernameLen = $serverConfig['max_username_length'] ?? 32;
 $maxPasswordLen = $serverConfig['max_password_length'] ?? 64;
-
-/**
- * NOTA DE SEGURIDAD:
- * Se eliminaron las validaciones estrictas de $_SESSION['reg_email'] en PHP.
- * El flujo ahora es controlado por 'reg_token' en el sessionStorage del cliente
- * y validado en cada paso por la API (AuthServices.php).
- */
 ?>
 
 <div class="component-layout-centered">

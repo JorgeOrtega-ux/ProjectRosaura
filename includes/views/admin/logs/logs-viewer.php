@@ -1,5 +1,4 @@
 <?php
-// includes/views/admin/logs/logs-viewer.php
 if (session_status() === PHP_SESSION_NONE) session_start();
 ?>
 <div class="view-content view-fade-in" style="height: 100%;">

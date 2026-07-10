@@ -1,5 +1,4 @@
 <?php
-// includes/core/Interfaces/RoleRepositoryInterface.php
 
 namespace App\Core\Interfaces;
 
@@ -20,8 +19,6 @@ interface RoleRepositoryInterface {
     public function getUserRoles(int $userId): array;
     public function getMergedPermissionsForUser(int $userId): array;
     public function getHighestPriorityRole(int $userId): ?array;
-
-    // NUEVO: Métodos de Exposición de Invalidación
     public function invalidateGlobalRolesCache(): void;
     public function invalidateRoleCache(int $roleId): void;
     public function invalidateUserCache(int $userId): void;

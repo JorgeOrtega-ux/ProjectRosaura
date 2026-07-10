@@ -1,5 +1,4 @@
 <?php
-// includes/core/route_handler.php
 
 use App\Core\Routing\Loader;
 use App\Core\Routing\Router;

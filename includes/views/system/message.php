@@ -1,15 +1,12 @@
 <?php
-// includes/views/system/message.php
 global $systemMessageType;
-
-// Por defecto será 404 si no se especifica
 $type = $systemMessageType ?? '404';
 
 $config = [];
 
 switch ($type) {
     case 'maintenance':
-        http_response_code(503); // Standard status code for service unavailable
+        http_response_code(503);
         $config = [
             'icon' => 'construction',
             'title' => __('maintenance_title'),

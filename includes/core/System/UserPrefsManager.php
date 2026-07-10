@@ -1,24 +1,21 @@
 <?php
-// includes/core/System/UserPrefsManager.php
 
 namespace App\Core\System;
 
 use App\Core\Interfaces\UserPrefsManagerInterface;
 use App\Core\Helpers\Utils;
 use App\Config\DatabaseManager;
-use App\Core\System\DatabaseConstants as DB; // IMPORTACIÓN DE CONSTANTES
+use App\Core\System\DatabaseConstants as DB;
 use PDO;
 
 class UserPrefsManager implements UserPrefsManagerInterface {
     private $pdo;
 
     public function __construct(DatabaseManager $db) {
-        // USO DE LA CONSTANTE DE CONEXIÓN
         $this->pdo = $db->getConnection(DB::CONN_IDENTITY);
     }
 
     public function ensureDefaultPreferences($userId) {
-        // USO DE LA CONSTANTE DE TABLA
         $tblUserPrefs = DB::TBL_USER_PREFERENCES;
 
         $stmtPref = $this->pdo->prepare("SELECT * FROM {$tblUserPrefs} WHERE user_id = ?");
@@ -28,9 +25,7 @@ class UserPrefsManager implements UserPrefsManagerInterface {
         if (!$userPrefs) {
             $acceptLang = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '';
             $assignedLang = Utils::getClosestLanguage($acceptLang);
-            $themeSystem = DB::THEME_SYSTEM; // USO DE LA CONSTANTE DE TEMA
-            
-            // SE INCLUYE allow_telemetry = 1 POR DEFECTO
+            $themeSystem = DB::THEME_SYSTEM;
             $insPref = $this->pdo->prepare("INSERT INTO {$tblUserPrefs} (user_id, language, open_links_new_tab, theme, extended_alerts, allow_telemetry, accepted_store_terms, accepted_content_store_terms) VALUES (?, ?, 1, ?, 0, 1, 0, 0)");
             $insPref->execute([$userId, $assignedLang, $themeSystem]);
             
@@ -39,13 +34,10 @@ class UserPrefsManager implements UserPrefsManagerInterface {
         }
         return $userPrefs;
     }
-
-    // NUEVO MÉTODO PARA LEER PREFERENCIAS INDIVIDUALES
     public function getPreference($userId, string $key, $default = null) {
         $prefs = $this->ensureDefaultPreferences($userId);
         
         if (isset($prefs[$key])) {
-            // Manejar booleanos guardados como tinyint(1) en DB
             if ($prefs[$key] === '1' || $prefs[$key] === 1) return true;
             if ($prefs[$key] === '0' || $prefs[$key] === 0) return false;
             return $prefs[$key];

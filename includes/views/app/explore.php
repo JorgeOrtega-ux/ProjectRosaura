@@ -1,5 +1,4 @@
 <?php
-// includes/views/app/explore.php
 use App\Core\Container;
 use App\Api\Services\CanvasServices;
 use App\Core\Interfaces\SessionManagerInterface;
@@ -13,15 +12,11 @@ $initialCanvases = [];
 try {
     $canvasServices = $container->get(CanvasServices::class);
     $sort = 'newest';
-    
-    // Oficiales
     $officialRes = $canvasServices->getOfficialCanvases($userId, $sort);
     $allCanvases = [];
     if ($officialRes && isset($officialRes['success']) && $officialRes['success'] && isset($officialRes['data'])) {
         $allCanvases = array_merge($allCanvases, $officialRes['data']);
     }
-    
-    // Públicos
     $publicRes = $canvasServices->getPublicCanvases($userId, 50, $sort);
     if ($publicRes && isset($publicRes['success']) && $publicRes['success'] && isset($publicRes['data'])) {
         $existingIds = array_column($allCanvases, 'id');
@@ -31,8 +26,6 @@ try {
             }
         }
     }
-    
-    // Ordenar (newest)
     usort($allCanvases, function($a, $b) {
         $timeA = strtotime($a['created_at']);
         $timeB = strtotime($b['created_at']);
@@ -113,8 +106,7 @@ $initialCanvasesJson = htmlspecialchars(json_encode($initialCanvases), ENT_QUOTE
         </div>
 
         <div class="component-bottom" style="padding: 0;" data-ref="dynamic-content-area" data-initial-canvases="<?php echo $initialCanvasesJson; ?>">
-            <!-- JS inyectará el component-grid o el component-empty-state aquí -->
-        </div>
+                    </div>
 
     </div>
 </div>

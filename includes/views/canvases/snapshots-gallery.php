@@ -1,5 +1,4 @@
 <?php
-// includes/views/canvases/snapshots-gallery.php
 
 use App\Config\DatabaseManager;
 use App\Core\System\DatabaseConstants as DB;

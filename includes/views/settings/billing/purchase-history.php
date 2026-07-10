@@ -1,5 +1,4 @@
 <?php
-// includes/views/settings/purchase-history.php
 if (session_status() === PHP_SESSION_NONE) session_start();
 ?>
 

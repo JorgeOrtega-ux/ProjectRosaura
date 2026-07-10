@@ -1,5 +1,4 @@
 <?php
-// includes/views/settings/accessibility.php
 $userPrefs = $_SESSION['user_prefs'] ?? [];
 $prefTheme = $userPrefs['theme'] ?? 'system';
 $prefExtendedAlerts = isset($userPrefs['extended_alerts']) ? (int)$userPrefs['extended_alerts'] : 0;

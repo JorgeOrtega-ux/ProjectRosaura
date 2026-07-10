@@ -1,5 +1,4 @@
 <?php
-// includes/views/settings/security/2fa-deactivate.php
 if (session_status() === PHP_SESSION_NONE) session_start();
 ?>
 <div class="view-content">

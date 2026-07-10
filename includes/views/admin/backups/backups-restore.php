@@ -1,5 +1,4 @@
 <?php
-// includes/views/admin/backups/backups-restore.php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 $backupId = isset($_GET['id']) ? $_GET['id'] : '';

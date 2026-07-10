@@ -1,19 +1,11 @@
 <?php
-// includes/core/System/SubscriptionPlanConstants.php
 
 namespace App\Core\System;
 
 class SubscriptionPlanConstants {
-    // Definición de Niveles
     public const TIER_BASIC = 0;
     public const TIER_PRO = 1;
     public const TIER_ADVANCED = 2;
-
-    /**
-     * Retorna todas las limitantes y características según el nivel del usuario.
-     * @param int $tier El nivel de suscripción del usuario.
-     * @return array
-     */
     public static function getTierLimits(int $tier): array {
         switch ($tier) {
             case self::TIER_ADVANCED:
@@ -63,10 +55,6 @@ class SubscriptionPlanConstants {
                 ];
         }
     }
-
-    /**
-     * Verifica si un nivel específico tiene acceso a una característica booleana.
-     */
     public static function hasFeature(int $tier, string $featureKey): bool {
         $limits = self::getTierLimits($tier);
         return isset($limits[$featureKey]) && $limits[$featureKey] === true;

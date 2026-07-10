@@ -1,5 +1,4 @@
 <?php
-// includes/views/admin/system/server-config.php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 use App\Config\DatabaseManager;

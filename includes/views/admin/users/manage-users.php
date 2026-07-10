@@ -1,13 +1,10 @@
 <?php
-// includes/views/admin/users/manage-users.php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 use App\Config\DatabaseManager;
 use App\Core\Helpers\Utils;
 use App\Core\System\DatabaseConstants as DB;
 use PDO;
-
-// EXTRACCIÓN DE PERMISOS GRANULARES
 $userPerms = $_SESSION['user_permissions'] ?? [];
 $isSuperAdmin = isset($_SESSION['user_role_id']) && (int)$_SESSION['user_role_id'] === 4;
 $canEditUsers = in_array('edit_users', $userPerms);
@@ -41,8 +38,6 @@ if ($page > $totalPages) {
     $page = $totalPages;
     $offset = ($page - 1) * $limit;
 }
-
-// QUERY ACTUALIZADA: Se agrega "ORDER BY r.weight DESC" en los GROUP_CONCAT
 $stmt = $pdo->query("
     SELECT u.id, u.uuid, u.username, u.email, u.deletion_scheduled_at, 
            ur.is_suspended, u.profile_picture, u.created_at,

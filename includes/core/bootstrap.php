@@ -1,11 +1,9 @@
 <?php
-// includes/core/bootstrap.php
 
 define('ROOT_PATH', dirname(__DIR__, 2));
 
 header("X-Frame-Options: SAMEORIGIN");
 header("X-Content-Type-Options: nosniff");
-// SE HAN AGREGADO ws: y wss: a connect-src PARA PERMITIR WEBSOCKETS
 header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com https://challenges.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://api.qrserver.com; connect-src 'self' https://unpkg.com https://cdn.jsdelivr.net ws: wss:; frame-src 'self' https://challenges.cloudflare.com; frame-ancestors 'none';");
 
 require_once ROOT_PATH . '/vendor/autoload.php';
@@ -126,19 +124,9 @@ try {
     $authService = $container->get(AuthServices::class);
     $prefsManager = $container->get(UserPrefsManagerInterface::class);
     $userRepo = $container->get(UserRepositoryInterface::class);
-
-    // ==============================================================
-    // MIDDLEWARE DE AUTENTICACIÓN MULTI-CUENTA E INVALIDACIÓN PASIVA
-    // ==============================================================
-    
-    // Si SessionManager ya purgó silenciosamente las cuentas marcadas, isLoggedIn() podría ser falso.
     if ($sessionManager->isLoggedIn()) {
-        
-        // Verifica si la sesión *activa* actual está amarrada al dispositivo actual
         if (!$authService->isCurrentDeviceValid()) {
-            $authService->logout(); // Esto expulsa solo la cuenta activa
-            
-            // Si después de hacer logout aún quedan cuentas, redirigimos al inicio para que el SPA se recargue con la cuenta secundaria.
+            $authService->logout();
             if ($sessionManager->isLoggedIn()) {
                 header("Location: " . APP_URL . "/?account_switched=1");
             } else {
@@ -147,13 +135,10 @@ try {
             exit;
             
         } else {
-            // Hidratación Multi-Cuenta (Usa ActiveAccountId en vez de variables genéricas)
             $activeId = $sessionManager->getActiveAccountId();
             $liveUser = $userRepo->findById($activeId);
-            
-            // CORRECCIÓN: Evitar el error de clave indefinida y usar la nueva lógica de eliminación
             if (!$liveUser || !empty($liveUser['deletion_scheduled_at'])) {
-                $authService->logout(); // Expulsa solo esta cuenta del pool
+                $authService->logout();
                 header("Location: " . APP_URL . "/account-deleted");
                 exit;
             }
@@ -162,16 +147,12 @@ try {
                 if ($liveUser['suspension_type'] === 'temporary' && $liveUser['suspension_end_date'] && strtotime($liveUser['suspension_end_date']) <= time()) {
                     $userRepo->liftSuspension($liveUser['id']);
                 } else {
-                    $authService->logout(); // Expulsa solo esta cuenta del pool
+                    $authService->logout();
                     header("Location: " . APP_URL . "/account-suspended");
                     exit;
                 }
             }
-            
-            // Refrescar permisos RBAC en tiempo real para la cuenta ACTIVA
             $permissions = !empty($liveUser['permissions']) ? explode(',', $liveUser['permissions']) : [];
-            
-            // CORRECCIÓN PROFUNDA: Actualizamos el "Pool" multi-cuenta en lugar de la raíz para evitar desajustes
             $accounts = $sessionManager->get(\App\Core\System\SessionConstants::KEY_LINKED_ACCOUNTS, []);
             if (isset($accounts[$activeId])) {
                 $accounts[$activeId]['user_role_id'] = $liveUser['role_id'] ?? null;
@@ -180,8 +161,6 @@ try {
                 $accounts[$activeId]['user_permissions'] = $permissions;
                 $accounts[$activeId]['user_pic'] = $liveUser['profile_picture'] ?? null;
                 $accounts[$activeId]['subscription_tier'] = (int)($liveUser['subscription_tier'] ?? 0);
-                
-                // Guardamos la configuración y la enviamos a la raíz en la misma milésima de segundo
                 $sessionManager->set(\App\Core\System\SessionConstants::KEY_LINKED_ACCOUNTS, $accounts);
                 $sessionManager->syncRootState();
             }

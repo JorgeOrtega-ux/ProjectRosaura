@@ -1,5 +1,4 @@
 <?php
-// includes/views/admin/logs/logs.php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 $logFiles = [];
@@ -36,8 +35,6 @@ if (is_dir($logBaseDir)) {
         return strtotime($b['modified_at']) - strtotime($a['modified_at']);
     });
 }
-
-// Lógica de Paginación Estandarizada
 $limit = 25; 
 $totalLogs = count($logFiles);
 $totalPages = ceil($totalLogs / $limit);
@@ -48,8 +45,6 @@ if ($page < 1) $page = 1;
 if ($page > $totalPages) $page = $totalPages;
 
 $offset = ($page - 1) * $limit;
-
-// Cortamos el array para mostrar solo la página actual
 $pagedLogs = array_slice($logFiles, $offset, $limit);
 
 $appUrl = defined('APP_URL') ? APP_URL : '';

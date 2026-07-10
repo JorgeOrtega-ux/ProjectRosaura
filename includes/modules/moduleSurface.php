@@ -1,5 +1,4 @@
 <?php
-// includes/modules/moduleSurface.php
 $isLoggedIn = isset($_SESSION['user_id']);
 $userPermissions = $_SESSION['user_permissions'] ?? [];
 $isAdminUser = in_array('access_admin_panel', $userPermissions);
@@ -41,7 +40,7 @@ $isMainArea = !$isAdminArea && !$isSettingsArea && !$isSitePolicyArea;
                         <span class="material-symbols-rounded">monetization_on</span>
                     </div>
                     <div class="component-menu-link-text">
-                        <span>Tienda de Monedas</span>
+                        <span><?php echo __('store_coins_title'); ?></span>
                     </div>
                 </div>
                 <div class="component-menu-link nav-item" data-nav="/store/content">
@@ -49,7 +48,7 @@ $isMainArea = !$isAdminArea && !$isSettingsArea && !$isSitePolicyArea;
                         <span class="material-symbols-rounded">storefront</span>
                     </div>
                     <div class="component-menu-link-text">
-                        <span>Tienda de Contenido</span>
+                        <span><?php echo __('store_content_title'); ?></span>
                     </div>
                 </div>
             </div>

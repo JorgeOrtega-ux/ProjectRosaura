@@ -1,5 +1,4 @@
 <?php
-// includes/core/Routing/MiddlewarePipeline.php
 
 namespace App\Core\Routing;
 
@@ -32,7 +31,7 @@ class MiddlewarePipeline {
                 $passed = $middleware->handle($input, $config);
                 
                 if (!$passed) {
-                    return false; // El middleware bloqueó la petición
+                    return false;
                 }
             } catch (\Exception $e) {
                 Logger::error("Error ejecutando middleware {$className}", ['exception' => $e->getMessage()]);

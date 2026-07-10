@@ -1,5 +1,4 @@
 <?php
-// includes/views/canvases/role-builder.php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 use App\Config\DatabaseManager;
@@ -61,8 +60,6 @@ if ($roleId) {
 }
 
 $isSystemRole = (isset($roleData['is_system']) && (int)$roleData['is_system'] === 1);
-
-// Obtener permisos del usuario para UI restrictions (peso máximo, canManage)
 $userRolesWeight = 0;
 $canManageRoles = ($canvasOwnerId === $userId);
 
@@ -84,8 +81,6 @@ if (!$canManageRoles) {
 }
 
 if (!$canManageRoles || ($isEdit && $roleData['weight'] >= $userRolesWeight && $canvasOwnerId !== $userId)) {
-     // User is allowed to view but maybe not edit if weight is higher? 
-     // We will let the frontend logic disable the inputs.
 }
 
 $appUrl = defined('APP_URL') ? APP_URL : '';

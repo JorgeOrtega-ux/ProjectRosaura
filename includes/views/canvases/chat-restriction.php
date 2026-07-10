@@ -1,5 +1,4 @@
 <?php
-// includes/views/canvases/chat-restriction.php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 use App\Config\DatabaseManager;
@@ -18,8 +17,6 @@ if (empty($canvasUuid) || empty($targetUserUuid)) {
 
 $db = new DatabaseManager();
 $pdo = $db->getConnection(DB::CONN_CANVASES);
-
-// Verificar canvas y si el user es el dueño
 $stmt = $pdo->prepare("SELECT id, owner_id as user_id FROM canvases WHERE id = ?");
 $stmt->execute([$canvasUuid]);
 $canvas = $stmt->fetch(\PDO::FETCH_ASSOC);
@@ -28,8 +25,6 @@ if (!$canvas || $canvas['user_id'] !== $_SESSION['active_account']) {
     header("Location: " . (defined('APP_URL') ? APP_URL : '') . "/");
     exit;
 }
-
-// Get user info
 $redis = new RedisCache();
 $roleRepo = new RoleRepository($db, $redis);
 $userRepo = new UserRepository($db, $roleRepo);
@@ -39,8 +34,6 @@ if (!$targetUser) {
     header("Location: " . (defined('APP_URL') ? APP_URL : '') . "/canvases/manage/{$canvasUuid}");
     exit;
 }
-
-// Get restriction info
 $stmt = $pdo->prepare("SELECT * FROM canvas_chat_restrictions WHERE canvas_id = ? AND user_id = ?");
 $stmt->execute([$canvasUuid, $targetUserUuid]);
 $restriction = $stmt->fetch(\PDO::FETCH_ASSOC);

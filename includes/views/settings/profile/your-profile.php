@@ -1,5 +1,4 @@
 <?php
-// includes/views/settings/your-profile.php
 use App\Core\System\SubscriptionPlanConstants;
 
 if (session_status() === PHP_SESSION_NONE) session_start();
@@ -15,10 +14,6 @@ $isLoggedIn = isset($_SESSION['user_id']);
 $userId = $_SESSION['user_id'] ?? 0;
 $userName = $_SESSION['user_name'] ?? __('default_user_name');
 $userEmail = $_SESSION['user_email'] ?? __('default_user_email');
-
-// =========================================================================
-// MOTOR DE VARIABLES PARA GRADIENTES DE ROL (CORTES SÓLIDOS DEL ROL MÁS FUERTE)
-// =========================================================================
 $userRoleColorRaw = $_SESSION['user_role_color'] ?? '{"type":"solid","colors":[{"hex":"var(--text-muted)"}]}';
 $activeRoleBg = 'var(--text-muted)';
 
@@ -56,12 +51,10 @@ $rawUserPic = $_SESSION['user_pic'] ?? '';
 $userPic = \App\Core\Helpers\Utils::getValidImage($rawUserPic, 'avatar');
 $formattedAvatar = APP_URL . '/' . htmlspecialchars($userPic);
 $isDefaultAvatar = strpos($userPic, '/default/') !== false || strpos($userPic, 'fallbacks/avatar-default.png') !== false;
-
-// Preferencias
 $userPrefs = $_SESSION['user_prefs'] ?? [];
 $prefLang = $userPrefs['language'] ?? ($_COOKIE['pr_language'] ?? 'es-419');
 $prefOpenLinks = isset($userPrefs['open_links_new_tab']) ? (int)$userPrefs['open_links_new_tab'] : 1;
-$prefTelemetry = isset($userPrefs['allow_telemetry']) ? (int)$userPrefs['allow_telemetry'] : 1; // NUEVA VARIABLE DE TELEMETRÍA
+$prefTelemetry = isset($userPrefs['allow_telemetry']) ? (int)$userPrefs['allow_telemetry'] : 1;
 
 $languages = \App\Core\System\Translator::getAvailableLanguages();
 $currentLangText = $languages[$prefLang] ?? __('default_language_text');

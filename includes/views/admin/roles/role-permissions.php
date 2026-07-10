@@ -1,12 +1,9 @@
 <?php
-// includes/views/admin/roles/role-permissions.php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 use App\Config\DatabaseManager;
 use App\Config\RedisCache;
 use App\Core\Repositories\RoleRepository;
-
-// 1. VALIDACIÓN ESTRICTA A NIVEL SERVIDOR
 $userPermissions = $_SESSION['user_permissions'] ?? [];
 if (!in_array('manage_roles_structure', $userPermissions)) {
     header("Location: " . (defined('APP_URL') ? APP_URL : '') . "/admin/manage-roles");
@@ -19,8 +16,6 @@ if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
 }
 
 $roleId = (int)$_GET['id'];
-
-// 2. HIDRATACIÓN DE DATOS (SERVER-SIDE)
 $dbManager = new DatabaseManager();
 $redis = new RedisCache();
 $roleRepo = new RoleRepository($dbManager, $redis);
@@ -30,8 +25,6 @@ if (!$role) {
     header("Location: " . (defined('APP_URL') ? APP_URL : '') . "/admin/manage-roles");
     exit;
 }
-
-// CORRECCIÓN: Obtener el peso del administrador y verificar si es Super Admin (ID 4) usando la sesión multi-cuenta
 $currentUserWeight = isset($_SESSION['user_role_weight']) ? (int)$_SESSION['user_role_weight'] : 0;
 $userRolesArray = isset($_SESSION['user_roles']) && is_array($_SESSION['user_roles']) ? $_SESSION['user_roles'] : [];
 $isSuperAdmin = in_array(4, $userRolesArray) ? 1 : 0;
@@ -74,8 +67,6 @@ $rolePermissionsIds = array_column($rolePermissionsData, 'id');
                             <?php 
                                 $isChecked = in_array($p['id'], $rolePermissionsIds) ? 'checked' : ''; 
                                 $isCritical = isset($p['is_critical']) ? (int)$p['is_critical'] : 0;
-                                
-                                // CORRECCIÓN: Generación dinámica de claves de traducción "0 textos hardcodeados"
                                 $cleanPermName = preg_replace('/[\s\W_]+/', '_', strtolower(trim($p['name'])));
                                 $permNameTranslated = __('perm.' . $cleanPermName);
                                 $permDescTranslated = __('perm.desc_' . $cleanPermName);

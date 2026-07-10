@@ -1,5 +1,4 @@
 <?php
-// includes/views/app/home.php
 use App\Core\Container;
 use App\Api\Services\CanvasServices;
 use App\Core\Interfaces\SessionManagerInterface;
@@ -93,7 +92,6 @@ $initialCanvasesJson = htmlspecialchars(json_encode($initialCanvases), ENT_QUOTE
         </div>
 
         <div class="component-bottom" style="padding: 0;" data-ref="dynamic-content-area" data-initial-canvases="<?php echo $initialCanvasesJson; ?>">
-            <!-- JS inyectará el component-grid o el component-empty-state aquí -->
-        </div>
+                    </div>
     </div>
 </div>

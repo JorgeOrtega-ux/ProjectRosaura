@@ -1,20 +1,15 @@
 <?php
-// includes/views/canvases/manage.php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 use App\Config\DatabaseManager;
 use App\Core\Helpers\Utils;
 use PDO;
-
-// Obtenemos el ID del usuario en sesión
 $userId = $_SESSION['active_account_id'] ?? $_SESSION['user_id'] ?? null;
 
 if (!$userId) {
     echo "<div class='view-content'><p>".__('err_unauthorized')."</p></div>";
     return;
 }
-
-// 1. Verificamos si el usuario es administrador o gestor de lienzos
 $userPermissions = $_SESSION['user_permissions'] ?? [];
 $isAdmin = in_array('manage_canvases', $userPermissions) || 
            in_array('access_admin_panel', $userPermissions) || 
@@ -30,10 +25,7 @@ $connName = defined('App\Core\System\DatabaseConstants::CONN_CANVASES') ? App\Co
 $pdo = $db->getConnection($connName); 
 
 $tblCanvases = defined('App\Core\System\DatabaseConstants::TBL_CANVASES') ? App\Core\System\DatabaseConstants::TBL_CANVASES : 'canvases';
-
-// 2. Construimos la consulta dependiendo de si es Admin o Usuario Normal
 if ($isAdmin) {
-    // El admin ve SUS lienzos y los lienzos OFICIALES (owner_id IS NULL)
     $sqlCount = "SELECT COUNT(*) FROM {$tblCanvases} WHERE owner_id = :uid OR (owner_id IS NULL AND scope_type != 'personal')";
     $sqlSelect = "SELECT id, uuid, name, description, privacy, size, max_participants, created_at, scope_type 
                   FROM {$tblCanvases} 
@@ -41,7 +33,6 @@ if ($isAdmin) {
                   ORDER BY id DESC 
                   LIMIT $limit OFFSET $offset";
 } else {
-    // Un usuario normal solo ve SUS lienzos
     $sqlCount = "SELECT COUNT(*) FROM {$tblCanvases} WHERE owner_id = :uid";
     $sqlSelect = "SELECT id, uuid, name, description, privacy, size, max_participants, created_at, scope_type 
                   FROM {$tblCanvases} 
@@ -49,8 +40,6 @@ if ($isAdmin) {
                   ORDER BY id DESC 
                   LIMIT $limit OFFSET $offset";
 }
-
-// Calcular total para paginación
 $stmtCount = $pdo->prepare($sqlCount);
 $stmtCount->execute(['uid' => $userId]);
 $totalCanvases = (int)$stmtCount->fetchColumn();
@@ -61,8 +50,6 @@ if ($page > $totalPages) {
     $page = $totalPages;
     $offset = ($page - 1) * $limit;
 }
-
-// Obtener los lienzos
 $stmt = $pdo->prepare($sqlSelect);
 $stmt->execute(['uid' => $userId]);
 $canvases = $stmt->fetchAll(PDO::FETCH_ASSOC);

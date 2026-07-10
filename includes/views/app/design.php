@@ -1,5 +1,4 @@
 <?php
-// includes/views/app/design.php
 
 use App\Config\DatabaseManager;
 use App\Core\System\DatabaseConstants as DB;
@@ -13,31 +12,23 @@ $canvasPalette = 'default';
 $canvasPrivacy = 'private'; 
 $canvasApproval = '0'; 
 $canvasAllowChat = '0';
-
-// Variables para el Cooldown
 $canvasCooldownBatch = '5';
 $canvasCooldownSeconds = '10';
-
-// Variables para reinicios
 $resetActive = '0';
 $nextResetAt = '';
 $timerAction = 'restart';
-
-// Variables para expansiones (resize)
 $resizeActive = '0';
 $nextResizeAt = '';
 $resizeTargetSize = '64';
 $resizeTimerAction = 'restart';
 
 $canvasUuid = $_GET['id'] ?? '';
-$isSnapshot = isset($_GET['snapshot']); // Bandera para saber si es historial
+$isSnapshot = isset($_GET['snapshot']);
 
 if (!empty($canvasUuid)) {
     try {
         $dbManager = new DatabaseManager();
         $db = $dbManager->getConnection(DB::CONN_CANVASES);
-
-        // Traemos información de reinicios y redimensiones
         $sql = "SELECT c.id, c.name, c.size, c.palette_id, c.privacy, c.requires_approval, 
                        c.cooldown_pixels_batch, c.cooldown_seconds, c.owner_id, c.created_at, c.max_participants, c.allow_chat,
                        r.is_active as reset_active, r.next_reset_at, r.timer_action as reset_timer_action,
@@ -71,12 +62,10 @@ if (!empty($canvasUuid)) {
             $nextResizeAt = $canvas['next_resize_at'] ?? '';
             $resizeTargetSize = $canvas['target_size'] ?? '64';
             $resizeTimerAction = $canvas['resize_timer_action'] ?? 'restart';
-
-            // Comprobar rol real del usuario para la UI inicial (evita el parpadeo "Lienzo Privado")
             $isMember = false;
             $userRole = 'spectator';
             $userId = null;
-            global $sessionManager; // o tomarlo del scope actual
+            global $sessionManager;
             $session = $sessionManager ?? null;
             if ($session && method_exists($session, 'isLoggedIn') && $session->isLoggedIn()) {
                 $userId = $session->getActiveAccountId();
@@ -85,7 +74,7 @@ if (!empty($canvasUuid)) {
                 $mStmt->execute([':cid' => $canvasIntId, ':uid' => $userId]);
                 if ($mRow = $mStmt->fetch(PDO::FETCH_ASSOC)) {
                     $isMember = true;
-                    $userRole = 'editor'; // Simplified for UI since actual permissions are checked via API
+                    $userRole = 'editor';
                 } else {
                     $ownerSql = "SELECT owner_id FROM canvases WHERE id = :cid LIMIT 1";
                     $oStmt = $db->prepare($ownerSql);
@@ -100,7 +89,6 @@ if (!empty($canvasUuid)) {
             }
             $isBlockedInit = ($canvasPrivacy === 'private' && !$isMember);
             $isSpectatorInit = ($userRole === 'spectator');
-            // CHECK PREMIUM EXPIRED STATE
             $isPremiumBlockedInit = false;
             try {
                 if (isset($canvas['owner_id']) && $canvas['owner_id']) {
@@ -110,8 +98,6 @@ if (!empty($canvasUuid)) {
                     
                     $planLimits = \App\Core\System\SubscriptionPlanConstants::getTierLimits($ownerTier);
                     $allSizes = \App\Core\Helpers\Utils::getCanvasSizes();
-                    
-                    // Check max canvases
                     if ($planLimits['max_canvases'] !== -1) {
                         $olderStmt = $db->prepare("SELECT COUNT(*) FROM canvases WHERE owner_id = :uid AND (created_at < :ca OR (created_at = :ca2 AND id < :id))");
                         $olderStmt->execute([
@@ -126,21 +112,15 @@ if (!empty($canvasUuid)) {
                             $isPremiumBlockedInit = true;
                         }
                     }
-                    
-                    // Check palette
                     if (!$isPremiumBlockedInit && $canvasPalette !== 'default' && empty($planLimits['custom_palettes'])) {
                         $isPremiumBlockedInit = true;
                     }
-                    
-                    // Check size
                     if (!$isPremiumBlockedInit) {
                         $requiredTier = $allSizes[$canvasSize]['tier'] ?? 0;
                         if ($ownerTier < $requiredTier) {
                             $isPremiumBlockedInit = true;
                         }
                     }
-
-                    // Check members
                     if (!$isPremiumBlockedInit) {
                         if ($planLimits['max_members_per_canvas'] !== -1 && isset($canvas['max_participants']) && $canvas['max_participants'] > $planLimits['max_members_per_canvas']) {
                             $isPremiumBlockedInit = true;
@@ -148,11 +128,10 @@ if (!empty($canvasUuid)) {
                     }
                     
                     if ($isPremiumBlockedInit) {
-                        $isBlockedInit = true; // Forzar bloqueo de interacciones
+                        $isBlockedInit = true;
                     }
                 }
             } catch (\Throwable $e) {}
-            // Comprobar si tiene restricción de chat
             $isChatRestricted = false;
             $chatRestrictionType = null;
             $chatRestrictionEnd = null;
@@ -175,7 +154,6 @@ if (!empty($canvasUuid)) {
 <div class="view-content">
     
     <?php 
-    // Utilizamos el render seguro de Utils para no tener un div con ID hardcodeado que de error de doble init.
     echo Utils::renderTurnstile('canvas_design'); 
     ?>
 

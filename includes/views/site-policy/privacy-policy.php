@@ -1,5 +1,4 @@
 <?php
-// includes/views/site-policy/privacy-policy.php
 ?>
 <div class="view-content">
     <div class="component-wrapper component-wrapper--full no-padding" data-ref="privacy-policy-wrapper">

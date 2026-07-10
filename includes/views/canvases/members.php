@@ -1,14 +1,10 @@
 <?php
-// includes/views/canvases/members.php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 use App\Config\DatabaseManager;
 use App\Core\Helpers\Utils;
 use PDO;
-
-// Obtenemos el ID del usuario en sesión
 $userId = $_SESSION['active_account_id'] ?? $_SESSION['user_id'] ?? null;
-// Obtenemos el UUID del lienzo por GET
 $canvasUuid = isset($_GET['uuid']) ? $_GET['uuid'] : null;
 
 $db = new DatabaseManager();
@@ -21,7 +17,6 @@ $canvasOwnerId = null;
 if ($canvasUuid) {
     try {
         $pdoCanvases = $db->getConnection($connNameCanvases);
-        // Consultamos también el owner_id por si queremos resaltarlo después
         $stmt = $pdoCanvases->prepare("SELECT id, owner_id FROM canvases WHERE uuid = :uuid LIMIT 1");
         $stmt->execute(['uuid' => $canvasUuid]);
         $canvasData = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -30,7 +25,6 @@ if ($canvasUuid) {
             $canvasOwnerId = (int)$canvasData['owner_id'];
         }
     } catch (\Exception $e) {
-        // Silenciado por seguridad
     }
 }
 
@@ -49,15 +43,10 @@ $tblMembers = 'canvas_members';
 $members = [];
 $totalMembers = 0;
 $userDetails = [];
-
-// BLOQUE 1: Obtener la membresía del lienzo
 try {
-    // Calcular total para paginación
     $stmtCount = $pdoCanvases->prepare("SELECT COUNT(*) FROM {$tblMembers} WHERE canvas_id = :cid");
     $stmtCount->execute(['cid' => $canvasId]);
     $totalMembers = (int)$stmtCount->fetchColumn();
-
-    // Consulta de miembros
     $stmt = $pdoCanvases->prepare("
         SELECT user_id, joined_at 
         FROM {$tblMembers} 
@@ -67,8 +56,6 @@ try {
     ");
     $stmt->execute(['cid' => $canvasId]);
     $members = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    // Obtener roles de los miembros
     $memberRoles = [];
     if (!empty($members)) {
         $userIds = array_column($members, 'user_id');
@@ -93,15 +80,12 @@ try {
     $members = [];
     $memberRoles = [];
 }
-
-// BLOQUE 2: Obtener perfiles de la DB Identity
 if (!empty($members)) {
     try {
         $userIds = array_column($members, 'user_id');
         $pdoIdentity = $db->getConnection($connNameIdentity);
         
         $inQuery = implode(',', array_fill(0, count($userIds), '?'));
-        // Extraemos la foto de perfil real (profile_picture) y el campo uuid solicitado
         $stmtUsers = $pdoIdentity->prepare("SELECT id, uuid, username, profile_picture FROM users WHERE id IN ($inQuery)");
         $stmtUsers->execute($userIds);
         
@@ -109,7 +93,6 @@ if (!empty($members)) {
             $userDetails[$row['id']] = $row;
         }
     } catch (\Exception $e) {
-        // Fallback en caso de error en la BD de usuarios
     }
 }
 
@@ -121,7 +104,6 @@ if ($page > $totalPages) {
 }
 
 $appUrl = defined('APP_URL') ? APP_URL : '';
-// Paginación adaptada al UUID
 $prevPageUrl = $page > 1 ? $appUrl . '/canvases/members/' . $canvasUuid . '?page=' . ($page - 1) : '#';
 $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/members/' . $canvasUuid . '?page=' . ($page + 1) : '#';
 ?>
@@ -207,7 +189,6 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/members/' . $canvasUui
                                     $username = !empty($uInfo['username']) ? $uInfo['username'] : 'Usuario #' . $member['user_id'];
                                     $avatar = !empty($uInfo['profile_picture']) ? $uInfo['profile_picture'] : $appUrl . '/public/assets/img/fallbacks/avatar-default.png';
                                     $userUuidStr = !empty($uInfo['uuid']) ? $uInfo['uuid'] : '';
-                                    // Identificar si tiene un rol dominante (para el color del borde del avatar)
                                     $mRoles = $memberRoles[$member['user_id']] ?? [];
                                     $primaryRoleName = !empty($mRoles) ? $mRoles[0]['name'] : '';
                                     $roleColor = ($primaryRoleName === 'SuperAdministrator' || $primaryRoleName === 'Administrator') ? '#dc3545' : '#6b7280';

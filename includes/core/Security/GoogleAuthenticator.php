@@ -1,5 +1,4 @@
 <?php
-// includes/core/Security/GoogleAuthenticator.php
 
 namespace App\Core\Security;
 
@@ -16,7 +15,6 @@ class GoogleAuthenticator {
     }
 
     public function getQRCodeUrl($name, $email, $secret) {
-        // Retornamos directamente la URI en lugar de la imagen externa
         return "otpauth://totp/" . rawurlencode($name) . ":" . rawurlencode($email) . "?secret=" . $secret . "&issuer=" . rawurlencode($name);
     }
 

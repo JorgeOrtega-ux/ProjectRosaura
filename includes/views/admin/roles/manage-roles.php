@@ -1,17 +1,12 @@
 <?php
-// includes/views/admin/roles/manage-roles.php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 use App\Config\DatabaseManager;
 use App\Core\Helpers\Utils;
 use App\Core\System\DatabaseConstants as DB;
 use PDO;
-
-// EXTRACCIÓN DE PERMISOS GRANULARES
 $userPerms = $_SESSION['user_permissions'] ?? [];
 $canManageRoles = in_array('manage_roles_structure', $userPerms);
-
-// Instanciamos la conexión y obtenemos los roles usando las constantes centralizadas
 $db = new DatabaseManager();
 $pdo = $db->getConnection(DB::CONN_IDENTITY);
 
@@ -19,8 +14,6 @@ $tblRoles = DB::TBL_ROLES;
 
 $stmt = $pdo->query("SELECT id, name, color, weight, is_system, created_at FROM {$tblRoles} ORDER BY id ASC");
 $roles = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-// Leer los datos directamente desde la estructura de sesión multi-cuenta
 $currentUserWeight = isset($_SESSION['user_role_weight']) ? (int)$_SESSION['user_role_weight'] : 0;
 $userRolesArray = isset($_SESSION['user_roles']) && is_array($_SESSION['user_roles']) ? $_SESSION['user_roles'] : [];
 $isSuperAdmin = in_array(4, $userRolesArray) ? 1 : 0;

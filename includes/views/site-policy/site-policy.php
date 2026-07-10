@@ -1,5 +1,4 @@
 <?php
-// includes/views/site-policy/site-policy.php
 ?>
 <div class="view-content">
     <div class="component-wrapper component-wrapper--full no-padding" data-ref="site-policy-hub-wrapper">
@@ -13,8 +12,7 @@
             
             <div class="policy-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
                 
-                <!-- Términos y Condiciones -->
-                <div class="policy-card nav-item" data-nav="<?php echo APP_URL; ?>/site-policy/terms-conditions" style="background: var(--bg-surface, #1e1e24); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color, #333); cursor: pointer; transition: transform 0.2s, border-color 0.2s;">
+                                <div class="policy-card nav-item" data-nav="<?php echo APP_URL; ?>/site-policy/terms-conditions" style="background: var(--bg-surface, #1e1e24); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color, #333); cursor: pointer; transition: transform 0.2s, border-color 0.2s;">
                     <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
                         <span class="material-symbols-rounded" style="color: var(--color-primary, #6c5ce7); font-size: 32px;">gavel</span>
                         <h3 style="margin: 0; font-size: 18px; color: var(--text-color, #fff);">Términos y Condiciones</h3>
@@ -24,8 +22,7 @@
                     </p>
                 </div>
 
-                <!-- Política de Privacidad -->
-                <div class="policy-card nav-item" data-nav="<?php echo APP_URL; ?>/site-policy/privacy-policy" style="background: var(--bg-surface, #1e1e24); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color, #333); cursor: pointer; transition: transform 0.2s, border-color 0.2s;">
+                                <div class="policy-card nav-item" data-nav="<?php echo APP_URL; ?>/site-policy/privacy-policy" style="background: var(--bg-surface, #1e1e24); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color, #333); cursor: pointer; transition: transform 0.2s, border-color 0.2s;">
                     <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
                         <span class="material-symbols-rounded" style="color: var(--color-primary, #6c5ce7); font-size: 32px;">shield_lock</span>
                         <h3 style="margin: 0; font-size: 18px; color: var(--text-color, #fff);">Política de Privacidad</h3>
@@ -35,8 +32,7 @@
                     </p>
                 </div>
 
-                <!-- Política de Cookies -->
-                <div class="policy-card nav-item" data-nav="<?php echo APP_URL; ?>/site-policy/cookies-policy" style="background: var(--bg-surface, #1e1e24); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color, #333); cursor: pointer; transition: transform 0.2s, border-color 0.2s;">
+                                <div class="policy-card nav-item" data-nav="<?php echo APP_URL; ?>/site-policy/cookies-policy" style="background: var(--bg-surface, #1e1e24); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color, #333); cursor: pointer; transition: transform 0.2s, border-color 0.2s;">
                     <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
                         <span class="material-symbols-rounded" style="color: var(--color-primary, #6c5ce7); font-size: 32px;">cookie</span>
                         <h3 style="margin: 0; font-size: 18px; color: var(--text-color, #fff);">Política de Cookies</h3>
@@ -46,8 +42,7 @@
                     </p>
                 </div>
 
-                <!-- Aviso Legal -->
-                <div class="policy-card nav-item" data-nav="<?php echo APP_URL; ?>/site-policy/legal-notice" style="background: var(--bg-surface, #1e1e24); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color, #333); cursor: pointer; transition: transform 0.2s, border-color 0.2s;">
+                                <div class="policy-card nav-item" data-nav="<?php echo APP_URL; ?>/site-policy/legal-notice" style="background: var(--bg-surface, #1e1e24); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color, #333); cursor: pointer; transition: transform 0.2s, border-color 0.2s;">
                     <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
                         <span class="material-symbols-rounded" style="color: var(--color-primary, #6c5ce7); font-size: 32px;">balance</span>
                         <h3 style="margin: 0; font-size: 18px; color: var(--text-color, #fff);">Aviso Legal</h3>
@@ -57,8 +52,7 @@
                     </p>
                 </div>
 
-                <!-- Política de Reembolsos -->
-                <div class="policy-card nav-item" data-nav="<?php echo APP_URL; ?>/site-policy/refund-policy" style="background: var(--bg-surface, #1e1e24); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color, #333); cursor: pointer; transition: transform 0.2s, border-color 0.2s;">
+                                <div class="policy-card nav-item" data-nav="<?php echo APP_URL; ?>/site-policy/refund-policy" style="background: var(--bg-surface, #1e1e24); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color, #333); cursor: pointer; transition: transform 0.2s, border-color 0.2s;">
                     <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
                         <span class="material-symbols-rounded" style="color: var(--color-primary, #6c5ce7); font-size: 32px;">currency_exchange</span>
                         <h3 style="margin: 0; font-size: 18px; color: var(--text-color, #fff);">Política de Reembolsos</h3>

@@ -1,5 +1,4 @@
 <?php
-// includes/core/Routing/Router.php
 
 namespace App\Core\Routing;
 
@@ -31,8 +30,6 @@ class Router {
         if ($relativePath === '' || $relativePath === false) {
             $relativePath = '/';
         }
-
-        // --- MANEJO DE RUTAS DE DISEÑO ---
         if ($relativePath === '/design') {
             header("Location: " . $this->basePath . "/");
             exit;
@@ -49,13 +46,9 @@ class Router {
         }
 
         if (preg_match('#^/design/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
-            $_GET['id'] = $matches[1]; // Opcionalmente cambiar a uuid si el backend lo requiere
+            $_GET['id'] = $matches[1];
             return ['view' => 'app/design.php'];
         }
-        
-        // --- MANEJO DE RUTAS DE PANEL DE CONTROL (CON UUID) ---
-        
-        // Resets
         if (preg_match('#^/canvases/manage/resets/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
             $_GET['uuid'] = $matches[1];
             return $this->routes['/canvases/manage/resets/:uuid'] ?? [
@@ -65,8 +58,6 @@ class Router {
                 'requires_2fa' => false
             ];
         }
-
-        // Change Member Role (¡NUEVO BLOQUE PARA 2 PARÁMETROS!)
         if (preg_match('#^/canvases/members/([a-zA-Z0-9\-]+)/role/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
             $_GET['uuid'] = $matches[1];
             $_GET['user_uuid'] = $matches[2];
@@ -77,8 +68,6 @@ class Router {
                 'requires_2fa' => false
             ];
         }
-
-        // Chat Restriction
         if (preg_match('#^/canvases/manage/chat-restriction/([a-zA-Z0-9\-]+)/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
             $_GET['uuid'] = $matches[1];
             $_GET['user_uuid'] = $matches[2];
@@ -88,8 +77,6 @@ class Router {
                 'requires_2fa' => false
             ];
         }
-
-        // Members
         if (preg_match('#^/canvases/members/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
             $_GET['uuid'] = $matches[1];
             return $this->routes['/canvases/members/:uuid'] ?? [
@@ -99,8 +86,6 @@ class Router {
                 'requires_2fa' => false
             ];
         }
-
-        // Requests
         if (preg_match('#^/canvases/manage/requests/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
             $_GET['uuid'] = $matches[1];
             return $this->routes['/canvases/manage/requests/:uuid'] ?? [
@@ -110,8 +95,6 @@ class Router {
                 'requires_2fa' => false
             ];
         }
-
-        // Edit
         if (preg_match('#^/canvases/edit/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
             $_GET['uuid'] = $matches[1];
             return $this->routes['/canvases/edit/:uuid'] ?? [
@@ -121,8 +104,6 @@ class Router {
                 'requires_2fa' => false
             ];
         }
-        
-        // Resize
         if (preg_match('#^/canvases/manage/resize/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
             $_GET['uuid'] = $matches[1];
             return $this->routes['/canvases/manage/resize/:uuid'] ?? [
@@ -132,8 +113,6 @@ class Router {
                 'requires_2fa' => false
             ];
         }
-
-        // Invites
         if (preg_match('#^/canvases/manage/invites/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
             $_GET['uuid'] = $matches[1];
             return $this->routes['/canvases/manage/invites/:uuid'] ?? [
@@ -143,8 +122,6 @@ class Router {
                 'requires_2fa' => false
             ];
         }
-
-        // Generate Invites
         if (preg_match('#^/canvases/manage/invites/generate/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
             $_GET['uuid'] = $matches[1];
             return $this->routes['/canvases/manage/invites/generate/:uuid'] ?? [
@@ -154,8 +131,6 @@ class Router {
                 'requires_2fa' => false
             ];
         }
-
-        // Roles
         if (preg_match('#^/canvases/manage/roles/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
             $_GET['uuid'] = $matches[1];
             return $this->routes['/canvases/manage/roles/:uuid'] ?? [
@@ -165,8 +140,6 @@ class Router {
                 'requires_2fa' => false
             ];
         }
-
-        // Role Builder
         if (preg_match('#^/canvases/manage/role-builder/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
             $_GET['uuid'] = $matches[1];
             return $this->routes['/canvases/manage/role-builder/:uuid'] ?? [
@@ -186,13 +159,10 @@ class Router {
                 'requires_2fa' => false
             ];
         }
-
-        // Compatibilidad: redirigir ruta antigua de resize
         if (preg_match('#^/canvases/resize/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
             header('Location: ' . $this->basePath . '/canvases/manage/resize/' . $matches[1]);
             exit;
         }
-        // ---------------------------------
 
         if (!array_key_exists($relativePath, $this->routes)) {
             Logger::warning("Route not found (404)", [

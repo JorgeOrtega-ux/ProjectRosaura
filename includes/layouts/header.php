@@ -1,5 +1,5 @@
 <?php 
-// includes/layouts/header.php
+
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -127,7 +127,7 @@ if ($isLoggedIn) {
             <?php if ($isLoggedIn && !$isPremium): ?>
                 <button class="component-button component-button--h40" data-nav="<?php echo APP_URL; ?>/premium">
                     <span class="material-symbols-rounded">workspace_premium</span>
-                    <span>Premium</span>
+                    <span><?php echo __('premium'); ?></span>
                 </button>
             <?php endif; ?>
 
@@ -138,7 +138,7 @@ if ($isLoggedIn) {
             <?php endif; ?>
 
             <?php if ($isLoggedIn && $hasCanvasAccess): ?>
-                <button class="component-button component-button--icon component-button--h40" data-action="toggleModule" data-target="moduleCanvases" data-tooltip="Lienzos" data-position="bottom">
+                <button class="component-button component-button--icon component-button--h40" data-action="toggleModule" data-target="moduleCanvases" data-tooltip="<?php echo __('tooltip_canvases'); ?>" data-position="bottom">
                     <span class="material-symbols-rounded">palette</span>
                 </button>
             <?php endif; ?>

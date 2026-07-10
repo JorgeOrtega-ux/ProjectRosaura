@@ -1,5 +1,4 @@
 <?php
-// includes/core/Repositories/VerificationCodeRepository.php
 
 namespace App\Core\Repositories;
 
@@ -27,10 +26,7 @@ class VerificationCodeRepository implements VerificationCodeRepositoryInterface 
 
     public function findLatestValidByIdentifierAndType(string $identifier, string $codeType): ?array {
         try {
-            // Pasamos la fecha de PHP en vez de usar NOW() para la expiración y evitamos desincronizaciones
             $now = date('Y-m-d H:i:s');
-            
-            // Pedimos a MySQL que calcule los segundos exactos desde la creación para evitar el strtotime()
             $stmt = $this->pdo->prepare("
                 SELECT *, TIMESTAMPDIFF(SECOND, created_at, NOW()) AS seconds_elapsed 
                 FROM verification_codes 

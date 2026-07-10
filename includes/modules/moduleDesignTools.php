@@ -1,12 +1,7 @@
 <?php
-// includes/modules/moduleDesignTools.php
 
 use App\Core\System\SubscriptionPlanConstants;
-
-// 1. Obtenemos el nivel desde la sesión asegurando que sea un número entero (int).
 $userTier = (int) ($_SESSION['subscription_tier'] ?? $_SESSION['tier'] ?? $_SESSION['user_tier'] ?? SubscriptionPlanConstants::TIER_BASIC);
-
-// 2. En lugar de hacer una validación manual (>=), usamos tu método oficial hasFeature.
 $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates');
 ?>
 <div class="component-module component-module--sidebar component-module--sidebar-responsive disabled" data-module="moduleDesignTools">
@@ -17,7 +12,7 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
         <div class="component-menu-header">
             <div class="component-menu-header-box">
                 <span class="material-symbols-rounded">stream</span>
-                <span class="component-menu-header-title">Transmitir Plantilla</span>
+                <span class="component-menu-header-title"><?php echo __('dt_stream_template'); ?></span>
             </div>
         </div>
         
@@ -27,7 +22,7 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
                     <div class="component-menu-top">
                         <div class="component-menu-header-box">
                             <span class="material-symbols-rounded">swap_horiz</span>
-                            <span class="component-menu-header-title">Posición X</span>
+                            <span class="component-menu-header-title"><?php echo __('dt_pos_x'); ?></span>
                         </div>
                     </div>
                     <div class="component-menu-bottom">
@@ -49,7 +44,7 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
                     <div class="component-menu-top">
                         <div class="component-menu-header-box">
                             <span class="material-symbols-rounded">swap_vert</span>
-                            <span class="component-menu-header-title">Posición Y</span>
+                            <span class="component-menu-header-title"><?php echo __('dt_pos_y'); ?></span>
                         </div>
                     </div>
                     <div class="component-menu-bottom">
@@ -71,7 +66,7 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
                     <div class="component-menu-top">
                         <div class="component-menu-header-box">
                             <span class="material-symbols-rounded">opacity</span>
-                            <span class="component-menu-header-title">Opacidad</span>
+                            <span class="component-menu-header-title"><?php echo __('dt_opacity'); ?></span>
                         </div>
                     </div>
                     <div class="component-menu-bottom">
@@ -93,7 +88,7 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
                     <div class="component-menu-top">
                         <div data-ref="live-share-active-alert" class="component-alert component-alert--info disabled">
                             <div class="component-alert-icon"><span class="material-symbols-rounded">info</span></div>
-                            <div class="component-alert-text">Código: <strong data-ref="live-share-code">...</strong></div>
+                            <div class="component-alert-text"><?php echo __('dt_code'); ?>: <strong data-ref="live-share-code">...</strong></div>
                         </div>
                     </div>
                 </div>
@@ -102,10 +97,10 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
             <div class="component-menu-bottom">
                 <div class="component-form-group" style="display: flex; flex-direction: column; gap: 8px;">
                     <button class="component-button component-button--full component-button--dark component-button--h40" data-action="startLive">
-                        <span class="material-symbols-rounded">play_arrow</span> Iniciar
+                        <span class="material-symbols-rounded">play_arrow</span> <?php echo __('dt_start'); ?>
                     </button>
                     <button class="component-button component-button--full component-button--danger component-button--h40 disabled" data-action="stopLive">
-                        <span class="material-symbols-rounded">stop</span> Detener
+                        <span class="material-symbols-rounded">stop</span> <?php echo __('dt_stop'); ?>
                     </button>
                 </div>
             </div>
@@ -118,7 +113,7 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
         <div class="component-menu-header">
             <div class="component-menu-header-box">
                 <span class="material-symbols-rounded">palette</span>
-                <span class="component-menu-header-title">Seleccionar color</span>
+                <span class="component-menu-header-title"><?php echo __('dt_select_color'); ?></span>
             </div>
         </div>
         
@@ -126,7 +121,7 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
             <div class="component-menu-top">
                 <div class="component-menu-header-box">
                     <span class="material-symbols-rounded">color_lens</span>
-                    <span class="component-menu-header-title">Colores predeterminados</span>
+                    <span class="component-menu-header-title"><?php echo __('dt_default_colors'); ?></span>
                 </div>
             </div>
             
@@ -135,13 +130,13 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
                     <div class="component-loader-center component-loader-center--compact">
                         <div class="component-empty-state-content">
                             <span class="material-symbols-rounded icon-spin-slow">palette</span><br>
-                            Cargando...
+                            <?php echo __('dt_loading'); ?>
                         </div>
                     </div>
                 </div>
                 <div class="component-empty-state" data-ref="empty-state-rendered" style="display: none;">
                     <span class="material-symbols-rounded component-empty-state-icon">error</span>
-                    <p class="component-empty-state-text">Mensaje generico</p>
+                    <p class="component-empty-state-text"><?php echo __('dt_generic_message'); ?></p
                 </div>
             </div>
         </div>
@@ -153,7 +148,7 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
         <div class="component-menu-header">
             <div class="component-menu-header-box">
                 <span class="material-symbols-rounded">photo_library</span>
-                <span class="component-menu-header-title">Plantillas</span>
+                <span class="component-menu-header-title"><?php echo __('dt_templates'); ?></span>
             </div>
         </div>
         
@@ -163,7 +158,7 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
                     <input type="file" accept="image/jpeg, image/png, image/webp" class="hidden-input" data-ref="template-file-input">
                     <button class="component-button component-button--full component-button--dark component-button--h40" data-action="triggerTemplateUpload">
                         <span class="material-symbols-rounded">cloud_upload</span>
-                        Subir a mi librería
+                        <?php echo __('dt_upload_library'); ?>
                     </button>
                 </div>
             </div>
@@ -173,7 +168,7 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
             <div class="component-menu-top">
                 <div class="component-menu-header-box">
                     <span class="material-symbols-rounded">collections_bookmark</span>
-                    <span class="component-menu-header-title">Mi Librería (<span data-ref="template-count">0</span>)</span>
+                    <span class="component-menu-header-title"><?php echo __('dt_my_library'); ?> (<span data-ref="template-count">0</span>)</span>
                 </div>
             </div>
             <div class="component-menu-bottom">
@@ -181,7 +176,7 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
                 </div>
                 <div class="component-empty-state" data-ref="empty-state-rendered" style="display: none;">
                     <span class="material-symbols-rounded component-empty-state-icon">error</span>
-                    <p class="component-empty-state-text">Mensaje generico</p>
+                    <p class="component-empty-state-text"><?php echo __('dt_generic_message'); ?></p>
                 </div>
             </div>
         </div>
@@ -193,7 +188,7 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
         <div class="component-menu-header">
             <div class="component-menu-header-box">
                 <span class="material-symbols-rounded">stars</span>
-                <span class="component-menu-header-title">Ventajas Activas</span>
+                <span class="component-menu-header-title"><?php echo __('dt_active_advantages'); ?></span>
             </div>
         </div>
         
@@ -201,7 +196,7 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
             <div class="component-menu-top">
                 <div class="component-menu-header-box">
                     <span class="material-symbols-rounded">inventory_2</span>
-                    <span class="component-menu-header-title">Mis Ventajas</span>
+                    <span class="component-menu-header-title"><?php echo __('dt_my_advantages'); ?></span>
                 </div>
             </div>
 
@@ -210,13 +205,13 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
                     <div class="component-loader-center component-loader-center--compact">
                         <div class="component-empty-state-content">
                             <span class="material-symbols-rounded icon-spin-slow">stars</span><br>
-                            Cargando...
+                            <?php echo __('dt_loading'); ?>
                         </div>
                     </div>
                 </div>
                 <div class="component-empty-state" data-ref="empty-state-rendered" style="display: none;">
                     <span class="material-symbols-rounded component-empty-state-icon">error</span>
-                    <p class="component-empty-state-text">No tienes ventajas disponibles.</p>
+                    <p class="component-empty-state-text"><?php echo __('dt_no_advantages'); ?></p>
                 </div>
             </div>
         </div>

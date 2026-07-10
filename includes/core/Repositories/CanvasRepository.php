@@ -13,8 +13,6 @@ use App\Core\System\DatabaseConstants as DB;
 class CanvasRepository implements CanvasRepositoryInterface {
     private $db;
     private TypesenseManager $typesenseManager;
-
-    // ELIMINADO EL LOGGER DEL CONSTRUCTOR PARA EVITAR ERROR DEL CONTENEDOR DI
     public function __construct(DatabaseManager $databaseManager, TypesenseManager $typesenseManager) {
         $this->db = $databaseManager->getConnection(DB::CONN_CANVASES);
         $this->typesenseManager = $typesenseManager;
@@ -63,8 +61,6 @@ class CanvasRepository implements CanvasRepositoryInterface {
         ]);
 
         $id = (int)$this->db->lastInsertId();
-
-        // --- INTEGRACIÓN TYPESENSE CON TOLERANCIA A FALLOS ---
         try {
             $client = $this->typesenseManager->getClient();
             if ($client) {
@@ -92,8 +88,6 @@ class CanvasRepository implements CanvasRepositoryInterface {
             
             $stmt = $this->db->prepare("INSERT IGNORE INTO " . DB::TBL_CANVAS_MEMBERS . " (canvas_id, user_id) VALUES (:cid, :uid)");
             $stmt->execute([':cid' => $canvasId, ':uid' => $userId]);
-
-            // Assign role
             $this->assignMemberRole($canvasId, $userId, $roleId);
 
             $this->db->commit();
@@ -260,8 +254,6 @@ class CanvasRepository implements CanvasRepositoryInterface {
         
         $params = array_merge($canvasIds, [$ownerId]);
         $success = $stmt->execute($params);
-
-        // --- INTEGRACIÓN TYPESENSE CON TOLERANCIA ---
         if ($success) {
             $client = $this->typesenseManager->getClient();
             if ($client) {
@@ -331,8 +323,6 @@ class CanvasRepository implements CanvasRepositoryInterface {
             ':cooldown_seconds'      => $data['cooldown_seconds'],
             ':id'                    => $id
         ]);
-
-        // --- INTEGRACIÓN TYPESENSE CON TOLERANCIA ---
         if ($success) {
             $client = $this->typesenseManager->getClient();
             if ($client) {
@@ -482,8 +472,6 @@ class CanvasRepository implements CanvasRepositoryInterface {
         $stmt->execute([':canvas_id' => $canvasId]);
         
         $roles = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        
-        // Fetch permissions for each role
         foreach ($roles as &$role) {
             $sqlPerms = "SELECT p.name 
                          FROM canvas_role_permissions crp
@@ -587,14 +575,11 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     private function syncRolePermissions(int $roleId, array $permissions) {
-        // Delete old
         $delSql = "DELETE FROM canvas_role_permissions WHERE role_id = :role_id";
         $delStmt = $this->db->prepare($delSql);
         $delStmt->execute([':role_id' => $roleId]);
         
         if (empty($permissions)) return;
-        
-        // Find permission IDs by name
         $placeholders = implode(',', array_fill(0, count($permissions), '?'));
         $permSql = "SELECT id FROM canvas_permissions WHERE name IN ($placeholders)";
         $permStmt = $this->db->prepare($permSql);
@@ -709,8 +694,6 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function trimMembersToLimit(int $canvasId, int $limit): bool {
-        // Keep the first $limit members ordered by id ASC, delete the rest.
-        // MySQL doesn't support LIMIT in subqueries directly for IN, but we can do it with a join or temporary table
         $sql = "DELETE FROM canvas_user_roles
                 WHERE canvas_id = :canvas_id 
                 AND user_id NOT IN (
@@ -726,8 +709,6 @@ class CanvasRepository implements CanvasRepositoryInterface {
         $stmt->bindValue(':canvas_id2', $canvasId, PDO::PARAM_INT);
         $stmt->bindValue(':limit', max(1, $limit), PDO::PARAM_INT);
         $rolesDeleted = $stmt->execute();
-        
-        // Also cleanup canvas_members that no longer have any roles
         $sqlClean = "DELETE FROM " . DB::TBL_CANVAS_MEMBERS . " 
                      WHERE canvas_id = :canvas_id 
                      AND user_id NOT IN (
@@ -960,10 +941,6 @@ class CanvasRepository implements CanvasRepositoryInterface {
         $stmt->execute([':user_id' => $userId, ':canvas_id' => $canvasId]);
         return (bool)$stmt->fetchColumn();
     }
-
-    // ==========================================
-    // NUEVOS MÉTODOS PARA INVITACIONES
-    // ==========================================
     public function createInvite(int $canvasId, string $code, string $roleId, ?int $maxUses, ?string $expiresAt, int $createdBy): int {
         $sql = "INSERT INTO canvas_invites (canvas_id, code, role, max_uses, expires_at, created_by) 
                 VALUES (:canvas_id, :code, :role_id, :max_uses, :expires_at, :created_by)";
@@ -971,7 +948,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
         $stmt->execute([
             ':canvas_id' => $canvasId,
             ':code' => $code,
-            ':role_id' => (string)$roleId, // storing role ID as string in existing column for now
+            ':role_id' => (string)$roleId,
             ':max_uses' => $maxUses,
             ':expires_at' => $expiresAt,
             ':created_by' => $createdBy

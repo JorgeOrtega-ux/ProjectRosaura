@@ -1,5 +1,4 @@
 <?php
-// includes/views/auth/forgot-password.php
 ?>
 <div class="component-layout-centered">
     <div class="component-form-box">

@@ -62,64 +62,6 @@ class CanvasController extends BaseController {
         
         if (!is_array($perms)) {
             $perms = [];
-<?php
-
-namespace App\Api\Controllers;
-
-use App\Api\Services\CanvasServices;
-use App\Core\Interfaces\SessionManagerInterface;
-use App\Core\Security\TurnstileValidator;
-use App\Config\RedisCache;
-
-class CanvasController extends BaseController {
-    
-    private $canvasServices;
-    private $session;
-
-    public function __construct(CanvasServices $canvasServices, SessionManagerInterface $session) {
-        $this->canvasServices = $canvasServices;
-        $this->session = $session;
-    }
-
-    private function canManageOfficial(): bool {
-        $perms = [];
-        
-
-        if (method_exists($this->session, 'getPermissions')) {
-            $perms = $this->session->getPermissions();
-        }
-        
-
-        if (empty($perms) && isset($_SESSION['user_permissions'])) {
-            $perms = $_SESSION['user_permissions'];
-        } elseif (empty($perms) && isset($_SESSION['permissions'])) {
-            $perms = $_SESSION['permissions'];
-        }
-        
-        if (!is_array($perms)) {
-            $perms = [];
-        }
-
-
-        return in_array('access_admin_panel', $perms) || 
-               in_array('canvases.manage_official', $perms);
-    }
-
-    private function canCreateOfficial(): bool {
-        $perms = [];
-        
-        if (method_exists($this->session, 'getPermissions')) {
-            $perms = $this->session->getPermissions();
-        }
-        
-        if (empty($perms) && isset($_SESSION['user_permissions'])) {
-            $perms = $_SESSION['user_permissions'];
-        } elseif (empty($perms) && isset($_SESSION['permissions'])) {
-            $perms = $_SESSION['permissions'];
-        }
-        
-        if (!is_array($perms)) {
-            $perms = [];
         }
 
         return in_array('access_admin_panel', $perms) || 
@@ -885,6 +827,11 @@ class CanvasController extends BaseController {
         }
     }
 
+    public function get_custom_palettes($input) {
+        try {
+            if (!$this->session->isLoggedIn()) {
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 401]);
+            }
             $userId = $this->session->getActiveAccountId();
             $result = $this->canvasServices->getCustomPalettes($userId);
             return $this->respond($result);
@@ -1013,3 +960,4 @@ class CanvasController extends BaseController {
     }
 }
 ?>
+

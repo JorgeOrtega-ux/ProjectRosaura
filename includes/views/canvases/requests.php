@@ -1,5 +1,4 @@
 <?php
-// includes/views/canvases/requests.php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 use App\Config\DatabaseManager;
@@ -23,15 +22,12 @@ if ($canvasUuid) {
         $stmt = $pdo->prepare("SELECT id FROM canvases WHERE uuid = :uuid LIMIT 1");
         $stmt->execute(['uuid' => $canvasUuid]);
         $canvasId = (int)$stmt->fetchColumn();
-
-        // Consulta a nivel de servidor de las peticiones pendientes
         if ($canvasId) {
             $stmtReq = $pdo->prepare("SELECT id, user_id, status, created_at FROM canvas_access_requests WHERE canvas_id = :cid AND status = 'pending' ORDER BY created_at ASC");
             $stmtReq->execute(['cid' => $canvasId]);
             $pendingRequests = $stmtReq->fetchAll(\PDO::FETCH_ASSOC);
         }
     } catch (\Exception $e) {
-        // Silenciar y atrapar error por si la base de datos o tabla no existe
     }
 }
 

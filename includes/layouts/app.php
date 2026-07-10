@@ -1,13 +1,13 @@
 <?php
-// includes/layouts/app.php
+
 
 use \App\Core\System\SubscriptionPlanConstants;
 
-// --- INICIALIZADORES DE SEGURIDAD (Fallback) ---
+
 $isLoggedIn = $isLoggedIn ?? false;
 $currentView = $currentView ?? 'system/message.php';
 $isAuthRoute = $isAuthRoute ?? false;
-// -----------------------------------------------
+
 
 global $serverConfig; 
 
@@ -38,7 +38,7 @@ if (strpos($currentPath, '/admin') === 0) {
 $routeTitles = [
     '/' => __('route_home'),
     '/explore' => __('route_explore'),
-    '/premium' => 'Planes Premium', 
+    '/premium' => __('route_premium'), 
     '/login' => __('route_login'),
     '/register' => __('route_register'),
     '/settings' => __('route_settings'),
@@ -71,14 +71,14 @@ if (isset($routeTitles[$currentPath])) {
     $initialTitle = $routeTitles[$currentPath] . ' - ' . APP_NAME;
 }
 
-// --- LECTURA DE PALETAS DE COLORES ---
+
 $palettesJson = '{}';
 $palettesPath = dirname(__DIR__, 2) . '/public/assets/data/palettes.json';
 if (file_exists($palettesPath)) {
     $palettesJson = file_get_contents($palettesPath);
 }
 
-// NOTA DE IMPLEMENTACIÓN: Extracción del Tier para el Frontend y Generación de Límites
+
 $activeAccountId = $_SESSION['active_account'] ?? null;
 $linkedAccounts = $_SESSION['accounts'] ?? [];
 $subscriptionTier = 0;
@@ -88,7 +88,7 @@ if ($activeAccountId && isset($linkedAccounts[$activeAccountId])) {
 
 $planLimits = SubscriptionPlanConstants::getTierLimits($subscriptionTier);
 
-// --- LECTURA DE PALETAS PERSONALIZADAS ---
+
 $customPalettesJson = '[]';
 if ($activeAccountId && SubscriptionPlanConstants::hasFeature($subscriptionTier, 'custom_palettes')) {
     try {
@@ -103,7 +103,7 @@ if ($activeAccountId && SubscriptionPlanConstants::hasFeature($subscriptionTier,
         $customPalettesJson = json_encode($customPalettes);
     } catch (\Exception $e) { }
 }
-// ---------------------------------------------------------------
+
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -137,18 +137,18 @@ if ($activeAccountId && SubscriptionPlanConstants::hasFeature($subscriptionTier,
         window.APP_CUSTOM_PALETTES = <?php echo $customPalettesJson; ?>;
         window.activeUserId = <?php echo isset($_SESSION['active_account']) ? json_encode((string)$_SESSION['active_account']) : 'null'; ?>;
         
-        // Inyección de la variable APP_USER con el tier y límites exactos de PHP
+
         window.APP_USER = {
             subscription_tier: <?php echo $subscriptionTier; ?>
         };
         window.APP_LIMITS = <?php echo json_encode($planLimits); ?>;
 
-        // --- CONFIGURACIÓN GLOBAL (INCLUYENDO WEBSOCKETS Y PERMISOS) ---
+
         window.APP_CONFIG = {
             wsPort: <?php echo (int)\App\Core\Helpers\EnvLoader::get('WS_PORT', 8765); ?>,
             permissions: <?php echo json_encode($userPermissions ?? []); ?>
         };
-        // ----------------------------------------------------
+
         
         function __(key, params = {}) { 
             let text = (window.AppTranslations && window.AppTranslations[key] !== undefined) ? window.AppTranslations[key] : key; 

@@ -1,5 +1,4 @@
 <?php
-// includes/views/canvases/components/reset-manager.php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 use App\Config\DatabaseManager;
@@ -70,7 +69,6 @@ if ($canvasUuid && $userId) {
             }
         }
     } catch (\Exception $e) {
-        // Silenciar error de carga
     }
 }
 
@@ -312,8 +310,7 @@ if (!isset($timerActions[$activeTimer])) {
 
                 <div class="component-group-item component-group-item--wrap">
                     <div class="component-card__content">
-                        <!-- Espacio extra -->
-                    </div>
+                                            </div>
                     <div class="component-card__actions component-card__actions--end">
                         <button type="button" class="component-button component-button--danger component-button--h40" data-action="resetNow">
                             <span class="material-symbols-rounded">delete_forever</span>

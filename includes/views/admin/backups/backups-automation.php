@@ -1,25 +1,18 @@
 <?php
-// includes/views/admin/backups/backups-automation.php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 use App\Config\DatabaseManager;
 use PDO;
-
-// 1. Obtener Configuración del Servidor
 $dbManager = new DatabaseManager();
 $pdoIdentity = $dbManager->getConnection('identity');
 
 $stmtConfig = $pdoIdentity->query("SELECT * FROM server_config LIMIT 1");
 $config = $stmtConfig->fetch(PDO::FETCH_ASSOC) ?: [];
-
-// Valores por defecto si no existen
 $autoEnabled = (int)($config['auto_backup_enabled'] ?? 0);
 $autoFreq = (int)($config['auto_backup_frequency_hours'] ?? 24);
 $autoRetention = (int)($config['auto_backup_retention_count'] ?? 5);
 $schemaConfigJson = $config['backup_schema_config'] ?? '{}';
 $schemaConfig = json_decode($schemaConfigJson, true) ?: [];
-
-// 2. Traducir el valor de frecuencia para el primer renderizado (SSR)
 $freqTextMap = [
     1 => __('auto_freq_1h'),
     3 => __('auto_freq_3h'),
@@ -30,8 +23,6 @@ $freqTextMap = [
     168 => __('auto_freq_168h')
 ];
 $currentFreqText = $freqTextMap[$autoFreq] ?? str_replace(':hours', $autoFreq, __('freq_every_x_hours'));
-
-// 3. Obtener Esquema de Base de Datos dinámicamente (Tablas)
 $availableSchema = [];
 try {
     $pdoGlobal = $dbManager->getGlobalConnection();
@@ -47,11 +38,8 @@ try {
         }
     }
 } catch (\Exception $e) {
-    // Fallback de emergencia
     $availableSchema['identity'] = [];
 }
-
-// Extraer módulos físicos del JSON guardado
 $selectedModules = $schemaConfig['_modules'] ?? [
     'db' => true,
     'avatars_uploaded' => false,
@@ -122,7 +110,6 @@ $selectedModules = $schemaConfig['_modules'] ?? [
                                         <div class="pill-container"><div class="drag-handle"></div></div>
                                         <div class="component-menu-list component-menu-list--scrollable">
                                             <?php 
-                                            // ELIMINADO EL MODO 0 (TEST)
                                             $freqs = [1 => '1h', 3 => '3h', 6 => '6h', 12 => '12h', 24 => '24h', 48 => '48h', 168 => '168h'];
                                             foreach($freqs as $val => $label): 
                                                 $icon = $val >= 24 ? ($val >= 168 ? 'date_range' : 'today') : 'schedule';

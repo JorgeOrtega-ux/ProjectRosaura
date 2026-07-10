@@ -1,5 +1,4 @@
 <?php
-// includes/core/Repositories/TokenRepository.php
 
 namespace App\Core\Repositories;
 
@@ -62,15 +61,8 @@ class TokenRepository implements TokenRepositoryInterface {
             return null;
         }
     }
-
-    /**
-     * OPTIMIZADO: Medida de seguridad (Guard Clause) para evitar saturación de memoria
-     * o desbordamiento de la consulta SQL si el input es manipulado maliciosamente.
-     */
     public function findValidTokensBySelectors(array $selectors): array {
         if (empty($selectors)) return [];
-        
-        // Prevención de ataques mediante listas masivas (Max ~100 tokens procesados a la vez)
         if (count($selectors) > 100) {
             $selectors = array_slice($selectors, 0, 100);
             Logger::warning("Se han detectado demasiados selectores en findValidTokensBySelectors, truncando a 100 por seguridad.", []);
@@ -143,11 +135,6 @@ class TokenRepository implements TokenRepositoryInterface {
             return false;
         }
     }
-
-    /**
-     * OPTIMIZADO: Límite duro integrado a la consulta para proteger la DB contra ataques DDoS
-     * de creación masiva de sesiones si el rate limit general llegase a fallar.
-     */
     public function getActiveDevicesByUserId(int $userId, int $limit = 50): array {
         $tblAuthTokens = DB::TBL_AUTH_TOKENS;
 

@@ -1,5 +1,4 @@
 <?php
-// includes/views/app/store-coins.php
 use App\Core\System\StorePackagesConfig;
 
 $coinPackages = [];

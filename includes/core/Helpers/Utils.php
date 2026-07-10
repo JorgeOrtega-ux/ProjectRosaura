@@ -3,8 +3,6 @@ namespace App\Core\Helpers;
 use App\Core\Interfaces\SessionManagerInterface;
 
 class Utils {
-    
-    // Propiedad estática para el caché en memoria de los tamaños de lienzo
     private static $canvasSizes = null;
 
     public static function getCanvasSizes(): array {
@@ -21,8 +19,6 @@ class Utils {
                 return self::$canvasSizes;
             }
         }
-        
-        // Fallback de emergencia si el archivo falla o no se encuentra
         self::$canvasSizes = [
             '64x64' => ['label' => '64x64', 'icon' => 'crop_square']
         ];
@@ -60,16 +56,12 @@ class Utils {
         if ($imageContent === false || empty($imageContent)) {
             return 'public/assets/img/fallbacks/avatar-default.png';
         }
-
-        // ESCRITURA FÍSICA A LA VERDADERA CARPETA PÚBLICA
         $storageDir = ROOT_PATH . '/storage/public/profilePictures/default/';
         if (!is_dir($storageDir)) mkdir($storageDir, 0755, true);
         
         $fileName = $uuid . '.png';
         $filePath = $storageDir . $fileName;
         file_put_contents($filePath, $imageContent);
-
-        // Retornamos la ruta mapeada vía Symlink para que el frontend la renderice
         return 'public/storage/profilePictures/default/' . $fileName;
     }
 
@@ -235,7 +227,6 @@ class Utils {
         }
 
         $cleanPath = ltrim($path, '/');
-        // Traducimos la ruta virtual (symlink) a la física para verificar si existe
         $realPathRelative = str_replace('public/storage/', 'storage/public/', $cleanPath);
         $absolutePath = ROOT_PATH . '/' . $realPathRelative;
 
@@ -324,7 +315,6 @@ class Utils {
             }
             if (strpos($oldPicPath, 'uploaded/') !== false || strpos($oldPicPath, 'default/') !== false) {
                 $oldPicRelative = str_replace(APP_URL . '/', '', ltrim($oldPicPath, '/'));
-                // Traducimos la ruta virtual (symlink) a la física para borrar el archivo
                 $realPathRelative = str_replace('public/storage/', 'storage/public/', $oldPicRelative);
                 $oldPath = ROOT_PATH . '/' . $realPathRelative;
                 

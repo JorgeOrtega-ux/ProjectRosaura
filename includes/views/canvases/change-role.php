@@ -1,11 +1,9 @@
 <?php
-// includes/views/canvases/change-role.php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 use App\Config\DatabaseManager;
 
 $userId = $_SESSION['active_account_id'] ?? $_SESSION['user_id'] ?? null;
-// Extraemos del router los parámetros de la URL adaptados a UUID
 $canvasUuid = isset($_GET['uuid']) ? $_GET['uuid'] : null;
 $targetUserUuid = isset($_GET['user_uuid']) ? $_GET['user_uuid'] : null;
 
@@ -24,8 +22,6 @@ if (!$userId || !$canvasUuid || !$targetUserUuid) {
     echo "<div class='view-content'><p>".__('err_unauthorized_or_missing_id')."</p></div>";
     return;
 }
-
-// 1. Obtener detalles del perfil (Identity) utilizando el UUID proporcionado
 try {
     $pdoIdentity = $db->getConnection($connNameIdentity);
     $stmtUser = $pdoIdentity->prepare("SELECT id, username, profile_picture FROM users WHERE uuid = :uuid LIMIT 1");
@@ -46,25 +42,17 @@ try {
     echo "<div class='view-content'><p>Error de conexión con el módulo de identidad.</p></div>";
     return;
 }
-
-// 2. Obtener ID del lienzo y verificar membresía actual del miembro objetivo
 try {
     $pdoCanvases = $db->getConnection($connNameCanvases);
-    
-    // Obtener info del lienzo
     $stmt = $pdoCanvases->prepare("SELECT id, owner_id FROM canvases WHERE uuid = :uuid LIMIT 1");
     $stmt->execute(['uuid' => $canvasUuid]);
     $canvasData = $stmt->fetch(PDO::FETCH_ASSOC);
     
     if ($canvasData) {
         $canvasId = (int)$canvasData['id'];
-        
-        // Identificamos si es el dueño
         if ($canvasData['owner_id'] == $targetUserId) {
             $isOwner = true;
         }
-
-        // Obtener roles actuales del miembro objetivo
         $stmtMember = $pdoCanvases->prepare("SELECT role_id FROM canvas_user_roles WHERE canvas_id = :cid AND user_id = :uid");
         $stmtMember->execute(['cid' => $canvasId, 'uid' => $targetUserId]);
         $memberRoles = $stmtMember->fetchAll(PDO::FETCH_COLUMN);
@@ -73,8 +61,7 @@ try {
             $targetCurrentRoles = array_map('intval', $memberRoles);
         } else {
             if ($isOwner) {
-                // Owner might not be in user_roles explicitly, or they have a max weight role
-                $targetCurrentRoles = [-1]; // Special indicator
+                $targetCurrentRoles = [-1];
             } else {
                 echo "<div class='view-content'><p>El usuario especificado no pertenece a este lienzo.</p></div>";
                 return;
@@ -88,8 +75,6 @@ try {
     echo "<div class='view-content'><p>Error interno al procesar los datos de membresía.</p></div>";
     return;
 }
-
-// Fetch all available roles for this canvas
 $availableRoles = [];
 try {
     $stmt = $pdoCanvases->prepare("SELECT * FROM canvas_roles WHERE canvas_id IS NULL OR canvas_id = :cid ORDER BY weight DESC");

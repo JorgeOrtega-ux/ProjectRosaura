@@ -75,7 +75,6 @@ class StoreRepository implements StoreRepositoryInterface {
     }
 
     public function markPerkAsUsed(int $userId, string $perkId): bool {
-        // Obtenemos el ID del primer perk sin usar de ese tipo
         $stmt = $this->db->prepare("
             SELECT id FROM user_perks 
             WHERE user_id = ? AND perk_id = ? AND is_used = 0 

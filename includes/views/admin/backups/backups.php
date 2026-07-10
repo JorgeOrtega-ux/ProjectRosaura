@@ -1,5 +1,4 @@
 <?php
-// includes/views/admin/backups/backups.php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 $userPerms = $_SESSION['user_permissions'] ?? [];

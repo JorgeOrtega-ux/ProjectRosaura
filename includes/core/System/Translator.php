@@ -1,14 +1,12 @@
 <?php
-// includes/core/System/Translator.php
 
 namespace App\Core\System;
 
 class Translator {
     private static $translations = null;
-    private static $cache = []; // Caché para peticiones bajo demanda (ej. envío de correos)
+    private static $cache = [];
 
     public static function init($lang) {
-        // Carga base obligatoria
         $file = ROOT_PATH . '/translations/' . $lang . '/general.json';
         
         if (file_exists($file)) {
@@ -17,19 +15,11 @@ class Translator {
         } else {
             self::$translations = [];
         }
-
-        // --- SOLUCIÓN: Auto-detección del contexto ADMIN ---
-        // Asegura que las llamadas AJAX, Fetch o renderizados directos (F5) 
-        // siempre cuenten con las traducciones de administración si la ruta lo requiere.
         $loadAdmin = false;
-
-        // 1. Detección por URI (carga inicial F5)
         $requestUri = $_SERVER['REQUEST_URI'] ?? '';
         if (strpos($requestUri, '/admin') !== false) {
             $loadAdmin = true;
         }
-
-        // 2. Detección por payload JSON (Ej. llamadas Fetch de la SPA al Router API)
         if (!$loadAdmin) {
             $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
             if (strpos($contentType, 'application/json') !== false) {
@@ -42,13 +32,9 @@ class Translator {
                 }
             }
         }
-
-        // 3. Detección por petición GET/POST estándar
         if (!$loadAdmin && isset($_REQUEST['route']) && strpos($_REQUEST['route'], 'admin') === 0) {
             $loadAdmin = true;
         }
-
-        // Si es un contexto admin, fusionamos los diccionarios en memoria
         if ($loadAdmin) {
             self::loadContext($lang, 'admin');
         }
@@ -94,8 +80,6 @@ class Translator {
                 $json = file_get_contents($generalFile);
                 $translations = array_merge($translations, json_decode($json, true) ?: []);
             }
-            
-            // Asegurarnos de que notificaciones/correos también tengan el contexto admin completo
             if (file_exists($adminFile)) {
                 $json = file_get_contents($adminFile);
                 $translations = array_merge($translations, json_decode($json, true) ?: []);

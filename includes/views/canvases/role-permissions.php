@@ -1,5 +1,4 @@
 <?php
-// includes/views/canvases/role-permissions.php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 use App\Config\DatabaseManager;
@@ -35,8 +34,6 @@ if (!$canvasId) {
     echo "<div class='view-content'><p>Lienzo no encontrado.</p></div>";
     return;
 }
-
-// Fetch role
 $roleData = null;
 $rolePermissions = [];
 try {
@@ -57,8 +54,6 @@ if (!$roleData) {
 }
 
 $isSystemRole = (isset($roleData['is_system']) && (int)$roleData['is_system'] === 1);
-
-// Obtener permisos del usuario en este lienzo para UI restrictions (peso máximo, canManage)
 $userRolesWeight = 0;
 $canManageRoles = ($canvasOwnerId === $userId);
 
@@ -83,8 +78,6 @@ if (!$canManageRoles) {
     echo "<div class='view-content'><p>No tienes permisos para ver esta sección.</p></div>";
     return;
 }
-
-// Fetch all permissions
 $allPermissions = [];
 try {
     $stmt = $pdoCanvases->query("SELECT id, name FROM canvas_permissions ORDER BY id ASC");

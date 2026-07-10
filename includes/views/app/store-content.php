@@ -1,5 +1,4 @@
 <?php
-// includes/views/app/store-content.php
 use App\Core\System\StorePackagesConfig;
 
 $contentPackages = [];

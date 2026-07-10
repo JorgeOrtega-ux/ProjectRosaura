@@ -1,5 +1,4 @@
 <?php
-// includes/views/app/search.php
 ?>
 <div class="view-content">
     <div class="component-wrapper component-wrapper--full no-padding" data-ref="">
@@ -16,8 +15,7 @@
         </div>
 
         <div class="component-bottom" style="padding: 0;" data-ref="dynamic-content-area">
-            <!-- JS inyectará el component-grid o el component-empty-state aquí -->
-        </div>
+                    </div>
 
     </div>
 </div>
