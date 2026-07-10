@@ -5,10 +5,9 @@ if (!isset($canvasAllowChat) || $canvasAllowChat != '1') {
     return;
 }
 ?>
-<div class="component-module component-module--sidebar component-module--sidebar-right component-module--sidebar-responsive disabled" data-module="moduleLiveChat" data-user-id="<?php echo htmlspecialchars((string)($userId ?? '')); ?>">
+<div class="component-module component-module--sidebar component-module--sidebar-right disabled" data-module="moduleLiveChat" data-user-id="<?php echo htmlspecialchars((string)($userId ?? '')); ?>">
     
     <div class="component-menu component-menu--w335 component-menu--chat component-menu--h-full component-menu--no-padding disabled" data-ref="menu-chat">
-        <div class="pill-container"><div class="drag-handle"></div></div>
         
         <div class="component-menu-header">
             <div class="component-menu-header-box">

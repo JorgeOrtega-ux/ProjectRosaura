@@ -101,6 +101,13 @@ export class DesignChat {
                     if (dropdown.classList.contains('disabled')) {
                         dropdown.classList.remove('disabled');
                         dropdown.classList.add('active');
+                        
+                        // Asegurar que el menú interno esté activo
+                        const innerMenu = dropdown.querySelector('.component-menu');
+                        if (innerMenu) {
+                            innerMenu.classList.remove('disabled');
+                            innerMenu.classList.add('active');
+                        }
                     } else {
                         dropdown.classList.add('disabled');
                         dropdown.classList.remove('active');
