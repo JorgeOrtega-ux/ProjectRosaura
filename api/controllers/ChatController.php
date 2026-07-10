@@ -45,11 +45,17 @@ class ChatController
         }
 
         try {
+            $this->pdo->exec("ALTER TABLE canvas_chat_messages ADD COLUMN attachments JSON DEFAULT NULL AFTER message;");
+        } catch (\Exception $e) {
+            // Already exists or other error
+        }
+
+        try {
             // Se usa subquery para obtener los últimos $limit mensajes ordenados por ID descendentemente
             // Luego en PHP se invierte si es necesario, o el cliente los acomoda.
             $identityDb = $_ENV['DB_IDENTITY_NAME'] ?? 'db_identity';
             $stmt = $this->pdo->prepare("
-                SELECT c.id, c.user_id, c.message, c.created_at, u.username, u.profile_picture as avatar 
+                SELECT c.id, c.user_id, c.message, c.attachments, c.created_at, u.username, u.profile_picture as avatar 
                 FROM canvas_chat_messages c
                 JOIN {$identityDb}.users u ON c.user_id = u.id
                 WHERE c.canvas_id = ?
@@ -64,6 +70,27 @@ class ChatController
             $stmt->execute();
             
             $messages = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Procesar attachments
+            foreach ($messages as &$message) {
+                if (!empty($message['attachments'])) {
+                    $decoded = json_decode($message['attachments'], true);
+                    if (is_array($decoded)) {
+                        $safeAttachments = [];
+                        foreach ($decoded as $att) {
+                            if (strpos($att, '/public/') !== 0) {
+                                $att = '/public' . $att;
+                            }
+                            $safeAttachments[] = $att;
+                        }
+                        $message['attachments'] = $safeAttachments;
+                    } else {
+                        $message['attachments'] = [];
+                    }
+                } else {
+                    $message['attachments'] = [];
+                }
+            }
             
             return [
                 'status' => 'success',
@@ -88,8 +115,10 @@ class ChatController
 
         $canvasId = (int)($request['canvas_id'] ?? 0);
         $messageText = trim((string)($request['message'] ?? ''));
+        
+        $files = $request['_files']['images'] ?? null;
 
-        if ($canvasId <= 0 || empty($messageText)) {
+        if ($canvasId <= 0 || (empty($messageText) && empty($files['name'][0]))) {
             return ['status' => 'error', 'message' => 'Datos inválidos', 'code' => 400];
         }
 
@@ -113,9 +142,48 @@ class ChatController
         }
 
         try {
+            $attachments = [];
+            
+            if ($files && is_array($files['name']) && count($files['name']) > 0 && !empty($files['name'][0])) {
+                $totalSize = array_sum($files['size']);
+                // max 25 MB total
+                if ($totalSize > 25 * 1024 * 1024) {
+                    return ['status' => 'error', 'message' => 'El tamaño total de las imágenes no puede superar los 25 MB', 'code' => 400];
+                }
+                if (count($files['name']) > 8) {
+                    return ['status' => 'error', 'message' => 'Máximo 8 imágenes por mensaje', 'code' => 400];
+                }
+                
+                $uploadDir = ROOT_PATH . '/public/storage/canvases/' . $canvasId . '/chat/';
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0755, true);
+                }
+
+                $allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+                
+                for ($i = 0; $i < count($files['name']); $i++) {
+                    if ($files['error'][$i] === UPLOAD_ERR_OK) {
+                        $singleFile = [
+                            'name' => $files['name'][$i],
+                            'type' => $files['type'][$i],
+                            'tmp_name' => $files['tmp_name'][$i],
+                            'error' => $files['error'][$i],
+                            'size' => $files['size'][$i],
+                        ];
+                        
+                        $uploadResult = \App\Core\Helpers\Utils::uploadAndSanitizeImage($singleFile, $uploadDir, 25);
+                        if ($uploadResult['success'] === true && !empty($uploadResult['file_name'])) {
+                            $attachments[] = '/public/storage/canvases/' . $canvasId . '/chat/' . $uploadResult['file_name'];
+                        }
+                    }
+                }
+            }
+
+            $attachmentsJson = !empty($attachments) ? json_encode($attachments) : null;
+
             // Guardar en BD
-            $stmt = $this->pdo->prepare("INSERT INTO canvas_chat_messages (canvas_id, user_id, message) VALUES (?, ?, ?)");
-            $stmt->execute([$canvasId, $userId, $messageText]);
+            $stmt = $this->pdo->prepare("INSERT INTO canvas_chat_messages (canvas_id, user_id, message, attachments) VALUES (?, ?, ?, ?)");
+            $stmt->execute([$canvasId, $userId, $messageText, $attachmentsJson]);
             $msgId = $this->pdo->lastInsertId();
 
             // Obtener info del usuario para el broadcast
@@ -131,6 +199,7 @@ class ChatController
                 'username' => $userInfo['username'] ?? 'Usuario',
                 'avatar' => $userInfo['profile_picture'] ?? null,
                 'message' => htmlspecialchars($messageText, ENT_QUOTES, 'UTF-8'),
+                'attachments' => $attachments,
                 'created_at' => date('Y-m-d H:i:s')
             ];
 

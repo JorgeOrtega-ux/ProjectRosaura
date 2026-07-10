@@ -13,12 +13,15 @@ export class DesignChat {
         this.chatInput = document.querySelector('[data-ref="chat-input-message"]');
         this.btnSend = document.querySelector('[data-ref="chat-btn-send"]');
         this.loader = document.querySelector('[data-ref="chat-loader"]');
+        this.fileInput = document.getElementById('chat-file-input');
+        this.previewContainer = document.querySelector('[data-ref="chat-attachments-preview"]');
         
         // Estado
         this.offset = 0;
         this.isLoading = false;
         this.hasMore = true;
         this.messages = [];
+        this.selectedFiles = [];
         this.isChatEnabled = document.querySelector('.component-wrapper')?.dataset.allowChat === '1';
         this.isFirstRenderScrollPending = true;
         this.currentUserId = document.querySelector('[data-module="moduleLiveChat"]')?.dataset.userId || null;
@@ -99,6 +102,10 @@ export class DesignChat {
             this.btnSend.addEventListener('click', () => this.sendMessage());
         }
 
+        if (this.fileInput) {
+            this.fileInput.addEventListener('change', (e) => this.handleFileSelection(e));
+        }
+
         if (this.chatInput) {
             this.chatInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
@@ -176,6 +183,16 @@ export class DesignChat {
             }
         });
 
+        // Trigger file input from attach menu
+        document.addEventListener('click', (e) => {
+            const btnAttach = e.target.closest('[data-action="triggerChatAttach"]');
+            if (btnAttach && this.fileInput) {
+                this.fileInput.click();
+                const dropdown = btnAttach.closest('.chat-dropdown-module');
+                if (dropdown) { dropdown.classList.remove('active'); dropdown.classList.add('disabled'); }
+            }
+        });
+
         if (this.chatContainer) {
             this.chatContainer.addEventListener('scroll', () => {
                 if (this.chatContainer.scrollTop === 0 && !this.isLoading && this.hasMore) {
@@ -231,6 +248,79 @@ export class DesignChat {
                     }
                 }
             }
+        });
+    }
+
+    handleFileSelection(e) {
+        const files = Array.from(e.target.files);
+        if (!files.length) return;
+
+        const maxFiles = 8;
+        const maxSize = 25 * 1024 * 1024; // 25MB total
+
+        let totalSize = this.selectedFiles.reduce((acc, file) => acc + file.size, 0);
+
+        for (const file of files) {
+            if (this.selectedFiles.length >= maxFiles) {
+                showMessage(`Solo puedes adjuntar hasta ${maxFiles} fotos por mensaje`, 'warning');
+                break;
+            }
+            if (!file.type.startsWith('image/')) {
+                showMessage(`El archivo ${file.name} no es una imagen válida`, 'warning');
+                continue;
+            }
+            if (totalSize + file.size > maxSize) {
+                showMessage(`El tamaño total no puede superar los 25 MB`, 'warning');
+                break;
+            }
+            this.selectedFiles.push(file);
+            totalSize += file.size;
+        }
+
+        this.renderPreview();
+        if (this.btnSend && (this.chatInput.value.trim().length > 0 || this.selectedFiles.length > 0)) {
+            this.btnSend.classList.add('active');
+        }
+        // Limpiar input para permitir seleccionar el mismo archivo de nuevo si se eliminó
+        this.fileInput.value = '';
+    }
+
+    renderPreview() {
+        if (!this.previewContainer) return;
+        
+        if (this.selectedFiles.length === 0) {
+            this.previewContainer.style.display = 'none';
+            this.previewContainer.innerHTML = '';
+            return;
+        }
+
+        this.previewContainer.style.display = 'flex';
+        this.previewContainer.innerHTML = '';
+
+        this.selectedFiles.forEach((file, index) => {
+            const reader = new FileReader();
+            
+            const card = document.createElement('div');
+            card.className = 'chat-attachment-preview-card';
+            
+            const img = document.createElement('img');
+            reader.onload = (e) => { img.src = e.target.result; };
+            reader.readAsDataURL(file);
+            
+            const btn = document.createElement('button');
+            btn.className = 'remove-btn';
+            btn.innerHTML = '<span class="material-symbols-rounded">close</span>';
+            btn.onclick = () => {
+                this.selectedFiles.splice(index, 1);
+                this.renderPreview();
+                if (this.selectedFiles.length === 0 && this.chatInput.value.trim().length === 0) {
+                    if (this.btnSend) this.btnSend.classList.remove('active');
+                }
+            };
+
+            card.appendChild(img);
+            card.appendChild(btn);
+            this.previewContainer.appendChild(card);
         });
     }
 
@@ -296,30 +386,54 @@ export class DesignChat {
 
     async sendMessage() {
         const text = this.chatInput.value.trim();
-        if (!text) return;
+        if (!text && this.selectedFiles.length === 0) return;
 
-        this.chatInput.value = '';
         this.chatInput.disabled = true;
         this.btnSend.disabled = true;
         this.btnSend.classList.remove('active');
+        
+        const backupText = text;
+        const backupFiles = [...this.selectedFiles];
+        
+        this.chatInput.value = '';
+        this.selectedFiles = [];
+        this.renderPreview();
 
         try {
-            const response = await this.api.post(ApiRoutes.Chat.Send, {
-                canvas_id: this.canvasId,
-                message: text
-            });
+            let response;
+            if (backupFiles.length > 0) {
+                const formData = new FormData();
+                formData.append('canvas_id', this.canvasId);
+                formData.append('message', backupText);
+                for (let i = 0; i < backupFiles.length; i++) {
+                    formData.append('images[]', backupFiles[i]);
+                }
+                response = await this.api.postForm(ApiRoutes.Chat.Send, formData);
+            } else {
+                response = await this.api.post(ApiRoutes.Chat.Send, {
+                    canvas_id: this.canvasId,
+                    message: backupText
+                });
+            }
 
             if (response.success === false || response.status === 'error') {
-                showMessage(response.message, 'error');
-                this.chatInput.value = text; // restaurar
+                showMessage(response.message || 'Error al enviar el mensaje', 'error');
+                this.chatInput.value = backupText; 
+                this.selectedFiles = backupFiles;
+                this.renderPreview();
             }
         } catch (error) {
             console.error("Error enviando mensaje:", error);
             showMessage('Error al enviar el mensaje', 'error');
-            this.chatInput.value = text;
+            this.chatInput.value = backupText;
+            this.selectedFiles = backupFiles;
+            this.renderPreview();
         } finally {
             this.chatInput.disabled = false;
             this.btnSend.disabled = false;
+            if (this.chatInput.value.trim().length > 0 || this.selectedFiles.length > 0) {
+                this.btnSend.classList.add('active');
+            }
             this.chatInput.focus();
             
             // Apagar typing
@@ -494,6 +608,41 @@ export class DesignChat {
             </div>
         </div>`;
 
+        let attachmentsHtml = '';
+        if (msg.attachments && msg.attachments.length > 0) {
+            const count = msg.attachments.length;
+            let gridClass = 'chat-attachment-grid-more';
+            if (count === 1) gridClass = 'chat-attachment-grid-1';
+            else if (count === 2) gridClass = 'chat-attachment-grid-2';
+            else if (count === 3) gridClass = 'chat-attachment-grid-3';
+            else if (count === 4) gridClass = 'chat-attachment-grid-4';
+
+            attachmentsHtml = `<div class="chat-message-attachments ${gridClass}">`;
+            
+            // Show up to 4 preview items
+            const displayCount = Math.min(count, 4);
+            
+            for (let i = 0; i < displayCount; i++) {
+                const url = (window.AppBasePath || '') + msg.attachments[i];
+                let overlay = '';
+                if (i === 3 && count > 4) {
+                    overlay = `<div class="chat-attachment-item-overlay">+${count - 4}</div>`;
+                }
+                attachmentsHtml += `
+                <div class="chat-attachment-item" onclick="window.open('${url}', '_blank')">
+                    <img src="${url}" loading="lazy" />
+                    ${overlay}
+                </div>
+                `;
+            }
+            attachmentsHtml += `</div>`;
+        }
+
+        let messageTextHtml = '';
+        if (msg.message && msg.message.trim().length > 0) {
+            messageTextHtml = `<div class="chat-message-text">${this.censorText(msg.message)}</div>`;
+        }
+
         el.innerHTML = `
             ${avatarStr}
             <div class="chat-message-bubble" style="overflow: visible;">
@@ -504,7 +653,8 @@ export class DesignChat {
                     </div>
                     ${menuBtn}
                 </div>
-                <div class="chat-message-text">${this.censorText(msg.message)}</div>
+                ${messageTextHtml}
+                ${attachmentsHtml}
             </div>
         `;
         return el;

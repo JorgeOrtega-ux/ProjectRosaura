@@ -35,7 +35,8 @@ $canModerateChat = (isset($canvas) && isset($userId) && (isset($canvas['owner_id
             </div>
             
             <!-- Área de input -->
-            <div class="component-menu-bottom component-chat-input-area">
+            <div class="component-menu-bottom component-chat-input-area" style="flex-direction: column;">
+                <div class="chat-attachments-preview-container" data-ref="chat-attachments-preview" style="display: none;"></div>
                 <div class="component-search component-search--w-auto">
                     <div class="component-search-input <?php echo (isset($isChatRestricted) && $isChatRestricted) ? 'disabled-interaction' : ''; ?>" style="padding-left: 4px;">
                         
@@ -47,12 +48,12 @@ $canModerateChat = (isset($canvas) && isset($userId) && (isset($canvas['owner_id
                                 <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding active" data-menu="chat-attach-options">
                                     <div class="pill-container"><div class="drag-handle"></div></div>
                                     <div class="component-menu-list component-menu-list--scrollable">
-                                        <div class="component-menu-link">
+                                        <div class="component-menu-link" data-action="triggerChatAttach">
                                             <div class="component-menu-link-icon">
                                                 <span class="material-symbols-rounded">attach_file</span>
                                             </div>
                                             <div class="component-menu-link-text">
-                                                <span>Adjuntar archivos</span>
+                                                <span>Adjuntar fotos</span>
                                             </div>
                                         </div>
                                         <div class="component-menu-link">
@@ -67,6 +68,8 @@ $canModerateChat = (isset($canvas) && isset($userId) && (isset($canvas['owner_id
                                 </div>
                             </div>
                         </div>
+
+                        <input type="file" id="chat-file-input" multiple accept="image/jpeg, image/png, image/webp, image/gif" style="display: none;">
 
                         <?php 
                         $placeholder = "Escribe un mensaje...";

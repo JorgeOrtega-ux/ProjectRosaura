@@ -57,3 +57,6 @@ storage/private/backups/*.gz
 /storage/public/thumbnails/
 /storage/public/snapshots_archive/
 /storage/public/templates/
+
+# Ignorar archivos subidos a los lienzos (fotos del chat, etc)
+/storage/public/canvases/
