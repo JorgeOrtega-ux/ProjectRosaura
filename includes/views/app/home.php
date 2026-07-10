@@ -1,5 +1,25 @@
 <?php
 // includes/views/app/home.php
+use App\Core\Container;
+use App\Api\Services\CanvasServices;
+use App\Core\Interfaces\SessionManagerInterface;
+
+$container = new Container();
+$sessionManager = $container->get(SessionManagerInterface::class);
+$isLoggedIn = $sessionManager->isLoggedIn();
+$initialCanvases = [];
+
+if ($isLoggedIn) {
+    try {
+        $canvasServices = $container->get(CanvasServices::class);
+        $userId = $sessionManager->getActiveAccountId();
+        $res = $canvasServices->getMine($userId, 50, 'all');
+        if ($res && isset($res['success']) && $res['success'] && isset($res['data'])) {
+            $initialCanvases = $res['data'];
+        }
+    } catch (\Throwable $e) {}
+}
+$initialCanvasesJson = htmlspecialchars(json_encode($initialCanvases), ENT_QUOTES, 'UTF-8');
 ?>
 <div class="view-content">
     <div class="component-wrapper component-wrapper--full no-padding" data-ref="purchase-history-wrapper">
@@ -72,7 +92,7 @@
             </div>
         </div>
 
-        <div class="component-bottom" style="padding: 0;" data-ref="dynamic-content-area">
+        <div class="component-bottom" style="padding: 0;" data-ref="dynamic-content-area" data-initial-canvases="<?php echo $initialCanvasesJson; ?>">
             <!-- JS inyectará el component-grid o el component-empty-state aquí -->
         </div>
     </div>

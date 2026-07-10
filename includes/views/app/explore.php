@@ -1,5 +1,48 @@
 <?php
 // includes/views/app/explore.php
+use App\Core\Container;
+use App\Api\Services\CanvasServices;
+use App\Core\Interfaces\SessionManagerInterface;
+
+$container = new Container();
+$sessionManager = $container->get(SessionManagerInterface::class);
+$userId = $sessionManager->isLoggedIn() ? $sessionManager->getActiveAccountId() : null;
+
+$initialCanvases = [];
+
+try {
+    $canvasServices = $container->get(CanvasServices::class);
+    $sort = 'newest';
+    
+    // Oficiales
+    $officialRes = $canvasServices->getOfficialCanvases($userId, $sort);
+    $allCanvases = [];
+    if ($officialRes && isset($officialRes['success']) && $officialRes['success'] && isset($officialRes['data'])) {
+        $allCanvases = array_merge($allCanvases, $officialRes['data']);
+    }
+    
+    // Públicos
+    $publicRes = $canvasServices->getPublicCanvases($userId, 50, $sort);
+    if ($publicRes && isset($publicRes['success']) && $publicRes['success'] && isset($publicRes['data'])) {
+        $existingIds = array_column($allCanvases, 'id');
+        foreach ($publicRes['data'] as $publicCanvas) {
+            if (!in_array($publicCanvas['id'], $existingIds)) {
+                $allCanvases[] = $publicCanvas;
+            }
+        }
+    }
+    
+    // Ordenar (newest)
+    usort($allCanvases, function($a, $b) {
+        $timeA = strtotime($a['created_at']);
+        $timeB = strtotime($b['created_at']);
+        return $timeB - $timeA;
+    });
+    
+    $initialCanvases = $allCanvases;
+} catch (\Throwable $e) {}
+
+$initialCanvasesJson = htmlspecialchars(json_encode($initialCanvases), ENT_QUOTES, 'UTF-8');
 ?>
 <div class="view-content">
     <div class="component-wrapper component-wrapper--full no-padding">
@@ -69,7 +112,7 @@
             </div>
         </div>
 
-        <div class="component-bottom" style="padding: 0;" data-ref="dynamic-content-area">
+        <div class="component-bottom" style="padding: 0;" data-ref="dynamic-content-area" data-initial-canvases="<?php echo $initialCanvasesJson; ?>">
             <!-- JS inyectará el component-grid o el component-empty-state aquí -->
         </div>
 

@@ -245,11 +245,11 @@ if (!empty($canvasUuid)) {
                         <span>Lienzo Privado</span>
                     </div>
                     
-                    <button class="component-button component-button--h34 <?php echo ($canvasPrivacy === 'private' && $canvasApproval) || (isset($isPremiumBlockedInit) && $isPremiumBlockedInit) ? 'disabled' : ''; ?>" data-action="joinCanvasDirectly" data-ref="btn-join-direct">
+                    <button class="component-button component-button--h34 <?php echo ($canvasApproval || (isset($isPremiumBlockedInit) && $isPremiumBlockedInit)) ? 'disabled' : ''; ?>" data-action="joinCanvasDirectly" data-ref="btn-join-direct">
                         <?php echo __('btn_join') ?? 'Unirse'; ?>
                     </button>
                     
-                    <button class="component-button component-button--h34 component-button--dark <?php echo ($canvasPrivacy === 'private' && !$canvasApproval) || (isset($isPremiumBlockedInit) && $isPremiumBlockedInit) ? 'disabled' : ''; ?>" data-action="requestCanvasAccess" data-ref="btn-request-access">
+                    <button class="component-button component-button--h34 component-button--dark <?php echo (!$canvasApproval || (isset($isPremiumBlockedInit) && $isPremiumBlockedInit)) ? 'disabled' : ''; ?>" data-action="requestCanvasAccess" data-ref="btn-request-access">
                         <span class="material-symbols-rounded">front_hand</span>
                         <?php echo __('btn_request_access') ?? 'Solicitar Acceso'; ?>
                     </button>
@@ -331,7 +331,7 @@ if (!empty($canvasUuid)) {
             <div class="canvas-badges-right" data-ref="badges-right"></div>
             
             <?php if (!$isSnapshot): ?>
-            <div class="component-action-pill <?php echo (isset($isBlockedInit) && $isBlockedInit) ? 'disabled' : ''; ?>">
+            <div class="component-action-pill <?php echo ((isset($isBlockedInit) && $isBlockedInit) || (isset($isSpectatorInit) && $isSpectatorInit)) ? 'disabled' : ''; ?>">
                 <button class="component-button component-button--dark component-button--h45 disabled-interactive" data-action="placePixels" data-ref="pixel-action-btn">
                     <span class="material-symbols-rounded">touch_app</span>
                     <span data-ref="pixel-action-text"><?php echo __('btn_select_pixels'); ?></span>

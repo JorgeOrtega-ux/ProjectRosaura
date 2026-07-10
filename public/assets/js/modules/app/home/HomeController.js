@@ -27,9 +27,19 @@ class HomeController {
         this.contentArea = document.querySelector('[data-ref="dynamic-content-area"]');
         
         if (this.contentArea) {
-            // Inicializa un grid temporal para el skeleton
-            this.contentArea.innerHTML = '<div class="component-grid" data-ref="home-all-canvases"></div>';
-            renderSkeleton(this.contentArea.querySelector('.component-grid'), 'homeCanvasGrid');
+            const initialData = this.contentArea.getAttribute('data-initial-canvases');
+            if (initialData) {
+                try {
+                    window.initialHomeCanvases = JSON.parse(initialData);
+                    this.contentArea.removeAttribute('data-initial-canvases');
+                } catch(e) {}
+            }
+
+            if (!window.initialHomeCanvases) {
+                // Inicializa un grid temporal para el skeleton
+                this.contentArea.innerHTML = '<div class="component-grid" data-ref="home-all-canvases"></div>';
+                renderSkeleton(this.contentArea.querySelector('.component-grid'), 'homeCanvasGrid');
+            }
         }
         
         this.loadCanvases();
@@ -126,14 +136,19 @@ class HomeController {
             const filterRadio = document.querySelector('input[name="home_filter"]:checked');
             const filter = filterRadio ? filterRadio.value : 'all';
 
-            // HOME CON SESIÓN: Cargar "Mis Lienzos" (Propios y unidos)
-            const res = await this.api.post(ApiRoutes.Canvases.GetMine, { limit: 50, filter: filter }, this.abortController.signal).catch(() => null);
-            if (this.abortController.signal.aborted) return;
-            
-            if (res && res.success) {
-                allCanvases = res.data || [];
+            if (window.initialHomeCanvases && filter === 'all') {
+                allCanvases = window.initialHomeCanvases;
+                window.initialHomeCanvases = null; // Usar solo en la carga inicial
             } else {
-                isError = true;
+                // HOME CON SESIÓN: Cargar "Mis Lienzos" (Propios y unidos)
+                const res = await this.api.post(ApiRoutes.Canvases.GetMine, { limit: 50, filter: filter }, this.abortController.signal).catch(() => null);
+                if (this.abortController.signal.aborted) return;
+                
+                if (res && res.success) {
+                    allCanvases = res.data || [];
+                } else {
+                    isError = true;
+                }
             }
 
             if (allCanvases.length > 0) {
@@ -163,44 +178,49 @@ class HomeController {
             const sortRadio = document.querySelector('input[name="explore_sort"]:checked');
             const sort = sortRadio ? sortRadio.value : 'newest';
 
-            // EXPLORE (O Home que por alguna razón llegó acá)
-            const [publicRes, officialRes] = await Promise.all([
-                this.api.post(ApiRoutes.Canvases.GetPublic, { limit: 50, sort: sort }, this.abortController.signal).catch(() => null),
-                this.api.post(ApiRoutes.Canvases.GetOfficial, { sort: sort }, this.abortController.signal).catch(() => null)
-            ]);
-            
-            if (this.abortController.signal.aborted) return;
+            if (window.initialHomeCanvases && sort === 'newest') {
+                allCanvases = window.initialHomeCanvases;
+                window.initialHomeCanvases = null;
+            } else {
+                // EXPLORE (O Home que por alguna razón llegó acá)
+                const [publicRes, officialRes] = await Promise.all([
+                    this.api.post(ApiRoutes.Canvases.GetPublic, { limit: 50, sort: sort }, this.abortController.signal).catch(() => null),
+                    this.api.post(ApiRoutes.Canvases.GetOfficial, { sort: sort }, this.abortController.signal).catch(() => null)
+                ]);
+                
+                if (this.abortController.signal.aborted) return;
 
-            // Integrar los oficiales
-            if (officialRes && officialRes.success) {
-                allCanvases = allCanvases.concat(officialRes.data || []);
-            } else if (!officialRes) {
-                isError = true;
-            }
+                // Integrar los oficiales
+                if (officialRes && officialRes.success) {
+                    allCanvases = allCanvases.concat(officialRes.data || []);
+                } else if (!officialRes) {
+                    isError = true;
+                }
 
-            // Integrar los públicos, evitando duplicados
-            if (publicRes && publicRes.success) {
-                const existingIds = new Set(allCanvases.map(c => c.id));
-                const newPublics = (publicRes.data || []).filter(c => !existingIds.has(c.id));
-                allCanvases = allCanvases.concat(newPublics);
-            } else if (!publicRes) {
-                isError = true;
-            }
+                // Integrar los públicos, evitando duplicados
+                if (publicRes && publicRes.success) {
+                    const existingIds = new Set(allCanvases.map(c => c.id));
+                    const newPublics = (publicRes.data || []).filter(c => !existingIds.has(c.id));
+                    allCanvases = allCanvases.concat(newPublics);
+                } else if (!publicRes) {
+                    isError = true;
+                }
 
-            // Client-side sort to ensure the combined list is properly ordered
-            if (allCanvases.length > 0) {
-                allCanvases.sort((a, b) => {
-                    if (sort === 'oldest') {
-                        return new Date(a.created_at) - new Date(b.created_at);
-                    } else if (sort === 'members') {
-                        if (b.members_count !== a.members_count) {
-                            return b.members_count - a.members_count;
+                // Client-side sort to ensure the combined list is properly ordered
+                if (allCanvases.length > 0) {
+                    allCanvases.sort((a, b) => {
+                        if (sort === 'oldest') {
+                            return new Date(a.created_at) - new Date(b.created_at);
+                        } else if (sort === 'members') {
+                            if (b.members_count !== a.members_count) {
+                                return b.members_count - a.members_count;
+                            }
+                            return new Date(b.created_at) - new Date(a.created_at);
+                        } else { // newest
+                            return new Date(b.created_at) - new Date(a.created_at);
                         }
-                        return new Date(b.created_at) - new Date(a.created_at);
-                    } else { // newest
-                        return new Date(b.created_at) - new Date(a.created_at);
-                    }
-                });
+                    });
+                }
             }
 
             if (allCanvases.length > 0) {

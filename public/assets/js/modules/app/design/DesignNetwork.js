@@ -760,7 +760,7 @@ export const DesignNetwork = {
             showMessage(response.message, 'success');
             
             if (response.joined || response.message.toLowerCase().includes('unido')) {
-                setTimeout(() => window.location.reload(), 1000);
+                this.checkCanvasAccess();
             } else {
                 btn.classList.add('disabled-interactive');
                 btn.innerHTML = `<span class="material-symbols-rounded">hourglass_empty</span> ${__('btn_pending')}`;
