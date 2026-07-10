@@ -29,6 +29,8 @@ export class DesignChat {
         this.lastTypingSent = 0;
         this.lastIsTyping = false;
         this.myTypingTimeout = null;
+        this.badWords = [];
+        this.loadBadWords();
         
         // Contenedor para typing indicator
         this.typingContainer = document.createElement('div');
@@ -48,6 +50,27 @@ export class DesignChat {
         if (this.isChatEnabled && this.chatContainer) {
             this.init();
         }
+    }
+
+    async loadBadWords() {
+        try {
+            const response = await fetch((window.AppBasePath || '') + '/public/assets/json/bad_words.json');
+            if (response.ok) {
+                this.badWords = await response.json();
+            }
+        } catch (e) {
+            console.error("Error loading bad words", e);
+        }
+    }
+
+    censorText(text) {
+        if (!this.badWords || this.badWords.length === 0) return text;
+        let censored = text;
+        this.badWords.forEach(word => {
+            const regex = new RegExp(`\\b${word}\\b`, 'gi');
+            censored = censored.replace(regex, '*'.repeat(word.length));
+        });
+        return censored;
     }
 
     init() {
@@ -430,7 +453,7 @@ export class DesignChat {
         const isMine = String(msg.user_id) === String(this.currentUserId);
         const uniqueId = 'msg-menu-' + msg.id;
 
-        const menuBtn = `<div class="component-dropdown-wrapper component-dropdown-wrapper--fit" style="margin-left: auto;">
+        const menuBtn = `<div class="component-dropdown-wrapper component-dropdown-wrapper--fit chat-msg-actions" style="margin-left: auto;">
             <button class="component-button component-button--icon" style="width: 24px; height: 24px; padding: 0; background: transparent; border: none;" data-action="toggleChatDropdown" data-target="${uniqueId}">
                 <span class="material-symbols-rounded" style="font-size: 18px; color: var(--text-secondary);">more_vert</span>
             </button>
@@ -481,7 +504,7 @@ export class DesignChat {
                     </div>
                     ${menuBtn}
                 </div>
-                <div class="chat-message-text">${msg.message}</div>
+                <div class="chat-message-text">${this.censorText(msg.message)}</div>
             </div>
         `;
         return el;

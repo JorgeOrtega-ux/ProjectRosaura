@@ -37,7 +37,37 @@ $canModerateChat = (isset($canvas) && isset($userId) && (isset($canvas['owner_id
             <!-- Área de input -->
             <div class="component-menu-bottom component-chat-input-area">
                 <div class="component-search component-search--w-auto">
-                    <div class="component-search-input <?php echo (isset($isChatRestricted) && $isChatRestricted) ? 'disabled-interaction' : ''; ?>">
+                    <div class="component-search-input <?php echo (isset($isChatRestricted) && $isChatRestricted) ? 'disabled-interaction' : ''; ?>" style="padding-left: 4px;">
+                        
+                        <div class="component-dropdown-wrapper component-dropdown-wrapper--fit" style="display: flex; align-items: center; margin-right: 4px;">
+                            <button class="component-chat-send-btn" data-action="toggleChatDropdown" data-target="chat-attach-menu" <?php echo (isset($isChatRestricted) && $isChatRestricted) ? 'disabled' : ''; ?> style="background: transparent; color: var(--text-secondary); width: 28px; height: 28px; margin: 0; padding: 0;">
+                                <span class="material-symbols-rounded" style="font-size: 20px;">add</span>
+                            </button>
+                            <div class="component-module component-module--dropdown component-module--dropdown-top component-module--dropdown-fixed chat-dropdown-module disabled" data-module="chat-attach-menu" style="bottom: 100%; top: auto; left: 0; margin-bottom: 8px; z-index: 110;">
+                                <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding active" data-menu="chat-attach-options">
+                                    <div class="pill-container"><div class="drag-handle"></div></div>
+                                    <div class="component-menu-list component-menu-list--scrollable">
+                                        <div class="component-menu-link">
+                                            <div class="component-menu-link-icon">
+                                                <span class="material-symbols-rounded">attach_file</span>
+                                            </div>
+                                            <div class="component-menu-link-text">
+                                                <span>Adjuntar archivos</span>
+                                            </div>
+                                        </div>
+                                        <div class="component-menu-link">
+                                            <div class="component-menu-link-icon">
+                                                <span class="material-symbols-rounded">share</span>
+                                            </div>
+                                            <div class="component-menu-link-text">
+                                                <span>Compartir plantilla</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <?php 
                         $placeholder = "Escribe un mensaje...";
                         if (isset($isChatRestricted) && $isChatRestricted) {
@@ -48,7 +78,7 @@ $canModerateChat = (isset($canvas) && isset($userId) && (isset($canvas['owner_id
                             }
                         }
                         ?>
-                        <input type="text" data-ref="chat-input-message" placeholder="<?php echo htmlspecialchars($placeholder); ?>" maxlength="255" style="padding-left: 12px;" <?php echo (isset($isChatRestricted) && $isChatRestricted) ? 'disabled' : ''; ?>>
+                        <input type="text" data-ref="chat-input-message" placeholder="<?php echo htmlspecialchars($placeholder); ?>" maxlength="255" style="padding-left: 8px;" <?php echo (isset($isChatRestricted) && $isChatRestricted) ? 'disabled' : ''; ?>>
                         <button class="component-chat-send-btn" data-action="sendChatMessage" data-ref="chat-btn-send" <?php echo (isset($isChatRestricted) && $isChatRestricted) ? 'disabled' : ''; ?>>
                             <span class="material-symbols-rounded" style="font-size: 16px;">arrow_upward</span>
                         </button>
