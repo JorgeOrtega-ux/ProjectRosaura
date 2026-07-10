@@ -7,13 +7,17 @@ function showMessage(message, type = 'success') {
     }
 }
 
-function setButtonLoading(btn) {
+function setButtonLoading(btn, text = null) {
     if (!btn) return;
     
     btn.dataset.originalText = btn.innerHTML;
     
     btn.classList.add('disabled-interactive');
-    btn.innerHTML = '<div class="component-spinner"></div>';
+    if (text) {
+        btn.innerHTML = `<div class="component-spinner"></div><span style="margin-left: 8px;">${text}</span>`;
+    } else {
+        btn.innerHTML = '<div class="component-spinner"></div>';
+    }
 }
 
 function restoreButton(btn) {

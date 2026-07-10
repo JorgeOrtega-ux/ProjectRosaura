@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS `canvases` (
   `privacy` enum('public', 'private') DEFAULT 'private',
   `requires_approval` tinyint(1) NOT NULL DEFAULT 0,
   `allow_purchases` tinyint(1) NOT NULL DEFAULT 1,
+  `allow_chat` tinyint(1) NOT NULL DEFAULT 0,
   `size` varchar(20) NOT NULL DEFAULT '64',
   `palette_id` varchar(50) NOT NULL DEFAULT 'default',
   `max_participants` int(11) NOT NULL DEFAULT 10,
@@ -235,3 +236,16 @@ CREATE TABLE IF NOT EXISTS `canvas_invites` (
 -- ==========================================
 GRANT ALL PRIVILEGES ON db_canvases.* TO 'system_web_executor'@'%';
 FLUSH PRIVILEGES;
+
+-- ==========================================
+-- TABLA PARA CHAT PREMIUM
+-- ==========================================
+CREATE TABLE IF NOT EXISTS `canvas_chat_messages` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `canvas_id` INT NOT NULL,
+    `user_id` INT NOT NULL,
+    `message` TEXT NOT NULL,
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX (`canvas_id`),
+    INDEX (`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
