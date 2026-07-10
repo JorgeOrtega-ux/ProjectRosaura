@@ -141,6 +141,28 @@ class ChatController
             return ['status' => 'error', 'message' => 'Tu acceso al chat ha sido restringido en este lienzo', 'code' => 403];
         }
 
+        // Protecciones Anti-spam / Anti-bot
+        $redisKeyBurst = "canvas_chat_burst:{$canvasId}:{$userId}";
+        $redisKeyLastMsg = "canvas_chat_last:{$canvasId}:{$userId}";
+
+        // Control de ráfagas (max 3 mensajes en 5 segundos)
+        $burstCount = $this->redis->incr($redisKeyBurst);
+        if ($burstCount === 1) {
+            $this->redis->expire($redisKeyBurst, 5);
+        }
+        if ($burstCount > 3) {
+            return ['status' => 'error', 'message' => 'Estás enviando mensajes muy rápido. Por favor, espera unos segundos.', 'code' => 429];
+        }
+
+        // Prevención de spam exacto duplicado (últimos 10 segundos)
+        if (!empty($messageText)) {
+            $lastMsg = $this->redis->get($redisKeyLastMsg);
+            if ($lastMsg === $messageText) {
+                return ['status' => 'error', 'message' => 'No puedes enviar exactamente el mismo mensaje de forma repetida.', 'code' => 429];
+            }
+            $this->redis->setex($redisKeyLastMsg, 10, $messageText);
+        }
+
         try {
             $attachments = [];
             
