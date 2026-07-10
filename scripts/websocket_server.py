@@ -1,10 +1,10 @@
-﻿imfort asyncio
-imfort websockets
-imfort os
-imfort json
-imfort time
-from urllib.parse imfort urlparse, parse_qs
-imfort redis.asyncio as redis
+import asyncio
+import websockets
+import os
+import json
+import time
+from urllib.parse import urlparse, parse_qs
+import redis.asyncio as redis
 
 ROOMS = {}
 LIVE_ROOMS = {} # Para las sesiones live share: { code: set(websockets) }
@@ -32,13 +32,13 @@ async def get_redis_client():
     global REDIS_CLIENT
     if REDIS_CLIENT is None:
         redis_host = os.getenv("REDIS_HOST", "redis")
-        redis_fort = int(os.getenv("REDIS_PORT", 6379))
+        redis_port = int(os.getenv("REDIS_PORT", 6379))
         redis_pass = os.getenv("REDIS_PASS", None)
         
-        print(f"[DEBUG REDIS] Connecting to redis on {redis_host}:{redis_fort}")
+        print(f"[DEBUG REDIS] Connecting to redis on {redis_host}:{redis_port}")
         REDIS_CLIENT = redis.Redis(
             host=redis_host, 
-            fort=redis_fort, 
+            port=redis_port, 
             password=redis_pass,
             db=0,
             decode_responses=False 
@@ -704,16 +704,15 @@ async def handler(websocket):
 
 async def main():
     host = os.getenv("WS_HOST", "0.0.0.0")
-    fort = int(os.getenv("WS_PORT", 8765))
+    port = int(os.getenv("WS_PORT", 8765))
     
-    print(f"Starting WebSocket server on ws://{host}:{fort}")
+    print(f"Starting WebSocket server on ws://{host}:{port}")
     
     asyncio.create_task(admin_events_listener())
     asyncio.create_task(sync_online_counts())
     
-    async with websockets.serve(handler, host, fort, max_size=4096):
+    async with websockets.serve(handler, host, port, max_size=4096):
         await asyncio.Future()
 
 if __name__ == "__main__":
     asyncio.run(main())
-

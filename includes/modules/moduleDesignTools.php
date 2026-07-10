@@ -136,7 +136,7 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
                 </div>
                 <div class="component-empty-state" data-ref="empty-state-rendered" style="display: none;">
                     <span class="material-symbols-rounded component-empty-state-icon">error</span>
-                    <p class="component-empty-state-text"><?php echo __('dt_generic_message'); ?></p
+                    <p class="component-empty-state-text"><?php echo __('dt_generic_message'); ?></p>
                 </div>
             </div>
         </div>

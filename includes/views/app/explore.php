@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 use App\Core\Container;
 use App\Api\Services\CanvasServices;
 use App\Core\Interfaces\SessionManagerInterface;

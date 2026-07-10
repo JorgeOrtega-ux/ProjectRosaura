@@ -71,10 +71,38 @@ class ChatController
             
             $messages = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
+            // Si estamos en la página 1, traemos los de Redis también
+            if ($offset === 0) {
+                $redisMessages = [];
+                $rawQueue = $this->redis->lrange('canvas_chat_queue', 0, -1);
+                if ($rawQueue) {
+                    foreach ($rawQueue as $item) {
+                        $data = json_decode($item, true);
+                        if ($data && $data['canvas_id'] == $canvasId) {
+                            $redisMessages[] = [
+                                'id' => $data['temp_id'],
+                                'user_id' => $data['user_id'],
+                                'message' => htmlspecialchars_decode($data['message'], ENT_QUOTES),
+                                'attachments' => $data['attachments'],
+                                'created_at' => $data['created_at'],
+                                'username' => $data['username'],
+                                'avatar' => $data['avatar']
+                            ];
+                        }
+                    }
+                }
+                
+                // Invertimos Redis para que el más nuevo esté primero (DESC)
+                $redisMessages = array_reverse($redisMessages);
+                
+                // Unimos Redis (más nuevos) + MySQL (más antiguos)
+                $messages = array_merge($redisMessages, $messages);
+            }
+            
             // Procesar attachments
             foreach ($messages as &$message) {
                 if (!empty($message['attachments'])) {
-                    $decoded = json_decode($message['attachments'], true);
+                    $decoded = is_string($message['attachments']) ? json_decode($message['attachments'], true) : $message['attachments'];
                     if (is_array($decoded)) {
                         $safeAttachments = [];
                         foreach ($decoded as $att) {
@@ -96,7 +124,7 @@ class ChatController
                 'status' => 'success',
                 'data' => [
                     'messages' => $messages,
-                    'has_more' => count($messages) === $limit
+                    'has_more' => count($messages) >= $limit
                 ]
             ];
 
@@ -203,10 +231,8 @@ class ChatController
 
             $attachmentsJson = !empty($attachments) ? json_encode($attachments) : null;
 
-            // Guardar en BD
-            $stmt = $this->pdo->prepare("INSERT INTO canvas_chat_messages (canvas_id, user_id, message, attachments) VALUES (?, ?, ?, ?)");
-            $stmt->execute([$canvasId, $userId, $messageText, $attachmentsJson]);
-            $msgId = $this->pdo->lastInsertId();
+            // En lugar de guardar en MySQL inmediatamente, generamos un ID temporal
+            $msgId = 'pending_' . uniqid();
 
             // Obtener info del usuario para el broadcast
             $userDbManager = new DatabaseManager();
@@ -224,6 +250,19 @@ class ChatController
                 'attachments' => $attachments,
                 'created_at' => date('Y-m-d H:i:s')
             ];
+
+            // Guardar en la cola global de Redis para el worker
+            $queuePayload = [
+                'canvas_id' => $canvasId,
+                'user_id' => $userId,
+                'message' => $messageText,
+                'attachments' => $attachmentsJson,
+                'created_at' => $messageData['created_at'],
+                'temp_id' => $msgId,
+                'username' => $messageData['username'],
+                'avatar' => $messageData['avatar']
+            ];
+            $this->redis->rpush('canvas_chat_queue', json_encode($queuePayload));
 
             // Publicar en Redis para que el WS Server lo transmita
             $eventPayload = [

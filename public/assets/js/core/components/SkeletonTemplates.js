@@ -8,6 +8,8 @@ export const SkeletonTemplates = {
         }
     },
 
+
+
     basicSkeleton() {
         return `
         <div class="view-content">

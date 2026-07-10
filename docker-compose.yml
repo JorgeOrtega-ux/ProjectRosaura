@@ -201,6 +201,27 @@ services:
     networks:
       - rosaura_network
 
+  worker_chat_persistence:
+    build:
+      context: .
+      dockerfile: docker/python/Dockerfile.worker
+    container_name: rosaura_worker_chat_persistence
+    restart: always
+    command: python -u scripts/worker_chat_persistence.py
+    volumes:
+      - .:/app
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      - TZ=${APP_TIMEZONE:-UTC}
+    networks:
+      - rosaura_network
+
   worker_canvas_thumbnails:
     build:
       context: .

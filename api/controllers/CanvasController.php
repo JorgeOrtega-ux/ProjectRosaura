@@ -826,7 +826,6 @@ class CanvasController extends BaseController {
             return $this->handleException($e, __FUNCTION__);
         }
     }
-
     public function get_custom_palettes($input) {
         try {
             if (!$this->session->isLoggedIn()) {
@@ -958,6 +957,16 @@ class CanvasController extends BaseController {
         $result = $this->canvasServices->deleteCanvasRole($userId, (int)$roleId, (int)$canvasId, $this->canManageOfficial());
         return $result;
     }
+
+    public function toggle_favorite($request) {
+        if (!$this->session->isLoggedIn()) return ['success' => false, 'message' => __('err_unauthorized')];
+        $userId = $this->session->getActiveAccountId();
+        
+        $canvasId = $request['canvas_id'] ?? $request['id'] ?? null;
+        if (!$canvasId) return ['success' => false, 'message' => __('err_missing_required_params')];
+        
+        $result = $this->canvasServices->toggleFavorite($userId, (int)$canvasId);
+        return $result;
+    }
 }
 ?>
-

@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 use App\Core\System\StorePackagesConfig;
 
 $coinPackages = [];
