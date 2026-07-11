@@ -1,7 +1,7 @@
 <?php
 
 
-namespace App\Config;
+namespace App\Config\Search;
 
 use Typesense\Client;
 use App\Core\Helpers\EnvLoader;

@@ -11,12 +11,12 @@ require_once __DIR__ . '/../vendor/autoload.php';
 define('ROOT_PATH', dirname(__DIR__));
 \App\Core\Helpers\EnvLoader::load(ROOT_PATH . '/.env');
 
-use App\Config\DatabaseManager;
+use App\Config\Database\DatabaseManager;
 use App\Core\Repositories\SubscriptionRepository;
 use App\Core\Repositories\StoreRepository;
 use App\Core\System\Logger;
 use App\Core\System\SubscriptionPlanConstants;
-use App\Config\RedisCache;
+use App\Config\Database\RedisCache;
 
 // 1. Leer el payload crudo y la firma
 $payload = @file_get_contents('php://input');

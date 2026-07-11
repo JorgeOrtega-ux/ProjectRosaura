@@ -1,5 +1,5 @@
 <?php
-use App\Config\DatabaseManager;
+use App\Config\Database\DatabaseManager;
 
 try {
     $db = new DatabaseManager();

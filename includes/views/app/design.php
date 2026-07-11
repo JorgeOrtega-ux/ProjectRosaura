@@ -1,6 +1,6 @@
 <?php
 
-use App\Config\DatabaseManager;
+use App\Config\Database\DatabaseManager;
 use App\Core\System\DatabaseConstants as DB;
 use App\Core\Helpers\Utils;
 use PDO;

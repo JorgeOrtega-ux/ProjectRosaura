@@ -4,7 +4,7 @@ define('ROOT_PATH', __DIR__);
 \App\Core\Helpers\EnvLoader::load(ROOT_PATH . '/.env');
 
 use App\Core\Container;
-use App\Api\Services\Canvas\CanvasServices;
+use App\Api\Services\Canvas\CanvasCoreService;
 
 try {
     $redisHost = $_ENV['REDIS_HOST'];
@@ -20,7 +20,7 @@ try {
     session_start();
 
     $container = new Container();
-    $service = $container->get(CanvasServices::class);
+    $service = $container->get(CanvasCoreService::class);
 
     echo "Public Canvases from Service:\n";
     print_r($service->getPublicCanvases(1));

@@ -3,7 +3,7 @@
 namespace App\Core\Repositories;
 
 use App\Core\Interfaces\TokenRepositoryInterface;
-use App\Config\DatabaseManager;
+use App\Config\Database\DatabaseManager;
 use App\Core\System\Logger;
 use App\Core\System\DatabaseConstants as DB;
 use PDO;

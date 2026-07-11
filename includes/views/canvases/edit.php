@@ -1,6 +1,6 @@
 <?php 
 use \App\Core\System\SubscriptionPlanConstants;
-use App\Config\DatabaseManager;
+use App\Config\Database\DatabaseManager;
 
 if (session_status() === PHP_SESSION_NONE) session_start();
 

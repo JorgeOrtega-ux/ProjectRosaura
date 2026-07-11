@@ -15,7 +15,7 @@ use App\Core\Interfaces\TokenRepositoryInterface;
 use App\Core\Interfaces\VerificationCodeRepositoryInterface;
 use App\Core\Interfaces\ServerConfigRepositoryInterface; 
 use App\Core\Interfaces\RoleRepositoryInterface;
-use App\Config\RedisCache;
+use App\Config\Database\RedisCache;
 use App\Core\System\RateLimitConstants;
 use App\Core\System\SecurityConstants;
 use App\Core\System\CacheConstants;

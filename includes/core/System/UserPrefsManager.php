@@ -4,7 +4,7 @@ namespace App\Core\System;
 
 use App\Core\Interfaces\UserPrefsManagerInterface;
 use App\Core\Helpers\Utils;
-use App\Config\DatabaseManager;
+use App\Config\Database\DatabaseManager;
 use App\Core\System\DatabaseConstants as DB;
 use PDO;
 

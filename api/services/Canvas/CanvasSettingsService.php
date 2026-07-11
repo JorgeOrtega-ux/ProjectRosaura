@@ -1,0 +1,536 @@
+<?php
+// api/services/CanvasServices.php
+namespace App\Api\Services\Canvas;
+
+use Exception;
+use DateTime;
+use App\Core\Interfaces\CanvasRepositoryInterface;
+use App\Core\Interfaces\UserRepositoryInterface;
+use App\Core\Helpers\Utils;
+use App\Core\System\Logger;
+use App\Core\System\DatabaseConstants as DB;
+use App\Core\System\CacheConstants;
+use App\Core\System\SubscriptionPlanConstants; 
+use App\Config\Database\RedisCache;
+use App\Config\Database\DatabaseManager;
+use PDO;
+
+class CanvasSettingsService {
+    private $canvasRepository;
+    private $userRepository;
+
+    public function __construct(CanvasRepositoryInterface $canvasRepository, UserRepositoryInterface $userRepository) {
+        $this->canvasRepository = $canvasRepository;
+        $this->userRepository = $userRepository;
+    }
+
+
+    // ==========================================
+    // EXPANSIÓN EN VIVO DEL LIENZO Y PROGRAMACIÓN
+    // ==========================================
+    public function resizeCanvas(int $userId, int $canvasId, string $newSize, bool $canManageOfficial = false): array {
+        try {
+            $canvas = $this->canvasRepository->getById($canvasId);
+            if (!$canvas) {
+                return ['success' => false, 'message' => __('err_canvas_not_found')];
+            }
+
+            $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            if (!$isOwner) {
+                if (!$this->canvasRepository->hasCanvasPermission($canvasId, $userId, 'manage_settings')) {
+                    return ['success' => false, 'message' => __('err_unauthorized')];
+                }
+            }
+
+            $oldSize = $canvas['size'];
+            if ($oldSize === $newSize) {
+                return ['success' => false, 'message' => __('err_canvas_already_size')];
+            }
+
+            $allSizes = \App\Core\Helpers\Utils::getCanvasSizes();
+            if (!isset($allSizes[$newSize])) {
+                return ['success' => false, 'message' => __('err_invalid_canvas_size')];
+            }
+
+            if ($canvas['owner_id'] !== null) {
+                $owner = $this->userRepository->findById($canvas['owner_id']);
+                $tier = $owner['subscription_tier'] ?? 0;
+                $requiredTier = $allSizes[$newSize]['tier'] ?? 0;
+                
+                if ($tier < $requiredTier) {
+                    return ['success' => false, 'message' => __('err_plan_canvas_resize')];
+                }
+            }
+
+            if (class_exists(RedisCache::class)) {
+                $redisInstance = new RedisCache();
+                $redis = $redisInstance->getClient();
+                
+                if ($redis) {
+                    $lockKey = "canvas:{$canvasId}:resize_lock";
+                    $redis->setex($lockKey, 60, "1"); // Bloqueo temporal preventivo para el worker
+                    
+                    $task = [
+                        'canvas_id' => $canvasId,
+                        'old_size'  => $oldSize,
+                        'new_size'  => $newSize
+                    ];
+                    
+                    $redis->lpush("canvases:pending_resizes", json_encode($task));
+                    
+                    $redis->publish("admin:canvas_events", json_encode([
+                        'type' => 'canvas_locked_resize',
+                        'canvas_id' => $canvasId,
+                        'new_size' => $newSize
+                    ]));
+
+                    return ['success' => true, 'message' => __('msg_resize_started')];
+                }
+            }
+
+            return ['success' => false, 'message' => __('err_queue_unavailable')];
+
+        } catch (Exception $e) {
+            Logger::error('Error en resizeCanvas.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_internal_server_error')];
+        }
+    }
+
+    public function getResizeSettings(int $userId, int $canvasId, bool $canManageOfficial = false): array {
+        try {
+            $canvas = $this->canvasRepository->getById($canvasId);
+            $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            
+            if (!$canvas || !$isOwner) {
+                return ['success' => false, 'message' => __('err_unauthorized')];
+            }
+
+            $settings = $this->canvasRepository->getResizeSettings($canvasId);
+            if (!$settings) {
+                $settings = [
+                    'is_active' => false,
+                    'next_resize_at' => null,
+                    'target_size' => '64x64',
+                    'timer_action' => 'restart'
+                ];
+            } else {
+                $settings['is_active'] = (bool)$settings['is_active'];
+            }
+
+            return ['success' => true, 'data' => $settings];
+        } catch (Exception $e) {
+            Logger::error('Error getting resize settings.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database')];
+        }
+    }
+
+  public function updateResizeSettings(int $userId, int $canvasId, array $data, bool $canManageOfficial = false): array {
+        try {
+            $canvas = $this->canvasRepository->getById($canvasId);
+            $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+
+            if (!$canvas || !$isOwner) {
+                return ['success' => false, 'message' => __('err_unauthorized')];
+            }
+
+            $isActive = filter_var($data['is_active'] ?? false, FILTER_VALIDATE_BOOLEAN);
+            $nextResizeAt = null;
+            
+            // NUEVA VALIDACIÓN: Usando el Single Source of Truth
+            $allSizes = \App\Core\Helpers\Utils::getCanvasSizes();
+            $targetSize = isset($allSizes[$data['target_size']]) ? $data['target_size'] : '64x64';
+            
+            if ($canvas['owner_id'] !== null) {
+                $owner = $this->userRepository->findById($canvas['owner_id']);
+                $tier = $owner['subscription_tier'] ?? 0;
+                $requiredTier = $allSizes[$targetSize]['tier'] ?? 0;
+                
+                if ($tier < $requiredTier) {
+                    return ['success' => false, 'message' => __('err_plan_canvas_resize')];
+                }
+            }
+            
+            if ($isActive) {
+                if (empty($data['next_resize_at'])) {
+                    return ['success' => false, 'message' => __('err_resize_date_required')];
+                }
+                
+                $date = DateTime::createFromFormat('Y-m-d H:i:s', $data['next_resize_at']);
+                if (!$date || $date->format('Y-m-d H:i:s') !== $data['next_resize_at']) {
+                    return ['success' => false, 'message' => __('err_invalid_date_format')];
+                }
+                $nextResizeAt = $data['next_resize_at'];
+            }
+
+            $settings = [
+                'is_active' => $isActive ? 1 : 0,
+                'next_resize_at' => $nextResizeAt,
+                'target_size' => $targetSize,
+                'timer_action' => in_array($data['timer_action'], ['stop', 'none', 'restart']) ? $data['timer_action'] : 'restart'
+            ];
+
+            $this->canvasRepository->updateResizeSettings($canvasId, $settings);
+
+            try {
+                if (class_exists(RedisCache::class)) {
+                    $redisInstance = new RedisCache();
+                    $redis = $redisInstance->getClient();
+                    if ($redis) {
+                        $redisKey = CacheConstants::PREFIX_CANVAS_NEXT_RESIZE . $canvasId;
+                        if ($isActive && $nextResizeAt) {
+                            $payload = json_encode([
+                                'next_resize_at' => $nextResizeAt,
+                                'target_size' => $targetSize
+                            ]);
+                            $redis->set($redisKey, $payload);
+                        } else {
+                            $redis->del($redisKey);
+                        }
+
+                        // 🔥 NOTIFICACIÓN EN VIVO (WEBSOCKETS)
+                        $redis->publish("admin:canvas_events", json_encode([
+                            'type' => 'canvas_resize_settings_updated',
+                            'canvas_id' => $canvasId,
+                            'is_active' => $isActive,
+                            'next_resize_at' => $nextResizeAt,
+                            'target_size' => $targetSize,
+                            'timer_action' => $settings['timer_action']
+                        ]));
+                    }
+                }
+            } catch (Exception $e) {
+                Logger::error('Error actualizando Redis para resize settings.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
+            }
+
+            return ['success' => true, 'message' => __('msg_resize_settings_updated')];
+        } catch (Exception $e) {
+            Logger::error('Error updating resize settings.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database')];
+        }
+    }
+
+    public function getResetSettings(int $userId, int $canvasId, bool $canManageOfficial = false): array {
+        try {
+            $canvas = $this->canvasRepository->getById($canvasId);
+            $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            
+            if (!$canvas || !$isOwner) {
+                return ['success' => false, 'message' => __('err_unauthorized')];
+            }
+
+            $settings = $this->canvasRepository->getResetSettings($canvasId);
+            if (!$settings) {
+                $settings = [
+                    'is_active' => false,
+                    'next_reset_at' => null,
+                    'take_snapshot' => true,
+                    'timer_action' => 'restart'
+                ];
+            } else {
+                $settings['is_active'] = (bool)$settings['is_active'];
+                $settings['take_snapshot'] = (bool)$settings['take_snapshot'];
+            }
+
+            return ['success' => true, 'data' => $settings];
+        } catch (Exception $e) {
+            Logger::error('Error getting reset settings.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database')];
+        }
+    }
+
+    public function updateResetSettings(int $userId, int $canvasId, array $data, bool $canManageOfficial = false): array {
+        try {
+            $canvas = $this->canvasRepository->getById($canvasId);
+            $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+
+            if (!$canvas || !$isOwner) {
+                return ['success' => false, 'message' => __('err_unauthorized')];
+            }
+
+            $isActive = filter_var($data['is_active'] ?? false, FILTER_VALIDATE_BOOLEAN);
+            $takeSnapshot = filter_var($data['take_snapshot'] ?? true, FILTER_VALIDATE_BOOLEAN);
+            $nextResetAt = null;
+
+            if ($isActive && $takeSnapshot && $canvas['owner_id'] !== null) {
+                $owner = $this->userRepository->findById($canvas['owner_id']);
+                $tier = $owner['subscription_tier'] ?? 0;
+                $planLimits = SubscriptionPlanConstants::getTierLimits($tier);
+
+                if ($planLimits['max_snapshots_per_canvas'] !== -1) {
+                    $currentSnapshots = $this->canvasRepository->countCanvasSnapshots($canvasId);
+                    if ($currentSnapshots >= $planLimits['max_snapshots_per_canvas']) {
+                        return ['success' => false, 'message' => __('err_max_snapshots_reached')];
+                    }
+                }
+            }
+            
+            if ($isActive) {
+                if (empty($data['next_reset_at'])) {
+                    return ['success' => false, 'message' => __('err_reset_date_required')];
+                }
+                
+                $date = DateTime::createFromFormat('Y-m-d H:i:s', $data['next_reset_at']);
+                if (!$date || $date->format('Y-m-d H:i:s') !== $data['next_reset_at']) {
+                    return ['success' => false, 'message' => __('err_invalid_date_format')];
+                }
+                $nextResetAt = $data['next_reset_at'];
+            }
+
+            $settings = [
+                'is_active' => $isActive ? 1 : 0,
+                'next_reset_at' => $nextResetAt,
+                'take_snapshot' => $takeSnapshot ? 1 : 0,
+                'timer_action' => in_array($data['timer_action'], ['stop', 'none', 'restart']) ? $data['timer_action'] : 'restart'
+            ];
+
+            $this->canvasRepository->updateResetSettings($canvasId, $settings);
+
+            try {
+                if (class_exists(RedisCache::class)) {
+                    $redisInstance = new RedisCache();
+                    $redis = $redisInstance->getClient();
+                    if ($redis) {
+                        $redisKey = CacheConstants::PREFIX_CANVAS_NEXT_RESET . $canvasId;
+                        if ($isActive && $nextResetAt) {
+                            $redis->set($redisKey, $nextResetAt);
+                        } else {
+                            $redis->del($redisKey);
+                        }
+
+                        // 🔥 NOTIFICACIÓN EN VIVO (WEBSOCKETS)
+                        $redis->publish("admin:canvas_events", json_encode([
+                            'type' => 'canvas_reset_settings_updated',
+                            'canvas_id' => $canvasId,
+                            'is_active' => $isActive,
+                            'next_reset_at' => $nextResetAt,
+                            'take_snapshot' => $takeSnapshot,
+                            'timer_action' => $settings['timer_action']
+                        ]));
+                    }
+                }
+            } catch (Exception $e) {
+                Logger::error('Error actualizando Redis para reset settings.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
+            }
+
+            return ['success' => true, 'message' => __('msg_reset_settings_updated')];
+        } catch (Exception $e) {
+            Logger::error('Error updating reset settings.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database')];
+        }
+    }
+
+    public function resetCanvasNow(int $userId, int $canvasId, bool $takeSnapshot = true, bool $canManageOfficial = false): array {
+        try {
+            $canvas = $this->canvasRepository->getById($canvasId);
+            if (!$canvas) {
+                return ['success' => false, 'message' => __('err_canvas_not_found')];
+            }
+
+            $role = null;
+            $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+
+            if (!$isOwner) {
+                if (!$this->canvasRepository->hasCanvasPermission($canvasId, $userId, 'manage_settings')) {
+                    return ['success' => false, 'message' => __('err_unauthorized')];
+                }
+            }
+
+            try {
+                if (class_exists(RedisCache::class)) {
+                    $redisInstance = new RedisCache();
+                    $redis = $redisInstance->getClient();
+                    
+                    if ($redis) {
+                        $redis->hset("canvases:force_resets_options", (string)$canvasId, json_encode(['take_snapshot' => $takeSnapshot ? 1 : 0]));
+                        $redis->sadd("canvases:force_resets", [$canvasId]);
+                    }
+                }
+            } catch (Exception $e) {
+                Logger::error('Error insertando orden de reseteo forzado en Redis.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
+            }
+
+            return ['success' => true, 'message' => __('msg_reset_order_sent')];
+            
+        } catch (Exception $e) {
+            Logger::error('Error in resetCanvasNow.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database')];
+        }
+    }
+
+    public function getCanvasRoles(int $userId, int $canvasId, bool $canManageOfficial = false): array {
+        try {
+            $canvas = $this->canvasRepository->getById($canvasId);
+            if (!$canvas) return ['success' => false, 'message' => __('err_canvas_not_found')];
+
+            $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            if (!$isOwner && !$this->canvasRepository->hasCanvasPermission($canvasId, $userId, 'manage_roles')) {
+                return ['success' => false, 'message' => __('err_unauthorized')];
+            }
+
+            $roles = $this->canvasRepository->getCanvasRoles($canvasId);
+            return ['success' => true, 'data' => $roles];
+        } catch (Exception $e) {
+            Logger::error('Error getting canvas roles.', ['error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database')];
+        }
+    }
+
+    public function getCanvasPermissions(int $userId, int $canvasId, bool $canManageOfficial = false): array {
+        try {
+            $canvas = $this->canvasRepository->getById($canvasId);
+            if (!$canvas) return ['success' => false, 'message' => __('err_canvas_not_found')];
+
+            $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            if (!$isOwner && !$this->canvasRepository->hasCanvasPermission($canvasId, $userId, 'manage_roles')) {
+                return ['success' => false, 'message' => __('err_unauthorized')];
+            }
+
+            $permissions = $this->canvasRepository->getCanvasPermissions();
+            return ['success' => true, 'data' => $permissions];
+        } catch (Exception $e) {
+            Logger::error('Error getting canvas permissions.', ['error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database')];
+        }
+    }
+
+    public function createCanvasRole(int $userId, int $canvasId, string $name, array $permissions, int $weight = 10, bool $canManageOfficial = false): array {
+        try {
+            $canvas = $this->canvasRepository->getById($canvasId);
+            if (!$canvas) return ['success' => false, 'message' => __('err_canvas_not_found')];
+
+            $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            if (!$isOwner && !$this->canvasRepository->hasCanvasPermission($canvasId, $userId, 'manage_roles')) {
+                return ['success' => false, 'message' => __('err_unauthorized')];
+            }
+
+            if (!$isOwner) {
+                $requesterWeight = 0;
+                $stmtRole = $this->canvasRepository->pdo->prepare("SELECT r.weight FROM canvas_roles r JOIN canvas_user_roles ur ON r.id = ur.role_id WHERE ur.canvas_id = :cid AND ur.user_id = :uid ORDER BY r.weight DESC LIMIT 1");
+                $stmtRole->execute(['cid' => $canvasId, 'uid' => $userId]);
+                $w = $stmtRole->fetchColumn();
+                if ($w !== false) $requesterWeight = (int)$w;
+                
+                if ($weight >= $requesterWeight) {
+                    return ['success' => false, 'message' => __('err_role_weight_too_high')];
+                }
+            }
+
+            if ($canvas['owner_id'] !== null) {
+                $owner = $this->userRepository->findById($canvas['owner_id']);
+                $tier = $owner['subscription_tier'] ?? 0;
+                if ($tier < 2) { 
+                    return ['success' => false, 'message' => __('err_plan_custom_roles')];
+                }
+            }
+
+            $roleId = $this->canvasRepository->createCanvasRole($canvasId, $name, $permissions, $weight);
+            return ['success' => true, 'message' => __('msg_role_created'), 'data' => ['id' => $roleId]];
+        } catch (Exception $e) {
+            Logger::error('Error creating canvas role.', ['error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database')];
+        }
+    }
+
+    public function updateCanvasRole(int $userId, int $roleId, int $canvasId, string $name, ?array $permissions = null, int $weight = 10, bool $canManageOfficial = false): array {
+        try {
+            $canvas = $this->canvasRepository->getById($canvasId);
+            if (!$canvas) return ['success' => false, 'message' => __('err_canvas_not_found')];
+
+            $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            if (!$isOwner && !$this->canvasRepository->hasCanvasPermission($canvasId, $userId, 'manage_roles')) {
+                return ['success' => false, 'message' => __('err_unauthorized')];
+            }
+
+            if (!$isOwner) {
+                $requesterWeight = 0;
+                $stmtRole = $this->canvasRepository->pdo->prepare("SELECT r.weight FROM canvas_roles r JOIN canvas_user_roles ur ON r.id = ur.role_id WHERE ur.canvas_id = :cid AND ur.user_id = :uid ORDER BY r.weight DESC LIMIT 1");
+                $stmtRole->execute(['cid' => $canvasId, 'uid' => $userId]);
+                $w = $stmtRole->fetchColumn();
+                if ($w !== false) $requesterWeight = (int)$w;
+                
+                if ($weight >= $requesterWeight) {
+                    return ['success' => false, 'message' => __('err_role_weight_too_high')];
+                }
+            }
+
+            if ($canvas['owner_id'] !== null) {
+                $owner = $this->userRepository->findById($canvas['owner_id']);
+                $tier = $owner['subscription_tier'] ?? 0;
+                if ($tier < 2) { 
+                    return ['success' => false, 'message' => __('err_plan_custom_roles')];
+                }
+            }
+
+            $success = $this->canvasRepository->updateCanvasRole($roleId, $canvasId, $name, $permissions, $weight);
+            if ($success) return ['success' => true, 'message' => __('msg_role_updated')];
+            
+            return ['success' => false, 'message' => __('err_role_update_failed')];
+        } catch (Exception $e) {
+            Logger::error('Error updating canvas role.', ['error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database')];
+        }
+    }
+
+    public function updateCanvasRolePermissions(int $userId, int $roleId, int $canvasId, array $permissions, bool $canManageOfficial = false): array {
+        try {
+            $canvas = $this->canvasRepository->getById($canvasId);
+            if (!$canvas) return ['success' => false, 'message' => __('err_canvas_not_found')];
+
+            $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            if (!$isOwner && !$this->canvasRepository->hasCanvasPermission($canvasId, $userId, 'manage_roles')) {
+                return ['success' => false, 'message' => __('err_unauthorized')];
+            }
+
+            if ($canvas['owner_id'] !== null) {
+                $owner = $this->userRepository->findById($canvas['owner_id']);
+                $tier = $owner['subscription_tier'] ?? 0;
+                if ($tier < 2) { 
+                    return ['success' => false, 'message' => __('err_plan_custom_roles')];
+                }
+            }
+            
+            // Re-fetch the role to verify ownership and avoid changing name/weight
+            $role = $this->canvasRepository->pdo->prepare("SELECT id FROM canvas_roles WHERE id = ? AND canvas_id = ?");
+            $role->execute([$roleId, $canvasId]);
+            if (!$role->fetch()) {
+                return ['success' => false, 'message' => __('err_role_not_found')];
+            }
+
+            $success = $this->canvasRepository->updateCanvasRolePermissions($roleId, $permissions);
+            if ($success) return ['success' => true, 'message' => __('msg_permissions_updated')];
+            
+            return ['success' => false, 'message' => __('err_permissions_update_failed')];
+        } catch (\Exception $e) {
+            Logger::error('Error updating canvas role permissions.', ['error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database')];
+        }
+    }
+
+    public function deleteCanvasRole(int $userId, int $roleId, int $canvasId, bool $canManageOfficial = false): array {
+        try {
+            $canvas = $this->canvasRepository->getById($canvasId);
+            if (!$canvas) return ['success' => false, 'message' => __('err_canvas_not_found')];
+
+            $isOwner = ($canvas['owner_id'] === $userId) || ($canvas['owner_id'] === null && $canManageOfficial);
+            if (!$isOwner && !$this->canvasRepository->hasCanvasPermission($canvasId, $userId, 'manage_roles')) {
+                return ['success' => false, 'message' => __('err_unauthorized')];
+            }
+
+            if ($canvas['owner_id'] !== null) {
+                $owner = $this->userRepository->findById($canvas['owner_id']);
+                $tier = $owner['subscription_tier'] ?? 0;
+                if ($tier < 2) { 
+                    return ['success' => false, 'message' => __('err_plan_custom_roles')];
+                }
+            }
+
+            $success = $this->canvasRepository->deleteCanvasRole($roleId, $canvasId);
+            if ($success) return ['success' => true, 'message' => __('msg_role_deleted')];
+            
+            return ['success' => false, 'message' => __('err_role_delete_failed')];
+        } catch (Exception $e) {
+            Logger::error('Error deleting canvas role.', ['error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database')];
+        }
+    }
+}

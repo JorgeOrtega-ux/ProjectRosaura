@@ -1,7 +1,7 @@
 <?php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
-use App\Config\DatabaseManager;
+use App\Config\Database\DatabaseManager;
 
 $userId = $_SESSION['active_account_id'] ?? $_SESSION['user_id'] ?? null;
 $canvasUuid = isset($_GET['uuid']) ? $_GET['uuid'] : null;

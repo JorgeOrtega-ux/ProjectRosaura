@@ -1,8 +1,8 @@
 <?php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
-use App\Config\DatabaseManager;
-use App\Config\RedisCache;
+use App\Config\Database\DatabaseManager;
+use App\Config\Database\RedisCache;
 use App\Core\Repositories\RoleRepository;
 use App\Core\Repositories\UserRepository;
 use App\Core\Repositories\ModerationRepository;

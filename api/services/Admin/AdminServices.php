@@ -15,7 +15,7 @@ use App\Core\Interfaces\RateLimiterInterface;
 use App\Core\Interfaces\RoleRepositoryInterface;
 use App\Core\Interfaces\ProfileLogRepositoryInterface;
 use App\Core\Interfaces\TelemetryRepositoryInterface;
-use App\Config\DatabaseManager;
+use App\Config\Database\DatabaseManager;
 use App\Core\System\DatabaseConstants as DB; 
 use App\Core\System\SecurityConstants;
 use App\Core\System\CacheConstants;
@@ -141,7 +141,7 @@ class AdminServices {
 
     private function dispatchBackupJob(string $type, array $modules, ?array $schema = null): array {
         try {
-            $redisCache = new \App\Config\RedisCache();
+            $redisCache = new \App\Config\Database\RedisCache();
             $redis = $redisCache->getClient();
 
             if (!$redis) {
@@ -452,7 +452,7 @@ class AdminServices {
         $failedCount = 0;
 
         try {
-            $redisCache = new \App\Config\RedisCache();
+            $redisCache = new \App\Config\Database\RedisCache();
             $redisClient = $redisCache->getClient();
 
             if (!$redisClient) {
@@ -976,7 +976,7 @@ class AdminServices {
         if (empty($jobId)) return ['success' => false, 'message' => __('validation.missing_job_id')];
 
         try {
-            $redisCache = new \App\Config\RedisCache();
+            $redisCache = new \App\Config\Database\RedisCache();
             $redis = $redisCache->getClient();
 
             if (!$redis) {
@@ -1017,7 +1017,7 @@ class AdminServices {
         }
 
         try {
-            $redisCache = new \App\Config\RedisCache();
+            $redisCache = new \App\Config\Database\RedisCache();
             $redis = $redisCache->getClient();
 
             if (!$redis) {
@@ -1090,7 +1090,7 @@ class AdminServices {
         if (!$this->hasPermission('view_logs')) return ['success' => false, 'message' => __('error.unauthorized')];
         
         try {
-            $redisCache = new \App\Config\RedisCache();
+            $redisCache = new \App\Config\Database\RedisCache();
             $redis = $redisCache->getClient();
 
             if (!$redis) {

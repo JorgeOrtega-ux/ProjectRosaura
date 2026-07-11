@@ -4,8 +4,8 @@ namespace App\Api\Controllers\Chat;
 use App\Api\Controllers\BaseController;
 
 use App\Core\System\DatabaseConstants as DB;
-use App\Config\DatabaseManager;
-use App\Config\RedisCache;
+use App\Config\Database\DatabaseManager;
+use App\Config\Database\RedisCache;
 use App\Core\Interfaces\SessionManagerInterface;
 use Exception;
 use PDO;

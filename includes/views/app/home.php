@@ -1,6 +1,6 @@
 <?php
 use App\Core\Container;
-use App\Api\Services\Canvas\CanvasServices;
+use App\Api\Services\Canvas\CanvasCoreService;
 use App\Core\Interfaces\SessionManagerInterface;
 
 $container = new Container();
@@ -10,7 +10,7 @@ $initialCanvases = [];
 
 if ($isLoggedIn) {
     try {
-        $canvasServices = $container->get(CanvasServices::class);
+        $canvasServices = $container->get(CanvasCoreService::class);
         $userId = $sessionManager->getActiveAccountId();
         $res = $canvasServices->getMine($userId, 50, 'all');
         if ($res && isset($res['success']) && $res['success'] && isset($res['data'])) {

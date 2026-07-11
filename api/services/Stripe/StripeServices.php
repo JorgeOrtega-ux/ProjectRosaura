@@ -386,7 +386,7 @@ class StripeServices {
 
             // Enqueue confirmation email for upgrades
             try {
-                $redisCache = new \App\Config\RedisCache();
+                $redisCache = new \App\Config\Database\RedisCache();
                 $redisClient = $redisCache->getClient();
                 if ($redisClient) {
                     $tierName = SubscriptionPlanConstants::getTierLimits($tier)['name'];

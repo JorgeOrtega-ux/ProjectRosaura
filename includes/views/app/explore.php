@@ -1,6 +1,6 @@
 <?php
 use App\Core\Container;
-use App\Api\Services\Canvas\CanvasServices;
+use App\Api\Services\Canvas\CanvasCoreService;
 use App\Core\Interfaces\SessionManagerInterface;
 
 $container = new Container();
@@ -10,7 +10,7 @@ $userId = $sessionManager->isLoggedIn() ? $sessionManager->getActiveAccountId() 
 $initialCanvases = [];
 
 try {
-    $canvasServices = $container->get(CanvasServices::class);
+    $canvasServices = $container->get(CanvasCoreService::class);
     $sort = 'newest';
     $officialRes = $canvasServices->getOfficialCanvases($userId, $sort);
     $allCanvases = [];

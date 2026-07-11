@@ -1,7 +1,7 @@
 <?php
 namespace App\Core\Repositories;
 
-use App\Config\DatabaseManager;
+use App\Config\Database\DatabaseManager;
 use App\Core\Interfaces\StoreRepositoryInterface;
 use App\Core\System\DatabaseConstants as DB;
 use PDO;

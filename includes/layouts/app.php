@@ -92,7 +92,7 @@ $planLimits = SubscriptionPlanConstants::getTierLimits($subscriptionTier);
 $customPalettesJson = '[]';
 if ($activeAccountId && SubscriptionPlanConstants::hasFeature($subscriptionTier, 'custom_palettes')) {
     try {
-        $db = new \App\Config\DatabaseManager();
+        $db = new \App\Config\Database\DatabaseManager();
         $pdo = $db->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
         $stmt = $pdo->prepare("SELECT palette_key, name, colors FROM custom_palettes WHERE user_id = :user_id");
         $stmt->execute([':user_id' => $activeAccountId]);

@@ -3,8 +3,8 @@
 namespace App\Core\Repositories;
 
 use App\Core\Interfaces\RoleRepositoryInterface;
-use App\Config\DatabaseManager;
-use App\Config\RedisCache;
+use App\Config\Database\DatabaseManager;
+use App\Config\Database\RedisCache;
 use App\Core\System\CacheConstants;
 use App\Core\System\DatabaseConstants as DB;
 use App\Core\System\SecurityConstants;

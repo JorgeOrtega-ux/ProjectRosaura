@@ -2,7 +2,7 @@
 namespace App\Core\Repositories;
 
 use App\Core\Interfaces\TelemetryRepositoryInterface;
-use App\Config\DatabaseManager;
+use App\Config\Database\DatabaseManager;
 use App\Core\System\DatabaseConstants as DB;
 use PDO;
 

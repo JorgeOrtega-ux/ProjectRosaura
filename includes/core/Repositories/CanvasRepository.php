@@ -5,8 +5,8 @@ namespace App\Core\Repositories;
 use PDO;
 use Exception;
 use App\Core\Interfaces\CanvasRepositoryInterface;
-use App\Config\DatabaseManager;
-use App\Config\TypesenseManager;
+use App\Config\Database\DatabaseManager;
+use App\Config\Search\TypesenseManager;
 use App\Core\System\Logger;
 use App\Core\System\DatabaseConstants as DB;
 

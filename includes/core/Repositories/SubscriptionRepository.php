@@ -2,7 +2,7 @@
 
 namespace App\Core\Repositories;
 
-use App\Config\DatabaseManager;
+use App\Config\Database\DatabaseManager;
 use App\Core\Interfaces\SubscriptionRepositoryInterface;
 use App\Core\System\DatabaseConstants as DB;
 use App\Core\System\Logger;

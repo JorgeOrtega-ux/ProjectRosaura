@@ -3,7 +3,7 @@
 
 namespace App\Api\Services\Search;
 
-use App\Config\TypesenseManager;
+use App\Config\Search\TypesenseManager;
 use App\Core\System\Logger;
 
 class SearchServices {

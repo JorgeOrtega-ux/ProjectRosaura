@@ -1,10 +1,10 @@
 <?php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
-use App\Config\DatabaseManager;
+use App\Config\Database\DatabaseManager;
 use App\Core\Repositories\UserRepository;
 use App\Core\Repositories\RoleRepository;
-use App\Config\RedisCache;
+use App\Config\Database\RedisCache;
 use App\Core\System\DatabaseConstants as DB;
 
 $canvasUuid = $_GET['uuid'] ?? '';

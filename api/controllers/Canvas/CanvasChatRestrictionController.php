@@ -4,7 +4,7 @@ namespace App\Api\Controllers\Canvas;
 
 use App\Api\Controllers\BaseController;
 
-use \App\Config\DatabaseManager;
+use App\Config\Database\DatabaseManager;
 use \App\Core\System\DatabaseConstants;
 use \App\Core\System\Logger;
 
@@ -104,7 +104,7 @@ class CanvasChatRestrictionController {
                 ]);
                 
                 // Add to Redis for websocket server to block typing events
-                $redis = (new \App\Config\RedisCache())->getClient();
+                $redis = (new \App\Config\Database\RedisCache())->getClient();
                 if ($suspensionType === 'temporary' && $endDate) {
                     $ttl = strtotime($endDate) - time();
                     if ($ttl > 0) {
@@ -121,7 +121,7 @@ class CanvasChatRestrictionController {
                 $stmt = $this->pdo->prepare("DELETE FROM canvas_chat_restrictions WHERE canvas_id = ? AND user_id = ?");
                 $stmt->execute([$canvasId, $targetUserId]);
                 
-                $redis = (new \App\Config\RedisCache())->getClient();
+                $redis = (new \App\Config\Database\RedisCache())->getClient();
                 $redis->del("canvas:{$canvasId}:chat_restricted:{$targetUserId}");
                 
                 return ['status' => 'success', 'message' => __('msg_chat_restriction_removed')];

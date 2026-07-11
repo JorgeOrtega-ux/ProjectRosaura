@@ -3,7 +3,7 @@
 use App\Core\Routing\Loader;
 use App\Core\Routing\Router;
 
-$routes = require ROOT_PATH . '/config/routes.php';
+$routes = require ROOT_PATH . '/config/Routes/routes.php';
 $loader = new Loader();
 $router = new Router($routes);
 

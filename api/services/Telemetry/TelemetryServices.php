@@ -2,7 +2,7 @@
 
 namespace App\Api\Services\Telemetry;
 
-use App\Config\RedisCache;
+use App\Config\Database\RedisCache;
 use App\Core\System\Logger;
 use App\Core\Helpers\Utils;
 use App\Core\Helpers\GeoIpHelper;

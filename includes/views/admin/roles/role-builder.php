@@ -1,7 +1,7 @@
 <?php
 if (session_status() === PHP_SESSION_NONE) session_start();
 
-use App\Config\DatabaseManager;
+use App\Config\Database\DatabaseManager;
 use App\Core\System\DatabaseConstants as DB;
 use PDO;
 $userPermissions = $_SESSION['user_permissions'] ?? [];

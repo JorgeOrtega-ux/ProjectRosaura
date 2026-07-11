@@ -343,100 +343,100 @@ return [
 
     // NUEVA RUTA PARA TICKETS DE WEBSOCKET
     'canvases.get_ws_ticket' => [
-        'controller' => 'App\Api\Controllers\Canvas\CanvasController',
+        'controller' => 'App\Api\Controllers\Canvas\CanvasCoreController',
         'action' => 'get_ws_ticket',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_ws_ticket', 'max' => 10, 'time' => RL::TIME_5, 'identifier' => RL::ID_IP]]
     ],
 
     // NUEVAS RUTAS DE PALETAS PERSONALIZADAS
     'canvases.get_custom_palettes' => [
-        'controller' => 'App\Api\Controllers\Canvas\CanvasController',
+        'controller' => 'App\Api\Controllers\Canvas\CanvasAssetController',
         'action' => 'get_custom_palettes',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_get_c_palettes', 'max' => 30, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
     ],
     'canvases.create_custom_palette' => [
-        'controller' => 'App\Api\Controllers\Canvas\CanvasController',
+        'controller' => 'App\Api\Controllers\Canvas\CanvasAssetController',
         'action' => 'create_custom_palette',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_create_c_palette', 'max' => 10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
     'canvases.delete_custom_palette' => [
-        'controller' => 'App\Api\Controllers\Canvas\CanvasController',
+        'controller' => 'App\Api\Controllers\Canvas\CanvasAssetController',
         'action' => 'delete_custom_palette',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_del_c_palette', 'max' => 10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
 
     'canvases.get_public' => [
-        'controller' => 'App\Api\Controllers\Canvas\CanvasController',
+        'controller' => 'App\Api\Controllers\Canvas\CanvasCoreController',
         'action' => 'get_public',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_get_public', 'max' => 30, 'time' => RL::TIME_1, 'identifier' => RL::ID_IP]]
     ],
 
     'canvases.get_mine' => [
-        'controller' => 'App\Api\Controllers\Canvas\CanvasController',
+        'controller' => 'App\Api\Controllers\Canvas\CanvasCoreController',
         'action' => 'get_mine',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_get_mine', 'max' => 30, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
     ],
 
     // NUEVA RUTA OFICIAL
     'canvases.get_official' => [
-        'controller' => 'App\Api\Controllers\Canvas\CanvasController',
+        'controller' => 'App\Api\Controllers\Canvas\CanvasCoreController',
         'action' => 'get_official',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_get_official', 'max' => 30, 'time' => RL::TIME_1, 'identifier' => RL::ID_IP]]
     ],
 
     'canvases.get' => [
-        'controller' => 'App\Api\Controllers\Canvas\CanvasController',
+        'controller' => 'App\Api\Controllers\Canvas\CanvasCoreController',
         'action' => 'get',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_get', 'max' => RL::MAX_20, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
     ],
     'canvases.create' => [
-        'controller' => 'App\Api\Controllers\Canvas\CanvasController',
+        'controller' => 'App\Api\Controllers\Canvas\CanvasCoreController',
         'action' => 'create',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_create', 'max' => RL::MAX_5, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
     ],
     'canvases.update' => [
-        'controller' => 'App\Api\Controllers\Canvas\CanvasController',
+        'controller' => 'App\Api\Controllers\Canvas\CanvasCoreController',
         'action' => 'update',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_update', 'max' => RL::MAX_10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
     'canvases.delete' => [
-        'controller' => 'App\Api\Controllers\Canvas\CanvasController',
+        'controller' => 'App\Api\Controllers\Canvas\CanvasCoreController',
         'action' => 'delete',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_delete', 'max' => RL::MAX_10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
     'canvases.downgrade' => [
-        'controller' => 'App\Api\Controllers\Canvas\CanvasController',
+        'controller' => 'App\Api\Controllers\Canvas\CanvasCoreController',
         'action' => 'downgrade',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_downgrade', 'max' => RL::MAX_5, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
     'canvases.leave' => [
-        'controller' => 'App\Api\Controllers\Canvas\CanvasController',
+        'controller' => 'App\Api\Controllers\Canvas\CanvasAccessController',
         'action' => 'leave',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_leave', 'max' => RL::MAX_10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
 
     // NUEVA RUTA PARA EXPANSIÓN EN VIVO
     'canvases.resize' => [
-        'controller' => 'App\Api\Controllers\Canvas\CanvasController',
+        'controller' => 'App\Api\Controllers\Canvas\CanvasSettingsController',
         'action' => 'resize',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_resize', 'max' => RL::MAX_5, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
     
     // NUEVAS RUTAS DE PROGRAMACIÓN DE REDIMENSIONES (RESIZES)
     'canvases.get_resize_settings' => [
-        'controller' => 'App\Api\Controllers\Canvas\CanvasController',
+        'controller' => 'App\Api\Controllers\Canvas\CanvasSettingsController',
         'action' => 'get_resize_settings',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_get_resize', 'max' => RL::MAX_20, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
     ],
     'canvases.update_resize_settings' => [
-        'controller' => 'App\Api\Controllers\Canvas\CanvasController',
+        'controller' => 'App\Api\Controllers\Canvas\CanvasSettingsController',
         'action' => 'update_resize_settings',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_upd_resize', 'max' => RL::MAX_10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
 
     // NUEVA RUTA: TOGGLE FAVORITOS
     'canvases.toggle_favorite' => [
-        'controller' => 'App\Api\Controllers\Canvas\CanvasController',
+        'controller' => 'App\Api\Controllers\Canvas\CanvasAssetController',
         'action' => 'toggle_favorite',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_toggle_fav', 'max' => 20, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
@@ -450,61 +450,61 @@ return [
     
     // --- NUEVAS RUTAS DE MODERACIÓN DE MIEMBROS ---
     'canvases.assign_member_role' => [
-        'controller' => 'App\Api\Controllers\Canvas\CanvasController',
+        'controller' => 'App\Api\Controllers\Canvas\CanvasAccessController',
         'action' => 'assign_member_role',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_assign_role', 'max' => 10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
     
     // --- NUEVAS RUTAS DE GESTION DE ROLES DEL LIENZO ---
     'canvases.get_roles' => [
-        'controller' => 'App\Api\Controllers\Canvas\CanvasController',
+        'controller' => 'App\Api\Controllers\Canvas\CanvasSettingsController',
         'action' => 'get_roles',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_get_roles', 'max' => 20, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
     'canvases.get_permissions' => [
-        'controller' => 'App\Api\Controllers\Canvas\CanvasController',
+        'controller' => 'App\Api\Controllers\Canvas\CanvasSettingsController',
         'action' => 'get_permissions',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_get_perms', 'max' => 20, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
     'canvases.create_role' => [
-        'controller' => 'App\Api\Controllers\Canvas\CanvasController',
+        'controller' => 'App\Api\Controllers\Canvas\CanvasSettingsController',
         'action' => 'create_role',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_create_role', 'max' => 10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
     'canvases.update_role' => [
-        'controller' => 'App\Api\Controllers\Canvas\CanvasController',
+        'controller' => 'App\Api\Controllers\Canvas\CanvasSettingsController',
         'action' => 'update_role',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_update_role', 'max' => 10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
     'canvases.delete_role' => [
-        'controller' => 'App\Api\Controllers\Canvas\CanvasController',
+        'controller' => 'App\Api\Controllers\Canvas\CanvasSettingsController',
         'action' => 'delete_role',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_delete_role', 'max' => 10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
     'canvases.remove_member' => [
-        'controller' => 'App\Api\Controllers\Canvas\CanvasController',
+        'controller' => 'App\Api\Controllers\Canvas\CanvasAccessController',
         'action' => 'remove_member',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_remove_member', 'max' => 10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
     
     // --- NUEVAS RUTAS DE INVITACIONES ---
     'canvases.generate_invite' => [
-        'controller' => 'App\Api\Controllers\Canvas\CanvasController',
+        'controller' => 'App\Api\Controllers\Canvas\CanvasAccessController',
         'action' => 'generate_invite',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_gen_invite', 'max' => 20, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
     'canvases.list_invites' => [
-        'controller' => 'App\Api\Controllers\Canvas\CanvasController',
+        'controller' => 'App\Api\Controllers\Canvas\CanvasAccessController',
         'action' => 'list_invites',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_list_invites', 'max' => 30, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
     ],
     'canvases.revoke_invite' => [
-        'controller' => 'App\Api\Controllers\Canvas\CanvasController',
+        'controller' => 'App\Api\Controllers\Canvas\CanvasAccessController',
         'action' => 'revoke_invite',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_revoke_invite', 'max' => 20, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
     'canvases.join_via_invite' => [
-        'controller' => 'App\Api\Controllers\Canvas\CanvasController',
+        'controller' => 'App\Api\Controllers\Canvas\CanvasAccessController',
         'action' => 'join_via_invite',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_join_invite', 'max' => 20, 'time' => RL::TIME_5, 'identifier' => RL::ID_IP]]
     ],
@@ -512,65 +512,65 @@ return [
 
     // --- RUTAS DE CONFIGURACIÓN DE REINICIOS ---
     'canvases.get_reset_settings' => [
-        'controller' => 'App\Api\Controllers\Canvas\CanvasController',
+        'controller' => 'App\Api\Controllers\Canvas\CanvasSettingsController',
         'action' => 'get_reset_settings',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_get_reset', 'max' => RL::MAX_20, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
     ],
     'canvases.update_reset_settings' => [
-        'controller' => 'App\Api\Controllers\Canvas\CanvasController',
+        'controller' => 'App\Api\Controllers\Canvas\CanvasSettingsController',
         'action' => 'update_reset_settings',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_upd_reset', 'max' => RL::MAX_10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
     'canvases.reset_now' => [
-        'controller' => 'App\Api\Controllers\Canvas\CanvasController',
+        'controller' => 'App\Api\Controllers\Canvas\CanvasSettingsController',
         'action' => 'reset_now',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_reset_now', 'max' => RL::MAX_5, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
     ],
     
     // --- RUTAS DE APROBACIÓN DE ACCESOS ---
     'canvases.request_access' => [
-        'controller' => 'App\Api\Controllers\Canvas\CanvasController',
+        'controller' => 'App\Api\Controllers\Canvas\CanvasAccessController',
         'action' => 'request_access',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_req_access', 'max' => RL::MAX_5, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
     'canvases.approve_request' => [
-        'controller' => 'App\Api\Controllers\Canvas\CanvasController',
+        'controller' => 'App\Api\Controllers\Canvas\CanvasAccessController',
         'action' => 'approve_request',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_approve', 'max' => RL::MAX_20, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
     ],
     'canvases.reject_request' => [
-        'controller' => 'App\Api\Controllers\Canvas\CanvasController',
+        'controller' => 'App\Api\Controllers\Canvas\CanvasAccessController',
         'action' => 'reject_request',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_reject', 'max' => RL::MAX_20, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
     ],
     'canvases.get_pending_requests' => [
-        'controller' => 'App\Api\Controllers\Canvas\CanvasController',
+        'controller' => 'App\Api\Controllers\Canvas\CanvasAccessController',
         'action' => 'get_pending_requests',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_get_reqs', 'max' => RL::MAX_20, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
     ],
 
     // --- NUEVA RUTA PÚBLICA DE GALERÍA DE SNAPSHOTS ---
     'canvases.get_snapshots_gallery' => [
-        'controller' => 'App\Api\Controllers\Canvas\CanvasController',
+        'controller' => 'App\Api\Controllers\Canvas\CanvasMediaController',
         'action' => 'get_snapshots_gallery',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_get_snapshots', 'max' => RL::MAX_30, 'time' => RL::TIME_1, 'identifier' => RL::ID_IP]]
     ],
 
     // --- NUEVA RUTA: OBTENER DETALLE DEL SNAPSHOT (PARA EL VISOR) ---
     'canvases.get_snapshot_detail' => [
-        'controller' => 'App\Api\Controllers\Canvas\CanvasController',
+        'controller' => 'App\Api\Controllers\Canvas\CanvasMediaController',
         'action' => 'get_snapshot_detail',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_get_snap_detail', 'max' => RL::MAX_30, 'time' => RL::TIME_1, 'identifier' => RL::ID_IP]]
     ],
 
     // --- NUEVAS RUTAS DE TIMELAPSE FALTANTES ---
     'canvases.get_timelapse' => [
-        'controller' => 'App\Api\Controllers\Canvas\CanvasController',
+        'controller' => 'App\Api\Controllers\Canvas\CanvasMediaController',
         'action' => 'get_timelapse',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_get_timelapse', 'max' => RL::MAX_30, 'time' => RL::TIME_1, 'identifier' => RL::ID_IP]]
     ],
     'canvases.get_snapshot_timelapse' => [
-        'controller' => 'App\Api\Controllers\Canvas\CanvasController',
+        'controller' => 'App\Api\Controllers\Canvas\CanvasMediaController',
         'action' => 'get_snapshot_timelapse',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_get_snap_timelapse', 'max' => RL::MAX_30, 'time' => RL::TIME_1, 'identifier' => RL::ID_IP]]
     ],
@@ -579,18 +579,18 @@ return [
     // NUEVAS RUTAS DE PLANTILLAS DE USUARIO
     // ==========================================
     'canvases.upload_template' => [
-        'controller' => 'App\Api\Controllers\Canvas\CanvasController',
+        'controller' => 'App\Api\Controllers\Canvas\CanvasAssetController',
         'action' => 'upload_template',
         // Límite de 10 subidas cada 5 minutos por usuario
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_upload_tpl', 'max' => 10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
     'canvases.get_templates' => [
-        'controller' => 'App\Api\Controllers\Canvas\CanvasController',
+        'controller' => 'App\Api\Controllers\Canvas\CanvasAssetController',
         'action' => 'get_templates',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_get_tpl', 'max' => 30, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
     ],
     'canvases.delete_template' => [
-        'controller' => 'App\Api\Controllers\Canvas\CanvasController',
+        'controller' => 'App\Api\Controllers\Canvas\CanvasAssetController',
         'action' => 'delete_template',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_del_tpl', 'max' => 20, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
     ],
@@ -608,12 +608,12 @@ return [
     // NUEVAS RUTAS DE LIVE SHARE
     // ==========================================
     'canvases.create_live_share' => [
-        'controller' => 'App\Api\Controllers\Canvas\CanvasController',
+        'controller' => 'App\Api\Controllers\Canvas\CanvasAccessController',
         'action' => 'create_live_share',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_create_live', 'max' => 10, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
     ],
     'canvases.join_live_share' => [
-        'controller' => 'App\Api\Controllers\Canvas\CanvasController',
+        'controller' => 'App\Api\Controllers\Canvas\CanvasAccessController',
         'action' => 'join_live_share',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_join_live', 'max' => 30, 'time' => RL::TIME_1, 'identifier' => RL::ID_IP]]
     ],

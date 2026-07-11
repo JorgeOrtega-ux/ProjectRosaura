@@ -4,7 +4,7 @@ namespace App\Core\Repositories;
 
 use App\Core\Interfaces\UserRepositoryInterface;
 use App\Core\Interfaces\RoleRepositoryInterface;
-use App\Config\DatabaseManager;
+use App\Config\Database\DatabaseManager;
 use App\Core\System\Logger;
 use App\Core\System\DatabaseConstants as DB;
 use App\Core\System\SecurityConstants;

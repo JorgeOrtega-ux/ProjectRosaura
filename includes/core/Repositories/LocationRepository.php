@@ -4,7 +4,7 @@ namespace App\Core\Repositories;
 
 use PDO;
 use App\Core\Interfaces\LocationRepositoryInterface;
-use App\Config\DatabaseManager;
+use App\Config\Database\DatabaseManager;
 use App\Core\System\DatabaseConstants as DB;
 
 class LocationRepository implements LocationRepositoryInterface {
