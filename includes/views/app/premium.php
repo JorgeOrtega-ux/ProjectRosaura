@@ -160,229 +160,30 @@ $comparisonRows = [
     ],
 ];
 ?>
-<style>
-/* CSS Exclusivo para Premium adaptado a components.css */
-.pricing-grid {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 24px;
-    margin-bottom: 48px;
-    width: 100%;
-}
-
-/* Toggle Switch Facturación */
-.billing-toggle-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 16px;
-    margin-bottom: 32px;
-    margin-top: 16px;
-}
-
-.billing-label {
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--text-secondary);
-    cursor: pointer;
-    transition: color 0.2s ease;
-    user-select: none;
-}
-
-.billing-label.active {
-    color: var(--text-primary);
-}
-
-.billing-discount {
-    background-color: var(--color-success-bg);
-    color: var(--color-success);
-    font-size: 11px;
-    padding: 2px 8px;
-    border-radius: var(--sl-border-radius-pill);
-    margin-left: 6px;
-    font-weight: 700;
-}
-
-.toggle-switch {
-    position: relative;
-    width: 50px;
-    height: 28px;
-    background-color: var(--bg-hover-light);
-    border: var(--border-dynamic);
-    border-radius: var(--sl-border-radius-pill);
-    cursor: pointer;
-    transition: background-color 0.2s ease, border-color 0.2s ease;
-}
-
-.toggle-knob {
-    position: absolute;
-    top: 2px;
-    left: 3px;
-    width: 22px;
-    height: 22px;
-    background-color: var(--text-primary);
-    border-radius: 50%;
-    transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
-.billing-yearly-active .toggle-knob {
-    transform: translateX(20px);
-    background-color: var(--action-primary);
-}
-
-.billing-yearly-active .toggle-switch {
-    border-color: var(--action-primary);
-}
-
-/* Pricing Cards - TAMAÑO FIJO */
-.pricing-card {
-    width: 320px; 
-    max-width: 100%; 
-    flex: 0 0 auto;
-    background-color: var(--bg-surface);
-    border: var(--border-dynamic);
-    border-radius: 12px;
-    padding: 24px;
-    display: flex;
-    flex-direction: column;
-    position: relative;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.pricing-card:hover {
-    border-color: var(--border-color-hover);
-}
-
-.pricing-card.featured {
-    border: 2px solid var(--action-primary);
-    box-shadow: var(--shadow-card);
-}
-
-.featured-badge {
-    position: absolute;
-    top: -12px;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: var(--action-primary);
-    color: var(--text-inverse);
-    padding: 2px 12px;
-    border-radius: 12px;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    white-space: nowrap;
-}
-
-.plan-name {
-    font-size: 20px;
-    font-weight: 700;
-    color: var(--text-primary);
-    margin-bottom: 8px;
-}
-
-.plan-price-wrapper {
-    display: flex;
-    align-items: baseline;
-    margin-bottom: 12px;
-}
-
-.plan-currency {
-    font-size: 20px;
-    color: var(--text-primary);
-    font-weight: 700;
-}
-
-.plan-price, .plan-period {
-    transition: opacity 0.15s ease;
-}
-
-.plan-price {
-    font-size: 36px;
-    font-weight: 700;
-    color: var(--text-primary);
-    line-height: 1;
-}
-
-.plan-period {
-    font-size: 13px;
-    color: var(--text-secondary);
-    margin-left: 4px;
-}
-
-.plan-desc {
-    font-size: 13px;
-    color: var(--text-secondary);
-    margin-bottom: 20px;
-    padding-bottom: 16px;
-    border-bottom: 1px solid var(--border-color);
-    line-height: 1.4;
-}
-
-.plan-features {
-    list-style: none;
-    padding: 0;
-    margin: 0 0 24px 0;
-    flex-grow: 1;
-}
-
-.plan-features li {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 12px;
-    font-size: 14px;
-    color: var(--text-primary);
-}
-
-.feature-icon-check {
-    color: var(--color-success);
-    font-size: 18px !important;
-}
-
-.feature-icon-cross {
-    color: var(--text-tertiary);
-    font-size: 18px !important;
-}
-
-/* Tabla Comparativa */
-.comparison-wrapper {
-    margin: 32px auto 0 auto;
-    width: 100%;
-    max-width: 1008px; 
-}
-
-.comparison-title {
-    text-align: center;
-    font-size: 20px;
-    font-weight: 700;
-    color: var(--text-primary);
-    margin-bottom: 24px;
-}
-</style>
-
 <div class="view-content">
-    <div class="component-wrapper component-wrapper--full" style="max-width: 1050px;">
+    <div class="component-wrapper component-wrapper--full component-max-w-1200">
         
-        <div style="text-align: center; padding: 24px 0;">
+        <div class="component-text-center component-py-24">
             <h1 class="component-page-title"><?php echo __('premium_page_title'); ?></h1>
-            <p class="component-page-description" style="max-width: 600px; margin: 0 auto;"><?php echo __('premium_page_desc'); ?></p>
+            <p class="component-page-description component-max-w-600"><?php echo __('premium_page_desc'); ?></p>
         </div>
 
-        <div class="billing-toggle-container" id="premiumBillingToggle">
-            <span class="billing-label active" id="lblMonthly"><?php echo __('premium_billing_monthly'); ?></span>
-            <div class="toggle-switch">
-                <div class="toggle-knob"></div>
-            </div>
-            <span class="billing-label" id="lblYearly">
-                <?php echo __('premium_billing_yearly'); ?> <span class="billing-discount"><?php echo __('premium_billing_save'); ?></span>
+        <div class="component-flex-center-row component-mb-32 component-mt-16" id="billingToggle">
+            <span class="component-text-notice component-font-600 component-cursor-pointer" id="lblMonthly"><?php echo __('premium_billing_monthly'); ?></span>
+            
+            <label class="component-toggle-switch">
+                <input type="checkbox" id="billingCheckboxToggle" autocomplete="off">
+                <span class="component-toggle-slider"></span>
+            </label>
+
+            <span class="component-text-notice component-text-notice--muted component-font-600 component-cursor-pointer" id="lblYearly">
+                <?php echo __('premium_billing_yearly'); ?> <span class="component-badge component-badge--sm component-badge--success component-ml-6"><?php echo __('premium_billing_save'); ?></span>
             </span>
         </div>
         
-        <p style="text-align: center; font-size: 13px; color: var(--text-secondary); margin-top: -16px; margin-bottom: 32px;"><?php echo __('premium_billing_currency_note'); ?></p>
+        <p class="component-text-center component-text-sm component-text-secondary component-mt-n16 component-mb-32"><?php echo __('premium_billing_currency_note'); ?></p>
 
-        <div class="pricing-grid">
+        <div class="component-flex-center-gap">
             
             <?php
             $plans = [
@@ -402,8 +203,8 @@ $comparisonRows = [
                     'tier'       => 1,
                     'name_key'   => 'premium_plan_pro',
                     'desc_key'   => 'premium_desc_pro',
-                    'css_class'  => 'featured',
-                    'badge'      => ['key' => 'premium_badge_popular', 'class' => 'featured-badge'],
+                    'css_class'  => 'component-card--featured',
+                    'badge'      => ['key' => 'premium_badge_popular', 'class' => 'component-badge component-badge--primary component-badge--top-center'],
                     'monthly'    => 15,
                     'yearly'     => 144,
                     'features'   => $cardFeaturesPro,
@@ -415,7 +216,7 @@ $comparisonRows = [
                     'name_key'   => 'premium_plan_advanced',
                     'desc_key'   => 'premium_desc_advanced',
                     'css_class'  => '',
-                    'badge'      => ['key' => 'premium_badge_top', 'class' => 'featured-badge'],
+                    'badge'      => ['key' => 'premium_badge_top', 'class' => 'component-badge component-badge--warning component-badge--top-center'],
                     'monthly'    => 35,
                     'yearly'     => 336,
                     'features'   => $cardFeaturesAdvanced,
@@ -427,50 +228,50 @@ $comparisonRows = [
             foreach ($plans as $plan):
                 $planTier = $plan['tier'];
             ?>
-            <div class="pricing-card <?php echo $plan['css_class']; ?>" data-tier="<?php echo $planTier; ?>">
+            <div class="component-card component-card--grouped component-card--p18 component-card--w320 <?php echo $plan['css_class']; ?>" data-tier="<?php echo $planTier; ?>" data-ref="plan-card">
                 <?php if ($plan['badge']): ?>
                     <div class="<?php echo $plan['badge']['class']; ?>"><?php echo __($plan['badge']['key']); ?></div>
                 <?php endif; ?>
                 
-                <div class="plan-name"><?php echo __($plan['name_key']); ?></div>
-                <div class="plan-price-wrapper">
-                    <span class="plan-currency">$</span>
-                    <span class="plan-price" data-monthly="<?php echo $plan['monthly']; ?>" data-yearly="<?php echo $plan['yearly']; ?>"><?php echo $plan['monthly']; ?></span>
-                    <span class="plan-period" data-period-monthly="<?php echo __('premium_period_month'); ?>" data-period-yearly="<?php echo __('premium_period_year'); ?>"><?php echo __('premium_period_month'); ?></span>
+                <div class="component-card__title component-text-lg component-font-bold component-mb-8"><?php echo __($plan['name_key']); ?></div>
+                <div class="component-flex-baseline component-mb-12">
+                    <span class="component-text-lg component-font-bold component-text-primary">$</span>
+                    <span data-ref="plan-price" data-monthly="<?php echo $plan['monthly']; ?>" data-yearly="<?php echo $plan['yearly']; ?>" class="component-text-xxl component-font-bold component-text-primary component-lh-1 component-transition-opacity"><?php echo $plan['monthly']; ?></span>
+                    <span data-ref="plan-period" data-period-monthly="<?php echo __('premium_period_month'); ?>" data-period-yearly="<?php echo __('premium_period_year'); ?>" class="component-text-sm component-text-secondary component-ml-4 component-transition-opacity"><?php echo __('premium_period_month'); ?></span>
                 </div>
-                <p class="plan-desc"><?php echo __($plan['desc_key']); ?></p>
+                <p class="component-card__description component-border-bottom"><?php echo __($plan['desc_key']); ?></p>
                 
-                <ul class="plan-features">
+                <ul class="component-list-none">
                     <?php foreach ($plan['features'] as $feat): 
-                        $iconClass = $feat['icon'] === 'check' ? 'feature-icon-check' : 'feature-icon-cross';
+                        $iconClass = $feat['icon'] === 'check' ? 'component-text-success' : 'component-text-tertiary';
                         $iconName  = $feat['icon'] === 'check' ? 'check_circle' : 'cancel';
                         $isBold    = !empty($feat['bold']);
                     ?>
-                    <li>
-                        <span class="material-symbols-rounded <?php echo $iconClass; ?>"><?php echo $iconName; ?></span>
+                    <li class="component-flex-center-gap-8 component-mb-12 component-text-md component-text-primary">
+                        <span class="material-symbols-rounded component-icon-sm <?php echo $iconClass; ?>"><?php echo $iconName; ?></span>
                         <?php echo $isBold ? '<b>' . $feat['text'] . '</b>' : $feat['text']; ?>
                     </li>
                     <?php endforeach; ?>
                 </ul>
 
                 <?php if ($tier === $planTier): ?>
-                    <div class="<?php echo $plan['btn_class']; ?> disabled" style="cursor: pointer; text-align: center; display: flex; align-items: center; justify-content: center;"><?php echo __('premium_btn_current'); ?></div>
+                    <div class="<?php echo $plan['btn_class']; ?> disabled component-cursor-pointer component-text-center component-flex-center-row"><?php echo __('premium_btn_current'); ?></div>
                 <?php elseif ($planTier === 0): ?>
-                    <div class="component-button component-button--full component-button--h45" data-action="subscribe" data-tier="0" style="cursor: pointer; text-align: center; display: flex; align-items: center; justify-content: center;"><?php echo __('premium_btn_downgrade_basic'); ?></div>
+                    <div class="component-button component-button--full component-button--h45 component-cursor-pointer component-text-center component-flex-center-row" data-action="subscribe" data-tier="0"><?php echo __('premium_btn_downgrade_basic'); ?></div>
                 <?php elseif ($planTier === 1 && $tier > 1): ?>
-                    <div class="<?php echo $plan['btn_class']; ?>" data-action="subscribe" data-tier="1" style="cursor: pointer; text-align: center; display: flex; align-items: center; justify-content: center;"><?php echo __('premium_btn_downgrade_pro'); ?></div>
+                    <div class="<?php echo $plan['btn_class']; ?> component-cursor-pointer component-text-center component-flex-center-row" data-action="subscribe" data-tier="1"><?php echo __('premium_btn_downgrade_pro'); ?></div>
                 <?php elseif ($planTier === 1): ?>
-                    <div class="<?php echo $plan['btn_class']; ?>" data-action="subscribe" data-tier="1" style="cursor: pointer; text-align: center; display: flex; align-items: center; justify-content: center;"><?php echo __('premium_btn_upgrade_pro'); ?></div>
+                    <div class="<?php echo $plan['btn_class']; ?> component-cursor-pointer component-text-center component-flex-center-row" data-action="subscribe" data-tier="1"><?php echo __('premium_btn_upgrade_pro'); ?></div>
                 <?php elseif ($planTier === 2): ?>
-                    <div class="<?php echo $plan['btn_class']; ?>" data-action="subscribe" data-tier="2" style="cursor: pointer; text-align: center; display: flex; align-items: center; justify-content: center;"><?php echo __('premium_btn_upgrade_advanced'); ?></div>
+                    <div class="<?php echo $plan['btn_class']; ?> component-cursor-pointer component-text-center component-flex-center-row" data-action="subscribe" data-tier="2"><?php echo __('premium_btn_upgrade_advanced'); ?></div>
                 <?php endif; ?>
             </div>
             <?php endforeach; ?>
 
         </div>
 
-                <div class="comparison-wrapper">
-            <h2 class="comparison-title"><?php echo __('premium_cmp_title'); ?></h2>
+        <div class="component-mt-32 component-w-full component-max-w-1008">
+            <h2 class="component-page-title component-text-center component-mb-24"><?php echo __('premium_cmp_title'); ?></h2>
             <div class="component-table-wrapper">
                 <table class="component-table">
                     <thead>
@@ -484,14 +285,14 @@ $comparisonRows = [
                     <tbody>
                         <?php foreach ($comparisonRows as $row): ?>
                         <tr class="component-table-row">
-                            <td style="font-weight: 600;"><?php echo $row['label']; ?></td>
+                            <td class="component-font-600"><?php echo $row['label']; ?></td>
                             <?php foreach ($row['values'] as $i => $val): ?>
                                 <td>
                                     <?php if ($row['type'] === 'boolean'): ?>
                                         <?php if ($val): ?>
-                                            <span class="material-symbols-rounded feature-icon-check">check</span>
+                                            <span class="material-symbols-rounded component-text-success component-icon-sm">check</span>
                                         <?php else: ?>
-                                            <span class="material-symbols-rounded feature-icon-cross">remove</span>
+                                            <span class="material-symbols-rounded component-text-tertiary component-icon-sm">remove</span>
                                         <?php endif; ?>
                                     <?php else: ?>
                                         <?php echo $val; ?>

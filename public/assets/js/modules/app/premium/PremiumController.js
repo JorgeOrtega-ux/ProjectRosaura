@@ -30,15 +30,14 @@ export class PremiumController {
     // ── Billing Toggle ──
 
     _handleClick(e) {
-        // Toggle switch
-        const toggleSwitch = e.target.closest('.toggle-switch');
+        const toggleSwitch = e.target.closest('#billingCheckboxToggle');
         if (toggleSwitch) {
             this._toggleBilling();
             return;
         }
 
         // Billing labels
-        const billingLabel = e.target.closest('.billing-label');
+        const billingLabel = e.target.closest('#lblMonthly, #lblYearly');
         if (billingLabel) {
             const id = billingLabel.id;
             if (id === 'lblMonthly') this._setBilling('monthly');
@@ -70,26 +69,27 @@ export class PremiumController {
     }
 
     _updateUIBilling() {
-        const toggleContainer = document.getElementById('premiumBillingToggle');
+        const toggleContainer = document.getElementById('billingToggle');
         const lblMonthly = document.getElementById('lblMonthly');
         const lblYearly = document.getElementById('lblYearly');
-        const cards = document.querySelectorAll('.pricing-card');
+        const checkbox = document.getElementById('billingCheckboxToggle');
+        const cards = document.querySelectorAll('[data-ref="plan-card"]');
 
         if (!toggleContainer) return;
 
+        if (checkbox) checkbox.checked = window.isYearlyPremium;
+
         if (window.isYearlyPremium) {
-            toggleContainer.classList.add('billing-yearly-active');
-            lblYearly.classList.add('active');
-            lblMonthly.classList.remove('active');
+            lblYearly.classList.remove('component-text-notice--muted');
+            lblMonthly.classList.add('component-text-notice--muted');
         } else {
-            toggleContainer.classList.remove('billing-yearly-active');
-            lblMonthly.classList.add('active');
-            lblYearly.classList.remove('active');
+            lblMonthly.classList.remove('component-text-notice--muted');
+            lblYearly.classList.add('component-text-notice--muted');
         }
 
         cards.forEach(card => {
-            const priceEl = card.querySelector('.plan-price');
-            const periodEl = card.querySelector('.plan-period');
+            const priceEl = card.querySelector('[data-ref="plan-price"]');
+            const periodEl = card.querySelector('[data-ref="plan-period"]');
             
             if (priceEl && periodEl) {
                 priceEl.style.opacity = '0';

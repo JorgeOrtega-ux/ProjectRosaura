@@ -3222,3 +3222,91 @@ input:checked + .component-toggle-slider:before {
 .component-credit-card--unknown {
     background: linear-gradient(135deg, #444444 0%, #222222 100%);
 }
+
+/* Modifiers for badges and cards */
+.component-card--p18 {
+    padding: 18px !important;
+}
+
+.component-badge--dark {
+    background-color: var(--text-primary);
+    color: var(--bg-surface);
+    border-color: transparent;
+}
+.component-badge--dark:hover {
+    background-color: var(--text-secondary);
+}
+.component-badge--dark .material-symbols-rounded {
+    color: inherit !important;
+}
+
+.component-badge-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
+}
+.component-badge-group .component-badge {
+    flex: 1;
+    justify-content: center;
+    text-align: center;
+}
+.component-badge-group .component-badge--full {
+    flex: 1 1 100%;
+}
+.component-badge--interactive {
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+}
+.component-badge--interactive:hover {
+    opacity: 0.85;
+}
+
+/* Custom Layout and Spacing Utilities */
+.component-mb-4 { margin-bottom: 4px !important; }
+.component-card--w320 { width: 320px !important; max-width: 100% !important; flex: 0 0 auto !important; position: relative !important; }
+.component-flex-center-gap { display: flex !important; flex-direction: row !important; flex-wrap: wrap !important; justify-content: center !important; gap: 24px !important; width: 100% !important; }
+.component-badge--top-center {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+}
+
+/* Generic Utility Modifiers */
+.component-text-success { color: var(--color-success) !important; }
+.component-text-tertiary { color: var(--text-tertiary) !important; }
+.component-max-w-1050 { max-width: 1050px !important; margin: 0 auto; }
+.component-max-w-1200 { max-width: 1200px !important; margin: 0 auto; }
+.component-max-w-1008 { max-width: 1008px !important; margin: 0 auto; }
+.component-max-w-600 { max-width: 600px !important; margin: 0 auto; }
+.component-py-24 { padding-top: 24px !important; padding-bottom: 24px !important; }
+.component-mt-16 { margin-top: 16px !important; }
+.component-mt-32 { margin-top: 32px !important; }
+.component-mt-n16 { margin-top: -16px !important; }
+.component-mb-8 { margin-bottom: 8px !important; }
+.component-mb-12 { margin-bottom: 12px !important; }
+.component-mb-24 { margin-bottom: 24px !important; }
+.component-mb-32 { margin-bottom: 32px !important; }
+.component-ml-4 { margin-left: 4px !important; }
+.component-ml-6 { margin-left: 6px !important; }
+.component-flex-center-row { display: flex; align-items: center; justify-content: center; flex-direction: row; gap: 16px; }
+.component-flex-baseline { display: flex; align-items: baseline; }
+.component-flex-center-gap-8 { display: flex; align-items: center; gap: 8px; }
+.component-font-bold { font-weight: bold !important; }
+.component-font-600 { font-weight: 600 !important; }
+.component-text-sm { font-size: 13px !important; }
+.component-text-md { font-size: 14px !important; }
+.component-text-lg { font-size: 20px !important; }
+.component-text-xl { font-size: 24px !important; }
+.component-text-xxl { font-size: 36px !important; }
+.component-text-center { text-align: center !important; }
+.component-cursor-pointer { cursor: pointer !important; }
+.component-transition-opacity { transition: opacity 0.15s ease !important; }
+.component-border-bottom { border-bottom: 1px solid var(--border-color) !important; padding-bottom: 16px; }
+.component-list-none { list-style: none !important; padding: 0 !important; margin: 0 0 24px 0 !important; flex-grow: 1; }
+.component-icon-sm { font-size: 18px !important; }
+.component-lh-1 { line-height: 1 !important; }
+.component-w-full { width: 100% !important; }
+.component-d-none { display: none !important; }
