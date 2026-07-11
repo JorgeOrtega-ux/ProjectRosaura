@@ -340,6 +340,11 @@ return [
         'action' => 'report',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'chat_report', 'max' => 10, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
     ],
+    'chat.attachment' => [
+        'controller' => 'App\Api\Controllers\Chat\ChatController',
+        'action' => 'attachment',
+        'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'chat_attachment', 'max' => 60, 'time' => RL::TIME_1, 'identifier' => RL::ID_IP]]
+    ],
 
     // NUEVA RUTA PARA TICKETS DE WEBSOCKET
     'canvases.get_ws_ticket' => [

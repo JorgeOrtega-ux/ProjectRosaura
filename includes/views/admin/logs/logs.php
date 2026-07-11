@@ -2,7 +2,7 @@
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 $logFiles = [];
-$logBaseDir = ROOT_PATH . '/logs/';
+$logBaseDir = ROOT_PATH . '/storage/private/logs/';
 
 if (is_dir($logBaseDir)) {
     $categories = array_diff(scandir($logBaseDir), ['.', '..', '.htaccess', '.gitkeep']);

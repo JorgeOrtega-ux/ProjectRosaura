@@ -47,6 +47,7 @@ export const DesignSetup = {
         
         if (wrapper) {
             this.canvasIntId = wrapper.getAttribute('data-canvas-id');
+            this.canvasId = wrapper.getAttribute('data-canvas-uuid'); // This gives JS the UUID
             this.canvasPrivacy = wrapper.getAttribute('data-privacy') || 'private';
             this.isPrivateBlocked = wrapper.getAttribute('data-is-blocked') === '1';
             this.isPremiumBlocked = wrapper.getAttribute('data-premium-blocked') === '1';

@@ -7,6 +7,7 @@ export class DesignChat {
         this.controller = controller;
         this.api = new ApiService();
         this.canvasId = controller.canvasIntId || controller.canvasId;
+        this.canvasUuid = controller.canvasId;
         
         // Elementos UI
         this.chatContainer = document.querySelector('[data-ref="chat-messages-container"]');
@@ -194,8 +195,19 @@ export class DesignChat {
         });
 
         if (this.chatContainer) {
+            const header = this.chatContainer.closest('.component-menu') ? this.chatContainer.closest('.component-menu').querySelector('.component-menu-header') : null;
+            
             this.chatContainer.addEventListener('scroll', () => {
-                if (this.chatContainer.scrollTop === 0 && !this.isLoading && this.hasMore) {
+                if (header) {
+                    const isAtBottom = this.chatContainer.scrollHeight - this.chatContainer.clientHeight <= this.chatContainer.scrollTop + 10;
+                    if (!isAtBottom) {
+                        header.classList.add('shadow');
+                    } else {
+                        header.classList.remove('shadow');
+                    }
+                }
+
+                if (this.chatContainer.scrollTop <= 15 && !this.isLoading && this.hasMore) {
                     this.loadHistory();
                 }
             });
@@ -254,136 +266,23 @@ export class DesignChat {
         document.addEventListener('click', (e) => {
             const attachmentItem = e.target.closest('[data-action="openChatImageViewer"]');
             if (attachmentItem) {
-                const imagesStr = attachmentItem.getAttribute('data-images');
+                const msgId = attachmentItem.getAttribute('data-message-id');
                 const indexStr = attachmentItem.getAttribute('data-index');
-                if (imagesStr && indexStr) {
+                const canvasUuid = attachmentItem.getAttribute('data-canvas-uuid');
+                if (msgId && indexStr) {
                     try {
-                        const images = JSON.parse(imagesStr);
                         const index = parseInt(indexStr, 10);
-                        this.openImageViewer(images, index);
+                        if (window.spaRouter) {
+                            window.spaRouter.navigate(`/canvases/chat-viewer?canvas=${canvasUuid}&msg=${msgId}&idx=${index}`);
+                        } else {
+                            window.location.href = (window.AppBasePath || '') + `/canvases/chat-viewer?canvas=${canvasUuid}&msg=${msgId}&idx=${index}`;
+                        }
                     } catch(err) { console.error("Error al abrir visor de imágenes:", err); }
                 }
             }
         });
     }
 
-    openImageViewer(images, initialIndex) {
-        if (!images || images.length === 0) return;
-        
-        let currentIndex = initialIndex;
-        let overlay = document.getElementById('chat-image-viewer-overlay');
-
-        if (!overlay) {
-            overlay = document.createElement('div');
-            overlay.id = 'chat-image-viewer-overlay';
-            overlay.className = 'chat-image-viewer-overlay';
-            overlay.innerHTML = `
-                <div class="chat-image-viewer-top">
-                    <div class="chat-image-viewer-actions">
-                        <button class="chat-image-viewer-btn" id="chat-iv-btn-download">
-                            <span class="material-symbols-rounded">download</span> Descargar plantilla
-                        </button>
-                    </div>
-                    <div class="chat-image-viewer-actions">
-                        <button class="chat-image-viewer-btn icon-only" id="chat-iv-btn-prev">
-                            <span class="material-symbols-rounded">chevron_left</span>
-                        </button>
-                        <span id="chat-iv-counter" style="color:#fff; font-size:14px; min-width: 40px; text-align:center;">1/1</span>
-                        <button class="chat-image-viewer-btn icon-only" id="chat-iv-btn-next">
-                            <span class="material-symbols-rounded">chevron_right</span>
-                        </button>
-                        <button class="chat-image-viewer-btn icon-only" id="chat-iv-btn-close" style="margin-left: 16px;">
-                            <span class="material-symbols-rounded">close</span>
-                        </button>
-                    </div>
-                </div>
-                <div class="chat-image-viewer-content">
-                    <img id="chat-iv-img" class="chat-image-viewer-img" src="" alt="Chat Image">
-                </div>
-            `;
-            document.body.appendChild(overlay);
-            
-            // Setup events
-            document.getElementById('chat-iv-btn-close').addEventListener('click', () => {
-                overlay.classList.remove('active');
-                setTimeout(() => { if (!overlay.classList.contains('active')) overlay.style.display = 'none'; }, 300);
-            });
-
-            document.getElementById('chat-iv-btn-prev').addEventListener('click', () => {
-                if (currentIndex > 0) {
-                    currentIndex--;
-                    updateView();
-                }
-            });
-
-            document.getElementById('chat-iv-btn-next').addEventListener('click', () => {
-                if (currentIndex < images.length - 1) {
-                    currentIndex++;
-                    updateView();
-                }
-            });
-
-            document.getElementById('chat-iv-btn-download').addEventListener('click', async (e) => {
-                const btn = e.currentTarget;
-                if (btn.hasAttribute('disabled')) return;
-                
-                const currentUrl = images[currentIndex];
-                btn.setAttribute('disabled', 'true');
-                btn.innerHTML = '<span class="material-symbols-rounded" style="animation: spin 1s linear infinite;">progress_activity</span> Guardando...';
-
-                try {
-                    // Fetch the image as a Blob
-                    const response = await fetch(currentUrl);
-                    const blob = await response.blob();
-                    
-                    // Create a File object from the blob
-                    const fileName = currentUrl.split('/').pop() || 'template.png';
-                    const file = new File([blob], fileName, { type: blob.type });
-
-                    const formData = new FormData();
-                    formData.append('file', file);
-
-                    // Send to backend
-                    const uploadRes = await this.api.postForm(ApiRoutes.Canvases.UploadTemplate, formData);
-                    if (uploadRes.success || uploadRes.status === 'success') {
-                        showMessage('Plantilla guardada exitosamente', 'success');
-                    } else {
-                        showMessage(uploadRes.message || 'Error al guardar la plantilla', 'error');
-                    }
-                } catch (error) {
-                    console.error('Error descargando plantilla:', error);
-                    showMessage('Error de red al guardar la plantilla', 'error');
-                } finally {
-                    btn.removeAttribute('disabled');
-                    btn.innerHTML = '<span class="material-symbols-rounded">download</span> Descargar plantilla';
-                }
-            });
-        }
-
-        const btnPrev = document.getElementById('chat-iv-btn-prev');
-        const btnNext = document.getElementById('chat-iv-btn-next');
-        const counter = document.getElementById('chat-iv-counter');
-        const imgEl = document.getElementById('chat-iv-img');
-
-        const updateView = () => {
-            imgEl.src = images[currentIndex];
-            counter.innerText = `${currentIndex + 1}/${images.length}`;
-            
-            if (currentIndex === 0) btnPrev.setAttribute('disabled', 'true');
-            else btnPrev.removeAttribute('disabled');
-
-            if (currentIndex === images.length - 1) btnNext.setAttribute('disabled', 'true');
-            else btnNext.removeAttribute('disabled');
-        };
-
-        // Initialize view
-        overlay.style.display = 'flex';
-        // Force reflow
-        void overlay.offsetWidth;
-        overlay.classList.add('active');
-        
-        updateView();
-    }
 
     handleFileSelection(e) {
         const files = Array.from(e.target.files);
@@ -462,8 +361,19 @@ export class DesignChat {
         if (this.isLoading || !this.hasMore) return;
         this.isLoading = true;
 
+        let loaderStartTime = 0;
         if (this.offset === 0 && this.loader) {
             this.loader.style.display = 'flex';
+        } else if (this.offset > 0) {
+            // Create a small inline loader at the top
+            this.topLoader = document.createElement('div');
+            this.topLoader.className = 'chat-top-loader';
+            this.topLoader.style.textAlign = 'center';
+            this.topLoader.style.padding = '12px';
+            this.topLoader.style.color = 'var(--text-secondary)';
+            this.topLoader.innerHTML = '<span class="material-symbols-rounded icon-spin-slow" style="font-size: 20px;">sync</span>';
+            this.chatContainer.insertBefore(this.topLoader, this.chatContainer.firstChild);
+            loaderStartTime = Date.now();
         }
 
         try {
@@ -475,6 +385,13 @@ export class DesignChat {
             if (this.offset === 0 && this.loader) {
                 this.loader.style.display = 'none';
                 this.chatContainer.querySelectorAll('.chat-message').forEach(el => el.remove());
+            } else if (this.topLoader) {
+                const elapsed = Date.now() - loaderStartTime;
+                if (elapsed < 300) {
+                    await new Promise(r => setTimeout(r, 300 - elapsed));
+                }
+                this.topLoader.remove();
+                this.topLoader = null;
             }
 
             if (response.success || response.status === 'success') {
@@ -763,8 +680,12 @@ export class DesignChat {
             
             // Show up to 4 preview items
             const displayCount = Math.min(count, 4);
-            const fullUrls = msg.attachments.map(a => (window.AppBasePath || '') + a);
-            const urlsJson = JSON.stringify(fullUrls).replace(/"/g, '&quot;');
+            const fullUrls = msg.attachments.map(a => {
+                if (a.startsWith('/api.php?route=chat.attachment')) {
+                    return (window.AppBasePath || '') + a;
+                }
+                return (window.AppBasePath || '') + a;
+            });
             
             for (let i = 0; i < displayCount; i++) {
                 const url = fullUrls[i];
@@ -773,7 +694,7 @@ export class DesignChat {
                     overlay = `<div class="chat-attachment-item-overlay">+${count - 4}</div>`;
                 }
                 attachmentsHtml += `
-                <div class="chat-attachment-item" data-action="openChatImageViewer" data-images="${urlsJson}" data-index="${i}">
+                <div class="chat-attachment-item" data-action="openChatImageViewer" data-message-id="${msg.id}" data-index="${i}" data-canvas-uuid="${this.canvasUuid}">
                     <img src="${url}" loading="lazy" />
                     ${overlay}
                 </div>

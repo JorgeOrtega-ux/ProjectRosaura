@@ -101,6 +101,10 @@ class ChatController
                 $messages = array_merge($redisMessages, $messages);
             }
             
+            $stmt = $this->pdo->prepare("SELECT uuid FROM " . DB::TBL_CANVASES . " WHERE id = ?");
+            $stmt->execute([$canvasId]);
+            $canvasUuid = $stmt->fetchColumn();
+
             // Procesar attachments
             foreach ($messages as &$message) {
                 if (!empty($message['attachments'])) {
@@ -108,10 +112,11 @@ class ChatController
                     if (is_array($decoded)) {
                         $safeAttachments = [];
                         foreach ($decoded as $att) {
-                            if (strpos($att, '/public/') !== 0) {
-                                $att = '/public' . $att;
+                            if (strpos($att, '/public/') === 0) {
+                                $safeAttachments[] = $att;
+                            } else {
+                                $safeAttachments[] = '/api.php?route=chat.attachment&canvas_uuid=' . $canvasUuid . '&file=' . urlencode(basename($att));
                             }
-                            $safeAttachments[] = $att;
                         }
                         $message['attachments'] = $safeAttachments;
                     } else {
@@ -206,7 +211,11 @@ class ChatController
                     return ['status' => 'error', 'message' => __('err_chat_image_count'), 'code' => 400];
                 }
                 
-                $uploadDir = ROOT_PATH . '/public/storage/canvases/' . $canvasId . '/chat/';
+                $stmt = $this->pdo->prepare("SELECT uuid FROM " . DB::TBL_CANVASES . " WHERE id = ?");
+                $stmt->execute([$canvasId]);
+                $canvasUuid = $stmt->fetchColumn();
+
+                $uploadDir = ROOT_PATH . '/storage/canvases/' . $canvasUuid . '/chat/';
                 if (!is_dir($uploadDir)) {
                     mkdir($uploadDir, 0755, true);
                 }
@@ -225,13 +234,22 @@ class ChatController
                         
                         $uploadResult = \App\Core\Helpers\Utils::uploadAndSanitizeImage($singleFile, $uploadDir, 25);
                         if ($uploadResult['success'] === true && !empty($uploadResult['file_name'])) {
-                            $attachments[] = '/public/storage/canvases/' . $canvasId . '/chat/' . $uploadResult['file_name'];
+                            $attachments[] = $uploadResult['file_name'];
                         }
                     }
                 }
             }
 
             $attachmentsJson = !empty($attachments) ? json_encode($attachments) : null;
+            
+            $safeAttachments = [];
+            foreach ($attachments as $att) {
+                if (strpos($att, '/public/') === 0) {
+                    $safeAttachments[] = $att;
+                } else {
+                    $safeAttachments[] = '/api.php?route=chat.attachment&canvas_uuid=' . $canvasUuid . '&file=' . urlencode(basename($att));
+                }
+            }
 
             // En lugar de guardar en MySQL inmediatamente, generamos un ID temporal
             $msgId = 'pending_' . uniqid();
@@ -249,7 +267,7 @@ class ChatController
                 'username' => $userInfo['username'] ?? 'Usuario',
                 'avatar' => $userInfo['profile_picture'] ?? null,
                 'message' => htmlspecialchars($messageText, ENT_QUOTES, 'UTF-8'),
-                'attachments' => $attachments,
+                'attachments' => $safeAttachments,
                 'created_at' => date('Y-m-d H:i:s')
             ];
 
@@ -347,5 +365,67 @@ class ChatController
         }
 
         return ['status' => 'success', 'message' => __('msg_message_reported')];
+    }
+
+    public function attachment($request)
+    {
+        $userId = $this->sessionManager->getActiveAccountId();
+        if (!$userId) {
+            http_response_code(401);
+            exit('Unauthorized');
+        }
+
+        $canvasUuid = $request['canvas_uuid'] ?? '';
+        $file = basename($request['file'] ?? '');
+
+        if (empty($canvasUuid) || empty($file)) {
+            http_response_code(400);
+            exit('Bad Request');
+        }
+
+        $stmt = $this->pdo->prepare("SELECT id, privacy, allow_chat, owner_id FROM " . DB::TBL_CANVASES . " WHERE uuid = ?");
+        $stmt->execute([$canvasUuid]);
+        $canvas = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$canvas) {
+            http_response_code(404);
+            exit('Not Found');
+        }
+        
+        $canvasId = (int)$canvas['id'];
+
+        $hasAccess = false;
+        if ($canvas['privacy'] === 'public') {
+            $hasAccess = true;
+        } else if ($canvas['owner_id'] == $userId) {
+            $hasAccess = true;
+        } else {
+            $stmt = $this->pdo->prepare("SELECT id FROM canvas_user_roles WHERE canvas_id = ? AND user_id = ? LIMIT 1");
+            $stmt->execute([$canvasId, $userId]);
+            if ($stmt->fetch()) {
+                $hasAccess = true;
+            }
+        }
+
+        if (!$hasAccess) {
+            http_response_code(403);
+            exit('Forbidden');
+        }
+
+        $filePath = ROOT_PATH . '/storage/canvases/' . $canvasUuid . '/chat/' . $file;
+        if (!file_exists($filePath)) {
+            http_response_code(404);
+            exit('File not found');
+        }
+
+        $mimeType = mime_content_type($filePath);
+        if (!$mimeType) $mimeType = 'application/octet-stream';
+        
+        header('Content-Type: ' . $mimeType);
+        header('Content-Length: ' . filesize($filePath));
+        header('Cache-Control: private, max-age=31536000');
+        
+        readfile($filePath);
+        exit;
     }
 }

@@ -160,6 +160,7 @@ if (!empty($canvasUuid)) {
     <div class="component-wrapper component-wrapper--full no-padding" 
          data-ref="design-wrapper" 
          data-canvas-id="<?php echo htmlspecialchars($canvasIntId); ?>"
+         data-canvas-uuid="<?php echo htmlspecialchars($canvasUuid); ?>"
          data-size="<?php echo htmlspecialchars($canvasSize); ?>" 
          data-palette="<?php echo htmlspecialchars($canvasPalette); ?>"
          data-privacy="<?php echo htmlspecialchars($canvasPrivacy); ?>"

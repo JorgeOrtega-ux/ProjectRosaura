@@ -6,7 +6,7 @@ $canCreate = in_array('create_backups', $userPerms);
 $canRestore = in_array('restore_backups', $userPerms);
 
 $backups = [];
-$backupDir = ROOT_PATH . '/storage/backups/';
+$backupDir = ROOT_PATH . '/storage/private/backups/';
 
 if (is_dir($backupDir)) {
     $files = scandir($backupDir);
