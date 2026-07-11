@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Api\Services;
+namespace App\Api\Services\Auth;
 
 use App\Core\Helpers\Utils;
 use App\Core\Helpers\GeoIpHelper;
@@ -21,6 +21,7 @@ use App\Core\System\SecurityConstants;
 use App\Core\System\CacheConstants;
 use App\Core\System\DatabaseConstants;
 use App\Core\System\SessionConstants;
+use App\Api\Services\Telemetry\TelemetryServices;
 
 class AuthServices {
     private $rateLimiter;

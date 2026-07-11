@@ -1,7 +1,9 @@
 <?php
-namespace App\Api\Controllers;
+namespace App\Api\Controllers\Stripe;
 
-use App\Api\Services\StripeServices;
+use App\Api\Controllers\BaseController;
+
+use App\Api\Services\Stripe\StripeServices;
 
 class StripeController extends BaseController {
 

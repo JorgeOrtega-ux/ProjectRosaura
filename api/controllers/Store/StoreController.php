@@ -1,7 +1,9 @@
 <?php
-namespace App\Api\Controllers;
+namespace App\Api\Controllers\Store;
 
-use App\Api\Services\StoreServices;
+use App\Api\Controllers\BaseController;
+
+use App\Api\Services\Store\StoreServices;
 
 class StoreController extends BaseController {
 

@@ -1,5 +1,7 @@
 <?php
-namespace App\Api\Controllers;
+namespace App\Api\Controllers\Chat;
+
+use App\Api\Controllers\BaseController;
 
 use App\Core\System\DatabaseConstants as DB;
 use App\Config\DatabaseManager;

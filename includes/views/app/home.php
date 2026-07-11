@@ -1,6 +1,6 @@
 <?php
 use App\Core\Container;
-use App\Api\Services\CanvasServices;
+use App\Api\Services\Canvas\CanvasServices;
 use App\Core\Interfaces\SessionManagerInterface;
 
 $container = new Container();

@@ -1,5 +1,5 @@
 <?php
-namespace App\Api\Services;
+namespace App\Api\Services\Store;
 
 use App\Core\Interfaces\SessionManagerInterface;
 use App\Core\Interfaces\StoreRepositoryInterface;

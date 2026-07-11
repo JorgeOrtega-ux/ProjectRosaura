@@ -1,7 +1,7 @@
 <?php
 // api/services/StripeServices.php
 
-namespace App\Api\Services;
+namespace App\Api\Services\Stripe;
 
 use App\Core\Interfaces\SessionManagerInterface;
 use App\Core\Interfaces\SubscriptionRepositoryInterface;

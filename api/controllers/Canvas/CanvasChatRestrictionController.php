@@ -1,6 +1,8 @@
 <?php
 // api/controllers/CanvasChatRestrictionController.php
-namespace App\Api\Controllers;
+namespace App\Api\Controllers\Canvas;
+
+use App\Api\Controllers\BaseController;
 
 use \App\Config\DatabaseManager;
 use \App\Core\System\DatabaseConstants;

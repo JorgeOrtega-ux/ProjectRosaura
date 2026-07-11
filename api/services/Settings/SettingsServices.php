@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Api\Services;
+namespace App\Api\Services\Settings;
 
 use App\Core\Helpers\Utils;
 use App\Core\Mail\Mailer;

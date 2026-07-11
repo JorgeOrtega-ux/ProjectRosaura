@@ -1,7 +1,9 @@
 <?php
-namespace App\Api\Controllers;
+namespace App\Api\Controllers\Search;
 
-use App\Api\Services\SearchServices;
+use App\Api\Controllers\BaseController;
+
+use App\Api\Services\Search\SearchServices;
 use App\Core\Interfaces\SessionManagerInterface;
 
 class SearchController extends BaseController {

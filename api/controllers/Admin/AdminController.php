@@ -1,7 +1,9 @@
 <?php
-namespace App\Api\Controllers;
+namespace App\Api\Controllers\Admin;
 
-use App\Api\Services\AdminServices;
+use App\Api\Controllers\BaseController;
+
+use App\Api\Services\Admin\AdminServices;
 
 class AdminController extends BaseController {
     

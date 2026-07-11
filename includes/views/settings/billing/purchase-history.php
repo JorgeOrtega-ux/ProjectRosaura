@@ -30,7 +30,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 <?php
                     global $container;
                     try {
-                        $stripeServices = $container->get(\App\Api\Services\StripeServices::class);
+                        $stripeServices = $container->get(\App\Api\Services\Stripe\StripeServices::class);
                         $response = $stripeServices->getPaymentHistory(['limit' => 20, 'offset' => 0]);
                         $history = $response['success'] ? $response['data'] : [];
                     } catch (\Throwable $e) {

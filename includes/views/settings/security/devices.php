@@ -1,7 +1,7 @@
 <?php
 if (session_status() === PHP_SESSION_NONE) session_start();
 global $container;
-$settingsServices = $container->get(\App\Api\Services\SettingsServices::class);
+$settingsServices = $container->get(\App\Api\Services\Settings\SettingsServices::class);
 $response = $settingsServices->getDevices();
 $devices = $response['success'] ? $response['devices'] : [];
 function parseUserAgentPHP($ua) {

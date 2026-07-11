@@ -1,6 +1,6 @@
 <?php
 // api/services/LocationServices.php
-namespace App\Api\Services;
+namespace App\Api\Services\Location;
 
 use Exception;
 use App\Core\Interfaces\LocationRepositoryInterface;

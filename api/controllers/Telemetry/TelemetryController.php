@@ -1,8 +1,8 @@
 <?php
-namespace App\Api\Controllers;
+namespace App\Api\Controllers\Telemetry;
 
 use App\Api\Controllers\BaseController;
-use App\Api\Services\TelemetryServices;
+use App\Api\Services\Telemetry\TelemetryServices;
 use App\Core\System\SessionManager;
 use App\Core\Helpers\Utils;
 use App\Core\System\Logger;

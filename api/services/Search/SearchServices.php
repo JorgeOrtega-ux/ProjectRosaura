@@ -1,7 +1,7 @@
 <?php
 // api/services/SearchServices.php
 
-namespace App\Api\Services;
+namespace App\Api\Services\Search;
 
 use App\Config\TypesenseManager;
 use App\Core\System\Logger;

@@ -106,7 +106,7 @@ register_shutdown_function(function () {
 use App\Core\Helpers\Utils; 
 use App\Core\System\Translator; 
 use App\Core\Container;
-use App\Api\Services\AuthServices;
+use App\Api\Services\Auth\AuthServices;
 use App\Core\Interfaces\UserPrefsManagerInterface;
 use App\Core\Interfaces\ServerConfigRepositoryInterface;
 use App\Core\Interfaces\UserRepositoryInterface;

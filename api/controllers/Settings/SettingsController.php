@@ -1,7 +1,9 @@
 <?php
-namespace App\Api\Controllers;
+namespace App\Api\Controllers\Settings;
 
-use App\Api\Services\SettingsServices;
+use App\Api\Controllers\BaseController;
+
+use App\Api\Services\Settings\SettingsServices;
 
 class SettingsController extends BaseController {
     

@@ -1,6 +1,6 @@
 <?php
 // api/services/CanvasServices.php
-namespace App\Api\Services;
+namespace App\Api\Services\Canvas;
 
 use Exception;
 use DateTime;
@@ -25,7 +25,7 @@ class CanvasServices {
     }
 
     private function getValidPalettes(): array {
-        $path = dirname(__DIR__, 2) . '/public/assets/data/palettes.json';
+        $path = dirname(__DIR__, 3) . '/public/assets/data/palettes.json';
         if (file_exists($path)) {
             $json = file_get_contents($path);
             $data = json_decode($json, true);
@@ -89,7 +89,7 @@ class CanvasServices {
                 $canvas['is_owner'] = ($canvas['owner_id'] === $currentUserId && $canvas['owner_id'] !== null);
                 
                 $thumbnailPath = "public/storage/thumbnails/canvas_" . $canvas['id'] . ".png";
-                $physicalPath = dirname(__DIR__, 2) . '/storage/public/thumbnails/canvas_' . $canvas['id'] . '.png';
+                $physicalPath = dirname(__DIR__, 3) . '/storage/public/thumbnails/canvas_' . $canvas['id'] . '.png';
                 $thumbnailUrl = null;
                 
                 if (file_exists($physicalPath)) {
@@ -130,7 +130,7 @@ class CanvasServices {
                 $canvas['privacy'] = 'public'; 
                 
                 $thumbnailPath = "public/storage/thumbnails/canvas_" . $canvas['id'] . ".png";
-                $physicalPath = dirname(__DIR__, 2) . '/storage/public/thumbnails/canvas_' . $canvas['id'] . '.png';
+                $physicalPath = dirname(__DIR__, 3) . '/storage/public/thumbnails/canvas_' . $canvas['id'] . '.png';
                 $thumbnailUrl = null;
                 
                 if (file_exists($physicalPath)) {
@@ -197,7 +197,7 @@ class CanvasServices {
                 }
                 
                 $thumbnailPath = "public/storage/thumbnails/canvas_" . $canvas['id'] . ".png";
-                $physicalPath = dirname(__DIR__, 2) . '/storage/public/thumbnails/canvas_' . $canvas['id'] . '.png';
+                $physicalPath = dirname(__DIR__, 3) . '/storage/public/thumbnails/canvas_' . $canvas['id'] . '.png';
                 $thumbnailUrl = null;
                 
                 if (file_exists($physicalPath)) {
@@ -935,7 +935,7 @@ class CanvasServices {
 
                 // Generar nuevo thumbnail físico de la imagen
                 try {
-                    $physicalPath = dirname(__DIR__, 2) . '/storage/public/thumbnails/canvas_' . $canvasId . '.png';
+                    $physicalPath = dirname(__DIR__, 3) . '/storage/public/thumbnails/canvas_' . $canvasId . '.png';
                     if (file_exists($physicalPath)) {
                         unlink($physicalPath);
                     }
@@ -966,7 +966,7 @@ class CanvasServices {
 
             if ($deleted) {
                 try {
-                    $physicalPath = dirname(__DIR__, 2) . '/storage/public/thumbnails/canvas_' . $canvas['id'] . '.png';
+                    $physicalPath = dirname(__DIR__, 3) . '/storage/public/thumbnails/canvas_' . $canvas['id'] . '.png';
                     if (file_exists($physicalPath)) {
                         unlink($physicalPath);
                     }
@@ -1097,7 +1097,7 @@ class CanvasServices {
             if ($deleted) {
                 try {
                     foreach ($canvasIds as $id) {
-                        $physicalPath = dirname(__DIR__, 2) . '/storage/public/thumbnails/canvas_' . $id . '.png';
+                        $physicalPath = dirname(__DIR__, 3) . '/storage/public/thumbnails/canvas_' . $id . '.png';
                         if (file_exists($physicalPath)) {
                             unlink($physicalPath);
                         }
@@ -1401,7 +1401,7 @@ class CanvasServices {
                 return ['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 403];
             }
 
-            $baseDir = dirname(__DIR__, 2) . '/storage/private/canvases/timelapses';
+            $baseDir = dirname(__DIR__, 3) . '/storage/private/canvases/timelapses';
             $filePath = $baseDir . '/canvas_' . $canvasId . '.jsonl';
 
             if (!file_exists($filePath) || filesize($filePath) === 0) {
@@ -1519,7 +1519,7 @@ class CanvasServices {
                 return ['success' => false, 'message' => __('err_no_timelapse_file'), 'http_code' => 404];
             }
 
-            $baseDir = dirname(__DIR__, 2) . '/storage/';
+            $baseDir = dirname(__DIR__, 3) . '/storage/';
             $filePath = $baseDir . ltrim($data['timelapse_file_path'], '/');
 
             if (!file_exists($filePath) || filesize($filePath) === 0) {
@@ -1625,7 +1625,7 @@ class CanvasServices {
                 }
             }
 
-            $uploadDir = dirname(__DIR__, 2) . '/storage/public/templates/';
+            $uploadDir = dirname(__DIR__, 3) . '/storage/public/templates/';
             if (!is_dir($uploadDir)) {
                 mkdir($uploadDir, 0755, true);
             }
@@ -1683,7 +1683,7 @@ class CanvasServices {
             
             if ($deleted) {
                 if ($filePath) {
-                    $physicalPath = dirname(__DIR__, 2) . '/' . str_replace('public/storage/', 'storage/public/', ltrim($filePath, '/'));
+                    $physicalPath = dirname(__DIR__, 3) . '/' . str_replace('public/storage/', 'storage/public/', ltrim($filePath, '/'));
                     if (file_exists($physicalPath)) {
                         unlink($physicalPath); 
                     }

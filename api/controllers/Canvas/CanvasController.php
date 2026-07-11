@@ -1,8 +1,10 @@
 <?php
 
-namespace App\Api\Controllers;
+namespace App\Api\Controllers\Canvas;
 
-use App\Api\Services\CanvasServices;
+use App\Api\Controllers\BaseController;
+
+use App\Api\Services\Canvas\CanvasServices;
 use App\Core\Interfaces\SessionManagerInterface;
 use App\Core\Security\TurnstileValidator;
 use App\Config\RedisCache;

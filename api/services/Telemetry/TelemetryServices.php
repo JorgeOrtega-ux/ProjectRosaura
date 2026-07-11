@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Api\Services;
+namespace App\Api\Services\Telemetry;
 
 use App\Config\RedisCache;
 use App\Core\System\Logger;

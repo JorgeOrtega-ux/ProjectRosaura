@@ -24,7 +24,7 @@ use App\Core\Helpers\Utils;
 use App\Core\Container;
 use App\Core\System\Logger;
 use App\Core\System\Translator;
-use App\Api\Services\AuthServices;
+use App\Api\Services\Auth\AuthServices;
 use App\Core\Interfaces\UserRepositoryInterface;
 use App\Core\Interfaces\ServerConfigRepositoryInterface;
 use App\Core\Routing\MiddlewarePipeline;
@@ -153,6 +153,7 @@ try {
     $serverConfig = $serverConfigRepo->getConfig();
 
 } catch (\Exception $e) {
+    file_put_contents(__DIR__ . '/debug_fatal_error.txt', date('Y-m-d H:i:s') . ' - ' . $e->getMessage() . "\n" . $e->getTraceAsString() . "\n\n", FILE_APPEND);
     http_response_code(500);
     echo json_encode(['success' => false, 'message_key' => 'error.database_offline']);
     exit;

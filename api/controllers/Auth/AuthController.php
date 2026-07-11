@@ -1,7 +1,9 @@
 <?php
-namespace App\Api\Controllers;
+namespace App\Api\Controllers\Auth;
 
-use App\Api\Services\AuthServices;
+use App\Api\Controllers\BaseController;
+
+use App\Api\Services\Auth\AuthServices;
 use App\Core\Security\TurnstileValidator;
 use App\Core\Helpers\Utils; 
 

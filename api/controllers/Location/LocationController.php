@@ -1,7 +1,9 @@
 <?php
-namespace App\Api\Controllers;
+namespace App\Api\Controllers\Location;
 
-use App\Api\Services\LocationServices;
+use App\Api\Controllers\BaseController;
+
+use App\Api\Services\Location\LocationServices;
 use App\Core\Interfaces\SessionManagerInterface;
 
 class LocationController extends BaseController {

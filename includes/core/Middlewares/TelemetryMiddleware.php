@@ -2,7 +2,7 @@
 namespace App\Core\Middlewares;
 
 use App\Core\Interfaces\MiddlewareInterface;
-use App\Api\Services\TelemetryServices;
+use App\Api\Services\Telemetry\TelemetryServices;
 use App\Core\System\SessionManager;
 use App\Core\Helpers\Utils;
 
