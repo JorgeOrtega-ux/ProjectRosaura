@@ -20,7 +20,7 @@ def get_perks_config():
     global PERKS_CONFIG
     if PERKS_CONFIG is None:
         try:
-            config_path = os.path.join(os.path.dirname(__file__), '..', 'config', 'perks.json')
+            config_path = os.path.join(os.path.dirname(__file__), '..', 'public', 'assets', 'data', 'perks.json')
             with open(config_path, 'r', encoding='utf-8') as f:
                 PERKS_CONFIG = json.load(f)
         except Exception as e:

@@ -151,7 +151,7 @@ class StoreServices {
         // Actualizar estado en Redis para el WebSocket Python
         try {
             if (isset($redis)) {
-                $perksConfigPath = __DIR__ . '/../../../config/Data/perks.json';
+                $perksConfigPath = __DIR__ . '/../../../public/assets/data/perks.json';
                 $perksConfig = [];
                 if (file_exists($perksConfigPath)) {
                     $perksConfig = json_decode(file_get_contents($perksConfigPath), true) ?: [];
