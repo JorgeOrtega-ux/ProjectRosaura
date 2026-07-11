@@ -10,6 +10,7 @@ import logging
 import math
 import uuid
 import shutil
+import mysql.connector
 from zlib import decompress
 from PIL import Image
 from datetime import datetime
@@ -363,7 +364,7 @@ def get_color(palette_id, index):
         
     return (255, 0, 255, 255)
 
-def get_db_connection():
+def get_db_connection_thumbnails():
     try:
         return mysql.connector.connect(
             host=DB_HOST,
@@ -534,7 +535,7 @@ def thumbnails_thread():
             pending_canvases = r.smembers("canvases:pending_snapshots")
             
             if pending_canvases:
-                db_conn = get_db_connection()
+                db_conn = get_db_connection_thumbnails()
                 if db_conn:
                     cursor = db_conn.cursor()
                     

@@ -15,6 +15,7 @@ import urllib.parse
 import requests
 import pymysql
 import typesense
+import logging
 from dotenv import load_dotenv
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -109,8 +110,7 @@ def get_redis_connection():
             'decode_responses': True,
             'socket_timeout': 30,
             'socket_connect_timeout': 10,
-            'socket_keepalive': True,
-            'retry_on_timeout': True
+            'socket_keepalive': True
         }
         if REDIS_PASS:
             client_args['password'] = REDIS_PASS
@@ -587,11 +587,6 @@ REDIS_HOST = os.getenv('REDIS_HOST', 'redis')
 REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
 REDIS_PASSWORD = os.getenv('REDIS_PASS', None)
 
-DB_HOST = os.getenv('DB_TELEMETRY_HOST', 'db')
-DB_NAME = os.getenv('DB_TELEMETRY_NAME', 'db_telemetry')
-DB_USER = os.getenv('DB_TELEMETRY_USER', 'system_web_executor')
-DB_PASS = os.getenv('DB_TELEMETRY_PASSWORD', 'secret')
-
 QUEUES = {
     'telemetry_api_latency': 'api_latency',
     'telemetry_pageviews': 'pageviews',
@@ -615,8 +610,7 @@ class TelemetryWorker:
                 'decode_responses': True,
                 'socket_timeout': 30,
                 'socket_connect_timeout': 10,
-                'socket_keepalive': True,
-                'retry_on_timeout': True
+                'socket_keepalive': True
             }
             if REDIS_PASSWORD:
                 client_args['password'] = REDIS_PASSWORD
@@ -633,10 +627,10 @@ class TelemetryWorker:
             return
         try:
             self.db_conn = mysql.connector.connect(
-                host=DB_HOST,
-                database=DB_NAME,
-                user=DB_USER,
-                password=DB_PASS
+                host=DB_TEL_HOST,
+                database=DB_TEL_NAME,
+                user=DB_TEL_USER,
+                password=DB_TEL_PASS
             )
         except Error as e:
             Logger.error(f"Telemetry database connection protocol failure: {e}")
@@ -785,15 +779,16 @@ def typesense_thread():
             logger.error(f"Critical error creating Typesense schema: {e}")
             return
 
-    logger.info(f"Starting sync loop (every {SYNC_INTERVAL} seconds)...")
+    logger.info(f"Starting sync loop (every {TS_SYNC_INTERVAL} seconds)...")
 
     while True:
         try:
+            db_canvases = os.getenv('DB_CANVASES_NAME', 'db_canvases')
             connection = pymysql.connect(
                 host=DB_HOST,
                 user=DB_USER,
                 password=DB_PASS,
-                database=DB_NAME,
+                database=db_canvases,
                 cursorclass=pymysql.cursors.DictCursor
             )
 
