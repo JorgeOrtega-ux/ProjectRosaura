@@ -259,6 +259,17 @@ export class SpaRouter {
         if (this.outlet) {
             this.outlet.innerHTML = html;
             this.outlet.scrollTop = 0;
+            
+            const scripts = this.outlet.querySelectorAll('script');
+            scripts.forEach(oldScript => {
+                if (oldScript.type && oldScript.type !== 'text/javascript' && oldScript.type !== 'module') return;
+                const newScript = document.createElement('script');
+                Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+                newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+                if (oldScript.parentNode) {
+                    oldScript.parentNode.replaceChild(newScript, oldScript);
+                }
+            });
         }
     }
 

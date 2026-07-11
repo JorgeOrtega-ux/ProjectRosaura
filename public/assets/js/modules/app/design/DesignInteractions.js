@@ -12,6 +12,10 @@ export const DesignInteractions = {
         document.addEventListener('click', this.handleClickBound);
         window.addEventListener('resize', this.handleResizeBound);
 
+        document.addEventListener('touchstart', this.handleTouchStartBound, { passive: false });
+        document.addEventListener('touchmove', this.handleTouchMoveBound, { passive: false });
+        document.addEventListener('touchend', this.handleTouchEndBound);
+
         if (this.fileInput) {
             this.fileInput.addEventListener('change', this.handleFileUploadBound);
         }
@@ -440,6 +444,243 @@ export const DesignInteractions = {
 
         this.calculateHoverPixel(e.clientX, e.clientY);
         this.requestRender();
+    },
+
+    handleTouchStart(e) {
+        const target = e.target.closest('[data-ref="design-canvas"]');
+        if (!target || this.isResizeLocked) return;
+
+        // Si son 2 dedos, iniciamos Pinch-to-Zoom
+        if (e.touches.length === 2) {
+            e.preventDefault();
+            this.isPinching = true;
+            this.isDragging = false;
+            this.templateInteraction = null;
+            this.initialPinchDistance = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+            this.initialScale = this.transform.scale;
+            return;
+        }
+
+        // Si es 1 dedo
+        if (e.touches.length === 1) {
+            // Permitimos el scroll por defecto a menos que determinemos que estamos arrastrando el canvas o plantillas
+            this.touchStartTime = Date.now();
+            this.touchStartX = e.touches[0].clientX;
+            this.touchStartY = e.touches[0].clientY;
+            this.lastMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+
+            const exact = this.getExactBoardCoords(this.touchStartX, this.touchStartY);
+            if (exact && !this.isSpectator && !this.timelapseActive && !this.isResetLocked) {
+                let hit = null;
+                if (typeof this.checkTemplateHit === 'function') {
+                    hit = this.checkTemplateHit(exact.x, exact.y);
+                }
+                
+                if (hit) {
+                    e.preventDefault(); // Prevenir scroll nativo
+                    if (this.liveShareStatus === 'spectator' && this.liveTemplateId === this.activeTemplateId) {
+                        showMessage(__('err_only_owner_moves') || 'Solo el creador puede moverla', 'warning');
+                        return;
+                    }
+                    const tpl = this.templates.find(t => t.id === this.activeTemplateId);
+                    this.templateInteraction = {
+                        type: hit,
+                        startX: exact.x,
+                        startY: exact.y,
+                        origX: tpl.x,
+                        origY: tpl.y,
+                        origW: tpl.w,
+                        origH: tpl.h
+                    };
+                    return;
+                }
+            }
+            
+            // Si no hay plantilla, asumimos Drag para desplazar el canvas por defecto
+            this.isDragging = true;
+            this.touchHasMoved = false;
+        }
+    },
+
+    handleTouchMove(e) {
+        if (this.isResizeLocked) return;
+
+        if (this.isPinching && e.touches.length === 2) {
+            e.preventDefault(); // Prevenir scroll/zoom nativo del navegador
+            const currentDistance = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+            
+            // Calcular el centro del pinch
+            const centerX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+            const centerY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+            const rect = this.canvas.getBoundingClientRect();
+            const mouseX = centerX - rect.left;
+            const mouseY = centerY - rect.top;
+
+            const scaleRatio = currentDistance / this.initialPinchDistance;
+            let newScale = this.initialScale * scaleRatio;
+            newScale = Math.max(0.05, Math.min(newScale, 40));
+
+            this.transform.x = mouseX - (mouseX - this.transform.x) * (newScale / this.transform.scale);
+            this.transform.y = mouseY - (mouseY - this.transform.y) * (newScale / this.transform.scale);
+            this.transform.scale = newScale;
+
+            if (typeof this.limitBounds === 'function') this.limitBounds();
+            this.requestRender();
+            return;
+        }
+
+        if (this.templateInteraction && e.touches.length === 1) {
+            e.preventDefault();
+            const exact = this.getExactBoardCoords(e.touches[0].clientX, e.touches[0].clientY);
+            if (!exact) return;
+
+            const tpl = this.templates.find(t => t.id === this.activeTemplateId);
+            const dx = exact.x - this.templateInteraction.startX;
+            const dy = exact.y - this.templateInteraction.startY;
+
+            if (this.templateInteraction.type === 'move') {
+                let newX = Math.round(this.templateInteraction.origX + dx);
+                let newY = Math.round(this.templateInteraction.origY + dy);
+                newX = Math.max(0, Math.min(newX, this.boardWidth - tpl.w));
+                newY = Math.max(0, Math.min(newY, this.boardHeight - tpl.h));
+                tpl.x = newX;
+                tpl.y = newY;
+            } else {
+                const aspect = this.templateInteraction.origW / this.templateInteraction.origH;
+                let newW, newH;
+                if (this.templateInteraction.type === 'resize-br') {
+                    newW = Math.round(this.templateInteraction.origW + dx);
+                    let maxW = this.boardWidth - this.templateInteraction.origX;
+                    let maxW_H = (this.boardHeight - this.templateInteraction.origY) * aspect;
+                    newW = Math.max(20, Math.min(newW, maxW, maxW_H));
+                    newH = Math.round(newW / aspect);
+                    tpl.w = newW; tpl.h = newH;
+                } else if (this.templateInteraction.type === 'resize-tl') {
+                    newW = Math.round(this.templateInteraction.origW - dx);
+                    let maxW = this.templateInteraction.origX + this.templateInteraction.origW;
+                    let maxW_H = (this.templateInteraction.origY + this.templateInteraction.origH) * aspect;
+                    newW = Math.max(20, Math.min(newW, maxW, maxW_H));
+                    newH = Math.round(newW / aspect);
+                    tpl.w = newW; tpl.h = newH;
+                    tpl.x = this.templateInteraction.origX + this.templateInteraction.origW - newW;
+                    tpl.y = this.templateInteraction.origY + this.templateInteraction.origH - newH;
+                } else if (this.templateInteraction.type === 'resize-tr') {
+                    newW = Math.round(this.templateInteraction.origW + dx);
+                    let maxW = this.boardWidth - this.templateInteraction.origX;
+                    let maxW_H = (this.templateInteraction.origY + this.templateInteraction.origH) * aspect;
+                    newW = Math.max(20, Math.min(newW, maxW, maxW_H));
+                    newH = Math.round(newW / aspect);
+                    tpl.w = newW; tpl.h = newH;
+                    tpl.y = this.templateInteraction.origY + this.templateInteraction.origH - newH;
+                } else if (this.templateInteraction.type === 'resize-bl') {
+                    newW = Math.round(this.templateInteraction.origW - dx);
+                    let maxW = this.templateInteraction.origX + this.templateInteraction.origW;
+                    let maxW_H = (this.boardHeight - this.templateInteraction.origY) * aspect;
+                    newW = Math.max(20, Math.min(newW, maxW, maxW_H));
+                    newH = Math.round(newW / aspect);
+                    tpl.w = newW; tpl.h = newH;
+                    tpl.x = this.templateInteraction.origX + this.templateInteraction.origW - newW;
+                }
+            }
+
+            if (this.liveShareStatus === 'owner' && this.activeTemplateId === this.liveTemplateId) {
+                if (this.uiLiveInputX) {
+                    this.uiLiveInputX.setAttribute('data-val', tpl.x);
+                    this.uiLiveInputX.textContent = tpl.x;
+                }
+                if (this.uiLiveInputY) {
+                    this.uiLiveInputY.setAttribute('data-val', tpl.y);
+                    this.uiLiveInputY.textContent = tpl.y;
+                }
+            }
+            this.requestRender();
+            return;
+        }
+
+        if (this.isDragging && e.touches.length === 1) {
+            const dx = e.touches[0].clientX - this.lastMouse.x;
+            const dy = e.touches[0].clientY - this.lastMouse.y;
+            
+            // Umbral mínimo de movimiento para empezar a prevenir el scroll nativo y considerar que se arrastró
+            if (!this.touchHasMoved) {
+                const totalDist = Math.hypot(e.touches[0].clientX - this.touchStartX, e.touches[0].clientY - this.touchStartY);
+                if (totalDist > 8) {
+                    this.touchHasMoved = true;
+                }
+            }
+
+            if (this.touchHasMoved) {
+                e.preventDefault(); // Ya estamos arrastrando el canvas, prevenir refresh o scroll del móvil
+                this.transform.x += dx;
+                this.transform.y += dy;
+                this.lastMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+                
+                if (typeof this.limitBounds === 'function') this.limitBounds();
+                this.requestRender();
+            }
+        }
+    },
+
+    handleTouchEnd(e) {
+        if (this.isPinching) {
+            if (e.touches.length < 2) {
+                this.isPinching = false;
+                this.isDragging = false; 
+            }
+            return;
+        }
+
+        if (this.templateInteraction) {
+            this.templateInteraction = null;
+            this.requestRender();
+            if (this.liveShareStatus === 'owner' && this.activeTemplateId === this.liveTemplateId) {
+                if (typeof this.emitLiveImageUpdate === 'function') {
+                    this.emitLiveImageUpdate();
+                }
+            }
+            return;
+        }
+
+        if (this.isDragging) {
+            this.isDragging = false;
+            
+            // Detectar Tap (Toque rápido y sin apenas movimiento)
+            const touchDuration = Date.now() - this.touchStartTime;
+            if (!this.touchHasMoved && touchDuration < 300) {
+                // Es un Tap válido. Interpretar como selección de píxel si aplica.
+                if (!this.isSpectator && !this.timelapseActive && !this.isResetLocked && !this.isResizeLocked) {
+                    const coords = this.getBoardCoords(this.touchStartX, this.touchStartY);
+                    if (coords) {
+                        const key = `${coords.x},${coords.y}`;
+                        if (this.selectedPixels.has(key)) {
+                            this.selectionMode = 'remove';
+                            this.selectedPixels.delete(key);
+                        } else {
+                            this.selectionMode = 'add';
+                            const maxBalance = this.getMaxBalance();
+                            if (this.selectedPixels.size < maxBalance) {
+                                this.selectedPixels.add(key);
+                            } else {
+                                showMessage(__('err_pixel_limit')?.replace(':limit', maxBalance === Infinity ? '∞' : maxBalance) || 'Límite alcanzado', 'warning');
+                            }
+                        }
+                        this.updateSelectionUI();
+                        
+                        // Mostrar las coordenadas tocadas
+                        this.hoveredPixel = coords;
+                        this.setCanvasBadge('coords', 'my_location', `${coords.x} , ${coords.y}`, 'left');
+                        
+                        this.requestRender();
+                    }
+                }
+            }
+        }
     },
 
     getBoardCoords(clientX, clientY) {

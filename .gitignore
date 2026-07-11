@@ -20,10 +20,11 @@ error_log
 /storage/private/logs/
 !/storage/private/logs/.gitkeep
 
-# === TIMELAPSES DE LIENZOS (ARCHIVOS FÍSICOS) ===
-storage/private/canvases/timelapses/*.jsonl
-!storage/private/canvases/timelapses/.htaccess
-!storage/private/canvases/timelapses/.gitkeep
+# === CARPETA DE LIENZOS (CANVASES) PRIVADOS ===
+/storage/private/canvases/
+!/storage/private/canvases/.gitkeep
+
+/storage/canvases/
 
 # === IGNORAR COPIAS DE SEGURIDAD DE LA BASE DE DATOS ===
 storage/private/backups/*.sql

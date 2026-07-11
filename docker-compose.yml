@@ -151,6 +151,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      typesense:
+        condition: service_started
     env_file:
       - .env
     environment:
@@ -158,34 +160,13 @@ services:
     networks:
       - rosaura_network
 
-  worker_telemetry:
+  worker_persistence:
     build:
       context: .
       dockerfile: docker/python/Dockerfile.worker
-    container_name: rosaura_worker_telemetry
+    container_name: rosaura_worker_persistence
     restart: always
-    command: python -u scripts/worker_telemetry.py
-    volumes:
-      - .:/app
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    env_file:
-      - .env
-    environment:
-      - TZ=${APP_TIMEZONE:-UTC}
-    networks:
-      - rosaura_network
-
-  worker_canvas_persistence:
-    build:
-      context: .
-      dockerfile: docker/python/Dockerfile.worker
-    container_name: rosaura_worker_canvas_persistence
-    restart: always
-    command: python -u scripts/worker_canvas_persistence.py
+    command: python -u scripts/worker_persistence.py
     volumes:
       - .:/app
       - ./storage/private/canvases/timelapses:/app/storage/private/canvases/timelapses
@@ -201,34 +182,13 @@ services:
     networks:
       - rosaura_network
 
-  worker_chat_persistence:
+  worker_canvas_jobs:
     build:
       context: .
       dockerfile: docker/python/Dockerfile.worker
-    container_name: rosaura_worker_chat_persistence
+    container_name: rosaura_worker_canvas_jobs
     restart: always
-    command: python -u scripts/worker_chat_persistence.py
-    volumes:
-      - .:/app
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    env_file:
-      - .env
-    environment:
-      - TZ=${APP_TIMEZONE:-UTC}
-    networks:
-      - rosaura_network
-
-  worker_canvas_thumbnails:
-    build:
-      context: .
-      dockerfile: docker/python/Dockerfile.worker
-    container_name: rosaura_worker_canvas_thumbnails
-    restart: always
-    command: python -u scripts/worker_canvas_thumbnails.py
+    command: python -u scripts/worker_canvas_jobs.py
     volumes:
       - .:/app
     depends_on:
@@ -241,49 +201,6 @@ services:
     environment:
       - TZ=${APP_TIMEZONE:-UTC}
       - PALETTES_FILE_PATH=/app/public/assets/data/palettes.json
-    networks:
-      - rosaura_network
-
-  worker_canvas_operations:
-    build:
-      context: .
-      dockerfile: docker/python/Dockerfile.worker
-    container_name: rosaura_worker_canvas_operations
-    restart: always
-    command: python -u scripts/worker_canvas_operations.py
-    volumes:
-      - .:/app
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    env_file:
-      - .env
-    environment:
-      - TZ=${APP_TIMEZONE:-UTC}
-    networks:
-      - rosaura_network
-
-  worker_typesense_sync:
-    build:
-      context: .
-      dockerfile: docker/python/Dockerfile.worker
-    container_name: rosaura_worker_typesense_sync
-    restart: always
-    command: python -u scripts/worker_typesense_sync.py
-    volumes:
-      - .:/app
-    depends_on:
-      db:
-        condition: service_healthy
-      typesense:
-        # Cambiado a service_started
-        condition: service_started
-    env_file:
-      - .env
-    environment:
-      - TZ=${APP_TIMEZONE:-UTC}
     networks:
       - rosaura_network
 

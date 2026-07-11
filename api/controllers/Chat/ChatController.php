@@ -115,7 +115,7 @@ class ChatController
                             if (strpos($att, '/public/') === 0) {
                                 $safeAttachments[] = $att;
                             } else {
-                                $safeAttachments[] = '/api.php?route=chat.attachment&canvas_uuid=' . $canvasUuid . '&file=' . urlencode(basename($att));
+                                $safeAttachments[] = '/api/index.php?route=chat.attachment&canvas_uuid=' . $canvasUuid . '&file=' . urlencode(basename($att));
                             }
                         }
                         $message['attachments'] = $safeAttachments;
@@ -247,7 +247,7 @@ class ChatController
                 if (strpos($att, '/public/') === 0) {
                     $safeAttachments[] = $att;
                 } else {
-                    $safeAttachments[] = '/api.php?route=chat.attachment&canvas_uuid=' . $canvasUuid . '&file=' . urlencode(basename($att));
+                    $safeAttachments[] = '/api/index.php?route=chat.attachment&canvas_uuid=' . $canvasUuid . '&file=' . urlencode(basename($att));
                 }
             }
 
@@ -370,10 +370,6 @@ class ChatController
     public function attachment($request)
     {
         $userId = $this->sessionManager->getActiveAccountId();
-        if (!$userId) {
-            http_response_code(401);
-            exit('Unauthorized');
-        }
 
         $canvasUuid = $request['canvas_uuid'] ?? '';
         $file = basename($request['file'] ?? '');
@@ -395,11 +391,15 @@ class ChatController
         $canvasId = (int)$canvas['id'];
 
         $hasAccess = false;
-        if ($canvas['privacy'] === 'public') {
+        
+        $userPermissions = $_SESSION['user_permissions'] ?? [];
+        $isAdmin = in_array('access_admin_panel', $userPermissions);
+
+        if ($canvas['privacy'] !== 'private' || $isAdmin) {
             $hasAccess = true;
-        } else if ($canvas['owner_id'] == $userId) {
+        } else if ($userId && $canvas['owner_id'] == $userId) {
             $hasAccess = true;
-        } else {
+        } else if ($userId) {
             $stmt = $this->pdo->prepare("SELECT id FROM canvas_user_roles WHERE canvas_id = ? AND user_id = ? LIMIT 1");
             $stmt->execute([$canvasId, $userId]);
             if ($stmt->fetch()) {
@@ -408,8 +408,13 @@ class ChatController
         }
 
         if (!$hasAccess) {
-            http_response_code(403);
-            exit('Forbidden');
+            if (!$userId) {
+                http_response_code(401);
+                exit('Unauthorized');
+            } else {
+                http_response_code(403);
+                exit('Forbidden');
+            }
         }
 
         $filePath = ROOT_PATH . '/storage/canvases/' . $canvasUuid . '/chat/' . $file;
@@ -420,6 +425,11 @@ class ChatController
 
         $mimeType = mime_content_type($filePath);
         if (!$mimeType) $mimeType = 'application/octet-stream';
+        
+        // Limpiar cualquier salida previa que pueda corromper la imagen
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
         
         header('Content-Type: ' . $mimeType);
         header('Content-Length: ' . filesize($filePath));

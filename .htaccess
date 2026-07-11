@@ -26,6 +26,9 @@
     RewriteCond %{REQUEST_FILENAME} -f
     RewriteRule ^ - [L]
 
+    # 4.5 Alias for api.php compatibility
+    RewriteRule ^api\.php$ api/index.php [QSA,L]
+
     # 5. Cualquier otra petición (incluyendo la raíz y las rutas SPA) va al index.php
     RewriteRule ^(.*)$ public/index.php [QSA,L]
 </IfModule>

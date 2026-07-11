@@ -11,6 +11,10 @@ export class WebSocketManager {
         this.canvasId = null;
         this.callbacks = {};
         this.isIntentionalDisconnect = false;
+
+        this.heartbeatIntervalId = null;
+        this.visibilityHandler = this.handleVisibilityChange.bind(this);
+        document.addEventListener('visibilitychange', this.visibilityHandler);
     }
 
     connect(canvasId, ticket = null) {
@@ -31,6 +35,7 @@ export class WebSocketManager {
             console.info(`[DEBUG WS] Conectado a la sala del lienzo: ${this.canvasId}`);
             this.reconnectAttempts = 0; 
             this.trigger('open'); // Notifica al frontend
+            this.startHeartbeat();
         };
 
         this.ws.onmessage = (event) => {
@@ -45,6 +50,7 @@ export class WebSocketManager {
 
         this.ws.onclose = (event) => {
             console.warn(`[DEBUG WS] Conexión cerrada. Código: ${event.code}, Razón: ${event.reason}`);
+            this.stopHeartbeat();
             
             // Detección de Desalojo por QoS (Servidor Python envía 4001)
             if (event.code === 4001) {
@@ -104,9 +110,37 @@ export class WebSocketManager {
 
     disconnect() {
         this.isIntentionalDisconnect = true;
+        this.stopHeartbeat();
+        document.removeEventListener('visibilitychange', this.visibilityHandler);
         if (this.ws) {
             this.ws.close();
             this.ws = null;
+        }
+    }
+
+    startHeartbeat() {
+        this.stopHeartbeat();
+        this.heartbeatIntervalId = setInterval(() => {
+            if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                this.ws.send(JSON.stringify({ type: 'ping' }));
+            }
+        }, 25000); // 25 segundos
+    }
+
+    stopHeartbeat() {
+        if (this.heartbeatIntervalId) {
+            clearInterval(this.heartbeatIntervalId);
+            this.heartbeatIntervalId = null;
+        }
+    }
+
+    handleVisibilityChange() {
+        if (document.visibilityState === 'visible') {
+            if (!this.isIntentionalDisconnect && (!this.ws || this.ws.readyState !== WebSocket.OPEN)) {
+                console.warn('[DEBUG WS] Socket cerrado en segundo plano. Forzando reconexión inmediata.');
+                this.reconnectAttempts = 0;
+                this.handleReconnect();
+            }
         }
     }
 }

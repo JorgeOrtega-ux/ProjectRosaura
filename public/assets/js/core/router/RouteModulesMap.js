@@ -12,6 +12,8 @@ export const RouteModulesMap = {
 
     '/design': { path: './modules/app/design/DesignController.js', className: 'DesignController', skeletonType: 'layout-basic' },
     
+    '/canvases/chat-viewer': { path: './modules/app/canvases/ChatViewerController.js', className: 'ChatViewerController', skeletonType: 'layout-basic' },
+    
     // ---- MÓDULOS DE TIENDA ----
     '/store/coins': { path: './modules/store/StoreController.js', className: 'StoreController', skeletonType: 'layout-grid' },
     '/store/content': { path: './modules/store/StoreController.js', className: 'StoreController', skeletonType: 'layout-grid' },

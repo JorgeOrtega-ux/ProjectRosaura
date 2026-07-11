@@ -100,6 +100,10 @@ class DesignController {
         this.handleClickBound = this.handleClick.bind(this);
         this.handleFileUploadBound = this.handleFileUpload.bind(this);
         this.renderBound = this.render.bind(this);
+
+        this.handleTouchStartBound = this.handleTouchStart.bind(this);
+        this.handleTouchMoveBound = this.handleTouchMove.bind(this);
+        this.handleTouchEndBound = this.handleTouchEnd.bind(this);
     }
 
     setCanvasBadge(id, icon, text, position = 'left') {
@@ -308,6 +312,10 @@ class DesignController {
         document.removeEventListener('keydown', this.handleKeyDownBound);
         document.removeEventListener('click', this.handleClickBound);
         window.removeEventListener('resize', this.handleResizeBound);
+        
+        document.removeEventListener('touchstart', this.handleTouchStartBound);
+        document.removeEventListener('touchmove', this.handleTouchMoveBound);
+        document.removeEventListener('touchend', this.handleTouchEndBound);
         
         if (this.fileInput) {
             this.fileInput.removeEventListener('change', this.handleFileUploadBound);

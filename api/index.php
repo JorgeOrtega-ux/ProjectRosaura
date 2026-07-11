@@ -187,7 +187,9 @@ if (!function_exists('__')) {
 }
 
 $requestToken = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
-if (!Utils::validateCSRFToken($requestToken, $sessionManager)) {
+$isChatAttachment = ($_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['route'] ?? '') === 'chat.attachment');
+
+if (!$isChatAttachment && !Utils::validateCSRFToken($requestToken, $sessionManager)) {
     Logger::security("CSRF validation failed.", 'warning', ['ip' => Utils::getIpAddress(), 'token_provided' => $requestToken]);
     http_response_code(403);
     echo json_encode(['success' => false, 'message_key' => 'error.invalid_csrf_token']);
@@ -205,6 +207,11 @@ if (strpos($contentType, 'multipart/form-data') !== false) {
         $inputJSON = file_get_contents('php://input');
         $input = json_decode($inputJSON, true) ?? [];
     }
+}
+
+// Ensure GET parameters are merged into input so routes like chat.attachment can be picked up
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    $input = array_merge($input, $_GET);
 }
 
 $route = $input['route'] ?? '';

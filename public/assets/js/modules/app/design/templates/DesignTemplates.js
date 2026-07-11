@@ -369,12 +369,35 @@ export const DesignTemplates = {
         const btn = document.querySelector(`[data-action="deleteServerTemplate"][data-id="${id}"]`);
         if (btn) btn.classList.add('disabled-interactive');
 
+        let templateFilePath = null;
+        if (btn && btn.parentElement) {
+            const img = btn.parentElement.querySelector('img');
+            if (img) templateFilePath = img.getAttribute('data-url');
+        }
+
         try {
             const response = await this.api.post(ApiRoutes.Canvases.DeleteTemplate, { id: id }, this.abortController.signal);
             if (response.aborted) return;
             
             if (response.success) {
                 showMessage(response.message, 'success');
+
+                if (templateFilePath) {
+                    if (this.liveShareStatus === 'owner' && this.liveTemplateId === templateFilePath) {
+                        if (typeof this.stopLiveShare === 'function') {
+                            this.stopLiveShare();
+                        }
+                    }
+                    if (this.templates.find(t => t.id === templateFilePath)) {
+                        this.templates = this.templates.filter(t => t.id !== templateFilePath);
+                        if (this.activeTemplateId === templateFilePath) {
+                            this.activeTemplateId = null;
+                        }
+                        this.updateTemplateUI();
+                        this.requestRender();
+                    }
+                }
+
                 await this.loadUserLibrary();
             } else {
                 showMessage(response.message, 'error');
@@ -450,6 +473,13 @@ export const DesignTemplates = {
 
     deleteTemplate() {
         if (!this.activeTemplateId) return;
+
+        if (this.liveShareStatus === 'owner' && this.liveTemplateId === this.activeTemplateId) {
+            if (typeof this.stopLiveShare === 'function') {
+                this.stopLiveShare();
+            }
+        }
+
         this.templates = this.templates.filter(t => t.id !== this.activeTemplateId);
         this.activeTemplateId = null;
         this.updateTemplateUI();

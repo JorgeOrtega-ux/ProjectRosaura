@@ -272,6 +272,15 @@ export class DesignChat {
                 if (msgId && indexStr) {
                     try {
                         const index = parseInt(indexStr, 10);
+                        
+                        const msgEl = document.querySelector(`.chat-message[data-message-id="${msgId}"]`);
+                        if (msgEl) {
+                            const imgs = Array.from(msgEl.querySelectorAll('.chat-attachment-item img')).map(img => img.src);
+                            if (imgs.length > 0) {
+                                sessionStorage.setItem('chat_viewer_images_' + msgId, JSON.stringify(imgs));
+                            }
+                        }
+
                         if (window.spaRouter) {
                             window.spaRouter.navigate(`/canvases/chat-viewer?canvas=${canvasUuid}&msg=${msgId}&idx=${index}`);
                         } else {
@@ -681,7 +690,7 @@ export class DesignChat {
             // Show up to 4 preview items
             const displayCount = Math.min(count, 4);
             const fullUrls = msg.attachments.map(a => {
-                if (a.startsWith('/api.php?route=chat.attachment')) {
+                if (a.startsWith('/api/index.php?route=chat.attachment')) {
                     return (window.AppBasePath || '') + a;
                 }
                 return (window.AppBasePath || '') + a;
@@ -689,12 +698,21 @@ export class DesignChat {
             
             for (let i = 0; i < displayCount; i++) {
                 const url = fullUrls[i];
+                
+                let extractedUuid = this.canvasUuid;
+                if (!extractedUuid || extractedUuid === 'null') {
+                    const match = url.match(/canvas_uuid=([^&]+)/);
+                    if (match) {
+                        extractedUuid = match[1];
+                    }
+                }
+                
                 let overlay = '';
                 if (i === 3 && count > 4) {
                     overlay = `<div class="chat-attachment-item-overlay">+${count - 4}</div>`;
                 }
                 attachmentsHtml += `
-                <div class="chat-attachment-item" data-action="openChatImageViewer" data-message-id="${msg.id}" data-index="${i}" data-canvas-uuid="${this.canvasUuid}">
+                <div class="chat-attachment-item" data-action="openChatImageViewer" data-message-id="${msg.id}" data-index="${i}" data-canvas-uuid="${extractedUuid}">
                     <img src="${url}" loading="lazy" />
                     ${overlay}
                 </div>
