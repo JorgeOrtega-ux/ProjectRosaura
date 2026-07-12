@@ -31,7 +31,7 @@ try {
 } catch (\Exception $e) {}
 
 if (!$canvasId) {
-    echo "<div class='view-content'><p>Lienzo no encontrado.</p></div>";
+    echo "<div class='view-content'><p>" . __('err_canvas_not_found') . "</p></div>";
     return;
 }
 
@@ -53,7 +53,7 @@ if ($roleId) {
             $isEdit = true;
             $roleData = $role;
         } else {
-            echo "<div class='view-content'><p>Rol no encontrado o no pertenece a este lienzo.</p></div>";
+            echo "<div class='view-content'><p>" . __('err_role_not_found') . "</p></div>";
             return;
         }
     } catch (\Exception $e) {}
@@ -106,7 +106,7 @@ if (trim($rawName) !== '') {
             <button class="component-button component-button--icon component-button--h40" data-nav="<?php echo $backUrl; ?>" data-tooltip="<?php echo __('btn_back') ?: 'Volver'; ?>" data-position="bottom">
                 <span class="material-symbols-rounded">arrow_back</span>
             </button>
-            <h1 class="component-top-title" style="margin-left: 10px;" data-ref="builderTitle"><?php echo $isEdit ? (__('admin_edit_role') ?: 'Editar Rol') : (__('admin_role_builder') ?: 'Crear Rol'); ?></h1>
+            <h1 class="component-top-title" data-ref="builderTitle"><?php echo $isEdit ? (__('admin_edit_role') ?: 'Editar Rol') : (__('admin_role_builder') ?: 'Crear Rol'); ?></h1>
             <?php if ($isSystemRole): ?>
             <h1 class="component-top-title" data-ref="systemIndicator"><?php echo __('admin_role_system_limited_edit') ?: '(Rol del Sistema)'; ?></h1>
             <?php endif; ?>

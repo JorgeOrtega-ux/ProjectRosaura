@@ -200,7 +200,7 @@ $showScheduledShrinkWarning = $scheduledWidth < $currWidth;
                                                 $isAllowed = $canManageOfficial || ($ownerTier >= $requiredTier);
                                                 $disabledClass = $isAllowed ? '' : 'disabled-interactive';
                                                 $action = $isAllowed ? 'selectValue' : '';
-                                                $lockIcon = $isAllowed ? '' : '<span class="material-symbols-rounded" style="font-size: 14px; margin-left: 6px; color: #ff8c00;">lock</span>';
+                                                $lockIcon = $isAllowed ? '' : '<span class="material-symbols-rounded">lock</span>';
                                                 $activeClass = ((string)$scheduledSize === (string)$val && $isAllowed) ? 'active' : '';
                                             ?>
                                             <div class="component-menu-link <?php echo $activeClass; ?> <?php echo $disabledClass; ?>"
@@ -209,9 +209,9 @@ $showScheduledShrinkWarning = $scheduledWidth < $currWidth;
                                                  data-value="<?php echo htmlspecialchars((string)$val); ?>"
                                                  data-label="<?php echo htmlspecialchars($data['label']); ?>"
                                                  data-icon="<?php echo htmlspecialchars($data['icon']); ?>"
-                                                 <?php if(!$isAllowed) echo 'title="' . __('tooltip_upgrade_required') . '" style="opacity: 0.6;"'; ?>>
+                                                 <?php if(!$isAllowed) echo 'title="' . __('tooltip_upgrade_required') . '"'; ?>>
                                                 <div class="component-menu-link-icon"><span class="material-symbols-rounded"><?php echo htmlspecialchars($data['icon']); ?></span></div>
-                                                <div class="component-menu-link-text" style="display:flex; align-items:center;">
+                                                <div class="component-menu-link-text">
                                                     <span><?php echo htmlspecialchars($data['label']); ?></span>
                                                     <?php echo $lockIcon; ?>
                                                 </div>
@@ -381,7 +381,7 @@ $showScheduledShrinkWarning = $scheduledWidth < $currWidth;
                                             $isAllowed = $canManageOfficial || ($ownerTier >= $requiredTier);
                                             $disabledClass = $isAllowed ? '' : 'disabled-interactive';
                                             $action = $isAllowed ? 'selectValue' : '';
-                                            $lockIcon = $isAllowed ? '' : '<span class="material-symbols-rounded" style="font-size: 14px; margin-left: 6px; color: #ff8c00;">lock</span>';
+                                            $lockIcon = $isAllowed ? '' : '<span class="material-symbols-rounded">lock</span>';
                                             $activeClass = ((string)$instantSize === (string)$val && $isAllowed) ? 'active' : '';
                                         ?>
                                         <div class="component-menu-link <?php echo $activeClass; ?> <?php echo $disabledClass; ?>"
@@ -390,9 +390,9 @@ $showScheduledShrinkWarning = $scheduledWidth < $currWidth;
                                              data-value="<?php echo htmlspecialchars((string)$val); ?>"
                                              data-label="<?php echo htmlspecialchars($data['label']); ?>"
                                              data-icon="<?php echo htmlspecialchars($data['icon']); ?>"
-                                             <?php if(!$isAllowed) echo 'title="' . __('tooltip_upgrade_required') . '" style="opacity: 0.6;"'; ?>>
+                                             <?php if(!$isAllowed) echo 'title="' . __('tooltip_upgrade_required') . '"'; ?>>
                                             <div class="component-menu-link-icon"><span class="material-symbols-rounded"><?php echo htmlspecialchars($data['icon']); ?></span></div>
-                                            <div class="component-menu-link-text" style="display:flex; align-items:center;">
+                                            <div class="component-menu-link-text">
                                                 <span><?php echo htmlspecialchars($data['label']); ?></span>
                                                 <?php echo $lockIcon; ?>
                                             </div>

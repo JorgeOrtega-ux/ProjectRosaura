@@ -229,7 +229,7 @@ if (!isset($timerActions[$activeTimer])) {
                                 <h2 class="component-card__title"><?php echo __('canvas_reset_snapshot_title'); ?></h2>
                                 <p class="component-card__description"><?php echo __('canvas_reset_snapshot_desc'); ?></p>
                                 <?php if (!$canTakeSnapshot): ?>
-                                    <p class="component-card__description text-danger" style="margin-top: 5px;"><b>Límite de historial alcanzado (<?php echo $currentSnapshots; ?>/<?php echo $maxSnapshots; ?>).</b> Mejora tu plan para guardar más fotos.</p>
+                                    <p class="component-card__description text-danger"><b><?php echo __('snapshot_limit_reached', ['current' => $currentSnapshots, 'max' => $maxSnapshots]); ?></b> <?php echo __('snapshot_upgrade_plan'); ?></p>
                                 <?php endif; ?>
                             </div>
                         </div>
@@ -296,7 +296,7 @@ if (!isset($timerActions[$activeTimer])) {
                             <h2 class="component-card__title"><?php echo __('canvas_reset_snapshot_title'); ?></h2>
                             <p class="component-card__description">Tomar una foto del lienzo antes de reiniciarlo de forma instantánea.</p>
                             <?php if (!$canTakeSnapshot): ?>
-                                <p class="component-card__description text-danger" style="margin-top: 5px;"><b>Límite de historial alcanzado (<?php echo $currentSnapshots; ?>/<?php echo $maxSnapshots; ?>).</b> Mejora tu plan para guardar más fotos.</p>
+                                <p class="component-card__description text-danger"><b><?php echo __('snapshot_limit_reached', ['current' => $currentSnapshots, 'max' => $maxSnapshots]); ?></b> <?php echo __('snapshot_upgrade_plan'); ?></p>
                             <?php endif; ?>
                         </div>
                     </div>

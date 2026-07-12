@@ -69,7 +69,7 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
 
     <div class="component-viewport">
         <div class="component-wrapper">
-            <div class="component-bottom" style="display: flex; flex-direction: column; gap: 16px;">
+            <div class="component-bottom">
                 <div id="form-generate-invite" class="component-form">
                     <div class="component-card--grouped">
                         

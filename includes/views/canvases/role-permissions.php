@@ -107,7 +107,7 @@ if (trim($rawName) !== '') {
             <button class="component-button component-button--icon component-button--h40" data-nav="<?php echo $backUrl; ?>" data-tooltip="<?php echo __('btn_back') ?: 'Volver'; ?>" data-position="bottom">
                 <span class="material-symbols-rounded">arrow_back</span>
             </button>
-            <h1 class="component-top-title" data-ref="role-name-display" style="margin-left: 10px;">
+            <h1 class="component-top-title" data-ref="role-name-display">
                 <?php echo __('admin_edit_role_permissions_title') ?: 'Permisos del Rol'; ?>: <?php echo htmlspecialchars($translatedName !== '' ? $translatedName : (__('admin_role_undefined') ?: 'Indefinido')); ?>
             </h1>
         </div>

@@ -39,11 +39,11 @@ if (!$canvasId) {
 $appUrl = defined('APP_URL') ? APP_URL : '';
 ?>
 
-<div class="view-content" style="position: relative;" data-canvas-id="<?php echo htmlspecialchars($canvasId); ?>" data-ref="canvas-requests-container">
+<div class="view-content" data-canvas-id="<?php echo htmlspecialchars($canvasId); ?>" data-ref="canvas-requests-container">
     <div class="component-wrapper component-wrapper--full no-padding h-full-flex">
         
         <div class="component-top">
-            <div class="component-top-left" style="display: flex; align-items: center; gap: 12px;">
+            <div class="component-top-left">
                 <h1 class="component-top-title"><?php echo __('canvases_requests_title') ?: 'Solicitudes de Acceso al Lienzo'; ?></h1>
             </div>
             
@@ -51,11 +51,11 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                 
                 <div class="component-actions disabled" data-ref="header-selection-actions">
                     <button class="component-button component-button--icon component-button--h40" data-action="approveSelectedRequests" data-tooltip="<?php echo __('tooltip_approve_request') ?: 'Aceptar solicitud'; ?>" data-position="bottom">
-                        <span class="material-symbols-rounded" style="color: var(--success-color, #10b981);">check_circle</span>
+                        <span class="material-symbols-rounded">check_circle</span>
                     </button>
 
                     <button class="component-button component-button--icon component-button--h40" data-action="rejectSelectedRequests" data-tooltip="<?php echo __('tooltip_reject_request') ?: 'Rechazar solicitud'; ?>" data-position="bottom">
-                        <span class="material-symbols-rounded" style="color: var(--danger-color, #ef4444);">cancel</span>
+                        <span class="material-symbols-rounded">cancel</span>
                     </button>
 
                     <button class="component-button component-button--icon component-button--h40" data-action="deselectRequest" data-tooltip="<?php echo __('tooltip_cancel_selection') ?: 'Cancelar selección'; ?>" data-position="bottom">
@@ -92,7 +92,7 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                             <?php foreach ($pendingRequests as $req): ?>
                                 <tr data-request-id="<?php echo htmlspecialchars($req['id']); ?>">
                                     <td>
-                                        <div style="display: flex; align-items: center; gap: 10px;">
+                                        <div>
                                             <span data-user-id="<?php echo htmlspecialchars($req['user_id']); ?>">
                                                 Usuario #<?php echo htmlspecialchars($req['user_id']); ?>
                                             </span>
@@ -100,11 +100,11 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                                     </td>
                                     <td><?php echo htmlspecialchars(date('Y-m-d H:i', strtotime($req['created_at']))); ?></td>
                                     <td>
-                                        <div style="display: flex; align-items: center; justify-content: space-between;">
-                                            <span class="status-badge" style="background-color: var(--warning-bg, rgba(245,158,11,0.1)); color: var(--warning-color, #f59e0b); padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500;">
+                                        <div>
+                                            <span class="status-badge">
                                                 <?php echo __('status_pending') ?: 'Pendiente'; ?>
                                             </span>
-                                            <input type="checkbox" class="request-checkbox" value="<?php echo htmlspecialchars($req['id']); ?>" style="margin-left: 10px; cursor: pointer;">
+                                            <input type="checkbox" class="request-checkbox" value="<?php echo htmlspecialchars($req['id']); ?>">
                                         </div>
                                     </td>
                                 </tr>

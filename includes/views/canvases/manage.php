@@ -59,7 +59,7 @@ $prevPageUrl = $page > 1 ? $appUrl . '/canvases/manage?page=' . ($page - 1) : '#
 $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page + 1) : '#';
 ?>
 
-<div class="view-content" style="position: relative;">
+<div class="view-content">
     <div class="component-wrapper component-wrapper--full no-padding h-full-flex" data-ref="manage-canvases-wrapper">
         
         <div class="component-top">
@@ -167,14 +167,14 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                                                 <span class="search-target font-medium"><?php echo htmlspecialchars($canvas['name']); ?></span>
                                                 
                                                 <?php if ($canvas['scope_type'] !== 'personal'): ?>
-                                                    <span style="font-size: 10px; font-weight: 700; background: var(--color-warning); color: #000; padding: 2px 6px; border-radius: 4px; margin-left: 6px; text-transform: uppercase;">
+                                                    <span>
                                                         <?php echo htmlspecialchars($canvas['scope_type']); ?>
                                                     </span>
                                                 <?php endif; ?>
                                             </div>
                                         </div>
                                         <?php if (!empty($canvas['description'])): ?>
-                                            <div style="font-size: 12px; color: #6b7280; margin-top: 4px;" class="search-target">
+                                            <div class="search-target">
                                                 <?php echo htmlspecialchars($canvas['description']); ?>
                                             </div>
                                         <?php endif; ?>

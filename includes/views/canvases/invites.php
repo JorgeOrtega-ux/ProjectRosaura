@@ -49,7 +49,7 @@ try {
 $appUrl = defined('APP_URL') ? APP_URL : '';
 ?>
 
-<div class="view-content" style="position: relative;">
+<div class="view-content">
     <div class="component-wrapper component-wrapper--full no-padding h-full-flex" data-ref="manage-invites-wrapper" data-canvas-id="<?php echo htmlspecialchars($canvasId); ?>" data-canvas-uuid="<?php echo htmlspecialchars($canvasUuid); ?>">
         
         <div class="component-top">

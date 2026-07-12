@@ -108,7 +108,7 @@ $prevPageUrl = $page > 1 ? $appUrl . '/canvases/members/' . $canvasUuid . '?page
 $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/members/' . $canvasUuid . '?page=' . ($page + 1) : '#';
 ?>
 
-<div class="view-content" style="position: relative;">
+<div class="view-content">
     <div class="component-wrapper component-wrapper--full no-padding h-full-flex" data-ref="manage-members-wrapper" data-canvas-id="<?php echo htmlspecialchars($canvasId); ?>">
         
         <div class="component-top">
@@ -203,7 +203,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/members/' . $canvasUui
                                                 <span class="material-symbols-rounded">person</span>
                                                 <span class="search-target font-medium"><?php echo htmlspecialchars($username); ?></span>
                                                 <?php if ($member['user_id'] == $canvasOwnerId): ?>
-                                                    <span class="material-symbols-rounded" style="font-size: 14px; color: #f59e0b; margin-left: 4px;" title="Creador">star</span>
+                                                    <span class="material-symbols-rounded" title="<?php echo __('role_creator'); ?>">star</span>
                                                 <?php endif; ?>
                                             </div>
                                         </div>
@@ -229,7 +229,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/members/' . $canvasUui
                                             
                                             $primaryName = $primaryRole['is_system'] ? (__('role_' . strtolower($primaryRole['name'])) ?: ucfirst($primaryRole['name'])) : htmlspecialchars($primaryRole['name']);
                                         ?>
-                                        <div style="display: flex; flex-direction: row; gap: 4px; align-items: center;">
+                                        <div>
                                             <div class="component-badge component-badge--sm">
                                                 <span class="material-symbols-rounded"><?php echo $icon; ?></span>
                                                 <span class="search-target font-bold" data-role-original-name="<?php echo htmlspecialchars($primaryRole['name']); ?>"><?php echo $primaryName; ?></span>
@@ -250,7 +250,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/members/' . $canvasUui
                                                 <?php foreach (array_slice($mRoles, 1) as $r): 
                                                     $rName = $r['is_system'] ? (__('role_' . strtolower($r['name'])) ?: ucfirst($r['name'])) : htmlspecialchars($r['name']);
                                                 ?>
-                                                    <span class="search-target" style="display:none;" data-role-original-name="<?php echo htmlspecialchars($r['name']); ?>"><?php echo $rName; ?></span>
+                                                    <span class="search-target" data-role-original-name="<?php echo htmlspecialchars($r['name']); ?>"><?php echo $rName; ?></span>
                                                 <?php endforeach; ?>
                                             <?php endif; ?>
                                         </div>

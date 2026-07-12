@@ -28,7 +28,7 @@ $translatedName = __('canvas_palette_new', 'Mi Nueva Paleta');
                 <div class="component-card--grouped">
                     <div class="component-group-item">
                         <div class="component-card__content">
-                            <div class="component-preview-ring" data-ref="paletteLivePreviewRing" style="background: conic-gradient(from 0deg, #d32029 0% 50%, #206bd3 50% 100%);">
+                            <div class="component-preview-ring" data-ref="paletteLivePreviewRing">
                                 <div class="component-preview-ring__inner">
                                     <span class="material-symbols-rounded">palette</span>
                                 </div>

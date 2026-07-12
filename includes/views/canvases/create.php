@@ -34,7 +34,7 @@ $defaultSizeKey = $defaultSizeData ? key($canvasSizesList) : '64x64';
 
     <div class="component-viewport">
         <div class="component-wrapper">
-            <div class="component-bottom" style="display: flex; flex-direction: column; gap: 16px;">
+            <div class="component-bottom">
                 
                 <div class="component-card--grouped">
                     <div class="component-group-item component-group-item--stacked" data-ref="scope-section">
@@ -268,12 +268,12 @@ $defaultSizeKey = $defaultSizeData ? key($canvasSizesList) : '64x64';
                                                 $isAllowed = ($tier >= $requiredTier);
                                                 $disabledClass = $isAllowed ? '' : 'disabled-interactive';
                                                 $action = $isAllowed ? 'selectValue' : '';
-                                                $lockIcon = $isAllowed ? '' : '<span class="material-symbols-rounded" style="font-size: 14px; margin-left: 6px; color: #ff8c00;" data-ref="lock-icon">lock</span>';
+                                                $lockIcon = $isAllowed ? '' : '<span class="material-symbols-rounded" data-ref="lock-icon">lock</span>';
                                                 $activeClass = ($val === $defaultSizeKey && $isAllowed) ? 'active' : '';
                                             ?>
-                                            <div class="component-menu-link <?php echo $activeClass; ?> <?php echo $disabledClass; ?>" data-action="<?php echo $action; ?>" data-type="size" data-value="<?php echo htmlspecialchars($val); ?>" data-tier="<?php echo $requiredTier; ?>" data-label="<?php echo htmlspecialchars($data['label']); ?>" data-icon="<?php echo htmlspecialchars($data['icon']); ?>" <?php if(!$isAllowed) echo 'title="' . __('tooltip_upgrade_required') . '" style="opacity: 0.6;"'; ?>>
+                                            <div class="component-menu-link <?php echo $activeClass; ?> <?php echo $disabledClass; ?>" data-action="<?php echo $action; ?>" data-type="size" data-value="<?php echo htmlspecialchars($val); ?>" data-tier="<?php echo $requiredTier; ?>" data-label="<?php echo htmlspecialchars($data['label']); ?>" data-icon="<?php echo htmlspecialchars($data['icon']); ?>" <?php if(!$isAllowed) echo 'title="' . __('tooltip_upgrade_required') . '"'; ?>>
                                                 <div class="component-menu-link-icon"><span class="material-symbols-rounded"><?php echo htmlspecialchars($data['icon']); ?></span></div>
-                                                <div class="component-menu-link-text" style="display:flex; align-items:center;">
+                                                <div class="component-menu-link-text">
                                                     <span><?php echo htmlspecialchars($data['label']); ?></span>
                                                     <?php echo $lockIcon; ?>
                                                 </div>
@@ -366,7 +366,7 @@ $defaultSizeKey = $defaultSizeData ? key($canvasSizesList) : '64x64';
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--start">
-                            <div style="display:flex; flex-direction:column; gap:8px; width:100%;">
+                            <div>
                                 <div class="component-dropdown-wrapper">
                                     <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="dropdownPalette">
                                         <span class="material-symbols-rounded" data-ref="icon-palette">palette</span>
@@ -379,9 +379,9 @@ $defaultSizeKey = $defaultSizeData ? key($canvasSizesList) : '64x64';
                                             <div class="component-menu-list component-menu-list--scrollable" data-ref="palette-selector-container">
                                             </div>
                                             <?php if (SubscriptionPlanConstants::hasFeature($tier, 'custom_palettes')): ?>
-                                                <div style="padding: 8px; border-top: 1px solid var(--border-color);">
-                                                    <button type="button" class="component-button component-button--text component-button--h34" style="width: 100%; justify-content: flex-start;" data-action="navigateCustomPalette">
-                                                        <span class="material-symbols-rounded" style="font-size:18px">add_circle</span>
+                                                <div>
+                                                    <button type="button" class="component-button component-button--text component-button--h34" data-action="navigateCustomPalette">
+                                                        <span class="material-symbols-rounded">add_circle</span>
                                                         <span>Crear paleta personalizada</span>
                                                     </button>
                                                 </div>
@@ -513,12 +513,12 @@ $defaultSizeKey = $defaultSizeData ? key($canvasSizesList) : '64x64';
                     <?php 
                     $hasLiveChat = SubscriptionPlanConstants::hasFeature($tier, 'allow_live_chat');
                     ?>
-                    <div class="component-group-item component-group-item--wrap <?php echo !$hasLiveChat ? 'disabled-interactive' : ''; ?>" <?php if(!$hasLiveChat) echo 'data-tooltip="Requiere Premium Advanced" data-position="top" style="opacity: 0.7;"'; ?>>
+                    <div class="component-group-item component-group-item--wrap <?php echo !$hasLiveChat ? 'disabled-interactive' : ''; ?>" <?php if(!$hasLiveChat) echo 'data-tooltip="Requiere Premium Advanced" data-position="top"'; ?>>
                         <div class="component-card__content">
                             <div class="component-card__text">
                                 <h2 class="component-card__title">
                                     Permitir chat en línea
-                                    <?php if(!$hasLiveChat): ?><span class="material-symbols-rounded" style="font-size: 16px; vertical-align: middle; margin-left: 4px; color: #ff8c00;">lock</span><?php endif; ?>
+                                    <?php if(!$hasLiveChat): ?><span class="material-symbols-rounded">lock</span><?php endif; ?>
                                 </h2>
                                 <p class="component-card__description">Habilita una sala de chat en tiempo real para todos los participantes del lienzo.</p>
                             </div>

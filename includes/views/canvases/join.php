@@ -1,4 +1,3 @@
-<?php // includes/views/canvases/join.php ?>
 <div class="view-content" data-ref="canvas-join-wrapper">
     <div class="component-top">
         <div class="component-top-left">
@@ -14,9 +13,9 @@
 
     <div class="component-viewport">
         <div class="component-wrapper">
-            <div class="component-bottom" style="display: flex; flex-direction: column; gap: 16px;">
+            <div class="component-bottom">
                 <div class="component-card--grouped">
-                    <form id="form-join-canvas" style="margin: 0; width: 100%;">
+                    <form id="form-join-canvas">
                         <div class="component-group-item component-group-item--stacked">
                             <div class="component-card__content">
                                 <div class="component-card__text">

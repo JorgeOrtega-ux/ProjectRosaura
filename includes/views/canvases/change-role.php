@@ -109,9 +109,9 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
             <div class="component-bottom">
                 
                 <?php if ($isOwner): ?>
-                <div style="margin-bottom: 20px; padding: 12px 15px; border-radius: 8px; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); color: #b45309; display: flex; align-items: center; gap: 10px;">
-                    <span class="material-symbols-rounded" style="font-size: 20px;">info</span>
-                    <span style="font-size: 13.5px;"><?php echo __('msg_owner_role_warning') ?: 'Este usuario es el creador principal. Es probable que el sistema no permita reducir sus privilegios.'; ?></span>
+                <div>
+                    <span class="material-symbols-rounded">info</span>
+                    <span><?php echo __('msg_owner_role_warning') ?: 'Este usuario es el creador principal. Es probable que el sistema no permita reducir sus privilegios.'; ?></span>
                 </div>
                 <?php endif; ?>
 
@@ -149,9 +149,9 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                         <div class="component-group-item component-group-item--wrap">
                             <div class="component-card__content">
                                 <div class="component-card__text">
-                                    <h2 class="component-card__title" style="display: flex; align-items: center; gap: 8px;">
+                                    <h2 class="component-card__title">
                                         <?php echo $translatedName; ?>
-                                        <span class="material-symbols-rounded" style="font-size: 16px; color: var(--text-color-muted);" title="Hierarchy: <?php echo $role['weight']; ?>"><?php echo $isSystemFlag ? 'shield' : 'person'; ?></span>
+                                        <span class="material-symbols-rounded" title="Hierarchy: <?php echo $role['weight']; ?>"><?php echo $isSystemFlag ? 'shield' : 'person'; ?></span>
                                     </h2>
                                     <p class="component-card__description"><?php echo htmlspecialchars($desc); ?></p>
                                 </div>

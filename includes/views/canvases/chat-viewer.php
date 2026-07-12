@@ -75,12 +75,12 @@ $attachmentsJson = json_encode($attachments);
 ?>
 
 <div class="view-content" data-ref="chat-viewer-wrapper" data-images='<?php echo htmlspecialchars($attachmentsJson, ENT_QUOTES); ?>' data-idx="<?php echo $idx; ?>">
-    <div class="component-top" style="align-items: center;">
+    <div class="component-top">
         <div class="component-top-left">
             <h1 class="component-top-title">Visor de imágenes</h1>
         </div>
         <div class="component-top-center"></div>
-        <div class="component-top-right" style="display: flex; gap: 8px;">
+        <div class="component-top-right">
             <?php if ($totalImages > 0 || $isPending): ?>
             <div class="component-inline-control" data-ref="pagination-container" data-tooltip="Paginación" data-position="bottom">
                 <div class="component-inline-control__group">
@@ -103,13 +103,13 @@ $attachmentsJson = json_encode($attachments);
         </div>
     </div>
     
-    <div class="component-bottom" style="display: flex; justify-content: center; align-items: center; background: var(--bg-secondary); border-radius: 12px; overflow: hidden; height: calc(100vh - 120px);">
+    <div class="component-bottom">
         <?php if ($errorMsg): ?>
-            <div style="color: var(--danger-color); padding: 20px;"><?php echo htmlspecialchars($errorMsg); ?></div>
+            <div><?php echo htmlspecialchars($errorMsg); ?></div>
         <?php elseif ($totalImages > 0 || $isPending): ?>
-            <img id="cv-main-image" src="<?php echo $totalImages > 0 ? htmlspecialchars($attachments[$idx]) : ''; ?>" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+            <img id="cv-main-image" src="<?php echo $totalImages > 0 ? htmlspecialchars($attachments[$idx]) : ''; ?>">
         <?php else: ?>
-            <div style="color: var(--text-secondary); padding: 20px;">No hay imágenes para mostrar.</div>
+            <div>No hay imágenes para mostrar.</div>
         <?php endif; ?>
     </div>
 </div>

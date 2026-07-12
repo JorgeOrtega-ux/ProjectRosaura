@@ -106,7 +106,7 @@ if ($error) {
             </div>
         </div>
 
-        <div class="component-bottom" style="padding: 0;" data-ref="dynamic-content-area">
+        <div class="component-bottom" data-ref="dynamic-content-area">
             <?php if ($error): ?>
                 <div class="component-empty-state" data-ref="empty-state-rendered">
                     <span class="material-symbols-rounded component-empty-state-icon"><?php echo htmlspecialchars($errorIcon); ?></span>

@@ -72,7 +72,7 @@ if (!$canvasId) {
 
     <div class="component-viewport">
         <div class="component-wrapper">
-            <div class="component-bottom" style="display: flex; flex-direction: column; gap: 16px;">
+            <div class="component-bottom">
                 
                 <div class="component-card--grouped">
                     <div class="component-group-item component-group-item--stateful">
@@ -125,22 +125,22 @@ if (!$canvasId) {
                 </div>
 
                 <div class="component-card--grouped">
-                    <div class="component-group-item component-group-item--stacked" style="opacity: 0.7;" data-tooltip="<?php echo __('canvas_size_locked_tooltip'); ?>" data-position="top">
+                    <div class="component-group-item component-group-item--stacked" data-tooltip="<?php echo __('canvas_size_locked_tooltip'); ?>" data-position="top">
                         <div class="component-card__content">
                             <div class="component-card__text">
                                 <h2 class="component-card__title">
                                     <?php echo __('canvas_size_title'); ?> 
-                                    <span class="material-symbols-rounded" style="font-size: 16px; vertical-align: middle; margin-left: 4px;">lock</span>
+                                    <span class="material-symbols-rounded">lock</span>
                                 </h2>
                                 <p class="component-card__description"><?php echo __('canvas_size_desc'); ?></p>
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--start">
                             <div class="component-dropdown-wrapper">
-                                <div class="component-dropdown-trigger" style="cursor: not-allowed; background-color: var(--surface-hover);">
+                                <div class="component-dropdown-trigger">
                                     <span class="material-symbols-rounded">crop_square</span>
                                     <span class="component-dropdown-text" data-ref="text-size"><?php echo $cSize; ?></span>
-                                    <span class="material-symbols-rounded" style="opacity: 0.5;">expand_more</span>
+                                    <span class="material-symbols-rounded">expand_more</span>
                                 </div>
                             </div>
                         </div>
@@ -226,7 +226,7 @@ if (!$canvasId) {
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--start">
-                            <div style="display:flex; flex-direction:column; gap:8px; width:100%;">
+                            <div>
                                 <div class="component-dropdown-wrapper">
                                     <div class="component-dropdown-trigger" data-action="toggleDropdown" data-target="dropdownPalette">
                                         <span class="material-symbols-rounded" data-ref="icon-palette">palette</span>
@@ -239,9 +239,9 @@ if (!$canvasId) {
                                             <div class="component-menu-list component-menu-list--scrollable" data-ref="palette-selector-container">
                                             </div>
                                             <?php if (SubscriptionPlanConstants::hasFeature($tier, 'custom_palettes')): ?>
-                                                <div style="padding: 8px; border-top: 1px solid var(--border-color);">
-                                                    <button type="button" class="component-button component-button--text component-button--h34" style="width: 100%; justify-content: flex-start;" data-action="navigateCustomPalette">
-                                                        <span class="material-symbols-rounded" style="font-size:18px">add_circle</span>
+                                                <div>
+                                                    <button type="button" class="component-button component-button--text component-button--h34" data-action="navigateCustomPalette">
+                                                        <span class="material-symbols-rounded">add_circle</span>
                                                         <span>Crear paleta personalizada</span>
                                                     </button>
                                                 </div>
@@ -373,12 +373,12 @@ if (!$canvasId) {
                     <?php 
                     $hasLiveChat = SubscriptionPlanConstants::hasFeature($tier, 'allow_live_chat');
                     ?>
-                    <div class="component-group-item component-group-item--wrap <?php echo !$hasLiveChat ? 'disabled-interactive' : ''; ?>" <?php if(!$hasLiveChat) echo 'data-tooltip="Requiere Premium Advanced" data-position="top" style="opacity: 0.7;"'; ?>>
+                    <div class="component-group-item component-group-item--wrap <?php echo !$hasLiveChat ? 'disabled-interactive' : ''; ?>" <?php if(!$hasLiveChat) echo 'data-tooltip="Requiere Premium Advanced" data-position="top"'; ?>>
                         <div class="component-card__content">
                             <div class="component-card__text">
                                 <h2 class="component-card__title">
                                     Permitir chat en línea
-                                    <?php if(!$hasLiveChat): ?><span class="material-symbols-rounded" style="font-size: 16px; vertical-align: middle; margin-left: 4px; color: #ff8c00;">lock</span><?php endif; ?>
+                                    <?php if(!$hasLiveChat): ?><span class="material-symbols-rounded">lock</span><?php endif; ?>
                                 </h2>
                                 <p class="component-card__description">Habilita una sala de chat en tiempo real para todos los participantes del lienzo.</p>
                             </div>
