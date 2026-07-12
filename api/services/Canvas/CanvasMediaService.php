@@ -44,7 +44,7 @@ class CanvasMediaService {
             }
 
             $baseDir = dirname(__DIR__, 3) . '/storage/private/canvases/timelapses';
-            $filePath = $baseDir . '/canvas_' . $canvasId . '.jsonl';
+            $filePath = $baseDir . '/' . $canvas['uuid'] . '/live/live_canvas_' . $canvas['uuid'] . '.jsonl';
 
             if (!file_exists($filePath) || filesize($filePath) === 0) {
                 return ['success' => false, 'message' => __('err_no_timelapse_data'), 'http_code' => 404];

@@ -97,13 +97,13 @@ export const DesignSetup = {
 
     updateLockBadges() {
         if (this.isResetLocked) {
-            this.setCanvasBadge('lock-reset', 'auto_delete icon-spin-slow', __('badge_resetting'), 'left');
+            this.setCanvasBadge('lock-reset', 'auto_delete', __('badge_resetting'), 'left');
         } else {
             this.removeCanvasBadge('lock-reset', 'left');
         }
 
         if (this.isResizeLocked) {
-            this.setCanvasBadge('lock-resize', 'aspect_ratio icon-spin-slow', __('badge_expanding'), 'left');
+            this.setCanvasBadge('lock-resize', 'aspect_ratio', __('badge_expanding'), 'left');
         } else {
             this.removeCanvasBadge('lock-resize', 'left');
         }
@@ -135,7 +135,7 @@ export const DesignSetup = {
             const diffMs = targetMs - nowMs;
             
             if (diffMs <= 0) {
-                this.setCanvasBadge('reset-timer', 'autorenew icon-spin-slow', '00:00:00', 'right');
+                this.setCanvasBadge('reset-timer', 'autorenew', '00:00:00', 'right');
                 if (this.timerAction === 'stop') {
                     clearInterval(this.resetTimerInterval);
                     setTimeout(() => this.removeCanvasBadge('reset-timer', 'right'), 2000);
@@ -170,7 +170,7 @@ export const DesignSetup = {
             const diffMs = targetMs - nowMs;
             
             if (diffMs <= 0) {
-                this.setCanvasBadge('resize-timer', 'aspect_ratio icon-spin-slow', __('badge_expanding'), 'right');
+                this.setCanvasBadge('resize-timer', 'aspect_ratio', __('badge_expanding'), 'right');
                 if (this.resizeTimerAction === 'stop') {
                     clearInterval(this.resizeTimerInterval);
                     setTimeout(() => this.removeCanvasBadge('resize-timer', 'right'), 5000);
@@ -214,8 +214,12 @@ export const DesignSetup = {
                     imageData.data[dataIdx + 2] = 0; 
                     imageData.data[dataIdx + 3] = 0; 
                 } else {
-                    const colorObj = paletteColors[colorIndex];
-                    const hex = (colorObj && colorObj.hex) ? colorObj.hex : '#FFFFFF';
+                    let hex = '#FFFFFF';
+                    if (paletteColors[colorIndex] && paletteColors[colorIndex].hex) {
+                        hex = paletteColors[colorIndex].hex;
+                    } else if (window.APP_PALETTES && window.APP_PALETTES['default'] && window.APP_PALETTES['default'].colors[colorIndex]) {
+                        hex = window.APP_PALETTES['default'].colors[colorIndex].hex;
+                    }
                     
                     const r = parseInt(hex.slice(1, 3), 16);
                     const g = parseInt(hex.slice(3, 5), 16);

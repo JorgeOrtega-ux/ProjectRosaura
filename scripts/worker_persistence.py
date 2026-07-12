@@ -49,6 +49,8 @@ def canvas_persistence_thread():
         print(f"[!] Canvas thread could not connect to Redis: {e}")
         return
 
+    canvas_uuid_cache = {}
+
     while True:
         try:
             keys = r.keys("canvas:*:stream")
@@ -68,7 +70,28 @@ def canvas_persistence_thread():
                     if not msgs: continue
                     stream_name = stream_name_b.decode('utf-8')
                     canvas_id = stream_name.split(":")[1]
-                    file_path = os.path.join(TIMELAPSE_DIR, f"live_canvas_{canvas_id}.jsonl")
+                    
+                    canvas_uuid = canvas_uuid_cache.get(canvas_id)
+                    if not canvas_uuid:
+                        db_conn = get_db_connection()
+                        if db_conn:
+                            cursor = db_conn.cursor()
+                            cursor.execute("SELECT uuid FROM canvases WHERE id = %s", (canvas_id,))
+                            row = cursor.fetchone()
+                            if row:
+                                canvas_uuid = row[0]
+                                canvas_uuid_cache[canvas_id] = canvas_uuid
+                            cursor.close()
+                            db_conn.close()
+                    
+                    if not canvas_uuid:
+                        print(f"[!] Could not resolve UUID for canvas {canvas_id}. Skipping.")
+                        continue
+                    
+                    target_dir = os.path.join(TIMELAPSE_DIR, canvas_uuid, "live")
+                    os.makedirs(target_dir, exist_ok=True)
+                    
+                    file_path = os.path.join(target_dir, f"live_canvas_{canvas_uuid}.jsonl")
                     
                     with open(file_path, "a", encoding="utf-8") as f:
                         for msg_id_b, msg_data_b in msgs:
@@ -81,7 +104,7 @@ def canvas_persistence_thread():
                     r.xack(stream_name, CONSUMER_GROUP, *msg_ids)
                     r.xdel(stream_name, *msg_ids)
                     r.sadd("canvases:dirty_states", canvas_id)
-                    print(f"[+] Written {len(msgs)} events to LIVE file of canvas {canvas_id}.")
+                    print(f"[+] Written {len(msgs)} events to LIVE file of canvas {canvas_id} ({canvas_uuid}).")
         except Exception as e:
             print(f"[!] Error processing Streams to disk: {e}")
 

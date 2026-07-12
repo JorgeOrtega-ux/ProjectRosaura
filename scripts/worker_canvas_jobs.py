@@ -444,7 +444,7 @@ def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palet
             
             if not can_save_history:
                 print(f"[-] Canvas {canvas_id} exceeded its historical snapshots limit ({max_snapshots}). Purging the oldest...")
-                timelapse_src = os.path.join(TIMELAPSE_DIR, f"live_canvas_{canvas_id}.jsonl")
+                timelapse_src = os.path.join(TIMELAPSE_DIR, str(canvas_uuid), "live", f"live_canvas_{canvas_uuid}.jsonl")
                 if os.path.exists(timelapse_src):
                     os.remove(timelapse_src)
             else:
@@ -471,16 +471,20 @@ def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palet
                 snapshot_uuid = str(uuid.uuid4())
                 public_filepath = f"public/storage/snapshots_archive/{canvas_uuid}/{archive_filename}"
                 
-                timelapse_src = os.path.join(TIMELAPSE_DIR, f"live_canvas_{canvas_id}.jsonl")
+                timelapse_src = os.path.join(TIMELAPSE_DIR, str(canvas_uuid), "live", f"live_canvas_{canvas_uuid}.jsonl")
                 timelapse_dest_filename = f"snapshot_{snapshot_uuid}.jsonl"
-                timelapse_dest = os.path.join(TIMELAPSE_DIR, timelapse_dest_filename)
+                
+                snapshots_dir = os.path.join(TIMELAPSE_DIR, str(canvas_uuid), "snapshots")
+                os.makedirs(snapshots_dir, exist_ok=True)
+                
+                timelapse_dest = os.path.join(snapshots_dir, timelapse_dest_filename)
                 
                 timelapse_db_path = None
                 
                 if os.path.exists(timelapse_src):
                     try:
                         shutil.move(timelapse_src, timelapse_dest)
-                        timelapse_db_path = f"private/canvases/timelapses/{timelapse_dest_filename}"
+                        timelapse_db_path = f"private/canvases/timelapses/{canvas_uuid}/snapshots/{timelapse_dest_filename}"
                         print(f"[+] Timelapse successfully converted to historical: {timelapse_dest_filename}")
                     except Exception as e:
                         print(f"[!] Error moving timelapse JSONL file for canvas {canvas_id}: {e}")

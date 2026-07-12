@@ -837,13 +837,22 @@ export const DesignNetwork = {
     _drawTimelapsePixel(data) {
         const pX = parseInt(data.x, 10);
         const pY = parseInt(data.y, 10);
-        const cIdx = parseInt(data.c, 10);
+        const cIdx = parseInt(data.c !== undefined ? data.c : data.color, 10);
+
+        if (isNaN(cIdx)) return;
 
         if (cIdx === 255) {
             this.offscreenCtx.clearRect(pX, pY, 1, 1);
         } else {
             const paletteObj = getPaletteById(this.canvasPaletteId);
-            const hexColor = (paletteObj && paletteObj.colors[cIdx]) ? paletteObj.colors[cIdx].hex : '#000000';
+            let hexColor = '#000000';
+            if (paletteObj && paletteObj.colors && paletteObj.colors[cIdx]) {
+                hexColor = paletteObj.colors[cIdx].hex;
+            } else if (window.APP_PALETTES && window.APP_PALETTES['default'] && window.APP_PALETTES['default'].colors[cIdx]) {
+                hexColor = window.APP_PALETTES['default'].colors[cIdx].hex;
+            } else {
+                hexColor = '#FFFFFF';
+            }
             
             this.offscreenCtx.fillStyle = hexColor;
             this.offscreenCtx.clearRect(pX, pY, 1, 1);
