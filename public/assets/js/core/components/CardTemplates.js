@@ -1,4 +1,4 @@
-import { escapeHTML } from '../utils/uiUtils.js';
+﻿import { escapeHTML } from '../utils/uiUtils.js';
 
 export const CardTemplates = {
     
@@ -14,7 +14,7 @@ export const CardTemplates = {
         const imgHtml = `
             <img src="${srcUrl}" 
                  alt="${name}" 
-                 class="component-snapshot-card__image" 
+                 class="component-gallery-card__image" 
                  loading="lazy" 
                  decoding="async" 
                  onerror="this.src='${fallbackImg}'">`;
@@ -22,11 +22,11 @@ export const CardTemplates = {
         const actionButtonHtml = canvas.is_owner 
             ? `<button type="button" class="component-menu-link component-menu-link--bordered component-text-notice--error" data-action="deleteCanvas" data-id="${canvas.id}" data-uuid="${uuid}">
                     <div class="component-menu-link-icon"><span class="material-symbols-rounded">delete</span></div>
-                    <div class="component-menu-link-text"><span>Eliminar lienzo</span></div>
+                    <div class="component-menu-link-text"><span>${window.__('delete_canvas')}</span></div>
                </button>`
             : `<button type="button" class="component-menu-link component-menu-link--bordered component-text-notice--error" data-action="leaveCanvas" data-id="${canvas.id}" data-uuid="${uuid}">
                     <div class="component-menu-link-icon"><span class="material-symbols-rounded">logout</span></div>
-                    <div class="component-menu-link-text"><span>Salir del lienzo</span></div>
+                    <div class="component-menu-link-text"><span>${window.__('leave_canvas')}</span></div>
                </button>`;
         const onlinePlayers = parseInt(canvas.online_players || 0, 10);
         const membersCount = parseInt(canvas.members_count || 0, 10);
@@ -35,24 +35,24 @@ export const CardTemplates = {
         let badgeHtml = '';
         if (isOfficial) {
             badgeHtml = `
-                <div style="position: absolute; top: 12px; right: 12px; display: flex; flex-direction: column; gap: 6px; align-items: flex-end; z-index: 10;">
-                    <div class="component-snapshot-badge" style="position: relative; top: auto; right: auto; background: var(--accent-primary, #3b82f6); color: white; display: flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
-                        <span class="material-symbols-rounded" style="font-size: 14px;">verified</span>
-                        Oficial
+                <div class="component-gallery-badges-container">
+                    <div class="component-badge component-badge--brand">
+                        <span class="material-symbols-rounded">verified</span>
+                        ${window.__('official')}
                     </div>
-                    <div class="component-snapshot-badge" style="position: relative; top: auto; right: auto; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
-                        <span class="material-symbols-rounded" style="color: ${onlinePlayers > 0 ? '#10b981' : 'inherit'}">person</span>
-                        ${onlinePlayers} Online
+                    <div class="component-badge component-badge--glass">
+                        <span class="material-symbols-rounded ${onlinePlayers > 0 ? 'component-text-success' : ''}">person</span>
+                        ${onlinePlayers} ${window.__('online')}
                     </div>
                 </div>
             `;
         } else {
             badgeHtml = `
-                <div class="component-snapshot-badge" style="display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
-                    <span class="material-symbols-rounded" style="color: ${onlinePlayers > 0 ? '#10b981' : 'inherit'}; font-size: 16px;">person</span>
-                    <span>${onlinePlayers} Online</span> 
-                    <span style="margin: 0 2px; opacity: 0.5;">|</span>
-                    <span class="material-symbols-rounded" style="font-size: 16px;">group</span>
+                <div class="component-badge component-badge--glass component-badge--absolute-tr">
+                    <span class="material-symbols-rounded ${onlinePlayers > 0 ? 'component-text-success' : ''}">person</span>
+                    <span>${onlinePlayers} ${window.__('online')}</span> 
+                    <span class="component-badge-divider">|</span>
+                    <span class="material-symbols-rounded">group</span>
                     <span>${membersCount}</span>
                 </div>
             `;
@@ -63,11 +63,11 @@ export const CardTemplates = {
         
         if (canvas.locked_requires_downgrade) {
             warningOverlay = `
-                <div style="position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.6); z-index: 5; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(2px);">
-                    <div style="text-align: center; color: white;">
-                        <span class="material-symbols-rounded" style="font-size: 32px; color: var(--color-warning); margin-bottom: 8px;">warning</span>
-                        <div style="font-weight: 600; font-size: 14px;">Plan Premium Expirado</div>
-                        <div style="font-size: 11px; opacity: 0.9; margin-top: 4px; padding: 0 10px;">El lienzo excede los límites básicos</div>
+                <div class="component-gallery-warning-overlay">
+                    <div class="component-gallery-warning-content">
+                        <span class="material-symbols-rounded">warning</span>
+                        <div class="component-gallery-warning-title">${window.__('premium_plan_expired')}</div>
+                        <div class="component-gallery-warning-desc">${window.__('canvas_exceeds_limits')}</div>
                     </div>
                 </div>
             `;
@@ -76,29 +76,29 @@ export const CardTemplates = {
                 warningMenuOption = `
                     <button type="button" class="component-menu-link component-menu-link--bordered component-text-notice--warning" data-action="downgradeCanvas" data-id="${canvas.id}" data-uuid="${uuid}">
                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">build_circle</span></div>
-                        <div class="component-menu-link-text"><span>Convertir a Básico</span></div>
+                        <div class="component-menu-link-text"><span>${window.__('convert_to_basic')}</span></div>
                     </button>
                 `;
             }
         }
 
         const navAction = canvas.locked_requires_downgrade ? '' : `data-nav="${basePath}/design/${uuid}"`;
-        const linkStyle = canvas.locked_requires_downgrade ? 'cursor: not-allowed; opacity: 0.6;' : 'cursor: pointer;';
+        const linkClass = canvas.locked_requires_downgrade ? 'component-gallery-link--disabled' : '';
 
         return `
-            <div class="component-snapshot-card" data-card-id="${canvas.id}" style="position: relative;">
+            <div class="component-gallery-card" data-card-id="${canvas.id}">
                 ${warningOverlay}
                 ${imgHtml}
                 ${badgeHtml}
 
-                <div ${navAction} class="component-snapshot-link" style="${linkStyle}">
-                    <h3 class="component-snapshot-title">${name}</h3>
+                <div ${navAction} class="component-gallery-link ${linkClass}">
+                    <h3 class="component-gallery-title">${name}</h3>
                 </div>
 
-                <div class="component-snapshot-actions-wrapper component-dropdown-wrapper">
-                    <div class="component-snapshot-actions" style="display: flex; gap: 4px; align-items: center;">
+                <div class="component-gallery-actions-wrapper component-dropdown-wrapper">
+                    <div class="component-gallery-actions">
                         <button type="button" class="component-button component-button--icon component-button--h32 btn-favorite ${isFavoriteClass}" data-action="toggleFavorite" data-id="${canvas.id}">
-                            <span class="material-symbols-rounded" style="font-size: 20px;">favorite</span>
+                            <span class="material-symbols-rounded component-icon--20">favorite</span>
                         </button>
                         <button type="button" class="component-button component-button--icon component-button--h32" data-action="toggleModule" data-target="snapshot-menu-${canvas.id}">
                             <span class="material-symbols-rounded">more_vert</span>
@@ -112,17 +112,17 @@ export const CardTemplates = {
                             <div class="component-menu-list">
                                 <button type="button" class="component-menu-link" data-action="openCanvasNewTab" data-uuid="${uuid}">
                                     <div class="component-menu-link-icon"><span class="material-symbols-rounded">open_in_new</span></div>
-                                    <div class="component-menu-link-text"><span>Abrir en una pestaña nueva</span></div>
+                                    <div class="component-menu-link-text"><span>${window.__('open_in_new_tab')}</span></div>
                                 </button>
 
                                 <button type="button" class="component-menu-link" data-action="copyCanvasLink" data-uuid="${uuid}">
                                     <div class="component-menu-link-icon"><span class="material-symbols-rounded">content_copy</span></div>
-                                    <div class="component-menu-link-text"><span>Copiar el enlace</span></div>
+                                    <div class="component-menu-link-text"><span>${window.__('copy_link')}</span></div>
                                 </button>
                                 
                                 <button type="button" class="component-menu-link" data-nav="${basePath}/design/s/${uuid}">
                                     <div class="component-menu-link-icon"><span class="material-symbols-rounded">collections</span></div>
-                                    <div class="component-menu-link-text"><span>Ver galería de reinicios</span></div>
+                                    <div class="component-menu-link-text"><span>${window.__('view_restart_gallery')}</span></div>
                                 </button>
                                 
                                 ${warningMenuOption}
@@ -147,19 +147,19 @@ export const CardTemplates = {
         const imageUrl = snapshot.url ? (snapshot.url.startsWith('/') ? snapshot.url : `/${snapshot.url}`) : fallbackImg;
 
         return `
-            <div class="component-snapshot-card">
+            <div class="component-gallery-card">
                 <img src="${escapeHTML(imageUrl)}" 
                      alt="${canvasName}" 
-                     class="component-snapshot-card__image" 
+                     class="component-gallery-card__image" 
                      loading="lazy" 
                      decoding="async"
                      onerror="this.src='${fallbackImg}'">
-                <div class="component-snapshot-badge">
+                <div class="component-gallery-badge">
                     <span class="material-symbols-rounded">history</span>
                     ${date}
                 </div>
-                <div data-nav="${viewUrl}" class="component-snapshot-link">
-                    <h3 class="component-snapshot-title">${canvasName}</h3>
+                <div data-nav="${viewUrl}" class="component-gallery-link">
+                    <h3 class="component-gallery-title">${canvasName}</h3>
                 </div>
             </div>
         `;
@@ -193,7 +193,7 @@ export const CardTemplates = {
                 </div>
                 <div class="component-credit-card__bottom">
                     <div class="component-credit-card__number">
-                        <span>••••</span> <span>••••</span> <span>••••</span> <span>${last4}</span>
+                        <span>â€¢â€¢â€¢â€¢</span> <span>â€¢â€¢â€¢â€¢</span> <span>â€¢â€¢â€¢â€¢</span> <span>${last4}</span>
                     </div>
                 </div>
             </div>
@@ -220,18 +220,18 @@ export const CardTemplates = {
             }
         }
 
-        let statusText = 'Activo';
+        let statusText = window.__('status_active');
         if (status !== 'active') {
-            statusText = status === 'incomplete' ? 'Incompleto' : 'Inactivo';
+            statusText = status === 'incomplete' ? window.__('status_incomplete') : window.__('status_inactive');
         } else if (cancelAtEnd) {
             statusText = window.__('will_cancel_soon');
         }
 
         const actionText = cancelAtEnd ? window.__('btn_reactivate_sub') : window.__('btn_cancel_renew');
         const btnClass = cancelAtEnd ? 'component-button--brand' : 'component-button--dark';
-        const changePlanText = window.__ ? window.__('btn_change_plan') : 'Cambiar plan';
+        const changePlanText = window.__('btn_change_plan');
         
-        let renewText = cancelAtEnd ? 'Cancelada' : 'Activa';
+        let renewText = cancelAtEnd ? window.__('status_canceled') : window.__('status_active');
         
         return `
             <div class="component-group-item component-group-item--wrap">
@@ -240,7 +240,7 @@ export const CardTemplates = {
                         <span class="material-symbols-rounded">stars</span>
                     </div>
                     <div class="component-card__text">
-                        <h2 class="component-card__title">Plan actual</h2>
+                        <h2 class="component-card__title">${window.__('current_plan')}</h2>
                         <p class="component-card__description">${tierName} (${statusText})</p>
                     </div>
                 </div>
@@ -259,7 +259,7 @@ export const CardTemplates = {
                         <span class="material-symbols-rounded">event_repeat</span>
                     </div>
                     <div class="component-card__text">
-                        <h2 class="component-card__title">Renovación automática</h2>
+                        <h2 class="component-card__title">${window.__('auto_renewal')}</h2>
                         <p class="component-card__description">${renewText} (${dateLabel} ${dateVal})</p>
                     </div>
                 </div>

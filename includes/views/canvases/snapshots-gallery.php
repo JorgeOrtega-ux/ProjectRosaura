@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 use App\Config\Database\DatabaseManager;
 use App\Core\System\DatabaseConstants as DB;
@@ -126,19 +126,19 @@ if ($error) {
                         $dateLabel = htmlspecialchars($snapshot['date']);
                         $nameLabel = htmlspecialchars($canvasName);
                         ?>
-                        <div class="component-snapshot-card">
+                        <div class="component-gallery-card">
                             <img src="<?php echo $imageUrl; ?>"
                                  alt="<?php echo $nameLabel; ?>"
-                                 class="component-snapshot-card__image"
+                                 class="component-gallery-card__image"
                                  loading="lazy"
                                  decoding="async"
                                  onerror="this.src='<?php echo htmlspecialchars($fallbackImg); ?>'">
-                            <div class="component-snapshot-badge">
+                            <div class="component-gallery-badge">
                                 <span class="material-symbols-rounded">history</span>
                                 <?php echo $dateLabel; ?>
                             </div>
-                            <div data-nav="<?php echo $viewUrl; ?>" class="component-snapshot-link">
-                                <h3 class="component-snapshot-title"><?php echo $nameLabel; ?></h3>
+                            <div data-nav="<?php echo $viewUrl; ?>" class="component-gallery-link">
+                                <h3 class="component-gallery-title"><?php echo $nameLabel; ?></h3>
                             </div>
                         </div>
                     <?php endforeach; ?>

@@ -154,7 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
             } catch (error) {
-                
+                console.error('[AppInit] Error loading controller:', error);
             } finally {
                 delete window.importLocks[className];
             }

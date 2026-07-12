@@ -24,7 +24,7 @@ $canModerateChat = (isset($canvas) && isset($userId) && (isset($canvas['owner_id
         
         <div class="component-menu-section-parent component-menu-section-parent--chat">
                         <div class="component-menu-center component-chat-messages" data-ref="chat-messages-container">
-                <div class="component-empty-state" data-ref="empty-state-rendered" style="display: none;">
+                <div class="component-empty-state disabled" data-ref="empty-state-rendered">
                     <span class="material-symbols-rounded component-empty-state-icon">error</span>
                     <p class="component-empty-state-text"><?php echo __('chat_no_messages'); ?></p>
                 </div>

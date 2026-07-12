@@ -1,4 +1,4 @@
-.component-layout-centered {
+﻿.component-layout-centered {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -1157,6 +1157,84 @@ html.dark-theme .component-avatar__overlay {
     font-size: 14px;
 }
 
+.component-gallery-warning-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(2px);
+}
+.component-gallery-warning-content {
+    text-align: center;
+    color: #fff;
+}
+.component-gallery-warning-content .material-symbols-rounded {
+    font-size: 32px;
+    color: var(--color-warning);
+    margin-bottom: 8px;
+}
+.component-gallery-warning-title {
+    font-weight: 600;
+    font-size: 14px;
+}
+.component-gallery-warning-desc {
+    font-size: 11px;
+    opacity: 0.9;
+    margin-top: 4px;
+    padding: 0 10px;
+}
+
+.component-badge--absolute-tr {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 10;
+}
+
+.component-badge--glass {
+    background: rgba(0, 0, 0, 0.6);
+    color: #fff;
+    border: none;
+    backdrop-filter: blur(4px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.component-badge--glass .material-symbols-rounded {
+    color: inherit !important;
+}
+
+.component-badge--brand {
+    background: var(--accent-primary, #3b82f6);
+    color: #fff;
+    border: none;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.component-badge--brand .material-symbols-rounded {
+    color: inherit !important;
+}
+
+.component-gallery-badges-container {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-end;
+    z-index: 10;
+}
+
 .component-badge--absolute-tl {
     position: absolute;
     top: 16px;
@@ -2080,17 +2158,17 @@ input:checked + .component-toggle-slider:before {
     font-weight: 700;
 }
 
-.component-preview-ring {
+.component-gallery-ring {
     width: 64px; height: 64px; border-radius: 50%; padding: 4px;
     display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     transition: background 0.05s linear; box-shadow: var(--shadow-card);
     background-color: #808080; 
 }
-.component-preview-ring__inner {
+.component-gallery-ring__inner {
     width: 100%; height: 100%; background-color: var(--bg-app);
     border-radius: 50%; display: flex; align-items: center; justify-content: center;
 }
-.component-preview-ring__inner span { font-size: 32px; color: var(--text-secondary); }
+.component-gallery-ring__inner span { font-size: 32px; color: var(--text-secondary); }
 
 .component-color-list { display: flex; flex-direction: column; width: 100%; }
 .component-color-row { width: 100%; display: flex; flex-direction: column; }
@@ -2879,7 +2957,7 @@ input:checked + .component-toggle-slider:before {
     width: 100%;
 }
 
-.component-snapshot-card {
+.component-gallery-card {
     height: 180px;
     background-color: #e9ecef;
     border-radius: 12px;
@@ -2889,10 +2967,9 @@ input:checked + .component-toggle-slider:before {
     transition: outline 0.2s ease, outline-offset 0.2s ease, transform 0.2s ease;
     cursor: pointer;
     text-decoration: none;
-    
 }
 
-.component-snapshot-card::after {
+.component-gallery-card::after {
     content: '';
     position: absolute;
     inset: 0;
@@ -2902,12 +2979,12 @@ input:checked + .component-toggle-slider:before {
     border-radius: inherit; 
 }
 
-.component-snapshot-card:hover {
+.component-gallery-card:hover {
     outline: 2px solid var(--text-primary, #000000);
     outline-offset: 2px;
 }
 
-.component-snapshot-card__image {
+.component-gallery-card__image {
     position: absolute;
     inset: 0;
     width: 100%;
@@ -2919,7 +2996,7 @@ input:checked + .component-toggle-slider:before {
     border-radius: inherit; 
 }
 
-.component-snapshot-link {
+.component-gallery-link {
     position: absolute;
     inset: 0;
     display: flex;
@@ -2930,7 +3007,7 @@ input:checked + .component-toggle-slider:before {
     border-radius: inherit;
 }
 
-.component-snapshot-title {
+.component-gallery-title {
     margin: 0; 
     color: #ffffff; 
     font-size: 1.25rem; 
@@ -2942,28 +3019,7 @@ input:checked + .component-toggle-slider:before {
     width: 100%;
 }
 
-.component-snapshot-badge {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    background: rgba(0, 0, 0, 0.6);
-    color: #fff;
-    padding: 4px 8px;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 500;
-    z-index: 10;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    backdrop-filter: blur(4px);
-}
-
-.component-snapshot-badge .material-symbols-rounded {
-    font-size: 14px;
-}
-
-.component-snapshot-skeleton {
+.component-gallery-skeleton {
     height: 180px;
     border-radius: 12px;
     background: linear-gradient(90deg, var(--bg-tertiary) 25%, var(--bg-secondary) 50%, var(--bg-tertiary) 75%);
@@ -2980,7 +3036,7 @@ input:checked + .component-toggle-slider:before {
     }
 }
 
-.component-snapshot-actions-wrapper {
+.component-gallery-actions-wrapper {
     position: absolute;
     top: 12px;
     right: 12px;
@@ -2989,16 +3045,15 @@ input:checked + .component-toggle-slider:before {
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.2s ease, visibility 0.2s ease;
-    
 }
 
-.component-snapshot-card:hover .component-snapshot-actions-wrapper,
-.component-snapshot-actions-wrapper:has(.component-module.active) {
+.component-gallery-card:hover .component-gallery-actions-wrapper,
+.component-gallery-actions-wrapper:has(.component-module.active) {
     opacity: 1;
     visibility: visible;
 }
 
-.component-snapshot-actions {
+.component-gallery-actions {
     background-color: var(--bg-surface, #ffffff);
     border-radius: 8px;
     display: flex;
@@ -4032,3 +4087,19 @@ html.dark-theme .component-skeleton::after {
 .ui-skeleton-loader.is-loaded { background-color: transparent; }
 .ui-skeleton-loader.is-loaded::after { display: none; }
 .ui-skeleton-loader.is-loaded img { opacity: 1; }
+
+.component-gallery-link--disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+.component-badge-divider {
+    margin: 0 2px;
+    opacity: 0.5;
+}
+.component-icon--20 {
+    font-size: 20px !important;
+}
+.component-gallery-actions {
+    gap: 4px;
+}
+

@@ -1,4 +1,4 @@
-import { ApiRoutes } from '../api/ApiRoutes.js';
+﻿import { ApiRoutes } from '../api/ApiRoutes.js';
 import { showMessage } from '../utils/uiUtils.js';
 
 export class CanvasCardInteractions {
@@ -122,7 +122,7 @@ export class CanvasCardInteractions {
 
         if (res.success) {
             showMessage(window.__('msg_canvas_deleted'), 'success');
-            const card = document.querySelector(`.component-snapshot-card[data-card-id="${id}"]`);
+            const card = document.querySelector(`.component-gallery-card[data-card-id="${id}"]`);
             if (card) card.remove();
         } else {
             showMessage(res.message, 'error');
@@ -147,7 +147,7 @@ export class CanvasCardInteractions {
 
         if (res.success) {
             showMessage(window.__('msg_canvas_left'), 'success');
-            const card = document.querySelector(`.component-snapshot-card[data-card-id="${id}"]`);
+            const card = document.querySelector(`.component-gallery-card[data-card-id="${id}"]`);
             if (card) card.remove();
         } else {
             showMessage(res.message, 'error');
@@ -168,7 +168,7 @@ export class CanvasCardInteractions {
                 
                 const confirmRes = await window.dialogSystem.show('confirmActionModal', {
                     title: window.__('downgrade_basic_title'),
-                    message: 'Esta acción es IRREVERSIBLE. Se recortará tu lienzo a 64x64 desde la esquina superior izquierda, se perderán los miembros excedentes, y la paleta se restablecerá a la original. Escribe CONFIRMAR para proceder.',
+                    message: 'Esta acciÃ³n es IRREVERSIBLE. Se recortarÃ¡ tu lienzo a 64x64 desde la esquina superior izquierda, se perderÃ¡n los miembros excedentes, y la paleta se restablecerÃ¡ a la original. Escribe CONFIRMAR para proceder.',
                     inputPlaceholder: 'CONFIRMAR',
                     expectedInput: 'CONFIRMAR'
                 });
@@ -183,11 +183,11 @@ export class CanvasCardInteractions {
                 }
             } catch(e) {
                 
-                const ans = prompt("Escribe CONFIRMAR para degradar el lienzo a básico. Esta acción es IRREVERSIBLE.");
+                const ans = prompt("Escribe CONFIRMAR para degradar el lienzo a bÃ¡sico. Esta acciÃ³n es IRREVERSIBLE.");
                 if (ans === 'CONFIRMAR') confirmed = true;
             }
         } else {
-            const ans = prompt("Escribe CONFIRMAR para degradar el lienzo a básico. Esta acción es IRREVERSIBLE. Se perderán datos que superen el plan básico (tamaño, miembros extras, paletas).");
+            const ans = prompt("Escribe CONFIRMAR para degradar el lienzo a bÃ¡sico. Esta acciÃ³n es IRREVERSIBLE. Se perderÃ¡n datos que superen el plan bÃ¡sico (tamaÃ±o, miembros extras, paletas).");
             if (ans === 'CONFIRMAR') confirmed = true;
         }
 

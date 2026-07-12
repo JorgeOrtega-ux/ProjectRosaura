@@ -134,7 +134,7 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
                         </div>
                     </div>
                 </div>
-                <div class="component-empty-state" data-ref="empty-state-rendered" style="display: none;">
+                <div class="component-empty-state disabled" data-ref="empty-state-rendered">
                     <span class="material-symbols-rounded component-empty-state-icon">error</span>
                     <p class="component-empty-state-text"><?php echo __('dt_generic_message'); ?></p>
                 </div>
@@ -174,7 +174,7 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
             <div class="component-menu-bottom">
                 <div class="component-items-grid component-items-grid--5" data-ref="user-templates-grid">
                 </div>
-                <div class="component-empty-state" data-ref="empty-state-rendered" style="display: none;">
+                <div class="component-empty-state disabled" data-ref="empty-state-rendered">
                     <span class="material-symbols-rounded component-empty-state-icon">error</span>
                     <p class="component-empty-state-text"><?php echo __('dt_generic_message'); ?></p>
                 </div>
@@ -209,7 +209,7 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
                         </div>
                     </div>
                 </div>
-                <div class="component-empty-state" data-ref="empty-state-rendered" style="display: none;">
+                <div class="component-empty-state disabled" data-ref="empty-state-rendered">
                     <span class="material-symbols-rounded component-empty-state-icon">error</span>
                     <p class="component-empty-state-text"><?php echo __('dt_no_advantages'); ?></p>
                 </div>
