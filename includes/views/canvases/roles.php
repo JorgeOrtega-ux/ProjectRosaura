@@ -30,7 +30,7 @@ try {
 } catch (\Exception $e) {}
 
 if (!$canvasId) {
-    echo "<div class='view-content'><p>Lienzo no encontrado.</p></div>";
+    echo "<div class='view-content'><p>".__('err_canvas_not_found')."</p></div>";
     return;
 }
 
@@ -61,7 +61,7 @@ if (!$canManageRoles) {
 }
 
 if (!$canManageRoles) {
-    echo "<div class='view-content'><p>No tienes permisos para ver esta sección.</p></div>";
+    echo "<div class='view-content'><p>".__('err_no_permission')."</p></div>";
     return;
 }
 
@@ -72,7 +72,7 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
         
         <div class="component-top">
             <div class="component-top-left">
-                <h1 class="component-top-title"><?php echo __('canvas_roles_title') ?: 'Roles del Lienzo'; ?></h1>
+                <h1 class="component-top-title"><?php echo __('canvas_roles_title'); ?></h1>
             </div>
             <div class="component-top-right">
                 <div class="component-actions disabled" data-ref="role-selection-actions">
@@ -80,7 +80,7 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                         <span class="material-symbols-rounded">edit</span>
                     </button>
                     
-                    <button class="component-button component-button--secondary component-button--icon component-button--h40" data-action="editPermissions" data-tooltip="<?php echo __('btn_edit_permissions') ?: 'Permisos'; ?>" data-position="bottom">
+                    <button class="component-button component-button--secondary component-button--icon component-button--h40" data-action="editPermissions" data-tooltip="<?php echo __('btn_edit_permissions'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">admin_panel_settings</span>
                     </button>
 
@@ -88,13 +88,13 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                         <span class="material-symbols-rounded">delete</span>
                     </button>
 
-                    <button class="component-button component-button--icon component-button--h40" data-action="deselectRole" data-tooltip="<?php echo __('tooltip_cancel_selection') ?: 'Cancelar selección'; ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-action="deselectRole" data-tooltip="<?php echo __('tooltip_cancel_selection'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">close</span>
                     </button>
                 </div>
                 
                 <div class="component-actions active" data-ref="header-default-actions">
-                    <button class="component-button component-button--primary component-button--icon component-button--h40" data-action="addRole" data-tooltip="<?php echo __('btn_add_role') ?: 'Nuevo Rol'; ?>" data-position="bottom">
+                    <button class="component-button component-button--primary component-button--icon component-button--h40" data-action="addRole" data-tooltip="<?php echo __('btn_add_role'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">add</span>
                     </button>
                 </div>
@@ -107,9 +107,9 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                 <table class="component-table">
                     <thead>
                         <tr>
-                            <th><?php echo __('admin_roles_col_system_role') ?: 'Rol'; ?></th>
-                            <th data-width="120"><?php echo __('admin_roles_col_hierarchy') ?: 'Peso'; ?></th>
-                            <th data-width="180">Tipo</th>
+                            <th><?php echo __('admin_roles_col_system_role'); ?></th>
+                            <th data-width="120"><?php echo __('admin_roles_col_hierarchy'); ?></th>
+                            <th data-width="180"><?php echo __('lbl_type'); ?></th>
                         </tr>
                     </thead>
                     <tbody data-ref="roles-table-body">
@@ -149,7 +149,7 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                             <td>
                                 <div class="component-badge component-badge--sm">
                                     <span class="material-symbols-rounded"><?php echo $isSystemFlag ? 'lock' : 'edit'; ?></span>
-                                    <span><?php echo $isSystemFlag ? 'Predeterminado' : 'Personalizado'; ?></span>
+                                    <span><?php echo $isSystemFlag ? __('lbl_default') : __('lbl_custom'); ?></span>
                                 </div>
                             </td>
                         </tr>
@@ -160,8 +160,8 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
             <?php else: ?>
             <div class="component-empty-state" data-ref="roles-empty-state">
                 <span class="material-symbols-rounded empty-icon">admin_panel_settings</span>
-                <h3>No hay roles</h3>
-                <p>Ocurrió un error al cargar los roles.</p>
+                <h3><?php echo __('empty_roles_title'); ?></h3>
+                <p><?php echo __('empty_roles_desc'); ?></p>
             </div>
             <?php endif; ?>
         </div>

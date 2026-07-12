@@ -71,7 +71,7 @@ if ($restriction && $restriction['suspension_type'] === 'temporary' && $restrict
 $initialStateJson = htmlspecialchars(json_encode($initialState), ENT_QUOTES, 'UTF-8');
 
 $displayTexts = [
-    'isSuspended' => ($initialState['isSuspended'] === '1') ? 'Restringido' : 'Sin restricción',
+    'isSuspended' => ($initialState['isSuspended'] === '1') ? __('lbl_restricted') : __('lbl_unrestricted'),
     'suspensionReason' => !empty($initialState['suspensionReason']) ? (in_array($initialState['suspensionReason'], $predefinedSuspension) ? __($initialState['suspensionReason']) : $initialState['suspensionReason']) : __('lbl_select_suspension_reason'),
     'suspendedType' => ($initialState['suspendedType'] === 'permanent') ? __('suspension_perm') : __('suspension_temp'),
     'suspensionDuration' => '...',
@@ -117,10 +117,10 @@ if ($initialState['isSuspended'] === '1') {
     
     <div class="component-top">
         <div class="component-top-left">
-            <h1 class="component-top-title" data-ref="page-main-title">Restricción de Chat: <?php echo htmlspecialchars($targetUser['username']); ?></h1>
+            <h1 class="component-top-title" data-ref="page-main-title"><?php echo __('lbl_chat_restriction_title') . ': ' . htmlspecialchars($targetUser['username']); ?></h1>
         </div>
         <div class="component-top-right" data-ref="toolbar-actions-config">
-            <button class="component-button component-button--icon component-button--h40 disabled-interaction" data-action="submitSuspensionUpdate" data-ref="admin-btn-save-suspension" data-tooltip="Guardar cambios" data-position="bottom">
+            <button class="component-button component-button--icon component-button--h40 disabled-interaction" data-action="submitSuspensionUpdate" data-ref="admin-btn-save-suspension" data-tooltip="<?php echo htmlspecialchars(__('lbl_save_changes')); ?>" data-position="bottom">
                 <span class="material-symbols-rounded">save</span>
             </button>
         </div>
@@ -139,8 +139,8 @@ if ($initialState['isSuspended'] === '1') {
                             <div class="component-group-item component-group-item--stacked">
                                 <div class="component-card__content">
                                     <div class="component-card__text">
-                                        <h2 class="component-card__title">Restricción de Acceso al Chat</h2>
-                                        <p class="component-card__description">Evita que este usuario pueda enviar mensajes en el chat de este lienzo.</p>
+                                        <h2 class="component-card__title"><?php echo __('lbl_chat_restriction_title'); ?></h2>
+                                        <p class="component-card__description"><?php echo __('desc_chat_restriction'); ?></p>
                                     </div>
                                 </div>
                                 <div class="component-card__actions component-card__actions--start">
@@ -156,11 +156,11 @@ if ($initialState['isSuspended'] === '1') {
                                                 <div class="component-menu-list component-menu-list--scrollable">
                                                     <div class="component-menu-link" data-action="adminSetDropdown" data-key="isSuspended" data-value="0">
                                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">lock_open</span></div>
-                                                        <div class="component-menu-link-text"><span>Sin restricción</span></div>
+                                                        <div class="component-menu-link-text"><span><?php echo __('lbl_unrestricted'); ?></span></div>
                                                     </div>
                                                     <div class="component-menu-link" data-action="adminSetDropdown" data-key="isSuspended" data-value="1">
                                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">block</span></div>
-                                                        <div class="component-menu-link-text"><span>Restringido</span></div>
+                                                        <div class="component-menu-link-text"><span><?php echo __('lbl_restricted'); ?></span></div>
                                                     </div>
                                                 </div>
                                             </div>

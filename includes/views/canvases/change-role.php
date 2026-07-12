@@ -35,11 +35,11 @@ try {
             $targetAvatar = $userData['profile_picture'];
         }
     } else {
-        echo "<div class='view-content'><p>El usuario especificado no existe o no es válido.</p></div>";
+        echo "<div class='view-content'><p>".__('err_invalid_user')."</p></div>";
         return;
     }
 } catch (\Exception $e) {
-    echo "<div class='view-content'><p>Error de conexión con el módulo de identidad.</p></div>";
+    echo "<div class='view-content'><p>".__('err_identity_conn')."</p></div>";
     return;
 }
 try {
@@ -63,7 +63,7 @@ try {
             if ($isOwner) {
                 $targetCurrentRoles = [-1];
             } else {
-                echo "<div class='view-content'><p>El usuario especificado no pertenece a este lienzo.</p></div>";
+                echo "<div class='view-content'><p>".__('err_user_not_member')."</p></div>";
                 return;
             }
         }
@@ -72,7 +72,7 @@ try {
         return;
     }
 } catch (\Exception $e) {
-    echo "<div class='view-content'><p>Error interno al procesar los datos de membresía.</p></div>";
+    echo "<div class='view-content'><p>".__('err_internal_membership')."</p></div>";
     return;
 }
 $availableRoles = [];
@@ -92,13 +92,13 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
     
     <div class="component-top">
         <div class="component-top-left">
-            <h1 class="component-top-title">Gestionar Rol: <?php echo htmlspecialchars($targetUsername); ?></h1>
+            <h1 class="component-top-title"><?php echo __('lbl_manage_role') . ': ' . htmlspecialchars($targetUsername); ?></h1>
         </div>
         <div class="component-top-right">
-            <button class="component-button component-button--icon component-button--h40" data-action="cancelRole" data-tooltip="<?php echo __('btn_cancel') ?: 'Cancelar'; ?>" data-position="bottom">
+            <button class="component-button component-button--icon component-button--h40" data-action="cancelRole" data-tooltip="<?php echo __('btn_cancel'); ?>" data-position="bottom">
                 <span class="material-symbols-rounded">close</span>
             </button>
-            <button class="component-button component-button--icon component-button--h40" data-action="saveRole" data-tooltip="<?php echo __('btn_save_changes') ?: 'Guardar Cambios'; ?>" data-position="bottom">
+            <button class="component-button component-button--icon component-button--h40" data-action="saveRole" data-tooltip="<?php echo __('btn_save_changes'); ?>" data-position="bottom">
                 <span class="material-symbols-rounded">save</span>
             </button>
         </div>
@@ -111,7 +111,7 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                 <?php if ($isOwner): ?>
                 <div>
                     <span class="material-symbols-rounded">info</span>
-                    <span><?php echo __('msg_owner_role_warning') ?: 'Este usuario es el creador principal. Es probable que el sistema no permita reducir sus privilegios.'; ?></span>
+                    <span><?php echo __('msg_owner_role_warning'); ?></span>
                 </div>
                 <?php endif; ?>
 
@@ -121,9 +121,9 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                         <div class="component-group-item component-group-item--stacked">
                             <div class="component-card__content">
                                 <div class="component-card__text">
-                                    <h2 class="component-card__title"><?php echo __('lbl_select_new_role') ?: 'Selecciona el nuevo nivel de acceso'; ?></h2>
+                                    <h2 class="component-card__title"><?php echo __('lbl_select_new_role'); ?></h2>
                                     <p class="component-card__description" data-ref="admin-role-desc">
-                                        Modifica el rol de este miembro dentro del lienzo actual de forma instantánea.
+                                        <?php echo __('desc_manage_role'); ?>
                                     </p>
                                 </div>
                             </div>
@@ -138,10 +138,10 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                                 $roleKey = 'role.' . preg_replace('/[\s\W_]+/', '_', strtolower(trim($rawName)));
                                 $translatedName = __($roleKey);
                                 if ($translatedName === $roleKey) $translatedName = $rawName;
-                                $desc = __('desc_role_' . strtolower(trim($rawName))) ?: 'Rol del sistema';
+                                $desc = __('desc_role_' . strtolower(trim($rawName)));
                             } else {
                                 $translatedName = htmlspecialchars($rawName);
-                                $desc = 'Rol personalizado (Peso: ' . $role['weight'] . ')';
+                                $desc = __('lbl_custom_role_weight') . ' ' . $role['weight'];
                             }
                             
                             $isChecked = in_array((int)$role['id'], $targetCurrentRoles ?? []) ? 'checked' : '';

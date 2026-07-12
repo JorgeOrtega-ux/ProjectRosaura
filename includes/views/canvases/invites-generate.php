@@ -26,7 +26,7 @@ if ($canvasUuid) {
 }
 
 if (!$userId || !$canvasId) {
-    echo "<div class='view-content'><p>Lienzo no encontrado o sin acceso.</p></div>";
+    echo "<div class='view-content'><p>".__('err_canvas_not_found_or_no_access')."</p></div>";
     return;
 }
 
@@ -57,12 +57,12 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
     
     <div class="component-top">
         <div class="component-top-left">
-            <h1 class="component-top-title">Generar nueva invitación</h1>
+            <h1 class="component-top-title"><?php echo __('lbl_generate_new_invite'); ?></h1>
         </div>
         <div class="component-top-right">
             <button type="button" class="component-button component-button--h40 component-button--primary" data-action="submitGenerateInvite">
                 <span class="material-symbols-rounded">add_link</span>
-                Generar invitación
+                <?php echo __('btn_generate_invite'); ?>
             </button>
         </div>
     </div>
@@ -76,8 +76,8 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                                                 <div class="component-group-item component-group-item--stacked">
                             <div class="component-card__content">
                                 <div class="component-card__text">
-                                    <h2 class="component-card__title">Rol a otorgar</h2>
-                                    <p class="component-card__description">Selecciona el nivel de acceso para esta invitación.</p>
+                                    <h2 class="component-card__title"><?php echo __('lbl_role_to_grant'); ?></h2>
+                                    <p class="component-card__description"><?php echo __('desc_invite_role'); ?></p>
                                 </div>
                             </div>
                             <div class="component-card__actions component-card__actions--start">
@@ -85,7 +85,7 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                                     <div class="component-dropdown-trigger" data-action="toggleModule" data-target="moduleRole">
                                         <?php 
                                             $defIcon = ($defaultRole['is_system'] ?? 0) ? 'shield' : 'person';
-                                            $defLabel = $defaultRole['name'] ?? 'Seleccionar';
+                                            $defLabel = $defaultRole['name'] ?? __('lbl_select');
                                             if ($defaultRole && ($defaultRole['is_system'] ?? 0)) {
                                                 $roleKey = 'role.' . preg_replace('/[\s\W_]+/', '_', strtolower(trim($defLabel)));
                                                 $translatedName = __($roleKey);
@@ -117,7 +117,7 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                                                     $isActive = ($defaultRole && $defaultRole['id'] == $role['id']) ? 'active' : '';
                                                     $isDisabled = $isHighRole ? 'disabled-interactive' : '';
                                                 ?>
-                                                    <div class="component-menu-link <?php echo $isActive . ' ' . $isDisabled; ?>" data-action="selectInviteRole" data-value="<?php echo htmlspecialchars($role['id']); ?>" data-label="<?php echo htmlspecialchars($translatedName); ?>" data-icon="<?php echo $icon; ?>" <?php if($isHighRole) echo 'data-tooltip="No puedes generar invitaciones con este rol" data-position="right"'; ?>>
+                                                    <div class="component-menu-link <?php echo $isActive . ' ' . $isDisabled; ?>" data-action="selectInviteRole" data-value="<?php echo htmlspecialchars($role['id']); ?>" data-label="<?php echo htmlspecialchars($translatedName); ?>" data-icon="<?php echo $icon; ?>" <?php if($isHighRole) echo 'data-tooltip="' . htmlspecialchars(__('err_cannot_generate_invite_role')) . '" data-position="right"'; ?>>
                                                         <div class="component-menu-link-icon">
                                                             <span class="material-symbols-rounded"><?php echo $icon; ?></span>
                                                         </div>
@@ -139,8 +139,8 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                                                 <div class="component-group-item component-group-item--stacked">
                             <div class="component-card__content">
                                 <div class="component-card__text">
-                                    <h2 class="component-card__title">Límite de usos</h2>
-                                    <p class="component-card__description">Opcional. Selecciona la opción "Sin límite" para no aplicar restricciones.</p>
+                                    <h2 class="component-card__title"><?php echo __('lbl_uses_limit'); ?></h2>
+                                    <p class="component-card__description"><?php echo __('desc_uses_limit'); ?></p>
                                 </div>
                             </div>
                             <div class="component-card__actions component-card__actions--start">
@@ -149,7 +149,7 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                                         <button type="button" class="component-inline-control__btn" data-action="adjustMaxUses" data-step="-5" data-min="0"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
                                         <button type="button" class="component-inline-control__btn" data-action="adjustMaxUses" data-step="-1" data-min="0"><span class="material-symbols-rounded">chevron_left</span></button>
                                     </div>
-                                    <div class="component-inline-control__center" data-ref="val_max_uses" data-val="0">Sin límite</div>
+                                    <div class="component-inline-control__center" data-ref="val_max_uses" data-val="0"><?php echo __('lbl_no_limit'); ?></div>
                                     <div class="component-inline-control__group">
                                         <button type="button" class="component-inline-control__btn" data-action="adjustMaxUses" data-step="1" data-max="999"><span class="material-symbols-rounded">chevron_right</span></button>
                                         <button type="button" class="component-inline-control__btn" data-action="adjustMaxUses" data-step="5" data-max="999"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
@@ -164,15 +164,15 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                                                 <div class="component-group-item component-group-item--stacked">
                             <div class="component-card__content">
                                 <div class="component-card__text">
-                                    <h2 class="component-card__title">Fecha de expiración</h2>
-                                    <p class="component-card__description">Día y hora exacta en la que la invitación caducará.</p>
+                                    <h2 class="component-card__title"><?php echo __('lbl_expiration_date'); ?></h2>
+                                    <p class="component-card__description"><?php echo __('desc_expiration_date'); ?></p>
                                 </div>
                             </div>
                             <div class="component-card__actions component-card__actions--start">
                                 <div class="component-dropdown-wrapper">
                                     <div class="component-dropdown-trigger" data-action="toggleModule" data-target="inviteModuleCalendar">
                                         <span class="material-symbols-rounded">calendar_month</span>
-                                        <span class="component-dropdown-text" data-ref="invite-endDate-text">Sin caducidad</span>
+                                        <span class="component-dropdown-text" data-ref="invite-endDate-text"><?php echo __('lbl_no_expiration'); ?></span>
                                     </div>
                                     <div class="component-module component-module--dropdown component-module--dropdown-left disabled" data-module="inviteModuleCalendar">
                                         <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding">
@@ -190,7 +190,7 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                                                 </div>
 
                                                 <div class="component-calendar-weekdays">
-                                                    <span>Do</span><span>Lu</span><span>Ma</span><span>Mi</span><span>Ju</span><span>Vi</span><span>Sá</span>
+                                                    <span><?php echo __('day_su_min'); ?></span><span><?php echo __('day_mo_min'); ?></span><span><?php echo __('day_tu_min'); ?></span><span><?php echo __('day_we_min'); ?></span><span><?php echo __('day_th_min'); ?></span><span><?php echo __('day_fr_min'); ?></span><span><?php echo __('day_sa_min'); ?></span>
                                                 </div>
 
                                                 <div class="component-calendar-days" data-ref="calendar-days"></div>
@@ -206,10 +206,10 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                                                 </div>
 
                                                 <div class="component-calendar-actions">
-                                                    <button type="button" class="component-button component-button--h30" data-action="calendarClear">Sin caducidad</button>
+                                                    <button type="button" class="component-button component-button--h30" data-action="calendarClear"><?php echo __('lbl_no_expiration'); ?></button>
                                                     <div>
-                                                        <button type="button" class="component-button component-button--h30" data-action="calendarCancel">Cancelar</button>
-                                                        <button type="button" class="component-button component-button--h30 component-button--dark" data-action="calendarConfirm">Aceptar</button>
+                                                        <button type="button" class="component-button component-button--h30" data-action="calendarCancel"><?php echo __('btn_cancel'); ?></button>
+                                                        <button type="button" class="component-button component-button--h30 component-button--dark" data-action="calendarConfirm"><?php echo __('btn_accept'); ?></button>
                                                     </div>
                                                 </div>
                                             </div>

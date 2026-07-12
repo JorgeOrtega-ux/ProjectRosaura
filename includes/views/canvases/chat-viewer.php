@@ -56,17 +56,17 @@ if ($userId && !empty($canvasUuid) && ($msgId > 0 || $isPending)) {
                         }
                     }
                 } else {
-                    $errorMsg = "El mensaje no tiene imágenes adjuntas.";
+                    $errorMsg = __('err_msg_no_attachments');
                 }
             }
         } else {
-            $errorMsg = "No tienes permiso para ver estas imágenes.";
+            $errorMsg = __('err_no_permission_images');
         }
     } catch (\Exception $e) {
-        $errorMsg = "Error al cargar la imagen.";
+        $errorMsg = __('err_load_image');
     }
 } else {
-    $errorMsg = "Parámetros inválidos.";
+    $errorMsg = __('err_invalid_params');
 }
 
 $totalImages = count($attachments);
@@ -77,12 +77,12 @@ $attachmentsJson = json_encode($attachments);
 <div class="view-content" data-ref="chat-viewer-wrapper" data-images='<?php echo htmlspecialchars($attachmentsJson, ENT_QUOTES); ?>' data-idx="<?php echo $idx; ?>">
     <div class="component-top">
         <div class="component-top-left">
-            <h1 class="component-top-title">Visor de imágenes</h1>
+            <h1 class="component-top-title"><?php echo __('lbl_image_viewer'); ?></h1>
         </div>
         <div class="component-top-center"></div>
         <div class="component-top-right">
             <?php if ($totalImages > 0 || $isPending): ?>
-            <div class="component-inline-control" data-ref="pagination-container" data-tooltip="Paginación" data-position="bottom">
+            <div class="component-inline-control" data-ref="pagination-container" data-tooltip="<?php echo htmlspecialchars(__('lbl_pagination')); ?>" data-position="bottom">
                 <div class="component-inline-control__group">
                     <button class="component-inline-control__btn <?php echo $idx === 0 ? 'disabled-interaction' : ''; ?>" id="cv-btn-prev">
                         <span class="material-symbols-rounded">chevron_left</span>
@@ -96,7 +96,7 @@ $attachmentsJson = json_encode($attachments);
                 </div>
             </div>
             
-            <button class="component-button component-button--icon component-button--h40" id="cv-btn-download" data-tooltip="Descargar plantilla" data-position="bottom">
+            <button class="component-button component-button--icon component-button--h40" id="cv-btn-download" data-tooltip="<?php echo htmlspecialchars(__('lbl_download_template')); ?>" data-position="bottom">
                 <span class="material-symbols-rounded">download</span>
             </button>
             <?php endif; ?>
@@ -109,7 +109,7 @@ $attachmentsJson = json_encode($attachments);
         <?php elseif ($totalImages > 0 || $isPending): ?>
             <img id="cv-main-image" src="<?php echo $totalImages > 0 ? htmlspecialchars($attachments[$idx]) : ''; ?>">
         <?php else: ?>
-            <div>No hay imágenes para mostrar.</div>
+            <div><?php echo __('lbl_no_images'); ?></div>
         <?php endif; ?>
     </div>
 </div>

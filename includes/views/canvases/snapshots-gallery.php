@@ -28,7 +28,7 @@ if ($uuid) {
 
         if (!$canvas) {
             $error = true;
-            $errorMessage = __('err_canvas_not_found') ?: 'El lienzo especificado no existe o fue eliminado.';
+            $errorMessage = __('err_canvas_not_found');
         } else {
             $canvasName = $canvas['name'];
             $isAuthorized = true;
@@ -49,7 +49,7 @@ if ($uuid) {
                 if (!$isOwner && !$isMember && !$isPrivileged) {
                     $isAuthorized = false;
                     $error = true;
-                    $errorMessage = __('err_unauthorized') ?: 'No tienes los permisos necesarios para ver el historial de este lienzo privado.';
+                    $errorMessage = __('err_unauthorized');
                     $errorIcon = 'lock';
                 }
             }
@@ -80,11 +80,11 @@ if ($uuid) {
         }
     } catch (Exception $e) {
         $error = true;
-        $errorMessage = __('err_load_snapshots') ?: 'Ocurrió un error al cargar la información desde el servidor.';
+        $errorMessage = __('err_load_snapshots');
     }
 } else {
     $error = true;
-    $errorMessage = __('err_canvas_uuid_missing') ?: 'Falta el identificador del lienzo en la solicitud.';
+    $errorMessage = __('err_canvas_uuid_missing');
 }
 
 $galleryTitle = str_replace('{name}', $canvasName, __('snapshots_gallery_title'));

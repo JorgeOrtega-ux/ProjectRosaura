@@ -5,37 +5,32 @@ error_reporting(E_ALL);
 
 try {
     $snapshotId = isset($_GET['id']) ? $_GET['id'] : null;
-    $title = function_exists('__') ? __('lbl_snapshot_viewer_title') : null;
-    $title = $title ?: 'Visor de Snapshot';
+    $title = __('lbl_snapshot_viewer_title');
 
 } catch (\Throwable $e) {
     $phpError = $e->getMessage();
 }
 ?>
 
-<style>
-@keyframes spin { 
-    100% { transform: rotate(360deg); } 
-}
-</style>
+
 
 <div class="view-content">
     
     <?php if (empty($snapshotId) || isset($phpError)): ?>
         <div>
             <h3>
-                <span class="material-symbols-rounded">warning</span> Error de Renderizado en la Vista
+                <span class="material-symbols-rounded">warning</span> <?php echo __('err_render_view'); ?>
             </h3>
             
             <?php if (isset($phpError)): ?>
-                <p><strong>Error PHP:</strong> <?php echo htmlspecialchars($phpError); ?></p>
+                <p><strong><?php echo __('lbl_php_error'); ?>:</strong> <?php echo htmlspecialchars($phpError); ?></p>
             <?php endif; ?>
             
             <?php if (empty($snapshotId)): ?>
-                <p><strong>Problema:</strong> La variable <code>$_GET['id']</code> está vacía o no llegó a la vista.</p>
-                <p><strong>Variables $_GET recibidas:</strong></p>
+                <p><strong><?php echo __('lbl_problem'); ?>:</strong> <?php echo __('err_missing_get_id'); ?></p>
+                <p><strong><?php echo __('lbl_get_vars_received'); ?>:</strong></p>
                 <pre><?php print_r($_GET); ?></pre>
-                <p><strong>URI Solicitada:</strong> <?php echo htmlspecialchars($_SERVER['REQUEST_URI'] ?? 'Desconocida'); ?></p>
+                <p><strong><?php echo __('lbl_requested_uri'); ?>:</strong> <?php echo htmlspecialchars($_SERVER['REQUEST_URI'] ?? __('lbl_unknown')); ?></p>
             <?php endif; ?>
         </div>
     <?php endif; ?>
@@ -53,7 +48,7 @@ try {
             
             <div class="component-top-right">
                 <div class="component-actions active">
-                    <button id="tl-btn-play" class="component-button component-button--icon component-button--h40" title="Reproducir Timelapse">
+                    <button id="tl-btn-play" class="component-button component-button--icon component-button--h40" data-tooltip="<?php echo __('tooltip_play_timelapse'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">play_circle</span>
                     </button>
                 </div>
@@ -69,7 +64,7 @@ try {
             </div>
             
             <div class="component-badge component-badge--warning component-badge--absolute-tl">
-                <span class="material-symbols-rounded">history</span> Modo Histórico (Solo Lectura)
+                <span class="material-symbols-rounded">history</span> <?php echo __('lbl_historical_mode'); ?>
             </div>
         </div>
     </div>

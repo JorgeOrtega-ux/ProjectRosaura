@@ -31,7 +31,7 @@ try {
 } catch (\Exception $e) {}
 
 if (!$canvasId) {
-    echo "<div class='view-content'><p>Lienzo no encontrado.</p></div>";
+    echo "<div class='view-content'><p>".__('err_canvas_not_found')."</p></div>";
     return;
 }
 $roleData = null;
@@ -49,7 +49,7 @@ try {
 } catch (\Exception $e) {}
 
 if (!$roleData) {
-    echo "<div class='view-content'><p>Rol no encontrado o no pertenece a este lienzo.</p></div>";
+    echo "<div class='view-content'><p>".__('err_role_not_found')."</p></div>";
     return;
 }
 
@@ -75,7 +75,7 @@ if (!$canManageRoles) {
 }
 
 if (!$canManageRoles) {
-    echo "<div class='view-content'><p>No tienes permisos para ver esta sección.</p></div>";
+    echo "<div class='view-content'><p>".__('err_no_permission')."</p></div>";
     return;
 }
 $allPermissions = [];
@@ -104,15 +104,15 @@ if (trim($rawName) !== '') {
     
     <div class="component-top">
         <div class="component-top-left">
-            <button class="component-button component-button--icon component-button--h40" data-nav="<?php echo $backUrl; ?>" data-tooltip="<?php echo __('btn_back') ?: 'Volver'; ?>" data-position="bottom">
+            <button class="component-button component-button--icon component-button--h40" data-nav="<?php echo $backUrl; ?>" data-tooltip="<?php echo __('btn_back'); ?>" data-position="bottom">
                 <span class="material-symbols-rounded">arrow_back</span>
             </button>
             <h1 class="component-top-title" data-ref="role-name-display">
-                <?php echo __('admin_edit_role_permissions_title') ?: 'Permisos del Rol'; ?>: <?php echo htmlspecialchars($translatedName !== '' ? $translatedName : (__('admin_role_undefined') ?: 'Indefinido')); ?>
+                <?php echo __('admin_edit_role_permissions_title'); ?>: <?php echo htmlspecialchars($translatedName !== '' ? $translatedName : __('admin_role_undefined')); ?>
             </h1>
         </div>
         <div class="component-top-right">
-            <button class="component-button component-button--primary component-button--icon component-button--h40" data-action="savePermissions" data-tooltip="<?php echo __('btn_save') ?: 'Guardar'; ?>" data-position="bottom" <?php echo $isSystemRole ? 'disabled' : ''; ?>>
+            <button class="component-button component-button--primary component-button--icon component-button--h40" data-action="savePermissions" data-tooltip="<?php echo __('btn_save'); ?>" data-position="bottom" <?php echo $isSystemRole ? 'disabled' : ''; ?>>
                 <span class="material-symbols-rounded">save</span>
             </button>
         </div>
@@ -125,7 +125,7 @@ if (trim($rawName) !== '') {
                     <?php if (empty($allPermissions)): ?>
                         <div class="component-empty-state">
                             <span class="material-symbols-rounded empty-icon">lock</span>
-                            <h3><?php echo __('admin_perms_empty_title') ?: 'No hay permisos'; ?></h3>
+                            <h3><?php echo __('admin_perms_empty_title'); ?></h3>
                         </div>
                     <?php else: ?>
                         <?php foreach ($allPermissions as $p): ?>

@@ -64,57 +64,57 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
         
         <div class="component-top">
             <div class="component-top-left">
-                <h1 class="component-top-title"><?php echo __('canvases_manage_title') ?: 'Administrar mis lienzos'; ?></h1>
+                <h1 class="component-top-title"><?php echo __('canvases_manage_title'); ?></h1>
             </div>
             
             <div class="component-top-right">
                 
                 <div class="component-actions disabled" data-ref="header-selection-actions">
                     
-                    <button class="component-button component-button--icon component-button--h40" data-ref="btn-nav-resize" data-nav="" data-tooltip="<?php echo __('tooltip_resize_canvas') ?: 'Expandir / Ajustar'; ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-ref="btn-nav-resize" data-nav="" data-tooltip="<?php echo __('tooltip_resize_canvas'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">expand</span>
                     </button>
 
-                    <button class="component-button component-button--icon component-button--h40 disabled-interactive" data-ref="btn-nav-snapshots" data-nav="" data-tooltip="<?php echo __('tooltip_view_snapshots') ?: 'Ver galería de reinicios'; ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40 disabled-interactive" data-ref="btn-nav-snapshots" data-nav="" data-tooltip="<?php echo __('tooltip_view_snapshots'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">collections</span>
                     </button>
 
-                    <button class="component-button component-button--icon component-button--h40" data-ref="btn-nav-resets" data-nav="" data-tooltip="<?php echo __('tooltip_manage_resets') ?: 'Programar reinicios'; ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-ref="btn-nav-resets" data-nav="" data-tooltip="<?php echo __('tooltip_manage_resets'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">update</span>
                     </button>
 
-                    <button class="component-button component-button--icon component-button--h40" data-ref="btn-nav-edit" data-nav="" data-tooltip="<?php echo __('tooltip_edit_canvas') ?: 'Editar configuración'; ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-ref="btn-nav-edit" data-nav="" data-tooltip="<?php echo __('tooltip_edit_canvas'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">edit</span>
                     </button>
 
-                    <button class="component-button component-button--icon component-button--h40" data-ref="btn-nav-members" data-nav="" data-tooltip="<?php echo __('tooltip_manage_members') ?: 'Gestionar miembros'; ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-ref="btn-nav-members" data-nav="" data-tooltip="<?php echo __('tooltip_manage_members'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">group</span>
                     </button>
 
-                    <button class="component-button component-button--icon component-button--h40" data-ref="btn-nav-roles" data-nav="" data-tooltip="<?php echo __('tooltip_manage_roles') ?: 'Gestionar roles'; ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-ref="btn-nav-roles" data-nav="" data-tooltip="<?php echo __('tooltip_manage_roles'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">shield_person</span>
                     </button>
 
-                    <button class="component-button component-button--icon component-button--h40" data-ref="btn-nav-invites" data-nav="" data-tooltip="<?php echo __('tooltip_manage_invites') ?: 'Gestionar invitaciones'; ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-ref="btn-nav-invites" data-nav="" data-tooltip="<?php echo __('tooltip_manage_invites'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">link</span>
                     </button>
 
-                    <button class="component-button component-button--icon component-button--h40 component-button--danger" data-action="deleteSelectedCanvases" data-tooltip="<?php echo __('tooltip_delete_canvas') ?: 'Eliminar lienzos'; ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40 component-button--danger" data-action="deleteSelectedCanvases" data-tooltip="<?php echo __('tooltip_delete_canvas'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">delete</span>
                     </button>
 
-                    <button class="component-button component-button--icon component-button--h40" data-action="deselectCanvas" data-tooltip="<?php echo __('tooltip_cancel_selection') ?: 'Cancelar selección'; ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-action="deselectCanvas" data-tooltip="<?php echo __('tooltip_cancel_selection'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">close</span>
                     </button>
                 </div>
                 
                 <div class="component-actions active" data-ref="header-default-actions">
                     
-                    <button class="component-button component-button--icon component-button--h40" data-action="searchCanvas" data-ref="btn-toggle-search" data-tooltip="<?php echo __('search_canvas_placeholder') ?: 'Buscar en mis lienzos'; ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-action="searchCanvas" data-ref="btn-toggle-search" data-tooltip="<?php echo __('search_canvas_placeholder'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">search</span>
                     </button>
 
-                    <div class="component-inline-control" data-ref="pagination-container" data-tooltip="<?php echo __('pagination_tooltip', ['page' => $page, 'total' => $totalPages]) ?: "Página $page de $totalPages"; ?>" data-position="bottom">
+                    <div class="component-inline-control" data-ref="pagination-container" data-tooltip="<?php echo __('pagination_tooltip', ['page' => $page, 'total' => $totalPages]); ?>" data-position="bottom">
                         <div class="component-inline-control__group">
                             <button class="component-inline-control__btn <?php echo $page <= 1 ? 'disabled-interactive' : ''; ?>" <?php echo $page > 1 ? 'data-nav="'.$prevPageUrl.'"' : ''; ?>>
                                 <span class="material-symbols-rounded">chevron_left</span>
@@ -137,7 +137,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                         <span class="material-symbols-rounded">search</span>
                     </div>
                     <div class="component-search-input">
-                        <input type="text" data-ref="canvas-search-input" placeholder="<?php echo __('search_canvas_placeholder') ?: 'Buscar por nombre o descripción...'; ?>">
+                        <input type="text" data-ref="canvas-search-input" placeholder="<?php echo __('search_canvas_placeholder'); ?>">
                     </div>
                 </div>
             </div>
@@ -149,11 +149,11 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                 <table class="component-table">
                     <thead>
                         <tr>
-                            <th><?php echo __('table_header_canvas_name') ?: 'Lienzo'; ?></th>
-                            <th><?php echo __('table_header_privacy') ?: 'Privacidad'; ?></th>
-                            <th><?php echo __('table_header_size') ?: 'Resolución'; ?></th>
-                            <th><?php echo __('table_header_limit') ?: 'Límite de usuarios'; ?></th>
-                            <th><?php echo __('table_header_registered') ?: 'Fecha de creación'; ?></th>
+                            <th><?php echo __('table_header_canvas_name'); ?></th>
+                            <th><?php echo __('table_header_privacy'); ?></th>
+                            <th><?php echo __('table_header_size'); ?></th>
+                            <th><?php echo __('table_header_limit'); ?></th>
+                            <th><?php echo __('table_header_registered'); ?></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -213,7 +213,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                                 <td colspan="5" class="component-empty-table-cell">
                                     <div class="component-empty-state component-empty-state--table">
                                         <span class="material-symbols-rounded component-empty-state-icon">search_off</span>
-                                        <p class="component-empty-state-text"><?php echo __('empty_search_canvases') ?: 'No se encontraron lienzos que coincidan con tu búsqueda.'; ?></p>
+                                        <p class="component-empty-state-text"><?php echo __('empty_search_canvases'); ?></p>
                                     </div>
                                 </td>
                             </tr>
@@ -223,7 +223,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                                 <td colspan="5" class="component-empty-table-cell">
                                     <div class="component-empty-state component-empty-state--table">
                                         <span class="material-symbols-rounded component-empty-state-icon">palette</span>
-                                        <p class="component-empty-state-text"><?php echo __('empty_canvases_system') ?: 'Aún no hay ningún lienzo para mostrar.'; ?></p>
+                                        <p class="component-empty-state-text"><?php echo __('empty_canvases_system'); ?></p>
                                     </div>
                                 </td>
                             </tr>

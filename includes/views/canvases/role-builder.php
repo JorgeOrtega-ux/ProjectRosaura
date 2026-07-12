@@ -103,18 +103,18 @@ if (trim($rawName) !== '') {
     
     <div class="component-top">
         <div class="component-top-left">
-            <button class="component-button component-button--icon component-button--h40" data-nav="<?php echo $backUrl; ?>" data-tooltip="<?php echo __('btn_back') ?: 'Volver'; ?>" data-position="bottom">
+            <button class="component-button component-button--icon component-button--h40" data-nav="<?php echo $backUrl; ?>" data-tooltip="<?php echo __('btn_back'); ?>" data-position="bottom">
                 <span class="material-symbols-rounded">arrow_back</span>
             </button>
-            <h1 class="component-top-title" data-ref="builderTitle"><?php echo $isEdit ? (__('admin_edit_role') ?: 'Editar Rol') : (__('admin_role_builder') ?: 'Crear Rol'); ?></h1>
+            <h1 class="component-top-title" data-ref="builderTitle"><?php echo $isEdit ? __('admin_edit_role') : __('admin_role_builder'); ?></h1>
             <?php if ($isSystemRole): ?>
-            <h1 class="component-top-title" data-ref="systemIndicator"><?php echo __('admin_role_system_limited_edit') ?: '(Rol del Sistema)'; ?></h1>
+            <h1 class="component-top-title" data-ref="systemIndicator"><?php echo __('admin_role_system_limited_edit'); ?></h1>
             <?php endif; ?>
         </div>
         <div class="component-top-right">
             <button class="component-button component-button--primary component-button--h40" data-action="saveRoleData">
                 <span class="material-symbols-rounded">save</span>
-                <?php echo __('btn_save_changes') ?: 'Guardar'; ?>
+                <?php echo __('btn_save_changes'); ?>
             </button>
         </div>
     </div>
@@ -129,28 +129,28 @@ if (trim($rawName) !== '') {
                         <div class="active component-state-box" data-state="role-name-view" data-ref="roleNameView">
                             <div class="component-card__content">
                                 <div class="component-card__text">
-                                    <h2 class="component-card__title"><?php echo __('admin_role_name') ?: 'Nombre del Rol'; ?></h2>
+                                    <h2 class="component-card__title"><?php echo __('admin_role_name'); ?></h2>
                                     <span class="component-display-value" data-ref="display-role-name">
-                                        <?php echo $translatedName !== '' ? htmlspecialchars($translatedName) : (__('admin_role_undefined') ?: 'Indefinido'); ?>
+                                        <?php echo $translatedName !== '' ? htmlspecialchars($translatedName) : __('admin_role_undefined'); ?>
                                     </span>
                                 </div>
                             </div>
                             <div class="component-card__actions component-card__actions--stretch">
-                                <button type="button" class="component-button component-button--h34 <?php echo $isSystemRole ? 'disabled-interaction' : ''; ?>" data-action="toggleEditState" data-target="role-name"><?php echo __('btn_edit') ?: 'Editar'; ?></button>
+                                <button type="button" class="component-button component-button--h34 <?php echo $isSystemRole ? 'disabled-interaction' : ''; ?>" data-action="toggleEditState" data-target="role-name"><?php echo __('btn_edit'); ?></button>
                             </div>
                         </div>
 
                         <div class="disabled component-state-box" data-state="role-name-edit" data-ref="roleNameEdit">
                             <div class="component-card__content">
                                 <div class="component-card__text">
-                                    <h2 class="component-card__title"><?php echo __('admin_role_name') ?: 'Nombre del Rol'; ?></h2>
+                                    <h2 class="component-card__title"><?php echo __('admin_role_name'); ?></h2>
                                     <div class="component-edit-row">
                                         <div class="component-input-group component-input-group--h34">
-                                            <input type="text" data-ref="roleNameInput" class="component-input-field component-input-field--simple" placeholder="<?php echo __('ph_role_moderator') ?: 'Ej: Moderador'; ?>" value="<?php echo htmlspecialchars($roleData['name']); ?>" <?php echo $isSystemRole ? 'disabled' : ''; ?>>
+                                            <input type="text" data-ref="roleNameInput" class="component-input-field component-input-field--simple" placeholder="<?php echo __('ph_role_moderator'); ?>" value="<?php echo htmlspecialchars($roleData['name']); ?>" <?php echo $isSystemRole ? 'disabled' : ''; ?>>
                                         </div>
                                         <div class="component-card__actions component-card__actions--stretch">
-                                            <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="role-name"><?php echo __('btn_cancel') ?: 'Cancelar'; ?></button>
-                                            <button type="button" class="component-button component-button--h34 component-button--dark <?php echo $isSystemRole ? 'disabled-interaction' : ''; ?>" data-action="applyRoleName"><?php echo __('btn_save') ?: 'Guardar'; ?></button>
+                                            <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="role-name"><?php echo __('btn_cancel'); ?></button>
+                                            <button type="button" class="component-button component-button--h34 component-button--dark <?php echo $isSystemRole ? 'disabled-interaction' : ''; ?>" data-action="applyRoleName"><?php echo __('btn_save'); ?></button>
                                         </div>
                                     </div>
                                 </div>
@@ -163,8 +163,8 @@ if (trim($rawName) !== '') {
                     <div class="component-group-item component-group-item--stacked">
                         <div class="component-card__content">
                             <div class="component-card__text">
-                                <h2 class="component-card__title"><?php echo __('admin_role_hierarchy_title') ?: 'Jerarquía (Peso)'; ?></h2>
-                                <p class="component-card__description"><?php echo __('admin_role_hierarchy_desc') ?: 'Roles con un peso mayor pueden gestionar a los que tienen menos peso.'; ?></p>
+                                <h2 class="component-card__title"><?php echo __('admin_role_hierarchy_title'); ?></h2>
+                                <p class="component-card__description"><?php echo __('admin_role_hierarchy_desc'); ?></p>
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--start">

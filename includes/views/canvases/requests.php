@@ -44,21 +44,21 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
         
         <div class="component-top">
             <div class="component-top-left">
-                <h1 class="component-top-title"><?php echo __('canvases_requests_title') ?: 'Solicitudes de Acceso al Lienzo'; ?></h1>
+                <h1 class="component-top-title"><?php echo __('canvases_requests_title'); ?></h1>
             </div>
             
             <div class="component-top-right">
                 
                 <div class="component-actions disabled" data-ref="header-selection-actions">
-                    <button class="component-button component-button--icon component-button--h40" data-action="approveSelectedRequests" data-tooltip="<?php echo __('tooltip_approve_request') ?: 'Aceptar solicitud'; ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-action="approveSelectedRequests" data-tooltip="<?php echo __('tooltip_approve_request'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">check_circle</span>
                     </button>
 
-                    <button class="component-button component-button--icon component-button--h40" data-action="rejectSelectedRequests" data-tooltip="<?php echo __('tooltip_reject_request') ?: 'Rechazar solicitud'; ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-action="rejectSelectedRequests" data-tooltip="<?php echo __('tooltip_reject_request'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">cancel</span>
                     </button>
 
-                    <button class="component-button component-button--icon component-button--h40" data-action="deselectRequest" data-tooltip="<?php echo __('tooltip_cancel_selection') ?: 'Cancelar selección'; ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-action="deselectRequest" data-tooltip="<?php echo __('tooltip_cancel_selection'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">close</span>
                     </button>
                 </div>
@@ -73,9 +73,9 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                 <table class="component-table">
                     <thead>
                         <tr>
-                            <th><?php echo __('table_header_user') ?: 'Usuario Solicitante'; ?></th>
-                            <th><?php echo __('table_header_date') ?: 'Fecha de Solicitud'; ?></th>
-                            <th><?php echo __('table_header_status') ?: 'Estado'; ?></th>
+                            <th><?php echo __('table_header_user'); ?></th>
+                            <th><?php echo __('table_header_date'); ?></th>
+                            <th><?php echo __('table_header_status'); ?></th>
                         </tr>
                     </thead>
                     <tbody data-ref="requests-table-body">
@@ -84,7 +84,7 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                                 <td colspan="3" class="component-empty-table-cell">
                                     <div class="component-empty-state component-empty-state--table">
                                         <span class="material-symbols-rounded component-empty-state-icon">inbox</span>
-                                        <p class="component-empty-state-text" data-ref="empty-state-text"><?php echo __('canvases_requests_empty') ?: 'No hay solicitudes pendientes en este momento.'; ?></p>
+                                        <p class="component-empty-state-text" data-ref="empty-state-text"><?php echo __('canvases_requests_empty'); ?></p>
                                     </div>
                                 </td>
                             </tr>
@@ -94,7 +94,7 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                                     <td>
                                         <div>
                                             <span data-user-id="<?php echo htmlspecialchars($req['user_id']); ?>">
-                                                Usuario #<?php echo htmlspecialchars($req['user_id']); ?>
+                                                <?php echo __('lbl_user'); ?> #<?php echo htmlspecialchars($req['user_id']); ?>
                                             </span>
                                         </div>
                                     </td>
@@ -102,7 +102,7 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                                     <td>
                                         <div>
                                             <span class="status-badge">
-                                                <?php echo __('status_pending') ?: 'Pendiente'; ?>
+                                                <?php echo __('status_pending'); ?>
                                             </span>
                                             <input type="checkbox" class="request-checkbox" value="<?php echo htmlspecialchars($req['id']); ?>">
                                         </div>

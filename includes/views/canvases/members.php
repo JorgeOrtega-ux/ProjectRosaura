@@ -113,36 +113,36 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/members/' . $canvasUui
         
         <div class="component-top">
             <div class="component-top-left">
-                <h1 class="component-top-title"><?php echo __('canvases_members_title') ?: 'Miembros del Lienzo'; ?></h1>
+                <h1 class="component-top-title"><?php echo __('canvases_members_title'); ?></h1>
             </div>
             
             <div class="component-top-right">
                 
                 <div class="component-actions disabled" data-ref="header-selection-actions">
-                    <button class="component-button component-button--icon component-button--h40" data-action="changeMemberRole" data-tooltip="<?php echo __('tooltip_change_role') ?: 'Cambiar rol'; ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-action="changeMemberRole" data-tooltip="<?php echo __('tooltip_change_role'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">manage_accounts</span>
                     </button>
 
-                    <button class="component-button component-button--icon component-button--h40 component-button--danger" data-action="removeMember" data-tooltip="<?php echo __('tooltip_remove_member') ?: 'Expulsar miembro'; ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40 component-button--danger" data-action="removeMember" data-tooltip="<?php echo __('tooltip_remove_member'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">person_remove</span>
                     </button>
 
-                    <button class="component-button component-button--icon component-button--h40" data-action="deselectMember" data-tooltip="<?php echo __('tooltip_cancel_selection') ?: 'Cancelar selección'; ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-action="deselectMember" data-tooltip="<?php echo __('tooltip_cancel_selection'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">close</span>
                     </button>
                 </div>
                 
                 <div class="component-actions active" data-ref="header-default-actions">
                     
-                    <button class="component-button component-button--icon component-button--h40" data-nav="<?php echo $appUrl; ?>/canvases/manage/requests/<?php echo htmlspecialchars($canvasUuid); ?>" data-tooltip="<?php echo __('tooltip_view_requests') ?: 'Solicitudes de acceso'; ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-nav="<?php echo $appUrl; ?>/canvases/manage/requests/<?php echo htmlspecialchars($canvasUuid); ?>" data-tooltip="<?php echo __('tooltip_view_requests'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">front_hand</span>
                     </button>
 
-                    <button class="component-button component-button--icon component-button--h40" data-action="searchMember" data-ref="btn-toggle-search" data-tooltip="<?php echo __('search_member_placeholder') ?: 'Buscar miembro'; ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-action="searchMember" data-ref="btn-toggle-search" data-tooltip="<?php echo __('search_member_placeholder'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">search</span>
                     </button>
 
-                    <div class="component-inline-control" data-ref="pagination-container" data-tooltip="<?php echo __('pagination_tooltip', ['page' => $page, 'total' => $totalPages]) ?: "Página $page de $totalPages"; ?>" data-position="bottom">
+                    <div class="component-inline-control" data-ref="pagination-container" data-tooltip="<?php echo __('pagination_tooltip', ['page' => $page, 'total' => $totalPages]); ?>" data-position="bottom">
                         <div class="component-inline-control__group">
                             <button class="component-inline-control__btn <?php echo $page <= 1 ? 'disabled-interactive' : ''; ?>" <?php echo $page > 1 ? 'data-nav="'.$prevPageUrl.'"' : ''; ?>>
                                 <span class="material-symbols-rounded">chevron_left</span>
@@ -164,7 +164,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/members/' . $canvasUui
                         <span class="material-symbols-rounded">search</span>
                     </div>
                     <div class="component-search-input">
-                        <input type="text" data-ref="member-search-input" placeholder="<?php echo __('search_member_placeholder') ?: 'Buscar por nombre o ID...'; ?>">
+                        <input type="text" data-ref="member-search-input" placeholder="<?php echo __('search_member_placeholder'); ?>">
                     </div>
                 </div>
             </div>
@@ -176,9 +176,9 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/members/' . $canvasUui
                 <table class="component-table">
                     <thead>
                         <tr>
-                            <th><?php echo __('table_header_member') ?: 'Usuario'; ?></th>
-                            <th><?php echo __('table_header_role') ?: 'Rol en Lienzo'; ?></th>
-                            <th><?php echo __('table_header_joined') ?: 'Fecha de Unión'; ?></th>
+                            <th><?php echo __('table_header_member'); ?></th>
+                            <th><?php echo __('table_header_role'); ?></th>
+                            <th><?php echo __('table_header_joined'); ?></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -186,7 +186,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/members/' . $canvasUui
                             <?php foreach ($members as $member): ?>
                                 <?php 
                                     $uInfo = $userDetails[$member['user_id']] ?? [];
-                                    $username = !empty($uInfo['username']) ? $uInfo['username'] : 'Usuario #' . $member['user_id'];
+                                    $username = !empty($uInfo['username']) ? $uInfo['username'] : __('lbl_user') . ' #' . $member['user_id'];
                                     $avatar = !empty($uInfo['profile_picture']) ? $uInfo['profile_picture'] : $appUrl . '/public/assets/img/fallbacks/avatar-default.png';
                                     $userUuidStr = !empty($uInfo['uuid']) ? $uInfo['uuid'] : '';
                                     $mRoles = $memberRoles[$member['user_id']] ?? [];
@@ -215,7 +215,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/members/' . $canvasUui
                                         ?>
                                             <div class="component-badge component-badge--sm">
                                                 <span class="material-symbols-rounded">person_off</span>
-                                                <span class="search-target">Sin rol</span>
+                                                <span class="search-target"><?php echo __('lbl_no_role'); ?></span>
                                             </div>
                                         <?php else:
                                             $primaryRole = $mRoles[0];
@@ -227,7 +227,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/members/' . $canvasUui
                                                 $icon = 'star';
                                             }
                                             
-                                            $primaryName = $primaryRole['is_system'] ? (__('role_' . strtolower($primaryRole['name'])) ?: ucfirst($primaryRole['name'])) : htmlspecialchars($primaryRole['name']);
+                                            $primaryName = $primaryRole['is_system'] ? __('role_' . strtolower($primaryRole['name'])) : htmlspecialchars($primaryRole['name']);
                                         ?>
                                         <div>
                                             <div class="component-badge component-badge--sm">
@@ -238,7 +238,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/members/' . $canvasUui
                                             <?php if (count($mRoles) > 1): 
                                                 $otherRolesNames = [];
                                                 foreach (array_slice($mRoles, 1) as $r) {
-                                                    $rName = $r['is_system'] ? (__('role_' . strtolower($r['name'])) ?: ucfirst($r['name'])) : htmlspecialchars($r['name']);
+                                                    $rName = $r['is_system'] ? __('role_' . strtolower($r['name'])) : htmlspecialchars($r['name']);
                                                     $otherRolesNames[] = $rName;
                                                 }
                                                 $tooltipText = implode(', ', $otherRolesNames);
@@ -248,7 +248,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/members/' . $canvasUui
                                                 </div>
                                                 
                                                 <?php foreach (array_slice($mRoles, 1) as $r): 
-                                                    $rName = $r['is_system'] ? (__('role_' . strtolower($r['name'])) ?: ucfirst($r['name'])) : htmlspecialchars($r['name']);
+                                                    $rName = $r['is_system'] ? __('role_' . strtolower($r['name'])) : htmlspecialchars($r['name']);
                                                 ?>
                                                     <span class="search-target" data-role-original-name="<?php echo htmlspecialchars($r['name']); ?>"><?php echo $rName; ?></span>
                                                 <?php endforeach; ?>
@@ -269,7 +269,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/members/' . $canvasUui
                                 <td colspan="3" class="component-empty-table-cell">
                                     <div class="component-empty-state component-empty-state--table">
                                         <span class="material-symbols-rounded component-empty-state-icon">search_off</span>
-                                        <p class="component-empty-state-text"><?php echo __('empty_search_members') ?: 'No se encontraron miembros que coincidan con tu búsqueda.'; ?></p>
+                                        <p class="component-empty-state-text"><?php echo __('empty_search_members'); ?></p>
                                     </div>
                                 </td>
                             </tr>
@@ -279,7 +279,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/members/' . $canvasUui
                                 <td colspan="3" class="component-empty-table-cell">
                                     <div class="component-empty-state component-empty-state--table">
                                         <span class="material-symbols-rounded component-empty-state-icon">group_off</span>
-                                        <p class="component-empty-state-text"><?php echo __('empty_members_system') ?: 'No hay miembros registrados en este lienzo aún.'; ?></p>
+                                        <p class="component-empty-state-text"><?php echo __('empty_members_system'); ?></p>
                                     </div>
                                 </td>
                             </tr>

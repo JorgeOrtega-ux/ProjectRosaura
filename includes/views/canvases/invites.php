@@ -29,7 +29,7 @@ if ($canvasUuid) {
 }
 
 if (!$userId || !$canvasId) {
-    echo "<div class='view-content'><p>Lienzo no encontrado o sin acceso.</p></div>";
+    echo "<div class='view-content'><p>".__('err_canvas_not_found_or_no_access')."</p></div>";
     return;
 }
 
@@ -54,24 +54,24 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
         
         <div class="component-top">
             <div class="component-top-left">
-                <h1 class="component-top-title">Gestión de Invitaciones</h1>
+                <h1 class="component-top-title"><?php echo __('lbl_invites_management'); ?></h1>
             </div>
             
             <div class="component-top-right">
                 <div class="component-actions disabled" data-ref="header-selection-actions">
-                    <button class="component-button component-button--icon component-button--h40" data-action="copySelectedInvite" data-tooltip="Copiar código" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-action="copySelectedInvite" data-tooltip="<?php echo htmlspecialchars(__('lbl_copy_code')); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">content_copy</span>
                     </button>
-                    <button class="component-button component-button--icon component-button--h40 component-button--danger" data-action="revokeSelectedInvites" data-tooltip="Revocar selección" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40 component-button--danger" data-action="revokeSelectedInvites" data-tooltip="<?php echo htmlspecialchars(__('lbl_revoke_selection')); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">delete_forever</span>
                     </button>
-                    <button class="component-button component-button--icon component-button--h40" data-action="deselectInvite" data-tooltip="Cancelar selección" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-action="deselectInvite" data-tooltip="<?php echo htmlspecialchars(__('lbl_cancel_selection')); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">close</span>
                     </button>
                 </div>
                 
                 <div class="component-actions active" data-ref="header-default-actions">
-                    <button data-nav="<?php echo htmlspecialchars($appUrl); ?>/canvases/manage/invites/generate/<?php echo htmlspecialchars($canvasUuid); ?>" class="component-button component-button--icon component-button--h40 component-button--primary" data-tooltip="Generar Invitación" data-position="bottom">
+                    <button data-nav="<?php echo htmlspecialchars($appUrl); ?>/canvases/manage/invites/generate/<?php echo htmlspecialchars($canvasUuid); ?>" class="component-button component-button--icon component-button--h40 component-button--primary" data-tooltip="<?php echo htmlspecialchars(__('lbl_generate_invite')); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">add_link</span>
                     </button>
                 </div>
@@ -83,10 +83,10 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                 <table class="component-table">
                     <thead>
                         <tr>
-                            <th>Código</th>
-                            <th>Rol</th>
-                            <th>Usos</th>
-                            <th>Expiración</th>
+                            <th><?php echo __('lbl_code'); ?></th>
+                            <th><?php echo __('lbl_role'); ?></th>
+                            <th><?php echo __('lbl_uses'); ?></th>
+                            <th><?php echo __('lbl_expiration'); ?></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -119,7 +119,7 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                                     <td>
                                         <div class="component-badge component-badge--sm <?php echo $statusClass; ?>">
                                             <span class="material-symbols-rounded">schedule</span>
-                                            <span><?php echo $invite['expires_at'] ? date('d/m/Y H:i', strtotime($invite['expires_at'])) : 'Nunca'; ?></span>
+                                            <span><?php echo $invite['expires_at'] ? date('d/m/Y H:i', strtotime($invite['expires_at'])) : __('lbl_never'); ?></span>
                                         </div>
                                     </td>
                                 </tr>
@@ -129,7 +129,7 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                                 <td colspan="4" class="component-empty-table-cell">
                                     <div class="component-empty-state component-empty-state--table">
                                         <span class="material-symbols-rounded component-empty-state-icon">link_off</span>
-                                        <p class="component-empty-state-text">No hay invitaciones activas para este lienzo.</p>
+                                        <p class="component-empty-state-text"><?php echo __('empty_no_active_invites'); ?></p>
                                     </div>
                                 </td>
                             </tr>

@@ -242,7 +242,7 @@ if (!$canvasId) {
                                                 <div>
                                                     <button type="button" class="component-button component-button--text component-button--h34" data-action="navigateCustomPalette">
                                                         <span class="material-symbols-rounded">add_circle</span>
-                                                        <span>Crear paleta personalizada</span>
+                                                        <span><?php echo __('btn_create_custom_palette'); ?></span>
                                                     </button>
                                                 </div>
                                             <?php endif; ?>
@@ -356,8 +356,8 @@ if (!$canvasId) {
                     <div class="component-group-item component-group-item--wrap">
                         <div class="component-card__content">
                             <div class="component-card__text">
-                                <h2 class="component-card__title">Permitir utilizar compras</h2>
-                                <p class="component-card__description">Permite que se utilicen ventajas y objetos adquiridos en la tienda dentro de este lienzo.</p>
+                                <h2 class="component-card__title"><?php echo __('lbl_allow_purchases'); ?></h2>
+                                <p class="component-card__description"><?php echo __('desc_allow_purchases'); ?></p>
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--end">
@@ -373,14 +373,14 @@ if (!$canvasId) {
                     <?php 
                     $hasLiveChat = SubscriptionPlanConstants::hasFeature($tier, 'allow_live_chat');
                     ?>
-                    <div class="component-group-item component-group-item--wrap <?php echo !$hasLiveChat ? 'disabled-interactive' : ''; ?>" <?php if(!$hasLiveChat) echo 'data-tooltip="Requiere Premium Advanced" data-position="top"'; ?>>
+                    <div class="component-group-item component-group-item--wrap <?php echo !$hasLiveChat ? 'disabled-interactive' : ''; ?>" <?php if(!$hasLiveChat) echo 'data-tooltip="' . htmlspecialchars(__('lbl_requires_premium_advanced')) . '" data-position="top"'; ?>>
                         <div class="component-card__content">
                             <div class="component-card__text">
                                 <h2 class="component-card__title">
-                                    Permitir chat en línea
+                                    <?php echo __('lbl_allow_live_chat'); ?>
                                     <?php if(!$hasLiveChat): ?><span class="material-symbols-rounded">lock</span><?php endif; ?>
                                 </h2>
-                                <p class="component-card__description">Habilita una sala de chat en tiempo real para todos los participantes del lienzo.</p>
+                                <p class="component-card__description"><?php echo __('desc_allow_live_chat'); ?></p>
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--end">

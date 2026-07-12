@@ -108,7 +108,7 @@ if (!empty($resizeSettings['next_resize_at'])) {
         $dt = new DateTime($resizeSettings['next_resize_at'], new DateTimeZone('UTC'));
         $dt->setTimezone(new DateTimeZone(date_default_timezone_get()));
         $resizeDateLocal = $dt->format('Y-m-d\TH:i');
-        $resizeDateDisplay = $dt->format('j') . ' de ' . $monthShort[(int)$dt->format('n') - 1] . ' ' . $dt->format('Y') . ', ' . $dt->format('H:i');
+        $resizeDateDisplay = $dt->format('j') . ' ' . __('lbl_of') . ' ' . $monthShort[(int)$dt->format('n') - 1] . ' ' . $dt->format('Y') . ', ' . $dt->format('H:i');
     } catch (\Exception $e) {
         $resizeDateLocal = '';
     }
