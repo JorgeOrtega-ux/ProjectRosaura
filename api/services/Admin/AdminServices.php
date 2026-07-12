@@ -237,7 +237,7 @@ class AdminServices {
         $file = $files['avatar'];
         $maxSizeMb = $this->config['max_avatar_size_mb'] ?? 2;
 
-        $uploadDir = ROOT_PATH . '/storage/public/profilePictures/uploaded/';
+        $uploadDir = 'profilePictures/uploaded/';
 
         $uploadResult = Utils::uploadAndSanitizeImage($file, $uploadDir, $maxSizeMb);
 

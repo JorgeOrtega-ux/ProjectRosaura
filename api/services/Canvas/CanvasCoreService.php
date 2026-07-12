@@ -94,14 +94,7 @@ class CanvasCoreService {
             $formattedCanvases = array_map(function($canvas) use ($currentUserId, $onlineCounts) {
                 $canvas['is_owner'] = ($canvas['owner_id'] === $currentUserId && $canvas['owner_id'] !== null);
                 
-                $thumbnailPath = "public/storage/thumbnails/canvas_" . $canvas['id'] . ".png";
-                $physicalPath = dirname(__DIR__, 3) . '/storage/public/thumbnails/canvas_' . $canvas['id'] . '.png';
-                $thumbnailUrl = null;
-                
-                if (file_exists($physicalPath)) {
-                    $timestamp = filemtime($physicalPath);
-                    $thumbnailUrl = "/" . $thumbnailPath . "?v=" . $timestamp;
-                }
+                $thumbnailUrl = \App\Core\Helpers\Utils::getS3PublicUrl("thumbnails/canvas_" . $canvas['uuid'] . ".png");
                 
                 $canvas['thumbnail_url'] = $thumbnailUrl;
                 $canvas['online_players'] = isset($onlineCounts[$canvas['id']]) ? (int)$onlineCounts[$canvas['id']] : 0;
@@ -141,14 +134,7 @@ class CanvasCoreService {
                 $canvas['is_owner'] = false; 
                 $canvas['privacy'] = 'public'; 
                 
-                $thumbnailPath = "public/storage/thumbnails/canvas_" . $canvas['id'] . ".png";
-                $physicalPath = dirname(__DIR__, 3) . '/storage/public/thumbnails/canvas_' . $canvas['id'] . '.png';
-                $thumbnailUrl = null;
-                
-                if (file_exists($physicalPath)) {
-                    $timestamp = filemtime($physicalPath);
-                    $thumbnailUrl = "/" . $thumbnailPath . "?v=" . $timestamp;
-                }
+                $thumbnailUrl = \App\Core\Helpers\Utils::getS3PublicUrl("thumbnails/canvas_" . $canvas['uuid'] . ".png");
                 
                 $canvas['thumbnail_url'] = $thumbnailUrl;
                 $canvas['online_players'] = isset($onlineCounts[$canvas['id']]) ? (int)$onlineCounts[$canvas['id']] : 0;
@@ -207,14 +193,7 @@ class CanvasCoreService {
                     }
                 }
                 
-                $thumbnailPath = "public/storage/thumbnails/canvas_" . $canvas['id'] . ".png";
-                $physicalPath = dirname(__DIR__, 3) . '/storage/public/thumbnails/canvas_' . $canvas['id'] . '.png';
-                $thumbnailUrl = null;
-                
-                if (file_exists($physicalPath)) {
-                    $timestamp = filemtime($physicalPath);
-                    $thumbnailUrl = "/" . $thumbnailPath . "?v=" . $timestamp;
-                }
+                $thumbnailUrl = \App\Core\Helpers\Utils::getS3PublicUrl("thumbnails/canvas_" . $canvas['uuid'] . ".png");
                 
                 $formattedCanvases[] = [
                     'id' => $canvas['id'],
@@ -740,12 +719,7 @@ class CanvasCoreService {
                     } catch (Exception $e) {}
                 }
 
-                try {
-                    $physicalPath = dirname(__DIR__, 3) . '/storage/public/thumbnails/canvas_' . $canvasId . '.png';
-                    if (file_exists($physicalPath)) {
-                        unlink($physicalPath);
-                    }
-                } catch (Exception $e) {}
+                // S3 deletion of thumbnail skipped
             }
 
             return ['success' => true, 'message' => __('msg_canvas_downgraded')];
@@ -770,14 +744,7 @@ class CanvasCoreService {
             $deleted = $this->canvasRepository->deleteCanvasByUuid($uuid);
 
             if ($deleted) {
-                try {
-                    $physicalPath = dirname(__DIR__, 3) . '/storage/public/thumbnails/canvas_' . $canvas['id'] . '.png';
-                    if (file_exists($physicalPath)) {
-                        unlink($physicalPath);
-                    }
-                } catch (Exception $e) {
-                    Logger::error('Error eliminando la imagen física del lienzo eliminado.', ['canvas_id' => $canvas['id'], 'error' => $e->getMessage()]);
-                }
+                // S3 deletion of thumbnail skipped
 
                 try {
                     if (class_exists(RedisCache::class)) {
@@ -823,16 +790,7 @@ class CanvasCoreService {
             $deleted = $this->canvasRepository->deleteCanvases($canvasIds, $userId);
 
             if ($deleted) {
-                try {
-                    foreach ($canvasIds as $id) {
-                        $physicalPath = dirname(__DIR__, 3) . '/storage/public/thumbnails/canvas_' . $id . '.png';
-                        if (file_exists($physicalPath)) {
-                            unlink($physicalPath);
-                        }
-                    }
-                } catch (Exception $e) {
-                    Logger::error('Error eliminando imágenes de los lienzos borrados.', ['error' => $e->getMessage()]);
-                }
+                // S3 deletion of thumbnail skipped
 
                 try {
                     if (class_exists(RedisCache::class)) {

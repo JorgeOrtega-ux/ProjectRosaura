@@ -70,7 +70,7 @@ class SettingsServices
         
         $maxSizeMb = $this->config['max_avatar_size_mb'];
 
-        $uploadDir = ROOT_PATH . '/storage/public/profilePictures/uploaded/';
+        $uploadDir = 'profilePictures/uploaded/';
 
         $uploadResult = Utils::uploadAndSanitizeImage($file, $uploadDir, $maxSizeMb);
 

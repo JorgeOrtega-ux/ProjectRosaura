@@ -49,7 +49,7 @@ if ($isLoggedIn) {
 
 $rawUserPic = $_SESSION['user_pic'] ?? '';
 $userPic = \App\Core\Helpers\Utils::getValidImage($rawUserPic, 'avatar');
-$formattedAvatar = APP_URL . '/' . htmlspecialchars($userPic);
+$formattedAvatar = htmlspecialchars($userPic);
 $isDefaultAvatar = strpos($userPic, '/default/') !== false || strpos($userPic, 'fallbacks/avatar-default.png') !== false;
 $userPrefs = $_SESSION['user_prefs'] ?? [];
 $prefLang = $userPrefs['language'] ?? ($_COOKIE['pr_language'] ?? 'es-419');

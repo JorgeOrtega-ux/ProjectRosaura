@@ -127,7 +127,7 @@ if ($isLoggedIn) {
                         data-target="moduleMainOptions" 
                         data-tooltip="<?php echo __('tooltip_options_account'); ?>" 
                         data-position="bottom">
-                    <img src="<?php echo APP_URL; ?>/<?php echo htmlspecialchars($userPic); ?>" 
+                    <img src="<?php echo htmlspecialchars($userPic); ?>" 
                          alt="<?php echo __('alt_profile'); ?>"
                          onload="this.parentElement.classList.add('is-loaded')">
                 </button>

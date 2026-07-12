@@ -269,15 +269,15 @@ class Utils {
             return $fallback;
         }
 
-        $cleanPath = ltrim($path, '/');
-        $realPathRelative = str_replace('public/storage/', 'storage/public/', $cleanPath);
-        $absolutePath = ROOT_PATH . '/' . $realPathRelative;
-
-        if (file_exists($absolutePath) && is_file($absolutePath)) {
-            return $cleanPath;
+        if (strpos($path, 'http') === 0) {
+            return $path;
         }
 
-        return $fallback;
+        if (strpos($path, 'uploaded/') !== false || strpos($path, 'thumbnails/') !== false || strpos($path, 'profilePictures/') !== false) {
+            return self::getS3PublicUrl($path);
+        }
+
+        return $path;
     }
 
     public static function renderTurnstile(string $action = 'general'): string {
@@ -348,7 +348,7 @@ class Utils {
         if ($imageRecreated && $imageContent !== null) {
             $bucket = EnvLoader::get('MINIO_BUCKET', 'rosaura-storage');
             $s3Client = self::getS3Client();
-            $s3Key = preg_replace('#^/?public/storage/#', '', ltrim($uploadDir, '/')) . '/' . $fileName;
+            $s3Key = trim($uploadDir, '/') . '/' . $fileName;
             $s3Key = preg_replace('#/+#', '/', ltrim($s3Key, '/'));
             try {
                 $s3Client->putObject([

@@ -50,7 +50,7 @@ class SearchServices {
                         'privacy'      => $doc['privacy'],
                         'scope_type'   => $doc['scope_type'],
                         'is_favorite'  => false, 
-                        'thumbnail_url' => $this->getThumbnailUrl((int)$doc['id'])
+                        'thumbnail_url' => $this->getThumbnailUrl($doc['uuid'])
                     ];
                 }
             }
@@ -63,8 +63,8 @@ class SearchServices {
         }
     }
     
-    private function getThumbnailUrl(int $id): ?string {
-        return \App\Core\Helpers\Utils::getS3PublicUrl("thumbnails/canvas_" . $id . ".png");
+    private function getThumbnailUrl(string $uuid): ?string {
+        return \App\Core\Helpers\Utils::getS3PublicUrl("thumbnails/canvas_" . $uuid . ".png");
     }
 }
 ?>

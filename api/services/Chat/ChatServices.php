@@ -188,10 +188,7 @@ class ChatServices
                 return ['success' => false, 'message' => __('err_chat_image_count'), 'http_code' => 400];
 }
 
-            $uploadDir = ROOT_PATH . '/storage/canvases/' . $canvasUuid . '/chat/';
-            if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0755, true);
-}
+            $uploadDir = 'canvases/' . $canvasUuid . '/chat/';
 
             for ($i = 0; $i < count($files['name']); $i++) {
                 if ($files['error'][$i] === UPLOAD_ERR_OK) {
