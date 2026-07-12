@@ -245,7 +245,6 @@ class AdminServices {
             $fileName = $uploadResult['file_name'];
             
             Utils::deleteOldAvatar($user['profile_picture']);
-            
 
             $newRelPath = 'public/storage/profilePictures/uploaded/' . $fileName;
 

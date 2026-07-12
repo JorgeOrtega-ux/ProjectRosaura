@@ -1,5 +1,5 @@
 <?php
-// api/services/CanvasServices.php
+
 namespace App\Api\Services\Canvas;
 
 use Exception;
@@ -22,12 +22,8 @@ class CanvasSettingsService {
     public function __construct(CanvasRepositoryInterface $canvasRepository, UserRepositoryInterface $userRepository) {
         $this->canvasRepository = $canvasRepository;
         $this->userRepository = $userRepository;
-    }
+}
 
-
-    // ==========================================
-    // EXPANSIÓN EN VIVO DEL LIENZO Y PROGRAMACIÓN
-    // ==========================================
     public function resizeCanvas(int $userId, int $canvasId, string $newSize, bool $canManageOfficial = false): array {
         try {
             $canvas = $this->canvasRepository->getById($canvasId);
@@ -68,7 +64,7 @@ class CanvasSettingsService {
                 
                 if ($redis) {
                     $lockKey = "canvas:{$canvasId}:resize_lock";
-                    $redis->setex($lockKey, 60, "1"); // Bloqueo temporal preventivo para el worker
+                    $redis->setex($lockKey, 60, "1"); 
                     
                     $task = [
                         'canvas_id' => $canvasId,
@@ -135,8 +131,7 @@ class CanvasSettingsService {
 
             $isActive = filter_var($data['is_active'] ?? false, FILTER_VALIDATE_BOOLEAN);
             $nextResizeAt = null;
-            
-            // NUEVA VALIDACIÓN: Usando el Single Source of Truth
+
             $allSizes = \App\Core\Helpers\Utils::getCanvasSizes();
             $targetSize = isset($allSizes[$data['target_size']]) ? $data['target_size'] : '64x64';
             
@@ -187,7 +182,6 @@ class CanvasSettingsService {
                             $redis->del($redisKey);
                         }
 
-                        // 🔥 NOTIFICACIÓN EN VIVO (WEBSOCKETS)
                         $redis->publish("admin:canvas_events", json_encode([
                             'type' => 'canvas_resize_settings_updated',
                             'canvas_id' => $canvasId,
@@ -297,7 +291,6 @@ class CanvasSettingsService {
                             $redis->del($redisKey);
                         }
 
-                        // 🔥 NOTIFICACIÓN EN VIVO (WEBSOCKETS)
                         $redis->publish("admin:canvas_events", json_encode([
                             'type' => 'canvas_reset_settings_updated',
                             'canvas_id' => $canvasId,
@@ -488,8 +481,7 @@ class CanvasSettingsService {
                     return ['success' => false, 'message' => __('err_plan_custom_roles')];
                 }
             }
-            
-            // Re-fetch the role to verify ownership and avoid changing name/weight
+
             $role = $this->canvasRepository->pdo->prepare("SELECT id FROM canvas_roles WHERE id = ? AND canvas_id = ?");
             $role->execute([$roleId, $canvasId]);
             if (!$role->fetch()) {

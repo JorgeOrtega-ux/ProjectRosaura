@@ -79,7 +79,6 @@ class SettingsServices
             $oldPic = $this->sessionManager->get('user_pic', '');
             
             Utils::deleteOldAvatar($oldPic);
-            
 
             $newRelPath = 'public/storage/profilePictures/uploaded/' . $fileName;
 

@@ -1,5 +1,5 @@
 <?php
-// api/services/CanvasServices.php
+
 namespace App\Api\Services\Canvas;
 
 use Exception;
@@ -22,8 +22,7 @@ class CanvasMediaService {
     public function __construct(CanvasRepositoryInterface $canvasRepository, UserRepositoryInterface $userRepository) {
         $this->canvasRepository = $canvasRepository;
         $this->userRepository = $userRepository;
-    }
-
+}
 
     public function prepareTimelapseDownload(?int $userId, int $canvasId, bool $canManageOfficial = false): array {
         try {
@@ -108,7 +107,6 @@ class CanvasMediaService {
             return ['success' => false, 'message' => __('err_internal_server_error'), 'http_code' => 500];
         }
     }
-
 
     public function getSnapshotsGallery(string $uuid, ?int $userId = null, bool $canManageOfficial = false): array {
         try {
@@ -201,9 +199,6 @@ class CanvasMediaService {
 
             $hasTimelapse = !empty($data['timelapse_file_path']);
 
-            // ====================================================
-            // Lógica ajustada para tamaño Ancho x Alto
-            // ====================================================
             $sizeStr = strtolower($data['size']);
             if (strpos($sizeStr, 'x') !== false) {
                 $parts = explode('x', $sizeStr);

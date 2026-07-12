@@ -1,5 +1,4 @@
 <?php
-// api/services/SearchServices.php
 
 namespace App\Api\Services\Search;
 

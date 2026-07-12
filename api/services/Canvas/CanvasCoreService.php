@@ -1,5 +1,5 @@
 <?php
-// api/services/CanvasServices.php
+
 namespace App\Api\Services\Canvas;
 
 use Exception;
@@ -22,8 +22,7 @@ class CanvasCoreService {
     public function __construct(CanvasRepositoryInterface $canvasRepository, UserRepositoryInterface $userRepository) {
         $this->canvasRepository = $canvasRepository;
         $this->userRepository = $userRepository;
-    }
-
+}
 
     private function getValidPalettes(): array {
         $path = dirname(__DIR__, 3) . '/public/assets/data/palettes.json';
@@ -165,8 +164,7 @@ class CanvasCoreService {
             
             $totalOwned = method_exists($this->canvasRepository, 'countUserCanvases') ? $this->canvasRepository->countUserCanvases($userId) : 0;
             $toLockCount = ($planLimits['max_canvases'] !== -1) ? max(0, $totalOwned - $planLimits['max_canvases']) : 0;
-            
-            // Format canvases similar to getPublicCanvases
+
             $formattedCanvases = [];
             foreach ($canvases as $canvas) {
                 $isLocked = false;
@@ -260,10 +258,9 @@ class CanvasCoreService {
             if ($canvas['privacy'] === DB::PRIVACY_PRIVATE && empty($roles) && !$isOwner) {
                 return ['success' => false, 'message' => __('err_unauthorized')];
             }
-            
-            // Assign roles and check permissions
+
             $canvas['roles'] = $isOwner ? [['id' => 4, 'name' => 'SuperAdministrator', 'weight' => 100, 'is_system' => 1]] : $roles;
-            // Provide a flat list of permissions for the frontend
+            
             $permissions = [];
             if ($isOwner) {
                 $permissions = ['place_pixels', 'manage_settings', 'manage_members', 'manage_roles', 'assign_roles', 'view_history', 'manage_resets'];
@@ -281,7 +278,6 @@ class CanvasCoreService {
             }
             $canvas['permissions'] = $permissions;
 
-            // Compatibilidad hacia atrás para el frontend (DesignNetwork.js espera 'role')
             if ($isOwner) {
                 $canvas['role'] = 'admin';
             } elseif (in_array('manage_settings', $permissions) || in_array('manage_roles', $permissions)) {
@@ -292,10 +288,6 @@ class CanvasCoreService {
                 $canvas['role'] = 'spectator';
             }
 
-
-            // ====================================================
-            // Lógica de Bloqueo por Plan Expirado
-            // ====================================================
             $ownerTier = 0;
             if ($canvas['owner_id'] !== null) {
                 $owner = $this->userRepository->findById($canvas['owner_id']);
@@ -339,9 +331,6 @@ class CanvasCoreService {
                 return ['success' => false, 'message' => __('err_premium_expired_downgrade'), 'locked_requires_downgrade' => true, 'locked_reasons' => $lockedReasons];
             }
 
-            // ====================================================
-            // Lógica ajustada para tamaño Ancho x Alto
-            // ====================================================
             $sizeStr = strtolower($canvas['size']);
             if (strpos($sizeStr, 'x') !== false) {
                 $parts = explode('x', $sizeStr);
@@ -357,7 +346,6 @@ class CanvasCoreService {
             $canvas['height'] = $height;
             $canvas['requires_approval'] = (bool)$canvas['requires_approval'];
 
-            // OBTENER ESTADO DE REINICIO
             $resetSettings = $this->canvasRepository->getResetSettings($canvasId);
             if ($resetSettings && $resetSettings['is_active']) {
                 $canvas['next_reset_at'] = $resetSettings['next_reset_at'];
@@ -365,7 +353,6 @@ class CanvasCoreService {
                 $canvas['next_reset_at'] = null;
             }
 
-            // OBTENER ESTADO DE EXPANSIÓN PROGRAMADA
             if (method_exists($this->canvasRepository, 'getResizeSettings')) {
                 $resizeSettings = $this->canvasRepository->getResizeSettings($canvasId);
                 if ($resizeSettings && $resizeSettings['is_active']) {
@@ -528,7 +515,7 @@ class CanvasCoreService {
             $canvasId = $this->canvasRepository->create($canvasData);
 
             if ($scopeType === 'personal') {
-                $this->canvasRepository->addMember($canvasId, $userId, 4); // 4 = SuperAdministrator
+                $this->canvasRepository->addMember($canvasId, $userId, 4); 
             }
 
             try {
@@ -633,9 +620,7 @@ class CanvasCoreService {
              return ['success' => false, 'message' => __('err_database')];
         }
     }
-    // ==========================================
-    // DEGRADACIÓN A PLAN BÁSICO
-    // ==========================================
+
     public function downgradeCanvasToBasic(int $userId, string $uuid, bool $canManageOfficial = false): array {
         try {
             $canvas = $this->canvasRepository->getCanvasByUuid($uuid);
@@ -648,7 +633,6 @@ class CanvasCoreService {
                 return ['success' => false, 'message' => __('err_unauthorized')];
             }
 
-            // Obtain current limits of the owner
             $ownerTier = 0;
             if ($canvas['owner_id'] !== null) {
                 $owner = $this->userRepository->findById($canvas['owner_id']);
@@ -659,20 +643,18 @@ class CanvasCoreService {
 
             $canvasId = $canvas['id'];
 
-            // 1. Reducción de Miembros (Trimming)
             if ($planLimits['max_members_per_canvas'] !== -1) {
                 $sql = "SELECT user_id FROM " . DB::TBL_CANVAS_MEMBERS . " 
                         WHERE canvas_id = :cid ORDER BY joined_at ASC";
                 if (method_exists($this->canvasRepository, 'db')) {
-                    // Si no tenemos acceso directo, podemos usar PDO del repositorio asumiendo getters o hacerlo en repo
+                    
                 }
-                // Como necesitamos acceso a DB, crearemos un método en el repositorio
+                
                 if (method_exists($this->canvasRepository, 'trimMembersToLimit')) {
                     $this->canvasRepository->trimMembersToLimit($canvasId, $planLimits['max_members_per_canvas']);
                 }
             }
-            
-            // 2. Restablecer Paleta y Límites
+
             $updateData = [
                 'name' => $canvas['name'],
                 'description' => $canvas['description'],
@@ -686,11 +668,9 @@ class CanvasCoreService {
             
             $this->canvasRepository->updateCanvasData($canvasId, $updateData);
 
-            // 3. Reducción de Tamaño (Cropping)
             $currentSizeStr = $canvas['size'];
-            
-            // ¿Es válido para el plan?
-            $maxAllowedSize = '64x64'; // Default safe fallback
+
+            $maxAllowedSize = '64x64'; 
             $maxAllowedArea = 0;
             foreach ($allSizes as $sizeKey => $sizeConfig) {
                 if ($ownerTier >= $sizeConfig['tier']) {
@@ -706,10 +686,9 @@ class CanvasCoreService {
             $reqTierForCurrent = $allSizes[$currentSizeStr]['tier'] ?? 0;
             
             if ($ownerTier < $reqTierForCurrent) {
-                // Resize and crop
+                
                 $this->canvasRepository->updateSize($canvasId, $maxAllowedSize);
 
-                // Recortar la imagen en binario de BD
                 $stateRaw = $this->canvasRepository->getSnapshot($canvasId);
                 if ($stateRaw) {
                     $oldParts = explode('x', strtolower($currentSizeStr));
@@ -721,7 +700,7 @@ class CanvasCoreService {
                     $newH = isset($newParts[1]) ? (int)$newParts[1] : $newW;
 
                     $newTotal = $newW * $newH;
-                    $newStateRaw = str_repeat(chr(255), $newTotal); // Rellenar con blanco por si acaso
+                    $newStateRaw = str_repeat(chr(255), $newTotal); 
 
                     if (strlen($stateRaw) == ($oldW * $oldH)) {
                         for ($y = 0; $y < min($oldH, $newH); $y++) {
@@ -732,13 +711,12 @@ class CanvasCoreService {
                             }
                         }
                     } else {
-                        // Mal formato, reiniciar a blanco
+                        
                         $newStateRaw = str_repeat(chr(255), $newTotal);
                     }
 
                     $this->canvasRepository->saveSnapshot($canvasId, $newStateRaw);
-                    
-                    // Actualizar Redis
+
                     try {
                         if (class_exists(RedisCache::class)) {
                             $redisInstance = new RedisCache();
@@ -750,7 +728,6 @@ class CanvasCoreService {
                     } catch (Exception $e) {}
                 }
 
-                // Generar nuevo thumbnail físico de la imagen
                 try {
                     $physicalPath = dirname(__DIR__, 3) . '/storage/public/thumbnails/canvas_' . $canvasId . '.png';
                     if (file_exists($physicalPath)) {
@@ -766,7 +743,6 @@ class CanvasCoreService {
         }
     }
 
-    // ==========================================
     public function deleteCanvas(?int $userId, string $uuid, bool $canManageOfficial = false): array {
         try {
             $canvas = $this->canvasRepository->getCanvasByUuid($uuid);
@@ -799,7 +775,7 @@ class CanvasCoreService {
                             $redis->del("canvas:{$canvas['id']}:state");
                             $redis->del("canvas:{$canvas['id']}:config");
                             $redis->del(CacheConstants::PREFIX_CANVAS_NEXT_RESET . $canvas['id']);
-                            $redis->del(CacheConstants::PREFIX_CANVAS_NEXT_RESIZE . $canvas['id']); // Agregado por seguridad
+                            $redis->del(CacheConstants::PREFIX_CANVAS_NEXT_RESIZE . $canvas['id']); 
                             
                             if ($canvas['owner_id'] === null) {
                                 $redis->del(CacheConstants::KEY_OFFICIAL_CANVASES);

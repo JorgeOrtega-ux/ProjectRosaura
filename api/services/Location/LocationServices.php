@@ -1,5 +1,5 @@
 <?php
-// api/services/LocationServices.php
+
 namespace App\Api\Services\Location;
 
 use Exception;

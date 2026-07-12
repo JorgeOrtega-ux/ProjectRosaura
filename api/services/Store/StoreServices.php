@@ -10,7 +10,6 @@ class StoreServices {
     private $sessionManager;
     private $storeRepo;
 
-    // Define available perks and their coin prices
     private const PERK_PRICES = [
         'no_cooldown_10s' => 1500,
         'pixel_protection_25' => 3000,
@@ -45,9 +44,8 @@ class StoreServices {
             return ['success' => false, 'message_key' => 'store.insufficient_coins'];
         }
 
-        // Deduct coins
         if ($this->storeRepo->deductCoins($userId, $price)) {
-            // Add perk
+            
             $this->storeRepo->addPerkToUser($userId, $perkId, $price);
             
             Logger::info("User bought perk", [
@@ -143,12 +141,10 @@ class StoreServices {
             Logger::error("Redis Error en activatePerk (Check): " . $e->getMessage());
         }
 
-        // Marcar perk como usado en MySQL
         if (!$this->storeRepo->markPerkAsUsed($userId, $perkId)) {
             return ['success' => false, 'message_key' => 'store.perk_not_owned'];
         }
 
-        // Actualizar estado en Redis para el WebSocket Python
         try {
             if (isset($redis)) {
                 $perksConfigPath = __DIR__ . '/../../../public/assets/data/perks.json';

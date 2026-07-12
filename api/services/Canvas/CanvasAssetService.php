@@ -1,5 +1,5 @@
 <?php
-// api/services/CanvasServices.php
+
 namespace App\Api\Services\Canvas;
 
 use Exception;
@@ -22,8 +22,7 @@ class CanvasAssetService {
     public function __construct(CanvasRepositoryInterface $canvasRepository, UserRepositoryInterface $userRepository) {
         $this->canvasRepository = $canvasRepository;
         $this->userRepository = $userRepository;
-    }
-
+}
 
     public function uploadTemplate(int $userId, array $fileInfo): array {
         try {
@@ -134,9 +133,6 @@ class CanvasAssetService {
         }
     }
 
-    // ==========================================
-    // CUSTOM PALETTES
-    // ==========================================
     public function getCustomPalettes(int $userId): array {
         try {
             $db = new DatabaseManager();

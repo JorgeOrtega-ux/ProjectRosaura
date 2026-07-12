@@ -1,5 +1,5 @@
 <?php
-// api/services/CanvasServices.php
+
 namespace App\Api\Services\Canvas;
 
 use Exception;
@@ -22,8 +22,7 @@ class CanvasAccessService {
     public function __construct(CanvasRepositoryInterface $canvasRepository, UserRepositoryInterface $userRepository) {
         $this->canvasRepository = $canvasRepository;
         $this->userRepository = $userRepository;
-    }
-
+}
 
     public function leaveCanvas(int $userId, string $uuid): array {
         try {
@@ -251,11 +250,9 @@ class CanvasAccessService {
                     $redis->set($key, json_encode($data));
                     $redis->expire($key, 14400); 
 
-                    // Track the user's active broadcast
                     $userBroadcastKey = CacheConstants::PREFIX_LIVE_SHARE . 'user_' . $userId;
                     $redis->set($userBroadcastKey, $code);
                     $redis->expire($userBroadcastKey, 14400);
-
 
                     return ['success' => true, 'data' => ['code' => $code]];
                 }
@@ -278,12 +275,12 @@ class CanvasAccessService {
                         $userBroadcastKey = CacheConstants::PREFIX_LIVE_SHARE . 'user_' . $userId;
                         $activeCode = $redis->get($userBroadcastKey);
                         if ($activeCode) {
-                            // Check if the broadcast actually still exists
+                            
                             $activeData = $redis->get(CacheConstants::PREFIX_LIVE_SHARE . $activeCode);
                             if ($activeData) {
                                 return ['success' => false, 'message' => __('err_cannot_join_while_streaming')];
                             } else {
-                                $redis->del($userBroadcastKey); // Cleanup stale key
+                                $redis->del($userBroadcastKey); 
                             }
                         }
                     }
@@ -293,8 +290,7 @@ class CanvasAccessService {
                     
                     if ($dataRaw) {
                         $data = json_decode($dataRaw, true);
-                        
-                        // CORRECCIÓN: Validar que la transmisión pertenezca al lienzo actual
+
                         if (isset($data['canvas_id']) && (int)$data['canvas_id'] !== $targetCanvasId) {
                             return ['success' => false, 'message' => __('err_stream_wrong_canvas')];
                         }
@@ -310,9 +306,6 @@ class CanvasAccessService {
         }
     }
 
-    // ==========================================
-    // NUEVOS MÉTODOS PARA INVITACIONES
-    // ==========================================
     public function generateInvite(int $userId, int $canvasId, string $role, ?int $maxUses, ?string $expiresAt, bool $canManageOfficial = false): array {
         try {
             $canvas = $this->canvasRepository->getById($canvasId);
@@ -328,7 +321,7 @@ class CanvasAccessService {
             foreach ($roles as $r) {
                 if ((string)$r['id'] === (string)$role || strtolower($r['name']) === strtolower($role)) {
                     $roleData = $r;
-                    $role = (string)$r['id']; // normalizar a ID
+                    $role = (string)$r['id']; 
                     break;
                 }
             }
@@ -349,7 +342,6 @@ class CanvasAccessService {
                 }
             }
 
-            // Generar un código único
             $code = strtoupper(substr(Utils::generateUUID(), 0, 4) . '-' . substr(Utils::generateUUID(), 4, 4));
 
             $inviteId = $this->canvasRepository->createInvite($canvasId, $code, $role, $maxUses, $expiresAt, $userId);
@@ -407,12 +399,10 @@ class CanvasAccessService {
                 return ['success' => false, 'message' => __('err_invalid_invite_code')];
             }
 
-            // Validar expiración
             if ($invite['expires_at'] && strtotime($invite['expires_at']) <= time()) {
                 return ['success' => false, 'message' => __('err_invite_expired')];
             }
 
-            // Validar límite de usos
             if ($invite['max_uses'] !== null && $invite['uses_count'] >= $invite['max_uses']) {
                 return ['success' => false, 'message' => __('err_invite_limit_reached')];
             }
@@ -421,13 +411,11 @@ class CanvasAccessService {
             $canvas = $this->canvasRepository->getById($canvasId);
             if (!$canvas) return ['success' => false, 'message' => __('err_canvas_deleted')];
 
-            // Verificar si el usuario ya es miembro
             $memberRoles = $this->canvasRepository->getMemberRoles($canvasId, $userId);
             if (!empty($memberRoles) || $canvas['owner_id'] === $userId) {
                 return ['success' => true, 'message' => __('msg_already_member'), 'data' => ['uuid' => $canvas['uuid']]];
             }
 
-            // Validar límite de miembros del plan
             if ($canvas['owner_id'] !== null) {
                 $owner = $this->userRepository->findById($canvas['owner_id']);
                 $tier = $owner['subscription_tier'] ?? 0;
@@ -441,7 +429,6 @@ class CanvasAccessService {
                 }
             }
 
-            // Agregar al usuario y sumar uso a la invitación
             $added = $this->canvasRepository->addMember($canvasId, $userId, (int)$invite['role']);
             if ($added) {
                 $this->canvasRepository->incrementInviteUses($invite['id']);

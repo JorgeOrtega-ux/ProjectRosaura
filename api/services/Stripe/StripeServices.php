@@ -1,5 +1,4 @@
 <?php
-// api/services/StripeServices.php
 
 namespace App\Api\Services\Stripe;
 
@@ -15,13 +14,12 @@ class StripeServices {
     private $subscriptionRepo;
     private $userRepo;
 
-    // Mapeo de tier + billing_period a variables de entorno de Price IDs
     private const PRICE_MAP = [
-        1 => [ // Pro
+        1 => [ 
             'monthly' => 'STRIPE_PRICE_PRO_MONTHLY',
             'yearly'  => 'STRIPE_PRICE_PRO_YEARLY'
         ],
-        2 => [ // Advanced
+        2 => [ 
             'monthly' => 'STRIPE_PRICE_ADVANCED_MONTHLY',
             'yearly'  => 'STRIPE_PRICE_ADVANCED_YEARLY'
         ]
@@ -45,7 +43,6 @@ class StripeServices {
         return $prices;
     }
 
-    // Mapeo inverso: Price ID → tier
     private function getPriceToTierMap(): array {
         $map = [];
         foreach (self::PRICE_MAP as $tier => $periods) {
@@ -69,9 +66,6 @@ class StripeServices {
         $this->userRepo = $userRepo;
     }
 
-    /**
-     * Crea una Stripe Checkout Session y retorna la URL de pago.
-     */
     public function createCheckoutSession(array $input): array {
         if (!$this->sessionManager->isLoggedIn()) {
             http_response_code(401);
@@ -82,7 +76,6 @@ class StripeServices {
         $tier = isset($input['tier']) ? (int) $input['tier'] : 0;
         $billingPeriod = $input['billing_period'] ?? 'monthly';
 
-        // Validaciones
         if (!in_array($tier, [SubscriptionPlanConstants::TIER_PRO, SubscriptionPlanConstants::TIER_ADVANCED])) {
             return ['success' => false, 'message_key' => 'stripe.invalid_tier'];
         }
@@ -96,7 +89,6 @@ class StripeServices {
             return ['success' => false, 'message_key' => 'stripe.already_on_plan'];
         }
 
-        // Obtener Price ID de Stripe
         $envKey = self::PRICE_MAP[$tier][$billingPeriod] ?? null;
         if (!$envKey || empty($_ENV[$envKey])) {
             Logger::error("Stripe Price ID not configured", ['env_key' => $envKey]);
@@ -104,10 +96,8 @@ class StripeServices {
         }
         $priceId = $_ENV[$envKey];
 
-        // Configurar Stripe
         \Stripe\Stripe::setApiKey($_ENV['STRIPE_SECRET_KEY']);
 
-        // Obtener o crear Customer de Stripe
         $user = $this->userRepo->findById($userId);
         if (!$user) {
             return ['success' => false, 'message_key' => 'error.user_not_found'];
@@ -117,7 +107,7 @@ class StripeServices {
 
         try {
             if ($stripeCustomerId) {
-                // Verificar que el customer existe en Stripe
+                
                 try {
                     $stripeCustomer = \Stripe\Customer::retrieve($stripeCustomerId);
                     if (!empty($stripeCustomer->deleted)) {
@@ -138,7 +128,6 @@ class StripeServices {
                 $this->subscriptionRepo->updateUserStripeCustomerId($userId, $stripeCustomerId);
             }
 
-            // Crear Checkout Session
             $tierName = SubscriptionPlanConstants::getTierLimits($tier)['name'];
             $periodLabel = $billingPeriod === 'yearly' ? 'Anual' : 'Mensual';
 
@@ -165,7 +154,6 @@ class StripeServices {
                 ]
             ]);
 
-            // Guardar registro de suscripción con status incomplete
             $this->subscriptionRepo->createSubscription([
                 'user_id' => $userId,
                 'stripe_customer_id' => $stripeCustomerId,
@@ -298,7 +286,6 @@ class StripeServices {
         $tier = isset($input['tier']) ? (int) $input['tier'] : 0;
         $billingPeriod = $input['billing_period'] ?? 'monthly';
 
-        // Validaciones
         if (!in_array($tier, [SubscriptionPlanConstants::TIER_BASIC, SubscriptionPlanConstants::TIER_PRO, SubscriptionPlanConstants::TIER_ADVANCED])) {
             return ['success' => false, 'message_key' => 'stripe.invalid_tier'];
         }
@@ -317,7 +304,6 @@ class StripeServices {
             return ['success' => false, 'message_key' => 'stripe.no_active_subscription'];
         }
 
-        // Manejar downgrade a plan Básico (Cancelación)
         if ($tier === SubscriptionPlanConstants::TIER_BASIC) {
             \Stripe\Stripe::setApiKey($_ENV['STRIPE_SECRET_KEY']);
             try {
@@ -340,7 +326,6 @@ class StripeServices {
             }
         }
 
-        // Obtener Price ID de Stripe
         $envKey = self::PRICE_MAP[$tier][$billingPeriod] ?? null;
         if (!$envKey || empty($_ENV[$envKey])) {
             Logger::error("Stripe Price ID not configured", ['env_key' => $envKey]);
@@ -348,13 +333,11 @@ class StripeServices {
         }
         $newPriceId = $_ENV[$envKey];
 
-        // Configurar Stripe
         \Stripe\Stripe::setApiKey($_ENV['STRIPE_SECRET_KEY']);
 
         try {
             $subscription = \Stripe\Subscription::retrieve($activeLocalSub['stripe_subscription_id']);
-            
-            // Actualizar la suscripción en Stripe
+
             \Stripe\Subscription::update($subscription->id, [
                 'items' => [
                     [
@@ -370,7 +353,6 @@ class StripeServices {
                 ]
             ]);
 
-            // Actualizar DB local (opcionalmente esperar al webhook, pero podemos hacerlo de inmediato para mayor respuesta visual)
             $this->subscriptionRepo->updateUserTier($userId, $tier);
             $this->subscriptionRepo->updateByStripeSubscriptionId($subscription->id, [
                 'tier' => $tier,
@@ -384,7 +366,6 @@ class StripeServices {
                 'period' => $billingPeriod
             ]);
 
-            // Enqueue confirmation email for upgrades
             try {
                 $redisCache = new \App\Config\Database\RedisCache();
                 $redisClient = $redisCache->getClient();
@@ -433,8 +414,7 @@ class StripeServices {
         }
 
         $userId = $this->sessionManager->getActiveAccountId();
-        
-        // Intentamos consultar a Stripe directamente para no depender del Webhook en localhost
+
         $stripeCustomerId = $this->subscriptionRepo->getStripeCustomerIdByUserId($userId);
         $history = [];
         
@@ -457,11 +437,11 @@ class StripeServices {
                         'description' => $desc ?: 'Suscripción',
                         'amount_cents' => $charge->amount,
                         'currency' => $charge->currency,
-                        'status' => $charge->status // 'succeeded', 'pending', 'failed'
+                        'status' => $charge->status 
                     ];
                 }
             } catch (\Exception $e) {
-                // Fallback a base de datos local si Stripe falla
+                
                 $limit = isset($input['limit']) ? min((int) $input['limit'], 50) : 20;
                 $offset = isset($input['offset']) ? (int) $input['offset'] : 0;
                 $history = $this->subscriptionRepo->getPaymentHistory($userId, $limit, $offset);
@@ -478,9 +458,6 @@ class StripeServices {
         ];
     }
 
-    /**
-     * Obtiene el estado actual de suscripción del usuario.
-     */
     public function getSubscriptionStatus(array $input): array {
         if (!$this->sessionManager->isLoggedIn()) {
             http_response_code(401);
@@ -494,8 +471,7 @@ class StripeServices {
             try {
                 \Stripe\Stripe::setApiKey($_ENV['STRIPE_SECRET_KEY']);
                 $stripeSub = \Stripe\Subscription::retrieve($subscription['stripe_subscription_id']);
-                
-                // Mezclamos los datos locales con los reales de Stripe
+
                 $subscription['cancel_at_period_end'] = $stripeSub->cancel_at_period_end;
                 $subscription['current_period_end'] = $stripeSub->current_period_end;
                 $subscription['status'] = $stripeSub->status;
@@ -507,7 +483,6 @@ class StripeServices {
             }
         }
 
-        // Fallback local: Si no hay fecha de fin (ej. webhook no configurado en entorno de desarrollo)
         if ($subscription && empty($subscription['current_period_end'])) {
             $createdAt = strtotime($subscription['created_at'] ?? 'now');
             $period = (isset($subscription['billing_period']) && $subscription['billing_period'] === 'yearly') ? '+1 year' : '+1 month';
@@ -520,9 +495,6 @@ class StripeServices {
         ];
     }
 
-    /**
-     * Alterna la renovación automática de una suscripción activa (cancelar/reactivar al final del periodo).
-     */
     public function toggleAutoRenewal(array $input): array {
         if (!$this->sessionManager->isLoggedIn()) {
             http_response_code(401);
@@ -563,9 +535,6 @@ class StripeServices {
         }
     }
 
-    /**
-     * Crea una Setup Session en Stripe para agregar un nuevo método de pago sin cobrar.
-     */
     public function createSetupSession(array $input): array {
         if (!$this->sessionManager->isLoggedIn()) {
             http_response_code(401);
@@ -578,14 +547,13 @@ class StripeServices {
             return ['success' => false, 'message_key' => 'error.user_not_found'];
         }
 
-        // Configurar Stripe
         \Stripe\Stripe::setApiKey($_ENV['STRIPE_SECRET_KEY']);
 
         $stripeCustomerId = $this->subscriptionRepo->getStripeCustomerIdByUserId($userId);
 
         try {
             if ($stripeCustomerId) {
-                // Verificar que el customer existe en Stripe
+                
                 try {
                     $stripeCustomer = \Stripe\Customer::retrieve($stripeCustomerId);
                     if (!empty($stripeCustomer->deleted)) {
@@ -606,7 +574,6 @@ class StripeServices {
                 $this->subscriptionRepo->updateUserStripeCustomerId($userId, $stripeCustomerId);
             }
 
-            // Crear Setup Session
             $session = \Stripe\Checkout\Session::create([
                 'payment_method_types' => ['card'],
                 'mode' => 'setup',
@@ -637,9 +604,6 @@ class StripeServices {
         }
     }
 
-    /**
-     * Obtiene los métodos de pago guardados del usuario actual.
-     */
     public function getPaymentMethods(array $input): array {
         if (!$this->sessionManager->isLoggedIn()) {
             http_response_code(401);
@@ -667,10 +631,10 @@ class StripeServices {
             $cards = [];
             $seenFingerprints = [];
             foreach ($paymentMethods->data as $pm) {
-                // Prevenir tarjetas duplicadas usando el fingerprint de Stripe
+                
                 $fingerprint = $pm->card->fingerprint;
                 if (in_array($fingerprint, $seenFingerprints)) {
-                    // Si ya vimos esta tarjeta, la eliminamos (detach) para mantener limpio el customer
+                    
                     try {
                         $pm->detach();
                     } catch (\Exception $e) {}
@@ -684,11 +648,10 @@ class StripeServices {
                     'last4' => $pm->card->last4,
                     'exp_month' => $pm->card->exp_month,
                     'exp_year' => $pm->card->exp_year,
-                    'is_default' => false // Stripe API no marca un default general para Cards si no es a nivel de Customer, pero por ahora false
+                    'is_default' => false 
                 ];
             }
-            
-            // Si queremos obtener la default del customer:
+
             try {
                 $customer = \Stripe\Customer::retrieve($stripeCustomerId);
                 if (isset($customer->invoice_settings->default_payment_method)) {

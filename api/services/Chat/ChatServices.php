@@ -21,7 +21,7 @@ class ChatServices
         
         $redisCache = new RedisCache();
         $this->redis = $redisCache->getClient();
-    }
+}
 
     public function history($userId, $canvasId, $offset)
     {
@@ -29,7 +29,7 @@ class ChatServices
 
         if ($canvasId <= 0) {
             return ['success' => false, 'message' => __('err_invalid_canvas'), 'http_code' => 400];
-        }
+}
 
         $stmt = $this->pdo->prepare("SELECT allow_chat, uuid FROM " . DB::TBL_CANVASES . " WHERE id = ?");
         $stmt->execute([$canvasId]);
@@ -37,7 +37,7 @@ class ChatServices
 
         if (!$canvas || $canvas['allow_chat'] != 1) {
             return ['success' => false, 'message' => __('err_chat_disabled'), 'http_code' => 403];
-        }
+}
 
         try {
             $this->pdo->exec("ALTER TABLE canvas_chat_messages ADD COLUMN attachments JSON DEFAULT NULL AFTER message;");
@@ -81,8 +81,8 @@ class ChatServices
             }
             $redisMessages = array_reverse($redisMessages);
             $messages = array_merge($redisMessages, $messages);
-        }
-        
+}
+
         $canvasUuid = $canvas['uuid'];
 
         foreach ($messages as &$message) {
@@ -104,8 +104,8 @@ class ChatServices
             } else {
                 $message['attachments'] = [];
             }
-        }
-        
+}
+
         return [
             'success' => true,
             'data' => [
@@ -113,17 +113,17 @@ class ChatServices
                 'has_more' => count($messages) >= $limit
             ]
         ];
-    }
+}
 
     public function send($userId, $canvasId, $messageText, $files)
     {
         if ($canvasId <= 0 || (empty($messageText) && empty($files['name'][0]))) {
             return ['success' => false, 'message' => __('err_invalid_data'), 'http_code' => 400];
-        }
+}
 
         if (mb_strlen($messageText) > 255) {
             return ['success' => false, 'message' => __('err_message_too_long'), 'http_code' => 400];
-        }
+}
 
         $stmt = $this->pdo->prepare("SELECT allow_chat, uuid FROM " . DB::TBL_CANVASES . " WHERE id = ?");
         $stmt->execute([$canvasId]);
@@ -131,13 +131,13 @@ class ChatServices
 
         if (!$canvas || $canvas['allow_chat'] != 1) {
             return ['success' => false, 'message' => __('err_chat_disabled'), 'http_code' => 403];
-        }
+}
 
         $stmt = $this->pdo->prepare("SELECT id FROM canvas_chat_restrictions WHERE canvas_id = ? AND user_id = ? AND (suspension_type = 'permanent' OR (suspension_type = 'temporary' AND end_date > NOW()))");
         $stmt->execute([$canvasId, $userId]);
         if ($stmt->fetch()) {
             return ['success' => false, 'message' => __('err_chat_restricted'), 'http_code' => 403];
-        }
+}
 
         if ($this->redis) {
             $redisKeyBurst = "canvas_chat_burst:{$canvasId}:{$userId}";
@@ -149,7 +149,7 @@ class ChatServices
             }
             if ($burstCount > 3) {
                 return ['success' => false, 'message' => __('err_chat_rate_limit'), 'http_code' => 429];
-            }
+}
 
             if (!empty($messageText)) {
                 $lastMsg = $this->redis->get($redisKeyLastMsg);
@@ -158,7 +158,7 @@ class ChatServices
                 }
                 $this->redis->setex($redisKeyLastMsg, 10, $messageText);
             }
-        }
+}
 
         $attachments = [];
         $canvasUuid = $canvas['uuid'];
@@ -170,12 +170,12 @@ class ChatServices
             }
             if (count($files['name']) > 8) {
                 return ['success' => false, 'message' => __('err_chat_image_count'), 'http_code' => 400];
-            }
-            
+}
+
             $uploadDir = ROOT_PATH . '/storage/canvases/' . $canvasUuid . '/chat/';
             if (!is_dir($uploadDir)) {
                 mkdir($uploadDir, 0755, true);
-            }
+}
 
             for ($i = 0; $i < count($files['name']); $i++) {
                 if ($files['error'][$i] === UPLOAD_ERR_OK) {
@@ -193,7 +193,7 @@ class ChatServices
                     }
                 }
             }
-        }
+}
 
         $attachmentsJson = !empty($attachments) ? json_encode($attachments) : null;
         
@@ -204,7 +204,7 @@ class ChatServices
             } else {
                 $safeAttachments[] = '/api/index.php?route=chat.attachment&canvas_uuid=' . $canvasUuid . '&file=' . urlencode(basename($att));
             }
-        }
+}
 
         $msgId = 'pending_' . uniqid();
 
@@ -248,19 +248,19 @@ class ChatServices
             $stmtInsert = $this->pdo->prepare("INSERT INTO canvas_chat_messages (canvas_id, user_id, message, attachments, created_at) VALUES (?, ?, ?, ?, ?)");
             $stmtInsert->execute([$canvasId, $userId, $messageText, $attachmentsJson, $messageData['created_at']]);
             $messageData['id'] = $this->pdo->lastInsertId();
-        }
+}
 
         return [
             'success' => true,
             'data' => $messageData
         ];
-    }
+}
 
     public function delete($userId, $canvasId, $messageId)
     {
         if ($messageId <= 0 || $canvasId <= 0) {
             return ['success' => false, 'message' => __('err_invalid_data'), 'http_code' => 400];
-        }
+}
 
         $stmt = $this->pdo->prepare("SELECT user_id FROM canvas_chat_messages WHERE id = ? AND canvas_id = ?");
         $stmt->execute([$messageId, $canvasId]);
@@ -268,11 +268,11 @@ class ChatServices
 
         if (!$msg) {
             return ['success' => false, 'message' => __('err_message_not_found'), 'http_code' => 404];
-        }
+}
 
         if ($msg['user_id'] != $userId) {
             return ['success' => false, 'message' => __('err_cannot_delete_others_message'), 'http_code' => 403];
-        }
+}
 
         $stmt = $this->pdo->prepare("DELETE FROM canvas_chat_messages WHERE id = ?");
         $stmt->execute([$messageId]);
@@ -286,10 +286,10 @@ class ChatServices
                 ]
             ];
             $this->redis->publish('admin:canvas_events', json_encode($eventPayload));
-        }
+}
 
         return ['success' => true, 'message' => __('msg_message_deleted')];
-    }
+}
 
     public function report($userId, $messageId, $reason)
     {
@@ -297,13 +297,13 @@ class ChatServices
             return ['success' => false, 'message' => __('err_invalid_data'), 'http_code' => 400];
         }
         return ['success' => true, 'message' => __('msg_message_reported')];
-    }
+}
 
     public function getAttachmentAccess($userId, $canvasUuid, $file, $userPermissions)
     {
         if (empty($canvasUuid) || empty($file)) {
             return ['success' => false, 'http_code' => 400];
-        }
+}
 
         $stmt = $this->pdo->prepare("SELECT id, privacy, allow_chat, owner_id FROM " . DB::TBL_CANVASES . " WHERE uuid = ?");
         $stmt->execute([$canvasUuid]);
@@ -311,8 +311,8 @@ class ChatServices
 
         if (!$canvas) {
             return ['success' => false, 'http_code' => 404];
-        }
-        
+}
+
         $canvasId = (int)$canvas['id'];
         $hasAccess = false;
         
@@ -328,7 +328,7 @@ class ChatServices
             if ($stmt->fetch()) {
                 $hasAccess = true;
             }
-        }
+}
 
         if (!$hasAccess) {
             if (!$userId) {
@@ -336,12 +336,12 @@ class ChatServices
             } else {
                 return ['success' => false, 'http_code' => 403];
             }
-        }
+}
 
         $filePath = ROOT_PATH . '/storage/canvases/' . $canvasUuid . '/chat/' . $file;
         if (!file_exists($filePath)) {
             return ['success' => false, 'http_code' => 404];
-        }
+}
 
         $mimeType = mime_content_type($filePath);
         if (!$mimeType) $mimeType = 'application/octet-stream';
