@@ -1,7 +1,6 @@
 CREATE DATABASE IF NOT EXISTS db_telemetry CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE db_telemetry;
 
--- Tabla para telemetría pasiva del backend (Middleware)
 CREATE TABLE IF NOT EXISTS api_latency (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     endpoint VARCHAR(255) NOT NULL,
@@ -17,7 +16,6 @@ CREATE TABLE IF NOT EXISTS api_latency (
     INDEX idx_user (user_uuid)
 ) ENGINE=InnoDB;
 
--- Tabla para interacciones de navegación (Frontend)
 CREATE TABLE IF NOT EXISTS pageviews (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     path VARCHAR(255) NOT NULL,
@@ -32,7 +30,6 @@ CREATE TABLE IF NOT EXISTS pageviews (
     INDEX idx_path (path)
 ) ENGINE=InnoDB;
 
--- Tabla para telemetría de seguridad (Backend)
 CREATE TABLE IF NOT EXISTS auth_events (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     event_type VARCHAR(50) NOT NULL,
@@ -44,8 +41,5 @@ CREATE TABLE IF NOT EXISTS auth_events (
     INDEX idx_event (event_type)
 ) ENGINE=InnoDB;
 
--- ==========================================
--- PERMISOS PARA EL USUARIO DE LA APLICACIÓN
--- ==========================================
 GRANT ALL PRIVILEGES ON db_telemetry.* TO 'system_web_executor'@'%';
 FLUSH PRIVILEGES;

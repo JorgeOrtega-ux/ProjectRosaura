@@ -1,6 +1,5 @@
 <?php
 
-
 namespace App\Config\Search;
 
 use Typesense\Client;
@@ -23,9 +22,9 @@ class TypesenseManager {
             $apiKey = EnvLoader::get('TYPESENSE_API_KEY', '');
 
             if (empty($apiKey)) {
-                throw new \Exception("La clave API de Typesense no está configurada en el entorno.");
+                Logger::error('err_typesense_api_missing');
+                throw new \Exception("err_typesense_api_missing");
             }
-
 
             if (class_exists('Typesense\Client')) {
                 $this->client = new Client([
@@ -40,20 +39,21 @@ class TypesenseManager {
                     'connection_timeout_seconds' => 3,
                 ]);
             } else {
-
-                throw new \Exception("La clase Typesense\Client no existe. El SDK de Typesense no está instalado en vendor/.");
+                Logger::error('err_typesense_sdk_missing');
+                throw new \Exception("err_typesense_sdk_missing");
             }
 
         } catch (\Throwable $e) {
-
-            throw new \Exception("Fallo al crear TypesenseManager: " . $e->getMessage());
+            Logger::error('err_typesense_init_failed', ['exception' => $e->getMessage()]);
+            throw new \Exception("err_typesense_init_failed: " . $e->getMessage());
         }
     }
 
     public function getClient(): ?Client {
 
         if ($this->client === null) {
-            throw new \Exception("El cliente de Typesense nunca se inicializó correctamente.");
+            Logger::error('err_typesense_not_initialized');
+            throw new \Exception("err_typesense_not_initialized");
         }
         
         return $this->client;

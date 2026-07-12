@@ -1,8 +1,6 @@
-#!/bin/bash
 set -e
 
-echo "[*] Ejecutando script de arranque (Entrypoint)..."
-
+echo "[*] Running startup script (Entrypoint)..."
 
 mkdir -p /var/www/html/storage/public/profilePictures/default
 mkdir -p /var/www/html/storage/public/profilePictures/uploaded
@@ -15,24 +13,20 @@ mkdir -p /var/www/html/storage/private/canvases/timelapses
 mkdir -p /var/www/html/storage/private/system
 mkdir -p /var/www/html/storage/private/geoip
 
-
-echo "[*] Configurando el Symlink público..."
+echo "[*] Configuring public Symlink..."
 
 rm -rf /var/www/html/public/storage
 
 ln -sf /var/www/html/storage/public /var/www/html/public/storage
 
-
-echo "[*] Configurando propiedad (chown) a www-data..."
+echo "[*] Configuring ownership (chown) to www-data..."
 chown -R www-data:www-data /var/www/html/storage
 
 chown -h www-data:www-data /var/www/html/public/storage
 
-
-echo "[*] Aplicando permisos 755 a storage..."
+echo "[*] Applying 755 permissions to storage..."
 chmod -R 755 /var/www/html/storage
 
-echo "[+] Todo listo. Iniciando Apache..."
-
+echo "[+] All set. Starting Apache..."
 
 exec "$@"

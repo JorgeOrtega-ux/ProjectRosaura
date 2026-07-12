@@ -1,4 +1,3 @@
--- docker/mysql/init/db_canvases.sql
 
 CREATE DATABASE IF NOT EXISTS db_canvases;
 
@@ -84,14 +83,12 @@ CREATE TABLE IF NOT EXISTS `canvas_members` (
   CONSTRAINT `fk_cm_canvas` FOREIGN KEY (`canvas_id`) REFERENCES `canvases` (`id`) ON DELETE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
--- Insert base canvas roles (NULL canvas_id means system-wide base roles)
 INSERT IGNORE INTO canvas_roles (id, canvas_id, name, weight, is_system) VALUES
   (1, NULL, 'Usuario', 1, 1),
   (2, NULL, 'Moderator', 50, 1),
   (3, NULL, 'Administrator', 80, 1),
   (4, NULL, 'SuperAdministrator', 100, 1);
 
--- Insert canvas permissions
 INSERT IGNORE INTO canvas_permissions (id, name, description) VALUES
   (1, 'place_pixels', 'desc_place_pixels'),
   (2, 'manage_settings', 'desc_manage_settings'),
@@ -101,19 +98,15 @@ INSERT IGNORE INTO canvas_permissions (id, name, description) VALUES
   (6, 'view_history', 'desc_view_history'),
   (7, 'manage_resets', 'desc_manage_resets');
 
--- SuperAdministrator (Role 4): All permissions
 INSERT IGNORE INTO canvas_role_permissions (role_id, permission_id) VALUES
   (4, 1), (4, 2), (4, 3), (4, 4), (4, 5), (4, 6), (4, 7);
 
--- Administrator (Role 3): All except manage_roles
 INSERT IGNORE INTO canvas_role_permissions (role_id, permission_id) VALUES
   (3, 1), (3, 2), (3, 3), (3, 5), (3, 6), (3, 7);
 
--- Moderator (Role 2): place_pixels, manage_members, view_history
 INSERT IGNORE INTO canvas_role_permissions (role_id, permission_id) VALUES
   (2, 1), (2, 3), (2, 6);
 
--- Usuario (Role 1): place_pixels
 INSERT IGNORE INTO canvas_role_permissions (role_id, permission_id) VALUES
   (1, 1);
 
@@ -129,9 +122,6 @@ CREATE TABLE IF NOT EXISTS `canvas_access_requests` (
   CONSTRAINT `fk_req_canvas` FOREIGN KEY (`canvas_id`) REFERENCES `canvases` (`id`) ON DELETE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
--- ==========================================
--- NUEVA TABLA PARA SISTEMA DE FAVORITOS
--- ==========================================
 
 CREATE TABLE IF NOT EXISTS `canvas_favorites` (
   `canvas_id` int(11) NOT NULL,
@@ -141,9 +131,6 @@ CREATE TABLE IF NOT EXISTS `canvas_favorites` (
   CONSTRAINT `fk_cf_canvas` FOREIGN KEY (`canvas_id`) REFERENCES `canvases` (`id`) ON DELETE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
--- ==========================================
--- TABLA PARA PERSISTENCIA (SNAPSHOTS)
--- ==========================================
 
 CREATE TABLE IF NOT EXISTS `canvas_snapshots` (
   `canvas_id` int(11) NOT NULL,
@@ -153,9 +140,6 @@ CREATE TABLE IF NOT EXISTS `canvas_snapshots` (
   CONSTRAINT `fk_snapshot_canvas` FOREIGN KEY (`canvas_id`) REFERENCES `canvases` (`id`) ON DELETE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
--- ==========================================
--- TABLA PARA CONFIGURACIÓN DE REINICIOS
--- ==========================================
 
 CREATE TABLE IF NOT EXISTS `canvas_reset_settings` (
   `canvas_id` int(11) NOT NULL,
@@ -169,9 +153,6 @@ CREATE TABLE IF NOT EXISTS `canvas_reset_settings` (
   CONSTRAINT `fk_reset_settings_canvas` FOREIGN KEY (`canvas_id`) REFERENCES `canvases` (`id`) ON DELETE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
--- ==========================================
--- TABLA NUEVA PARA CONFIGURACIÓN DE EXPANSIONES/REDUCCIONES
--- ==========================================
 
 CREATE TABLE IF NOT EXISTS `canvas_resize_settings` (
   `canvas_id` int(11) NOT NULL,
@@ -185,9 +166,6 @@ CREATE TABLE IF NOT EXISTS `canvas_resize_settings` (
   CONSTRAINT `fk_resize_settings_canvas` FOREIGN KEY (`canvas_id`) REFERENCES `canvases` (`id`) ON DELETE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
--- ==========================================
--- TABLA PARA HISTORIAL DE REINICIOS (SNAPSHOTS)
--- ==========================================
 
 CREATE TABLE IF NOT EXISTS `canvas_snapshots_history` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -201,9 +179,6 @@ CREATE TABLE IF NOT EXISTS `canvas_snapshots_history` (
   CONSTRAINT `fk_history_canvas` FOREIGN KEY (`canvas_id`) REFERENCES `canvases` (`id`) ON DELETE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
--- ==========================================
--- TABLA PARA LIBRERÍA DE PLANTILLAS DE USUARIO
--- ==========================================
 
 CREATE TABLE IF NOT EXISTS `user_templates` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -214,9 +189,6 @@ CREATE TABLE IF NOT EXISTS `user_templates` (
   INDEX `idx_user_templates` (`user_id`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
--- ==========================================
--- TABLA PARA INVITACIONES DE LIENZOS
--- ==========================================
 
 CREATE TABLE IF NOT EXISTS `canvas_invites` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
@@ -231,15 +203,9 @@ CREATE TABLE IF NOT EXISTS `canvas_invites` (
   FOREIGN KEY (`canvas_id`) REFERENCES `canvases`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ==========================================
--- ASIGNACIÓN DE PERMISOS AL USUARIO DE LA API
--- ==========================================
 GRANT ALL PRIVILEGES ON db_canvases.* TO 'system_web_executor'@'%';
 FLUSH PRIVILEGES;
 
--- ==========================================
--- TABLA PARA CHAT PREMIUM
--- ==========================================
 CREATE TABLE IF NOT EXISTS `canvas_chat_messages` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
     `canvas_id` INT NOT NULL,

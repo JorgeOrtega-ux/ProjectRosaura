@@ -1,9 +1,9 @@
 <?php
-// api/route-map.php
+
 use App\Core\System\RateLimitConstants as RL;
 
 return [
-    // --- RUTAS DE AUTENTICACIÓN ---
+    
     'auth.register.step1' => [
         'controller' => 'App\Api\Controllers\Auth\AuthController',
         'action' => 'register_step1',
@@ -40,7 +40,6 @@ return [
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => RL::KEY_AUTH_CANCEL_DELETION, 'max' => RL::MAX_5, 'time' => RL::TIME_15, 'identifier' => RL::ID_IP]]
     ],
 
-    // --- RUTAS MULTI-SESIÓN ---
     'auth.switch_account' => [
         'controller' => 'App\Api\Controllers\Auth\AuthController',
         'action' => 'switch_account',
@@ -67,7 +66,6 @@ return [
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => RL::KEY_AUTH_RESET_PASSWORD, 'max' => RL::MAX_5, 'time' => RL::TIME_15, 'identifier' => RL::ID_IP_AND_EMAIL]]
     ],
 
-    // --- RUTAS DE CONFIGURACIÓN / PERFIL ---
     'settings.update_avatar' => [
         'controller' => 'App\Api\Controllers\Settings\SettingsController',
         'action' => 'update_avatar',
@@ -124,7 +122,6 @@ return [
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => RL::KEY_SET_DELETE_ACCOUNT, 'max' => RL::MAX_5, 'time' => RL::TIME_15, 'identifier' => RL::ID_USER_ID]]
     ],
 
-    // --- RUTAS 2FA ---
     'settings.2fa_generate' => [
         'controller' => 'App\Api\Controllers\Settings\SettingsController',
         'action' => 'generate_2fa',
@@ -146,7 +143,6 @@ return [
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => RL::KEY_2FA_REGEN_CODES, 'max' => RL::MAX_5, 'time' => RL::TIME_15, 'identifier' => RL::ID_USER_ID]]
     ],
 
-    // --- RUTAS DISPOSITIVOS ---
     'settings.get_devices' => [
         'controller' => 'App\Api\Controllers\Settings\SettingsController',
         'action' => 'get_devices',
@@ -163,7 +159,6 @@ return [
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => RL::KEY_DEV_REVOKE_ALL, 'max' => RL::MAX_5, 'time' => RL::TIME_15, 'identifier' => RL::ID_USER_ID]]
     ],
 
-    // --- RUTAS ADMINISTRADOR ---
     'admin.get_dashboard_metrics' => [
         'controller' => 'App\Api\Controllers\Admin\AdminController',
         'action' => 'get_dashboard_metrics',
@@ -222,7 +217,6 @@ return [
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => RL::KEY_ADM_GET_MOD_KARDEX, 'max' => RL::MAX_30, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
     ],
 
-    // --- RUTAS DE GESTIÓN DE ROLES Y PERMISOS ---
     'admin.get_roles' => [
         'controller' => 'App\Api\Controllers\Admin\AdminController',
         'action' => 'get_roles',
@@ -259,7 +253,6 @@ return [
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => RL::KEY_ADM_UPDATE_ROLE_PERMS, 'max' => RL::MAX_20, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
 
-    // --- RUTAS DE CONFIGURACIÓN DEL SERVIDOR ---
     'admin.get_server_config' => [
         'controller' => 'App\Api\Controllers\Admin\AdminController',
         'action' => 'get_server_config',
@@ -271,7 +264,6 @@ return [
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => RL::KEY_ADM_UPDATE_SERVER_CFG, 'max' => RL::MAX_10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
 
-    // --- RUTAS DE COPIAS DE SEGURIDAD ---
     'admin.create_backup' => [
         'controller' => 'App\Api\Controllers\Admin\AdminController',
         'action' => 'create_backup',
@@ -298,7 +290,6 @@ return [
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => RL::KEY_ADM_CREATE_CUSTOM_BACKUP, 'max' => RL::MAX_1, 'time' => RL::TIME_10, 'identifier' => RL::ID_USER_ID]]
     ],
 
-    // --- RUTAS DE LOGS ---
     'admin.read_logs' => [
         'controller' => 'App\Api\Controllers\Admin\AdminController',
         'action' => 'read_logs',
@@ -310,16 +301,12 @@ return [
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => RL::KEY_ADM_CHECK_WORKER, 'max' => RL::MAX_60, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
     ],
 
-    // --- RUTA PARA CARGAR DICCIONARIOS EN SPA ---
     'admin.get_translations' => [
         'controller' => 'App\Api\Controllers\Admin\AdminController',
         'action' => 'get_admin_translations',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => RL::KEY_ADM_GET_TRANSLATIONS, 'max' => RL::MAX_60, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
     ],
 
-    // --- RUTAS DE LIENZOS (CANVASES) ---
-    
-    // NUEVAS RUTAS DE CHAT EN LÍNEA
     'chat.history' => [
         'controller' => 'App\Api\Controllers\Chat\ChatController',
         'action' => 'history',
@@ -346,14 +333,12 @@ return [
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'chat_attachment', 'max' => 60, 'time' => RL::TIME_1, 'identifier' => RL::ID_IP]]
     ],
 
-    // NUEVA RUTA PARA TICKETS DE WEBSOCKET
     'canvases.get_ws_ticket' => [
         'controller' => 'App\Api\Controllers\Canvas\CanvasCoreController',
         'action' => 'get_ws_ticket',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_ws_ticket', 'max' => 10, 'time' => RL::TIME_5, 'identifier' => RL::ID_IP]]
     ],
 
-    // NUEVAS RUTAS DE PALETAS PERSONALIZADAS
     'canvases.get_custom_palettes' => [
         'controller' => 'App\Api\Controllers\Canvas\CanvasAssetController',
         'action' => 'get_custom_palettes',
@@ -382,7 +367,6 @@ return [
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_get_mine', 'max' => 30, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
     ],
 
-    // NUEVA RUTA OFICIAL
     'canvases.get_official' => [
         'controller' => 'App\Api\Controllers\Canvas\CanvasCoreController',
         'action' => 'get_official',
@@ -420,14 +404,12 @@ return [
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_leave', 'max' => RL::MAX_10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
 
-    // NUEVA RUTA PARA EXPANSIÓN EN VIVO
     'canvases.resize' => [
         'controller' => 'App\Api\Controllers\Canvas\CanvasSettingsController',
         'action' => 'resize',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_resize', 'max' => RL::MAX_5, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
-    
-    // NUEVAS RUTAS DE PROGRAMACIÓN DE REDIMENSIONES (RESIZES)
+
     'canvases.get_resize_settings' => [
         'controller' => 'App\Api\Controllers\Canvas\CanvasSettingsController',
         'action' => 'get_resize_settings',
@@ -439,28 +421,24 @@ return [
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_upd_resize', 'max' => RL::MAX_10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
 
-    // NUEVA RUTA: TOGGLE FAVORITOS
     'canvases.toggle_favorite' => [
         'controller' => 'App\Api\Controllers\Canvas\CanvasAssetController',
         'action' => 'toggle_favorite',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_toggle_fav', 'max' => 20, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
 
-    // --- NUEVA RUTA PARA BÚSQUEDA TYPESENSE ---
     'search.query' => [
         'controller' => 'App\Api\Controllers\Search\SearchController',
         'action' => 'search',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'search_query', 'max' => 60, 'time' => RL::TIME_1, 'identifier' => RL::ID_IP]]
     ],
-    
-    // --- NUEVAS RUTAS DE MODERACIÓN DE MIEMBROS ---
+
     'canvases.assign_member_role' => [
         'controller' => 'App\Api\Controllers\Canvas\CanvasAccessController',
         'action' => 'assign_member_role',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_assign_role', 'max' => 10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
-    
-    // --- NUEVAS RUTAS DE GESTION DE ROLES DEL LIENZO ---
+
     'canvases.get_roles' => [
         'controller' => 'App\Api\Controllers\Canvas\CanvasSettingsController',
         'action' => 'get_roles',
@@ -491,8 +469,7 @@ return [
         'action' => 'remove_member',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_remove_member', 'max' => 10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
-    
-    // --- NUEVAS RUTAS DE INVITACIONES ---
+
     'canvases.generate_invite' => [
         'controller' => 'App\Api\Controllers\Canvas\CanvasAccessController',
         'action' => 'generate_invite',
@@ -514,8 +491,6 @@ return [
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_join_invite', 'max' => 20, 'time' => RL::TIME_5, 'identifier' => RL::ID_IP]]
     ],
 
-
-    // --- RUTAS DE CONFIGURACIÓN DE REINICIOS ---
     'canvases.get_reset_settings' => [
         'controller' => 'App\Api\Controllers\Canvas\CanvasSettingsController',
         'action' => 'get_reset_settings',
@@ -531,8 +506,7 @@ return [
         'action' => 'reset_now',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_reset_now', 'max' => RL::MAX_5, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
     ],
-    
-    // --- RUTAS DE APROBACIÓN DE ACCESOS ---
+
     'canvases.request_access' => [
         'controller' => 'App\Api\Controllers\Canvas\CanvasAccessController',
         'action' => 'request_access',
@@ -554,21 +528,18 @@ return [
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_get_reqs', 'max' => RL::MAX_20, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
     ],
 
-    // --- NUEVA RUTA PÚBLICA DE GALERÍA DE SNAPSHOTS ---
     'canvases.get_snapshots_gallery' => [
         'controller' => 'App\Api\Controllers\Canvas\CanvasMediaController',
         'action' => 'get_snapshots_gallery',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_get_snapshots', 'max' => RL::MAX_30, 'time' => RL::TIME_1, 'identifier' => RL::ID_IP]]
     ],
 
-    // --- NUEVA RUTA: OBTENER DETALLE DEL SNAPSHOT (PARA EL VISOR) ---
     'canvases.get_snapshot_detail' => [
         'controller' => 'App\Api\Controllers\Canvas\CanvasMediaController',
         'action' => 'get_snapshot_detail',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_get_snap_detail', 'max' => RL::MAX_30, 'time' => RL::TIME_1, 'identifier' => RL::ID_IP]]
     ],
 
-    // --- NUEVAS RUTAS DE TIMELAPSE FALTANTES ---
     'canvases.get_timelapse' => [
         'controller' => 'App\Api\Controllers\Canvas\CanvasMediaController',
         'action' => 'get_timelapse',
@@ -580,13 +551,10 @@ return [
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_get_snap_timelapse', 'max' => RL::MAX_30, 'time' => RL::TIME_1, 'identifier' => RL::ID_IP]]
     ],
 
-    // ==========================================
-    // NUEVAS RUTAS DE PLANTILLAS DE USUARIO
-    // ==========================================
     'canvases.upload_template' => [
         'controller' => 'App\Api\Controllers\Canvas\CanvasAssetController',
         'action' => 'upload_template',
-        // Límite de 10 subidas cada 5 minutos por usuario
+        
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_upload_tpl', 'max' => 10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
     'canvases.get_templates' => [
@@ -600,18 +568,12 @@ return [
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_del_tpl', 'max' => 20, 'time' => RL::TIME_1, 'identifier' => RL::ID_USER_ID]]
     ],
 
-    // ==========================================
-    // CANVASES
-    // ==========================================
     'canvas.update_chat_restriction' => [
         'controller' => 'App\Api\Controllers\Canvas\CanvasChatRestrictionController',
         'action' => 'updateRestriction',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_update_chat_res', 'max' => 10, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
 
-    // ==========================================
-    // NUEVAS RUTAS DE LIVE SHARE
-    // ==========================================
     'canvases.create_live_share' => [
         'controller' => 'App\Api\Controllers\Canvas\CanvasAccessController',
         'action' => 'create_live_share',
@@ -623,9 +585,6 @@ return [
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'canvas_join_live', 'max' => 30, 'time' => RL::TIME_1, 'identifier' => RL::ID_IP]]
     ],
 
-    // ==========================================
-    // RUTAS DE UBICACIONES (PAÍSES, ESTADOS, MUNICIPIOS)
-    // ==========================================
     'locations.get_countries' => [
         'controller' => 'App\Api\Controllers\Location\LocationController',
         'action' => 'get_countries',
@@ -642,14 +601,12 @@ return [
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'loc_get_cities', 'max' => 60, 'time' => RL::TIME_1, 'identifier' => RL::ID_IP]]
     ],
 
-    // --- NUEVA RUTA DE TELEMETRÍA (Tracker Frontend) ---
     'telemetry.collect' => [
         'controller' => 'App\Api\Controllers\Telemetry\TelemetryController',
         'action' => 'collect',
         'middleware' => [] 
     ],
 
-    // --- RUTAS DE STRIPE / PAGOS ---
     'stripe.create_checkout' => [
         'controller' => 'App\Api\Controllers\Stripe\StripeController',
         'action' => 'create_checkout',
@@ -685,8 +642,7 @@ return [
         'action' => 'toggle_auto_renewal',
         'middleware' => [['type' => 'Telemetry'], ['type' => 'RateLimit', 'key' => 'stripe_toggle_renewal', 'max' => RL::MAX_5, 'time' => RL::TIME_5, 'identifier' => RL::ID_USER_ID]]
     ],
-    
-    // --- RUTAS DE TIENDA (MONEDAS Y VENTAJAS) ---
+
     'stripe.create_coin_checkout' => [
         'controller' => 'App\Api\Controllers\Stripe\StripeController',
         'action' => 'create_coin_checkout',

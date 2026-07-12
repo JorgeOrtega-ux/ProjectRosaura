@@ -31,11 +31,6 @@ CREATE TABLE IF NOT EXISTS `cities` (
   CONSTRAINT `fk_cities_country` FOREIGN KEY (`country_id`) REFERENCES `countries` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- ==========================================
--- DATOS DE MUESTRA BÁSICOS (EJEMPLO ESTRUCTURAL)
--- Nota: En producción importarías un volcado SQL masivo.
--- Estos datos sirven para que tu contenedor inicie con información y puedas hacer pruebas.
--- ==========================================
 
 INSERT IGNORE INTO `countries` (`id`, `name`, `iso2`, `iso3`, `phone_code`) VALUES 
 (142, 'Mexico', 'MX', 'MEX', '52');
@@ -46,8 +41,5 @@ INSERT IGNORE INTO `states` (`id`, `country_id`, `name`, `state_code`) VALUES
 INSERT IGNORE INTO `cities` (`id`, `state_id`, `country_id`, `name`) VALUES 
 (68512, 2409, 142, 'Matamoros');
 
--- ==========================================
--- ASIGNACIÓN DE PERMISOS AL USUARIO DE LA API
--- ==========================================
 GRANT ALL PRIVILEGES ON db_locations.* TO 'system_web_executor'@'%';
 FLUSH PRIVILEGES;

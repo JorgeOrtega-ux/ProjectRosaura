@@ -1,5 +1,4 @@
 <?php
-// api/index.php
 
 header('Content-Type: application/json');
 
@@ -209,7 +208,6 @@ if (strpos($contentType, 'multipart/form-data') !== false) {
     }
 }
 
-// Ensure GET parameters are merged into input so routes like chat.attachment can be picked up
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $input = array_merge($input, $_GET);
 }
