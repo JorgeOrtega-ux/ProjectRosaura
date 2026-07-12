@@ -87,7 +87,7 @@ class CanvasAssetService {
                 'message' => __('msg_template_uploaded'),
                 'data' => [
                     'id' => $templateId,
-                    'url' => "/" . $dbPath
+                    'url' => Utils::getS3PublicUrl($dbPath)
                 ]
             ];
 
@@ -100,6 +100,13 @@ class CanvasAssetService {
     public function getUserTemplates(int $userId): array {
         try {
             $templates = $this->canvasRepository->getUserTemplates($userId);
+            if (is_array($templates)) {
+                foreach ($templates as &$t) {
+                    if (!empty($t['file_path'])) {
+                        $t['file_path'] = Utils::getS3PublicUrl($t['file_path']);
+                    }
+                }
+            }
             return ['success' => true, 'data' => $templates];
         } catch (Exception $e) {
             Logger::error('Error getUserTemplates.', ['user_id' => $userId, 'error' => $e->getMessage()]);

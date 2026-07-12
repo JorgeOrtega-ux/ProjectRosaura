@@ -45,7 +45,7 @@ class CanvasMediaService {
 
             $s3Key = 'timelapses/' . $canvas['uuid'] . '/live/live_canvas_' . $canvas['uuid'] . '.jsonl';
 
-            $bucket = \App\Config\EnvLoader::get('MINIO_BUCKET', 'rosaura-storage');
+            $bucket = \App\Core\Helpers\EnvLoader::get('MINIO_BUCKET', 'rosaura-storage');
             $s3Client = Utils::getS3Client();
 
             if (!$s3Client->doesObjectExist($bucket, $s3Key)) {
@@ -100,7 +100,7 @@ class CanvasMediaService {
                 $s3Key = str_replace('private/canvases/', '', $s3Key);
             }
 
-            $bucket = \App\Config\EnvLoader::get('MINIO_BUCKET', 'rosaura-storage');
+            $bucket = \App\Core\Helpers\EnvLoader::get('MINIO_BUCKET', 'rosaura-storage');
             $s3Client = Utils::getS3Client();
 
             if (!$s3Client->doesObjectExist($bucket, $s3Key)) {

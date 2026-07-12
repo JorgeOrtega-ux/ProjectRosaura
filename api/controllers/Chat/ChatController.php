@@ -112,11 +112,7 @@ class ChatController extends BaseController
                 ob_end_clean();
             }
             
-            header('Content-Type: ' . $result['mime_type']);
-            header('Content-Length: ' . $result['file_size']);
-            header('Cache-Control: private, max-age=31536000');
-            
-            readfile($result['file_path']);
+            header('Location: ' . $result['presigned_url']);
             exit;
         } catch (\Throwable $e) {
             $this->handleException($e, __FUNCTION__);

@@ -24,12 +24,16 @@ class SnapshotViewerController {
         
         this.needsRender = false;
         this.animationFrameId = null;
+        this.isDataLoaded = false;
+        
+        this.playbackSpeed = 1;
+        this.pixelAccumulator = 0;
+        this.showGrid = true;
 
         this.hasTimelapse = false;
         this.timelapseData = null;
         this.isPlaying = false;
         this.currentFrame = 0;
-        this.playbackSpeed = 5; 
         this.paletteColors = [];
         this.playAnimationFrameId = null;
         this.originalImageUrl = null;
@@ -46,6 +50,12 @@ class SnapshotViewerController {
         const wrapper = document.querySelector('[data-ref="snapshot-wrapper"]');
         if (wrapper) {
             this.snapshotId = wrapper.getAttribute('data-snapshot-id');
+            const sizeStr = wrapper.getAttribute('data-size');
+            if (sizeStr) {
+                const parts = sizeStr.toLowerCase().split('x');
+                this.boardWidth = parseInt(parts[0], 10);
+                this.boardHeight = parts.length > 1 ? parseInt(parts[1], 10) : this.boardWidth;
+            }
         } else {
             const parts = window.location.pathname.split('/');
             this.snapshotId = parts[parts.length - 1]; 
@@ -57,6 +67,14 @@ class SnapshotViewerController {
         if (this.canvas) {
             this.ctx = this.canvas.getContext('2d', { alpha: false });
             this.canvas.classList.add('component-pixelated');
+            this.canvas.classList.add('component-canvas-transition');
+            
+            this.setupCanvas();
+            this.updateCanvasDimensions();
+            this.centerBoard(); 
+            this.isDataLoaded = true;
+            this.requestRender();
+            console.log('[SnapshotViewer] Canvas initialized, dimensions:', this.canvas.width, this.canvas.height);
         }
 
         this.bindEvents();
@@ -77,9 +95,92 @@ class SnapshotViewerController {
     bindEvents() {
         document.addEventListener('wheel', this.handleWheelBound, { passive: false });
         document.addEventListener('mousedown', this.handleMouseDownBound);
-        document.addEventListener('mousemove', this.handleMouseMoveBound);
-        document.addEventListener('mouseup', this.handleMouseUpBound);
+        this.canvas.addEventListener('mousemove', this.handleMouseMoveBound);
+        window.addEventListener('mouseup', this.handleMouseUpBound);
         window.addEventListener('resize', this.handleResizeBound);
+
+        this.bindTimelapseTools();
+    }
+
+    bindTimelapseTools() {
+        const speedBtns = document.querySelectorAll('[data-action="adjustTimelapseSpeed"]');
+        speedBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const stepAction = btn.getAttribute('data-step');
+                
+                if (stepAction === 'up') {
+                    if (this.playbackSpeed < 1) this.playbackSpeed = parseFloat((this.playbackSpeed + 0.2).toFixed(1));
+                    else this.playbackSpeed += 1;
+                } else if (stepAction === 'down') {
+                    if (this.playbackSpeed <= 1 && this.playbackSpeed > 0.2) this.playbackSpeed = parseFloat((this.playbackSpeed - 0.2).toFixed(1));
+                    else if (this.playbackSpeed > 1) this.playbackSpeed -= 1;
+                } else if (stepAction === 'fast_up') {
+                    if (this.playbackSpeed < 1) this.playbackSpeed = 1;
+                    this.playbackSpeed += 50;
+                } else if (stepAction === 'fast_down') {
+                    if (this.playbackSpeed > 50) this.playbackSpeed -= 50;
+                    else this.playbackSpeed = 1;
+                }
+                
+                this.playbackSpeed = Math.max(0.2, Math.min(10000, this.playbackSpeed));
+
+                const valDisplay = document.querySelector('[data-ref="val_timelapse_speed"]');
+                if (valDisplay) valDisplay.textContent = this.playbackSpeed + 'x';
+            });
+        });
+
+        const btnPlayPause = document.querySelector('[data-action="toggleTimelapsePlayPause"]');
+        if (btnPlayPause) {
+            btnPlayPause.innerHTML = '<span class="material-symbols-rounded">play_arrow</span> Play';
+            btnPlayPause.addEventListener('click', async () => {
+                
+                if (!this.timelapseData) {
+                    btnPlayPause.innerHTML = '<span class="material-symbols-rounded" style="animation: spin 1s linear infinite;">sync</span> Loading...';
+                    const ok = await this.fetchTimelapseData();
+                    if (!ok) {
+                        btnPlayPause.innerHTML = '<span class="material-symbols-rounded">play_arrow</span> Play';
+                        return;
+                    }
+                }
+
+                if (this.playAnimationFrameId) {
+                    this.pauseTimelapse();
+                    btnPlayPause.innerHTML = '<span class="material-symbols-rounded">play_arrow</span> Play';
+                } else {
+                    if (this.currentFrame === 0 || (this.timelapseData && this.currentFrame >= this.timelapseData.length)) {
+                        this.currentFrame = 0;
+                        this.resetCanvasToBlank();
+                    }
+                    this.resumeTimelapse();
+                    btnPlayPause.innerHTML = '<span class="material-symbols-rounded">pause</span> Pause';
+                }
+            });
+        }
+
+        const btnRestart = document.querySelector('[data-action="restartTimelapse"]');
+        if (btnRestart) {
+            btnRestart.addEventListener('click', async () => {
+                this.pauseTimelapse();
+                this.currentFrame = 0;
+                this.resetCanvasToBlank();
+                
+                const bp = document.querySelector('[data-action="toggleTimelapsePlayPause"]');
+                if (bp) bp.innerHTML = '<span class="material-symbols-rounded">play_arrow</span> Play';
+            });
+        }
+    }
+
+    pauseTimelapse() {
+        if (this.playAnimationFrameId) {
+            cancelAnimationFrame(this.playAnimationFrameId);
+            this.playAnimationFrameId = null;
+        }
+    }
+
+    resumeTimelapse() {
+        if (!this.playAnimationFrameId) {
+            this.playLoop();
+        }
     }
 
     async loadSnapshotData() {
@@ -88,6 +189,7 @@ class SnapshotViewerController {
             const response = await this.api.post(endpoint, { id: this.snapshotId });
             
             if (response.success && response.data) {
+                this.isDataLoaded = true;
                 this.boardWidth = parseInt(response.data.width, 10) || 2000;
                 this.boardHeight = parseInt(response.data.height, 10) || 1000;
                 this.originalImageUrl = response.data.image_url;
@@ -117,12 +219,16 @@ class SnapshotViewerController {
 
     async loadPalette(paletteId) {
         try {
-            const res = await fetch('/public/assets/data/palettes.json');
+            let basePath = window.AppBasePath || '';
+            const res = await fetch(`${basePath}/public/assets/data/palettes.json`);
             if (res.ok) {
                 const data = await res.json();
                 this.paletteColors = data[paletteId]?.colors || data['default']?.colors || [];
+            } else {
+                console.warn('[SnapshotViewer] Failed to load palette.json', res.status);
             }
         } catch(e) {
+            console.error('[SnapshotViewer] Error loading palette:', e);
         }
     }
 
@@ -132,31 +238,18 @@ class SnapshotViewerController {
         
         btnPlay.classList.remove('disabled'); btnPlay.classList.add('active'); 
 
-        btnPlay.addEventListener('click', async () => {
-            if (!this.timelapseData) {
-                btnPlay.innerHTML = '<span class="material-symbols-rounded" style="animation: spin 1s linear infinite;">sync</span>';
-                const loaded = await this.fetchTimelapseData();
-                if (!loaded) {
-                    btnPlay.innerHTML = '<span class="material-symbols-rounded">play_circle</span>';
-                    return;
+        const btnToggleGrid = document.getElementById('tl-btn-toggle-grid');
+        if (btnToggleGrid) {
+            btnToggleGrid.addEventListener('click', () => {
+                this.showGrid = !this.showGrid;
+                if (this.showGrid) {
+                    btnToggleGrid.classList.add('active');
+                } else {
+                    btnToggleGrid.classList.remove('active');
                 }
-            }
-
-            this.isPlaying = !this.isPlaying;
-            btnPlay.innerHTML = this.isPlaying 
-                ? '<span class="material-symbols-rounded">pause_circle</span>'
-                : '<span class="material-symbols-rounded">play_circle</span>';
-
-            if (this.isPlaying) {
-                if (this.currentFrame >= this.timelapseData.length) {
-                    this.resetCanvasToBlank();
-                    this.currentFrame = 0;
-                }
-                this.playLoop();
-            } else {
-                if (this.playAnimationFrameId) cancelAnimationFrame(this.playAnimationFrameId);
-            }
-        });
+                this.requestRender();
+            });
+        }
     }
 
     async fetchTimelapseData() {
@@ -172,12 +265,11 @@ class SnapshotViewerController {
             const text = response.data;
             const lines = text.trim().split('\n');
             
-            this.timelapseData = lines.map(line => {
+            this.timelapseData = lines.map((line) => {
                 try { return JSON.parse(line); } catch(e) { return null; }
             }).filter(item => item !== null);
 
             return true;
-
         } catch(e) {
             showMessage(__('err_load_timelapse'), "error");
             return false;
@@ -188,30 +280,67 @@ class SnapshotViewerController {
         this.offscreenCtx.fillStyle = '#FFFFFF';
         this.offscreenCtx.fillRect(0, 0, this.boardWidth, this.boardHeight);
         this.requestRender();
+        this.updateStatsBadge();
+    }
+
+    updateStatsBadge() {
+        const badge = document.getElementById('tl-stats-badge');
+        const textEl = document.getElementById('tl-stats-text');
+        
+        if (!badge || !textEl || !this.timelapseData) {
+            if (badge) badge.style.opacity = '0';
+            return;
+        }
+
+        if (this.currentFrame === 0) {
+            badge.style.opacity = '0';
+        } else {
+            badge.style.opacity = '1';
+            const total = this.timelapseData.length;
+            const pct = Math.round((this.currentFrame / total) * 100);
+            
+            // If JSON has timestamps (e.g. `t`), we could calculate elapsed time here.
+            // For now, we show Pixels / Total and Percentage.
+            textEl.textContent = `${this.currentFrame.toLocaleString()} / ${total.toLocaleString()} (${pct}%)`;
+        }
     }
 
     playLoop() {
-        if (!this.isPlaying) return;
+        try {
+            if (!this.timelapseData || this.currentFrame >= this.timelapseData.length) {
+                this.playAnimationFrameId = null;
+                
+                const btnPlayPause = document.querySelector('[data-action="toggleTimelapsePlayPause"]');
+                if (btnPlayPause) btnPlayPause.innerHTML = '<span class="material-symbols-rounded">play_arrow</span> Play';
+                
+                if (this.timelapseData && this.currentFrame >= this.timelapseData.length) {
+                    this.currentFrame = 0;
+                }
 
-        let pixelsToDraw = this.playbackSpeed;
-        
-        while (pixelsToDraw > 0 && this.currentFrame < this.timelapseData.length) {
-            const pixel = this.timelapseData[this.currentFrame];
-            this.drawSinglePixel(pixel);
-            this.currentFrame++;
-            pixelsToDraw--;
-        }
-
-        this.requestRender(); 
-
-        if (this.currentFrame < this.timelapseData.length) {
-            this.playAnimationFrameId = requestAnimationFrame(() => this.playLoop());
-        } else {
-            this.isPlaying = false;
-            const btnPlay = document.getElementById('tl-btn-play');
-            if (btnPlay) {
-                btnPlay.innerHTML = '<span class="material-symbols-rounded">play_circle</span>';
+                return;
             }
+
+            this.pixelAccumulator += this.playbackSpeed;
+            const pixelsToDraw = Math.floor(this.pixelAccumulator);
+            this.pixelAccumulator -= pixelsToDraw;
+
+            for (let i = 0; i < pixelsToDraw; i++) {
+                if (this.currentFrame >= this.timelapseData.length) break;
+                
+                const frame = this.timelapseData[this.currentFrame];
+                this.drawSinglePixel(frame);
+                this.currentFrame++;
+            }
+            
+            this.updateStatsBadge();
+            this.requestRender();
+
+            this.playAnimationFrameId = requestAnimationFrame(() => this.playLoop());
+        } catch (e) {
+            console.error('[SnapshotViewer] Error in playLoop:', e);
+            this.playAnimationFrameId = null;
+            const btnPlayPause = document.querySelector('[data-action="toggleTimelapsePlayPause"]');
+            if (btnPlayPause) btnPlayPause.innerHTML = '<span class="material-symbols-rounded">play_arrow</span> Play';
         }
     }
 
@@ -222,7 +351,11 @@ class SnapshotViewerController {
         let colorHex = '#FFFFFF';
         
         if (colorIndex !== 255 && this.paletteColors[colorIndex]) {
-            colorHex = this.paletteColors[colorIndex];
+            colorHex = this.paletteColors[colorIndex].hex || this.paletteColors[colorIndex];
+        }
+
+        if (this.currentFrame < 5 || this.currentFrame % 500 === 0) {
+            console.log(`[SnapshotViewer] drawSinglePixel frame=${this.currentFrame} x=${pixel.x} y=${pixel.y} c=${pixel.c} mappedHex=${colorHex}`);
         }
 
         this.offscreenCtx.fillStyle = colorHex;
@@ -257,10 +390,15 @@ class SnapshotViewerController {
         const rect = parent.getBoundingClientRect();
         
         const dpr = window.devicePixelRatio || 1;
-        this.canvas.width = rect.width * dpr;
-        this.canvas.height = rect.height * dpr;
-        this.canvas.style.width = `${rect.width}px`;
-        this.canvas.style.height = `${rect.height}px`;
+        const newWidth = rect.width * dpr;
+        const newHeight = rect.height * dpr;
+        
+        if (this.canvas.width !== newWidth || this.canvas.height !== newHeight) {
+            this.canvas.width = newWidth;
+            this.canvas.height = newHeight;
+            this.canvas.style.width = `${rect.width}px`;
+            this.canvas.style.height = `${rect.height}px`;
+        }
     }
 
     centerBoard() {
@@ -432,6 +570,8 @@ class SnapshotViewerController {
         this.ctx.fillStyle = bgColor; 
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
+        if (!this.isDataLoaded) return;
+
         this.ctx.save();
         
         const dpr = window.devicePixelRatio || 1;
@@ -445,7 +585,11 @@ class SnapshotViewerController {
         this.ctx.fillStyle = '#FFFFFF';
         this.ctx.fillRect(0, 0, this.boardWidth, this.boardHeight);
 
-        if (this.transform.scale > 4) {
+        if (this.offscreenCanvas) {
+            this.ctx.drawImage(this.offscreenCanvas, 0, 0);
+        }
+
+        if (this.transform.scale > 4 && this.showGrid) {
             this.ctx.lineWidth = 1 / this.transform.scale;
             this.ctx.strokeStyle = gridColor; 
             this.ctx.beginPath();
@@ -466,10 +610,6 @@ class SnapshotViewerController {
                 this.ctx.lineTo(endX, y);
             }
             this.ctx.stroke();
-        }
-
-        if (this.offscreenCanvas) {
-            this.ctx.drawImage(this.offscreenCanvas, 0, 0);
         }
 
         if (this.hoveredPixel) {

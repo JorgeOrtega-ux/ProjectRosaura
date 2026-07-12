@@ -1,4 +1,8 @@
 <?php
+use App\Config\Database\DatabaseManager;
+use App\Core\System\DatabaseConstants as DB;
+use PDO;
+
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
@@ -6,6 +10,21 @@ error_reporting(E_ALL);
 try {
     $snapshotId = isset($_GET['id']) ? $_GET['id'] : null;
     $title = __('lbl_snapshot_viewer_title');
+    $canvasSize = '64x64';
+    
+    if ($snapshotId) {
+        $dbManager = new DatabaseManager();
+        $db = $dbManager->getConnection(DB::CONN_CANVASES);
+        
+        $sql = "SELECT c.size FROM canvas_snapshots_history s
+                JOIN canvases c ON s.canvas_id = c.id
+                WHERE s.snapshot_uuid = :uuid LIMIT 1";
+        $stmt = $db->prepare($sql);
+        $stmt->execute([':uuid' => $snapshotId]);
+        if ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $canvasSize = $row['size'];
+        }
+    }
 
 } catch (\Throwable $e) {
     $phpError = $e->getMessage();
@@ -37,7 +56,8 @@ try {
 
     <div class="component-wrapper component-wrapper--full no-padding" 
          data-ref="snapshot-wrapper" 
-         data-snapshot-id="<?php echo htmlspecialchars($snapshotId ?? ''); ?>">
+         data-snapshot-id="<?php echo htmlspecialchars($snapshotId ?? ''); ?>"
+         data-size="<?php echo htmlspecialchars($canvasSize ?? '64x64'); ?>">
          
         <div class="component-top">
             <div class="component-top-left">
@@ -48,7 +68,10 @@ try {
             
             <div class="component-top-right">
                 <div class="component-actions active">
-                    <button id="tl-btn-play" class="component-button component-button--icon component-button--h40" data-tooltip="<?php echo __('tooltip_play_timelapse'); ?>" data-position="bottom">
+                    <button id="tl-btn-toggle-grid" class="component-button component-button--icon component-button--h40 active" data-action="toggleSnapshotGrid" data-tooltip="<?php echo __('dt_grid'); ?>" data-position="bottom">
+                        <span class="material-symbols-rounded">grid_on</span>
+                    </button>
+                    <button id="tl-btn-play" class="component-button component-button--icon component-button--h40" data-action="toggleMenuInModule" data-module-target="moduleTimelapseTools" data-menu-target="menu-timelapse" data-tooltip="<?php echo __('tooltip_play_timelapse'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">play_circle</span>
                     </button>
                 </div>
@@ -66,6 +89,14 @@ try {
             <div class="component-badge component-badge--warning component-badge--absolute-tl">
                 <span class="material-symbols-rounded">history</span> <?php echo __('lbl_historical_mode'); ?>
             </div>
+
+            <div id="tl-stats-badge" class="component-badge component-badge--dark component-badge--absolute-tl" style="top: 48px; opacity: 0; transition: opacity 0.3s ease;">
+                <span class="material-symbols-rounded">analytics</span> 
+                <span id="tl-stats-text">0 / 0 (0%)</span>
+            </div>
         </div>
     </div>
+
+    <?php require_once __DIR__ . '/../../modules/moduleTimelapseTools.php'; ?>
+
 </div>

@@ -351,19 +351,42 @@ class ChatServices
             }
 }
 
-        $filePath = ROOT_PATH . '/storage/canvases/' . $canvasUuid . '/chat/' . $file;
-        if (!file_exists($filePath)) {
-            return ['success' => false, 'http_code' => 404];
-}
+        $s3Key = 'canvases/' . $canvasUuid . '/chat/' . $file;
+        $bucket = \App\Core\Helpers\EnvLoader::get('MINIO_BUCKET', 'rosaura-storage');
+        $s3Client = \App\Core\Helpers\Utils::getS3Client();
 
-        $mimeType = mime_content_type($filePath);
-        if (!$mimeType) $mimeType = 'application/octet-stream';
-        
-        return [
-            'success' => true,
-            'file_path' => $filePath,
-            'mime_type' => $mimeType,
-            'file_size' => filesize($filePath)
-        ];
+        try {
+            $s3Client->headObject([
+                'Bucket' => $bucket,
+                'Key' => $s3Key
+            ]);
+            
+            $publicEndpoint = rtrim(\App\Core\Helpers\EnvLoader::get('MINIO_PUBLIC_URL', 'http://localhost:9000'), '/');
+            $credentials = new \Aws\Credentials\Credentials(
+                \App\Core\Helpers\EnvLoader::get('MINIO_ROOT_USER', 'admin'),
+                \App\Core\Helpers\EnvLoader::get('MINIO_ROOT_PASSWORD', 'password')
+            );
+            $s3PublicClient = new \Aws\S3\S3Client([
+                'version' => 'latest',
+                'region'  => 'us-east-1',
+                'endpoint' => $publicEndpoint,
+                'use_path_style_endpoint' => true,
+                'credentials' => $credentials,
+            ]);
+            
+            $cmd = $s3PublicClient->getCommand('GetObject', [
+                'Bucket' => $bucket,
+                'Key'    => $s3Key
+            ]);
+            $request = $s3PublicClient->createPresignedRequest($cmd, '+60 minutes');
+            $presignedUrl = (string)$request->getUri();
+            
+            return [
+                'success' => true,
+                'presigned_url' => $presignedUrl
+            ];
+        } catch (\Exception $e) {
+            return ['success' => false, 'http_code' => 404];
+        }
     }
 }

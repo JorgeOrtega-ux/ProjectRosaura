@@ -64,7 +64,7 @@ class CanvasMediaController extends BaseController {
             }
 
             $s3Key = $result['file_path'];
-            $bucket = \App\Config\EnvLoader::get('MINIO_BUCKET', 'rosaura-storage');
+            $bucket = \App\Core\Helpers\EnvLoader::get('MINIO_BUCKET', 'rosaura-storage');
             $s3Client = \App\Core\Helpers\Utils::getS3Client();
 
             try {
@@ -118,7 +118,7 @@ class CanvasMediaController extends BaseController {
             }
 
             $s3Key = $result['file_path'];
-            $bucket = \App\Config\EnvLoader::get('MINIO_BUCKET', 'rosaura-storage');
+            $bucket = \App\Core\Helpers\EnvLoader::get('MINIO_BUCKET', 'rosaura-storage');
             $s3Client = \App\Core\Helpers\Utils::getS3Client();
 
             try {
@@ -136,17 +136,21 @@ class CanvasMediaController extends BaseController {
 
             header('Content-Type: application/x-ndjson');
             header('Content-Disposition: attachment; filename="snapshot_timelapse_' . $snapshotId . '.jsonl"');
-            header('Content-Length: ' . $head['ContentLength']);
+            // header('Content-Length: ' . $head['ContentLength']);
             header('Cache-Control: no-cache, must-revalidate');
             header('Pragma: no-cache');
             header('Expires: 0');
             
             flush();
+            $stream = fopen('php://output', 'w');
             $s3Client->getObject([
                 'Bucket' => $bucket,
                 'Key' => $s3Key,
-                'SaveAs' => 'php://output'
+                'SaveAs' => $stream
             ]);
+            if (is_resource($stream)) {
+                fclose($stream);
+            }
             exit;
 
         } catch (\Throwable $e) {
