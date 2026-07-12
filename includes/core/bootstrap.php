@@ -4,11 +4,13 @@ define('ROOT_PATH', dirname(__DIR__, 2));
 
 header("X-Frame-Options: SAMEORIGIN");
 header("X-Content-Type-Options: nosniff");
-header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com https://challenges.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://api.qrserver.com; connect-src 'self' https://unpkg.com https://cdn.jsdelivr.net ws: wss:; frame-src 'self' https://challenges.cloudflare.com; frame-ancestors 'none';");
-
 require_once ROOT_PATH . '/vendor/autoload.php';
 
 \App\Core\Helpers\EnvLoader::load(ROOT_PATH . '/.env');
+
+$s3Host = $_ENV['MINIO_PUBLIC_URL'] ?? 'http://localhost:9000';
+header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com https://challenges.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://api.qrserver.com {$s3Host}; connect-src 'self' https://unpkg.com https://cdn.jsdelivr.net ws: wss:; frame-src 'self' https://challenges.cloudflare.com; frame-ancestors 'none';");
+
 
 if (!isset($_ENV['APP_URL'])) {
     die("Critical Failure: APP_URL is not defined in the environment.");
@@ -21,17 +23,20 @@ date_default_timezone_set($appTimezone);
 
 $redisClient = null;
 try {
-    if (isset($_ENV['REDIS_HOST']) && isset($_ENV['REDIS_PORT'])) {
-        $redisParams = ['scheme' => 'tcp', 'host' => $_ENV['REDIS_HOST'], 'port' => (int)$_ENV['REDIS_PORT']];
-        if (!empty($_ENV['REDIS_PASS'])) $redisParams['password'] = $_ENV['REDIS_PASS'];
+    if (getenv('REDIS_HOST') && getenv('REDIS_PORT')) {
+        $redisParams = ['scheme' => 'tcp', 'host' => getenv('REDIS_HOST'), 'port' => (int)getenv('REDIS_PORT')];
+        if (getenv('REDIS_PASS')) $redisParams['password'] = getenv('REDIS_PASS');
         
         $redisClient = new \Predis\Client($redisParams);
         $redisClient->ping(); 
         
-        $sessionHandler = new \App\Core\System\RedisSessionHandler($redisClient);
-        session_set_save_handler($sessionHandler, true);
+        $redisHost = getenv('REDIS_HOST') ?: '127.0.0.1';
+        $redisPass = getenv('REDIS_PASS') ?: '';
+        ini_set('session.save_handler', 'redis');
+        $redisPath = "tcp://$redisHost:6379" . (!empty($redisPass) ? "?auth=$redisPass" : "");
+        ini_set('session.save_path', $redisPath);
     }
-} catch (\Throwable $e) {} 
+} catch (\Throwable $e) {}
 
 try {
     if (session_status() === PHP_SESSION_NONE) {

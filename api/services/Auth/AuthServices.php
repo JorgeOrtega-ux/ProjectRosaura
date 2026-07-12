@@ -208,7 +208,7 @@ class AuthServices {
             'user_role_name' => $user['role_name'] ?? SecurityConstants::DEFAULT_ROLE_NAME,
             'user_role_color' => $user['role_color'] ?? SecurityConstants::DEFAULT_ROLE_COLOR,
             'user_permissions' => $permissions,
-            'user_pic' => $user['profile_picture'],
+            'user_pic' => \App\Core\Helpers\Utils::getS3PublicUrl($user['profile_picture']),
             'user_prefs' => $userPrefs,
             'user_2fa' => $user['two_factor_enabled'] ?? 0,
             'user_asn' => $asn,

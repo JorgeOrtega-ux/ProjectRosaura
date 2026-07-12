@@ -5,6 +5,24 @@ import redis
 import mysql.connector
 import threading
 from zlib import compress
+import boto3
+import botocore
+
+S3_ENDPOINT = os.getenv("MINIO_ENDPOINT", "http://minio:9000")
+if not S3_ENDPOINT.startswith("http"):
+    S3_ENDPOINT = "http://" + S3_ENDPOINT + ":9000"
+S3_ACCESS_KEY = os.getenv("MINIO_ROOT_USER", "admin")
+S3_SECRET_KEY = os.getenv("MINIO_ROOT_PASSWORD", "password")
+S3_BUCKET = os.getenv("MINIO_BUCKET", "rosaura-storage")
+
+def get_s3_client():
+    return boto3.client(
+        's3',
+        endpoint_url=S3_ENDPOINT,
+        aws_access_key_id=S3_ACCESS_KEY,
+        aws_secret_access_key=S3_SECRET_KEY,
+        region_name='us-east-1'
+    )
 
 REDIS_HOST = os.getenv("REDIS_HOST", "redis")
 REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
@@ -88,17 +106,29 @@ def canvas_persistence_thread():
                         print(f"[!] Could not resolve UUID for canvas {canvas_id}. Skipping.")
                         continue
                     
-                    target_dir = os.path.join(TIMELAPSE_DIR, canvas_uuid, "live")
-                    os.makedirs(target_dir, exist_ok=True)
+                    s3 = get_s3_client()
+                    live_key = f"timelapses/{canvas_uuid}/live/live_canvas_{canvas_uuid}.jsonl"
                     
-                    file_path = os.path.join(target_dir, f"live_canvas_{canvas_uuid}.jsonl")
-                    
-                    with open(file_path, "a", encoding="utf-8") as f:
-                        for msg_id_b, msg_data_b in msgs:
-                            msg_id = msg_id_b.decode('utf-8')
-                            event = {k.decode('utf-8'): v.decode('utf-8') for k, v in msg_data_b.items()}
-                            event["_id"] = msg_id
-                            f.write(json.dumps(event) + "\n")
+                    existing_data = b""
+                    try:
+                        response = s3.get_object(Bucket=S3_BUCKET, Key=live_key)
+                        existing_data = response['Body'].read()
+                    except botocore.exceptions.ClientError as e:
+                        if e.response['Error']['Code'] != "NoSuchKey":
+                            print(f"[!] S3 error reading timelapse: {e}")
+                            
+                    new_events = []
+                    for msg_id_b, msg_data_b in msgs:
+                        msg_id = msg_id_b.decode('utf-8')
+                        event = {k.decode('utf-8'): v.decode('utf-8') for k, v in msg_data_b.items()}
+                        event["_id"] = msg_id
+                        new_events.append(json.dumps(event) + "\n")
+                        
+                    final_data = existing_data + "".join(new_events).encode('utf-8')
+                    try:
+                        s3.put_object(Bucket=S3_BUCKET, Key=live_key, Body=final_data, ContentType='application/jsonl')
+                    except Exception as e:
+                        print(f"[!] S3 error saving timelapse: {e}")
                     
                     msg_ids = [msg_id_b for msg_id_b, _ in msgs]
                     r.xack(stream_name, CONSUMER_GROUP, *msg_ids)

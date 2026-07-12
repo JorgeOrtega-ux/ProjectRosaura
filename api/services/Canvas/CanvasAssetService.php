@@ -7,6 +7,7 @@ use DateTime;
 use App\Core\Interfaces\CanvasRepositoryInterface;
 use App\Core\Interfaces\UserRepositoryInterface;
 use App\Core\Helpers\Utils;
+use App\Core\Helpers\EnvLoader;
 use App\Core\System\Logger;
 use App\Core\System\DatabaseConstants as DB;
 use App\Core\System\CacheConstants;
@@ -61,16 +62,19 @@ class CanvasAssetService {
                 }
             }
 
-            $uploadDir = dirname(__DIR__, 3) . '/storage/public/templates/';
-            if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0755, true);
-            }
-
             $fileName = sprintf('%s_%s.%s', $userId, Utils::generateUUID(), $extension);
-            $destination = $uploadDir . $fileName;
-
-            if (!move_uploaded_file($fileInfo['tmp_name'], $destination)) {
-                Logger::error('Fallo al mover el archivo de plantilla al File System.', ['user_id' => $userId]);
+            
+            $bucket = EnvLoader::get('MINIO_BUCKET', 'rosaura-storage');
+            $s3Client = Utils::getS3Client();
+            try {
+                $s3Client->putObject([
+                    'Bucket' => $bucket,
+                    'Key'    => 'templates/' . $fileName,
+                    'SourceFile' => $fileInfo['tmp_name'],
+                    'ContentType' => $allowedTypes[$extension]
+                ]);
+            } catch (Exception $e) {
+                Logger::error('Fallo al subir el archivo de plantilla a S3.', ['user_id' => $userId, 'error' => $e->getMessage()]);
                 return ['success' => false, 'message' => __('err_file_write')];
             }
 
@@ -119,9 +123,16 @@ class CanvasAssetService {
             
             if ($deleted) {
                 if ($filePath) {
-                    $physicalPath = dirname(__DIR__, 3) . '/' . str_replace('public/storage/', 'storage/public/', ltrim($filePath, '/'));
-                    if (file_exists($physicalPath)) {
-                        unlink($physicalPath); 
+                    $s3Key = preg_replace('#^/?public/storage/#', '', ltrim($filePath, '/'));
+                    $bucket = EnvLoader::get('MINIO_BUCKET', 'rosaura-storage');
+                    $s3Client = Utils::getS3Client();
+                    try {
+                        $s3Client->deleteObject([
+                            'Bucket' => $bucket,
+                            'Key'    => ltrim($s3Key, '/')
+                        ]);
+                    } catch (Exception $e) {
+                        Logger::error('Fallo al eliminar archivo de plantilla de S3.', ['user_id' => $userId, 'error' => $e->getMessage()]);
                     }
                 }
                 return ['success' => true, 'message' => __('msg_template_deleted')];

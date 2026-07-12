@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS `canvases` (
   `cooldown_pixels_batch` int(11) NOT NULL DEFAULT 5,
   `cooldown_seconds` int(11) NOT NULL DEFAULT 10,
   `favorites_count` int(11) NOT NULL DEFAULT 0,
+  `members_count` int(11) NOT NULL DEFAULT 0,
   `scope_type` enum('personal', 'global', 'country', 'state', 'municipality', 'organization') NOT NULL DEFAULT 'personal',
   `scope_ref_1` varchar(100) DEFAULT NULL,
   `scope_ref_2` varchar(100) DEFAULT NULL,

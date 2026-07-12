@@ -53,24 +53,26 @@ if (Utils::isMaintenanceActive()) {
 }
 
 try {
-    if (!isset($_ENV['REDIS_HOST']) || !isset($_ENV['REDIS_PORT'])) {
+    if (getenv('REDIS_HOST') && getenv('REDIS_PORT')) {
+        $redisHost = getenv('REDIS_HOST');
+        $redisPort = (int)getenv('REDIS_PORT');
+        $redisParams = ['scheme' => 'tcp', 'host' => $redisHost, 'port' => $redisPort];
+        
+        if (getenv('REDIS_PASS')) {
+            $redisParams['password'] = getenv('REDIS_PASS');
+        }
+        
+        $redisClient = new \Predis\Client($redisParams);
+        $redisClient->ping(); 
+        
+        $redisHostNative = getenv('REDIS_HOST') ?: '127.0.0.1';
+        $redisPassNative = getenv('REDIS_PASS') ?: '';
+        ini_set('session.save_handler', 'redis');
+        $redisPath = "tcp://$redisHostNative:6379" . (!empty($redisPassNative) ? "?auth=$redisPassNative" : "");
+        ini_set('session.save_path', $redisPath);
+    } else {
         throw new \Exception("REDIS_HOST or REDIS_PORT variables are not defined in the API environment.");
     }
-    
-    $redisHost = $_ENV['REDIS_HOST'];
-    $redisPort = (int)$_ENV['REDIS_PORT'];
-    $redisParams = ['scheme' => 'tcp', 'host' => $redisHost, 'port' => $redisPort];
-    
-    if (!empty($_ENV['REDIS_PASS'])) {
-        $redisParams['password'] = $_ENV['REDIS_PASS'];
-    }
-    
-    $redisClient = new \Predis\Client($redisParams);
-    $redisClient->ping(); 
-    
-    $sessionHandler = new \App\Core\System\RedisSessionHandler($redisClient);
-    session_set_save_handler($sessionHandler, true);
-    
 } catch (\Exception $e) {
     Logger::critical("API: Could not connect to Redis for session management. " . $e->getMessage());
 }

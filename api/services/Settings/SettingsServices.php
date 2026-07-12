@@ -80,7 +80,7 @@ class SettingsServices
             
             Utils::deleteOldAvatar($oldPic);
 
-            $newRelPath = 'public/storage/profilePictures/uploaded/' . $fileName;
+            $newRelPath = 'profilePictures/uploaded/' . $fileName;
 
             if ($this->userRepository->updateAvatar($userId, $newRelPath)) {
                 $this->logProfileChange($userId, DB::LOG_CHANGE_AVATAR, json_encode(['avatar' => $oldPic]), json_encode(['avatar' => $newRelPath]));
@@ -92,7 +92,7 @@ class SettingsServices
                     $this->sessionManager->set(SessionConstants::KEY_LINKED_ACCOUNTS, $accounts);
                 }
 
-                return ['success' => true, 'message' => __('settings.avatar_updated'), 'new_avatar' => APP_URL . '/' . ltrim($newRelPath, '/')];
+                return ['success' => true, 'message' => __('settings.avatar_updated'), 'new_avatar' => \App\Core\Helpers\Utils::getS3PublicUrl($newRelPath)];
             }
         } else {
             return ['success' => false, 'message' => __($uploadResult['message_key'])];

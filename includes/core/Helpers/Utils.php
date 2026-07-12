@@ -3,6 +3,7 @@ namespace App\Core\Helpers;
 use App\Core\Interfaces\SessionManagerInterface;
 
 class Utils {
+    private static $s3Client = null;
     private static $canvasSizes = null;
 
     public static function getCanvasSizes(): array {
@@ -25,6 +26,42 @@ class Utils {
         return self::$canvasSizes;
     }
 
+    public static function getS3Client() {
+        if (self::$s3Client === null) {
+            $endpoint = EnvLoader::get('MINIO_ENDPOINT', 'http://minio:9000');
+            if (strpos($endpoint, 'http') !== 0) {
+                $endpoint = 'http://' . $endpoint . ':9000';
+            }
+            $credentials = new \Aws\Credentials\Credentials(
+                EnvLoader::get('MINIO_ROOT_USER', 'admin'),
+                EnvLoader::get('MINIO_ROOT_PASSWORD', 'password')
+            );
+            self::$s3Client = new \Aws\S3\S3Client([
+                'version' => 'latest',
+                'region'  => 'us-east-1',
+                'endpoint' => $endpoint,
+                'use_path_style_endpoint' => true,
+                'credentials' => $credentials,
+                'http' => [
+                    'verify' => false
+                ]
+            ]);
+        }
+        return self::$s3Client;
+    }
+
+    public static function getS3PublicUrl($path) {
+        if (empty($path)) return '';
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://') || str_starts_with($path, 'data:')) return $path;
+        
+        $path = preg_replace('#^/?public/storage/#', '', ltrim($path, '/'));
+        
+        $bucket = EnvLoader::get('MINIO_BUCKET', 'rosaura-storage');
+        $publicUrl = rtrim(EnvLoader::get('MINIO_PUBLIC_URL', 'http://localhost:9000'), '/');
+        
+        return $publicUrl . '/' . $bucket . '/' . ltrim($path, '/');
+    }
+
     public static function generateUUID() {
         $data = random_bytes(16);
         $data[6] = chr(ord($data[6]) & 0x0f | 0x40);
@@ -32,39 +69,45 @@ class Utils {
         return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
     }
 
-    public static function generateProfilePicture($username, $uuid) {
-        $initial = mb_substr(mb_strtoupper($username, "UTF-8"), 0, 1, "UTF-8");
-        $allowedColors = ['2563eb', '16a34a', '7c3aed', 'dc2626', 'ea580c', '374151'];
-        $randomColor = $allowedColors[array_rand($allowedColors)];
+    public static function generateProfilePicture($text) {
+        $uuid = self::generateUUID();
+        $backgroundColor = self::getRandomColor();
         
-        $url = "https://ui-avatars.com/api/?name=" . urlencode($initial) . "&background=" . $randomColor . "&color=fff&size=512&font-size=0.5";
+        $image = imagecreatetruecolor(100, 100);
+        $bg = imagecolorallocate($image, hexdec(substr($backgroundColor, 1, 2)), hexdec(substr($backgroundColor, 3, 2)), hexdec(substr($backgroundColor, 5, 2)));
+        imagefill($image, 0, 0, $bg);
+        $textColor = imagecolorallocate($image, 255, 255, 255);
+        $fontPath = ROOT_PATH . '/public/assets/fonts/Inter-Bold.ttf';
         
-        $context = stream_context_create([
-            'http' => [
-                'timeout' => 3.0,
-                'ignore_errors' => true
-            ]
-        ]);
-
-        $imageContent = false;
-        try {
-            $imageContent = file_get_contents($url, false, $context);
-        } catch (\Throwable $e) {
-            \App\Core\System\Logger::error('Avatar generation failed', ['url' => $url, 'exception' => $e->getMessage()]);
+        if (file_exists($fontPath)) {
+            imagettftext($image, 40, 0, 20, 65, $textColor, $fontPath, strtoupper(substr($text, 0, 1)));
+        } else {
+            imagestring($image, 5, 40, 40, strtoupper(substr($text, 0, 1)), $textColor);
         }
         
-        if ($imageContent === false || empty($imageContent)) {
+        ob_start();
+        imagepng($image);
+        $imageContent = ob_get_clean();
+        imagedestroy($image);
+        
+        if ($imageContent === false) {
             return 'public/assets/img/fallbacks/avatar-default.png';
         }
-        $storageDir = ROOT_PATH . '/storage/public/profilePictures/default/';
-        if (!is_dir($storageDir)) mkdir($storageDir, 0755, true);
-        
         $fileName = $uuid . '.png';
-        $filePath = $storageDir . $fileName;
-        file_put_contents($filePath, $imageContent);
-        return 'public/storage/profilePictures/default/' . $fileName;
+        $bucket = EnvLoader::get('MINIO_BUCKET', 'rosaura-storage');
+        $s3Client = self::getS3Client();
+        try {
+            $s3Client->putObject([
+                'Bucket' => $bucket,
+                'Key'    => 'profilePictures/default/' . $fileName,
+                'Body'   => $imageContent,
+                'ContentType' => 'image/png'
+            ]);
+        } catch (\Throwable $e) {
+            \App\Core\System\Logger::error('Failed to upload avatar to S3', ['exception' => $e->getMessage()]);
+        }
+        return 'profilePictures/default/' . $fileName;
     }
-
     public static function generateCSRFToken(SessionManagerInterface $sessionManager) {
         return $sessionManager->getCsrfToken();
     }
@@ -269,13 +312,8 @@ class Utils {
         }
 
         $fileName = self::generateUUID() . (($mime === 'image/png') ? '.png' : '.jpg');
-        
-        if (!is_dir($uploadDir)) {
-            mkdir($uploadDir, 0755, true);
-        }
-        
-        $destPath = rtrim($uploadDir, '/') . '/' . $fileName;
         $imageRecreated = false;
+        $imageContent = null;
 
         if ($mime === 'image/png') {
             try {
@@ -283,8 +321,11 @@ class Utils {
                 if ($sourceImage !== false) {
                     imagealphablending($sourceImage, false);
                     imagesavealpha($sourceImage, true);
-                    $imageRecreated = imagepng($sourceImage, $destPath);
+                    ob_start();
+                    imagepng($sourceImage);
+                    $imageContent = ob_get_clean();
                     imagedestroy($sourceImage);
+                    $imageRecreated = true;
                 }
             } catch (\Throwable $e) {
                 \App\Core\System\Logger::error('Image processing failed', ['format' => 'png', 'exception' => $e->getMessage()]);
@@ -293,40 +334,60 @@ class Utils {
             try {
                 $sourceImage = imagecreatefromjpeg($file['tmp_name']);
                 if ($sourceImage !== false) {
-                    $imageRecreated = imagejpeg($sourceImage, $destPath, 90);
+                    ob_start();
+                    imagejpeg($sourceImage, null, 90);
+                    $imageContent = ob_get_clean();
                     imagedestroy($sourceImage);
+                    $imageRecreated = true;
                 }
             } catch (\Throwable $e) {
                 \App\Core\System\Logger::error('Image processing failed', ['format' => 'jpeg', 'exception' => $e->getMessage()]);
             }
         }
 
-        if ($imageRecreated) {
-            return ['success' => true, 'file_name' => $fileName];
+        if ($imageRecreated && $imageContent !== null) {
+            $bucket = EnvLoader::get('MINIO_BUCKET', 'rosaura-storage');
+            $s3Client = self::getS3Client();
+            $s3Key = preg_replace('#^/?public/storage/#', '', ltrim($uploadDir, '/')) . '/' . $fileName;
+            $s3Key = preg_replace('#/+#', '/', ltrim($s3Key, '/'));
+            try {
+                $s3Client->putObject([
+                    'Bucket' => $bucket,
+                    'Key'    => ltrim($s3Key, '/'),
+                    'Body'   => $imageContent,
+                    'ContentType' => $mime
+                ]);
+                return ['success' => true, 'file_name' => $fileName];
+            } catch (\Throwable $e) {
+                \App\Core\System\Logger::error('Failed to upload image to S3', ['exception' => $e->getMessage()]);
+            }
         }
 
         return ['success' => false, 'message_key' => 'error.internal_server_error'];
     }
-
     public static function deleteOldAvatar($oldPicPath) {
         if (!empty($oldPicPath)) {
             if (strpos($oldPicPath, 'fallbacks/avatar-default.png') !== false) {
                 return false;
             }
             if (strpos($oldPicPath, 'uploaded/') !== false || strpos($oldPicPath, 'default/') !== false) {
-                $oldPicRelative = str_replace(APP_URL . '/', '', ltrim($oldPicPath, '/'));
-                $realPathRelative = str_replace('public/storage/', 'storage/public/', $oldPicRelative);
-                $oldPath = ROOT_PATH . '/' . $realPathRelative;
+                $s3Key = preg_replace('#^/?public/storage/#', '', ltrim($oldPicPath, '/'));
                 
-                if (file_exists($oldPath) && is_file($oldPath)) {
-                    unlink($oldPath);
+                $bucket = EnvLoader::get('MINIO_BUCKET', 'rosaura-storage');
+                $s3Client = self::getS3Client();
+                try {
+                    $s3Client->deleteObject([
+                        'Bucket' => $bucket,
+                        'Key'    => ltrim($s3Key, '/')
+                    ]);
                     return true;
+                } catch (\Throwable $e) {
+                    \App\Core\System\Logger::error('Failed to delete avatar from S3', ['exception' => $e->getMessage()]);
                 }
             }
         }
         return false;
     }
-
     public static function invalidateUserSessions(SessionManagerInterface $sessionManager, $userId, $flushAll = false, $selector = null) {
         if ($flushAll && method_exists($sessionManager, 'flushAllSessionsForUser')) {
             $sessionManager->flushAllSessionsForUser($userId);

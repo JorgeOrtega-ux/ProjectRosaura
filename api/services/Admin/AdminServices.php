@@ -200,7 +200,7 @@ class AdminServices {
                 'id' => $user['id'],
                 'username' => $user['username'],
                 'email' => $user['email'],
-                'profile_picture' => $user['profile_picture'],
+                'profile_picture' => \App\Core\Helpers\Utils::getS3PublicUrl($user['profile_picture']),
                 'roles' => $assignedRoles, 
                 'role_name' => $user['role_name'] ?? SecurityConstants::DEFAULT_ROLE_NAME,
                 'role_color' => $user['role_color'] ?? SecurityConstants::DEFAULT_ROLE_COLOR,
@@ -246,13 +246,13 @@ class AdminServices {
             
             Utils::deleteOldAvatar($user['profile_picture']);
 
-            $newRelPath = 'public/storage/profilePictures/uploaded/' . $fileName;
+            $newRelPath = 'profilePictures/uploaded/' . $fileName;
 
             if ($this->userRepository->updateAvatar($targetId, $newRelPath)) {
                 $currentUserId = $this->sessionManager->get('user_id');
                 $logPayload = json_encode(['event' => 'admin_override_avatar', 'target_user' => $targetId, 'admin_user' => $currentUserId]);
                 $this->moderationRepository->logAction($targetId, $currentUserId, 'profile_avatar', $logPayload, null);
-                return ['success' => true, 'message' => __('admin.avatar_updated'), 'new_avatar' => APP_URL . '/' . ltrim($newRelPath, '/')];
+                return ['success' => true, 'message' => __('admin.avatar_updated'), 'new_avatar' => \App\Core\Helpers\Utils::getS3PublicUrl($newRelPath)];
             }
         } else {
             return ['success' => false, 'message' => __($uploadResult['message_key'])];

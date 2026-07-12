@@ -9,7 +9,8 @@
         "geoip2/geoip2": "^3.0",
         "typesense/typesense-php": "^4.9",
         "symfony/http-client": "^7.4",
-        "stripe/stripe-php": "^20.3"
+        "stripe/stripe-php": "^20.3",
+        "aws/aws-sdk-php": "^3.388"
     },
    "autoload": {
         "psr-4": {

@@ -4,6 +4,6 @@ RUN apt-get update && apt-get install -y default-mysql-client tzdata && rm -rf /
 
 WORKDIR /app
 
-RUN pip install --no-cache-dir cryptography mysql-connector-python pymysql redis python-dotenv requests websockets Pillow numpy typesense
+RUN pip install --no-cache-dir cryptography mysql-connector-python pymysql redis python-dotenv requests websockets Pillow numpy typesense boto3
 
 CMD ["python", "-u", "scripts/worker_backups.py"]

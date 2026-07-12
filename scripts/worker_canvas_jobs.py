@@ -14,6 +14,24 @@ import mysql.connector
 from zlib import decompress
 from PIL import Image
 from datetime import datetime
+import boto3
+import io
+
+S3_ENDPOINT = os.getenv("MINIO_ENDPOINT", "http://minio:9000")
+if not S3_ENDPOINT.startswith("http"):
+    S3_ENDPOINT = "http://" + S3_ENDPOINT + ":9000"
+S3_ACCESS_KEY = os.getenv("MINIO_ROOT_USER", "admin")
+S3_SECRET_KEY = os.getenv("MINIO_ROOT_PASSWORD", "password")
+S3_BUCKET = os.getenv("MINIO_BUCKET", "rosaura-storage")
+
+def get_s3_client():
+    return boto3.client(
+        's3',
+        endpoint_url=S3_ENDPOINT,
+        aws_access_key_id=S3_ACCESS_KEY,
+        aws_secret_access_key=S3_SECRET_KEY,
+        region_name='us-east-1'
+    )
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(threadName)s] %(levelname)s: %(message)s')
 
@@ -421,8 +439,14 @@ def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palet
 
         img_thumb = img.resize((thumb_width, thumb_height), Image.NEAREST)
         
-        filepath = os.path.join(THUMBNAILS_DIR, f"canvas_{canvas_id}.png")
-        img_thumb.save(filepath, "PNG", optimize=True)
+        thumb_io = io.BytesIO()
+        img_thumb.save(thumb_io, "PNG", optimize=True)
+        thumb_io.seek(0)
+        s3 = get_s3_client()
+        try:
+            s3.put_object(Bucket=S3_BUCKET, Key=f"thumbnails/canvas_{canvas_id}.png", Body=thumb_io, ContentType='image/png')
+        except Exception as e:
+            print(f"[!] Error uploading thumbnail to S3: {e}")
         
         if r.exists(f"canvas:{canvas_id}:reset_lock"):
             
@@ -444,9 +468,12 @@ def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palet
             
             if not can_save_history:
                 print(f"[-] Canvas {canvas_id} exceeded its historical snapshots limit ({max_snapshots}). Purging the oldest...")
-                timelapse_src = os.path.join(TIMELAPSE_DIR, str(canvas_uuid), "live", f"live_canvas_{canvas_uuid}.jsonl")
-                if os.path.exists(timelapse_src):
-                    os.remove(timelapse_src)
+                s3 = get_s3_client()
+                live_key = f"timelapses/{canvas_uuid}/live/live_canvas_{canvas_uuid}.jsonl"
+                try:
+                    s3.delete_object(Bucket=S3_BUCKET, Key=live_key)
+                except Exception:
+                    pass
             else:
                 scale_arch_w = ARCHIVE_MAX_SIZE / width
                 scale_arch_h = ARCHIVE_MAX_SIZE / height
@@ -460,36 +487,34 @@ def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palet
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 archive_filename = f"canvas_{canvas_id}_{timestamp}.png"
                 
-                canvas_archive_dir = os.path.join(ARCHIVE_DIR, str(canvas_uuid))
-                os.makedirs(canvas_archive_dir, exist_ok=True)
-                
-                archive_filepath = os.path.join(canvas_archive_dir, archive_filename)
-                
-                img_archive.save(archive_filepath, "PNG", optimize=True)
-                print(f"[+] Historical file saved successfully ({arch_width}x{arch_height}): {archive_filepath}")
+                s3 = get_s3_client()
+                archive_key = f"snapshots_archive/{canvas_uuid}/{archive_filename}"
+                arch_io = io.BytesIO()
+                img_archive.save(arch_io, "PNG", optimize=True)
+                arch_io.seek(0)
+                try:
+                    s3.put_object(Bucket=S3_BUCKET, Key=archive_key, Body=arch_io, ContentType='image/png')
+                    print(f"[+] Historical file saved to S3 successfully: {archive_key}")
+                except Exception as e:
+                    print(f"[!] Error uploading archive to S3: {e}")
 
                 snapshot_uuid = str(uuid.uuid4())
-                public_filepath = f"public/storage/snapshots_archive/{canvas_uuid}/{archive_filename}"
+                public_filepath = f"snapshots_archive/{canvas_uuid}/{archive_filename}"
                 
-                timelapse_src = os.path.join(TIMELAPSE_DIR, str(canvas_uuid), "live", f"live_canvas_{canvas_uuid}.jsonl")
+                live_key = f"timelapses/{canvas_uuid}/live/live_canvas_{canvas_uuid}.jsonl"
                 timelapse_dest_filename = f"snapshot_{snapshot_uuid}.jsonl"
-                
-                snapshots_dir = os.path.join(TIMELAPSE_DIR, str(canvas_uuid), "snapshots")
-                os.makedirs(snapshots_dir, exist_ok=True)
-                
-                timelapse_dest = os.path.join(snapshots_dir, timelapse_dest_filename)
+                dest_key = f"timelapses/{canvas_uuid}/snapshots/{timelapse_dest_filename}"
                 
                 timelapse_db_path = None
                 
-                if os.path.exists(timelapse_src):
-                    try:
-                        shutil.move(timelapse_src, timelapse_dest)
-                        timelapse_db_path = f"private/canvases/timelapses/{canvas_uuid}/snapshots/{timelapse_dest_filename}"
-                        print(f"[+] Timelapse successfully converted to historical: {timelapse_dest_filename}")
-                    except Exception as e:
-                        print(f"[!] Error moving timelapse JSONL file for canvas {canvas_id}: {e}")
-                else:
-                    print(f"[-] 'live_canvas' file not found for canvas {canvas_id}. Base snapshot will be saved without timelapse.")
+                try:
+                    s3.head_object(Bucket=S3_BUCKET, Key=live_key)
+                    s3.copy_object(Bucket=S3_BUCKET, CopySource={'Bucket': S3_BUCKET, 'Key': live_key}, Key=dest_key)
+                    s3.delete_object(Bucket=S3_BUCKET, Key=live_key)
+                    timelapse_db_path = f"private/canvases/timelapses/{canvas_uuid}/snapshots/{timelapse_dest_filename}"
+                    print(f"[+] Timelapse successfully converted to historical in S3: {timelapse_dest_filename}")
+                except Exception as e:
+                    print(f"[-] 'live_canvas' file not found for canvas {canvas_id} or error moving. Base snapshot will be saved without timelapse. Error: {e}")
 
                 try:
                     cursor = db_conn.cursor()

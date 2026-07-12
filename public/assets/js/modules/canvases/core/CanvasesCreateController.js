@@ -252,7 +252,10 @@ class CanvasesCreateController {
                 link.removeAttribute('title');
                 link.classList.remove('disabled-interactive');
                 const lockIcon = link.querySelector('[data-ref="lock-icon"]');
-                if (lockIcon) lockIcon.classList.remove('active'); lockIcon.classList.add('disabled');
+                if (lockIcon) {
+                    lockIcon.classList.remove('active');
+                    lockIcon.classList.add('disabled');
+                }
             } else {
                 link.classList.add('disabled-interactive');
                 link.setAttribute('data-action', '');

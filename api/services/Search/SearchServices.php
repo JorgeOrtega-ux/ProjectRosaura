@@ -64,13 +64,7 @@ class SearchServices {
     }
     
     private function getThumbnailUrl(int $id): ?string {
-        $thumbnailPath = "/storage/public/thumbnails/canvas_" . $id . ".png";
-        $physicalPath = dirname(__DIR__, 3) . $thumbnailPath;
-        if (file_exists($physicalPath)) {
-            $timestamp = filemtime($physicalPath);
-            return $thumbnailPath . "?v=" . $timestamp;
-        }
-        return null;
+        return \App\Core\Helpers\Utils::getS3PublicUrl("thumbnails/canvas_" . $id . ".png");
     }
 }
 ?>

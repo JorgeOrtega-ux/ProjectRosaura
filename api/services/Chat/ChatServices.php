@@ -71,7 +71,7 @@ class ChatServices
             foreach ($messages as &$msg) {
                 $uid = $msg['user_id'];
                 $msg['username'] = $usersMap[$uid]['username'] ?? __('default_user');
-                $msg['avatar'] = $usersMap[$uid]['profile_picture'] ?? null;
+                $msg['avatar'] = isset($usersMap[$uid]['profile_picture']) ? \App\Core\Helpers\Utils::getS3PublicUrl($usersMap[$uid]['profile_picture']) : null;
             }
             unset($msg);
         }
@@ -234,7 +234,7 @@ class ChatServices
             'id' => $msgId,
             'user_id' => $userId,
             'username' => $userInfo['username'] ?? $defaultUsername,
-            'avatar' => $userInfo['profile_picture'] ?? null,
+            'avatar' => isset($userInfo['profile_picture']) ? \App\Core\Helpers\Utils::getS3PublicUrl($userInfo['profile_picture']) : null,
             'message' => htmlspecialchars($messageText, ENT_QUOTES, 'UTF-8'),
             'attachments' => $safeAttachments,
             'created_at' => date('Y-m-d H:i:s')

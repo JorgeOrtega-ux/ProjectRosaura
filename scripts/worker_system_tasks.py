@@ -1,3 +1,4 @@
+import boto3
 import os
 import json
 import time
@@ -75,6 +76,12 @@ REDIS_HOST = os.getenv('REDIS_HOST', 'redis')
 REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
 REDIS_PASS = os.getenv('REDIS_PASS', None)
 
+S3_BUCKET = os.getenv("MINIO_BUCKET", "rosaura-storage")
+s3 = boto3.client('s3',
+    endpoint_url=os.getenv("MINIO_ENDPOINT", "http://minio:9000"),
+    aws_access_key_id=os.getenv("MINIO_ROOT_USER", "admin"),
+    aws_secret_access_key=os.getenv("MINIO_ROOT_PASSWORD", "password")
+)
 APP_ROOT_PATH = os.getenv('APP_ROOT_PATH', '/app')
 QUEUE_ACCOUNT_DELETION = 'queue:account_deletion'
 QUEUE_EMAILS = 'queue:emails'

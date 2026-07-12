@@ -1,5 +1,5 @@
+#!/bin/sh
 set -e
-
 echo "[*] Running startup script (Entrypoint)..."
 
 mkdir -p /var/www/html/storage/public/profilePictures/default
