@@ -75,10 +75,18 @@ class ModerationRepository implements ModerationRepositoryInterface {
                     ml.reason,
                     u.username as admin_username,
                     u.profile_picture as admin_profile_picture,
-                    (SELECT r.name FROM {$tblRoles} r INNER JOIN {$tblUserRoles} ur ON r.id = ur.role_id WHERE ur.user_id = ml.admin_id ORDER BY r.weight DESC LIMIT 1) as admin_role,
-                    (SELECT r.color FROM {$tblRoles} r INNER JOIN {$tblUserRoles} ur ON r.id = ur.role_id WHERE ur.user_id = ml.admin_id ORDER BY r.weight DESC LIMIT 1) as admin_role_color
+                    admin_roles.top_role_name as admin_role,
+                    admin_roles.top_role_color as admin_role_color
                 FROM {$tblModLogs} ml
                 LEFT JOIN {$tblUsers} u ON ml.admin_id = u.id
+                LEFT JOIN (
+                    SELECT ur_top.user_id,
+                           SUBSTRING_INDEX(GROUP_CONCAT(r_top.name ORDER BY r_top.weight DESC), ',', 1) as top_role_name,
+                           SUBSTRING_INDEX(GROUP_CONCAT(r_top.color ORDER BY r_top.weight DESC SEPARATOR '|||'), '|||', 1) as top_role_color
+                    FROM {$tblUserRoles} ur_top
+                    INNER JOIN {$tblRoles} r_top ON ur_top.role_id = r_top.id
+                    GROUP BY ur_top.user_id
+                ) admin_roles ON admin_roles.user_id = ml.admin_id
                 WHERE ml.user_id = :userId1
 
                 UNION ALL

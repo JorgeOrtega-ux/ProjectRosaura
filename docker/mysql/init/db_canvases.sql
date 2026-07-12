@@ -128,6 +128,7 @@ CREATE TABLE IF NOT EXISTS `canvas_favorites` (
   `user_id` int(11) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`canvas_id`, `user_id`),
+  INDEX `idx_user_created` (`user_id`, `created_at` DESC),
   CONSTRAINT `fk_cf_canvas` FOREIGN KEY (`canvas_id`) REFERENCES `canvases` (`id`) ON DELETE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
@@ -211,9 +212,10 @@ CREATE TABLE IF NOT EXISTS `canvas_chat_messages` (
     `canvas_id` INT NOT NULL,
     `user_id` INT NOT NULL,
     `message` TEXT NOT NULL,
-    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     INDEX (`canvas_id`),
-    INDEX (`created_at`)
+    INDEX (`created_at`),
+    INDEX `idx_canvas_id_desc` (`canvas_id`, `id` DESC)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `canvas_chat_restrictions` (

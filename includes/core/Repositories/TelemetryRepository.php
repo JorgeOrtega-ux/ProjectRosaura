@@ -53,10 +53,10 @@ class TelemetryRepository implements TelemetryRepositoryInterface {
     public function getPageviewsOverTime(string $startDate, string $endDate): array {
         $tbl = DB::TBL_TELEMETRY_PAGEVIEWS;
         $stmt = $this->db->prepare("
-            SELECT DATE(created_at) as date, COUNT(*) as count 
+            SELECT date_only as date, COUNT(*) as count 
             FROM {$tbl} 
             WHERE created_at >= :start AND created_at <= :end 
-            GROUP BY DATE(created_at) 
+            GROUP BY date_only 
             ORDER BY date ASC
         ");
         $stmt->execute(['start' => $startDate, 'end' => $endDate]);
@@ -66,10 +66,10 @@ class TelemetryRepository implements TelemetryRepositoryInterface {
     public function getAuthEventsOverTime(string $startDate, string $endDate, string $eventType = 'login_success'): array {
         $tbl = DB::TBL_TELEMETRY_AUTH_EVENTS;
         $stmt = $this->db->prepare("
-            SELECT DATE(created_at) as date, COUNT(*) as count 
+            SELECT date_only as date, COUNT(*) as count 
             FROM {$tbl} 
             WHERE event_type = :event_type AND created_at >= :start AND created_at <= :end 
-            GROUP BY DATE(created_at) 
+            GROUP BY date_only 
             ORDER BY date ASC
         ");
         $stmt->execute(['start' => $startDate, 'end' => $endDate, 'event_type' => $eventType]);

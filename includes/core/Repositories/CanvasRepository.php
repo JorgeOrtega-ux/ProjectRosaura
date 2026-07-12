@@ -1002,5 +1002,40 @@ class CanvasRepository implements CanvasRepositoryInterface {
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([':id' => $inviteId, ':canvas_id' => $canvasId]);
     }
+
+    public function getUserCanvasWeight(int $userId, int $canvasId): int {
+        $redis = null;
+        $cacheKey = "canvas_weight:u{$userId}:c{$canvasId}";
+        if (class_exists(\App\Config\Database\RedisCache::class)) {
+            try {
+                $redisInstance = new \App\Config\Database\RedisCache();
+                $redis = $redisInstance->getClient();
+                if ($redis) {
+                    $cached = $redis->get($cacheKey);
+                    if ($cached !== null) {
+                        return (int)$cached;
+                    }
+                }
+            } catch (\Exception $e) {}
+        }
+
+        $sql = "SELECT r.weight 
+                FROM canvas_roles r 
+                JOIN canvas_user_roles ur ON r.id = ur.role_id 
+                WHERE ur.canvas_id = :cid AND ur.user_id = :uid 
+                ORDER BY r.weight DESC LIMIT 1";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':cid' => $canvasId, ':uid' => $userId]);
+        $weight = $stmt->fetchColumn();
+        $weight = $weight !== false ? (int)$weight : 0;
+
+        if ($redis) {
+            try {
+                $redis->setex($cacheKey, 300, (string)$weight);
+            } catch (\Exception $e) {}
+        }
+
+        return $weight;
+    }
 }
 ?>

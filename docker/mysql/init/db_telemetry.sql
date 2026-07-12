@@ -26,7 +26,9 @@ CREATE TABLE IF NOT EXISTS pageviews (
     theme_preference VARCHAR(10) NULL,
     locale VARCHAR(10) NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    date_only DATE GENERATED ALWAYS AS (DATE(created_at)) STORED,
     INDEX idx_created_at (created_at),
+    INDEX idx_date_only (date_only),
     INDEX idx_path (path)
 ) ENGINE=InnoDB;
 
@@ -37,7 +39,9 @@ CREATE TABLE IF NOT EXISTS auth_events (
     ip_address VARCHAR(45) NULL,
     asn VARCHAR(255) NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    date_only DATE GENERATED ALWAYS AS (DATE(created_at)) STORED,
     INDEX idx_created_at (created_at),
+    INDEX idx_date_only (date_only),
     INDEX idx_event (event_type)
 ) ENGINE=InnoDB;
 

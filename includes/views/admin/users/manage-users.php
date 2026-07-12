@@ -40,16 +40,52 @@ if ($page > $totalPages) {
 }
 $stmt = $pdo->query("
     SELECT u.id, u.uuid, u.username, u.email, u.deletion_scheduled_at, 
-           ur.is_suspended, u.profile_picture, u.created_at,
-           (SELECT r.color FROM {$tblRoles} r INNER JOIN {$tblUserRoles} ur2 ON r.id = ur2.role_id WHERE ur2.user_id = u.id ORDER BY r.weight DESC LIMIT 1) as role_color,
-           (SELECT GROUP_CONCAT(r.id ORDER BY r.weight DESC) FROM {$tblRoles} r INNER JOIN {$tblUserRoles} ur3 ON r.id = ur3.role_id WHERE ur3.user_id = u.id) as role_ids,
-           (SELECT GROUP_CONCAT(r.name ORDER BY r.weight DESC) FROM {$tblRoles} r INNER JOIN {$tblUserRoles} ur4 ON r.id = ur4.role_id WHERE ur4.user_id = u.id) as role_names
+           ur.is_suspended, u.profile_picture, u.created_at
     FROM {$tblUsers} u
     LEFT JOIN {$tblUserRestr} ur ON u.id = ur.user_id
     ORDER BY u.id DESC 
     LIMIT $limit OFFSET $offset
 ");
 $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+if (!empty($users)) {
+    $userIds = array_column($users, 'id');
+    $placeholders = implode(',', array_fill(0, count($userIds), '?'));
+    
+    $stmtRoles = $pdo->prepare("
+        SELECT ur.user_id, r.id, r.name, r.color
+        FROM {$tblUserRoles} ur
+        INNER JOIN {$tblRoles} r ON ur.role_id = r.id
+        WHERE ur.user_id IN ($placeholders)
+        ORDER BY r.weight DESC
+    ");
+    $stmtRoles->execute($userIds);
+    $userRoles = $stmtRoles->fetchAll(PDO::FETCH_ASSOC);
+    
+    $rolesByUser = [];
+    foreach ($userRoles as $ur) {
+        $uid = $ur['user_id'];
+        if (!isset($rolesByUser[$uid])) {
+            $rolesByUser[$uid] = ['ids' => [], 'names' => [], 'color' => $ur['color']];
+        }
+        $rolesByUser[$uid]['ids'][] = $ur['id'];
+        $rolesByUser[$uid]['names'][] = $ur['name'];
+    }
+    
+    foreach ($users as &$uRow) {
+        $uid = $uRow['id'];
+        if (isset($rolesByUser[$uid])) {
+            $uRow['role_ids'] = implode(',', $rolesByUser[$uid]['ids']);
+            $uRow['role_names'] = implode(',', $rolesByUser[$uid]['names']);
+            $uRow['role_color'] = $rolesByUser[$uid]['color'];
+        } else {
+            $uRow['role_ids'] = null;
+            $uRow['role_names'] = null;
+            $uRow['role_color'] = null;
+        }
+    }
+    unset($uRow);
+}
 
 $appUrl = defined('APP_URL') ? APP_URL : '';
 $prevPageUrl = $page > 1 ? $appUrl . '/admin/manage-users?page=' . ($page - 1) : '#';

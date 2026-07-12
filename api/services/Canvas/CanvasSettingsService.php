@@ -397,11 +397,11 @@ class CanvasSettingsService {
             }
 
             if (!$isOwner) {
-                $requesterWeight = 0;
-                $stmtRole = $this->canvasRepository->pdo->prepare("SELECT r.weight FROM canvas_roles r JOIN canvas_user_roles ur ON r.id = ur.role_id WHERE ur.canvas_id = :cid AND ur.user_id = :uid ORDER BY r.weight DESC LIMIT 1");
-                $stmtRole->execute(['cid' => $canvasId, 'uid' => $userId]);
-                $w = $stmtRole->fetchColumn();
-                if ($w !== false) $requesterWeight = (int)$w;
+                $requesterWeight = $this->canvasRepository->getUserCanvasWeight($userId, $canvasId);
+                // query moved to repository
+                // execute removed
+                // fetch removed
+                // assignment removed
                 
                 if ($weight >= $requesterWeight) {
                     return ['success' => false, 'message' => __('err_role_weight_too_high')];
@@ -435,11 +435,11 @@ class CanvasSettingsService {
             }
 
             if (!$isOwner) {
-                $requesterWeight = 0;
-                $stmtRole = $this->canvasRepository->pdo->prepare("SELECT r.weight FROM canvas_roles r JOIN canvas_user_roles ur ON r.id = ur.role_id WHERE ur.canvas_id = :cid AND ur.user_id = :uid ORDER BY r.weight DESC LIMIT 1");
-                $stmtRole->execute(['cid' => $canvasId, 'uid' => $userId]);
-                $w = $stmtRole->fetchColumn();
-                if ($w !== false) $requesterWeight = (int)$w;
+                $requesterWeight = $this->canvasRepository->getUserCanvasWeight($userId, $canvasId);
+                // query moved to repository
+                // execute removed
+                // fetch removed
+                // assignment removed
                 
                 if ($weight >= $requesterWeight) {
                     return ['success' => false, 'message' => __('err_role_weight_too_high')];

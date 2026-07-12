@@ -60,5 +60,6 @@ interface CanvasRepositoryInterface {
     public function getInviteByCode(string $code): ?array;
     public function incrementInviteUses(int $inviteId): bool;
     public function revokeInvite(int $inviteId, int $canvasId): bool;
+    public function getUserCanvasWeight(int $userId, int $canvasId): int;
 }
 ?>

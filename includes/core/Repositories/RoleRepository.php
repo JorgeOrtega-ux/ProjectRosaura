@@ -89,7 +89,7 @@ class RoleRepository implements RoleRepositoryInterface {
             if ($cached) return json_decode($cached, true);
 
             $tblRoles = DB::TBL_ROLES;
-            $stmt = $this->pdo->prepare("SELECT * FROM {$tblRoles} WHERE id = ? LIMIT 1");
+            $stmt = $this->pdo->prepare("SELECT id, name, color, weight, is_system, created_at, updated_at FROM {$tblRoles} WHERE id = ? LIMIT 1");
             $stmt->execute([$id]);
             $role = $stmt->fetch(PDO::FETCH_ASSOC);
             
@@ -108,7 +108,7 @@ class RoleRepository implements RoleRepositoryInterface {
             if ($cached) return json_decode($cached, true);
 
             $tblRoles = DB::TBL_ROLES;
-            $stmt = $this->pdo->prepare("SELECT * FROM {$tblRoles} WHERE name = ? LIMIT 1");
+            $stmt = $this->pdo->prepare("SELECT id, name, color, weight, is_system, created_at, updated_at FROM {$tblRoles} WHERE name = ? LIMIT 1");
             $stmt->execute([$name]);
             $role = $stmt->fetch(PDO::FETCH_ASSOC);
 
