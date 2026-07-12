@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: ../
+      dockerfile: docker/php/Dockerfile
+    container_name: rosaura_app
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      # El código base se monta (o en producción pura, se copia dentro de la imagen al construirla)
+      - ../:/var/www/html
+      # IMPORTANTE: NO HAY VOLÚMENES PARA STORAGE AQUÍ. 
+      # Todo el storage (imágenes, lienzos, timelapses) debe ir al MinIO en el VPS 4.
+    env_file:
+      - ../.env
+    environment:
+      - TZ=${APP_TIMEZONE:-UTC}
+      # Estas variables deben apuntar a la IP PRIVADA del VPS 4
+      - DB_HOST=${DB_HOST_PROD} 
+      - REDIS_HOST=${REDIS_HOST_PROD}
+      - TYPESENSE_HOST=${TYPESENSE_HOST_PROD}
+      - MINIO_ENDPOINT=${MINIO_ENDPOINT_PROD}
+      # Forzar el uso de Redis para sesiones
+      - SESSION_DRIVER=redis
+    networks:
+      - rosaura_app_network
+
+networks:
+  rosaura_app_network:
+    driver: bridge
