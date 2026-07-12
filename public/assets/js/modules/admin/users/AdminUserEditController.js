@@ -1,8 +1,6 @@
-// public/assets/js/modules/admin/users/AdminUserEditController.js
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
-
 class AdminUserEditController {
     constructor() {
         this.api = new ApiService();
@@ -11,14 +9,11 @@ class AdminUserEditController {
         this.isDefaultAvatar = false;
         this.basePath = window.AppBasePath || '';
         this.config = window.AppServerConfig || {};
-        
         this.abortController = null;
-        
         this.handleViewLoadedBound = this.handleViewLoaded.bind(this);
         this.handleClickBound = this.handleClick.bind(this);
         this.handleChangeBound = this.handleChange.bind(this);
     }
-
     init() {
         this.abortController = new AbortController();
         this.bindEvents();
@@ -26,7 +21,6 @@ class AdminUserEditController {
             this.setupInitialState();
         }
     }
-
     destroy() {
         if (this.abortController) {
             this.abortController.abort();
@@ -35,29 +29,24 @@ class AdminUserEditController {
         document.removeEventListener('click', this.handleClickBound);
         document.removeEventListener('change', this.handleChangeBound);
     }
-
     bindEvents() {
         window.addEventListener('viewLoaded', this.handleViewLoadedBound);
         document.addEventListener('click', this.handleClickBound);
         document.addEventListener('change', this.handleChangeBound);
     }
-
     translateKey(key) {
         return typeof window.__ === 'function' ? window.__(key) : key;
     }
-
     handleViewLoaded(e) {
         if (e.detail.url.includes('/admin/edit-user')) {
             this.setupInitialState();
         }
     }
-
     setupInitialState() {
         const viewContent = document.querySelector('.view-content[data-user-id]');
         if (viewContent) {
             this.targetUserId = viewContent.getAttribute('data-user-id');
         }
-        
         const imgEl = document.querySelector('[data-ref="admin-profile-avatar-img"]');
         if (imgEl && imgEl.getAttribute('data-is-default') === 'true') {
             this.isDefaultAvatar = true;
@@ -65,86 +54,64 @@ class AdminUserEditController {
             this.isDefaultAvatar = false;
         }
     }
-
     handleClick(e) {
         if (!window.location.pathname.includes('/admin/edit-user')) return;
-
         if (e.target.closest('[data-ref="admin-btn-change-avatar"]') || e.target.closest('[data-ref="admin-profile-avatar-overlay"]')) {
             const input = document.querySelector('[data-ref="admin-input-avatar-file"]');
             if (input) input.click();
         }
-
         if (e.target.closest('[data-ref="admin-btn-cancel-avatar"]')) this.cancelAvatarPreview();
-        
         const btnSaveAvatar = e.target.closest('[data-ref="admin-btn-save-avatar"]');
         if (btnSaveAvatar) this.saveAvatar(btnSaveAvatar);
-
         const btnDelAvatar = e.target.closest('[data-ref="admin-btn-delete-avatar"]');
         if (btnDelAvatar) this.deleteAvatar(btnDelAvatar);
-        
         const btnSaveRole = e.target.closest('[data-action="adminSaveRole"]');
         if (btnSaveRole) this.saveRole(btnSaveRole);
-
         const btnSaveUsername = e.target.closest('[data-action="adminSaveUsername"]');
         if (btnSaveUsername) this.saveUsername(btnSaveUsername);
-
         const btnSaveEmail = e.target.closest('[data-action="adminSaveEmail"]');
         if (btnSaveEmail) this.saveEmail(btnSaveEmail);
-
         const btnSetPref = e.target.closest('[data-action="adminSetPref"]');
         if (btnSetPref) this.savePrefFromDropdown(btnSetPref);
     }
-
     handleChange(e) {
         if (!window.location.pathname.includes('/admin/edit-user')) return;
         if (e.target && e.target.getAttribute('data-ref') === 'admin-input-avatar-file') this.handleFileSelection(e);
-
         if (e.target.matches('[data-action="adminTogglePreference"]')) {
             const key = e.target.getAttribute('data-key');
             const value = e.target.checked ? 1 : 0;
             this.savePreference(key, value);
         }
     }
-
     async saveRole(btn) {
         const selectEl = document.querySelector('[data-ref="input-admin-role"]');
         const passEl = document.querySelector('[data-ref="input-admin-role-password"]');
         if (!selectEl || !passEl) return;
-
         const roleId = selectEl.value;
         const password = passEl.value;
-
         if (!password) {
             showMessage(this.translateKey('validation.missing_fields'), 'error');
             return;
         }
-
         setButtonLoading(btn);
-
         const result = await this.api.post(ApiRoutes.Admin.UpdateRole, { 
             target_user_id: this.targetUserId, 
             role_id: roleId,
             password: password
         }, this.abortController.signal);
-
         if (result.aborted) return;
         restoreButton(btn);
-
         if (result.success) {
             showMessage(result.message, 'success');
-            
             const dispRole = document.querySelector('[data-ref="admin-display-role"]');
             const avatarContainer = document.querySelector('[data-ref="admin-profile-avatar-container"]');
             const selectedOption = selectEl.options[selectEl.selectedIndex];
-
             if (selectedOption) {
                 const rawName = selectedOption.getAttribute('data-raw-name');
                 const rawColor = selectedOption.getAttribute('data-raw-color');
-                
                 if (dispRole) {
                     dispRole.textContent = rawName;
                 }
-                
                 if (avatarContainer && rawColor) {
                     try {
                         let parsedColor = JSON.parse(rawColor);
@@ -168,14 +135,12 @@ class AdminUserEditController {
                     }
                 }
             }
-            
             passEl.value = '';
             window.appInstance.toggleEditState('admin-role');
         } else {
             showMessage(result.message, 'error');
         }
     }
-
     handleFileSelection(e) {
         const file = e.target.files[0];
         if (!file) return;
@@ -200,7 +165,6 @@ class AdminUserEditController {
         };
         reader.readAsDataURL(file);
     }
-
     cancelAvatarPreview() {
         const imgEl = document.querySelector('[data-ref="admin-profile-avatar-img"]');
         const fileInput = document.querySelector('[data-ref="admin-input-avatar-file"]');
@@ -209,7 +173,6 @@ class AdminUserEditController {
         this.selectedFile = null;
         this.toggleAvatarButtons(false);
     }
-
     toggleAvatarButtons(isPreview) {
         const btnChange = document.querySelector('[data-ref="admin-btn-change-avatar"]');
         const btnDelete = document.querySelector('[data-ref="admin-btn-delete-avatar"]');
@@ -234,7 +197,6 @@ class AdminUserEditController {
             btnSave.classList.add('disabled');
         }
     }
-
     async saveAvatar(btn) {
         if (!this.selectedFile) return;
         setButtonLoading(btn);
@@ -255,7 +217,6 @@ class AdminUserEditController {
             this.toggleAvatarButtons(false);
         } else { showMessage(result.message, 'error'); }
     }
-
     async deleteAvatar(btn) {
         const isConfirmed = await window.dialogSystem.show('confirmDeleteAvatar');
         if (!isConfirmed || !isConfirmed.confirmed) return;
@@ -271,7 +232,6 @@ class AdminUserEditController {
             this.toggleAvatarButtons(false);
         } else { showMessage(result.message, 'error'); }
     }
-
     async saveUsername(btn) {
         const input = document.querySelector('[data-ref="input-admin-username"]');
         if (!input) return;
@@ -289,7 +249,6 @@ class AdminUserEditController {
             window.appInstance.toggleEditState('admin-username');
         } else { showMessage(result.message, 'error'); }
     }
-
     async saveEmail(btn) {
         const input = document.querySelector('[data-ref="input-admin-email"]');
         if (!input) return;
@@ -307,7 +266,6 @@ class AdminUserEditController {
             window.appInstance.toggleEditState('admin-email');
         } else { showMessage(result.message, 'error'); }
     }
-
     async savePrefFromDropdown(btn) {
         const key = btn.getAttribute('data-key');
         const value = btn.getAttribute('data-value');
@@ -324,7 +282,6 @@ class AdminUserEditController {
         }
         await this.savePreference(key, value);
     }
-
     async savePreference(key, value) {
         const result = await this.api.post(ApiRoutes.Admin.UpdatePreference, { target_user_id: this.targetUserId, key: key, value: value }, this.abortController.signal);
         if (result.aborted) return;
@@ -332,5 +289,4 @@ class AdminUserEditController {
         else showMessage(result.message, 'error');
     }
 }
-
 export { AdminUserEditController };

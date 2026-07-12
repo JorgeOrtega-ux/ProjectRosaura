@@ -1,8 +1,6 @@
-// public/assets/js/modules/admin/backups/AdminBackupsRestoreController.js
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { showMessage } from '../../../core/utils/uiUtils.js';
-
 class AdminBackupsRestoreController {
     constructor() {
         this.api = new ApiService();
@@ -10,37 +8,30 @@ class AdminBackupsRestoreController {
         this.isRestoring = false;
         this.pollInterval = null;
         this.abortController = null;
-        
         this.handleClickBound = this.handleClick.bind(this);
         this.handleChangeBound = this.handleChange.bind(this);
     }
-
     init() {
         this.abortController = new AbortController();
         this.bindEvents();
     }
-
     destroy() {
         if (this.abortController) {
             this.abortController.abort();
         }
         document.removeEventListener('click', this.handleClickBound);
         document.removeEventListener('change', this.handleChangeBound);
-
         if (this.pollInterval) {
             clearInterval(this.pollInterval);
             this.pollInterval = null;
         }
     }
-
     bindEvents() {
         document.addEventListener('click', this.handleClickBound);
         document.addEventListener('change', this.handleChangeBound);
     }
-
     handleChange(e) {
         if (!window.location.pathname.includes('/admin/backups/restore')) return;
-
         const toggleLock = e.target.closest('[data-action="toggleRestoreLock"]');
         if (toggleLock) {
             const confirmBtn = document.querySelector('[data-action="confirmRestore"]');
@@ -53,50 +44,35 @@ class AdminBackupsRestoreController {
             }
         }
     }
-
     handleClick(e) {
         if (!window.location.pathname.includes('/admin/backups/restore')) return;
-
         const confirmBtn = e.target.closest('[data-action="confirmRestore"]');
-
         if (confirmBtn) {
             this.handleConfirmRestore(confirmBtn);
         }
     }
-
     async handleConfirmRestore(btn) {
         const urlParams = new URLSearchParams(window.location.search);
         const backupId = urlParams.get('id');
-
         if (!backupId) {
             showMessage(typeof window.__ === 'function' ? window.__('err_backup_id_missing') : 'ID de backup faltante', 'error');
             return;
         }
-
         const resultDialog = await window.dialogSystem.show('verifyPasswordRestoreBackup');
-
         if (!resultDialog.confirmed) return;
-
         const password = resultDialog.data['modal_verify_password'] ? resultDialog.data['modal_verify_password'].trim() : '';
-
         if (!password) {
-            showMessage(typeof window.__ === 'function' ? window.__('err_password_authorize_restore') : 'Contraseña requerida', 'error');
+            showMessage(typeof window.__ === 'function' ? window.__('err_password_authorize_restore') : 'err_admin_password_required', 'error');
             return;
         }
-
         if (this.isRestoring) return;
         this.isRestoring = true;
-
         const originalText = btn.innerHTML;
         btn.innerHTML = '<span class="material-symbols-rounded spin-icon" style="color: white;">autorenew</span>';
         btn.classList.add('disabled-interaction');
-
         showMessage('Initiating lockdown protocol...', 'success');
-
         const res = await this.api.post(ApiRoutes.Admin.RestoreBackup, { backup_id: backupId, password: password }, this.abortController.signal);
-
         if (res.aborted) return;
-
         if (res.success && res.job_id) {
             this.pollRestoreStatus(res.job_id, btn, originalText);
         } else {
@@ -104,25 +80,18 @@ class AdminBackupsRestoreController {
             showMessage(res.message || (typeof window.__ === 'function' ? window.__('err_start_restore') : 'Error'), 'error');
         }
     }
-
     async pollRestoreStatus(jobId, btn, originalText) {
         if (this.pollInterval) clearInterval(this.pollInterval);
-
         this.pollInterval = setInterval(async () => {
             const res = await this.api.post('admin.backups.check_worker_status', {}, this.abortController.signal);
-            
             if (res.aborted) return;
-            
             if (res.success) {
                 if (res.status === 'finished') {
                     clearInterval(this.pollInterval);
                     this.resetRestoreUI(btn, originalText);
                     showMessage(typeof window.__ === 'function' ? window.__('success_db_restored') : 'Restaurado', 'success');
-                    
                     window.location.href = this.basePath + '/login';
-
                 } else if (res.status === 'restoring') {
-                    // Seguimos esperando en la pantalla
                 }
             } else {
                 clearInterval(this.pollInterval);
@@ -131,7 +100,6 @@ class AdminBackupsRestoreController {
             }
         }, 2500);
     }
-
     resetRestoreUI(btn, originalText) {
         this.isRestoring = false;
         if (btn) {
@@ -140,5 +108,4 @@ class AdminBackupsRestoreController {
         }
     }
 }
-
 export { AdminBackupsRestoreController };
