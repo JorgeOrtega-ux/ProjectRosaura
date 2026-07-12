@@ -120,7 +120,7 @@ class CanvasInvitesGenerateController {
         }
 
         if (!data.role) {
-            showMessage('Por favor, selecciona un rol.', 'error');
+            showMessage(__('err_select_role'), 'error');
             return;
         }
 
@@ -131,7 +131,7 @@ class CanvasInvitesGenerateController {
             const response = await this.api.post('canvases.generate_invite', data);
             
             if (response && response.success) {
-                showMessage(response.message || 'Invitación generada exitosamente.', 'success');
+                showMessage(response.message || __('msg_invite_generated'), 'success');
                 
                 if (window.spaRouter) {
                     window.spaRouter.navigate(`${window.AppBasePath || ''}/canvases/manage/invites/${this.canvasUuid}`);
@@ -139,12 +139,12 @@ class CanvasInvitesGenerateController {
                     window.location.href = `${window.AppBasePath || ''}/canvases/manage/invites/${this.canvasUuid}`;
                 }
             } else {
-                showMessage(response?.message || 'Error al generar la invitación.', 'error');
+                showMessage(response?.message || __('err_generate_invite'), 'error');
                 if (btnSubmit) restoreButton(btnSubmit);
             }
         } catch (error) {
             
-            showMessage('Error de conexión.', 'error');
+            showMessage(__('err_connection'), 'error');
             if (btnSubmit) restoreButton(btnSubmit);
         }
     }

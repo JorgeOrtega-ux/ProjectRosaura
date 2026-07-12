@@ -118,7 +118,7 @@ class CanvasInvitesController {
             }
 
             if (successCount > 0) {
-                showMessage(`Se revocaron ${successCount} invitación(es) con éxito.`, 'success');
+                showMessage(__('msg_invites_revoked').replace(':count', successCount), 'success');
                 if (window.spaRouter) {
                     window.spaRouter.navigate(`${window.AppBasePath || ''}/canvases/manage/invites/${this.canvasUuid}`);
                 } else {
@@ -126,11 +126,11 @@ class CanvasInvitesController {
                 }
             }
             if (failCount > 0) {
-                showMessage(`Error al revocar ${failCount} invitación(es).`, 'warning');
+                showMessage(__('err_invites_revoke').replace(':count', failCount), 'warning');
             }
         } catch (error) {
             
-            showMessage('Error de conexión.', 'error');
+            showMessage(__('err_connection'), 'error');
         }
     }
 
@@ -144,10 +144,10 @@ class CanvasInvitesController {
             const code = selectedRow.getAttribute('data-invite-code');
             if (code) {
                 navigator.clipboard.writeText(code).then(() => {
-                    showMessage('Código copiado al portapapeles.', 'success');
+                    showMessage(__('msg_code_copied'), 'success');
                 }).catch(err => {
                     
-                    showMessage('No se pudo copiar el código.', 'error');
+                    showMessage(__('err_copy_code'), 'error');
                 });
             }
         }

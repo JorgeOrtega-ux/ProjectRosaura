@@ -3,7 +3,7 @@ export const WsConfig = {
     getBaseUrl: () => {
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const host = window.location.hostname;
-        return `${protocol}
+        return `${protocol}//${host}:${window.APP_CONFIG?.wsPort || 8765}`;
     }
 };
 
@@ -16,11 +16,11 @@ export const ApiRoutes = {
         RegisterStep2: 'auth.register.step2',
         RegisterVerify: 'auth.register.verify',
         RegisterResendCode: 'auth.register.resend_code',
-        
+
         SwitchAccount: 'auth.switch_account',
         LogoutAll: 'auth.logout_all',
         Logout: 'auth.logout',
-        
+
         ForgotPassword: 'auth.forgot_password',
         ResetPassword: 'auth.reset_password'
     },
@@ -53,13 +53,13 @@ export const ApiRoutes = {
         UpdateEmail: 'admin.update_email',
         UpdatePreference: 'admin.update_preference',
         UpdateRole: 'admin.update_role',
-        
-        UpdateSuspension: 'admin.update_suspension', 
-        DeleteUsers: 'admin.delete_users', 
-        
+
+        UpdateSuspension: 'admin.update_suspension',
+        DeleteUsers: 'admin.delete_users',
+
         GetModerationKardex: 'admin.get_moderation_kardex',
         AddAdminNote: 'admin.add_admin_note',
-        
+
         GetRoles: 'admin.get_roles',
         CreateRole: 'admin.create_role',
         EditRole: 'admin.edit_role',
@@ -67,10 +67,10 @@ export const ApiRoutes = {
         GetPermissions: 'admin.get_permissions',
         GetRolePermissions: 'admin.get_role_permissions',
         UpdateRolePermissions: 'admin.update_role_permissions',
-        
+
         GetServerConfig: 'admin.get_server_config',
         UpdateServerConfig: 'admin.update_server_config',
-        
+
         MaintenanceFlushSessions: 'admin.maintenance_flush_sessions',
         MaintenanceClearCache: 'admin.maintenance_clear_cache',
         MaintenanceResetRateLimits: 'admin.maintenance_reset_rate_limits',
@@ -89,20 +89,20 @@ export const ApiRoutes = {
         Update: 'canvases.update',
         Delete: 'canvases.delete',
         Downgrade: 'canvases.downgrade',
-        Leave: 'canvases.leave', 
+        Leave: 'canvases.leave',
         UpdateChatRestriction: 'canvas.update_chat_restriction',
-        
+
         Resize: 'canvases.resize',
         GetResizeSettings: 'canvases.get_resize_settings',
         UpdateResizeSettings: 'canvases.update_resize_settings',
-        
+
         ToggleFavorite: 'canvases.toggle_favorite',
-        
+
         RequestAccess: 'canvases.request_access',
         ApproveRequest: 'canvases.approve_request',
         RejectRequest: 'canvases.reject_request',
         GetPendingRequests: 'canvases.get_pending_requests',
-        
+
         GetResetSettings: 'canvases.get_reset_settings',
         UpdateResetSettings: 'canvases.update_reset_settings',
         ResetNow: 'canvases.reset_now',

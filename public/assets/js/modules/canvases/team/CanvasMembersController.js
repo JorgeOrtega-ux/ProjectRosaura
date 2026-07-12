@@ -174,7 +174,7 @@ class CanvasMembersController {
         const targetUserUuid = selectedRow ? selectedRow.getAttribute('data-member-uuid') : null;
 
         if (!targetUserUuid) {
-            showMessage("Error: No se pudo obtener el identificador del usuario.", "error");
+            showMessage(__('err_missing_user_id'), "error");
             return;
         }
         

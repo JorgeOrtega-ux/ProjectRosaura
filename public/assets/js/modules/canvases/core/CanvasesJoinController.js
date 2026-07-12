@@ -62,13 +62,13 @@ class CanvasesJoinController {
 
         const termsCheckbox = document.getElementById('join-terms-checkbox');
         if (termsCheckbox && !termsCheckbox.checked) {
-            showMessage('Debes aceptar los términos y condiciones para continuar.', 'warning');
+            showMessage(__('err_accept_terms'), 'warning');
             return;
         }
 
         const code = this.input.value.trim();
         if (code.length < 5) {
-            showMessage('Por favor, ingresa un código válido.', 'error');
+            showMessage(__('err_invalid_code'), 'error');
             return;
         }
 
@@ -76,7 +76,7 @@ class CanvasesJoinController {
         if (!btn) return;
         
         const originalText = btn.innerHTML;
-        btn.innerHTML = '<span class="material-symbols-rounded" style="animation: spin 1s linear infinite;">autorenew</span> Validando...';
+        btn.innerHTML = `<span class="material-symbols-rounded" style="animation: spin 1s linear infinite;">autorenew</span> ${__('lbl_validating')}`;
         btn.disabled = true;
 
         const termsAccepted = termsCheckbox ? termsCheckbox.checked : false;
@@ -85,10 +85,10 @@ class CanvasesJoinController {
             const response = await this.api.post('canvases.join_via_invite', { code: code, terms_accepted: termsAccepted });
             
             if (response && response.success) {
-                showMessage(response.message || '¡Te has unido exitosamente!', 'success');
+                showMessage(response.message || __('msg_joined_successfully'), 'success');
                 const uuid = response.data?.uuid;
                 
-                btn.innerHTML = '<span class="material-symbols-rounded">check_circle</span> ¡Listo!';
+                btn.innerHTML = `<span class="material-symbols-rounded">check_circle</span> ${__('lbl_ready')}`;
                 btn.classList.add('component-button--success');
                 
                 setTimeout(() => {
@@ -101,13 +101,13 @@ class CanvasesJoinController {
             } else {
                 btn.innerHTML = originalText;
                 btn.disabled = false;
-                showMessage(response?.message || 'Error al validar el código.', 'error');
+                showMessage(response?.message || __('err_validate_code'), 'error');
             }
         } catch (error) {
             
             btn.innerHTML = originalText;
             btn.disabled = false;
-            showMessage('Error de conexión con el servidor.', 'error');
+            showMessage(__('err_connection'), 'error');
         }
     }
 }
