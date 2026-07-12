@@ -379,7 +379,7 @@ class ProfileController {
         const passInput = document.querySelector('[data-ref="delete_account_password"]');
 
         if (!chkConfirm || !chkConfirm.checked) {
-            showMessage("Debes confirmar la eliminación.", "error");
+            showMessage(window.__('err_confirm_deletion'), "error");
             return;
         }
 
@@ -398,7 +398,7 @@ class ProfileController {
         restoreButton(btn);
 
         if (result.success) {
-            showMessage("Proceso de eliminación iniciado con éxito.", "success");
+            showMessage(window.__('msg_deletion_started'), "success");
             setTimeout(() => {
                 window.location.href = this.basePath + '/login';
             }, 2000);

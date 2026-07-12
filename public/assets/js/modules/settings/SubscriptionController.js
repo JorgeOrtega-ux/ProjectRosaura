@@ -72,16 +72,15 @@ export class SubscriptionController {
 
             if (response.success) {
                 const msgKey = cancelAtPeriodEnd ? 'renewal_cancelled_success' : 'renewal_reactivated_success';
-                const msgDefault = cancelAtPeriodEnd ? 'Renovación automática cancelada' : 'Suscripción reactivada';
-                showMessage('success', window.__ ? window.__(msgKey) || msgDefault : msgDefault);
+                showMessage(window.__(msgKey), 'success');
 
                 this.loadSubscriptionStatus();
             } else {
-                showMessage('error', response.message_key || 'Error toggling auto renewal');
+                showMessage(window.__('err_toggle_auto_renew'), 'error');
             }
         } catch (error) {
             if (error.name !== 'AbortError') {
-                showMessage('error', 'Network or unexpected error');
+                showMessage(window.__('err_network'), 'error');
             }
         } finally {
             if (this.abortController && !this.abortController.signal.aborted) {

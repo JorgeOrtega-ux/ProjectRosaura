@@ -127,7 +127,7 @@ class SecurityController {
 
         const chkConfirm = document.querySelector('[data-ref="chk_confirm_delete"]');
         if (!chkConfirm || !chkConfirm.checked) {
-            showMessage("Debes confirmar la eliminación.", "error");
+            showMessage(window.__('err_confirm_deletion'), "error");
             return;
         }
 
@@ -150,7 +150,7 @@ class SecurityController {
             restoreButton(btn);
 
             if (result.success) {
-                showMessage(result.message || "Proceso de eliminación iniciado con éxito.", "success");
+                showMessage(result.message || window.__('msg_deletion_started'), "success");
                 setTimeout(() => {
                     window.location.href = this.basePath + '/login';
                 }, 2000);

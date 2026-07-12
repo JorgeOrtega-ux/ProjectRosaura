@@ -69,12 +69,12 @@ export class BillingController {
             if (response.success && response.checkout_url) {
                 window.location.href = response.checkout_url;
             } else {
-                showMessage('error', response.message_key || 'Error creating setup session');
+                showMessage(window.__('err_create_setup_session'), 'error');
                 restoreButton(btn);
             }
         } catch (error) {
             if (error.name !== 'AbortError') {
-                showMessage('error', 'Network or unexpected error');
+                showMessage(window.__('err_network'), 'error');
                 restoreButton(btn);
             }
         }

@@ -42,7 +42,7 @@ export class StoreController {
             const result = await window.dialogSystem.show('modalContentStoreTerms');
             if (result && result.confirmed) {
                 if (!result.data || !result.data.checkAcceptContentTerms) {
-                    showMessage('Debes confirmar que entiendes las condiciones marcando la casilla.', 'error');
+                    showMessage(window.__('err_accept_conditions'), 'error');
                     return;
                 }
                 setButtonLoading(btn, 'Guardando...');
@@ -53,12 +53,12 @@ export class StoreController {
                         restoreButton(btn);
                         return this.handleBuyPerk(btn);
                     } else {
-                        showMessage(res?.message || 'Error al guardar preferencia', 'error');
+                        showMessage(res?.message || window.__('err_save_preference'), 'error');
                         restoreButton(btn);
                         return;
                     }
                 } catch (e) {
-                    showMessage('Error de red', 'error');
+                    showMessage(window.__('err_network'), 'error');
                     restoreButton(btn);
                     return;
                 }
@@ -74,17 +74,17 @@ export class StoreController {
         try {
             const result = await this.api.post(ApiRoutes.Store.BuyPerk, { perk_id: perkId });
             if (result && result.success) {
-                showMessage('Ventaja comprada con éxito. Tu nuevo saldo es de: ' + result.new_balance + ' monedas.', 'success');
+                showMessage(window.__('msg_perk_purchased').replace(':balance', result.new_balance), 'success');
                 this.updateCoinsDisplay(result.new_balance);
             } else if (result) {
                 if (result.message_key === 'store.insufficient_coins') {
-                    showMessage('No tienes suficientes monedas para comprar esta ventaja.', 'error');
+                    showMessage(window.__('err_insufficient_coins'), 'error');
                 } else {
-                    showMessage(result.message_key || 'Error al procesar la compra', 'error');
+                    showMessage(result.message_key || window.__('err_process_purchase'), 'error');
                 }
             }
         } catch (err) {
-            showMessage('Error de red', 'error');
+            showMessage(window.__('err_network'), 'error');
         } finally {
             restoreButton(btn);
         }
@@ -97,7 +97,7 @@ export class StoreController {
             const result = await window.dialogSystem.show('modalStoreTerms');
             if (result && result.confirmed) {
                 if (!result.data || !result.data.checkAcceptStoreTerms) {
-                    showMessage('Debes aceptar las condiciones marcando la casilla antes de continuar.', 'error');
+                    showMessage(window.__('err_accept_conditions'), 'error');
                     return;
                 }
                 setButtonLoading(btn, 'Guardando...');
@@ -108,12 +108,12 @@ export class StoreController {
                         restoreButton(btn);
                         return this.handleBuyCoins(btn);
                     } else {
-                        showMessage(res?.message || 'Error al guardar preferencia', 'error');
+                        showMessage(res?.message || window.__('err_save_preference'), 'error');
                         restoreButton(btn);
                         return;
                     }
                 } catch (e) {
-                    showMessage('Error de red', 'error');
+                    showMessage(window.__('err_network'), 'error');
                     restoreButton(btn);
                     return;
                 }
@@ -134,10 +134,10 @@ export class StoreController {
             if (result && result.success && result.checkout_url) {
                 window.location.href = result.checkout_url;
             } else if (result) {
-                showMessage(result.message_key || 'Error al procesar el pago', 'error');
+                showMessage(result.message_key || window.__('err_process_payment'), 'error');
             }
         } catch (err) {
-            showMessage('Error de red', 'error');
+            showMessage(window.__('err_network'), 'error');
         } finally {
             restoreButton(btn);
         }

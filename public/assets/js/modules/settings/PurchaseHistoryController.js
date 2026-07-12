@@ -34,17 +34,17 @@ export class PurchaseHistoryController {
                 
                 response.data.forEach(item => {
                     const date = new Date(item.created_at).toLocaleDateString();
-                    const description = escapeHTML(item.description || 'Suscripción');
+                    const description = escapeHTML(item.description || window.__('lbl_subscription'));
                     const amount = `$${(item.amount_cents / 100).toFixed(2)} ${escapeHTML(item.currency).toUpperCase()}`;
                     
                     let statusClass = 'component-text-notice--success';
                     let statusIcon = 'check_circle';
-                    let statusText = 'Pagado';
+                    let statusText = window.__('lbl_paid');
                     
                     if (item.status !== 'succeeded' && item.status !== 'paid') {
                         statusClass = 'component-text-notice--error';
                         statusIcon = 'error';
-                        statusText = 'Fallido';
+                        statusText = window.__('lbl_failed');
                     }
 
                     const row = `
@@ -73,7 +73,7 @@ export class PurchaseHistoryController {
                         <td colspan="4" class="component-empty-table-cell">
                             <div class="component-empty-state component-empty-state--table">
                                 <span class="material-symbols-rounded component-empty-state-icon">error</span>
-                                <p class="component-empty-state-text">Error al cargar el historial.</p>
+                                <p class="component-empty-state-text">${window.__('err_load_history')}</p>
                             </div>
                         </td>
                     </tr>
