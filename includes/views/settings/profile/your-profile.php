@@ -85,7 +85,7 @@ $subscriptionPlanLabel = match ($subscriptionTier) {
             <div class="component-card--grouped">
                 <div class="component-group-item">
                     <div class="component-card__content">
-                        <div class="component-avatar role-dynamic" style="--active-role-bg: <?php echo $activeRoleBg; ?>;" data-ref="profile-avatar-container">
+                        <div class="component-avatar role-dynamic" data-role-bg="<?php echo $activeRoleBg; ?>" data-ref="profile-avatar-container">
                             <img src="<?php echo htmlspecialchars($formattedAvatar); ?>" alt="<?php echo __('alt_avatar'); ?>" data-ref="profile-avatar-img" data-original-src="<?php echo htmlspecialchars($formattedAvatar); ?>">
                             <div class="component-avatar__overlay" data-ref="profile-avatar-overlay">
                                 <span class="material-symbols-rounded">photo_camera</span>

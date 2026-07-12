@@ -196,7 +196,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/members/' . $canvasUui
                                 <tr class="component-table-row" data-action="selectMember" data-member-id="<?php echo htmlspecialchars($member['user_id']); ?>" data-member-uuid="<?php echo htmlspecialchars($userUuidStr); ?>">
                                     <td>
                                         <div class="td-user-info">
-                                            <div class="component-button--profile role-dynamic component-avatar--static-sm" style="--active-role-bg: <?php echo $roleColor; ?>;">
+                                            <div class="component-button--profile role-dynamic component-avatar--static-sm" data-role-bg="<?php echo $roleColor; ?>">
                                                 <img src="<?php echo htmlspecialchars($avatar); ?>" alt="alt_avatar">
                                             </div>
                                             <div class="component-badge component-badge--sm">

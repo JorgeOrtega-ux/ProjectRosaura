@@ -30,6 +30,21 @@ document.addEventListener('DOMContentLoaded', () => {
     window.telemetryTracker.init();
 
     // ========================================================
+    // ROLE DYNAMIC COLORS ENGINE
+    // ========================================================
+    const applyRoleDynamicColors = () => {
+        document.querySelectorAll('.role-dynamic[data-role-bg]').forEach(el => {
+            el.style.setProperty('--active-role-bg', el.dataset.roleBg);
+        });
+    };
+    
+    // Apply initially
+    applyRoleDynamicColors();
+
+    // Export globally so modules can trigger it manually if needed (e.g. after DOM modifications)
+    window.applyRoleDynamicColors = applyRoleDynamicColors;
+
+    // ========================================================
     // DELEGACIÓN GLOBAL: EVENTO DEL BUSCADOR DEL HEADER
     // ========================================================
     document.body.addEventListener('keydown', (e) => {
@@ -60,6 +75,11 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (window.telemetryTracker) {
             window.telemetryTracker.trackPageview(cleanUrl, loadTimeMs);
+        }
+        
+        // Re-apply role dynamic colors for the newly loaded view
+        if (window.applyRoleDynamicColors) {
+            window.applyRoleDynamicColors();
         }
 
         let relativePath = cleanUrl;
