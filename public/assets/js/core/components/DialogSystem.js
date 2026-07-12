@@ -155,10 +155,20 @@ export class DialogSystem {
         try {
             if (result !== false && this.activeBox) {
                 const inputs = this.activeBox.querySelectorAll('input, select, textarea');
+                const processedRadioNames = new Set();
                 inputs.forEach(inp => { 
+                    if (inp.type === 'radio') {
+                        const radioName = inp.name;
+                        if (radioName && !processedRadioNames.has(radioName)) {
+                            processedRadioNames.add(radioName);
+                            const checked = this.activeBox.querySelector(`input[name="${radioName}"]:checked`);
+                            formData[radioName] = checked ? checked.value : '';
+                        }
+                        return;
+                    }
                     const key = inp.id || inp.name || inp.getAttribute('data-ref'); 
                     if (key) {
-                        if (inp.type === 'checkbox' || inp.type === 'radio') {
+                        if (inp.type === 'checkbox') {
                             formData[key] = inp.checked;
                         } else {
                             formData[key] = inp.value;

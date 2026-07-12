@@ -93,17 +93,19 @@ export class SpaRouter {
         let targetPath = url;
         try {
             if (url.startsWith('http')) {
-                targetPath = new URL(url).pathname;
+                const parsed = new URL(url);
+                targetPath = parsed.pathname + parsed.search;
             }
         } catch(e) {}
         
-        let currentPath = window.location.pathname;
+        let currentFull = window.location.pathname + window.location.search;
         
-        targetPath = targetPath.split('?')[0].split('#')[0];
-        currentPath = currentPath.split('?')[0].split('#')[0];
-        
-        let normalizedCurrent = currentPath.endsWith('/') && currentPath.length > 1 ? currentPath.slice(0, -1) : currentPath;
-        let normalizedTarget = targetPath.endsWith('/') && targetPath.length > 1 ? targetPath.slice(0, -1) : targetPath;
+        let normalizedCurrent = currentFull.endsWith('/') && currentFull.split('?')[0].length > 1 
+            ? currentFull.replace(/\/$/, '') 
+            : currentFull;
+        let normalizedTarget = targetPath.endsWith('/') && targetPath.split('?')[0].length > 1 
+            ? targetPath.replace(/\/$/, '') 
+            : targetPath;
 
         if (normalizedCurrent === normalizedTarget) return;
 

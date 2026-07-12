@@ -1,14 +1,27 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
+import { ApiService } from '../../../core/api/ApiServices.js';
 import { CardTemplates } from '../../../core/components/CardTemplates.js';
 import { CanvasCardInteractions } from '../../../core/components/CanvasCardInteractions.js';
 
 export class SearchController {
     constructor() {
-        this.contentArea = document.querySelector('[data-ref="dynamic-content-area"]');
-        this.title = document.querySelector('[data-ref="search-title"]');
+        this.api = new ApiService();
+        this.basePath = window.AppBasePath || '';
+        this.abortController = null;
+        this.cardInteractions = null;
+
+        this.handleGlobalClickBound = this.handleGlobalClick.bind(this);
     }
 
     async init() {
+        this.abortController = new AbortController();
+        this.cardInteractions = new CanvasCardInteractions(this.api, this.basePath, this.abortController);
+
+        this.contentArea = document.querySelector('[data-ref="dynamic-content-area"]');
+        this.title = document.querySelector('[data-ref="search-title"]');
+
+        document.addEventListener('click', this.handleGlobalClickBound);
+
         const params = new URLSearchParams(window.location.search);
         const query = params.get('q') || '';
         
@@ -20,7 +33,9 @@ export class SearchController {
             return;
         }
 
-        if (this.title) this.title.textContent = `Buscando resultados para "${query}"...`;
+        if (this.title) {
+            this.title.textContent = window.__('search_searching_for').replace(':query', query);
+        }
         
         try {
             const reqUrl = (window.AppBasePath || '') + '/api/index.php';
@@ -45,7 +60,7 @@ export class SearchController {
             } catch (jsonErr) {
                 if (this.title) this.title.textContent = window.__('err_critical_server');
                 if (this.contentArea) {
-                    this.contentArea.innerHTML = CardTemplates.emptyState('Error de respuesta del servidor.', 'error');
+                    this.contentArea.innerHTML = CardTemplates.emptyState(window.__('err_server_response'), 'error');
                 }
                 return;
             }
@@ -55,25 +70,20 @@ export class SearchController {
                 const count = results.length;
                 
                 if (this.title) {
-                    this.title.textContent = `Resultados encontrados: ${count} para "${query}"`;
+                    this.title.textContent = window.__('search_results_for')
+                        .replace(':count', count)
+                        .replace(':query', query);
                 }
 
                 if (this.contentArea) {
                     if (count === 0) {
                         this.contentArea.innerHTML = CardTemplates.emptyState(window.__('msg_no_search_results'), 'search_off');
                     } else {
-                        let cardsHtml = '';
-                        results.forEach(canvas => {
-                            cardsHtml += typeof CardTemplates.generateCanvasCard === 'function' 
-                                           ? CardTemplates.generateCanvasCard(canvas) 
-                                           : this.buildFallbackCard(canvas);
-                        });
+                        const cardsHtml = results.map(canvas => 
+                            CardTemplates.canvasCard(canvas, { basePath: this.basePath })
+                        ).join('');
                         
                         this.contentArea.innerHTML = `<div class="component-grid" data-ref="home-all-canvases">${cardsHtml}</div>`;
-                        
-                        if (typeof CanvasCardInteractions !== 'undefined' && CanvasCardInteractions.init) {
-                            CanvasCardInteractions.init();
-                        }
                     }
                 }
             } else {
@@ -90,14 +100,19 @@ export class SearchController {
         }
     }
 
-    buildFallbackCard(canvas) {
-        return `<div class="component-snapshot-card" data-card-id="${canvas.id}">
-                    <div data-nav="${window.APP_URL || ''}/design/${canvas.uuid}" class="component-snapshot-link" style="cursor: pointer;">
-                        <h3 class="component-snapshot-title">${canvas.name}</h3>
-                    </div>
-                </div>`;
+    handleGlobalClick(e) {
+        const actionBtn = e.target.closest('[data-action]');
+        if (!actionBtn) return;
+
+        const action = actionBtn.getAttribute('data-action');
+
+        if (this.cardInteractions && this.cardInteractions.handleAction(action, actionBtn)) {
+            return;
+        }
     }
 
     destroy() {
+        if (this.abortController) this.abortController.abort();
+        document.removeEventListener('click', this.handleGlobalClickBound);
     }
 }

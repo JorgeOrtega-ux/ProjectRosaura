@@ -690,12 +690,40 @@ export const DialogTemplates = {
     },
 
     reportMessageDialog: {
-        build: () => DialogTemplates.confirmActionModal.build({
-            title: 'Reportar Mensaje',
-            message: window.__('report_options_msg'),
-            inputPlaceholder: window.__('ph_report_option'),
-            confirmClass: 'component-button--danger'
-        })
+        build: () => `
+            <div class="pill-container"><div class="drag-handle"></div></div>
+            <div class="component-modal-header">
+                <h2 class="component-modal-title">${__('report_title')}</h2>
+                <p class="component-modal-desc">${__('report_desc')}</p>
+            </div>
+            <div class="component-modal-body">
+                <div class="component-radio-group" style="display: flex; flex-direction: column; gap: 8px;">
+                    <label class="component-radio-option" style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; transition: background 0.15s; border: 1px solid var(--border-color, rgba(255,255,255,0.08));">
+                        <input type="radio" name="report_reason" value="spam" data-ref="report_reason" style="accent-color: var(--accent-primary, #3b82f6); width: 18px; height: 18px; cursor: pointer;" onchange="document.getElementById('report_other_textarea').style.display='none'">
+                        <span style="font-size: 14px;">${__('report_spam')}</span>
+                    </label>
+                    <label class="component-radio-option" style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; transition: background 0.15s; border: 1px solid var(--border-color, rgba(255,255,255,0.08));">
+                        <input type="radio" name="report_reason" value="offensive" data-ref="report_reason" style="accent-color: var(--accent-primary, #3b82f6); width: 18px; height: 18px; cursor: pointer;" onchange="document.getElementById('report_other_textarea').style.display='none'">
+                        <span style="font-size: 14px;">${__('report_offensive')}</span>
+                    </label>
+                    <label class="component-radio-option" style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; transition: background 0.15s; border: 1px solid var(--border-color, rgba(255,255,255,0.08));">
+                        <input type="radio" name="report_reason" value="harassment" data-ref="report_reason" style="accent-color: var(--accent-primary, #3b82f6); width: 18px; height: 18px; cursor: pointer;" onchange="document.getElementById('report_other_textarea').style.display='none'">
+                        <span style="font-size: 14px;">${__('report_harassment')}</span>
+                    </label>
+                    <label class="component-radio-option" style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; transition: background 0.15s; border: 1px solid var(--border-color, rgba(255,255,255,0.08));">
+                        <input type="radio" name="report_reason" value="other" data-ref="report_reason" style="accent-color: var(--accent-primary, #3b82f6); width: 18px; height: 18px; cursor: pointer;" onchange="document.getElementById('report_other_textarea').style.display='block'">
+                        <span style="font-size: 14px;">${__('report_other')}</span>
+                    </label>
+                </div>
+                <div class="component-input-group" style="margin-top: 12px;">
+                    <textarea id="report_other_textarea" data-ref="report_other_text" class="component-input-field" placeholder="${__('report_other_placeholder')}" rows="3" style="display: none; resize: vertical; min-height: 60px;"></textarea>
+                </div>
+            </div>
+            <div class="component-modal-actions">
+                <button class="component-button component-button--h45 hide-on-desktop" data-modal-action="cancel">${__('btn_cancel')}</button>
+                <button class="component-button component-button--h45 component-button--danger component-button--full" data-modal-action="confirm">${__('btn_report')}</button>
+            </div>
+        `
     }
 ,
     downgradeCanvasModal: {

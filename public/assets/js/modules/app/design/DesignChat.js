@@ -528,21 +528,35 @@ export class DesignChat {
     }
 
     async reportMessage(id) {
-        let reason;
+        let reasonText;
+
         if (window.dialogSystem) {
             const res = await window.dialogSystem.show('reportMessageDialog');
-            if (!res.confirmed || !res.data.confirm_input) return;
-            reason = res.data.confirm_input;
+            if (!res.confirmed) return;
+
+            const selectedReason = res.data.report_reason;
+            if (!selectedReason) {
+                showMessage(__('err_report_select_reason'), 'error');
+                return;
+            }
+
+            const reasonMap = {
+                spam: __('report_spam'),
+                offensive: __('report_offensive'),
+                harassment: __('report_harassment'),
+                other: __('report_other')
+            };
+
+            if (selectedReason === 'other') {
+                const otherText = (res.data.report_other_textarea || '').trim();
+                reasonText = otherText || reasonMap.other;
+            } else {
+                reasonText = reasonMap[selectedReason] || selectedReason;
+            }
         } else {
-            reason = prompt(window.__('report_options_msg'));
-            if (!reason) return;
+            reasonText = prompt(__('report_desc'));
+            if (!reasonText) return;
         }
-        
-        let reasonText = reason;
-        if (reason === '1') reasonText = 'Spam o publicidad';
-        if (reason === '2') reasonText = 'Lenguaje ofensivo';
-        if (reason === '3') reasonText = window.__('report_harassment');
-        if (reason === '4') reasonText = 'Otro';
 
         try {
             const response = await this.api.post(ApiRoutes.Chat.Report, {
@@ -552,13 +566,12 @@ export class DesignChat {
             });
             
             if (response.success || response.status === 'success') {
-                showMessage(response.message, 'success');
+                showMessage(response.message || __('msg_report_success'), 'success');
             } else {
-                showMessage(response.message, 'error');
+                showMessage(response.message || __('err_report_failed'), 'error');
             }
         } catch (error) {
-            
-            showMessage('Error al reportar mensaje', 'error');
+            showMessage(__('err_report_failed'), 'error');
         }
     }
 
@@ -644,7 +657,7 @@ export class DesignChat {
                                 <span class="material-symbols-rounded">report</span>
                             </div>
                             <div class="component-menu-link-text">
-                                <span>Reportar</span>
+                                <span>${__('lbl_report_chat')}</span>
                             </div>
                         </div>
                         ${(!isMine && this.canModerateChat) ? `

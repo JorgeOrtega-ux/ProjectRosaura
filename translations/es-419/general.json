@@ -517,5 +517,22 @@
     "err_palette_unauthorized": "No tienes permisos para gestionar esta paleta",
     "tooltip_upgrade_palette": "Mejora tu plan para desbloquear esta paleta",
     "tooltip_upgrade_custom_palette": "Mejora a Advanced para crear paletas personalizadas",
-    "lbl_custom_palette_badge": "Personalizada"
+    "lbl_custom_palette_badge": "Personalizada",
+
+    "search_searching_for": "Buscando resultados para \":query\"...",
+    "search_results_for": "Resultados encontrados: :count para \":query\"",
+    "err_server_response": "Error de respuesta del servidor",
+
+    "report_title": "Reportar mensaje",
+    "report_desc": "Selecciona el motivo del reporte",
+    "report_spam": "Spam o publicidad",
+    "report_offensive": "Lenguaje ofensivo",
+    "report_harassment": "Acoso o intimidación",
+    "report_other": "Otro",
+    "report_other_placeholder": "Describe el motivo...",
+    "btn_report": "Reportar",
+    "lbl_report_chat": "Reportar",
+    "msg_report_success": "Mensaje reportado correctamente",
+    "err_report_failed": "Error al reportar mensaje",
+    "err_report_select_reason": "Selecciona un motivo de reporte"
 }
