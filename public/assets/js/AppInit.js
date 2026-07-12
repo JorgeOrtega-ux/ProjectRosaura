@@ -1,4 +1,3 @@
-// public/assets/js/AppInit.js
 import { MainController } from './MainController.js';
 import { SpaRouter } from './core/router/SpaRouter.js';
 import { DialogSystem } from './core/components/DialogSystem.js';
@@ -29,24 +28,16 @@ document.addEventListener('DOMContentLoaded', () => {
     
     window.telemetryTracker.init();
 
-    // ========================================================
-    // ROLE DYNAMIC COLORS ENGINE
-    // ========================================================
     const applyRoleDynamicColors = () => {
         document.querySelectorAll('.role-dynamic[data-role-bg]').forEach(el => {
             el.style.setProperty('--active-role-bg', el.dataset.roleBg);
         });
     };
-    
-    // Apply initially
+
     applyRoleDynamicColors();
 
-    // Export globally so modules can trigger it manually if needed (e.g. after DOM modifications)
     window.applyRoleDynamicColors = applyRoleDynamicColors;
 
-    // ========================================================
-    // DELEGACIÓN GLOBAL: EVENTO DEL BUSCADOR DEL HEADER
-    // ========================================================
     document.body.addEventListener('keydown', (e) => {
         if (e.target.matches('#globalSearchInput')) {
             if (e.key === 'Enter') {
@@ -59,10 +50,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // ========================================================
-    // MOTOR DE CARGA DIFERIDA (LAZY LOADING) REFORZADO CON CICLO DE VIDA
-    // ========================================================
-    
     window.loadedControllers = {}; 
     window.importLocks = {}; 
     window.activeControllerInstance = null;
@@ -76,8 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (window.telemetryTracker) {
             window.telemetryTracker.trackPageview(cleanUrl, loadTimeMs);
         }
-        
-        // Re-apply role dynamic colors for the newly loaded view
+
         if (window.applyRoleDynamicColors) {
             window.applyRoleDynamicColors();
         }
@@ -130,7 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         window.adminLangLoaded = true;
                     }
                 } catch (error) {
-                    // Errores de API silenciados por instrucciones directas.
+                    
                 }
             }
 
@@ -168,7 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
             } catch (error) {
-                // Errores de Lazy Loading silenciados por instrucciones directas.
+                
             } finally {
                 delete window.importLocks[className];
             }

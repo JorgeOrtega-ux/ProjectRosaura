@@ -124,7 +124,7 @@ class CanvasesCreateController {
             btn.setAttribute('data-palette-name', translatedName);
             
             if (isLocked) {
-                btn.style.opacity = '0.6';
+                btn.classList.add('disabled-interactive');
                 btn.title = window.__('tooltip_upgrade_palette');
             }
 
@@ -257,7 +257,7 @@ class CanvasesCreateController {
                 link.classList.add('disabled-interactive');
                 link.setAttribute('data-action', '');
                 link.setAttribute('title', window.__('tooltip_upgrade_required'));
-                link.style.opacity = '0.6';
+                link.classList.add('disabled-interactive');
                 
                 let lockIcon = link.querySelector('[data-ref="lock-icon"]');
                 if (!lockIcon) {
@@ -266,7 +266,7 @@ class CanvasesCreateController {
                         textContainer.insertAdjacentHTML('beforeend', '<span class="material-symbols-rounded" data-ref="lock-icon" style="font-size: 14px; margin-left: 6px; color: #ff8c00;">lock</span>');
                     }
                 } else {
-                    lockIcon.style.display = 'inline-block';
+                    lockIcon.classList.remove('disabled'); lockIcon.classList.add('active');
                 }
             }
         });

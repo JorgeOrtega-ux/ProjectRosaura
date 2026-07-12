@@ -160,7 +160,7 @@ class CanvasEditController {
             btn.setAttribute('data-palette-name', translatedName);
             
             if (isLocked) {
-                btn.style.opacity = '0.6';
+                btn.classList.add('disabled-interactive');
                 btn.title = window.__('tooltip_upgrade_palette');
             }
 

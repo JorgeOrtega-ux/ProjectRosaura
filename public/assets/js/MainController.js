@@ -1,4 +1,3 @@
-// public/assets/js/MainController.js
 import { ApiService } from './core/api/ApiServices.js';
 import { ApiRoutes } from './core/api/ApiRoutes.js';
 import { showMessage, setButtonLoading, restoreButton } from './core/utils/uiUtils.js';
@@ -32,8 +31,7 @@ export class MainController {
     }
 
     get isMobile() { return window.innerWidth <= 768; }
-    
-    // NOTA DE IMPLEMENTACIÓN: Getter centralizado para el nivel del usuario
+
     get userTier() { return window.appUserTier || 0; }
 
     init() {
@@ -108,7 +106,7 @@ export class MainController {
                 });
             }
         } catch (e) {
-            console.error('Error fetching coins', e);
+            
         }
     }
 
@@ -250,8 +248,7 @@ export class MainController {
         if (btn) {
             const action = btn.getAttribute('data-action');
             if (action === 'toggleModule') this.toggleModule(btn.getAttribute('data-target'));
-            
-            // NUEVA LÓGICA DE HERRAMIENTAS: Maneja paneles con sub-menús intercambiables
+
             else if (action === 'toggleMenuInModule') {
                 e.preventDefault();
                 const moduleName = btn.getAttribute('data-module-target');
@@ -282,7 +279,6 @@ export class MainController {
                     }
                 }
             }
-            // FIN DE NUEVA LÓGICA
 
             else if (action === 'toggleMobileSearch') this.toggleMobileSearch();
             else if (action === 'submitLogout') { e.preventDefault(); this.handleLogout(btn); }
@@ -544,7 +540,7 @@ export class MainController {
 
         if (btnElement) {
             btnElement.dataset.loading = 'true';
-            btnElement.style.opacity = '0.5';
+            btnElement.classList.add('disabled-interactive');
             btnElement.style.pointerEvents = 'none';
         }
 
@@ -553,7 +549,7 @@ export class MainController {
         if (result && result.aborted) {
             if (btnElement) {
                 btnElement.dataset.loading = 'false';
-                btnElement.style.opacity = '';
+                btnElement.classList.remove('disabled-interactive');;
                 btnElement.style.pointerEvents = '';
             }
             return;
@@ -564,7 +560,7 @@ export class MainController {
         } else {
             if (btnElement) {
                 btnElement.dataset.loading = 'false';
-                btnElement.style.opacity = '';
+                btnElement.classList.remove('disabled-interactive');;
                 btnElement.style.pointerEvents = '';
             }
             this.showToast(result.message || 'Error al cambiar de cuenta', 'error');
