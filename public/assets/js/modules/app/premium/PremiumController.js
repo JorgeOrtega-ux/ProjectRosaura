@@ -1,5 +1,3 @@
-// public/assets/js/modules/app/premium/PremiumController.js
-
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
@@ -13,21 +11,17 @@ export class PremiumController {
     }
 
     init() {
-        // Estado inicial del toggle de facturación
+        
         window.isYearlyPremium = false;
 
-        // Delegar todos los clicks (suscripción + billing toggle)
         document.body.addEventListener('click', this._boundHandleClick);
 
-        // Verificar parámetros de URL (retorno de Stripe)
         this._handleUrlParams();
     }
 
     destroy() {
         document.body.removeEventListener('click', this._boundHandleClick);
     }
-
-    // ── Billing Toggle ──
 
     _handleClick(e) {
         const toggleSwitch = e.target.closest('#billingCheckboxToggle');
@@ -36,7 +30,6 @@ export class PremiumController {
             return;
         }
 
-        // Billing labels
         const billingLabel = e.target.closest('#lblMonthly, #lblYearly');
         if (billingLabel) {
             const id = billingLabel.id;
@@ -45,7 +38,6 @@ export class PremiumController {
             return;
         }
 
-        // Subscribe buttons
         const subscribeBtn = e.target.closest('[data-action="subscribe"]');
         if (subscribeBtn) {
             this._handleSubscribeClick(e);
@@ -104,31 +96,24 @@ export class PremiumController {
                         ? periodEl.getAttribute('data-period-yearly') 
                         : periodEl.getAttribute('data-period-monthly');
                         
-                    priceEl.style.opacity = '1';
-                    periodEl.style.opacity = '1';
+                    priceEl.classList.remove('disabled-interactive');
+                    periodEl.classList.remove('disabled-interactive');
                 }, 150);
             }
         });
     }
 
-    // ── URL Params (retorno de Stripe) ──
-
-    /**
-     * Verifica los query params al volver de Stripe Checkout.
-     */
     _handleUrlParams() {
         const urlParams = new URLSearchParams(window.location.search);
         const status = urlParams.get('status');
         const sessionId = urlParams.get('session_id');
 
         if (status === 'success' && sessionId) {
-            showMessage('¡Pago completado con éxito! Tu suscripción se activará en breve.', 'success');
+            showMessage(window.__('msg_payment_success'), 'success');
 
-            // Limpiar los params de la URL sin recargar
             const cleanUrl = window.location.pathname;
             window.history.replaceState({}, document.title, cleanUrl);
 
-            // Hacer polling breve para actualizar el tier en la sesión
             this._pollSubscriptionStatus(3);
         } else if (status === 'cancel') {
             showMessage('El pago fue cancelado. Puedes intentarlo de nuevo cuando quieras.', 'warning');
@@ -138,9 +123,6 @@ export class PremiumController {
         }
     }
 
-    /**
-     * Polling breve para detectar cuándo el webhook ya procesó el pago.
-     */
     async _pollSubscriptionStatus(maxAttempts) {
         for (let i = 0; i < maxAttempts; i++) {
             await new Promise(resolve => setTimeout(resolve, 2000));
@@ -148,30 +130,23 @@ export class PremiumController {
             try {
                 const result = await this.api.post(ApiRoutes.Stripe.GetSubscriptionStatus);
                 if (result.success && result.data && result.data.status === 'active') {
-                    showMessage('¡Tu plan ha sido actualizado exitosamente! Recarga la página para ver los cambios.', 'success');
-                    
-                    // Actualizar el tier visual sin recargar
+                    showMessage(window.__('msg_plan_updated'), 'success');
+
                     setTimeout(() => { window.location.reload(); }, 1500);
                     return;
                 }
             } catch (e) {
-                // Silenciar errores de polling
+                
             }
         }
     }
 
-    // ── Suscripción ──
-
-    /**
-     * Maneja el click en los botones de suscripción.
-     */
     async _handleSubscribeClick(e) {
         const btn = e.target.closest('[data-action="subscribe"]');
         if (!btn) return;
 
         e.preventDefault();
 
-        // Verificar si el usuario está logueado
         if (!window.activeUserId) {
             window.spaRouter.navigate('/login');
             return;
@@ -181,15 +156,14 @@ export class PremiumController {
         const billingPeriod = (window.isYearlyPremium === true) ? 'yearly' : 'monthly';
 
         if (isNaN(tier) || tier < 0 || tier > 2) {
-            showMessage('Plan inválido.', 'error');
+            showMessage(window.__('err_invalid_plan'), 'error');
             return;
         }
 
-        // Deshabilitar el botón y mostrar loading
         setButtonLoading(btn);
 
         try {
-            // Primero, verificar si ya tiene una suscripción activa
+            
             const subStatusResult = await this.api.post(ApiRoutes.Stripe.GetSubscriptionStatus);
             let hasActiveStripeSub = false;
 
@@ -201,14 +175,14 @@ export class PremiumController {
             }
 
             if (hasActiveStripeSub) {
-                // Actualizar suscripción existente (Downgrade/Upgrade)
+                
                 const result = await this.api.post(ApiRoutes.Stripe.UpdateSubscription, {
                     tier: tier,
                     billing_period: billingPeriod
                 });
 
                 if (result.success && result.updated) {
-                    showMessage('¡Tu suscripción se ha actualizado correctamente!', 'success');
+                    showMessage(window.__('msg_sub_updated'), 'success');
                     setTimeout(() => { window.location.reload(); }, 1500);
                 } else {
                     restoreButton(btn);
@@ -217,26 +191,26 @@ export class PremiumController {
                 }
 
             } else {
-                // Crear nuevo Checkout Session para usuarios sin suscripción
+                
                 const result = await this.api.post(ApiRoutes.Stripe.CreateCheckout, {
                     tier: tier,
                     billing_period: billingPeriod
                 });
 
                 if (result.success && result.checkout_url) {
-                    // Redirigir a Stripe Checkout
+                    
                     window.location.href = result.checkout_url;
                 } else {
-                    // Restaurar botón
+                    
                     restoreButton(btn);
 
-                    const msg = result.message || (typeof window.__ === 'function' ? window.__('stripe_checkout_error') : 'Error al crear la sesión de pago');
+                    const msg = result.message || window.__('stripe_checkout_error');
                     showMessage(msg, 'error');
                 }
             }
         } catch (error) {
             restoreButton(btn);
-            showMessage('Error de conexión. Intenta de nuevo.', 'error');
+            showMessage(window.__('err_connection'), 'error');
         }
     }
 }

@@ -1,4 +1,3 @@
-// public/assets/js/modules/settings/DevicesController.js
 import { ApiRoutes } from '../../core/api/ApiRoutes.js';
 import { ApiService } from '../../core/api/ApiServices.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../core/utils/uiUtils.js';
@@ -42,11 +41,10 @@ class DevicesController {
         
         if (res.success) { 
             showMessage(res.message, 'success'); 
-            
-            // UX mejorada: Remueve el div completo de ese dispositivo sin recargar la página.
+
             const deviceRow = document.getElementById(`device-row-${id}`);
             if (deviceRow) {
-                // Removemos el divisor <hr> que le sigue (si existe) para mantener la vista limpia
+                
                 const nextElement = deviceRow.nextElementSibling;
                 if (nextElement && nextElement.tagName === 'HR') nextElement.remove();
                 
@@ -70,7 +68,7 @@ class DevicesController {
             if (isConfirmed.action === 'revoke_all') {
                 window.location.href = this.basePath + '/login';
             } else {
-                // Si borró "las demás" recargamos limpiamente (o usamos tu enrutador SPA)
+                
                 window.location.reload(); 
             }
         } else {

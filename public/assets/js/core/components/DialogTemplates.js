@@ -675,7 +675,7 @@ export const DialogTemplates = {
                 </div>
             </div>
             <div class="component-modal-actions">
-                <button class="component-button component-button--h45 hide-on-desktop" data-modal-action="cancel">${__('btn_cancel') || 'Cancelar'}</button>
+                <button class="component-button component-button--h45 hide-on-desktop" data-modal-action="cancel">${__('btn_cancel')}</button>
                 <button class="component-button component-button--dark component-button--h45 component-button--full" data-modal-action="confirm">Unirme al lienzo</button>
             </div>
         `
@@ -692,18 +692,18 @@ export const DialogTemplates = {
     reportMessageDialog: {
         build: () => DialogTemplates.confirmActionModal.build({
             title: 'Reportar Mensaje',
-            message: 'Selecciona una opción de reporte:<br>1. Spam o publicidad<br>2. Lenguaje ofensivo<br>3. Acoso o incitación al odio<br>4. Otro',
-            inputPlaceholder: 'Ingresa el número de opción (1-4)',
+            message: window.__('report_options_msg'),
+            inputPlaceholder: window.__('ph_report_option'),
             confirmClass: 'component-button--danger'
         })
     }
 ,
     downgradeCanvasModal: {
         build: () => DialogTemplates.confirmActionModal.build({
-            title: window.__ ? window.__('downgrade_basic_title') : 'downgrade_basic_title',
-            message: window.__ ? window.__('downgrade_basic_msg') : 'downgrade_basic_msg',
-            inputPlaceholder: window.__ ? window.__('word_confirm') : 'CONFIRMAR',
-            expectedInput: window.__ ? window.__('word_confirm') : 'CONFIRMAR',
+            title: window.__('downgrade_basic_title'),
+            message: window.__('downgrade_basic_msg'),
+            inputPlaceholder: window.__('word_confirm'),
+            expectedInput: window.__('word_confirm'),
             confirmClass: 'component-button--danger'
         })
     }

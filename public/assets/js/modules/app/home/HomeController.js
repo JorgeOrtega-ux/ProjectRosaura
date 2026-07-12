@@ -1,5 +1,3 @@
-// public/assets/js/modules/app/home/HomeController.js
-
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { renderSkeleton } from '../../../core/utils/uiUtils.js';
@@ -36,7 +34,7 @@ class HomeController {
             }
 
             if (!window.initialHomeCanvases) {
-                // Inicializa un grid temporal para el skeleton
+                
                 this.contentArea.innerHTML = '<div class="component-grid" data-ref="home-all-canvases"></div>';
                 renderSkeleton(this.contentArea.querySelector('.component-grid'), 'homeCanvasGrid');
             }
@@ -78,8 +76,7 @@ class HomeController {
         }
 
         if (action === 'changeHomeFilter' || action === 'changeExploreSort') {
-            // For radio inputs, the browser handles unchecking others. 
-            // If they are checkboxes simulating radios:
+
             if (actionBtn.tagName.toLowerCase() === 'input' && actionBtn.type === 'checkbox') {
                 const name = actionBtn.getAttribute('name');
                 document.querySelectorAll(`input[name="${name}"]`).forEach(cb => {
@@ -88,17 +85,15 @@ class HomeController {
             }
 
             this.updateFilterDot();
-            
-            // Optionally close the dropdown:
+
             const dropdownModule = actionBtn.closest('.component-module');
             if (dropdownModule) {
-                // dropdownModule.classList.remove('active');
+                
             }
             this.loadCanvases();
             return;
         }
 
-        // Delegar interacciones de las tarjetas al helper
         if (this.cardInteractions && this.cardInteractions.handleAction(action, actionBtn)) {
             return;
         }
@@ -109,9 +104,8 @@ class HomeController {
         const isHome = !isExplore && (window.location.pathname === '/' || window.location.pathname.includes('/home'));
         const isLoggedIn = window.activeUserId !== null;
 
-        // HOME SIN SESIÓN
         if (isHome && !isLoggedIn) {
-            const msgEmpty = window.__ ? window.__('msg_home_guest') || '¡Explora los increíbles lienzos que la comunidad ha creado!' : '¡Explora los increíbles lienzos que la comunidad ha creado!';
+            const msgEmpty = window.__ ? window.__('msg_home_guest') || window.__('msg_home_guest') : window.__('msg_home_guest');
             const emptyHtml = `
                 <div class="component-empty-state" data-ref="empty-state-rendered" style="padding: 40px 20px;">
                     <span class="material-symbols-rounded component-empty-state-icon">explore</span>
@@ -132,15 +126,15 @@ class HomeController {
         let isError = false;
 
         if (isHome && isLoggedIn) {
-            // Get selected filter
+            
             const filterRadio = document.querySelector('input[name="home_filter"]:checked');
             const filter = filterRadio ? filterRadio.value : 'all';
 
             if (window.initialHomeCanvases && filter === 'all') {
                 allCanvases = window.initialHomeCanvases;
-                window.initialHomeCanvases = null; // Usar solo en la carga inicial
+                window.initialHomeCanvases = null; 
             } else {
-                // HOME CON SESIÓN: Cargar "Mis Lienzos" (Propios y unidos)
+                
                 const res = await this.api.post(ApiRoutes.Canvases.GetMine, { limit: 50, filter: filter }, this.abortController.signal).catch(() => null);
                 if (this.abortController.signal.aborted) return;
                 
@@ -154,9 +148,9 @@ class HomeController {
             if (allCanvases.length > 0) {
                 this.renderCanvases(this.contentArea, allCanvases);
             } else if (isError) {
-                this.showError(this.contentArea, (res && res.message) ? res.message : (window.__ ? window.__('err_load_canvases') || 'Error al cargar lienzos.' : 'Error al cargar lienzos.'));
+                this.showError(this.contentArea, (res && res.message) ? res.message : window.__('err_load_canvases'));
             } else {
-                const msgEmpty = window.__ ? window.__('msg_home_empty') || 'Cuando crees un lienzo o te unas a uno, aparecerá aquí.' : 'Cuando crees un lienzo o te unas a uno, aparecerá aquí.';
+                const msgEmpty = window.__ ? window.__('msg_home_empty') || window.__('msg_home_empty') : window.__('msg_home_empty');
                 const emptyHtml = `
                     <div class="component-empty-state" data-ref="empty-state-rendered" style="padding: 40px 20px;">
                         <span class="material-symbols-rounded component-empty-state-icon">dashboard_customize</span>
@@ -174,7 +168,7 @@ class HomeController {
                 this.contentArea.innerHTML = emptyHtml;
             }
         } else {
-            // Get selected sort
+            
             const sortRadio = document.querySelector('input[name="explore_sort"]:checked');
             const sort = sortRadio ? sortRadio.value : 'newest';
 
@@ -182,7 +176,7 @@ class HomeController {
                 allCanvases = window.initialHomeCanvases;
                 window.initialHomeCanvases = null;
             } else {
-                // EXPLORE (O Home que por alguna razón llegó acá)
+                
                 const [publicRes, officialRes] = await Promise.all([
                     this.api.post(ApiRoutes.Canvases.GetPublic, { limit: 50, sort: sort }, this.abortController.signal).catch(() => null),
                     this.api.post(ApiRoutes.Canvases.GetOfficial, { sort: sort }, this.abortController.signal).catch(() => null)
@@ -190,14 +184,12 @@ class HomeController {
                 
                 if (this.abortController.signal.aborted) return;
 
-                // Integrar los oficiales
                 if (officialRes && officialRes.success) {
                     allCanvases = allCanvases.concat(officialRes.data || []);
                 } else if (!officialRes) {
                     isError = true;
                 }
 
-                // Integrar los públicos, evitando duplicados
                 if (publicRes && publicRes.success) {
                     const existingIds = new Set(allCanvases.map(c => c.id));
                     const newPublics = (publicRes.data || []).filter(c => !existingIds.has(c.id));
@@ -206,7 +198,6 @@ class HomeController {
                     isError = true;
                 }
 
-                // Client-side sort to ensure the combined list is properly ordered
                 if (allCanvases.length > 0) {
                     allCanvases.sort((a, b) => {
                         if (sort === 'oldest') {
@@ -216,7 +207,7 @@ class HomeController {
                                 return b.members_count - a.members_count;
                             }
                             return new Date(b.created_at) - new Date(a.created_at);
-                        } else { // newest
+                        } else { 
                             return new Date(b.created_at) - new Date(a.created_at);
                         }
                     });
@@ -226,9 +217,9 @@ class HomeController {
             if (allCanvases.length > 0) {
                 this.renderCanvases(this.contentArea, allCanvases);
             } else if (isError) {
-                this.showError(this.contentArea, window.__ ? window.__('err_load_public_canvases') || 'Error al cargar lienzos. El servidor no responde.' : 'Error al cargar lienzos. El servidor no responde.');
+                this.showError(this.contentArea, window.__ ? window.__('err_load_public_canvases') : 'Error al cargar lienzos. El servidor no responde.');
             } else {
-                const msgEmpty = window.__ ? window.__('empty_home_gallery') || 'Aún no hay lienzos disponibles para explorar.' : 'Aún no hay lienzos disponibles para explorar.';
+                const msgEmpty = window.__ ? window.__('empty_home_gallery') || window.__('empty_home_gallery') : window.__('empty_home_gallery');
                 this.contentArea.innerHTML = CardTemplates.emptyState(msgEmpty, 'collections');
             }
         }
@@ -245,14 +236,14 @@ class HomeController {
     renderCanvases(container, canvases) {
         if (!container) return;
         const cardsHtml = canvases.map(canvas => CardTemplates.canvasCard(canvas, { basePath: this.basePath })).join('');
-        // Se reemplaza todo el HTML por el GRID puro
+        
         container.innerHTML = `<div class="component-grid" data-ref="home-all-canvases">${cardsHtml}</div>`;
     }
 
     reinitializeUI() {
         if (!this.contentArea) return;
         const grid = this.contentArea.querySelector('.component-grid');
-        if (!grid) return; // Si no hay grid (estado vacío), omitimos.
+        if (!grid) return; 
         
         if (window.app && typeof window.app.initModules === 'function') window.app.initModules(grid);
         else if (window.uiUtils && typeof window.uiUtils.initDropdowns === 'function') window.uiUtils.initDropdowns(grid);
@@ -276,7 +267,7 @@ class HomeController {
                         break;
                     }
                 } catch (e) {
-                    // Silenciar errores
+                    
                 }
                 await new Promise(resolve => setTimeout(resolve, 2000));
             }

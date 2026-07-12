@@ -1,5 +1,3 @@
-// public/assets/js/modules/canvases/CanvasEditController.js
-
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
@@ -51,7 +49,7 @@ class CanvasEditController {
         this.abortController = new AbortController();
         
         if (!this.canvasId) {
-            showMessage(window.__ ? window.__('err_invalid_canvas_id') : 'Invalid Canvas ID', 'error');
+            showMessage(window.__('err_invalid_canvas_id'), 'error');
             return;
         }
         
@@ -142,7 +140,7 @@ class CanvasEditController {
         const palettes = getAllPalettes();
         container.innerHTML = '';
 
-        let activePaletteName = window.__ ? window.__('lbl_palette') : 'Palette';
+        let activePaletteName = window.__('lbl_palette');
         
         const canUseCustomPalettes = window.APP_LIMITS && window.APP_LIMITS.custom_palettes === true;
 
@@ -163,7 +161,7 @@ class CanvasEditController {
             
             if (isLocked) {
                 btn.style.opacity = '0.6';
-                btn.title = window.__ ? window.__('tooltip_upgrade_palette') : 'Upgrade needed';
+                btn.title = window.__('tooltip_upgrade_palette');
             }
 
             let colorsHtml = `<div style="display:flex; align-items:center;">`;
@@ -383,7 +381,7 @@ class CanvasEditController {
         }
 
         if (!this.state.name) {
-            showMessage(window.__ ? window.__('err_field_required') : 'Required', 'warning');
+            showMessage(window.__('err_field_required'), 'warning');
             return;
         }
 
@@ -407,13 +405,13 @@ class CanvasEditController {
             if (response.aborted) return;
 
             if (response && response.success) {
-                showMessage(window.__ ? window.__('canvas_update_success') : 'Success', 'success');
+                showMessage(window.__('canvas_update_success'), 'success');
             } else {
                 showMessage(response.message, 'error');
             }
         } catch (error) {
             if (error.name === 'AbortError') return;
-            showMessage(window.__ ? window.__('err_update_canvas') : 'Error', 'error');
+            showMessage(window.__('err_update_canvas'), 'error');
         } finally {
             restoreButton(btn);
         }

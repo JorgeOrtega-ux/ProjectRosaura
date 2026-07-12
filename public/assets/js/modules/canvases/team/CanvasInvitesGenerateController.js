@@ -143,7 +143,7 @@ class CanvasInvitesGenerateController {
                 if (btnSubmit) restoreButton(btnSubmit);
             }
         } catch (error) {
-            console.error('Error generating invite:', error);
+            
             showMessage('Error de conexión.', 'error');
             if (btnSubmit) restoreButton(btnSubmit);
         }

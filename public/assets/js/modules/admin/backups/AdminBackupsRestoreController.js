@@ -77,7 +77,7 @@ class AdminBackupsRestoreController {
             this.pollRestoreStatus(res.job_id, btn, originalText);
         } else {
             this.resetRestoreUI(btn, originalText);
-            showMessage(res.message || (typeof window.__ === 'function' ? window.__('err_start_restore') : 'Error'), 'error');
+            showMessage(res.message || window.__('err_start_restore'), 'error');
         }
     }
     async pollRestoreStatus(jobId, btn, originalText) {
@@ -96,7 +96,7 @@ class AdminBackupsRestoreController {
             } else {
                 clearInterval(this.pollInterval);
                 this.resetRestoreUI(btn, originalText);
-                showMessage(res.message || (typeof window.__ === 'function' ? window.__('err_connection') : 'Error'), 'error');
+                showMessage(res.message || window.__('err_connection'), 'error');
             }
         }, 2500);
     }

@@ -86,7 +86,7 @@ class ChatViewerController {
                 }
             }
         } catch(err) {
-            console.error('Error parseando imágenes del visor:', err);
+            
         }
         
         this.currentIndex = parseInt(wrapper.dataset.idx, 10) || 0;
@@ -146,13 +146,13 @@ class ChatViewerController {
             const uploadRes = await this.api.postForm(ApiRoutes.Canvases.UploadTemplate, formData);
             
             if (uploadRes.success || uploadRes.status === 'success') {
-                showMessage(__('plantilla_guardada_exito') || 'Plantilla guardada exitosamente', 'success');
+                showMessage(__('msg_template_saved'), 'success');
             } else {
-                showMessage(uploadRes.message || __('error_guardar_plantilla') || 'Error al guardar la plantilla', 'error');
+                showMessage(uploadRes.message || __('err_save_template'), 'error');
             }
         } catch (error) {
-            console.error('Error descargando plantilla:', error);
-            showMessage(__('error_red_guardar_plantilla') || 'Error de red al guardar la plantilla', 'error');
+            
+            showMessage(__('err_network_save_template'), 'error');
         } finally {
             restoreButton(btn);
         }

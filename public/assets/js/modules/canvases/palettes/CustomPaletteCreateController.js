@@ -1,4 +1,3 @@
-// public/assets/js/modules/canvases/palettes/CustomPaletteCreateController.js
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { setButtonLoading, restoreButton, showMessage } from '../../../core/utils/uiUtils.js';
@@ -76,9 +75,6 @@ class CustomPaletteCreateController {
         }
     }
 
-    /* -----------------------------------------------------------
-       PLANTILLA HTML DEL BLOQUE 
-    ----------------------------------------------------------- */
     getColorBlockTemplate() {
         const uniqueId = 'cp_' + Math.random().toString(36).substr(2, 9);
         return `
@@ -86,8 +82,8 @@ class CustomPaletteCreateController {
                 <div class="component-group-item component-group-item--stacked">
                     <div class="component-card__content">
                         <div class="component-card__text">
-                            <h2 class="component-card__title" data-ref="blockTitle">${_t('admin_role_hue_adjust', 'Ajuste de Color')}</h2>
-                            <p class="component-card__description" data-ref="blockDesc">${_t('admin_role_hue_adjust_desc', 'Configura el color usando el selector visual o el valor hexadecimal.')}</p>
+                            <h2 class="component-card__title" data-ref="blockTitle">${_t('admin_role_hue_adjust')}</h2>
+                            <p class="component-card__description" data-ref="blockDesc">${_t('admin_role_hue_adjust_desc')}</p>
                         </div>
                     </div>
                     <div class="component-card__actions component-card__actions--start">
@@ -130,9 +126,6 @@ class CustomPaletteCreateController {
         `;
     }
 
-    /* -----------------------------------------------------------
-       LÓGICA DE DRAG & DROP PARA COLOR PICKER
-    ----------------------------------------------------------- */
     getEventCoords(e) {
         if (e.touches && e.touches.length > 0) {
             return { clientX: e.touches[0].clientX, clientY: e.touches[0].clientY };
@@ -207,9 +200,6 @@ class CustomPaletteCreateController {
         this.updatePickerUI(this.activePicker);
     }
 
-    /* -----------------------------------------------------------
-       MATEMÁTICAS DEL COLOR Y ACTUALIZACIÓN UI
-    ----------------------------------------------------------- */
     hexToHsv(hex) {
         hex = hex.replace(/^#/, '');
         if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
@@ -293,9 +283,6 @@ class CustomPaletteCreateController {
         this.updateLivePreview();
     }
 
-    /* -----------------------------------------------------------
-       EVENTOS GLOBALES DE CLIC Y UI
-    ----------------------------------------------------------- */
     handleGlobalClick(e) {
         if (e.target.closest('[data-action="savePaletteData"]')) {
             this.savePalette(e.target.closest('[data-action="savePaletteData"]'));
@@ -323,26 +310,20 @@ class CustomPaletteCreateController {
         }
     }
 
-
-
     handleApplyPaletteName(btn) {
         const input = document.querySelector('[data-ref="paletteNameInput"]');
         const display = document.querySelector('[data-ref="display-palette-name"]');
-        if (input && display) display.textContent = input.value.trim() || _t('canvas_palette_new', 'Mi Nueva Paleta');
+        if (input && display) display.textContent = input.value.trim() || _t('canvas_palette_new');
 
         if (window.appInstance) {
             window.appInstance.toggleEditState('palette-name');
         }
     }
 
-    /* -----------------------------------------------------------
-       LÓGICA LIMPIA. JAVASCRIPT LEE EL DOM
-    ----------------------------------------------------------- */
     detectModeAndLoad() {
         const view = document.querySelector('[data-ref="customPaletteBuilderView"]');
         if (!view) return;
 
-        // Initialize with default colors if empty
         const gContainer = document.querySelector('[data-ref="paletteColorsContainer"]');
         if (gContainer && gContainer.children.length === 0) {
             this.addColorBlock('paletteColorsContainer', '#d32029');
@@ -404,7 +385,6 @@ class CustomPaletteCreateController {
             return;
         }
 
-        // Distribute equal portions for the conic gradient preview
         let base = Math.floor(100 / rows.length);
         let remainder = 100 % rows.length;
         
@@ -437,14 +417,14 @@ class CustomPaletteCreateController {
         const name = nameInput ? nameInput.value.trim() : '';
 
         if (!name) {
-            showMessage(_t('msg_palette_name_required', 'El nombre de la paleta es requerido.'), 'error');
+            showMessage(_t('msg_palette_name_required'), 'error');
             return;
         }
 
         const colors = this.extractColors();
 
         if (colors.length < 4) {
-            showMessage(_t('msg_palette_min_colors', 'Se requieren al menos 4 colores.'), 'error');
+            showMessage(_t('msg_palette_min_colors'), 'error');
             return;
         }
 
@@ -463,7 +443,7 @@ class CustomPaletteCreateController {
         restoreButton(btn);
 
         if (res.success) {
-            showMessage(_t('msg_palette_created', 'Paleta creada exitosamente.'), 'success');
+            showMessage(_t('msg_palette_created'), 'success');
             
             if (!window.APP_CUSTOM_PALETTES) window.APP_CUSTOM_PALETTES = [];
             window.APP_CUSTOM_PALETTES.push({
@@ -474,7 +454,7 @@ class CustomPaletteCreateController {
             
             this.goBack();
         } else {
-            showMessage(res.message || _t('err_default', 'Error al crear la paleta.'), 'error');
+            showMessage(res.message || _t('err_default'), 'error');
         }
     }
     

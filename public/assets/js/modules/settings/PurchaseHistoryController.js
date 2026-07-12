@@ -1,5 +1,3 @@
-// public/assets/js/modules/settings/PurchaseHistoryController.js
-
 import { ApiRoutes } from '../../core/api/ApiRoutes.js';
 import { ApiService } from '../../core/api/ApiServices.js';
 import { escapeHTML } from '../../core/utils/uiUtils.js';
@@ -22,8 +20,7 @@ export class PurchaseHistoryController {
 
     bindEvents() {
         if (!this.container) return;
-        
-        // Eventos futuros para manipulación de la tabla (ej. paginación, filtros)
+
     }
 
     async loadHistory() {
@@ -33,7 +30,7 @@ export class PurchaseHistoryController {
             const response = await this.api.post(ApiRoutes.Stripe.GetPaymentHistory, { limit: 20, offset: 0 }, this.abortController.signal);
             
             if (response.success && response.data && response.data.length > 0) {
-                this.tbody.innerHTML = ''; // Clear empty state
+                this.tbody.innerHTML = ''; 
                 
                 response.data.forEach(item => {
                     const date = new Date(item.created_at).toLocaleDateString();
@@ -66,11 +63,11 @@ export class PurchaseHistoryController {
                     this.tbody.insertAdjacentHTML('beforeend', row);
                 });
             } else {
-                // If empty, leave the default empty state row.
+                
             }
         } catch (error) {
             if (error.name !== 'AbortError') {
-                console.error('Error fetching purchase history:', error);
+                
                 this.tbody.innerHTML = `
                     <tr>
                         <td colspan="4" class="component-empty-table-cell">

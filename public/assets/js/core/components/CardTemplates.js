@@ -204,7 +204,7 @@ export const CardTemplates = {
         const tierName = data.tier === 2 ? 'Advanced' : (data.tier === 1 ? 'Pro' : 'Free');
         const status = escapeHTML(data.status || 'inactive');
         const cancelAtEnd = data.cancel_at_period_end;
-        let dateLabel = cancelAtEnd ? window.__ ? window.__('ends_on') : 'ends_on' : 'Próximo cobro:';
+        let dateLabel = cancelAtEnd ? window.__('ends_on') : window.__('next_billing');
         
         let dateVal = '-';
         if (data.current_period_end) {
@@ -224,12 +224,12 @@ export const CardTemplates = {
         if (status !== 'active') {
             statusText = status === 'incomplete' ? 'Incompleto' : 'Inactivo';
         } else if (cancelAtEnd) {
-            statusText = 'Se cancelará pronto';
+            statusText = window.__('will_cancel_soon');
         }
 
-        const actionText = cancelAtEnd ? (window.__ ? window.__('btn_reactivate_sub') || 'Reactivar renovación' : 'Reactivar renovación') : (window.__ ? window.__('btn_cancel_renew') || 'Cancelar renovación' : 'Cancelar renovación');
+        const actionText = cancelAtEnd ? window.__('btn_reactivate_sub') : window.__('btn_cancel_renew');
         const btnClass = cancelAtEnd ? 'component-button--brand' : 'component-button--dark';
-        const changePlanText = window.__ ? window.__('btn_change_plan') || 'Cambiar plan' : 'Cambiar plan';
+        const changePlanText = window.__ ? window.__('btn_change_plan') : 'Cambiar plan';
         
         let renewText = cancelAtEnd ? 'Cancelada' : 'Activa';
         

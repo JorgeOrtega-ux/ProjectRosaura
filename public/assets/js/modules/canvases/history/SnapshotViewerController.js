@@ -1,5 +1,3 @@
-// public/assets/js/modules/canvases/SnapshotViewerController.js
-
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { showMessage } from '../../../core/utils/uiUtils.js';
@@ -132,7 +130,7 @@ class SnapshotViewerController {
         const btnPlay = document.getElementById('tl-btn-play');
         if (!btnPlay) return;
         
-        btnPlay.style.display = 'flex'; 
+        btnPlay.classList.remove('disabled'); btnPlay.classList.add('active'); 
 
         btnPlay.addEventListener('click', async () => {
             if (!this.timelapseData) {

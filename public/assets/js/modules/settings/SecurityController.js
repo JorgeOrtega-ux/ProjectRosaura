@@ -1,4 +1,3 @@
-// public/assets/js/modules/settings/SecurityController.js
 import { ApiRoutes } from '../../core/api/ApiRoutes.js';
 import { ApiService } from '../../core/api/ApiServices.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../core/utils/uiUtils.js';
@@ -64,7 +63,7 @@ class SecurityController {
         if (!input) return;
         const val = input.value.trim();
         if (val === '') { 
-            showMessage(typeof window.__ === 'function' ? window.__('err_current_password_required') : 'Contraseña actual requerida', 'error'); 
+            showMessage(window.__('err_current_password_required'), 'error'); 
             return; 
         }
         
@@ -91,7 +90,7 @@ class SecurityController {
         const valConfirm = confirmPass.value;
         
         if (valNew !== valConfirm) { 
-            showMessage(typeof window.__ === 'function' ? window.__('err_password_mismatch') : 'Las contraseñas no coinciden', 'error'); 
+            showMessage(window.__('err_password_mismatch'), 'error'); 
             return; 
         }
 
@@ -99,7 +98,7 @@ class SecurityController {
         const maxPass = this.config.max_password_length || 64;
 
         if (valNew.length < minPass || valNew.length > maxPass) { 
-            let msg = typeof window.__ === 'function' ? window.__('err_password_length') : 'Longitud inválida';
+            let msg = window.__('err_password_length');
             if (msg.includes(':min')) {
                 msg = msg.replace(':min', minPass).replace(':max', maxPass);
             }
@@ -137,7 +136,7 @@ class SecurityController {
         if (dialog.confirmed) {
             const passInput = dialog.data['modal_delete_password'];
             if (!passInput) {
-                showMessage(typeof window.__ === 'function' ? window.__('err_password_required') : 'Contraseña requerida', "error");
+                showMessage(window.__('err_password_required'), "error");
                 return;
             }
 

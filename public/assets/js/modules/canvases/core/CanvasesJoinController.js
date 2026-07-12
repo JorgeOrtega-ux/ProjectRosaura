@@ -104,7 +104,7 @@ class CanvasesJoinController {
                 showMessage(response?.message || 'Error al validar el código.', 'error');
             }
         } catch (error) {
-            console.error('Error joining canvas:', error);
+            
             btn.innerHTML = originalText;
             btn.disabled = false;
             showMessage('Error de conexión con el servidor.', 'error');

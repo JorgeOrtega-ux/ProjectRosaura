@@ -1,5 +1,3 @@
-// public/assets/js/modules/canvases/CanvasMembersController.js
-
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
 
@@ -119,9 +117,9 @@ class CanvasMembersController {
         const currentPaginations = document.querySelectorAll('[data-ref="pagination-container"], [class*="pagin"]');
 
         if (tableContainer) {
-            tableContainer.style.transition = 'opacity 0.2s ease';
-            tableContainer.style.opacity = '0.5';
-            tableContainer.style.pointerEvents = 'none';
+            
+            tableContainer.classList.add('disabled-interactive');
+            
         }
 
         try {
@@ -161,8 +159,8 @@ class CanvasMembersController {
             else window.location.href = url;
         } finally {
             if (tableContainer) {
-                tableContainer.style.opacity = '1';
-                tableContainer.style.pointerEvents = 'auto';
+                tableContainer.classList.remove('disabled-interactive');
+                
             }
         }
     }
@@ -172,8 +170,7 @@ class CanvasMembersController {
         
         const targetUserId = Array.from(this.selectedMemberIds)[0];
         const selectedRow = document.querySelector(`[data-member-id="${targetUserId}"]`);
-        
-        // Obtenemos el UUID en lugar del ID numérico para la URL
+
         const targetUserUuid = selectedRow ? selectedRow.getAttribute('data-member-uuid') : null;
 
         if (!targetUserUuid) {
@@ -192,7 +189,6 @@ class CanvasMembersController {
             return;
         }
 
-        // Redirección utilizando el UUID del usuario
         const routeUrl = `${this.basePath}/canvases/members/${uuid}/role/${targetUserUuid}`;
         if (window.spaRouter) {
             window.spaRouter.navigate(routeUrl);

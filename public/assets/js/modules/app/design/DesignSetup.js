@@ -1,4 +1,3 @@
-// public/assets/js/modules/app/DesignSetup.js
 import { getPaletteById } from './utils/DesignPaletteUtils.js';
 import { showMessage } from '../../../core/utils/uiUtils.js';
 
@@ -47,7 +46,7 @@ export const DesignSetup = {
         
         if (wrapper) {
             this.canvasIntId = wrapper.getAttribute('data-canvas-id');
-            this.canvasId = wrapper.getAttribute('data-canvas-uuid'); // This gives JS the UUID
+            this.canvasId = wrapper.getAttribute('data-canvas-uuid'); 
             this.canvasPrivacy = wrapper.getAttribute('data-privacy') || 'private';
             this.isPrivateBlocked = wrapper.getAttribute('data-is-blocked') === '1';
             this.isPremiumBlocked = wrapper.getAttribute('data-premium-blocked') === '1';
@@ -110,7 +109,7 @@ export const DesignSetup = {
         }
 
         if (this.isPremiumBlocked) {
-            this.setCanvasBadge('lock-premium', 'warning', __('badge_premium_expired') || 'Requiere atención', 'left');
+            this.setCanvasBadge('lock-premium', 'warning', __('badge_premium_expired'), 'left');
             this.removeCanvasBadge('lock-private', 'left');
         } else if (this.isPrivateBlocked) {
             this.setCanvasBadge('lock-private', 'lock', __('badge_member_required'), 'left');

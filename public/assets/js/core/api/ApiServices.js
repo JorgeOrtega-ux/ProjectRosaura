@@ -32,7 +32,7 @@ export class ApiService {
             ];
 
             if (securityKeys.includes(result.message_key) && translated === result.message_key.split('.').pop()) {
-                result.message = window.__ ? window.__('err_security_violation') : 'err_security_violation';
+                result.message = window.__('err_security_violation');
             }
         }
         return result;
@@ -46,11 +46,11 @@ export class ApiService {
 
         if (response.status === 401) {
             window.location.href = (window.AppBasePath || '') + '/login?reason=session_revoked';
-            return { success: false, message: (typeof window.__ === 'function' ? window.__('session_revoked') : 'session_revoked') };
+            return { success: false, message: window.__('session_revoked') };
         }
 
         if (response.status === 500) {
-            return { success: false, message: (typeof window.__ === 'function' ? window.__('server_error_database_offline') : 'Error de base de datos') };
+            return { success: false, message: window.__('server_error_database_offline') };
         }
         
         return null;
@@ -104,7 +104,7 @@ export class ApiService {
             if (error.name === 'AbortError') {
                 return { success: false, aborted: true }; 
             }
-            return { success: false, message: (typeof window.__ === 'function' ? window.__('api_connection_error') : 'api_connection_error') };
+            return { success: false, message: window.__('api_connection_error') };
         }
     }
 
@@ -152,7 +152,7 @@ export class ApiService {
             if (error.name === 'AbortError') {
                 return { success: false, aborted: true }; 
             }
-            return { success: false, message: (typeof window.__ === 'function' ? window.__('api_connection_error') : 'api_connection_error') };
+            return { success: false, message: window.__('api_connection_error') };
         }
     }
 
@@ -205,7 +205,7 @@ export class ApiService {
             if (error.name === 'AbortError') {
                 return { success: false, aborted: true }; 
             }
-            return { success: false, message: (typeof window.__ === 'function' ? window.__('api_connection_error') : 'api_connection_error') };
+            return { success: false, message: window.__('api_connection_error') };
         }
     }
 
@@ -251,7 +251,7 @@ export class ApiService {
             if (error.name === 'AbortError') {
                 return { success: false, aborted: true }; 
             }
-            return { success: false, message: (typeof window.__ === 'function' ? window.__('api_connection_error') : 'api_connection_error') };
+            return { success: false, message: window.__('api_connection_error') };
         }
     }
 

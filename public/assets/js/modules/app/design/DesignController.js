@@ -1,4 +1,3 @@
-// public/assets/js/modules/app/design/DesignController.js
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
 import { DesignSetup } from './DesignSetup.js';
@@ -36,7 +35,7 @@ class DesignController {
         this.selectedPixels = new Set();
         this.isSelecting = false;
         this.selectionMode = 'add';
-        this.interactionMode = 'normal'; // normal, protecting, erasing
+        this.interactionMode = 'normal'; 
         this.btnPlacePixels = null;
         this.txtPlacePixels = null;
         
@@ -85,8 +84,7 @@ class DesignController {
         this.liveShareStatus = 'none';
         this.liveShareCode = null;
         this.liveTemplateId = null;
-        
-        // Punteros a los componentes div (inline-controls)
+
         this.uiLiveInputX = null;
         this.uiLiveInputY = null;
         this.uiLiveInputOpacity = null;
@@ -181,8 +179,7 @@ class DesignController {
             }
             
             this.startCooldownLoop();
-            
-            // Inicializar chat si está disponible
+
             this.chat = new DesignChat(this);
         }
     }
@@ -199,13 +196,12 @@ class DesignController {
                 liveShareMenuBtn.removeAttribute('data-action');
                 liveShareMenuBtn.removeAttribute('data-module-target');
                 liveShareMenuBtn.removeAttribute('data-menu-target');
-                
-                // Asegurarse de que el click sobreescriba cualquier otro handler
+
                 liveShareMenuBtn.addEventListener('click', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
                     window.location.href = (window.AppBasePath || '') + '/premium';
-                }, true); // useCapture para interceptar antes
+                }, true); 
             }
         }
     }
@@ -215,7 +211,7 @@ class DesignController {
         
         const tick = () => {
             if (!this.isSpectator && !this.isSnapshotMode && !this.isResizeLocked) {
-                // Actualizar balance y tiempo restante
+                
                 let remaining = 0;
                 if (!this.perkNoCooldown) {
                     if (this.cooldownSec > 0 && this.cooldownBalance < this.cooldownMax) {
@@ -256,7 +252,6 @@ class DesignController {
                     }
                 }
 
-                // Generar el HTML completo del badge central
                 if (this.uiCooldownBadge) {
                     let newHtml = '';
                     if (this.perkNoCooldown) {

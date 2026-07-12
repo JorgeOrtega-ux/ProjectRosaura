@@ -1,4 +1,3 @@
-// public/assets/js/modules/app/design/DesignNetwork.js
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
 import { WebSocketManager } from '../../../core/api/WebSocketManager.js';
@@ -21,12 +20,12 @@ export const DesignNetwork = {
             }
 
             if (typeof turnstile === 'undefined') {
-                console.warn("[Turnstile] Script not loaded");
+                
                 return resolve(null);
             }
 
             try {
-                // Si el widget ya tiene un iframe, es que se inicializó antes. Limpiamos.
+                
                 if (wrapper.hasChildNodes()) {
                     wrapper.innerHTML = '';
                 }
@@ -42,7 +41,7 @@ export const DesignNetwork = {
                     }
                 });
             } catch (e) {
-                console.error("[Turnstile] Render error:", e);
+                
                 resolve(null);
             }
         });
@@ -131,18 +130,16 @@ export const DesignNetwork = {
                     this.protectedPixels.delete(data.offset);
                 }
                 else if (data.type === 'pixel_protected_error') {
-                    // Prevenir spam de toast si se procesan multiples errores en corto tiempo
+                    
                     if (!this.lastProtectedToastTime || (Date.now() - this.lastProtectedToastTime > 2000)) {
                         showMessage(data.message || 'Este píxel está protegido', 'warning');
                         this.lastProtectedToastTime = Date.now();
                     }
-                    
-                    // Restaurar balance y estado de cooldown devuelto por el servidor
+
                     if (data.balance !== undefined) {
                         this.handleCooldownSync(data);
                     }
 
-                    
                     if (data.x !== undefined && data.y !== undefined && data.color !== undefined) {
                         const pX = parseInt(data.x, 10);
                         const pY = parseInt(data.y, 10);
@@ -562,8 +559,7 @@ export const DesignNetwork = {
             this.cooldownNextIn = data.next_replenish_in;
             this.lastSyncTime = Date.now();
         }
-        
-        // Soporte para ventajas (perks)
+
         if (data.perk_no_cooldown !== undefined) this.perkNoCooldown = data.perk_no_cooldown;
         if (data.perk_protection_left !== undefined) this.perkProtectionLeft = data.perk_protection_left;
         if (data.perk_eraser_left !== undefined) this.perkEraserLeft = data.perk_eraser_left;
@@ -744,7 +740,7 @@ export const DesignNetwork = {
         if (window.dialogSystem) {
             const res = await window.dialogSystem.show('joinCanvasTerms');
             if (!res.confirmed || !res.data.modal_join_terms) {
-                if (res.confirmed) showMessage('Debes aceptar los términos para continuar.', 'warning');
+                if (res.confirmed) showMessage(window.__('err_accept_terms'), 'warning');
                 return;
             }
         }

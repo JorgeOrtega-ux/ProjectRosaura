@@ -8,16 +8,14 @@ export class DesignChat {
         this.api = new ApiService();
         this.canvasId = controller.canvasIntId || controller.canvasId;
         this.canvasUuid = controller.canvasId;
-        
-        // Elementos UI
+
         this.chatContainer = document.querySelector('[data-ref="chat-messages-container"]');
         this.chatInput = document.querySelector('[data-ref="chat-input-message"]');
         this.btnSend = document.querySelector('[data-ref="chat-btn-send"]');
         this.loader = document.querySelector('[data-ref="chat-loader"]');
         this.fileInput = document.getElementById('chat-file-input');
         this.previewContainer = document.querySelector('[data-ref="chat-attachments-preview"]');
-        
-        // Estado
+
         this.offset = 0;
         this.isLoading = false;
         this.hasMore = true;
@@ -35,11 +33,10 @@ export class DesignChat {
         this.myTypingTimeout = null;
         this.badWords = [];
         this.loadBadWords();
-        
-        // Contenedor para typing indicator
+
         this.typingContainer = document.createElement('div');
         this.typingContainer.className = 'chat-typing-indicator';
-        this.typingContainer.style.display = 'none';
+        this.typingContainer.classList.remove('active'); this.typingContainer.classList.add('disabled');
         this.typingContainer.style.fontSize = '12px';
         this.typingContainer.style.color = 'var(--text-secondary)';
         this.typingContainer.style.padding = '4px 16px';
@@ -63,7 +60,7 @@ export class DesignChat {
                 this.badWords = await response.json();
             }
         } catch (e) {
-            console.error("Error loading bad words", e);
+            
         }
     }
 
@@ -79,12 +76,11 @@ export class DesignChat {
 
     init() {
         this.setupEventListeners();
-        
-        // El chat está oculto por defecto. Cuando se abre, ResizeObserver lo detecta y hacemos el scroll al fondo.
+
         this.resizeObserver = new ResizeObserver(() => {
             if (this.isFirstRenderScrollPending && this.chatContainer.clientHeight > 0) {
                 this.scrollToBottom();
-                this.isFirstRenderScrollPending = false; // Solo la primera vez
+                this.isFirstRenderScrollPending = false; 
             }
         });
         this.resizeObserver.observe(this.chatContainer);
@@ -123,8 +119,7 @@ export class DesignChat {
                         this.btnSend.classList.remove('active');
                     }
                 }
-                
-                // Emitir typing cada 2 segundos o si cambia de estado
+
                 const now = Date.now();
                 const isTyping = this.chatInput.value.trim().length > 0;
                 
@@ -140,7 +135,6 @@ export class DesignChat {
                     this.lastIsTyping = isTyping;
                 }
 
-                // Autoclear typing state after 2 seconds of inactivity
                 if (this.myTypingTimeout) clearTimeout(this.myTypingTimeout);
                 if (isTyping) {
                     this.myTypingTimeout = setTimeout(() => {
@@ -157,7 +151,6 @@ export class DesignChat {
             });
         }
 
-        // Delegación de eventos para menús de reporte y eliminar
         this.chatContainer.addEventListener('click', (e) => {
             const btnDelete = e.target.closest('[data-action="chatDeleteMessage"]');
             if (btnDelete) {
@@ -184,7 +177,6 @@ export class DesignChat {
             }
         });
 
-        // Trigger file input from attach menu
         document.addEventListener('click', (e) => {
             const btnAttach = e.target.closest('[data-action="triggerChatAttach"]');
             if (btnAttach && this.fileInput) {
@@ -212,11 +204,10 @@ export class DesignChat {
                 }
             });
         }
-        
-        // Escuchar eventos WebSocket si el módulo Network recibe algo no manejado o interceptar via un custom event
+
         document.addEventListener('canvas:chat_message', (e) => {
             const data = e.detail;
-            this.appendMessage(data, true); // true = scroll to bottom
+            this.appendMessage(data, true); 
         });
 
         document.addEventListener('canvas:chat_typing', (e) => {
@@ -227,7 +218,6 @@ export class DesignChat {
             this.removeMessageElement(e.detail.id);
         });
 
-        // Evento global para los menús de chat
         document.addEventListener('click', (e) => {
             const toggleBtn = e.target.closest('[data-action="toggleChatDropdown"]');
             if (toggleBtn) {
@@ -236,7 +226,7 @@ export class DesignChat {
                 const dropdown = document.querySelector(`[data-module="${targetId}"]`);
                 
                 if (dropdown) {
-                    // Cierra otros primero
+                    
                     document.querySelectorAll('.chat-dropdown-module').forEach(el => {
                         if (el !== dropdown) {
                             el.classList.add('disabled');
@@ -247,8 +237,7 @@ export class DesignChat {
                     if (dropdown.classList.contains('disabled')) {
                         dropdown.classList.remove('disabled');
                         dropdown.classList.add('active');
-                        
-                        // Asegurar que el menú interno esté activo
+
                         const innerMenu = dropdown.querySelector('.component-menu');
                         if (innerMenu) {
                             innerMenu.classList.remove('disabled');
@@ -262,7 +251,6 @@ export class DesignChat {
             }
         });
 
-        // Global listener for opening image viewer
         document.addEventListener('click', (e) => {
             const attachmentItem = e.target.closest('[data-action="openChatImageViewer"]');
             if (attachmentItem) {
@@ -286,19 +274,18 @@ export class DesignChat {
                         } else {
                             window.location.href = (window.AppBasePath || '') + `/canvases/chat-viewer?canvas=${canvasUuid}&msg=${msgId}&idx=${index}`;
                         }
-                    } catch(err) { console.error("Error al abrir visor de imágenes:", err); }
+                    } catch(err) {  }
                 }
             }
         });
     }
-
 
     handleFileSelection(e) {
         const files = Array.from(e.target.files);
         if (!files.length) return;
 
         const maxFiles = 8;
-        const maxSize = 25 * 1024 * 1024; // 25MB total
+        const maxSize = 25 * 1024 * 1024; 
 
         let totalSize = this.selectedFiles.reduce((acc, file) => acc + file.size, 0);
 
@@ -323,7 +310,7 @@ export class DesignChat {
         if (this.btnSend && (this.chatInput.value.trim().length > 0 || this.selectedFiles.length > 0)) {
             this.btnSend.classList.add('active');
         }
-        // Limpiar input para permitir seleccionar el mismo archivo de nuevo si se eliminó
+        
         this.fileInput.value = '';
     }
 
@@ -331,12 +318,12 @@ export class DesignChat {
         if (!this.previewContainer) return;
         
         if (this.selectedFiles.length === 0) {
-            this.previewContainer.style.display = 'none';
+            this.previewContainer.classList.remove('active'); this.previewContainer.classList.add('disabled');
             this.previewContainer.innerHTML = '';
             return;
         }
 
-        this.previewContainer.style.display = 'flex';
+        this.previewContainer.classList.remove('disabled'); this.previewContainer.classList.add('active');
         this.previewContainer.innerHTML = '';
 
         this.selectedFiles.forEach((file, index) => {
@@ -372,9 +359,9 @@ export class DesignChat {
 
         let loaderStartTime = 0;
         if (this.offset === 0 && this.loader) {
-            this.loader.style.display = 'flex';
+            this.loader.classList.remove('disabled'); this.loader.classList.add('active');
         } else if (this.offset > 0) {
-            // Create a small inline loader at the top
+            
             this.topLoader = document.createElement('div');
             this.topLoader.className = 'chat-top-loader';
             this.topLoader.style.textAlign = 'center';
@@ -392,7 +379,7 @@ export class DesignChat {
             });
             
             if (this.offset === 0 && this.loader) {
-                this.loader.style.display = 'none';
+                this.loader.classList.remove('active'); this.loader.classList.add('disabled');
                 this.chatContainer.querySelectorAll('.chat-message').forEach(el => el.remove());
             } else if (this.topLoader) {
                 const elapsed = Date.now() - loaderStartTime;
@@ -408,18 +395,16 @@ export class DesignChat {
                 
                 const emptyState = this.chatContainer.querySelector('[data-ref="empty-state-rendered"]');
                 if (this.offset === 0 && msgs.length === 0) {
-                    if (emptyState) emptyState.style.display = 'flex';
+                    if (emptyState) emptyState.classList.remove('disabled'); emptyState.classList.add('active');
                 } else {
-                    if (emptyState) emptyState.style.display = 'none';
+                    if (emptyState) emptyState.classList.remove('active'); emptyState.classList.add('disabled');
                 }
 
                 this.hasMore = response.data.has_more;
                 this.offset += msgs.length;
 
-                // Guardar la altura antes de agregar
                 const previousHeight = this.chatContainer.scrollHeight;
 
-                // Insertar al inicio porque cargamos historia hacia atrás
                 const isFirstLoad = this.offset === msgs.length;
                 
                 msgs.forEach(msg => {
@@ -431,11 +416,11 @@ export class DesignChat {
                         this.scrollToBottom();
                         this.isFirstRenderScrollPending = false;
                     } else {
-                        // Está oculto, se encargará el ResizeObserver
+                        
                         this.isFirstRenderScrollPending = true;
                     }
                 } else {
-                    // Mantener el scroll
+                    
                     const newHeight = this.chatContainer.scrollHeight;
                     this.chatContainer.scrollTop = newHeight - previousHeight;
                 }
@@ -443,7 +428,7 @@ export class DesignChat {
                 showMessage(response.message, 'error');
             }
         } catch (error) {
-            console.error("Error al cargar historial de chat:", error);
+            
             if (this.offset === 0 && this.loader) {
                 this.loader.innerHTML = 'Error al cargar mensajes.';
             }
@@ -491,7 +476,7 @@ export class DesignChat {
                 this.renderPreview();
             }
         } catch (error) {
-            console.error("Error enviando mensaje:", error);
+            
             showMessage('Error al enviar el mensaje', 'error');
             this.chatInput.value = backupText;
             this.selectedFiles = backupFiles;
@@ -503,8 +488,7 @@ export class DesignChat {
                 this.btnSend.classList.add('active');
             }
             this.chatInput.focus();
-            
-            // Apagar typing
+
             if (this.myTypingTimeout) clearTimeout(this.myTypingTimeout);
             if (this.controller.wsManager) {
                 this.controller.wsManager.send({
@@ -525,7 +509,6 @@ export class DesignChat {
             if (!confirm('¿Seguro que deseas eliminar este mensaje?')) return;
         }
 
-        
         try {
             const response = await this.api.post(ApiRoutes.Chat.Delete, {
                 canvas_id: this.canvasId,
@@ -539,7 +522,7 @@ export class DesignChat {
                 showMessage(response.message, 'error');
             }
         } catch (error) {
-            console.error("Error deleting message:", error);
+            
             showMessage('Error al eliminar mensaje', 'error');
         }
     }
@@ -551,14 +534,14 @@ export class DesignChat {
             if (!res.confirmed || !res.data.confirm_input) return;
             reason = res.data.confirm_input;
         } else {
-            reason = prompt('Selecciona una opción de reporte:\\n1. Spam o publicidad\\n2. Lenguaje ofensivo\\n3. Acoso o incitación al odio\\n4. Otro');
+            reason = prompt(window.__('report_options_msg'));
             if (!reason) return;
         }
         
         let reasonText = reason;
         if (reason === '1') reasonText = 'Spam o publicidad';
         if (reason === '2') reasonText = 'Lenguaje ofensivo';
-        if (reason === '3') reasonText = 'Acoso o incitación al odio';
+        if (reason === '3') reasonText = window.__('report_harassment');
         if (reason === '4') reasonText = 'Otro';
 
         try {
@@ -574,7 +557,7 @@ export class DesignChat {
                 showMessage(response.message, 'error');
             }
         } catch (error) {
-            console.error("Error reporting message:", error);
+            
             showMessage('Error al reportar mensaje', 'error');
         }
     }
@@ -602,7 +585,7 @@ export class DesignChat {
     }
 
     updateTypingUI() {
-        // Limpiar expirados (3 segundos sin recibir updates)
+        
         const now = Date.now();
         for (const [uid, info] of this.typingUsers.entries()) {
             if (now - info.timestamp > 3500) {
@@ -612,15 +595,15 @@ export class DesignChat {
 
         const count = this.typingUsers.size;
         if (count === 0) {
-            this.typingContainer.style.display = 'none';
+            this.typingContainer.classList.remove('active'); this.typingContainer.classList.add('disabled');
             this.typingContainer.innerHTML = '';
         } else if (count === 1) {
             const username = Array.from(this.typingUsers.values())[0].username;
             this.typingContainer.innerHTML = `<strong>${username}</strong> está escribiendo...`;
-            this.typingContainer.style.display = 'block';
+            this.typingContainer.classList.remove('disabled'); this.typingContainer.classList.add('active');
         } else {
             this.typingContainer.innerHTML = `${count} usuarios están escribiendo...`;
-            this.typingContainer.style.display = 'block';
+            this.typingContainer.classList.remove('disabled'); this.typingContainer.classList.add('active');
         }
     }
 
@@ -699,8 +682,7 @@ export class DesignChat {
             else if (count === 4) gridClass = 'chat-attachment-grid-4';
 
             attachmentsHtml = `<div class="chat-message-attachments ${gridClass}">`;
-            
-            // Show up to 4 preview items
+
             const displayCount = Math.min(count, 4);
             const fullUrls = msg.attachments.map(a => {
                 if (a.startsWith('/api/index.php?route=chat.attachment')) {

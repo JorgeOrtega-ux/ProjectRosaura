@@ -1,5 +1,3 @@
-// public/assets/js/modules/canvases/CanvasesController.js
-
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
@@ -106,7 +104,7 @@ class CanvasesCreateController {
         const palettes = getAllPalettes();
         container.innerHTML = '';
 
-        let activePaletteName = window.__ ? window.__('lbl_loading') : '...';
+        let activePaletteName = window.__('lbl_loading');
         
         const canUseCustomPalettes = window.APP_LIMITS && window.APP_LIMITS.custom_palettes === true;
 
@@ -127,7 +125,7 @@ class CanvasesCreateController {
             
             if (isLocked) {
                 btn.style.opacity = '0.6';
-                btn.title = window.__ ? window.__('tooltip_upgrade_palette') : 'Upgrade needed';
+                btn.title = window.__('tooltip_upgrade_palette');
             }
 
             let colorsHtml = `<div style="display:flex; align-items:center;">`;
@@ -252,13 +250,13 @@ class CanvasesCreateController {
                 link.classList.remove('disabled-interactive');
                 link.setAttribute('data-action', 'selectValue');
                 link.removeAttribute('title');
-                link.style.opacity = '1';
+                link.classList.remove('disabled-interactive');
                 const lockIcon = link.querySelector('[data-ref="lock-icon"]');
-                if (lockIcon) lockIcon.style.display = 'none';
+                if (lockIcon) lockIcon.classList.remove('active'); lockIcon.classList.add('disabled');
             } else {
                 link.classList.add('disabled-interactive');
                 link.setAttribute('data-action', '');
-                link.setAttribute('title', window.__('tooltip_upgrade_required') || 'Mejora requerida');
+                link.setAttribute('title', window.__('tooltip_upgrade_required'));
                 link.style.opacity = '0.6';
                 
                 let lockIcon = link.querySelector('[data-ref="lock-icon"]');
@@ -555,8 +553,6 @@ class CanvasesCreateController {
         }
     }
 
-
-
     async submitCanvas(btn) {
         const inputName = document.querySelector('[data-ref="input-canvasname"]');
         if (inputName) {
@@ -614,7 +610,7 @@ class CanvasesCreateController {
         restoreButton(btn);
 
         if (res.success) {
-            showMessage(window.__ ? window.__('msg_canvas_created') : 'Created', 'success');
+            showMessage(window.__('msg_canvas_created'), 'success');
             if (window.spaRouter) {
                 window.spaRouter.navigate(`${this.basePath}/design/${res.data.uuid}`);
             }

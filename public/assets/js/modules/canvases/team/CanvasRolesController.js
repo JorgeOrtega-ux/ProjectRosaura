@@ -1,5 +1,3 @@
-// public/assets/js/modules/canvases/team/CanvasRolesController.js
-
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
 
@@ -106,17 +104,14 @@ class CanvasRolesController {
                 if (btnDelete) btnDelete.classList.remove('disabled-interactive');
             } else {
                 if (btnEdit) btnEdit.classList.add('disabled-interactive');
-                // Even if it's a system role, can we edit permissions?
-                // Typically system roles have locked permissions or we don't let people change them.
-                // Or maybe only owner can? Let's disable for system roles to match the edit button behavior.
+
                 if (btnPerms) {
                     if (canEdit) btnPerms.classList.remove('disabled-interactive');
                     else btnPerms.classList.add('disabled-interactive');
                 }
                 if (btnDelete) btnDelete.classList.add('disabled-interactive');
             }
-            
-            // You can never delete system roles, even if owner
+
             if (isSystem && btnDelete) btnDelete.classList.add('disabled-interactive');
 
         } else {

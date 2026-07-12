@@ -1,5 +1,3 @@
-// public/assets/js/modules/canvases/CanvasRequestsController.js
-
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
 
@@ -92,7 +90,7 @@ class CanvasRequestsController {
         if (!tbody) return;
 
         if (requests.length === 0) {
-            this.showEmptyState(__('canvases_requests_empty') || 'No hay solicitudes pendientes en este momento.', 'inbox');
+            this.showEmptyState(__('canvases_requests_empty'), 'inbox');
             return;
         }
 

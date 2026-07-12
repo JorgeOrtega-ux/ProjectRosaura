@@ -220,7 +220,7 @@ class AuthController {
             try {
                 turnstile.reset(this.turnstileWidgetId);
             } catch (error) {
-                // Se ignora silenciosamente si el widget no está listo en el DOM
+                
             }
         }
     }
@@ -240,7 +240,7 @@ class AuthController {
                         size: 'invisible'
                     });
                 } catch (error) {
-                    // Evitar crash si el script de Cloudflare carga de forma asíncrona inestable
+                    
                 }
             }
         });
@@ -253,7 +253,7 @@ class AuthController {
             const existingToken = turnstile.getResponse(this.turnstileWidgetId);
             if (existingToken) return existingToken;
         } catch (error) {
-            // El ID existe pero el iframe aún no, se atrapa el error para no romper la promesa
+            
         }
 
         return new Promise((resolve) => {
@@ -276,7 +276,7 @@ class AuthController {
                         }
                     });
                 } catch (error) {
-                    // Si falla el execute porque el usuario hizo click demasiado rápido
+                    
                     clearTimeout(timeoutId);
                     resolve(null);
                 }
@@ -298,7 +298,7 @@ class AuthController {
         if (result.success) {
             window.location.href = this.basePath + '/';
         } else {
-            showMessage(result.message || 'Error al cambiar de cuenta', 'error');
+            showMessage(result.message || window.__('err_switch_account'), 'error');
         }
     }
 
@@ -366,7 +366,7 @@ class AuthController {
                 if (window.spaRouter) window.spaRouter.navigate(this.basePath + '/account-deleted');
                 else window.location.href = this.basePath + '/account-deleted';
             } else {
-                this.showError(result.message || 'Error al iniciar sesión. Comprueba el límite de cuentas.');
+                this.showError(result.message || window.__('err_login_limit'));
             }
         }
     }
@@ -410,7 +410,7 @@ class AuthController {
 
         const tempToken = sessionStorage.getItem('temp_auth_token');
         if (!tempToken) {
-            this.showError(__('err_session_expired') || 'Sesión expirada.');
+            this.showError(__('err_session_expired'));
             return;
         }
 
@@ -497,7 +497,7 @@ class AuthController {
         const regToken = sessionStorage.getItem('reg_token');
 
         if (!regToken) {
-            this.showError(__('err_session_expired') || 'Sesión expirada.');
+            this.showError(__('err_session_expired'));
             return;
         }
 
@@ -528,7 +528,7 @@ class AuthController {
 
         const regToken = sessionStorage.getItem('reg_token');
         if (!regToken) {
-            this.showError(__('err_session_expired') || 'Sesión expirada.');
+            this.showError(__('err_session_expired'));
             return;
         }
 
@@ -558,7 +558,7 @@ class AuthController {
 
         const regToken = sessionStorage.getItem('reg_token');
         if (!regToken) {
-            this.showError(__('err_session_expired') || 'Sesión expirada.');
+            this.showError(__('err_session_expired'));
             return;
         }
 

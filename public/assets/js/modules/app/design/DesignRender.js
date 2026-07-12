@@ -1,4 +1,3 @@
-// public/assets/js/modules/app/DesignRender.js
 import { getPaletteById } from './utils/DesignPaletteUtils.js';
 
 export const DesignRender = {
@@ -11,17 +10,17 @@ export const DesignRender = {
         container.innerHTML = '';
 
         if (!palette || !palette.colors || palette.colors.length === 0) {
-            container.style.display = 'none';
+            container.classList.remove('active'); container.classList.add('disabled');
             if (emptyState) {
-                emptyState.style.display = 'flex';
+                emptyState.classList.remove('disabled'); emptyState.classList.add('active');
                 const emptyText = emptyState.querySelector('.component-empty-state-text');
                 if (emptyText) emptyText.innerText = 'No hay colores disponibles.';
             }
             return;
         }
 
-        container.style.display = 'grid';
-        if (emptyState) emptyState.style.display = 'none';
+        container.classList.remove('disabled'); container.classList.add('active');
+        if (emptyState) emptyState.classList.remove('active'); emptyState.classList.add('disabled');
 
         this.currentColor = palette.colors[0].hex;
         if (this.btnColorPalette) {
@@ -35,8 +34,7 @@ export const DesignRender = {
             btn.className = `component-color-btn ${index === 0 ? 'active' : ''}`;
             btn.setAttribute('data-action', 'selectColor');
             btn.setAttribute('data-color', hex);
-            
-            // Asignación de tooltip utilizando tu sistema de internacionalización
+
             const colorName = typeof __ === 'function' ? __(colorObj.name_key) : colorObj.name_key;
             btn.setAttribute('data-tooltip', `${colorName} - ${hex.toUpperCase()}`);
             

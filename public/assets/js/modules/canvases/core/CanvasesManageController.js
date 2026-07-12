@@ -1,5 +1,3 @@
-// public/assets/js/modules/canvases/core/CanvasesManageController.js
-
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
@@ -135,7 +133,7 @@ class CanvasesManageController {
             if (result.error_code === 'UPGRADE_REQUIRED' || result.http_code === 403) {
                 const banner = document.querySelector('[data-ref="limit-reached-banner"]');
                 if (banner) {
-                    banner.style.display = 'flex';
+                    banner.classList.remove('disabled'); banner.classList.add('active');
                     banner.classList.remove('disabled');
                 }
                 btn.classList.add('disabled-interactive');
@@ -176,9 +174,9 @@ class CanvasesManageController {
         const currentPaginations = document.querySelectorAll('[data-ref="pagination-container"], [class*="pagin"]');
 
         if (tableContainer) {
-            tableContainer.style.transition = 'opacity 0.2s ease';
-            tableContainer.style.opacity = '0.5';
-            tableContainer.style.pointerEvents = 'none';
+            
+            tableContainer.classList.add('disabled-interactive');
+            
         }
 
         try {
@@ -218,8 +216,8 @@ class CanvasesManageController {
             else window.location.href = url;
         } finally {
             if (tableContainer) {
-                tableContainer.style.opacity = '1';
-                tableContainer.style.pointerEvents = 'auto';
+                tableContainer.classList.remove('disabled-interactive');
+                
             }
         }
     }
@@ -318,7 +316,6 @@ class CanvasesManageController {
                     if (btn) btn.classList.remove('disabled-interactive');
                 });
 
-                // Asignar los atributos data-nav de manera dinámica utilizando el UUID
                 if (btnEdit) btnEdit.setAttribute('data-nav', `${this.basePath}/canvases/edit/${this.selectedCanvasUuid}`);
                 if (btnMembers) btnMembers.setAttribute('data-nav', `${this.basePath}/canvases/members/${this.selectedCanvasUuid}`);
                 if (btnRoles) btnRoles.setAttribute('data-nav', `${this.basePath}/canvases/manage/roles/${this.selectedCanvasUuid}`);

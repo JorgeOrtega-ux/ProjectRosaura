@@ -67,7 +67,7 @@ export class CanvasCardInteractions {
             } else {
                 btn.classList.remove('is-favorite');
             }
-            showMessage(res.message || (window.__ ? window.__('err_default') : 'Error'), 'error');
+            showMessage(res.message || (window.__('err_default')), 'error');
         }
     }
 
@@ -167,7 +167,7 @@ export class CanvasCardInteractions {
             try {
                 
                 const confirmRes = await window.dialogSystem.show('confirmActionModal', {
-                    title: 'Convertir a Básico',
+                    title: window.__('downgrade_basic_title'),
                     message: 'Esta acción es IRREVERSIBLE. Se recortará tu lienzo a 64x64 desde la esquina superior izquierda, se perderán los miembros excedentes, y la paleta se restablecerá a la original. Escribe CONFIRMAR para proceder.',
                     inputPlaceholder: 'CONFIRMAR',
                     expectedInput: 'CONFIRMAR'

@@ -1,4 +1,3 @@
-// public/assets/js/modules/settings/TwoFactorController.js
 import { ApiRoutes } from '../../core/api/ApiRoutes.js';
 import { ApiService } from '../../core/api/ApiServices.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../core/utils/uiUtils.js';
@@ -96,7 +95,7 @@ class TwoFactorController {
                         if (!window.QRCodeStyling) {
                             await new Promise((resolve, reject) => {
                                 const script = document.createElement('script');
-                                script.src = 'https://unpkg.com/qr-code-styling@1.5.0/lib/qr-code-styling.js';
+                                script.src = 'https:
                                 script.onload = resolve;
                                 script.onerror = reject;
                                 document.head.appendChild(script);
@@ -108,7 +107,6 @@ class TwoFactorController {
                         const isDarkTheme = document.documentElement.classList.contains('dark-theme') || document.body.classList.contains('dark-theme');
                         const qrFgColor = isDarkTheme ? "#ffffff" : "#111111"; 
 
-                        // Volvemos a formato SVG puro y opciones "rounded"
                         const qrCode = new window.QRCodeStyling({
                             width: 150, 
                             height: 150, 
@@ -126,10 +124,7 @@ class TwoFactorController {
                         const qrElement = qrContainer.querySelector('svg');
                         if (qrElement) {
                             qrElement.classList.add('component-qr');
-                            
-                            // FIX MAGISTRAL: Eliminamos los "cortes" de sub-píxeles en el SVG
-                            // Le agregamos un contorno microscópico (0.3px) del mismo color 
-                            // a todos los vectores para que sellen cualquier fisura provocada por el anti-aliasing del navegador.
+
                             qrElement.querySelectorAll('path').forEach(p => {
                                 p.setAttribute('stroke', qrFgColor);
                                 p.setAttribute('stroke-width', '0.3');
@@ -156,12 +151,10 @@ class TwoFactorController {
         const isConfirmed = await window.dialogSystem.show('activate2FADialog');
         if (!isConfirmed.confirmed) return;
 
-        // CORRECCIÓN: Evitamos la condición de carrera extrayendo del DOM
-        // y consumimos la llave modal_2fa_code directamente del payload encapsulado de la promesa.
         const code = isConfirmed.data['modal_2fa_code'] ? isConfirmed.data['modal_2fa_code'].trim() : '';
 
         if (code.length !== 6) {
-            showMessage(__('err_code_6_digits') || 'El código debe tener 6 dígitos', 'error');
+            showMessage(__('err_code_6_digits'), 'error');
             return;
         }
 

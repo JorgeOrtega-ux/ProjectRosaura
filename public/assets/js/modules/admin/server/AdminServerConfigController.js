@@ -162,7 +162,7 @@ class AdminServerConfigController {
         let domain = inputEl.value.trim().toLowerCase();
         const domainRegex = /^[a-z0-9.-]+\.[a-z]{2,}$/i;
         if (!domainRegex.test(domain)) {
-            showMessage((window.__ ? window.__('err_invalid_domain') : 'err_invalid_domain'), 'error');
+            showMessage((window.__('err_invalid_domain')), 'error');
             return;
         }
         const listContainer = document.querySelector('[data-ref="list_allowed_domains"]');

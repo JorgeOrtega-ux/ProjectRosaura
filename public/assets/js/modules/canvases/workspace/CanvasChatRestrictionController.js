@@ -1,4 +1,3 @@
-// public/assets/js/modules/canvases/workspace/CanvasChatRestrictionController.js
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
@@ -106,7 +105,7 @@ class CanvasChatRestrictionController {
                 this.renderUI();
                 this.checkForChanges();
             } catch (error) {
-                console.error("[System Log] Initial state parsing failed", error);
+                
             }
         }
     }

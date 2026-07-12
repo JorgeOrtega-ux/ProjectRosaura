@@ -1,20 +1,15 @@
-// public/assets/js/modules/app/design/templates/DesignTemplates.js
 import { ApiRoutes } from '../../../../core/api/ApiRoutes.js';
 import { showMessage } from '../../../../core/utils/uiUtils.js';
 
 export const DesignTemplates = {
-    
-    // ==========================================
-    // CONTROL DE MODALES VÍA DIALOGSYSTEM Y MENÚS
-    // ==========================================
+
     handleTemplateModals(e) {
-        
-        // 1. Abrir Modal de Unirse
+
         const btnOpenJoinLive = e.target.closest('[data-action="openJoinLiveModal"]');
         if (btnOpenJoinLive) {
             e.preventDefault();
             if (this.liveShareStatus === 'owner') {
-                showMessage(__('err_cannot_join_while_streaming') || 'No puedes unirte a una transmisión mientras transmites', 'warning');
+                showMessage(__('err_cannot_join_while_streaming'), 'warning');
                 return true;
             }
             if (window.dialogSystem) {
@@ -23,7 +18,6 @@ export const DesignTemplates = {
             return true;
         }
 
-        // 2. Interceptar el toggle del nuevo menú y setear valores
         const btnToggleLiveMenu = e.target.closest('[data-menu-target="menu-live"]');
         if (btnToggleLiveMenu) {
             if (btnToggleLiveMenu.getAttribute('data-requires-premium') === 'true') {
@@ -52,10 +46,9 @@ export const DesignTemplates = {
                     this.uiLiveInputOpacity.textContent = `${Math.round(tpl.opacity * 100)}%`;
                 }
             }
-            // Retornamos falso para permitir que ModuleMainOptions o quien maneje el menu lo despliegue visualmente
+            
         }
-        
-        // 3. Interceptar click en los botones del inline-control de Live Template
+
         const btnAdjustLive = e.target.closest('[data-action="adjustLiveTemplate"]');
         if (btnAdjustLive && this.activeTemplateId) {
             e.preventDefault();
@@ -97,12 +90,11 @@ export const DesignTemplates = {
             return true;
         }
 
-        // 4. Procesar clic en el Botón "Unirse" sin que el Modal se cierre automáticamente
         const btnSubmitJoinLive = e.target.closest('[data-action="submitJoinLive"]');
         if (btnSubmitJoinLive) {
             e.preventDefault();
             if (this.liveShareStatus === 'owner') {
-                showMessage(__('err_cannot_join_while_streaming') || 'No puedes unirte a una transmisión mientras transmites', 'error');
+                showMessage(__('err_cannot_join_while_streaming'), 'error');
                 return true;
             }
             const input = document.querySelector('[data-ref="live-join-code-modal"]');
@@ -143,12 +135,11 @@ export const DesignTemplates = {
                 attemptJoin();
                 
             } else {
-                showMessage(__('err_valid_code') || 'Código inválido', 'warning');
+                showMessage(__('err_valid_code'), 'warning');
             }
             return true;
         }
 
-        // 5. Iniciar Transmisión desde menú
         const btnStartLive = e.target.closest('[data-action="startLive"]');
         if (btnStartLive) {
             e.preventDefault();
@@ -193,7 +184,6 @@ export const DesignTemplates = {
             return true;
         }
 
-        // 6. Detener Transmisión desde menú
         const btnStopLive = e.target.closest('[data-action="stopLive"]');
         if (btnStopLive) {
             e.preventDefault();
@@ -228,9 +218,6 @@ export const DesignTemplates = {
         return false;
     },
 
-    // ==========================================
-    // LÓGICA DE PLANTILLAS Y LIBRERÍA
-    // ==========================================
     async loadUserLibrary() {
         if (this.isSpectator || this.isSnapshotMode) return;
         try {
@@ -254,9 +241,9 @@ export const DesignTemplates = {
         this.updateTemplateCount(templates.length);
 
         if (templates.length === 0) {
-            container.style.display = 'none';
+            container.classList.remove('active'); container.classList.add('disabled');
             if (emptyState) {
-                emptyState.style.display = 'flex';
+                emptyState.classList.remove('disabled'); emptyState.classList.add('active');
                 const emptyText = emptyState.querySelector('.component-empty-state-text');
                 if (emptyText) emptyText.innerText = 'No tienes plantillas guardadas.';
             }
@@ -264,8 +251,8 @@ export const DesignTemplates = {
             return;
         }
 
-        container.style.display = 'grid';
-        if (emptyState) emptyState.style.display = 'none';
+        container.classList.remove('disabled'); container.classList.add('active');
+        if (emptyState) emptyState.classList.remove('active'); emptyState.classList.add('disabled');
 
         templates.forEach(tpl => {
             const card = document.createElement('div');
@@ -273,7 +260,7 @@ export const DesignTemplates = {
             
             const img = document.createElement('img');
             img.src = tpl.file_path;
-            img.alt = __('alt_saved_template') || 'Plantilla';
+            img.alt = __('alt_saved_template');
             img.className = 'component-library-card__image';
             
             img.setAttribute('data-action', 'addTemplateToCanvas');
@@ -312,13 +299,13 @@ export const DesignTemplates = {
             if (response.aborted) return;
 
             if (response.success) {
-                showMessage(__('msg_template_uploaded') || 'Plantilla subida', 'success');
+                showMessage(__('msg_template_uploaded'), 'success');
                 await this.loadUserLibrary();
             } else {
                 showMessage(response.message, 'error');
             }
         } catch (error) {
-            showMessage(__('err_network_upload') || 'Error de red', 'error');
+            showMessage(__('err_network_upload'), 'error');
         } finally {
             this.fileInput.value = '';
             if (btnUpload) {
@@ -357,10 +344,10 @@ export const DesignTemplates = {
             });
 
             this.toggleTemplate(id); 
-            showMessage(__('msg_template_added') || 'Plantilla agregada', 'success');
+            showMessage(__('msg_template_added'), 'success');
         };
         img.onerror = () => {
-            showMessage(__('err_download_library_image') || 'Error al descargar imagen', 'error');
+            showMessage(__('err_download_library_image'), 'error');
         };
         img.src = url;
     },
@@ -404,7 +391,7 @@ export const DesignTemplates = {
                 if (btn) btn.classList.remove('disabled-interactive');
             }
         } catch (error) {
-            showMessage(__('err_connection') || 'Error de conexión', 'error');
+            showMessage(__('err_connection'), 'error');
             if (btn) btn.classList.remove('disabled-interactive');
         }
     },

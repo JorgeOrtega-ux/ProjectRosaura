@@ -1,5 +1,3 @@
-// public/assets/js/modules/settings/SubscriptionController.js
-
 import { CardTemplates } from '../../core/components/CardTemplates.js';
 import { ApiService } from '../../core/api/ApiServices.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../core/utils/uiUtils.js';
@@ -43,21 +41,21 @@ export class SubscriptionController {
             const response = await this.api.post('stripe.get_subscription_status', {}, this.abortController.signal);
             
             if (response.success && response.data) {
-                // Hay una suscripción activa
+                
                 this.subscriptionArea.innerHTML = CardTemplates.subscriptionCard(response.data);
-                this.subscriptionArea.style.display = 'block';
+                this.subscriptionArea.classList.remove('disabled'); this.subscriptionArea.classList.add('active');
             } else {
-                // No hay suscripción o no pudo cargar
-                const emptyMsg = window.__('empty_subscription') || 'No tienes una suscripción activa.';
+                
+                const emptyMsg = window.__('empty_subscription');
                 this.subscriptionArea.innerHTML = CardTemplates.emptyState(emptyMsg, 'stars');
-                this.subscriptionArea.style.display = 'block';
+                this.subscriptionArea.classList.remove('disabled'); this.subscriptionArea.classList.add('active');
             }
         } catch (error) {
             if (error.name !== 'AbortError') {
-                console.error('Error fetching subscription status:', error);
-                const emptyMsg = window.__('error_fetching_subscription') || 'Error al cargar tu suscripción.';
+                
+                const emptyMsg = window.__('error_fetching_subscription');
                 this.subscriptionArea.innerHTML = CardTemplates.emptyState(emptyMsg, 'error');
-                this.subscriptionArea.style.display = 'block';
+                this.subscriptionArea.classList.remove('disabled'); this.subscriptionArea.classList.add('active');
             }
         }
     }
@@ -76,8 +74,7 @@ export class SubscriptionController {
                 const msgKey = cancelAtPeriodEnd ? 'renewal_cancelled_success' : 'renewal_reactivated_success';
                 const msgDefault = cancelAtPeriodEnd ? 'Renovación automática cancelada' : 'Suscripción reactivada';
                 showMessage('success', window.__ ? window.__(msgKey) || msgDefault : msgDefault);
-                
-                // Recargar el estado para actualizar la UI
+
                 this.loadSubscriptionStatus();
             } else {
                 showMessage('error', response.message_key || 'Error toggling auto renewal');

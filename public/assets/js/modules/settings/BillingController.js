@@ -1,5 +1,3 @@
-// public/assets/js/modules/settings/BillingController.js
-
 import { CardTemplates } from '../../core/components/CardTemplates.js';
 import { ApiRoutes } from '../../core/api/ApiRoutes.js';
 import { ApiService } from '../../core/api/ApiServices.js';
@@ -10,8 +8,7 @@ export class BillingController {
         this.api = new ApiService();
         this.abortController = null;
         this.contentArea = null;
-        
-        // Regla 1: Binding obligatorio en el constructor inerte
+
         this.handleClickBound = this.handleClick.bind(this);
     }
 
@@ -20,13 +17,12 @@ export class BillingController {
         this.contentArea = document.querySelector('[data-ref="dynamic-content-area"]');
         
         this.bindEvents();
-        
-        // Simulación de carga inicial de datos
+
         this.loadPaymentMethods();
     }
 
     bindEvents() {
-        // Regla 3: Delegación pura global
+        
         document.addEventListener('click', this.handleClickBound);
     }
 
@@ -39,7 +35,6 @@ export class BillingController {
             this.handleAddNewCard(btn);
         }
     }
-
 
     async loadPaymentMethods() {
         if (!this.contentArea) return;
@@ -55,13 +50,13 @@ export class BillingController {
                 html += '</div>';
                 this.contentArea.innerHTML = html;
             } else {
-                const emptyMsg = window.__('empty_billing_methods') || 'No tienes métodos de pago guardados.';
+                const emptyMsg = window.__('empty_billing_methods');
                 this.contentArea.innerHTML = CardTemplates.emptyState(emptyMsg, 'credit_card_off');
             }
         } catch (error) {
             if (error.name !== 'AbortError') {
-                console.error('Error fetching payment methods:', error);
-                const emptyMsg = window.__('error_fetching_payment_methods') || 'Error al cargar métodos de pago.';
+                
+                const emptyMsg = window.__('error_fetching_payment_methods');
                 this.contentArea.innerHTML = CardTemplates.emptyState(emptyMsg, 'error');
             }
         }
@@ -85,9 +80,8 @@ export class BillingController {
         }
     }
 
-
     destroy() {
-        // Regla 4 y 7: Limpieza rigurosa
+        
         if (this.abortController) this.abortController.abort();
         document.removeEventListener('click', this.handleClickBound);
         this.contentArea = null;

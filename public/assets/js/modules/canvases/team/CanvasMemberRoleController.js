@@ -1,5 +1,3 @@
-// public/assets/js/modules/canvases/team/CanvasMemberRoleController.js
-
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
 
@@ -52,13 +50,13 @@ class CanvasMemberRoleController {
 
     async saveMemberRole(btn) {
         if (!this.canvasId || !this.targetUserId) {
-            showMessage(__('err_missing_data') || 'Datos incompletos para actualizar el rol.', 'error');
+            showMessage(__('err_missing_data'), 'error');
             return;
         }
 
         const selectedRoleInputs = document.querySelectorAll('input[name="new_member_roles[]"]:checked');
         if (selectedRoleInputs.length === 0) {
-            showMessage(__('err_select_role') || 'Por favor, selecciona al menos un rol.', 'warning');
+            showMessage(__('err_select_role'), 'warning');
             return;
         }
 
@@ -83,7 +81,7 @@ class CanvasMemberRoleController {
                 restoreButton(btn);
             }
         } catch (error) {
-            showMessage(__('err_connection_role') || 'Error de conexión al cambiar el rol.', "error");
+            showMessage(__('err_connection_role'), "error");
             restoreButton(btn);
         }
     }

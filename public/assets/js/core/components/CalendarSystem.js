@@ -166,7 +166,7 @@ export class CalendarSystem {
     confirm() {
         if (!this.selectedDate) {
             
-            showMessage(window.__ ? window.__('err_select_day') : 'err_select_day', 'error');
+            showMessage(window.__('err_select_day'), 'error');
             return;
         }
         

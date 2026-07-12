@@ -1,4 +1,3 @@
-// public/assets/js/StoreController.js
 import { ApiService } from '../../core/api/ApiServices.js';
 import { ApiRoutes } from '../../core/api/ApiRoutes.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../core/utils/uiUtils.js';

@@ -129,7 +129,7 @@ class CanvasInvitesController {
                 showMessage(`Error al revocar ${failCount} invitación(es).`, 'warning');
             }
         } catch (error) {
-            console.error('Error revoking invites:', error);
+            
             showMessage('Error de conexión.', 'error');
         }
     }
@@ -146,7 +146,7 @@ class CanvasInvitesController {
                 navigator.clipboard.writeText(code).then(() => {
                     showMessage('Código copiado al portapapeles.', 'success');
                 }).catch(err => {
-                    console.error('Error al copiar:', err);
+                    
                     showMessage('No se pudo copiar el código.', 'error');
                 });
             }

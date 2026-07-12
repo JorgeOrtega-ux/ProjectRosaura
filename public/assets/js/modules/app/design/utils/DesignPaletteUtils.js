@@ -1,5 +1,3 @@
-// public/assets/js/modules/app/DesignPaletteUtils.js
-
 export function getPaletteById(paletteId) {
     if (!window.APP_PALETTES) {
         return { colors: [{ hex: '#000000', name_key: 'color_black' }] };

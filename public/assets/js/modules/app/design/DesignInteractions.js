@@ -1,4 +1,3 @@
-// public/assets/js/modules/app/design/DesignInteractions.js
 import { getPaletteById } from './utils/DesignPaletteUtils.js';
 import { showMessage } from '../../../core/utils/uiUtils.js';
 
@@ -29,12 +28,11 @@ export const DesignInteractions = {
     },
 
     handleClick(e) {
-        // 1. Delegar los eventos de modales (Live Share/Templates) al módulo correspondiente
+        
         if (typeof this.handleTemplateModals === 'function' && this.handleTemplateModals(e)) {
-            return; // Si handleTemplateModals devuelve 'true', capturó el evento.
+            return; 
         }
 
-        // 2. Comportamiento general
         const btnActivatePerk = e.target.closest('[data-action="activatePerk"]');
         if (btnActivatePerk) {
             e.preventDefault();
@@ -66,7 +64,7 @@ export const DesignInteractions = {
         if (imgAdd) {
             e.preventDefault();
             if (this.isResetLocked || this.isResizeLocked) {
-                showMessage(__('err_canvas_locked') || 'Lienzo bloqueado', 'warning');
+                showMessage(__('err_canvas_locked'), 'warning');
                 return;
             }
             const url = imgAdd.getAttribute('data-url');
@@ -100,7 +98,7 @@ export const DesignInteractions = {
         if (cardTemplate && !e.target.closest('.component-template-action-btn')) {
             const id = cardTemplate.getAttribute('data-id');
             if (this.liveShareStatus === 'spectator' && this.liveTemplateId === id) {
-                showMessage(__('info_template_live') || 'Plantilla en vivo', 'info');
+                showMessage(__('info_template_live'), 'info');
                 return;
             }
             if (typeof this.toggleTemplate === 'function') {
@@ -221,7 +219,7 @@ export const DesignInteractions = {
             
             if (hit) {
                 if (this.liveShareStatus === 'spectator' && this.liveTemplateId === this.activeTemplateId) {
-                    showMessage(__('err_only_owner_moves') || 'Solo el creador puede moverla', 'warning');
+                    showMessage(__('err_only_owner_moves'), 'warning');
                     return;
                 }
 
@@ -335,8 +333,7 @@ export const DesignInteractions = {
                     tpl.x = this.templateInteraction.origX + this.templateInteraction.origW - newW;
                 }
             }
-            
-            // Actualizar interfaz lateral (inline-controls) de manera dinámica si es el owner
+
             if (this.liveShareStatus === 'owner' && this.activeTemplateId === this.liveTemplateId) {
                 if (this.uiLiveInputX) {
                     this.uiLiveInputX.setAttribute('data-val', tpl.x);
@@ -450,7 +447,6 @@ export const DesignInteractions = {
         const target = e.target.closest('[data-ref="design-canvas"]');
         if (!target || this.isResizeLocked) return;
 
-        // Si son 2 dedos, iniciamos Pinch-to-Zoom
         if (e.touches.length === 2) {
             e.preventDefault();
             this.isPinching = true;
@@ -464,9 +460,8 @@ export const DesignInteractions = {
             return;
         }
 
-        // Si es 1 dedo
         if (e.touches.length === 1) {
-            // Permitimos el scroll por defecto a menos que determinemos que estamos arrastrando el canvas o plantillas
+            
             this.touchStartTime = Date.now();
             this.touchStartX = e.touches[0].clientX;
             this.touchStartY = e.touches[0].clientY;
@@ -480,9 +475,9 @@ export const DesignInteractions = {
                 }
                 
                 if (hit) {
-                    e.preventDefault(); // Prevenir scroll nativo
+                    e.preventDefault(); 
                     if (this.liveShareStatus === 'spectator' && this.liveTemplateId === this.activeTemplateId) {
-                        showMessage(__('err_only_owner_moves') || 'Solo el creador puede moverla', 'warning');
+                        showMessage(__('err_only_owner_moves'), 'warning');
                         return;
                     }
                     const tpl = this.templates.find(t => t.id === this.activeTemplateId);
@@ -498,8 +493,7 @@ export const DesignInteractions = {
                     return;
                 }
             }
-            
-            // Si no hay plantilla, asumimos Drag para desplazar el canvas por defecto
+
             this.isDragging = true;
             this.touchHasMoved = false;
         }
@@ -509,13 +503,12 @@ export const DesignInteractions = {
         if (this.isResizeLocked) return;
 
         if (this.isPinching && e.touches.length === 2) {
-            e.preventDefault(); // Prevenir scroll/zoom nativo del navegador
+            e.preventDefault(); 
             const currentDistance = Math.hypot(
                 e.touches[0].clientX - e.touches[1].clientX,
                 e.touches[0].clientY - e.touches[1].clientY
             );
-            
-            // Calcular el centro del pinch
+
             const centerX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
             const centerY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
             const rect = this.canvas.getBoundingClientRect();
@@ -606,8 +599,7 @@ export const DesignInteractions = {
         if (this.isDragging && e.touches.length === 1) {
             const dx = e.touches[0].clientX - this.lastMouse.x;
             const dy = e.touches[0].clientY - this.lastMouse.y;
-            
-            // Umbral mínimo de movimiento para empezar a prevenir el scroll nativo y considerar que se arrastró
+
             if (!this.touchHasMoved) {
                 const totalDist = Math.hypot(e.touches[0].clientX - this.touchStartX, e.touches[0].clientY - this.touchStartY);
                 if (totalDist > 8) {
@@ -616,7 +608,7 @@ export const DesignInteractions = {
             }
 
             if (this.touchHasMoved) {
-                e.preventDefault(); // Ya estamos arrastrando el canvas, prevenir refresh o scroll del móvil
+                e.preventDefault(); 
                 this.transform.x += dx;
                 this.transform.y += dy;
                 this.lastMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
@@ -649,11 +641,10 @@ export const DesignInteractions = {
 
         if (this.isDragging) {
             this.isDragging = false;
-            
-            // Detectar Tap (Toque rápido y sin apenas movimiento)
+
             const touchDuration = Date.now() - this.touchStartTime;
             if (!this.touchHasMoved && touchDuration < 300) {
-                // Es un Tap válido. Interpretar como selección de píxel si aplica.
+                
                 if (!this.isSpectator && !this.timelapseActive && !this.isResetLocked && !this.isResizeLocked) {
                     const coords = this.getBoardCoords(this.touchStartX, this.touchStartY);
                     if (coords) {
@@ -671,8 +662,7 @@ export const DesignInteractions = {
                             }
                         }
                         this.updateSelectionUI();
-                        
-                        // Mostrar las coordenadas tocadas
+
                         this.hoveredPixel = coords;
                         this.setCanvasBadge('coords', 'my_location', `${coords.x} , ${coords.y}`, 'left');
                         
@@ -749,7 +739,7 @@ export const DesignInteractions = {
             } else if (this.interactionMode === 'erasing') {
                 this.txtPlacePixels.textContent = `Borrar (${this.selectedPixels.size})`;
             } else {
-                this.txtPlacePixels.textContent = __('btn_place_pixels') || 'Colocar';
+                this.txtPlacePixels.textContent = __('btn_place_pixels');
             }
         } else {
             this.btnPlacePixels.classList.add('disabled-interactive');
@@ -757,10 +747,10 @@ export const DesignInteractions = {
                 if (this.interactionMode === 'protecting' || this.interactionMode === 'erasing') {
                     this.txtPlacePixels.textContent = `Máx: ${maxBalance} usos`;
                 } else {
-                    this.txtPlacePixels.textContent = (__('lbl_max_pixels') || ':max máximo').replace(':max', maxBalance === Infinity ? '∞' : maxBalance);
+                    this.txtPlacePixels.textContent = (__('lbl_max_pixels')).replace(':max', maxBalance === Infinity ? '∞' : maxBalance);
                 }
             } else {
-                this.txtPlacePixels.textContent = __('btn_select_pixels') || 'Seleccionar Pixeles';
+                this.txtPlacePixels.textContent = __('btn_select_pixels');
             }
         }
     },
@@ -791,13 +781,13 @@ export const DesignInteractions = {
 
             if (this.interactionMode === 'normal' || this.interactionMode === 'protecting') {
                 if (this.protectedPixels && this.protectedPixels.has(offset)) {
-                    // Píxel protegido. Bloquear acción como un muro.
+                    
                     hitProtected = true;
                     return;
                 }
             } else if (this.interactionMode === 'erasing') {
                 if (this.protectedPixels && !this.protectedPixels.has(offset)) {
-                    // No está protegido, ignorar
+                    
                     return;
                 }
             }
@@ -806,7 +796,7 @@ export const DesignInteractions = {
         
         if (hitProtected) {
             if (!this.lastProtectedToastTime || (Date.now() - this.lastProtectedToastTime > 2000)) {
-                showMessage(__('err_pixel_protected') || 'Este píxel está protegido', 'warning');
+                showMessage(__('err_pixel_protected'), 'warning');
                 this.lastProtectedToastTime = Date.now();
             }
         }
@@ -850,18 +840,17 @@ export const DesignInteractions = {
                 this.cooldownNextIn = this.cooldownSec;
                 this.lastSyncTime = Date.now();
             }
-            showMessage(__('msg_pixels_placed') || 'Pixeles colocados', 'success');
+            showMessage(__('msg_pixels_placed'), 'success');
         } else if (this.interactionMode === 'protecting') {
             this.perkProtectionLeft -= validPixels.length;
-            showMessage('Protección aplicada', 'success');
+            showMessage(window.__('msg_prot_applied'), 'success');
         } else if (this.interactionMode === 'erasing') {
             this.perkEraserLeft -= validPixels.length;
             showMessage('Borrador aplicado', 'success');
         }
 
         this.selectedPixels.clear();
-        
-        // Return to normal mode if out of uses
+
         if (this.interactionMode === 'protecting' && this.perkProtectionLeft <= 0) this.cancelInteractionMode();
         if (this.interactionMode === 'erasing' && this.perkEraserLeft <= 0) this.cancelInteractionMode();
         
@@ -892,16 +881,16 @@ export const DesignInteractions = {
         const emptyText = emptyState ? emptyState.querySelector('.component-empty-state-text') : null;
 
         const showEmpty = (msg) => {
-            list.style.display = 'none';
+            list.classList.remove('active'); list.classList.add('disabled');
             if (emptyState) {
-                emptyState.style.display = 'flex';
+                emptyState.classList.remove('disabled'); emptyState.classList.add('active');
                 if (emptyText && msg) emptyText.innerText = msg;
             }
         };
 
         const hideEmpty = () => {
-            if (emptyState) emptyState.style.display = 'none';
-            list.style.display = 'grid'; // Grid is used for perks
+            if (emptyState) emptyState.classList.remove('active'); emptyState.classList.add('disabled');
+            list.classList.remove('disabled'); list.classList.add('active'); 
         };
 
         try {
@@ -923,8 +912,8 @@ export const DesignInteractions = {
                     
                     const titles = {
                         'no_cooldown_10s': 'Sin Enfriamiento (10s)',
-                        'pixel_protection_25': 'Protección de Píxel (25)',
-                        'elite_eraser_25': 'Borrador de Élite (25)'
+                        'pixel_protection_25': window.__('perk_pixel_prot'),
+                        'elite_eraser_25': window.__('perk_elite_eraser')
                     };
                     const icons = {
                         'no_cooldown_10s': 'bolt',
@@ -934,7 +923,7 @@ export const DesignInteractions = {
                     
                     const title = titles[p.perk_id] || p.perk_id;
                     const icon = icons[p.perk_id] || 'stars';
-                    const description = p.description || 'Sin descripción';
+                    const description = p.description || window.__('no_desc');
                     
                     el.innerHTML = `
                         <div class="component-item-card__header">
@@ -955,7 +944,7 @@ export const DesignInteractions = {
                 showEmpty(result?.message || 'Error al cargar ventajas.');
             }
         } catch (error) {
-            console.error('Error cargando ventajas:', error);
+            
             showEmpty('Error al cargar ventajas.');
         }
     },
@@ -963,13 +952,11 @@ export const DesignInteractions = {
     async activatePerk(perkId, btn) {
         if (!perkId) return;
 
-        // Si es Sin Enfriamiento, primero lo "equipamos" para usarlo desde el badge
         if (perkId === 'no_cooldown_10s') {
             this.perkNoCooldownReady = true;
             if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
             if (typeof showMessage === 'function') showMessage('Ventaja equipada. Haz clic en el badge a la izquierda para activarla.', 'info');
-            
-            // Cerrar menú de ventajas
+
             const btnClose = document.querySelector('.component-sheet-close[data-action="closeSheet"]');
             if(btnClose) btnClose.click();
             
@@ -983,29 +970,28 @@ export const DesignInteractions = {
             
             if (result && result.success) {
                 if (typeof showMessage === 'function') showMessage('Ventaja activada exitosamente', 'success');
-                
-                // Activar localmente
+
                 if (result.perk_id === 'pixel_protection_25') {
                     this.perkProtectionLeft = (this.perkProtectionLeft || 0) + 25;
                     this.interactionMode = 'protecting';
                     if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
                     this.updateSelectionUI();
-                    showMessage('Modo Protección activado. Selecciona los píxeles a proteger.', 'info');
+                    showMessage(window.__('msg_prot_mode_active'), 'info');
                 } else if (result.perk_id === 'elite_eraser_25') {
                     this.perkEraserLeft = (this.perkEraserLeft || 0) + 25;
                     this.interactionMode = 'erasing';
                     if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
                     this.updateSelectionUI();
-                    showMessage('Borrador de Élite activado. Selecciona los píxeles a desproteger.', 'info');
+                    showMessage(window.__('msg_elite_eraser_active'), 'info');
                 }
 
-                this.loadUserPerks(); // Recargar lista
+                this.loadUserPerks(); 
             } else {
                 if (typeof showMessage === 'function') showMessage(result?.message_key || 'Error al activar ventaja', 'error');
             }
         } catch (error) {
             if (btn) btn.classList.remove('loading');
-            console.error('Error activating perk', error);
+            
             if (typeof showMessage === 'function') showMessage('Error al conectar con el servidor', 'error');
         }
     },
@@ -1014,7 +1000,6 @@ export const DesignInteractions = {
         const badgesLeft = document.querySelector('[data-ref="badges-left"]');
         if (!badgesLeft) return;
 
-        // Badge Sin Cooldown
         let noCdBadge = badgesLeft.querySelector('[data-badge-id="perk-no-cooldown"]');
         if (this.perkNoCooldown || this.perkNoCooldownReady) {
             if (!noCdBadge) {
@@ -1027,7 +1012,7 @@ export const DesignInteractions = {
                 noCdBadge.addEventListener('click', async () => {
                     if (this.perkNoCooldownReady && !this.perkNoCooldown) {
                         try {
-                            // Mostrar loading en el badge
+                            
                             noCdBadge.innerHTML = `<span class="material-symbols-rounded" style="color:var(--color-primary);">hourglass_empty</span><span>Activando...</span>`;
                             const result = await this.api.post('store.activate_perk', { perk_id: 'no_cooldown_10s' });
                             
@@ -1038,16 +1023,16 @@ export const DesignInteractions = {
                                 if (typeof showMessage === 'function') showMessage('¡Sin Enfriamiento activado por 10s!', 'success');
                                 this.updatePerkBadges();
                                 this.updateSelectionUI();
-                                this.loadUserPerks(); // Recargar lista internamente
+                                this.loadUserPerks(); 
                             } else {
                                 if (typeof showMessage === 'function') showMessage(result?.message_key || 'Error al activar ventaja', 'error');
-                                this.perkNoCooldownReady = false; // Reset si falló
+                                this.perkNoCooldownReady = false; 
                                 this.updatePerkBadges();
                             }
                         } catch (error) {
-                            console.error('Error activating perk', error);
+                            
                             if (typeof showMessage === 'function') showMessage('Error al conectar con el servidor', 'error');
-                            this.perkNoCooldownReady = false; // Reset si falló
+                            this.perkNoCooldownReady = false; 
                             this.updatePerkBadges();
                         }
                     }
@@ -1055,8 +1040,7 @@ export const DesignInteractions = {
                 
                 badgesLeft.appendChild(noCdBadge);
             }
-            
-            // Actualizar estilo según si está activo o solo listo
+
             if (this.perkNoCooldown) {
                 noCdBadge.innerHTML = `<span class="material-symbols-rounded" style="color:var(--color-success);">bolt</span><span>Sin Cooldown</span>`;
                 noCdBadge.style.border = '1px solid var(--color-success)';
@@ -1070,7 +1054,6 @@ export const DesignInteractions = {
             noCdBadge.remove();
         }
 
-        // Badge Protección
         let protBadge = badgesLeft.querySelector('[data-badge-id="perk-protection"]');
         if (this.perkProtectionLeft > 0) {
             if (!protBadge) {
@@ -1078,12 +1061,12 @@ export const DesignInteractions = {
                 protBadge.className = 'component-badge';
                 protBadge.setAttribute('data-badge-id', 'perk-protection');
                 protBadge.style.cursor = 'pointer';
-                protBadge.title = 'Haz clic para alternar Modo Protección';
+                protBadge.title = window.__('tt_toggle_prot_mode');
                 protBadge.addEventListener('click', () => {
                     this.interactionMode = this.interactionMode === 'protecting' ? 'normal' : 'protecting';
                     this.updateSelectionUI();
                     if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
-                    if (typeof showMessage === 'function') showMessage(this.interactionMode === 'protecting' ? 'Modo Protección activado' : 'Modo Protección desactivado', 'info');
+                    if (typeof showMessage === 'function') showMessage(this.interactionMode === 'protecting' ? window.__('msg_prot_mode_on') : window.__('msg_prot_mode_off'), 'info');
                 });
                 badgesLeft.appendChild(protBadge);
             }
@@ -1099,7 +1082,6 @@ export const DesignInteractions = {
             protBadge.remove();
         }
 
-        // Badge Borrador de Élite
         let eraserBadge = badgesLeft.querySelector('[data-badge-id="perk-eraser"]');
         if (this.perkEraserLeft > 0) {
             if (!eraserBadge) {
