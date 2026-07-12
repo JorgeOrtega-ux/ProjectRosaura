@@ -68,8 +68,8 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                 <td><?php echo $description; ?></td>
                                 <td><?php echo $amount; ?></td>
                                 <td>
-                                    <span class="<?php echo $statusClass; ?>" style="display: flex; align-items: center; gap: 4px;">
-                                        <span class="material-symbols-rounded" style="font-size: 16px;"><?php echo $statusIcon; ?></span>
+                                    <span class="<?php echo $statusClass; ?>">
+                                        <span class="material-symbols-rounded"><?php echo $statusIcon; ?></span>
                                         <?php echo $statusText; ?>
                                     </span>
                                 </td>

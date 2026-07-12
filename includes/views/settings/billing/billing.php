@@ -20,7 +20,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
             </div>
         </div>
 
-                <div class="component-bottom" style="padding: 0;" data-ref="dynamic-content-area">
+                <div class="component-bottom" data-ref="dynamic-content-area">
                     </div>
 
     </div>

@@ -58,7 +58,7 @@ function parseUserAgentPHP($ua) {
                                             <?php $asnText = !empty($device['asn']) ? " ({$device['asn']})" : ''; ?>
                                             <div class="component-badge component-badge--sm" title="<?php echo htmlspecialchars($device['location'] . $asnText); ?>">
                                                 <span class="material-symbols-rounded">location_on</span>
-                                                <span style="max-width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: inline-block;">
+                                                <span>
                                                     <?php echo htmlspecialchars($device['location'] . $asnText); ?>
                                                 </span>
                                             </div>

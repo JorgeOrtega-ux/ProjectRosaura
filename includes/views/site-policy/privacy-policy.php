@@ -3,58 +3,46 @@
 <div class="view-content">
     <div class="component-wrapper component-wrapper--full no-padding" data-ref="privacy-policy-wrapper">
         <div class="component-bottom policy-container">
-            <h1 class="policy-title">Política de Privacidad</h1>
-            <p class="policy-subtitle">Última revisión: 30 de octubre de 2025</p>
+            <h1 class="policy-title"><?php echo __('policy_pol_tica_de_privacidad'); ?></h1>
+            <p class="policy-subtitle"><?php echo __('policy__ltima_revisi_n_30_de_octubre_d'); ?></p>
             
-            <h2 class="policy-section-title">1. Información que Recopilamos</h2>
-            <p class="policy-text">
-                Para brindarle la mejor experiencia posible, recopilamos diversos tipos de información cuando utiliza nuestro Servicio. Esto incluye:
-            </p>
+            <h2 class="policy-section-title"><?php echo __('policy_1_informaci_n_que_recopilamos'); ?></h2>
+            <p class="policy-text"><?php echo __('policy_para_brindarle_la_mejor_experie'); ?></p>
             <ul class="policy-list">
-                <li><strong>1.1 Datos de la Cuenta:</strong> Nombre de usuario, dirección de correo electrónico, contraseña cifrada, foto de perfil y, en caso de activarlo, su configuración de Autenticación de Dos Factores (2FA).</li>
-                <li><strong>1.2 Datos de Uso y Lienzos:</strong> La información sobre los lienzos que crea, las paletas de colores que utiliza, las invitaciones a miembros del equipo, y los Snapshots o copias de seguridad de sus diseños.</li>
-                <li><strong>1.3 Datos de Pago:</strong> Si adquiere una suscripción Premium, recopilamos información de facturación y del historial de compras. Nota: Los datos sensibles de su tarjeta de crédito son procesados por proveedores externos seguros y no se almacenan en nuestros servidores.</li>
+                <li><strong><?php echo __('policy_1_1_datos_de_la_cuenta_'); ?></strong><?php echo __('policy_nombre_de_usuario_direcci_n_de'); ?></li>
+                <li><strong><?php echo __('policy_1_2_datos_de_uso_y_lienzos_'); ?></strong><?php echo __('policy_la_informaci_n_sobre_los_lienzo'); ?></li>
+                <li><strong><?php echo __('policy_1_3_datos_de_pago_'); ?></strong><?php echo __('policy_si_adquiere_una_suscripci_n_pre'); ?></li>
             </ul>
 
-            <h2 class="policy-section-title">2. Cómo Utilizamos su Información</h2>
-            <p class="policy-text">Utilizamos la información recopilada con los siguientes propósitos:</p>
+            <h2 class="policy-section-title"><?php echo __('policy_2_c_mo_utilizamos_su_informaci'); ?></h2>
+            <p class="policy-text"><?php echo __('policy_utilizamos_la_informaci_n_recop'); ?></p>
             <ul class="policy-list">
-                <li><strong>2.1</strong> Proporcionar, operar y mantener las funcionalidades de la plataforma (ej. sincronizar lienzos entre varios usuarios).</li>
-                <li><strong>2.2</strong> Mejorar, personalizar y expandir nuestro Servicio, analizando cómo interactúa con nuestras herramientas de diseño.</li>
-                <li><strong>2.3</strong> Comprender y analizar tendencias para desarrollar nuevos productos, servicios o características.</li>
-                <li><strong>2.4</strong> Procesar sus transacciones y enviarle información relacionada, incluyendo confirmaciones de compra y facturas.</li>
-                <li><strong>2.5</strong> Detectar y prevenir fraudes, y garantizar la seguridad de su cuenta y la de otros usuarios.</li>
+                <li><strong><?php echo __('policy_2_1'); ?></strong><?php echo __('policy_proporcionar_operar_y_mantener'); ?></li>
+                <li><strong><?php echo __('policy_2_2'); ?></strong><?php echo __('policy_mejorar_personalizar_y_expandir'); ?></li>
+                <li><strong><?php echo __('policy_2_3'); ?></strong><?php echo __('policy_comprender_y_analizar_tendencia'); ?></li>
+                <li><strong><?php echo __('policy_2_4'); ?></strong><?php echo __('policy_procesar_sus_transacciones_y_en'); ?></li>
+                <li><strong><?php echo __('policy_2_5'); ?></strong><?php echo __('policy_detectar_y_prevenir_fraudes_y_g'); ?></li>
             </ul>
 
-            <h2 class="policy-section-title">3. Uso Compartido de Datos con Terceros</h2>
-            <p class="policy-text">
-                No vendemos, alquilamos ni compartimos su información personal con terceros para fines comerciales, excepto en los siguientes casos:
-            </p>
+            <h2 class="policy-section-title"><?php echo __('policy_3_uso_compartido_de_datos_con_t'); ?></h2>
+            <p class="policy-text"><?php echo __('policy_no_vendemos_alquilamos_ni_compa'); ?></p>
             <ul class="policy-list">
-                <li><strong>3.1 Proveedores de Servicios:</strong> Podemos compartir su información con proveedores de confianza (ej. pasarelas de pago, servicios de alojamiento en la nube, servicios de correo electrónico) que nos ayudan a operar nuestra plataforma.</li>
-                <li><strong>3.2 Cumplimiento Legal:</strong> Podemos divulgar su información si creemos que es necesario para cumplir con la ley, proteger nuestros derechos o la seguridad del público (ej. responder a una citación o solicitud gubernamental legal).</li>
-                <li><strong>3.3 Colaboración en Lienzos:</strong> Tenga en cuenta que si invita a otros usuarios a sus lienzos (ya sea como espectador o colaborador), cierta información de su perfil y de su diseño será visible para ellos.</li>
+                <li><strong><?php echo __('policy_3_1_proveedores_de_servicios_'); ?></strong><?php echo __('policy_podemos_compartir_su_informaci'); ?></li>
+                <li><strong><?php echo __('policy_3_2_cumplimiento_legal_'); ?></strong><?php echo __('policy_podemos_divulgar_su_informaci_n'); ?></li>
+                <li><strong><?php echo __('policy_3_3_colaboraci_n_en_lienzos_'); ?></strong><?php echo __('policy_tenga_en_cuenta_que_si_invita_a'); ?></li>
             </ul>
 
-            <h2 class="policy-section-title">4. Seguridad de los Datos</h2>
-            <p class="policy-text">
-                Nos tomamos muy en serio la seguridad de sus datos personales. Implementamos medidas de seguridad técnicas y organizativas razonables, como el cifrado de contraseñas y el uso de protocolos SSL, para proteger su información contra accesos no autorizados, alteraciones o destrucción. Sin embargo, ningún método de transmisión por Internet o almacenamiento electrónico es 100% seguro; por lo tanto, le recomendamos activar la Autenticación de Dos Factores (2FA) para proteger aún más su cuenta.
-            </p>
+            <h2 class="policy-section-title"><?php echo __('policy_4_seguridad_de_los_datos'); ?></h2>
+            <p class="policy-text"><?php echo __('policy_nos_tomamos_muy_en_serio_la_seg'); ?></p>
 
-            <h2 class="policy-section-title">5. Retención de Datos</h2>
-            <p class="policy-text">
-                Retendremos su información personal durante el tiempo que su cuenta esté activa o según sea necesario para brindarle nuestros servicios, cumplir con nuestras obligaciones legales, resolver disputas y hacer cumplir nuestros acuerdos. Si decide eliminar su cuenta desde el panel de Configuración, sus datos personales, lienzos y configuraciones serán eliminados de nuestros servidores en un plazo de 30 días, a menos que la ley exija lo contrario.
-            </p>
+            <h2 class="policy-section-title"><?php echo __('policy_5_retenci_n_de_datos'); ?></h2>
+            <p class="policy-text"><?php echo __('policy_retendremos_su_informaci_n_pers'); ?></p>
 
-            <h2 class="policy-section-title">6. Sus Derechos de Privacidad</h2>
-            <p class="policy-text">
-                Dependiendo de su ubicación (ej. residentes de la UE según el RGPD, o residentes de California según la CCPA), usted puede tener el derecho a acceder, corregir, actualizar o solicitar la eliminación de su información personal. Puede gestionar la mayor parte de su información directamente desde el panel de Configuración de su cuenta. Para solicitudes más específicas, puede contactarnos a través del correo privacy@nuestraplataforma.com.
-            </p>
+            <h2 class="policy-section-title"><?php echo __('policy_6_sus_derechos_de_privacidad'); ?></h2>
+            <p class="policy-text"><?php echo __('policy_dependiendo_de_su_ubicaci_n_ej'); ?></p>
 
-            <h2 class="policy-section-title">7. Cambios en esta Política</h2>
-            <p class="policy-text">
-                Podemos actualizar nuestra Política de Privacidad ocasionalmente para reflejar los cambios en nuestras prácticas. Le notificaremos cualquier cambio importante mediante un aviso destacado en nuestra plataforma o enviándole un correo electrónico antes de que el cambio entre en vigencia. Le sugerimos revisar periódicamente esta página para obtener la información más reciente sobre nuestras prácticas de privacidad.
-            </p>
+            <h2 class="policy-section-title"><?php echo __('policy_7_cambios_en_esta_pol_tica'); ?></h2>
+            <p class="policy-text"><?php echo __('policy_podemos_actualizar_nuestra_pol'); ?></p>
         </div>
     </div>
 </div>
