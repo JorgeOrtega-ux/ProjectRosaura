@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 use App\Config\Database\DatabaseManager;
 use App\Core\System\DatabaseConstants as DB;
@@ -66,9 +66,7 @@ if ($uuid) {
 
                 foreach ($history as $item) {
                     $imageUrl = $item['file_path'];
-                    if (!str_starts_with($imageUrl, '/')) {
-                        $imageUrl = '/' . $imageUrl;
-                    }
+                    $imageUrl = \App\Core\Helpers\Utils::getS3PublicUrl($imageUrl);
                     $snapshots[] = [
                         'id' => $item['id'],
                         'url' => $imageUrl,
@@ -133,9 +131,11 @@ if ($error) {
                                  loading="lazy"
                                  decoding="async"
                                  onerror="this.src='<?php echo htmlspecialchars($fallbackImg); ?>'">
-                            <div class="component-gallery-badge">
-                                <span class="material-symbols-rounded">history</span>
-                                <?php echo $dateLabel; ?>
+                            <div class="component-gallery-badges-container">
+                                <div class="component-badge component-badge--glass">
+                                    <span class="material-symbols-rounded">history</span>
+                                    <span><?php echo $dateLabel; ?></span>
+                                </div>
                             </div>
                             <div data-nav="<?php echo $viewUrl; ?>" class="component-gallery-link">
                                 <h3 class="component-gallery-title"><?php echo $nameLabel; ?></h3>

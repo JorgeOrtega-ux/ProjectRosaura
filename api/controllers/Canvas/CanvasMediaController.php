@@ -63,7 +63,18 @@ class CanvasMediaController extends BaseController {
                 return $this->respond($result);
             }
 
-            $filePath = $result['file_path'];
+            $s3Key = $result['file_path'];
+            $bucket = \App\Config\EnvLoader::get('MINIO_BUCKET', 'rosaura-storage');
+            $s3Client = \App\Core\Helpers\Utils::getS3Client();
+
+            try {
+                $head = $s3Client->headObject([
+                    'Bucket' => $bucket,
+                    'Key' => $s3Key
+                ]);
+            } catch (\Exception $e) {
+                return $this->respond(['success' => false, 'message' => __('err_physical_file_missing'), 'http_code' => 404]);
+            }
 
             if (ob_get_level()) {
                 ob_end_clean();
@@ -71,13 +82,17 @@ class CanvasMediaController extends BaseController {
 
             header('Content-Type: application/x-ndjson');
             header('Content-Disposition: attachment; filename="timelapse_' . $canvasId . '.jsonl"');
-            header('Content-Length: ' . filesize($filePath));
+            header('Content-Length: ' . $head['ContentLength']);
             header('Cache-Control: no-cache, must-revalidate');
             header('Pragma: no-cache');
             header('Expires: 0');
             
             flush();
-            readfile($filePath);
+            $s3Client->getObject([
+                'Bucket' => $bucket,
+                'Key' => $s3Key,
+                'SaveAs' => 'php://output'
+            ]);
             exit;
 
         } catch (\Throwable $e) {
@@ -102,7 +117,18 @@ class CanvasMediaController extends BaseController {
                 return $this->respond($result);
             }
 
-            $filePath = $result['file_path'];
+            $s3Key = $result['file_path'];
+            $bucket = \App\Config\EnvLoader::get('MINIO_BUCKET', 'rosaura-storage');
+            $s3Client = \App\Core\Helpers\Utils::getS3Client();
+
+            try {
+                $head = $s3Client->headObject([
+                    'Bucket' => $bucket,
+                    'Key' => $s3Key
+                ]);
+            } catch (\Exception $e) {
+                return $this->respond(['success' => false, 'message' => __('err_physical_file_missing'), 'http_code' => 404]);
+            }
 
             if (ob_get_level()) {
                 ob_end_clean();
@@ -110,13 +136,17 @@ class CanvasMediaController extends BaseController {
 
             header('Content-Type: application/x-ndjson');
             header('Content-Disposition: attachment; filename="snapshot_timelapse_' . $snapshotId . '.jsonl"');
-            header('Content-Length: ' . filesize($filePath));
+            header('Content-Length: ' . $head['ContentLength']);
             header('Cache-Control: no-cache, must-revalidate');
             header('Pragma: no-cache');
             header('Expires: 0');
             
             flush();
-            readfile($filePath);
+            $s3Client->getObject([
+                'Bucket' => $bucket,
+                'Key' => $s3Key,
+                'SaveAs' => 'php://output'
+            ]);
             exit;
 
         } catch (\Throwable $e) {

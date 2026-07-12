@@ -114,7 +114,7 @@ class SettingsServices
 
         Utils::deleteOldAvatar($oldPic);
 
-        $newRelPath = Utils::generateProfilePicture($this->sessionManager->get('user_name'), $this->sessionManager->get('user_uuid'));
+        $newRelPath = Utils::generateProfilePicture($this->sessionManager->get('user_name'));
         if ($this->userRepository->updateAvatar($userId, $newRelPath)) {
             $this->logProfileChange($userId, DB::LOG_CHANGE_AVATAR, json_encode(['avatar' => $oldPic]), json_encode(['avatar' => $newRelPath]));
             $this->sessionManager->set('user_pic', $newRelPath);
@@ -125,7 +125,7 @@ class SettingsServices
                 $this->sessionManager->set(SessionConstants::KEY_LINKED_ACCOUNTS, $accounts);
             }
 
-            return ['success' => true, 'message' => __('settings.avatar_deleted'), 'new_avatar' => APP_URL . '/' . ltrim($newRelPath, '/')];
+            return ['success' => true, 'message' => __('settings.avatar_deleted'), 'new_avatar' => Utils::getS3PublicUrl($newRelPath)];
         }
         
         return ['success' => false, 'message' => __('error.database')];

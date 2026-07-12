@@ -511,7 +511,7 @@ def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palet
                     s3.head_object(Bucket=S3_BUCKET, Key=live_key)
                     s3.copy_object(Bucket=S3_BUCKET, CopySource={'Bucket': S3_BUCKET, 'Key': live_key}, Key=dest_key)
                     s3.delete_object(Bucket=S3_BUCKET, Key=live_key)
-                    timelapse_db_path = f"private/canvases/timelapses/{canvas_uuid}/snapshots/{timelapse_dest_filename}"
+                    timelapse_db_path = dest_key
                     print(f"[+] Timelapse successfully converted to historical in S3: {timelapse_dest_filename}")
                 except Exception as e:
                     print(f"[-] 'live_canvas' file not found for canvas {canvas_id} or error moving. Base snapshot will be saved without timelapse. Error: {e}")

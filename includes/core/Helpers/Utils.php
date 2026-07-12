@@ -69,26 +69,48 @@ class Utils {
         return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
     }
 
+    public static function getRandomColor() {
+        return '#' . str_pad(dechex(mt_rand(0, 0xFFFFFF)), 6, '0', STR_PAD_LEFT);
+    }
+
     public static function generateProfilePicture($text) {
         $uuid = self::generateUUID();
         $backgroundColor = self::getRandomColor();
         
-        $image = imagecreatetruecolor(100, 100);
-        $bg = imagecolorallocate($image, hexdec(substr($backgroundColor, 1, 2)), hexdec(substr($backgroundColor, 3, 2)), hexdec(substr($backgroundColor, 5, 2)));
-        imagefill($image, 0, 0, $bg);
-        $textColor = imagecolorallocate($image, 255, 255, 255);
-        $fontPath = ROOT_PATH . '/public/assets/fonts/Inter-Bold.ttf';
+        $cleanBg = ltrim($backgroundColor, '#');
+        $initial = urlencode(strtoupper(substr(trim($text), 0, 1)));
+        $apiUrl = "https://ui-avatars.com/api/?name={$initial}&background={$cleanBg}&color=ffffff&size=256&font-size=0.5&format=png";
         
-        if (file_exists($fontPath)) {
-            imagettftext($image, 40, 0, 20, 65, $textColor, $fontPath, strtoupper(substr($text, 0, 1)));
-        } else {
-            imagestring($image, 5, 40, 40, strtoupper(substr($text, 0, 1)), $textColor);
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $apiUrl);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+        $imageContent = curl_exec($ch);
+        curl_close($ch);
+
+        if (!$imageContent) {
+            $image = imagecreatetruecolor(256, 256);
+            $bg = imagecolorallocate($image, hexdec(substr($backgroundColor, 1, 2)), hexdec(substr($backgroundColor, 3, 2)), hexdec(substr($backgroundColor, 5, 2)));
+            imagefill($image, 0, 0, $bg);
+            $textColor = imagecolorallocate($image, 255, 255, 255);
+            $fontPath = defined('ROOT_PATH') ? ROOT_PATH . '/public/assets/fonts/Inter-Bold.ttf' : '';
+            
+            if (!empty($fontPath) && file_exists($fontPath)) {
+                imagettftext($image, 100, 0, 70, 170, $textColor, $fontPath, urldecode($initial));
+            } else {
+                $tempImg = imagecreatetruecolor(20, 20);
+                imagefill($tempImg, 0, 0, $bg);
+                imagestring($tempImg, 5, 6, 2, urldecode($initial), $textColor);
+                imagecopyresized($image, $tempImg, 0, 0, 0, 0, 256, 256, 20, 20);
+                imagedestroy($tempImg);
+            }
+            
+            ob_start();
+            imagepng($image);
+            $imageContent = ob_get_clean();
+            imagedestroy($image);
         }
-        
-        ob_start();
-        imagepng($image);
-        $imageContent = ob_get_clean();
-        imagedestroy($image);
         
         if ($imageContent === false) {
             return 'public/assets/img/fallbacks/avatar-default.png';

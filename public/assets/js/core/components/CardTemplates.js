@@ -1,4 +1,4 @@
-﻿import { escapeHTML } from '../utils/uiUtils.js';
+import { escapeHTML } from '../utils/uiUtils.js';
 
 export const CardTemplates = {
     
@@ -8,7 +8,7 @@ export const CardTemplates = {
         const basePath = config.basePath || '';
         const isFavoriteClass = canvas.is_favorite ? 'is-favorite' : '';
 
-        const fallbackImg = '/assets/img/misc/placeholder.png';
+        const fallbackImg = basePath + '/assets/img/fallbacks/canvas-default.png';
         const srcUrl = canvas.thumbnail_url ? escapeHTML(canvas.thumbnail_url) : fallbackImg;
 
         const imgHtml = `

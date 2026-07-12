@@ -43,14 +43,16 @@ class CanvasMediaService {
                 return ['success' => false, 'message' => __('err_unauthorized'), 'http_code' => 403];
             }
 
-            $baseDir = dirname(__DIR__, 3) . '/storage/private/canvases/timelapses';
-            $filePath = $baseDir . '/' . $canvas['uuid'] . '/live/live_canvas_' . $canvas['uuid'] . '.jsonl';
+            $s3Key = 'timelapses/' . $canvas['uuid'] . '/live/live_canvas_' . $canvas['uuid'] . '.jsonl';
 
-            if (!file_exists($filePath) || filesize($filePath) === 0) {
+            $bucket = \App\Config\EnvLoader::get('MINIO_BUCKET', 'rosaura-storage');
+            $s3Client = Utils::getS3Client();
+
+            if (!$s3Client->doesObjectExist($bucket, $s3Key)) {
                 return ['success' => false, 'message' => __('err_no_timelapse_data'), 'http_code' => 404];
             }
 
-            return ['success' => true, 'file_path' => $filePath];
+            return ['success' => true, 'file_path' => $s3Key];
 
         } catch (Exception $e) {
             Logger::error('Error preparing timelapse download.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
@@ -93,14 +95,19 @@ class CanvasMediaService {
                 return ['success' => false, 'message' => __('err_no_timelapse_file'), 'http_code' => 404];
             }
 
-            $baseDir = dirname(__DIR__, 3) . '/storage/';
-            $filePath = $baseDir . ltrim($data['timelapse_file_path'], '/');
+            $s3Key = ltrim($data['timelapse_file_path'], '/');
+            if (str_starts_with($s3Key, 'private/canvases/')) {
+                $s3Key = str_replace('private/canvases/', '', $s3Key);
+            }
 
-            if (!file_exists($filePath) || filesize($filePath) === 0) {
+            $bucket = \App\Config\EnvLoader::get('MINIO_BUCKET', 'rosaura-storage');
+            $s3Client = Utils::getS3Client();
+
+            if (!$s3Client->doesObjectExist($bucket, $s3Key)) {
                 return ['success' => false, 'message' => __('err_physical_file_missing'), 'http_code' => 404];
             }
 
-            return ['success' => true, 'file_path' => $filePath];
+            return ['success' => true, 'file_path' => $s3Key];
 
         } catch (Exception $e) {
             Logger::error('Error preparing snapshot timelapse.', ['snapshot_id' => $snapshotId, 'error' => $e->getMessage()]);
@@ -135,10 +142,7 @@ class CanvasMediaService {
             $history = $this->canvasRepository->getSnapshotsHistoryByUuid($uuid);
 
             $formattedHistory = array_map(function($item) {
-                $imageUrl = $item['file_path'];
-                if (!str_starts_with($imageUrl, '/')) {
-                    $imageUrl = '/' . $imageUrl;
-                }
+                $imageUrl = \App\Core\Helpers\Utils::getS3PublicUrl($item['file_path']);
                 return [
                     'id' => $item['id'],
                     'url' => $imageUrl,
@@ -192,10 +196,7 @@ class CanvasMediaService {
                 return ['success' => false, 'message' => __('err_unauthorized')];
             }
 
-            $imageUrl = $data['file_path'];
-            if (!str_starts_with($imageUrl, '/')) {
-                $imageUrl = '/' . $imageUrl;
-            }
+            $imageUrl = \App\Core\Helpers\Utils::getS3PublicUrl($data['file_path']);
 
             $hasTimelapse = !empty($data['timelapse_file_path']);
 
