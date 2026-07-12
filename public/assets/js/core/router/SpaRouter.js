@@ -1,4 +1,3 @@
-// public/assets/js/core/router/SpaRouter.js
 import { RouteModulesMap } from './RouteModulesMap.js';
 import { SkeletonTemplates } from '../components/SkeletonTemplates.js';
 
@@ -14,7 +13,6 @@ export class SpaRouter {
         this.init();
     }
 
-    // --- NUEVO MÉTODO DE REFACTORIZACIÓN (DRY) ---
     _getRoutePattern(url) {
         if (url.startsWith('/design/s/')) return '/design/s/:uuid';
         if (url.startsWith('/snapshot/view/')) return '/snapshot/view/:id';
@@ -209,8 +207,7 @@ export class SpaRouter {
                 if (this.basePath && moduleUrl.startsWith(this.basePath)) {
                     moduleUrl = moduleUrl.slice(this.basePath.length);
                 }
-                
-                // Uso del método refactorizado
+
                 moduleUrl = this._getRoutePattern(moduleUrl);
 
                 const loadTimeMs = Math.round(performance.now() - startTime);
@@ -372,7 +369,7 @@ export class SpaRouter {
     }
 
     _showLoaderInOutlet(cleanUrl) {
-        // Uso del método refactorizado
+        
         let mapKey = this._getRoutePattern(cleanUrl);
 
         const routeConfig = RouteModulesMap[mapKey];

@@ -1,5 +1,3 @@
-// public/assets/js/core/api/WebSocketManager.js
-
 import { WsConfig } from './ApiRoutes.js';
 
 export class WebSocketManager {
@@ -7,7 +5,7 @@ export class WebSocketManager {
         this.ws = null;
         this.reconnectAttempts = 0;
         this.maxReconnectAttempts = 5;
-        this.baseDelay = 1000; // 1 segundo inicial
+        this.baseDelay = 1000; 
         this.canvasId = null;
         this.callbacks = {};
         this.isIntentionalDisconnect = false;
@@ -27,71 +25,66 @@ export class WebSocketManager {
             url += `?ticket=${encodeURIComponent(ticket)}`;
         }
 
-        console.log(`[DEBUG WS] Intentando conectar a: ${url}`);
-        
         this.ws = new WebSocket(url);
 
         this.ws.onopen = () => {
-            console.info(`[DEBUG WS] Conectado a la sala del lienzo: ${this.canvasId}`);
+            
             this.reconnectAttempts = 0; 
-            this.trigger('open'); // Notifica al frontend
+            this.trigger('open'); 
             this.startHeartbeat();
         };
 
         this.ws.onmessage = (event) => {
-            console.log(`[DEBUG WS] Mensaje crudo recibido del servidor:`, event.data);
+            
             try {
                 const data = JSON.parse(event.data);
                 this.trigger('message', data);
             } catch (e) {
-                console.error('[DEBUG WS] Error parseando mensaje entrante', e);
+                
             }
         };
 
         this.ws.onclose = (event) => {
-            console.warn(`[DEBUG WS] Conexión cerrada. Código: ${event.code}, Razón: ${event.reason}`);
-            this.stopHeartbeat();
             
-            // Detección de Desalojo por QoS (Servidor Python envía 4001)
+            this.stopHeartbeat();
+
             if (event.code === 4001) {
                 this.isIntentionalDisconnect = true;
-                console.warn('[DEBUG WS] Desalojado por QoS (4001). Bloqueando reconexión.');
+                . Bloqueando reconexión.');
                 this.trigger('qos_evicted', event.reason);
             } 
             else if (!this.isIntentionalDisconnect) {
                 this.handleReconnect();
             } else {
-                console.info('[DEBUG WS] Desconectado limpiamente');
+                
             }
         };
 
         this.ws.onerror = (error) => {
-            console.error('[DEBUG WS] Error en la conexión', error);
+            
         };
     }
 
     handleReconnect() {
         if (this.reconnectAttempts < this.maxReconnectAttempts) {
             const delay = this.baseDelay * Math.pow(2, this.reconnectAttempts);
-            console.warn(`[DEBUG WS] Reintentando conexión en ${delay}ms...`);
-            
+
             setTimeout(() => {
                 this.reconnectAttempts++;
-                // Nota: DesignNetwork.js sobrescribirá este método en tiempo de ejecución 
-                // para inyectar la lógica de pedir un NUEVO ticket antes de llamar a connect()
+
                 this.connect(this.canvasId);
             }, delay);
         } else {
-            console.error('[DEBUG WS] Máximos intentos de reconexión alcanzados.');
+            
         }
     }
 
     send(payload) {
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-            console.log(`[DEBUG WS] Enviando al servidor:`, payload);
+            
             this.ws.send(JSON.stringify(payload));
         } else {
-            console.warn('[DEBUG WS] Intento de envío ignorado: No hay conexión abierta.', payload);
+            
         }
     }
 
@@ -124,7 +117,7 @@ export class WebSocketManager {
             if (this.ws && this.ws.readyState === WebSocket.OPEN) {
                 this.ws.send(JSON.stringify({ type: 'ping' }));
             }
-        }, 25000); // 25 segundos
+        }, 25000); 
     }
 
     stopHeartbeat() {
@@ -137,7 +130,7 @@ export class WebSocketManager {
     handleVisibilityChange() {
         if (document.visibilityState === 'visible') {
             if (!this.isIntentionalDisconnect && (!this.ws || this.ws.readyState !== WebSocket.OPEN)) {
-                console.warn('[DEBUG WS] Socket cerrado en segundo plano. Forzando reconexión inmediata.');
+                
                 this.reconnectAttempts = 0;
                 this.handleReconnect();
             }

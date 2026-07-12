@@ -1,5 +1,3 @@
-// public/assets/js/core/components/DialogTemplates.js
-
 export const DialogTemplates = {
     welcomePremiumModal: {
         build: (data) => {
@@ -550,9 +548,6 @@ export const DialogTemplates = {
         })
     },
 
-    // ==========================================
-    // DIÁLOGOS DE CANVASES (LIVE SHARE)
-    // ==========================================
     joinLiveShare: {
         build: () => `
             <div class="pill-container"><div class="drag-handle"></div></div>
@@ -699,6 +694,16 @@ export const DialogTemplates = {
             title: 'Reportar Mensaje',
             message: 'Selecciona una opción de reporte:<br>1. Spam o publicidad<br>2. Lenguaje ofensivo<br>3. Acoso o incitación al odio<br>4. Otro',
             inputPlaceholder: 'Ingresa el número de opción (1-4)',
+            confirmClass: 'component-button--danger'
+        })
+    }
+,
+    downgradeCanvasModal: {
+        build: () => DialogTemplates.confirmActionModal.build({
+            title: window.__ ? window.__('downgrade_basic_title') : 'downgrade_basic_title',
+            message: window.__ ? window.__('downgrade_basic_msg') : 'downgrade_basic_msg',
+            inputPlaceholder: window.__ ? window.__('word_confirm') : 'CONFIRMAR',
+            expectedInput: window.__ ? window.__('word_confirm') : 'CONFIRMAR',
             confirmClass: 'component-button--danger'
         })
     }

@@ -1,13 +1,7 @@
-/* public/assets/css/root.css */
-
 @import url('https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,100..900;1,100..900&display=swap');
 
 :root {
-    /* ========================================================================
-       1. PRIMITIVOS (DESIGN TOKENS)
-       ======================================================================== */
-       
-    /* --- GRAY SCALE (Base HSL) --- */
+
     --sl-color-gray-50: hsl(0, 0%, 98%);
     --sl-color-gray-100: hsl(240 4.8% 95.9%);
     --sl-color-gray-200: hsl(240, 6%, 90%);
@@ -20,7 +14,6 @@
     --sl-color-gray-900: hsl(240 5.9% 10%);
     --sl-color-gray-950: hsl(240 7.3% 8%);
 
-    /* --- COLOR PALETTE --- */
     --sl-color-red-50: hsl(0 85.7% 97.3%);
     --sl-color-red-100: hsl(0 93.3% 94.1%);
     --sl-color-red-200: hsl(0 96.3% 89.4%);
@@ -225,7 +218,6 @@
     --sl-color-rose-900: hsl(341.5 75.5% 30.4%);
     --sl-color-rose-950: hsl(341.3 70.1% 17.1%);
 
-    /* --- THEME MAPPING (Default: Light / Sky Blue) --- */
     --sl-color-primary-50: var(--sl-color-sky-50);
     --sl-color-primary-100: var(--sl-color-sky-100);
     --sl-color-primary-200: var(--sl-color-sky-200);
@@ -289,7 +281,6 @@
     --sl-color-neutral-0: hsl(0, 0%, 100%);
     --sl-color-neutral-1000: hsl(0, 0%, 0%);
 
-    /* --- BORDER RADIUS --- */
     --sl-border-radius-small: .1875rem;
     --sl-border-radius-medium: .25rem;
     --sl-border-radius-large: .5rem;
@@ -297,14 +288,12 @@
     --sl-border-radius-circle: 50%;
     --sl-border-radius-pill: 9999px;
 
-    /* --- SHADOWS --- */
     --sl-shadow-x-small: 0 1px 2px hsl(240 3.8% 46.1% / 6%);
     --sl-shadow-small: 0 1px 2px hsl(240 3.8% 46.1% / 12%);
     --sl-shadow-medium: 0 2px 4px hsl(240 3.8% 46.1% / 12%);
     --sl-shadow-large: 0 2px 8px hsl(240 3.8% 46.1% / 12%);
     --sl-shadow-x-large: 0 4px 16px hsl(240 3.8% 46.1% / 12%);
 
-    /* --- SPACING --- */
     --sl-spacing-3x-small: .125rem;
     --sl-spacing-2x-small: .25rem;
     --sl-spacing-x-small: .5rem;
@@ -316,14 +305,12 @@
     --sl-spacing-3x-large: 3rem;
     --sl-spacing-4x-large: 4.5rem;
 
-    /* --- TRANSITIONS --- */
     --sl-transition-x-slow: 1s;
     --sl-transition-slow: .5s;
     --sl-transition-medium: .25s;
     --sl-transition-fast: .15s;
     --sl-transition-x-fast: 50ms;
 
-    /* --- TYPOGRAPHY --- */
     --sl-font-mono: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
     --sl-font-sans: "Roboto Condensed", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     --sl-font-serif: Georgia, "Times New Roman", serif;
@@ -355,7 +342,6 @@
     --sl-line-height-loose: 2.2;
     --sl-line-height-looser: 2.6;
 
-    /* --- COMPONENTS & UTILS (SHOELACE DEFAULTS) --- */
     --sl-focus-ring-color: var(--sl-color-primary-600);
     --sl-focus-ring-style: solid;
     --sl-focus-ring-width: 3px;
@@ -368,18 +354,12 @@
     --sl-z-index-toast: 950;
     --sl-z-index-tooltip: 1000;
 
-    /* ========================================================================
-       2. SEMÁNTICA DEL PROYECTO (TEMA CLARO - PROJECT ROSAURA DEFAULT)
-       ======================================================================== */
-
-    /* --- Backgrounds --- */
     --bg-app: #f5f5fa;
     --bg-surface: #ffffff;
     --bg-surface-alt: #fcfcfc;
     --bg-input: #ffffff;
     --bg-hover-light: #f5f5fa; 
-    
-    /* --- Text & Borders --- */
+
     --text-primary: #111111;
     --text-secondary: #666666;
     --text-tertiary: #999999;
@@ -389,7 +369,6 @@
     --border-color-hover: #111111;
     --divider-color: #00000020;
 
-    /* Bordes y Opacidades */
     --border-light: #00000015;
     --border-lighter: #00000010;
     --border-transparent-20: #00000020;
@@ -397,7 +376,6 @@
     
     --border-dynamic: 1px solid var(--border-lighter);
 
-    /* --- Actions --- */
     --action-primary: #111111;
     --action-primary-hover: #333333;
     
@@ -405,24 +383,20 @@
     --action-danger-bg: #fffaf9;
     --action-danger-hover: #ffebee;
 
-    /* --- Status --- */
     --color-success: #16a34a;
     --color-success-bg: #f0fdf4;
     
     --color-error: #d32f2f;
     --color-error-bg: #ffffff;
 
-    /* Colores Específicos de Toast */
     --color-toast-info: #0288d1;
     --color-toast-warning: #ed6c02;
     --color-toast-success-text: #16a34a;
     --color-toast-error-text: #d32f2f;
-    
-    /* --- Dimensions & Effects --- */
-    --radius-md: 0.75rem; /* 12px */
+
+    --radius-md: 0.75rem; 
     --shadow-card: var(--sl-shadow-medium);
 
-    /* --- CODE EDITOR (LIGHT) --- */
     --bg-code-editor: var(--bg-surface, #ffffff);
     --text-code-base: var(--text-primary, #333333);
     --token-comment: #16a34a; 
@@ -440,31 +414,24 @@
     --token-debug: #6f42c1;
     --token-path: #032f62;
 
-    /* SCROLLBAR CUSTOM COLORS (LIGHT) */
     --scrollbar-track: transparent;
     --scrollbar-thumb: #cccccc;
 }
 
-/* ========================================================================
-   3. TEMA OSCURO (DEFINICIÓN DE VARIABLES)
-   ======================================================================== */
-/* Se aplica por OS preference a menos que se fuerce el light mode */
 @media (prefers-color-scheme: dark) {
     html:not([data-theme="light"]):not(.light-theme) {
-        /* --- Backgrounds --- */
+        
         --bg-app: #0e0e11;
         --bg-surface: #161619;
         --bg-surface-alt: #1c1c20;
         --bg-input: #161619;
         --bg-hover-light: rgba(255, 255, 255, 0.05);
-        
-        /* --- Text --- */
+
         --text-primary: #f5f5f5;
         --text-secondary: #a0a0a0;
         --text-tertiary: #737373;
         --text-inverse: #111111;
 
-        /* --- Borders --- */
         --border-color: rgba(255, 255, 255, 0.12);
         --border-color-hover: rgba(255, 255, 255, 0.5);
         --divider-color: rgba(255, 255, 255, 0.08);
@@ -475,7 +442,6 @@
         
         --overlay-dark: rgba(0, 0, 0, 0.7);
 
-        /* --- Actions --- */
         --action-primary: #ffffff;
         --action-primary-hover: #cccccc;
         
@@ -483,18 +449,15 @@
         --action-danger-bg: rgba(239, 68, 68, 0.15);
         --action-danger-hover: rgba(239, 68, 68, 0.25);
 
-        /* --- Status --- */
         --color-success: #4ade80;
         --color-success-bg: rgba(34, 197, 94, 0.15);
         
         --color-error: #ef4444;
         --color-error-bg: rgba(239, 68, 68, 0.15);
 
-        /* Shadows y Bordes Dinámicos para modo oscuro */
         --shadow-card: none;
         --border-dynamic: 1px solid rgba(255, 255, 255, 0.12);
 
-        /* --- CODE EDITOR (DARK) --- */
         --bg-code-editor: #1e1e1e;
         --text-code-base: #d4d4d4;
         --token-comment: #6a9955; 
@@ -512,31 +475,27 @@
         --token-debug: #c586c0;
         --token-path: #ce9178;
 
-        /* SCROLLBAR CUSTOM COLORS (DARK) */
         --scrollbar-track: transparent;
         --scrollbar-thumb: rgba(255, 255, 255, 0.2);
     }
 }
 
-/* Se aplica cuando el modo oscuro es forzado manualmente (acepta clases y atributos) */
 html[data-theme="dark"], 
 body[data-theme="dark"],
 [data-theme="dark"],
 html.dark-theme {
-    /* --- Backgrounds --- */
+    
     --bg-app: #0e0e11;
     --bg-surface: #161619;
     --bg-surface-alt: #1c1c20;
     --bg-input: #161619;
     --bg-hover-light: rgba(255, 255, 255, 0.05);
-    
-    /* --- Text --- */
+
     --text-primary: #f5f5f5;
     --text-secondary: #a0a0a0;
     --text-tertiary: #737373;
     --text-inverse: #111111;
 
-    /* --- Borders --- */
     --border-color: rgba(255, 255, 255, 0.12);
     --border-color-hover: rgba(255, 255, 255, 0.5);
     --divider-color: rgba(255, 255, 255, 0.08);
@@ -547,7 +506,6 @@ html.dark-theme {
     
     --overlay-dark: rgba(0, 0, 0, 0.7);
 
-    /* --- Actions --- */
     --action-primary: #ffffff;
     --action-primary-hover: #cccccc;
     
@@ -555,18 +513,15 @@ html.dark-theme {
     --action-danger-bg: rgba(239, 68, 68, 0.15);
     --action-danger-hover: rgba(239, 68, 68, 0.25);
 
-    /* --- Status --- */
     --color-success: #4ade80;
     --color-success-bg: rgba(34, 197, 94, 0.15);
     
     --color-error: #ef4444;
     --color-error-bg: rgba(239, 68, 68, 0.15);
-    
-    /* Shadows y Bordes Dinámicos para modo oscuro */
+
     --shadow-card: none;
     --border-dynamic: 1px solid rgba(255, 255, 255, 0.12);
 
-    /* --- CODE EDITOR (DARK) --- */
     --bg-code-editor: #1e1e1e;
     --text-code-base: #d4d4d4;
     --token-comment: #6a9955; 
@@ -584,7 +539,6 @@ html.dark-theme {
     --token-debug: #c586c0;
     --token-path: #ce9178;
 
-    /* SCROLLBAR CUSTOM COLORS (DARK) */
     --scrollbar-track: transparent;
     --scrollbar-thumb: rgba(255, 255, 255, 0.2);
 }

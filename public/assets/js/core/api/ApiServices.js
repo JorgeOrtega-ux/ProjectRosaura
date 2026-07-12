@@ -1,5 +1,3 @@
-// public/assets/js/core/api/ApiServices.js
-
 import { ApiRoutes } from './ApiRoutes.js';
 import { showMessage } from '../utils/uiUtils.js';
 
@@ -34,7 +32,7 @@ export class ApiService {
             ];
 
             if (securityKeys.includes(result.message_key) && translated === result.message_key.split('.').pop()) {
-                result.message = "Violación de Seguridad: Permisos insuficientes o acción denegada por jerarquía.";
+                result.message = window.__ ? window.__('err_security_violation') : 'err_security_violation';
             }
         }
         return result;
@@ -48,7 +46,7 @@ export class ApiService {
 
         if (response.status === 401) {
             window.location.href = (window.AppBasePath || '') + '/login?reason=session_revoked';
-            return { success: false, message: (typeof window.__ === 'function' ? window.__('session_revoked') : 'Sesión revocada') };
+            return { success: false, message: (typeof window.__ === 'function' ? window.__('session_revoked') : 'session_revoked') };
         }
 
         if (response.status === 500) {
@@ -106,7 +104,7 @@ export class ApiService {
             if (error.name === 'AbortError') {
                 return { success: false, aborted: true }; 
             }
-            return { success: false, message: (typeof window.__ === 'function' ? window.__('api_connection_error') : 'Error de conexión') };
+            return { success: false, message: (typeof window.__ === 'function' ? window.__('api_connection_error') : 'api_connection_error') };
         }
     }
 
@@ -154,7 +152,7 @@ export class ApiService {
             if (error.name === 'AbortError') {
                 return { success: false, aborted: true }; 
             }
-            return { success: false, message: (typeof window.__ === 'function' ? window.__('api_connection_error') : 'Error de conexión') };
+            return { success: false, message: (typeof window.__ === 'function' ? window.__('api_connection_error') : 'api_connection_error') };
         }
     }
 
@@ -207,7 +205,7 @@ export class ApiService {
             if (error.name === 'AbortError') {
                 return { success: false, aborted: true }; 
             }
-            return { success: false, message: (typeof window.__ === 'function' ? window.__('api_connection_error') : 'Error de conexión') };
+            return { success: false, message: (typeof window.__ === 'function' ? window.__('api_connection_error') : 'api_connection_error') };
         }
     }
 
@@ -221,7 +219,7 @@ export class ApiService {
         const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
 
         const fetchOptions = {
-            method: 'POST', // Todas las peticiones a nuestra API central deben ser POST
+            method: 'POST', 
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRF-Token': csrfToken
@@ -237,8 +235,7 @@ export class ApiService {
             if (!response.ok) {
                 const handledError = this._handleHttpErrors(response);
                 if (handledError) return handledError;
-                
-                // Intentar procesar como JSON para extraer mensaje de error del backend
+
                 try {
                     const errorResult = await response.json();
                     return this._processResponse(errorResult);
@@ -247,7 +244,6 @@ export class ApiService {
                 }
             }
 
-            // Descargamos crudo como texto
             const text = await response.text();
             return { success: true, data: text };
 
@@ -255,17 +251,13 @@ export class ApiService {
             if (error.name === 'AbortError') {
                 return { success: false, aborted: true }; 
             }
-            return { success: false, message: (typeof window.__ === 'function' ? window.__('api_connection_error') : 'Error de conexión') };
+            return { success: false, message: (typeof window.__ === 'function' ? window.__('api_connection_error') : 'api_connection_error') };
         }
     }
 
-    // ==========================================
-    // EXPANSIÓN EN VIVO DEL LIENZO
-    // ==========================================
     async resizeCanvas(canvasId, newSize) {
         return await this.post(ApiRoutes.Canvases.Resize, { id: canvasId, size: newSize });
     }
-    // ==========================================
 
     async toggleFavorite(canvasId) {
         return await this.post(ApiRoutes.Canvases.ToggleFavorite, { id: canvasId });

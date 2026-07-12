@@ -1,11 +1,3 @@
-/* =========================================
-   COMPONENTS.CSS
-   Sistema de Componentes (Ordenado y Categorizado)
-   ========================================= */
-
-/* =========================================
-   1. BASE, LAYOUT Y CONTENEDORES
-   ========================================= */
 .component-layout-centered {
     display: flex;
     justify-content: center;
@@ -79,9 +71,6 @@
     display: none !important;
 }
 
-/* =========================================
-   2. ESTRUCTURA SUPERIOR E INFERIOR (TOP / BOTTOM)
-   ========================================= */
 .component-top {
     display: flex;
     justify-content: space-between;
@@ -187,9 +176,6 @@ html.dark-theme .component-top.shadow {
     border-radius: 0;
 }
 
-/* =========================================
-   3. UTILIDADES GLOBALES
-   ========================================= */
 .h-full {
     height: 100% !important;
 }
@@ -210,9 +196,6 @@ html.dark-theme .component-top.shadow {
     display: none !important;
 }
 
-/* =========================================
-   4. TIPOGRAFÍA, ENLACES Y ESTADOS VACÍOS
-   ========================================= */
 .component-header-card {
     text-align: center;
     border: 1px solid var(--border-color);
@@ -290,15 +273,15 @@ html.dark-theme .component-top.shadow {
 .component-empty-state {
     text-align: center;
     padding: 40px;
-    background: transparent; /* Ajustado para que se integre al fondo */
-    border: none; /* NUEVO: Sin bordes */
-    border-radius: 0; /* NUEVO: Sin radius */
-    height: 100%; /* NUEVO: Ocupa todo el component-bottom */
-    flex: 1; /* NUEVO: Apoyo al flexbox para estirarse */
-    display: flex; /* NUEVO: Convierte el contenedor en flex */
-    flex-direction: column; /* NUEVO */
-    justify-content: center; /* NUEVO: Centra el icono y el texto verticalmente */
-    align-items: center; /* NUEVO: Centra horizontalmente */
+    background: transparent; 
+    border: none; 
+    border-radius: 0; 
+    height: 100%; 
+    flex: 1; 
+    display: flex; 
+    flex-direction: column; 
+    justify-content: center; 
+    align-items: center; 
 }
 
 .component-empty-state-icon {
@@ -372,9 +355,6 @@ html.dark-theme .component-top.shadow {
     margin: 0;
 }
 
-/* =========================================
-   5. BOTONES Y ACCIONES
-   ========================================= */
 .component-actions {
     display: flex;
     flex-direction: row;
@@ -548,9 +528,6 @@ html.dark-theme .component-top.shadow {
     font-size: 18px;
 }
 
-/* =========================================
-   6. FORMULARIOS, INPUTS Y BÚSQUEDA
-   ========================================= */
 .component-form-box {
     width: 100%;
     max-width: 325px;
@@ -789,9 +766,6 @@ textarea.component-input-field::placeholder {
     max-width: 100%;
 }
 
-/* =========================================
-   7. TARJETAS (CARDS), LISTAS Y AVATARES
-   ========================================= */
 .component-card--grouped {
     display: flex;
     flex-direction: column;
@@ -892,7 +866,6 @@ textarea.component-input-field::placeholder {
     gap: 8px;
     width: 100%;
 }
-
 
 .component-group-item {
     display: flex;
@@ -1106,7 +1079,6 @@ textarea.component-input-field::placeholder {
     opacity: 1;
 }
 
-/* FIX: Mantiene el fondo oscuro pero vuelve el ícono blanco en Dark Theme */
 html[data-theme="dark"] .component-avatar__overlay,
 html.dark-theme .component-avatar__overlay {
     background-color: rgba(0, 0, 0, 0.6);
@@ -1185,7 +1157,6 @@ html.dark-theme .component-avatar__overlay {
     font-size: 14px;
 }
 
-/* Modificador para posicionamiento absoluto top-left del badge sin Z-INDEX conflictivo */
 .component-badge--absolute-tl {
     position: absolute;
     top: 16px;
@@ -1196,10 +1167,6 @@ html.dark-theme .component-avatar__overlay {
     font-family: var(--sl-font-mono);
 }
 
-
-/* =========================================
-   8. MENÚS Y NAVEGACIÓN
-   ========================================= */
 .component-module {
     display: block;
 }
@@ -1455,9 +1422,6 @@ html.dark-theme .component-avatar__overlay {
     border-radius: 10px;
 }
 
-/* =========================================
-   9. DROPDOWNS, ACORDIONES Y TOGGLES
-   ========================================= */
 .component-dropdown-wrapper {
     position: relative;
     width: 100%;
@@ -1538,7 +1502,6 @@ html.dark-theme .component-avatar__overlay {
     border-bottom-right-radius: 12px;
 }
 
-/* El uso estricto de ">" previene la herencia de estilos en sub-acordeones */
 .component-accordion.active > .component-accordion-header {
     border-bottom-color: var(--border-lighter);
     border-bottom-left-radius: 0 !important;
@@ -1560,7 +1523,6 @@ html.dark-theme .component-avatar__overlay {
     transition: grid-template-rows 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-/* El uso estricto de ">" evita que se abran todos los hijos a la vez */
 .component-accordion.active > .component-accordion-body {
     grid-template-rows: 1fr;
 }
@@ -1625,9 +1587,6 @@ input:checked + .component-toggle-slider:before {
     transform: translateX(20px);
 }
 
-/* =========================================
-   10. TABLAS Y CONTROLES EN LÍNEA
-   ========================================= */
 .component-table-wrapper {
     background-color: var(--bg-surface);
     border: 1px solid var(--border-color);
@@ -1769,10 +1728,6 @@ input:checked + .component-toggle-slider:before {
     box-sizing: border-box;
 }
 
-/* =========================================
-   11. COMPONENTES COMPLEJOS (CALENDARIO)
-   ========================================= */
-
 .component-calendar {
     padding: 16px;
     display: flex;
@@ -1876,10 +1831,6 @@ input:checked + .component-toggle-slider:before {
     justify-content: space-between;
     margin-top: 16px;
 }
-
-/* =========================================
-   12. MÓDULOS ESPECIALIZADOS
-   ========================================= */
 
 .component-file-viewer {
     flex: 1;
@@ -2259,9 +2210,6 @@ input:checked + .component-toggle-slider:before {
     display: none !important;
 }
 
-/* =========================================
-   13. MODALES, TOASTS, TOOLTIPS Y ALERTAS
-   ========================================= */
 .component-modal-overlay {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
@@ -2559,7 +2507,6 @@ input:checked + .component-toggle-slider:before {
     display: block;
 }
 
-/* Generic Alert System */
 .component-alert {
     display: none;
     align-items: center;
@@ -2618,9 +2565,6 @@ input:checked + .component-toggle-slider:before {
     color: var(--color-success);
 }
 
-/* =========================================
-   14. ANIMACIONES (SPINNERS)
-   ========================================= */
 @keyframes component-spin {
     to { transform: rotate(360deg); }
 }
@@ -2644,9 +2588,6 @@ input:checked + .component-toggle-slider:before {
     border-top-color: var(--text-inverse);
 }
 
-/* =========================================
-   15. MEDIA QUERIES (RESPONSIVE)
-   ========================================= */
 @media (max-width: 600px) {
     .component-group-item {
         flex-direction: column;
@@ -2844,10 +2785,6 @@ input:checked + .component-toggle-slider:before {
     }
 }
 
-/* ==========================================================================
-   16. COMPONENTES GENÉRICOS DE ESTADÍSTICAS (STATS)
-   ========================================================================== */
-
 .component-filter-bar {
     display: flex;
     align-items: center;
@@ -2934,11 +2871,6 @@ input:checked + .component-toggle-slider:before {
     }
 }
 
-/* ==========================================================================
-   17. COMPONENTES DE TARJETAS DE CAPTURAS (SNAPSHOT CARDS) Y GRILLAS GLOBALES
-   ========================================================================== */
-
-/* Estandarización de Grillas sin estilos inline */
 .component-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -2957,18 +2889,17 @@ input:checked + .component-toggle-slider:before {
     transition: outline 0.2s ease, outline-offset 0.2s ease, transform 0.2s ease;
     cursor: pointer;
     text-decoration: none;
-    /* overflow: hidden; ELIMINADO PARA PERMITIR QUE EL MODULO DESPLEGABLE ESCAPE */
+    
 }
 
-/* Pseudo-elemento para inyectar la sombra interna por encima de la etiqueta <img> */
 .component-snapshot-card::after {
     content: '';
     position: absolute;
     inset: 0;
     box-shadow: inset 0px -70px 50px -20px rgba(0, 0, 0, 0.7);
     pointer-events: none;
-    z-index: 2; /* Por encima de la imagen (z-index 1) */
-    border-radius: inherit; /* NUEVO: Mantiene la sombra ceñida a los bordes sin usar overflow hidden */
+    z-index: 2; 
+    border-radius: inherit; 
 }
 
 .component-snapshot-card:hover {
@@ -2976,7 +2907,6 @@ input:checked + .component-toggle-slider:before {
     outline-offset: 2px;
 }
 
-/* Clase hija para controlar las imágenes nativas incrustadas */
 .component-snapshot-card__image {
     position: absolute;
     inset: 0;
@@ -2984,12 +2914,11 @@ input:checked + .component-toggle-slider:before {
     height: 100%;
     object-fit: cover;
     image-rendering: pixelated;
-    z-index: 1; /* Al fondo de la jerarquía interna de la tarjeta */
+    z-index: 1; 
     pointer-events: none;
-    border-radius: inherit; /* NUEVO: Recorta la imagen a los bordes sin usar overflow hidden */
+    border-radius: inherit; 
 }
 
-/* -- NUEVA CAPA INVISIBLE QUE SE ENCARGA DEL ENLACE Y DE UBICAR EL TÍTULO -- */
 .component-snapshot-link {
     position: absolute;
     inset: 0;
@@ -2997,7 +2926,7 @@ input:checked + .component-toggle-slider:before {
     align-items: flex-end;
     padding: 20px;
     text-decoration: none;
-    z-index: 10; /* Por encima del gradiente de sombra */
+    z-index: 10; 
     border-radius: inherit;
 }
 
@@ -3051,20 +2980,18 @@ input:checked + .component-toggle-slider:before {
     }
 }
 
-/* --- CLASES NUEVAS PARA EL BOTÓN Y MENÚ HOVER EN CARDS --- */
 .component-snapshot-actions-wrapper {
     position: absolute;
     top: 12px;
     right: 12px;
-    z-index: 20; /* Z-Index superior para que las acciones queden sobre la capa del link */
+    z-index: 20; 
     width: auto;
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.2s ease, visibility 0.2s ease;
-    /* padding: 2px; ELIMINADO: Movido al div hijo */
+    
 }
 
-/* Se asegura de que el menú se quede abierto gracias a la pseudo-clase nativa de CSS3 :has() */
 .component-snapshot-card:hover .component-snapshot-actions-wrapper,
 .component-snapshot-actions-wrapper:has(.component-module.active) {
     opacity: 1;
@@ -3078,12 +3005,9 @@ input:checked + .component-toggle-slider:before {
     align-items: center;
     justify-content: center;
     box-shadow: var(--shadow-card, 0 2px 8px rgba(0,0,0,0.15));
-    padding: 2px; /* NUEVO: Agregado aquí para que los bordes envuelvan bien al botón */
+    padding: 2px; 
 }
 
-/* =========================================
-   SISTEMA DE DISEÑO R/PLACE (DESIGN CANVAS)
-   ========================================= */
 .component-wrapper[data-ref="design-wrapper"],
 .component-wrapper[data-ref="snapshot-wrapper"] {
     display: flex;
@@ -3099,20 +3023,6 @@ input:checked + .component-toggle-slider:before {
     padding: 0;
 }
 
-
-
-
-
-
-
-
-
-
-/* ==========================================================================
-   50. TARJETAS DE MÉTODOS DE PAGO (BILLING)
-   ========================================================================== */
-
-/* Contenedor base de la tarjeta simulando una física */
 .component-credit-card {
     display: flex;
     flex-direction: column;
@@ -3172,12 +3082,6 @@ input:checked + .component-toggle-slider:before {
     text-transform: uppercase;
 }
 
-/* 
-   Estilos específicos por Marca (Visa, Mastercard, Amex, etc.)
-   Añaden gradientes completos y texturas a las tarjetas
-*/
-
-/* Visa */
 .component-credit-card--visa {
     background: linear-gradient(135deg, #00C6FF 0%, #0072FF 100%);
 }
@@ -3185,7 +3089,6 @@ input:checked + .component-toggle-slider:before {
     color: #ffffff;
 }
 
-/* Mastercard */
 .component-credit-card--mastercard {
     background: linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%);
 }
@@ -3193,7 +3096,6 @@ input:checked + .component-toggle-slider:before {
     color: #ffffff;
 }
 
-/* American Express (Amex) */
 .component-credit-card--amex {
     background: linear-gradient(135deg, #36D1DC 0%, #5B86E5 100%);
 }
@@ -3201,22 +3103,18 @@ input:checked + .component-toggle-slider:before {
     color: #ffffff;
 }
 
-/* Diners Club */
 .component-credit-card--diners {
     background: linear-gradient(135deg, #004a95 0%, #002d5c 100%);
 }
 
-/* Discover */
 .component-credit-card--discover {
     background: linear-gradient(135deg, #e55c20 0%, #b34211 100%);
 }
 
-/* Fallback (Unknown) */
 .component-credit-card--unknown {
     background: linear-gradient(135deg, #444444 0%, #222222 100%);
 }
 
-/* Modifiers for badges and cards */
 .component-card--p18 {
     padding: 18px !important;
 }
@@ -3255,7 +3153,6 @@ input:checked + .component-toggle-slider:before {
     opacity: 0.85;
 }
 
-/* Custom Layout and Spacing Utilities */
 .component-mb-4 { margin-bottom: 4px !important; }
 .component-card--w320 { width: 320px !important; max-width: 100% !important; flex: 0 0 auto !important; position: relative !important; }
 .component-flex-center-gap { display: flex !important; flex-direction: row !important; flex-wrap: wrap !important; justify-content: center !important; gap: 24px !important; width: 100% !important; }
@@ -3267,7 +3164,6 @@ input:checked + .component-toggle-slider:before {
     z-index: 10;
 }
 
-/* Generic Utility Modifiers */
 .component-text-success { color: var(--color-success) !important; }
 .component-text-tertiary { color: var(--text-tertiary) !important; }
 .component-max-w-1050 { max-width: 1050px !important; margin: 0 auto; }
@@ -3303,3 +3199,836 @@ input:checked + .component-toggle-slider:before {
 .component-lh-1 { line-height: 1 !important; }
 .component-w-full { width: 100% !important; }
 .component-d-none { display: none !important; }
+
+.component-wrapper[data-ref="design-wrapper"],
+.component-wrapper[data-ref="snapshot-wrapper"] {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.component-wrapper[data-ref="design-wrapper"] .component-bottom,
+.component-wrapper[data-ref="snapshot-wrapper"] .component-bottom {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    padding: 0;
+}
+
+.component-canvas-surface {
+    display: block;
+    width: 100%;
+    height: 100%;
+    cursor: default; 
+    outline: none;
+}
+
+.component-canvas-surface.cursor-grabbing {
+    cursor: grabbing !important;
+}
+
+.component-action-pill {
+    position: absolute;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+
+.component-action-pill .component-button {
+    pointer-events: auto;
+    border-radius: var(--sl-border-radius-pill);
+    padding: 0 28px;
+    box-shadow: var(--shadow-large);
+    transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.component-color-indicator {
+    position: relative;
+}
+
+.component-color-indicator::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 10px;
+    height: 10px;
+    background-color: var(--active-color, var(--text-primary));
+    border-radius: 50%;
+    border: 2px solid var(--bg-surface);
+    box-sizing: border-box;
+    transition: background-color 0.2s ease;
+}
+
+.component-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.component-divider-vertical {
+    width: 1px;
+    height: 24px;
+    background-color: var(--border-color);
+    margin: 0 4px;
+}
+
+.component-divider-vertical.disabled {
+    display: none !important;
+}
+
+.component-menu-section-parent {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.component-menu-section-parent--bordered {
+    border-bottom: 1px solid var(--border-color);
+}
+
+.hidden-input {
+    display: none !important;
+}
+
+.component-loader-center--compact {
+    min-height: 100px;
+    padding: 20px;
+}
+
+.component-empty-state-content {
+    text-align: center;
+    opacity: 0.5;
+    width: 100%;
+}
+
+.component-items-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px; 
+    justify-items: center;
+    width: 100%;
+}
+
+.component-items-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px;
+    width: 100%;
+}
+
+.component-items-grid--5 {
+    grid-template-columns: repeat(5, 1fr);
+}
+
+.component-menu-header-box--section {
+    margin-bottom: 8px;
+}
+
+.component-color-btn {
+    width: 100%; 
+    aspect-ratio: 1 / 1;
+    border-radius: 50%;
+    border: none;
+    background-color: var(--color-val);
+    cursor: pointer;
+    outline: none;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.15); 
+    transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.2s ease;
+    padding: 0;
+}
+
+.component-color-btn:hover,
+.component-color-btn.active {
+    box-shadow: 0 0 0 2px var(--bg-surface), 0 0 0 4px var(--color-val), inset 0 0 0 1px rgba(0,0,0,0.15);
+    transform: scale(0.82); 
+}
+
+.component-color-btn:active {
+    transform: scale(0.75); 
+}
+
+.component-library-card {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    border: none;
+    padding: 0;
+    aspect-ratio: 1 / 1;
+    background-color: var(--bg-surface-alt);
+    transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.2s ease;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.15);
+}
+
+.component-library-card:hover,
+.component-library-card.active {
+    box-shadow: 0 0 0 2px var(--bg-surface), 0 0 0 4px var(--action-primary), inset 0 0 0 1px rgba(0,0,0,0.15);
+    transform: scale(0.82); 
+}
+
+.component-library-card__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.component-library-card__delete {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 20px !important;
+    height: 20px !important;
+    min-height: 20px !important;
+    padding: 0;
+}
+
+.component-library-card__delete .material-symbols-rounded {
+    font-size: 12px;
+}
+
+.live-share-code-display {
+    padding: 8px;
+    background: rgba(0, 255, 128, 0.1);
+    color: #00ff80;
+    text-align: center;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 1.2rem;
+    letter-spacing: 2px;
+    font-weight: bold;
+}
+
+.live-share-inputs-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.live-share-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.live-share-label {
+    font-size: 10px;
+    opacity: 0.7;
+}
+
+.live-share-label--flex {
+    display: flex;
+    justify-content: space-between;
+}
+
+.live-share-range {
+    width: 100%;
+    margin: 4px 0;
+}
+
+.component-fullscreen-overlay {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.component-fullscreen-overlay.disabled {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.component-canvas-blocked,
+.component-canvas-blur {
+    filter: blur(8px);
+    transition: filter 0.3s ease;
+}
+
+.component-overlay-reset {
+    background-color: rgba(0, 0, 0, 0.6);
+}
+
+.request-list-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px;
+    background-color: var(--bg-surface-alt);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    transition: background-color 0.2s;
+}
+
+.request-list-item:hover {
+    background-color: var(--surface-hover);
+}
+
+.request-list-item-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.request-list-item-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.canvas-badges-left {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    pointer-events: none;
+}
+
+.canvas-badges-right {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    pointer-events: none;
+}
+
+.canvas-badges-left .component-badge,
+.canvas-badges-right .component-badge {
+    background-color: var(--bg-surface);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+    font-family: var(--sl-font-mono, monospace);
+    box-shadow: var(--shadow-card);
+    margin: 0;
+    pointer-events: auto; 
+    
+    display: flex; 
+    align-items: center;
+    width: max-content;
+}
+
+.icon-spin-slow {
+    animation: spin 3s linear infinite;
+}
+
+@keyframes spin {
+    100% { transform: rotate(360deg); }
+}
+
+.component-button.btn-favorite {
+    transition: color 0.2s ease, transform 0.1s ease;
+}
+
+.component-button.btn-favorite.is-favorite {
+    color: #ff3b30; 
+
+}
+
+.component-button.btn-favorite.is-favorite .material-symbols-rounded {
+    font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 20;
+    animation: favoriteBeat 0.3s ease-in-out; 
+}
+
+@keyframes favoriteBeat {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.25); }
+}
+
+.component-module--sidebar-right {
+    left: auto !important;
+    right: 0 !important;
+}
+.component-menu--chat {
+    overflow-y: hidden !important; 
+}
+.component-menu--w335 {
+    width: 335px;
+}
+.component-menu-section-parent--chat {
+    flex: 1;
+    min-height: 0;
+}
+.component-chat-messages {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+.component-chat-messages::-webkit-scrollbar {
+    width: 6px;
+}
+.component-chat-messages::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+}
+.component-chat-messages::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 4px;
+}
+
+.component-chat-input-area {
+    padding: 12px;
+    border-top: 1px solid var(--border-color);
+    background: var(--bg-surface);
+    flex: 0 0 auto;
+}
+.component-chat-input-wrapper {
+    display: flex;
+    gap: 8px;
+}
+
+.component-chat-send-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    background-color: var(--surface-hover);
+    color: var(--text-secondary);
+    transition: all 0.2s ease;
+    margin-right: 6px;
+    flex-shrink: 0;
+}
+.component-chat-send-btn.active {
+    background-color: var(--text-primary);
+    color: var(--bg-surface);
+}
+
+.chat-message {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 13px;
+}
+.chat-message-avatar-img {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+.chat-message-avatar-placeholder {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.chat-message-avatar-placeholder .material-symbols-rounded {
+    font-size: 18px;
+    color: var(--text-secondary);
+}
+.chat-message-bubble {
+    flex: 1;
+    background: transparent;
+    border: 1px solid #00000020;
+    padding: 8px 4px 8px 12px;
+    border-radius: 8px;
+    color: var(--text-primary);
+}
+
+.theme-dark .chat-message-bubble,
+[data-theme="dark"] .chat-message-bubble {
+    border-color: #ffffff20;
+}
+
+.chat-msg-actions {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+
+.chat-message:hover .chat-msg-actions,
+.chat-msg-actions:has(.chat-dropdown-module.active) {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.chat-message-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+}
+.chat-message-username {
+    color: var(--primary-color);
+}
+.chat-message-time {
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+.chat-message-text {
+    word-break: break-word;
+    line-height: 1.4;
+}
+
+.chat-attachments-preview-container {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+.chat-attachments-preview-container::-webkit-scrollbar {
+    height: 6px;
+}
+.chat-attachments-preview-container::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+}
+.chat-attachments-preview-container::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 4px;
+}
+
+.chat-attachment-preview-card {
+    position: relative;
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: var(--bg-surface-alt);
+    border: 1px solid var(--border-color);
+}
+.chat-attachment-preview-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.chat-attachment-preview-card .remove-btn {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 16px;
+    height: 16px;
+    background: rgba(0, 0, 0, 0.6);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 12px;
+    padding: 0;
+    line-height: 1;
+}
+.chat-attachment-preview-card .remove-btn:hover {
+    background: rgba(255, 59, 48, 0.9);
+}
+
+.chat-message-attachments {
+    margin-top: 8px;
+    display: grid;
+    gap: 4px;
+    border-radius: 8px;
+    overflow: hidden;
+    max-width: 280px;
+}
+
+.chat-attachment-grid-1 {
+    grid-template-columns: 1fr;
+}
+.chat-attachment-grid-1 .chat-attachment-item {
+    aspect-ratio: auto;
+    max-height: 280px;
+}
+
+.chat-attachment-grid-2 {
+    grid-template-columns: 1fr 1fr;
+}
+.chat-attachment-grid-2 .chat-attachment-item {
+    aspect-ratio: 1 / 1;
+}
+
+.chat-attachment-grid-3 {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+}
+.chat-attachment-grid-3 .chat-attachment-item {
+    aspect-ratio: auto;
+}
+.chat-attachment-grid-3 .chat-attachment-item:first-child {
+    grid-row: span 2;
+}
+.chat-attachment-grid-3 .chat-attachment-item:nth-child(2),
+.chat-attachment-grid-3 .chat-attachment-item:nth-child(3) {
+    aspect-ratio: 1 / 1;
+}
+
+.chat-attachment-grid-4,
+.chat-attachment-grid-more {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+}
+.chat-attachment-grid-4 .chat-attachment-item,
+.chat-attachment-grid-more .chat-attachment-item {
+    aspect-ratio: 1 / 1;
+}
+
+.chat-attachment-item {
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    background-color: var(--bg-surface-alt);
+}
+.chat-attachment-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.2s ease;
+}
+.chat-attachment-item:hover img {
+    transform: scale(1.05);
+}
+
+.chat-attachment-item-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.chat-image-viewer-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(8px);
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.chat-image-viewer-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.chat-image-viewer-top {
+    height: 64px;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(180deg, rgba(0,0,0,0.6) 0%, transparent 100%);
+    z-index: 10;
+}
+
+.chat-image-viewer-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.chat-image-viewer-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    border-radius: 8px;
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.chat-image-viewer-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+}
+
+.chat-image-viewer-btn.icon-only {
+    padding: 8px;
+    border-radius: 50%;
+}
+
+.chat-image-viewer-btn[disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.chat-image-viewer-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    position: relative;
+}
+
+.chat-image-viewer-img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border-radius: 4px;
+    transform: scale(0.95);
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.chat-image-viewer-overlay.active .chat-image-viewer-img {
+    transform: scale(1);
+}
+
+:root {
+    --sk-bg-light: #e2e2e2;
+    --sk-shimmer-light: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.7) 50%, transparent 100%);
+    
+    --sk-bg-dark: #2a2a2a;
+    --sk-shimmer-dark: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.06) 50%, transparent 100%);
+}
+
+.component-skeleton {
+    background-color: var(--sk-bg-light);
+    position: relative;
+    overflow: hidden;
+    border-radius: 6px;
+    border: none !important;
+    width: 100%;
+}
+
+html[data-theme="dark"] .component-skeleton,
+html.dark-theme .component-skeleton { 
+    background-color: var(--sk-bg-dark); 
+}
+
+.component-skeleton::after {
+    content: "";
+    position: absolute;
+    top: 0; right: 0; bottom: 0; left: 0;
+    transform: translateX(-100%);
+    background-image: var(--sk-shimmer-light);
+    animation: sk-shimmer 1.5s infinite;
+}
+
+html[data-theme="dark"] .component-skeleton::after,
+html.dark-theme .component-skeleton::after {
+    background-image: var(--sk-shimmer-dark);
+}
+
+@keyframes sk-shimmer { 
+    100% { transform: translateX(100%); } 
+}
+
+.component-skeleton--avatar {
+    border-radius: 50% !important;
+    width: 64px;
+    height: 64px;
+    flex-shrink: 0;
+}
+
+.component-skeleton--avatar-sm {
+    border-radius: 50% !important;
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+}
+
+.component-skeleton--title {
+    height: 24px;
+    width: 40%;
+    border-radius: 6px;
+}
+
+.component-skeleton--text {
+    height: 14px;
+    width: 100%;
+    border-radius: 4px;
+}
+
+.component-skeleton--text-short {
+    height: 14px;
+    width: 30%;
+    border-radius: 4px;
+}
+
+.component-skeleton--text-medium {
+    height: 14px;
+    width: 60%;
+    border-radius: 4px;
+}
+
+.component-skeleton--button {
+    height: 40px;
+    width: 120px;
+    border-radius: 8px;
+}
+
+.component-skeleton--button-full {
+    height: 40px;
+    width: 100%;
+    border-radius: 8px;
+}
+
+.component-skeleton--card {
+    height: 100px;
+    width: 100%;
+    border-radius: 12px;
+}
+
+.component-skeleton--h14 { height: 14px; } 
+.component-skeleton--h16 { height: 16px; } 
+.component-skeleton--h20 { height: 20px; }
+.component-skeleton--h24 { height: 24px; }
+.component-skeleton--h34 { height: 34px; } 
+.component-skeleton--h40 { height: 40px; }
+.component-skeleton--h45 { height: 45px; }
+.component-skeleton--h100 { height: 100px; }
+
+.component-skeleton--centered {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.ui-skeleton-loader {
+    position: relative;
+    background-color: var(--sk-bg-dark); 
+    transition: background-color 0.3s ease;
+}
+.ui-skeleton-loader::after {
+    content: "";
+    position: absolute;
+    top: 0; right: 0; bottom: 0; left: 0;
+    background-image: linear-gradient(90deg, rgba(255,255,255,0) 0, rgba(255,255,255,0.05) 20%, rgba(255,255,255,0.1) 60%, rgba(255,255,255,0));
+    animation: sk-shimmer 2s infinite;
+    z-index: 1;
+    pointer-events: none;
+}
+.ui-skeleton-loader img {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 2;
+    position: relative;
+}
+.ui-skeleton-loader.is-loaded { background-color: transparent; }
+.ui-skeleton-loader.is-loaded::after { display: none; }
+.ui-skeleton-loader.is-loaded img { opacity: 1; }

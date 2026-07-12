@@ -1,5 +1,3 @@
-// public/assets/js/core/components/TooltipSystem.js
-
 export class TooltipSystem {
     constructor() {
         this.activeTooltip = null;
@@ -7,7 +5,6 @@ export class TooltipSystem {
         this.activeTarget = null;
         this.initialized = false;
 
-        // Bindings obligatorios para ciclo de vida controlado
         this.handleShowBound = this.handleShow.bind(this);
         this.handleHideBound = this.handleHide.bind(this);
         this.handleClickBound = this.handleClick.bind(this);
@@ -75,8 +72,7 @@ export class TooltipSystem {
                 { name: 'offset', options: { offset: [0, 8] } },
                 { name: 'flip', enabled: true, options: { fallbackPlacements: ['bottom', 'top', 'left', 'right'] } },
                 { name: 'preventOverflow', enabled: true, options: { boundary: 'viewport' } },
-                // LA MAGIA ESTÁ AQUÍ: Evitamos que Popper use transform (translate3d)
-                // Esto hace que el salto inicial sea instantáneo mediante top/left
+
                 { name: 'computeStyles', options: { gpuAcceleration: false } }
             ],
         });
@@ -84,7 +80,7 @@ export class TooltipSystem {
         this.activePopper.update().then(() => {
             requestAnimationFrame(() => {
                 if (this.activeTooltip) {
-                    this.activeTooltip.classList.add('active'); // Reemplazado .show por .active
+                    this.activeTooltip.classList.add('active'); 
                 }
             });
         });
@@ -108,7 +104,7 @@ export class TooltipSystem {
             const tooltipToRemove = this.activeTooltip;
             const popperToRemove = this.activePopper;
 
-            tooltipToRemove.classList.remove('active'); // Reemplazado .show por .active
+            tooltipToRemove.classList.remove('active'); 
             
             setTimeout(() => {
                 if (popperToRemove) {
@@ -117,7 +113,7 @@ export class TooltipSystem {
                 if (tooltipToRemove.parentNode) {
                     tooltipToRemove.parentNode.removeChild(tooltipToRemove);
                 }
-            }, 150); // Sincronizado con la duración del CSS (0.15s)
+            }, 150); 
         }
 
         this.activeTooltip = null;

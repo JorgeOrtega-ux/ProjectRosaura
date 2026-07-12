@@ -1,4 +1,3 @@
-// public/assets/js/core/components/CalendarSystem.js
 import { showMessage } from '../utils/uiUtils.js';
 
 export class CalendarSystem {
@@ -13,7 +12,6 @@ export class CalendarSystem {
         this.monthsStr = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
         this.monthsShortStr = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
-        // REGLA 1: Bindings obligatorios
         this.handleClickBound = this.handleClick.bind(this);
         this.handleFocusOutBound = this.handleFocusOut.bind(this);
     }
@@ -69,14 +67,14 @@ export class CalendarSystem {
     }
 
     bindEvents() {
-        // REGLA 3: Delegación Global Pura
+        
         document.addEventListener('click', this.handleClickBound);
         document.addEventListener('focusout', this.handleFocusOutBound);
     }
 
     handleClick(e) {
         const container = this.getContainer();
-        // Ignorar clicks que no provengan de la instancia específica de este calendario
+        
         if (container !== document && !container.contains(e.target)) {
             return;
         }
@@ -167,8 +165,8 @@ export class CalendarSystem {
 
     confirm() {
         if (!this.selectedDate) {
-            // REGLA 5: Sin native alerts
-            showMessage('Selecciona un día en el calendario.', 'error');
+            
+            showMessage(window.__ ? window.__('err_select_day') : 'err_select_day', 'error');
             return;
         }
         

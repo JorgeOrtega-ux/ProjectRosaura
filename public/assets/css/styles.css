@@ -1,6 +1,4 @@
-/* public/assets/css/styles.css */
 @import url('https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,100..900;1,100..900&display=swap');
-@import url('./components/design.css');
 
 * {
     padding: 0;
@@ -19,10 +17,6 @@ body,html {
     height: 100%;
     overflow: hidden;
 }
-
-/* ========================================= */
-/* --- MAIN LAYOUT STRUCTURE ---             */
-/* ========================================= */
 
 .main-content {
     width: 100%;
@@ -49,7 +43,6 @@ body,html {
     transition: border-bottom-color 0.3s ease;
 }
 
-/* --- Estado Active (Shadow del Header al hacer scroll en Modo Claro) --- */
 .general-content-top::after {
     content: '';
     position: absolute;
@@ -71,7 +64,6 @@ body,html {
     opacity: 1;
 }
 
-/* Override para Modo Oscuro: Desactivar sombra de scroll y mantener borde */
 html[data-theme="dark"] .general-content-top::after,
 html.dark-theme .general-content-top::after {
     display: none;
@@ -110,10 +102,6 @@ html.dark-theme .general-content-top.shadow {
     scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
 
-/* ========================================= */
-/* --- HEADER LAYOUT ---                     */
-/* ========================================= */
-
 .header {
     width: 100%;
     height: auto; 
@@ -151,10 +139,6 @@ html.dark-theme .general-content-top.shadow {
     display: none; 
 }
 
-/* ========================================= */
-/* --- RESPONSIVE LAYOUT LOGIC ---           */
-/* ========================================= */
-
 @media (max-width: 768px) {
     .main-content {
         padding: 0;
@@ -162,10 +146,9 @@ html.dark-theme .general-content-top.shadow {
 
     .general-content {
         border-radius: 0;
-        border: none !important; /* Forzar que en móvil pegue a los bordes de la pantalla */
+        border: none !important; 
     }
 
-    /* FIX 1: Eliminar bordes redondos de los subcontenedores en móvil para evitar recortes (ej. sombra tabla) */
     .general-content-bottom {
         border-radius: 0 !important;
     }
@@ -197,14 +180,9 @@ html.dark-theme .general-content-top.shadow {
     }
 }
 
-/* Aseguramos que los elementos .disabled verdaderamente se oculten */
 .disabled {
     display: none !important;
 }
-
-/* ========================================= */
-/* --- POLICY DOCUMENTS STYLES ---           */
-/* ========================================= */
 
 .policy-container {
     padding: 32px;
@@ -247,3 +225,4 @@ html.dark-theme .general-content-top.shadow {
 .policy-list li {
     margin-bottom: 8px;
 }
+

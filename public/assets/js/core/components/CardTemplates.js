@@ -1,24 +1,16 @@
-// public/assets/js/core/components/CardTemplates.js
-
 import { escapeHTML } from '../utils/uiUtils.js';
 
 export const CardTemplates = {
-    /**
-     * Construye la tarjeta principal de un lienzo (Usada en Home, Explore, etc.)
-     * @param {Object} canvas Datos del lienzo devueltos por la API
-     * @param {Object} config Opciones adicionales (ej. basePath)
-     */
+    
     canvasCard: (canvas, config = {}) => {
         const name = escapeHTML(canvas.name);
         const uuid = escapeHTML(canvas.uuid);
         const basePath = config.basePath || '';
         const isFavoriteClass = canvas.is_favorite ? 'is-favorite' : '';
-        
-        // Determinar URL de fallback para la imagen
+
         const fallbackImg = '/assets/img/misc/placeholder.png';
         const srcUrl = canvas.thumbnail_url ? escapeHTML(canvas.thumbnail_url) : fallbackImg;
-        
-        // Bloque de imagen con onerror por si la ruta devuelta falla
+
         const imgHtml = `
             <img src="${srcUrl}" 
                  alt="${name}" 
@@ -27,7 +19,6 @@ export const CardTemplates = {
                  decoding="async" 
                  onerror="this.src='${fallbackImg}'">`;
 
-        // Botón de acción condicional en el dropdown (basado en lógica de negocio devuelta por API)
         const actionButtonHtml = canvas.is_owner 
             ? `<button type="button" class="component-menu-link component-menu-link--bordered component-text-notice--error" data-action="deleteCanvas" data-id="${canvas.id}" data-uuid="${uuid}">
                     <div class="component-menu-link-icon"><span class="material-symbols-rounded">delete</span></div>
@@ -145,9 +136,6 @@ export const CardTemplates = {
         `;
     },
 
-    /**
-     * Construye una tarjeta para el historial de reinicios (Snapshots Gallery)
-     */
     snapshotCard: (snapshot, config = {}) => {
         const canvasName = escapeHTML(config.canvasName || 'Lienzo');
         const basePath = config.basePath || '';
@@ -177,9 +165,6 @@ export const CardTemplates = {
         `;
     },
 
-    /**
-     * Devuelve el bloque HTML completo de un estado vacío.
-     */
     emptyState: (message, icon = 'collections') => {
         return `
             <div class="component-empty-state" data-ref="empty-state-rendered">
@@ -189,9 +174,6 @@ export const CardTemplates = {
         `;
     },
 
-    /**
-     * Construye una tarjeta para un método de pago.
-     */
     paymentMethodCard: (card) => {
         const brandRaw = card.brand ? card.brand.toLowerCase() : 'unknown';
         const brand = escapeHTML(card.brand || 'Card').toUpperCase();
@@ -218,14 +200,11 @@ export const CardTemplates = {
         `;
     },
 
-    /**
-     * Construye una tarjeta para la suscripción actual.
-     */
     subscriptionCard: (data) => {
         const tierName = data.tier === 2 ? 'Advanced' : (data.tier === 1 ? 'Pro' : 'Free');
         const status = escapeHTML(data.status || 'inactive');
         const cancelAtEnd = data.cancel_at_period_end;
-        let dateLabel = cancelAtEnd ? 'Finaliza el:' : 'Próximo cobro:';
+        let dateLabel = cancelAtEnd ? window.__ ? window.__('ends_on') : 'ends_on' : 'Próximo cobro:';
         
         let dateVal = '-';
         if (data.current_period_end) {

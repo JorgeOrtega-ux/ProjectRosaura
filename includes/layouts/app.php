@@ -118,7 +118,7 @@ if ($activeAccountId && SubscriptionPlanConstants::hasFeature($subscriptionTier,
     
     <link rel="stylesheet" type="text/css" href="assets/css/styles.css">
     <link rel="stylesheet" type="text/css" href="assets/css/components/components.css">
-    <link rel="stylesheet" type="text/css" href="assets/css/components/skeleton.css">
+
     <link rel="stylesheet" type="text/css" href="assets/css/root.css">
     <title><?php echo htmlspecialchars($initialTitle); ?></title>
     

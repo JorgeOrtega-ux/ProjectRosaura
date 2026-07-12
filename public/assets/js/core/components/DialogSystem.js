@@ -1,20 +1,16 @@
-// public/assets/js/core/components/DialogSystem.js
 import { DialogTemplates } from './DialogTemplates.js';
 
 export class DialogSystem {
     constructor() {
         this.templates = DialogTemplates;
-        
-        // Estado del modal actual (Inerte)
+
         this.activeResolveFn = null;
         this.activeWrapper = null;
         this.activeOverlay = null;
         this.activeBox = null;
-        
-        // Estado del drag
+
         this.dragState = { startY: 0, currentDiff: 0, isDragging: false };
 
-        // Bindings
         this.handleClickBound = this.handleClick.bind(this);
         this.handlePointerDownBound = this.handlePointerDown.bind(this);
         this.handlePointerMoveBound = this.handlePointerMove.bind(this);
@@ -28,8 +24,7 @@ export class DialogSystem {
     init() {
         if (this.initialized) return;
         this.initialized = true;
-        
-        // Delegación pura en el DOM
+
         document.addEventListener('click', this.handleClickBound);
         document.addEventListener('pointerdown', this.handlePointerDownBound);
         document.addEventListener('pointermove', this.handlePointerMoveBound);
@@ -61,19 +56,18 @@ export class DialogSystem {
     }
 
     show(templateName, data = {}) {
-        // Defensa en profundidad: Si alguien llamó a destroy(), lo volvemos a revivir al mostrar
+        
         if (!this.initialized) {
             this.init();
         }
 
         return new Promise((resolve) => {
             if (!this.templates[templateName]) {
-                console.error(`La plantilla de diálogo '${templateName}' no existe.`);
+                
                 resolve({ confirmed: false, data: {} });
                 return;
             }
 
-            // Si hay un modal abierto, ciérralo antes de abrir otro
             if (this.activeResolveFn) this.closeCurrent(false);
 
             const container = this._getContainer();
@@ -106,25 +100,21 @@ export class DialogSystem {
     handleClick(e) {
         if (!this.activeResolveFn) return; 
 
-        // 1. Botón de cerrar explícito
         const closeBtn = e.target.closest('.component-modal-close-btn');
         if (closeBtn) {
             this.closeCurrent(false);
             return;
         }
 
-        // 2. Búsqueda de botones de acción
         const actionBtn = e.target.closest('[data-modal-action], [data-action="confirm"], [data-action="cancel"], #btn_confirm_custom_backup');
         
         if (actionBtn) {
             let action = actionBtn.getAttribute('data-modal-action') || actionBtn.getAttribute('data-action');
-            
-            // Fallback para IDs específicos
+
             if (!action && actionBtn.id === 'btn_confirm_custom_backup') {
                 action = 'confirm';
             }
 
-            // Lógica para alternar visibilidad de contraseña dentro del diálogo
             if (action === 'togglePassword') {
                 const inputGroup = actionBtn.closest('.component-input-group');
                 if (inputGroup) {
@@ -139,7 +129,7 @@ export class DialogSystem {
                         }
                     }
                 }
-                return; // Evitamos cerrar el diálogo
+                return; 
             }
 
             if (action === 'cancel') {
@@ -152,7 +142,6 @@ export class DialogSystem {
             return;
         }
 
-        // 3. Clic en el fondo oscuro
         if (e.target === this.activeOverlay || e.target === this.activeWrapper) {
             this.closeCurrent(false);
         }
@@ -167,7 +156,7 @@ export class DialogSystem {
             if (result !== false && this.activeBox) {
                 const inputs = this.activeBox.querySelectorAll('input, select, textarea');
                 inputs.forEach(inp => { 
-                    const key = inp.id || inp.name || inp.getAttribute('data-ref'); // <-- AÑADIDO data-ref
+                    const key = inp.id || inp.name || inp.getAttribute('data-ref'); 
                     if (key) {
                         if (inp.type === 'checkbox' || inp.type === 'radio') {
                             formData[key] = inp.checked;
@@ -178,7 +167,7 @@ export class DialogSystem {
                 });
             }
         } catch (error) {
-            console.error("Error al recolectar datos del diálogo:", error);
+            
         }
 
         const overlayToRemove = this.activeOverlay;
@@ -193,7 +182,6 @@ export class DialogSystem {
         this.activeWrapper = null;
         this.activeBox = null;
 
-        // Resolvemos la promesa INMEDIATAMENTE para evitar la condición de carrera
         resolveToCall({ confirmed: result !== false, action: result, data: formData });
 
         setTimeout(() => {

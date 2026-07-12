@@ -1,5 +1,3 @@
-// public/assets/js/core/components/CanvasCardInteractions.js
-
 import { ApiRoutes } from '../api/ApiRoutes.js';
 import { showMessage } from '../utils/uiUtils.js';
 
@@ -10,10 +8,6 @@ export class CanvasCardInteractions {
         this.abortController = abortController;
     }
 
-    /**
-     * Enruta la acción al método correspondiente.
-     * @returns {boolean} Retorna true si la acción fue manejada, false si no.
-     */
     handleAction(action, btn) {
         if (action === 'openCanvasNewTab') {
             this.openCanvasNewTab(btn);
@@ -40,16 +34,12 @@ export class CanvasCardInteractions {
         return false;
     }
 
-    // ==========================================
-    // LÓGICA DE FAVORITOS (Sin contador numérico)
-    // ==========================================
     async toggleFavorite(btn) {
         if (btn.classList.contains('disabled-interactive')) return;
         
         const canvasId = btn.getAttribute('data-id');
         if (!canvasId) return;
 
-        // Optimistic update
         const wasFavorite = btn.classList.contains('is-favorite');
         if (wasFavorite) {
             btn.classList.remove('is-favorite');
@@ -64,14 +54,14 @@ export class CanvasCardInteractions {
         btn.classList.remove('disabled-interactive');
 
         if (res && res.success) {
-            // Sync with actual server state just in case
+            
             if (res.data.action === 'added') {
                 btn.classList.add('is-favorite');
             } else {
                 btn.classList.remove('is-favorite');
             }
         } else {
-            // Revert on failure
+            
             if (wasFavorite) {
                 btn.classList.add('is-favorite');
             } else {
@@ -81,9 +71,6 @@ export class CanvasCardInteractions {
         }
     }
 
-    // ==========================================
-    // LÓGICA DE MENÚS Y NAVEGACIÓN
-    // ==========================================
     viewCanvasSnapshots(btn) {
         const uuid = btn.getAttribute('data-uuid');
         if (uuid) {
@@ -117,9 +104,6 @@ export class CanvasCardInteractions {
         }
     }
 
-    // ==========================================
-    // LÓGICA DE DESTRUCCIÓN / ABANDONO
-    // ==========================================
     async deleteCanvas(btn) {
         const id = btn.getAttribute('data-id');
         const uuid = btn.getAttribute('data-uuid');
@@ -177,12 +161,11 @@ export class CanvasCardInteractions {
 
         this.closeDropdowns();
 
-        // Use standard window.prompt or a custom dialog system if available
         let confirmed = false;
         if (window.dialogSystem && window.dialogSystem.show) {
-            // If you have a specific modal for this, use it, else fallback to generic or prompt
+            
             try {
-                // Since this is a new action, we can use a basic prompt if a modal doesn't exist
+                
                 const confirmRes = await window.dialogSystem.show('confirmActionModal', {
                     title: 'Convertir a Básico',
                     message: 'Esta acción es IRREVERSIBLE. Se recortará tu lienzo a 64x64 desde la esquina superior izquierda, se perderán los miembros excedentes, y la paleta se restablecerá a la original. Escribe CONFIRMAR para proceder.',
@@ -199,7 +182,7 @@ export class CanvasCardInteractions {
                     }
                 }
             } catch(e) {
-                // Modal failed or not found, fallback to prompt
+                
                 const ans = prompt("Escribe CONFIRMAR para degradar el lienzo a básico. Esta acción es IRREVERSIBLE.");
                 if (ans === 'CONFIRMAR') confirmed = true;
             }

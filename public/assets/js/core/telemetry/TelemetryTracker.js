@@ -19,8 +19,7 @@ class TelemetryTracker {
 
     init() {
         this.abortController = new AbortController();
-        
-        // Uso de sessionStorage para evitar amnesia entre recargas
+
         let savedUUID = sessionStorage.getItem('telemetry_session_uuid');
         if (!savedUUID) {
             savedUUID = this.generateSessionUUID();
