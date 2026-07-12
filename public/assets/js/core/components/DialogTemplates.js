@@ -684,5 +684,22 @@ export const DialogTemplates = {
                 <button class="component-button component-button--dark component-button--h45 component-button--full" data-modal-action="confirm">Unirme al lienzo</button>
             </div>
         `
+    },
+
+    confirmDeleteMessage: {
+        build: () => DialogTemplates.confirmAction.build({
+            titleKey: 'title_confirm_action',
+            descHtml: '¿Seguro que deseas eliminar este mensaje?',
+            confirmClass: 'component-button--danger'
+        })
+    },
+
+    reportMessageDialog: {
+        build: () => DialogTemplates.confirmActionModal.build({
+            title: 'Reportar Mensaje',
+            message: 'Selecciona una opción de reporte:<br>1. Spam o publicidad<br>2. Lenguaje ofensivo<br>3. Acoso o incitación al odio<br>4. Otro',
+            inputPlaceholder: 'Ingresa el número de opción (1-4)',
+            confirmClass: 'component-button--danger'
+        })
     }
 };

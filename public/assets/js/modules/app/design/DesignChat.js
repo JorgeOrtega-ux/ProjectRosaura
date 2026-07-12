@@ -518,7 +518,13 @@ export class DesignChat {
     }
 
     async deleteMessage(id) {
-        if (!confirm('¿Seguro que deseas eliminar este mensaje?')) return;
+        if (window.dialogSystem) {
+            const res = await window.dialogSystem.show('confirmDeleteMessage');
+            if (!res.confirmed) return;
+        } else {
+            if (!confirm('¿Seguro que deseas eliminar este mensaje?')) return;
+        }
+
         
         try {
             const response = await this.api.post(ApiRoutes.Chat.Delete, {
@@ -539,8 +545,15 @@ export class DesignChat {
     }
 
     async reportMessage(id) {
-        const reason = prompt('Selecciona una opción de reporte:\\n1. Spam o publicidad\\n2. Lenguaje ofensivo\\n3. Acoso o incitación al odio\\n4. Otro');
-        if (!reason) return;
+        let reason;
+        if (window.dialogSystem) {
+            const res = await window.dialogSystem.show('reportMessageDialog');
+            if (!res.confirmed || !res.data.confirm_input) return;
+            reason = res.data.confirm_input;
+        } else {
+            reason = prompt('Selecciona una opción de reporte:\\n1. Spam o publicidad\\n2. Lenguaje ofensivo\\n3. Acoso o incitación al odio\\n4. Otro');
+            if (!reason) return;
+        }
         
         let reasonText = reason;
         if (reason === '1') reasonText = 'Spam o publicidad';
