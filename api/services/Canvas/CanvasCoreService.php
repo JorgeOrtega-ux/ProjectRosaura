@@ -71,16 +71,22 @@ class CanvasCoreService {
         }
     }
 
-    public function getPublicCanvases(?int $currentUserId, int $limit = 20, string $sort = 'newest'): array {
+    public function getPublicCanvases(?int $currentUserId, int $limit = 20, string $sort = 'newest', int $offset = 0): array {
         try {
-            $canvases = $this->canvasRepository->getPublicCanvases($limit, $currentUserId, $sort);
+            $canvases = $this->canvasRepository->getPublicCanvases($limit, $currentUserId, $sort, $offset);
             
             $onlineCounts = [];
             try {
                 if (class_exists(RedisCache::class)) {
                     $redis = (new RedisCache())->getClient();
-                    if ($redis) {
-                        $onlineCounts = $redis->hGetAll("canvas:online_counts") ?: [];
+                    if ($redis && !empty($canvases)) {
+                        $canvasIds = array_column($canvases, 'id');
+                        $rawCounts = $redis->hmGet("canvas:online_counts", $canvasIds);
+                        foreach ($canvasIds as $idx => $cId) {
+                            if ($rawCounts[$idx] !== false) {
+                                $onlineCounts[$cId] = $rawCounts[$idx];
+                            }
+                        }
                     }
                 }
             } catch (Exception $e) {}
@@ -111,16 +117,22 @@ class CanvasCoreService {
         }
     }
 
-    public function getOfficialCanvases(?int $currentUserId = null, string $sort = 'newest'): array {
+    public function getOfficialCanvases(?int $currentUserId = null, string $sort = 'newest', int $limit = 50, int $offset = 0): array {
         try {
-            $canvases = $this->canvasRepository->getOfficialCanvases($currentUserId, $sort);
+            $canvases = $this->canvasRepository->getOfficialCanvases($currentUserId, $sort, $limit, $offset);
             
             $onlineCounts = [];
             try {
                 if (class_exists(RedisCache::class)) {
                     $redis = (new RedisCache())->getClient();
-                    if ($redis) {
-                        $onlineCounts = $redis->hGetAll("canvas:online_counts") ?: [];
+                    if ($redis && !empty($canvases)) {
+                        $canvasIds = array_column($canvases, 'id');
+                        $rawCounts = $redis->hmGet("canvas:online_counts", $canvasIds);
+                        foreach ($canvasIds as $idx => $cId) {
+                            if ($rawCounts[$idx] !== false) {
+                                $onlineCounts[$cId] = $rawCounts[$idx];
+                            }
+                        }
                     }
                 }
             } catch (Exception $e) {}
@@ -152,10 +164,10 @@ class CanvasCoreService {
         }
     }
 
-    public function getMine(?int $userId, int $limit = 50, string $filter = 'all'): array {
+    public function getMine(?int $userId, int $limit = 50, string $filter = 'all', int $offset = 0): array {
         if (!$userId) return ['success' => false, 'message' => __('err_unauthorized')];
         try {
-            $canvases = $this->canvasRepository->getUserAndJoinedCanvases($userId, $limit, $filter);
+            $canvases = $this->canvasRepository->getUserAndJoinedCanvases($userId, $limit, $filter, $offset);
             
             $user = $this->userRepository->findById($userId);
             $tier = $user['subscription_tier'] ?? 0;

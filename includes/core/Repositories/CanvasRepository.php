@@ -88,6 +88,12 @@ class CanvasRepository implements CanvasRepositoryInterface {
             
             $stmt = $this->db->prepare("INSERT IGNORE INTO " . DB::TBL_CANVAS_MEMBERS . " (canvas_id, user_id) VALUES (:cid, :uid)");
             $stmt->execute([':cid' => $canvasId, ':uid' => $userId]);
+            
+            if ($stmt->rowCount() > 0) {
+                $stmtUpdate = $this->db->prepare("UPDATE " . DB::TBL_CANVASES . " SET members_count = members_count + 1 WHERE id = :cid");
+                $stmtUpdate->execute([':cid' => $canvasId]);
+            }
+            
             $this->assignMemberRole($canvasId, $userId, $roleId);
 
             $this->db->commit();
@@ -101,26 +107,27 @@ class CanvasRepository implements CanvasRepositoryInterface {
         }
     }
 
-    public function getPublicCanvases(int $limit = 20, ?int $currentUserId = null, string $sort = 'newest'): array {
+    public function getPublicCanvases(int $limit = 20, ?int $currentUserId = null, string $sort = 'newest', int $offset = 0): array {
         $orderClause = "ORDER BY c.created_at DESC";
         if ($sort === 'oldest') {
             $orderClause = "ORDER BY c.created_at ASC";
         } elseif ($sort === 'members') {
-            $orderClause = "ORDER BY members_count DESC, c.created_at DESC";
+            $orderClause = "ORDER BY c.members_count DESC, c.created_at DESC";
         }
 
         $sql = "SELECT c.id, c.uuid, c.name, c.owner_id, c.scope_type, 
                        CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
-                       (SELECT COUNT(DISTINCT user_id) FROM canvas_user_roles WHERE canvas_id = c.id) as members_count
+                       c.members_count
                 FROM " . DB::TBL_CANVASES . " c
                 LEFT JOIN canvas_favorites f ON c.id = f.canvas_id AND f.user_id = :current_user_id
                 WHERE c.privacy = 'public' AND c.scope_type = 'personal'
                 $orderClause 
-                LIMIT :limit";
+                LIMIT :limit OFFSET :offset";
         
         $stmt = $this->db->prepare($sql);
         $stmt->bindValue(':current_user_id', $currentUserId ?? 0, PDO::PARAM_INT);
         $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmt->execute();
         
         $results = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
@@ -133,24 +140,27 @@ class CanvasRepository implements CanvasRepositoryInterface {
         return array_map([$this, 'appendSnapshotUrl'], $results);
     }
 
-    public function getOfficialCanvases(?int $currentUserId = null, string $sort = 'newest'): array {
+    public function getOfficialCanvases(?int $currentUserId = null, string $sort = 'newest', int $limit = 50, int $offset = 0): array {
         $orderClause = "ORDER BY c.created_at DESC";
         if ($sort === 'oldest') {
             $orderClause = "ORDER BY c.created_at ASC";
         } elseif ($sort === 'members') {
-            $orderClause = "ORDER BY members_count DESC, c.created_at DESC";
+            $orderClause = "ORDER BY c.members_count DESC, c.created_at DESC";
         }
 
         $sql = "SELECT c.id, c.uuid, c.name, c.description, c.size, c.palette_id, c.scope_type, c.scope_ref_1, c.scope_ref_2, c.scope_ref_3,
                        CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
-                       (SELECT COUNT(DISTINCT user_id) FROM canvas_user_roles WHERE canvas_id = c.id) as members_count
+                       c.members_count
                 FROM " . DB::TBL_CANVASES . " c
                 LEFT JOIN canvas_favorites f ON c.id = f.canvas_id AND f.user_id = :current_user_id
                 WHERE c.owner_id IS NULL AND c.scope_type != 'personal'
-                $orderClause";
+                $orderClause
+                LIMIT :limit OFFSET :offset";
                 
         $stmt = $this->db->prepare($sql);
         $stmt->bindValue(':current_user_id', $currentUserId ?? 0, PDO::PARAM_INT);
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmt->execute();
         
         $results = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
@@ -163,7 +173,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
         return array_map([$this, 'appendSnapshotUrl'], $results);
     }
 
-    public function getUserAndJoinedCanvases(int $userId, int $limit = 50, string $filter = 'all'): array {
+    public function getUserAndJoinedCanvases(int $userId, int $limit = 50, string $filter = 'all', int $offset = 0): array {
         $whereClause = "WHERE (c.owner_id = :uid3 OR EXISTS (SELECT 1 FROM canvas_user_roles cm WHERE cm.canvas_id = c.id AND cm.user_id = :uid4))";
         if ($filter === 'mine') {
             $whereClause = "WHERE c.owner_id = :uid3";
@@ -175,13 +185,13 @@ class CanvasRepository implements CanvasRepositoryInterface {
 
         $sql = "SELECT c.id, c.uuid, c.name, c.description, c.privacy, c.requires_approval, c.size, c.palette_id, c.max_participants, c.cooldown_pixels_batch, c.cooldown_seconds, c.created_at, c.scope_type, c.owner_id,
                        CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
-                       (SELECT COUNT(DISTINCT user_id) FROM canvas_user_roles WHERE canvas_id = c.id) as members_count,
+                       c.members_count,
                        CASE WHEN c.owner_id = :uid1 THEN 1 ELSE 0 END as is_owner
                 FROM " . DB::TBL_CANVASES . " c
                 LEFT JOIN canvas_favorites f ON c.id = f.canvas_id AND f.user_id = :uid2
                 $whereClause
                 ORDER BY c.id DESC 
-                LIMIT :limit";
+                LIMIT :limit OFFSET :offset";
         
         $stmt = $this->db->prepare($sql);
         $stmt->bindValue(':uid1', $userId, PDO::PARAM_INT);
@@ -189,6 +199,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
         $stmt->bindValue(':uid3', $userId, PDO::PARAM_INT);
         $stmt->bindValue(':uid4', $userId, PDO::PARAM_INT);
         $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmt->execute();
         
         $results = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
@@ -205,7 +216,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
     public function getUserCanvasesPaginated(int $ownerId, int $limit, int $offset): array {
         $sql = "SELECT c.id, c.uuid, c.name, c.description, c.privacy, c.requires_approval, c.size, c.palette_id, c.max_participants, c.cooldown_pixels_batch, c.cooldown_seconds, c.created_at, c.scope_type,
                        CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
-                       (SELECT COUNT(DISTINCT user_id) FROM canvas_user_roles WHERE canvas_id = c.id) as members_count
+                       c.members_count
                 FROM " . DB::TBL_CANVASES . " c
                 LEFT JOIN canvas_favorites f ON c.id = f.canvas_id AND f.user_id = :oid
                 WHERE c.owner_id = :oid 
@@ -664,7 +675,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
         return $success;
     }
 
-    public function removeMember(int $canvasId, int $userId): bool {
+        public function removeMember(int $canvasId, int $userId): bool {
         try {
             $this->db->beginTransaction();
             
@@ -681,6 +692,11 @@ class CanvasRepository implements CanvasRepositoryInterface {
                 ':canvas_id' => $canvasId,
                 ':user_id'   => $userId
             ]);
+            
+            if ($stmtMembers->rowCount() > 0) {
+                $stmtUpdate = $this->db->prepare("UPDATE " . DB::TBL_CANVASES . " SET members_count = GREATEST(members_count - 1, 0) WHERE id = :cid");
+                $stmtUpdate->execute([':cid' => $canvasId]);
+            }
             
             $this->db->commit();
             return true;

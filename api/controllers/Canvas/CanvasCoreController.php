@@ -210,10 +210,11 @@ class CanvasCoreController extends BaseController {
     public function get_public($input) {
         try {
             $userId = $this->session->isLoggedIn() ? $this->session->getActiveAccountId() : null;
-            $limit = $input['limit'] ?? 20;
+            $limit = isset($input['limit']) ? (int)$input['limit'] : 20;
             $sort = $input['sort'] ?? 'newest';
+            $offset = isset($input['offset']) ? (int)$input['offset'] : 0;
 
-            $result = $this->canvasServices->getPublicCanvases($userId, (int)$limit, $sort);
+            $result = $this->canvasServices->getPublicCanvases($userId, $limit, $sort, $offset);
             
             return $this->respond($result);
         } catch (\Throwable $e) {
@@ -226,8 +227,23 @@ class CanvasCoreController extends BaseController {
             $userId = $this->session->isLoggedIn() ? $this->session->getActiveAccountId() : null;
             $limit = isset($input['limit']) ? (int)$input['limit'] : 50;
             $filter = $input['filter'] ?? 'all';
+            $offset = isset($input['offset']) ? (int)$input['offset'] : 0;
             
-            $result = $this->canvasServices->getMine($userId, $limit, $filter);
+            $result = $this->canvasServices->getMine($userId, $limit, $filter, $offset);
+            return $this->respond($result);
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
+    public function get_official($input) {
+        try {
+            $userId = $this->session->isLoggedIn() ? $this->session->getActiveAccountId() : null;
+            $limit = isset($input['limit']) ? (int)$input['limit'] : 50;
+            $sort = $input['sort'] ?? 'newest';
+            $offset = isset($input['offset']) ? (int)$input['offset'] : 0;
+            
+            $result = $this->canvasServices->getOfficialCanvases($userId, $sort, $limit, $offset);
             return $this->respond($result);
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);

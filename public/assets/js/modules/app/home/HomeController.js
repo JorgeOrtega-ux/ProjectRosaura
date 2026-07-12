@@ -13,6 +13,12 @@ class HomeController {
         this.contentArea = null;
         this.cardInteractions = null;
         
+        this.currentOffset = 0;
+        this.allCanvases = [];
+        this.isLoadingMore = false;
+        this.hasMore = true;
+        this.observer = null;
+        
         this.handleGlobalClickBound = this.handleGlobalClick.bind(this);
     }
 
@@ -47,6 +53,7 @@ class HomeController {
     destroy() {
         if (this.abortController) this.abortController.abort();
         document.removeEventListener('click', this.handleGlobalClickBound);
+        if (this.observer) this.observer.disconnect();
     }
 
     bindEvents() {
@@ -99,7 +106,15 @@ class HomeController {
         }
     }
 
-    async loadCanvases() {
+    async loadCanvases(isLoadMore = false) {
+        if (!isLoadMore) {
+            this.currentOffset = 0;
+            this.allCanvases = [];
+            this.hasMore = true;
+        }
+
+        if (!this.hasMore || this.isLoadingMore) return;
+        
         const isExplore = window.location.pathname.includes('/explore');
         const isHome = !isExplore && (window.location.pathname === '/' || window.location.pathname.includes('/home'));
         const isLoggedIn = window.activeUserId !== null;
@@ -122,34 +137,45 @@ class HomeController {
             return;
         }
 
-        let allCanvases = [];
+        this.isLoadingMore = true;
+        if (isLoadMore && this.contentArea) {
+            const loaderHtml = '<div class="infinite-scroll-loader" style="text-align:center; padding: 20px;"><div class="component-loader"></div></div>';
+            this.contentArea.insertAdjacentHTML('beforeend', loaderHtml);
+        }
+
+        let newCanvases = [];
         let isError = false;
+        const limit = 20;
 
         if (isHome && isLoggedIn) {
             
             const filterRadio = document.querySelector('input[name="home_filter"]:checked');
             const filter = filterRadio ? filterRadio.value : 'all';
 
-            if (window.initialHomeCanvases && filter === 'all') {
-                allCanvases = window.initialHomeCanvases;
+            if (window.initialHomeCanvases && filter === 'all' && !isLoadMore) {
+                newCanvases = window.initialHomeCanvases;
                 window.initialHomeCanvases = null; 
             } else {
+                const res = await this.api.post(ApiRoutes.Canvases.GetMine, { limit: limit, offset: this.currentOffset, filter: filter }, this.abortController.signal).catch(() => null);
                 
-                const res = await this.api.post(ApiRoutes.Canvases.GetMine, { limit: 50, filter: filter }, this.abortController.signal).catch(() => null);
-                if (this.abortController.signal.aborted) return;
+                if (this.abortController.signal.aborted) {
+                    this.isLoadingMore = false;
+                    return;
+                }
                 
                 if (res && res.success) {
-                    allCanvases = res.data || [];
+                    newCanvases = res.data || [];
                 } else {
                     isError = true;
                 }
             }
 
-            if (allCanvases.length > 0) {
-                this.renderCanvases(this.contentArea, allCanvases);
-            } else if (isError) {
+            if (newCanvases.length > 0 || (this.allCanvases.length > 0 && isLoadMore)) {
+                this.allCanvases = this.allCanvases.concat(newCanvases);
+                this.renderCanvases(this.contentArea, this.allCanvases, isLoadMore);
+            } else if (isError && !isLoadMore) {
                 this.showError(this.contentArea, (res && res.message) ? res.message : window.__('err_load_canvases'));
-            } else {
+            } else if (!isLoadMore) {
                 const msgEmpty = window.__ ? window.__('msg_home_empty') || window.__('msg_home_empty') : window.__('msg_home_empty');
                 const emptyHtml = `
                     <div class="component-empty-state" data-ref="empty-state-rendered" style="padding: 40px 20px;">
@@ -172,34 +198,39 @@ class HomeController {
             const sortRadio = document.querySelector('input[name="explore_sort"]:checked');
             const sort = sortRadio ? sortRadio.value : 'newest';
 
-            if (window.initialHomeCanvases && sort === 'newest') {
-                allCanvases = window.initialHomeCanvases;
+            if (window.initialHomeCanvases && sort === 'newest' && !isLoadMore) {
+                newCanvases = window.initialHomeCanvases;
                 window.initialHomeCanvases = null;
             } else {
                 
                 const [publicRes, officialRes] = await Promise.all([
-                    this.api.post(ApiRoutes.Canvases.GetPublic, { limit: 50, sort: sort }, this.abortController.signal).catch(() => null),
-                    this.api.post(ApiRoutes.Canvases.GetOfficial, { sort: sort }, this.abortController.signal).catch(() => null)
+                    this.api.post(ApiRoutes.Canvases.GetPublic, { limit: limit, offset: this.currentOffset, sort: sort }, this.abortController.signal).catch(() => null),
+                    this.api.post(ApiRoutes.Canvases.GetOfficial, { limit: limit, offset: this.currentOffset, sort: sort }, this.abortController.signal).catch(() => null)
                 ]);
                 
-                if (this.abortController.signal.aborted) return;
+                if (this.abortController.signal.aborted) {
+                    this.isLoadingMore = false;
+                    return;
+                }
+
+                let currentFetched = [];
 
                 if (officialRes && officialRes.success) {
-                    allCanvases = allCanvases.concat(officialRes.data || []);
+                    currentFetched = currentFetched.concat(officialRes.data || []);
                 } else if (!officialRes) {
                     isError = true;
                 }
 
                 if (publicRes && publicRes.success) {
-                    const existingIds = new Set(allCanvases.map(c => c.id));
+                    const existingIds = new Set(currentFetched.map(c => c.id));
                     const newPublics = (publicRes.data || []).filter(c => !existingIds.has(c.id));
-                    allCanvases = allCanvases.concat(newPublics);
+                    currentFetched = currentFetched.concat(newPublics);
                 } else if (!publicRes) {
                     isError = true;
                 }
 
-                if (allCanvases.length > 0) {
-                    allCanvases.sort((a, b) => {
+                if (currentFetched.length > 0) {
+                    currentFetched.sort((a, b) => {
                         if (sort === 'oldest') {
                             return new Date(a.created_at) - new Date(b.created_at);
                         } else if (sort === 'members') {
@@ -211,20 +242,63 @@ class HomeController {
                             return new Date(b.created_at) - new Date(a.created_at);
                         }
                     });
+                    newCanvases = currentFetched;
                 }
             }
 
-            if (allCanvases.length > 0) {
-                this.renderCanvases(this.contentArea, allCanvases);
-            } else if (isError) {
+            if (newCanvases.length > 0 || (this.allCanvases.length > 0 && isLoadMore)) {
+                this.allCanvases = this.allCanvases.concat(newCanvases);
+                
+                const existingIdsGlobal = new Set();
+                this.allCanvases = this.allCanvases.filter(c => {
+                    if (existingIdsGlobal.has(c.id)) return false;
+                    existingIdsGlobal.add(c.id);
+                    return true;
+                });
+                
+                this.renderCanvases(this.contentArea, this.allCanvases, isLoadMore);
+            } else if (isError && !isLoadMore) {
                 this.showError(this.contentArea, window.__ ? window.__('err_load_public_canvases') : 'Error al cargar lienzos. El servidor no responde.');
-            } else {
+            } else if (!isLoadMore) {
                 const msgEmpty = window.__ ? window.__('empty_home_gallery') || window.__('empty_home_gallery') : window.__('empty_home_gallery');
                 this.contentArea.innerHTML = CardTemplates.emptyState(msgEmpty, 'collections');
             }
         }
+        
+        const loader = this.contentArea ? this.contentArea.querySelector('.infinite-scroll-loader') : null;
+        if (loader) loader.remove();
+        
+        if (newCanvases.length < limit && !window.initialHomeCanvases) {
+            this.hasMore = false;
+        } else {
+            this.currentOffset += limit;
+        }
+        this.isLoadingMore = false;
 
         this.reinitializeUI();
+        this.setupInfiniteScroll();
+    }
+
+    setupInfiniteScroll() {
+        if (!this.hasMore || !this.contentArea) return;
+        
+        if (this.observer) {
+            this.observer.disconnect();
+        }
+        
+        const cards = this.contentArea.querySelectorAll('.component-card');
+        if (cards.length === 0) return;
+        
+        const lastCard = cards[cards.length - 1];
+        
+        this.observer = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting) {
+                this.observer.disconnect();
+                this.loadCanvases(true);
+            }
+        }, { rootMargin: '200px' });
+        
+        this.observer.observe(lastCard);
     }
 
     showError(container, message) {
@@ -233,10 +307,20 @@ class HomeController {
         }
     }
 
-    renderCanvases(container, canvases) {
+    renderCanvases(container, canvases, isLoadMore = false) {
         if (!container) return;
-        const cardsHtml = canvases.map(canvas => CardTemplates.canvasCard(canvas, { basePath: this.basePath })).join('');
         
+        if (isLoadMore) {
+            const grid = container.querySelector('.component-grid');
+            if (grid) {
+                const oldScroll = window.scrollY;
+                grid.innerHTML = canvases.map(canvas => CardTemplates.canvasCard(canvas, { basePath: this.basePath })).join('');
+                window.scrollTo(0, oldScroll);
+                return;
+            }
+        }
+        
+        const cardsHtml = canvases.map(canvas => CardTemplates.canvasCard(canvas, { basePath: this.basePath })).join('');
         container.innerHTML = `<div class="component-grid" data-ref="home-all-canvases">${cardsHtml}</div>`;
     }
 
