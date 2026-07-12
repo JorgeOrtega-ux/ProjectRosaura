@@ -43,13 +43,11 @@ class ChatServices
             $this->pdo->exec("ALTER TABLE canvas_chat_messages ADD COLUMN attachments JSON DEFAULT NULL AFTER message;");
         } catch (\Exception $e) {}
 
-        $identityDb = $_ENV['DB_IDENTITY_NAME'] ?? 'db_identity';
         $stmt = $this->pdo->prepare("
-            SELECT c.id, c.user_id, c.message, c.attachments, c.created_at, u.username, u.profile_picture as avatar 
-            FROM canvas_chat_messages c
-            JOIN {$identityDb}.users u ON c.user_id = u.id
-            WHERE c.canvas_id = ?
-            ORDER BY c.id DESC
+            SELECT id, user_id, message, attachments, created_at 
+            FROM canvas_chat_messages
+            WHERE canvas_id = ?
+            ORDER BY id DESC
             LIMIT ? OFFSET ?
         ");
         
@@ -59,6 +57,24 @@ class ChatServices
         $stmt->execute();
         
         $messages = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if (!empty($messages)) {
+            $userIds = array_values(array_unique(array_column($messages, 'user_id')));
+            $placeholders = implode(',', array_fill(0, count($userIds), '?'));
+            $userStmt = $this->identityPdo->prepare("SELECT id, username, profile_picture FROM users WHERE id IN ($placeholders)");
+            $userStmt->execute($userIds);
+            $usersMap = [];
+            while ($row = $userStmt->fetch(PDO::FETCH_ASSOC)) {
+                $usersMap[$row['id']] = $row;
+            }
+            
+            foreach ($messages as &$msg) {
+                $uid = $msg['user_id'];
+                $msg['username'] = $usersMap[$uid]['username'] ?? __('default_user');
+                $msg['avatar'] = $usersMap[$uid]['profile_picture'] ?? null;
+            }
+            unset($msg);
+        }
         
         if ($offset === 0 && $this->redis) {
             $redisMessages = [];
