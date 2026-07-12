@@ -52,9 +52,9 @@ if (!empty($token)) {
                 <p class="component-form-desc"><?php echo __('reset_desc'); ?></p>
                 
                 <?php if (!empty($userEmail)): ?>
-                <div style="margin-top: 15px; display: inline-flex; align-items: center; background-color: var(--color-surface, #f5f5fa); padding: 6px 14px; border-radius: 20px; font-size: 13px; color: var(--color-text-secondary, #666); border: 1px solid var(--color-border, #00000020);">
-                    <span class="material-symbols-rounded" style="font-size: 16px; margin-right: 6px;">mail</span>
-                    <span style="font-weight: 500;"><?php echo htmlspecialchars($userEmail); ?></span>
+                <div class="component-badge component-mt-4">
+                    <span class="material-symbols-rounded">mail</span>
+                    <span class="font-medium"><?php echo htmlspecialchars($userEmail); ?></span>
                 </div>
                 <?php endif; ?>
             </div>

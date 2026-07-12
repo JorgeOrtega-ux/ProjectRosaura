@@ -18,7 +18,7 @@ $acceptedContentTerms = !empty($userPrefs['accepted_content_store_terms']);
     <div class="component-wrapper component-wrapper--full no-padding">
         <div class="component-top">
         <div class="component-top-left">
-            <h1 class="component-top-title">Tienda de Contenido</h1>
+            <h1 class="component-top-title"><?php echo __('store_content_title'); ?></h1>
         </div>
         <div class="component-top-right">
             <div class="component-badge component-badge--warning">
@@ -31,7 +31,7 @@ $acceptedContentTerms = !empty($userPrefs['accepted_content_store_terms']);
         <?php if (empty($contentPackages)): ?>
         <div class="component-empty-state" data-ref="empty-state-rendered">
             <span class="material-symbols-rounded component-empty-state-icon">search_off</span>
-            <p class="component-empty-state-text">No hay paquetes de contenido disponibles en este momento. Vuelve más tarde.</p>
+            <p class="component-empty-state-text"><?php echo __('store_content_empty'); ?></p>
         </div>
         <?php else: ?>
         <div class="component-grid" data-ref="">

@@ -147,7 +147,7 @@ if (!empty($canvasUuid)) {
             }
         }
     } catch (Exception $e) {
-        error_log("Error al cargar el lienzo en la vista de diseño: " . $e->getMessage());
+        \App\Core\System\Logger::error('err_design_view_load', ['exception' => $e->getMessage()]);
     }
 }
 ?>
