@@ -155,46 +155,15 @@ class CanvasCoreService {
         try {
             $canvases = $this->canvasRepository->getUserAndJoinedCanvases($userId, $limit, $filter, $offset);
             
-            $user = $this->userRepository->findById($userId);
-            $tier = $user['subscription_tier'] ?? 0;
-            $planLimits = SubscriptionPlanConstants::getTierLimits($tier);
-            $allSizes = \App\Core\Helpers\Utils::getCanvasSizes();
-            
-            $totalOwned = method_exists($this->canvasRepository, 'countUserCanvases') ? $this->canvasRepository->countUserCanvases($userId) : 0;
-            $toLockCount = ($planLimits['max_canvases'] !== -1) ? max(0, $totalOwned - $planLimits['max_canvases']) : 0;
-
             $formattedCanvases = [];
             foreach ($canvases as $canvas) {
-                $isLocked = false;
-                $lockedReasons = [];
-                
-                if ($canvas['is_owner']) {
-                    if ($toLockCount > 0) {
-                        $isLocked = true;
-                        $lockedReasons[] = 'max_canvases';
-                        $toLockCount--;
-                    }
-                    
-                    $sizeStr = $canvas['size'];
-                    $requiredTier = $allSizes[$sizeStr]['tier'] ?? 0;
-                    if ($tier < $requiredTier) {
-                        $isLocked = true;
-                        $lockedReasons[] = 'size';
-                    }
-                    
-                    if (isset($canvas['palette_id']) && $canvas['palette_id'] !== 'default' && empty($planLimits['custom_palettes'])) {
-                        $isLocked = true;
-                        $lockedReasons[] = 'palette';
-                    }
-                    
-                    if ($planLimits['max_members_per_canvas'] !== -1 && $canvas['max_participants'] > $planLimits['max_members_per_canvas']) {
-                        $isLocked = true;
-                        $lockedReasons[] = 'members';
-                    }
-                }
-                
                 $thumbnailUrl = \App\Core\Helpers\Utils::getS3PublicUrl("thumbnails/canvas_" . $canvas['uuid'] . ".png");
                 
+                $lockedReasons = [];
+                if (!empty($canvas['locked_reasons'])) {
+                    $lockedReasons = is_array($canvas['locked_reasons']) ? $canvas['locked_reasons'] : json_decode($canvas['locked_reasons'], true);
+                }
+
                 $formattedCanvases[] = [
                     'id' => $canvas['id'],
                     'uuid' => $canvas['uuid'],
@@ -209,9 +178,10 @@ class CanvasCoreService {
                     'is_owner' => $canvas['is_owner'],
                     'online_players' => 0, 
                     'members_count' => $canvas['members_count'],
+                    'favorites_count' => $canvas['favorites_count'] ?? 0,
                     'thumbnail_url' => $thumbnailUrl,
-                    'locked_requires_downgrade' => $isLocked,
-                    'locked_reasons' => $lockedReasons
+                    'locked_requires_downgrade' => (bool)$canvas['is_locked'],
+                    'locked_reasons' => $lockedReasons ?: []
                 ];
             }
             
@@ -279,47 +249,12 @@ class CanvasCoreService {
                 $canvas['role'] = 'spectator';
             }
 
-            $ownerTier = 0;
-            if ($canvas['owner_id'] !== null) {
-                $owner = $this->userRepository->findById($canvas['owner_id']);
-                $ownerTier = $owner['subscription_tier'] ?? 0;
-            }
-            $planLimits = SubscriptionPlanConstants::getTierLimits($ownerTier);
-            $allSizes = \App\Core\Helpers\Utils::getCanvasSizes();
-            
-            $isLocked = false;
-            $lockedReasons = [];
-
-            if ($canvas['owner_id'] !== null) {
-                if ($planLimits['max_canvases'] !== -1) {
-                    $olderCount = method_exists($this->canvasRepository, 'countOlderCanvases') ? 
-                        $this->canvasRepository->countOlderCanvases($canvasId, $canvas['owner_id'], $canvas['created_at']) : 0;
-                    if ($olderCount >= $planLimits['max_canvases']) {
-                        $isLocked = true;
-                        $lockedReasons[] = 'max_canvases';
-                    }
+            if ($canvas['is_locked']) {
+                $lockedReasons = [];
+                if (!empty($canvas['locked_reasons'])) {
+                    $lockedReasons = is_array($canvas['locked_reasons']) ? $canvas['locked_reasons'] : json_decode($canvas['locked_reasons'], true);
                 }
-                
-                $sizeStr = $canvas['size'];
-                $requiredTier = $allSizes[$sizeStr]['tier'] ?? 0;
-                if ($ownerTier < $requiredTier) {
-                    $isLocked = true;
-                    $lockedReasons[] = 'size';
-                }
-                
-                if (isset($canvas['palette_id']) && $canvas['palette_id'] !== 'default' && empty($planLimits['custom_palettes'])) {
-                    $isLocked = true;
-                    $lockedReasons[] = 'palette';
-                }
-                
-                if ($planLimits['max_members_per_canvas'] !== -1 && $canvas['max_participants'] > $planLimits['max_members_per_canvas']) {
-                    $isLocked = true;
-                    $lockedReasons[] = 'members';
-                }
-            }
-
-            if ($isLocked) {
-                return ['success' => false, 'message' => __('err_premium_expired_downgrade'), 'locked_requires_downgrade' => true, 'locked_reasons' => $lockedReasons];
+                return ['success' => false, 'message' => __('err_premium_expired_downgrade'), 'locked_requires_downgrade' => true, 'locked_reasons' => $lockedReasons ?: []];
             }
 
             $sizeStr = strtolower($canvas['size']);
@@ -432,7 +367,8 @@ class CanvasCoreService {
         ?string $scopeRef2 = null,
         ?string $scopeRef3 = null,
         bool $canManageOfficial = false,
-        int $allowPurchases = 1
+        int $allowPurchases = 1,
+        int $allowChat = 0
     ): array {
         try {
             if ($scopeType !== 'personal' && !$canManageOfficial) {
@@ -500,13 +436,21 @@ class CanvasCoreService {
                 'scope_ref_1'           => $scopeRef1,
                 'scope_ref_2'           => $scopeRef2,
                 'scope_ref_3'           => $scopeRef3,
-                'allow_purchases'       => $allowPurchases
+                'allow_purchases'       => $allowPurchases,
+                'allow_chat'            => $allowChat
             ];
 
             $canvasId = $this->canvasRepository->create($canvasData);
 
             if ($scopeType === 'personal') {
                 $this->canvasRepository->addMember($canvasId, $userId, 4); 
+                
+                try {
+                    $lockManager = new CanvasLockManager($this->canvasRepository, $this->userRepository);
+                    $lockManager->evaluateUserCanvases($userId);
+                } catch (Exception $e) {
+                    Logger::error('Error evaluating canvases on create.', ['error' => $e->getMessage()]);
+                }
             }
 
             try {
@@ -577,6 +521,10 @@ class CanvasCoreService {
             
             if (isset($data['allow_purchases'])) {
                 $data['allow_purchases'] = (int)$data['allow_purchases'];
+            }
+
+            if (isset($data['allow_chat'])) {
+                $data['allow_chat'] = (int)$data['allow_chat'];
             }
 
             $updated = $this->canvasRepository->updateCanvasData($canvasId, $data);
@@ -754,14 +702,22 @@ class CanvasCoreService {
                             $redis->del("canvas:{$canvas['id']}:state");
                             $redis->del("canvas:{$canvas['id']}:config");
                             $redis->del(CacheConstants::PREFIX_CANVAS_NEXT_RESET . $canvas['id']);
-                            $redis->del(CacheConstants::PREFIX_CANVAS_NEXT_RESIZE . $canvas['id']); 
-                            
+                            $redis->del(CacheConstants::PREFIX_CANVAS_NEXT_RESIZE . $canvas['id']);
                             if ($canvas['owner_id'] === null) {
                                 $redis->del(CacheConstants::KEY_OFFICIAL_CANVASES);
                             }
                         }
                     }
                 } catch (Exception $e) {}
+
+                if ($canvas['owner_id'] !== null) {
+                    try {
+                        $lockManager = new CanvasLockManager($this->canvasRepository, $this->userRepository);
+                        $lockManager->evaluateUserCanvases($canvas['owner_id']);
+                    } catch (Exception $e) {
+                        Logger::error('Error evaluating canvases on delete.', ['error' => $e->getMessage()]);
+                    }
+                }
 
                 return ['success' => true, 'message' => __('msg_canvas_deleted')];
             }

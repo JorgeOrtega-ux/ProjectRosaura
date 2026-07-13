@@ -380,6 +380,11 @@ class CanvasEditController {
             this.state.allow_purchases = allowPurchasesInput.checked ? 1 : 0;
         }
 
+        const allowChatInput = this.container.querySelector('[data-ref="val_allow_chat"]');
+        if (allowChatInput) {
+            this.state.allow_chat = allowChatInput.checked ? 1 : 0;
+        }
+
         if (!this.state.name) {
             showMessage(window.__('err_field_required'), 'warning');
             return;
@@ -394,7 +399,8 @@ class CanvasEditController {
             max_members: this.state.max_members,
             cooldown_pixels_batch: this.state.cooldown_pixels_batch,
             cooldown_seconds: this.state.cooldown_seconds,
-            allow_purchases: this.state.allow_purchases
+            allow_purchases: this.state.allow_purchases,
+            allow_chat: this.state.allow_chat
         };
 
         setButtonLoading(btn);

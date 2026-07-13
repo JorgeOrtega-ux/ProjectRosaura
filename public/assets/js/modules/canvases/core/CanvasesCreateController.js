@@ -580,6 +580,11 @@ class CanvasesCreateController {
             this.formState.allow_purchases = inputPurchases.checked ? 1 : 0;
         }
 
+        const inputChat = document.querySelector('[data-ref="val_allow_chat"]');
+        if (inputChat) {
+            this.formState.allow_chat = inputChat.checked ? 1 : 0;
+        }
+
         const scopeSection = document.querySelector('[data-ref="scope-section"]');
         if (scopeSection && !scopeSection.classList.contains('disabled')) {
             const scopeType = this.formState.scope_type;

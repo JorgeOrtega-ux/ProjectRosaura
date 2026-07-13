@@ -38,8 +38,8 @@ class CanvasRepository implements CanvasRepositoryInterface {
 
     public function create(array $canvasData): int {
         $sql = "INSERT INTO " . DB::TBL_CANVASES . " 
-                (uuid, owner_id, name, description, privacy, requires_approval, size, palette_id, max_participants, cooldown_pixels_batch, cooldown_seconds, scope_type, scope_ref_1, scope_ref_2, scope_ref_3) 
-                VALUES (:uuid, :owner_id, :name, :description, :privacy, :requires_approval, :size, :palette_id, :max_participants, :cooldown_pixels_batch, :cooldown_seconds, :scope_type, :scope_ref_1, :scope_ref_2, :scope_ref_3)";
+                (uuid, owner_id, name, description, privacy, requires_approval, size, palette_id, max_participants, cooldown_pixels_batch, cooldown_seconds, scope_type, scope_ref_1, scope_ref_2, scope_ref_3, allow_purchases, allow_chat) 
+                VALUES (:uuid, :owner_id, :name, :description, :privacy, :requires_approval, :size, :palette_id, :max_participants, :cooldown_pixels_batch, :cooldown_seconds, :scope_type, :scope_ref_1, :scope_ref_2, :scope_ref_3, :allow_purchases, :allow_chat)";
         
         $stmt = $this->db->prepare($sql);
         $stmt->execute([
@@ -57,7 +57,9 @@ class CanvasRepository implements CanvasRepositoryInterface {
             ':scope_type'            => $canvasData['scope_type'] ?? 'personal',
             ':scope_ref_1'           => $canvasData['scope_ref_1'] ?? null,
             ':scope_ref_2'           => $canvasData['scope_ref_2'] ?? null,
-            ':scope_ref_3'           => $canvasData['scope_ref_3'] ?? null
+            ':scope_ref_3'           => $canvasData['scope_ref_3'] ?? null,
+            ':allow_purchases'       => $canvasData['allow_purchases'] ?? 1,
+            ':allow_chat'            => $canvasData['allow_chat'] ?? 0
         ]);
 
         $id = (int)$this->db->lastInsertId();
@@ -115,12 +117,12 @@ class CanvasRepository implements CanvasRepositoryInterface {
             $orderClause = "ORDER BY c.members_count DESC, c.created_at DESC";
         }
 
-        $sql = "SELECT c.id, c.uuid, c.name, c.owner_id, c.scope_type, 
+        $sql = "SELECT c.id, c.uuid, c.name, c.owner_id, c.scope_type, c.favorites_count,
                        CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
                        c.members_count
                 FROM " . DB::TBL_CANVASES . " c
                 LEFT JOIN canvas_favorites f ON c.id = f.canvas_id AND f.user_id = :current_user_id
-                WHERE c.privacy = 'public' AND c.scope_type = 'personal'
+                WHERE c.privacy = 'public' AND c.scope_type = 'personal' AND c.is_locked = 0
                 $orderClause 
                 LIMIT :limit OFFSET :offset";
         
@@ -148,12 +150,12 @@ class CanvasRepository implements CanvasRepositoryInterface {
             $orderClause = "ORDER BY c.members_count DESC, c.created_at DESC";
         }
 
-        $sql = "SELECT c.id, c.uuid, c.name, c.description, c.size, c.palette_id, c.scope_type, c.scope_ref_1, c.scope_ref_2, c.scope_ref_3,
+        $sql = "SELECT c.id, c.uuid, c.name, c.description, c.size, c.palette_id, c.scope_type, c.scope_ref_1, c.scope_ref_2, c.scope_ref_3, c.favorites_count,
                        CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
                        c.members_count
                 FROM " . DB::TBL_CANVASES . " c
                 LEFT JOIN canvas_favorites f ON c.id = f.canvas_id AND f.user_id = :current_user_id
-                WHERE c.owner_id IS NULL AND c.scope_type != 'personal'
+                WHERE c.owner_id IS NULL AND c.scope_type != 'personal' AND c.is_locked = 0
                 $orderClause
                 LIMIT :limit OFFSET :offset";
                 
@@ -183,7 +185,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
             $whereClause .= " AND f.canvas_id IS NOT NULL";
         }
 
-        $sql = "SELECT c.id, c.uuid, c.name, c.description, c.privacy, c.requires_approval, c.size, c.palette_id, c.max_participants, c.cooldown_pixels_batch, c.cooldown_seconds, c.created_at, c.scope_type, c.owner_id,
+        $sql = "SELECT c.id, c.uuid, c.name, c.description, c.privacy, c.requires_approval, c.size, c.palette_id, c.max_participants, c.cooldown_pixels_batch, c.cooldown_seconds, c.created_at, c.scope_type, c.owner_id, c.is_locked, c.locked_reasons, c.favorites_count,
                        CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
                        c.members_count,
                        CASE WHEN c.owner_id = :uid1 THEN 1 ELSE 0 END as is_owner
@@ -214,7 +216,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function getUserCanvasesPaginated(int $ownerId, int $limit, int $offset): array {
-        $sql = "SELECT c.id, c.uuid, c.name, c.description, c.privacy, c.requires_approval, c.size, c.palette_id, c.max_participants, c.cooldown_pixels_batch, c.cooldown_seconds, c.created_at, c.scope_type,
+        $sql = "SELECT c.id, c.uuid, c.name, c.description, c.privacy, c.requires_approval, c.size, c.palette_id, c.max_participants, c.cooldown_pixels_batch, c.cooldown_seconds, c.created_at, c.scope_type, c.is_locked, c.locked_reasons, c.favorites_count,
                        CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
                        c.members_count
                 FROM " . DB::TBL_CANVASES . " c
@@ -319,7 +321,9 @@ class CanvasRepository implements CanvasRepositoryInterface {
                     palette_id = :palette_id,
                     max_participants = :max_participants,
                     cooldown_pixels_batch = :cooldown_pixels_batch,
-                    cooldown_seconds = :cooldown_seconds
+                    cooldown_seconds = :cooldown_seconds,
+                    allow_purchases = :allow_purchases,
+                    allow_chat = :allow_chat
                 WHERE id = :id";
         
         $stmt = $this->db->prepare($sql);
@@ -332,6 +336,8 @@ class CanvasRepository implements CanvasRepositoryInterface {
             ':max_participants'      => $data['max_participants'],
             ':cooldown_pixels_batch' => $data['cooldown_pixels_batch'],
             ':cooldown_seconds'      => $data['cooldown_seconds'],
+            ':allow_purchases'       => $data['allow_purchases'] ?? 1,
+            ':allow_chat'            => $data['allow_chat'] ?? 0,
             ':id'                    => $id
         ]);
         if ($success) {

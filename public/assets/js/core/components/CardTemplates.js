@@ -28,6 +28,7 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
                </button>`;
         const onlinePlayers = parseInt(canvas.online_players || 0, 10);
         const membersCount = parseInt(canvas.members_count || 0, 10);
+        const likesCount = parseInt(canvas.favorites_count || 0, 10);
         const isOfficial = canvas.scope_type && canvas.scope_type !== 'personal';
 
         let badgeHtml = '';
@@ -41,6 +42,9 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
                     <div class="component-badge component-badge--glass">
                         <span class="material-symbols-rounded ${onlinePlayers > 0 ? 'component-text-success' : ''}">person</span>
                         ${formatNumber(onlinePlayers)} ${window.__('online')}
+                        <span class="component-badge-divider">|</span>
+                        <span class="material-symbols-rounded" style="color:var(--accent-color)">favorite</span>
+                        <span>${formatNumber(likesCount)}</span>
                     </div>
                 </div>
             `;
@@ -52,6 +56,9 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
                     <span class="component-badge-divider">|</span>
                     <span class="material-symbols-rounded">group</span>
                     <span>${formatNumber(membersCount)}</span>
+                    <span class="component-badge-divider">|</span>
+                    <span class="material-symbols-rounded" style="color:var(--accent-color)">favorite</span>
+                    <span>${formatNumber(likesCount)}</span>
                 </div>
             `;
         }

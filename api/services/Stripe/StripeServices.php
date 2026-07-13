@@ -315,6 +315,14 @@ class StripeServices {
                     'status' => 'canceled',
                     'canceled_at' => date('Y-m-d H:i:s')
                 ]);
+                
+                try {
+                    $container = new \App\Core\Container();
+                    $lockManager = $container->get(\App\Api\Services\Canvas\CanvasLockManager::class);
+                    $lockManager->evaluateUserCanvases((int) $userId);
+                } catch (\Exception $e) {
+                    Logger::error("Failed to evaluate canvases on downgrade", ['user_id' => $userId, 'error' => $e->getMessage()]);
+                }
                 Logger::info("Stripe Subscription canceled (downgraded to basic)", [
                     'user_id' => $userId,
                     'subscription_id' => $subscription->id
@@ -358,6 +366,14 @@ class StripeServices {
                 'tier' => $tier,
                 'billing_period' => $billingPeriod
             ]);
+            
+            try {
+                $container = new \App\Core\Container();
+                $lockManager = $container->get(\App\Api\Services\Canvas\CanvasLockManager::class);
+                $lockManager->evaluateUserCanvases((int) $userId);
+            } catch (\Exception $e) {
+                Logger::error("Failed to evaluate canvases on upgrade", ['user_id' => $userId, 'error' => $e->getMessage()]);
+            }
 
             Logger::info("Stripe Subscription updated", [
                 'user_id' => $userId,

@@ -115,12 +115,13 @@ class CanvasCoreController extends BaseController {
             }
 
             $allowPurchases = isset($input['allow_purchases']) ? (int)$input['allow_purchases'] : 1;
+            $allowChat = isset($input['allow_chat']) ? (int)$input['allow_chat'] : 0;
 
             $result = $this->canvasServices->createCanvas(
                 $userId, $name, $description, $privacy, $requiresApproval, 
                 $size, (int)$limit, $paletteId, (int)$cooldownBatch, (int)$cooldownSeconds,
                 $scopeType, $scopeRef1, $scopeRef2, $scopeRef3, $this->canCreateOfficial(),
-                $allowPurchases
+                $allowPurchases, $allowChat
             );
 
 
@@ -159,7 +160,8 @@ class CanvasCoreController extends BaseController {
                 'max_participants' => $input['max_members'] ?? null,
                 'cooldown_pixels_batch' => $input['cooldown_pixels_batch'] ?? null,
                 'cooldown_seconds' => $input['cooldown_seconds'] ?? null,
-                'allow_purchases' => isset($input['allow_purchases']) ? (int)$input['allow_purchases'] : null
+                'allow_purchases' => isset($input['allow_purchases']) ? (int)$input['allow_purchases'] : null,
+                'allow_chat' => isset($input['allow_chat']) ? (int)$input['allow_chat'] : null
             ];
 
             $result = $this->canvasServices->updateCanvas($userId, (int)$canvasId, $data, $this->canManageOfficial());

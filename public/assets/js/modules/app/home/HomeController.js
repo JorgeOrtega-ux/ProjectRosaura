@@ -268,11 +268,10 @@ class HomeController {
         const loader = this.contentArea ? this.contentArea.querySelector('.infinite-scroll-loader') : null;
         if (loader) loader.remove();
         
-        if (newCanvases.length < limit && !window.initialHomeCanvases) {
+        if (newCanvases.length < limit) {
             this.hasMore = false;
-        } else {
-            this.currentOffset += limit;
         }
+        this.currentOffset += newCanvases.length;
         this.isLoadingMore = false;
 
         this.reinitializeUI();

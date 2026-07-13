@@ -179,6 +179,15 @@ try {
                 // Regresar al usuario al tier básico (0)
                 $subRepo->updateUserTier((int) $localSub['user_id'], SubscriptionPlanConstants::TIER_BASIC);
 
+                // Disparador instantáneo para re-evaluar bloqueos de lienzos
+                try {
+                    $container = new \App\Core\Container();
+                    $lockManager = $container->get(\App\Api\Services\Canvas\CanvasLockManager::class);
+                    $lockManager->evaluateUserCanvases((int) $localSub['user_id']);
+                } catch (\Exception $e) {
+                    Logger::error("Failed to evaluate canvases on webhook", ['user_id' => $localSub['user_id'], 'error' => $e->getMessage()]);
+                }
+
                 Logger::info("Stripe webhook: subscription deleted, user reverted to Basic", [
                     'user_id' => $localSub['user_id'],
                     'stripe_subscription_id' => $stripeSubId

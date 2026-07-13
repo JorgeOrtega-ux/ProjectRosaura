@@ -43,7 +43,7 @@ $initialCanvasesJson = htmlspecialchars(json_encode($initialCanvases), ENT_QUOTE
         <div class="component-top">
             <div class="component-top-left">
                 <h1 class="component-top-title"><?php echo __('explore_title'); ?></h1>
-                <p class="component-top-subtitle"><?php echo __('explore_desc'); ?></p>
+
             </div>
             
             <div class="component-top-right">

@@ -26,6 +26,7 @@
 
 .component-wrapper--full {
     max-width: 100% !important;
+    height: 100%;
 }
 
 .component-wrapper.no-padding {
@@ -1169,6 +1170,7 @@ html.dark-theme .component-avatar__overlay {
     align-items: center;
     justify-content: center;
     backdrop-filter: blur(2px);
+    border-radius: inherit;
 }
 .component-gallery-warning-content {
     text-align: center;
