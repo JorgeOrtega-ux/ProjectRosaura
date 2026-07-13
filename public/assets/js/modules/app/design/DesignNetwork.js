@@ -400,8 +400,15 @@ export const DesignNetwork = {
                 if (this.uiLiveInputY) this.uiLiveInputY.value = tpl.y;
                 if (this.uiLiveInputOpacity) this.uiLiveInputOpacity.value = tpl.opacity || 1;
 
-                const badge = document.getElementById('live-share-badge');
-                if (badge) badge.style.display = 'flex';
+                let badge = document.getElementById('live-share-badge');
+                if (!badge) {
+                    badge = document.createElement('div');
+                    badge.className = 'component-badge';
+                    badge.id = 'live-share-badge';
+                    badge.innerHTML = '<span class="material-symbols-rounded">sensors</span><span>Transmisión en curso</span>';
+                    const badgesContainer = document.querySelector('[data-ref="badges-left"]');
+                    if (badgesContainer) badgesContainer.appendChild(badge);
+                }
 
                 showMessage(__('msg_broadcasting').replace(':code', this.liveShareCode), 'success');
                 return true;
@@ -429,7 +436,7 @@ export const DesignNetwork = {
         this.liveTemplateId = null;
 
         const badge = document.getElementById('live-share-badge');
-        if (badge) badge.style.display = 'none';
+        if (badge) badge.remove();
 
         const btnOpenJoinLive = document.querySelector('[data-action="openJoinLiveModal"]');
         if (btnOpenJoinLive) {
@@ -485,8 +492,15 @@ export const DesignNetwork = {
                             });
                             this.activeTemplateId = liveId;
                             
-                            const badge = document.getElementById('live-share-badge');
-                            if (badge) badge.style.display = 'flex';
+                            let badge = document.getElementById('live-share-badge');
+                            if (!badge) {
+                                badge = document.createElement('div');
+                                badge.className = 'component-badge';
+                                badge.id = 'live-share-badge';
+                                badge.innerHTML = '<span class="material-symbols-rounded">sensors</span><span>Transmisión en curso</span>';
+                                const badgesContainer = document.querySelector('[data-ref="badges-left"]');
+                                if (badgesContainer) badgesContainer.appendChild(badge);
+                            }
                             
                             resolve();
                         };
@@ -496,8 +510,15 @@ export const DesignNetwork = {
                         };
                     });
                 } else {
-                    const badge = document.getElementById('live-share-badge');
-                    if (badge) badge.style.display = 'flex';
+                    let badge = document.getElementById('live-share-badge');
+                    if (!badge) {
+                        badge = document.createElement('div');
+                        badge.className = 'component-badge';
+                        badge.id = 'live-share-badge';
+                        badge.innerHTML = '<span class="material-symbols-rounded">sensors</span><span>Transmisión en curso</span>';
+                        const badgesContainer = document.querySelector('[data-ref="badges-left"]');
+                        if (badgesContainer) badgesContainer.appendChild(badge);
+                    }
                 }
 
                 if (this.wsManager) {
@@ -571,7 +592,7 @@ export const DesignNetwork = {
             this.liveShareCode = null;
             
             const badge = document.getElementById('live-share-badge');
-            if (badge) badge.style.display = 'none';
+            if (badge) badge.remove();
 
             if (this.liveTemplateId) {
                 this.templates = this.templates.filter(t => t.id !== this.liveTemplateId);

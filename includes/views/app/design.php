@@ -280,10 +280,6 @@ if (!empty($canvasUuid)) {
             <canvas data-ref="design-canvas" class="component-canvas-surface <?php echo (isset($isBlockedInit) && $isBlockedInit) ? 'component-canvas-blocked disabled-interactive' : ''; ?>"></canvas>
 
             <div class="canvas-badges-left" data-ref="badges-left">
-                <div class="component-badge" id="live-share-badge">
-                    <span class="material-symbols-rounded">sensors</span>
-                    <span>Transmisión en curso</span>
-                </div>
                 
                 <div class="component-badge" data-badge-id="coords">
                     <span class="material-symbols-rounded">my_location</span>
