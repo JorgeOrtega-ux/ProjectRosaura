@@ -204,7 +204,7 @@ class CanvasAccessService {
         }
     }
 
-    public function createLiveShare(int $userId, int $canvasId, string $imgUrl, float $x, float $y, float $w, float $h, float $opacity, bool $canManageOfficial = false): array {
+    public function createLiveShare(int $userId, int $canvasId, string $imgUrl, float $x, float $y, float $w, float $h, float $opacity, float $angle, bool $canManageOfficial = false): array {
         try {
             $user = $this->userRepository->findById($userId);
             $tier = $user['subscription_tier'] ?? 0;
@@ -240,6 +240,7 @@ class CanvasAccessService {
                 'w' => $w,
                 'h' => $h,
                 'opacity' => $opacity,
+                'angle' => $angle,
                 'created_at' => time()
             ];
 

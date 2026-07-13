@@ -552,8 +552,14 @@ export const DesignTemplates = {
         // If we delete the active template and it was being live-shared, we just keep the live share active.
         // Spectators will see nothing until a new template is placed.
 
-        this.templates = this.templates.filter(t => t.id !== this.activeTemplateId);
+        const deletedId = this.activeTemplateId;
+        this.templates = this.templates.filter(t => t.id !== deletedId);
         this.activeTemplateId = null;
+        
+        if (typeof this.emitLiveImageUpdate === 'function' && this.liveShareStatus === 'owner' && deletedId === this.liveTemplateId) {
+            this.emitLiveImageUpdate();
+        }
+
         this.updateTemplateUI();
         this.requestRender();
     },

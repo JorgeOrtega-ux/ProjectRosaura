@@ -296,15 +296,38 @@ async def handler(websocket):
                         if websocket not in OWNER_CONNS:
                             OWNER_CONNS[websocket] = code
                             print(f"[DEBUG LIVE] WS registered as owner of session {code}")
-                            
+                        
+                        # === Update Redis Cache with the latest state ===
+                        redis_key = f"live_share:{code}"
+                        existing_data_str = await r.get(redis_key)
+                        if existing_data_str:
+                            try:
+                                existing_data = json.loads(existing_data_str)
+                                if data.get("empty"):
+                                    existing_data["empty"] = True
+                                else:
+                                    existing_data["empty"] = False
+                                    if data.get("x") is not None: existing_data["x"] = data.get("x")
+                                    if data.get("y") is not None: existing_data["y"] = data.get("y")
+                                    if data.get("w") is not None: existing_data["w"] = data.get("w")
+                                    if data.get("h") is not None: existing_data["h"] = data.get("h")
+                                    if data.get("opacity") is not None: existing_data["opacity"] = data.get("opacity")
+                                    if data.get("angle") is not None: existing_data["angle"] = data.get("angle")
+                                
+                                await r.set(redis_key, json.dumps(existing_data))
+                            except Exception as e:
+                                print(f"[DEBUG LIVE] Error updating Redis state for {code}: {e}")
+
                         update_msg = json.dumps({
                             "type": "live_image_updated",
                             "code": code,
+                            "empty": data.get("empty"),
                             "x": data.get("x"),
                             "y": data.get("y"),
                             "w": data.get("w"),
                             "h": data.get("h"),
-                            "opacity": data.get("opacity")
+                            "opacity": data.get("opacity"),
+                            "angle": data.get("angle")
                         })
                         tasks = [
                             asyncio.create_task(client.send(update_msg))

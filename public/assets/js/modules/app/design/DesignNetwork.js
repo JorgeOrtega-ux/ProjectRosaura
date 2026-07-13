@@ -379,7 +379,8 @@ export const DesignNetwork = {
                 y: tpl.y,
                 w: tpl.w,
                 h: tpl.h,
-                opacity: tpl.opacity || 1
+                opacity: tpl.opacity || 1,
+                angle: tpl.angle || 0
             }, this.abortController.signal);
             
             if (response.aborted) return false;
@@ -477,7 +478,8 @@ export const DesignNetwork = {
                                 y: parseInt(response.data.y) || 0,
                                 w: parseInt(response.data.w) || img.width,
                                 h: parseInt(response.data.h) || img.height,
-                                opacity: parseFloat(response.data.opacity) || 1,
+                                opacity: response.data.empty ? 0 : (parseFloat(response.data.opacity) || 1),
+                                angle: parseFloat(response.data.angle) || 0,
                                 locked: true, 
                                 url: img.src
                             });

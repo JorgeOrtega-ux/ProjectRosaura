@@ -202,12 +202,13 @@ class CanvasAccessController extends BaseController {
             $w = $input['w'] ?? 100;
             $h = $input['h'] ?? 100;
             $opacity = $input['opacity'] ?? 1;
+            $angle = $input['angle'] ?? 0;
 
             if (!$canvasId || !$imgUrl) {
                 return $this->respond(['success' => false, 'message' => __('err_missing_live_share_params')]);
             }
 
-            $result = $this->canvasServices->createLiveShare($userId, (int)$canvasId, $imgUrl, (float)$x, (float)$y, (float)$w, (float)$h, (float)$opacity, $this->canManageOfficial());
+            $result = $this->canvasServices->createLiveShare($userId, (int)$canvasId, $imgUrl, (float)$x, (float)$y, (float)$w, (float)$h, (float)$opacity, (float)$angle, $this->canManageOfficial());
             return $this->respond($result);
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);
