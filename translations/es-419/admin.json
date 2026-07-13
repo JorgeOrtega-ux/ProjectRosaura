@@ -185,6 +185,7 @@
     "table_header_email": "Correo",
     "table_header_role": "Rol",
     "table_header_uuid": "UUID",
+    "table_header_likes": "Likes",
     "table_header_registered": "Registrado",
     "admin_server_settings_title": "Ajustes Globales",
     "tooltip_save_config": "Guardar ajustes",

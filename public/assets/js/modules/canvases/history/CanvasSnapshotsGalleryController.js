@@ -138,21 +138,13 @@ class CanvasSnapshotsGalleryController {
         if (window.dialogSystem && window.dialogSystem.show) {
             const confirmRes = await window.dialogSystem.show('confirmActionModal', {
                 title: window.__('delete_snapshot') || 'Eliminar Snapshot',
-                message: window.__('confirm_delete_snapshot') || '¿Estás seguro de que deseas eliminar este snapshot? Esta acción no se puede deshacer.',
-                inputPlaceholder: 'ELIMINAR',
-                expectedInput: 'ELIMINAR'
+                message: window.__('confirm_delete_snapshot') || '¿Estás seguro de que deseas eliminar este snapshot? Esta acción no se puede deshacer.'
             });
             if (confirmRes && confirmRes.confirmed) {
-                const userInput = confirmRes.data && confirmRes.data.confirm_input ? confirmRes.data.confirm_input.trim().toUpperCase() : '';
-                if (userInput === 'ELIMINAR') {
-                    confirmed = true;
-                } else {
-                    showMessage('Debes escribir ELIMINAR', 'error');
-                }
+                confirmed = true;
             }
         } else {
-            const ans = prompt("Escribe ELIMINAR para borrar este snapshot permanentemente.");
-            if (ans === 'ELIMINAR') confirmed = true;
+            confirmed = confirm("¿Estás seguro de que deseas eliminar este snapshot?");
         }
 
         if (!confirmed) return;

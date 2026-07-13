@@ -325,10 +325,12 @@ export const DialogTemplates = {
                 <p class="component-modal-desc">${data.message || __('desc_confirm_action')}</p>
             </div>
             <div class="component-modal-body">
+                ${data.inputPlaceholder ? `
                 <div class="component-input-group">
                     <input type="text" data-ref="confirm_input" class="component-input-field" placeholder=" " autocomplete="off">
-                    <label class="component-input-label">${data.inputPlaceholder || __('ph_confirm_action')}</label>
+                    <label class="component-input-label">${data.inputPlaceholder}</label>
                 </div>
+                ` : ''}
             </div>
             <div class="component-modal-actions">
                 <button class="component-button component-button--h45 hide-on-desktop" data-modal-action="cancel">${__('btn_cancel')}</button>

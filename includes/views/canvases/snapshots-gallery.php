@@ -56,12 +56,17 @@ if ($uuid) {
 
             if ($isAuthorized) {
                 $userIdParam = $_SESSION['user_id'] ?? 0;
+                $privacyCondition = '';
+                if (!$isOwner && !$isPrivileged) {
+                    $privacyCondition = ' AND s.privacy = \'public\'';
+                }
+
                 $stmtHist = $db->prepare('
                     SELECT s.id, s.file_path, s.snapshot_uuid, s.created_at, s.privacy,
                            (SELECT COUNT(*) FROM canvas_snapshots_likes l WHERE l.snapshot_id = s.id) as likes_count,
                            (SELECT COUNT(*) FROM canvas_snapshots_likes l WHERE l.snapshot_id = s.id AND l.user_id = :user_id) as user_liked
                     FROM canvas_snapshots_history s
-                    WHERE s.canvas_id = :canvas_id
+                    WHERE s.canvas_id = :canvas_id' . $privacyCondition . '
                     ORDER BY s.created_at DESC
                 ');
                 $stmtHist->execute([':canvas_id' => $canvas['id'], ':user_id' => $userIdParam]);
@@ -142,6 +147,12 @@ if ($error) {
                                     <span class="material-symbols-rounded">history</span>
                                     <span><?php echo $dateLabel; ?></span>
                                 </div>
+                                <?php if ($snapshot['privacy'] === 'private'): ?>
+                                <div class="component-badge component-badge--glass component-badge--danger">
+                                    <span class="material-symbols-rounded">lock</span>
+                                    <span>Privado</span>
+                                </div>
+                                <?php endif; ?>
                             </div>
                             <div data-nav="<?php echo $viewUrl; ?>" class="component-gallery-link">
                                 <h3 class="component-gallery-title"><?php echo $nameLabel; ?></h3>

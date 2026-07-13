@@ -27,14 +27,14 @@ $pdo = $db->getConnection($connName);
 $tblCanvases = defined('App\Core\System\DatabaseConstants::TBL_CANVASES') ? App\Core\System\DatabaseConstants::TBL_CANVASES : 'canvases';
 if ($isAdmin) {
     $sqlCount = "SELECT COUNT(*) FROM {$tblCanvases} WHERE owner_id = :uid OR (owner_id IS NULL AND scope_type != 'personal')";
-    $sqlSelect = "SELECT id, uuid, name, description, privacy, size, max_participants, created_at, scope_type 
+    $sqlSelect = "SELECT id, uuid, name, description, privacy, size, max_participants, created_at, scope_type, favorites_count 
                   FROM {$tblCanvases} 
                   WHERE owner_id = :uid OR (owner_id IS NULL AND scope_type != 'personal')
                   ORDER BY id DESC 
                   LIMIT $limit OFFSET $offset";
 } else {
     $sqlCount = "SELECT COUNT(*) FROM {$tblCanvases} WHERE owner_id = :uid";
-    $sqlSelect = "SELECT id, uuid, name, description, privacy, size, max_participants, created_at, scope_type 
+    $sqlSelect = "SELECT id, uuid, name, description, privacy, size, max_participants, created_at, scope_type, favorites_count 
                   FROM {$tblCanvases} 
                   WHERE owner_id = :uid 
                   ORDER BY id DESC 
@@ -153,6 +153,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                             <th><?php echo __('table_header_privacy'); ?></th>
                             <th><?php echo __('table_header_size'); ?></th>
                             <th><?php echo __('table_header_limit'); ?></th>
+                            <th><?php echo __('table_header_likes'); ?></th>
                             <th><?php echo __('table_header_registered'); ?></th>
                         </tr>
                     </thead>
@@ -202,6 +203,12 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                                     </td>
                                     <td>
                                         <div class="component-badge component-badge--sm">
+                                            <span class="material-symbols-rounded">favorite</span>
+                                            <span class="search-target"><?php echo htmlspecialchars($canvas['favorites_count']); ?></span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="component-badge component-badge--sm">
                                             <span class="material-symbols-rounded">calendar_month</span>
                                             <span><?php echo date('d/m/Y', strtotime($canvas['created_at'])); ?></span>
                                         </div>
@@ -210,7 +217,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                             <?php endforeach; ?>
                             
                             <tr class="disabled" data-ref="empty-search-table">
-                                <td colspan="5" class="component-empty-table-cell">
+                                <td colspan="6" class="component-empty-table-cell">
                                     <div class="component-empty-state component-empty-state--table">
                                         <span class="material-symbols-rounded component-empty-state-icon">search_off</span>
                                         <p class="component-empty-state-text"><?php echo __('empty_search_canvases'); ?></p>
@@ -220,7 +227,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
 
                         <?php else: ?>
                             <tr>
-                                <td colspan="5" class="component-empty-table-cell">
+                                <td colspan="6" class="component-empty-table-cell">
                                     <div class="component-empty-state component-empty-state--table">
                                         <span class="material-symbols-rounded component-empty-state-icon">palette</span>
                                         <p class="component-empty-state-text"><?php echo __('empty_canvases_system'); ?></p>
